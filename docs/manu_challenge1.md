@@ -169,14 +169,38 @@ flowchart TD
 - Airline passt sich dementsprechend an
 - Traveler prüft, ob es sich lohnt zu kaufen.
 
-***ERM***
+## ERM
 
 tbd
 
-***User Stories***
+## User Stories
 
-Systemnutzer
-Traveler
-Airline
-Regulator
-AirportManagement
+### Traveler
+
+1. Als preisbewusster Reisender, möchte ich primär die günstigsten Ticketpreise sehen, so dass ich mein Mobilitätsbedürfnis zum niedrigsten Preis befriedigen kann.
+2. Als umweltbewusster Reisender, möchte ich die CO2-Bilanz eines Fluges mit alternativen Verkehrsmitteln vergleichen können, so dass ich mich gegen den Flug entscheide, wenn die ökologischen Kosten meine persönlichen Grenzwerte überschreiten.
+3. Als pragmatischer Reisender, möchte ich nachhaltige Flugoptionen wählen können, so dass ich Emissionen senke, sofern Aufpreis und Zeitverlust in einem für mich akzeptablen Rahmen bleiben.
+
+### Airline
+
+4. Als Airline-Manager, möchte ich die aktuellen Kerosinpreise und CO2-Abgaben in meine Ticketpreise einpreisen, so dass ich trotz steigender Umweltkosten eine nachhaltige Profitabilität sicherstelle.
+5. Als Airline-Manager, möchte ich die Verfügbarkeit von SAF und Wasserstoff-Infrastruktur an Flughäfen prüfen, so dass ich fundierte Investitionsentscheidungen für meine zukünftige Flottenzusammensetzung treffen kann.
+6. Als Airline-Manager, möchte ich meinen CO2-Fußabdruck senken, so dass ich meine Reputation verbessere und Marktanteile in umweltbewussten Kundengruppen gewinne.
+
+### Regulator
+
+7. Als Regulator, möchte ich die Gesamtemissionen der vorherigen Iteration analysieren und die CO2-Steuer anpassen, so dass ein spürbarer finanzieller Druck auf die Airlines entsteht, fossiles Kerosin zu ersetzen.
+8. Als Regulator, möchte ich mein Förderbudget strategisch verteilen (z.B. SAF vs. Wasserstoff), so dass die Produktionskosten für grüne Energieträger gezielt gesenkt werden.
+9. Als Regulator, möchte ich Forschungsförderungen (R&D) vergeben, so dass grüne Technologien mit aktuell niedrigem Reifegrad schneller Marktreife erlangen.
+
+### AirportManagement
+
+10. Als Flughafenbetreiber, möchte ich mein Budget und erhaltene Subventionen in neue Anlagen (z.B. Wasserstoff-Tanklager) investieren, so dass Airlines diese alternativen Energieträger physisch bei mir tanken können.
+11. Als Flughafenbetreiber, möchte ich meine Kapazitäten und Routen optimieren, so dass Flugbewegungen am Boden und in der Luft effizienter werden und operative Emissionen sinken.
+
+### Systemnutzer
+
+12. Als Foresight-Analyst, möchte ich verschiedene Startkonfigurationen der Umweltvariablen testen, so dass ich durch den Ergebnisvergleich die effektivsten Hebel für die Dekarbonisierung bis 2050 identifizieren kann.
+13. Als Foresight-Analyst, möchte ich die jährlichen Fortschritte und Entscheidungen der Agenten exportieren, so dass ich eine Cross-Impact-Matrix erstellen und die Pfadabhängigkeiten visualisieren kann.
+
+*Info: Mit KI ausformuliert*
