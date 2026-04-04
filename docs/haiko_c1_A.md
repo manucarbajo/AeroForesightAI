@@ -103,7 +103,7 @@ graph TD;
 
 ### A.1.3 Herleitung der Einflussfaktoren
 
-Die Einflussfaktoren wurden mittels einer PESTLE-Analyse (Political, Economic, Social, Technological, Legal, Environmental) identifiziert und mit den Megatrends aus dem Zukunftsinstitut abgeglichen:
+Die Einflussfaktoren wurden mittels einer PESTLE-Analyse (Political, Economic, Social, Technological, Legal, Environmental) identifiziert und mit den Megatrends aus dem Zukunftsinstitut (2025) abgeglichen:
 
 | # | Einflussfaktor | PESTLE-Kategorie | Beschreibung | Bezug zu Megatrends |
 |---|---|---|---|---|
