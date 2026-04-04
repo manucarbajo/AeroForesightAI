@@ -558,7 +558,7 @@ Prioritäten nach MoSCoW: **M**ust, **S**hould, **C**ould, **W**on't.
 ### A.4.4 Zusammenfassung der Anforderungen
 ```mermaid
 graph TD
-    subgraph GESAMT["Anforderungen Gesamt: 20"]
+    subgraph GESAMT["Anforderungen Gesamt"]
         direction TB
 
         subgraph FA["Funktionale Anforderungen: 16 User Stories"]
