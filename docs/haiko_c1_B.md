@@ -22,6 +22,7 @@
   - [B.1.1 Identifikation der Klassen](#b11-identifikation-der-klassen)
   - [B.1.2 UML-Klassendiagramm (Kernmodell)](#b12-uml-klassendiagramm-kernmodell)
   - [B.1.3 Erläuterung der Klassen und Attribute](#b13-erläuterung-der-klassen-und-attribute)
+- [B.2 Zustandsmodell der Einflussfaktoren](#b2-zustandsmodell-der-einflussfaktoren)
 ---
 
 ## Methodische Grundlage
@@ -394,3 +395,55 @@ classDiagram
 | `impact_strength` | int | Wirkungsstärke (1-3) |
 
 ---
+
+## B.2 Zustandsmodell der Einflussfaktoren
+
+Jeder Einflussfaktor befindet sich zu jedem Simulationszeitpunkt in genau einem seiner definierten Zustände.
+
+### Generisches Zustandsdiagramm
+
+```mermaid
+stateDiagram-v2
+    [*] --> State1 : Initialkonfiguration
+    [*] --> State2 : Initialkonfiguration
+
+    State1 : Zustand 1 (Kontinuität)
+    State2 : Zustand 2 (Transformation)
+
+    State1 --> State2 : Transition durch: </br>-Cross-Impact </br>-Agenten-Interaktion </br>-Weak Signal </br>-Manuelle Änderung
+    State2 --> State1 : Transition durch: </br>-Cross-Impact </br>-Agenten-Interaktion</br>- Weak Signal</br>- Manuelle Änderung
+
+    note right of State1
+        Beispiel F1:
+        "Hohes Wachstum"
+        Globaler Reiseboom,
+        +3-5% p.a.
+    end note
+
+    note right of State2
+        Beispiel F1:
+        "Stagnation und Verzicht"
+        Substitution
+    end note
+```
+
+**Erläuterung:**
+- Während (C3) wird der Zustand initial gesetzt und bleibt während einer Simulationsrunde konstant. Die CIB-Matrix bewertet die Konsistenz der Zustandskombination.
+- Während (C4) können Zustandsübergänge durch CI-Effekte, Agenten-Interaktionen, Weak Signals oder manuelle Eingriffe ausgelöst werden (dynamisch).
+- Das Modell ist erweiterbar auf mehr als zwei Zustände pro Faktor weil `InfluenceFactor.states` eine Liste beliebiger Länge ist.
+
+### Angewandtes Zustandsmodell: Biespiel Faktor F1 (Mobilitätsbedürfnis)
+
+```mermaid
+stateDiagram-v2
+    [*] --> F1_1
+
+    F1_1 : F1.1 Hohes Wachstum
+    F1_2 : F1.2 Stagnation und Verzicht
+
+    F1_1 --> F1_2 : F6.2 Starkes Klimabewusstsein <br>F5.2 Intermodalität <br>F4.2 Rezession<br>F7.2 Fragmentierung
+    F1_2 --> F1_1 : F6.1 Fliegen akzeptiert<br>F4.1 Stabiles Wachstum<br>F7.1 Offene Märkte<br>F5.1 Fliegen alternativlos
+```
+
+---
+
