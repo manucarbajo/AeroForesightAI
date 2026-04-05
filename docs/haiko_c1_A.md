@@ -495,7 +495,7 @@ Persona konkretisieren: tbd
 > **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 15.4.4 beschreiben Anforderungen den Nutzen, den eine Software bringen soll (funktionale Anforderungen), und welche Eigenschaften es haben muss (nicht-funktionale Anforderungen). Sie werden aus Sicht der Stakeholder formuliert und müssen eindeutig, prüfbar, konsistent und verfolgbar sein.
 
 ### A.4.1 Funktionale Anforderungen (User Stories)
-> *Hinweis*: User Stories wurden unter Zuhilfenahme von KI (Claude Opus 4.6) erstellt. KI diente hier zur Identifikation von Kernargumenten. Diese werden im nächsten Iterationsschritt eigenständig überprüft und ausformuliert. (Stand 05.04.2026)
+> *Hinweis*: User Stories wurden unter Zuhilfenahme von KI (Claude Opus 4.6) erstellt. KI diente hier zur Identifikation von Kernargumenten. Diese werden in weiteren Iterationsschritten erneut überprüft und ausformuliert. (Stand 05.04.2026)
 
 User Stories folgen dem Format (vgl. Ludewig & Lichter, Kap. 15.7.4, S. 377 ff.):
 > **Als** [Rolle] **möchte ich** [Funktion], **damit** [Nutzen].
@@ -544,7 +544,7 @@ Prioritäten nach MoSCoW: **M**ust, **S**hould, **C**ould, **W**on't.
 | **NFA-03** | Konfigurierbarkeit | Die Domäne (Akteure, Faktoren, Zustände, Beziehungen) muss ohne Codeänderungen anpassbar sein, ausschließlich über Konfigurationsdateien. | Trennung von Domänenwissen und Systemlogik. | **Must** |
 | **NFA-04** | Lokalität | Das System muss vollständig lokal lauffähig sein (Ollama-basierte LLMs), ohne Abhängigkeit von Cloud-APIs. | Vorgabe aus Projektbeschreibung. | **Must** |
 | **NFA-05** | Dokumentation | Alle Systemkomponenten, Konfigurationsformate und Nutzungsprozesse müssen in Markdown dokumentiert sein. | Vorgabe aus Projektbeschreibung. | **Must** |
-| **NFA-06** | Modularität | Das System muss modular aufgebaut sein, sodass einzelne Komponenten unabhängig ausgetauscht oder erweitert werden können. | Prototyp-Charakter: Erweiterbarkeit. Vgl. Ludewig & Lichter Kap. 16.3. | **Must** |
+| **NFA-06** | Modularität | Das System muss modular aufgebaut sein, sodass einzelne Komponenten unabhängig voneinander verändert und weiterentwickelt werden können. | Vgl. Ludewig & Lichter Kap. 16.3. - Prinzipien des Architekturentwurfs | **Must** |
 | **NFA-07** | Performance | Eine einzelne Simulationsrunde soll innerhalb von 5 Minuten abgeschlossen sein. | Iteratives Experimentieren muss möglich sein. | **Should** |
 | **NFA-08** | Transparenz | Das System soll die verwendeten Prompts, Systemrollen und Entscheidungslogiken offenlegen. | Wissenschaftliche Nachvollziehbarkeit. | **Must** |
 
