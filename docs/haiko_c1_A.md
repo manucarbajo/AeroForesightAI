@@ -187,7 +187,9 @@ graph TD
 
 > **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 15.3 definiert und klärt ein Begriffslexikon zentrale Begriffe eindeutig, welche möglicherweise von verschiedenen Leuten unterschiedlich ausgelegt werden. Es dient als gemeinsame Sprache zwischen allen Beteiligten und verhindert Missverständnisse. Das Begriffslexikon ist ein lebendes Dokument, das während des gesamten Projekts gepflegt wird.
 
-Hinweis: Begriffslexikon mithilfe KI-erstellt. (**Gemeinsam nochmal durchgehen, damit alle konform und auch dem gleichen Stand sind!**)
+> *Hinweis*: Begriffslexikon wurde unter Zuhilfename von KI (Claude Opus 4.6) erstellt. KI diente hier zur Ausformulierung der einzelnen Begriffe. Diese werden im nächsten Iterationsschritt überprüft und im Plenum definiert. (Stand 05.04.2026)
+
+**TODO: Begriffslexikon gemeinsam nochmal durchgehen, damit alle konform und auch dem gleichen Stand sind!**
 
 ### Struktur jedes Eintrags
 
@@ -493,6 +495,7 @@ Persona konkretisieren: tbd
 > **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 15.4.4 beschreiben Anforderungen den Nutzen, den eine Software bringen soll (funktionale Anforderungen), und welche Eigenschaften es haben muss (nicht-funktionale Anforderungen). Sie werden aus Sicht der Stakeholder formuliert und müssen eindeutig, prüfbar, konsistent und verfolgbar sein.
 
 ### A.4.1 Funktionale Anforderungen (User Stories)
+> *Hinweis*: User Stories wurden unter Zuhilfenahme von KI (Claude Opus 4.6) erstellt. KI diente hier zur Identifikation von Kernargumenten. Diese werden im nächsten Iterationsschritt eigenständig überprüft und ausformuliert. (Stand 05.04.2026)
 
 User Stories folgen dem Format (vgl. Ludewig & Lichter, Kap. 15.7.4, S. 377 ff.):
 > **Als** [Rolle] **möchte ich** [Funktion], **damit** [Nutzen].
