@@ -67,31 +67,38 @@ graph TD
     B4 --> B4a
 ```
 
----
-
 ## B.1 Konzeptuelles Domänenmodell
 
 ### B.1.1 Identifikation der Klassen
 
-Aus dem Glossar (Phase A.2) leiten sich folgende Klassen ab:
+Aus dem Glossar (Phase A.2) leiten sich die fachlichen Konzepte der Problemdomäne ab. Das konzeptuelle Domänenmodell beschränkt sich bewusst auf Konfigurationskonzepte, also die Struktur des zu simulierenden soziotechnischen Systems. Technische Laufzeitkonzepte (z.B. LangGraph-State, Messages, Simulationsstand) gehören nicht ins Domänenmodell, sondern in die technologische Konzeption bzw. in die Implementierung (Challenge 2/3). Die Klasse `Actor` beschreibt die fachliche Konfiguration eines Akteurs. Die technische Umsetzung als LLM-basierter Agent, der mit anderen Agenten kommuniziert, wird in der technologischen Konzeption und Challenge 2 (Workbench) behandelt.
 
 | Glossar-Begriff | Klasse im Modell | Begründung |
 |---|---|---|
-| Domäne | `Domain` | Root, enthält gesamte Systemkonfiguration |
-| Soziotechnisches System | (implizit in `Domain`) | Die Domain ist die Repräsentation des soziotechnischen Systems |
+| Domäne | `Domain` | Root, enthält die gesamte Systemkonfiguration |
 | Szenarioplanung | `ScenarioConfig` | Konfiguration der Fragestellung, Zeit, Scope |
 | Akteur | `Actor` | Handlungsträger im System mit eigener Logik |
 | Einflussfaktor | `InfluenceFactor` | Key Unsicherheit mit definierten Ausprägungen |
 | Faktor-Zustand | `FactorState` | Konkrete Ausprägung eines Einflussfaktors |
 | Cross-Impact-Bilanz | `CrossImpactMatrix` | Bewertung der Faktor-Faktor-Wechselwirkungen |
 | Cross-Impact-Bewertung | `CrossImpactEntry` | Wechselwirkungsbeziehnug zwischen zwei Zuständen |
-| Beziehung (Akteur↔Akteur) | `ActorRelation` | Gerichteter Einfluss zwischen zwei Akteuren |
-| Beziehung (Akteur↔Faktor) | `ActorFactorRelation` | Zuordnung von Akteuren zu Faktoren |
-| Simulationsstand | `SimulationState` | Gesamtzustand zu einem Zeitpunkt (relevant ab C3?) |
-| Szenario | `Scenario` | Konsistente Kombination von Faktor-Zuständen (relevant ab C3?) |
-| Weak Signal | `WeakSignal` | Externer Impuls (relevant ab C4?) |
+| Weak Signal | `WeakSignal` | Externer Impuls zur Dynamisierung (Challenge 4?) |
+
+
+**Bewusst nicht als eigene Klassen modelliert:**
+
+| Glossar-Begriff | Verbleib | Begründung |
+|---|---|---|
+| Akteur-Akteur-Beziehung | Integriert in `Actor.description` und `Actor.action_logic` | Beziehungswissen wird über Prompts transportiert; eigene Klasse wäre redundant |
+| Akteur-Faktor-Beziehung | Integriert in `Actor.description` und `Actor.action_logic` | Beziehungswissen wird über Prompts transportiert; eigene Klasse wäre redundant |
+| Simulationsstand | Technische Implementierung | Laufzeitkonzept, kein Domänenkonzept; wird durch LangGraph-State abgedeckt |
+| Szenario | Technische Implementierung (Challenge 3) | Ergebnis-Artefakt, kein Eingabe-/Konfigurationskonzept |
 
 ### B.1.2 UML-Klassendiagramm (Kernmodell)
+
+Das konzeptuelle Domänenmodell beschränkt sich auf die fachlichen Konzepte der Problemdomäne, also die Konfiguration des soziotechnischen Systems. Technische Laufzeitkonzepte (z.B. LangGraph-State, Messages) gehören nicht ins Domänenmodell, sondern in technologische Konzeption.
+
+**Design-Entscheidung:** Beziehungen zwischen Akteuren sowie Akteur-Faktor-Zuordnungen werden nicht als eigene Klassen modelliert, sondern als Bestandteil der natürlichsprachlichen Akteursbeschreibung (`Actor.description`, `Actor.action_logic`). Entspricht der Arbeitsweise von LangGraph, bei dem Beziehungswissen über Prompts transportiert wird.
 
 ```mermaid
 classDiagram
@@ -102,9 +109,6 @@ classDiagram
         +list~Actor~ actors
         +list~InfluenceFactor~ influence_factors
         +CrossImpactMatrix cross_impact_matrix
-        +list~ActorRelation~ actor_relations
-        +list~ActorFactorRelation~ actor_factor_relations
-        +validate() bool
     }
 
     class ScenarioConfig {
@@ -119,35 +123,27 @@ classDiagram
     class Actor {
         +str id
         +str name
-        +list~String~ synonyms
         +str description
         +str objectives
         +str action_logic
-        +list~String~ examples
     }
 
     class InfluenceFactor {
         +str id
         +str name
-        +list~String~ synonyms
         +str category
         +str description
-        +str delimitation
         +list~FactorState~ states
-        +list~String~ megatrend_references
     }
 
     class FactorState {
         +str id
         +str name
         +str description
-        +str factor_id
     }
 
     class CrossImpactMatrix {
         +list~CrossImpactEntry~ entries
-        +get_impact(active_state_id, passive_state_id) int
-        +get_consistent_scenarios() List~Scenario~
     }
 
     class CrossImpactEntry {
@@ -155,53 +151,6 @@ classDiagram
         +str passive_state_id
         +int impact_value
         +str justification
-    }
-
-    class ActorRelation {
-        +str source_actor_id
-        +str target_actor_id
-        +str relation_type
-        +str description
-        +int strength
-    }
-
-    class ActorFactorRelation {
-        +str actor_id
-        +str factor_id
-        +str direction
-        +str description
-        +int strength
-    }
-
-    class Scenario {
-        +str id
-        +str name
-        +str description
-        +list~FactorState~ factor_states
-        +float consistency_score
-    }
-
-    class SimulationState {
-        +str id
-        +int time_step
-        +str timestamp
-        +list~FactorState~ current_factor_states
-        +list~ActorPosition~ actor_positions
-        +list~Message~ conversation_log
-    }
-
-    class ActorPosition {
-        +str actor_id
-        +str position_summary
-        +str reasoning
-        +int time_step
-    }
-
-    class Message {
-        +str sender_actor_id
-        +str content
-        +int time_step
-        +str timestamp
     }
 
     class WeakSignal {
@@ -217,8 +166,6 @@ classDiagram
     Domain "1" *-- "1..*" Actor : contains
     Domain "1" *-- "1..*" InfluenceFactor : contains
     Domain "1" *-- "0..1" CrossImpactMatrix : contains
-    Domain "1" *-- "0..*" ActorRelation : contains
-    Domain "1" *-- "0..*" ActorFactorRelation : contains
 
     InfluenceFactor "1" *-- "2..*" FactorState : contains
 
@@ -226,173 +173,114 @@ classDiagram
     CrossImpactEntry "1" --> "1" FactorState : active_state
     CrossImpactEntry "1" --> "1" FactorState : passive_state
 
-    ActorRelation "1" --> "1" Actor : source
-    ActorRelation "1" --> "1" Actor : target
-
-    ActorFactorRelation "1" --> "1" Actor : actor
-    ActorFactorRelation "1" --> "1" InfluenceFactor : factor
-
-    Scenario "1" o-- "1..*" FactorState : combines
-
-    SimulationState "1" o-- "1..*" FactorState : current_states
-    SimulationState "1" *-- "0..*" ActorPosition : contains
-    SimulationState "1" *-- "0..*" Message : contains
-    ActorPosition "1" --> "1" Actor : refers_to
-    Message "1" --> "1" Actor : sent_by
-
     WeakSignal "1" --> "1..*" InfluenceFactor : affects
 ```
 
 ### B.1.3 Erläuterung der Klassen und Attribute
 
-#### Domain (root)
+#### Übersicht
+
+Das Domänenmodell umfasst **8 Klassen** in vier logischen Gruppen:
+
+| Gruppe | Klassen | Beschreibung |
+|--------|---------|-------------|
+| **Systemkonfiguration** | `Domain`, `ScenarioConfig` | Rahmen des zu simulierenden Systems |
+| **Systeminhalt** | `Actor`, `InfluenceFactor`, `FactorState` | Akteure und Einflussfaktoren mit ihren Ausprägungen |
+| **Wechselwirkungen** | `CrossImpactMatrix`, `CrossImpactEntry` | Bewertung der gegenseitigen Beeinflussung von Faktor-Zuständen |
+| **Externe Impulse** | `WeakSignal` | Schwache Signale zur Dynamisierung (Challenge 4) |
+
+#### Domain (Root)
 
 | Attribut | Typ | Beschreibung |
 |----------|-----|-------------|
-| `name` | string | Name des modellierten Systems ("Flugverkehr Europa") |
+| `name` | string | Name des modellierten Systems (z.B. "Flugverkehr Europa") |
 | `description` | string | Übergeordnete Beschreibung der Domäne |
-| `scenario_config` | ScenarioConfig | Szenario Konfiguration |
-| `actors` | list[Actor] | Liste aller Akteure |
-| `influence_factors` | list[InfluenceFactor] | Liste aller Einflussfaktoren |
-| `cross_impact_matrix` | CrossImpactMatrix | Wechselwirkungsmatrix (optional, wird in C3 befüllt?) |
-| `actor_relations` | list[ActorRelation] | Beziehungen zwischen Akteuren |
-| `actor_factor_relations` | list[ActorFactorRelation] | Beziehungen zwischen Akteuren und Faktoren |
+| `scenario_config` | ScenarioConfig | Konfiguration der Szenarioanalyse |
+| `actors` | List[Actor] | Liste aller Akteure im System (mindestens 2) |
+| `influence_factors` | List[InfluenceFactor] | Liste aller Einflussfaktoren (mindestens 2) |
+| `cross_impact_matrix` | CrossImpactMatrix | Wechselwirkungsmatrix (optional, wird in Challenge 3 befüllt) |
 
-**Design-Entscheidung:** `Domain` ist zentrale Konfigurationsobjekt, alle anderen Objekte sind darin enthalten oder referenziert.
+**Design-Entscheidung:** `Domain` ist das zentrale Konfigurationsobjekt. Alle anderen Objekte sind darin enthalten. Eine `Domain`-Instanz repräsentiert eine vollständige, in sich geschlossene Systemkonfiguration.
 
 #### ScenarioConfig
 
 | Attribut | Typ | Beschreibung |
 |----------|-----|-------------|
-| `central_question` | string | zentrale Fragestellung (US-1.06) |
-| `scenario_type` | string | Szenario Typ: "explorative", "predictive", "normative" |
-| `geographical_scope` | string | Geographischer Geltungsbereich |
-| `time_horizon_start` | int | Startjahr (z.B. 2025) |
-| `time_horizon_end` | int | Endjahr (z.B. 2035) |
-| `description` | string | *Ergänzende Beschreibung?* |
+| `central_question` | String | Zentrale Fragestellung der Szenarioanalyse |
+| `scenario_type` | String | Art des Szenarios: "explorative", "predictive" oder "normative" |
+| `geographical_scope` | String | Geographischer Scope (z.B. "Europa") |
+| `time_horizon_start` | int | Startjahr des Zeithorizonts (z.B. 2025) |
+| `time_horizon_end` | int | Endjahr des Zeithorizonts (z.B. 2035). Muss nach `time_horizon_start` liegen. |
+| `description` | String | Ergänzende Beschreibung (optional) |
 
 #### Actor
 
 | Attribut | Typ | Beschreibung |
 |----------|-----|-------------|
-| `id` | string/int | ID (z.B. "A1_regulatorien") oder nur numeric 0000001? |
-| `name` | string | Anzeigename (z.B. "Regulatorien / Politik") |
-| `synonyms` | list[String] | Alternative Bezeichnungen |
-| `description` | string | Ausführliche Beschreibung (→ wird zum LLM-System-Prompt? Humanmessage? ) |
-| `objectives` | string | Ziele und Interessen des Akteurs |
-| `action_logic` | string | Handlungslogik (→ US-1.02) Systemprompt? |
-| `examples` | list[String] | Konkrete Beispiele (z.B. "EU-Kommission", "EASA") |
+| `id` | String | ID (z.B. "A1_regulatorien") |
+| `name` | String | Name (z.B. "Regulatorien / Politik") |
+| `description` | String | Beschreibung des Akteurs, seiner Rolle, seines Kontexts im System sowie seiner Beziehungen zu anderen Akteuren und zu den Einflussfaktoren |
+| `objectives` | String | Ziele und Interessen des Akteurs |
+| `action_logic` | String | Beschreibung der Handlungslogik: Wie trifft dieser Akteur Entscheidungen? Welche Prinzipien leiten sein Verhalten? Wie reagiert er auf andere Akteure und auf Veränderungen der Einflussfaktoren? |
+
+**Design-Entscheidungen:**
+
+- Die Felder `description` und `action_logic` enthalten bewusst auch Informationen über Beziehungen zu anderen Akteuren und relevante Einflussfaktoren. Damit werden die Konzepte Akteur-Akteur-Beziehung und Akteur-Faktor-Beziehung in natürlichsprachlicher Form integriert. Beispiel in `action_logic`: *"Du reagierst auf öffentlichen Druck der Zivilgesellschaft und Lobbyarbeit der Airlines. Die regulatorische Strenge (F2) ist dein direktes Handlungsfeld."*
+- Die Trennung zwischen `description` (Was/Wer ist der Akteur?) und `action_logic` (Wie handelt er?) ermöglicht unterschiedliche Verwendung: `description` liefert Kontext, `action_logic` steuert das Verhalten.
+- Felder wie `synonyms` aus dem Glossar (Phase A.2) werden in `description` integriert, anstatt als eigene Attribute modelliert zu werden. Die detaillierten Informationen sind weiterhin im Glossar-Dokument nachschlagbar.
 
 #### InfluenceFactor
 
 | Attribut | Typ | Beschreibung |
 |----------|-----|-------------|
-| `id` | string | ID (z.B. "F1_mobilitaetsbeduernis") |
-| `name` | string | Anzeigename |
-| `synonyms` | list[String] | Alternative Bezeichnungen |
-| `category` | string | PESTLE oder STEEP-Kategorie (Social, Technological, Economic, Environmental, Political, Legal) |
-| `description` | string | Definition |
-| `delimitation` | string | *Abgrenzung zu verwandten Faktoren?* |
-| `states` | list[FactorState] | Mögliche Ausprägungen (mindestens 2) |
-| `megatrend_references` | list[String] | *Zuordnung zu Megatrends?* |
+| `id` | String | ID (z.B. "F1_mobilitaet") |
+| `name` | String | Name (z.B. "Mobilitätsbedürfnis / Nachfrage") |
+| `category` | String | PESTLE-Kategorie: "political", "economic", "social", "technological", "legal" oder "environmental"  |
+| `description` | String | Definition des Faktors, einschließlich Abgrenzung zu verwandten Faktoren, Synonymen und Megatrend-Referenzen |
+| `states` | List[FactorState] | Mögliche Ausprägungen/Zustände (mindestens 2). Erweiterbar auf mehr als 2 Zustände, da `states` eine Liste beliebiger Länge ist. |
+
+**Design-Entscheidung:** Felder wie `synonyms` und `abgrenzung` aus dem Glossar (Phase A.2) werden in das Feld `description` integriert, anstatt als eigene Attribute modelliert zu werden. Dies hält das Modell schlank. Die detaillierten Informationen sind weiterhin im Glossar-Dokument nachschlagbar.
 
 #### FactorState
 
 | Attribut | Typ | Beschreibung |
 |----------|-----|-------------|
-| `id` | string | ID (z.B. "F1.1_hohes_wachstum") |
-| `name` | string | Name (z.B. "Hohes Wachstum") |
-| `description` | string | Beschreibung des Zustands |
-| `factor_id` | string | *Rückreferenz auf übergeordneten Faktor?* |
+| `id` | String | ID (z.B. "F1.1_hohes_wachstum") |
+| `name` | String | Name des Zustands (z.B. "Hohes Wachstum") |
+| `description` | String | Ausführliche Beschreibung, was dieser Zustand konkret bedeutet |
+
 
 #### CrossImpactMatrix
 
-| Attribut / Methode | Typ | Beschreibung |
+| Attribut | Typ | Beschreibung |
 |----------|-----|-------------|
-| `entries` | list[CrossImpactEntry] | Alle bewerteten Wechselwirkungen |
-| `get_impact()` | Methode | Gibt den Wirkungswert zwischen zwei Zuständen zurück |
-| `get_consistent_scenarios()` | Methode | Berechnet konsistente Szenariokombinationen |
+| `entries` | List[CrossImpactEntry] | Alle bewerteten Wechselwirkungen. Kann initial leer sein (wird in Challenge 3 befüllt). |
+
 
 #### CrossImpactEntry
 
 | Attribut | Typ | Beschreibung |
 |----------|-----|-------------|
-| `active_state_id` | string | Zustand der wirkt (Ursache) |
-| `passive_state_id` | string | Zustand der beeinflusst wird (Wirkung) |
-| `impact_value` | int | Stärke: -3 (stark hemmend) bis +3 (stark fördernd), 0 = kein Einfluss |
-| `justification` | string | Begründung für Bewertung |
+| `active_state_id` | String | Faktor-Zustand der wirkt (Ursache). Referenz auf `FactorState.id`. |
+| `passive_state_id` | String | Faktor-Zustand, der beeinflusst wird (Wirkung). Referenz auf `FactorState.id`. |
+| `impact_value` | int | Wirkungsstärke: -3 (stark hemmend) bis +3 (stark fördernd), 0 = kein Einfluss |
+| `justification` | String | Begründung für die Bewertung. |
 
-**Design-Entscheidung:** Jeder Eintrag enthält eine `justification`, um die Nachvollziehbarkeit zu gewährleisten (→ NFA-01). Begründung kann vom Foresight-Analysten vorgegeben werden.
+**Einschränkung:** `active_state_id` und `passive_state_id` dürfen nicht auf Zustände desselben Einflussfaktors verweisen (ein Faktor beeinflusst sich nicht selbst in der CIB).
 
-#### ActorRelation
-
-| Attribut | Typ | Beschreibung |
-|----------|-----|-------------|
-| `source_actor_id` | string | Akteur, der beeinflusst |
-| `target_actor_id` | string | Akteur, der beeinflusst wird |
-| `relation_type` | string | Art der Beziehung (z.B. "regulatory_pressure", "market_demand", "lobbying") |
-| `description` | string | Beschreibung Beziehung |
-| `strength` | int | Stärke: 1 (schwach) bis 3 (stark) |
-
-#### ActorFactorRelation
+#### WeakSignal (relevant ab Challenge 4)
 
 | Attribut | Typ | Beschreibung |
 |----------|-----|-------------|
-| `actor_id` | string | Betroffener Akteur |
-| `factor_id` | string | Betroffener Einflussfaktor |
-| `direction` | string | "actor_influences_factor" oder "factor_influences_actor" |
-| `description` | string | Beschreibung der Beziehung |
-| `strength` | int | Stärke: 1 (schwach) bis 3 (stark) |
+| `id` | String | ID |
+| `name` | String | Name  Signals (z.B. "EU-Kurzstreckenverbot") |
+| `description` | String | Beschreibung Signals |
+| `source` | String | Quelle Signals (z.B. "Pressemitteilung EU-Kommission") |
+| `affected_factor_ids` | List[String] | Betroffene Einflussfaktoren (Referenzen auf `InfluenceFactor.id`) |
+| `impact_strength` | int | Wirkungsstärke: 1 (schwach) bis 3 (stark) |
 
-#### Scenario (Ergebnisobjekt, relevant ab C3? - Nochmal Absprechen)
+**Design-Entscheidung:** `WeakSignal` ist nicht Teil der `Domain`-Klasse, sondern ein eigenständiges Konzept, das von außen in Simulation integriert wird.
 
-| Attribut | Typ | Beschreibung |
-|----------|-----|-------------|
-| `id` | string | ID |
-| `name` | string | Sprechender Name (z.B. "Business as Usual") |
-| `description` | string | Szenariobeschreibung |
-| `factor_states` | list[FactorState] | Kombination der Faktor-Zustände |
-| `consistency_score` | float | Konsistenzbewertung auf Basis der CIB |
-
-#### SimulationState (relevant ab C2/C3? - Nochmal Absprechen)
-
-| Attribut | Typ | Beschreibung |
-|----------|-----|-------------|
-| `id` | string | ID |
-| `time_step` | int | Simulationszeitschrift |
-| `timestamp` | string | Zeitstempel Creation |
-| `current_factor_states` | List[FactorState] | Aktuelle Ausprägungen aller Faktoren |
-| `actor_positions` | list[ActorPosition] | Zusammenfassung Akteur Positionen |
-| `conversation_log` | list[Message] | Gesprächsprotokoll der Agenten |
-
-#### ActorPosition (relevant ab C2/C3? - Nochmal Absprechen)
-
-| Attribut | Typ | Beschreibung |
-|----------|-----|-------------|
-| `actor_id` | string | Referenz auf Akteur |
-| `position_summary` | string | Zusammenfassung der aktuellen Position |
-| `reasoning` | string | Begründung Position |
-| `time_step` | int | Zeitschritt, zu dem Position erfasst wurde |
-
-#### Message (relevant ab C2/C3? - Nochmal Absprechen)
-
-| Attribut | Typ | Beschreibung |
-|----------|-----|-------------|
-| `sender_actor_id` | string | Akteur/Sender Nachricht |
-| `content` | string | Inhalt der Nachricht |
-| `time_step` | int | Simulationszeitschritt |
-| `timestamp` | string | Zeitstempel |
-
-#### WeakSignal (relevant ab C4? - Nochmal Absprechen)
-
-| Attribut | Typ | Beschreibung |
-|----------|-----|-------------|
-| `id` | string | ID |
-| `name` | string | Name Signal |
-| `description` | string | Beschreibung |
-| `source` | string | Quelle Signal |
-| `affected_factor_ids` | List[String] | Betroffene Einflussfaktoren |
-| `impact_strength` | int | Wirkungsstärke (1-3) |
 
 ---
 
