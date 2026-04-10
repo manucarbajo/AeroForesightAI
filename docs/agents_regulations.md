@@ -600,15 +600,15 @@ SYNCHRONISATION
           ┌──────────────┼──────────────┐
           │              │              │
           ▼              ▼              ▼
-  ┌───────────┐  ┌─────────────┐  ┌─────────┐
-  │R1: Markt- │  │A1: Airlines │  │K1/K2:   │
-  │struktur   │  │A2: Plattform│  │Konsumen-│
-  │           │  │             │  │ten      │
+  ┌────────────┐  ┌─────────────┐  ┌─────────┐
+  │R1: Markt-  │  │A1: Airlines │  │K1/K2:   │
+  │struktur    │  │A2: Plattform│  │Konsumen-│
+  │            │  │             │  │ten      │
   │• n Airlines│  │             │  │         │
-  │• HHI      │  │             │  │         │
-  │• Ein-/    │  │             │  │         │
-  │  Austritt │  │             │  │         │
-  └─────┬─────┘  └──────┬──────┘  └────┬────┘
+  │• HHI       │  │             │  │         │
+  │• Ein-/     │  │             │  │         │
+  │  Austritt  │  │             │  │         │
+  └─────┬──────┘  └──────┬──────┘  └────┬────┘
         │                │              │
         │    Marktstruktur│  Transaktionen│
         │    daten        │  daten        │
@@ -618,7 +618,7 @@ SYNCHRONISATION
                  ▼       ▼       ▼
            ┌─────────────────────────┐
            │  R2: Monitoring/Messung │
-           │                        │
+           │                         │
            │  • Preisdispersion      │
            │    (Gini, σ, CV)        │
            │  • Konzentration (HHI)  │
