@@ -4,7 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="add initial project configuration and migration files" />
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="add initial project configuration and migration files">
+      <change afterPath="$PROJECT_DIR$/docs/agents_consumer.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/agents_provider.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/agents_regulations.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/references/Preisdispersion und Wettbewerb im Luftverkehr Leibniz Information Centre for Economics.pdf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -53,6 +60,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "jonas",
+    "last_opened_file_path": "/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab/docs",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -62,6 +70,14 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/docs" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/docs/references" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="Technology Lab" />
@@ -107,7 +123,7 @@
       <workItem from="1774882197413" duration="47000" />
       <workItem from="1775461364395" duration="1582000" />
       <workItem from="1775663081106" duration="478000" />
-      <workItem from="1775805914800" duration="318000" />
+      <workItem from="1775805914800" duration="1742000" />
     </task>
     <task id="LOCAL-00001" summary="add initial project configuration and migration files">
       <option name="closed" value="true" />
@@ -125,7 +141,15 @@
       <option name="project" value="LOCAL" />
       <updated>1775806204762</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="add initial project configuration and migration files">
+      <option name="closed" value="true" />
+      <created>1775806307665</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1775806307665</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
