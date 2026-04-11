@@ -55,36 +55,60 @@
 | **Szenariotyp** | Explorativ (Was kann passieren?) | Vorgabe & CIB-Matrix |
 | **Akteure & Faktoren** | 3 Akteure, 7 Faktoren | MVP für Weiterentwicklung |
 
-### 1.2 Herleitung der Akteure 
-(MANU)
+### 1.2 Akteure 
+
+Die Identifikation der Akteure ist essenziell, um das soziotechnische System abzubilden. Um die technische und methodische Machbarkeit der Simulationsumgebung (Workbench) zu validieren, setzen wir auf einen iterativen Ansatz. Wir beginnen mit einem Minimum Viable Product (MVP), das im weiteren Verlauf modular erweitert werden kann.
 
 ### 1.2.1 MVP-Akteure für Workbench
+
+Für die erste Iteration des Prototyps beschränken wir uns auf die drei fundamentalsten Akteure des Systems, die das klassische Marktdreieck (Angebot, Nachfrage, Rahmenbedingungen) abbilden.
+
 | MVP-Akteure | Beschreibung |
 |-----------|------------|
 | Konsumenten | Privat- und Geschäftsreisende → treffen Reiseentscheidungen |
 | Anbieter | Fluggesellschaften → setzen Preise, Routen, investieren |
 | Regulatorien | EU-Kommission, nationale Regierungen, (EASA, ICAO) → setzen Rahmenbedingungen |
 
-Begründung:
-xxx einfachheit, modular weiterbauen
+Begründung für MVP: Die Beschränkung auf drei Hauptakteure dient in der ersten Entwicklungsphase der Komplexitätsreduktion. So können wir die grundlegende Architektur (Python, LangGraph, Ollama) und die Interaktionslogik der LLM-Agenten testen, ohne an Performanz-Grenzen zu stoßen. Sobald der Basis-Workflow stabil ist, lässt sich dieses Setup dank der modularen Architektur durch weitere Akteure erweitern.
 
 ### 1.2.2 Weitere Akteure
-Nachfolgend weitere identifizierte Akteure, die jedoch nicht in der ersten Iteration berücksichtigt werden.
+
+Das reale Ökosystem des Flugverkehrs umfasst selbstverständlich weitere Akteure. Nachfolgend sind weitere identifizierte Akteure aufgeführt, die jedoch bewusst nicht in der ersten Iteration berücksichtigt werden, um den Scope des Prototyps nicht zu sprengen:
+
 | Weitere Akteure | Beschreibung |
 |-----------|------------|
-| Konsumenten | Privat- und Geschäftsreisende → treffen Reiseentscheidungen |
-| Anbieter | Fluggesellschaften → setzen Preise, Routen, investieren |
-| Regulatorien | EU-Kommission, nationale Regierungen, (EASA, ICAO) → setzen Rahmenbedingungen |
+| Infrastrukturbetreiber | Flughäfen → stellen Kapazitäten bereit und steuern den operativen Betrieb. |
+| Technologieentwickler | Flugzeughersteller (Airbus, Boeing), Treibstoffproduzenten → bestimmen den technologischen Fortschritt (F3). |
+| Substitutionsanbieter | Bahnunternehmen, Fernbusbetreiber → bieten konkurrierende Verkehrsmittel an und beeinflussen direkt die Verfügbarkeit von Alternativen (F5). |
+| Zivilgesellschaft / NGOs | Umweltverbände, Bürgerinitiativen → üben gesellschaftlichen Druck aus und treiben den Wertewandel (F6). |
 
 ### 1.2.3 Sub-Agenten Überlegung
-Verlinkung einer weiteren Idee mit Hilfe von Subagenten, die wir jedoch auch nicht in der ersten Iteration berücksichtigen, um im späteren Verlauf die beste Modellierung zu identifizieren.
-VERLINKUNG
 
-Im weiteren Verlauf prüfen wir alle Alternativen und bauen den Prototyp nach Best Practices aus.
+Neben der Hinzunahme völlig neuer Akteursgruppen ziehen wir für zukünftige Iterationen auch die Modellierung von sogenannten Sub-Agenten in Betracht. Das bedeutet, dass aggregierte Akteure in spezifischere Untergruppen aufgespalten werden (z.B. die Aufteilung der „Anbieter“ in Low-Cost-Carrier und Full-Service-Carrier, oder der „Konsumenten“ in Geschäftsreisende und Privaturlauber).
+
+VERLINKUNG DER MD VON JONAS
+
+Wir berücksichtigen diese auch nicht in der ersten Iteration. Im weiteren Projektverlauf prüfen wir diese Alternativen und bauen den Prototyp anhand der gewonnenen Erkenntnisse nach Best Practices aus, um die für unsere Szenarioplanung optimale Granularität zu identifizieren.
 
 ### 1.2.4 Akteurübersicht
 
-MERMAID JS GRAPH
+```mermaid
+flowchart TD
+    %% Akteure
+    A3[Regulatorien]
+    A1[Konsumenten]
+    A2[Anbieter]
+    
+    %% Interaktionen
+    A3 <-->|Rahmenbedingungen| A1
+    A3 <-->|Rahmenbedingungen| A2
+    A1 <-->|Angebot & Nachfrage| A2
+```
+```mermaid
+flowchart LR
+    %% Weitere Akteure
+    B1[Infrastruktur-<br/>betreiber] ~~~ B2[Technologie-<br/>entwickler] ~~~ B3[Substitutions-<br/>anbieter] ~~~ B4[Zivilgesellschaft<br/>& NGOs]
+```
 
 ---
 
@@ -380,8 +404,7 @@ Info: MVP 2 Zustände -> Iterationen mehr Zustände nach Analyse
 
 ---
 
-## 3 Stakeholder-Identifikation 
-(MANU)
+## 3 Stakeholder
 
 > **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 6.2.3, können Kunden sowohl natürliche als auch juristische Personen sein. Jedoch existieren auch noch weitere, unsichtbare Klienten, welche identifiziert werden müssen. Vor Anforderungserhebung werden die Stakeholder, also alle Personen und Gruppen, die ein Interesse am System haben oder von ihm betroffen sind, identifiziert.
 
