@@ -481,10 +481,471 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
 | **OOS-05** | Persistente Datenbank | Dateibasierte Speicherung (JSON/Markdown) ausreichend |
 
 ## 5 Modelle & Diagramme
+
 (MARC)
+> **Methodische Grundlage:** Die folgenden Modelle bilden die Grundlage für die prototypische Implementierung der Simulationsumgebung mit Langgraph. Sie sind bewusst auf den MVP zugeschnitten (3 Akteure, 7 Faktoren, Environment-Node) und so gestaltet, dass sie modular erweiterbar sind. Die Diagramme orientieren sich an Ludewig & Lichter, Kap. 16 (Modellierung) und wurden auf die Besonderheiten einer LLM-basierten Multi-Agenten-Simulation angepasst.
 
-### 5.1 ERM 
+> **Stereotypen-Legende:**
+> | Stereotyp | Bedeutung |
+> |-----------|-----------|
+> | `<<TypedDict>>` | Python-TypedDict – zentraler Langgraph-State |
+> | `<<dataclass>>` | Python-Dataclass – strukturierter Datencontainer |
+> | `<<enumeration>>` | Python-Enum – fester Wertebereich |
+> | `<<node>>` | Langgraph-Node – Verarbeitungseinheit im Graphen |
 
-### 5.2 Klassendiagramme
+---
+
+### 5.0 Fachliches Domänenmodell
+
+Bevor die technischen Modelle folgen, zeigt das fachliche Domänenmodell die Struktur aus Abschnitt 1 als Übersicht. Es visualisiert die vier Beziehungstypen aus 1.5 und die Zuordnung der Einflussfaktoren zu den Akteuren aus dem Glossar (2.2).
+
+```mermaid
+flowchart TB
+    subgraph Akteure
+        A1["A1: Regulatorien / Politik"]
+        A2["A2: Konsumenten"]
+        A3["A3: Anbieter / Airlines"]
+    end
+
+    subgraph Einflussfaktoren
+        F1["F1: Mobilitätsbedürfnis"]
+        F2["F2: Regulatorische Strenge"]
+        F3["F3: Technologische Reife"]
+        F4["F4: Wirtschaftliche Entwicklung"]
+        F5["F5: Verfügbarkeit Alternativen"]
+        F6["F6: Gesellsch. Wertewandel"]
+        F7["F7: Geopolitische Stabilität"]
+    end
+
+    %% Akteur → Akteur
+    A2 -->|"Nachfrage / Kauf"| A3
+    A3 -->|"Preise / Angebot"| A2
+    A1 -->|"Auflagen / Steuern"| A3
+    A1 -->|"Verbote / Anreize"| A2
+    A2 -->|"Wählerwille"| A1
+
+    %% Faktor → Akteur (primäre Zuordnung)
+    F1 -.->|treibt| A2
+    F1 -.->|treibt| A3
+    F2 -.->|beschränkt| A3
+    F2 -.->|beschränkt| A1
+    F3 -.->|ermöglicht| A3
+    F4 -.->|rahmt| A2
+    F4 -.->|rahmt| A3
+    F6 -.->|legitimiert| A1
+
+    %% Faktor ↔ Faktor (Cross-Impact, Auswahl)
+    F6 <-->|"verstärkt"| F2
+    F4 <-->|"beeinflusst"| F1
+    F5 <-->|"substituiert"| F1
+    F7 <-->|"destabilisiert"| F4
+```
+
+> **Lesehilfe:** Durchgezogene Pfeile = Akteur-Akteur-Beziehungen. Gestrichelte Pfeile = Faktor-Akteur-Zuordnung. Doppelpfeile = Faktor-Faktor-Wechselwirkung (Cross-Impact, exemplarisch).
+
+Dieses Modell ist die fachliche Grundlage. Die folgenden technischen Modelle übersetzen es in eine implementierbare Struktur.
+
+---
+
+### 5.1 ERM
+
+Das Entity-Relationship-Modell zeigt die Datenstruktur der Simulation – welche Entitäten existieren, welche Attribute sie tragen und wie sie zueinander in Beziehung stehen. Es bildet die Grundlage für den `SimulationState`, der in Langgraph als `TypedDict` durch den Graphen fließt.
+
+> *Hinweis:* Da der MVP dateibasiert arbeitet (kein persistenter Datenbankbetrieb, vgl. OOS-05), ist dieses ERM ein logisches Modell – es beschreibt die Informationsstruktur, nicht ein physisches Datenbankschema.
+
+```mermaid
+erDiagram
+    SimulationConfig ||--o{ Agent : "defines"
+    SimulationConfig ||--o{ InfluenceFactor : "defines"
+    SimulationConfig ||--|| InitialEnvironment : "sets"
+
+    Agent ||--o{ AgentFactorRelevance : "has"
+    InfluenceFactor ||--o{ AgentFactorRelevance : "assigned_via"
+
+    SimulationRound ||--o{ AgentResponse : "produces"
+    SimulationRound ||--|| EnvironmentState : "results_in"
+
+    Agent ||--o{ AgentResponse : "generates"
+
+    InfluenceFactor ||--|{ FactorState : "has (exactly 2 in MVP)"
+
+    EnvironmentState ||--o{ FactorState : "references_active"
+
+    FactorState ||--o{ CrossImpactEntry : "acts_as_active"
+    FactorState ||--o{ CrossImpactEntry : "acts_as_passive"
+
+    SimulationConfig {
+        string strategic_question
+        string time_horizon
+        int total_rounds
+        string llm_model
+        float temperature
+    }
+
+    InitialEnvironment {
+        json initial_active_states "z.B. F1:F1.1, F2:F2.1 ..."
+        string initial_narrative "Ausgangslage-Beschreibung"
+    }
+
+    Agent {
+        string agent_id PK
+        string agent_type "CONSUMER | PROVIDER | REGULATOR"
+        string name
+        string system_prompt
+        json goals
+        json constraints
+    }
+
+    AgentFactorRelevance {
+        string agent_id FK
+        string factor_id FK
+        string relevance_type "primary | secondary"
+    }
+
+    InfluenceFactor {
+        string factor_id PK
+        string name
+        string category "PESTLE-Kategorie"
+        string description
+    }
+
+    FactorState {
+        string state_id PK
+        string factor_id FK
+        string label "z.B. F1.1 Hohes Wachstum"
+        string description
+    }
+
+    SimulationRound {
+        int round_number PK
+        string phase
+        datetime timestamp
+    }
+
+    AgentResponse {
+        string response_id PK
+        int round_number FK
+        string agent_id FK
+        string reasoning
+        json decisions
+        json factor_assessments
+        string raw_prompt
+        string raw_response
+        datetime timestamp
+    }
+
+    EnvironmentState {
+        int round_number FK
+        json active_factor_states "Welche FactorStates aktiv sind"
+        string narrative_summary
+        string round_summary
+        datetime timestamp
+    }
+
+    CrossImpactEntry {
+        string entry_id PK
+        string active_factor_state FK
+        string passive_factor_state FK
+        int impact_value "-3 bis +3"
+        string justification
+    }
+```
+
+**Wesentliche Design-Entscheidungen:**
+
+| Entscheidung | Begründung |
+|---|---|
+| `AgentFactorRelevance` als Zuordnung | Bildet die in Glossar 2.2 beschriebene Primärzuordnung (z.B. Regulator → F2, F6) explizit ab. Wird beim Prompt-Bau genutzt, um dem Agenten seine relevanten Faktoren mitzugeben. |
+| `InitialEnvironment` als eigene Entität | Macht explizit, welche Faktor-Zustände zu Beginn aktiv sind. Im MVP: alle Faktoren starten auf Zustand 1 (Kontinuität), konfigurierbar via JSON. |
+| Kein `Simulation`-Container | Im MVP gibt es einen Lauf. Die Config *ist* die Simulation. Erweiterbar durch spätere Kapselung. |
+| Kein `is_active`-Flag auf `FactorState` | Welche Zustände aktiv sind, wird ausschließlich im `EnvironmentState` referenziert → eine Wahrheitsquelle. |
+| `CrossImpactEntry` ohne `round_id` | Die CIB wird post-hoc aus der gesamten History extrahiert, nicht pro Runde erzeugt. |
+| Genau 2 Zustände pro Faktor | MVP-Vereinfachung. Spätere Iterationen können auf n Zustände erweitern (Kardinalität `||--|{` erlaubt das bereits). |
+
+**Mapping auf Langgraph:**
+
+| Entität | Langgraph-Bezug |
+|---------|-----------------|
+| SimulationConfig + InitialEnvironment | Aus JSON-Config geladen, Teil des initialen State |
+| Agent + AgentFactorRelevance | Konfiguration für einen Langgraph-Node (Relevanz fließt in Prompt-Template ein) |
+| InfluenceFactor / FactorState | Teil des State-Dicts, wird pro Runde evaluiert |
+| SimulationRound | Ein voller Durchlauf des Langgraph-Graphen |
+| AgentResponse | Output eines Agent-Nodes |
+| EnvironmentState | State-Snapshot nach dem Environment-Node |
+| CrossImpactEntry | Output des CIB-Extractor-Nodes am Ende |
+
+---
+
+### 5.2 Klassendiagramm
+
+> Langgraph-Konvention: Datenklassen repräsentieren den State, Verarbeitungsklassen (`<<node>>`) repräsentieren die Nodes.
+
+**Zentrale Design-Entscheidungen:**
+
+| Entscheidung | Begründung |
+|---|---|
+| Eine parametrisierte `AgentNode`-Klasse statt drei Subklassen | Der Unterschied zwischen Consumer, Provider und Regulator liegt im Prompt, nicht im Code. Neue Akteure erfordern nur eine neue Config, keine neue Klasse. |
+| Sequentielle Agenten-Reihenfolge | **MVP-Entscheidung:** Einfachste Implementierung in Langgraph (lineare Edge-Kette). Der Regulator sieht bewusst, was Consumer und Provider sagten – das bildet ab, dass Politik auf Markt und Gesellschaft reagiert. Der daraus entstehende Informationsbias wird als bekannte Limitation akzeptiert und in späteren Iterationen durch Fan-Out/Fan-In adressiert. |
+| Prompt-Bau per Template | `_build_prompt()` nutzt ein String-Template mit Platzhaltern: Rolle, Ziele, aktuell aktive Faktor-Zustände, Zusammenfassung der letzten Runde, Responses vorheriger Agenten der aktuellen Runde. Im MVP wird nur die letzte Runde als Kontext mitgegeben (nicht die gesamte History), um das Context-Window lokal lauffähiger Modelle nicht zu überlasten. |
+| JSON-Output-Schema für Parsing | `_parse_response()` erwartet vom LLM eine JSON-Antwort mit definierten Feldern (`reasoning`, `decisions`, `factor_assessments`). Das System-Prompt enthält eine Output-Schema-Vorgabe. Fallback bei Parse-Fehler: Raw-Response wird gespeichert, `decisions` und `factor_assessments` bleiben leer. |
+
+```mermaid
+classDiagram
+    direction TB
+
+    class SimulationState {
+        <<TypedDict>>
+        +SimulationConfig config
+        +int current_round
+        +int total_rounds
+        +String phase
+        +List~FactorState~ factors
+        +List~AgentConfig~ agents
+        +List~AgentResponse~ current_round_responses
+        +List~RoundResult~ history
+        +EnvironmentState environment
+        +CIBMatrix cib_matrix
+    }
+
+    class SimulationConfig {
+        <<dataclass>>
+        +String strategic_question
+        +String time_horizon
+        +int total_rounds
+        +String llm_model
+        +float temperature
+        +Dict~String, String~ initial_active_states
+    }
+
+    class EnvironmentState {
+        <<dataclass>>
+        +Dict~String, String~ active_states
+        +String narrative_summary
+        +String round_summary
+    }
+
+    class FactorState {
+        <<dataclass>>
+        +String factor_id
+        +String name
+        +String category
+        +List~String~ possible_states
+        +String current_state
+        +String description
+    }
+
+    class AgentConfig {
+        <<dataclass>>
+        +String agent_id
+        +AgentType agent_type
+        +String name
+        +String system_prompt
+        +List~String~ goals
+        +List~String~ constraints
+        +List~String~ relevant_factor_ids
+    }
+
+    class AgentResponse {
+        <<dataclass>>
+        +String agent_id
+        +int round_number
+        +String reasoning
+        +Dict decisions
+        +Dict~String, String~ factor_assessments
+        +String raw_prompt
+        +String raw_response
+        +bool parse_success
+    }
+
+    class RoundResult {
+        <<dataclass>>
+        +int round_number
+        +List~AgentResponse~ responses
+        +EnvironmentState env_state_after
+    }
+
+    class AgentType {
+        <<enumeration>>
+        CONSUMER
+        PROVIDER
+        REGULATOR
+    }
+
+    class CIBMatrix {
+        <<dataclass>>
+        +List~CIBEntry~ entries
+    }
+
+    class CIBEntry {
+        <<dataclass>>
+        +String active_state
+        +String passive_state
+        +int impact_value
+        +String justification
+    }
+
+    SimulationState *-- SimulationConfig
+    SimulationState *-- EnvironmentState
+    SimulationState *-- "*" FactorState
+    SimulationState *-- "*" AgentConfig
+    SimulationState *-- "*" RoundResult
+    SimulationState *-- CIBMatrix
+    CIBMatrix *-- "*" CIBEntry
+    RoundResult *-- "*" AgentResponse
+    RoundResult *-- EnvironmentState
+    AgentConfig --> AgentType
+
+    class AgentNode {
+        <<node>>
+        -AgentConfig config
+        -LLMClient llm
+        +invoke(SimulationState state) SimulationState
+        -_build_prompt(SimulationState state) String
+        -_parse_response(String raw) AgentResponse
+    }
+
+    class EnvironmentNode {
+        <<node>>
+        -LLMClient llm
+        +invoke(SimulationState state) SimulationState
+        -_aggregate_responses(SimulationState state) String
+        -_update_factors(SimulationState state) Dict
+        -_generate_narrative(SimulationState state) String
+    }
+
+    class CIBExtractorNode {
+        <<node>>
+        -LLMClient llm
+        +invoke(SimulationState state) SimulationState
+    }
+
+    class LLMClient {
+        +String model
+        +float temperature
+        +call(String prompt) String
+    }
+
+    class SimulationRunner {
+        +build_graph() StateGraph
+        +run(String config_path) SimulationState
+        +save_results(SimulationState state, String path) void
+    }
+
+    AgentNode --> LLMClient : nutzt
+    AgentNode --> AgentConfig : konfiguriert durch
+    EnvironmentNode --> LLMClient : nutzt
+    CIBExtractorNode --> LLMClient : nutzt
+
+    SimulationRunner --> AgentNode : orchestriert 3x
+    SimulationRunner --> EnvironmentNode : orchestriert
+    SimulationRunner --> CIBExtractorNode : orchestriert
+```
+
+**Mapping auf Langgraph-Konzepte:**
+
+| Klasse | Langgraph-Konzept | Beschreibung |
+|--------|-------------------|--------------|
+| `SimulationState` | `TypedDict` | Zentraler State, der durch den Graphen fließt |
+| `AgentNode` (3 Instanzen) | Nodes | Gleiche Klasse, verschiedene Configs → 3 Nodes im Graphen |
+| `EnvironmentNode` | Node | Aggregiert Responses, aktualisiert Faktoren, erzeugt Narrativ |
+| `CIBExtractorNode` | Node | Post-hoc CIB-Extraktion aus gesamter History |
+| `SimulationRunner.build_graph()` | `StateGraph` Builder | Registriert Nodes, definiert Edges + Conditional Edge |
+| Runden-Schleife | Conditional Edge | `round < total_rounds` → zurück zu Consumer-Node, sonst weiter zu CIB |
+
+**Faktor-Zustandsdynamik im MVP:**
+- Jeder Faktor hat genau 2 Zustände (Kontinuität / Transformation)
+- Pro Runde kann der EnvironmentNode den aktiven Zustand eines Faktors wechseln (binäre Entscheidung durch LLM)
+- Im MVP ist kein Zurückwechsel vorgesehen (Transformation ist irreversibel) – das vereinfacht die Simulation und erzeugt klarere Szenarioverläufe
+- Spätere Iterationen können reversible Wechsel und mehr als 2 Zustände einführen
+
+---
 
 ### 5.3 Aktivitätsdiagramm
+
+Das Aktivitätsdiagramm zeigt den vollständigen Ablauf einer Simulation von der Konfiguration bis zur Ergebnissicherung. Jede Aktivität entspricht einem Langgraph-Node, jeder Pfeil einer Edge.
+
+```mermaid
+flowchart TD
+    Start((●)) --> LoadConfig
+
+    subgraph SETUP ["Phase: Setup"]
+        LoadConfig["Config laden<br/>(JSON einlesen)<br/>─────────────<br/>• strategic_question<br/>• agents + prompts + relevant_factors<br/>• factors + states<br/>• initial_active_states<br/>• llm_model, total_rounds"]
+        InitState["State initialisieren<br/>─────────────<br/>• round = 0<br/>• factors = aus Config<br/>• active_states = initial_active_states<br/>• history = leer<br/>• environment = Ausgangslage"]
+        LoadConfig --> InitState
+    end
+
+    InitState --> NewRound
+
+    subgraph ROUND ["Phase: Simulationsrunde (N Durchläufe)"]
+        NewRound["round += 1<br/>current_round_responses = leer"]
+
+        NewRound --> ConsumerAgent
+
+        subgraph AGENTS ["Agent-Nodes (sequentiell – MVP-Entscheidung)"]
+            ConsumerAgent["CONSUMER AGENT<br/>═══════════════<br/>Prompt-Template:<br/>Rolle + Ziele +<br/>relevante Faktoren +<br/>aktuelle Zustände +<br/>letzte Runde (Summary)<br/>→ LLM-Call → JSON-Parse<br/>═══════════════<br/>→ AgentResponse"]
+
+            ProviderAgent["PROVIDER AGENT<br/>═══════════════<br/>Prompt-Template:<br/>Airline-Perspektive +<br/>Consumer-Response +<br/>relevante Faktoren +<br/>aktuelle Zustände<br/>→ LLM-Call → JSON-Parse<br/>═══════════════<br/>→ AgentResponse"]
+
+            RegulatorAgent["REGULATOR AGENT<br/>═══════════════<br/>Prompt-Template:<br/>Politik-Perspektive +<br/>Consumer + Provider Responses +<br/>gesellschaftl. Druck +<br/>relevante Faktoren<br/>→ LLM-Call → JSON-Parse<br/>═══════════════<br/>→ AgentResponse"]
+
+            ConsumerAgent --> ProviderAgent
+            ProviderAgent --> RegulatorAgent
+        end
+
+        RegulatorAgent --> EnvironmentNode
+
+        EnvironmentNode["ENVIRONMENT NODE<br/>═══════════════<br/>1. Responses aggregieren<br/>2. Faktoren aktualisieren<br/>   (aktive Zustände: binärer Wechsel,<br/>    irreversibel im MVP)<br/>3. Narrativ generieren (LLM)<br/>4. RoundResult → history<br/>═══════════════<br/>→ aktualisierter State"]
+    end
+
+    EnvironmentNode --> Decision{{"round < total_rounds?"}}
+
+    Decision -->|"JA → State wird<br/>nächste Runde"| NewRound
+    Decision -->|NEIN| CIBNode
+
+    subgraph FINALIZE ["Phase: Finalisierung"]
+        CIBNode["CIB EXTRACTOR<br/>═══════════════<br/>round_summaries durchgehen →<br/>LLM bewertet Faktor-<br/>Wechselwirkungen<br/>(-3 bis +3 pro Paar)<br/>═══════════════<br/>→ CIB-Matrix"]
+
+        SaveResults["Ergebnisse speichern<br/>─────────────<br/>• Protokoll (Markdown)<br/>• CIB-Matrix (JSON)<br/>• Narrativ-Zusammenfassung"]
+
+        CIBNode --> SaveResults
+    end
+
+    SaveResults --> Ende((◉))
+```
+
+**State-Fluss durch den Graphen:**
+
+```mermaid
+flowchart LR
+    StateN["State<sub>n</sub><br/>(Rundenstart)"]
+    Consumer["Consumer<br/>Agent"]
+    StateN1["State<sub>n+1</sub>"]
+    Provider["Provider<br/>Agent"]
+    StateN2["State<sub>n+2</sub>"]
+    Regulator["Regulator<br/>Agent"]
+    StateN3["State<sub>n+3</sub>"]
+    Environment["Environment<br/>Node"]
+    StateN4["State<sub>n+4</sub><br/>(Rundenende)"]
+    Decision{{"round < max?"}}
+    CIB["CIB<br/>Extractor"]
+    StateFinal["State<sub>final</sub>"]
+    Save["Speichern"]
+    Ende((◉))
+
+    StateN --> Consumer --> StateN1 --> Provider --> StateN2 --> Regulator --> StateN3 --> Environment --> StateN4
+    StateN4 --> Decision
+    Decision -->|"JA: State<sub>n+4</sub> wird<br/>neues State<sub>n</sub>"| Consumer
+    Decision -->|NEIN| CIB
+    CIB --> StateFinal --> Save --> Ende
+```
+
+> Jeder Node empfängt den kompletten `SimulationState`, reichert ihn um seine Ergebnisse an und gibt den aktualisierten State weiter. Der `EnvironmentNode` schreibt am Ende jeder Runde das `RoundResult` in die `history` und leert `current_round_responses` für die nächste Runde. Der State der abgeschlossenen Runde wird direkt zum Eingabe-State der nächsten Runde.
+
+**Bekannte Limitationen des MVP-Ablaufs:**
+
+| Limitation | Beschreibung | Geplante Adressierung |
+|---|---|---|
+| Sequentieller Informationsbias | Consumer hat nie Kontext aus der aktuellen Runde, Regulator sieht alles. Bewusste MVP-Entscheidung: bildet ab, dass Politik auf Markt reagiert. | Spätere Iteration: Fan-Out/Fan-In (alle Agents parallel, dann Environment) |
+| Irreversible Faktor-Wechsel | Ein Faktor kann im MVP nur von Zustand 1 → 2 wechseln, nicht zurück. Das vereinfacht, kann aber Oszillationen nicht abbilden. | Spätere Iteration: Reversible Wechsel mit Schwellenwert |
+| Nicht-deterministisches Faktor-Update | Der Environment-Node nutzt ein LLM für die Faktor-Aktualisierung – qualitative Entscheidung, nicht regelbasiert. | Akzeptable Eigenschaft einer qualitativen Simulation; wird in Evaluation reflektiert |
+| Context-Window bei CIB-Extraktion | Bei vielen Runden kann die History das Context-Window lokaler Modelle übersteigen. | Der EnvironmentNode erzeugt pro Runde ein `round_summary`. Der CIB-Extractor arbeitet auf diesen Zusammenfassungen, nicht auf Rohdaten. |
