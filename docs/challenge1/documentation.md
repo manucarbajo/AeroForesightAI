@@ -89,11 +89,7 @@ MERMAID JS GRAPH
 ---
 
 ### 1.3 Herleitung der Einflussfaktoren 
-(HAIKO)
-
-Preiselastizität; Preisdispersion -> 3.3 / 3.4
-
-Einflussfaktoren existieren auf verschiedenen Ebenen und Zeitskalen (Horx et al., 2007):
+Einflussfaktoren existieren auf verschiedenen Ebenen und Zeitskalen (Horx Zukunftsinstitut GmbH, 2010, S.3-4):
 
 | Ebene | Zeithorizont | Beispiel |
 |---|---|---|
@@ -105,15 +101,35 @@ Einflussfaktoren existieren auf verschiedenen Ebenen und Zeitskalen (Horx et al.
 
 Für die Szenarioplanung im Flugverkehr sind insbesondere relevant:
 - **Megatrends**: Dekarbonisierung, Digitalisierung, Globalisierung/Deglobalisierung, demografischer Wandel
-- **Branchentrends**: Sustainable Aviation Fuel (SAF), emissionsfreie Antriebe, multimodale Mobilität
-- **Regulatorische Trends**: EU-ETS, CO₂-Bepreisung, Kurzstreckenverbote
+- **Soziokulturelle Trends**: Sustainable Aviation Fuel (SAF), emissionsfreie Antriebe, multimodale Mobilität
+- **Konsumtrends**: EU-ETS, CO₂-Bepreisung, Kurzstreckenverbote
+
+
+Für die Modellierung des Systems „Flugverkehr" ist zudem das Verständnis von Marktmechanismen, Preisbildung und Nachfrageelastizität zentral (basierend auf Evangelinos et al., 2011, S.2 ff.):
+
+Preisdispersion im Luftverkehr entsteht durch:
+1. **Preisdifferenzierung** basierend auf unterschiedlichen Nachfrageelastizitäten (Geschäftsreisende vs. Freizeitreisende)
+2. **Nachfrageschwankungen** (Peak-Load Pricing bei hoher/niedriger Nachfrage)
+3. **Nachfrageunsicherheit** (stochastische Nachfrage erfordert dynamische Preisanpassung)
+
+Zusammenhang zwischen Wettbewerb und Preisdispersion:
+- **Monopoleffekt**: Bewirkt, dass zunehmender Wettbewerb die Preisaufschläge reduziert, wobei preisunelastische Passagiere stärker betroffen sind → Preisdispersion sinkt (vgl. Evangelinos et al., 2011, S. 5)
+- **Wettbewerbs-/Markeneffekt**: Bewirkt, dass preiselastische Passagiere stärker auf Konkurrenz reagieren → Preisdispersion kann steigen (vgl. Evangelinos et al., 2011, S. 6)
+- **Anreizkompatibilitätseffekt**: Beschränkt bei Preisdifferenzierung zweiter Ordnung die Preisdifferenz → Preisdispersion kann sinken (vgl. Evangelinos et al., 2011, S. 7)
+- **Nicht-monotone Zusammenhänge**: In konzentrierten Märkten steigt Preisdispersion mit Wettbewerb, in weniger konzentrierten sinkt sie (vgl. Evangelinos et al., 2011, S. 12-15)
+
+**Analogie zum Delay-Effekt (Spritpreis-Beispiel, Sprechstunde):**
+Unterschiedliche Nachfragergruppen reagieren unterschiedlich schnell und stark auf Preisänderungen. So reagieren Geschäftsreisende (analog zu Motorradfahrern im Spritpreis-Beispiel) kaum auf höhere Flugpreise, während Freizeitreisende (analog zu Autofahrern) verzögert, aber deutlich reagieren. Die heterogene Elastizität und die zeitliche Verzögerung sind essenziell für die dynamische Simulation.
+
+**Sättigungseffekte:** Ab einem bestimmten Niveau der Nachfrage oder der Kapazitätsauslastung treten Sättigungseffekte ein, bei denen weitere Impulse keinen proportionalen Einfluss mehr haben. Dies ist bei der Dynamisierung der Einflussfaktoren zu berücksichtigen.
+
 
 Die Einflussfaktoren wurden mittels einer PESTLE-Analyse (Political, Economic, Social, Technological, Legal, Environmental) identifiziert und mit den Megatrends aus dem Zukunftsinstitut (2025) abgeglichen:
 
 | # | Einflussfaktor | PESTLE-Kategorie | Beschreibung | Bezug zu Megatrends |
 |---|---|---|---|---|
-| **F1** | Mobilitätsbedürfnis / Nachfrage | Social | Wie stark wollen Menschen fliegen? | Globalisierung, Identitätsdynamik |
-| **F2** | Regulatorische Strenge | Political / Environmental / Legal | Welche klimapolitischen Leitplanken werden gesetzt? | Ökointelligenz |
+| **F1** | Mobilitätsbedürfnis / Nachfrage (vgl. Braun et al, 2023, S. 22) | Social | Wie stark wollen Menschen fliegen? | Globalisierung, Identitätsdynamik |
+| **F2** | Regulatorische Strenge (vgl. Braun et al, 2023, S. 4) | Political / Environmental / Legal | Welche klimapolitischen Leitplanken werden gesetzt? | Ökointelligenz |
 | **F3** | Technologische Reife (Dekarbonisierung) | Technological | Wie weit sind SAF, E-Aviation, H₂? | Konnektivität, Ökointelligenz |
 | **F4** | Wirtschaftliche Entwicklung | Economic | Konjunktur, Kaufkraft, Energiepreise | Globalisierung, Demographischer Wandel|
 | **F5** | Verfügbarkeit von Alternativen | Technological / Political / Legal | Schiene, digitale Substitution, Intermodalität | Mobilität, Konnektivität |
