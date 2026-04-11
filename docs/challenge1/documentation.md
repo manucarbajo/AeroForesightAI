@@ -124,19 +124,17 @@ Unterschiedliche Nachfragergruppen reagieren unterschiedlich schnell und stark a
 **Sättigungseffekte:** Ab einem bestimmten Niveau der Nachfrage oder der Kapazitätsauslastung treten Sättigungseffekte ein, bei denen weitere Impulse keinen proportionalen Einfluss mehr haben. Dies ist bei der Dynamisierung der Einflussfaktoren zu berücksichtigen.
 
 
-Die Einflussfaktoren wurden mittels einer PESTLE-Analyse (Political, Economic, Social, Technological, Legal, Environmental) identifiziert und mit den Megatrends aus dem Zukunftsinstitut (2025) abgeglichen:
+Die identifizierten Einflussfaktoren wurden mittels einer PESTLE-Analyse (Political, Economic, Social, Technological, Legal, Environmental) kategorisiert und mit den Megatrends aus dem Zukunftsinstitut (2025) abgeglichen:
 
 | # | Einflussfaktor | PESTLE-Kategorie | Beschreibung | Bezug zu Megatrends |
 |---|---|---|---|---|
 | **F1** | Mobilitätsbedürfnis / Nachfrage (vgl. Braun et al, 2023, S. 22) | Social | Wie stark wollen Menschen fliegen? | Globalisierung, Identitätsdynamik |
 | **F2** | Regulatorische Strenge (vgl. Braun et al, 2023, S. 4) | Political / Environmental / Legal | Welche klimapolitischen Leitplanken werden gesetzt? | Ökointelligenz |
-| **F3** | Technologische Reife (Dekarbonisierung) | Technological | Wie weit sind SAF, E-Aviation, H₂? | Konnektivität, Ökointelligenz |
-| **F4** | Wirtschaftliche Entwicklung | Economic | Konjunktur, Kaufkraft, Energiepreise | Globalisierung, Demographischer Wandel|
-| **F5** | Verfügbarkeit von Alternativen | Technological / Political / Legal | Schiene, digitale Substitution, Intermodalität | Mobilität, Konnektivität |
-| **F6** | Gesellschaftlicher Wertewandel | Social / Environmental | Klimabewusstsein, Flight Shaming, Normen | Ökointelligenz, Identitätsdynamik |
-| **F7** | Geopolitische Stabilität | Political / Security | Offene Lufträume, Konflikte, Pandemien | Sicherheit, Globalisierung |
-
-Einflussfaktoren mit Quellen belegen; 
+| **F3** | Technologische Reife (Dekarbonisierung) (vgl. Braun et al, 2023, S. 9) | Technological | Wie weit sind SAF, E-Aviation, H₂? | Konnektivität, Ökointelligenz |
+| **F4** | Wirtschaftliche Entwicklung (vgl. Braun et al, 2023, S. 9) | Economic | Konjunktur, Kaufkraft, Energiepreise | Globalisierung, Demographischer Wandel|
+| **F5** | Verfügbarkeit von Alternativen (vgl. Evangelinos, 2011, S. 6) | Technological / Political / Legal | Schiene, digitale Substitution, Intermodalität | Mobilität, Konnektivität |
+| **F6** | Gesellschaftlicher Wertewandel (Horx Zukunftsinstitut GmbH, 2010, S.3) | Social / Environmental | Klimabewusstsein, Flight Shaming, Normen | Ökointelligenz, Identitätsdynamik |
+| **F7** | Geopolitische Stabilität (vgl. Braun et al, 2023, S. 9) | Political / Security | Offene Lufträume, Konflikte, Pandemien | Sicherheit, Globalisierung |
 
 **Prüfung auf Eindeutigkeit:**
 
