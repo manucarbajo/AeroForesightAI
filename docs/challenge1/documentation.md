@@ -93,7 +93,20 @@ MERMAID JS GRAPH
 
 Preiselastizität; Preisdispersion -> 3.3 / 3.4
 
-Tabelle Megatrends
+Einflussfaktoren existieren auf verschiedenen Ebenen und Zeitskalen (Horx et al., 2007):
+
+| Ebene | Zeithorizont | Beispiel |
+|---|---|---|
+| Metatrends | Evolutionäre Konstanten | Steigende Komplexität |
+| Megatrends | >50 Jahre, global, alle Lebensbereiche | Digitalisierung, Klimawandel |
+| Soziokulturelle Trends | ~10 Jahre | Nachhaltigkeit als Lebensstil |
+| Konsumtrends | ~5 Jahre | Nachfrage nach „grünem Fliegen" |
+| Mikrotrends | Saison/kurzfristig | Buchungsverhalten bei Krisen |
+
+Für die Szenarioplanung im Flugverkehr sind insbesondere relevant:
+- **Megatrends**: Dekarbonisierung, Digitalisierung, Globalisierung/Deglobalisierung, demografischer Wandel
+- **Branchentrends**: Sustainable Aviation Fuel (SAF), emissionsfreie Antriebe, multimodale Mobilität
+- **Regulatorische Trends**: EU-ETS, CO₂-Bepreisung, Kurzstreckenverbote
 
 Die Einflussfaktoren wurden mittels einer PESTLE-Analyse (Political, Economic, Social, Technological, Legal, Environmental) identifiziert und mit den Megatrends aus dem Zukunftsinstitut (2025) abgeglichen:
 
