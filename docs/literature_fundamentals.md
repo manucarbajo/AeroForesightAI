@@ -59,6 +59,53 @@ Der Informationsfluss zwischen den Akteuren ist ein Kreislauf (Feedback-Schleife
 3. Der Tarif wird über Buchungssysteme auf den Markt gespielt
 4. Marktreaktionen fließen zurück zur Airline, die den Preis anpasst
 
+```
+┌────────────────────────────────────────────────┐
+│                                                │
+│                FEEDBACK-SCHLEIFE               │
+│                 DER PREISBILDUNG               │
+│                                                │
+│  ┌──────────────┐         ┌─────────────┐      │
+│  │              │         │             │      │
+│  │  1. INPUT    │────────>│  2. PREIS-  │      │
+│  │              │         │   SETZUNG   │      │
+│  │ Nachfrage-   │         │             │      │
+│  │ informationen│         │ Airline     │      │
+│  │ + Wettbe-    │         │ bildet      │      │
+│  │ werberpreise │         │ Tarif       │      │
+│  │              │         │             │      │
+│  └──────▲───────┘         └──────┬──────┘      │
+│         │                        │             │
+│         │                        │             │
+│         │                        │             │
+│         │                        │             │
+│  ┌──────┴──────┐         ┌───────▼─────┐       │
+│  │             │         │             │       │
+│  │ 4. MARKT-   │<────────│ 3. TARIF    │       │
+│  │    REAKTION │         │    AUF DEN  │       │
+│  │             │         │    MARKT    │       │
+│  │ Buchungen/  │         │             │       │
+│  │ Nicht-      │         │ Buchungs-   │       │
+│  │ Buchungen   │         │ systeme     │       │
+│  │ fließen     │         │ publizieren │       │
+│  │ zurück      │         │ Tarife      │       │
+│  │             │         │             │       │
+│  │ → Preis-    │         │             │       │
+│  │   anpassung │         │             │       │
+│  │             │         │             │       │
+│  └─────────────┘         └─────────────┘       │
+│                                                │
+│  Der Kreislauf wiederholt sich kontinuierlich  │  
+│  über den gesamten Buchungszeitraum            │
+│                                                │
+│                                                │
+└────────────────────────────────────────────────┘
+```
+
+---
+
+Soll ich dieses Feedback-Schleifen-Diagramm nun in die **Gesamtarchitektur** integrieren oder ein weiteres **Detaildiagramm** für einen bestimmten Schritt erstellen?
+
 ---
 
 ## Regulatorische Ebene

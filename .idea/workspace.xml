@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added market form to literature_fundamentals.md">
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_06_04_26,_10_08_[Changes]1/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_06_04_26__10_08__Changes_1.xml" beforeDir="false" />
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/literature_fundamentals.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/literature_fundamentals.md" afterDir="false" />
     </list>
@@ -18,7 +16,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="jonas" />
+        <entry key="$PROJECT_DIR$" value="main" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -196,12 +194,12 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add initial project configuration and migration files" />
-    <MESSAGE value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
     <MESSAGE value="added fundamentals of pricing in air travel based on literature (presentation purpose)" />
     <MESSAGE value="added regulatory information to fundamentals of pricing in air travel based on literature (presentation purpose)" />
     <MESSAGE value="corrected display error in markdown in agents_provider_classes.md" />
     <MESSAGE value="added market form to literature_fundamentals.md" />
-    <option name="LAST_COMMIT_MESSAGE" value="added market form to literature_fundamentals.md" />
+    <MESSAGE value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
+    <option name="LAST_COMMIT_MESSAGE" value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1774365758343" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
