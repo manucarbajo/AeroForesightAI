@@ -4,9 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added fundamentals of pricing in air travel based on literature (presentation purpose)">
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="corrected display error in markdown in agents_provider_classes.md">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_provider_classes.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/agents_provider_classes.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/literature_fundamentals.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/literature_fundamentals.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -162,7 +161,23 @@
       <option name="project" value="LOCAL" />
       <updated>1776065517849</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="added regulatory information to fundamentals of pricing in air travel based on literature (presentation purpose)">
+      <option name="closed" value="true" />
+      <created>1776066057411</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1776066057411</updated>
+    </task>
+    <task id="LOCAL-00007" summary="corrected display error in markdown in agents_provider_classes.md">
+      <option name="closed" value="true" />
+      <created>1776066122591</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1776066122591</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -172,7 +187,9 @@
     <MESSAGE value="add initial project configuration and migration files" />
     <MESSAGE value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
     <MESSAGE value="added fundamentals of pricing in air travel based on literature (presentation purpose)" />
-    <option name="LAST_COMMIT_MESSAGE" value="added fundamentals of pricing in air travel based on literature (presentation purpose)" />
+    <MESSAGE value="added regulatory information to fundamentals of pricing in air travel based on literature (presentation purpose)" />
+    <MESSAGE value="corrected display error in markdown in agents_provider_classes.md" />
+    <option name="LAST_COMMIT_MESSAGE" value="corrected display error in markdown in agents_provider_classes.md" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1774365758343" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

@@ -10,7 +10,9 @@ Der -dynamisch- gebildete Preis hängt von unterschiedlichen Faktoren ab:
 * Wettbewerb auf der Strecke
 * Restriktionen der Fluggesellschaft
 
--> Peak-Load-Pricing
+-> Peak-Load-Pricing<br>
+-> Luftverkehr ist ein Angebotsoligopol (große Anzahl von Fluggästen und begrenzte Anzahl von Fluggestellschaften)<br>
+-> Wenige große Airline-Gruppen konkurrieren mit kleineren Low-Cost-Carrier Anbietern.
 
 Preisunterschiede können unterschiedliche Ursachen haben:
 * Geringere Preiselastizität (%-Mengenänderung / %-Preisänderung) der Nachfrage in Spitzenzeiten.<br>
