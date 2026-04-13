@@ -64,3 +64,7 @@ Der Informationsfluss zwischen den Akteuren ist ein Kreislauf (Feedback-Schleife
 Die Regulierungen setzen den Preis nicht direkt fest. Sie bilden jedoch die Rahmenbedingungen, innerhalb derer die Fluggesellschaften ihre Preise gestalten können.
 Regulierungen können beispielsweise Mindest- oder Höchstpreise festlegen, um den Wettbewerb zu fördern oder Verbraucher zu schützen.
 
+Regulatorien können auf unterschiedlichen Ebenen agieren:
+* Nationale Ebene: Department of Transportation (DOT) in den USA. Luftfahrt-Bundesamt (LBA) in Deutschland. Civil Aviation Authority (CAA) in Großbritannien.
+* Internationale Ebene: International Civil Aviation Organization (ICAO). International Air Transport Association (IATA).
+* Europäische Ebene: European Union Aviation Safety Agency (EASA)
