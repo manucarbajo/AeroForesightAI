@@ -25,7 +25,6 @@
   - [1.3 Herleitung der Einflussfaktoren](#13-herleitung-der-einflussfaktoren)
   - [1.4 Faktor-Zustände](#14-faktor-zustände)
   - [1.5 Beziehungstypen](#15-beziehungstypen)
-  - [1.6 Domänenstruktur (Übersicht)](#16-domänenstruktur-übersicht)
 - [2 Begriffslexikon / Glossar](#2-begriffslexikon--glossar)
   - [2.1 Systemkonzepte](#21-systemkonzepte)
   - [2.2 Akteure](#22-akteure)
@@ -86,7 +85,7 @@ Das reale Ökosystem des Flugverkehrs umfasst selbstverständlich weitere Akteur
 
 Neben der Hinzunahme völlig neuer Akteursgruppen ziehen wir für zukünftige Iterationen auch die Modellierung von sogenannten Sub-Agenten in Betracht. Das bedeutet, dass aggregierte Akteure in spezifischere Untergruppen aufgespalten werden (z.B. die Aufteilung der „Anbieter“ in Low-Cost-Carrier und Full-Service-Carrier, oder der „Konsumenten“ in Geschäftsreisende und Privaturlauber).
 
-VERLINKUNG DER MD VON JONAS
+VERLINKUNG SUB-AGENTEN-DOC
 
 Wir berücksichtigen diese auch nicht in der ersten Iteration. Im weiteren Projektverlauf prüfen wir diese Alternativen und bauen den Prototyp anhand der gewonnenen Erkenntnisse nach Best Practices aus, um die für unsere Szenarioplanung optimale Granularität zu identifizieren.
 
@@ -202,8 +201,6 @@ Jeder Faktor weist einen erkennbaren Unterschied auf:
 > **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 15.3 definiert und klärt ein Begriffslexikon zentrale Begriffe eindeutig, welche möglicherweise von verschiedenen Leuten unterschiedlich ausgelegt werden. Es dient als gemeinsame Sprache zwischen allen Beteiligten und verhindert Missverständnisse. Das Begriffslexikon ist ein lebendes Dokument, das während des gesamten Projekts gepflegt wird.
 
 > *Hinweis*: Begriffslexikon wurde unter Zuhilfename von KI (Claude Opus 4.6) erstellt. KI diente hier zur Ausformulierung der einzelnen Begriffe. Diese werden im nächsten Iterationsschritt überprüft und im Plenum definiert. (Stand 05.04.2026)
-
-**TODO: Begriffslexikon gemeinsam nochmal durchgehen, damit alle konform und auch dem gleichen Stand sind!**
 
 ### Struktur jedes Eintrags
 
@@ -477,7 +474,7 @@ Die Stakeholder sind nicht die Akteure *innerhalb* der Domäne (Regulatorien, Ai
 |---|---|---|---|---|
 | **S1** | **Foresight-Analyst** | Primärer Nutzer | Möchte mithilfe der Simulation plausible Zukunftsszenarien explorieren, Wechselwirkungen verstehen und Szenarien ableiten. Erwartet nachvollziehbare, qualitativ hochwertige Ergebnisse. |  Hoch |
 | **S2** | **Dozent** | Auftraggeber & Prüfer | Bewertet die wissenschaftliche und technische Qualität des Projekts. Erwartet systematisches Vorgehen und angemessene Dokumentation. |  Hoch |
-| **S3** | **Systementwicklerv (wir)** | Entwickler & Betreiber | Entwickelt und wartet das System. Benötigt klare Architektur, wartbaren Code, nachvollziehbare Konfiguration. |  Hoch |
+| **S3** | **Systementwickler (wir)** | Entwickler & Betreiber | Entwickelt und wartet das System. Benötigt klare Architektur, wartbaren Code, nachvollziehbare Konfiguration. |  Hoch |
 
 ---
 
@@ -546,7 +543,7 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
 | **NFA-04** | **Lokalität** | Das System muss vollständig lokal laufen können. | **Must** |
 | **NFA-05** | **Dokumentation** | Alle Systemkomponenten und Nutzungsprozesse müssen in Markdown dokumentiert sein. | **Must** |
 | **NFA-06** | **Modularität** | Das System muss modular aufgebaut sein (Trennung von LangGraph-Logik, Prompt-Management und Extraktion). | **Must** |
-| **NFA-07** | **Performance** | Eine vollständige Simulationsrunde soll schnell durchlaufen können. | **Could** |
+| **NFA-07** | **Performance** | Eine vollständige Simulationsrunde soll in 15 Minuten durchlaufen können. | **Could** |
 | **NFA-08** | **Transparenz** | Alle verwendeten Prompts und Entscheidungslogiken müssen für den Nutzer offenliegen. | **Should** |
 
 
@@ -557,7 +554,7 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
 | ID | Aspekt | Begründung |
 |:---|:---|:---|
 | **OOS-01** | Grafische Benutzeroberfläche (GUI) | Prototyp; CLI/Konfigurationsdateien/Notebooks ausreichend |
-| **OOS-02** | Qualitative Simulation | Fokus auf qualitative Simulation durch LLM-basierte Agenten |
+| **OOS-02** | Quantitative Simulation | Fokus auf qualitative Simulation durch LLM-basierte Agenten |
 | **OOS-03** | Mehrsprachigkeit | Prototyp arbeitet primär auf Deutsch oder Englisch |
 | **OOS-04** | Mehrbenutzerbetrieb | Einzelplatz-Prototyp |
 | **OOS-05** | Persistente Datenbank | Dateibasierte Speicherung (JSON/Markdown) ausreichend |
