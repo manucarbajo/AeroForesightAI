@@ -38,6 +38,7 @@
   - [5.1 ERM](#51-erm)
   - [5.2 Klassendiagramme](#52-klassendiagramme)
   - [5.3 Aktivitätsdiagramm](#53-aktivitätsdiagramm)
+- [6 Quellenverzeichnis](#6-quellenverzeichnis)
 
 ---
 
@@ -198,9 +199,9 @@ Jeder Faktor weist einen erkennbaren Unterschied auf:
 
 ## 2 Begriffslexikon / Glossar
 
-> **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 15.3 definiert und klärt ein Begriffslexikon zentrale Begriffe eindeutig, welche möglicherweise von verschiedenen Leuten unterschiedlich ausgelegt werden. Es dient als gemeinsame Sprache zwischen allen Beteiligten und verhindert Missverständnisse. Das Begriffslexikon ist ein lebendes Dokument, das während des gesamten Projekts gepflegt wird.
+> **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 15.3, definiert und klärt ein Begriffslexikon zentrale Begriffe eindeutig, welche möglicherweise von verschiedenen Leuten unterschiedlich ausgelegt werden. Es dient als gemeinsame Sprache zwischen allen Beteiligten und verhindert Missverständnisse. Das Begriffslexikon ist ein lebendes Dokument, das während des gesamten Projekts gepflegt wird.
 
-> *Hinweis*: Begriffslexikon wurde unter Zuhilfename von KI (Claude Opus 4.6) erstellt. KI diente hier zur Ausformulierung der einzelnen Begriffe. Diese werden im nächsten Iterationsschritt überprüft und im Plenum definiert. (Stand 05.04.2026)
+> *Hinweis*: Begriffslexikon wurde unter Zuhilfename von KI (Claude Opus 4.6) erstellt. KI diente hier zur Ausformulierung der einzelnen Begriffe. Diese werden im nächsten Iterationsschritt überprüft und im Plenum definiert.
 
 ### Struktur jedes Eintrags
 
@@ -480,18 +481,18 @@ Die Stakeholder sind nicht die Akteure *innerhalb* der Domäne (Regulatorien, Ai
 
 ## 4 Anforderungserhebung
 
-> **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 15.4.4 beschreiben Anforderungen den Nutzen, den eine Software bringen soll (funktionale Anforderungen), und welche Eigenschaften es haben muss (nicht-funktionale Anforderungen). Sie werden aus Sicht der Stakeholder formuliert und müssen eindeutig, prüfbar, konsistent und verfolgbar sein.
+> **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 15.4.4, beschreiben Anforderungen den Nutzen, den eine Software bringen soll (funktionale Anforderungen), und welche Eigenschaften es haben muss (nicht-funktionale Anforderungen). Sie werden aus Sicht der Stakeholder formuliert und müssen eindeutig, prüfbar, konsistent und verfolgbar sein.
 
 ---
 
 ### 4.1 Funktionale Anforderungen (User Stories)
 
 #### Formatierung
-User Stories folgen dem Format (vgl. Ludewig & Lichter, Kap. 15.7.4, S. 377 ff.):
+User Stories folgen dem Format (vgl. Ludewig & Lichter, 2023, Kap. 15.7.4, S. 377 ff.):
 > **Als** [Rolle] **möchte ich** [Funktion], **damit** [Nutzen].
 
 #### Priorisierung
-Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
+Die Priorisierung der Stories erfolgte mit der Methode MoSCoW (vgl. Rezazadeh & Tabatabaie, 2011, S. 1)
 * **M (Must-have):**
 * **S (Should-have):**
 * **C (Could-have):**
@@ -567,3 +568,12 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
 ### 5.2 Klassendiagramme
 
 ### 5.3 Aktivitätsdiagramm
+
+
+## 6. Quellenverzeichnis
+
+- Braun, S., Dienes, K., Leyh, J., Rieck, A. & Letzgus, M. (2023). *#futuredistricts2053 – Strategische Zukunftsszenarien und Handlungsanforderungen für die Quartiersentwicklung*. Fraunhofer IAO.
+- Evangelinos, C., Obermeyer, A. & Püschel, R. (2011). *Preisdispersion und Wettbewerb im Luftverkehr: Ein theoretischer und empirischer Überblick*. Diskussionsbeiträge aus dem Institut für Wirtschaft und Verkehr, Nr. 2/2011, Technische Universität Dresden.
+- Horx, M., Huber, J., Steinle, A. & Wenzel, E. (2007). *Zukunft machen: Wie Sie von Trends zu Business-Innovationen kommen*. Campus Verlag.
+- Ludewig, J. & Lichter, H. (2023). *Software Engineering – Grundlagen, Menschen, Prozesse, Techniken.* 4. Aufl., dpunkt.verlag.
+- Rezazadeh, H. & Tabatabaie, M. (2011). *Time boxing planning: buffered moscow rules.* ACM SIGSOFT Software Engineering Notes, 36(6), S. 1–5.
