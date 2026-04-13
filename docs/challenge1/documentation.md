@@ -25,7 +25,6 @@
   - [1.3 Herleitung der Einflussfaktoren](#13-herleitung-der-einflussfaktoren)
   - [1.4 Faktor-Zustände](#14-faktor-zustände)
   - [1.5 Beziehungstypen](#15-beziehungstypen)
-  - [1.6 Domänenstruktur (Übersicht)](#16-domänenstruktur-übersicht)
 - [2 Begriffslexikon / Glossar](#2-begriffslexikon--glossar)
   - [2.1 Systemkonzepte](#21-systemkonzepte)
   - [2.2 Akteure](#22-akteure)
@@ -55,59 +54,110 @@
 | **Szenariotyp** | Explorativ (Was kann passieren?) | Vorgabe & CIB-Matrix |
 | **Akteure & Faktoren** | 3 Akteure, 7 Faktoren | MVP für Weiterentwicklung |
 
-### 1.2 Herleitung der Akteure 
-(MANU)
+### 1.2 Akteure 
+
+Die Identifikation der Akteure ist essenziell, um das soziotechnische System abzubilden. Um die technische und methodische Machbarkeit der Simulationsumgebung (Workbench) zu validieren, setzen wir auf einen iterativen Ansatz. Wir beginnen mit einem Minimum Viable Product (MVP), das im weiteren Verlauf modular erweitert werden kann.
 
 ### 1.2.1 MVP-Akteure für Workbench
+
+Für die erste Iteration des Prototyps beschränken wir uns auf die drei fundamentalsten Akteure des Systems, die das klassische Marktdreieck (Angebot, Nachfrage, Rahmenbedingungen) abbilden.
+
 | MVP-Akteure | Beschreibung |
 |-----------|------------|
 | Konsumenten | Privat- und Geschäftsreisende → treffen Reiseentscheidungen |
 | Anbieter | Fluggesellschaften → setzen Preise, Routen, investieren |
 | Regulatorien | EU-Kommission, nationale Regierungen, (EASA, ICAO) → setzen Rahmenbedingungen |
 
-Begründung:
-xxx einfachheit, modular weiterbauen
+Begründung für MVP: Die Beschränkung auf drei Hauptakteure dient in der ersten Entwicklungsphase der Komplexitätsreduktion. So können wir die grundlegende Architektur (Python, LangGraph, Ollama) und die Interaktionslogik der LLM-Agenten testen, ohne an Performanz-Grenzen zu stoßen. Sobald der Basis-Workflow stabil ist, lässt sich dieses Setup dank der modularen Architektur durch weitere Akteure erweitern.
 
 ### 1.2.2 Weitere Akteure
-Nachfolgend weitere identifizierte Akteure, die jedoch nicht in der ersten Iteration berücksichtigt werden.
+
+Das reale Ökosystem des Flugverkehrs umfasst selbstverständlich weitere Akteure. Nachfolgend sind weitere identifizierte Akteure aufgeführt, die jedoch bewusst nicht in der ersten Iteration berücksichtigt werden, um den Scope des Prototyps nicht zu sprengen:
+
 | Weitere Akteure | Beschreibung |
 |-----------|------------|
-| Konsumenten | Privat- und Geschäftsreisende → treffen Reiseentscheidungen |
-| Anbieter | Fluggesellschaften → setzen Preise, Routen, investieren |
-| Regulatorien | EU-Kommission, nationale Regierungen, (EASA, ICAO) → setzen Rahmenbedingungen |
+| Infrastrukturbetreiber | Flughäfen → stellen Kapazitäten bereit und steuern den operativen Betrieb. |
+| Technologieentwickler | Flugzeughersteller (Airbus, Boeing), Treibstoffproduzenten → bestimmen den technologischen Fortschritt (F3). |
+| Substitutionsanbieter | Bahnunternehmen, Fernbusbetreiber → bieten konkurrierende Verkehrsmittel an und beeinflussen direkt die Verfügbarkeit von Alternativen (F5). |
+| Zivilgesellschaft / NGOs | Umweltverbände, Bürgerinitiativen → üben gesellschaftlichen Druck aus und treiben den Wertewandel (F6). |
 
 ### 1.2.3 Sub-Agenten Überlegung
-Verlinkung einer weiteren Idee mit Hilfe von Subagenten, die wir jedoch auch nicht in der ersten Iteration berücksichtigen, um im späteren Verlauf die beste Modellierung zu identifizieren.
-VERLINKUNG
 
-Im weiteren Verlauf prüfen wir alle Alternativen und bauen den Prototyp nach Best Practices aus.
+Neben der Hinzunahme völlig neuer Akteursgruppen ziehen wir für zukünftige Iterationen auch die Modellierung von sogenannten Sub-Agenten in Betracht. Das bedeutet, dass aggregierte Akteure in spezifischere Untergruppen aufgespalten werden (z.B. die Aufteilung der „Anbieter“ in Low-Cost-Carrier und Full-Service-Carrier, oder der „Konsumenten“ in Geschäftsreisende und Privaturlauber).
+
+Die Modellierungsidee ist unter [subagent.md](/docs/challenge1/subagent.md) zu finden.
+
+Wir berücksichtigen diese auch nicht in der ersten Iteration. Im weiteren Projektverlauf prüfen wir diese Alternativen und bauen den Prototyp anhand der gewonnenen Erkenntnisse nach Best Practices aus, um die für unsere Szenarioplanung optimale Granularität zu identifizieren.
 
 ### 1.2.4 Akteurübersicht
 
-MERMAID JS GRAPH
+```mermaid
+flowchart TD
+    %% Akteure
+    A3[Regulatorien]
+    A1[Konsumenten]
+    A2[Anbieter]
+    
+    %% Interaktionen
+    A3 <-->|Rahmenbedingungen| A1
+    A3 <-->|Rahmenbedingungen| A2
+    A1 <-->|Angebot & Nachfrage| A2
+```
+```mermaid
+flowchart LR
+    %% Weitere Akteure
+    B1[Infrastruktur-<br/>betreiber] ~~~ B2[Technologie-<br/>entwickler] ~~~ B3[Substitutions-<br/>anbieter] ~~~ B4[Zivilgesellschaft<br/>& NGOs]
+```
 
 ---
 
 ### 1.3 Herleitung der Einflussfaktoren 
-(HAIKO)
+Einflussfaktoren existieren auf verschiedenen Ebenen und Zeitskalen (Horx Zukunftsinstitut GmbH, 2010, S.3-4):
 
-Preiselastizität; Preisdispersion -> 3.3 / 3.4
+| Ebene | Zeithorizont | Beispiel |
+|---|---|---|
+| Metatrends | Evolutionäre Konstanten | Steigende Komplexität |
+| Megatrends | >50 Jahre, global, alle Lebensbereiche | Digitalisierung, Klimawandel |
+| Soziokulturelle Trends | ~10 Jahre | Nachhaltigkeit als Lebensstil |
+| Konsumtrends | ~5 Jahre | Nachfrage nach „grünem Fliegen" |
+| Mikrotrends | Saison/kurzfristig | Buchungsverhalten bei Krisen |
 
-Tabelle Megatrends
+Für die Szenarioplanung im Flugverkehr sind insbesondere relevant:
+- **Megatrends**: Dekarbonisierung, Digitalisierung, Globalisierung/Deglobalisierung, demografischer Wandel
+- **Soziokulturelle Trends**: Sustainable Aviation Fuel (SAF), emissionsfreie Antriebe, multimodale Mobilität
+- **Konsumtrends**: EU-ETS, CO₂-Bepreisung, Kurzstreckenverbote
 
-Die Einflussfaktoren wurden mittels einer PESTLE-Analyse (Political, Economic, Social, Technological, Legal, Environmental) identifiziert und mit den Megatrends aus dem Zukunftsinstitut (2025) abgeglichen:
+
+Für die Modellierung des Systems „Flugverkehr" ist zudem das Verständnis von Marktmechanismen, Preisbildung und Nachfrageelastizität zentral (basierend auf Evangelinos et al., 2011, S.2 ff.):
+
+Preisdispersion im Luftverkehr entsteht durch:
+1. **Preisdifferenzierung** basierend auf unterschiedlichen Nachfrageelastizitäten (Geschäftsreisende vs. Freizeitreisende)
+2. **Nachfrageschwankungen** (Peak-Load Pricing bei hoher/niedriger Nachfrage)
+3. **Nachfrageunsicherheit** (stochastische Nachfrage erfordert dynamische Preisanpassung)
+
+Zusammenhang zwischen Wettbewerb und Preisdispersion:
+- **Monopoleffekt**: Bewirkt, dass zunehmender Wettbewerb die Preisaufschläge reduziert, wobei preisunelastische Passagiere stärker betroffen sind → Preisdispersion sinkt (vgl. Evangelinos et al., 2011, S. 5)
+- **Wettbewerbs-/Markeneffekt**: Bewirkt, dass preiselastische Passagiere stärker auf Konkurrenz reagieren → Preisdispersion kann steigen (vgl. Evangelinos et al., 2011, S. 6)
+- **Anreizkompatibilitätseffekt**: Beschränkt bei Preisdifferenzierung zweiter Ordnung die Preisdifferenz → Preisdispersion kann sinken (vgl. Evangelinos et al., 2011, S. 7)
+- **Nicht-monotone Zusammenhänge**: In konzentrierten Märkten steigt Preisdispersion mit Wettbewerb, in weniger konzentrierten sinkt sie (vgl. Evangelinos et al., 2011, S. 12-15)
+
+**Analogie zum Delay-Effekt (Spritpreis-Beispiel, Sprechstunde):**
+Unterschiedliche Nachfragergruppen reagieren unterschiedlich schnell und stark auf Preisänderungen. So reagieren Geschäftsreisende (analog zu Motorradfahrern im Spritpreis-Beispiel) kaum auf höhere Flugpreise, während Freizeitreisende (analog zu Autofahrern) verzögert, aber deutlich reagieren. Die heterogene Elastizität und die zeitliche Verzögerung sind essenziell für die dynamische Simulation.
+
+**Sättigungseffekte:** Ab einem bestimmten Niveau der Nachfrage oder der Kapazitätsauslastung treten Sättigungseffekte ein, bei denen weitere Impulse keinen proportionalen Einfluss mehr haben. Dies ist bei der Dynamisierung der Einflussfaktoren zu berücksichtigen.
+
+
+Die identifizierten Einflussfaktoren wurden mittels einer PESTLE-Analyse (Political, Economic, Social, Technological, Legal, Environmental) kategorisiert und mit den Megatrends aus dem Zukunftsinstitut (2025) abgeglichen:
 
 | # | Einflussfaktor | PESTLE-Kategorie | Beschreibung | Bezug zu Megatrends |
 |---|---|---|---|---|
-| **F1** | Mobilitätsbedürfnis / Nachfrage | Social | Wie stark wollen Menschen fliegen? | Globalisierung, Identitätsdynamik |
-| **F2** | Regulatorische Strenge | Political / Environmental / Legal | Welche klimapolitischen Leitplanken werden gesetzt? | Ökointelligenz |
-| **F3** | Technologische Reife (Dekarbonisierung) | Technological | Wie weit sind SAF, E-Aviation, H₂? | Konnektivität, Ökointelligenz |
-| **F4** | Wirtschaftliche Entwicklung | Economic | Konjunktur, Kaufkraft, Energiepreise | Globalisierung, Demographischer Wandel|
-| **F5** | Verfügbarkeit von Alternativen | Technological / Political / Legal | Schiene, digitale Substitution, Intermodalität | Mobilität, Konnektivität |
-| **F6** | Gesellschaftlicher Wertewandel | Social / Environmental | Klimabewusstsein, Flight Shaming, Normen | Ökointelligenz, Identitätsdynamik |
-| **F7** | Geopolitische Stabilität | Political / Security | Offene Lufträume, Konflikte, Pandemien | Sicherheit, Globalisierung |
-
-Einflussfaktoren mit Quellen belegen; 
+| **F1** | Mobilitätsbedürfnis / Nachfrage (vgl. Braun et al, 2023, S. 22) | Social | Wie stark wollen Menschen fliegen? | Globalisierung, Identitätsdynamik |
+| **F2** | Regulatorische Strenge (vgl. Braun et al, 2023, S. 4) | Political / Environmental / Legal | Welche klimapolitischen Leitplanken werden gesetzt? | Ökointelligenz |
+| **F3** | Technologische Reife (Dekarbonisierung) (vgl. Braun et al, 2023, S. 9) | Technological | Wie weit sind SAF, E-Aviation, H₂? | Konnektivität, Ökointelligenz |
+| **F4** | Wirtschaftliche Entwicklung (vgl. Braun et al, 2023, S. 9) | Economic | Konjunktur, Kaufkraft, Energiepreise | Globalisierung, Demographischer Wandel|
+| **F5** | Verfügbarkeit von Alternativen (vgl. Evangelinos, 2011, S. 6) | Technological / Political / Legal | Schiene, digitale Substitution, Intermodalität | Mobilität, Konnektivität |
+| **F6** | Gesellschaftlicher Wertewandel (Horx Zukunftsinstitut GmbH, 2010, S.3) | Social / Environmental | Klimabewusstsein, Flight Shaming, Normen | Ökointelligenz, Identitätsdynamik |
+| **F7** | Geopolitische Stabilität (vgl. Braun et al, 2023, S. 9) | Political / Security | Offene Lufträume, Konflikte, Pandemien | Sicherheit, Globalisierung |
 
 **Prüfung auf Eindeutigkeit:**
 
@@ -133,7 +183,7 @@ Jeder Faktor weist einen erkennbaren Unterschied auf:
 | **F6** Gesellsch. Wertewandel | F6.1: Fliegen bleibt akzeptiert | F6.2: Starkes Klimabewusstsein, Flight Shaming |
 | **F7** Geopolitische Stabilität | F7.1: Offene Märkte, Kooperation | F7.2: Fragmentierung, Konflikte |
 
-Info: MVP 2 Zustände -> Iterationen mehr Zustände nach Analyse
+> Hinweis: Für den MVP sind 2 unterschiedliche Zustände ausreichend. In späteren Iterationen besteht die Möglichkeit, weitere Zustände je Faktor zu implementieren.
 
 ### 1.5 Beziehungstypen
 
@@ -151,8 +201,6 @@ Info: MVP 2 Zustände -> Iterationen mehr Zustände nach Analyse
 > **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 15.3 definiert und klärt ein Begriffslexikon zentrale Begriffe eindeutig, welche möglicherweise von verschiedenen Leuten unterschiedlich ausgelegt werden. Es dient als gemeinsame Sprache zwischen allen Beteiligten und verhindert Missverständnisse. Das Begriffslexikon ist ein lebendes Dokument, das während des gesamten Projekts gepflegt wird.
 
 > *Hinweis*: Begriffslexikon wurde unter Zuhilfename von KI (Claude Opus 4.6) erstellt. KI diente hier zur Ausformulierung der einzelnen Begriffe. Diese werden im nächsten Iterationsschritt überprüft und im Plenum definiert. (Stand 05.04.2026)
-
-**TODO: Begriffslexikon gemeinsam nochmal durchgehen, damit alle konform und auch dem gleichen Stand sind!**
 
 ### Struktur jedes Eintrags
 
@@ -257,7 +305,6 @@ Info: MVP 2 Zustände -> Iterationen mehr Zustände nach Analyse
 | **Beziehungen** | Kann dynamisieren → Einflussfaktoren. Wird erkannt durch → Environmental Scanning. Relevant für → Challenge 4. |
 
 ### 2.2 Akteure 
-(HAIKO)
 
 #### A1: Regulatorien / Politik
 
@@ -292,6 +339,39 @@ Info: MVP 2 Zustände -> Iterationen mehr Zustände nach Analyse
 | **Abgrenzung** | Nicht die Flugzeughersteller (→ Technologieentwickler). Nicht die Flughäfen (→ Infrastrukturbetreiber). Airlines nutzen Technologie und Infrastruktur, entwickeln und betreiben diese aber nicht primär selbst. |
 | **Beziehungen** | Beeinflusst direkt → Konsumenten (Preise, Angebot, Routen), Infrastrukturbetreiber (Slot-Nachfrage), Technologieentwickler (Bestellungen, Anforderungen). Wird beeinflusst von → Regulatorien (Auflagen, Steuern), Konsumenten (Nachfrage), Technologieentwickler (verfügbare Flugzeuge/Kraftstoffe), Infrastrukturbetreiber (Kapazitäten). Primär zugeordnete Einflussfaktoren → F1 (Nachfrage), F2 (Regulierung), F3 (Technologie), F4 (Wirtschaftslage). |
 
+
+#### A4: Infrastrukturbetreiber / Flughäfen
+
+| Feld | Inhalt |
+|------|--------|
+| **Begriff** | Infrastrukturbetreiber / Flughäfen |
+| **Synonyme** | Airports, Flughafenbetreiber, Bodeninfrastruktur |
+| **Kategorie** | Akteur |
+| **Definition** | Organisationen, die die physische Infrastruktur für den Flugverkehr bereitstellen und betreiben. Dazu gehören Flughafenbetreibergesellschaften (Fraport, Aéroports de Paris, Schiphol Group) sowie Flugsicherungsorganisationen (DFS, Eurocontrol) und Bodenabfertigungsdienste. Ihre Handlungslogik ist geprägt durch langfristige Investitionszyklen (Pistenausbau, Terminalerweiterung dauern Jahrzehnte), lokalpolitische Spannungen (Lärmschutz, Nachtflugverbote) und die Abhängigkeit von Airline-Nachfrage. Sie sind Enabler und Engpass zugleich. |
+| **Abgrenzung** | Nicht die Airlines, die die Infrastruktur nutzen. Nicht die staatliche Regulierung, obwohl viele Flughäfen in öffentlicher Hand sind – ihre operative Logik (Kapazitätsplanung, Entgelte) unterscheidet sich von der politischen Logik (Gesetze, Steuern). |
+| **Beziehungen** | Beeinflusst direkt → Anbieter (Kapazitäten, Entgelte, Slots), Konsumenten (Erreichbarkeit, Reisequalität). Wird beeinflusst von → Regulatorien (Genehmigungen, Umweltauflagen), Anbieter (Nachfrage nach Slots), Zivilgesellschaft (Proteste gegen Ausbau/Lärm). Primär zugeordnete Einflussfaktoren → F1 (Nachfrage), F2 (Regulierung), F7 (Geopolitik). |
+
+#### A5: Technologieentwickler
+
+| Feld | Inhalt |
+|------|--------|
+| **Begriff** | Technologieentwickler |
+| **Synonyme** | Hersteller, OEMs, Innovatoren, Technology Providers |
+| **Kategorie** | Akteur |
+| **Definition** | Unternehmen und Forschungseinrichtungen, die die technologischen Grundlagen des Flugverkehrs entwickeln und bereitstellen. Dies umfasst Flugzeughersteller (Airbus, Boeing, Embraer), Triebwerkshersteller (Rolls-Royce, CFM, Pratt & Whitney), SAF-Produzenten (Neste, SkyNRG), Startups im Bereich E-Aviation und Urban Air Mobility (Lilium, Volocopter) sowie Forschungseinrichtungen (DLR, Fraunhofer). Ihre Handlungslogik ist geprägt durch extrem lange Entwicklungszyklen (10–15 Jahre für ein neues Flugzeugmuster), hohe Investitionskosten und Zertifizierungsanforderungen. |
+| **Abgrenzung** | Nicht die Airlines, die Technologie einsetzen. Nicht die Regulatoren, die Technologie zertifizieren. Der Fokus liegt auf Akteuren, die neue technologische Optionen schaffen. |
+| **Beziehungen** | Beeinflusst direkt → Anbieter (verfügbare Flugzeuge, Kraftstoffoptionen), Regulatorien (Machbarkeitsnachweis ermöglicht strengere Regulierung). Wird beeinflusst von → Regulatorien (Förderprogramme, Zertifizierung), Anbieter (Bestellungen), wirtschaftliche Entwicklung (Investitionsbereitschaft). Primär zugeordnete Einflussfaktoren → F3 (Technologische Reife), F4 (Wirtschaftslage). |
+
+#### A6: Zivilgesellschaft / NGOs
+
+| Feld | Inhalt |
+|------|--------|
+| **Begriff** | Zivilgesellschaft / NGOs |
+| **Synonyme** | Nichtregierungsorganisationen, Bürgerinitiativen, Civil Society, Interessengruppen |
+| **Kategorie** | Akteur |
+| **Definition** | Organisierte gesellschaftliche Gruppen, die im öffentlichen Diskurs Einfluss auf die Entwicklung des Flugverkehrs nehmen, ohne selbst am Marktgeschehen (Angebot/Nachfrage) direkt teilzunehmen. Dazu gehören Umwelt-NGOs (Greenpeace, BUND, Transport & Environment), Klimabewegungen (Fridays for Future, Stay Grounded), Bürgerinitiativen (Fluglärm-Gegner, Ausbau-Gegner) und Think Tanks (Agora Verkehrswende). Ihre Handlungslogik ist wertegetrieben: Sie setzen Themen auf die Agenda, mobilisieren öffentliche Meinung, betreiben Lobbyarbeit und schaffen sozialen Druck. |
+| **Abgrenzung** | Nicht der einzelne Konsument in seiner Kaufentscheidung – sondern die organisierte, politische Artikulation gesellschaftlicher Werte und Interessen. Nicht die Medien (die berichten, aber keine eigene Agenda im Flugverkehr verfolgen). Nicht die Politik (die entscheidet, nicht nur fordert). |
+| **Beziehungen** | Beeinflusst direkt → Regulatorien (Lobbyarbeit, öffentlicher Druck), Konsumenten (Normbildung, Awareness-Kampagnen), Anbieter (Reputationsrisiko). Wird beeinflusst von → gesellschaftlicher Wertewandel (Mobilisierungspotenzial), Regulatorien (werden Forderungen umgesetzt, sinkt der Druck). Primär zugeordnete Einflussfaktoren → F6 (Wertewandel), F2 (Regulierung als Ziel). |
 ### 2.3 Einflussfaktoren
 
 #### F1: Mobilitätsbedürfnis / Nachfrage
@@ -380,8 +460,7 @@ Info: MVP 2 Zustände -> Iterationen mehr Zustände nach Analyse
 
 ---
 
-## 3 Stakeholder-Identifikation 
-(MANU)
+## 3 Stakeholder
 
 > **Methodische Grundlage:** Gemäß Ludewig & Lichter, Kap. 6.2.3, können Kunden sowohl natürliche als auch juristische Personen sein. Jedoch existieren auch noch weitere, unsichtbare Klienten, welche identifiziert werden müssen. Vor Anforderungserhebung werden die Stakeholder, also alle Personen und Gruppen, die ein Interesse am System haben oder von ihm betroffen sind, identifiziert.
 
@@ -394,8 +473,8 @@ Die Stakeholder sind nicht die Akteure *innerhalb* der Domäne (Regulatorien, Ai
 | # | Stakeholder | Rolle | Interesse am System | Priorität |
 |---|---|---|---|---|
 | **S1** | **Foresight-Analyst** | Primärer Nutzer | Möchte mithilfe der Simulation plausible Zukunftsszenarien explorieren, Wechselwirkungen verstehen und Szenarien ableiten. Erwartet nachvollziehbare, qualitativ hochwertige Ergebnisse. |  Hoch |
-| **S2** | **Dozent / Betreuer** | Auftraggeber & Prüfer | Bewertet die wissenschaftliche und technische Qualität des Projekts. Erwartet systematisches Vorgehen und angemessene Dokumentation. |  Hoch |
-| **S3** | **Systementwickler / Projektteam** | Entwickler & Betreiber | Entwickelt und wartet das System. Benötigt klare Architektur, wartbaren Code, nachvollziehbare Konfiguration. |  Hoch |
+| **S2** | **Dozent** | Auftraggeber & Prüfer | Bewertet die wissenschaftliche und technische Qualität des Projekts. Erwartet systematisches Vorgehen und angemessene Dokumentation. |  Hoch |
+| **S3** | **Systementwickler (wir)** | Entwickler & Betreiber | Entwickelt und wartet das System. Benötigt klare Architektur, wartbaren Code, nachvollziehbare Konfiguration. |  Hoch |
 
 ---
 
@@ -464,7 +543,7 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
 | **NFA-04** | **Lokalität** | Das System muss vollständig lokal laufen können. | **Must** |
 | **NFA-05** | **Dokumentation** | Alle Systemkomponenten und Nutzungsprozesse müssen in Markdown dokumentiert sein. | **Must** |
 | **NFA-06** | **Modularität** | Das System muss modular aufgebaut sein (Trennung von LangGraph-Logik, Prompt-Management und Extraktion). | **Must** |
-| **NFA-07** | **Performance** | Eine vollständige Simulationsrunde soll schnell durchlaufen können. | **Could** |
+| **NFA-07** | **Performance** | Eine vollständige Simulationsrunde soll in 15 Minuten durchlaufen können. | **Could** |
 | **NFA-08** | **Transparenz** | Alle verwendeten Prompts und Entscheidungslogiken müssen für den Nutzer offenliegen. | **Should** |
 
 
@@ -475,7 +554,7 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
 | ID | Aspekt | Begründung |
 |:---|:---|:---|
 | **OOS-01** | Grafische Benutzeroberfläche (GUI) | Prototyp; CLI/Konfigurationsdateien/Notebooks ausreichend |
-| **OOS-02** | Qualitative Simulation | Fokus auf qualitative Simulation durch LLM-basierte Agenten |
+| **OOS-02** | Quantitative Simulation | Fokus auf qualitative Simulation durch LLM-basierte Agenten |
 | **OOS-03** | Mehrsprachigkeit | Prototyp arbeitet primär auf Deutsch oder Englisch |
 | **OOS-04** | Mehrbenutzerbetrieb | Einzelplatz-Prototyp |
 | **OOS-05** | Persistente Datenbank | Dateibasierte Speicherung (JSON/Markdown) ausreichend |
