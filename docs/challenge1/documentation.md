@@ -85,7 +85,7 @@ Das reale Ökosystem des Flugverkehrs umfasst selbstverständlich weitere Akteur
 
 Neben der Hinzunahme völlig neuer Akteursgruppen ziehen wir für zukünftige Iterationen auch die Modellierung von sogenannten Sub-Agenten in Betracht. Das bedeutet, dass aggregierte Akteure in spezifischere Untergruppen aufgespalten werden (z.B. die Aufteilung der „Anbieter“ in Low-Cost-Carrier und Full-Service-Carrier, oder der „Konsumenten“ in Geschäftsreisende und Privaturlauber).
 
-VERLINKUNG SUB-AGENTEN-DOC
+Die Modellierungsidee ist unter [subagent.md](/docs/challenge1/subagent.md) zu finden.
 
 Wir berücksichtigen diese auch nicht in der ersten Iteration. Im weiteren Projektverlauf prüfen wir diese Alternativen und bauen den Prototyp anhand der gewonnenen Erkenntnisse nach Best Practices aus, um die für unsere Szenarioplanung optimale Granularität zu identifizieren.
 
