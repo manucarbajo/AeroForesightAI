@@ -576,79 +576,79 @@ erDiagram
     FactorState ||--o{ CrossImpactEntry : "passive_role"
 
     SimulationConfig {
-        strategic_question
-        time_horizon
-        total_rounds
-        llm_model
-        temperature
+        string strategic_question
+        string time_horizon
+        int total_rounds
+        string llm_model
+        float temperature
     }
 
     InitialEnvironment {
-        initial_active_states
-        initial_narrative
+        string initial_active_states
+        string initial_narrative
     }
 
     Agent {
-        agent_id
-        agent_type
-        name
-        system_prompt
-        goals
-        constraints
+        string agent_id
+        string agent_type
+        string name
+        string system_prompt
+        string goals
+        string constraints
     }
 
     AgentFactorRelevance {
-        agent_id
-        factor_id
-        relevance_type
+        string agent_id
+        string factor_id
+        string relevance_type
     }
 
     InfluenceFactor {
-        factor_id
-        name
-        category
-        description
+        string factor_id
+        string name
+        string category
+        string description
     }
 
     FactorState {
-        state_id
-        factor_id
-        label
-        description
+        string state_id
+        string factor_id
+        string label
+        string description
     }
 
     SimulationRound {
-        round_number
-        phase
-        timestamp
+        int round_number
+        string phase
+        datetime timestamp
     }
 
     AgentResponse {
-        response_id
-        round_number
-        agent_id
-        reasoning
-        decisions
-        factor_assessments
-        raw_prompt
-        raw_response
-        timestamp
+        string response_id
+        int round_number
+        string agent_id
+        string reasoning
+        string decisions
+        string factor_assessments
+        string raw_prompt
+        string raw_response
+        datetime timestamp
     }
 
     EnvironmentState {
-        round_number
-        active_factor_states
-        narrative_summary
-        round_summary
-        timestamp
+        int round_number
+        string active_factor_states
+        string narrative_summary
+        string round_summary
+        datetime timestamp
     }
 
     CrossImpactEntry {
-        entry_id
-        active_factor_state
-        passive_factor_state
-        impact_value
-        justification
+        string entry_id
+        string active_factor_state
+        string passive_factor_state
+        int impact_value
+        string justification
     }
 ```
 
