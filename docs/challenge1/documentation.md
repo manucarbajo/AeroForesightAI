@@ -482,7 +482,6 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
 
 ## 5 Modelle & Diagramme
 
-(MARC)
 > **Methodische Grundlage:** Die folgenden Modelle bilden die Grundlage für die prototypische Implementierung der Simulationsumgebung mit Langgraph. Sie sind bewusst auf den MVP zugeschnitten (3 Akteure, 7 Faktoren, Environment-Node) und so gestaltet, dass sie modular erweiterbar sind. Die Diagramme orientieren sich an Ludewig & Lichter, Kap. 16 (Modellierung) und wurden auf die Besonderheiten einer LLM-basierten Multi-Agenten-Simulation angepasst.
 
 > **Stereotypen-Legende:**
@@ -492,6 +491,8 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
 > | `<<dataclass>>` | Python-Dataclass – strukturierter Datencontainer |
 > | `<<enumeration>>` | Python-Enum – fester Wertebereich |
 > | `<<node>>` | Langgraph-Node – Verarbeitungseinheit im Graphen |
+>
+> *Die Stereotypen `<<TypedDict>>`, `<<dataclass>>` und `<<node>>` sind projektspezifische Erweiterungen der UML-Notation für die Langgraph-Architektur und keine UML-Standard-Stereotypen.*
 
 ---
 
@@ -551,105 +552,107 @@ Dieses Modell ist die fachliche Grundlage. Die folgenden technischen Modelle üb
 
 Das Entity-Relationship-Modell zeigt die Datenstruktur der Simulation – welche Entitäten existieren, welche Attribute sie tragen und wie sie zueinander in Beziehung stehen. Es bildet die Grundlage für den `SimulationState`, der in Langgraph als `TypedDict` durch den Graphen fließt.
 
-> *Hinweis:* Da der MVP dateibasiert arbeitet (kein persistenter Datenbankbetrieb, vgl. OOS-05), ist dieses ERM ein logisches Modell – es beschreibt die Informationsstruktur, nicht ein physisches Datenbankschema.
+> *Hinweis:* Da der MVP dateibasiert arbeitet (kein persistenter Datenbankbetrieb, vgl. OOS-05), ist dieses ERM ein **konzeptionelles Modell** – es beschreibt die Informationsstruktur, nicht ein physisches Datenbankschema. Datentypen und Schlüssel werden erst im Klassendiagramm (5.2) spezifiziert.
 
 ```mermaid
 erDiagram
-    SimulationConfig ||--o{ Agent : "defines"
-    SimulationConfig ||--o{ InfluenceFactor : "defines"
-    SimulationConfig ||--|| InitialEnvironment : "sets"
+    SimulationConfig ||--o{ Agent : ""
+    SimulationConfig ||--o{ InfluenceFactor : ""
+    SimulationConfig ||--|| InitialEnvironment : ""
 
-    Agent ||--o{ AgentFactorRelevance : "has"
-    InfluenceFactor ||--o{ AgentFactorRelevance : "assigned_via"
+    Agent ||--o{ AgentFactorRelevance : ""
+    InfluenceFactor ||--o{ AgentFactorRelevance : ""
 
-    SimulationRound ||--o{ AgentResponse : "produces"
-    SimulationRound ||--|| EnvironmentState : "results_in"
+    SimulationRound ||--o{ AgentResponse : ""
+    SimulationRound ||--|| EnvironmentState : ""
 
-    Agent ||--o{ AgentResponse : "generates"
+    Agent ||--o{ AgentResponse : ""
 
-    InfluenceFactor ||--|{ FactorState : "has (exactly 2 in MVP)"
+    InfluenceFactor ||--|{ FactorState : ""
 
-    EnvironmentState ||--o{ FactorState : "references_active"
+    EnvironmentState ||--o{ FactorState : ""
 
-    FactorState ||--o{ CrossImpactEntry : "acts_as_active"
-    FactorState ||--o{ CrossImpactEntry : "acts_as_passive"
+    FactorState ||--o{ CrossImpactEntry : "active_role"
+    FactorState ||--o{ CrossImpactEntry : "passive_role"
 
     SimulationConfig {
-        string strategic_question
-        string time_horizon
-        int total_rounds
-        string llm_model
-        float temperature
+        strategic_question
+        time_horizon
+        total_rounds
+        llm_model
+        temperature
     }
 
     InitialEnvironment {
-        json initial_active_states "z.B. F1:F1.1, F2:F2.1 ..."
-        string initial_narrative "Ausgangslage-Beschreibung"
+        initial_active_states
+        initial_narrative
     }
 
     Agent {
-        string agent_id PK
-        string agent_type "CONSUMER | PROVIDER | REGULATOR"
-        string name
-        string system_prompt
-        json goals
-        json constraints
+        agent_id
+        agent_type
+        name
+        system_prompt
+        goals
+        constraints
     }
 
     AgentFactorRelevance {
-        string agent_id FK
-        string factor_id FK
-        string relevance_type "primary | secondary"
+        agent_id
+        factor_id
+        relevance_type
     }
 
     InfluenceFactor {
-        string factor_id PK
-        string name
-        string category "PESTLE-Kategorie"
-        string description
+        factor_id
+        name
+        category
+        description
     }
 
     FactorState {
-        string state_id PK
-        string factor_id FK
-        string label "z.B. F1.1 Hohes Wachstum"
-        string description
+        state_id
+        factor_id
+        label
+        description
     }
 
     SimulationRound {
-        int round_number PK
-        string phase
-        datetime timestamp
+        round_number
+        phase
+        timestamp
     }
 
     AgentResponse {
-        string response_id PK
-        int round_number FK
-        string agent_id FK
-        string reasoning
-        json decisions
-        json factor_assessments
-        string raw_prompt
-        string raw_response
-        datetime timestamp
+        response_id
+        round_number
+        agent_id
+        reasoning
+        decisions
+        factor_assessments
+        raw_prompt
+        raw_response
+        timestamp
     }
 
     EnvironmentState {
-        int round_number FK
-        json active_factor_states "Welche FactorStates aktiv sind"
-        string narrative_summary
-        string round_summary
-        datetime timestamp
+        round_number
+        active_factor_states
+        narrative_summary
+        round_summary
+        timestamp
     }
 
     CrossImpactEntry {
-        string entry_id PK
-        string active_factor_state FK
-        string passive_factor_state FK
-        int impact_value "-3 bis +3"
-        string justification
+        entry_id
+        active_factor_state
+        passive_factor_state
+        impact_value
+        justification
     }
 ```
+
+> **Hinweis zu CrossImpactEntry:** Die Entität `CrossImpactEntry` referenziert `FactorState` in zwei unterschiedlichen Rollen: als *aktiven Zustand* (Ursache der Wechselwirkung) und als *passiven Zustand* (Wirkungsziel). Die Rollenbezeichnungen `active_role` und `passive_role` kennzeichnen diese beiden gerichteten Beziehungen.
 
 **Wesentliche Design-Entscheidungen:**
 
@@ -688,6 +691,8 @@ erDiagram
 | Sequentielle Agenten-Reihenfolge | **MVP-Entscheidung:** Einfachste Implementierung in Langgraph (lineare Edge-Kette). Der Regulator sieht bewusst, was Consumer und Provider sagten – das bildet ab, dass Politik auf Markt und Gesellschaft reagiert. Der daraus entstehende Informationsbias wird als bekannte Limitation akzeptiert und in späteren Iterationen durch Fan-Out/Fan-In adressiert. |
 | Prompt-Bau per Template | `_build_prompt()` nutzt ein String-Template mit Platzhaltern: Rolle, Ziele, aktuell aktive Faktor-Zustände, Zusammenfassung der letzten Runde, Responses vorheriger Agenten der aktuellen Runde. Im MVP wird nur die letzte Runde als Kontext mitgegeben (nicht die gesamte History), um das Context-Window lokal lauffähiger Modelle nicht zu überlasten. |
 | JSON-Output-Schema für Parsing | `_parse_response()` erwartet vom LLM eine JSON-Antwort mit definierten Feldern (`reasoning`, `decisions`, `factor_assessments`). Das System-Prompt enthält eine Output-Schema-Vorgabe. Fallback bei Parse-Fehler: Raw-Response wird gespeichert, `decisions` und `factor_assessments` bleiben leer. |
+| Komposition vs. Aggregation | `SimulationState` besitzt `SimulationConfig`, `RoundResult` und `CIBMatrix` exklusiv (Komposition) – sie existieren nicht ohne den State. `FactorState` und `AgentConfig` werden aus der externen Config geladen und könnten unabhängig existieren → Aggregation (`o--`). |
+| Keine `current_state`-Eigenschaft auf `FactorState` | Im ERM ist festgelegt, dass der `EnvironmentState` die einzige Wahrheitsquelle für aktive Zustände ist. Um diesen Grundsatz nicht zu verletzen, trägt `FactorState` im Klassendiagramm kein `current_state`-Feld. Der aktive Zustand wird ausschließlich über `EnvironmentState.active_states` abgefragt. |
 
 ```mermaid
 classDiagram
@@ -730,7 +735,6 @@ classDiagram
         +String name
         +String category
         +List~String~ possible_states
-        +String current_state
         +String description
     }
 
@@ -786,8 +790,8 @@ classDiagram
 
     SimulationState *-- SimulationConfig
     SimulationState *-- EnvironmentState
-    SimulationState *-- "*" FactorState
-    SimulationState *-- "*" AgentConfig
+    SimulationState o-- "*" FactorState
+    SimulationState o-- "*" AgentConfig
     SimulationState *-- "*" RoundResult
     SimulationState *-- CIBMatrix
     CIBMatrix *-- "*" CIBEntry
@@ -839,6 +843,7 @@ classDiagram
     SimulationRunner --> AgentNode : orchestriert 3x
     SimulationRunner --> EnvironmentNode : orchestriert
     SimulationRunner --> CIBExtractorNode : orchestriert
+    SimulationRunner --> SimulationState : erzeugt und verarbeitet
 ```
 
 **Mapping auf Langgraph-Konzepte:**
@@ -860,9 +865,11 @@ classDiagram
 
 ---
 
-### 5.3 Aktivitätsdiagramm
+### 5.3 Ablaufdiagramm
 
-Das Aktivitätsdiagramm zeigt den vollständigen Ablauf einer Simulation von der Konfiguration bis zur Ergebnissicherung. Jede Aktivität entspricht einem Langgraph-Node, jeder Pfeil einer Edge.
+> *Das folgende Ablaufdiagramm visualisiert den Simulationsprozess. Es orientiert sich an UML-Aktivitätsdiagrammen, nutzt aber Mermaid-Flowchart-Syntax, da Mermaid keine native Unterstützung für UML-Aktivitätsdiagramme (Swimlanes, Fork/Join-Balken, Objektflüsse) bietet.*
+
+Das Ablaufdiagramm zeigt den vollständigen Ablauf einer Simulation von der Konfiguration bis zur Ergebnissicherung. Jede Aktivität entspricht einem Langgraph-Node, jeder Pfeil einer Edge.
 
 ```mermaid
 flowchart TD
