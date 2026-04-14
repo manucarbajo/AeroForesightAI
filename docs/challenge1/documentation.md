@@ -496,58 +496,6 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW
 
 ---
 
-### 5.0 Fachliches Domänenmodell
-
-Bevor die technischen Modelle folgen, zeigt das fachliche Domänenmodell die Struktur aus Abschnitt 1 als Übersicht. Es visualisiert die vier Beziehungstypen aus 1.5 und die Zuordnung der Einflussfaktoren zu den Akteuren aus dem Glossar (2.2).
-
-```mermaid
-flowchart TB
-    subgraph Akteure
-        A1["A1: Regulatorien / Politik"]
-        A2["A2: Konsumenten"]
-        A3["A3: Anbieter / Airlines"]
-    end
-
-    subgraph Einflussfaktoren
-        F1["F1: Mobilitätsbedürfnis"]
-        F2["F2: Regulatorische Strenge"]
-        F3["F3: Technologische Reife"]
-        F4["F4: Wirtschaftliche Entwicklung"]
-        F5["F5: Verfügbarkeit Alternativen"]
-        F6["F6: Gesellsch. Wertewandel"]
-        F7["F7: Geopolitische Stabilität"]
-    end
-
-    %% Akteur → Akteur
-    A2 -->|"Nachfrage / Kauf"| A3
-    A3 -->|"Preise / Angebot"| A2
-    A1 -->|"Auflagen / Steuern"| A3
-    A1 -->|"Verbote / Anreize"| A2
-    A2 -->|"Wählerwille"| A1
-
-    %% Faktor → Akteur (primäre Zuordnung)
-    F1 -.->|treibt| A2
-    F1 -.->|treibt| A3
-    F2 -.->|beschränkt| A3
-    F2 -.->|beschränkt| A1
-    F3 -.->|ermöglicht| A3
-    F4 -.->|rahmt| A2
-    F4 -.->|rahmt| A3
-    F6 -.->|legitimiert| A1
-
-    %% Faktor ↔ Faktor (Cross-Impact, Auswahl)
-    F6 <-->|"verstärkt"| F2
-    F4 <-->|"beeinflusst"| F1
-    F5 <-->|"substituiert"| F1
-    F7 <-->|"destabilisiert"| F4
-```
-
-> **Lesehilfe:** Durchgezogene Pfeile = Akteur-Akteur-Beziehungen. Gestrichelte Pfeile = Faktor-Akteur-Zuordnung. Doppelpfeile = Faktor-Faktor-Wechselwirkung (Cross-Impact, exemplarisch).
-
-Dieses Modell ist die fachliche Grundlage. Die folgenden technischen Modelle übersetzen es in eine implementierbare Struktur.
-
----
-
 ### 5.1 ERM
 
 Das Entity-Relationship-Modell zeigt die Datenstruktur der Simulation – welche Entitäten existieren, welche Attribute sie tragen und wie sie zueinander in Beziehung stehen. Es bildet die Grundlage für den `SimulationState`, der in Langgraph als `TypedDict` durch den Graphen fließt.
