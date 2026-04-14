@@ -504,24 +504,24 @@ Das Entity-Relationship-Modell zeigt die Datenstruktur der Simulation – welche
 
 ```mermaid
 erDiagram
-    SimulationConfig ||--o{ Agent : ""
-    SimulationConfig ||--o{ InfluenceFactor : ""
-    SimulationConfig ||--|| InitialEnvironment : ""
+    SimulationConfig ||--o{ Agent : "Agent-Definition"
+    SimulationConfig ||--o{ InfluenceFactor : "Faktor-Definition"
+    SimulationConfig ||--|| InitialEnvironment : "Ausgangszustand"
 
-    Agent ||--o{ AgentFactorRelevance : ""
-    InfluenceFactor ||--o{ AgentFactorRelevance : ""
+    Agent ||--o{ AgentFactorRelevance : "Faktorrelevanz"
+    InfluenceFactor ||--o{ AgentFactorRelevance : "Faktorzuordnung"
 
-    SimulationRound ||--o{ AgentResponse : ""
-    SimulationRound ||--|| EnvironmentState : ""
+    SimulationRound ||--o{ AgentResponse : "Rundenbeitrag"
+    SimulationRound ||--|| EnvironmentState : "Umweltzustand"
 
-    Agent ||--o{ AgentResponse : ""
+    Agent ||--o{ AgentResponse : "Agentenantwort"
 
-    InfluenceFactor ||--|{ FactorState : ""
+    InfluenceFactor ||--|{ FactorState : "Zustandsauspraegung"
 
-    EnvironmentState ||--o{ FactorState : ""
+    EnvironmentState ||--o{ FactorState : "Aktiver-Zustand"
 
-    FactorState ||--o{ CrossImpactEntry : "active_role"
-    FactorState ||--o{ CrossImpactEntry : "passive_role"
+    FactorState ||--o{ CrossImpactEntry : "Aktive-Rolle"
+    FactorState ||--o{ CrossImpactEntry : "Passive-Rolle"
 
     SimulationConfig {
         string strategic_question
@@ -736,16 +736,16 @@ classDiagram
         +String justification
     }
 
-    SimulationState *-- SimulationConfig
-    SimulationState *-- EnvironmentState
-    SimulationState o-- "*" FactorState
-    SimulationState o-- "*" AgentConfig
-    SimulationState *-- "*" RoundResult
-    SimulationState *-- CIBMatrix
-    CIBMatrix *-- "*" CIBEntry
-    RoundResult *-- "*" AgentResponse
-    RoundResult *-- EnvironmentState
-    AgentConfig --> AgentType
+    SimulationState *-- SimulationConfig : Konfiguration
+    SimulationState *-- EnvironmentState : Umweltzustand
+    SimulationState o-- "*" FactorState : Faktor-Definition
+    SimulationState o-- "*" AgentConfig : Agenten-Definition
+    SimulationState *-- "*" RoundResult : Rundenverlauf
+    SimulationState *-- CIBMatrix : Wirkungsmatrix
+    CIBMatrix *-- "*" CIBEntry : Matrix-Eintrag
+    RoundResult *-- "*" AgentResponse : Agenten-Antwort
+    RoundResult *-- EnvironmentState : Zustands-Snapshot
+    AgentConfig --> AgentType : Rollen-Typ
 
     class AgentNode {
         <<node>>
@@ -783,15 +783,15 @@ classDiagram
         +save_results(SimulationState state, String path) void
     }
 
-    AgentNode --> LLMClient : nutzt
-    AgentNode --> AgentConfig : konfiguriert durch
-    EnvironmentNode --> LLMClient : nutzt
-    CIBExtractorNode --> LLMClient : nutzt
+    AgentNode --> LLMClient : LLM-Zugriff
+    AgentNode --> AgentConfig : Agenten-Konfiguration
+    EnvironmentNode --> LLMClient : LLM-Zugriff
+    CIBExtractorNode --> LLMClient : LLM-Zugriff
 
-    SimulationRunner --> AgentNode : orchestriert 3x
-    SimulationRunner --> EnvironmentNode : orchestriert
-    SimulationRunner --> CIBExtractorNode : orchestriert
-    SimulationRunner --> SimulationState : erzeugt und verarbeitet
+    SimulationRunner --> AgentNode : Node-Orchestrierung
+    SimulationRunner --> EnvironmentNode : Node-Orchestrierung
+    SimulationRunner --> CIBExtractorNode : Node-Orchestrierung
+    SimulationRunner --> SimulationState : State-Verwaltung
 ```
 
 **Mapping auf Langgraph-Konzepte:**
