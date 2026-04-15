@@ -16,7 +16,7 @@ Der -dynamisch- gebildete Preis hängt von unterschiedlichen Faktoren ab:
 
 Preisunterschiede können unterschiedliche Ursachen haben:
 * Geringere Preiselastizität (%-Mengenänderung / %-Preisänderung) der Nachfrage in Spitzenzeiten.<br>
-Kunden sind weniger preissensibel
+Kunden sind weniger preissensibel.
 * Unterschiedliche Kostenstrukturen zwischen Spitzen- und Nebenzeiten.
 
 → Höhere Preise sind eine Reaktion auf die höhere Zahlungsbereitschaft der Kunden und die höheren Kosten in Spitzenzeiten.
@@ -33,7 +33,7 @@ Kunden sind weniger preissensibel
 Setzen den Preis aber nicht selbst fest.
 
 ### Indirekte Einflussfaktoren
-* Konkurrenz: Begrenzen den Spielraum der Preisgestaltung durch die Wettbewerbs- und Markeneffekte.
+* Konkurrenz und Regulatoren: Begrenzen den Spielraum der Preisgestaltung durch die Wettbewerbs- und Markeneffekte.
 * Marktkontext: Spitzen-/Nebensaison-Bedingungen und zugehörige Kostenunterschiede.
 
 ### Vertriebskanäle
