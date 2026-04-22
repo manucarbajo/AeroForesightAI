@@ -562,46 +562,69 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW (vgl. Rezazadeh & 
 
 ## 5 Modelle & Diagramme
 
-> **Methodische Grundlage:** Die folgenden Modelle bilden die Grundlage für die prototypische Implementierung der Simulationsumgebung mit Langgraph. Sie sind bewusst auf den MVP zugeschnitten (3 Akteure, 7 Faktoren, Environment-Node) und so gestaltet, dass sie modular erweiterbar sind. Die Diagramme orientieren sich an Ludewig & Lichter, Kap. 16 (Modellierung) und wurden auf die Besonderheiten einer LLM-basierten Multi-Agenten-Simulation angepasst.
+> **Methodische Grundlage:** Die folgenden Modelle bilden die Grundlage für die prototypische Implementierung der Simulationsumgebung mit LangGraph. Sie sind bewusst auf den MVP zugeschnitten (3 Sub-Agenten, 1 Markt-Agent, 7 Faktoren, Orchestrator, Environment-Node) und so gestaltet, dass sie modular erweiterbar sind. Die Diagramme orientieren sich an Ludewig & Lichter, Kap. 16 (Modellierung) und wurden auf die Besonderheiten einer LLM-basierten Multi-Agenten-Simulation angepasst.
+
+> **Einordnung Simulationsparadigma:** Das Modell ist ein hybrider Simulationsansatz. Es übernimmt aus der Discrete-Event Simulation (Banks et al., 2010) das Kernprinzip, dass Ereignisse während der Simulation zu strukturierten, geloggten Objekten mit Simulationsuhr-Zeitstempel gemacht werden, auf die andere Agenten in Folgerunden reagieren können. Eine vollständige DES-Implementierung (Future Event List als Priority Queue, Agent-to-Agent-Kommunikation) ist mit LangGraph im Rahmen dieses Projekts nicht zielführend umsetzbar. Die Agenten selbst folgen dem Agent-Based Simulation (ABS) Paradigma: Sie sind aktiv, entscheidend und besitzen individuelle Ziele und Constraints. Faktor-Wechselwirkungen orientieren sich konzeptuell an System Dynamics (CIB).
+
+> **Leitendes Design-Prinzip – Trennung von Simulation und Ergebnisverarbeitung:** Das Event-Log (`event_log`) ist die primäre und unveränderliche Ausgabe der Simulation. Es protokolliert alle Ereignisse mit Simulationsuhr-Zeitstempel. Alle Auswertungsschritte (CIB-Extraktion, Narrativ-Generierung, Preishistorie-Analyse) operieren ausschließlich *auf* diesem Log und verändern es nicht. `CIBExtractorNode` und `SaveResults` sind bewusst außerhalb des Simulations-Loops positioniert. Das ermöglicht es, dieselbe Simulation mit unterschiedlichen Auswertungslogiken zu analysieren, ohne sie erneut laufen zu lassen.
 
 > **Stereotypen-Legende:**
 > | Stereotyp | Bedeutung |
 > |-----------|-----------|
-> | `<<TypedDict>>` | Python-TypedDict – zentraler Langgraph-State |
+> | `<<TypedDict>>` | Python-TypedDict – zentraler LangGraph-State |
 > | `<<dataclass>>` | Python-Dataclass – strukturierter Datencontainer |
 > | `<<enumeration>>` | Python-Enum – fester Wertebereich |
-> | `<<node>>` | Langgraph-Node – Verarbeitungseinheit im Graphen |
+> | `<<node>>` | LangGraph-Node – Verarbeitungseinheit im Graphen |
 >
-> *Die Stereotypen `<<TypedDict>>`, `<<dataclass>>` und `<<node>>` sind projektspezifische Erweiterungen der UML-Notation für die Langgraph-Architektur und keine UML-Standard-Stereotypen.*
+> *Die Stereotypen `<<TypedDict>>`, `<<dataclass>>` und `<<node>>` sind projektspezifische Erweiterungen der UML-Notation für die LangGraph-Architektur und keine UML-Standard-Stereotypen.*
 
 ---
 
 ### 5.1 ERM
 
-Das Entity-Relationship-Modell zeigt die Datenstruktur der Simulation – welche Entitäten existieren, welche Attribute sie tragen und wie sie zueinander in Beziehung stehen. Es bildet die Grundlage für den `SimulationState`, der in Langgraph als `TypedDict` durch den Graphen fließt.
+Das Entity-Relationship-Modell zeigt die Datenstruktur der Simulation – welche Entitäten existieren, welche Attribute sie tragen und wie sie zueinander in Beziehung stehen. Es bildet die Grundlage für den `SimulationState`, der in LangGraph als `TypedDict` durch den Graphen fließt.
 
 > *Hinweis:* Da der MVP dateibasiert arbeitet (kein persistenter Datenbankbetrieb, vgl. OOS-05), ist dieses ERM ein **konzeptionelles Modell** – es beschreibt die Informationsstruktur, nicht ein physisches Datenbankschema. Datentypen und Schlüssel werden erst im Klassendiagramm (5.2) spezifiziert.
 
+**Wesentliche Änderungen gegenüber dem Vormodell:**
+
+| Änderung | Begründung |
+|---|---|
+| `OrchestratorAgent` als neue Entität | Explizite Modellierung der steuernden Instanz über den Sub-Agenten |
+| `MarketAgent` als neue Entität | Der Markt wird als eigenständiger Agent mit Preishistorie modelliert |
+| `SimulationClock` als neue Entität | Logische Simulationsuhr mit Bezug zum modellierten Zeithorizont 2025–2035 |
+| `EventLogEntry` als zentrale Ereignisstruktur | Jede Agenten-Aktion wird als diskretes Ereignis mit Zeitstempel geloggt |
+| `InfluenceFactor.is_dynamic` Flag | Agenten können im Simulationsverlauf neue Faktoren vorschlagen |
+
 ```mermaid
 erDiagram
-    SimulationConfig ||--o{ Agent : "Agent-Definition"
-    SimulationConfig ||--o{ InfluenceFactor : "Faktor-Definition"
+    SimulationConfig ||--o{ AgentConfig : "Sub-Agenten-Definition"
+    SimulationConfig ||--|| MarketAgent : "Markt-Agenten-Definition"
+    SimulationConfig ||--o{ InfluenceFactor : "Faktoren-Definition"
     SimulationConfig ||--|| InitialEnvironment : "Ausgangszustand"
+    SimulationConfig ||--|| SimulationClock : "Uhren-Initialisierung"
 
-    Agent ||--o{ AgentFactorRelevance : "Faktorrelevanz"
+    OrchestratorAgent ||--o{ SimulationRound : "Rundensteuerung"
+    OrchestratorAgent ||--o{ AgentConfig : "Sub-Agenten-Kenntnis"
+
+    AgentConfig ||--o{ AgentFactorRelevance : "Faktorrelevanz"
     InfluenceFactor ||--o{ AgentFactorRelevance : "Faktorzuordnung"
 
-    SimulationRound ||--o{ AgentResponse : "Rundenbeitrag"
+    SimulationRound ||--o{ EventLogEntry : "Runden-Ereignisse"
     SimulationRound ||--|| EnvironmentState : "Umweltzustand"
 
-    Agent ||--o{ AgentResponse : "Agentenantwort"
+    AgentConfig ||--o{ EventLogEntry : "Agenten-Ereignisse"
+    MarketAgent ||--o{ EventLogEntry : "Markt-Ereignisse"
+    MarketAgent ||--o{ PriceHistoryEntry : "Preishistorie"
 
-    InfluenceFactor ||--|{ FactorState : "Zustandsauspraegung"
+    InfluenceFactor ||--|{ FactorState : "Zustandsausprägung"
+    EnvironmentState ||--o{ FactorState : "Aktivzustand"
+    EnvironmentState ||--|| SimulationClock : "Uhr-Snapshot"
 
-    EnvironmentState ||--o{ FactorState : "Aktiver-Zustand"
+    FactorState ||--o{ CrossImpactEntry : "Aktivrolle"
+    FactorState ||--o{ CrossImpactEntry : "Passivrolle"
 
-    FactorState ||--o{ CrossImpactEntry : "Aktive-Rolle"
-    FactorState ||--o{ CrossImpactEntry : "Passive-Rolle"
+    SimulationClock ||--o{ EventLogEntry : "Zeitstempel"
 
     SimulationConfig {
         string strategic_question
@@ -609,6 +632,7 @@ erDiagram
         int total_rounds
         string llm_model
         float temperature
+        dict initial_active_states
     }
 
     InitialEnvironment {
@@ -616,13 +640,40 @@ erDiagram
         string initial_narrative
     }
 
-    Agent {
+    SimulationClock {
+        string clock_id
+        int current_tick
+        string simulated_year
+        string tick_unit
+    }
+
+    OrchestratorAgent {
+        string agent_id
+        string system_prompt
+        string current_task
+    }
+
+    AgentConfig {
         string agent_id
         string agent_type
         string name
         string system_prompt
         string goals
         string constraints
+    }
+
+    MarketAgent {
+        string agent_id
+        string system_prompt
+        float current_price_index
+    }
+
+    PriceHistoryEntry {
+        string entry_id
+        int clock_tick
+        string simulated_year
+        float price_index
+        string trigger_event_id
     }
 
     AgentFactorRelevance {
@@ -636,6 +687,7 @@ erDiagram
         string name
         string category
         string description
+        bool is_dynamic
     }
 
     FactorState {
@@ -648,19 +700,18 @@ erDiagram
     SimulationRound {
         int round_number
         string phase
-        datetime timestamp
+        int clock_tick_start
+        int clock_tick_end
     }
 
-    AgentResponse {
-        string response_id
-        int round_number
+    EventLogEntry {
+        string event_id
         string agent_id
-        string reasoning
-        string decisions
-        string factor_assessments
-        string raw_prompt
-        string raw_response
-        datetime timestamp
+        int clock_tick
+        string simulated_year
+        string event_type
+        string description
+        string payload
     }
 
     EnvironmentState {
@@ -668,7 +719,7 @@ erDiagram
         string active_factor_states
         string narrative_summary
         string round_summary
-        datetime timestamp
+        int clock_tick
     }
 
     CrossImpactEntry {
@@ -680,47 +731,32 @@ erDiagram
     }
 ```
 
-> **Hinweis zu CrossImpactEntry:** Die Entität `CrossImpactEntry` referenziert `FactorState` in zwei unterschiedlichen Rollen: als *aktiven Zustand* (Ursache der Wechselwirkung) und als *passiven Zustand* (Wirkungsziel). Die Rollenbezeichnungen Aktive-Rolle und Passive-Rolle kennzeichnen diese beiden gerichteten Beziehungen.
+> **Hinweis zu `OrchestratorAgent`:** Die Beziehung „Sub-Agenten-Kenntnis" beschreibt, dass der Orchestrator weiß, welche Sub-Agenten existieren und in welcher Reihenfolge er sie im MVP aufruft. Er orchestriert deren *Ausführung*, nicht ihre Konfiguration – die `AgentConfig` bleibt eine eigenständige Entität.
 
-**Wesentliche Design-Entscheidungen:**
+> **Hinweis zu `MarketAgent`:** Obwohl der Markt-Agent konzeptuell auch als `AgentConfig` mit `type = MARKET` modelliert werden könnte, rechtfertigt das Attribut `current_price_index` sowie die exklusive Beziehung zur `PriceHistoryEntry` eine eigene Entität. Der Markt-Agent hat damit eine strukturell andere Rolle als die drei Sub-Agenten.
 
-| Entscheidung | Begründung |
-|---|---|
-| `AgentFactorRelevance` als Zuordnung | Bildet die in Glossar 2.2 beschriebene Primärzuordnung (z.B. Regulator → F2, F6) explizit ab. Wird beim Prompt-Bau genutzt, um dem Agenten seine relevanten Faktoren mitzugeben. |
-| `InitialEnvironment` als eigene Entität | Macht explizit, welche Faktor-Zustände zu Beginn aktiv sind. Im MVP: alle Faktoren starten auf Zustand 1 (Kontinuität), konfigurierbar via JSON. |
-| Kein `Simulation`-Container | Im MVP gibt es einen Lauf. Die Config *ist* die Simulation. Erweiterbar durch spätere Kapselung. |
-| Kein `is_active`-Flag auf `FactorState` | Welche Zustände aktiv sind, wird ausschließlich im `EnvironmentState` referenziert → eine Wahrheitsquelle. |
-| `CrossImpactEntry` ohne `round_id` | Die CIB wird post-hoc aus der gesamten History extrahiert, nicht pro Runde erzeugt. |
-| Genau 2 Zustände pro Faktor | MVP-Vereinfachung. Spätere Iterationen können auf n Zustände erweitern (Kardinalität `||--|{` erlaubt das bereits). |
+> **Hinweis zu `EventLogEntry`:** Der `EventLogEntry` ist die zentrale Umsetzung des DES-Kernprinzips. Jede relevante Aktion eines Agenten (z.B. „Anbieter erhöht Preis um 10%", „Regulierung verschärft CO₂-Grenzwert") wird als strukturiertes Ereignis mit `clock_tick` und `simulated_year` festgehalten. Andere Agenten können auf diese Einträge in Folgerunden reagieren. Das Log ist damit sowohl Protokoll als auch reaktive Datenstruktur – wird aber selbst nie verändert (vgl. Trennungs-Prinzip).
 
-**Mapping auf Langgraph:**
-
-| Entität | Langgraph-Bezug |
-|---------|-----------------|
-| SimulationConfig + InitialEnvironment | Aus JSON-Config geladen, Teil des initialen State |
-| Agent + AgentFactorRelevance | Konfiguration für einen Langgraph-Node (Relevanz fließt in Prompt-Template ein) |
-| InfluenceFactor / FactorState | Teil des State-Dicts, wird pro Runde evaluiert |
-| SimulationRound | Ein voller Durchlauf des Langgraph-Graphen |
-| AgentResponse | Output eines Agent-Nodes |
-| EnvironmentState | State-Snapshot nach dem Environment-Node |
-| CrossImpactEntry | Output des CIB-Extractor-Nodes am Ende |
+> **Hinweis zu `InfluenceFactor.is_dynamic`:** Das Flag markiert Faktoren, die im Simulationsverlauf durch Agenten-Vorschläge hinzugefügt wurden, im Gegensatz zu den 7 initial konfigurierten Faktoren. Im MVP werden dynamisch hinzugefügte Faktoren geloggt und ratifiziert, aber noch nicht vollständig in die CIB-Matrix integriert.
 
 ---
 
 ### 5.2 Klassendiagramm
 
-> Langgraph-Konvention: Datenklassen repräsentieren den State, Verarbeitungsklassen (`<<node>>`) repräsentieren die Nodes.
+> LangGraph-Konvention: Datenklassen repräsentieren den State, Verarbeitungsklassen (`<<node>>`) repräsentieren die Nodes.
 
 **Zentrale Design-Entscheidungen:**
 
 | Entscheidung | Begründung |
 |---|---|
-| Eine parametrisierte `AgentNode`-Klasse statt drei Subklassen | Der Unterschied zwischen Consumer, Provider und Regulator liegt im Prompt, nicht im Code. Neue Akteure erfordern nur eine neue Config, keine neue Klasse. |
-| Sequentielle Agenten-Reihenfolge | **MVP-Entscheidung:** Einfachste Implementierung in Langgraph (lineare Edge-Kette). Der Regulator sieht bewusst, was Consumer und Provider sagten – das bildet ab, dass Politik auf Markt und Gesellschaft reagiert. Der daraus entstehende Informationsbias wird als bekannte Limitation akzeptiert und in späteren Iterationen durch Fan-Out/Fan-In adressiert. |
-| Prompt-Bau per Template | `_build_prompt()` nutzt ein String-Template mit Platzhaltern: Rolle, Ziele, aktuell aktive Faktor-Zustände, Zusammenfassung der letzten Runde, Responses vorheriger Agenten der aktuellen Runde. Im MVP wird nur die letzte Runde als Kontext mitgegeben (nicht die gesamte History), um das Context-Window lokal lauffähiger Modelle nicht zu überlasten. |
-| JSON-Output-Schema für Parsing | `_parse_response()` erwartet vom LLM eine JSON-Antwort mit definierten Feldern (`reasoning`, `decisions`, `factor_assessments`). Das System-Prompt enthält eine Output-Schema-Vorgabe. Fallback bei Parse-Fehler: Raw-Response wird gespeichert, `decisions` und `factor_assessments` bleiben leer. |
-| Komposition vs. Aggregation | `SimulationState` besitzt `SimulationConfig`, `RoundResult` und `CIBMatrix` exklusiv (Komposition) – sie existieren nicht ohne den State. `FactorState` und `AgentConfig` werden aus der externen Config geladen und könnten unabhängig existieren → Aggregation (`o--`). |
-| Keine `current_state`-Eigenschaft auf `FactorState` | Im ERM ist festgelegt, dass der `EnvironmentState` die einzige Wahrheitsquelle für aktive Zustände ist. Um diesen Grundsatz nicht zu verletzen, trägt `FactorState` im Klassendiagramm kein `current_state`-Feld. Der aktive Zustand wird ausschließlich über `EnvironmentState.active_states` abgefragt. |
+| **Strikte Trennung von Simulation und Ergebnisverarbeitung** | Das `event_log` ist die primäre, unveränderliche Ausgabe der Simulation. `CIBExtractorNode` und `SaveResults` sind außerhalb des Simulations-Loops positioniert und operieren ausschließlich lesend auf dem Log. Das ermöglicht es, unterschiedliche Auswertungslogiken auf denselben Simulationsdaten anzuwenden, ohne die Simulation erneut laufen zu lassen. |
+| `OrchestratorNode` als explizite Klasse | Macht die Steuerungslogik sichtbar und trennbar vom fachlichen Verhalten der Sub-Agenten. Im MVP steuert er eine feste Reihenfolge; `_decide_next_agent()` ist als Erweiterungspunkt für dynamisches Routing in späteren Iterationen vorgesehen. |
+| `SimulationClock` im State | Die Uhr ist Teil des gemeinsamen State. `tick()` wird ausschließlich vom `EnvironmentNode` am Ende jeder Runde aufgerufen. Jeder Agent liest den aktuellen `clock_tick` lesend aus dem State und schreibt ihn in seine `EventLogEntry`. |
+| `EventLogEntry` mit `EventType`-Enum | Agenten produzieren strukturierte Ereignisse mit Zeitstempel. `AgentResponse` bleibt als Container für den LLM-Output erhalten, wird aber um `event_log_entries` ergänzt, die der `SimulationState` akkumuliert. |
+| `MarketAgentNode` als eigene Klasse | Der Markt aggregiert Preis-Signale aus Consumer- und Provider-Events und pflegt eine eigene `PriceHistory`. Diese strukturell andere Aufgabe rechtfertigt eine eigene Node-Klasse statt einer weiteren `AgentNode`-Instanz. |
+| Eine parametrisierte `AgentNode`-Klasse für Sub-Agenten | Der Unterschied zwischen Consumer, Provider und Regulator liegt im Prompt, nicht im Code. Neue Akteure erfordern nur eine neue Config, keine neue Klasse. |
+| `InfluenceFactor`-Liste zur Laufzeit erweiterbar | Neue Faktoren können als `EventLogEntry` vom Typ `NEW_FACTOR` vorgeschlagen und vom `EnvironmentNode` via `_ratify_new_factors()` ratifiziert werden. |
+| Komposition vs. Aggregation | `SimulationState` besitzt `SimulationConfig`, `SimulationClock`, `RoundResult` und `CIBMatrix` exklusiv (Komposition). `FactorState` und `AgentConfig` werden aus externer Config geladen und könnten unabhängig existieren (Aggregation). |
 
 ```mermaid
 classDiagram
@@ -729,15 +765,28 @@ classDiagram
     class SimulationState {
         <<TypedDict>>
         +SimulationConfig config
+        +SimulationClock clock
         +int current_round
         +int total_rounds
         +String phase
         +List~FactorState~ factors
         +List~AgentConfig~ agents
+        +AgentConfig market_agent
         +List~AgentResponse~ current_round_responses
+        +List~EventLogEntry~ event_log
+        +List~PriceHistoryEntry~ price_history
         +List~RoundResult~ history
         +EnvironmentState environment
         +CIBMatrix cib_matrix
+    }
+
+    class SimulationClock {
+        <<dataclass>>
+        +int current_tick
+        +String simulated_year
+        +String tick_unit
+        +tick() void
+        +get_timestamp() String
     }
 
     class SimulationConfig {
@@ -747,14 +796,15 @@ classDiagram
         +int total_rounds
         +String llm_model
         +float temperature
-        +Dict~String, String~ initial_active_states
+        +Dict~String,String~ initial_active_states
     }
 
     class EnvironmentState {
         <<dataclass>>
-        +Dict~String, String~ active_states
+        +Dict~String,String~ active_states
         +String narrative_summary
         +String round_summary
+        +int clock_tick
     }
 
     class FactorState {
@@ -764,6 +814,7 @@ classDiagram
         +String category
         +List~String~ possible_states
         +String description
+        +bool is_dynamic
     }
 
     class AgentConfig {
@@ -781,18 +832,41 @@ classDiagram
         <<dataclass>>
         +String agent_id
         +int round_number
+        +int clock_tick
         +String reasoning
         +Dict decisions
-        +Dict~String, String~ factor_assessments
+        +Dict~String,String~ factor_assessments
+        +List~EventLogEntry~ event_log_entries
         +String raw_prompt
         +String raw_response
         +bool parse_success
     }
 
+    class EventLogEntry {
+        <<dataclass>>
+        +String event_id
+        +String agent_id
+        +int clock_tick
+        +String simulated_year
+        +EventType event_type
+        +String description
+        +Dict payload
+    }
+
+    class PriceHistoryEntry {
+        <<dataclass>>
+        +int clock_tick
+        +String simulated_year
+        +float price_index
+        +String trigger_event_id
+    }
+
     class RoundResult {
         <<dataclass>>
         +int round_number
+        +int clock_tick
         +List~AgentResponse~ responses
+        +List~EventLogEntry~ round_events
         +EnvironmentState env_state_after
     }
 
@@ -801,6 +875,18 @@ classDiagram
         CONSUMER
         PROVIDER
         REGULATOR
+        MARKET
+        ORCHESTRATOR
+    }
+
+    class EventType {
+        <<enumeration>>
+        PRICE_CHANGE
+        REGULATION_CHANGE
+        DEMAND_SHIFT
+        FACTOR_STATE_CHANGE
+        NEW_FACTOR
+        MARKET_UPDATE
     }
 
     class CIBMatrix {
@@ -817,15 +903,30 @@ classDiagram
     }
 
     SimulationState *-- SimulationConfig : Konfiguration
+    SimulationState *-- SimulationClock : Simulationsuhr
     SimulationState *-- EnvironmentState : Umweltzustand
-    SimulationState o-- "*" FactorState : Faktor-Definition
-    SimulationState o-- "*" AgentConfig : Agenten-Definition
-    SimulationState *-- "*" RoundResult : Rundenverlauf
+    SimulationState o-- "*" FactorState : Faktoren
+    SimulationState o-- "*" AgentConfig : Agenten
+    SimulationState *-- "*" RoundResult : Verlauf
+    SimulationState *-- "*" EventLogEntry : Ereignislog
+    SimulationState *-- "*" PriceHistoryEntry : Preishistorie
     SimulationState *-- CIBMatrix : Wirkungsmatrix
-    CIBMatrix *-- "*" CIBEntry : Matrix-Eintrag
-    RoundResult *-- "*" AgentResponse : Agenten-Antwort
-    RoundResult *-- EnvironmentState : Zustands-Snapshot
-    AgentConfig --> AgentType : Rollen-Typ
+    CIBMatrix *-- "*" CIBEntry : Einträge
+    RoundResult *-- "*" AgentResponse : Antworten
+    RoundResult *-- "*" EventLogEntry : Ereignisse
+    RoundResult *-- EnvironmentState : Zustandsschnappschuss
+    AgentResponse *-- "*" EventLogEntry : Ereignisse
+    AgentConfig --> AgentType : Rollentyp
+    EventLogEntry --> EventType : Ereignistyp
+    EnvironmentState --> SimulationClock : Uhrschnappschuss
+
+    class OrchestratorNode {
+        <<node>>
+        -LLMClient llm
+        +invoke(SimulationState state) SimulationState
+        -_decide_next_agent(SimulationState state) String
+        -_check_termination(SimulationState state) bool
+    }
 
     class AgentNode {
         <<node>>
@@ -834,21 +935,36 @@ classDiagram
         +invoke(SimulationState state) SimulationState
         -_build_prompt(SimulationState state) String
         -_parse_response(String raw) AgentResponse
+        -_create_event_entries(AgentResponse r) List~EventLogEntry~
+    }
+
+    class MarketAgentNode {
+        <<node>>
+        -LLMClient llm
+        +invoke(SimulationState state) SimulationState
+        -_read_price_signals(SimulationState state) List~EventLogEntry~
+        -_update_price_index(List~EventLogEntry~ signals) float
+        -_create_price_entry(float price, int tick) PriceHistoryEntry
+        -_create_event_entry(SimulationState state) EventLogEntry
     }
 
     class EnvironmentNode {
         <<node>>
         -LLMClient llm
         +invoke(SimulationState state) SimulationState
-        -_aggregate_responses(SimulationState state) String
+        -_aggregate_events(SimulationState state) String
         -_update_factors(SimulationState state) Dict
+        -_ratify_new_factors(SimulationState state) List~FactorState~
         -_generate_narrative(SimulationState state) String
+        -_advance_clock(SimulationState state) SimulationClock
     }
 
     class CIBExtractorNode {
         <<node>>
         -LLMClient llm
         +invoke(SimulationState state) SimulationState
+        -_read_event_log(SimulationState state) List~EventLogEntry~
+        -_extract_cib_entries(List~EventLogEntry~ log) List~CIBEntry~
     }
 
     class LLMClient {
@@ -863,86 +979,162 @@ classDiagram
         +save_results(SimulationState state, String path) void
     }
 
+    OrchestratorNode --> LLMClient : LLM-Zugriff
     AgentNode --> LLMClient : LLM-Zugriff
-    AgentNode --> AgentConfig : Agenten-Konfiguration
+    AgentNode --> AgentConfig : Konfiguration
+    MarketAgentNode --> LLMClient : LLM-Zugriff
     EnvironmentNode --> LLMClient : LLM-Zugriff
     CIBExtractorNode --> LLMClient : LLM-Zugriff
-
-    SimulationRunner --> AgentNode : Node-Orchestrierung
-    SimulationRunner --> EnvironmentNode : Node-Orchestrierung
-    SimulationRunner --> CIBExtractorNode : Node-Orchestrierung
-    SimulationRunner --> SimulationState : State-Verwaltung
+    SimulationRunner --> OrchestratorNode : Orchestrierung
+    SimulationRunner --> AgentNode : Orchestrierung
+    SimulationRunner --> MarketAgentNode : Orchestrierung
+    SimulationRunner --> EnvironmentNode : Orchestrierung
+    SimulationRunner --> CIBExtractorNode : Orchestrierung
+    SimulationRunner --> SimulationState : Zustandsverwaltung
 ```
 
-**Mapping auf Langgraph-Konzepte:**
+**Mapping auf LangGraph-Konzepte:**
 
-| Klasse | Langgraph-Konzept | Beschreibung |
+| Klasse | LangGraph-Konzept | Beschreibung |
 |--------|-------------------|--------------|
 | `SimulationState` | `TypedDict` | Zentraler State, der durch den Graphen fließt |
-| `AgentNode` (3 Instanzen) | Nodes | Gleiche Klasse, verschiedene Configs → 3 Nodes im Graphen |
-| `EnvironmentNode` | Node | Aggregiert Responses, aktualisiert Faktoren, erzeugt Narrativ |
-| `CIBExtractorNode` | Node | Post-hoc CIB-Extraktion aus gesamter History |
+| `OrchestratorNode` | Entry-Node | Startet jede Runde, legt Sub-Agenten-Reihenfolge fest (MVP: fix), prüft Abbruchbedingung |
+| `AgentNode` (3 Instanzen) | Nodes | Gleiche Klasse, verschiedene Configs → Consumer, Provider, Regulator |
+| `MarketAgentNode` | Node | Liest Preis-Events, aktualisiert Preisindex, schreibt Preishistorie |
+| `EnvironmentNode` | Node | Aggregiert Events, aktualisiert Faktoren, takt Uhr weiter, schreibt RoundResult |
+| `CIBExtractorNode` | Node (außerhalb Loop) | Liest Event-Log nach Simulationsende, extrahiert CIB – verändert Log nicht |
 | `SimulationRunner.build_graph()` | `StateGraph` Builder | Registriert Nodes, definiert Edges + Conditional Edge |
-| Runden-Schleife | Conditional Edge | `round < total_rounds` → zurück zu Consumer-Node, sonst weiter zu CIB |
-
-**Faktor-Zustandsdynamik im MVP:**
-- Jeder Faktor hat genau 2 Zustände (Kontinuität / Transformation)
-- Pro Runde kann der EnvironmentNode den aktiven Zustand eines Faktors wechseln (binäre Entscheidung durch LLM)
-- Im MVP ist kein Zurückwechsel vorgesehen (Transformation ist irreversibel) – das vereinfacht die Simulation und erzeugt klarere Szenarioverläufe
-- Spätere Iterationen können reversible Wechsel und mehr als 2 Zustände einführen
 
 ---
 
 ### 5.3 Ablaufdiagramm
 
-> *Das folgende Ablaufdiagramm visualisiert den Simulationsprozess. Es orientiert sich an UML-Aktivitätsdiagrammen, nutzt aber Mermaid-Flowchart-Syntax, da Mermaid keine native Unterstützung für UML-Aktivitätsdiagramme (Swimlanes, Fork/Join-Balken, Objektflüsse) bietet.*
-
-Das Ablaufdiagramm zeigt den vollständigen Ablauf einer Simulation von der Konfiguration bis zur Ergebnissicherung. Jede Aktivität entspricht einem Langgraph-Node, jeder Pfeil einer Edge.
+> *Das folgende Ablaufdiagramm visualisiert den Simulationsprozess als Flowchart (Mermaid-Syntax). Es orientiert sich an UML-Aktivitätsdiagrammen. Die Trennung von Simulations-Loop und Ergebnisverarbeitung ist durch separate Subgraphen sichtbar gemacht.*
 
 ```mermaid
 flowchart TD
     Start((●)) --> LoadConfig
 
     subgraph SETUP ["Phase: Setup"]
-        LoadConfig["Config laden<br/>(JSON einlesen)<br/>─────────────<br/>• strategic_question<br/>• agents + prompts + relevant_factors<br/>• factors + states<br/>• initial_active_states<br/>• llm_model, total_rounds"]
-        InitState["State initialisieren<br/>─────────────<br/>• round = 0<br/>• factors = aus Config<br/>• active_states = initial_active_states<br/>• history = leer<br/>• environment = Ausgangslage"]
+        LoadConfig["Config laden (JSON)
+        ─────────────
+        • strategic_question
+        • agents + prompts + relevant_factors
+        • factors + states
+        • initial_active_states
+        • llm_model, total_rounds
+        • tick_unit, time_horizon"]
+        InitState["State initialisieren
+        ─────────────
+        • round = 0
+        • clock.tick = 0, clock.year = 2025
+        • factors = aus Config
+        • active_states = initial
+        • event_log = leer
+        • price_history = leer
+        • history = leer"]
         LoadConfig --> InitState
     end
 
-    InitState --> NewRound
+    InitState --> Orchestrator
 
-    subgraph ROUND ["Phase: Simulationsrunde (N Durchläufe)"]
-        NewRound["round += 1<br/>current_round_responses = leer"]
+    subgraph LOOP ["Phase: Simulations-Loop (N Durchläufe)"]
 
-        NewRound --> ConsumerAgent
+        Orchestrator["ORCHESTRATOR NODE
+        ═══════════════
+        • round += 1
+        • Reihenfolge festlegen
+          (MVP: fix)
+          • current_round_responses leeren"]
 
-        subgraph AGENTS ["Agent-Nodes (sequentiell – MVP-Entscheidung)"]
-            ConsumerAgent["CONSUMER AGENT<br/>═══════════════<br/>Prompt-Template:<br/>Rolle + Ziele +<br/>relevante Faktoren +<br/>aktuelle Zustände +<br/>letzte Runde (Summary)<br/>→ LLM-Call → JSON-Parse<br/>═══════════════<br/>→ AgentResponse"]
+        Orchestrator --> ConsumerAgent
 
-            ProviderAgent["PROVIDER AGENT<br/>═══════════════<br/>Prompt-Template:<br/>Airline-Perspektive +<br/>Consumer-Response +<br/>relevante Faktoren +<br/>aktuelle Zustände<br/>→ LLM-Call → JSON-Parse<br/>═══════════════<br/>→ AgentResponse"]
+        subgraph AGENTS ["Sub-Agenten (sequentiell – MVP)"]
+            ConsumerAgent["CONSUMER AGENT
+            ───────────────
+            Prompt: Rolle + Ziele +
+            relevante Faktoren +
+            letzte EventLog-Einträge
+            → LLM → JSON-Parse
+            → AgentResponse
+            → EventLogEntries
+               (clock_tick aus State)"]
 
-            RegulatorAgent["REGULATOR AGENT<br/>═══════════════<br/>Prompt-Template:<br/>Politik-Perspektive +<br/>Consumer + Provider Responses +<br/>gesellschaftl. Druck +<br/>relevante Faktoren<br/>→ LLM-Call → JSON-Parse<br/>═══════════════<br/>→ AgentResponse"]
+            ProviderAgent["PROVIDER AGENT
+            ───────────────
+            Prompt: Airline-Perspektive +
+            Consumer-Events aus Log +
+            relevante Faktoren
+            → LLM → JSON-Parse
+            → AgentResponse
+            → EventLogEntries
+               (clock_tick aus State)"]
+
+            RegulatorAgent["REGULATOR AGENT
+            ───────────────
+            Prompt: Politik-Perspektive +
+            Consumer + Provider Events +
+            gesellschaftl. Druck
+            → LLM → JSON-Parse
+            → AgentResponse
+            → EventLogEntries
+               (clock_tick aus State)"]
 
             ConsumerAgent --> ProviderAgent
             ProviderAgent --> RegulatorAgent
         end
 
-        RegulatorAgent --> EnvironmentNode
+        RegulatorAgent --> MarketAgent
 
-        EnvironmentNode["ENVIRONMENT NODE<br/>═══════════════<br/>1. Responses aggregieren<br/>2. Faktoren aktualisieren<br/>   (aktive Zustände: binärer Wechsel,<br/>    irreversibel im MVP)<br/>3. Narrativ generieren (LLM)<br/>4. RoundResult → history<br/>═══════════════<br/>→ aktualisierter State"]
+        MarketAgent["MARKET AGENT
+        ═══════════════
+        • Preis-Events aus Log lesen
+        • price_index aktualisieren
+        • PriceHistoryEntry schreiben
+          (clock_tick)
+          • MARKET_UPDATE Event
+            → event_log"]
+
+        MarketAgent --> EnvironmentNode
+
+        EnvironmentNode["ENVIRONMENT NODE
+        ═══════════════
+        1. Events aggregieren
+        2. Faktoren aktualisieren
+        3. Uhr vorrücken 
+            clock.tick += 1
+        4. Narrativ generieren
+        5. RoundResult → history"]
     end
 
     EnvironmentNode --> Decision{{"round < total_rounds?"}}
+    Decision -->|"Ja"| Orchestrator
+    Decision -->|"Nein"| AuswertungStart
 
-    Decision -->|"JA → State wird<br/>nächste Runde"| NewRound
-    Decision -->|NEIN| CIBNode
+    subgraph AUSWERTUNG ["Phase: Ergebnisauswertung (liest event_log, verändert ihn nicht)"]
+        AuswertungStart["Eingabe:
+        vollständiges event_log"]
+        CIBNode["CIB EXTRACTOR
+        ═══════════════
+        Event-Log + Round-Summaries
+        → LLM bewertet
+        Faktor-Wechselwirkungen
+        (-3 bis +3)
+        → CIB-Matrix"]
+        AuswertungStart --> CIBNode
+    end
 
-    subgraph FINALIZE ["Phase: Finalisierung"]
-        CIBNode["CIB EXTRACTOR<br/>═══════════════<br/>round_summaries durchgehen →<br/>LLM bewertet Faktor-<br/>Wechselwirkungen<br/>(-3 bis +3 pro Paar)<br/>═══════════════<br/>→ CIB-Matrix"]
+    CIBNode --> AusgabeStart
 
-        SaveResults["Ergebnisse speichern<br/>─────────────<br/>• Protokoll (Markdown)<br/>• CIB-Matrix (JSON)<br/>• Narrativ-Zusammenfassung"]
-
-        CIBNode --> SaveResults
+    subgraph AUSGABE ["Phase: Ergebnisausgabe"]
+        AusgabeStart["Alle Auswertungen\nabgeschlossen"]
+        SaveResults["Ergebnisse speichern
+        ─────────────
+        • Event-Log (JSON)
+        • Preishistorie (JSON)
+        • CIB-Matrix (JSON)
+        • Narrativ (Markdown)"]
+        AusgabeStart --> SaveResults
     end
 
     SaveResults --> Ende((◉))
@@ -952,38 +1144,43 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    StateN["State<sub>n</sub><br/>(Rundenstart)"]
-    Consumer["Consumer<br/>Agent"]
-    StateN1["State<sub>n+1</sub>"]
-    Provider["Provider<br/>Agent"]
-    StateN2["State<sub>n+2</sub>"]
-    Regulator["Regulator<br/>Agent"]
-    StateN3["State<sub>n+3</sub>"]
-    Environment["Environment<br/>Node"]
-    StateN4["State<sub>n+4</sub><br/>(Rundenende)"]
-    Decision{{"round < max?"}}
-    CIB["CIB<br/>Extractor"]
-    StateFinal["State<sub>final</sub>"]
+    S0["State₀\n(Rundenstart)"]
+    Orch["Orchestrator"]
+    S1["State₁"]
+    Con["Consumer"]
+    S2["State₂"]
+    Pro["Provider"]
+    S3["State₃"]
+    Reg["Regulator"]
+    S4["State₄"]
+    Mkt["Market"]
+    S5["State₅"]
+    Env["Environment"]
+    S6["State₆\n(Rundenende)"]
+    Dec{{"round < max?"}}
+    CIB["CIB Extractor"]
+    SF["Stateₓ\n(final)"]
     Save["Speichern"]
-    Ende((◉))
+    End((◉))
 
-    StateN --> Consumer --> StateN1 --> Provider --> StateN2 --> Regulator --> StateN3 --> Environment --> StateN4
-    StateN4 --> Decision
-    Decision -->|"JA: State<sub>n+4</sub> wird<br/>neues State<sub>n</sub>"| Consumer
-    Decision -->|NEIN| CIB
-    CIB --> StateFinal --> Save --> Ende
+    S0 --> Orch --> S1 --> Con --> S2 --> Pro --> S3 --> Reg --> S4 --> Mkt --> S5 --> Env --> S6
+    S6 --> Dec
+    Dec -->|"Ja"| Orch
+    Dec -->|"Nein"| CIB --> SF --> Save --> End
 ```
 
-> Jeder Node empfängt den kompletten `SimulationState`, reichert ihn um seine Ergebnisse an und gibt den aktualisierten State weiter. Der `EnvironmentNode` schreibt am Ende jeder Runde das `RoundResult` in die `history` und leert `current_round_responses` für die nächste Runde. Der State der abgeschlossenen Runde wird direkt zum Eingabe-State der nächsten Runde.
+> **State-Propagation:** Jeder Node empfängt den kompletten `SimulationState`, reichert ihn an und gibt den aktualisierten State weiter. Der `EnvironmentNode` schreibt das `RoundResult` in die `history`, rückt die Simulationsuhr vor (`clock.tick += 1`) und leert `current_round_responses` für die nächste Runde. Der `CIBExtractorNode` liest ausschließlich aus dem `event_log` – er ist der einzige Node, der den State nach Simulationsende noch verändert, aber nur um `cib_matrix` zu befüllen. Das `event_log` selbst bleibt unverändert.
 
 **Bekannte Limitationen des MVP-Ablaufs:**
 
 | Limitation | Beschreibung | Geplante Adressierung |
 |---|---|---|
-| Sequentieller Informationsbias | Consumer hat nie Kontext aus der aktuellen Runde, Regulator sieht alles. Bewusste MVP-Entscheidung: bildet ab, dass Politik auf Markt reagiert. | Spätere Iteration: Fan-Out/Fan-In (alle Agents parallel, dann Environment) |
-| Irreversible Faktor-Wechsel | Ein Faktor kann im MVP nur von Zustand 1 → 2 wechseln, nicht zurück. Das vereinfacht, kann aber Oszillationen nicht abbilden. | Spätere Iteration: Reversible Wechsel mit Schwellenwert |
-| Nicht-deterministisches Faktor-Update | Der Environment-Node nutzt ein LLM für die Faktor-Aktualisierung – qualitative Entscheidung, nicht regelbasiert. | Akzeptable Eigenschaft einer qualitativen Simulation; wird in Evaluation reflektiert |
-| Context-Window bei CIB-Extraktion | Bei vielen Runden kann die History das Context-Window lokaler Modelle übersteigen. | Der EnvironmentNode erzeugt pro Runde ein `round_summary`. Der CIB-Extractor arbeitet auf diesen Zusammenfassungen, nicht auf Rohdaten. |
+| Sequentieller Informationsbias | Consumer sieht nie Events der aktuellen Runde; Regulator sieht alles. Bildet im MVP bewusst ab, dass Politik auf Markt und Gesellschaft reagiert. | Spätere Iteration: Fan-Out/Fan-In (Agents parallel, dann Environment) |
+| Fixer Orchestrator-Workflow | `_decide_next_agent()` ist im MVP als Erweiterungspunkt vorgesehen, gibt aber eine feste Reihenfolge zurück. | Dynamisches Routing via LangGraph Conditional Edges |
+| Irreversible Faktor-Wechsel | Ein Faktor kann im MVP nur von Zustand 1 → 2 wechseln, nicht zurück. | Reversible Wechsel mit Schwellenwert in späteren Iterationen |
+| Simulationsuhr ohne empirische Kalibrierung | Mapping (Tick → Kalenderjahr) ist konfigurierbar, aber noch nicht an den Zeithorizont 2025–2035 kalibriert. | Kalibrierung vor Challenge 2 |
+| Dynamische Faktoren ohne CIB-Integration | `NEW_FACTOR`-Events werden geloggt und ratifiziert, fließen aber im MVP nicht in die CIB-Berechnung ein. | Vollständige CIB-Integration in späteren Iterationen |
+| CIB-Extraktion bei vielen Runden | Bei langer Simulation kann die Event-Log-History das Context-Window lokaler Modelle übersteigen. | CIB-Extractor arbeitet primär auf `round_summary`-Einträgen, nicht auf Rohdaten |
 
 ## 6. Quellenverzeichnis
 
@@ -992,3 +1189,4 @@ flowchart LR
 - Horx, M., Huber, J., Steinle, A. & Wenzel, E. (2007). *Zukunft machen: Wie Sie von Trends zu Business-Innovationen kommen*. Campus Verlag.
 - Ludewig, J. & Lichter, H. (2023). *Software Engineering – Grundlagen, Menschen, Prozesse, Techniken.* 4. Aufl., dpunkt.verlag.
 - Rezazadeh, H. & Tabatabaie, M. (2011). *Time boxing planning: buffered moscow rules.* ACM SIGSOFT Software Engineering Notes, 36(6), S. 1–5.
+- 
