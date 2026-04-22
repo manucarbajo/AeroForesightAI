@@ -680,7 +680,7 @@ erDiagram
     }
 ```
 
-> **Hinweis zu CrossImpactEntry:** Die Entität `CrossImpactEntry` referenziert `FactorState` in zwei unterschiedlichen Rollen: als *aktiven Zustand* (Ursache der Wechselwirkung) und als *passiven Zustand* (Wirkungsziel). Die Rollenbezeichnungen `active_role` und `passive_role` kennzeichnen diese beiden gerichteten Beziehungen.
+> **Hinweis zu CrossImpactEntry:** Die Entität `CrossImpactEntry` referenziert `FactorState` in zwei unterschiedlichen Rollen: als *aktiven Zustand* (Ursache der Wechselwirkung) und als *passiven Zustand* (Wirkungsziel). Die Rollenbezeichnungen Aktive-Rolle und Passive-Rolle kennzeichnen diese beiden gerichteten Beziehungen.
 
 **Wesentliche Design-Entscheidungen:**
 
