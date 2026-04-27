@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 
 
@@ -33,3 +35,22 @@ class SimulationConfig(BaseModel):
     clock: SimulationClock
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
+
+
+class SimulationState(BaseModel):
+    config: SimulationConfig
+    clock: SimulationClock
+    environment: EnvironmentState
+    agents: list[AgentConfig]
+    event_log: list[EventLogEntry] = []
+    price_history: list[PriceHistoryEntry] = []
+    round_results: list[RoundResult] = []
+    cib_matrix: CIBMatrix | None = None
+
+
+# deferred imports for forward refs
+from src.models.agent_models import AgentConfig  # noqa: E402
+from src.models.cib_models import CIBMatrix  # noqa: E402
+from src.models.event_models import EventLogEntry, PriceHistoryEntry, RoundResult  # noqa: E402
+
+SimulationState.model_rebuild()
