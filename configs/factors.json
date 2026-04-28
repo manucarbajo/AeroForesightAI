@@ -1,0 +1,72 @@
+{
+  "F1": {
+    "id": "F1",
+    "name": "Mobilitaetsbeduerfnis / Nachfrage",
+    "description": "Wie stark wollen Menschen fliegen?",
+    "current_state": "F1.1",
+    "possible_states": {
+      "F1.1": "Globaler Reiseboom, ungebrochenes Wachstum",
+      "F1.2": "Stagnation und Verzicht, Substitution"
+    }
+  },
+  "F2": {
+    "id": "F2",
+    "name": "Regulatorische Strenge",
+    "description": "Welche klimapolitischen Leitplanken werden gesetzt?",
+    "current_state": "F2.1",
+    "possible_states": {
+      "F2.1": "Moderater Klimaschutz, Kompensationsfokus",
+      "F2.2": "Radikale Dekarbonisierung, Verbote"
+    }
+  },
+  "F3": {
+    "id": "F3",
+    "name": "Technologische Reife",
+    "description": "Wie weit sind SAF, E-Aviation, H2?",
+    "current_state": "F3.1",
+    "possible_states": {
+      "F3.1": "Inkrementelle Verbesserungen, SAF teuer",
+      "F3.2": "Durchbruch bei SAF/E-Fuels/H2"
+    }
+  },
+  "F4": {
+    "id": "F4",
+    "name": "Wirtschaftliche Entwicklung",
+    "description": "Konjunktur, Kaufkraft, Energiepreise",
+    "current_state": "F4.1",
+    "possible_states": {
+      "F4.1": "Stabiles Wachstum, moderate Inflation",
+      "F4.2": "Rezession / Stagflation"
+    }
+  },
+  "F5": {
+    "id": "F5",
+    "name": "Verfuegbarkeit von Alternativen",
+    "description": "Schiene, digitale Substitution, Intermodalitaet",
+    "current_state": "F5.1",
+    "possible_states": {
+      "F5.1": "Schiene stagniert, Fliegen alternativlos",
+      "F5.2": "Massiver Schienenausbau, Intermodalitaet"
+    }
+  },
+  "F6": {
+    "id": "F6",
+    "name": "Gesellschaftlicher Wertewandel",
+    "description": "Klimabewusstsein, Flight Shaming, Normen",
+    "current_state": "F6.1",
+    "possible_states": {
+      "F6.1": "Fliegen bleibt akzeptiert",
+      "F6.2": "Starkes Klimabewusstsein, Flight Shaming"
+    }
+  },
+  "F7": {
+    "id": "F7",
+    "name": "Geopolitische Stabilitaet",
+    "description": "Offene Luftraeume, Konflikte, Pandemien",
+    "current_state": "F7.1",
+    "possible_states": {
+      "F7.1": "Offene Maerkte, Kooperation",
+      "F7.2": "Fragmentierung, Konflikte"
+    }
+  }
+}

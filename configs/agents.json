@@ -1,0 +1,50 @@
+[
+  {
+    "id": "consumer",
+    "name": "Konsumenten",
+    "agent_type": "consumer",
+    "description": "Privat- und Geschaeftsreisende, die Reiseentscheidungen treffen",
+    "goals": [
+      "Guenstige Flugpreise erhalten",
+      "Reisebeduerfnisse erfuellen",
+      "Auf Marktveraenderungen reagieren"
+    ],
+    "constraints": [
+      "Budgetabhaengig",
+      "Beeinflusst durch gesellschaftlichen Wertewandel",
+      "Reagiert auf Alternativangebote"
+    ]
+  },
+  {
+    "id": "provider",
+    "name": "Anbieter",
+    "agent_type": "provider",
+    "description": "Fluggesellschaften, die Preise setzen, Routen planen und investieren",
+    "goals": [
+      "Profitabilitaet sichern",
+      "Marktanteile halten oder ausbauen",
+      "Regulatorische Anforderungen erfuellen"
+    ],
+    "constraints": [
+      "Abhaengig von Treibstoffpreisen und Technologie",
+      "Muss regulatorische Vorgaben einhalten",
+      "Kapazitaetsgrenzen bei Flotte und Infrastruktur"
+    ]
+  },
+  {
+    "id": "regulator",
+    "name": "Regulatorien",
+    "agent_type": "regulator",
+    "description": "EU-Kommission und nationale Regierungen, die Rahmenbedingungen setzen",
+    "goals": [
+      "Klimaziele erreichen",
+      "Wettbewerbsfaehigkeit der Luftfahrt erhalten",
+      "Verbraucherschutz gewaehrleisten"
+    ],
+    "constraints": [
+      "Internationale Abkommen beachten",
+      "Gesellschaftliche Akzeptanz notwendig",
+      "Wirtschaftliche Auswirkungen abwaegen"
+    ]
+  }
+]
