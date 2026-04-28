@@ -6,6 +6,8 @@ Ziel ist die technische Operationalisierung der in Challenge 1 definierten Domä
 Dafür wird ein lauffähiger MVP-Prototyp in Python mit LangGraph und Ollama umgesetzt, der:
 
 - die 3 MVP-Akteure (Konsumenten, Anbieter, Regulatorien) als Agenten modelliert,
+- heterogene Konsumentenpopulationen über Segmente mit stochastischen Verteilungen (Preiselastizität, Einkommen, Umweltbewusstsein) abbildet,
+- konfigurierbare Szenarioparameter (Nachfragewachstum, Preisveränderungen) als steuerbare Inputs bereitstellt,
 - die 7 Einflussfaktoren und ihre Zustände im State verwaltet,
 - über mehrere Simulationsrunden läuft,
 - ein Event-Log erzeugt,
@@ -85,26 +87,36 @@ Definition und Implementierung aller zentralen Datenstrukturen und Konfiguration
   - `CIBEntry`
   - `CIBMatrix`
   - `SimulationState`
+  - `PopulationConfig`
+  - `ConsumerSegment`
+  - `DistributionConfig`
+  - `ScenarioParameter`
 - Enums anlegen:
   - `AgentType`
   - `EventType`
+  - `DistributionType`
 - Konfigurationsdateien erstellen:
-  - `simulation_config.json`
-  - `agents.json`
+  - `simulation_config.json` (inkl. `scenario_parameters`)
+  - `agents.json` (Consumer-Agent inkl. `population_config` mit Segmenten und Verteilungen)
   - `factors.json`
 - Loader-Funktionen schreiben:
   - `load_simulation_config()`
   - `load_agents()`
   - `load_factors()`
+  - `load_population_config()`
   - `build_initial_state()`
 - Validierungslogik ergänzen:
   - Pflichtfelder prüfen
   - Faktor-IDs prüfen
   - Initialzustände prüfen
+  - Segmentanteile prüfen (Summe = 1.0)
+  - Verteilungsparameter validieren (gültige Typen, Parameterbereiche)
+  - Szenarioparameter auf Pflichtfelder prüfen
 - Gemeinsame Interface-Dokumentation erstellen
 
 ### Deliverables
 - `src/models/`
+- `src/models/population_models.py`
 - `src/config_loader.py`
 - `configs/simulation_config.json`
 - `configs/agents.json`
@@ -119,6 +131,7 @@ Definition und Implementierung aller zentralen Datenstrukturen und Konfiguration
 - stabile Klassennamen
 - stabile JSON-Struktur
 - Beispiel-Initial-State
+- Populations- und Segmentkonfiguration als Referenz für AP2 (Prompt-Anreicherung)
 
 ---
 
@@ -134,37 +147,45 @@ Umsetzung der drei MVP-Agenten mit konsistenten Prompts und parserfreundlichem A
   - Task Prompt
   - Output-Anweisung
 - Prompts für folgende Agenten schreiben:
-  - Konsumenten
-  - Anbieter
+  - Konsumenten (inkl. segmentspezifischer Populationskontext)
+  - Anbieter (inkl. Segment-Analyse der Consumer-Runde als Input)
   - Regulator
-- JSON-Ausgabeformat definieren
+- Consumer-Prompt-Template mit Populationskontext:
+  - Segmentdaten (Preiselastizität, Einkommensniveau, Umweltbewusstsein, Marktanteil) als strukturierten Kontext aufbereiten
+  - LLM argumentiert segmentspezifisch über Reaktionen verschiedener Nachfragergruppen
+  - `_build_population_context()` implementieren
+- JSON-Ausgabeformat definieren (inkl. optionalem `segment_analysis`-Feld)
 - Parsing-Logik implementieren:
   - rohe LLM-Antwort → `AgentResponse`
   - Extraktion von `EventLogEntry`-Rohdaten
+  - Extraktion von `segment_analysis` (Consumer-Agent)
 - Fehlerbehandlung definieren:
   - Parse-Fallback
   - Default-Response bei fehlerhaftem JSON
 - `AgentNode` implementieren:
   - `_build_prompt()`
+  - `_build_population_context()`
   - `_parse_response()`
   - `_create_event_entries()`
-- Mit Mock-State testen
-- Beispielantworten dokumentieren
+- Mit Mock-State testen (inkl. Populations-Kontext)
+- Beispielantworten dokumentieren (inkl. segmentspezifische Consumer-Argumentation)
 
 ### Deliverables
 - `src/nodes/agent_node.py`
-- `src/prompts/consumer.md`
+- `src/prompts/consumer.md` (inkl. Segment-Kontext-Template)
 - `src/prompts/provider.md`
 - `src/prompts/regulator.md`
 - `docs/agent_output_schema.md`
 
 ### Abhängigkeiten
-- Nutzt Datenmodell aus AP1
+- Nutzt Datenmodell aus AP1 (inkl. `PopulationConfig`, `ConsumerSegment`)
 - Kann initial mit Mock-State arbeiten
 - Muss nicht auf vollständigen Graph warten
 
 ### Wichtigster Output für andere
 - Agenten liefern zuverlässig parsebare `AgentResponse`
+- Consumer-Agent liefert segmentspezifische Analyse als Teil der Response
+- definierte Event-Struktur für das Event-Log
 - definierte Event-Struktur für das Event-Log
 
 ---
@@ -180,23 +201,26 @@ Aufbau des ausführbaren LangGraph-Workflows inklusive Rundenlogik, Simulationsu
 - LangGraph-StateFlow aufbauen
 - Node-Reihenfolge definieren:
   - Orchestrator
-  - Consumer
+  - Consumer (mit Populationskontext)
   - Provider
   - Regulator
   - optional Market
   - Environment
 - Abbruchbedingung implementieren
 - Simulationsuhr integrieren
+- Populations-Konfiguration in Setup-Phase laden und im State bereitstellen
+- Szenarioparameter im State verwalten und als Prompt-Kontext verfügbar machen
+- Consumer-Agent-Node: Populationsdaten und Szenarioparameter in Prompt-Kontext integrieren
 - `EnvironmentNode` implementieren:
   - Events aggregieren
-  - Rundensummary erzeugen
-  - Faktorenzustände aktualisieren
+  - Rundensummary erzeugen (inkl. segmentspezifischer Reaktionen)
+  - Faktorenzustände aktualisieren (unter Berücksichtigung heterogener Segmentreaktionen)
   - Uhr weiterschalten
   - `RoundResult` schreiben
 - Faktor-Update-Regeln für MVP definieren
 - Optional: `MarketAgentNode` minimal umsetzen
 - `SimulationRunner` bauen
-- End-to-end-Lauf mit Mock-Agenten testen
+- End-to-end-Lauf mit Mock-Agenten testen (inkl. Populations-Kontext)
 
 ### Deliverables
 - `src/nodes/orchestrator_node.py`
@@ -206,14 +230,15 @@ Aufbau des ausführbaren LangGraph-Workflows inklusive Rundenlogik, Simulationsu
 - `docs/simulation_flow.md`
 
 ### Abhängigkeiten
-- braucht Datenmodell aus AP1
+- braucht Datenmodell aus AP1 (inkl. `PopulationConfig`, `ScenarioParameter`)
 - kann Agenten zunächst mocken
 - später Integration mit echter AgentNode aus AP2
 
 ### Wichtigster Output für andere
 - laufender Simulationsloop
-- definierter State-Fluss
+- definierter State-Fluss (inkl. Populationsdaten)
 - Faktorupdate-Mechanik
+- Szenarioparameter-Verwaltung
 
 ---
 
@@ -230,17 +255,20 @@ Speicherung, Auswertung, Nachvollziehbarkeit und Abschlussdokumentation der Chal
   - `price_history.json`
   - `round_history.json`
   - `cib_matrix.json`
+  - `segment_analysis.json`
   - `final_narrative.md`
   - `run_metadata.json`
 - `CIBExtractorNode` implementieren
 - MVP-CIB-Extraktion aus Event-Log / Round-Summary bauen
 - Testfälle definieren:
-  - Config-Laden
-  - State-Aufbau
-  - Agent-Output parsebar
+  - Config-Laden (inkl. Populations-Konfiguration und Szenarioparameter)
+  - State-Aufbau (inkl. Populationsdaten im State)
+  - Segmentanteile-Validierung (Summe = 1.0)
+  - Verteilungsparameter-Validierung (gültige Typen und Wertebereiche)
+  - Agent-Output parsebar (inkl. segment_analysis)
   - mindestens 1 vollständiger Simulationslauf
 - Traceability-Tabelle C1 → C2 erstellen
-- Abschlussdokumentation für Challenge 2 verfassen
+- Abschlussdokumentation für Challenge 2 verfassen (inkl. Populationsmodell und Preiselastizitäts-Konzepte)
 - README/Run-Anleitung schreiben
 
 ### Deliverables
@@ -253,11 +281,11 @@ Speicherung, Auswertung, Nachvollziehbarkeit und Abschlussdokumentation der Chal
 ### Abhängigkeiten
 - kann mit Mock-Event-Logs starten
 - braucht für finalen Test den integrierten Run aus AP3
-- nutzt Datenmodell aus AP1
+- nutzt Datenmodell aus AP1 (inkl. Populationsmodelle)
 
 ### Wichtigster Output für andere
 - Nachweis, dass das System funktioniert
-- auswertbare Artefakte
+- auswertbare Artefakte (inkl. segmentspezifische Analyse)
 - Challenge-2-Dokumentation
 
 ---
@@ -272,17 +300,24 @@ Diese Punkte müssen am ersten Arbeitstag abgestimmt und danach nicht mehr stän
 - Faktor-IDs
 - Zustands-IDs
 - EventType-Werte
+- Segment-IDs
+- DistributionType-Werte
+- ScenarioParameter-IDs
 
 ### Freeze 2: Gemeinsame Datenformate
 - `SimulationState`
-- `AgentResponse`
+- `AgentResponse` (inkl. `segment_analysis`)
 - `EventLogEntry`
+- `PopulationConfig` / `ConsumerSegment`
+- `ScenarioParameter`
 
 ### Freeze 3: MVP-Umfang
 - Markt-Agent drin oder nur minimal?
 - wie viele Runden?
 - welche Faktorwechsel sind im MVP erlaubt?
 - CIB regelbasiert oder LLM-basiert?
+- welche Konsumenten-Segmente und Verteilungen im MVP?
+- welche Szenarioparameter konfigurierbar?
 
 Wenn diese 3 Dinge früh feststehen, könnt ihr fast parallel arbeiten.
 
@@ -307,6 +342,7 @@ project/
 ├── src/
 │   ├── models/
 │   │   ├── state_models.py
+│   │   ├── population_models.py
 │   │   ├── enums.py
 │   │   └── __init__.py
 │   │
@@ -331,6 +367,7 @@ project/
 ├── tests/
 │   ├── test_config_loader.py
 │   ├── test_agent_parsing.py
+│   ├── test_population_config.py
 │   ├── test_environment_updates.py
 │   └── test_end_to_end.py
 │

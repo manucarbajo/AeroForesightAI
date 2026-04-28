@@ -512,6 +512,9 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW (vgl. Rezazadeh & 
 | **US-A5** | Als Foresight-Analyst möchte ich am Ende eine maschinell abgeleitete Cross-Impact-Bilanz (CIB) und eine Visualisierung erhalten, um die gegenseitige Beeinflussung der Akteure zu sehen. | Must | Output |
 | **US-A6** | Als Foresight-Analyst möchte ich das Protokoll und die CIB-Matrix lokal abspeichern können, um sie für spätere Berichte zu nutzen. | Should | Output |
 | **US-A7** | Als Foresight-Analyst möchte ich die geladenen Agenten-Prompts vor dem Start im UI anpassen können, um Nuancen ohne JSON-Änderung zu testen. | Should | Setup |
+| **US-A8** | Als Foresight-Analyst möchte ich Konsumenten-Segmente mit unterschiedlicher Preiselastizität und Marktanteilen konfigurieren können (z.B. Geschäftsreisende 35%, Privatreisende 40%, umweltbewusste Mittelschicht 25%), damit die Simulation heterogene Nachfragergruppen abbildet. | Must | Setup |
+| **US-A9** | Als Foresight-Analyst möchte ich Szenarioparameter (z.B. Nachfragewachstum 10% p.a., Kerosinpreisanstieg 15%) vor dem Simulationsstart konfigurieren können, damit ich verschiedene Zukunftsannahmen systematisch durchspielen kann. | Must | Setup |
+| **US-A10** | Als Foresight-Analyst möchte ich in den Ergebnissen segmentspezifische Analysen sehen können (z.B. „Geschäftsreisende reagieren kaum, Privatreisende weichen auf Bahn aus"), damit ich differenzierte strategische Schlussfolgerungen ziehen kann. | Should | Output |
 
 ### Rolle: Dozenten / Evaluatoren
 *Diese Gruppe prüft die methodische Qualität und die logische Konsistenz der Simulation im Hinblick auf ein Forschungsprojekt.*
@@ -539,7 +542,7 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW (vgl. Rezazadeh & 
 | ID | Kategorie | Anforderung | Priorität |
 |:---|:---|:---|:---:|
 | **NFA-01** | **Nachvollziehbarkeit** | Das System muss durch Prompting und Systemgrenzen Halluzinationen minimieren. Ergebnisse müssen auf den Simulationsstand zurückführbar sein. | **Must** |
-| **NFA-02** | **Reproduzierbarkeit** | Bei identischer Konfiguration und identischem LLM (Temperature = 0) soll die Simulation vergleichbare Ergebnisse liefern. | **Should** |
+| **NFA-02** | **Reproduzierbarkeit** | Bei identischer Konfiguration und identischem LLM (Temperature = 0) soll die Simulation vergleichbare Ergebnisse liefern. Stochastische Populationsmodelle nutzen konfigurierbare Seeds für deterministische Reproduzierbarkeit. | **Should** |
 | **NFA-03** | **Konfigurierbarkeit** | Die Domäne (Akteure, Ziele) muss ausschließlich über Konfigurationsdateien anpassbar sein, ohne den Kerncode zu ändern. | **Must** |
 | **NFA-04** | **Lokalität** | Das System muss vollständig lokal laufen können. | **Must** |
 | **NFA-05** | **Dokumentation** | Alle Systemkomponenten und Nutzungsprozesse müssen in Markdown dokumentiert sein. | **Must** |
@@ -555,7 +558,7 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW (vgl. Rezazadeh & 
 | ID | Aspekt | Begründung |
 |:---|:---|:---|
 | **OOS-01** | Grafische Benutzeroberfläche (GUI) | Prototyp; CLI/Konfigurationsdateien/Notebooks ausreichend |
-| **OOS-02** | Quantitative Simulation | Fokus auf qualitative Simulation durch LLM-basierte Agenten |
+| **OOS-02** | Rein quantitative Simulation | Die Simulation ist primär qualitativ (LLM-basierte Agenten). Konsumentenheterogenität wird über stochastische Verteilungen formal modelliert und parametrisiert den qualitativen Diskurs, ersetzt ihn aber nicht. Eine vollständig quantitative Aggregation (z.B. exakte Nachfrageberechnung über Elastizitätsfunktionen) ist nicht Gegenstand des MVP. |
 | **OOS-03** | Mehrsprachigkeit | Prototyp arbeitet primär auf Deutsch oder Englisch |
 | **OOS-04** | Mehrbenutzerbetrieb | Einzelplatz-Prototyp |
 | **OOS-05** | Persistente Datenbank | Dateibasierte Speicherung (JSON/Markdown) ausreichend |
@@ -565,6 +568,8 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW (vgl. Rezazadeh & 
 > **Methodische Grundlage:** Die folgenden Modelle bilden die Grundlage für die prototypische Implementierung der Simulationsumgebung mit LangGraph. Sie sind bewusst auf den MVP zugeschnitten (3 Sub-Agenten, 1 Markt-Agent, 7 Faktoren, Orchestrator, Environment-Node) und so gestaltet, dass sie modular erweiterbar sind. Die Diagramme orientieren sich an Ludewig & Lichter, Kap. 16 (Modellierung) und wurden auf die Besonderheiten einer LLM-basierten Multi-Agenten-Simulation angepasst.
 
 > **Einordnung Simulationsparadigma:** Das Modell ist ein hybrider Simulationsansatz. Es übernimmt aus der Discrete-Event Simulation (Banks et al., 2010) das Kernprinzip, dass Ereignisse während der Simulation zu strukturierten, geloggten Objekten mit Simulationsuhr-Zeitstempel gemacht werden, auf die andere Agenten in Folgerunden reagieren können. Eine vollständige DES-Implementierung (Future Event List als Priority Queue, Agent-to-Agent-Kommunikation) ist mit LangGraph im Rahmen dieses Projekts nicht zielführend umsetzbar. Die Agenten selbst folgen dem Agent-Based Simulation (ABS) Paradigma: Sie sind aktiv, entscheidend und besitzen individuelle Ziele und Constraints. Faktor-Wechselwirkungen orientieren sich konzeptuell an System Dynamics (CIB).
+
+> **Populationsheterogenität und Marktdynamik:** Ein zentrales Modellierungsprinzip ist die Abbildung heterogener Konsumentenpopulationen. Reale Märkte bestehen nicht aus einem homogenen Nachfrager, sondern aus unterschiedlichen Konsumenten-Segmenten mit variierender Preiselastizität, Einkommensniveau und Umweltbewusstsein (vgl. Evangelinos et al., 2011, S. 2 ff.). Ein Geschäftsreisender reagiert auf eine Preiserhöhung von 20% kaum (niedrige Preiselastizität), während ein preisbewusster Privatreisender bei derselben Erhöhung auf die Bahn umsteigt (hohe Preiselastizität). Diese Heterogenität wird durch **stochastische Verteilungen** (z.B. Normalverteilung für Einkommensniveaus, bimodale Verteilung für Preiselastizität) formal beschrieben und über das `PopulationConfig`-Modell konfigurierbar gemacht. Die Verteilungen werden mittels `scipy.stats` parametrisiert und dienen als strukturierter Kontext für die qualitative Argumentation der LLM-Agenten. Zusätzlich ermöglichen **Szenarioparameter** (z.B. „Nachfragewachstum 10% p.a.", „Kerosinpreisanstieg 15%") die gezielte Steuerung von Simulationsannahmen, ohne den Kerncode zu ändern. Die qualitative Simulation wird damit nicht ersetzt, sondern durch eine formale Populationsmodellierung parametrisiert: Der LLM-Consumer-Agent erhält die Segmentdaten als Kontext und argumentiert differenziert über die Reaktionen verschiedener Nachfragergruppen.
 
 > **Leitendes Design-Prinzip – Trennung von Simulation und Ergebnisverarbeitung:** Das Event-Log (`event_log`) ist die primäre und unveränderliche Ausgabe der Simulation. Es protokolliert alle Ereignisse mit Simulationsuhr-Zeitstempel. Alle Auswertungsschritte (CIB-Extraktion, Narrativ-Generierung, Preishistorie-Analyse) operieren ausschließlich *auf* diesem Log und verändern es nicht. `CIBExtractorNode` und `SaveResults` sind bewusst außerhalb des Simulations-Loops positioniert. Das ermöglicht es, dieselbe Simulation mit unterschiedlichen Auswertungslogiken zu analysieren, ohne sie erneut laufen zu lassen.
 
@@ -595,6 +600,10 @@ Das Entity-Relationship-Modell zeigt die Datenstruktur der Simulation – welche
 | `SimulationClock` als neue Entität | Logische Simulationsuhr mit Bezug zum modellierten Zeithorizont 2025–2035 |
 | `EventLogEntry` als zentrale Ereignisstruktur | Jede Agenten-Aktion wird als diskretes Ereignis mit Zeitstempel geloggt |
 | `InfluenceFactor.is_dynamic` Flag | Agenten können im Simulationsverlauf neue Faktoren vorschlagen |
+| `PopulationConfig` als neue Entität | Modellierung heterogener Konsumentenpopulationen mit segmentspezifischer Preiselastizität |
+| `ConsumerSegment` als neue Entität | Abbildung unterschiedlicher Nachfragergruppen (Geschäftsreisende, Privatreisende etc.) mit eigenen Verteilungsparametern |
+| `DistributionConfig` als neue Entität | Formale Beschreibung stochastischer Verteilungen (Normalverteilung, bimodale Verteilung etc.) für Konsumenten-Attribute |
+| `ScenarioParameter` als neue Entität | Konfigurierbare Simulationsannahmen (Nachfragewachstum, Preisveränderungen) als steuerbare Inputs |
 
 ```mermaid
 erDiagram
@@ -603,12 +612,17 @@ erDiagram
     SimulationConfig ||--o{ InfluenceFactor : "Faktoren-Definition"
     SimulationConfig ||--|| InitialEnvironment : "Ausgangszustand"
     SimulationConfig ||--|| SimulationClock : "Uhren-Initialisierung"
+    SimulationConfig ||--o{ ScenarioParameter : "Szenario-Annahmen"
 
     OrchestratorAgent ||--o{ SimulationRound : "Rundensteuerung"
     OrchestratorAgent ||--o{ AgentConfig : "Sub-Agenten-Kenntnis"
 
     AgentConfig ||--o{ AgentFactorRelevance : "Faktorrelevanz"
+    AgentConfig |o--o| PopulationConfig : "Populationsmodell"
     InfluenceFactor ||--o{ AgentFactorRelevance : "Faktorzuordnung"
+
+    PopulationConfig ||--o{ ConsumerSegment : "Segmentierung"
+    ConsumerSegment ||--o{ DistributionConfig : "Verteilungsparameter"
 
     SimulationRound ||--o{ EventLogEntry : "Runden-Ereignisse"
     SimulationRound ||--|| EnvironmentState : "Umweltzustand"
@@ -660,6 +674,7 @@ erDiagram
         string system_prompt
         string goals
         string constraints
+        string population_config_ref
     }
 
     MarketAgent {
@@ -729,6 +744,34 @@ erDiagram
         int impact_value
         string justification
     }
+
+    PopulationConfig {
+        string config_id
+        int total_count
+        int seed
+    }
+
+    ConsumerSegment {
+        string segment_id
+        string label
+        float share
+        string description
+    }
+
+    DistributionConfig {
+        string distribution_id
+        string attribute_name
+        string distribution_type
+        string parameters
+    }
+
+    ScenarioParameter {
+        string parameter_id
+        string name
+        float value
+        string unit
+        string description
+    }
 ```
 
 > **Hinweis zu `OrchestratorAgent`:** Die Beziehung „Sub-Agenten-Kenntnis" beschreibt, dass der Orchestrator weiß, welche Sub-Agenten existieren und in welcher Reihenfolge er sie im MVP aufruft. Er orchestriert deren *Ausführung*, nicht ihre Konfiguration – die `AgentConfig` bleibt eine eigenständige Entität.
@@ -738,6 +781,12 @@ erDiagram
 > **Hinweis zu `EventLogEntry`:** Der `EventLogEntry` ist die zentrale Umsetzung des DES-Kernprinzips. Jede relevante Aktion eines Agenten (z.B. „Anbieter erhöht Preis um 10%", „Regulierung verschärft CO₂-Grenzwert") wird als strukturiertes Ereignis mit `clock_tick` und `simulated_year` festgehalten. Andere Agenten können auf diese Einträge in Folgerunden reagieren. Das Log ist damit sowohl Protokoll als auch reaktive Datenstruktur – wird aber selbst nie verändert (vgl. Trennungs-Prinzip).
 
 > **Hinweis zu `InfluenceFactor.is_dynamic`:** Das Flag markiert Faktoren, die im Simulationsverlauf durch Agenten-Vorschläge hinzugefügt wurden, im Gegensatz zu den 7 initial konfigurierten Faktoren. Im MVP werden dynamisch hinzugefügte Faktoren geloggt und ratifiziert, aber noch nicht vollständig in die CIB-Matrix integriert.
+
+> **Hinweis zu `PopulationConfig` und `ConsumerSegment`:** Die Konsumentenpopulation wird nicht als homogene Masse modelliert, sondern in differenzierte Segmente aufgeteilt (z.B. preissensitive Privatreisende, preisunelastische Geschäftsreisende, umweltbewusste Mittelschicht). Jedes Segment besitzt einen `share` (Marktanteil, Summe aller Segmente = 1.0) und wird über `DistributionConfig`-Einträge mit stochastischen Verteilungen für Attribute wie Preiselastizität, Einkommensniveau und Umweltbewusstsein parametrisiert. Diese Segmentdaten fließen als strukturierter Kontext in die Prompts des Consumer-Agenten, der darauf basierend segmentspezifisch argumentiert. Die `PopulationConfig` ist optional an `AgentConfig` gebunden – nur Agenten vom Typ `CONSUMER` nutzen sie.
+
+> **Hinweis zu `DistributionConfig`:** Beschreibt eine stochastische Verteilung (z.B. Normalverteilung, bimodale Verteilung, Beta-Verteilung) mit ihren Parametern (µ, σ, Schiefe etc.) für ein Konsumenten-Attribut. Die Verteilungen werden mittels `scipy.stats` instanziiert und formalisieren die Heterogenität innerhalb eines Segments. Beispiel: Die Preiselastizität von Privatreisenden folgt einer Normalverteilung mit µ=0.7 und σ=0.15, was bedeutet, dass die meisten Privatreisenden preissensitiv sind, aber die Ausprägung streut.
+
+> **Hinweis zu `ScenarioParameter`:** Konfigurierbare Annahmen, die als steuerbare Inputs in die Simulation einfließen (z.B. „Nachfragewachstum: 10% p.a.", „Kerosinpreisanstieg: 15%", „SAF-Beimischungsquote: 5%"). Szenarioparameter werden vor Simulationsstart festgelegt und beeinflussen die Argumentation aller Agenten. Sie sind bewusst von den Einflussfaktoren getrennt: Faktoren beschreiben *Zustände* des Systems, Szenarioparameter beschreiben *Annahmen über Veränderungsraten*.
 
 ---
 
@@ -757,6 +806,9 @@ erDiagram
 | Eine parametrisierte `AgentNode`-Klasse für Sub-Agenten | Der Unterschied zwischen Consumer, Provider und Regulator liegt im Prompt, nicht im Code. Neue Akteure erfordern nur eine neue Config, keine neue Klasse. |
 | `InfluenceFactor`-Liste zur Laufzeit erweiterbar | Neue Faktoren können als `EventLogEntry` vom Typ `NEW_FACTOR` vorgeschlagen und vom `EnvironmentNode` via `_ratify_new_factors()` ratifiziert werden. |
 | Komposition vs. Aggregation | `SimulationState` besitzt `SimulationConfig`, `SimulationClock`, `RoundResult` und `CIBMatrix` exklusiv (Komposition). `FactorState` und `AgentConfig` werden aus externer Config geladen und könnten unabhängig existieren (Aggregation). |
+| **Populationsheterogenität über Konsumenten-Segmente** | Reale Märkte bestehen aus heterogenen Nachfragern mit unterschiedlicher Preiselastizität (vgl. Evangelinos et al., 2011). Statt eines monolithischen Consumer-Agenten definiert `PopulationConfig` differenzierte Segmente (z.B. Geschäftsreisende, Privatreisende), deren Attribute über `DistributionConfig` mit stochastischen Verteilungen (`scipy.stats`) parametrisiert werden. Der Consumer-Agent erhält die Segmentdaten als Kontext und argumentiert segmentspezifisch. |
+| **Stochastische Verteilungen als formale Grundlage** | `DistributionConfig` beschreibt Verteilungstyp und Parameter für Konsumenten-Attribute. Unterstützt werden u.a. Normalverteilung (Einkommen), bimodale Verteilung (Preiselastizität: elastisch vs. inelastisch), Beta-Verteilung (Umweltbewusstsein). Die Formalisierung über 2–3 Verteilungen macht die Populationsheterogenität konfigurierbar und reproduzierbar (über Seeds). |
+| **Szenarioparameter als steuerbare Inputs** | `ScenarioParameter` ermöglicht es, Annahmen wie Nachfragewachstum, Preisveränderungen oder Technologie-Adoptionsraten vor Simulationsstart zu konfigurieren. Im Gegensatz zu Einflussfaktoren (Systemzustände) beschreiben Szenarioparameter Veränderungsraten und exogene Annahmen. |
 
 ```mermaid
 classDiagram
@@ -797,6 +849,7 @@ classDiagram
         +String llm_model
         +float temperature
         +Dict~String,String~ initial_active_states
+        +List~ScenarioParameter~ scenario_parameters
     }
 
     class EnvironmentState {
@@ -826,6 +879,7 @@ classDiagram
         +List~String~ goals
         +List~String~ constraints
         +List~String~ relevant_factor_ids
+        +PopulationConfig population_config
     }
 
     class AgentResponse {
@@ -837,6 +891,7 @@ classDiagram
         +Dict decisions
         +Dict~String,String~ factor_assessments
         +List~EventLogEntry~ event_log_entries
+        +Dict segment_analysis
         +String raw_prompt
         +String raw_response
         +bool parse_success
@@ -902,6 +957,49 @@ classDiagram
         +String justification
     }
 
+    class PopulationConfig {
+        <<dataclass>>
+        +int total_count
+        +List~ConsumerSegment~ segments
+        +int seed
+    }
+
+    class ConsumerSegment {
+        <<dataclass>>
+        +String segment_id
+        +String label
+        +float share
+        +String description
+        +DistributionConfig price_elasticity
+        +DistributionConfig income_level
+        +DistributionConfig eco_awareness
+    }
+
+    class DistributionConfig {
+        <<dataclass>>
+        +DistributionType type
+        +Dict parameters
+        +String description
+    }
+
+    class DistributionType {
+        <<enumeration>>
+        NORMAL
+        BIMODAL
+        UNIFORM
+        LOGNORMAL
+        BETA
+    }
+
+    class ScenarioParameter {
+        <<dataclass>>
+        +String parameter_id
+        +String name
+        +float value
+        +String unit
+        +String description
+    }
+
     SimulationState *-- SimulationConfig : Konfiguration
     SimulationState *-- SimulationClock : Simulationsuhr
     SimulationState *-- EnvironmentState : Umweltzustand
@@ -934,6 +1032,7 @@ classDiagram
         -LLMClient llm
         +invoke(SimulationState state) SimulationState
         -_build_prompt(SimulationState state) String
+        -_build_population_context(PopulationConfig pop) String
         -_parse_response(String raw) AgentResponse
         -_create_event_entries(AgentResponse r) List~EventLogEntry~
     }
@@ -991,6 +1090,14 @@ classDiagram
     SimulationRunner --> EnvironmentNode : Orchestrierung
     SimulationRunner --> CIBExtractorNode : Orchestrierung
     SimulationRunner --> SimulationState : Zustandsverwaltung
+    SimulationConfig *-- "*" ScenarioParameter : Szenarioparameter
+    AgentConfig o-- PopulationConfig : Populationsmodell
+    PopulationConfig *-- "*" ConsumerSegment : Segmente
+    ConsumerSegment *-- DistributionConfig : Preiselastizität
+    ConsumerSegment *-- DistributionConfig : Einkommensniveau
+    ConsumerSegment *-- DistributionConfig : Umweltbewusstsein
+    DistributionConfig --> DistributionType : Verteilungstyp
+    AgentNode --> PopulationConfig : Populationskontext
 ```
 
 **Mapping auf LangGraph-Konzepte:**
@@ -999,11 +1106,13 @@ classDiagram
 |--------|-------------------|--------------|
 | `SimulationState` | `TypedDict` | Zentraler State, der durch den Graphen fließt |
 | `OrchestratorNode` | Entry-Node | Startet jede Runde, legt Sub-Agenten-Reihenfolge fest (MVP: fix), prüft Abbruchbedingung |
-| `AgentNode` (3 Instanzen) | Nodes | Gleiche Klasse, verschiedene Configs → Consumer, Provider, Regulator |
+| `AgentNode` (3 Instanzen) | Nodes | Gleiche Klasse, verschiedene Configs → Consumer, Provider, Regulator. Consumer-Instanz nutzt `PopulationConfig` für segmentspezifische Prompt-Anreicherung via `_build_population_context()` |
 | `MarketAgentNode` | Node | Liest Preis-Events, aktualisiert Preisindex, schreibt Preishistorie |
 | `EnvironmentNode` | Node | Aggregiert Events, aktualisiert Faktoren, takt Uhr weiter, schreibt RoundResult |
 | `CIBExtractorNode` | Node (außerhalb Loop) | Liest Event-Log nach Simulationsende, extrahiert CIB – verändert Log nicht |
 | `SimulationRunner.build_graph()` | `StateGraph` Builder | Registriert Nodes, definiert Edges + Conditional Edge |
+| `PopulationConfig` | Config-Daten | Definiert Konsumenten-Segmente und deren Verteilungsparameter, wird beim Setup geladen |
+| `ScenarioParameter` | Config-Daten | Konfigurierbare Simulationsannahmen, die als Kontext in alle Agent-Prompts einfließen |
 
 ---
 
@@ -1023,7 +1132,10 @@ flowchart TD
         • factors + states
         • initial_active_states
         • llm_model, total_rounds
-        • tick_unit, time_horizon"]
+        • tick_unit, time_horizon
+        • scenario_parameters
+        • population_config (Segmente,
+          Verteilungen, Preiselastizität)"]
         InitState["State initialisieren
         ─────────────
         • round = 0
@@ -1032,7 +1144,9 @@ flowchart TD
         • active_states = initial
         • event_log = leer
         • price_history = leer
-        • history = leer"]
+        • history = leer
+        • population = Segmente geladen
+        • scenario_params = geladen"]
         LoadConfig --> InitState
     end
 
@@ -1054,9 +1168,13 @@ flowchart TD
             ───────────────
             Prompt: Rolle + Ziele +
             relevante Faktoren +
-            letzte EventLog-Einträge
+            letzte EventLog-Einträge +
+            Populationskontext:
+              Segmente + Preiselastizität +
+              Szenarioparameter
             → LLM → JSON-Parse
             → AgentResponse
+              (inkl. segment_analysis)
             → EventLogEntries
                (clock_tick aus State)"]
 
@@ -1064,7 +1182,9 @@ flowchart TD
             ───────────────
             Prompt: Airline-Perspektive +
             Consumer-Events aus Log +
-            relevante Faktoren
+            Consumer segment_analysis +
+            relevante Faktoren +
+            Szenarioparameter
             → LLM → JSON-Parse
             → AgentResponse
             → EventLogEntries
@@ -1101,9 +1221,11 @@ flowchart TD
         ═══════════════
         1. Events aggregieren
         2. Faktoren aktualisieren
+           (inkl. Segment-Reaktionen)
         3. Uhr vorrücken 
             clock.tick += 1
         4. Narrativ generieren
+           (segmentspezifisch)
         5. RoundResult → history"]
     end
 
@@ -1133,6 +1255,7 @@ flowchart TD
         • Event-Log (JSON)
         • Preishistorie (JSON)
         • CIB-Matrix (JSON)
+        • Segment-Analyse (JSON)
         • Narrativ (Markdown)"]
         AusgabeStart --> SaveResults
     end
@@ -1169,7 +1292,7 @@ flowchart LR
     Dec -->|"Nein"| CIB --> SF --> Save --> End
 ```
 
-> **State-Propagation:** Jeder Node empfängt den kompletten `SimulationState`, reichert ihn an und gibt den aktualisierten State weiter. Der `EnvironmentNode` schreibt das `RoundResult` in die `history`, rückt die Simulationsuhr vor (`clock.tick += 1`) und leert `current_round_responses` für die nächste Runde. Der `CIBExtractorNode` liest ausschließlich aus dem `event_log` – er ist der einzige Node, der den State nach Simulationsende noch verändert, aber nur um `cib_matrix` zu befüllen. Das `event_log` selbst bleibt unverändert.
+> **State-Propagation:** Jeder Node empfängt den kompletten `SimulationState`, reichert ihn an und gibt den aktualisierten State weiter. Der `EnvironmentNode` schreibt das `RoundResult` in die `history`, rückt die Simulationsuhr vor (`clock.tick += 1`) und leert `current_round_responses` für die nächste Runde. Der `CIBExtractorNode` liest ausschließlich aus dem `event_log` – er ist der einzige Node, der den State nach Simulationsende noch verändert, aber nur um `cib_matrix` zu befüllen. Das `event_log` selbst bleibt unverändert. Die `PopulationConfig` und `ScenarioParameter` bleiben über den gesamten Simulationslauf konstant im State und werden von jedem Agent-Node lesend als Prompt-Kontext genutzt.
 
 **Bekannte Limitationen des MVP-Ablaufs:**
 
@@ -1181,6 +1304,8 @@ flowchart LR
 | Simulationsuhr ohne empirische Kalibrierung | Mapping (Tick → Kalenderjahr) ist konfigurierbar, aber noch nicht an den Zeithorizont 2025–2035 kalibriert. | Kalibrierung vor Challenge 2 |
 | Dynamische Faktoren ohne CIB-Integration | `NEW_FACTOR`-Events werden geloggt und ratifiziert, fließen aber im MVP nicht in die CIB-Berechnung ein. | Vollständige CIB-Integration in späteren Iterationen |
 | CIB-Extraktion bei vielen Runden | Bei langer Simulation kann die Event-Log-History das Context-Window lokaler Modelle übersteigen. | CIB-Extractor arbeitet primär auf `round_summary`-Einträgen, nicht auf Rohdaten |
+| Statische Populationsverteilung | Konsumenten-Segmente und ihre Anteile bleiben über den Simulationslauf konstant. In der Realität verschieben sich Segmentanteile dynamisch (z.B. wachsende umweltbewusste Mittelschicht). | Dynamische Segment-Anteile in späteren Iterationen, gesteuert durch Events und Faktoränderungen |
+| Qualitative Segment-Analyse | Die segmentspezifische Analyse erfolgt qualitativ durch den LLM. Eine quantitative Aggregation (z.B. exakte Nachfrageberechnung pro Segment via Elastizitätsfunktionen) ist im MVP nicht implementiert. | Optional: quantitative Aggregationsschicht über `scipy.stats` in späteren Iterationen |
 
 ## 6. Quellenverzeichnis
 
