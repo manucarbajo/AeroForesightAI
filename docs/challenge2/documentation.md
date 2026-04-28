@@ -1182,6 +1182,34 @@ flowchart LR
 | Dynamische Faktoren ohne CIB-Integration | `NEW_FACTOR`-Events werden geloggt und ratifiziert, fließen aber im MVP nicht in die CIB-Berechnung ein. | Vollständige CIB-Integration in späteren Iterationen |
 | CIB-Extraktion bei vielen Runden | Bei langer Simulation kann die Event-Log-History das Context-Window lokaler Modelle übersteigen. | CIB-Extractor arbeitet primär auf `round_summary`-Einträgen, nicht auf Rohdaten |
 
+### 5.4 Umsetzungsstand AP2 (Agentenlogik & Prompting)
+
+Im Rahmen von AP2 wurde die Agentenlogik fuer die drei MVP-Agenten modular in der bestehenden Projektstruktur umgesetzt:
+
+- `src/nodes/agent_node.py`: einheitliche `AgentNode`-Klasse mit den Methoden `_build_prompt()`, `_parse_response()` und `_create_event_entries()`.
+- `src/prompts/consumer.md`, `src/prompts/provider.md`, `src/prompts/regulator.md`: getrennte rollenbezogene Prompt-Templates.
+- `docs/challenge2/agent_output_schema.md`: verbindliches JSON-Ausgabeformat inklusive Fallback-Strategie.
+- `tests/test_agent_node.py`: Mock-State-basierte Tests fuer valides Parsing und Parse-Fallback.
+
+**Prompt-Strategie (Vgl. White et al., 2023):**
+
+1. **System Prompt** definiert Rolle, Handlungsrahmen und Grenzen.
+2. **Task Prompt** fordert rundenbezogene Entscheidungen mit Aktionen, moeglichen State-Changes und Events.
+3. **Output-Anweisung** erzwingt ein strikt parserfreundliches JSON-Objekt.
+
+Verwendete Prompt-Pattern aus dem Prompt Pattern Catalog (White et al., 2023):
+
+- **Persona Pattern**: klare Rollenidentitaet pro Agent fuer konsistente Perspektive.
+- **Template Pattern**: festes JSON-Schema zur Reduktion von Formatabweichungen.
+- **Context Manager Pattern**: Einbettung von Faktoren, globalem Kontext und relevanten letzten Events.
+- **Reflection Pattern**: verpflichtendes `reasoning`-Feld fuer nachvollziehbare Entscheidungslogik.
+
+**Robustheit im Parsing:**
+
+- Unterstuetzt direktes JSON, JSON-Codeblocks und eingebettetes JSON in Freitext.
+- Bei fehlerhaftem JSON wird eine sichere Default-`AgentResponse` erstellt (`NO_OP_PARSE_FALLBACK`).
+- Event-Erzeugung bleibt stabil durch agentenspezifische Default-Eventtypen (Consumer/Provider/Regulator).
+
 ## 6. Quellenverzeichnis
 
 - Braun, S., Dienes, K., Leyh, J., Rieck, A. & Letzgus, M. (2023). *#futuredistricts2053 – Strategische Zukunftsszenarien und Handlungsanforderungen für die Quartiersentwicklung*. Fraunhofer IAO.
@@ -1189,4 +1217,4 @@ flowchart LR
 - Horx, M., Huber, J., Steinle, A. & Wenzel, E. (2007). *Zukunft machen: Wie Sie von Trends zu Business-Innovationen kommen*. Campus Verlag.
 - Ludewig, J. & Lichter, H. (2023). *Software Engineering – Grundlagen, Menschen, Prozesse, Techniken.* 4. Aufl., dpunkt.verlag.
 - Rezazadeh, H. & Tabatabaie, M. (2011). *Time boxing planning: buffered moscow rules.* ACM SIGSOFT Software Engineering Notes, 36(6), S. 1–5.
-- 
+- White, J., Fu, Q., Hays, S., Sandborn, M., Olea, C., Gilbert, H., Elnashar, A., Spencer-Smith, J. & Schmidt, D. C. (2023). *A Prompt Pattern Catalog to Enhance Prompt Engineering with ChatGPT*. arXiv:2302.11382.
