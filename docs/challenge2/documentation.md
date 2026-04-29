@@ -1307,6 +1307,35 @@ flowchart LR
 | Statische Populationsverteilung | Konsumenten-Segmente und ihre Anteile bleiben über den Simulationslauf konstant. In der Realität verschieben sich Segmentanteile dynamisch (z.B. wachsende umweltbewusste Mittelschicht). | Dynamische Segment-Anteile in späteren Iterationen, gesteuert durch Events und Faktoränderungen |
 | Qualitative Segment-Analyse | Die segmentspezifische Analyse erfolgt qualitativ durch den LLM. Eine quantitative Aggregation (z.B. exakte Nachfrageberechnung pro Segment via Elastizitätsfunktionen) ist im MVP nicht implementiert. | Optional: quantitative Aggregationsschicht über `scipy.stats` in späteren Iterationen |
 
+### 5.4 Umsetzungsstand AP2 (Agentenlogik & Prompting)
+
+Im Rahmen von AP2 wurde die Agentenlogik fuer die drei MVP-Agenten modular in der bestehenden Projektstruktur umgesetzt:
+
+- `src/nodes/agent_node.py`: einheitliche `AgentNode`-Klasse mit `_build_prompt()`, `_parse_response()` und `_create_event_entries()`; Consumer-Prompts enthalten jetzt Populationskontext und Szenarioparameter, sowie optional `segment_analysis`.
+- `src/prompts/consumer.md`, `src/prompts/provider.md`, `src/prompts/regulator.md`: getrennte rollenbezogene Prompt-Templates (inkl. neuer Kontext-Blocks und `segment_analysis`-Feld im Output).
+- `docs/challenge2/agent_output_schema.md`: verbindliches JSON-Ausgabeformat inkl. Parse/Fallback-Regeln fuer `segment_analysis`.
+- `tests/test_agent_node.py`: Mock-State-basierte Tests fuer valides Parsing, Parse-Fallback und `segment_analysis`.
+
+**Prompt-Strategie (Vgl. White et al., 2023):**
+
+1. **System Prompt** definiert Rolle, Handlungsrahmen und Grenzen.
+2. **Task Prompt** fordert rundenbezogene Entscheidungen mit Aktionen, moeglichen State-Changes und Events.
+3. **Output-Anweisung** erzwingt ein strikt parserfreundliches JSON-Objekt.
+
+Verwendete Prompt-Pattern aus dem Prompt Pattern Catalog (White et al., 2023):
+
+- **Persona Pattern**: klare Rollenidentitaet pro Agent fuer konsistente Perspektive.
+- **Template Pattern**: festes JSON-Schema zur Reduktion von Formatabweichungen.
+- **Context Manager Pattern**: Einbettung von Faktoren, globalem Kontext und relevanten letzten Events.
+- **Reflection Pattern**: verpflichtendes `reasoning`-Feld fuer nachvollziehbare Entscheidungslogik.
+
+**Robustheit im Parsing:**
+
+- Unterstuetzt direktes JSON, JSON-Codeblocks und eingebettetes JSON in Freitext.
+- Bei fehlerhaftem JSON wird eine sichere Default-`AgentResponse` erstellt (`NO_OP_PARSE_FALLBACK`).
+- `segment_analysis` wird optional geparst; bei fehlendem/fehlerhaftem Feld wird `{}` verwendet.
+- Event-Erzeugung bleibt stabil durch agentenspezifische Default-Eventtypen (Consumer/Provider/Regulator).
+
 ## 6. Quellenverzeichnis
 
 - Braun, S., Dienes, K., Leyh, J., Rieck, A. & Letzgus, M. (2023). *#futuredistricts2053 – Strategische Zukunftsszenarien und Handlungsanforderungen für die Quartiersentwicklung*. Fraunhofer IAO.
@@ -1314,4 +1343,4 @@ flowchart LR
 - Horx, M., Huber, J., Steinle, A. & Wenzel, E. (2007). *Zukunft machen: Wie Sie von Trends zu Business-Innovationen kommen*. Campus Verlag.
 - Ludewig, J. & Lichter, H. (2023). *Software Engineering – Grundlagen, Menschen, Prozesse, Techniken.* 4. Aufl., dpunkt.verlag.
 - Rezazadeh, H. & Tabatabaie, M. (2011). *Time boxing planning: buffered moscow rules.* ACM SIGSOFT Software Engineering Notes, 36(6), S. 1–5.
-- 
+- White, J., Fu, Q., Hays, S., Sandborn, M., Olea, C., Gilbert, H., Elnashar, A., Spencer-Smith, J. & Schmidt, D. C. (2023). *A Prompt Pattern Catalog to Enhance Prompt Engineering with ChatGPT*. arXiv:2302.11382.

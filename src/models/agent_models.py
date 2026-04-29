@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 from src.models.enums import AgentType
 from src.models.population_models import PopulationConfig
@@ -26,4 +28,6 @@ class AgentResponse(BaseModel):
     reasoning: str
     actions: list[str]
     state_changes: list[StateChange] = []
+    # Optional field: Consumer liefert segmentspezifische qualitative Analyse.
+    segment_analysis: dict[str, Any] = Field(default_factory=dict)
     raw_output: str = ""
