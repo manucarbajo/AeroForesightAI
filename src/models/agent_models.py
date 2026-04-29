@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 from src.models.enums import AgentType
+from src.models.population_models import PopulationConfig
 
 
 class AgentConfig(BaseModel):
@@ -10,6 +11,7 @@ class AgentConfig(BaseModel):
     description: str
     goals: list[str]
     constraints: list[str] = []
+    population_config: PopulationConfig | None = None
 
 
 class StateChange(BaseModel):

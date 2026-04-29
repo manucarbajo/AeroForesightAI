@@ -13,7 +13,94 @@
       "Budgetabhaengig",
       "Beeinflusst durch gesellschaftlichen Wertewandel",
       "Reagiert auf Alternativangebote"
-    ]
+    ],
+    "population_config": {
+      "segments": [
+        {
+          "id": "business",
+          "name": "Geschaeftsreisende",
+          "share": 0.3,
+          "price_elasticity": {
+            "type": "normal",
+            "mean": 0.3,
+            "std_dev": 0.1,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "income_level": {
+            "type": "normal",
+            "mean": 0.8,
+            "std_dev": 0.1,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "environmental_awareness": {
+            "type": "normal",
+            "mean": 0.3,
+            "std_dev": 0.15,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "description": "Haeufig fliegende Geschaeftsreisende mit geringer Preissensitivitaet"
+        },
+        {
+          "id": "leisure_price_sensitive",
+          "name": "Privatreisende (preissensitiv)",
+          "share": 0.5,
+          "price_elasticity": {
+            "type": "normal",
+            "mean": 0.8,
+            "std_dev": 0.1,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "income_level": {
+            "type": "normal",
+            "mean": 0.4,
+            "std_dev": 0.15,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "environmental_awareness": {
+            "type": "normal",
+            "mean": 0.4,
+            "std_dev": 0.2,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "description": "Preisbewusste Privatreisende mit mittlerem Einkommen"
+        },
+        {
+          "id": "leisure_eco_conscious",
+          "name": "Privatreisende (umweltbewusst)",
+          "share": 0.2,
+          "price_elasticity": {
+            "type": "normal",
+            "mean": 0.5,
+            "std_dev": 0.15,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "income_level": {
+            "type": "normal",
+            "mean": 0.6,
+            "std_dev": 0.15,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "environmental_awareness": {
+            "type": "normal",
+            "mean": 0.85,
+            "std_dev": 0.1,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "description": "Umweltbewusste Reisende, bereit fuer hoehere Preise bei gruenen Optionen"
+        }
+      ],
+      "total_population": 1000,
+      "default_distribution": "normal"
+    }
   },
   {
     "id": "provider",
