@@ -27,7 +27,10 @@ Der Parser in `src/nodes/agent_node.py` verarbeitet rohe LLM-Antworten zu:
       "description": "Beschreibt das Ereignis praezise",
       "affected_factors": ["F1", "F5"]
     }
-  ]
+  ],
+  "segment_analysis": {
+    "business": "string"
+  }
 }
 ```
 
@@ -47,6 +50,9 @@ Der Parser in `src/nodes/agent_node.py` verarbeitet rohe LLM-Antworten zu:
     - `market_event`
     - `technology_shift`
   - `affected_factors` wird auf bekannte Faktoren gefiltert.
+- `segment_analysis`: optionales Objekt (Consumer liefert es, Provider/Regulator sollen `{}` liefern)
+  - Key: `segment_id`
+  - Value: `string` (Kurzbegruendung/erwartete Segmentreaktion)
 
 ## Parse- und Fallback-Strategie
 - Der Parser akzeptiert:
@@ -55,6 +61,7 @@ Der Parser in `src/nodes/agent_node.py` verarbeitet rohe LLM-Antworten zu:
   - eingebettetes JSON innerhalb von Freitext (erstes gueltiges Objekt)
 - Bei Parse-Fehler:
   - `AgentResponse` wird als Fallback mit `NO_OP_PARSE_FALLBACK` erzeugt
+  - `segment_analysis` wird auf `{}` gesetzt
   - ein Default-Event wird agententypabhaengig erzeugt:
     - Consumer -> `demand_shift`
     - Provider -> `price_change`
@@ -80,7 +87,11 @@ Der Parser in `src/nodes/agent_node.py` verarbeitet rohe LLM-Antworten zu:
       "description": "Freizeitreisende verschieben Buchungen auf Alternativen.",
       "affected_factors": ["F1", "F5"]
     }
-  ]
+  ],
+  "segment_analysis": {
+    "leisure_price_sensitive": "Hohe Preise stoeren preissensitive Segmente besonders; Substitution Richtung Bahn/Wettbewerb.",
+    "business": "Geschaeftsreisende reagieren weniger preissensitiv, daher kleinere Nachfrageverschiebung."
+  }
 }
 ```
 

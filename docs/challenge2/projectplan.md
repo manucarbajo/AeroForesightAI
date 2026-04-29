@@ -154,6 +154,8 @@ Umsetzung der drei MVP-Agenten mit konsistenten Prompts und parserfreundlichem A
   - Segmentdaten (Preiselastizität, Einkommensniveau, Umweltbewusstsein, Marktanteil) als strukturierten Kontext aufbereiten
   - LLM argumentiert segmentspezifisch über Reaktionen verschiedener Nachfragergruppen
   - `_build_population_context()` implementieren
+- Consumer-Prompt-Template mit Szenarioparametern:
+  - `scenario_parameters` aus AP1 als strukturierten Prompt-Block aufbereiten (`scenario_block`)
 - JSON-Ausgabeformat definieren (inkl. optionalem `segment_analysis`-Feld)
 - Parsing-Logik implementieren:
   - rohe LLM-Antwort → `AgentResponse`
@@ -164,6 +166,7 @@ Umsetzung der drei MVP-Agenten mit konsistenten Prompts und parserfreundlichem A
   - Default-Response bei fehlerhaftem JSON
 - `AgentNode` implementieren:
   - `_build_prompt()`
+  - `_format_scenario_parameters()` / Szenarioblock für Prompt-Kontext
   - `_build_population_context()`
   - `_parse_response()`
   - `_create_event_entries()`
@@ -185,7 +188,6 @@ Umsetzung der drei MVP-Agenten mit konsistenten Prompts und parserfreundlichem A
 ### Wichtigster Output für andere
 - Agenten liefern zuverlässig parsebare `AgentResponse`
 - Consumer-Agent liefert segmentspezifische Analyse als Teil der Response
-- definierte Event-Struktur für das Event-Log
 - definierte Event-Struktur für das Event-Log
 
 ---

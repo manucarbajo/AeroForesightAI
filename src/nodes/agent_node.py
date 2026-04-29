@@ -50,7 +50,9 @@ class AgentNode:
         prompt = self._build_prompt(state)
         raw_output = self.llm.call(prompt)
 
-        response, raw_event_entries = self._parse_response(raw_output, state.clock.current_round)
+        response, raw_event_entries = self._parse_response(
+            raw_output, state.clock.current_round, state=state
+        )
         events = self._create_event_entries(state, response, raw_event_entries)
 
         state.round_results.append(
@@ -69,6 +71,9 @@ class AgentNode:
         template = self._load_prompt_template()
         factors_block = self._format_factors(state)
         recent_events_block = self._format_recent_events(state)
+        scenario_block = self._format_scenario_parameters(state)
+        population_context = self._build_population_context()
+        consumer_segment_analysis = self._format_consumer_segment_analysis(state)
         goals = "\n".join(f"- {goal}" for goal in self.config.goals) or "- Keine Ziele konfiguriert"
         constraints = (
             "\n".join(f"- {constraint}" for constraint in self.config.constraints)
@@ -87,13 +92,16 @@ class AgentNode:
                 or "Kein globaler Kontext gesetzt.",
                 "goals": goals,
                 "constraints": constraints,
+                "scenario_block": scenario_block,
                 "factors_block": factors_block,
                 "recent_events_block": recent_events_block,
+                "population_context": population_context,
+                "consumer_segment_analysis": consumer_segment_analysis,
             },
         )
 
     def _parse_response(
-        self, raw_output: str, round_number: int
+        self, raw_output: str, round_number: int, state: SimulationState
     ) -> tuple[AgentResponse, list[dict[str, Any]]]:
         payload = self._extract_json_payload(raw_output)
         if payload is None:
@@ -104,12 +112,35 @@ class AgentNode:
             raw_event_entries = []
 
         try:
+            segment_analysis_raw = payload.get("segment_analysis", {})
+            if self.config.agent_type != AgentType.CONSUMER:
+                segment_analysis: dict[str, Any] = {}
+            elif isinstance(segment_analysis_raw, dict):
+                # Consumer: erlauben nur bekannte Segment-IDs aus dem Populationskontext.
+                known_segment_ids: set[str] = set()
+                if self.config.population_config and self.config.population_config.segments:
+                    known_segment_ids = {seg.id for seg in self.config.population_config.segments}
+
+                segment_analysis = {}
+                for key, value in segment_analysis_raw.items():
+                    if not isinstance(key, str):
+                        continue
+                    if known_segment_ids and key not in known_segment_ids:
+                        continue
+                    if isinstance(value, str):
+                        cleaned = value.strip()
+                        if cleaned:
+                            segment_analysis[key] = cleaned
+            else:
+                segment_analysis = {}
+
             response = AgentResponse(
                 agent_id=self.config.id,
                 round_number=round_number,
                 reasoning=str(payload.get("reasoning", "")).strip() or "Kein Reasoning geliefert.",
                 actions=[str(action) for action in payload.get("actions", []) if str(action).strip()],
-                state_changes=self._parse_state_changes(payload.get("state_changes", [])),
+                state_changes=self._parse_state_changes(payload.get("state_changes", []), state=state),
+                segment_analysis=segment_analysis,
                 raw_output=raw_output,
             )
             if not response.actions:
@@ -187,6 +218,70 @@ class AgentNode:
             )
         return "\n".join(lines)
 
+    def _format_scenario_parameters(self, state: SimulationState) -> str:
+        if not state.config.scenario_parameters:
+            return "- Keine Szenarioparameter konfiguriert."
+
+        lines: list[str] = []
+        for param in state.config.scenario_parameters:
+            desc = f" :: {param.description}" if param.description else ""
+            unit = f" {param.unit}" if param.unit else ""
+            lines.append(
+                f"- {param.id} ({param.name}): value={param.value}{unit}{desc}"
+            )
+        return "\n".join(lines)
+
+    def _build_population_context(self) -> str:
+        pop = self.config.population_config
+        if not pop or not pop.segments:
+            return "- Kein Populationskontext für dieses Agent."
+
+        lines: list[str] = [f"- total_population={pop.total_population}, default={pop.default_distribution.value}"]
+        for seg in pop.segments:
+            lines.append(
+                f"- segment {seg.id} ({seg.name}) share={seg.share} :: {seg.description or '-'}"
+            )
+
+            lines.append(
+                "  - price_elasticity: "
+                + self._format_distribution_config(seg.price_elasticity)
+            )
+            lines.append(
+                "  - income_level: "
+                + self._format_distribution_config(seg.income_level)
+            )
+            lines.append(
+                "  - environmental_awareness: "
+                + self._format_distribution_config(seg.environmental_awareness)
+            )
+
+        return "\n".join(lines)
+
+    def _format_distribution_config(self, dist: Any) -> str:
+        # Dist-Model ist in AP1 als pydantic-Modell definiert; wir formatieren generisch.
+        dist_type = getattr(dist, "type", None)
+        type_value = dist_type.value if hasattr(dist_type, "value") else str(dist_type)
+
+        return (
+            f"type={type_value}, mean={dist.mean}, std_dev={dist.std_dev}, "
+            f"min_value={dist.min_value}, max_value={dist.max_value}"
+        )
+
+    def _format_consumer_segment_analysis(self, state: SimulationState) -> str:
+        # Provider/Regulator sollen (im MVP) die Consumer-segmentspezifische Analyse sehen.
+        round_number = state.clock.current_round
+        for rr in reversed(state.round_results):
+            if rr.round_number != round_number:
+                continue
+            for agent_response in rr.agent_responses:
+                if agent_response.agent_id != "consumer":
+                    continue
+                if isinstance(agent_response.segment_analysis, dict) and agent_response.segment_analysis:
+                    return json.dumps(agent_response.segment_analysis, ensure_ascii=True, indent=2)
+                return "{}"
+
+        return "{}"
+
     def _extract_json_payload(self, raw_output: str) -> dict[str, Any] | None:
         cleaned = raw_output.strip()
         if cleaned.startswith("```"):
@@ -225,11 +320,12 @@ class AgentNode:
             raw_output=raw_output,
         )
 
-    def _parse_state_changes(self, payload: Any) -> list[StateChange]:
+    def _parse_state_changes(self, payload: Any, state: SimulationState) -> list[StateChange]:
         if not isinstance(payload, list):
             return []
 
         parsed: list[StateChange] = []
+        valid_factors = state.environment.factors
         for item in payload:
             if not isinstance(item, dict):
                 continue
@@ -239,6 +335,11 @@ class AgentNode:
             reasoning = str(item.get("reasoning", "")).strip() or "Keine Begruendung"
 
             if not factor_id or not proposed_state:
+                continue
+            if factor_id not in valid_factors:
+                continue
+            factor = valid_factors[factor_id]
+            if proposed_state not in factor.possible_states:
                 continue
 
             parsed.append(

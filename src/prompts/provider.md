@@ -18,6 +18,12 @@ Constraints:
 Globaler Kontext:
 {global_context}
 
+Szenarioparameter:
+{scenario_block}
+
+Consumer segment_analysis (Input):
+{consumer_segment_analysis}
+
 Aktuelle Faktorlage:
 {factors_block}
 
@@ -28,8 +34,9 @@ Letzte Events:
 Treffe fuer diese Runde eine anbieterorientierte Entscheidung:
 1) begruende kurz Preis-, Kapazitaets- oder Investitionsentscheidung
 2) nenne konkrete Aktionen (z.B. Preis aendern, Route anpassen, in SAF investieren)
-3) schlage optional konkrete Faktorzustandsaenderungen vor, falls aus deiner Sicht plausibel
-4) formuliere 1-3 Events, die aus deiner Entscheidung folgen
+3) nutze consumer_segment_analysis, um segmentiert auf Nachfrageverschiebungen zu reagieren
+4) schlage optional konkrete Faktorzustandsaenderungen vor, falls aus deiner Sicht plausibel
+5) formuliere 1-3 Events, die aus deiner Entscheidung folgen
 
 ## Output-Anweisung (strict)
 Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock.
@@ -50,6 +57,7 @@ Nutze exakt dieses Schema:
       "description": "string",
       "affected_factors": ["F1", "F3", "F4"]
     }
-  ]
+  ],
+  "segment_analysis": {}
 }
 Wenn ein Feld leer ist, gib leere Listen statt Weglassen aus.

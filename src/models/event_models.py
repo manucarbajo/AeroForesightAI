@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.models.agent_models import AgentResponse
 from src.models.enums import EventType
@@ -11,7 +11,7 @@ class EventLogEntry(BaseModel):
     source_agent: str
     event_type: EventType
     description: str
-    affected_factors: list[str] = []
+    affected_factors: list[str] = Field(default_factory=list)
     timestamp: str = ""
 
 

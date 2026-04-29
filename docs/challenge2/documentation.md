@@ -1311,10 +1311,10 @@ flowchart LR
 
 Im Rahmen von AP2 wurde die Agentenlogik fuer die drei MVP-Agenten modular in der bestehenden Projektstruktur umgesetzt:
 
-- `src/nodes/agent_node.py`: einheitliche `AgentNode`-Klasse mit den Methoden `_build_prompt()`, `_parse_response()` und `_create_event_entries()`.
-- `src/prompts/consumer.md`, `src/prompts/provider.md`, `src/prompts/regulator.md`: getrennte rollenbezogene Prompt-Templates.
-- `docs/challenge2/agent_output_schema.md`: verbindliches JSON-Ausgabeformat inklusive Fallback-Strategie.
-- `tests/test_agent_node.py`: Mock-State-basierte Tests fuer valides Parsing und Parse-Fallback.
+- `src/nodes/agent_node.py`: einheitliche `AgentNode`-Klasse mit `_build_prompt()`, `_parse_response()` und `_create_event_entries()`; Consumer-Prompts enthalten jetzt Populationskontext und Szenarioparameter, sowie optional `segment_analysis`.
+- `src/prompts/consumer.md`, `src/prompts/provider.md`, `src/prompts/regulator.md`: getrennte rollenbezogene Prompt-Templates (inkl. neuer Kontext-Blocks und `segment_analysis`-Feld im Output).
+- `docs/challenge2/agent_output_schema.md`: verbindliches JSON-Ausgabeformat inkl. Parse/Fallback-Regeln fuer `segment_analysis`.
+- `tests/test_agent_node.py`: Mock-State-basierte Tests fuer valides Parsing, Parse-Fallback und `segment_analysis`.
 
 **Prompt-Strategie (Vgl. White et al., 2023):**
 
@@ -1333,6 +1333,7 @@ Verwendete Prompt-Pattern aus dem Prompt Pattern Catalog (White et al., 2023):
 
 - Unterstuetzt direktes JSON, JSON-Codeblocks und eingebettetes JSON in Freitext.
 - Bei fehlerhaftem JSON wird eine sichere Default-`AgentResponse` erstellt (`NO_OP_PARSE_FALLBACK`).
+- `segment_analysis` wird optional geparst; bei fehlendem/fehlerhaftem Feld wird `{}` verwendet.
 - Event-Erzeugung bleibt stabil durch agentenspezifische Default-Eventtypen (Consumer/Provider/Regulator).
 
 ## 6. Quellenverzeichnis
