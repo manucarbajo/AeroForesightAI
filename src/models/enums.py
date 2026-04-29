@@ -15,3 +15,9 @@ class EventType(str, Enum):
     POLICY_CHANGE = "policy_change"
     MARKET_EVENT = "market_event"
     TECHNOLOGY_SHIFT = "technology_shift"
+
+
+class DistributionType(str, Enum):
+    NORMAL = "normal"
+    UNIFORM = "uniform"
+    TRIANGULAR = "triangular"

@@ -29,6 +29,13 @@ Alle Modelle basieren auf Pydantic v2 `BaseModel`.
 | `market_event` | Marktereignis |
 | `technology_shift` | Technologischer Wandel |
 
+### DistributionType
+| Wert | Beschreibung |
+|------|-------------|
+| `normal` | Normalverteilung (mean, std_dev) |
+| `uniform` | Gleichverteilung (min, max) |
+| `triangular` | Dreiecksverteilung (min, mean, max) |
+
 ---
 
 ## State Models (`src/models/state_models.py`)
@@ -71,6 +78,7 @@ Alle Modelle basieren auf Pydantic v2 `BaseModel`.
 | `clock` | `SimulationClock` | Zeitkonfiguration |
 | `llm` | `LLMConfig` | LLM-Einstellungen |
 | `seed` | `int \| None` | Optionaler Seed |
+| `scenario_parameters` | `list[ScenarioParameter]` | Konfigurierbare Szenarioparameter |
 
 ---
 
@@ -85,6 +93,7 @@ Alle Modelle basieren auf Pydantic v2 `BaseModel`.
 | `description` | `str` | Rollenbeschreibung |
 | `goals` | `list[str]` | Ziele des Agenten |
 | `constraints` | `list[str]` | Einschränkungen |
+| `population_config` | `PopulationConfig \| None` | Populationskonfiguration (nur Consumer) |
 
 ### StateChange
 | Feld | Typ | Beschreibung |
@@ -138,6 +147,48 @@ Alle Modelle basieren auf Pydantic v2 `BaseModel`.
 
 ---
 
+## Population Models (`src/models/population_models.py`)
+
+### DistributionConfig
+| Feld | Typ | Default | Beschreibung |
+|------|-----|---------|-------------|
+| `type` | `DistributionType` | `normal` | Art der Verteilung |
+| `mean` | `float` | `0.5` | Mittelwert |
+| `std_dev` | `float` | `0.1` | Standardabweichung |
+| `min_value` | `float` | `0.0` | Minimaler Wert |
+| `max_value` | `float` | `1.0` | Maximaler Wert |
+
+### ConsumerSegment
+| Feld | Typ | Beschreibung |
+|------|-----|-------------|
+| `id` | `str` | Segment-ID (z.B. `business`) |
+| `name` | `str` | Anzeigename |
+| `share` | `float` | Marktanteil (0-1, Summe aller Segmente = 1.0) |
+| `price_elasticity` | `DistributionConfig` | Preiselastizität des Segments |
+| `income_level` | `DistributionConfig` | Einkommensniveau |
+| `environmental_awareness` | `DistributionConfig` | Umweltbewusstsein |
+| `description` | `str` | Beschreibung des Segments |
+
+### PopulationConfig
+| Feld | Typ | Default | Beschreibung |
+|------|-----|---------|-------------|
+| `segments` | `list[ConsumerSegment]` | – | Konsumenten-Segmente |
+| `total_population` | `int` | `1000` | Gesamtpopulation |
+| `default_distribution` | `DistributionType` | `normal` | Standard-Verteilungstyp |
+
+### ScenarioParameter
+| Feld | Typ | Beschreibung |
+|------|-----|-------------|
+| `id` | `str` | Parameter-ID (z.B. `demand_growth_rate`) |
+| `name` | `str` | Anzeigename |
+| `description` | `str` | Beschreibung |
+| `value` | `float` | Aktueller Wert |
+| `unit` | `str` | Einheit (z.B. `percent_per_year`) |
+| `min_value` | `float \| None` | Minimaler erlaubter Wert |
+| `max_value` | `float \| None` | Maximaler erlaubter Wert |
+
+---
+
 ## CIB Models (`src/models/cib_models.py`)
 
 ### CIBEntry
@@ -181,6 +232,7 @@ Top-Level-Container für den gesamten Simulationszustand.
 | `load_simulation_config(path?)` | `SimulationConfig` | Lädt `simulation_config.json` |
 | `load_agents(path?)` | `list[AgentConfig]` | Lädt `agents.json` |
 | `load_factors(path?)` | `dict[str, FactorState]` | Lädt `factors.json` |
+| `load_population_config(agents)` | `PopulationConfig \| None` | Extrahiert PopulationConfig aus Consumer-Agent |
 | `build_initial_state(...)` | `SimulationState` | Baut den initialen Simulationszustand |
 
 ---
@@ -203,6 +255,10 @@ Top-Level-Container für den gesamten Simulationszustand.
 | `validate_agent(agent, factor_ids)` | Prüft ob Goals definiert sind |
 | `validate_config(config)` | Prüft Clock-Parameter |
 | `validate_state(state)` | Validiert gesamten State, wirft `ValidationError` |
+| `validate_distribution(dist, context?)` | Prüft Verteilungsparameter (Typen, Wertebereiche) |
+| `validate_segments(segments)` | Prüft Segmentanteile (Summe = 1.0, keine Duplikate) |
+| `validate_population_config(pop)` | Validiert gesamte Populationskonfiguration |
+| `validate_scenario_parameter(param)` | Prüft Szenarioparameter (Pflichtfelder, min/max) |
 
 ---
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from src.models.population_models import ScenarioParameter
+
 
 class FactorState(BaseModel):
     id: str
@@ -35,6 +37,7 @@ class SimulationConfig(BaseModel):
     clock: SimulationClock
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
+    scenario_parameters: list[ScenarioParameter] = []
 
 
 class SimulationState(BaseModel):
