@@ -5,20 +5,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files">
+      <change beforePath="$PROJECT_DIR$/.idea/Technology Lab.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Technology Lab.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_consumer.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_consumer.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_consumer_classes.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_consumer_classes.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_provider.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_provider.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_provider_classes.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_provider_classes.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_regulations.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_regulations.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_regulations_classes.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_regulations_classes.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_sequence_diagram.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_sequence_diagram.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/literature_fundamentals.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/challenge1/literature_fundamentals.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manu_playground/2_chat_with_llm.py" beforeDir="false" afterPath="$PROJECT_DIR$/manu_playground/2_chat_with_llm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab" value="3BOg733rT10q2xR4jYXNR7y4k0g" />
+    </persistenceIdMap>
+  </component>
+  <component name="CopilotUserSelectedChatMode">
+    <option name="chatModeId" value="Agent" />
+  </component>
+  <component name="Git.Rebase.Settings">
+    <option name="NEW_BASE" value="main" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
@@ -47,6 +54,9 @@
     &quot;accountId&quot;: &quot;7bc44401-60a0-4f56-acf7-d4be28fa39cc&quot;
   }
 }</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
 }</component>
@@ -58,11 +68,18 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Python tests.Python tests for test_agent_node.AgentNodeTests.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests for test_agent_node.AgentNodeTests.test_parse_valid_json_output.executor&quot;: &quot;Run&quot;,
+    &quot;Python.1_easy_llm_output.executor&quot;: &quot;Run&quot;,
+    &quot;Python.2_chat_with_llm.executor&quot;: &quot;Run&quot;,
+    &quot;Python.agent_node.executor&quot;: &quot;Run&quot;,
+    &quot;Python.config_loader.executor&quot;: &quot;Run&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.printBoard.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/ap4-output-testing&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab/docs&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -111,8 +128,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-76f8388c3a79-JavaScript-PY-243.24978.54" />
-        <option value="bundled-python-sdk-91e3b7efe1d4-466328ff949b-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.24978.54" />
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-PY-243.26574.109" />
+        <option value="bundled-python-sdk-63635adfcd5c-4df51de95216-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.26574.109" />
       </set>
     </attachedChunks>
   </component>
@@ -130,6 +147,9 @@
       <workItem from="1775663081106" duration="478000" />
       <workItem from="1775805914800" duration="2075000" />
       <workItem from="1776079164679" duration="1264000" />
+      <workItem from="1777646818653" duration="443000" />
+      <workItem from="1777647316338" duration="776000" />
+      <workItem from="1777648101990" duration="1068000" />
     </task>
     <task id="LOCAL-00001" summary="add initial project configuration and migration files">
       <option name="closed" value="true" />
@@ -201,6 +221,17 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add initial project configuration and migration files" />
     <MESSAGE value="added fundamentals of pricing in air travel based on literature (presentation purpose)" />
@@ -211,7 +242,13 @@
     <option name="LAST_COMMIT_MESSAGE" value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1774365758343" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$config_loader.coverage" NAME="config_loader Coverage Results" MODIFIED="1777648057905" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$1_easy_llm_output.coverage" NAME="1_easy_llm_output Coverage Results" MODIFIED="1777646797892" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1777646789585" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/extensions" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$.coverage" NAME=" Coverage Results" MODIFIED="1777648092192" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$agent_node.coverage" NAME="agent_node Coverage Results" MODIFIED="1777646793770" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/docs" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$2_chat_with_llm.coverage" NAME="2_chat_with_llm Coverage Results" MODIFIED="1777648996926" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$printBoard.coverage" NAME="printBoard Coverage Results" MODIFIED="1777645793274" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/extensions" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
