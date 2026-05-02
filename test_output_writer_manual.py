@@ -45,31 +45,31 @@ test_prices = [
     ),
 ]
 
-print("🧪 Teste save_event_log()...")
+print("Teste save_event_log()...")
 event_path = save_event_log(test_events)
-print(f"✅ Events gespeichert unter: {event_path}")
+print(f"Events gespeichert unter: {event_path}")
 
 # Überprüfe, dass Datei existiert
 if Path(event_path).exists():
     with open(event_path, "r") as f:
         data = json.load(f)
-    print(f"   📊 {len(data)} Events in JSON geschrieben")
-    print(f"   📝 Beispiel: {data[0]}")
+    print(f"{len(data)} Events in JSON geschrieben")
+    print(f"Beispiel: {data[0]}")
 else:
-    print(f"❌ Fehler: Datei nicht gefunden!")
+    print(f"Fehler: Datei nicht gefunden!")
 
-print("\n🧪 Teste save_price_history()...")
+print("\nTeste save_price_history()...")
 price_path = save_price_history(test_prices)
-print(f"✅ Preise gespeichert unter: {price_path}")
+print(f"Preise gespeichert unter: {price_path}")
 
 # Überprüfe, dass Datei existiert
 if Path(price_path).exists():
     with open(price_path, "r") as f:
         data = json.load(f)
-    print(f"   📊 {len(data)} Preis-Einträge in JSON geschrieben")
-    print(f"   📝 Beispiel: {data[0]}")
+    print(f"{len(data)} Preis-Einträge in JSON geschrieben")
+    print(f"Beispiel: {data[0]}")
 else:
-    print(f"❌ Fehler: Datei nicht gefunden!")
+    print(f"Fehler: Datei nicht gefunden!")
 
-print("\n✨ Test abgeschlossen! Überprüfe den outputs/ Ordner.")
+print("\nTest abgeschlossen! Überprüfe den outputs/ Ordner.")
 
