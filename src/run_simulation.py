@@ -9,7 +9,11 @@ from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
 from src.validation import validate_state
-from src.output_writer import save_event_log, save_price_history, save_round_history, save_run_metadata
+from src.output_writer import (save_event_log,
+                               save_price_history,
+                               save_round_history,
+                               save_run_metadata,
+                               save_segment_analysis)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -117,13 +121,15 @@ def main() -> int:
     save_run_metadata(state, args)
     metadata_path = save_run_metadata(state, args)
 
+    save_segment_analysis(state.round_results)
+    segment_analysis_path = save_segment_analysis(state.round_results)
 
 
     print(
         f"\nDone. rounds={state.clock.current_round}, events={len(state.event_log)}, "
         f"round_results={len(state.round_results)}, price_history={len(state.price_history)}"
     )
-    print(f"Saved: {event_log_path}, {price_history_path}, {round_history_path}, {metadata_path}")
+    print(f"Saved: {event_log_path}, {price_history_path}, {round_history_path}, {metadata_path}, {segment_analysis_path}")
     return 0
 
 
