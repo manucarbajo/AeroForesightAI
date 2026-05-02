@@ -22,7 +22,6 @@ for round_num in range(1, 6):
     print(f"\nRUNDE {round_num}")
     print("-" * 70)
 
-    # Erstelle 2 Events pro Runde
     round_events = [
         EventLogEntry(
             id=f"evt_{round_num:02d}_001",
@@ -42,19 +41,18 @@ for round_num in range(1, 6):
         ),
     ]
 
-    # Erstelle 2 Preis-Einträge pro Runde (für 2 Agenten)
     round_prices = [
         PriceHistoryEntry(
             round_number=round_num,
             agent_id="agent_a",
-            price=100.0 + (round_num * 5),  # Preis steigt mit jeder Runde
-            demand_level=0.9 - (round_num * 0.05),  # Demand sinkt leicht
-            load_factor=0.85 + (round_num * 0.03)  # Load factor steigt
+            price=100.0 + (round_num * 5),
+            demand_level=0.9 - (round_num * 0.05),
+            load_factor=0.85 + (round_num * 0.03)
         ),
         PriceHistoryEntry(
             round_number=round_num,
             agent_id="agent_b",
-            price=95.0 + (round_num * 4),  # Anderes Preis-Szenario
+            price=95.0 + (round_num * 4),
             demand_level=0.88 - (round_num * 0.04),
             load_factor=0.80 + (round_num * 0.04)
         ),

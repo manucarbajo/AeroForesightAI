@@ -5,7 +5,7 @@ from typing import List
 
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
 
-OUTPUT_DIR = "outputs"
+OUTPUT_DIR = "/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab/outputs"
 
 
 def ensure_output_dir():
