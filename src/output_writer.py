@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 from typing import List
+from datetime import datetime
 
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
 
@@ -64,5 +65,34 @@ def save_round_history(round_results: List, filename: str = "round_history.json"
 
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(round_data, f, indent=2, ensure_ascii=False)
+
+    return filepath
+
+def save_run_metadata(state, args, filename: str = "run_metadata.json") -> str:
+    """
+    Speichert Metadaten des Simulationslaufs als JSON.
+        state: finaler SimulationState
+        args: geparste CLI-Argumente
+        Default Name der Ausgabedatei: run_metadata.json
+    """
+    ensure_output_dir()
+    filepath = os.path.join(OUTPUT_DIR, filename)
+
+    metadata = {
+        "timestamp": datetime.now().isoformat(),
+        "model": args.model,
+        "base_url": args.base_url,
+        "temperature": args.temperature,
+        "max_tokens": args.max_tokens,
+        "rounds_completed": state.clock.current_round,
+        "rounds_max": state.clock.max_rounds,
+        "market_enabled": not args.no_market,
+        "total_events": len(state.event_log),
+        "total_round_results": len(state.round_results),
+        "total_price_history": len(state.price_history),
+    }
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2, ensure_ascii=False)
 
     return filepath
