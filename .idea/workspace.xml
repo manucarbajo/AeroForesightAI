@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files">
-      <change beforePath="$PROJECT_DIR$/.idea/Technology Lab.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Technology Lab.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/manu_playground/2_chat_with_llm.py" beforeDir="false" afterPath="$PROJECT_DIR$/manu_playground/2_chat_with_llm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-    </list>
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="add ensure_output_dir function to create output directory if it doesn't exist" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -149,7 +143,7 @@
       <workItem from="1776079164679" duration="1264000" />
       <workItem from="1777646818653" duration="443000" />
       <workItem from="1777647316338" duration="776000" />
-      <workItem from="1777648101990" duration="1068000" />
+      <workItem from="1777648101990" duration="2105000" />
     </task>
     <task id="LOCAL-00001" summary="add initial project configuration and migration files">
       <option name="closed" value="true" />
@@ -215,7 +209,39 @@
       <option name="project" value="LOCAL" />
       <updated>1776066585100</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="update LLM model to llama3.2:3b and adjust project configuration files">
+      <option name="closed" value="true" />
+      <created>1777649194624</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1777649194624</updated>
+    </task>
+    <task id="LOCAL-00010" summary="update LLM model to llama3.2:3b and adjust project configuration files">
+      <option name="closed" value="true" />
+      <created>1777649975408</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1777649975408</updated>
+    </task>
+    <task id="LOCAL-00011" summary="add OUTPUT_DIR constant to specify output directory in output_writer.py">
+      <option name="closed" value="true" />
+      <created>1777650072702</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1777650072702</updated>
+    </task>
+    <task id="LOCAL-00012" summary="add ensure_output_dir function to create output directory if it doesn't exist">
+      <option name="closed" value="true" />
+      <created>1777650183992</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1777650183992</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -239,7 +265,10 @@
     <MESSAGE value="corrected display error in markdown in agents_provider_classes.md" />
     <MESSAGE value="added market form to literature_fundamentals.md" />
     <MESSAGE value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
-    <option name="LAST_COMMIT_MESSAGE" value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
+    <MESSAGE value="update LLM model to llama3.2:3b and adjust project configuration files" />
+    <MESSAGE value="add OUTPUT_DIR constant to specify output directory in output_writer.py" />
+    <MESSAGE value="add ensure_output_dir function to create output directory if it doesn't exist" />
+    <option name="LAST_COMMIT_MESSAGE" value="add ensure_output_dir function to create output directory if it doesn't exist" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Technology_Lab$config_loader.coverage" NAME="config_loader Coverage Results" MODIFIED="1777648057905" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
@@ -247,7 +276,7 @@
     <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1777646789585" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/extensions" />
     <SUITE FILE_PATH="coverage/Technology_Lab$.coverage" NAME=" Coverage Results" MODIFIED="1777648092192" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
     <SUITE FILE_PATH="coverage/Technology_Lab$agent_node.coverage" NAME="agent_node Coverage Results" MODIFIED="1777646793770" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/docs" />
-    <SUITE FILE_PATH="coverage/Technology_Lab$2_chat_with_llm.coverage" NAME="2_chat_with_llm Coverage Results" MODIFIED="1777648996926" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$2_chat_with_llm.coverage" NAME="2_chat_with_llm Coverage Results" MODIFIED="1777649993436" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
     <SUITE FILE_PATH="coverage/Technology_Lab$printBoard.coverage" NAME="printBoard Coverage Results" MODIFIED="1777645793274" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/extensions" />
   </component>
   <component name="github-copilot-workspace">
