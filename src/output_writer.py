@@ -51,4 +51,18 @@ def save_price_history(price_entries: List[PriceHistoryEntry], filename: str = "
     
     return filepath
 
+def save_round_history(round_results: List, filename: str = "round_history.json") -> str:
+    """
+    Speichert die Rundenhistorie als JSON.
+        round_results: Liste von RoundResult-Objekten
+        Default Name der Ausgabedatei: round_history.json
+    """
+    ensure_output_dir()
+    filepath = os.path.join(OUTPUT_DIR, filename)
 
+    round_data = [round_result.model_dump() for round_result in round_results]
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(round_data, f, indent=2, ensure_ascii=False)
+
+    return filepath
