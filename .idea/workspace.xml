@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added save_metadata">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nodes/agent_node.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nodes/agent_node.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/output_writer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/output_writer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/run_simulation.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/run_simulation.py" afterDir="false" />
-    </list>
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added segment_analysis. results of analysis is still empty. needs to be fixed -&gt; segment id -&gt; 'string'" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -162,6 +157,7 @@
       <workItem from="1777647316338" duration="776000" />
       <workItem from="1777648101990" duration="2105000" />
       <workItem from="1777743111443" duration="4874000" />
+      <workItem from="1777750060374" duration="883000" />
     </task>
     <task id="LOCAL-00001" summary="add initial project configuration and migration files">
       <option name="closed" value="true" />
@@ -283,7 +279,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777749429691</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="added segment_analysis. results of analysis is still empty. needs to be fixed -&gt; segment id -&gt; 'string'">
+      <option name="closed" value="true" />
+      <created>1777750187010</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1777750187011</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -313,7 +317,8 @@
     <MESSAGE value="add ensure_output_dir function to create output directory if it doesn't exist and added connection of output_writer to run_simulation" />
     <MESSAGE value="added round_history" />
     <MESSAGE value="added save_metadata" />
-    <option name="LAST_COMMIT_MESSAGE" value="added save_metadata" />
+    <MESSAGE value="added segment_analysis. results of analysis is still empty. needs to be fixed -&gt; segment id -&gt; 'string'" />
+    <option name="LAST_COMMIT_MESSAGE" value="added segment_analysis. results of analysis is still empty. needs to be fixed -&gt; segment id -&gt; 'string'" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Technology_Lab$test_output_writer.coverage" NAME="test_output_writer Coverage Results" MODIFIED="1777743495288" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />

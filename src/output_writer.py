@@ -99,26 +99,31 @@ def save_run_metadata(state, args, filename: str = "run_metadata.json") -> str:
 
 def save_segment_analysis(round_results: List, filename: str = "segment_analysis.json") -> str:
     """
-    Speichert die segmentspezifischen Analysen aus den Rundenergebnissen als JSON.
+    Speichert die segmentspezifischen Analysen aller Agenten als JSON.
         round_results: Liste von RoundResult-Objekten
         Default Name der Ausgabedatei: segment_analysis.json
     """
     ensure_output_dir()
     filepath = os.path.join(OUTPUT_DIR, filename)
 
-    segment_data = []
+    # Gruppiere nach Rundennummer
+    rounds: dict = {}
     for round_result in round_results:
-        # Suche segment_analysis in den agent_responses
-        segment_analysis = {}
+        round_number = round_result.round_number
+        if round_number not in rounds:
+            rounds[round_number] = {
+                "round": round_number,
+                "agents": {}
+            }
+        # Alle Agenten speichern
         for response in round_result.agent_responses:
-            if hasattr(response, "segment_analysis") and response.segment_analysis:
-                segment_analysis = response.segment_analysis
+            rounds[round_number]["agents"][response.agent_id] = {
+                "reasoning": response.reasoning,
+                "actions": response.actions,
+                "segment_analysis": response.segment_analysis,
+            }
 
-        round_entry = {
-            "round": round_result.round_number,
-            "segment_analysis": segment_analysis,
-        }
-        segment_data.append(round_entry)
+    segment_data = list(rounds.values())
 
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(segment_data, f, indent=2, ensure_ascii=False)
