@@ -1,0 +1,9 @@
+{
+"name": "haiko_playground",
+"description": "LangGraph project for Technology-Lab simulation (haiko_playground)",
+"env": "./.env",
+"source": { "kind": "uv", "root": ".." },
+"graphs": {
+"simulation": "./graph.py:graph"
+}
+}
