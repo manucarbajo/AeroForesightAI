@@ -115,27 +115,6 @@ def main() -> int:
 
     validate_state(state)
 
-    # save_event_log(state.event_log)
-    # event_log_path = save_event_log(state.event_log)
-    #
-    # save_price_history(state.price_history)
-    # price_history_path = save_price_history(state.price_history)
-    #
-    # save_round_history(state.round_results)
-    # round_history_path = save_round_history(state.round_results)
-    #
-    # save_run_metadata(state, args)
-    # metadata_path = save_run_metadata(state, args)
-    #
-    # save_segment_analysis(state.round_results)
-    # segment_analysis_path = save_segment_analysis(state.round_results)
-    #
-    # save_final_narrative(state)
-    # final_narrative_path = save_final_narrative(state)
-    #
-    # save_cib_matrix(state.cib_matrix)
-    # cib_matrix_path = save_cib_matrix(state)
-
     event_log_path = save_event_log(state.event_log)
     price_history_path = save_price_history(state.price_history)
     round_history_path = save_round_history(state.round_results)
