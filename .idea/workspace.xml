@@ -4,21 +4,38 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files">
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added CIB-Matrix of factors">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_consumer.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_consumer.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_consumer_classes.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_consumer_classes.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_provider.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_provider.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_provider_classes.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_provider_classes.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_regulations.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_regulations.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_regulations_classes.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_regulations_classes.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/agents_sequence_diagram.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/drafts/agents_sequence_diagram.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/literature_fundamentals.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/challenge1/literature_fundamentals.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/simulation_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/configs/simulation_config.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab" value="3BOg733rT10q2xR4jYXNR7y4k0g" />
+    </persistenceIdMap>
+  </component>
+  <component name="CopilotUserSelectedChatMode">
+    <option name="chatModeId" value="Ask" />
+  </component>
+  <component name="CopilotUserSelectedModel">
+    <selectedModels>
+      <entry key="agent-panel" value="Claude Haiku 4.5" />
+      <entry key="chat-panel" value="Claude Haiku 4.5" />
+    </selectedModels>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Rebase.Settings">
+    <option name="NEW_BASE" value="main" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
@@ -47,6 +64,9 @@
     &quot;accountId&quot;: &quot;7bc44401-60a0-4f56-acf7-d4be28fa39cc&quot;
   }
 }</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
 }</component>
@@ -55,29 +75,45 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab/docs&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;settings.sync&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Python tests.Python tests for test_agent_node.AgentNodeTests.executor": "Run",
+    "Python tests.Python tests for test_agent_node.AgentNodeTests.test_parse_valid_json_output.executor": "Run",
+    "Python.1_easy_llm_output.executor": "Run",
+    "Python.2_chat_with_llm.executor": "Run",
+    "Python.agent_node.executor": "Run",
+    "Python.config_loader.executor": "Run",
+    "Python.llm_client.executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.market_node.executor": "Run",
+    "Python.output_writer.executor": "Run",
+    "Python.printBoard.executor": "Run",
+    "Python.run_simulation.executor": "Run",
+    "Python.simulation_runner.executor": "Run",
+    "Python.test_output_writer.executor": "Run",
+    "Python.validation.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "feature/ap4-output-testing",
+    "last_opened_file_path": "/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab/src/prompts",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "settings.sync",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/prompts" />
       <recent name="$PROJECT_DIR$/docs" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/nodes" />
       <recent name="$PROJECT_DIR$/docs/drafts" />
       <recent name="$PROJECT_DIR$/docs/challenge1" />
       <recent name="$PROJECT_DIR$/docs/references" />
@@ -111,8 +147,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-76f8388c3a79-JavaScript-PY-243.24978.54" />
-        <option value="bundled-python-sdk-91e3b7efe1d4-466328ff949b-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.24978.54" />
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-PY-243.26574.109" />
+        <option value="bundled-python-sdk-63635adfcd5c-4df51de95216-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.26574.109" />
       </set>
     </attachedChunks>
   </component>
@@ -130,6 +166,11 @@
       <workItem from="1775663081106" duration="478000" />
       <workItem from="1775805914800" duration="2075000" />
       <workItem from="1776079164679" duration="1264000" />
+      <workItem from="1777646818653" duration="443000" />
+      <workItem from="1777647316338" duration="776000" />
+      <workItem from="1777648101990" duration="2105000" />
+      <workItem from="1777743111443" duration="4874000" />
+      <workItem from="1777750060374" duration="10067000" />
     </task>
     <task id="LOCAL-00001" summary="add initial project configuration and migration files">
       <option name="closed" value="true" />
@@ -195,11 +236,126 @@
       <option name="project" value="LOCAL" />
       <updated>1776066585100</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="update LLM model to llama3.2:3b and adjust project configuration files">
+      <option name="closed" value="true" />
+      <created>1777649194624</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1777649194624</updated>
+    </task>
+    <task id="LOCAL-00010" summary="update LLM model to llama3.2:3b and adjust project configuration files">
+      <option name="closed" value="true" />
+      <created>1777649975408</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1777649975408</updated>
+    </task>
+    <task id="LOCAL-00011" summary="add OUTPUT_DIR constant to specify output directory in output_writer.py">
+      <option name="closed" value="true" />
+      <created>1777650072702</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1777650072702</updated>
+    </task>
+    <task id="LOCAL-00012" summary="add ensure_output_dir function to create output directory if it doesn't exist">
+      <option name="closed" value="true" />
+      <created>1777650183992</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1777650183992</updated>
+    </task>
+    <task id="LOCAL-00013" summary="add ensure_output_dir function to create output directory if it doesn't exist and added connection of output_writer to run_simulation">
+      <option name="closed" value="true" />
+      <created>1777745394342</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1777745394342</updated>
+    </task>
+    <task id="LOCAL-00014" summary="added round_history">
+      <option name="closed" value="true" />
+      <created>1777746041001</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1777746041001</updated>
+    </task>
+    <task id="LOCAL-00015" summary="added save_metadata">
+      <option name="closed" value="true" />
+      <created>1777749429691</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1777749429691</updated>
+    </task>
+    <task id="LOCAL-00016" summary="added segment_analysis. results of analysis is still empty. needs to be fixed -&gt; segment id -&gt; 'string'">
+      <option name="closed" value="true" />
+      <created>1777750187010</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1777750187011</updated>
+    </task>
+    <task id="LOCAL-00017" summary="fixed empty resoning etc. in segment_analysis.json">
+      <option name="closed" value="true" />
+      <created>1777792447880</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1777792447880</updated>
+    </task>
+    <task id="LOCAL-00018" summary="fixed price problem. price did not change over the rounds">
+      <option name="closed" value="true" />
+      <created>1777796923631</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1777796923631</updated>
+    </task>
+    <task id="LOCAL-00019" summary="deleted provier_backupt">
+      <option name="closed" value="true" />
+      <created>1777796954109</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1777796954109</updated>
+    </task>
+    <task id="LOCAL-00020" summary="added final_narrative in markdown format">
+      <option name="closed" value="true" />
+      <created>1777798137399</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1777798137399</updated>
+    </task>
+    <task id="LOCAL-00021" summary="added CIB-Matrix of factors">
+      <option name="closed" value="true" />
+      <created>1777807397605</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1777807397605</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add initial project configuration and migration files" />
@@ -208,10 +364,35 @@
     <MESSAGE value="corrected display error in markdown in agents_provider_classes.md" />
     <MESSAGE value="added market form to literature_fundamentals.md" />
     <MESSAGE value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
-    <option name="LAST_COMMIT_MESSAGE" value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
+    <MESSAGE value="update LLM model to llama3.2:3b and adjust project configuration files" />
+    <MESSAGE value="add OUTPUT_DIR constant to specify output directory in output_writer.py" />
+    <MESSAGE value="add ensure_output_dir function to create output directory if it doesn't exist" />
+    <MESSAGE value="add ensure_output_dir function to create output directory if it doesn't exist and added connection of output_writer to run_simulation" />
+    <MESSAGE value="added round_history" />
+    <MESSAGE value="added save_metadata" />
+    <MESSAGE value="added segment_analysis. results of analysis is still empty. needs to be fixed -&gt; segment id -&gt; 'string'" />
+    <MESSAGE value="fixed empty resoning etc. in segment_analysis.json" />
+    <MESSAGE value="fixed price problem. price did not change over the rounds" />
+    <MESSAGE value="deleted provier_backupt" />
+    <MESSAGE value="added final_narrative in markdown format" />
+    <MESSAGE value="added CIB-Matrix of factors" />
+    <option name="LAST_COMMIT_MESSAGE" value="added CIB-Matrix of factors" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1774365758343" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$test_output_writer.coverage" NAME="test_output_writer Coverage Results" MODIFIED="1777743495288" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1777742388634" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$.coverage" NAME=" Coverage Results" MODIFIED="1777648092192" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$validation.coverage" NAME="validation Coverage Results" MODIFIED="1777743792441" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$printBoard.coverage" NAME="printBoard Coverage Results" MODIFIED="1777645793274" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/extensions" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$simulation_runner.coverage" NAME="simulation_runner Coverage Results" MODIFIED="1777743795261" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$market_node.coverage" NAME="market_node Coverage Results" MODIFIED="1777795410670" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nodes" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$config_loader.coverage" NAME="config_loader Coverage Results" MODIFIED="1777744193540" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$1_easy_llm_output.coverage" NAME="1_easy_llm_output Coverage Results" MODIFIED="1777646797892" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$output_writer.coverage" NAME="output_writer Coverage Results" MODIFIED="1777745278805" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$run_simulation.coverage" NAME="run_simulation Coverage Results" MODIFIED="1777807221593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$llm_client.coverage" NAME="llm_client Coverage Results" MODIFIED="1777743802262" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$agent_node.coverage" NAME="agent_node Coverage Results" MODIFIED="1777749871106" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nodes" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$2_chat_with_llm.coverage" NAME="2_chat_with_llm Coverage Results" MODIFIED="1777743365393" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>

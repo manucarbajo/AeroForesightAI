@@ -113,6 +113,7 @@ class AgentNode:
 
         try:
             segment_analysis_raw = payload.get("segment_analysis", {})
+            #print(f"DEBUG segment_analysis_raw: {segment_analysis_raw}")
             if self.config.agent_type != AgentType.CONSUMER:
                 segment_analysis: dict[str, Any] = {}
             elif isinstance(segment_analysis_raw, dict):

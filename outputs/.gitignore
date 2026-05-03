@@ -1,0 +1,5 @@
+# Ignoriere alle generierten Output-Dateien, aber tracke die Ordnerstruktur
+*
+!.gitkeep
+!.gitignore
+
