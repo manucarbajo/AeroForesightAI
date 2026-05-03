@@ -39,6 +39,7 @@ from src.nodes.agent_node import AgentNode
 from src.nodes.orchestrator_node import OrchestratorNode
 from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
+from src.nodes.cib_extractor_node import CIBExtractorNode
 
 try:
     from .llm_adapter import get_llm
@@ -68,6 +69,7 @@ def build_stategraph():
 
     market_node = MarketNode()
     environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
+    cib_node = CIBExtractorNode()
 
     def _deep_merge(base: dict, override: dict) -> dict:
         merged = dict(base)
@@ -83,6 +85,17 @@ def build_stategraph():
         base_payload = build_initial_state().model_dump()
         if not payload:
             return base_payload
+        # Allow a convenient top-level shorthand: {"max_rounds": 5} or {"rounds": 5}
+        if isinstance(payload.get("max_rounds"), int) or isinstance(payload.get("rounds"), int):
+            rounds = payload.get("max_rounds") or payload.get("rounds")
+            try:
+                base_payload.setdefault("clock", {})
+                # ensure clock exists in nested config shape
+                if isinstance(base_payload.get("clock"), dict):
+                    base_payload["clock"]["max_rounds"] = int(rounds)
+            except Exception:
+                pass
+
         return _deep_merge(base_payload, payload)
 
     def _wrap(node_fn):
@@ -105,6 +118,7 @@ def build_stategraph():
 
     graph.add_node("market", _wrap(market_node.invoke))
     graph.add_node("environment", _wrap(environment_node.invoke))
+    graph.add_node("cib_extractor", _wrap(cib_node.invoke))
 
     graph.set_entry_point("orchestrator")
 
@@ -118,9 +132,12 @@ def build_stategraph():
         from src.models.state_models import SimulationState
 
         state = SimulationState(**_coerce_payload(payload))
-        return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
+        # Continue rounds until max_rounds; when finished, route to 'cib_extractor'
+        return "orchestrator" if state.clock.current_round < state.clock.max_rounds else "cib_extractor"
 
     graph.add_conditional_edges("environment", _should_continue)
+    # After CIB extraction, end the run
+    graph.add_edge("cib_extractor", END)
 
     compiled = graph.compile()
 
@@ -129,6 +146,40 @@ def build_stategraph():
 
     # Export a simple dict for langgraph to use
     return compiled
+
+
+def _make_build_options() -> dict:
+    """Return a compact description of editable run options for Studio UI."""
+    try:
+        state = build_initial_state()
+    except Exception:
+        # fallback defaults
+        return {
+            "max_rounds": {"type": "int", "default": 2, "description": "Maximal number of rounds"},
+            "enable_market": {"type": "bool", "default": True, "description": "Enable MarketNode"},
+            "llm_model": {"type": "str", "default": "llama3", "description": "LLM model name"},
+            "llm_temperature": {"type": "float", "default": 0.7, "description": "LLM temperature"},
+        }
+
+    opts = {
+        "max_rounds": {"type": "int", "default": state.clock.max_rounds, "description": "Maximal number of rounds"},
+        "enable_market": {"type": "bool", "default": True, "description": "Enable MarketNode"},
+        "llm_model": {"type": "str", "default": state.config.llm.model, "description": "LLM model name"},
+        "llm_temperature": {"type": "float", "default": state.config.llm.temperature, "description": "LLM temperature"},
+        "scenario_parameters": [
+            {"id": p.id, "name": p.name, "default": p.value, "unit": getattr(p, "unit", None)}
+            for p in state.config.scenario_parameters
+        ],
+        "agents": [{"id": a.id, "name": a.name, "type": a.agent_type.value} for a in state.agents],
+    }
+    return opts
+
+
+# Export UI-friendly options for LangGraph Studio to display
+try:
+    build_options = _make_build_options()
+except Exception:
+    build_options = {"max_rounds": {"type": "int", "default": 2}}
 
 
 # Export `graph` symbol (some langgraph setups expect this)

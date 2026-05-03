@@ -6,4 +6,67 @@
 "graphs": {
 "simulation": "./graph.py:graph"
 }
+,
+"default_payload": {
+	"config": {
+		"name": "Flugverkehr Szenarioplanung MVP",
+		"description": "Prototypische Multi-Agenten-Simulation fuer Szenarioplanung im Flugverkehr (2025-2035)",
+		"clock": {
+			"current_round": 0,
+			"max_rounds": 2,
+			"year_start": 2026,
+			"years_per_round": 1
+		},
+		"llm": { "model": "llama3", "temperature": 0.7, "max_tokens": 2048 },
+		"seed": null,
+		"scenario_parameters": [
+			{ "id": "demand_growth_rate", "name": "Nachfragewachstum", "description": "Jaehrliche Wachstumsrate der Flugnachfrage", "value": 0.03, "unit": "percent_per_year", "min_value": -0.05, "max_value": 0.10 },
+			{ "id": "fuel_price_change", "name": "Treibstoffpreisentwicklung", "description": "Jaehrliche Veraenderung der Treibstoffkosten", "value": 0.02, "unit": "percent_per_year", "min_value": -0.10, "max_value": 0.20 },
+			{ "id": "carbon_tax_level", "name": "CO2-Steuer", "description": "CO2-Bepreisung pro Tonne in EUR", "value": 50.0, "unit": "eur_per_tonne", "min_value": 0.0, "max_value": 300.0 }
+		]
+	},
+	"clock": {
+		"current_round": 0,
+		"max_rounds": 2,
+		"year_start": 2026,
+		"years_per_round": 1
+	},
+	"environment": {
+		"factors": {
+			"F1": { "id": "F1", "name": "Mobilitaetsbeduerfnis / Nachfrage", "description": "Wie stark wollen Menschen fliegen?", "current_state": "F1.1", "possible_states": { "F1.1": "Globaler Reiseboom, ungebrochenes Wachstum", "F1.2": "Stagnation und Verzicht, Substitution" } },
+			"F2": { "id": "F2", "name": "Regulatorische Strenge", "description": "Welche klimapolitischen Leitplanken werden gesetzt?", "current_state": "F2.1", "possible_states": { "F2.1": "Moderater Klimaschutz, Kompensationsfokus", "F2.2": "Radikale Dekarbonisierung, Verbote" } },
+			"F3": { "id": "F3", "name": "Technologische Reife", "description": "Wie weit sind SAF, E-Aviation, H2?", "current_state": "F3.1", "possible_states": { "F3.1": "Inkrementelle Verbesserungen, SAF teuer", "F3.2": "Durchbruch bei SAF/E-Fuels/H2" } },
+			"F4": { "id": "F4", "name": "Wirtschaftliche Entwicklung", "description": "Konjunktur, Kaufkraft, Energiepreise", "current_state": "F4.1", "possible_states": { "F4.1": "Stabiles Wachstum, moderate Inflation", "F4.2": "Rezession / Stagflation" } },
+			"F5": { "id": "F5", "name": "Verfuegbarkeit von Alternativen", "description": "Schiene, digitale Substitution, Intermodalitaet", "current_state": "F5.1", "possible_states": { "F5.1": "Schiene stagniert, Fliegen alternativlos", "F5.2": "Massiver Schienenausbau, Intermodalitaet" } },
+			"F6": { "id": "F6", "name": "Gesellschaftlicher Wertewandel", "description": "Klimabewusstsein, Flight Shaming, Normen", "current_state": "F6.1", "possible_states": { "F6.1": "Fliegen bleibt akzeptiert", "F6.2": "Starkes Klimabewusstsein, Flight Shaming" } },
+			"F7": { "id": "F7", "name": "Geopolitische Stabilitaet", "description": "Offene Luftraeume, Konflikte, Pandemien", "current_state": "F7.1", "possible_states": { "F7.1": "Offene Maerkte, Kooperation", "F7.2": "Fragmentierung, Konflikte" } }
+		},
+		"global_context": ""
+	},
+	"agents": [
+		{
+			"id": "consumer",
+			"name": "Konsumenten",
+			"agent_type": "consumer",
+			"description": "Privat- und Geschaeftsreisende, die Reiseentscheidungen treffen",
+			"goals": ["Guenstige Flugpreise erhalten","Reisebeduerfnisse erfuellen","Auf Marktveraenderungen reagieren"],
+			"constraints": ["Budgetabhaengig","Beeinflusst durch gesellschaftlichen Wertewandel","Reagiert auf Alternativangebote"],
+			"population_config": {
+				"segments": [
+					{ "id": "business", "name": "Geschaeftsreisende", "share": 0.3, "price_elasticity": { "type": "normal", "mean": 0.3, "std_dev": 0.1, "min_value": 0.0, "max_value": 1.0 }, "income_level": { "type": "normal", "mean": 0.8, "std_dev": 0.1, "min_value": 0.0, "max_value": 1.0 }, "environmental_awareness": { "type": "normal", "mean": 0.3, "std_dev": 0.15, "min_value": 0.0, "max_value": 1.0 }, "description": "Haeufig fliegende Geschaeftsreisende mit geringer Preissensitivitaet" },
+					{ "id": "leisure_price_sensitive", "name": "Privatreisende (preissensitiv)", "share": 0.5, "price_elasticity": { "type": "normal", "mean": 0.8, "std_dev": 0.1, "min_value": 0.0, "max_value": 1.0 }, "income_level": { "type": "normal", "mean": 0.4, "std_dev": 0.15, "min_value": 0.0, "max_value": 1.0 }, "environmental_awareness": { "type": "normal", "mean": 0.4, "std_dev": 0.2, "min_value": 0.0, "max_value": 1.0 }, "description": "Preisbewusste Privatreisende mit mittlerem Einkommen" },
+					{ "id": "leisure_eco_conscious", "name": "Privatreisende (umweltbewusst)", "share": 0.2, "price_elasticity": { "type": "normal", "mean": 0.5, "std_dev": 0.15, "min_value": 0.0, "max_value": 1.0 }, "income_level": { "type": "normal", "mean": 0.6, "std_dev": 0.15, "min_value": 0.0, "max_value": 1.0 }, "environmental_awareness": { "type": "normal", "mean": 0.85, "std_dev": 0.1, "min_value": 0.0, "max_value": 1.0 }, "description": "Umweltbewusste Reisende, bereit fuer hoehere Preise bei gruenen Optionen" }
+				],
+				"total_population": 1000,
+				"default_distribution": "normal"
+			}
+		},
+		{ "id": "provider", "name": "Anbieter", "agent_type": "provider", "description": "Fluggesellschaften, die Preise setzen, Routen planen und investieren", "goals": ["Profitabilitaet sichern","Marktanteile halten oder ausbauen","Regulatorische Anforderungen erfuellen"], "constraints": ["Abhaengig von Treibstoffpreisen und Technologie","Muss regulatorische Vorgaben einhalten","Kapazitaetsgrenzen bei Flotte und Infrastruktur"] },
+		{ "id": "regulator", "name": "Regulatorien", "agent_type": "regulator", "description": "EU-Kommission und nationale Regierungen, die Rahmenbedingungen setzen", "goals": ["Klimaziele erreichen","Wettbewerbsfaehigkeit der Luftfahrt erhalten","Verbraucherschutz gewaehrleisten"], "constraints": ["Internationale Abkommen beachten","Gesellschaftliche Akzeptanz notwendig","Wirtschaftliche Auswirkungen abwaegen"] }
+	],
+	"event_log": [],
+	"price_history": [],
+	"round_results": [],
+	"cib_matrix": null
+}
 }

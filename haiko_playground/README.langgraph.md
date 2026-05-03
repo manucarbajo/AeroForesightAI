@@ -58,3 +58,32 @@ LLAMA_TRANSFORMERS_MODEL=/path/to/llama3.2-model
 - `LANGSMITH_API_KEY` wird **nur** abgefragt, wenn leer/nicht gesetzt. Die Eingabe wird versteckt (getpass).
 - `OLLAMA_MODEL`, `LLAMA_HTTP_URL` und `LLAMA_TRANSFORMERS_MODEL` werden **nicht** abgefragt — diese laden Sie direkt aus `.env` oder setzen sie lokal. Falls nichts gesetzt ist, nutzt der Graph einen Mock-LLM.
 - Committe niemals dein echtes `.env` (mit echten API-Keys) in das Repository.
+
+Studio: `build_options` & `default_payload`
+-----------------------------------------
+Das Projekt exportiert in `graph.py` zusätzlich zwei Hilfs-Objekte, die LangGraph Studio das Konfigurieren erleichtern:
+
+- `default_payload`: Ein vollständiges Start-`SimulationState` JSON, das beim Start in Studio vorausgefüllt wird. Du findest es in `haiko_playground/langgraph.json`.
+- `build_options`: Ein kompaktes Objekt mit häufig genutzten Feldern (z.B. `max_rounds`, `llm_model`, `llm_temperature`, `scenario_parameters`, `agents`). Studio zeigt `default_payload` im Run-Input an; `build_options` kann als Orientierung oder zur schnellen UI-Integration genutzt werden.
+
+Wie nutze ich das in Studio?
+
+1. Öffne `langgraph dev` im `haiko_playground`-Ordner.
+2. Im Studio-Fenster siehst du links das Run-Input JSON (voreingestellt mit `default_payload`).
+3. Zum schnellen Ändern der Rundenzahl kannst du entweder das JSON-Feld editieren:
+
+```json
+{ "clock": { "max_rounds": 5 } }
+```
+
+oder die Kurzform verwenden:
+
+```json
+{ "max_rounds": 5 }
+```
+
+4. Willst du Szenarioparameter oder Agenteneigenschaften ändern, editiere `default_payload.config.scenario_parameters` oder den entsprechenden `agents`-Block direkt im Run-Input.
+
+5. Starte den Run — am Ende des Laufs wird `cib_matrix` berechnet und im Result-JSON unter `cib_matrix` erscheinen (sofern Events vorhanden sind).
+
+Tipp: Wenn `cib_matrix` weiterhin `null` ist, prüfe, ob während der konfigurierten Runden Events im `event_log` erzeugt wurden; ohne Events kann die CIB-Extraktion keine Einträge ableiten.
