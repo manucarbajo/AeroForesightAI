@@ -39,8 +39,7 @@ Treffe fuer diese Runde eine anbieterorientierte Entscheidung:
 5) formuliere 1-3 Events, die aus deiner Entscheidung folgen
 
 ## Output-Anweisung (strict)
-Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock.
-Nutze exakt dieses Schema:
+Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock. Nutze exakt dieses Schema:
 {
   "reasoning": "string",
   "actions": ["string"],
@@ -54,10 +53,11 @@ Nutze exakt dieses Schema:
   "events": [
     {
       "event_type": "price_change",
-      "description": "string",
+      "description": "Preise um X% gesenkt/erhoeht, Begruendung hier",
       "affected_factors": ["F1", "F3", "F4"]
     }
   ],
   "segment_analysis": {}
 }
+Wichtig: Bei event_type price_change muss die description immer eine konkrete Prozentangabe enthalten, z.B. "Preise um 5% gesenkt" oder "Ticketpreise um 12% erhoeht". Ohne Prozentangabe kann der Markt den Preiseffekt nicht berechnen.
 Wenn ein Feld leer ist, gib leere Listen statt Weglassen aus.
