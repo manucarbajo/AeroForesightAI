@@ -4,12 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="fixed empty resoning etc. in segment_analysis.json">
-      <change afterPath="$PROJECT_DIR$/src/prompts/provider_backup.md" afterDir="false" />
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="deleted provier_backupt">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/configs/simulation_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/configs/simulation_config.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/nodes/market_node.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nodes/market_node.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/prompts/provider.md" beforeDir="false" afterPath="$PROJECT_DIR$/src/prompts/provider.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/output_writer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/output_writer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/run_simulation.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/run_simulation.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -165,7 +164,7 @@
       <workItem from="1777647316338" duration="776000" />
       <workItem from="1777648101990" duration="2105000" />
       <workItem from="1777743111443" duration="4874000" />
-      <workItem from="1777750060374" duration="4831000" />
+      <workItem from="1777750060374" duration="5798000" />
     </task>
     <task id="LOCAL-00001" summary="add initial project configuration and migration files">
       <option name="closed" value="true" />
@@ -303,7 +302,23 @@
       <option name="project" value="LOCAL" />
       <updated>1777792447880</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="fixed price problem. price did not change over the rounds">
+      <option name="closed" value="true" />
+      <created>1777796923631</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1777796923631</updated>
+    </task>
+    <task id="LOCAL-00019" summary="deleted provier_backupt">
+      <option name="closed" value="true" />
+      <created>1777796954109</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1777796954109</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -335,7 +350,9 @@
     <MESSAGE value="added save_metadata" />
     <MESSAGE value="added segment_analysis. results of analysis is still empty. needs to be fixed -&gt; segment id -&gt; 'string'" />
     <MESSAGE value="fixed empty resoning etc. in segment_analysis.json" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixed empty resoning etc. in segment_analysis.json" />
+    <MESSAGE value="fixed price problem. price did not change over the rounds" />
+    <MESSAGE value="deleted provier_backupt" />
+    <option name="LAST_COMMIT_MESSAGE" value="deleted provier_backupt" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Technology_Lab$test_output_writer.coverage" NAME="test_output_writer Coverage Results" MODIFIED="1777743495288" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
@@ -348,7 +365,7 @@
     <SUITE FILE_PATH="coverage/Technology_Lab$config_loader.coverage" NAME="config_loader Coverage Results" MODIFIED="1777744193540" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$1_easy_llm_output.coverage" NAME="1_easy_llm_output Coverage Results" MODIFIED="1777646797892" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
     <SUITE FILE_PATH="coverage/Technology_Lab$output_writer.coverage" NAME="output_writer Coverage Results" MODIFIED="1777745278805" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
-    <SUITE FILE_PATH="coverage/Technology_Lab$run_simulation.coverage" NAME="run_simulation Coverage Results" MODIFIED="1777796837770" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$run_simulation.coverage" NAME="run_simulation Coverage Results" MODIFIED="1777797593434" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$llm_client.coverage" NAME="llm_client Coverage Results" MODIFIED="1777743802262" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$agent_node.coverage" NAME="agent_node Coverage Results" MODIFIED="1777749871106" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nodes" />
     <SUITE FILE_PATH="coverage/Technology_Lab$2_chat_with_llm.coverage" NAME="2_chat_with_llm Coverage Results" MODIFIED="1777743365393" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />

@@ -129,3 +129,59 @@ def save_segment_analysis(round_results: List, filename: str = "segment_analysis
         json.dump(segment_data, f, indent=2, ensure_ascii=False)
 
     return filepath
+
+def save_final_narrative(state, filename: str = "final_narrative.md") -> str:
+    """
+    Speichert eine lesbare Markdown-Zusammenfassung der Simulation.
+        state: finaler SimulationState
+        Default Name der Ausgabedatei: final_narrative.md
+    """
+    ensure_output_dir()
+    filepath = os.path.join(OUTPUT_DIR, filename)
+
+    lines = []
+
+    # Titel
+    lines.append(f"# Simulationsbericht: {state.config.name}")
+    lines.append(f"\n{state.config.description}\n")
+
+    # Überblick
+    lines.append("## Überblick")
+    lines.append(f"- **Simulierte Runden:** {state.clock.current_round}")
+    lines.append(f"- **Simulierte Jahre:** {state.clock.year_start} – {state.clock.year_start + state.clock.current_round * state.clock.years_per_round}")
+    lines.append(f"- **Gesamte Events:** {len(state.event_log)}")
+    lines.append(f"- **Preis Start:** {state.price_history[0].price:.2f} €" if state.price_history else "- **Preis Start:** n/a")
+    lines.append(f"- **Preis Ende:** {state.price_history[-1].price:.2f} €" if state.price_history else "- **Preis Ende:** n/a")
+
+    # Rundenübersicht
+    lines.append("\n## Rundenübersicht")
+    best_per_round: dict = {}
+    for rr in state.round_results:
+        best_per_round[rr.round_number] = rr
+
+    for round_number in sorted(best_per_round.keys()):
+        rr = best_per_round[round_number]
+        sim_year = state.clock.year_start + (round_number * state.clock.years_per_round)
+        lines.append(f"\n### Runde {round_number} – Jahr {sim_year}")
+
+        # Reasoning pro Agent
+        for resp in rr.agent_responses:
+            first_line = resp.reasoning.strip().splitlines()[0] if resp.reasoning else "kein Reasoning"
+            lines.append(f"- **{resp.agent_id}:** {first_line}")
+
+        # Events der Runde
+        if rr.events:
+            lines.append(f"\n**Events ({len(rr.events)}):**")
+            for e in rr.events:
+                lines.append(f"- {e.source_agent}: {e.description}")
+
+    # Finaler Umweltzustand
+    lines.append("\n## Finaler Umweltzustand")
+    for factor_id, factor in state.environment.factors.items():
+        state_label = factor.possible_states.get(factor.current_state, factor.current_state)
+        lines.append(f"- **{factor.name}:** {factor.current_state} – {state_label}")
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
+    return filepath

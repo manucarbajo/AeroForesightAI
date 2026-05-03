@@ -13,7 +13,8 @@ from src.output_writer import (save_event_log,
                                save_price_history,
                                save_round_history,
                                save_run_metadata,
-                               save_segment_analysis)
+                               save_segment_analysis,
+                               save_final_narrative)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -124,6 +125,9 @@ def main() -> int:
     save_segment_analysis(state.round_results)
     segment_analysis_path = save_segment_analysis(state.round_results)
 
+    save_final_narrative(state)
+    final_narrative_path = save_final_narrative(state)
+    print(f"Saved: {event_log_path}, {price_history_path}, {round_history_path}, {metadata_path}, {segment_analysis_path}, {final_narrative_path}")
 
     print(
         f"\nDone. rounds={state.clock.current_round}, events={len(state.event_log)}, "
