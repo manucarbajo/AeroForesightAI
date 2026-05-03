@@ -1,6 +1,5 @@
 import json
 import os
-from pathlib import Path
 from typing import List
 from datetime import datetime
 
@@ -183,5 +182,24 @@ def save_final_narrative(state, filename: str = "final_narrative.md") -> str:
 
     with open(filepath, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
+
+    return filepath
+
+def save_cib_matrix(state, filename: str = "cib_matrix.json") -> str:
+    """
+    Speichert die CIB-Matrix als JSON.
+        state: finaler SimulationState
+        Default Name der Ausgabedatei: cib_matrix.json
+    """
+    ensure_output_dir()
+    filepath = os.path.join(OUTPUT_DIR, filename)
+
+    if state.cib_matrix is None:
+        cib_data = {"entries": [], "round_generated": 0, "metadata": {}}
+    else:
+        cib_data = state.cib_matrix.model_dump()
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(cib_data, f, indent=2, ensure_ascii=False)
 
     return filepath

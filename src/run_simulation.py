@@ -14,7 +14,9 @@ from src.output_writer import (save_event_log,
                                save_round_history,
                                save_run_metadata,
                                save_segment_analysis,
-                               save_final_narrative)
+                               save_final_narrative,
+                               save_cib_matrix)
+from src.nodes.cib_extractor_node import CIBExtractorNode
 
 
 def _parse_args() -> argparse.Namespace:
@@ -108,26 +110,41 @@ def main() -> int:
             last_summary = state.round_results[-1].summary.strip().splitlines()[0]
             print(f"environment done :: {last_summary}")
 
+    cib_extractor = CIBExtractorNode()
+    state = cib_extractor.invoke(state)
+
     validate_state(state)
 
-    save_event_log(state.event_log)
+    # save_event_log(state.event_log)
+    # event_log_path = save_event_log(state.event_log)
+    #
+    # save_price_history(state.price_history)
+    # price_history_path = save_price_history(state.price_history)
+    #
+    # save_round_history(state.round_results)
+    # round_history_path = save_round_history(state.round_results)
+    #
+    # save_run_metadata(state, args)
+    # metadata_path = save_run_metadata(state, args)
+    #
+    # save_segment_analysis(state.round_results)
+    # segment_analysis_path = save_segment_analysis(state.round_results)
+    #
+    # save_final_narrative(state)
+    # final_narrative_path = save_final_narrative(state)
+    #
+    # save_cib_matrix(state.cib_matrix)
+    # cib_matrix_path = save_cib_matrix(state)
+
     event_log_path = save_event_log(state.event_log)
-
-    save_price_history(state.price_history)
     price_history_path = save_price_history(state.price_history)
-
-    save_round_history(state.round_results)
     round_history_path = save_round_history(state.round_results)
-
-    save_run_metadata(state, args)
     metadata_path = save_run_metadata(state, args)
-
-    save_segment_analysis(state.round_results)
     segment_analysis_path = save_segment_analysis(state.round_results)
-
-    save_final_narrative(state)
     final_narrative_path = save_final_narrative(state)
-    print(f"Saved: {event_log_path}, {price_history_path}, {round_history_path}, {metadata_path}, {segment_analysis_path}, {final_narrative_path}")
+    cib_matrix_path = save_cib_matrix(state)
+
+    print(f"Saved: {event_log_path}, {price_history_path}, {round_history_path}, {metadata_path}, {segment_analysis_path}, {final_narrative_path}, {cib_matrix_path}")
 
     print(
         f"\nDone. rounds={state.clock.current_round}, events={len(state.event_log)}, "

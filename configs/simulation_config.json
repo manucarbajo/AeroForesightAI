@@ -3,8 +3,8 @@
   "description": "Prototypische Multi-Agenten-Simulation fuer Szenarioplanung im Flugverkehr (2025-2035)",
   "clock": {
     "current_round": 0,
-    "max_rounds": 3,
-    "year_start": 2025,
+    "max_rounds": 2,
+    "year_start": 2026,
     "years_per_round": 1
   },
   "llm": {
