@@ -4,12 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added final_narrative in markdown format">
-      <change afterPath="$PROJECT_DIR$/src/nodes/cib_extractor_node.py" afterDir="false" />
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added CIB-Matrix of factors">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/configs/simulation_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/configs/simulation_config.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/output_writer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/output_writer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/run_simulation.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/run_simulation.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -173,7 +170,7 @@
       <workItem from="1777647316338" duration="776000" />
       <workItem from="1777648101990" duration="2105000" />
       <workItem from="1777743111443" duration="4874000" />
-      <workItem from="1777750060374" duration="9394000" />
+      <workItem from="1777750060374" duration="10067000" />
     </task>
     <task id="LOCAL-00001" summary="add initial project configuration and migration files">
       <option name="closed" value="true" />
@@ -335,7 +332,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777798137399</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="added CIB-Matrix of factors">
+      <option name="closed" value="true" />
+      <created>1777807397605</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1777807397605</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -370,7 +375,8 @@
     <MESSAGE value="fixed price problem. price did not change over the rounds" />
     <MESSAGE value="deleted provier_backupt" />
     <MESSAGE value="added final_narrative in markdown format" />
-    <option name="LAST_COMMIT_MESSAGE" value="added final_narrative in markdown format" />
+    <MESSAGE value="added CIB-Matrix of factors" />
+    <option name="LAST_COMMIT_MESSAGE" value="added CIB-Matrix of factors" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Technology_Lab$test_output_writer.coverage" NAME="test_output_writer Coverage Results" MODIFIED="1777743495288" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
@@ -383,7 +389,7 @@
     <SUITE FILE_PATH="coverage/Technology_Lab$config_loader.coverage" NAME="config_loader Coverage Results" MODIFIED="1777744193540" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$1_easy_llm_output.coverage" NAME="1_easy_llm_output Coverage Results" MODIFIED="1777646797892" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
     <SUITE FILE_PATH="coverage/Technology_Lab$output_writer.coverage" NAME="output_writer Coverage Results" MODIFIED="1777745278805" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
-    <SUITE FILE_PATH="coverage/Technology_Lab$run_simulation.coverage" NAME="run_simulation Coverage Results" MODIFIED="1777806847600" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$run_simulation.coverage" NAME="run_simulation Coverage Results" MODIFIED="1777807221593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$llm_client.coverage" NAME="llm_client Coverage Results" MODIFIED="1777743802262" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$agent_node.coverage" NAME="agent_node Coverage Results" MODIFIED="1777749871106" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nodes" />
     <SUITE FILE_PATH="coverage/Technology_Lab$2_chat_with_llm.coverage" NAME="2_chat_with_llm Coverage Results" MODIFIED="1777743365393" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />

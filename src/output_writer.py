@@ -199,6 +199,22 @@ def save_cib_matrix(state, filename: str = "cib_matrix.json") -> str:
     else:
         cib_data = state.cib_matrix.model_dump()
 
+        # Faktornamen direkt in source_factor und target_factor einbetten
+        enriched_entries = []
+        for entry in cib_data["entries"]:
+            source_id = entry["source_factor"]
+            target_id = entry["target_factor"]
+
+            source_factor = state.environment.factors.get(source_id)
+            target_factor = state.environment.factors.get(target_id)
+
+            entry["source_factor"] = f"{source_id} - {source_factor.name}" if source_factor else source_id
+            entry["target_factor"] = f"{target_id} - {target_factor.name}" if target_factor else target_id
+
+            enriched_entries.append(entry)
+
+        cib_data["entries"] = enriched_entries
+
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(cib_data, f, indent=2, ensure_ascii=False)
 
