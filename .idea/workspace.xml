@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added CIB-Matrix of factors">
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="deleted old save-log-functions">
+      <change afterPath="$PROJECT_DIR$/tests/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_agent_parsing.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_config_loader.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_end_to_end.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_environment_updates.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_population_config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/configs/simulation_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/configs/simulation_config.json" afterDir="false" />
     </list>
@@ -80,6 +86,11 @@
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Python tests.Python tests for test_agent_node.AgentNodeTests.executor": "Run",
     "Python tests.Python tests for test_agent_node.AgentNodeTests.test_parse_valid_json_output.executor": "Run",
+    "Python tests.Python tests in test_agent_parsing.py.executor": "Run",
+    "Python tests.Python tests in test_config_loader.py.executor": "Run",
+    "Python tests.Python tests in test_end_to_end.py.executor": "Run",
+    "Python tests.Python tests in test_environment_updates.py.executor": "Run",
+    "Python tests.Python tests in test_population_config.py.executor": "Run",
     "Python.1_easy_llm_output.executor": "Run",
     "Python.2_chat_with_llm.executor": "Run",
     "Python.agent_node.executor": "Run",
@@ -91,6 +102,7 @@
     "Python.printBoard.executor": "Run",
     "Python.run_simulation.executor": "Run",
     "Python.simulation_runner.executor": "Run",
+    "Python.test_config_loader.executor": "Run",
     "Python.test_output_writer.executor": "Run",
     "Python.validation.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -170,7 +182,7 @@
       <workItem from="1777647316338" duration="776000" />
       <workItem from="1777648101990" duration="2105000" />
       <workItem from="1777743111443" duration="4874000" />
-      <workItem from="1777750060374" duration="10067000" />
+      <workItem from="1777750060374" duration="11552000" />
     </task>
     <task id="LOCAL-00001" summary="add initial project configuration and migration files">
       <option name="closed" value="true" />
@@ -340,7 +352,23 @@
       <option name="project" value="LOCAL" />
       <updated>1777807397605</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="added understandable description of factors in cib_matrix.json">
+      <option name="closed" value="true" />
+      <created>1777808062549</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1777808062549</updated>
+    </task>
+    <task id="LOCAL-00023" summary="deleted old save-log-functions">
+      <option name="closed" value="true" />
+      <created>1777808755260</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1777808755260</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -376,20 +404,23 @@
     <MESSAGE value="deleted provier_backupt" />
     <MESSAGE value="added final_narrative in markdown format" />
     <MESSAGE value="added CIB-Matrix of factors" />
-    <option name="LAST_COMMIT_MESSAGE" value="added CIB-Matrix of factors" />
+    <MESSAGE value="added understandable description of factors in cib_matrix.json" />
+    <MESSAGE value="deleted old save-log-functions" />
+    <option name="LAST_COMMIT_MESSAGE" value="deleted old save-log-functions" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/Technology_Lab$test_config_loader.coverage" NAME="test_config_loader Coverage Results" MODIFIED="1777808822156" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
     <SUITE FILE_PATH="coverage/Technology_Lab$test_output_writer.coverage" NAME="test_output_writer Coverage Results" MODIFIED="1777743495288" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
     <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1777742388634" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Technology_Lab$.coverage" NAME=" Coverage Results" MODIFIED="1777648092192" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$.coverage" NAME=" Coverage Results" MODIFIED="1777809157127" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
     <SUITE FILE_PATH="coverage/Technology_Lab$validation.coverage" NAME="validation Coverage Results" MODIFIED="1777743792441" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$printBoard.coverage" NAME="printBoard Coverage Results" MODIFIED="1777645793274" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/extensions" />
     <SUITE FILE_PATH="coverage/Technology_Lab$simulation_runner.coverage" NAME="simulation_runner Coverage Results" MODIFIED="1777743795261" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$market_node.coverage" NAME="market_node Coverage Results" MODIFIED="1777795410670" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nodes" />
     <SUITE FILE_PATH="coverage/Technology_Lab$config_loader.coverage" NAME="config_loader Coverage Results" MODIFIED="1777744193540" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$1_easy_llm_output.coverage" NAME="1_easy_llm_output Coverage Results" MODIFIED="1777646797892" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
-    <SUITE FILE_PATH="coverage/Technology_Lab$output_writer.coverage" NAME="output_writer Coverage Results" MODIFIED="1777745278805" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
-    <SUITE FILE_PATH="coverage/Technology_Lab$run_simulation.coverage" NAME="run_simulation Coverage Results" MODIFIED="1777807221593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$output_writer.coverage" NAME="output_writer Coverage Results" MODIFIED="1777807897717" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$run_simulation.coverage" NAME="run_simulation Coverage Results" MODIFIED="1777808329313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$llm_client.coverage" NAME="llm_client Coverage Results" MODIFIED="1777743802262" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$agent_node.coverage" NAME="agent_node Coverage Results" MODIFIED="1777749871106" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nodes" />
     <SUITE FILE_PATH="coverage/Technology_Lab$2_chat_with_llm.coverage" NAME="2_chat_with_llm Coverage Results" MODIFIED="1777743365393" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
