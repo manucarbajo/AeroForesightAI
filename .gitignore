@@ -3,3 +3,11 @@
 .notes/
 __pycache__/
 *.py[cod]venv/
+
+
+
+
+# Local runtime artifacts and secrets
+haiko_playground/.langgraph_api/
+haiko_playground/.env
+*.env

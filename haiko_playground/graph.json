@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "id": "orchestrator",
+      "label": "Orchestrator"
+    },
+    {
+      "id": "consumer",
+      "label": "Consumer"
+    },
+    {
+      "id": "provider",
+      "label": "Provider"
+    },
+    {
+      "id": "regulator",
+      "label": "Regulator"
+    },
+    {
+      "id": "market",
+      "label": "Market"
+    },
+    {
+      "id": "environment",
+      "label": "Environment"
+    }
+  ],
+  "edges": [
+    {
+      "from": "orchestrator",
+      "to": "consumer"
+    },
+    {
+      "from": "consumer",
+      "to": "provider"
+    },
+    {
+      "from": "provider",
+      "to": "regulator"
+    },
+    {
+      "from": "regulator",
+      "to": "market"
+    },
+    {
+      "from": "market",
+      "to": "environment"
+    }
+  ],
+  "meta": {
+    "description": "Simple simulation flow: Orchestrator -> Consumer -> Provider -> Regulator -> Market -> Environment",
+    "generated_by": "example"
+  }
+}
