@@ -1,0 +1,86 @@
+[
+  {
+    "round": 1,
+    "agents": {
+      "consumer": {
+        "reasoning": "Die Nachfrage wird durch die steigende Nachfrageschwelle und die zunehmenden CO2-Steuern beeinflusst. Viele Privatreisende werden zu umweltbewussteren Entscheidungen führen, was zu einem Rückgang der Nachfrage nach günstigen Flügen führt. Die Geschäftsreisenden sind jedoch nur zum Teil von diesen Faktoren beeinflusst und bleiben eher bei ihren ursprünglichen Entscheidungen, die auf Preis und Zeitpunkt abzielen.",
+        "actions": [
+          "{'action_type': 'buchungsverhalten', 'description': 'Reisende wählen günstigere Flugzeiten oder alternativen Verkehrsmittel'}",
+          "{'action_type': 'verzicht', 'description': 'Reisende entscheiden sich für alternative Reiseziele oder -möglichkeiten'}"
+        ],
+        "segment_analysis": {}
+      },
+      "provider": {
+        "reasoning": "Um die Nachfrage nach günstigen Flügen zu decken und gleichzeitig die Kosten minimieren, entscheide ich, die Preise um 8% zu senken.",
+        "actions": [
+          "{'action_type': 'price_reduction', 'factor_ids': ['F1', 'F3', 'F4'], 'percentage_change': '-8%'}"
+        ],
+        "segment_analysis": {}
+      },
+      "regulator": {
+        "reasoning": "Um die Klimaziele zu erreichen und gleichzeitig die Wettbewerbsfähigkeit der Luftfahrt zu erhalten, wird entschieden, die CO2-Steuer weiterhin auf 55.0 Euro pro Tonne anzustigen, um den Treibstoffverbrauch zu reduzieren. Gleichzeitig wird eine Foerderung für die Entwicklung und den Einsatz von alternativen Antriebstechnologien wie SAF/E-Fuels/H2 gestartet, um die wirtschaftliche Auswirkungen zu minimieren.",
+        "actions": [
+          "{'action_id': 'Foerderung_starten', 'description': 'Eine Foerderung für die Entwicklung und den Einsatz von alternativen Antriebstechnologien wie SAF/E-Fuels/H2 wird gestartet.'}"
+        ],
+        "segment_analysis": {}
+      }
+    }
+  },
+  {
+    "round": 2,
+    "agents": {
+      "consumer": {
+        "reasoning": "Die Nachfrage nach günstigen Flügen nimmt ab, da Reisende umweltbewussterer Entscheidungen treffen. Dies führt zu einer Abnahme der Zahlungsbereitschaft, insbesondere bei den Privatreisenden, die sich für alternative Reiseziele oder -möglichkeiten entscheiden. In der gleichen Runde wird ein Preisverlust von 8% bei Flügen angeboten, was für Geschäftsreisende nur zum Teil beeinflusst ist und sie eher bei ihren ursprünglichen Entscheidungen bleibt. Daher ist es für mich als Konsument entscheidend, auf Alternativangebote wie Bussen oder Züge zurückzugreifen, um die Umweltbelastung zu minimieren.",
+        "actions": [
+          "{'action_type': 'Buchungsverhalten', 'description': 'Wähle günstigere Flugzeiten oder alternativen Verkehrsmittel'}",
+          "{'action_type': 'Verzicht', 'description': 'Entscheide mich für alternative Reiseziele oder -möglichkeiten'}"
+        ],
+        "segment_analysis": {}
+      },
+      "provider": {
+        "reasoning": "Um die Nachfrage nach günstigen Flügen zu decken und gleichzeitig die Kosten minimieren, entscheide ich, die Preise um 8% zu senken. Dieser Schritt wird durch die steigende Nachfrageschwelle und die zunehmenden CO2-Steuern beeinflusst.",
+        "actions": [
+          "price_reduction",
+          "investition_in_SAF"
+        ],
+        "segment_analysis": {}
+      },
+      "regulator": {
+        "reasoning": "Die regulatorische Entscheidung soll die Klimaziele erreichen und gleichzeitig die Wettbewerbsfähigkeit der Luftfahrt erhalten. Die CO2-Steuer wird weiterhin auf 55.0 Euro pro Tonne angehoben, um den Treibstoffverbrauch zu reduzieren. Gleichzeitig wird eine Foerderung für die Entwicklung und den Einsatz von alternativen Antriebstechnologien wie SAF/E-Fuels/H2 gestartet, um die wirtschaftliche Auswirkungen zu minimieren.",
+        "actions": [
+          "{'action_id': 'CO2-Steuer erhöhen', 'description': 'Die CO2-Steuer wird auf 55.0 Euro pro Tonne angehoben.'}",
+          "{'action_id': 'Foerderung starten', 'description': 'Eine Foerderung für die Entwicklung und den Einsatz von alternativen Antriebstechnologien wie SAF/E-Fuels/H2 wird gestartet.'}"
+        ],
+        "segment_analysis": {}
+      }
+    }
+  },
+  {
+    "round": 3,
+    "agents": {
+      "consumer": {
+        "reasoning": "Die Nachfrage nach günstigen Flügen nimmt ab, da Reisende umweltbewussterer Entscheidungen treffen. Dies führt zu einer Abnahme der Zahlungsbereitschaft, insbesondere bei den Privatreisenden, die sich für alternative Reiseziele oder -möglichkeiten entscheiden. Als Konsument möchte ich daher auf Alternativangebote wie Bussen oder Züge zurückgreifen, um die Umweltbelastung zu minimieren.",
+        "actions": [
+          "{'action_type': 'Buchungsverhalten', 'description': 'Wähle günstigere Flugzeiten oder alternativen Verkehrsmittel'}",
+          "{'action_type': 'Verzicht', 'description': 'Entscheide mich für alternative Reiseziele oder -möglichkeiten'}"
+        ],
+        "segment_analysis": {}
+      },
+      "provider": {
+        "reasoning": "Die steigende Nachfrage nach günstigen Flügen und die CO2-Steuererhöhung führen dazu, dass Investitionen in Alternativen wie SAF/E-Fuels/H2 sinnvoll sind. Dies reduziert Treibstoffkosten und senkt Preise.",
+        "actions": [
+          "investition_in_SAF",
+          "preis_verringern"
+        ],
+        "segment_analysis": {}
+      },
+      "regulator": {
+        "reasoning": "um den Treibstoffverbrauch zu reduzieren und die Klimaziele zu erreichen",
+        "actions": [
+          "NO_OP"
+        ],
+        "segment_analysis": {}
+      }
+    }
+  }
+]

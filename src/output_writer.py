@@ -1,11 +1,14 @@
 import json
 import os
+from pathlib import Path
 from typing import List
 from datetime import datetime
 
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
 
-OUTPUT_DIR = "/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab/outputs"
+# Projekt-Root relativ zu dieser Datei (…/src/output_writer.py → Repo-Root)
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+OUTPUT_DIR = str(_REPO_ROOT / "outputs")
 
 
 def ensure_output_dir():
