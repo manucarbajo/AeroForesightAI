@@ -11,3 +11,4 @@ __pycache__/
 haiko_playground/.langgraph_api/
 haiko_playground/.env
 *.env
+.venv312/

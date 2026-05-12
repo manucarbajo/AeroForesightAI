@@ -1,0 +1,82 @@
+{
+  "entries": [
+    {
+      "source_factor": "F1 - Mobilitaetsbeduerfnis / Nachfrage",
+      "target_factor": "F2 - Regulatorische Strenge",
+      "influence_score": 1.0,
+      "reasoning": "Die CO2-Steuer wird auf 55.0 Euro pro Tonne angehoben."
+    },
+    {
+      "source_factor": "F2 - Regulatorische Strenge",
+      "target_factor": "F1 - Mobilitaetsbeduerfnis / Nachfrage",
+      "influence_score": 1.0,
+      "reasoning": "Die CO2-Steuer wird auf 55.0 Euro pro Tonne angehoben."
+    },
+    {
+      "source_factor": "F2 - Regulatorische Strenge",
+      "target_factor": "F6 - Gesellschaftlicher Wertewandel",
+      "influence_score": 0.875,
+      "reasoning": "Die CO2-Steuer wird auf 55.0 Euro pro Tonne angehoben."
+    },
+    {
+      "source_factor": "F6 - Gesellschaftlicher Wertewandel",
+      "target_factor": "F2 - Regulatorische Strenge",
+      "influence_score": 0.875,
+      "reasoning": "Die CO2-Steuer wird auf 55.0 Euro pro Tonne angehoben."
+    },
+    {
+      "source_factor": "F3 - Technologische Reife",
+      "target_factor": "F4 - Wirtschaftliche Entwicklung",
+      "influence_score": 0.792,
+      "reasoning": "Preise um 8% gesenkt, Begruendung: Investition in SAF/E-Fuels/H2 reduziert Treibstoffkosten und senkt Preise."
+    },
+    {
+      "source_factor": "F4 - Wirtschaftliche Entwicklung",
+      "target_factor": "F3 - Technologische Reife",
+      "influence_score": 0.792,
+      "reasoning": "Preise um 8% gesenkt, Begruendung: Investition in SAF/E-Fuels/H2 reduziert Treibstoffkosten und senkt Preise."
+    },
+    {
+      "source_factor": "F1 - Mobilitaetsbeduerfnis / Nachfrage",
+      "target_factor": "F3 - Technologische Reife",
+      "influence_score": 0.75,
+      "reasoning": "Preise um 8% gesenkt, Begruendung: Investition in SAF/E-Fuels/H2 reduziert Treibstoffkosten und senkt Preise."
+    },
+    {
+      "source_factor": "F1 - Mobilitaetsbeduerfnis / Nachfrage",
+      "target_factor": "F4 - Wirtschaftliche Entwicklung",
+      "influence_score": 0.75,
+      "reasoning": "Preise um 8% gesenkt, Begruendung: Investition in SAF/E-Fuels/H2 reduziert Treibstoffkosten und senkt Preise."
+    },
+    {
+      "source_factor": "F3 - Technologische Reife",
+      "target_factor": "F1 - Mobilitaetsbeduerfnis / Nachfrage",
+      "influence_score": 0.75,
+      "reasoning": "Preise um 8% gesenkt, Begruendung: Investition in SAF/E-Fuels/H2 reduziert Treibstoffkosten und senkt Preise."
+    },
+    {
+      "source_factor": "F4 - Wirtschaftliche Entwicklung",
+      "target_factor": "F1 - Mobilitaetsbeduerfnis / Nachfrage",
+      "influence_score": 0.75,
+      "reasoning": "Preise um 8% gesenkt, Begruendung: Investition in SAF/E-Fuels/H2 reduziert Treibstoffkosten und senkt Preise."
+    },
+    {
+      "source_factor": "F1 - Mobilitaetsbeduerfnis / Nachfrage",
+      "target_factor": "F5 - Verfuegbarkeit von Alternativen",
+      "influence_score": 0.5,
+      "reasoning": "Die Nachfrage nach günstigen Flügen nimmt ab, da Reisende umweltbewussterer Entscheidungen treffen"
+    },
+    {
+      "source_factor": "F5 - Verfuegbarkeit von Alternativen",
+      "target_factor": "F1 - Mobilitaetsbeduerfnis / Nachfrage",
+      "influence_score": 0.5,
+      "reasoning": "Die Nachfrage nach günstigen Flügen nimmt ab, da Reisende umweltbewussterer Entscheidungen treffen"
+    }
+  ],
+  "round_generated": 3,
+  "metadata": {
+    "total_events": 16,
+    "total_entries": 12,
+    "rounds": 3
+  }
+}
