@@ -68,7 +68,7 @@ Es gibt nur wenige geplante Integrationspunkte:
 ---
 
 ## AP1 – Datenmodell & Konfiguration
-**Verantwortung:** Person A
+**Verantwortung:** Marc
 
 ### Ziel
 Definition und Implementierung aller zentralen Datenstrukturen und Konfigurationsdateien.
@@ -136,7 +136,7 @@ Definition und Implementierung aller zentralen Datenstrukturen und Konfiguration
 ---
 
 ## AP2 – Agentenlogik & Prompting
-**Verantwortung:** Person B
+**Verantwortung:** Manuel
 
 ### Ziel
 Umsetzung der drei MVP-Agenten mit konsistenten Prompts und parserfreundlichem Ausgabeformat.
@@ -193,7 +193,7 @@ Umsetzung der drei MVP-Agenten mit konsistenten Prompts und parserfreundlichem A
 ---
 
 ## AP3 – Simulationsgraph, Orchestrierung & Environment
-**Verantwortung:** Person C
+**Verantwortung:** Haiko
 
 ### Ziel
 Aufbau des ausführbaren LangGraph-Workflows inklusive Rundenlogik, Simulationsuhr und Umweltaktualisierung.
@@ -245,7 +245,7 @@ Aufbau des ausführbaren LangGraph-Workflows inklusive Rundenlogik, Simulationsu
 ---
 
 ## AP4 – Output, CIB, Testing & Dokumentation
-**Verantwortung:** Person D
+**Verantwortung:** Jonas
 
 ### Ziel
 Speicherung, Auswertung, Nachvollziehbarkeit und Abschlussdokumentation der Challenge 2.
@@ -292,40 +292,7 @@ Speicherung, Auswertung, Nachvollziehbarkeit und Abschlussdokumentation der Chal
 
 ---
 
-# Minimierung von Blockaden
-
-## Was muss ganz am Anfang gemeinsam entschieden werden?
-Diese Punkte müssen am ersten Arbeitstag abgestimmt und danach nicht mehr ständig geändert werden:
-
-### Freeze 1: Gemeinsame IDs
-- Agenten-IDs
-- Faktor-IDs
-- Zustands-IDs
-- EventType-Werte
-- Segment-IDs
-- DistributionType-Werte
-- ScenarioParameter-IDs
-
-### Freeze 2: Gemeinsame Datenformate
-- `SimulationState`
-- `AgentResponse` (inkl. `segment_analysis`)
-- `EventLogEntry`
-- `PopulationConfig` / `ConsumerSegment`
-- `ScenarioParameter`
-
-### Freeze 3: MVP-Umfang
-- Markt-Agent drin oder nur minimal?
-- wie viele Runden?
-- welche Faktorwechsel sind im MVP erlaubt?
-- CIB regelbasiert oder LLM-basiert?
-- welche Konsumenten-Segmente und Verteilungen im MVP?
-- welche Szenarioparameter konfigurierbar?
-
-Wenn diese 3 Dinge früh feststehen, könnt ihr fast parallel arbeiten.
-
----
-
-# Empfohlene Projektstruktur
+# Projektstruktur
 
 ```text
 project/

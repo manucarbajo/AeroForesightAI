@@ -1,15 +1,15 @@
-# Challenge 1: Domänenrepräsentation
+# Challenge 2: Multi-Agenten-Simulationsumgebung
 
 ## Projektkontext
 
 | Attribut | Wert |
 |----------|------|
 | **Forschungsprojekt** | Entwicklung einer prototypischen multiagentischen Simulationsumgebung für die Szenarioplanung im Strategic Foresight |
-| **Challenge** | C1 – Domänenrepräsentation |
+| **Challenge** | C2 – Multi-Agenten-Simulationsumgebung |
 | **Domäne** | System Flugverkehr |
 | **Methodik** | Ludewig, J. & Lichter, H. (2023): Software Engineering – Grundlagen, Menschen, Prozesse, Techniken. 4. Aufl., dpunkt.verlag. |
 | **Technischer Stack** | Python, LangGraph, Ollama (lokale LLMs) |
-| **Stand** | Analyse (Systemabgrenzung, Glossar, Stakeholder, Anforderungen, Modelle)  |
+| **Stand** | Implementierter MVP + wissenschaftlich begründete Architektur |
 
 ---
 
@@ -17,11 +17,11 @@
 
 - [1 Problemdomäne verstehen & abgrenzen](#1-problemdomäne-verstehen--abgrenzen)
   - [1.1 Festgelegte Systemgrenzen](#11-festgelegte-systemgrenzen)
-  - [1.2 Herleitung der Akteure](#12-herleitung-der-akteure)
+  - [1.2 Akteure](#12-akteure)
     - [1.2.1 MVP-Akteure für Workbench](#121-mvp-akteure-für-workbench)
     - [1.2.2 Weitere Akteure](#122-weitere-akteure)
     - [1.2.3 Sub-Agenten Überlegung](#123-sub-agenten-überlegung)
-    - [1.2.4 Akteurübersicht](#124-akteurs-übersicht)
+    - [1.2.4 Akteurübersicht](#124-akteurübersicht)
   - [1.3 Herleitung der Einflussfaktoren](#13-herleitung-der-einflussfaktoren)
   - [1.4 Faktor-Zustände](#14-faktor-zustände)
   - [1.5 Beziehungstypen](#15-beziehungstypen)
@@ -29,16 +29,18 @@
   - [2.1 Systemkonzepte](#21-systemkonzepte)
   - [2.2 Akteure](#22-akteure)
   - [2.3 Einflussfaktoren](#23-einflussfaktoren)
-- [3 Stakeholder-Identifikation](#3-stakeholder-identifikation)
+- [3 Stakeholder](#3-stakeholder)
 - [4 Anforderungserhebung](#4-anforderungserhebung)
   - [4.1 Funktionale Anforderungen (User Stories)](#41-funktionale-anforderungen-user-stories)
-  - [4.2 Nicht-funktionale Anforderungen](#42-nicht-funktionale-anforderungen)
+  - [4.2 Nicht-funktionale Anforderungen (NFA)](#42-nicht-funktionale-anforderungen-nfa)
   - [4.3 Abgrenzung (Out of Scope)](#43-abgrenzung-out-of-scope)
 - [5 Modelle & Diagramme](#5-modelle--diagramme)
+  - [5.0 Wissenschaftliche Fundierung](#50-wissenschaftliche-fundierung)
   - [5.1 ERM](#51-erm)
-  - [5.2 Klassendiagramme](#52-klassendiagramme)
-  - [5.3 Aktivitätsdiagramm](#53-aktivitätsdiagramm)
-- [6 Quellenverzeichnis](#6-quellenverzeichnis)
+  - [5.2 Klassendiagramm](#52-klassendiagramm)
+  - [5.3 Ablaufdiagramm](#53-ablaufdiagramm)
+  - [5.4 Umsetzungsstand AP2 (Agentenlogik & Prompting)](#54-umsetzungsstand-ap2-agentenlogik--prompting)
+- [6. Quellenverzeichnis](#6-quellenverzeichnis)
 
 ---
 
@@ -567,16 +569,39 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW (vgl. Rezazadeh & 
 
 > **Methodische Grundlage:** Die folgenden Modelle bilden die Grundlage für die prototypische Implementierung der Simulationsumgebung mit LangGraph. Sie sind bewusst auf den MVP zugeschnitten (3 Sub-Agenten, 1 Markt-Agent, 7 Faktoren, Orchestrator, Environment-Node) und so gestaltet, dass sie modular erweiterbar sind. Die Diagramme orientieren sich an Ludewig & Lichter, Kap. 16 (Modellierung) und wurden auf die Besonderheiten einer LLM-basierten Multi-Agenten-Simulation angepasst.
 
-> **Einordnung Simulationsparadigma:** Das Modell ist ein hybrider Simulationsansatz. Es übernimmt aus der Discrete-Event Simulation (Banks et al., 2010) das Kernprinzip, dass Ereignisse während der Simulation zu strukturierten, geloggten Objekten mit Simulationsuhr-Zeitstempel gemacht werden, auf die andere Agenten in Folgerunden reagieren können. Eine vollständige DES-Implementierung (Future Event List als Priority Queue, Agent-to-Agent-Kommunikation) ist mit LangGraph im Rahmen dieses Projekts nicht zielführend umsetzbar. Die Agenten selbst folgen dem Agent-Based Simulation (ABS) Paradigma: Sie sind aktiv, entscheidend und besitzen individuelle Ziele und Constraints. Faktor-Wechselwirkungen orientieren sich konzeptuell an System Dynamics (CIB).
+> **Einordnung Simulationsparadigma:** Das Modell ist ein hybrider Simulationsansatz. Es übernimmt aus der Discrete-Event Simulation (Banks et al., 2010) das Kernprinzip, dass Ereignisse während der Simulation zu strukturierten, geloggten Objekten gemacht werden, auf die andere Agenten in Folgerunden reagieren können. Eine vollständige DES-Implementierung (Future Event List als Priority Queue, explizite Event-Scheduling-Logik) ist im MVP bewusst nicht umgesetzt. Die Agenten folgen dem Agent-Based-Simulation-Paradigma: Sie sind aktiv, entscheidungsfähig und besitzen individuelle Ziele und Constraints. Faktor-Wechselwirkungen orientieren sich konzeptuell an CIB und damit an einer systemdynamischen Sicht auf Rückkopplungen.
 
-> **Populationsheterogenität und Marktdynamik:** Ein zentrales Modellierungsprinzip ist die Abbildung heterogener Konsumentenpopulationen. Reale Märkte bestehen nicht aus einem homogenen Nachfrager, sondern aus unterschiedlichen Konsumenten-Segmenten mit variierender Preiselastizität, Einkommensniveau und Umweltbewusstsein (vgl. Evangelinos et al., 2011, S. 2 ff.). Ein Geschäftsreisender reagiert auf eine Preiserhöhung von 20% kaum (niedrige Preiselastizität), während ein preisbewusster Privatreisender bei derselben Erhöhung auf die Bahn umsteigt (hohe Preiselastizität). Diese Heterogenität wird durch **stochastische Verteilungen** (z.B. Normalverteilung für Einkommensniveaus, bimodale Verteilung für Preiselastizität) formal beschrieben und über das `PopulationConfig`-Modell konfigurierbar gemacht. Die Verteilungen werden mittels `scipy.stats` parametrisiert und dienen als strukturierter Kontext für die qualitative Argumentation der LLM-Agenten. Zusätzlich ermöglichen **Szenarioparameter** (z.B. „Nachfragewachstum 10% p.a.", „Kerosinpreisanstieg 15%") die gezielte Steuerung von Simulationsannahmen, ohne den Kerncode zu ändern. Die qualitative Simulation wird damit nicht ersetzt, sondern durch eine formale Populationsmodellierung parametrisiert: Der LLM-Consumer-Agent erhält die Segmentdaten als Kontext und argumentiert differenziert über die Reaktionen verschiedener Nachfragergruppen.
+### 5.0 Wissenschaftliche Fundierung
+
+Die nachfolgende Tabelle zeigt explizit, wie die theoretische Fundierung im implementierten Code durchgeführt wurde. Ziel ist methodische Stringenz: Jede zentrale Architekturentscheidung ist auf mind. ein wissenschaftliches Prinzip zurückführbar.
+
+| Wissenschaftliche Grundlage | Kernaussage für dieses Projekt | Konkrete Umsetzung im Code (C2) | Methodische Einordnung |
+|---|---|---|---|
+| **Discrete-Event System Simulation, Banks et al. (2010)** | Simulation soll aus diskreten, nachvollziehbaren Ereignissen bestehen. | `EventLogEntry` als zentrale Ereigniseinheit; Akkumulation in `SimulationState.event_log`; post-hoc Auswertung durch `CIBExtractorNode`; sequentielle Runden im Runner. | DES-Kernprinzip (Ereignisprotokollierung) ist umgesetzt, jedoch ohne vollständige Future-Event-List. Das ist für den MVP eine bewusste Komplexitätsreduktion. |
+| **Agent-Based Modeling: Methods and Techniques for Simulating Human Systems, Bonabeau (2002)** | Makroeffekte entstehen aus lokalem Verhalten heterogener Agenten. | Drei autonome Rollen (`consumer`, `provider`, `regulator`) mit eigenen Zielen/Constraints in `agents.json`; gemeinsame Interaktion über geteilten State und Event-Log (`AgentNode`, `EnvironmentNode`). | Entspricht ABM-Logik: dezentrale Entscheidungen, explizite Interaktion, emergente Systemdynamik über mehrere Runden. |
+| **Generative Social Science, Epstein (2006)** | "If you did not grow it, you did not explain it": Erklärung durch generative Prozesse statt nur statischer Beschreibung. | Rundenbasierter Simulationsprozess erzeugt Schritt für Schritt Systemzustände (`round_results`, `environment.global_context`) aus Mikroentscheidungen der Agenten. | Der Fokus liegt auf generativer Erklärung plausibler Szenarien, nicht auf punktgenauer Vorhersage. |
+| **Dynamic Models of Segregation, Schelling (1971)** | Schon einfache lokale Entscheidungsregeln können nichtlineare, aggregierte Muster erzeugen. | Segmentierte Konsumentenpopulation (`PopulationConfig` mit `ConsumerSegment` und Verteilungen) beeinflusst Entscheidungen des Consumer-Agenten und damit Markt-/Policy-Reaktionen über Folgeevents. | Die Segmente operationalisieren heterogene Präferenzen und bilden die Mikro-Makro-Logik für Nachfrageverschiebungen ab. |
+| **Preisdispersion und Wettbewerb im Luftverkehr, Evangelinos et al. (2011)** | Preiselastizität ist heterogen; Marktreaktionen sind segmentabhängig. | Segmentattribute wie `price_elasticity`, `income_level`, `environmental_awareness`; `segment_analysis` im Agent-Output; einfache Preisfortschreibung im `MarketNode`. | Der MVP bildet die Richtung der Effekte ab (qualitativ + heuristisch), nicht bereits eine voll kalibrierte ökonometrische Nachfragefunktion. |
+| **A Prompt Pattern Catalog to Enhance Prompt Engineering with ChatGPT, White et al. (2023)** | LLM-Ausgaben werden robuster, wenn Rollen, Kontext und Output-Format als Pattern strukturiert werden. | Rollenbasierte Prompt-Templates (`consumer.md`, `provider.md`, `regulator.md`) mit Persona-, Template-, Context-Manager- und Reflection-Pattern; robustes JSON-Parsing mit Fallback in `AgentNode`. | Prompting ist als methodischer Baustein explizit dokumentiert und mit parserfreundlicher Ausgabe in die Simulationsarchitektur integriert. |
+
+**Wissenschaftliche Zielsetzung im MVP:**  
+Im MVP verfolgen wir bewusst ein erklärendes, generatives Simulationsdesign. Ziel ist es, Wirkmechanismen im soziotechnischen System transparent zu machen und plausible Argumentationsketten für die Szenarioplanung zu erzeugen.
+
+**Ausblick / nächster Entwicklungsschritt:**  
+Die aktuelle Umsetzung ist als "work in progress" anzusehen. Es adressiert logischerweise noch nicht alle geplanten Ausbaustufen:
+- Die Agentenabfolge ist im MVP sequentiell/fix. Als nächster Schritt ist eine dynamische Orchestrierung vorgesehen (situationsabhängiges Routing statt fester Reihenfolge). (aus Testzwecken zunächst sequentiell)
+- Neue Einflussfaktoren können derzeit nur eingeschränkt verarbeitet werden. Geplant ist die **vollständige Generierung und Integration dynamischer Faktoren** in den Simulations- und Auswertungsfluss.
+- Die Laufzeit ist aktuell noch relativ hoch. Ein zentrales To-do ist die **Performance-Optimierung** (u.a. effizientere Prompt-/Kontextsteuerung, reduzierte Token-Last, gezieltes Caching und robustere Pipeline für längere Läufe).
+- Die Konfiguration ist aktuell in Teilen noch stark numerisch geprägt. Als Ausblick soll die Modellierung stärker **qualitativ/ordinal** werden (z.B. Zustandsklassen wie niedrig/mittel/hoch statt primär Prozent- und Absolutwerten), damit sie besser zur Foresight-Logik passt.
+
+> **Populationsheterogenität und Marktdynamik:** Ein zentrales Modellierungsprinzip ist die Abbildung heterogener Konsumentenpopulationen. Reale Märkte bestehen nicht aus einem homogenen Nachfrager, sondern aus unterschiedlichen Konsumenten-Segmenten mit variierender Preiselastizität, Einkommensniveau und Umweltbewusstsein (vgl. Evangelinos et al., 2011, S. 2 ff.). Ein Geschäftsreisender reagiert auf eine Preiserhöhung von 20% kaum (niedrige Preiselastizität), während ein preisbewusster Privatreisender bei derselben Erhöhung auf die Bahn umsteigt (hohe Preiselastizität). Diese Heterogenität wird durch **parametrisierte Verteilungsmodelle** über `DistributionConfig` (z.B. Normalverteilung) formal beschrieben und über das `PopulationConfig`-Modell konfigurierbar gemacht. Die Verteilungen dienen als strukturierter Kontext für die qualitative Argumentation der LLM-Agenten. Zusätzlich ermöglichen **Szenarioparameter** (z.B. „Nachfragewachstum 10% p.a.", „Kerosinpreisanstieg 15%") die gezielte Steuerung von Simulationsannahmen, ohne den Kerncode zu ändern. Die qualitative Simulation wird damit nicht ersetzt, sondern durch eine formale Populationsmodellierung parametrisiert: Der LLM-Consumer-Agent erhält die Segmentdaten als Kontext und argumentiert differenziert über die Reaktionen verschiedener Nachfragergruppen.
 
 > **Leitendes Design-Prinzip – Trennung von Simulation und Ergebnisverarbeitung:** Das Event-Log (`event_log`) ist die primäre und unveränderliche Ausgabe der Simulation. Es protokolliert alle Ereignisse mit Simulationsuhr-Zeitstempel. Alle Auswertungsschritte (CIB-Extraktion, Narrativ-Generierung, Preishistorie-Analyse) operieren ausschließlich *auf* diesem Log und verändern es nicht. `CIBExtractorNode` und `SaveResults` sind bewusst außerhalb des Simulations-Loops positioniert. Das ermöglicht es, dieselbe Simulation mit unterschiedlichen Auswertungslogiken zu analysieren, ohne sie erneut laufen zu lassen.
 
 > **Stereotypen-Legende:**
 > | Stereotyp | Bedeutung |
 > |-----------|-----------|
-> | `<<TypedDict>>` | Python-TypedDict – zentraler LangGraph-State |
+> | `<<TypedDict>>` | Konzeptioneller State-Typ im UML-Modell (technisch als Pydantic-State umgesetzt) |
 > | `<<dataclass>>` | Python-Dataclass – strukturierter Datencontainer |
 > | `<<enumeration>>` | Python-Enum – fester Wertebereich |
 > | `<<node>>` | LangGraph-Node – Verarbeitungseinheit im Graphen |
@@ -587,7 +612,7 @@ Die Priorisierung der Stories erfolgte mit der Methode MoSCoW (vgl. Rezazadeh & 
 
 ### 5.1 ERM
 
-Das Entity-Relationship-Modell zeigt die Datenstruktur der Simulation – welche Entitäten existieren, welche Attribute sie tragen und wie sie zueinander in Beziehung stehen. Es bildet die Grundlage für den `SimulationState`, der in LangGraph als `TypedDict` durch den Graphen fließt.
+Das Entity-Relationship-Modell zeigt die Datenstruktur der Simulation – welche Entitäten existieren, welche Attribute sie tragen und wie sie zueinander in Beziehung stehen. Es bildet die Grundlage für den `SimulationState`, der im aktuellen Code als Pydantic-`BaseModel` umgesetzt ist.
 
 > *Hinweis:* Da der MVP dateibasiert arbeitet (kein persistenter Datenbankbetrieb, vgl. OOS-05), ist dieses ERM ein **konzeptionelles Modell** – es beschreibt die Informationsstruktur, nicht ein physisches Datenbankschema. Datentypen und Schlüssel werden erst im Klassendiagramm (5.2) spezifiziert.
 
@@ -784,7 +809,7 @@ erDiagram
 
 > **Hinweis zu `PopulationConfig` und `ConsumerSegment`:** Die Konsumentenpopulation wird nicht als homogene Masse modelliert, sondern in differenzierte Segmente aufgeteilt (z.B. preissensitive Privatreisende, preisunelastische Geschäftsreisende, umweltbewusste Mittelschicht). Jedes Segment besitzt einen `share` (Marktanteil, Summe aller Segmente = 1.0) und wird über `DistributionConfig`-Einträge mit stochastischen Verteilungen für Attribute wie Preiselastizität, Einkommensniveau und Umweltbewusstsein parametrisiert. Diese Segmentdaten fließen als strukturierter Kontext in die Prompts des Consumer-Agenten, der darauf basierend segmentspezifisch argumentiert. Die `PopulationConfig` ist optional an `AgentConfig` gebunden – nur Agenten vom Typ `CONSUMER` nutzen sie.
 
-> **Hinweis zu `DistributionConfig`:** Beschreibt eine stochastische Verteilung (z.B. Normalverteilung, bimodale Verteilung, Beta-Verteilung) mit ihren Parametern (µ, σ, Schiefe etc.) für ein Konsumenten-Attribut. Die Verteilungen werden mittels `scipy.stats` instanziiert und formalisieren die Heterogenität innerhalb eines Segments. Beispiel: Die Preiselastizität von Privatreisenden folgt einer Normalverteilung mit µ=0.7 und σ=0.15, was bedeutet, dass die meisten Privatreisenden preissensitiv sind, aber die Ausprägung streut.
+> **Hinweis zu `DistributionConfig`:** Beschreibt eine stochastische Verteilung (im aktuellen MVP: `normal`, `uniform`, `triangular`) mit Parametern wie Mittelwert, Streuung und Wertebereich für ein Konsumenten-Attribut. Die Verteilungen werden derzeit als Konfigurationsparameter für den Prompt-Kontext genutzt; eine vollständige Sampling-/Aggregationslogik ist als nächster Ausbauschritt vorgesehen.
 
 > **Hinweis zu `ScenarioParameter`:** Konfigurierbare Annahmen, die als steuerbare Inputs in die Simulation einfließen (z.B. „Nachfragewachstum: 10% p.a.", „Kerosinpreisanstieg: 15%", „SAF-Beimischungsquote: 5%"). Szenarioparameter werden vor Simulationsstart festgelegt und beeinflussen die Argumentation aller Agenten. Sie sind bewusst von den Einflussfaktoren getrennt: Faktoren beschreiben *Zustände* des Systems, Szenarioparameter beschreiben *Annahmen über Veränderungsraten*.
 
@@ -806,7 +831,7 @@ erDiagram
 | Eine parametrisierte `AgentNode`-Klasse für Sub-Agenten | Der Unterschied zwischen Consumer, Provider und Regulator liegt im Prompt, nicht im Code. Neue Akteure erfordern nur eine neue Config, keine neue Klasse. |
 | `InfluenceFactor`-Liste zur Laufzeit erweiterbar | Neue Faktoren können als `EventLogEntry` vom Typ `NEW_FACTOR` vorgeschlagen und vom `EnvironmentNode` via `_ratify_new_factors()` ratifiziert werden. |
 | Komposition vs. Aggregation | `SimulationState` besitzt `SimulationConfig`, `SimulationClock`, `RoundResult` und `CIBMatrix` exklusiv (Komposition). `FactorState` und `AgentConfig` werden aus externer Config geladen und könnten unabhängig existieren (Aggregation). |
-| **Populationsheterogenität über Konsumenten-Segmente** | Reale Märkte bestehen aus heterogenen Nachfragern mit unterschiedlicher Preiselastizität (vgl. Evangelinos et al., 2011). Statt eines monolithischen Consumer-Agenten definiert `PopulationConfig` differenzierte Segmente (z.B. Geschäftsreisende, Privatreisende), deren Attribute über `DistributionConfig` mit stochastischen Verteilungen (`scipy.stats`) parametrisiert werden. Der Consumer-Agent erhält die Segmentdaten als Kontext und argumentiert segmentspezifisch. |
+| **Populationsheterogenität über Konsumenten-Segmente** | Reale Märkte bestehen aus heterogenen Nachfragern mit unterschiedlicher Preiselastizität (vgl. Evangelinos et al., 2011). Statt eines monolithischen Consumer-Agenten definiert `PopulationConfig` differenzierte Segmente (z.B. Geschäftsreisende, Privatreisende), deren Attribute über `DistributionConfig` parametriert werden. Der Consumer-Agent erhält die Segmentdaten als Kontext und argumentiert segmentspezifisch. |
 | **Stochastische Verteilungen als formale Grundlage** | `DistributionConfig` beschreibt Verteilungstyp und Parameter für Konsumenten-Attribute. Unterstützt werden u.a. Normalverteilung (Einkommen), bimodale Verteilung (Preiselastizität: elastisch vs. inelastisch), Beta-Verteilung (Umweltbewusstsein). Die Formalisierung über 2–3 Verteilungen macht die Populationsheterogenität konfigurierbar und reproduzierbar (über Seeds). |
 | **Szenarioparameter als steuerbare Inputs** | `ScenarioParameter` ermöglicht es, Annahmen wie Nachfragewachstum, Preisveränderungen oder Technologie-Adoptionsraten vor Simulationsstart zu konfigurieren. Im Gegensatz zu Einflussfaktoren (Systemzustände) beschreiben Szenarioparameter Veränderungsraten und exogene Annahmen. |
 
@@ -985,10 +1010,8 @@ classDiagram
     class DistributionType {
         <<enumeration>>
         NORMAL
-        BIMODAL
         UNIFORM
-        LOGNORMAL
-        BETA
+        TRIANGULAR
     }
 
     class ScenarioParameter {
@@ -1104,7 +1127,7 @@ classDiagram
 
 | Klasse | LangGraph-Konzept | Beschreibung |
 |--------|-------------------|--------------|
-| `SimulationState` | `TypedDict` | Zentraler State, der durch den Graphen fließt |
+| `SimulationState` | Pydantic `BaseModel` | Zentraler State, der durch den Graphen fließt |
 | `OrchestratorNode` | Entry-Node | Startet jede Runde, legt Sub-Agenten-Reihenfolge fest (MVP: fix), prüft Abbruchbedingung |
 | `AgentNode` (3 Instanzen) | Nodes | Gleiche Klasse, verschiedene Configs → Consumer, Provider, Regulator. Consumer-Instanz nutzt `PopulationConfig` für segmentspezifische Prompt-Anreicherung via `_build_population_context()` |
 | `MarketAgentNode` | Node | Liest Preis-Events, aktualisiert Preisindex, schreibt Preishistorie |
@@ -1139,7 +1162,7 @@ flowchart TD
         InitState["State initialisieren
         ─────────────
         • round = 0
-        • clock.tick = 0, clock.year = 2025
+        • clock.tick = 0, clock.year = 2026 (gemäß aktueller Config)
         • factors = aus Config
         • active_states = initial
         • event_log = leer
@@ -1239,9 +1262,9 @@ flowchart TD
         CIBNode["CIB EXTRACTOR
         ═══════════════
         Event-Log + Round-Summaries
-        → LLM bewertet
+        → heuristische Auswertung
         Faktor-Wechselwirkungen
-        (-3 bis +3)
+        (score-basiert im MVP)
         → CIB-Matrix"]
         AuswertungStart --> CIBNode
     end
@@ -1301,11 +1324,11 @@ flowchart LR
 | Sequentieller Informationsbias | Consumer sieht nie Events der aktuellen Runde; Regulator sieht alles. Bildet im MVP bewusst ab, dass Politik auf Markt und Gesellschaft reagiert. | Spätere Iteration: Fan-Out/Fan-In (Agents parallel, dann Environment) |
 | Fixer Orchestrator-Workflow | `_decide_next_agent()` ist im MVP als Erweiterungspunkt vorgesehen, gibt aber eine feste Reihenfolge zurück. | Dynamisches Routing via LangGraph Conditional Edges |
 | Irreversible Faktor-Wechsel | Ein Faktor kann im MVP nur von Zustand 1 → 2 wechseln, nicht zurück. | Reversible Wechsel mit Schwellenwert in späteren Iterationen |
-| Simulationsuhr ohne empirische Kalibrierung | Mapping (Tick → Kalenderjahr) ist konfigurierbar, aber noch nicht an den Zeithorizont 2025–2035 kalibriert. | Kalibrierung vor Challenge 2 |
+| Simulationsuhr ohne empirische Kalibrierung | Mapping (Tick → Kalenderjahr) ist konfigurierbar, aber noch nicht empirisch kalibriert. | Kalibrierung als nächster Entwicklungsschritt |
 | Dynamische Faktoren ohne CIB-Integration | `NEW_FACTOR`-Events werden geloggt und ratifiziert, fließen aber im MVP nicht in die CIB-Berechnung ein. | Vollständige CIB-Integration in späteren Iterationen |
 | CIB-Extraktion bei vielen Runden | Bei langer Simulation kann die Event-Log-History das Context-Window lokaler Modelle übersteigen. | CIB-Extractor arbeitet primär auf `round_summary`-Einträgen, nicht auf Rohdaten |
 | Statische Populationsverteilung | Konsumenten-Segmente und ihre Anteile bleiben über den Simulationslauf konstant. In der Realität verschieben sich Segmentanteile dynamisch (z.B. wachsende umweltbewusste Mittelschicht). | Dynamische Segment-Anteile in späteren Iterationen, gesteuert durch Events und Faktoränderungen |
-| Qualitative Segment-Analyse | Die segmentspezifische Analyse erfolgt qualitativ durch den LLM. Eine quantitative Aggregation (z.B. exakte Nachfrageberechnung pro Segment via Elastizitätsfunktionen) ist im MVP nicht implementiert. | Optional: quantitative Aggregationsschicht über `scipy.stats` in späteren Iterationen |
+| Qualitative Segment-Analyse | Die segmentspezifische Analyse erfolgt qualitativ durch den LLM. Eine quantitative Aggregation (z.B. exakte Nachfrageberechnung pro Segment via Elastizitätsfunktionen) ist im MVP nicht implementiert. | Optional: quantitative Aggregationsschicht in späteren Iterationen |
 
 ### 5.4 Umsetzungsstand AP2 (Agentenlogik & Prompting)
 
@@ -1339,8 +1362,12 @@ Verwendete Prompt-Pattern aus dem Prompt Pattern Catalog (White et al., 2023):
 ## 6. Quellenverzeichnis
 
 - Braun, S., Dienes, K., Leyh, J., Rieck, A. & Letzgus, M. (2023). *#futuredistricts2053 – Strategische Zukunftsszenarien und Handlungsanforderungen für die Quartiersentwicklung*. Fraunhofer IAO.
+- Banks, J., Carson, J. S., Nelson, B. L. & Nicol, D. M. (2010). *Discrete-Event System Simulation*. 5th ed., Pearson.
+- Bonabeau, E. (2002). Agent-based modeling: Methods and techniques for simulating human systems. *Proceedings of the National Academy of Sciences*, 99(Suppl. 3), 7280-7287.
+- Epstein, J. M. (2006). *Generative Social Science: Studies in Agent-Based Computational Modeling*. Princeton University Press.
 - Evangelinos, C., Obermeyer, A. & Püschel, R. (2011). *Preisdispersion und Wettbewerb im Luftverkehr: Ein theoretischer und empirischer Überblick*. Diskussionsbeiträge aus dem Institut für Wirtschaft und Verkehr, Nr. 2/2011, Technische Universität Dresden.
 - Horx, M., Huber, J., Steinle, A. & Wenzel, E. (2007). *Zukunft machen: Wie Sie von Trends zu Business-Innovationen kommen*. Campus Verlag.
 - Ludewig, J. & Lichter, H. (2023). *Software Engineering – Grundlagen, Menschen, Prozesse, Techniken.* 4. Aufl., dpunkt.verlag.
 - Rezazadeh, H. & Tabatabaie, M. (2011). *Time boxing planning: buffered moscow rules.* ACM SIGSOFT Software Engineering Notes, 36(6), S. 1–5.
+- Schelling, T. C. (1971). Dynamic models of segregation. *Journal of Mathematical Sociology*, 1(2), 143-186.
 - White, J., Fu, Q., Hays, S., Sandborn, M., Olea, C., Gilbert, H., Elnashar, A., Spencer-Smith, J. & Schmidt, D. C. (2023). *A Prompt Pattern Catalog to Enhance Prompt Engineering with ChatGPT*. arXiv:2302.11382.

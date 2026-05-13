@@ -4,7 +4,7 @@
   "clock": {
     "current_round": 0,
     "max_rounds": 10,
-    "year_start": 2025,
+    "year_start": 2026,
     "years_per_round": 1
   },
   "llm": {

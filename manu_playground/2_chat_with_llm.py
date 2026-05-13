@@ -9,8 +9,9 @@ class State(TypedDict):
     messages: Annotated[list, add_messages]
 
 #LLM initialisieren
+#model="llama3.2:3b",
 llm = ChatOllama(
-    model="llama3.1:8b",
+    model="llama3.2:3b",
     temperature=0.7,
 )
 

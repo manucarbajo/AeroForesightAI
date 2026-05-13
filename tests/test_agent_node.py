@@ -5,7 +5,6 @@ from src.models.agent_models import AgentResponse
 from src.nodes.agent_node import AgentNode
 from src.models.event_models import RoundResult
 
-#Test generated with Gemini 3.2
 class MockLLM:
     def __init__(self, output: str):
         self.output = output
