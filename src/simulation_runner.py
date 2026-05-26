@@ -10,9 +10,11 @@ if __package__ in {None, ""}:
 
 from src.config_loader import build_initial_state
 from src.models.agent_models import AgentConfig
+from src.models.cib_models import CIBMatrixHistory
 from src.models.enums import AgentType
 from src.models.state_models import SimulationState
 from src.nodes.agent_node import AgentNode, LLMCallable
+from src.nodes.cib_extractor_node import CIBExtractorNode
 from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
@@ -22,6 +24,7 @@ from src.validation import validate_state
 @dataclass(frozen=True)
 class RunnerOptions:
     enable_market: bool = True
+    enable_cib: bool = True
 
 
 class SimulationRunner:
@@ -40,6 +43,7 @@ class SimulationRunner:
         agent_nodes = self._build_agent_nodes(agents)
         market_node = MarketNode()
         environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
+        cib_extractor = CIBExtractorNode(llm=self.llm) if self.options.enable_cib else None
 
         # LangGraph arbeitet intern mit dict-State; wir halten die Public-API als SimulationState.
         def _wrap(node_fn: Callable[[SimulationState], SimulationState]) -> Callable[[dict], dict]:
@@ -58,6 +62,8 @@ class SimulationRunner:
         if self.options.enable_market:
             graph.add_node("market", _wrap(market_node.invoke))
         graph.add_node("environment", _wrap(environment_node.invoke))
+        if cib_extractor is not None:
+            graph.add_node("cib_extractor", _wrap(cib_extractor.invoke))
 
         graph.set_entry_point("orchestrator")
 
@@ -70,11 +76,20 @@ class SimulationRunner:
         else:
             graph.add_edge("regulator", "environment")
 
-        def _should_continue(payload: dict) -> str:
-            state = SimulationState(**payload)
-            return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
+        if cib_extractor is not None:
+            graph.add_edge("environment", "cib_extractor")
 
-        graph.add_conditional_edges("environment", _should_continue)
+            def _should_continue(payload: dict) -> str:
+                state = SimulationState(**payload)
+                return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
+
+            graph.add_conditional_edges("cib_extractor", _should_continue)
+        else:
+            def _should_continue(payload: dict) -> str:
+                state = SimulationState(**payload)
+                return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
+
+            graph.add_conditional_edges("environment", _should_continue)
 
         compiled = graph.compile()
 
@@ -112,8 +127,12 @@ class SimulationRunner:
         agent_nodes = self._build_agent_nodes(agents)
         market_node = MarketNode()
         environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
+        cib_extractor = CIBExtractorNode(llm=self.llm) if self.options.enable_cib else None
 
         def _run(state: SimulationState) -> SimulationState:
+            if state.cib_history is None:
+                state.cib_history = CIBMatrixHistory()
+
             while state.clock.current_round < state.clock.max_rounds:
                 state = orchestrator.invoke(state)
                 state = agent_nodes["consumer"].invoke(state)
@@ -122,6 +141,8 @@ class SimulationRunner:
                 if self.options.enable_market:
                     state = market_node.invoke(state)
                 state = environment_node.invoke(state)
+                if cib_extractor is not None:
+                    state = cib_extractor.invoke(state)
             return state
 
         return _run
