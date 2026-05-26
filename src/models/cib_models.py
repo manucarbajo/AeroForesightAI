@@ -38,13 +38,13 @@ class CIBCell(BaseModel):
 
     source_descriptor: str = Field(description="Source descriptor ID, e.g. 'F1.1'")
     target_descriptor: str = Field(description="Target descriptor ID, e.g. 'F2.2'")
-    influence: int = Field(ge=MIN_INFLUENCE, le=MAX_INFLUENCE, description="Influence score (-3 to +3)")
+    influence: int = Field(description="Influence score (-3 to +3)")
     reasoning: str = Field(default="", description="LLM reasoning for this assessment")
 
-    @field_validator("influence")
+    @field_validator("influence", mode="before")
     @classmethod
     def clamp_influence(cls, v: int) -> int:
-        return max(MIN_INFLUENCE, min(MAX_INFLUENCE, v))
+        return max(MIN_INFLUENCE, min(MAX_INFLUENCE, int(v)))
 
 
 class FactorScore(BaseModel):
