@@ -225,6 +225,28 @@ class TestDeltaConstraint:
         result = apply_delta_constraint(prev, proposed)
         assert len(result.factor_scores) == 7
 
+    def test_preserves_cells_missing_from_proposed(self):
+        """Cells in previous but not in proposed must be preserved (LLM partial response)."""
+        prev = CIBMatrix.empty(round_generated=1)
+        prev.set_cell(CIBCell(source_descriptor="F1.1", target_descriptor="F2.1", influence=2))
+        prev.set_cell(CIBCell(source_descriptor="F3.1", target_descriptor="F4.1", influence=-1))
+
+        # Proposed only has one cell — F3.1|F4.1 is "missing" (LLM didn't return it)
+        proposed = CIBMatrix(
+            cells={
+                CIBMatrix.cell_key("F1.1", "F2.1"): CIBCell(
+                    source_descriptor="F1.1", target_descriptor="F2.1", influence=3
+                ),
+            },
+            round_generated=2,
+        )
+
+        result = apply_delta_constraint(prev, proposed)
+        # F1.1→F2.1: delta 2→3 = +1, allowed
+        assert result.get_influence("F1.1", "F2.1") == 3
+        # F3.1→F4.1: preserved from previous
+        assert result.get_influence("F3.1", "F4.1") == -1
+
 
 # ---------------------------------------------------------------------------
 # CIB Extractor Tests

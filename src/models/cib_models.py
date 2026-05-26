@@ -183,6 +183,7 @@ def apply_delta_constraint(previous: CIBMatrix, proposed: CIBMatrix) -> CIBMatri
     """Enforce max ±1 change per cell per round.
 
     Returns a new matrix where no cell differs from the previous by more than 1.
+    Cells present in previous but missing from proposed are preserved unchanged.
     """
     constrained_cells: dict[str, CIBCell] = {}
 
@@ -203,6 +204,11 @@ def apply_delta_constraint(previous: CIBMatrix, proposed: CIBMatrix) -> CIBMatri
             influence=new_influence,
             reasoning=proposed_cell.reasoning,
         )
+
+    # Preserve cells from previous that weren't re-evaluated
+    for key, prev_cell in previous.cells.items():
+        if key not in constrained_cells:
+            constrained_cells[key] = prev_cell
 
     result = CIBMatrix(
         cells=constrained_cells,
