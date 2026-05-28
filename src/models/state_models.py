@@ -49,11 +49,12 @@ class SimulationState(BaseModel):
     price_history: list[PriceHistoryEntry] = []
     round_results: list[RoundResult] = []
     cib_matrix: CIBMatrix | None = None
+    cib_history: CIBMatrixHistory | None = None
 
 
 # deferred imports for forward refs
 from src.models.agent_models import AgentConfig  # noqa: E402
-from src.models.cib_models import CIBMatrix  # noqa: E402
+from src.models.cib_models import CIBMatrix, CIBMatrixHistory  # noqa: E402
 from src.models.event_models import EventLogEntry, PriceHistoryEntry, RoundResult  # noqa: E402
 
 SimulationState.model_rebuild()
