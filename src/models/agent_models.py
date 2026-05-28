@@ -30,4 +30,8 @@ class AgentResponse(BaseModel):
     state_changes: list[StateChange] = []
     # Optional field: Consumer liefert segmentspezifische qualitative Analyse.
     segment_analysis: dict[str, Any] = Field(default_factory=dict)
+    # Optional: maschinenlesbare Einschätzung von Einflussstärken (-3..+3),
+    # z.B. um Diskussion/Protokoll und CIB-Argumentation konsistenter zu machen.
+    # Struktur ist absichtlich flexibel (dicts), damit Prompts iterierbar bleiben.
+    impact_assessment: list[dict[str, Any]] = Field(default_factory=list)
     raw_output: str = ""
