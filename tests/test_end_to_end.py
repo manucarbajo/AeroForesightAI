@@ -4,7 +4,7 @@ from src.config_loader import build_initial_state
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.enums import EventType
-from src.nodes.environment_node import EnvironmentNode
+from src.nodes.environment_node_c2 import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
 from src.nodes.cib_extractor_node import CIBExtractorNode
