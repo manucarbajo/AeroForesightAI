@@ -49,3 +49,52 @@ class ScenarioDerivationResult(BaseModel):
     consistent_count: int = 0
     matrix_round: int = 0
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+# Konsistenzprüfung
+class ConsistencyChecker:
+    """Ein Szenario ist konsistent, wenn die Wechselwirkungen zwischen den
+       Faktor-Zuständen keine starken gegenseitigen Widersprüche erzeugen.
+    """
+
+    def __init__(self, cib_matrix: CIBMatrix, conflict_threshold: float = -1.5):
+        """
+        Args:
+            cib_matrix: Die CIB-Matrix zur Konsistenzprüfung
+            conflict_threshold: Ab wann gilt eine Wechselwirkung als Konflikt?
+                                (Default: -1.5, also ≤ -2 ist ein Konflikt)
+        """
+        self.cib_matrix = cib_matrix
+        self.conflict_threshold = conflict_threshold
+        self.matrix_array = cib_matrix.to_numpy()
+
+    def check_scenario(self, scenario: ScenarioDescriptor) -> ConsistencyCheckResult:
+        result = ConsistencyCheckResult()
+        conflicts = []
+        conflict_sum = 0.0
+
+        descriptors = [scenario.factor_states[fid] for fid in FACTOR_IDS]
+
+        for i, src_desc in enumerate(descriptors):
+            for j, tgt_desc in enumerate(descriptors):
+                if i == j:
+                    continue
+
+                influence = self.cib_matrix.get_influence(src_desc, tgt_desc)
+
+                if influence <= self.conflict_threshold:
+                    conflict_msg = (
+                        f"{src_desc} → {tgt_desc}: influence={influence} "
+                        f"(conflict threshold: {self.conflict_threshold})"
+                    )
+                    conflicts.append(conflict_msg)
+                    conflict_sum += abs(influence)
+
+        result.is_consistent = len(conflicts) == 0
+        result.conflicts = conflicts
+        result.total_conflict_strength = conflict_sum
+        result.details = {
+            "num_conflicts": len(conflicts),
+            "scenario": scenario.factor_states,
+        }
+
+        return result
