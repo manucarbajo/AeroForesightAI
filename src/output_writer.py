@@ -222,3 +222,39 @@ def save_cib_matrix(state, filename: str = "cib_matrix.json") -> str:
         json.dump(cib_data, f, indent=2, ensure_ascii=False)
 
     return filepath
+
+
+def save_protocol(protocol_payload: dict, filename: str = "protocol.json") -> str:
+    """Save structured conversation protocol as JSON."""
+    ensure_output_dir()
+    filepath = os.path.join(OUTPUT_DIR, filename)
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(protocol_payload, f, indent=2, ensure_ascii=False)
+    return filepath
+
+
+def save_protocol_markdown(markdown: str, filename: str = "protocol.md") -> str:
+    """Save conversation protocol as Markdown."""
+    ensure_output_dir()
+    filepath = os.path.join(OUTPUT_DIR, filename)
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(markdown)
+    return filepath
+
+
+def save_scenarios(payload: dict, filename: str = "scenarios.json") -> str:
+    """Save derived scenarios as JSON."""
+    ensure_output_dir()
+    filepath = os.path.join(OUTPUT_DIR, filename)
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+    return filepath
+
+
+def save_scenarios_markdown(markdown: str, filename: str = "scenarios.md") -> str:
+    """Save derived scenarios as Markdown."""
+    ensure_output_dir()
+    filepath = os.path.join(OUTPUT_DIR, filename)
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(markdown)
+    return filepath
