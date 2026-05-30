@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import sys
+from pathlib import Path
+
+if __package__ in {None, ""}:
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from src.config_loader import build_initial_state
 from src.llm_client import OllamaClient, OllamaConfig
@@ -15,8 +20,14 @@ from src.output_writer import (save_event_log,
                                save_run_metadata,
                                save_segment_analysis,
                                save_final_narrative,
-                               save_cib_matrix)
+                               save_cib_matrix,
+                               save_protocol,
+                               save_protocol_markdown,
+                               save_scenarios,
+                               save_scenarios_markdown)
 from src.nodes.cib_extractor_node import CIBExtractorNode
+from src.protocol_generator import build_protocol_payload, render_protocol_markdown
+from src.nodes.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 
 
 def _parse_args() -> argparse.Namespace:
@@ -45,6 +56,8 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Reduce per-round console output.",
     )
+    parser.add_argument("--no-protocol", action="store_true", help="Do not generate protocol output.")
+    parser.add_argument("--no-scenarios", action="store_true", help="Do not generate scenarios from CIB matrix.")
     return parser.parse_args()
 
 
@@ -123,7 +136,28 @@ def main() -> int:
     final_narrative_path = save_final_narrative(state)
     cib_matrix_path = save_cib_matrix(state)
 
-    print(f"Saved: {event_log_path}, {price_history_path}, {round_history_path}, {metadata_path}, {segment_analysis_path}, {final_narrative_path}, {cib_matrix_path}")
+    protocol_path = None
+    protocol_md_path = None
+    if not args.no_protocol:
+        protocol_payload = build_protocol_payload(state)
+        protocol_path = save_protocol(protocol_payload)
+        protocol_md_path = save_protocol_markdown(render_protocol_markdown(protocol_payload))
+
+    scenarios_path = None
+    scenarios_md_path = None
+    if not args.no_scenarios and state.cib_matrix is not None:
+        scenario_node = ScenarioAgentNode(llm=llm)
+        state = scenario_node.invoke(state)
+        scenarios_payload = {"scenarios": state.cib_matrix.metadata.get("scenarios", []) if state.cib_matrix.metadata else []}
+        scenarios_path = save_scenarios(scenarios_payload)
+        scenarios_md_path = save_scenarios_markdown(render_scenarios_markdown(scenarios_payload, state))
+
+    print(
+        "Saved: "
+        + ", ".join(
+            [p for p in [event_log_path, price_history_path, round_history_path, metadata_path, segment_analysis_path, final_narrative_path, cib_matrix_path, protocol_path, protocol_md_path, scenarios_path, scenarios_md_path] if p]
+        )
+    )
 
     print(
         f"\nDone. rounds={state.clock.current_round}, events={len(state.event_log)}, "
