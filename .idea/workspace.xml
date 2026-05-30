@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added module setup with constants for population development and LLM protocol">
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added PopulationShift, PopulationUpdateResult models and prompts">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/nodes/environment_node.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nodes/environment_node.py" afterDir="false" />
     </list>
@@ -446,7 +446,15 @@
       <option name="project" value="LOCAL" />
       <updated>1780062085390</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="added PopulationShift, PopulationUpdateResult models and prompts">
+      <option name="closed" value="true" />
+      <created>1780069405154</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1780069405154</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -464,7 +472,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="added market form to literature_fundamentals.md" />
     <MESSAGE value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
     <MESSAGE value="update LLM model to llama3.2:3b and adjust project configuration files" />
     <MESSAGE value="add OUTPUT_DIR constant to specify output directory in output_writer.py" />
@@ -489,7 +496,8 @@
     <MESSAGE value="added test for consitencychecker" />
     <MESSAGE value="added environment_node.py and test (no code yet). Also renamed old node environment_node_c2.py (no population variation)" />
     <MESSAGE value="added module setup with constants for population development and LLM protocol" />
-    <option name="LAST_COMMIT_MESSAGE" value="added module setup with constants for population development and LLM protocol" />
+    <MESSAGE value="added PopulationShift, PopulationUpdateResult models and prompts" />
+    <option name="LAST_COMMIT_MESSAGE" value="added PopulationShift, PopulationUpdateResult models and prompts" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Technology_Lab$test_config_loader.coverage" NAME="test_config_loader Coverage Results" MODIFIED="1777808822156" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
