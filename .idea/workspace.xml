@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="pytests for agent parsing, config loader, environment update, population config and end to end">
-      <change afterPath="$PROJECT_DIR$/docs/challenge2/challenge2_readme.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/challenge2/challenge2_report.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/challenge2/challenge2_traceability_table.md" afterDir="false" />
+    <list default="true" id="1031cce3-ba9a-4e60-bacd-b0fca6bbff92" name="Changes" comment="added EnvironmentAgentNode&#10;&#10;added LLM-based population update with prompt building&#10;&#10;added heuristic for population update">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_environment_node.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_environment_node.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,7 +41,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="jonas" />
+        <entry key="$PROJECT_DIR$" value="main" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -68,7 +66,7 @@
   }
 }</component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="ProjectErrors" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
@@ -78,44 +76,48 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Python tests.Python tests for test_agent_node.AgentNodeTests.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests for test_agent_node.AgentNodeTests.test_parse_valid_json_output.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests in test_agent_parsing.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests in test_config_loader.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests in test_end_to_end.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests in test_environment_updates.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python tests.Python tests in test_population_config.py.executor&quot;: &quot;Run&quot;,
-    &quot;Python.1_easy_llm_output.executor&quot;: &quot;Run&quot;,
-    &quot;Python.2_chat_with_llm.executor&quot;: &quot;Run&quot;,
-    &quot;Python.agent_node.executor&quot;: &quot;Run&quot;,
-    &quot;Python.config_loader.executor&quot;: &quot;Run&quot;,
-    &quot;Python.llm_client.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.market_node.executor&quot;: &quot;Run&quot;,
-    &quot;Python.output_writer.executor&quot;: &quot;Run&quot;,
-    &quot;Python.printBoard.executor&quot;: &quot;Run&quot;,
-    &quot;Python.run_simulation.executor&quot;: &quot;Run&quot;,
-    &quot;Python.simulation_runner.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test_config_loader.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test_output_writer.executor&quot;: &quot;Run&quot;,
-    &quot;Python.validation.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/ap4-output-testing&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab/docs/challenge2&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;settings.sync&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Python tests.Python tests for test_agent_node.AgentNodeTests.executor": "Run",
+    "Python tests.Python tests for test_agent_node.AgentNodeTests.test_parse_valid_json_output.executor": "Run",
+    "Python tests.Python tests in test_agent_parsing.py.executor": "Run",
+    "Python tests.Python tests in test_config_loader.py.executor": "Run",
+    "Python tests.Python tests in test_end_to_end.py.executor": "Run",
+    "Python tests.Python tests in test_environment_node.py.executor": "Run",
+    "Python tests.Python tests in test_environment_updates.py.executor": "Run",
+    "Python tests.Python tests in test_population_config.py.executor": "Run",
+    "Python.1_easy_llm_output.executor": "Run",
+    "Python.2_chat_with_llm.executor": "Run",
+    "Python.agent_node.executor": "Run",
+    "Python.config_loader.executor": "Run",
+    "Python.llm_client.executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.market_node.executor": "Run",
+    "Python.output_writer.executor": "Run",
+    "Python.printBoard.executor": "Run",
+    "Python.run_simulation.executor": "Run",
+    "Python.simulation_runner.executor": "Run",
+    "Python.test_config_loader.executor": "Run",
+    "Python.test_consistency_checker.executor": "Run",
+    "Python.test_consistency_quick.executor": "Run",
+    "Python.test_environment_node.executor": "Run",
+    "Python.test_output_writer.executor": "Run",
+    "Python.validation.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "jonas",
+    "last_opened_file_path": "/Users/jonas/Documents/Studium/Studium/Master/2. Semester/Technology Lab/docs/challenge2",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "settings.sync",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/docs/challenge2" />
@@ -375,7 +377,95 @@
       <option name="project" value="LOCAL" />
       <updated>1777809508615</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="added scenario_consistency.py file. no code yet">
+      <option name="closed" value="true" />
+      <created>1780036519433</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1780036519433</updated>
+    </task>
+    <task id="LOCAL-00026" summary="added structure and logger">
+      <option name="closed" value="true" />
+      <created>1780037339130</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1780037339130</updated>
+    </task>
+    <task id="LOCAL-00027" summary="added data models for&#10;scenariodescriptor, consistencyceheckresult,&#10;scenarioderivationresult">
+      <option name="closed" value="true" />
+      <created>1780039080497</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1780039080497</updated>
+    </task>
+    <task id="LOCAL-00028" summary="added data models for&#10;scenariodescriptor, consistencyceheckresult,&#10;scenarioderivationresult">
+      <option name="closed" value="true" />
+      <created>1780039129043</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1780039129043</updated>
+    </task>
+    <task id="LOCAL-00029" summary="added ConsistencyChecker with check_scenario method">
+      <option name="closed" value="true" />
+      <created>1780041616469</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1780041616469</updated>
+    </task>
+    <task id="LOCAL-00030" summary="added consistency score and stability index computation to consistencychecker.&#10;&#10;added ScenarioDeriver with brute-force scenario generation and reasoning&#10;&#10;added scenarios_to_dict utility function for JSON serialization">
+      <option name="closed" value="true" />
+      <created>1780061055153</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1780061055153</updated>
+    </task>
+    <task id="LOCAL-00031" summary="added test for consitencychecker">
+      <option name="closed" value="true" />
+      <created>1780061095994</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1780061095994</updated>
+    </task>
+    <task id="LOCAL-00032" summary="added environment_node.py and test (no code yet). Also renamed old node environment_node_c2.py (no population variation)">
+      <option name="closed" value="true" />
+      <created>1780061547173</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1780061547173</updated>
+    </task>
+    <task id="LOCAL-00033" summary="added module setup with constants for population development and LLM protocol">
+      <option name="closed" value="true" />
+      <created>1780062085390</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1780062085390</updated>
+    </task>
+    <task id="LOCAL-00034" summary="added PopulationShift, PopulationUpdateResult models and prompts">
+      <option name="closed" value="true" />
+      <created>1780069405154</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1780069405154</updated>
+    </task>
+    <task id="LOCAL-00035" summary="added EnvironmentAgentNode&#10;&#10;added LLM-based population update with prompt building&#10;&#10;added heuristic for population update">
+      <option name="closed" value="true" />
+      <created>1780131096412</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1780131096413</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -393,12 +483,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="add initial project configuration and migration files" />
-    <MESSAGE value="added fundamentals of pricing in air travel based on literature (presentation purpose)" />
-    <MESSAGE value="added regulatory information to fundamentals of pricing in air travel based on literature (presentation purpose)" />
-    <MESSAGE value="corrected display error in markdown in agents_provider_classes.md" />
-    <MESSAGE value="added market form to literature_fundamentals.md" />
-    <MESSAGE value="added agents_consumer.md, agents_provider.md &amp; agents_regulations.md files" />
     <MESSAGE value="update LLM model to llama3.2:3b and adjust project configuration files" />
     <MESSAGE value="add OUTPUT_DIR constant to specify output directory in output_writer.py" />
     <MESSAGE value="add ensure_output_dir function to create output directory if it doesn't exist" />
@@ -414,21 +498,35 @@
     <MESSAGE value="added understandable description of factors in cib_matrix.json" />
     <MESSAGE value="deleted old save-log-functions" />
     <MESSAGE value="pytests for agent parsing, config loader, environment update, population config and end to end" />
-    <option name="LAST_COMMIT_MESSAGE" value="pytests for agent parsing, config loader, environment update, population config and end to end" />
+    <MESSAGE value="added scenario_consistency.py file. no code yet" />
+    <MESSAGE value="added structure and logger" />
+    <MESSAGE value="added data models for&#10;scenariodescriptor, consistencyceheckresult,&#10;scenarioderivationresult" />
+    <MESSAGE value="added ConsistencyChecker with check_scenario method" />
+    <MESSAGE value="added consistency score and stability index computation to consistencychecker.&#10;&#10;added ScenarioDeriver with brute-force scenario generation and reasoning&#10;&#10;added scenarios_to_dict utility function for JSON serialization" />
+    <MESSAGE value="added test for consitencychecker" />
+    <MESSAGE value="added environment_node.py and test (no code yet). Also renamed old node environment_node_c2.py (no population variation)" />
+    <MESSAGE value="added module setup with constants for population development and LLM protocol" />
+    <MESSAGE value="added PopulationShift, PopulationUpdateResult models and prompts" />
+    <MESSAGE value="added EnvironmentAgentNode&#10;&#10;added LLM-based population update with prompt building&#10;&#10;added heuristic for population update" />
+    <option name="LAST_COMMIT_MESSAGE" value="added EnvironmentAgentNode&#10;&#10;added LLM-based population update with prompt building&#10;&#10;added heuristic for population update" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Technology_Lab$test_config_loader.coverage" NAME="test_config_loader Coverage Results" MODIFIED="1777808822156" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
     <SUITE FILE_PATH="coverage/Technology_Lab$test_output_writer.coverage" NAME="test_output_writer Coverage Results" MODIFIED="1777743495288" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
-    <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1777742388634" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/Technology_Lab$.coverage" NAME=" Coverage Results" MODIFIED="1777809157127" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$main.coverage" NAME="main Coverage Results" MODIFIED="1780035290198" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$test_consistency_checker.coverage" NAME="test_consistency_checker Coverage Results" MODIFIED="1780060350616" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$.coverage" NAME=" Coverage Results" MODIFIED="1780131357047" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
     <SUITE FILE_PATH="coverage/Technology_Lab$validation.coverage" NAME="validation Coverage Results" MODIFIED="1777743792441" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$test_environment_node.coverage" NAME="test_environment_node Coverage Results" MODIFIED="1780131195245" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
     <SUITE FILE_PATH="coverage/Technology_Lab$printBoard.coverage" NAME="printBoard Coverage Results" MODIFIED="1777645793274" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$APPLICATION_CONFIG_DIR$/extensions" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$test_consistency_quick.coverage" NAME="test_consistency_quick Coverage Results" MODIFIED="1780060774884" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
     <SUITE FILE_PATH="coverage/Technology_Lab$simulation_runner.coverage" NAME="simulation_runner Coverage Results" MODIFIED="1777743795261" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$market_node.coverage" NAME="market_node Coverage Results" MODIFIED="1777795410670" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nodes" />
     <SUITE FILE_PATH="coverage/Technology_Lab$config_loader.coverage" NAME="config_loader Coverage Results" MODIFIED="1777744193540" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$1_easy_llm_output.coverage" NAME="1_easy_llm_output Coverage Results" MODIFIED="1777646797892" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />
     <SUITE FILE_PATH="coverage/Technology_Lab$output_writer.coverage" NAME="output_writer Coverage Results" MODIFIED="1777807897717" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
-    <SUITE FILE_PATH="coverage/Technology_Lab$run_simulation.coverage" NAME="run_simulation Coverage Results" MODIFIED="1777808329313" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$scenario_consistency.coverage" NAME="scenario_consistency Coverage Results" MODIFIED="1779954396937" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Technology_Lab$run_simulation.coverage" NAME="run_simulation Coverage Results" MODIFIED="1780035455935" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$llm_client.coverage" NAME="llm_client Coverage Results" MODIFIED="1777743802262" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/Technology_Lab$agent_node.coverage" NAME="agent_node Coverage Results" MODIFIED="1777749871106" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nodes" />
     <SUITE FILE_PATH="coverage/Technology_Lab$2_chat_with_llm.coverage" NAME="2_chat_with_llm Coverage Results" MODIFIED="1777743365393" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/manu_playground" />

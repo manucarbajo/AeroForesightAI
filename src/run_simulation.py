@@ -10,7 +10,7 @@ if __package__ in {None, ""}:
 from src.config_loader import build_initial_state
 from src.llm_client import OllamaClient, OllamaConfig
 from src.nodes.agent_node import AgentNode
-from src.nodes.environment_node import EnvironmentNode
+from src.nodes.environment_node_c2 import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
 from src.validation import validate_state

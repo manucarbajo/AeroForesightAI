@@ -15,7 +15,7 @@ from src.models.enums import AgentType
 from src.models.state_models import SimulationState
 from src.nodes.agent_node import AgentNode, LLMCallable
 from src.nodes.cib_extractor_node import CIBExtractorNode
-from src.nodes.environment_node import EnvironmentNode
+from src.nodes.environment_node_c2 import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
 from src.validation import validate_state

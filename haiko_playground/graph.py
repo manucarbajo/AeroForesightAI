@@ -37,7 +37,7 @@ from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
 from src.nodes.agent_node import AgentNode
 from src.nodes.orchestrator_node import OrchestratorNode
-from src.nodes.environment_node import EnvironmentNode
+from src.nodes.environment_node_c2 import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.cib_extractor_node import CIBExtractorNode
 
