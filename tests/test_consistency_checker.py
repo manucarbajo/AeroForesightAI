@@ -191,14 +191,12 @@ class TestIntegration:
         # Erstelle eine Matrix mit ein paar echten Werten
         matrix = CIBMatrix.empty(round_generated=1)
 
-        # F1.1 (Reiseboom) fördert F2.1 (moderater Klimaschutz)
         matrix.set_cell(CIBCell(
             source_descriptor="F1.1",
             target_descriptor="F2.1",
             influence=2
         ))
 
-        # F1.1 hemmt F2.2 (radikale Dekarbonisierung)
         matrix.set_cell(CIBCell(
             source_descriptor="F1.1",
             target_descriptor="F2.2",

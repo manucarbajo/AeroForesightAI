@@ -1,7 +1,5 @@
 """Szenario-Konsistenzprüfung
 ConsistencyChecker: Prüft ob Zustandskombinationen konsistent sind
-ScenarioDeriver: Generiert Top-N konsistente Szenarien
-Scoring-Funktionen: Bewertet Szenarien nach Stabilität und Konsistenz
 """
 
 from __future__ import annotations
@@ -27,20 +25,22 @@ logger = logging.getLogger(__name__)
 # Data Models
 @dataclass
 class ScenarioDescriptor:
-    """vollständige Zustandskombination aller 7 Faktoren.
-        Struktur: factor_states = {"F1": "F1.1", "F2": "F2.2", ..., "F7": "F7.1"}
+    """Eine vollständige Zustandskombination aller 7 Faktoren.
+    Struktur: factor_states = {"F1": "F1.1", "F2": "F2.2", ..., "F7": "F7.1"}
     """
-    factor_states: dict[str, str]
-    consistency_score: float = 0.0
-    stability_index: float = 0.0
-    reasoning: str = ""
+    factor_states: dict[str, str]  # Factor ID -> Descriptor ID (z.B. "F1" -> "F1.1")
+    consistency_score: float = 0.0  # 0-1: wie konsistent ist dieses Szenario?
+    stability_index: float = 0.0    # 0-1: wie stabil unter den gegeben Wechselwirkungen?
+    reasoning: str = ""              # Kurze Erklärung warum dieses Szenario plausibel ist
+
 
 class ConsistencyCheckResult(BaseModel):
-    """Ergebnis der Konsistenzprüfung."""
+    """Ergebnis einer Konsistenzprüfung."""
     is_consistent: bool = True
     conflicts: list[str] = Field(default_factory=list)
     total_conflict_strength: float = 0.0
     details: dict[str, Any] = Field(default_factory=dict)
+
 
 class ScenarioDerivationResult(BaseModel):
     """Ergebnis der Szenario-Ableitung."""
@@ -50,10 +50,12 @@ class ScenarioDerivationResult(BaseModel):
     matrix_round: int = 0
     metadata: dict[str, Any] = Field(default_factory=dict)
 
-# Konsistenzprüfung
+# Core Consistency Checker
 class ConsistencyChecker:
-    """Ein Szenario ist konsistent, wenn die Wechselwirkungen zwischen den
-       Faktor-Zuständen keine starken gegenseitigen Widersprüche erzeugen.
+    """Prüft ob Zustandskombinationen konsistent sind.
+
+    Ein Szenario ist konsistent, wenn die Wechselwirkungen zwischen den
+    Faktor-Zuständen keine starken gegenseitigen Widersprüche erzeugen.
     """
 
     def __init__(self, cib_matrix: CIBMatrix, conflict_threshold: float = -1.5):
@@ -68,26 +70,39 @@ class ConsistencyChecker:
         self.matrix_array = cib_matrix.to_numpy()
 
     def check_scenario(self, scenario: ScenarioDescriptor) -> ConsistencyCheckResult:
+        """Prüft ob ein Szenario intern konsistent ist.
+
+        Algorithmus:
+        1. Für jedes Faktor-Paar im Szenario: hole die Wechselwirkung
+        2. Wenn eine Wechselwirkung ≤ conflict_threshold: merke als Konflikt
+        3. Summiere alle Konflikt-Stärken
+
+        Returns:
+            ConsistencyCheckResult mit Details der Konflikte
+        """
         result = ConsistencyCheckResult()
         conflicts = []
         conflict_sum = 0.0
 
+        # Hole die Descriptor IDs für dieses Szenario
         descriptors = [scenario.factor_states[fid] for fid in FACTOR_IDS]
 
+        # Prüfe alle Wechselwirkungen innerhalb dieses Szenarios
         for i, src_desc in enumerate(descriptors):
             for j, tgt_desc in enumerate(descriptors):
                 if i == j:
-                    continue
+                    continue  # Kein Selbst-Einfluss
 
                 influence = self.cib_matrix.get_influence(src_desc, tgt_desc)
 
+                # Ist das ein Konflikt?
                 if influence <= self.conflict_threshold:
                     conflict_msg = (
                         f"{src_desc} → {tgt_desc}: influence={influence} "
                         f"(conflict threshold: {self.conflict_threshold})"
                     )
                     conflicts.append(conflict_msg)
-                    conflict_sum += abs(influence)
+                    conflict_sum += abs(influence)  # Summiere absolute Stärke
 
         result.is_consistent = len(conflicts) == 0
         result.conflicts = conflicts
@@ -101,8 +116,13 @@ class ConsistencyChecker:
 
     def compute_consistency_score(self, scenario: ScenarioDescriptor) -> float:
         """Berechnet einen Konsistenz-Score (0-1) für ein Szenario.
-           Positive Wechselwirkungen erhöhen den Score,
-           negative vermindern ihn.
+
+        Nutzt die Wechselwirkungsstärken um zu bewerten wie "harmonisch"
+        ein Szenario ist. Positive Wechselwirkungen erhöhen den Score,
+        negative verminderin ihn.
+
+        Returns:
+            Float zwischen 0 (sehr inkonsistent) und 1 (sehr konsistent)
         """
         descriptors = [scenario.factor_states[fid] for fid in FACTOR_IDS]
 
@@ -122,18 +142,25 @@ class ConsistencyChecker:
                     negative_sum += abs(influence)
 
         if total_strength == 0:
-            return 0.5
+            return 0.5  # Neutral
 
+        # Score = (positive - negative) / total normalisiert auf 0-1
         raw_score = (positive_sum - negative_sum) / total_strength
-        normalized_score = (raw_score + 1) / 2
+        normalized_score = (raw_score + 1) / 2  # Skaliere auf [0, 1]
         return max(0.0, min(1.0, normalized_score))
 
     def compute_stability_index(self, scenario: ScenarioDescriptor) -> float:
         """Berechnet einen Stabilitäts-Index (0-1).
-            Stabiles Szenario hat wenige starke negative Einflüsse.
+
+        Misst wie stabil ein Szenario unter den Wechselwirkungen ist.
+        Ein stabiles Szenario hat wenige starke negative Einflüsse.
+
+        Returns:
+            Float zwischen 0 (sehr instabil) und 1 (sehr stabil)
         """
         descriptors = [scenario.factor_states[fid] for fid in FACTOR_IDS]
 
+        # Zähle stark negative Wechselwirkungen
         strong_negative_count = 0
         total_interactions = 0
 
@@ -149,13 +176,13 @@ class ConsistencyChecker:
         if total_interactions == 0:
             return 0.5
 
+        # Stabilität = 1 - (starke negative / gesamt)
         stability = 1.0 - (strong_negative_count / total_interactions)
         return max(0.0, min(1.0, stability))
 
-
 # Scenario Generator
 class ScenarioDeriver:
-    """Generiert konsistente Szenarien aus der CIB-Matrix."""
+    """Generiert konsistente Szenarien aus einer CIB-Matrix."""
 
     def __init__(self, cib_matrix: CIBMatrix, conflict_threshold: float = -1.5):
         self.cib_matrix = cib_matrix
@@ -168,13 +195,16 @@ class ScenarioDeriver:
     ) -> ScenarioDerivationResult:
         """Leitet die Top-N konsistentesten Szenarien ab.
         Brute-Force-Ansatz: Generiere alle 2^7 = 128 möglichen
-        Zustandskombinationen, prüfe Konsistenz, und sortiere nach Score.
         """
         result = ScenarioDerivationResult(matrix_round=self.cib_matrix.round_generated)
 
+        # Generiere alle möglichen Szenarien
         all_scenarios = []
 
+        # Für jeden Faktor: wähle einen der beiden Zustände
         for state_combo in product(range(STATES_PER_FACTOR), repeat=NUM_FACTORS):
+            # state_combo = (0, 1, 0, 1, 0, 0, 1) bedeutet:
+            # F1.1, F2.2, F3.1, F4.2, F5.1, F6.1, F7.2
             factor_states = {}
             for factor_idx, state_idx in enumerate(state_combo):
                 factor_id = f"F{factor_idx + 1}"
@@ -183,14 +213,17 @@ class ScenarioDeriver:
 
             scenario = ScenarioDescriptor(factor_states=factor_states)
 
+            # Berechne Scores
             consistency = self.checker.compute_consistency_score(scenario)
             stability = self.checker.compute_stability_index(scenario)
             scenario.consistency_score = consistency
             scenario.stability_index = stability
 
+            # Prüfe ob konsistent
             check = self.checker.check_scenario(scenario)
             is_consistent = check.is_consistent
 
+            # Entscheide ob einzubeziehen
             if is_consistent or allow_inconsistent:
                 all_scenarios.append({
                     "scenario": scenario,
@@ -201,8 +234,10 @@ class ScenarioDeriver:
         result.total_evaluated = len(all_scenarios)
         result.consistent_count = sum(1 for s in all_scenarios if s["is_consistent"])
 
+        # Sortiere nach kombiniertem Score (absteigend)
         all_scenarios.sort(key=lambda x: x["combined_score"], reverse=True)
 
+        # Nehme Top-N
         for item in all_scenarios[:top_n]:
             scenario = item["scenario"]
             scenario.reasoning = self._build_reasoning(scenario, item["is_consistent"])
@@ -229,7 +264,7 @@ class ScenarioDeriver:
 
         if check.conflicts:
             lines.append(f"Konflikte ({len(check.conflicts)}):")
-            for conflict in check.conflicts[:3]:
+            for conflict in check.conflicts[:3]:  # Zeige erste 3
                 lines.append(f"  - {conflict}")
             if len(check.conflicts) > 3:
                 lines.append(f"  ... und {len(check.conflicts) - 3} weitere")
