@@ -6,6 +6,8 @@ from src.models.state_models import (
     SimulationClock,
     SimulationConfig,
     SimulationState,
+    SpeechCandidateState,
+    SpeechPlanState,
 )
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
 from src.models.event_models import EventLogEntry, PriceHistoryEntry, RoundResult
@@ -26,6 +28,8 @@ __all__ = [
     "SimulationClock",
     "LLMConfig",
     "SimulationConfig",
+    "SpeechCandidateState",
+    "SpeechPlanState",
     "AgentConfig",
     "AgentResponse",
     "StateChange",

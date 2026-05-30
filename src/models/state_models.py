@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from datetime import UTC, datetime
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 from src.models.population_models import ScenarioParameter
 
@@ -13,16 +16,78 @@ class FactorState(BaseModel):
     possible_states: dict[str, str]
 
 
+class ConfigChangeEntry(BaseModel):
+    """Timestamped record of a runtime configuration change."""
+
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    round_number: int | None = None
+    parameter_id: str
+    old_value: Any
+    new_value: Any
+    source_agent: str = "EnvironmentAgent"
+    reason: str = ""
+
+
 class EnvironmentState(BaseModel):
     factors: dict[str, FactorState]
     global_context: str = ""
 
 
+class SpeechCandidateState(BaseModel):
+    """Serialized speech candidate emitted by the RedebedarfScheduler."""
+
+    agent_id: str
+    score: int
+    reasons: list[str] = Field(default_factory=list)
+    contributions_this_round: int = 0
+
+
+class SpeechPlanState(BaseModel):
+    """Round-level speech plan generated before agent execution."""
+
+    round_number: int
+    order: list[str] = Field(default_factory=list)
+    candidates: list[SpeechCandidateState] = Field(default_factory=list)
+    scores: dict[str, int] = Field(default_factory=dict)
+
+
 class SimulationClock(BaseModel):
     current_round: int = 0
-    max_rounds: int = 10
-    year_start: int = 2025
+    max_rounds: int = 40
+    year_start: int = 2026
     years_per_round: int = 1
+    tick_unit: str = "quarter"
+    timeline_start_year: int = 2026
+    timeline_start_quarter: int = 1
+    timeline_end_year: int = 2035
+    timeline_end_quarter: int = 4
+
+    def quarter_for_round(self, round_number: int) -> tuple[int, int]:
+        """Return the quarter/year tuple for a 1-based round number."""
+
+        if round_number < 1:
+            raise ValueError("round_number must be >= 1")
+
+        offset = round_number - 1
+        year = self.timeline_start_year + (offset // 4)
+        quarter = self.timeline_start_quarter + (offset % 4)
+        if quarter > 4:
+            year += 1
+            quarter -= 4
+        return year, quarter
+
+    def quarter_label_for_round(self, round_number: int) -> str:
+        """Return the human readable quarter label for a 1-based round number."""
+
+        year, quarter = self.quarter_for_round(round_number)
+        return f"Q{quarter} {year}"
+
+    @property
+    def total_quarters(self) -> int:
+        """Total number of supported quarterly ticks in the configured timeline."""
+
+        year_span = self.timeline_end_year - self.timeline_start_year
+        return (year_span * 4) + (self.timeline_end_quarter - self.timeline_start_quarter) + 1
 
 
 class LLMConfig(BaseModel):
@@ -37,7 +102,44 @@ class SimulationConfig(BaseModel):
     clock: SimulationClock
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
-    scenario_parameters: list[ScenarioParameter] = []
+    scenario_parameters: list[ScenarioParameter] = Field(default_factory=list)
+    change_log: list[ConfigChangeEntry] = Field(default_factory=list)
+
+    def update_scenario_parameter(
+        self,
+        parameter_id: str,
+        new_value: float,
+        *,
+        source_agent: str = "EnvironmentAgent",
+        reason: str = "",
+        round_number: int | None = None,
+    ) -> None:
+        """Update a scenario parameter and append a timestamped change log entry."""
+
+        for parameter in self.scenario_parameters:
+            if parameter.id != parameter_id:
+                continue
+
+            old_value = parameter.value
+            parameter.value = new_value
+            self.change_log.append(
+                ConfigChangeEntry(
+                    round_number=round_number,
+                    parameter_id=parameter_id,
+                    old_value=old_value,
+                    new_value=new_value,
+                    source_agent=source_agent,
+                    reason=reason,
+                )
+            )
+            return
+
+        raise KeyError(f"Unknown scenario parameter: {parameter_id}")
+
+    def runtime_parameter_map(self) -> dict[str, float]:
+        """Return the current scenario parameters as a flat runtime mapping."""
+
+        return {parameter.id: parameter.value for parameter in self.scenario_parameters}
 
 
 class SimulationState(BaseModel):
@@ -45,11 +147,50 @@ class SimulationState(BaseModel):
     clock: SimulationClock
     environment: EnvironmentState
     agents: list[AgentConfig]
-    event_log: list[EventLogEntry] = []
-    price_history: list[PriceHistoryEntry] = []
-    round_results: list[RoundResult] = []
+    redebedarf_scores: dict[str, int] = Field(default_factory=dict)
+    current_speech_candidates: list[SpeechCandidateState] = Field(default_factory=list)
+    current_speech_order: list[str] = Field(default_factory=list)
+    current_round_spoken_agents: list[str] = Field(default_factory=list)
+    speech_plan: SpeechPlanState | None = None
+    event_log: list[EventLogEntry] = Field(default_factory=list)
+    price_history: list[PriceHistoryEntry] = Field(default_factory=list)
+    round_results: list[RoundResult] = Field(default_factory=list)
     cib_matrix: CIBMatrix | None = None
     cib_history: CIBMatrixHistory | None = None
+
+
+class InputState(BaseModel):
+    """Studio-facing input defaults for AP3 runs."""
+
+    max_rounds: int = Field(default=40, description="Maximale Anzahl an Quartalen/Runden")
+    rounds: int = Field(default=4, description="Alias für max_rounds")
+    seed: int | None = Field(default=None, description="Seed für Multi-Run")
+    llm_model: str = Field(default="llama3.2", description="LLM-Modellname")
+    llm_temperature: float = Field(default=0.7, description="LLM-Temperatur")
+    llm_max_tokens: int = Field(default=2048, description="Maximale Token pro Antwort")
+    ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama-Base-URL")
+    scenario_parameters: list[dict[str, Any]] = Field(default_factory=list, description="Szenarioparameter")
+
+
+class PlaygroundState(InputState):
+    """Graph state schema tolerant to partial/empty Studio payloads."""
+
+    config: dict[str, Any] | None = Field(default=None)
+    clock: dict[str, Any] | None = Field(default=None)
+    environment: dict[str, Any] | None = Field(default=None)
+    agents: list[dict[str, Any]] | None = Field(default=None)
+
+    event_log: list[dict[str, Any]] = Field(default_factory=list)
+    price_history: list[dict[str, Any]] = Field(default_factory=list)
+    round_results: list[dict[str, Any]] = Field(default_factory=list)
+    cib_matrix: dict[str, Any] | None = Field(default=None)
+    cib_history: dict[str, Any] | None = Field(default=None)
+
+    redebedarf_scores: dict[str, int] = Field(default_factory=dict)
+    current_speech_candidates: list[SpeechCandidateState] = Field(default_factory=list)
+    current_speech_order: list[str] = Field(default_factory=list)
+    current_round_spoken_agents: list[str] = Field(default_factory=list)
+    speech_plan: SpeechPlanState | None = Field(default=None)
 
 
 # deferred imports for forward refs

@@ -48,7 +48,26 @@ class AgentNode:
 
     def invoke(self, state: SimulationState) -> SimulationState:
         prompt = self._build_prompt(state)
-        raw_output = self.llm.call(prompt)
+        try:
+            raw_output = self.llm.call(prompt)
+        except Exception as exc:
+            # Best-effort fallback to Studio mock LLM to avoid aborting the whole run
+            try:
+                from src.studio_helpers import get_llm
+
+                print(f"LLM call failed for agent {self.config.id}: {exc}. Falling back to mock LLM.")
+                fallback = get_llm()
+                raw_output = fallback.call(prompt)
+            except Exception:
+                # Last-resort: produce a default NO-OP payload
+                print(f"Fallback LLM also failed for agent {self.config.id}: {exc}. Using default NO_OP.")
+                raw_output = json.dumps({
+                    "reasoning": "fallback",
+                    "actions": ["NO_OP"],
+                    "state_changes": [],
+                    "events": [],
+                    "segment_analysis": {},
+                }, ensure_ascii=False)
 
         response, raw_event_entries = self._parse_response(
             raw_output, state.clock.current_round, state=state

@@ -3,9 +3,14 @@
   "description": "Prototypische Multi-Agenten-Simulation fuer Szenarioplanung im Flugverkehr (2025-2035)",
   "clock": {
     "current_round": 0,
-    "max_rounds": 10,
+    "max_rounds": 40,
     "year_start": 2026,
-    "years_per_round": 1
+    "years_per_round": 1,
+    "tick_unit": "quarter",
+    "timeline_start_year": 2026,
+    "timeline_start_quarter": 1,
+    "timeline_end_year": 2035,
+    "timeline_end_quarter": 4
   },
   "llm": {
     "model": "llama3",
@@ -13,6 +18,7 @@
     "max_tokens": 2048
   },
   "seed": null,
+  "change_log": [],
   "scenario_parameters": [
     {
       "id": "demand_growth_rate",

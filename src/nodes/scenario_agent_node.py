@@ -7,6 +7,7 @@ from typing import Any, Protocol
 
 from src.models.cib_models import CIBMatrix, DESCRIPTOR_IDS, MAX_INFLUENCE, MIN_INFLUENCE
 from src.models.state_models import SimulationState
+from src.scenario_consistency import ScenarioDeriver, scenarios_to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,16 @@ def _top_influences(matrix: CIBMatrix, limit: int = 40) -> list[dict[str, Any]]:
     return items[:limit]
 
 
-def _build_scenario_prompt(state: SimulationState) -> str:
+def _build_consistent_scenarios(state: SimulationState) -> dict[str, Any]:
+    if state.cib_matrix is None:
+        return {"scenarios": [], "metadata": {}}
+
+    deriver = ScenarioDeriver(state.cib_matrix)
+    derived = deriver.derive_scenarios(top_n=3, allow_inconsistent=False)
+    return scenarios_to_dict(derived)
+
+
+def _build_scenario_prompt(state: SimulationState, consistent_payload: dict[str, Any]) -> str:
     if state.cib_matrix is None:
         raise ValueError("ScenarioAgentNode requires state.cib_matrix")
 
@@ -67,6 +77,7 @@ def _build_scenario_prompt(state: SimulationState) -> str:
     top_json = json.dumps(top, ensure_ascii=False, indent=2)
     scores = matrix.factor_scores or []
     scores_json = json.dumps([s.model_dump() for s in scores], ensure_ascii=False, indent=2)
+    consistent_json = json.dumps(consistent_payload, ensure_ascii=False, indent=2)
 
     return f"""{SCENARIO_SYSTEM_PROMPT}
 
@@ -83,6 +94,9 @@ def _build_scenario_prompt(state: SimulationState) -> str:
 
 ## Stärkste Beziehungen (abs(influence) >= 2)
 {top_json}
+
+## Mathematisch konsistente Szenario-Kandidaten
+{consistent_json}
 
 ## Output-Format (strict)
 Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock:
@@ -244,7 +258,13 @@ class ScenarioAgentNode:
         if state.cib_matrix is None:
             return state
 
-        prompt = _build_scenario_prompt(state)
+        consistent_payload = _build_consistent_scenarios(state)
+        if state.cib_matrix.metadata is None:
+            state.cib_matrix.metadata = {}
+        state.cib_matrix.metadata["scenario_candidates"] = consistent_payload.get("scenarios", [])
+        state.cib_matrix.metadata["scenario_consistency"] = consistent_payload.get("metadata", {})
+
+        prompt = _build_scenario_prompt(state, consistent_payload)
         try:
             raw = self.llm.call(prompt)
         except Exception as e:
@@ -259,9 +279,8 @@ class ScenarioAgentNode:
         payload = _normalize_scenarios(payload)
 
         # Store on state (non-breaking): attach as metadata to cib_matrix
-        if state.cib_matrix.metadata is None:
-            state.cib_matrix.metadata = {}
         state.cib_matrix.metadata["scenarios"] = payload.get("scenarios", [])
+        state.cib_matrix.metadata["scenario_llm_payload"] = payload
 
         # Optional file output
         if self.output_dir is not None:
@@ -279,6 +298,10 @@ def render_scenarios_markdown(payload: dict[str, Any], state: SimulationState) -
     lines.append(f"# Szenarien: {state.config.name}")
     if state.cib_matrix is not None:
         lines.append(f"- **CIB round_generated:** {state.cib_matrix.round_generated}")
+        if state.cib_matrix.metadata:
+            consistency = state.cib_matrix.metadata.get("scenario_consistency")
+            if isinstance(consistency, dict) and consistency:
+                lines.append(f"- **scenario_consistency:** {json.dumps(consistency, ensure_ascii=False)}")
     lines.append("")
 
     scenarios = payload.get("scenarios", [])

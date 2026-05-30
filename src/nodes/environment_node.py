@@ -1,16 +1,4 @@
-"""Environment Agent Node für Challenge 3 mit Bevölkerungsänderungen
-
-Dieser Node entscheidet pro Runde die Populationsverschiebungen basierend auf:
-- Faktor-Zustände
-- CIB-Matrix
-- Bisherige Bevölkerungsentwicklung
-- LLM-basierte Begründung
-
-Beschränkungen:
-- Maximal 5% Verschiebung pro Segment pro Runde (MAX_SHARE_CHANGE_PER_ROUND)
-- Segmente können überlappen
-- Änderungen werden geloggt
-"""
+"""Environment nodes for AP3/AP4 simulation flows."""
 
 from __future__ import annotations
 
@@ -20,70 +8,74 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, Field
 
+from src.models.agent_models import AgentResponse, StateChange
 from src.models.cib_models import CIBMatrix
-from src.models.population_models import ConsumerSegment, PopulationConfig
+from src.models.event_models import EventLogEntry, RoundResult
+from src.models.population_models import PopulationConfig
 from src.models.state_models import SimulationState
 
 logger = logging.getLogger(__name__)
 
-# Max. Verschiebung pro Segment pro Runde
 MAX_SHARE_CHANGE_PER_ROUND = 0.05  # 5%
 MIN_SEGMENT_SHARE = 0.0
 MAX_SEGMENT_SHARE = 1.0
 
 
 class LLMCallable(Protocol):
-    """Protocol für LLM-Clients"""
+    """Protocol for LLM clients."""
 
     def call(self, prompt: str) -> str: ...
 
 
 class PopulationShift(BaseModel):
-    """Bevölkerungsverschiebung je Segment"""
+    """Population shift for one segment."""
+
     segment_id: str
     segment_name: str
     old_share: float
     new_share: float
     shift_amount: float
     reasoning: str
-    clamped: bool = False  #War die Verschiebung durch Max-Constraint begrenzt?
+    clamped: bool = False
 
 
 class PopulationUpdateResult(BaseModel):
-    """Ergebnis einer Veränderung der Bevölkerung"""
+    """Result of a population update."""
+
     round_number: int
     shifts: list[PopulationShift] = Field(default_factory=list)
     total_reasoning: str = ""
     metadata: dict[str, Any] = Field(default_factory=dict)
 
-# Prompts
-POPULATION_UPDATE_SYSTEM_PROMPT = """Du bist ein Experte für Bevölkerungsdynamik und Marktentwicklung im Flugverkehr.
 
-Deine Aufgabe: Prognostiziere die Verschiebung der Konsumenten-Segmente für die nächste Runde.
+POPULATION_UPDATE_SYSTEM_PROMPT = """Du bist ein Experte fuer Bevoelkerungsdynamik und Marktentwicklung im Flugverkehr.
+
+Deine Aufgabe: Prognostiziere die Verschiebung der Konsumenten-Segmente fuer die naechste Runde.
 
 Input:
 - Aktuelle Segment-Anteile
-- Aktuelle Faktor-Zustände (Mobilitätsbedürfnis, Regulierung, Technologie, etc.)
+- Aktuelle Faktor-Zustaende (Mobilitaetsbeduerfnis, Regulierung, Technologie, etc.)
 - CIB-Matrix (wie Faktoren sich gegenseitig beeinflussen)
-- Bisherige Bevölkerungstrends
+- Bisherige Bevoelkerungstrends
 
 Output:
 - Neue Segment-Anteile (prozentual)
-- Begründung für jede Verschiebung
+- Begruendung fuer jede Verschiebung
 - Max. 5% Verschiebung pro Segment pro Runde
 
 Wichtig:
-- Begründe mit Faktoren-Zuständen und CIB-Wechselwirkungen
-- Segmente können überlappen (ein Passenger kann mehrere Labels haben)
-- Alle Anteile müssen zusammen ≤ 100% ergeben (erlaubt Überlappung)
+- Begruende mit Faktoren-Zustaenden und CIB-Wechselwirkungen
+- Segmente koennen ueberlappen (ein Passenger kann mehrere Labels haben)
+- Alle Anteile muessen zusammen <= 100% ergeben (erlaubt Ueberlappung)
 """
+
 
 POPULATION_UPDATE_USER_PROMPT_TEMPLATE = """Runde: {round_number}
 
 Aktuelle Segment-Anteile:
 {segments_json}
 
-Aktuelle Faktor-Zustände:
+Aktuelle Faktor-Zustaende:
 {factors_json}
 
 CIB-Matrix Zusammenfassung (Top 10 Wechselwirkungen):
@@ -92,7 +84,7 @@ CIB-Matrix Zusammenfassung (Top 10 Wechselwirkungen):
 Bisherige Verschiebungen (letzte 3 Runden):
 {historical_shifts}
 
-Prognostiziere die neuen Segment-Anteile und begründe jede Verschiebung.
+Prognostiziere die neuen Segment-Anteile und begruende jede Verschiebung.
 
 Format JSON:
 {{
@@ -107,37 +99,194 @@ Format JSON:
 }}
 """
 
-# Environment Agent Node
-class EnvironmentAgentNode:
 
-    def __init__(self, llm: LLMCallable | None = None):
-                self.llm = llm
+class EnvironmentNode:
+    def __init__(self, prefer_agent_order: list[str] | None = None) -> None:
+        self.prefer_agent_order = prefer_agent_order or ["regulator", "provider", "consumer"]
 
     def invoke(self, state: SimulationState) -> SimulationState:
-
         round_number = state.clock.current_round
 
-        # Hole Population-Config aus Consumer-Agent
+        responses = self._collect_round_responses(state, round_number)
+        round_events = [event for event in state.event_log if event.round_number == round_number]
+
+        applied_changes = self._apply_state_changes(state, responses)
+        summary = self._build_round_summary(state, responses, round_events, applied_changes)
+
+        state.environment.global_context = summary
+        state.round_results.append(
+            RoundResult(
+                round_number=round_number,
+                agent_responses=[],
+                events=round_events,
+                environment_snapshot=state.environment,
+                summary=summary,
+            )
+        )
+
+        return state
+
+    def _collect_round_responses(self, state: SimulationState, round_number: int) -> list[AgentResponse]:
+        by_agent: dict[str, AgentResponse] = {}
+        for round_result in state.round_results:
+            if round_result.round_number != round_number:
+                continue
+            for response in round_result.agent_responses:
+                by_agent[response.agent_id] = response
+
+        preferred_order = (
+            list(state.current_speech_order)
+            if getattr(state, "current_speech_order", None)
+            else list(self.prefer_agent_order)
+        )
+
+        ordered: list[str] = []
+        for agent_id in preferred_order:
+            if agent_id in by_agent:
+                ordered.append(agent_id)
+        for agent_id in sorted(by_agent.keys()):
+            if agent_id not in ordered:
+                ordered.append(agent_id)
+
+        return [by_agent[agent_id] for agent_id in ordered]
+
+    def _apply_state_changes(self, state: SimulationState, responses: list[AgentResponse]) -> dict[str, str]:
+        changes_by_factor: dict[str, StateChange] = {}
+        for response in responses:
+            for change in response.state_changes:
+                if change.factor_id not in state.environment.factors:
+                    continue
+                factor = state.environment.factors[change.factor_id]
+                if change.proposed_state not in factor.possible_states:
+                    continue
+                if change.factor_id in changes_by_factor:
+                    continue
+                changes_by_factor[change.factor_id] = change
+
+        applied: dict[str, str] = {}
+        for factor_id, change in changes_by_factor.items():
+            state.environment.factors[factor_id].current_state = change.proposed_state
+            applied[factor_id] = change.proposed_state
+
+        for response in responses:
+            for action in response.actions:
+                if not isinstance(action, str):
+                    continue
+                act = action.strip()
+                if not act:
+                    continue
+                low = act.lower()
+                if low.startswith("update_scenario_parameter:") or low.startswith("set_param:"):
+                    try:
+                        _, tail = act.split(":", 1)
+                        key, val = tail.split("=", 1)
+                        param_id = key.strip()
+                        new_value_raw = val.strip()
+                        if not param_id or not new_value_raw:
+                            continue
+                        try:
+                            new_value = float(new_value_raw)
+                        except Exception:
+                            continue
+                        try:
+                            state.config.update_scenario_parameter(
+                                parameter_id=param_id,
+                                new_value=new_value,
+                                source_agent=response.agent_id,
+                                round_number=state.clock.current_round,
+                                reason=f"Agent override ({response.agent_id})",
+                            )
+                        except KeyError:
+                            continue
+                    except Exception:
+                        continue
+
+        return applied
+
+    def _build_round_summary(
+        self,
+        state: SimulationState,
+        responses: list[AgentResponse],
+        events: list[EventLogEntry],
+        applied_changes: dict[str, str],
+    ) -> str:
+        lines: list[str] = []
+
+        quarter_label = state.clock.quarter_label_for_round(state.clock.current_round)
+        lines.append(f"Round {state.clock.current_round}/{state.clock.max_rounds} ({quarter_label})")
+
+        if getattr(state, "current_speech_order", None):
+            lines.append("Speech order:")
+            lines.append("- " + ", ".join(state.current_speech_order))
+
+        if getattr(state, "redebedarf_scores", None):
+            lines.append("Redebedarf scores:")
+            lines.append(
+                "- "
+                + ", ".join(
+                    f"{agent_id}={score}" for agent_id, score in sorted(state.redebedarf_scores.items())
+                )
+            )
+
+        if applied_changes:
+            lines.append("Applied factor updates:")
+            for factor_id in sorted(applied_changes.keys()):
+                factor = state.environment.factors[factor_id]
+                desc = factor.possible_states.get(factor.current_state, "")
+                lines.append(f"- {factor_id} -> {factor.current_state} :: {desc}")
+        else:
+            lines.append("Applied factor updates: -")
+
+        if events:
+            lines.append("Events:")
+            for event in events:
+                affected = ", ".join(event.affected_factors) if event.affected_factors else "-"
+                lines.append(
+                    f"- source={event.source_agent} type={event.event_type.value} factors={affected} :: {event.description}"
+                )
+        else:
+            lines.append("Events: -")
+
+        segment_analysis = self._collect_segment_analysis(responses)
+        if segment_analysis:
+            lines.append("Consumer segment_analysis:")
+            lines.append(json.dumps(segment_analysis, ensure_ascii=True, indent=2))
+
+        lines.append("Agent summaries:")
+        for response in responses:
+            actions = ", ".join(response.actions) if response.actions else "-"
+            lines.append(f"- {response.agent_id}: actions={actions} :: {response.reasoning}")
+
+        return "\n".join(lines).strip() + "\n"
+
+    def _collect_segment_analysis(self, responses: list[AgentResponse]) -> dict[str, Any]:
+        merged: dict[str, Any] = {}
+        for response in responses:
+            if response.agent_id != "consumer":
+                continue
+            if isinstance(response.segment_analysis, dict):
+                merged.update(response.segment_analysis)
+        return merged
+
+
+class EnvironmentAgentNode:
+    def __init__(self, llm: LLMCallable | None = None):
+        self.llm = llm
+
+    def invoke(self, state: SimulationState) -> SimulationState:
+        round_number = state.clock.current_round
+
         pop_config = self._extract_population_config(state)
         if pop_config is None:
             logger.warning("No population config found, skipping population update")
             return state
 
-        # Berechne neue Segment-Anteile
-        result = self._update_population(
-            state=state,
-            pop_config=pop_config,
-            round_number=round_number
-        )
-
-        # Wende Änderungen an
+        result = self._update_population(state=state, pop_config=pop_config, round_number=round_number)
         state = self._apply_population_changes(state, result, pop_config)
 
-        # Logge Änderungen
         if result.shifts:
             logger.info(
-                f"Round {round_number}: Population update - "
-                f"{len(result.shifts)} segments shifted"
+                f"Round {round_number}: Population update - {len(result.shifts)} segments shifted"
             )
 
         return state
@@ -149,40 +298,28 @@ class EnvironmentAgentNode:
         return None
 
     def _update_population(
-            self,
-            state: SimulationState,
-            pop_config: PopulationConfig,
-            round_number: int
+        self,
+        state: SimulationState,
+        pop_config: PopulationConfig,
+        round_number: int,
     ) -> PopulationUpdateResult:
-        result = PopulationUpdateResult(round_number=round_number)
-
         if self.llm:
-            result = self._update_with_llm(state, pop_config, round_number)
-        else:
-            result = self._update_with_heuristic(state, pop_config, round_number)
-
-        return result
+            return self._update_with_llm(state, pop_config, round_number)
+        return self._update_with_heuristic(state, pop_config, round_number)
 
     def _update_with_llm(
-            self,
-            state: SimulationState,
-            pop_config: PopulationConfig,
-            round_number: int
+        self,
+        state: SimulationState,
+        pop_config: PopulationConfig,
+        round_number: int,
     ) -> PopulationUpdateResult:
-        """LLM-basiertes Update."""
-        # Baue Prompts zusammen
-        segments_json = json.dumps(
-            [s.model_dump() for s in pop_config.segments],
-            indent=2
-        )
-
+        segments_json = json.dumps([segment.model_dump() for segment in pop_config.segments], indent=2)
         factors_json = json.dumps(
-            {fid: f.current_state for fid, f in state.environment.factors.items()},
-            indent=2
+            {factor_id: factor.current_state for factor_id, factor in state.environment.factors.items()},
+            indent=2,
         )
 
         cib_summary = self._build_cib_summary(state.cib_matrix) if state.cib_matrix else "N/A"
-
         historical_shifts = self._build_historical_shifts(state, pop_config)
 
         user_prompt = POPULATION_UPDATE_USER_PROMPT_TEMPLATE.format(
@@ -193,26 +330,20 @@ class EnvironmentAgentNode:
             historical_shifts=historical_shifts,
         )
 
-        # Rufe LLM auf
         try:
             response = self.llm.call(user_prompt)
             llm_output = self._parse_llm_response(response)
-        except Exception as e:
-            logger.error(f"LLM call failed: {e}, falling back to heuristic")
+        except Exception as exc:
+            logger.error(f"LLM call failed: {exc}, falling back to heuristic")
             return self._update_with_heuristic(state, pop_config, round_number)
 
-        # Baue PopulationUpdateResult
         result = PopulationUpdateResult(
             round_number=round_number,
-            total_reasoning=llm_output.get("overall_reasoning", "")
+            total_reasoning=llm_output.get("overall_reasoning", ""),
         )
 
         for segment in pop_config.segments:
-            seg_update = next(
-                (s for s in llm_output.get("segments", []) if s.get("id") == segment.id),
-                None
-            )
-
+            seg_update = next((item for item in llm_output.get("segments", []) if item.get("id") == segment.id), None)
             if seg_update is None:
                 continue
 
@@ -225,121 +356,97 @@ class EnvironmentAgentNode:
                 shift_amount=new_share - segment.share,
                 reasoning=seg_update.get("reasoning", ""),
             )
-
-            # Prüfe Constraints
-            shift = self._apply_shift_constraints(shift, pop_config)
-            result.shifts.append(shift)
+            result.shifts.append(self._apply_shift_constraints(shift, pop_config))
 
         return result
 
     def _update_with_heuristic(
-            self,
-            state: SimulationState,
-            pop_config: PopulationConfig,
-            round_number: int
+        self,
+        state: SimulationState,
+        pop_config: PopulationConfig,
+        round_number: int,
     ) -> PopulationUpdateResult:
-        """Fallback: Einfache Heuristik für Tests."""
         result = PopulationUpdateResult(round_number=round_number)
 
         for segment in pop_config.segments:
-            # Sehr einfache Heuristik: kleine zufällige Shifts
-            shift = PopulationShift(
-                segment_id=segment.id,
-                segment_name=segment.name,
-                old_share=segment.share,
-                new_share=segment.share,  # Keine Änderung
-                shift_amount=0.0,
-                reasoning="Heuristic: No change (waiting for LLM)",
+            result.shifts.append(
+                PopulationShift(
+                    segment_id=segment.id,
+                    segment_name=segment.name,
+                    old_share=segment.share,
+                    new_share=segment.share,
+                    shift_amount=0.0,
+                    reasoning="Heuristic: No change (waiting for LLM)",
+                )
             )
-            result.shifts.append(shift)
 
         result.total_reasoning = "Fallback heuristic - no population changes"
         return result
 
     def _apply_population_changes(
-            self,
-            state: SimulationState,
-            result: PopulationUpdateResult,
-            pop_config: PopulationConfig
+        self,
+        state: SimulationState,
+        result: PopulationUpdateResult,
+        pop_config: PopulationConfig,
     ) -> SimulationState:
-        """Wende Segment-Änderungen auf State an."""
         for shift in result.shifts:
-            # Finde Segment in Population-Config
-            segment = next(
-                (s for s in pop_config.segments if s.id == shift.segment_id),
-                None
-            )
-            if segment:
+            segment = next((item for item in pop_config.segments if item.id == shift.segment_id), None)
+            if segment is not None:
                 segment.share = shift.new_share
 
-        # Speichere Result im State (für Audit-Trail)
         if not hasattr(state, "_population_updates"):
-            state._population_updates = []  # type: ignore
-        state._population_updates.append(result)  # type: ignore
+            state._population_updates = []  # type: ignore[attr-defined]
+        state._population_updates.append(result)  # type: ignore[attr-defined]
 
         return state
 
-    def _apply_shift_constraints(
-            self,
-            shift: PopulationShift,
-            pop_config: PopulationConfig
-    ) -> PopulationShift:
-        # Maximal eine Veränderung von 5% pro Segment
-        max_shift = pop_config.segments[0].share * MAX_SHARE_CHANGE_PER_ROUND
+    def _apply_shift_constraints(self, shift: PopulationShift, pop_config: PopulationConfig) -> PopulationShift:
+        if not pop_config.segments:
+            return shift
 
+        max_shift = pop_config.segments[0].share * MAX_SHARE_CHANGE_PER_ROUND
         if abs(shift.shift_amount) > max_shift:
             clamped_shift = max_shift if shift.shift_amount > 0 else -max_shift
             shift.new_share = shift.old_share + clamped_shift
             shift.shift_amount = clamped_shift
             shift.clamped = True
 
-        # Clamp auf [0, 1]
         shift.new_share = max(MIN_SEGMENT_SHARE, min(MAX_SEGMENT_SHARE, shift.new_share))
-
         return shift
 
     def _parse_llm_response(self, response: str) -> dict[str, Any]:
         try:
-            # Versuche JSON zu extrahieren
             start = response.find("{")
             end = response.rfind("}") + 1
             if start >= 0 and end > start:
-                json_str = response[start:end]
-                return json.loads(json_str)
-        except Exception as e:
-            logger.error(f"Failed to parse LLM response: {e}")
+                return json.loads(response[start:end])
+        except Exception as exc:
+            logger.error(f"Failed to parse LLM response: {exc}")
 
         return {"segments": [], "overall_reasoning": "Parse failed"}
 
     def _build_cib_summary(self, cib_matrix: CIBMatrix | None) -> str:
-        #Baue eine kurze Zusammenfassung der CIB-Matrix
         if cib_matrix is None:
             return "No CIB matrix available"
 
-        # Hole Top-10 stärkste Wechselwirkungen
-        influences = []
+        influences: list[str] = []
         for cell in list(cib_matrix.cells.values())[:10]:
             if cell.influence != 0:
-                influences.append(
-                    f"{cell.source_descriptor} → {cell.target_descriptor}: {cell.influence:+d}"
-                )
+                influences.append(f"{cell.source_descriptor} -> {cell.target_descriptor}: {cell.influence:+d}")
 
         return "\n".join(influences) if influences else "No strong influences"
 
     def _build_historical_shifts(self, state: SimulationState, pop_config: PopulationConfig) -> str:
-        #Baue eine Zusammenfassung der bisherigen Verschiebungen
         updates = getattr(state, "_population_updates", [])[-3:]
-
         if not updates:
             return "No historical shifts yet"
 
-        lines = []
+        lines: list[str] = []
         for update in updates:
             lines.append(f"Round {update.round_number}:")
             for shift in update.shifts:
                 lines.append(
-                    f"  {shift.segment_id}: {shift.old_share:.1%} → {shift.new_share:.1%} "
-                    f"({shift.shift_amount:+.1%})"
+                    f"  {shift.segment_id}: {shift.old_share:.1%} -> {shift.new_share:.1%} ({shift.shift_amount:+.1%})"
                 )
 
         return "\n".join(lines)

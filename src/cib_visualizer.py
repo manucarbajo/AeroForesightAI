@@ -12,9 +12,11 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import matplotlib
+# Use non-interactive backend to avoid GUI/Tk dependencies in headless test environments
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-import networkx as nx
 import numpy as np
 
 from src.models.cib_models import (
@@ -123,53 +125,57 @@ def render_network(
     Only edges with absolute influence >= threshold are shown.
     """
     data = matrix.to_numpy()
-    G = nx.DiGraph()
 
-    # Add factor nodes
-    for i, fid in enumerate(FACTOR_IDS):
-        G.add_node(fid, color=FACTOR_COLORS[i])
+    # Build simple circular layout positions for factor nodes
+    n = len(FACTOR_IDS)
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    radius = 3.0
+    positions = {
+        FACTOR_IDS[i]: (radius * np.cos(angles[i]), radius * np.sin(angles[i]))
+        for i in range(n)
+    }
 
     # Aggregate influences at factor level
+    edges = []  # list of (src, tgt, total)
     for i, src_factor in enumerate(FACTOR_IDS):
         for j, tgt_factor in enumerate(FACTOR_IDS):
             if i == j:
                 continue
-            # Sum influences from all source descriptors to all target descriptors
             total = 0
             for si in range(STATES_PER_FACTOR):
                 for sj in range(STATES_PER_FACTOR):
                     row = i * STATES_PER_FACTOR + si
                     col = j * STATES_PER_FACTOR + sj
                     total += data[row, col]
-
             if abs(total) >= threshold:
-                G.add_edge(src_factor, tgt_factor, weight=total)
+                edges.append((src_factor, tgt_factor, int(total)))
 
     fig, ax = plt.subplots(1, 1, figsize=figsize)
-    pos = nx.circular_layout(G)
 
     # Draw nodes
-    node_colors = [FACTOR_COLORS[i] for i in range(len(FACTOR_IDS))]
-    nx.draw_networkx_nodes(G, pos, ax=ax, node_size=800, node_color=node_colors, alpha=0.9)
-    nx.draw_networkx_labels(G, pos, ax=ax, font_size=9, font_weight="bold")
+    for idx, fid in enumerate(FACTOR_IDS):
+        x, y = positions[fid]
+        ax.scatter([x], [y], s=800, color=FACTOR_COLORS[idx % len(FACTOR_COLORS)], zorder=3)
+        ax.text(x, y, fid, ha="center", va="center", fontsize=9, fontweight="bold", zorder=4)
 
-    # Draw edges with color/width based on weight
-    edges = G.edges(data=True)
-    for u, v, d in edges:
-        weight = d["weight"]
+    # Draw edges as arrows
+    for src, tgt, weight in edges:
+        x1, y1 = positions[src]
+        x2, y2 = positions[tgt]
+        dx, dy = x2 - x1, y2 - y1
         color = "#388e3c" if weight > 0 else "#d32f2f"
         width = min(abs(weight) * 0.5, 4.0)
         alpha = min(abs(weight) / 6.0 + 0.3, 1.0)
-        nx.draw_networkx_edges(
-            G, pos, edgelist=[(u, v)], ax=ax,
-            width=width, edge_color=color, alpha=alpha,
-            arrows=True, arrowsize=15,
-            connectionstyle="arc3,rad=0.1",
+        ax.annotate(
+            "",
+            xy=(x2, y2),
+            xytext=(x1, y1),
+            arrowprops=dict(arrowstyle="->", color=color, lw=width, alpha=alpha, shrinkA=15, shrinkB=15),
+            zorder=2,
         )
-
-    # Edge labels
-    edge_labels = {(u, v): f"{d['weight']:+d}" for u, v, d in edges}
-    nx.draw_networkx_edge_labels(G, pos, edge_labels, ax=ax, font_size=7)
+        # Edge label
+        mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+        ax.text(mx, my, f"{weight:+d}", fontsize=8, ha="center", va="center", zorder=5)
 
     ax.set_title(title, fontsize=12, fontweight="bold")
     ax.axis("off")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -21,6 +22,22 @@ def _safe_first_line(text: str, fallback: str = "") -> str:
     if not cleaned:
         return fallback
     return cleaned.splitlines()[0].strip()
+
+
+def _descriptor_to_factor_id(descriptor: str | None) -> str | None:
+    """Extract the factor id (e.g. F1) from a descriptor such as F1.2."""
+
+    if not descriptor:
+        return None
+
+    candidate = str(descriptor).strip()
+    if not candidate:
+        return None
+
+    factor_id = candidate.split("→", 1)[0].split("|")[-1].strip().split(".")[0]
+    if factor_id.startswith("F") and factor_id[1:].isdigit():
+        return factor_id
+    return None
 
 
 def _group_round_results(round_results: list[RoundResult]) -> dict[int, list[RoundResult]]:
@@ -138,6 +155,208 @@ def _agent_contribution(
         payload["raw_output"] = resp.raw_output
 
     return payload
+
+
+def collect_agent_factor_references(payload: dict[str, Any]) -> dict[str, set[str]]:
+    """Collect factor references per agent from a structured protocol payload.
+
+    The helper walks the real AP2 payload and extracts factors mentioned in
+    state changes, events and impact assessments. This is used by AP3 to build
+    deterministic speech-demand relevance relations from actual data instead of
+    a static mock table.
+    """
+
+    references: dict[str, set[str]] = defaultdict(set)
+
+    for agent in payload.get("agents", []):
+        agent_id = agent.get("id")
+        if isinstance(agent_id, str) and agent_id.strip():
+            references[agent_id.strip()]  # ensure key exists
+
+    for round_payload in payload.get("rounds", []):
+        for contribution in round_payload.get("contributions", []):
+            agent_id = contribution.get("agent_id")
+            if not isinstance(agent_id, str) or not agent_id.strip():
+                continue
+
+            factor_ids = _collect_factor_ids_from_contribution(contribution)
+            if factor_ids:
+                references[agent_id.strip()].update(factor_ids)
+
+    return {agent_id: set(sorted(factor_ids)) for agent_id, factor_ids in references.items()}
+
+
+def collect_contradiction_signals(
+    payload: dict[str, Any],
+    *,
+    cib_matrix: Any | None = None,
+) -> list[dict[str, Any]]:
+    """Detect deterministic contradiction signals from AP2 protocol data.
+
+    Two real-data sources are used:
+    - conflicting state changes for the same factor within one round,
+    - impact assessments that disagree on the sign of the same descriptor pair
+      or contradict the current CIB matrix sign if one is available.
+    """
+
+    signals: list[dict[str, Any]] = []
+
+    for round_payload in payload.get("rounds", []):
+        round_number = round_payload.get("round_number")
+        if not isinstance(round_number, int):
+            continue
+
+        state_change_votes: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
+        pair_votes: dict[tuple[str, str], dict[int, set[str]]] = defaultdict(lambda: defaultdict(set))
+
+        for contribution in round_payload.get("contributions", []):
+            agent_id = contribution.get("agent_id")
+            if not isinstance(agent_id, str) or not agent_id.strip():
+                continue
+
+            for change in contribution.get("state_changes", []):
+                if not isinstance(change, dict):
+                    continue
+                factor_id = change.get("factor_id")
+                proposed_state = change.get("proposed_state")
+                if not isinstance(factor_id, str) or not isinstance(proposed_state, str):
+                    continue
+                factor_id = factor_id.strip()
+                proposed_state = proposed_state.strip()
+                if not factor_id or not proposed_state:
+                    continue
+                state_change_votes[factor_id][proposed_state].add(agent_id.strip())
+
+            for item in contribution.get("impact_assessment", []):
+                if not isinstance(item, dict):
+                    continue
+                source_descriptor = item.get("source_descriptor")
+                target_descriptor = item.get("target_descriptor")
+                influence = item.get("influence")
+                if not isinstance(source_descriptor, str) or not isinstance(target_descriptor, str):
+                    continue
+                if not isinstance(influence, int):
+                    try:
+                        influence = int(influence)
+                    except (ValueError, TypeError):
+                        continue
+
+                pair = (source_descriptor.strip(), target_descriptor.strip())
+                if not pair[0] or not pair[1] or influence == 0:
+                    continue
+                pair_votes[pair][1 if influence > 0 else -1].add(agent_id.strip())
+
+                if cib_matrix is not None:
+                    current = 0
+                    try:
+                        current = int(cib_matrix.get_influence(pair[0], pair[1]))
+                    except Exception:
+                        current = 0
+                    if current != 0 and (current > 0) != (influence > 0):
+                        signals.append(
+                            {
+                                "round_number": round_number,
+                                "agent_ids": [agent_id.strip()],
+                                "factor_id": _descriptor_to_factor_id(pair[1]),
+                                "descriptor_pair": pair,
+                                "kind": "cib_conflict",
+                                "reason": (
+                                    f"AP2 impact assessment widerspricht AP1 CIB-Signatur {pair[0]} -> {pair[1]}"
+                                ),
+                                "weight": 2,
+                            }
+                        )
+
+        for factor_id, votes in state_change_votes.items():
+            if len(votes) <= 1:
+                continue
+            majority_state = _deterministic_majority_state(votes)
+            minority_agents = sorted(
+                {agent_id for state, agents in votes.items() if state != majority_state for agent_id in agents}
+            )
+            if minority_agents:
+                signals.append(
+                    {
+                        "round_number": round_number,
+                        "agent_ids": minority_agents,
+                        "factor_id": factor_id,
+                        "kind": "state_change_conflict",
+                        "reason": (
+                            f"Konkurrierende Zustandsvorschläge für {factor_id}; Mehrheit: {majority_state}"
+                        ),
+                        "weight": 2,
+                    }
+                )
+
+        for pair, votes in pair_votes.items():
+            if len(votes) <= 1:
+                continue
+            majority_sign = _deterministic_majority_sign(votes)
+            minority_agents = sorted(
+                {agent_id for sign, agents in votes.items() if sign != majority_sign for agent_id in agents}
+            )
+            if minority_agents:
+                signals.append(
+                    {
+                        "round_number": round_number,
+                        "agent_ids": minority_agents,
+                        "factor_id": _descriptor_to_factor_id(pair[1]),
+                        "descriptor_pair": pair,
+                        "kind": "impact_conflict",
+                        "reason": (
+                            f"Widersprüchliche Impact-Assessments für {pair[0]} -> {pair[1]}"
+                        ),
+                        "weight": 2,
+                    }
+                )
+
+    return signals
+
+
+def _collect_factor_ids_from_contribution(contribution: dict[str, Any]) -> set[str]:
+    factor_ids: set[str] = set()
+
+    for change in contribution.get("state_changes", []):
+        if not isinstance(change, dict):
+            continue
+        factor_id = change.get("factor_id")
+        if isinstance(factor_id, str) and factor_id.strip():
+            factor_ids.add(factor_id.strip())
+
+    impact = contribution.get("impact", {})
+    if isinstance(impact, dict):
+        for factor_id in impact.get("affected_factors", []):
+            if isinstance(factor_id, str) and factor_id.strip():
+                factor_ids.add(factor_id.strip())
+
+    for event in contribution.get("events", []):
+        if not isinstance(event, dict):
+            continue
+        for factor_id in event.get("affected_factors", []):
+            if isinstance(factor_id, str) and factor_id.strip():
+                factor_ids.add(factor_id.strip())
+
+    for item in contribution.get("impact_assessment", []):
+        if not isinstance(item, dict):
+            continue
+        source_factor = _descriptor_to_factor_id(item.get("source_descriptor"))
+        target_factor = _descriptor_to_factor_id(item.get("target_descriptor"))
+        if source_factor:
+            factor_ids.add(source_factor)
+        if target_factor:
+            factor_ids.add(target_factor)
+
+    return factor_ids
+
+
+def _deterministic_majority_state(votes: dict[str, set[str]]) -> str:
+    ranked = sorted(votes.items(), key=lambda item: (-len(item[1]), item[0]))
+    return ranked[0][0]
+
+
+def _deterministic_majority_sign(votes: dict[int, set[str]]) -> int:
+    ranked = sorted(votes.items(), key=lambda item: (-len(item[1]), -item[0]))
+    return ranked[0][0]
 
 
 def write_protocol_files(

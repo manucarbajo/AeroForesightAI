@@ -16,14 +16,30 @@ def ensure_output_dir():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
-def save_event_log(events: List[EventLogEntry], filename: str = "event_log.json") -> str:
+def _resolve_output_path(filename: str, output_subdir: str | Path | None = None) -> str:
+    ensure_output_dir()
+    if output_subdir is None:
+        target_dir = Path(OUTPUT_DIR)
+    else:
+        subdir_path = Path(output_subdir)
+        target_dir = subdir_path if subdir_path.is_absolute() else Path(OUTPUT_DIR) / subdir_path
+        target_dir.mkdir(parents=True, exist_ok=True)
+    return str(target_dir / filename)
+
+
+def save_event_log(
+    events: List[EventLogEntry],
+    filename: str = "event_log.json",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """
     Speichert die Event-Log-Einträge als JSON.
         Liste von EventLogEntry-Objekten
         Default Name der Ausgabedatei: event_log.json
     """
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
     
     # Konvertiere alle Events zu Dictionaries für JSON
     events_data = [event.model_dump() for event in events]
@@ -34,7 +50,12 @@ def save_event_log(events: List[EventLogEntry], filename: str = "event_log.json"
     return filepath
 
 
-def save_price_history(price_entries: List[PriceHistoryEntry], filename: str = "price_history.json") -> str:
+def save_price_history(
+    price_entries: List[PriceHistoryEntry],
+    filename: str = "price_history.json",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """
     Speichert die Preis-Historie als JSON.
         price_entries: Liste von PriceHistoryEntry-Objekten
@@ -44,7 +65,7 @@ def save_price_history(price_entries: List[PriceHistoryEntry], filename: str = "
         Pfad zur gespeicherten Datei
     """
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
     
     # Konvertiere alle Einträge zu Dictionaries für JSON
     price_data = [entry.model_dump() for entry in price_entries]
@@ -54,14 +75,19 @@ def save_price_history(price_entries: List[PriceHistoryEntry], filename: str = "
     
     return filepath
 
-def save_round_history(round_results: List, filename: str = "round_history.json") -> str:
+def save_round_history(
+    round_results: List,
+    filename: str = "round_history.json",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """
     Speichert die Rundenhistorie als JSON.
         round_results: Liste von RoundResult-Objekten
         Default Name der Ausgabedatei: round_history.json
     """
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
 
     round_data = [round_result.model_dump() for round_result in round_results]
 
@@ -70,7 +96,13 @@ def save_round_history(round_results: List, filename: str = "round_history.json"
 
     return filepath
 
-def save_run_metadata(state, args, filename: str = "run_metadata.json") -> str:
+def save_run_metadata(
+    state,
+    args,
+    filename: str = "run_metadata.json",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """
     Speichert Metadaten des Simulationslaufs als JSON.
         state: finaler SimulationState
@@ -78,7 +110,7 @@ def save_run_metadata(state, args, filename: str = "run_metadata.json") -> str:
         Default Name der Ausgabedatei: run_metadata.json
     """
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
 
     metadata = {
         "timestamp": datetime.now().isoformat(),
@@ -99,14 +131,19 @@ def save_run_metadata(state, args, filename: str = "run_metadata.json") -> str:
 
     return filepath
 
-def save_segment_analysis(round_results: List, filename: str = "segment_analysis.json") -> str:
+def save_segment_analysis(
+    round_results: List,
+    filename: str = "segment_analysis.json",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """
     Speichert die segmentspezifischen Analysen aller Agenten als JSON.
         round_results: Liste von RoundResult-Objekten
         Default Name der Ausgabedatei: segment_analysis.json
     """
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
 
     # Gruppiere nach Rundennummer
     rounds: dict = {}
@@ -132,14 +169,19 @@ def save_segment_analysis(round_results: List, filename: str = "segment_analysis
 
     return filepath
 
-def save_final_narrative(state, filename: str = "final_narrative.md") -> str:
+def save_final_narrative(
+    state,
+    filename: str = "final_narrative.md",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """
     Speichert eine lesbare Markdown-Zusammenfassung der Simulation.
         state: finaler SimulationState
         Default Name der Ausgabedatei: final_narrative.md
     """
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
 
     lines = []
 
@@ -188,14 +230,19 @@ def save_final_narrative(state, filename: str = "final_narrative.md") -> str:
 
     return filepath
 
-def save_cib_matrix(state, filename: str = "cib_matrix.json") -> str:
+def save_cib_matrix(
+    state,
+    filename: str = "cib_matrix.json",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """
     Speichert die CIB-Matrix als JSON.
         state: finaler SimulationState
         Default Name der Ausgabedatei: cib_matrix.json
     """
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
 
     if state.cib_matrix is None:
         cib_data = {"entries": [], "round_generated": 0, "metadata": {}}
@@ -224,37 +271,57 @@ def save_cib_matrix(state, filename: str = "cib_matrix.json") -> str:
     return filepath
 
 
-def save_protocol(protocol_payload: dict, filename: str = "protocol.json") -> str:
+def save_protocol(
+    protocol_payload: dict,
+    filename: str = "protocol.json",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """Save structured conversation protocol as JSON."""
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(protocol_payload, f, indent=2, ensure_ascii=False)
     return filepath
 
 
-def save_protocol_markdown(markdown: str, filename: str = "protocol.md") -> str:
+def save_protocol_markdown(
+    markdown: str,
+    filename: str = "protocol.md",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """Save conversation protocol as Markdown."""
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(markdown)
     return filepath
 
 
-def save_scenarios(payload: dict, filename: str = "scenarios.json") -> str:
+def save_scenarios(
+    payload: dict,
+    filename: str = "scenarios.json",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """Save derived scenarios as JSON."""
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
     return filepath
 
 
-def save_scenarios_markdown(markdown: str, filename: str = "scenarios.md") -> str:
+def save_scenarios_markdown(
+    markdown: str,
+    filename: str = "scenarios.md",
+    *,
+    output_subdir: str | Path | None = None,
+) -> str:
     """Save derived scenarios as Markdown."""
     ensure_output_dir()
-    filepath = os.path.join(OUTPUT_DIR, filename)
+    filepath = _resolve_output_path(filename, output_subdir)
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(markdown)
     return filepath
