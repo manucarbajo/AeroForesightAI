@@ -185,6 +185,13 @@ def save_final_narrative(
 
     lines = []
 
+    start_label = state.clock.quarter_label_for_round(1) if state.clock.current_round >= 1 else "n/a"
+    end_label = (
+        state.clock.quarter_label_for_round(state.clock.current_round)
+        if state.clock.current_round >= 1
+        else "n/a"
+    )
+
     # Titel
     lines.append(f"# Simulationsbericht: {state.config.name}")
     lines.append(f"\n{state.config.description}\n")
@@ -192,7 +199,7 @@ def save_final_narrative(
     # Überblick
     lines.append("## Überblick")
     lines.append(f"- **Simulierte Runden:** {state.clock.current_round}")
-    lines.append(f"- **Simulierte Jahre:** {state.clock.year_start} – {state.clock.year_start + state.clock.current_round * state.clock.years_per_round}")
+    lines.append(f"- **Simulierter Zeitraum:** {start_label} - {end_label}")
     lines.append(f"- **Gesamte Events:** {len(state.event_log)}")
     lines.append(f"- **Preis Start:** {state.price_history[0].price:.2f} €" if state.price_history else "- **Preis Start:** n/a")
     lines.append(f"- **Preis Ende:** {state.price_history[-1].price:.2f} €" if state.price_history else "- **Preis Ende:** n/a")
@@ -205,8 +212,8 @@ def save_final_narrative(
 
     for round_number in sorted(best_per_round.keys()):
         rr = best_per_round[round_number]
-        sim_year = state.clock.year_start + (round_number * state.clock.years_per_round)
-        lines.append(f"\n### Runde {round_number} – Jahr {sim_year}")
+        quarter_label = state.clock.quarter_label_for_round(round_number)
+        lines.append(f"\n### Runde {round_number} – {quarter_label}")
 
         # Reasoning pro Agent
         for resp in rr.agent_responses:
