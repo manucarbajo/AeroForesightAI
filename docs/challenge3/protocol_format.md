@@ -39,7 +39,8 @@ Dieses Dokument beschreibt das Ausgabeformat des Gesprächsprotokolls, das aus d
 - `impact` (object):
   - `affected_factors` (string[]): union aus `state_changes.factor_id` und `events.affected_factors`
   - `impact_assessment` (array): optional, frei strukturiert (vom Agent gelieferte CIB-Argumentation)
-- `redebedarf_score` (number|null): Platzhalter für AP3 (Scheduler)
+- `redebedarf_score` (number|null): Redebedarf-Score (0–10) zum Zeitpunkt des Beitrags
+- `redebedarf_reasons` (string[]): auslösende Scheduler-Gründe (z.B. Faktor-Relevanz, Widerspruch, Stillstand)
 - `segment_analysis` (object): Segment-Analysen (aktuell nur Consumer)
 
 ### Events
@@ -57,5 +58,5 @@ Jedes Event in `events[]` (rundeweit oder beitragsspezifisch) hat:
 ### Notes / Erweiterbarkeit
 
 - Das Protokoll ist **append-only erweiterbar**: neue Felder können ergänzt werden, ohne bestehende Auswertung zu brechen.
-- `redebedarf_score` ist absichtlich `null`, bis AP3 die deterministische Score-Berechnung integriert.
+- `redebedarf_score`/`redebedarf_reasons` stammen aus AP3 (`RoundExecutionNode`) oder werden deterministisch per Scheduler-Replay rekonstruiert.
 

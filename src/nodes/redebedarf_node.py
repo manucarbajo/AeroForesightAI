@@ -50,6 +50,39 @@ def _latest_round_result(state: SimulationState, round_number: int) -> RoundResu
     return None
 
 
+def _attach_redebedarf_metadata(
+    state: SimulationState,
+    *,
+    agent_id: str,
+    score: int,
+    reasons: list[str],
+) -> None:
+    """Persist the scheduler score that triggered a contribution."""
+
+    if not state.round_results:
+        return
+
+    latest_rr = state.round_results[-1]
+    if not latest_rr.agent_responses:
+        return
+
+    latest_response = latest_rr.agent_responses[-1]
+    if latest_response.agent_id != agent_id:
+        return
+
+    patched_response = latest_response.model_copy(
+        update={
+            "redebedarf_score": int(score),
+            "redebedarf_reasons": list(reasons),
+        }
+    )
+    state.round_results[-1] = latest_rr.model_copy(
+        update={
+            "agent_responses": latest_rr.agent_responses[:-1] + [patched_response],
+        }
+    )
+
+
 @dataclass
 class RoundExecutionNode:
     """Compute speech demand and execute agents in the scheduler-dictated order."""
@@ -124,7 +157,15 @@ class RoundExecutionNode:
                         agent_node = self._agent_nodes.get(agent_id)
                         if agent_node is None:
                             continue
+                        score_at_speak = int(scheduler.snapshot_scores().get(agent_id, 0))
+                        reasons_at_speak = list(scheduler.snapshot_reasons().get(agent_id, ()))
                         state = agent_node.invoke(state)
+                        _attach_redebedarf_metadata(
+                            state,
+                            agent_id=agent_id,
+                            score=score_at_speak,
+                            reasons=reasons_at_speak,
+                        )
                         # after invoke, reset and count contribution
                         scheduler.mark_spoken(agent_id, round_number=round_number)
                         state.redebedarf_scores = scheduler.snapshot_scores()
@@ -140,8 +181,17 @@ class RoundExecutionNode:
                 scheduler.mark_spoken(agent_id, round_number=round_number)
                 continue
 
+            score_at_speak = candidate.score
+            reasons_at_speak = list(candidate.reasons)
+
             # invoke agent; AgentNode will append a RoundResult for this single agent
             state = agent_node.invoke(state)
+            _attach_redebedarf_metadata(
+                state,
+                agent_id=agent_id,
+                score=score_at_speak,
+                reasons=reasons_at_speak,
+            )
 
             # after the agent ran, apply deltas observed in their produced RoundResult
             latest_rr = None

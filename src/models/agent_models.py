@@ -34,4 +34,6 @@ class AgentResponse(BaseModel):
     # z.B. um Diskussion/Protokoll und CIB-Argumentation konsistenter zu machen.
     # Struktur ist absichtlich flexibel (dicts), damit Prompts iterierbar bleiben.
     impact_assessment: list[dict[str, Any]] = Field(default_factory=list)
+    redebedarf_score: int | None = None
+    redebedarf_reasons: list[str] = Field(default_factory=list)
     raw_output: str = ""

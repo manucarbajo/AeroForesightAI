@@ -48,23 +48,30 @@ def _group_round_results(round_results: list[RoundResult]) -> dict[int, list[Rou
 
 
 def build_protocol_payload(state: SimulationState, options: ProtocolOptions | None = None) -> dict[str, Any]:
-    """Build a structured conversation protocol from SimulationState.
+    """Build a structured conversation protocol from SimulationState."""
 
-    Notes:
-    - Current implementation uses existing `round_results` ordering (append order).
-    - If AP3 (Redebedarf-Scheduler) adds per-contribution scores later, this format
-      can be extended without breaking consumers by adding optional fields.
-    """
     options = options or ProtocolOptions()
+    redebedarf_by_contribution = _resolve_redebedarf_by_contribution(state)
 
     by_round = _group_round_results(state.round_results)
     rounds: list[dict[str, Any]] = []
 
     for round_number in sorted(by_round.keys()):
         contributions: list[dict[str, Any]] = []
+        contribution_index = 0
         for rr in by_round[round_number]:
             for resp in rr.agent_responses:
-                contributions.append(_agent_contribution(resp, rr.events, options))
+                redebedarf = redebedarf_by_contribution.get((round_number, contribution_index), {})
+                contributions.append(
+                    _agent_contribution(
+                        resp,
+                        rr.events,
+                        options,
+                        redebedarf_score=redebedarf.get("redebedarf_score"),
+                        redebedarf_reasons=redebedarf.get("redebedarf_reasons", []),
+                    )
+                )
+                contribution_index += 1
 
         rounds.append(
             {
@@ -124,8 +131,123 @@ def _event_payload(event: EventLogEntry) -> dict[str, Any]:
     }
 
 
+def _resolve_redebedarf_by_contribution(
+    state: SimulationState,
+) -> dict[tuple[int, int], dict[str, Any]]:
+    """Resolve per-contribution Redebedarf metadata from stored or replayed scores."""
+
+    stored = _stored_redebedarf_by_contribution(state)
+    if _all_contributions_have_redebedarf(state, stored):
+        return stored
+    return _replay_redebedarf_by_contribution(state)
+
+
+def _stored_redebedarf_by_contribution(
+    state: SimulationState,
+) -> dict[tuple[int, int], dict[str, Any]]:
+    stored: dict[tuple[int, int], dict[str, Any]] = {}
+    by_round = _group_round_results(state.round_results)
+
+    for round_number in sorted(by_round.keys()):
+        contribution_index = 0
+        for rr in by_round[round_number]:
+            for resp in rr.agent_responses:
+                if resp.redebedarf_score is not None:
+                    stored[(round_number, contribution_index)] = {
+                        "redebedarf_score": int(resp.redebedarf_score),
+                        "redebedarf_reasons": list(resp.redebedarf_reasons or []),
+                    }
+                contribution_index += 1
+    return stored
+
+
+def _all_contributions_have_redebedarf(
+    state: SimulationState,
+    stored: dict[tuple[int, int], dict[str, Any]],
+) -> bool:
+    total_contributions = sum(
+        len(rr.agent_responses)
+        for rr in state.round_results
+    )
+    return total_contributions > 0 and len(stored) == total_contributions
+
+
+def _replay_redebedarf_by_contribution(
+    state: SimulationState,
+) -> dict[tuple[int, int], dict[str, Any]]:
+    """Replay AP3 scheduler logic to reconstruct per-contribution scores."""
+
+    from src.nodes.redebedarf_node import _initial_score_ledger
+    from src.redebedarf_scheduler import FactorChangeObservation, RedebedarfScheduler
+
+    result: dict[tuple[int, int], dict[str, Any]] = {}
+    by_round = _group_round_results(state.round_results)
+    partial_round_results: list[RoundResult] = []
+    end_of_round_scores: dict[str, int] = {}
+
+    for round_number in sorted(by_round.keys()):
+        partial_state = state.model_copy(deep=True)
+        partial_state.round_results = list(partial_round_results)
+        partial_state.redebedarf_scores = dict(end_of_round_scores)
+
+        scheduler = RedebedarfScheduler.from_simulation_state(partial_state, apply_score_deltas=False)
+        scheduler._score_by_agent = _initial_score_ledger(partial_state, scheduler, round_number)
+
+        last_spoken: dict[str, int] = {}
+        for rr in partial_round_results:
+            for response in rr.agent_responses:
+                last_spoken[response.agent_id] = max(
+                    last_spoken.get(response.agent_id, 0),
+                    rr.round_number,
+                )
+        scheduler._last_spoken_round = {
+            agent_id: last_spoken.get(agent_id, 0)
+            for agent_id in scheduler.agent_ids
+        }
+        scheduler.start_round(round_number)
+        scheduler._contributions_this_round = {
+            agent_id: 0 for agent_id in scheduler.agent_ids
+        }
+
+        contribution_index = 0
+        for rr in by_round[round_number]:
+            for resp in rr.agent_responses:
+                score_at_speak = int(scheduler.snapshot_scores().get(resp.agent_id, 0))
+                reasons_at_speak = list(scheduler.snapshot_reasons().get(resp.agent_id, ()))
+                result[(round_number, contribution_index)] = {
+                    "redebedarf_score": score_at_speak,
+                    "redebedarf_reasons": reasons_at_speak,
+                }
+
+                observed_factor_ids = {change.factor_id for change in resp.state_changes}
+                observed_factor_ids.update(
+                    factor_id
+                    for event in rr.events
+                    for factor_id in event.affected_factors
+                )
+                for factor_id in sorted(observed_factor_ids):
+                    scheduler.register_factor_change(
+                        FactorChangeObservation(
+                            factor_id=factor_id,
+                            source_agent=resp.agent_id,
+                        )
+                    )
+                scheduler.mark_spoken(resp.agent_id, round_number=round_number)
+                contribution_index += 1
+
+        end_of_round_scores = scheduler.snapshot_scores()
+        partial_round_results.extend(by_round[round_number])
+
+    return result
+
+
 def _agent_contribution(
-    resp: AgentResponse, events: list[EventLogEntry], options: ProtocolOptions
+    resp: AgentResponse,
+    events: list[EventLogEntry],
+    options: ProtocolOptions,
+    *,
+    redebedarf_score: int | None = None,
+    redebedarf_reasons: list[str] | None = None,
 ) -> dict[str, Any]:
     affected_factors: set[str] = set()
     for sc in resp.state_changes:
@@ -146,8 +268,8 @@ def _agent_contribution(
             "affected_factors": sorted(affected_factors),
             "impact_assessment": resp.impact_assessment,
         },
-        # Placeholder for AP3 (scheduler) integration
-        "redebedarf_score": None,
+        "redebedarf_score": redebedarf_score,
+        "redebedarf_reasons": list(redebedarf_reasons or []),
         "segment_analysis": resp.segment_analysis if isinstance(resp.segment_analysis, dict) else {},
     }
 
@@ -403,7 +525,13 @@ def render_protocol_markdown(payload: dict[str, Any]) -> str:
         for contrib in r.get("contributions", []):
             agent_id = contrib.get("agent_id", "?")
             why = contrib.get("why", "")
-            lines.append(f"- **{agent_id}:** {why}")
+            score = contrib.get("redebedarf_score")
+            score_suffix = f" (Redebedarf={score})" if score is not None else ""
+            lines.append(f"- **{agent_id}:** {why}{score_suffix}")
+
+            reasons = contrib.get("redebedarf_reasons", [])
+            if isinstance(reasons, list) and reasons:
+                lines.append(f"  - redebedarf_reasons: {', '.join(str(reason) for reason in reasons)}")
 
             impacted = contrib.get("impact", {}).get("affected_factors", [])
             if impacted:
