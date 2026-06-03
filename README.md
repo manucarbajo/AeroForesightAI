@@ -9,6 +9,7 @@ Multi-Agenten-Simulation für Szenarioplanung im Flugverkehr. Challenge 4 fokuss
 ```bash
 pip install -r requirements.txt
 python src/run_simulation.py --mock-llm --rounds 2 --quiet
+python src/run_simulation.py --rounds 3 --runs 2 --model llama3.2 --temperature 0.7 
 ```
 
 **LangGraph Studio (interaktiv, gleiche Pipeline):**
