@@ -199,8 +199,6 @@ M0 → M1 → M2 → M3 → M4 → M5
 
 Ziel: CIB im Lauf nutzbar, Matrix unverändert, kein LLM-CIB pro Tick. Agenten liefern keine freien CIB-Zellwerte mehr.
 
-**Was war `impact_assessment` (C3)?** In den Prompts der drei Rollen-Agenten (`consumer`, `provider`, `regulator`) war Punkt 6 vorgeschrieben: 2–6 CIB-Beziehungen als JSON (`source_descriptor → target_descriptor`, `influence` −3..+3, Begründung). Das LLM schätzte damit Wechselwirkungen parallel zur eigentlichen CIB-Extraktion — freie Zahlen, Halluzinationsrisiko. In C4 entfällt das Feld; die Matrix kommt nur aus `cib_frozen.json` (später M2b: deterministische Engine).
-
 **Ist-Zustand (Code):**
 
 - `CIBExtractorNode` läuft **pro Runde** nach `EnvironmentNode` (LLM, ~182 Zellen/Runde)
