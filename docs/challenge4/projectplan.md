@@ -37,10 +37,10 @@ Die bestehende CIB aus C3 bleibt im System nutzbar (State, Export, Szenarioablei
 
 Technik:
 
-1. `configs/cib_frozen.json` = Kopie von `test_output/test_output_c3/cib_matrix.json` (oder der besten C3-Matrix).
+1. Bester C3-Lauf mit aktuellem Export neu erzeugen → `CIBMatrix`-JSON (`cells`, Deskriptor-IDs F1.1–F7.2, vgl. `docs/challenge3/cib_format.md`). Daraus `configs/cib_frozen.json` (14×14, −3..+3). Nicht die Legacy-Datei `test_output/cib_matrix.json` (`entries` mit Faktor-Namen) übernehmen.
 2. Beim Start in `config_loader` laden, `state.cib_matrix` setzen.
-3. Pro Tick kein LLM-Update; am Ende `outputs/<run_id>/cib_matrix.json` exportieren.
-4. `impact_assessment` aus den Prompts entfernen.
+3. Pro Tick kein LLM-Update (`CIBExtractorNode` aus Runden-Loop in `simulation_runner.py` und `langgraph_workflow.py`); am Ende `outputs/<run_id>/cib_matrix.json` exportieren (unveränderte Kopie der geladenen Matrix).
+4. `impact_assessment` entfernen (siehe M0): Agenten liefern keine CIB-Zellwerte mehr.
 
 Nach dem Coaching (M2b): `configs/cib_baseline.json`, `docs/challenge4/cib_rationale.md`, `src/cib_engine.py` (deterministische Updates, weiterhin kein LLM für Zellen).
 
@@ -158,14 +158,32 @@ M0 → M1 → M2 → M3 → M4 → M5
 
 ### M0 – CIB aktiv, Inhalt fix
 
-Ziel: CIB im Lauf nutzbar, Matrix unverändert, kein LLM-CIB pro Tick.
+Ziel: CIB im Lauf nutzbar, Matrix unverändert, kein LLM-CIB pro Tick. Agenten liefern keine freien CIB-Zellwerte mehr.
+
+**Was war `impact_assessment` (C3)?** In den Prompts der drei Rollen-Agenten (`consumer`, `provider`, `regulator`) war Punkt 6 vorgeschrieben: 2–6 CIB-Beziehungen als JSON (`source_descriptor → target_descriptor`, `influence` −3..+3, Begründung). Das LLM schätzte damit Wechselwirkungen parallel zur eigentlichen CIB-Extraktion — freie Zahlen, Halluzinationsrisiko. In C4 entfällt das Feld; die Matrix kommt nur aus `cib_frozen.json` (später M2b: deterministische Engine).
+
+**Ist-Zustand (Code):**
+
+- `CIBExtractorNode` läuft **pro Runde** nach `EnvironmentNode` (LLM, ~182 Zellen/Runde)
+- Agent-Prompts und `agent_node.py` verlangen/parsen `impact_assessment`
+- `protocol_generator.py` und `redebedarf_scheduler.py` werten `impact_assessment` aus
+- Kein Laden einer fixen Matrix in `config_loader`
+- `test_output/cib_matrix.json` ist Legacy-Format, nicht `CIBMatrix`-Schema
 
 Aufgaben:
 
-- `configs/cib_frozen.json` anlegen (Kopie C3-Matrix)
-- Laden in `src/config_loader.py`, kein `CIBExtractorNode` pro Tick in `src/simulation_runner.py`
-- `impact_assessment` aus `src/prompts/consumer.md`, `provider.md`, `regulator.md` entfernen
-- Szenarioableitung mit fixer Matrix (`src/scenario_consistency.py`) weiter nutzen
+1. **Matrix einfrieren:** Bester C3-Lauf mit aktuellem Export neu erzeugen; daraus `configs/cib_frozen.json` im `CIBMatrix`-Format ablegen
+2. **Laden:** `load_cib_frozen()` in `src/config_loader.py` → `state.cib_matrix` in `build_initial_state()`
+3. **Kein LLM-CIB pro Tick:** `CIBExtractorNode` aus Runden-Loop entfernen in `src/simulation_runner.py` und `src/langgraph_workflow.py`; `enable_cib` = frozen Matrix aktiv (Standard), nicht Extractor
+4. **`impact_assessment` entfernen** (nur dieses JSON-Feld — **Protokoll und Redebedarf bleiben**):
+   - Prompts: `src/prompts/consumer.md`, `provider.md`, `regulator.md`
+   - Parsing: `src/nodes/agent_node.py`, Feld in `src/models/agent_models.py`
+   - Protokoll: Abschnitt `impact.impact_assessment` und Markdown-Zeilen dazu in `src/protocol_generator.py` streichen; `reasoning`, `actions`, `state_changes`, `events`, `segment_analysis`, `redebedarf_score` bleiben
+   - Redebedarf: CIB-Widerspruchs-Signale aus Agent-`impact_assessment` in `src/protocol_generator.py` / `src/redebedarf_scheduler.py` entfallen; übrige Trigger (Faktorwechsel, widersprüchliche `state_changes`, Erwähnungen im Text) bleiben
+5. **Szenarioableitung** mit fixer Matrix unverändert nutzen (`src/scenario_consistency.py`, `ScenarioAgentNode`)
+6. **Coaching-Vorbereitung:** `docs/challenge4/cib_coaching_questions.md` anlegen
+7. **Export:** `outputs/<run_id>/cib_matrix.json` am Laufende (gleiche Matrix wie beim Start; Output-Pfad-Ziel laut Konvention — volle `output_writer`-Umstellung kann mit M1 zusammenfallen)
+8. **Tests:** Erwartungen ohne LLM-CIB anpassen (`tests/test_end_to_end.py`, ggf. `tests/test_cib_matrix.py`)
 
 Ergebnis:
 
