@@ -37,7 +37,6 @@ Treffe fuer diese Runde eine konsumentenorientierte Entscheidung:
 3) schlage optional konkrete Faktorzustandsaenderungen vor, falls aus deiner Sicht plausibel
 4) formuliere 1-3 Events, die aus deiner Entscheidung folgen
 5) liefere segment_analysis so, dass die erwartete Reaktion pro Segment (aus dem Populationskontext) klar erkennbar ist
-6) liefere impact_assessment: nenne 2-6 zentrale CIB-Beziehungen als "source_descriptor → target_descriptor" mit influence (-3..+3) und kurzer Begründung (warum deine Entscheidung genau diese Wechselwirkungen stützt)
 
 ## Output-Anweisung (strict)
 Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock.
@@ -57,14 +56,6 @@ Nutze exakt dieses Schema:
       "event_type": "demand_shift",
       "description": "string",
       "affected_factors": ["F1", "F5"]
-    }
-  ],
-  "impact_assessment": [
-    {
-      "source_descriptor": "F1.1",
-      "target_descriptor": "F2.2",
-      "influence": 2,
-      "why": "string"
     }
   ],
   "segment_analysis": {

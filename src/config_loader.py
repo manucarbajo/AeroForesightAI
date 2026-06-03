@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from src.models.agent_models import AgentConfig
+from src.models.cib_models import CIBMatrix
 from src.models.population_models import PopulationConfig
 from src.models.state_models import (
     EnvironmentState,
@@ -42,10 +43,21 @@ def load_population_config(agents: list[AgentConfig]) -> PopulationConfig | None
     return None
 
 
+def load_cib_frozen(path: Path | None = None) -> CIBMatrix:
+    """Load the fixed CIB matrix used for C4 runs (no per-tick LLM updates)."""
+    path = path or CONFIGS_DIR / "cib_frozen.json"
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return CIBMatrix.model_validate(data)
+
+
 def build_initial_state(
     config_path: Path | None = None,
     agents_path: Path | None = None,
     factors_path: Path | None = None,
+    *,
+    cib_path: Path | None = None,
+    load_cib: bool = True,
 ) -> SimulationState:
     config = load_simulation_config(config_path)
     agents = load_agents(agents_path)
@@ -54,9 +66,12 @@ def build_initial_state(
     environment = EnvironmentState(factors=factors)
     clock = SimulationClock(**config.clock.model_dump())
 
+    cib_matrix = load_cib_frozen(cib_path) if load_cib else None
+
     return SimulationState(
         config=config,
         clock=clock,
         environment=environment,
         agents=agents,
+        cib_matrix=cib_matrix,
     )

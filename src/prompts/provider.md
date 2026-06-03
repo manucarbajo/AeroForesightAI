@@ -37,7 +37,6 @@ Treffe fuer diese Runde eine anbieterorientierte Entscheidung:
 3) nutze consumer_segment_analysis, um segmentiert auf Nachfrageverschiebungen zu reagieren
 4) schlage optional konkrete Faktorzustandsaenderungen vor, falls aus deiner Sicht plausibel
 5) formuliere 1-3 Events, die aus deiner Entscheidung folgen
-6) liefere impact_assessment: nenne 2-6 zentrale CIB-Beziehungen als "source_descriptor → target_descriptor" mit influence (-3..+3) und kurzer Begründung (warum deine Entscheidung genau diese Wechselwirkungen stützt)
 
 ## Output-Anweisung (strict)
 Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock. Nutze exakt dieses Schema:
@@ -56,14 +55,6 @@ Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock. Nutze exa
       "event_type": "price_change",
       "description": "Preise um X% gesenkt/erhoeht, Begruendung hier",
       "affected_factors": ["F1", "F3", "F4"]
-    }
-  ],
-  "impact_assessment": [
-    {
-      "source_descriptor": "F3.1",
-      "target_descriptor": "F1.2",
-      "influence": -2,
-      "why": "string"
     }
   ],
   "segment_analysis": {}

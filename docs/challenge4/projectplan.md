@@ -17,6 +17,7 @@ C4 Aufgabenstellung:
 | Orchestrierung | Redebedarf, sequentiell                            | Default: parallel, je Agent einmal pro Tick               |
 | Zeitmodell     | Quartale überall                                   | Ein Tick ist ein Tick                                     |
 | Pipeline       | Runner und LangGraph getrennt                      | Ein Pfad: LangGraph ruft Runner-Logik auf                 |
+| Projektstruktur | C1–C3-Schichten, doppelte Pipelines, Legacy im Repo | Klare Ordner, eine Orchestrierung, Archiv statt Müll im Root |
 
 
 Bewertung als Orientierung: Challenge 1 (9/10), Challenge 2 (15/20), Challenge 3 schwächer mit Kritik an der Logik (LLM für Berechnungen, CIB, fehlende Statistik).
@@ -37,7 +38,7 @@ Die bestehende CIB aus C3 bleibt im System nutzbar (State, Export, Szenarioablei
 
 Technik:
 
-1. Bester C3-Lauf mit aktuellem Export neu erzeugen → `CIBMatrix`-JSON (`cells`, Deskriptor-IDs F1.1–F7.2, vgl. `docs/challenge3/cib_format.md`). Daraus `configs/cib_frozen.json` (14×14, −3..+3). Nicht die Legacy-Datei `test_output/cib_matrix.json` (`entries` mit Faktor-Namen) übernehmen.
+1. Bester C3-Lauf mit aktuellem Export neu erzeugen → `CIBMatrix`-JSON (`cells`, Deskriptor-IDs F1.1–F7.2, vgl. `docs/challenge3/cib_format.md`). Daraus `configs/cib_frozen.json` (14×14, −3..+3).
 2. Beim Start in `config_loader` laden, `state.cib_matrix` setzen.
 3. Pro Tick kein LLM-Update (`CIBExtractorNode` aus Runden-Loop in `simulation_runner.py` und `langgraph_workflow.py`); am Ende `outputs/<run_id>/cib_matrix.json` exportieren (unveränderte Kopie der geladenen Matrix).
 4. `impact_assessment` entfernen (siehe M0): Agenten liefern keine CIB-Zellwerte mehr.
@@ -103,6 +104,7 @@ docs/challenge4/
   cib_rationale.md              M2b
   challenge4_report.md          M5
 
+docs/archive/                 M5: challenge1–3, drafts (optional schon M1 anlegen)
 docs/presentation/
   outline.md
   figures/
@@ -145,7 +147,44 @@ outputs/sweeps/<sweep_name>/
   sweep_summary.json
 ```
 
-Konvention: nie flach in `outputs/` schreiben. `test_output/` nur noch als Fixture/Sample, nicht als Ziel der Pipeline. Abgabe-Plots nach `docs/presentation/figures/`.
+Konvention: nie flach in `outputs/` schreiben. Abgabe-Plots nach `docs/presentation/figures/`. Alte Challenge-Docs nach `docs/archive/` (M5, optional schon in M1).
+
+### Aufräumen: Ist-Zustand und Zuordnung zu Meilensteinen
+
+**Gehört nicht zu M0.** M0 ist CIB-Logik (fixe Matrix, kein `impact_assessment`). Struktur-Aufräumen startet in **M1** (Pipeline, Outputs, Legacy-Code) und zieht sich bis **M5** (Doku-Archiv, Abgabe).
+
+**Kernproblem:** drei parallele Einstiege statt einer Pipeline:
+
+| Weg | Dateien | Problem |
+| --- | ------- | ------- |
+| CLI | `run_simulation.py` → `simulation_runner.py` | Standard; nutzt `RoundExecutionNode` (Redebedarf) |
+| Playground-Graph | `langgraph_workflow.py` | Anderer Graph: `SchedulerNode` + Agent-Nodes einzeln |
+| Studio-Adapter | `haiko_playground/` | Extra-Schicht; teils erneuter Aufruf von `run_simulation` |
+
+**Weitere Baustellen:**
+
+| Bereich | Ist | Soll / Aktion | Meilenstein |
+| ------- | --- | ------------- | ----------- |
+| Environment | `environment_node.py` + `environment_node_c2.py`; `nodes/__init__.py` exportiert C2 | C2-Node löschen, Tests migrieren | **M1** |
+| Redebedarf | `redebedarf_node.py` + `scheduler_node.py` (duplizierte Helfer) | Default parallel (M3); Redebedarf nur `--redebedarf`; Doppelcode zusammenführen | **M3** |
+| CIB-Extractor | `cib_extractor_node.py` (LLM, ~17 KB) | Nicht im Loop (M0 ✅); Code für M2b behalten, ggf. `src/legacy/` | **M2b** |
+| Sample-Outputs | `test_output/` im Root (Legacy) | Entfernt; Lauf-Outputs nur unter `outputs/<run_id>/` | **M1** ✅ |
+| Root-Müll | `tmp_ollama_payload.json`, `package-lock.json` ohne `package.json` | Löschen | **M1** |
+| IDE | `.idea/` versioniert | `.gitignore` | **M1** |
+| Doku | `README.md` = C2; `docs/drafts/`, doppelte `literature_fundamentals.md`, `docs/agent_node.py` (Python in docs/) | README C4; Entwürfe archivieren oder löschen | **M1** (README), **M5** (Archiv) |
+| Playgrounds | `manu_playground/`, großteils `haiko_playground/` | Nur behalten, wenn Studio genutzt wird; sonst `experiments/` + gitignore | **M5** (Entscheidung) |
+| Referenzen | `docs/references/` (PDFs) | Behalten (Thesis); nicht anfassen ohne Absprache | — |
+
+**C4-Kern** (alles andere optional oder Legacy):
+
+```
+configs/          agents, factors, simulation_config, cib_frozen
+src/              config_loader, simulation_runner, run_simulation, nodes/, models/, prompts/
+                  scenario_consistency, protocol_generator, output_writer
+tests/            pytest + fixtures/
+docs/challenge4/  Plan, Report, Coaching
+outputs/<run_id>/ Laufzeit (gitignored)
+```
 
 ## Meilensteine (zeitliche Reihenfolge)
 
@@ -167,8 +206,7 @@ Ziel: CIB im Lauf nutzbar, Matrix unverändert, kein LLM-CIB pro Tick. Agenten l
 - `CIBExtractorNode` läuft **pro Runde** nach `EnvironmentNode` (LLM, ~182 Zellen/Runde)
 - Agent-Prompts und `agent_node.py` verlangen/parsen `impact_assessment`
 - `protocol_generator.py` und `redebedarf_scheduler.py` werten `impact_assessment` aus
-- Kein Laden einer fixen Matrix in `config_loader`
-- `test_output/cib_matrix.json` ist Legacy-Format, nicht `CIBMatrix`-Schema
+- Kein Laden einer fixen Matrix in `config_loader` (M0: erledigt)
 
 Aufgaben:
 
@@ -185,6 +223,8 @@ Aufgaben:
 7. **Export:** `outputs/<run_id>/cib_matrix.json` am Laufende (gleiche Matrix wie beim Start; Output-Pfad-Ziel laut Konvention — volle `output_writer`-Umstellung kann mit M1 zusammenfallen)
 8. **Tests:** Erwartungen ohne LLM-CIB anpassen (`tests/test_end_to_end.py`, ggf. `tests/test_cib_matrix.py`)
 
+**Offen nach M0-Implementierung (bewusst an M1 delegiert):** echter C3-Re-Export in `cib_frozen.json` (statt Seed-Platzhalter); Export-Pfad `outputs/<run_id>/` (noch flaches `outputs/`).
+
 Ergebnis:
 
 
@@ -197,15 +237,29 @@ Ergebnis:
 
 ### M1 – Fundament
 
-Ziel: eine Pipeline, Tick-Modell, ein Output-Ort.
+Ziel: eine Pipeline, Tick-Modell, ein Output-Ort. **Erster Aufräum-Meilenstein** (siehe Abschnitt „Aufräumen“).
 
 Aufgaben:
 
-- `src/langgraph_workflow.py` an `src/simulation_runner.py` anbinden
-- C2-Legacy: `src/nodes/environment_node_c2.py` entfernen, Tests migrieren
+**Pipeline & Outputs**
+
+- `src/langgraph_workflow.py` an `src/simulation_runner.py` anbinden (ein Graph, kein paralleler `SchedulerNode`-Pfad als zweite Wahrheit)
 - Tick in `configs/simulation_config.json`, `src/output_writer.py`, Protokoll
-- `src/output_writer.py`: Ausgabe nach `outputs/<run_id>/`
+- `src/output_writer.py` + `run_simulation.py`: Ausgabe nach `outputs/<run_id>/` (nicht flach in `outputs/`)
 - `README.md` auf C4 aktualisieren
+
+**Legacy-Code**
+
+- C2-Legacy: `src/nodes/environment_node_c2.py` entfernen; Tests (`test_end_to_end.py`, `test_environment_updates.py`) auf `environment_node.py` migrieren
+- `src/nodes/__init__.py`: Export auf C3-`EnvironmentNode` korrigieren
+
+**Repo-Hygiene (klein, wenig Risiko)**
+
+- `test_output/` entfernt (kein Ersatz nötig)
+- Root-Artefakte entfernen: `tmp_ollama_payload.json`, `package-lock.json` (ohne `package.json`)
+- `.idea/` in `.gitignore`
+- `configs/calibration_agents.md` → `docs/challenge4/` (falls behalten)
+- `docs/agent_node.py` entfernen oder nach `docs/archive/` verschieben
 
 Ergebnis:
 
@@ -215,6 +269,7 @@ Ergebnis:
 | Runner / LangGraph | `src/simulation_runner.py`, `src/langgraph_workflow.py` |
 | Config             | `configs/simulation_config.json`                        |
 | Doku               | `README.md`                                             |
+| Lauf-Outputs       | `outputs/<run_id>/`                                     |
 
 
 ### M2 – Deterministischer Kern (ohne CIB-Inhalt)
@@ -278,6 +333,7 @@ Ziel: drei parallele Agenten pro Tick, halluzinationssichere Prompts, statistisc
 Aufgaben:
 
 - Parallel in `src/simulation_runner.py`, `--redebedarf` in `src/run_simulation.py`
+- Redebedarf-Doppelcode: `scheduler_node.py` vs. `redebedarf_node.py` — gemeinsame Helfer extrahieren oder einen Pfad deprecaten (Playground-Graph dann über Runner)
 - Strikte Validierung in `src/validation.py`
 - Englische Prompts in `src/prompts/`
 - `src/population_sampler.py`, erweiterte Verteilungen in `src/models/enums.py`
@@ -325,6 +381,8 @@ Aufgaben:
 - Tests ohne Ollama (`MockLLM`)
 - `docs/presentation/outline.md` und Figures
 - `docs/challenge4/challenge4_report.md` (Feedback → Umsetzung)
+- **Doku aufräumen:** `docs/challenge1/` … `docs/challenge3/`, `docs/drafts/` → `docs/archive/`; `interfaces.md` prüfen/aktualisieren
+- **Playgrounds:** Entscheidung `manu_playground/`, `haiko_playground/` — behalten (Studio) oder aus Repo / unter `experiments/` + gitignore
 
 Präsentation (Gliederung in `docs/presentation/outline.md`):
 

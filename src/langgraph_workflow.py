@@ -21,7 +21,6 @@ from src.langgraph_adapter import (
 from src.models.enums import AgentType
 from src.models.state_models import InputState, PlaygroundState
 from src.nodes.agent_node import AgentNode
-from src.nodes.cib_extractor_node import CIBExtractorNode
 from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
@@ -52,7 +51,6 @@ def build_playground_stategraph(llm: Any | None = None):
     scheduler_node = SchedulerNode()
     market_node = MarketNode()
     environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
-    cib_node = CIBExtractorNode(llm=llm)
     scenario_node = ScenarioAgentNode(llm=llm)
 
     by_type = {agent.agent_type: agent for agent in agents}
@@ -90,7 +88,6 @@ def build_playground_stategraph(llm: Any | None = None):
     )
     workflow.add_node("market", wrap_node(market_node.invoke))
     workflow.add_node("environment", wrap_node(environment_node.invoke))
-    workflow.add_node("cib_extractor", wrap_node(cib_node.invoke))
     workflow.add_node("scenario_agent", wrap_node(scenario_node.invoke))
 
     workflow.set_entry_point("initialize_state")
@@ -114,13 +111,12 @@ def build_playground_stategraph(llm: Any | None = None):
     workflow.add_edge("regulator", "determine_next_speaker")
     workflow.add_edge("market", "environment")
 
-    # CIB runs once at the end of the simulation run.
+    # Frozen CIB is loaded at initialize_state; scenario derivation runs once at end.
     def _route_after_environment(payload: Any) -> str:
         state = to_state(payload)
-        return "reset_round_buffer" if state.clock.current_round < state.clock.max_rounds else "cib_extractor"
+        return "reset_round_buffer" if state.clock.current_round < state.clock.max_rounds else "scenario_agent"
 
     workflow.add_conditional_edges("environment", _route_after_environment)
-    workflow.add_edge("cib_extractor", "scenario_agent")
     workflow.add_edge("scenario_agent", END)
 
     return workflow.compile()

@@ -7,7 +7,6 @@ from src.models.enums import EventType
 from src.nodes.environment_node_c2 import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
-from src.nodes.cib_extractor_node import CIBExtractorNode
 from src.nodes.agent_node import AgentNode
 from src.validation import validate_state
 from uuid import uuid4
@@ -115,15 +114,23 @@ def test_end_to_end_multiple_rounds():
     assert len(state.price_history) == 3
 
 
-def test_end_to_end_cib_extraction():
-    """Testet ob CIBExtractorNode nach der Simulation eine Matrix erstellt."""
+def test_end_to_end_frozen_cib_loaded():
+    """Frozen CIB matrix is available from build_initial_state without LLM extraction."""
+    state = build_initial_state()
+    assert state.cib_matrix is not None
+    assert state.cib_matrix.is_complete
+    assert len(state.cib_matrix.cells) == 168
+
+
+def test_end_to_end_cib_unchanged_after_rounds():
+    """Simulation rounds must not mutate the frozen CIB matrix."""
     state = build_initial_state()
     state.clock.max_rounds = 2
+    original_dump = state.cib_matrix.model_dump() if state.cib_matrix else None
 
     orchestrator = OrchestratorNode(state.agents)
     market = MarketNode()
     environment = EnvironmentNode()
-    cib_extractor = CIBExtractorNode()
 
     while state.clock.current_round < state.clock.max_rounds:
         state = orchestrator.invoke(state)
@@ -143,11 +150,8 @@ def test_end_to_end_cib_extraction():
         state = market.invoke(state)
         state = environment.invoke(state)
 
-    state = cib_extractor.invoke(state)
-
     assert state.cib_matrix is not None
-    assert len(state.cib_matrix.entries) > 0
-    assert state.cib_matrix.round_generated == 2
+    assert state.cib_matrix.model_dump() == original_dump
 
 
 def test_end_to_end_output_files(tmp_path):
@@ -160,7 +164,6 @@ def test_end_to_end_output_files(tmp_path):
         save_segment_analysis,
         save_cib_matrix,
     )
-    from src.nodes.cib_extractor_node import CIBExtractorNode
 
     state = build_initial_state()
     state.clock.max_rounds = 1
@@ -186,8 +189,6 @@ def test_end_to_end_output_files(tmp_path):
 
         state = market.invoke(state)
         state = environment.invoke(state)
-
-    state = CIBExtractorNode().invoke(state)
 
     # In tmp_path speichern
     save_event_log(state.event_log, filename=str(tmp_path / "event_log.json"))

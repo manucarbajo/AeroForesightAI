@@ -5,6 +5,7 @@ from src.config_loader import (
     load_agents,
     load_factors,
     load_population_config,
+    load_cib_frozen,
     build_initial_state,
 )
 from src.models.state_models import SimulationState, SimulationConfig, FactorState
@@ -64,3 +65,22 @@ def test_build_initial_state_agent_ids():
     assert "consumer" in agent_ids
     assert "provider" in agent_ids
     assert "regulator" in agent_ids
+
+
+def test_load_cib_frozen():
+    matrix = load_cib_frozen()
+    assert matrix.is_complete
+    assert matrix.round_generated == 0
+    assert matrix.metadata.get("frozen") is True
+
+
+def test_build_initial_state_loads_frozen_cib():
+    state = build_initial_state()
+    assert state.cib_matrix is not None
+    assert state.cib_matrix.is_complete
+    assert len(state.cib_matrix.cells) == 168
+
+
+def test_build_initial_state_without_cib():
+    state = build_initial_state(load_cib=False)
+    assert state.cib_matrix is None

@@ -11,11 +11,9 @@ if __package__ in {None, ""}:
 
 from src.config_loader import build_initial_state
 from src.models.agent_models import AgentConfig
-from src.models.cib_models import CIBMatrixHistory
 from src.models.enums import AgentType
 from src.models.state_models import SimulationState
 from src.nodes.agent_node import AgentNode, LLMCallable
-from src.nodes.cib_extractor_node import CIBExtractorNode
 from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
@@ -26,7 +24,7 @@ from src.validation import validate_state
 @dataclass(frozen=True)
 class RunnerOptions:
     enable_market: bool = True
-    enable_cib: bool = True
+    enable_cib: bool = True  # load frozen CIB from configs/cib_frozen.json
 
 
 @dataclass(frozen=True)
@@ -133,7 +131,6 @@ class SimulationRunner:
         round_execution = RoundExecutionNode(agents, llm=self.llm)
         market_node = MarketNode()
         environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
-        cib_extractor = CIBExtractorNode(llm=self.llm) if self.options.enable_cib else None
 
         # LangGraph arbeitet intern mit dict-State; wir halten die Public-API als SimulationState.
         def _wrap(node_fn: Callable[[SimulationState], SimulationState]) -> Callable[[dict], dict]:
@@ -150,8 +147,6 @@ class SimulationRunner:
         if self.options.enable_market:
             graph.add_node("market", _wrap(market_node.invoke))
         graph.add_node("environment", _wrap(environment_node.invoke))
-        if cib_extractor is not None:
-            graph.add_node("cib_extractor", _wrap(cib_extractor.invoke))
 
         graph.set_entry_point("orchestrator")
 
@@ -162,20 +157,11 @@ class SimulationRunner:
         else:
             graph.add_edge("round_execution", "environment")
 
-        if cib_extractor is not None:
-            graph.add_edge("environment", "cib_extractor")
+        def _should_continue(payload: dict) -> str:
+            state = SimulationState(**payload)
+            return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
 
-            def _should_continue(payload: dict) -> str:
-                state = SimulationState(**payload)
-                return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
-
-            graph.add_conditional_edges("cib_extractor", _should_continue)
-        else:
-            def _should_continue(payload: dict) -> str:
-                state = SimulationState(**payload)
-                return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
-
-            graph.add_conditional_edges("environment", _should_continue)
+        graph.add_conditional_edges("environment", _should_continue)
 
         compiled = graph.compile()
 
@@ -205,9 +191,11 @@ class SimulationRunner:
                 raise ValueError("checkpoint_store is required when resume_from is provided")
             state = checkpoint_store.load(resume_from)
         elif state is None:
-            state = build_initial_state()
+            state = build_initial_state(load_cib=self.options.enable_cib)
 
         state = state.model_copy(deep=True)
+        if not self.options.enable_cib:
+            state.cib_matrix = None
         if seed is not None:
             state.config.seed = seed
 
@@ -235,7 +223,9 @@ class SimulationRunner:
         if runs < 1:
             raise ValueError("runs must be >= 1")
 
-        base_state = (base_state or build_initial_state()).model_copy(deep=True)
+        base_state = (base_state or build_initial_state(load_cib=self.options.enable_cib)).model_copy(deep=True)
+        if not self.options.enable_cib:
+            base_state.cib_matrix = None
         base_seed = base_state.config.seed or 0
         resolved_seeds = self._resolve_seeds(runs=runs, seeds=seeds, base_seed=base_seed)
 
@@ -396,40 +386,34 @@ class SimulationRunner:
     def _create_components(
         self,
         agents: list[AgentConfig],
-    ) -> tuple[OrchestratorNode, RoundExecutionNode, MarketNode, EnvironmentNode, CIBExtractorNode | None]:
+    ) -> tuple[OrchestratorNode, RoundExecutionNode, MarketNode, EnvironmentNode]:
         """Build the reusable nodes that make up one simulation round."""
 
         orchestrator = OrchestratorNode(agents)
         round_execution = RoundExecutionNode(agents, llm=self.llm)
         market_node = MarketNode()
         environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
-        cib_extractor = CIBExtractorNode(llm=self.llm) if self.options.enable_cib else None
-        return orchestrator, round_execution, market_node, environment_node, cib_extractor
+        return orchestrator, round_execution, market_node, environment_node
 
     def _run_single_round(
         self,
         state: SimulationState,
-        components: tuple[OrchestratorNode, RoundExecutionNode, MarketNode, EnvironmentNode, CIBExtractorNode | None],
+        components: tuple[OrchestratorNode, RoundExecutionNode, MarketNode, EnvironmentNode],
     ) -> SimulationState:
         """Run a single deterministic round using the configured nodes."""
 
-        orchestrator, round_execution, market_node, environment_node, cib_extractor = components
+        orchestrator, round_execution, market_node, environment_node = components
         state = orchestrator.invoke(state)
         state = round_execution.invoke(state)
         if self.options.enable_market:
             state = market_node.invoke(state)
         state = environment_node.invoke(state)
-        if cib_extractor is not None:
-            state = cib_extractor.invoke(state)
         return state
 
     def _build_sequential_runner(self, agents: list[AgentConfig]) -> Callable[[SimulationState], SimulationState]:
         components = self._create_components(agents)
 
         def _run(state: SimulationState) -> SimulationState:
-            if state.cib_history is None:
-                state.cib_history = CIBMatrixHistory()
-
             while state.clock.current_round < state.clock.max_rounds:
                 state = self._run_single_round(state, components)
             return state

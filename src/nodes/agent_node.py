@@ -132,8 +132,6 @@ class AgentNode:
 
         try:
             segment_analysis_raw = payload.get("segment_analysis", {})
-            impact_assessment_raw = payload.get("impact_assessment", [])
-            #print(f"DEBUG segment_analysis_raw: {segment_analysis_raw}")
             if self.config.agent_type != AgentType.CONSUMER:
                 segment_analysis: dict[str, Any] = {}
             elif isinstance(segment_analysis_raw, dict):
@@ -155,12 +153,6 @@ class AgentNode:
             else:
                 segment_analysis = {}
 
-            impact_assessment: list[dict[str, Any]] = []
-            if isinstance(impact_assessment_raw, list):
-                for item in impact_assessment_raw:
-                    if isinstance(item, dict):
-                        impact_assessment.append(item)
-
             response = AgentResponse(
                 agent_id=self.config.id,
                 round_number=round_number,
@@ -168,7 +160,6 @@ class AgentNode:
                 actions=[str(action) for action in payload.get("actions", []) if str(action).strip()],
                 state_changes=self._parse_state_changes(payload.get("state_changes", []), state=state),
                 segment_analysis=segment_analysis,
-                impact_assessment=impact_assessment,
                 raw_output=raw_output,
             )
             if not response.actions:

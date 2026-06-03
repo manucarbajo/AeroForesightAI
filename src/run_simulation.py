@@ -17,7 +17,6 @@ if __package__ in {None, ""}:
 from src.checkpoint_manager import CheckpointManager
 from src.config_loader import build_initial_state
 from src.llm_client import OllamaClient, OllamaConfig
-from src.nodes.cib_extractor_node import CIBExtractorNode
 from src.nodes.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 from src.output_writer import (
     save_cib_matrix,

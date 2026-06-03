@@ -257,7 +257,7 @@ class TestCIBExtractorHeuristic:
     """Test the heuristic fallback (no LLM)."""
 
     def test_invoke_without_llm(self):
-        state = build_initial_state()
+        state = build_initial_state(load_cib=False)
         state.clock.current_round = 1
         extractor = CIBExtractorNode(llm=None)
         result = extractor.invoke(state)
@@ -281,7 +281,7 @@ class TestCIBExtractorLLM:
         ])
         llm = self._make_mock_llm(mock_response)
 
-        state = build_initial_state()
+        state = build_initial_state(load_cib=False)
         state.clock.current_round = 1
         extractor = CIBExtractorNode(llm=llm)
         result = extractor.invoke(state)
@@ -294,7 +294,7 @@ class TestCIBExtractorLLM:
     def test_fallback_on_invalid_response(self):
         llm = self._make_mock_llm("This is not valid JSON at all")
 
-        state = build_initial_state()
+        state = build_initial_state(load_cib=False)
         state.clock.current_round = 1
         extractor = CIBExtractorNode(llm=llm)
         result = extractor.invoke(state)
@@ -323,7 +323,7 @@ class TestCIBExtractorLLM:
 
         mock.call.side_effect = side_effect
 
-        state = build_initial_state()
+        state = build_initial_state(load_cib=False)
         state.clock.current_round = 1
         extractor = CIBExtractorNode(llm=mock)
 
