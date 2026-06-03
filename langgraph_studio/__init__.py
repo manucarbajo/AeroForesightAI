@@ -1,1 +1,1 @@
-﻿"haiko_playground package marker for LangGraph integration."
+﻿"""LangGraph Studio package marker."""

@@ -87,6 +87,9 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
         "run": {
             "name": state.config.name,
             "description": state.config.description,
+            "ticks_completed": state.clock.current_round,
+            "ticks_max": state.clock.max_rounds,
+            "tick_unit": state.clock.tick_unit,
             "rounds_completed": state.clock.current_round,
             "rounds_max": state.clock.max_rounds,
             "seed": state.config.seed,
@@ -429,7 +432,7 @@ def render_protocol_markdown(payload: dict[str, Any]) -> str:
 
     lines.append("")
     lines.append("## Überblick")
-    lines.append(f"- **Runden:** {run.get('rounds_completed')} / {run.get('rounds_max')}")
+    lines.append(f"- **Ticks:** {run.get('ticks_completed', run.get('rounds_completed'))} / {run.get('ticks_max', run.get('rounds_max'))}")
     if run.get("seed") is not None:
         lines.append(f"- **Seed:** {run.get('seed')}")
 
@@ -438,7 +441,7 @@ def render_protocol_markdown(payload: dict[str, Any]) -> str:
     for r in payload.get("rounds", []):
         round_number = r.get("round_number")
         lines.append("")
-        lines.append(f"### Runde {round_number}")
+        lines.append(f"### Tick {round_number}")
 
         for contrib in r.get("contributions", []):
             agent_id = contrib.get("agent_id", "?")

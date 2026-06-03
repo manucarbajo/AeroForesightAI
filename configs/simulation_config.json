@@ -4,13 +4,7 @@
   "clock": {
     "current_round": 0,
     "max_rounds": 40,
-    "year_start": 2026,
-    "years_per_round": 1,
-    "tick_unit": "quarter",
-    "timeline_start_year": 2026,
-    "timeline_start_quarter": 1,
-    "timeline_end_year": 2035,
-    "timeline_end_quarter": 4
+    "tick_unit": "tick"
   },
   "llm": {
     "model": "llama3",

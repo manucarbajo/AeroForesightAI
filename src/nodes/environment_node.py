@@ -212,8 +212,7 @@ class EnvironmentNode:
     ) -> str:
         lines: list[str] = []
 
-        quarter_label = state.clock.quarter_label_for_round(state.clock.current_round)
-        lines.append(f"Round {state.clock.current_round}/{state.clock.max_rounds} ({quarter_label})")
+        lines.append(f"Tick {state.clock.current_round}/{state.clock.max_rounds}")
 
         if getattr(state, "current_speech_order", None):
             lines.append("Speech order:")

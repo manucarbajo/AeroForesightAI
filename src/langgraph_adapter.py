@@ -138,7 +138,7 @@ def append_spoken_agent(state: SimulationState, agent_id: str) -> dict[str, list
 def _make_build_options() -> dict:
     """Return a compact description of editable run options for Studio UI.
 
-    Kept here so the minimal `haiko_playground` adapter can import a ready-made
+    Kept here so the minimal ``langgraph_studio`` adapter can import a ready-made
     build-options payload without owning inspection logic.
     """
     try:

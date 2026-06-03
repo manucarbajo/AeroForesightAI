@@ -37,8 +37,8 @@
       "label": "Environment"
     },
     {
-      "id": "cib_extractor",
-      "label": "CIB Extractor"
+      "id": "scenario_agent",
+      "label": "Scenario Agent"
     }
   ],
   "edges": [
@@ -93,17 +93,17 @@
     },
     {
       "from": "environment",
-      "to": "cib_extractor",
+      "to": "scenario_agent",
       "condition": "end"
     },
     {
-      "from": "cib_extractor",
+      "from": "scenario_agent",
       "to": "END"
     }
   ],
   "meta": {
-    "description": "Generated simulation StateGraph layout (playground adapter).",
+    "description": "Studio graph with explicit agent nodes (consumer, provider, regulator).",
     "generated_by": "create_graph.py",
-    "generated_at": "2026-05-29T20:10:41.251063Z"
+    "generated_at": "2026-06-03T00:00:00Z"
   }
 }

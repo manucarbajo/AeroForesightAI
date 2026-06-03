@@ -9,14 +9,14 @@ C4 Aufgabenstellung:
 ## Ausgangslage: Feedback aus C3
 
 
-| Thema          | Problem in C3                                      | Ziel in C4                                                |
-| -------------- | -------------------------------------------------- | --------------------------------------------------------- |
-| CIB            | 182 Zellen per LLM pro Runde                       | Kein LLM für CIB; Matrix fix aus C3-Kopie, aktiv im Lauf  |
-| Agenten        | Freie Zahlen, `impact_assessment`, Halluzinationen | Rechnung in Funktionen; LLM nur für 3 Rollen, kurzes JSON |
-| Population     | 3 Segmente, nur `normal`, kaum genutzt             | N Individuen, Mischverteilung, schiefe Attribute          |
-| Orchestrierung | Redebedarf, sequentiell                            | Default: parallel, je Agent einmal pro Tick               |
-| Zeitmodell     | Quartale überall                                   | Ein Tick ist ein Tick                                     |
-| Pipeline       | Runner und LangGraph getrennt                      | Ein Pfad: LangGraph ruft Runner-Logik auf                 |
+| Thema           | Problem in C3                                       | Ziel in C4                                                   |
+| --------------- | --------------------------------------------------- | ------------------------------------------------------------ |
+| CIB             | 182 Zellen per LLM pro Runde                        | Kein LLM für CIB; Matrix fix aus C3-Kopie, aktiv im Lauf     |
+| Agenten         | Freie Zahlen, `impact_assessment`, Halluzinationen  | Rechnung in Funktionen; LLM nur für 3 Rollen, kurzes JSON    |
+| Population      | 3 Segmente, nur `normal`, kaum genutzt              | N Individuen, Mischverteilung, schiefe Attribute             |
+| Orchestrierung  | Redebedarf, sequentiell                             | Default: parallel, je Agent einmal pro Tick                  |
+| Zeitmodell      | Quartale überall                                    | Ein Tick ist ein Tick                                        |
+| Pipeline        | Runner und LangGraph getrennt                       | Batch (`RoundExecutionNode`) + Studio (Agent-Knoten); ein CLI-Einstieg `--studio` |
 | Projektstruktur | C1–C3-Schichten, doppelte Pipelines, Legacy im Repo | Klare Ordner, eine Orchestrierung, Archiv statt Müll im Root |
 
 
@@ -91,15 +91,21 @@ src/
   scenario_sweeps.py        M4
   state_explorer.py         M5
   cib_engine.py             M2b
-  simulation_runner.py
-  langgraph_workflow.py     an Runner angebunden
+  simulation_runner.py      Batch-CLI (RoundExecutionNode)
+  langgraph_workflow.py     Studio-Graph (Agent-Knoten sichtbar)
+  run_simulation.py         Batch + --studio
   config_loader.py
   output_writer.py
+  studio_helpers.py
   nodes/ ...
   prompts/ ...
 
+langgraph_studio/           M1: Studio-Adapter (.env, langgraph.json, graph.py)
+  README.langgraph.md
+
 docs/challenge4/
   projectplan.md
+  calibration_agents.md       M1
   cib_coaching_questions.md   M0
   cib_rationale.md              M2b
   challenge4_report.md          M5
@@ -153,37 +159,43 @@ Konvention: nie flach in `outputs/` schreiben. Abgabe-Plots nach `docs/presentat
 
 **Gehört nicht zu M0.** M0 ist CIB-Logik (fixe Matrix, kein `impact_assessment`). Struktur-Aufräumen startet in **M1** (Pipeline, Outputs, Legacy-Code) und zieht sich bis **M5** (Doku-Archiv, Abgabe).
 
-**Kernproblem:** drei parallele Einstiege statt einer Pipeline:
+**Kernproblem (gelöst in M1):** drei parallele Einstiege — jetzt klar getrennt, gleiche Agenten-Logik:
 
-| Weg | Dateien | Problem |
-| --- | ------- | ------- |
-| CLI | `run_simulation.py` → `simulation_runner.py` | Standard; nutzt `RoundExecutionNode` (Redebedarf) |
-| Playground-Graph | `langgraph_workflow.py` | Anderer Graph: `SchedulerNode` + Agent-Nodes einzeln |
-| Studio-Adapter | `haiko_playground/` | Extra-Schicht; teils erneuter Aufruf von `run_simulation` |
+
+| Weg            | Dateien                                              | Umsetzung                                                                     |
+| -------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Batch-CLI      | `run_simulation.py` → `simulation_runner.py`         | Standard; `RoundExecutionNode`; Outputs unter `outputs/<run_id>/`             |
+| Studio-Graph   | `langgraph_workflow.py` → `langgraph_studio/graph.py` | Eigene Knoten **consumer / provider / regulator**; Redebedarf via `SchedulerNode` |
+| Studio-Start   | `run_simulation.py --studio`                         | Startet `langgraph dev`; `.env` aus `langgraph_studio/`; Dep: `langgraph-cli[inmem]` |
+
 
 **Weitere Baustellen:**
 
-| Bereich | Ist | Soll / Aktion | Meilenstein |
-| ------- | --- | ------------- | ----------- |
-| Environment | `environment_node.py` + `environment_node_c2.py`; `nodes/__init__.py` exportiert C2 | C2-Node löschen, Tests migrieren | **M1** |
-| Redebedarf | `redebedarf_node.py` + `scheduler_node.py` (duplizierte Helfer) | Default parallel (M3); Redebedarf nur `--redebedarf`; Doppelcode zusammenführen | **M3** |
-| CIB-Extractor | `cib_extractor_node.py` (LLM, ~17 KB) | Nicht im Loop (M0 ✅); Code für M2b behalten, ggf. `src/legacy/` | **M2b** |
-| Sample-Outputs | `test_output/` im Root (Legacy) | Entfernt; Lauf-Outputs nur unter `outputs/<run_id>/` | **M1** ✅ |
-| Root-Müll | `tmp_ollama_payload.json`, `package-lock.json` ohne `package.json` | Löschen | **M1** |
-| IDE | `.idea/` versioniert | `.gitignore` | **M1** |
-| Doku | `README.md` = C2; `docs/drafts/`, doppelte `literature_fundamentals.md`, `docs/agent_node.py` (Python in docs/) | README C4; Entwürfe archivieren oder löschen | **M1** (README), **M5** (Archiv) |
-| Playgrounds | `manu_playground/`, großteils `haiko_playground/` | Nur behalten, wenn Studio genutzt wird; sonst `experiments/` + gitignore | **M5** (Entscheidung) |
-| Referenzen | `docs/references/` (PDFs) | Behalten (Thesis); nicht anfassen ohne Absprache | — |
+
+| Bereich        | Ist                                                                                                             | Soll / Aktion                                                                   | Meilenstein                      |
+| -------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------- |
+| Environment    | `environment_node_c2.py` entfernt; Tests auf `environment_node.py` | Erledigt | **M1** (erledigt) |
+| Redebedarf     | `redebedarf_node.py` + `scheduler_node.py` (duplizierte Helfer)      | Default parallel (M3); Redebedarf nur `--redebedarf`; Doppelcode zusammenführen | **M3** |
+| CIB-Extractor  | `cib_extractor_node.py` (LLM, ~17 KB)                                  | Nicht im Loop (M0); Code für M2b behalten, ggf. `src/legacy/` | **M2b** |
+| Sample-Outputs | `test_output/` im Root (Legacy)                                      | Entfernt; Lauf-Outputs nur unter `outputs/<run_id>/` | **M1** (erledigt) |
+| Root-Müll      | `tmp_ollama_payload.json`, `package-lock.json` ohne `package.json`   | Gelöscht | **M1** (erledigt) |
+| IDE            | `.idea/` versioniert                                                   | `.gitignore` | **M1** (erledigt) |
+| Doku           | `README.md` = C2; `docs/drafts/`, `docs/agent_node.py`               | README C4; `agent_node.py` → `docs/archive/` | **M1** (erledigt) (README/Archiv), **M5** (restl. Drafts) |
+| Playgrounds    | `haiko_playground/` → `langgraph_studio/`; `manu_playground/`        | Studio behalten; `manu_playground/` optional archivieren | **M1** (erledigt) (Studio), **M5** (manu_playground) |
+| Referenzen     | `docs/references/` (PDFs)                                                                                       | Behalten (Thesis); nicht anfassen ohne Absprache                                | —                                |
+
 
 **C4-Kern** (alles andere optional oder Legacy):
 
 ```
-configs/          agents, factors, simulation_config, cib_frozen
-src/              config_loader, simulation_runner, run_simulation, nodes/, models/, prompts/
-                  scenario_consistency, protocol_generator, output_writer
-tests/            pytest + fixtures/
-docs/challenge4/  Plan, Report, Coaching
-outputs/<run_id>/ Laufzeit (gitignored)
+configs/              agents, factors, simulation_config, cib_frozen
+src/                  config_loader, simulation_runner, run_simulation, nodes/, models/, prompts/
+                      scenario_consistency, protocol_generator, output_writer, studio_helpers
+langgraph_studio/     langgraph.json, graph.py, .env (gitignored)
+tests/                pytest + fixtures/
+docs/challenge4/      Plan, Report, Coaching, calibration_agents.md
+outputs/<run_id>/     Laufzeit (gitignored)
+requirements.txt      inkl. langgraph-cli[inmem] für Studio
 ```
 
 ## Meilensteine (zeitliche Reihenfolge)
@@ -211,17 +223,17 @@ Aufgaben:
 1. **Matrix einfrieren:** Bester C3-Lauf mit aktuellem Export neu erzeugen; daraus `configs/cib_frozen.json` im `CIBMatrix`-Format ablegen
 2. **Laden:** `load_cib_frozen()` in `src/config_loader.py` → `state.cib_matrix` in `build_initial_state()`
 3. **Kein LLM-CIB pro Tick:** `CIBExtractorNode` aus Runden-Loop entfernen in `src/simulation_runner.py` und `src/langgraph_workflow.py`; `enable_cib` = frozen Matrix aktiv (Standard), nicht Extractor
-4. **`impact_assessment` entfernen** (nur dieses JSON-Feld — **Protokoll und Redebedarf bleiben**):
-   - Prompts: `src/prompts/consumer.md`, `provider.md`, `regulator.md`
-   - Parsing: `src/nodes/agent_node.py`, Feld in `src/models/agent_models.py`
-   - Protokoll: Abschnitt `impact.impact_assessment` und Markdown-Zeilen dazu in `src/protocol_generator.py` streichen; `reasoning`, `actions`, `state_changes`, `events`, `segment_analysis`, `redebedarf_score` bleiben
-   - Redebedarf: CIB-Widerspruchs-Signale aus Agent-`impact_assessment` in `src/protocol_generator.py` / `src/redebedarf_scheduler.py` entfallen; übrige Trigger (Faktorwechsel, widersprüchliche `state_changes`, Erwähnungen im Text) bleiben
+4. `**impact_assessment` entfernen** (nur dieses JSON-Feld — **Protokoll und Redebedarf bleiben**):
+  - Prompts: `src/prompts/consumer.md`, `provider.md`, `regulator.md`
+  - Parsing: `src/nodes/agent_node.py`, Feld in `src/models/agent_models.py`
+  - Protokoll: Abschnitt `impact.impact_assessment` und Markdown-Zeilen dazu in `src/protocol_generator.py` streichen; `reasoning`, `actions`, `state_changes`, `events`, `segment_analysis`, `redebedarf_score` bleiben
+  - Redebedarf: CIB-Widerspruchs-Signale aus Agent-`impact_assessment` in `src/protocol_generator.py` / `src/redebedarf_scheduler.py` entfallen; übrige Trigger (Faktorwechsel, widersprüchliche `state_changes`, Erwähnungen im Text) bleiben
 5. **Szenarioableitung** mit fixer Matrix unverändert nutzen (`src/scenario_consistency.py`, `ScenarioAgentNode`)
 6. **Coaching-Vorbereitung:** `docs/challenge4/cib_coaching_questions.md` anlegen
 7. **Export:** `outputs/<run_id>/cib_matrix.json` am Laufende (gleiche Matrix wie beim Start; Output-Pfad-Ziel laut Konvention — volle `output_writer`-Umstellung kann mit M1 zusammenfallen)
 8. **Tests:** Erwartungen ohne LLM-CIB anpassen (`tests/test_end_to_end.py`, ggf. `tests/test_cib_matrix.py`)
 
-**Offen nach M0-Implementierung (bewusst an M1 delegiert):** echter C3-Re-Export in `cib_frozen.json` (statt Seed-Platzhalter); Export-Pfad `outputs/<run_id>/` (noch flaches `outputs/`).
+**Offen nach M0 (an M1 delegiert, M1 erledigt):** echter C3-Re-Export in `cib_frozen.json` (statt Seed-Platzhalter) — weiterhin offen; Export-Pfad `outputs/<run_id>/` (erledigt)
 
 Ergebnis:
 
@@ -233,41 +245,54 @@ Ergebnis:
 | Export pro Lauf | `outputs/<run_id>/cib_matrix.json`          |
 
 
-### M1 – Fundament
+### M1 – Fundament (erledigt)
 
-Ziel: eine Pipeline, Tick-Modell, ein Output-Ort. **Erster Aufräum-Meilenstein** (siehe Abschnitt „Aufräumen“).
+Ziel: eine Pipeline, Tick-Modell, ein Output-Ort, LangGraph Studio integriert.
 
 Aufgaben:
 
 **Pipeline & Outputs**
 
-- `src/langgraph_workflow.py` an `src/simulation_runner.py` anbinden (ein Graph, kein paralleler `SchedulerNode`-Pfad als zweite Wahrheit)
-- Tick in `configs/simulation_config.json`, `src/output_writer.py`, Protokoll
-- `src/output_writer.py` + `run_simulation.py`: Ausgabe nach `outputs/<run_id>/` (nicht flach in `outputs/`)
-- `README.md` auf C4 aktualisieren
+- Batch: `simulation_runner.py` mit `RoundExecutionNode` (Redebedarf in einem Knoten) (erledigt)
+- Studio: `langgraph_workflow.py` mit **eigenen Agent-Knoten** (consumer / provider / regulator) und `SchedulerNode` — gleiche Agenten, andere Graph-Darstellung für Debugging (erledigt)
+- Tick in `configs/simulation_config.json` (`tick_unit: tick`), `output_writer.py`, Protokoll (erledigt)
+- Ausgabe nach `outputs/<run_id>/`; Checkpoints unter `outputs/<run_id>/checkpoints/` (erledigt)
+- `README.md` auf C4 aktualisiert (erledigt)
+
+**LangGraph Studio**
+
+- `haiko_playground/` → `langgraph_studio/` umbenannt (erledigt)
+- Ein CLI-Einstieg: `python src/run_simulation.py --studio` (startet `python -m langgraph_cli dev`) (erledigt)
+- Abhängigkeit: `langgraph-cli[inmem]>=0.2` in `requirements.txt` (erledigt)
+- `.env` in `langgraph_studio/`; CLI lädt sie über `studio_helpers.load_env` (kein blockierender Import im Graph) (erledigt)
+- Studio-Troubleshooting dokumentiert in `langgraph_studio/README.langgraph.md` (404 → `.langgraph_api` löschen, neuer Thread) (erledigt)
 
 **Legacy-Code**
 
-- C2-Legacy: `src/nodes/environment_node_c2.py` entfernen; Tests (`test_end_to_end.py`, `test_environment_updates.py`) auf `environment_node.py` migrieren
-- `src/nodes/__init__.py`: Export auf C3-`EnvironmentNode` korrigieren
+- C2-Legacy: `environment_node_c2.py` entfernt; Tests auf `environment_node.py` migriert (erledigt)
+- `src/nodes/__init__.py`: Export auf C3-`EnvironmentNode` korrigiert (erledigt)
 
-**Repo-Hygiene (klein, wenig Risiko)**
+**Repo-Hygiene**
 
-- `test_output/` entfernt (kein Ersatz nötig)
-- Root-Artefakte entfernen: `tmp_ollama_payload.json`, `package-lock.json` (ohne `package.json`)
-- `.idea/` in `.gitignore`
-- `configs/calibration_agents.md` → `docs/challenge4/` (falls behalten)
-- `docs/agent_node.py` entfernen oder nach `docs/archive/` verschieben
+- `test_output/` entfernt (erledigt)
+- Root-Artefakte entfernt: `tmp_ollama_payload.json`, `package-lock.json` (erledigt)
+- `.idea/` in `.gitignore` (erledigt)
+- `configs/calibration_agents.md` → `docs/challenge4/calibration_agents.md` (erledigt)
+- `docs/agent_node.py` → `docs/archive/agent_node.py` (erledigt)
+- `tests/test_run_output_layout.py` für Output-Konvention (erledigt)
 
 Ergebnis:
 
 
-| Was                | Pfad                                                    |
-| ------------------ | ------------------------------------------------------- |
-| Runner / LangGraph | `src/simulation_runner.py`, `src/langgraph_workflow.py` |
-| Config             | `configs/simulation_config.json`                        |
-| Doku               | `README.md`                                             |
-| Lauf-Outputs       | `outputs/<run_id>/`                                     |
+| Was                | Pfad                                                                 |
+| ------------------ | -------------------------------------------------------------------- |
+| Batch-Runner       | `src/simulation_runner.py`, `src/run_simulation.py`                  |
+| Studio-Graph       | `src/langgraph_workflow.py`, `langgraph_studio/graph.py`             |
+| Studio-Start       | `python src/run_simulation.py --studio`                              |
+| Config             | `configs/simulation_config.json`                                     |
+| Doku               | `README.md`, `langgraph_studio/README.langgraph.md`                  |
+| Lauf-Outputs       | `outputs/<run_id>/`                                                  |
+| Studio-Deps        | `requirements.txt` → `langgraph-cli[inmem]`                           |
 
 
 ### M2 – Deterministischer Kern (ohne CIB-Inhalt)
@@ -331,7 +356,7 @@ Ziel: drei parallele Agenten pro Tick, halluzinationssichere Prompts, statistisc
 Aufgaben:
 
 - Parallel in `src/simulation_runner.py`, `--redebedarf` in `src/run_simulation.py`
-- Redebedarf-Doppelcode: `scheduler_node.py` vs. `redebedarf_node.py` — gemeinsame Helfer extrahieren oder einen Pfad deprecaten (Playground-Graph dann über Runner)
+- Redebedarf-Doppelcode: `scheduler_node.py` vs. `redebedarf_node.py` — gemeinsame Helfer extrahieren (Studio nutzt `SchedulerNode`, Batch `RoundExecutionNode`) 
 - Strikte Validierung in `src/validation.py`
 - Englische Prompts in `src/prompts/`
 - `src/population_sampler.py`, erweiterte Verteilungen in `src/models/enums.py`
@@ -364,7 +389,7 @@ Ergebnis:
 
 | Was        | Pfad                                                |
 | ---------- | --------------------------------------------------- |
-| Sweeps     | `outputs/sweeps/<name>/run_*`, `sweep_summary.json` |
+| Sweeps     | `outputs/sweeps/<name>/run_`*, `sweep_summary.json` |
 | Zeitreihen | `outputs/<run_id>/timeseries/*.csv`                 |
 | Szenarien  | `outputs/<run_id>/scenarios.json`, `scenarios.md`   |
 
@@ -380,7 +405,7 @@ Aufgaben:
 - `docs/presentation/outline.md` und Figures
 - `docs/challenge4/challenge4_report.md` (Feedback → Umsetzung)
 - **Doku aufräumen:** `docs/challenge1/` … `docs/challenge3/`, `docs/drafts/` → `docs/archive/`; `interfaces.md` prüfen/aktualisieren
-- **Playgrounds:** Entscheidung `manu_playground/`, `haiko_playground/` — behalten (Studio) oder aus Repo / unter `experiments/` + gitignore
+- **Playgrounds:** Entscheidung `manu_playground/` — archivieren oder unter `experiments/` + gitignore; `langgraph_studio/` ist der Studio-Adapter (Einstieg: `run_simulation.py --studio`)
 
 Präsentation (Gliederung in `docs/presentation/outline.md`):
 
@@ -401,3 +426,5 @@ Ergebnis:
 | Explorer  | `src/state_explorer.py`                |
 | Report    | `docs/challenge4/challenge4_report.md` |
 | Demo-Lauf | `outputs/<run_id>/`                    |
+
+

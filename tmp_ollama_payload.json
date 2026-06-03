@@ -1,1 +1,0 @@
-﻿{"model":"llama3.2:latest","prompt":"hello","stream":false,"options":{"temperature":0.7,"num_predict":32}}

@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-try:
-    from haiko_playground.env_utils import load_env as _load_env
-except Exception:
-    _load_env = None
-
-if _load_env is not None:
-    _load_env()
-
 from typing import Any
 
 from src.config_loader import build_initial_state
@@ -26,14 +18,21 @@ from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
 from src.nodes.scheduler_node import SchedulerNode
 from src.nodes.scenario_agent_node import ScenarioAgentNode
+from src.simulation_runner import RunnerOptions
 from src.studio_helpers import get_llm
 
 
-def build_playground_stategraph(llm: Any | None = None):
-    """Build and compile the LangGraph stategraph for AP3 playground runs.
+def build_playground_stategraph(
+    llm: Any | None = None,
+    *,
+    options: RunnerOptions | None = None,
+):
+    """Build and compile the LangGraph stategraph for Studio runs.
 
-    All simulation flow logic lives in `src` so `haiko_playground` remains a
-    thin LangGraph Studio adapter.
+    Studio exposes consumer, provider and regulator as separate graph nodes
+    (via ``SchedulerNode`` / Redebedarf routing). The CLI batch runner still
+    uses ``RoundExecutionNode`` in ``simulation_runner.py`` — same agents,
+    same logic, different graph layout for visibility.
     """
 
     try:
@@ -41,10 +40,11 @@ def build_playground_stategraph(llm: Any | None = None):
     except Exception as exc:
         raise RuntimeError("langgraph package not available in this environment") from exc
 
+    runner_options = options or RunnerOptions()
     if llm is None:
         llm = get_llm()
 
-    initial_state = build_initial_state()
+    initial_state = build_initial_state(load_cib=runner_options.enable_cib)
     agents = initial_state.agents
 
     orchestrator = OrchestratorNode(agents)
@@ -59,6 +59,8 @@ def build_playground_stategraph(llm: Any | None = None):
         "provider": AgentNode(by_type[AgentType.PROVIDER], llm=llm),
         "regulator": AgentNode(by_type[AgentType.REGULATOR], llm=llm),
     }
+
+    post_round_target = "market" if runner_options.enable_market else "environment"
 
     workflow = StateGraph(PlaygroundState, input_schema=InputState)
     workflow.add_node("initialize_state", initialize_state)
@@ -86,7 +88,8 @@ def build_playground_stategraph(llm: Any | None = None):
             on_exit=lambda state: append_spoken_agent(state, "regulator"),
         ),
     )
-    workflow.add_node("market", wrap_node(market_node.invoke))
+    if runner_options.enable_market:
+        workflow.add_node("market", wrap_node(market_node.invoke))
     workflow.add_node("environment", wrap_node(environment_node.invoke))
     workflow.add_node("scenario_agent", wrap_node(scenario_node.invoke))
 
@@ -95,28 +98,44 @@ def build_playground_stategraph(llm: Any | None = None):
     workflow.add_edge("reset_round_buffer", "orchestrator")
     workflow.add_edge("orchestrator", "determine_next_speaker")
 
+    route_targets = {
+        "consumer": "consumer",
+        "provider": "provider",
+        "regulator": "regulator",
+        post_round_target: post_round_target,
+    }
+
+    def _route_from_scheduler(payload: Any) -> str:
+        state = to_state(payload)
+        target = SchedulerNode.route_from_scheduler(state)
+        if target == "market" and not runner_options.enable_market:
+            return "environment"
+        return target
+
     workflow.add_conditional_edges(
         "determine_next_speaker",
-        lambda payload: SchedulerNode.route_from_scheduler(to_state(payload)),
-        {
-            "consumer": "consumer",
-            "provider": "provider",
-            "regulator": "regulator",
-            "market": "market",
-        },
+        _route_from_scheduler,
+        route_targets,
     )
 
     workflow.add_edge("consumer", "determine_next_speaker")
     workflow.add_edge("provider", "determine_next_speaker")
     workflow.add_edge("regulator", "determine_next_speaker")
-    workflow.add_edge("market", "environment")
+    if runner_options.enable_market:
+        workflow.add_edge("market", "environment")
 
-    # Frozen CIB is loaded at initialize_state; scenario derivation runs once at end.
     def _route_after_environment(payload: Any) -> str:
         state = to_state(payload)
         return "reset_round_buffer" if state.clock.current_round < state.clock.max_rounds else "scenario_agent"
 
-    workflow.add_conditional_edges("environment", _route_after_environment)
+    workflow.add_conditional_edges(
+        "environment",
+        _route_after_environment,
+        {
+            "reset_round_buffer": "reset_round_buffer",
+            "scenario_agent": "scenario_agent",
+        },
+    )
     workflow.add_edge("scenario_agent", END)
 
     return workflow.compile()

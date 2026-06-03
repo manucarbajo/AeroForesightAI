@@ -4,11 +4,12 @@
 __pycache__/
 *.py[cod]venv/
 
-
-
+.idea/
+test_output/
+tmp_ollama_payload.json
 
 # Local runtime artifacts and secrets
-haiko_playground/.langgraph_api/
-haiko_playground/.env
+langgraph_studio/.langgraph_api/
+langgraph_studio/.env
 *.env
 .venv312/

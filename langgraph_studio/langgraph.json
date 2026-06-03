@@ -1,6 +1,6 @@
 {
-"name": "haiko_playground",
-"description": "LangGraph project for Technology-Lab simulation (haiko_playground)",
+"name": "langgraph_studio",
+"description": "LangGraph Studio project for Technology-Lab simulation",
 "env": "./.env",
 "source": { "kind": "uv", "root": ".." },
 "graphs": {
@@ -27,7 +27,7 @@
 				"max_rounds": 40,
 			"year_start": 2026,
 				"years_per_round": 1,
-				"tick_unit": "quarter",
+				"tick_unit": "tick",
 				"timeline_start_year": 2026,
 				"timeline_start_quarter": 1,
 				"timeline_end_year": 2035,

@@ -19,6 +19,8 @@ from src.config_loader import build_initial_state
 from src.llm_client import OllamaClient, OllamaConfig
 from src.nodes.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 from src.output_writer import (
+    create_run_id,
+    resolve_run_output_dir,
     save_cib_matrix,
     save_event_log,
     save_final_narrative,
@@ -33,11 +35,11 @@ from src.output_writer import (
 )
 from src.protocol_generator import build_protocol_payload, render_protocol_markdown
 from src.simulation_runner import MultiRunResult, SimulationRunner
-from src.studio_helpers import get_llm
+from src.studio_helpers import STUDIO_DIR, get_llm, load_env
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run Challenge-3 simulation (AP3).")
+    parser = argparse.ArgumentParser(description="Run Challenge 4 simulation.")
     parser.add_argument("--model", default="llama3.2", help="Ollama model name, e.g. llama3.2")
     parser.add_argument(
         "--base-url",
@@ -50,7 +52,7 @@ def _parse_args() -> argparse.Namespace:
         "--rounds",
         type=int,
         default=None,
-        help="Override max rounds (uses configs/simulation_config.json by default).",
+        help="Override max ticks (uses configs/simulation_config.json by default).",
     )
     parser.add_argument(
         "--runs",
@@ -71,10 +73,21 @@ def _parse_args() -> argparse.Namespace:
         help="Resume from a checkpoint file path or run id.",
     )
     parser.add_argument(
+        "--studio",
+        action="store_true",
+        help="Start LangGraph Studio (interactive UI) instead of a batch simulation run.",
+    )
+    parser.add_argument(
+        "--run-id",
+        type=str,
+        default=None,
+        help="Optional run id for outputs/<run_id>/ (default: run_<UTC timestamp>).",
+    )
+    parser.add_argument(
         "--checkpoint-dir",
         type=str,
-        default=str(Path("outputs") / "checkpoints"),
-        help="Directory used for AP3 checkpoints.",
+        default=None,
+        help="Directory for checkpoints (default: outputs/<run_id>/checkpoints).",
     )
     parser.add_argument(
         "--no-market",
@@ -103,64 +116,37 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _prefixed_name(prefix: str, filename: str) -> str:
-    return f"{prefix}{filename}" if prefix else filename
-
-
-def _run_output_subdir(prefix: str) -> str | None:
-    if not prefix:
-        return None
-    return prefix[:-1] if prefix.endswith("_") else prefix
-
-
 def _save_run_outputs(
     state,
     args: argparse.Namespace,
     llm: OllamaClient,
     *,
-    prefix: str = "",
+    run_dir: Path,
+    run_id: str,
 ) -> dict[str, str | None]:
     """Persist the standard simulation artefacts for one completed run."""
 
-    output_subdir = _run_output_subdir(prefix)
-
-    event_log_path = save_event_log(state.event_log, filename="event_log.json", output_subdir=output_subdir)
-    price_history_path = save_price_history(
-        state.price_history,
-        filename="price_history.json",
-        output_subdir=output_subdir,
-    )
-    round_history_path = save_round_history(
-        state.round_results,
-        filename="round_history.json",
-        output_subdir=output_subdir,
-    )
-    metadata_path = save_run_metadata(state, args, filename="run_metadata.json", output_subdir=output_subdir)
-    segment_analysis_path = save_segment_analysis(
-        state.round_results,
-        filename="segment_analysis.json",
-        output_subdir=output_subdir,
-    )
-    final_narrative_path = save_final_narrative(
+    event_log_path = save_event_log(state.event_log, run_dir=run_dir)
+    price_history_path = save_price_history(state.price_history, run_dir=run_dir)
+    round_history_path = save_round_history(state.round_results, run_dir=run_dir)
+    metadata_path = save_run_metadata(
         state,
-        filename="final_narrative.md",
-        output_subdir=output_subdir,
+        args,
+        run_dir=run_dir,
+        run_id=run_id,
     )
-    cib_matrix_path = save_cib_matrix(state, filename="cib_matrix.json", output_subdir=output_subdir)
+    segment_analysis_path = save_segment_analysis(state.round_results, run_dir=run_dir)
+    final_narrative_path = save_final_narrative(state, run_dir=run_dir)
+    cib_matrix_path = save_cib_matrix(state, run_dir=run_dir)
 
     protocol_path = None
     protocol_md_path = None
     if not args.no_protocol:
         protocol_payload = build_protocol_payload(state)
-        protocol_path = save_protocol(
-            protocol_payload,
-            filename="protocol.json",
-            output_subdir=output_subdir,
-        )
+        protocol_path = save_protocol(protocol_payload, run_dir=run_dir)
         protocol_md_path = save_protocol_markdown(
             render_protocol_markdown(protocol_payload),
-            filename="protocol.md",
-            output_subdir=output_subdir,
+            run_dir=run_dir,
         )
 
     scenarios_path = None
@@ -171,18 +157,15 @@ def _save_run_outputs(
         scenarios_payload = {
             "scenarios": state.cib_matrix.metadata.get("scenarios", []) if state.cib_matrix.metadata else []
         }
-        scenarios_path = save_scenarios(
-            scenarios_payload,
-            filename="scenarios.json",
-            output_subdir=output_subdir,
-        )
+        scenarios_path = save_scenarios(scenarios_payload, run_dir=run_dir)
         scenarios_md_path = save_scenarios_markdown(
             render_scenarios_markdown(scenarios_payload, state),
-            filename="scenarios.md",
-            output_subdir=output_subdir,
+            run_dir=run_dir,
         )
 
     return {
+        "run_id": run_id,
+        "output_dir": str(run_dir),
         "event_log": event_log_path,
         "price_history": price_history_path,
         "round_history": round_history_path,
@@ -195,6 +178,46 @@ def _save_run_outputs(
         "scenarios": scenarios_path,
         "scenarios_markdown": scenarios_md_path,
     }
+
+
+def _resolve_run_layout(args: argparse.Namespace, repo_root: Path) -> tuple[str, Path, Path]:
+    """Resolve run id, output directory, and checkpoint directory."""
+
+    run_id = args.run_id or create_run_id()
+    run_dir = resolve_run_output_dir(run_id)
+
+    if args.checkpoint_dir:
+        ck_path = Path(args.checkpoint_dir)
+        if not ck_path.is_absolute():
+            ck_path = repo_root / ck_path
+    else:
+        ck_path = run_dir / "checkpoints"
+
+    return run_id, run_dir, ck_path
+
+
+def _launch_studio() -> int:
+    """Start the LangGraph dev server for interactive debugging."""
+
+    if not STUDIO_DIR.is_dir():
+        raise RuntimeError(f"LangGraph Studio directory not found: {STUDIO_DIR}")
+
+    print(f"Starting LangGraph Studio in {STUDIO_DIR}")
+    print("Open the URL shown below in your browser. Press Ctrl+C to stop.")
+
+    try:
+        import langgraph_api  # noqa: F401
+        import langgraph_cli  # noqa: F401
+    except ImportError as exc:
+        raise RuntimeError(
+            "LangGraph Studio dependencies missing. Run: pip install -r requirements.txt "
+            '(needs langgraph-cli[inmem] with langgraph-api).'
+        ) from exc
+
+    return subprocess.call(
+        [sys.executable, "-m", "langgraph_cli", "dev"],
+        cwd=STUDIO_DIR,
+    )
 
 
 def _build_run_args(base_args: argparse.Namespace, *, run_index: int, seed: int | None) -> SimpleNamespace:
@@ -239,6 +262,14 @@ def _write_multi_run_summary(
 
 def main() -> int:
     args = _parse_args()
+    load_env()
+
+    if args.studio:
+        if args.resume is not None:
+            raise ValueError("--studio cannot be combined with --resume")
+        if args.runs != 1:
+            raise ValueError("--studio cannot be combined with --runs")
+        return _launch_studio()
 
     if args.mock_llm:
         llm = get_llm()
@@ -297,15 +328,13 @@ def main() -> int:
 
     runner = SimulationRunner(llm=llm)
     repo_root = Path(__file__).resolve().parents[1]
-    ck_path = Path(args.checkpoint_dir)
-    if not ck_path.is_absolute():
-        ck_path = repo_root / ck_path
-    checkpoint_manager = CheckpointManager(ck_path)
 
     if args.resume is not None and args.runs != 1:
         raise ValueError("--resume is only supported for single-run execution")
 
     if args.resume is not None:
+        run_id, run_dir, ck_path = _resolve_run_layout(args, repo_root)
+        checkpoint_manager = CheckpointManager(ck_path)
         state = None
         if not args.quiet:
             print(f"Resuming simulation from checkpoint reference: {args.resume}")
@@ -313,13 +342,20 @@ def main() -> int:
             state,
             checkpoint_store=checkpoint_manager,
             resume_from=args.resume,
-            run_id="run-resume",
+            run_id=run_id,
         )
-        artifacts = _save_run_outputs(final_state, _build_run_args(args, run_index=1, seed=final_state.config.seed), llm)
+        artifacts = _save_run_outputs(
+            final_state,
+            _build_run_args(args, run_index=1, seed=final_state.config.seed),
+            llm,
+            run_dir=run_dir,
+            run_id=run_id,
+        )
         if not args.quiet:
-            print("Saved: " + ", ".join([path for path in artifacts.values() if path]))
+            print(f"Output directory: {run_dir}")
+            print("Saved: " + ", ".join([path for path in artifacts.values() if isinstance(path, str) and path]))
             print(
-                f"\nDone. rounds={final_state.clock.current_round}, events={len(final_state.event_log)}, "
+                f"\nDone. ticks={final_state.clock.current_round}, events={len(final_state.event_log)}, "
                 f"round_results={len(final_state.round_results)}, price_history={len(final_state.price_history)}"
             )
         return 0
@@ -331,38 +367,52 @@ def main() -> int:
         base_state.config.seed = int(args.seed)
 
     if args.runs == 1:
+        run_id, run_dir, ck_path = _resolve_run_layout(args, repo_root)
+        checkpoint_manager = CheckpointManager(ck_path)
+
         if not args.quiet:
             print(
-                f"Simulation start: rounds={base_state.clock.max_rounds}, model={args.model}, "
-                f"market={'off' if args.no_market else 'on'}"
+                f"Simulation start: ticks={base_state.clock.max_rounds}, model={args.model}, "
+                f"market={'off' if args.no_market else 'on'}, run_id={run_id}"
             )
 
         final_state = runner.run(
             base_state,
             seed=args.seed,
             checkpoint_store=checkpoint_manager,
-            run_id="run-001",
+            run_id=run_id,
         )
-        artifacts = _save_run_outputs(final_state, _build_run_args(args, run_index=1, seed=args.seed), llm)
+        artifacts = _save_run_outputs(
+            final_state,
+            _build_run_args(args, run_index=1, seed=args.seed),
+            llm,
+            run_dir=run_dir,
+            run_id=run_id,
+        )
         if not args.quiet:
-            print("Saved: " + ", ".join([path for path in artifacts.values() if path]))
+            print(f"Output directory: {run_dir}")
+            print("Saved: " + ", ".join([path for path in artifacts.values() if isinstance(path, str) and path]))
             print(
-                f"\nDone. rounds={final_state.clock.current_round}, events={len(final_state.event_log)}, "
+                f"\nDone. ticks={final_state.clock.current_round}, events={len(final_state.event_log)}, "
                 f"round_results={len(final_state.round_results)}, price_history={len(final_state.price_history)}"
             )
         return 0
 
+    batch_id = args.run_id or create_run_id("batch")
+    batch_dir = resolve_run_output_dir(batch_id)
+    ck_path = Path(args.checkpoint_dir) if args.checkpoint_dir else batch_dir / "checkpoints"
+    if not ck_path.is_absolute():
+        ck_path = repo_root / ck_path
+    checkpoint_manager = CheckpointManager(ck_path)
+
     if not args.quiet:
         print(
-            f"Simulation start: runs={args.runs}, rounds={base_state.clock.max_rounds}, model={args.model}, "
-            f"market={'off' if args.no_market else 'on'}"
+            f"Simulation start: runs={args.runs}, ticks={base_state.clock.max_rounds}, model={args.model}, "
+            f"market={'off' if args.no_market else 'on'}, batch_id={batch_id}"
         )
 
-    if args.rounds is not None:
-        base_state.clock.max_rounds = int(args.rounds)
-
     if not args.quiet:
-        print(f"Starting multi-run: runs={args.runs}, rounds={base_state.clock.max_rounds}")
+        print(f"Starting multi-run: runs={args.runs}, ticks={base_state.clock.max_rounds}")
 
     multi_result = runner.run_multi(
         args.runs,
@@ -372,9 +422,17 @@ def main() -> int:
 
     all_artifacts: list[dict[str, str | None]] = []
     for index, run_result in enumerate(multi_result.runs, start=1):
-        prefix = f"run_{index:03d}_"
+        run_id = f"run_{index:03d}"
+        run_dir = batch_dir / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
         run_args = _build_run_args(args, run_index=index, seed=run_result.seed)
-        artifacts = _save_run_outputs(run_result.final_state, run_args, llm, prefix=prefix)
+        artifacts = _save_run_outputs(
+            run_result.final_state,
+            run_args,
+            llm,
+            run_dir=run_dir,
+            run_id=run_id,
+        )
         all_artifacts.append(artifacts)
 
     if checkpoint_manager is not None:
@@ -382,24 +440,20 @@ def main() -> int:
             try:
                 ck_existing = checkpoint_manager.list_checkpoints(run_result.run_id)
                 if not ck_existing:
-                    checkpoint_manager.save(run_result.final_state, run_id=run_result.run_id, round_number=run_result.final_state.clock.current_round)
+                    checkpoint_manager.save(
+                        run_result.final_state,
+                        run_id=run_result.run_id,
+                        round_number=run_result.final_state.clock.current_round,
+                    )
             except Exception as exc:
                 print(f"Warning: failed to ensure checkpoint for {run_result.run_id}: {exc}")
 
-    summary_path = Path("outputs") / "multi_run_summary.json"
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        _write_multi_run_summary(summary_path=summary_path, result=multi_result, run_artifacts=all_artifacts)
-    except Exception as exc:
-        print(f"Warning: failed to write multi_run_summary.json: {exc}")
+    summary_path = batch_dir / "multi_run_summary.json"
+    _write_multi_run_summary(summary_path=summary_path, result=multi_result, run_artifacts=all_artifacts)
 
     for idx, run_result in enumerate(multi_result.runs, start=1):
         seed_info = run_result.seed
         print(f"Run {idx:03d}: run_id={run_result.run_id} seed={seed_info} checkpoints={run_result.checkpoint_paths}")
-
-    summary_path = Path("outputs") / "multi_run_summary.json"
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    _write_multi_run_summary(summary_path=summary_path, result=multi_result, run_artifacts=all_artifacts)
 
     if not args.quiet:
         print(
@@ -407,7 +461,7 @@ def main() -> int:
             + ", ".join(
                 [
                     str(summary_path),
-                    *[path for artifacts in all_artifacts for path in artifacts.values() if path],
+                    *[path for artifacts in all_artifacts for path in artifacts.values() if isinstance(path, str) and path],
                 ]
             )
         )

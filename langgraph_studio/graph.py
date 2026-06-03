@@ -1,4 +1,4 @@
-"""LangGraph project entry for the Simulation (haiko_playground)."""
+"""LangGraph project entry for Technology-Lab simulation."""
 from __future__ import annotations
 
 import sys

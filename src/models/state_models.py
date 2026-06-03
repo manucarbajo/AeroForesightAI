@@ -82,6 +82,13 @@ class SimulationClock(BaseModel):
         year, quarter = self.quarter_for_round(round_number)
         return f"Q{quarter} {year}"
 
+    def tick_label_for_round(self, round_number: int) -> str:
+        """Return the display label for a 1-based tick (or quarter when configured)."""
+
+        if self.tick_unit == "tick":
+            return f"Tick {round_number}"
+        return self.quarter_label_for_round(round_number)
+
     @property
     def total_quarters(self) -> int:
         """Total number of supported quarterly ticks in the configured timeline."""

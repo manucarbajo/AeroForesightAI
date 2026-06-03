@@ -3,7 +3,7 @@ from src.config_loader import build_initial_state
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.enums import EventType
-from src.nodes.environment_node_c2 import EnvironmentNode
+from src.nodes.environment_node import EnvironmentNode
 
 
 def _make_response(agent_id: str, state_changes: list[StateChange] = None) -> AgentResponse:
@@ -119,4 +119,4 @@ def test_environment_node_summary_contains_round_info():
     state = environment.invoke(state)
 
     last_summary = state.round_results[-1].summary
-    assert "Round 1" in last_summary
+    assert "Tick 1" in last_summary

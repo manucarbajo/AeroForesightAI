@@ -1,14 +1,4 @@
-"""Erstellt `graph.json` aus der aktuellen Playground-Graph-Topologie.
-
-Das Skript lädt `haiko_playground.graph` (Validierung) und schreibt eine
-kleine, leichtgewichtige JSON-Repräsentation der Node-/Edge-Struktur, so
-dass Studio/Viewer stets eine synchronisierte `graph.json` erhalten.
-
-Aufruf:
-    python create_graph.py
-
-Erzeugt `graph.json` im selben Ordner.
-"""
+"""Erstellt `graph.json` aus der aktuellen Studio-Graph-Topologie."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -22,11 +12,14 @@ if str(ROOT.parent) not in sys.path:
 
 
 def build_static_graph() -> dict:
-    # Ensure the playground graph module imports correctly (will raise on error).
     try:
-        import haiko_playground.graph as pg  # type: ignore
+        import langgraph_studio.graph as pg  # type: ignore
+
+        if getattr(pg, "graph", None) is None and callable(getattr(pg, "get_build_error", None)):
+            error = pg.get_build_error()
+            if error is not None:
+                raise error
     except Exception:
-        # If importing the dynamic graph fails, fall back to a safe static layout.
         pass
 
     nodes = [
@@ -39,7 +32,7 @@ def build_static_graph() -> dict:
         {"id": "regulator", "label": "Regulator"},
         {"id": "market", "label": "Market"},
         {"id": "environment", "label": "Environment"},
-        {"id": "cib_extractor", "label": "CIB Extractor"},
+        {"id": "scenario_agent", "label": "Scenario Agent"},
     ]
 
     edges = [
@@ -55,12 +48,12 @@ def build_static_graph() -> dict:
         {"from": "regulator", "to": "determine_next_speaker"},
         {"from": "market", "to": "environment"},
         {"from": "environment", "to": "reset_round_buffer", "condition": "continue"},
-        {"from": "environment", "to": "cib_extractor", "condition": "end"},
-        {"from": "cib_extractor", "to": "END"},
+        {"from": "environment", "to": "scenario_agent", "condition": "end"},
+        {"from": "scenario_agent", "to": "END"},
     ]
 
     meta = {
-        "description": "Generated simulation StateGraph layout (playground adapter).",
+        "description": "Studio graph with explicit agent nodes (consumer, provider, regulator).",
         "generated_by": "create_graph.py",
         "generated_at": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),
     }

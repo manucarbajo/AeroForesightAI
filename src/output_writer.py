@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 from typing import List
-from datetime import datetime
+from datetime import UTC, datetime
 
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
 
@@ -11,12 +11,38 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = str(_REPO_ROOT / "outputs")
 
 
+def create_run_id(prefix: str = "run") -> str:
+    """Create a unique run directory name, e.g. ``run_20260603T143022Z``."""
+
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    return f"{prefix}_{timestamp}"
+
+
 def ensure_output_dir():
     """Stellt sicher, dass der Output-Ordner existiert."""
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
-def _resolve_output_path(filename: str, output_subdir: str | Path | None = None) -> str:
+def resolve_run_output_dir(run_id: str | None = None) -> Path:
+    """Return ``outputs/<run_id>/``, creating the directory when needed."""
+
+    ensure_output_dir()
+    resolved_run_id = run_id or create_run_id()
+    run_dir = Path(OUTPUT_DIR) / resolved_run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    return run_dir
+
+
+def _resolve_output_path(
+    filename: str,
+    output_subdir: str | Path | None = None,
+    *,
+    run_dir: Path | None = None,
+) -> str:
+    if run_dir is not None:
+        run_dir.mkdir(parents=True, exist_ok=True)
+        return str(run_dir / filename)
+
     ensure_output_dir()
     if output_subdir is None:
         target_dir = Path(OUTPUT_DIR)
@@ -32,6 +58,7 @@ def save_event_log(
     filename: str = "event_log.json",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """
     Speichert die Event-Log-Einträge als JSON.
@@ -39,7 +66,7 @@ def save_event_log(
         Default Name der Ausgabedatei: event_log.json
     """
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
     
     # Konvertiere alle Events zu Dictionaries für JSON
     events_data = [event.model_dump() for event in events]
@@ -55,6 +82,7 @@ def save_price_history(
     filename: str = "price_history.json",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """
     Speichert die Preis-Historie als JSON.
@@ -65,7 +93,7 @@ def save_price_history(
         Pfad zur gespeicherten Datei
     """
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
     
     # Konvertiere alle Einträge zu Dictionaries für JSON
     price_data = [entry.model_dump() for entry in price_entries]
@@ -80,6 +108,7 @@ def save_round_history(
     filename: str = "round_history.json",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """
     Speichert die Rundenhistorie als JSON.
@@ -87,7 +116,7 @@ def save_round_history(
         Default Name der Ausgabedatei: round_history.json
     """
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
 
     round_data = [round_result.model_dump() for round_result in round_results]
 
@@ -102,6 +131,8 @@ def save_run_metadata(
     filename: str = "run_metadata.json",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
+    run_id: str | None = None,
 ) -> str:
     """
     Speichert Metadaten des Simulationslaufs als JSON.
@@ -110,14 +141,18 @@ def save_run_metadata(
         Default Name der Ausgabedatei: run_metadata.json
     """
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
 
     metadata = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
+        "run_id": run_id or (run_dir.name if run_dir is not None else None),
         "model": args.model,
         "base_url": args.base_url,
         "temperature": args.temperature,
         "max_tokens": args.max_tokens,
+        "ticks_completed": state.clock.current_round,
+        "ticks_max": state.clock.max_rounds,
+        "tick_unit": state.clock.tick_unit,
         "rounds_completed": state.clock.current_round,
         "rounds_max": state.clock.max_rounds,
         "market_enabled": not args.no_market,
@@ -136,6 +171,7 @@ def save_segment_analysis(
     filename: str = "segment_analysis.json",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """
     Speichert die segmentspezifischen Analysen aller Agenten als JSON.
@@ -143,7 +179,7 @@ def save_segment_analysis(
         Default Name der Ausgabedatei: segment_analysis.json
     """
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
 
     # Gruppiere nach Rundennummer
     rounds: dict = {}
@@ -174,6 +210,7 @@ def save_final_narrative(
     filename: str = "final_narrative.md",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """
     Speichert eine lesbare Markdown-Zusammenfassung der Simulation.
@@ -181,13 +218,13 @@ def save_final_narrative(
         Default Name der Ausgabedatei: final_narrative.md
     """
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
 
     lines = []
 
-    start_label = state.clock.quarter_label_for_round(1) if state.clock.current_round >= 1 else "n/a"
+    start_label = state.clock.tick_label_for_round(1) if state.clock.current_round >= 1 else "n/a"
     end_label = (
-        state.clock.quarter_label_for_round(state.clock.current_round)
+        state.clock.tick_label_for_round(state.clock.current_round)
         if state.clock.current_round >= 1
         else "n/a"
     )
@@ -198,22 +235,22 @@ def save_final_narrative(
 
     # Überblick
     lines.append("## Überblick")
-    lines.append(f"- **Simulierte Runden:** {state.clock.current_round}")
-    lines.append(f"- **Simulierter Zeitraum:** {start_label} - {end_label}")
+    lines.append(f"- **Simulierte Ticks:** {state.clock.current_round} / {state.clock.max_rounds}")
+    lines.append(f"- **Zeitraum:** {start_label} – {end_label}")
     lines.append(f"- **Gesamte Events:** {len(state.event_log)}")
     lines.append(f"- **Preis Start:** {state.price_history[0].price:.2f} €" if state.price_history else "- **Preis Start:** n/a")
     lines.append(f"- **Preis Ende:** {state.price_history[-1].price:.2f} €" if state.price_history else "- **Preis Ende:** n/a")
 
-    # Rundenübersicht
-    lines.append("\n## Rundenübersicht")
+    # Tick-Übersicht
+    lines.append("\n## Tick-Übersicht")
     best_per_round: dict = {}
     for rr in state.round_results:
         best_per_round[rr.round_number] = rr
 
     for round_number in sorted(best_per_round.keys()):
         rr = best_per_round[round_number]
-        quarter_label = state.clock.quarter_label_for_round(round_number)
-        lines.append(f"\n### Runde {round_number} – {quarter_label}")
+        tick_label = state.clock.tick_label_for_round(round_number)
+        lines.append(f"\n### {tick_label}")
 
         # Reasoning pro Agent
         for resp in rr.agent_responses:
@@ -242,6 +279,7 @@ def save_cib_matrix(
     filename: str = "cib_matrix.json",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """
     Speichert die CIB-Matrix als JSON.
@@ -249,7 +287,7 @@ def save_cib_matrix(
         Default Name der Ausgabedatei: cib_matrix.json
     """
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
 
     if state.cib_matrix is None:
         cib_data = {"entries": [], "round_generated": 0, "metadata": {}}
@@ -283,10 +321,11 @@ def save_protocol(
     filename: str = "protocol.json",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """Save structured conversation protocol as JSON."""
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(protocol_payload, f, indent=2, ensure_ascii=False)
     return filepath
@@ -297,10 +336,11 @@ def save_protocol_markdown(
     filename: str = "protocol.md",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """Save conversation protocol as Markdown."""
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(markdown)
     return filepath
@@ -311,10 +351,11 @@ def save_scenarios(
     filename: str = "scenarios.json",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """Save derived scenarios as JSON."""
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
     return filepath
@@ -325,10 +366,11 @@ def save_scenarios_markdown(
     filename: str = "scenarios.md",
     *,
     output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
 ) -> str:
     """Save derived scenarios as Markdown."""
     ensure_output_dir()
-    filepath = _resolve_output_path(filename, output_subdir)
+    filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(markdown)
     return filepath

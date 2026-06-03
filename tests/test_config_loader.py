@@ -16,7 +16,7 @@ def test_load_simulation_config():
     config = load_simulation_config()
     assert isinstance(config, SimulationConfig)
     assert config.clock.max_rounds >= 1
-    assert config.clock.years_per_round >= 1
+    assert config.clock.tick_unit == "tick"
     assert config.name != ""
 
 
