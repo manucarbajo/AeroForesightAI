@@ -19,11 +19,11 @@ langgraph dev
 
 ## Konfiguration
 
-Erstelle `langgraph_studio/.env` (nicht committen):
-
+Minimale `.env` für Ollama:
 ```
 LANGCHAIN_TRACING_V2=true
-LANGSMITH_API_KEY=
+LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
+LANGSMITH_API_KEY=YourKeyHere123456789
 OLLAMA_MODEL=llama3.2
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 ```
