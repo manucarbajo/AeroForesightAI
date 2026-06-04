@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from src.config_loader import (
     load_simulation_config,
+    load_simulation_clock,
     load_agents,
     load_factors,
     load_population_config,
@@ -15,9 +16,14 @@ from src.models.agent_models import AgentConfig
 def test_load_simulation_config():
     config = load_simulation_config()
     assert isinstance(config, SimulationConfig)
-    assert config.clock.max_rounds >= 1
-    assert config.clock.tick_unit == "tick"
     assert config.name != ""
+
+
+def test_load_simulation_clock():
+    clock = load_simulation_clock()
+    assert clock.max_ticks >= 1
+    assert clock.tick_unit == "tick"
+    assert clock.current_tick == 0
 
 
 def test_load_agents():
@@ -51,7 +57,7 @@ def test_load_population_config():
 def test_build_initial_state():
     state = build_initial_state()
     assert isinstance(state, SimulationState)
-    assert state.clock.current_round == 0
+    assert state.clock.current_tick == 0
     assert len(state.agents) > 0
     assert len(state.environment.factors) > 0
     assert state.event_log == []

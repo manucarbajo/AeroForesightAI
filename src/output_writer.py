@@ -150,11 +150,9 @@ def save_run_metadata(
         "base_url": args.base_url,
         "temperature": args.temperature,
         "max_tokens": args.max_tokens,
-        "ticks_completed": state.clock.current_round,
-        "ticks_max": state.clock.max_rounds,
+        "ticks_completed": state.clock.current_tick,
+        "ticks_max": state.clock.max_ticks,
         "tick_unit": state.clock.tick_unit,
-        "rounds_completed": state.clock.current_round,
-        "rounds_max": state.clock.max_rounds,
         "market_enabled": not args.no_market,
         "total_events": len(state.event_log),
         "total_round_results": len(state.round_results),
@@ -187,7 +185,7 @@ def save_segment_analysis(
         round_number = round_result.round_number
         if round_number not in rounds:
             rounds[round_number] = {
-                "round": round_number,
+                "tick": round_number,
                 "agents": {}
             }
         # Alle Agenten speichern
@@ -222,12 +220,8 @@ def save_final_narrative(
 
     lines = []
 
-    start_label = state.clock.tick_label_for_round(1) if state.clock.current_round >= 1 else "n/a"
-    end_label = (
-        state.clock.tick_label_for_round(state.clock.current_round)
-        if state.clock.current_round >= 1
-        else "n/a"
-    )
+    start_tick = 1 if state.clock.current_tick >= 1 else None
+    end_tick = state.clock.current_tick if state.clock.current_tick >= 1 else None
 
     # Titel
     lines.append(f"# Simulationsbericht: {state.config.name}")
@@ -235,8 +229,9 @@ def save_final_narrative(
 
     # Überblick
     lines.append("## Überblick")
-    lines.append(f"- **Simulierte Ticks:** {state.clock.current_round} / {state.clock.max_rounds}")
-    lines.append(f"- **Zeitraum:** {start_label} – {end_label}")
+    lines.append(f"- **Simulierte Ticks:** {state.clock.current_tick} / {state.clock.max_ticks}")
+    if start_tick is not None and end_tick is not None:
+        lines.append(f"- **Tick-Bereich:** Tick {start_tick} – Tick {end_tick}")
     lines.append(f"- **Gesamte Events:** {len(state.event_log)}")
     lines.append(f"- **Preis Start:** {state.price_history[0].price:.2f} €" if state.price_history else "- **Preis Start:** n/a")
     lines.append(f"- **Preis Ende:** {state.price_history[-1].price:.2f} €" if state.price_history else "- **Preis Ende:** n/a")
@@ -249,7 +244,7 @@ def save_final_narrative(
 
     for round_number in sorted(best_per_round.keys()):
         rr = best_per_round[round_number]
-        tick_label = state.clock.tick_label_for_round(round_number)
+        tick_label = state.clock.tick_label(round_number)
         lines.append(f"\n### {tick_label}")
 
         # Reasoning pro Agent

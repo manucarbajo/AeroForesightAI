@@ -47,12 +47,12 @@ class MockLLM:
 
 def main():
     state = build_initial_state()
-    state.clock.max_rounds = 1
+    state.clock.max_ticks = 1
     runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
     run_graph = runner._build_sequential_runner(state.agents)
     final = run_graph(state)
 
-    print("Current round:", final.clock.current_round)
+    print("Current tick:", final.clock.current_tick)
     print("Environment factors:")
     for fid, f in final.environment.factors.items():
         print(f" - {fid}: {f.current_state}")

@@ -21,9 +21,9 @@ class CheckpointMetadata:
     """Lightweight metadata stored alongside each checkpoint."""
 
     run_id: str
-    round_number: int
+    tick_number: int
     saved_at: str
-    checkpoint_version: int = 1
+    checkpoint_version: int = 2
 
 
 class CheckpointManager:
@@ -35,16 +35,17 @@ class CheckpointManager:
         self.last_saved_path: Path | None = None
 
     def save(self, state: SimulationState, *, run_id: str, round_number: int) -> Path:
-        """Save a checkpoint after a completed round and return the file path."""
+        """Save a checkpoint after a completed tick and return the file path."""
 
         run_dir = self.checkpoint_dir / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
 
-        checkpoint_path = run_dir / f"round_{round_number:04d}.json"
+        tick_number = round_number
+        checkpoint_path = run_dir / f"tick_{tick_number:04d}.json"
         payload = {
             "metadata": CheckpointMetadata(
                 run_id=run_id,
-                round_number=round_number,
+                tick_number=tick_number,
                 saved_at=datetime.now(UTC).isoformat(),
             ).__dict__,
             "state": state.model_dump(mode="json"),
@@ -72,7 +73,9 @@ class CheckpointManager:
         if not run_dir.exists():
             return None
 
-        checkpoints = sorted(run_dir.glob("round_*.json"))
+        checkpoints = sorted(run_dir.glob("tick_*.json"))
+        if not checkpoints:
+            checkpoints = sorted(run_dir.glob("round_*.json"))
         return checkpoints[-1] if checkpoints else None
 
     def list_checkpoints(self, run_id: str) -> list[Path]:
@@ -82,6 +85,9 @@ class CheckpointManager:
         if not run_dir.exists():
             return []
 
+        checkpoints = sorted(run_dir.glob("tick_*.json"))
+        if checkpoints:
+            return checkpoints
         return sorted(run_dir.glob("round_*.json"))
 
     def _resolve_reference(self, reference: str | Path) -> Path:

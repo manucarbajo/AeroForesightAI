@@ -15,11 +15,24 @@ from src.models.state_models import (
 CONFIGS_DIR = Path(__file__).parent.parent / "configs"
 
 
+def _read_simulation_config_file(path: Path) -> dict:
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def load_simulation_config(path: Path | None = None) -> SimulationConfig:
     path = path or CONFIGS_DIR / "simulation_config.json"
-    with open(path) as f:
-        data = json.load(f)
+    data = _read_simulation_config_file(path)
+    data.pop("clock", None)
     return SimulationConfig(**data)
+
+
+def load_simulation_clock(path: Path | None = None) -> SimulationClock:
+    """Load the simulation clock from config (single source for tick limits)."""
+
+    path = path or CONFIGS_DIR / "simulation_config.json"
+    data = _read_simulation_config_file(path)
+    return SimulationClock(**data.get("clock", {}))
 
 
 def load_agents(path: Path | None = None) -> list[AgentConfig]:
@@ -59,12 +72,13 @@ def build_initial_state(
     cib_path: Path | None = None,
     load_cib: bool = True,
 ) -> SimulationState:
-    config = load_simulation_config(config_path)
+    config_file = config_path or CONFIGS_DIR / "simulation_config.json"
+    config = load_simulation_config(config_file)
+    clock = load_simulation_clock(config_file)
     agents = load_agents(agents_path)
     factors = load_factors(factors_path)
 
     environment = EnvironmentState(factors=factors)
-    clock = SimulationClock(**config.clock.model_dump())
 
     cib_matrix = load_cib_frozen(cib_path) if load_cib else None
 

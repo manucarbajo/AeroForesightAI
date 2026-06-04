@@ -105,7 +105,7 @@ class EnvironmentNode:
         self.prefer_agent_order = prefer_agent_order or ["regulator", "provider", "consumer"]
 
     def invoke(self, state: SimulationState) -> SimulationState:
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
 
         responses = self._collect_round_responses(state, round_number)
         round_events = [event for event in state.event_log if event.round_number == round_number]
@@ -193,7 +193,7 @@ class EnvironmentNode:
                                 parameter_id=param_id,
                                 new_value=new_value,
                                 source_agent=response.agent_id,
-                                round_number=state.clock.current_round,
+                                round_number=state.clock.current_tick,
                                 reason=f"Agent override ({response.agent_id})",
                             )
                         except KeyError:
@@ -212,7 +212,7 @@ class EnvironmentNode:
     ) -> str:
         lines: list[str] = []
 
-        lines.append(f"Tick {state.clock.current_round}/{state.clock.max_rounds}")
+        lines.append(f"Tick {state.clock.current_tick}/{state.clock.max_ticks}")
 
         if getattr(state, "current_speech_order", None):
             lines.append("Speech order:")
@@ -273,7 +273,7 @@ class EnvironmentAgentNode:
         self.llm = llm
 
     def invoke(self, state: SimulationState) -> SimulationState:
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
 
         pop_config = self._extract_population_config(state)
         if pop_config is None:

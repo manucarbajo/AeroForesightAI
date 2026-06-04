@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from src.models.population_models import ScenarioParameter
 
@@ -54,16 +54,30 @@ class SpeechPlanState(BaseModel):
 class SimulationClock(BaseModel):
     """Discrete simulation clock. One tick is one tick.  No calendar mapping."""
 
-    current_round: int = 0
-    max_rounds: int = 40
+    current_tick: int = 0
+    max_ticks: int = 40
     tick_unit: str = "tick"
 
-    def tick_label_for_round(self, round_number: int) -> str:
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_legacy_fields(cls, data: Any) -> Any:
+        """Accept legacy ``current_round`` / ``max_rounds`` keys from older checkpoints."""
+
+        if not isinstance(data, dict):
+            return data
+        normalized = dict(data)
+        if "current_tick" not in normalized and "current_round" in normalized:
+            normalized["current_tick"] = normalized["current_round"]
+        if "max_ticks" not in normalized and "max_rounds" in normalized:
+            normalized["max_ticks"] = normalized["max_rounds"]
+        return normalized
+
+    def tick_label(self, tick: int) -> str:
         """Return the display label for a 1-based tick index."""
 
-        if round_number < 1:
-            raise ValueError("round_number must be >= 1")
-        return f"Tick {round_number}"
+        if tick < 1:
+            raise ValueError("tick must be >= 1")
+        return f"Tick {tick}"
 
 
 class LLMConfig(BaseModel):
@@ -75,7 +89,6 @@ class LLMConfig(BaseModel):
 class SimulationConfig(BaseModel):
     name: str
     description: str
-    clock: SimulationClock
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
     scenario_parameters: list[ScenarioParameter] = Field(default_factory=list)

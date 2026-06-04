@@ -52,7 +52,7 @@ class SimulationRunnerE2ETest(unittest.TestCase):
     def test_run_with_mock_agents_applies_factor_updates_and_runs(self) -> None:
         state = build_initial_state()
         # keep the run short for tests
-        state.clock.max_rounds = 1
+        state.clock.max_ticks = 1
 
         runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
 
@@ -61,7 +61,7 @@ class SimulationRunnerE2ETest(unittest.TestCase):
         final = run_graph(state)
 
         # Clock should have advanced to 1 (one round)
-        self.assertEqual(final.clock.current_round, 1)
+        self.assertEqual(final.clock.current_tick, 1)
 
         # Environment factors: F1 should have been proposed by consumer and applied,
         # F2 proposed by regulator and should be applied (regulator has priority)

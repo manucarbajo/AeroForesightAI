@@ -30,7 +30,7 @@ def _make_event(agent_id: str, event_type: EventType, affected_factors: list[str
 
 def test_environment_node_applies_valid_state_change():
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
 
     # Ersten Faktor und seinen alternativen Zustand holen
     factor_id = list(state.environment.factors.keys())[0]
@@ -58,7 +58,7 @@ def test_environment_node_applies_valid_state_change():
 
 def test_environment_node_ignores_invalid_state_change():
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
 
     factor_id = list(state.environment.factors.keys())[0]
     original_state = state.environment.factors[factor_id].current_state
@@ -84,7 +84,7 @@ def test_environment_node_ignores_invalid_state_change():
 
 def test_environment_node_writes_round_result():
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
 
     response = _make_response(agent_id="consumer")
     state.round_results.append(RoundResult(
@@ -105,7 +105,7 @@ def test_environment_node_writes_round_result():
 
 def test_environment_node_summary_contains_round_info():
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
 
     response = _make_response(agent_id="consumer")
     state.round_results.append(RoundResult(

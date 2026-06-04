@@ -28,26 +28,13 @@ class RunnerOptions:
 
 
 @dataclass(frozen=True)
-class SimulationQuarter:
-    """Representation of one simulated quarter."""
-
-    round_number: int
-    year: int
-    quarter: int
-
-    @property
-    def label(self) -> str:
-        return f"Q{self.quarter} {self.year}"
-
-
-@dataclass(frozen=True)
 class SingleRunResult:
     """Container with metadata for one completed simulation run."""
 
     run_id: str
     seed: int | None
     final_state: SimulationState
-    quarter_timeline: list[SimulationQuarter]
+    ticks_completed: int
     checkpoint_paths: list[Path]
 
 
@@ -69,56 +56,10 @@ class CheckpointStore(Protocol):
         """Restore a previously persisted simulation state."""
 
 
-def _timeline_from_round(round_number: int, start_year: int = 2026) -> SimulationQuarter:
-    """Convert a 1-based round number into a quarterly timestamp."""
-
-    if round_number < 1:
-        raise ValueError("round_number must be >= 1")
-
-    offset = round_number - 1
-    year = start_year + (offset // 4)
-    quarter = (offset % 4) + 1
-    return SimulationQuarter(round_number=round_number, year=year, quarter=quarter)
-
-
 class SimulationRunner:
     def __init__(self, llm: LLMCallable, options: RunnerOptions | None = None) -> None:
         self.llm = llm
         self.options = options or RunnerOptions()
-
-    @property
-    def timeline_start_year(self) -> int:
-        return 2026
-
-    @property
-    def timeline_end_year(self) -> int:
-        return 2035
-
-    @property
-    def timeline_end_quarter(self) -> int:
-        return 4
-
-    @property
-    def max_supported_rounds(self) -> int:
-        years = self.timeline_end_year - self.timeline_start_year
-        return (years * 4) + self.timeline_end_quarter
-
-    def quarter_for_round(self, round_number: int) -> SimulationQuarter:
-        """Return the deterministic quarter label for a 1-based round number."""
-
-        quarter = _timeline_from_round(round_number, start_year=self.timeline_start_year)
-        if quarter.year > self.timeline_end_year or (
-            quarter.year == self.timeline_end_year and quarter.quarter > self.timeline_end_quarter
-        ):
-            raise ValueError(
-                "round_number exceeds the configured Q1 2026 to Q4 2035 timeline"
-            )
-        return quarter
-
-    def timeline_for_rounds(self, total_rounds: int) -> list[SimulationQuarter]:
-        """Build the quarter timeline for the requested number of rounds."""
-
-        return [self.quarter_for_round(index) for index in range(1, total_rounds + 1)]
 
     def build_graph(self, agents: list[AgentConfig]) -> Callable[[SimulationState], SimulationState]:
         # LangGraph ist optional; wenn nicht vorhanden, liefern wir einen deterministischen Runner-Fallback.
@@ -159,7 +100,7 @@ class SimulationRunner:
 
         def _should_continue(payload: dict) -> str:
             state = SimulationState(**payload)
-            return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
+            return "orchestrator" if state.clock.current_tick < state.clock.max_ticks else END
 
         graph.add_conditional_edges("environment", _should_continue)
 
@@ -253,7 +194,7 @@ class SimulationRunner:
                     latest_fn = getattr(checkpoint_store, "latest_checkpoint", None)
                     latest = latest_fn(run_id) if callable(latest_fn) else None
                     if not existing and latest is None:
-                        checkpoint_store.save(final_state, run_id=run_id, round_number=final_state.clock.current_round)
+                        checkpoint_store.save(final_state, run_id=run_id, round_number=final_state.clock.current_tick)
                 except Exception:
                     # Non-fatal: we do not want checkpoint write issues to stop
                     # the multi-run aggregation; they will be visible in logs.
@@ -263,7 +204,7 @@ class SimulationRunner:
                     run_id=run_id,
                     seed=run_seed,
                     final_state=final_state,
-                    quarter_timeline=self.timeline_for_rounds(final_state.clock.current_round),
+                    ticks_completed=final_state.clock.current_tick,
                     checkpoint_paths=self._checkpoint_paths_from_store(checkpoint_store, run_id),
                 )
             )
@@ -277,8 +218,7 @@ class SimulationRunner:
             return {
                 "run_count": 0,
                 "seeds": [],
-                "completed_rounds": [],
-                "final_quarters": [],
+                "ticks_completed": [],
                 "total_events": 0,
                 "total_round_results": 0,
             }
@@ -286,11 +226,7 @@ class SimulationRunner:
         return {
             "run_count": len(run_results),
             "seeds": [result.seed for result in run_results],
-            "completed_rounds": [result.final_state.clock.current_round for result in run_results],
-            "final_quarters": [
-                self.quarter_for_round(result.final_state.clock.current_round).label
-                for result in run_results
-            ],
+            "ticks_completed": [result.ticks_completed for result in run_results],
             "total_events": sum(len(result.final_state.event_log) for result in run_results),
             "total_round_results": sum(len(result.final_state.round_results) for result in run_results),
         }
@@ -376,10 +312,10 @@ class SimulationRunner:
 
         components = self._create_components(state.agents)
 
-        while state.clock.current_round < state.clock.max_rounds:
+        while state.clock.current_tick < state.clock.max_ticks:
             state = self._run_single_round(state, components)
             if checkpoint_store is not None:
-                checkpoint_store.save(state, run_id=run_id, round_number=state.clock.current_round)
+                checkpoint_store.save(state, run_id=run_id, round_number=state.clock.current_tick)
 
         return state
 
@@ -414,7 +350,7 @@ class SimulationRunner:
         components = self._create_components(agents)
 
         def _run(state: SimulationState) -> SimulationState:
-            while state.clock.current_round < state.clock.max_rounds:
+            while state.clock.current_tick < state.clock.max_ticks:
                 state = self._run_single_round(state, components)
             return state
 

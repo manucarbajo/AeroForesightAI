@@ -13,7 +13,7 @@ class MarketNode:
         self.base_price = base_price
 
     def invoke(self, state: SimulationState) -> SimulationState:
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
 
         recent_events = [e for e in state.event_log if e.round_number == round_number]
         #DEBUG

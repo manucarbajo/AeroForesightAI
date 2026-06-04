@@ -70,13 +70,13 @@ class AgentNode:
                 }, ensure_ascii=False)
 
         response, raw_event_entries = self._parse_response(
-            raw_output, state.clock.current_round, state=state
+            raw_output, state.clock.current_tick, state=state
         )
         events = self._create_event_entries(state, response, raw_event_entries)
 
         state.round_results.append(
             RoundResult(
-                round_number=state.clock.current_round,
+                round_number=state.clock.current_tick,
                 agent_responses=[response],
                 events=events,
                 environment_snapshot=state.environment,
@@ -106,7 +106,7 @@ class AgentNode:
                 "agent_id": self.config.id,
                 "agent_name": self.config.name,
                 "agent_description": self.config.description,
-                "round_number": state.clock.current_round,
+                "round_number": state.clock.current_tick,
                 "global_context": state.environment.global_context
                 or "Kein globaler Kontext gesetzt.",
                 "goals": goals,
@@ -188,7 +188,7 @@ class AgentNode:
             created.append(
                 EventLogEntry(
                     id=str(uuid4()),
-                    round_number=state.clock.current_round,
+                    round_number=state.clock.current_tick,
                     source_agent=self.config.id,
                     event_type=self._parse_event_type(raw_event.get("event_type")),
                     description=str(raw_event.get("description", "")).strip() or "Ohne Beschreibung",
@@ -288,7 +288,7 @@ class AgentNode:
 
     def _format_consumer_segment_analysis(self, state: SimulationState) -> str:
         # Provider/Regulator sollen (im MVP) die Consumer-segmentspezifische Analyse sehen.
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
         for rr in reversed(state.round_results):
             if rr.round_number != round_number:
                 continue

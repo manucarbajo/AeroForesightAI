@@ -6,7 +6,7 @@ from src.models.population_models import (
     PopulationConfig,
     ScenarioParameter,
 )
-from src.models.state_models import FactorState, SimulationConfig, SimulationState
+from src.models.state_models import FactorState, SimulationClock, SimulationConfig, SimulationState
 
 
 class ValidationError(Exception):
@@ -43,14 +43,20 @@ def validate_agent(agent: AgentConfig, factor_ids: set[str]) -> list[str]:
 def validate_config(config: SimulationConfig) -> list[str]:
     errors = []
 
-    if config.clock.max_rounds < 1:
-        errors.append("max_rounds muss mindestens 1 sein")
-
-    if config.clock.years_per_round < 1:
-        errors.append("years_per_round muss mindestens 1 sein")
-
     for param in config.scenario_parameters:
         errors.extend(validate_scenario_parameter(param))
+
+    return errors
+
+
+def validate_clock(clock: SimulationClock) -> list[str]:
+    errors = []
+
+    if clock.max_ticks < 1:
+        errors.append("max_ticks muss mindestens 1 sein")
+
+    if clock.tick_unit != "tick":
+        errors.append("tick_unit muss 'tick' sein")
 
     return errors
 
@@ -137,6 +143,7 @@ def validate_state(state: SimulationState) -> list[str]:
     errors = []
 
     errors.extend(validate_config(state.config))
+    errors.extend(validate_clock(state.clock))
 
     factor_ids = set(state.environment.factors.keys())
     for factor in state.environment.factors.values():

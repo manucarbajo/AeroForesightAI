@@ -212,7 +212,7 @@ class AgentNodeTests(unittest.TestCase):
         # Falscher, aber sinnvoller AP3-ähnlicher Zustand: Consumer hat im gleichen Round segment_analysis erzeugt.
         consumer_response = AgentResponse(
             agent_id="consumer",
-            round_number=state.clock.current_round,
+            round_number=state.clock.current_tick,
             reasoning="Consumer-Analyse",
             actions=["dummy"],
             state_changes=[],
@@ -221,7 +221,7 @@ class AgentNodeTests(unittest.TestCase):
         )
         state.round_results.append(
             RoundResult(
-                round_number=state.clock.current_round,
+                round_number=state.clock.current_tick,
                 agent_responses=[consumer_response],
                 events=[],
                 environment_snapshot=state.environment,

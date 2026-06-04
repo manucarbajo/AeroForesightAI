@@ -250,8 +250,8 @@ def _write_multi_run_summary(
             {
                 "run_id": run_result.run_id,
                 "seed": run_result.seed,
-                "rounds": run_result.final_state.clock.current_round,
-                "quarter_timeline": [quarter.label for quarter in run_result.quarter_timeline],
+                "ticks_completed": run_result.ticks_completed,
+                "tick_timeline": list(range(1, run_result.ticks_completed + 1)),
                 "checkpoint_paths": [str(path) for path in run_result.checkpoint_paths],
                 "artifacts": artifacts,
             }
@@ -355,14 +355,14 @@ def main() -> int:
             print(f"Output directory: {run_dir}")
             print("Saved: " + ", ".join([path for path in artifacts.values() if isinstance(path, str) and path]))
             print(
-                f"\nDone. ticks={final_state.clock.current_round}, events={len(final_state.event_log)}, "
+                f"\nDone. ticks={final_state.clock.current_tick}, events={len(final_state.event_log)}, "
                 f"round_results={len(final_state.round_results)}, price_history={len(final_state.price_history)}"
             )
         return 0
 
     base_state = build_initial_state()
     if args.rounds is not None:
-        base_state.clock.max_rounds = int(args.rounds)
+        base_state.clock.max_ticks = int(args.rounds)
     if args.seed is not None:
         base_state.config.seed = int(args.seed)
 
@@ -372,7 +372,7 @@ def main() -> int:
 
         if not args.quiet:
             print(
-                f"Simulation start: ticks={base_state.clock.max_rounds}, model={args.model}, "
+                f"Simulation start: ticks={base_state.clock.max_ticks}, model={args.model}, "
                 f"market={'off' if args.no_market else 'on'}, run_id={run_id}"
             )
 
@@ -393,7 +393,7 @@ def main() -> int:
             print(f"Output directory: {run_dir}")
             print("Saved: " + ", ".join([path for path in artifacts.values() if isinstance(path, str) and path]))
             print(
-                f"\nDone. ticks={final_state.clock.current_round}, events={len(final_state.event_log)}, "
+                f"\nDone. ticks={final_state.clock.current_tick}, events={len(final_state.event_log)}, "
                 f"round_results={len(final_state.round_results)}, price_history={len(final_state.price_history)}"
             )
         return 0
@@ -407,12 +407,12 @@ def main() -> int:
 
     if not args.quiet:
         print(
-            f"Simulation start: runs={args.runs}, ticks={base_state.clock.max_rounds}, model={args.model}, "
+            f"Simulation start: runs={args.runs}, ticks={base_state.clock.max_ticks}, model={args.model}, "
             f"market={'off' if args.no_market else 'on'}, batch_id={batch_id}"
         )
 
     if not args.quiet:
-        print(f"Starting multi-run: runs={args.runs}, ticks={base_state.clock.max_rounds}")
+        print(f"Starting multi-run: runs={args.runs}, ticks={base_state.clock.max_ticks}")
 
     multi_result = runner.run_multi(
         args.runs,
@@ -443,7 +443,7 @@ def main() -> int:
                     checkpoint_manager.save(
                         run_result.final_state,
                         run_id=run_result.run_id,
-                        round_number=run_result.final_state.clock.current_round,
+                        round_number=run_result.final_state.clock.current_tick,
                     )
             except Exception as exc:
                 print(f"Warning: failed to ensure checkpoint for {run_result.run_id}: {exc}")

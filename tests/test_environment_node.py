@@ -51,9 +51,9 @@ def sample_state(sample_population_config: PopulationConfig) -> SimulationState:
     config = SimulationConfig(
         name="Test",
         description="Test simulation",
-        clock=SimulationClock(current_round=1, max_rounds=10),
         llm=LLMConfig(),
     )
+    clock = SimulationClock(current_tick=1, max_ticks=10)
 
     environment = EnvironmentState(
         factors={
@@ -79,7 +79,7 @@ def sample_state(sample_population_config: PopulationConfig) -> SimulationState:
 
     state = SimulationState(
         config=config,
-        clock=config.clock,
+        clock=clock,
         environment=environment,
         agents=[consumer_agent],
         cib_matrix=None,

@@ -258,7 +258,7 @@ class TestCIBExtractorHeuristic:
 
     def test_invoke_without_llm(self):
         state = build_initial_state(load_cib=False)
-        state.clock.current_round = 1
+        state.clock.current_tick = 1
         extractor = CIBExtractorNode(llm=None)
         result = extractor.invoke(state)
         # No events = empty CIB
@@ -282,7 +282,7 @@ class TestCIBExtractorLLM:
         llm = self._make_mock_llm(mock_response)
 
         state = build_initial_state(load_cib=False)
-        state.clock.current_round = 1
+        state.clock.current_tick = 1
         extractor = CIBExtractorNode(llm=llm)
         result = extractor.invoke(state)
 
@@ -295,7 +295,7 @@ class TestCIBExtractorLLM:
         llm = self._make_mock_llm("This is not valid JSON at all")
 
         state = build_initial_state(load_cib=False)
-        state.clock.current_round = 1
+        state.clock.current_tick = 1
         extractor = CIBExtractorNode(llm=llm)
         result = extractor.invoke(state)
 
@@ -324,7 +324,7 @@ class TestCIBExtractorLLM:
         mock.call.side_effect = side_effect
 
         state = build_initial_state(load_cib=False)
-        state.clock.current_round = 1
+        state.clock.current_tick = 1
         extractor = CIBExtractorNode(llm=mock)
 
         # Round 1
@@ -333,7 +333,7 @@ class TestCIBExtractorLLM:
         assert r1_value == 3  # no constraint on round 1
 
         # Round 2
-        state.clock.current_round = 2
+        state.clock.current_tick = 2
         state = extractor.invoke(state)
         r2_value = state.cib_matrix.get_influence("F1.1", "F2.1")
         # delta from 3 to -3 = -6, clamped to -1, so 3 + (-1) = 2

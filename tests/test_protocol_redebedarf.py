@@ -48,7 +48,7 @@ def _append_contribution(
 
 def test_protocol_uses_stored_redebedarf_scores():
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
     _append_contribution(state, round_number=1, agent_id="consumer", factor_id="F1", redebedarf_score=3)
 
     payload = build_protocol_payload(state)
@@ -60,7 +60,7 @@ def test_protocol_uses_stored_redebedarf_scores():
 
 def test_protocol_replays_redebedarf_when_missing():
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
     _append_contribution(state, round_number=1, agent_id="consumer", factor_id="F1")
     _append_contribution(state, round_number=1, agent_id="provider", factor_id="F4")
 

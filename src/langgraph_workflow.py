@@ -126,7 +126,7 @@ def build_playground_stategraph(
 
     def _route_after_environment(payload: Any) -> str:
         state = to_state(payload)
-        return "reset_round_buffer" if state.clock.current_round < state.clock.max_rounds else "scenario_agent"
+        return "reset_round_buffer" if state.clock.current_tick < state.clock.max_ticks else "scenario_agent"
 
     workflow.add_conditional_edges(
         "environment",
