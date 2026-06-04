@@ -52,49 +52,18 @@ class SpeechPlanState(BaseModel):
 
 
 class SimulationClock(BaseModel):
+    """Discrete simulation clock. One tick is one tick.  No calendar mapping."""
+
     current_round: int = 0
     max_rounds: int = 40
-    year_start: int = 2026
-    years_per_round: int = 1
-    tick_unit: str = "quarter"
-    timeline_start_year: int = 2026
-    timeline_start_quarter: int = 1
-    timeline_end_year: int = 2035
-    timeline_end_quarter: int = 4
+    tick_unit: str = "tick"
 
-    def quarter_for_round(self, round_number: int) -> tuple[int, int]:
-        """Return the quarter/year tuple for a 1-based round number."""
+    def tick_label_for_round(self, round_number: int) -> str:
+        """Return the display label for a 1-based tick index."""
 
         if round_number < 1:
             raise ValueError("round_number must be >= 1")
-
-        offset = round_number - 1
-        year = self.timeline_start_year + (offset // 4)
-        quarter = self.timeline_start_quarter + (offset % 4)
-        if quarter > 4:
-            year += 1
-            quarter -= 4
-        return year, quarter
-
-    def quarter_label_for_round(self, round_number: int) -> str:
-        """Return the human readable quarter label for a 1-based round number."""
-
-        year, quarter = self.quarter_for_round(round_number)
-        return f"Q{quarter} {year}"
-
-    def tick_label_for_round(self, round_number: int) -> str:
-        """Return the display label for a 1-based tick (or quarter when configured)."""
-
-        if self.tick_unit == "tick":
-            return f"Tick {round_number}"
-        return self.quarter_label_for_round(round_number)
-
-    @property
-    def total_quarters(self) -> int:
-        """Total number of supported quarterly ticks in the configured timeline."""
-
-        year_span = self.timeline_end_year - self.timeline_start_year
-        return (year_span * 4) + (self.timeline_end_quarter - self.timeline_start_quarter) + 1
+        return f"Tick {round_number}"
 
 
 class LLMConfig(BaseModel):
@@ -169,7 +138,7 @@ class SimulationState(BaseModel):
 class InputState(BaseModel):
     """Studio-facing input defaults for AP3 runs."""
 
-    max_rounds: int = Field(default=40, description="Maximale Anzahl an Quartalen/Runden")
+    max_rounds: int = Field(default=40, description="Maximale Anzahl an Ticks")
     rounds: int = Field(default=4, description="Alias für max_rounds")
     seed: int | None = Field(default=None, description="Seed für Multi-Run")
     llm_model: str = Field(default="llama3.2", description="LLM-Modellname")
