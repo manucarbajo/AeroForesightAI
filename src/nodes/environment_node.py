@@ -129,6 +129,44 @@ class EnvironmentNode:
         # Population Update
         pop_node = EnvironmentAgentNode(llm=self.llm)
         state = pop_node.invoke(state)
+        
+        # M3 Population Sampling
+        consumer_agent = next((a for a in state.agents if a.id == "consumer"), None)
+        if consumer_agent and consumer_agent.population_config:
+            from src.population_sampler import run_population_sampling
+            
+            # Fetch ticket price from history
+            current_ticket_price = 100.0
+            if state.price_history and state.price_history[-1].round_number == round_number:
+                current_ticket_price = state.price_history[-1].price
+            elif len(state.price_history) > 1:
+                current_ticket_price = state.price_history[-2].price
+                
+            carbon_tax = state.market_metrics.get("carbon_tax_level", 0.0)
+            
+            pop_stats = run_population_sampling(
+                config=consumer_agent.population_config, 
+                ticket_price=current_ticket_price, 
+                carbon_tax=carbon_tax
+            )
+            
+            # Override deterministic demand_level with sampled actual demand
+            state.market_metrics["demand_level"] = pop_stats.total_demand
+            if state.price_history and state.price_history[-1].round_number == round_number:
+                state.price_history[-1].demand_level = pop_stats.total_demand
+            
+            # Save stats
+            if not hasattr(state, "population_stats"):
+                state.population_stats = []
+            state.population_stats.append({
+                "round_number": round_number,
+                "total_demand": pop_stats.total_demand,
+                "total_booked": pop_stats.total_booked,
+                "total_population": pop_stats.total_population,
+                "segments": {
+                    k: v.model_dump() for k, v in pop_stats.segments.items()
+                }
+            })
 
         summary = self._build_round_summary(state, responses, round_events, applied_changes)
 

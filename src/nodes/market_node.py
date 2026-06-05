@@ -25,19 +25,12 @@ class MarketNode:
         state.market_metrics = metrics
 
         last_price = state.price_history[-1].price if state.price_history else self.base_price
-        last_demand = state.price_history[-1].demand_level if state.price_history else 1.0
 
         price = derive_ticket_price(
             round_number,
             schedule,
             previous_price=last_price,
-            base_price=self.base_price,
-            previous_metrics=previous_metrics or None,
-        )
-        demand_level = derive_demand_level(
-            round_number,
-            schedule,
-            previous_level=last_demand,
+            previous_metrics=state.market_metrics or None,
         )
 
         state.price_history.append(
@@ -45,7 +38,7 @@ class MarketNode:
                 round_number=round_number,
                 agent_id="market",
                 price=price,
-                demand_level=demand_level,
+                demand_level=0.0,  # Will be updated by EnvironmentNode
                 load_factor=0.0,
             )
         )
@@ -58,7 +51,6 @@ class MarketNode:
                 event_type=EventType.MARKET_EVENT,
                 description=(
                     f"Market update (deterministic): price={price:.2f}, "
-                    f"demand_level={demand_level:.2f}, "
                     f"oil_index={metrics['oil_price_index']:.2f}, "
                     f"carbon_tax={metrics['carbon_tax_level']:.2f}"
                 ),

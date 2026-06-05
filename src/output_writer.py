@@ -258,11 +258,29 @@ def save_final_narrative(
             for e in rr.events:
                 lines.append(f"- {e.source_agent}: {e.description}")
 
+        # Population Stats der Runde
+        if hasattr(state, "population_stats") and state.population_stats:
+            stats_for_round = next((s for s in state.population_stats if s.get("round_number") == round_number), None)
+            if stats_for_round:
+                lines.append(f"\n**Populations-Statistik:**")
+                lines.append(f"- **Total Demand:** {stats_for_round['total_demand']:.1%} ({stats_for_round['total_booked']} von {stats_for_round['total_population']} gebucht)")
+                for seg_id, seg_data in stats_for_round["segments"].items():
+                    lines.append(f"  - {seg_id}: {seg_data['booked_individuals']}/{seg_data['total_individuals']} (Rate: {seg_data['booking_rate']:.1%})")
+
     # Finaler Umweltzustand
     lines.append("\n## Finaler Umweltzustand")
     for factor_id, factor in state.environment.factors.items():
         state_label = factor.possible_states.get(factor.current_state, factor.current_state)
         lines.append(f"- **{factor.name}:** {factor.current_state} – {state_label}")
+
+    # Population Stats
+    if hasattr(state, "population_stats") and state.population_stats:
+        last_stats = state.population_stats[-1]
+        lines.append("\n## Populations-Statistik (Aktueller Stand)")
+        lines.append(f"- **Total Demand:** {last_stats['total_demand']:.1%} ({last_stats['total_booked']} von {last_stats['total_population']} gebucht)")
+        lines.append("- **Segment-Details:**")
+        for seg_id, seg_data in last_stats["segments"].items():
+            lines.append(f"  - **{seg_id}** (Anteil: {seg_data['share']:.1%}): {seg_data['booked_individuals']} gebucht / {seg_data['total_individuals']} gesamt (Rate: {seg_data['booking_rate']:.1%})")
 
     with open(filepath, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))

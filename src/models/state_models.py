@@ -174,7 +174,7 @@ class SimulationState(BaseModel):
     cib_matrix: CIBMatrix | None = None
     cib_history: CIBMatrixHistory | None = None
     market_metrics: dict[str, float] = Field(default_factory=dict)
-
+    population_stats: list[dict[str, Any]] = Field(default_factory=list)
 
 class InputState(BaseModel):
     """Studio-facing input defaults for AP3 runs."""
