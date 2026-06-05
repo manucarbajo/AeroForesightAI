@@ -102,7 +102,7 @@ Technology-Lab/
 
 ## Zeitmodell
 
-Ein **Tick ist ein Tick**, keine Kalenderzuordnung (keine Quartale/Jahre in Config, Checkpoints oder Summaries). Intern heißt das Feld weiterhin `current_round` (1-basierter Tick-Index); in Outputs und Doku wird neutral „Tick N“ verwendet.
+Ein **Tick ist ein Tick**, keine Kalenderzuordnung (keine Quartale/Jahre in Config, Checkpoints oder Summaries). Intern heißt das Feld weiterhin `current_tick` (1-basierter Tick-Index); in Outputs und Doku wird neutral „Tick N“ verwendet.
 
 ## Meilensteine
 
