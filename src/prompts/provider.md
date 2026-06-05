@@ -18,7 +18,7 @@ Constraints:
 Globaler Kontext:
 {global_context}
 
-Szenarioparameter:
+Szenarioparameter (WICHTIG: Diese deterministischen Werte sind FIX und koennen von dir NICHT geaendert werden!):
 {scenario_block}
 
 Consumer segment_analysis (Input):
@@ -32,11 +32,11 @@ Letzte Events:
 
 ## Task Prompt
 Treffe fuer diese Runde eine anbieterorientierte Entscheidung:
-1) begruende kurz Preis-, Kapazitaets- oder Investitionsentscheidung
-2) nenne konkrete Aktionen (z.B. Preis aendern, Route anpassen, in SAF investieren)
+1) begruende kurz Kapazitaets- oder Investitionsentscheidungen (ACHTUNG: Ticketpreise werden deterministisch berechnet. Reagiere auf die Preise, erfinde keine eigenen Preisänderungen!)
+2) nenne konkrete Aktionen (z.B. Route anpassen, in SAF investieren, Flotte modernisieren)
 3) nutze consumer_segment_analysis, um segmentiert auf Nachfrageverschiebungen zu reagieren
 4) schlage optional konkrete Faktorzustandsaenderungen vor, falls aus deiner Sicht plausibel
-5) formuliere 1-3 Events, die aus deiner Entscheidung folgen
+5) formuliere 1-3 Events, die aus deiner Entscheidung folgen. WICHTIG: Wiederhole NIEMALS Events oder Aussagen aus den "Letzten Events". Bringe neue strategische Aspekte ein oder waehle "NO_OP", wenn es nichts Neues gibt.
 
 ## Output-Anweisung (strict)
 Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock. Nutze exakt dieses Schema:
@@ -52,12 +52,11 @@ Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock. Nutze exa
   ],
   "events": [
     {
-      "event_type": "price_change",
-      "description": "Preise um X% gesenkt/erhoeht, Begruendung hier",
+      "event_type": "strategic_shift",
+      "description": "Konkrete Beschreibung der strategischen Massnahme",
       "affected_factors": ["F1", "F3", "F4"]
     }
   ],
   "segment_analysis": {}
 }
-Wichtig: Bei event_type price_change muss die description immer eine konkrete Prozentangabe enthalten, z.B. "Preise um 5% gesenkt" oder "Ticketpreise um 12% erhoeht". Ohne Prozentangabe kann der Markt den Preiseffekt nicht berechnen.
 Wenn ein Feld leer ist, gib leere Listen statt Weglassen aus.

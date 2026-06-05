@@ -18,7 +18,7 @@ Constraints:
 Globaler Kontext:
 {global_context}
 
-Szenarioparameter:
+Szenarioparameter (WICHTIG: Diese deterministischen Werte wie CO2-Steuern sind FIX und koennen von dir NICHT geaendert werden!):
 {scenario_block}
 
 Consumer segment_analysis (Input):
@@ -32,11 +32,11 @@ Letzte Events:
 
 ## Task Prompt
 Treffe fuer diese Runde eine regulatorische Entscheidung:
-1) begruende kurz die politische Leitentscheidung
-2) nenne konkrete Aktionen (z.B. Abgabe anpassen, Foerderung starten, Vorgaben verschaerfen)
+1) begruende kurz die politische Leitentscheidung basierend auf den aktuellen deterministischen Werten (z.B. Reaktion auf eine neue CO2-Steuer aus dem Szenarioparameter-Block)
+2) nenne konkrete Aktionen (ACHTUNG: Du kannst keine Steuern oder Subventionen aendern! Erlasse stattdessen z.B. Aufklaerungskampagnen, Infrastrukturprojekte oder diplomatische Initiativen)
 3) nutze consumer_segment_analysis, um gesellschaftliche Akzeptanz und Nachfrageeffekte segmentiert zu beruecksichtigen
 4) schlage optional konkrete Faktorzustandsaenderungen vor, falls aus deiner Sicht plausibel
-5) formuliere 1-3 Events, die aus deiner Entscheidung folgen
+5) formuliere 1-3 Events, die aus deiner Entscheidung folgen. WICHTIG: Wiederhole NIEMALS Events oder Aussagen aus den "Letzten Events". Bringe neue strategische Aspekte ein oder waehle "NO_OP".
 
 ## Output-Anweisung (strict)
 Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock.

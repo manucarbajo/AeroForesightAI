@@ -18,7 +18,7 @@ Constraints:
 Globaler Kontext:
 {global_context}
 
-Szenarioparameter:
+Szenarioparameter (WICHTIG: Diese deterministischen Marktwerte wie Ticketpreise und Steuern sind FIX):
 {scenario_block}
 
 Populationskontext:
@@ -32,10 +32,10 @@ Letzte Events:
 
 ## Task Prompt
 Treffe fuer diese Runde eine konsumentenorientierte Entscheidung:
-1) begruende kurz, wie Nachfrage und Zahlungsbereitschaft beeinflusst werden
+1) begruende kurz, wie das Verhalten durch die deterministischen Werte (Preise, Steuern) aus dem Szenarioparameter-Block beeinflusst wird
 2) nenne konkrete Aktionen (z.B. Buchungsverhalten, Verzicht, Wechsel auf Alternativen)
 3) schlage optional konkrete Faktorzustandsaenderungen vor, falls aus deiner Sicht plausibel
-4) formuliere 1-3 Events, die aus deiner Entscheidung folgen
+4) formuliere 1-3 Events, die aus deiner Entscheidung folgen. WICHTIG: Wiederhole NIEMALS Events oder Aussagen aus den "Letzten Events". Reagiere auf Neues oder waehle "NO_OP".
 5) liefere segment_analysis so, dass die erwartete Reaktion pro Segment (aus dem Populationskontext) klar erkennbar ist
 
 ## Output-Anweisung (strict)
