@@ -13,6 +13,7 @@ from src.models.cib_models import CIBMatrix
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.population_models import PopulationConfig
 from src.models.state_models import SimulationState
+from src.simulation_functions import compute_market_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -101,8 +102,9 @@ Format JSON:
 
 
 class EnvironmentNode:
-    def __init__(self, prefer_agent_order: list[str] | None = None) -> None:
+    def __init__(self, prefer_agent_order: list[str] | None = None, llm: LLMCallable | None = None) -> None:
         self.prefer_agent_order = prefer_agent_order or ["regulator", "provider", "consumer"]
+        self.llm = llm
 
     def invoke(self, state: SimulationState) -> SimulationState:
         round_number = state.clock.current_tick
@@ -111,6 +113,23 @@ class EnvironmentNode:
         round_events = [event for event in state.event_log if event.round_number == round_number]
 
         applied_changes = self._apply_state_changes(state, responses)
+        
+        # Only compute market metrics if MarketNode has not already computed them for this round
+        market_already_computed = False
+        if state.price_history and state.price_history[-1].round_number == round_number:
+            market_already_computed = True
+            
+        if not market_already_computed:
+            state.market_metrics = compute_market_metrics(
+                round_number,
+                state.config.policy_schedule,
+                previous_metrics=state.market_metrics or None,
+            )
+            
+        # Population Update
+        pop_node = EnvironmentAgentNode(llm=self.llm)
+        state = pop_node.invoke(state)
+
         summary = self._build_round_summary(state, responses, round_events, applied_changes)
 
         state.environment.global_context = summary
@@ -168,39 +187,6 @@ class EnvironmentNode:
             state.environment.factors[factor_id].current_state = change.proposed_state
             applied[factor_id] = change.proposed_state
 
-        for response in responses:
-            for action in response.actions:
-                if not isinstance(action, str):
-                    continue
-                act = action.strip()
-                if not act:
-                    continue
-                low = act.lower()
-                if low.startswith("update_scenario_parameter:") or low.startswith("set_param:"):
-                    try:
-                        _, tail = act.split(":", 1)
-                        key, val = tail.split("=", 1)
-                        param_id = key.strip()
-                        new_value_raw = val.strip()
-                        if not param_id or not new_value_raw:
-                            continue
-                        try:
-                            new_value = float(new_value_raw)
-                        except Exception:
-                            continue
-                        try:
-                            state.config.update_scenario_parameter(
-                                parameter_id=param_id,
-                                new_value=new_value,
-                                source_agent=response.agent_id,
-                                round_number=state.clock.current_tick,
-                                reason=f"Agent override ({response.agent_id})",
-                            )
-                        except KeyError:
-                            continue
-                    except Exception:
-                        continue
-
         return applied
 
     def _build_round_summary(
@@ -236,6 +222,11 @@ class EnvironmentNode:
         else:
             lines.append("Applied factor updates: -")
 
+        if state.market_metrics:
+            lines.append("Market metrics (deterministic):")
+            for metric_id in sorted(state.market_metrics.keys()):
+                lines.append(f"- {metric_id}={state.market_metrics[metric_id]}")
+
         if events:
             lines.append("Events:")
             for event in events:
@@ -245,6 +236,14 @@ class EnvironmentNode:
                 )
         else:
             lines.append("Events: -")
+
+        if hasattr(state, "_population_updates") and state._population_updates:
+            last_update = state._population_updates[-1]
+            if last_update.round_number == state.clock.current_tick and last_update.shifts:
+                lines.append("Population shifts:")
+                for shift in last_update.shifts:
+                    lines.append(f"- {shift.segment_id}: {shift.old_share:.3f} -> {shift.new_share:.3f} ({shift.shift_amount:+.3f})")
+                lines.append(f"  Reasoning: {last_update.total_reasoning}")
 
         segment_analysis = self._collect_segment_analysis(responses)
         if segment_analysis:
@@ -392,6 +391,12 @@ class EnvironmentAgentNode:
             segment = next((item for item in pop_config.segments if item.id == shift.segment_id), None)
             if segment is not None:
                 segment.share = shift.new_share
+
+        # Normalize to ensure sum is 1.0 to pass validation
+        total_share = sum(seg.share for seg in pop_config.segments)
+        if total_share > 0 and abs(total_share - 1.0) > 1e-6:
+            for seg in pop_config.segments:
+                seg.share = seg.share / total_share
 
         if not hasattr(state, "_population_updates"):
             state._population_updates = []  # type: ignore[attr-defined]

@@ -50,7 +50,10 @@ def build_playground_stategraph(
     orchestrator = OrchestratorNode(agents)
     scheduler_node = SchedulerNode()
     market_node = MarketNode()
-    environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
+    environment_node = EnvironmentNode(
+        prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
+        llm=llm,
+    )
     scenario_node = ScenarioAgentNode(llm=llm)
 
     by_type = {agent.agent_type: agent for agent in agents}

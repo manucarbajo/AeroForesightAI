@@ -71,7 +71,10 @@ class SimulationRunner:
         orchestrator = OrchestratorNode(agents)
         round_execution = RoundExecutionNode(agents, llm=self.llm)
         market_node = MarketNode()
-        environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
+        environment_node = EnvironmentNode(
+            prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
+            llm=self.llm,
+        )
 
         # LangGraph arbeitet intern mit dict-State; wir halten die Public-API als SimulationState.
         def _wrap(node_fn: Callable[[SimulationState], SimulationState]) -> Callable[[dict], dict]:
@@ -328,7 +331,10 @@ class SimulationRunner:
         orchestrator = OrchestratorNode(agents)
         round_execution = RoundExecutionNode(agents, llm=self.llm)
         market_node = MarketNode()
-        environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
+        environment_node = EnvironmentNode(
+            prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
+            llm=self.llm,
+        )
         return orchestrator, round_execution, market_node, environment_node
 
     def _run_single_round(
