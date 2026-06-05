@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import re
 from uuid import uuid4
 
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
 from src.models.enums import EventType
 from src.models.state_models import SimulationState
+from src.simulation_functions import compute_market_metrics, derive_demand_level, derive_ticket_price
 
 
 class MarketNode:
@@ -14,15 +14,31 @@ class MarketNode:
 
     def invoke(self, state: SimulationState) -> SimulationState:
         round_number = state.clock.current_tick
+        schedule = state.config.policy_schedule
 
-        recent_events = [e for e in state.event_log if e.round_number == round_number]
-        #DEBUG
-        #print(f"DEBUG MarketNode: {len(recent_events)} events in round {round_number}")
-        #for e in recent_events:
-        #    print(f"  - agent={e.source_agent}, type={e.event_type}, desc={e.description[:60]}")
+        previous_metrics = dict(state.market_metrics)
+        metrics = compute_market_metrics(
+            round_number,
+            schedule,
+            previous_metrics=previous_metrics or None,
+        )
+        state.market_metrics = metrics
 
-        price = self._derive_price(state, recent_events)
-        demand_level = self._derive_demand_level(state, recent_events)
+        last_price = state.price_history[-1].price if state.price_history else self.base_price
+        last_demand = state.price_history[-1].demand_level if state.price_history else 1.0
+
+        price = derive_ticket_price(
+            round_number,
+            schedule,
+            previous_price=last_price,
+            base_price=self.base_price,
+            previous_metrics=previous_metrics or None,
+        )
+        demand_level = derive_demand_level(
+            round_number,
+            schedule,
+            previous_level=last_demand,
+        )
 
         state.price_history.append(
             PriceHistoryEntry(
@@ -40,54 +56,15 @@ class MarketNode:
                 round_number=round_number,
                 source_agent="market",
                 event_type=EventType.MARKET_EVENT,
-                description=f"Market update: price={price:.2f}, demand_level={demand_level:.2f}",
+                description=(
+                    f"Market update (deterministic): price={price:.2f}, "
+                    f"demand_level={demand_level:.2f}, "
+                    f"oil_index={metrics['oil_price_index']:.2f}, "
+                    f"carbon_tax={metrics['carbon_tax_level']:.2f}"
+                ),
                 affected_factors=[],
                 timestamp="",
             )
         )
 
         return state
-
-    def _derive_price(self, state: SimulationState, events: list[EventLogEntry]) -> float:
-        last_price = state.price_history[-1].price if state.price_history else self.base_price
-
-        # MVP-Heuristik: suche pro Runde nach einer Prozentangabe in Provider-PRICE_CHANGE-Events.
-        pct = 0.0
-        for e in events:
-            if e.source_agent != "provider":
-                continue
-            if e.event_type != EventType.PRICE_CHANGE:
-                continue
-            #DEBUG
-            extracted = self._extract_percent(e.description)
-            #print(f"DEBUG _derive_price: desc='{e.description[:80]}' extracted={extracted}")
-            pct = self._extract_percent(e.description) or pct
-        new_price = max(1.0, last_price * (1.0 + pct / 100.0))
-        #print(f"DEBUG _derive_price: last_price={last_price}, pct={pct}, new_price={new_price}")
-        return new_price
-        #return max(1.0, last_price * (1.0 + pct / 100.0))
-
-    def _derive_demand_level(self, state: SimulationState, events: list[EventLogEntry]) -> float:
-        # MVP: baseline=1.0, Consumer-DEMAND_SHIFT kann +/- durch Text-Hinweis beeinflussen.
-        level = 1.0
-        for e in events:
-            if e.source_agent != "consumer":
-                continue
-            if e.event_type != EventType.DEMAND_SHIFT:
-                continue
-            text = e.description.lower()
-            if "reduz" in text or "sink" in text or "rueck" in text or "rück" in text:
-                level -= 0.05
-            if "steiger" in text or "wachst" in text:
-                level += 0.05
-        return max(0.0, min(2.0, level))
-
-    def _extract_percent(self, text: str) -> float | None:
-        match = re.search(r"(-?\d+(?:\.\d+)?)\s*%", text)
-        if not match:
-            return None
-        try:
-            return float(match.group(1))
-        except ValueError:
-            return None
-

@@ -185,12 +185,16 @@ class AgentNode:
 
         created: list[EventLogEntry] = []
         for raw_event in raw_event_entries:
+            event_type = self._parse_event_type(raw_event.get("event_type"))
+            if event_type == EventType.MARKET_EVENT:
+                continue
+
             created.append(
                 EventLogEntry(
                     id=str(uuid4()),
                     round_number=state.clock.current_tick,
                     source_agent=self.config.id,
-                    event_type=self._parse_event_type(raw_event.get("event_type")),
+                    event_type=event_type,
                     description=str(raw_event.get("description", "")).strip() or "Ohne Beschreibung",
                     affected_factors=self._filter_factor_ids(
                         raw_event.get("affected_factors", []), state
@@ -238,11 +242,22 @@ class AgentNode:
         return "\n".join(lines)
 
     def _format_scenario_parameters(self, state: SimulationState) -> str:
-        if not state.config.scenario_parameters:
-            return "- Keine Szenarioparameter konfiguriert."
-
         lines: list[str] = []
+
+        if state.market_metrics:
+            lines.append("Deterministische Marktmetriken (Python, nicht vom Agenten zu setzen):")
+            for metric_id in sorted(state.market_metrics.keys()):
+                lines.append(f"- {metric_id}: {state.market_metrics[metric_id]}")
+            lines.append("")
+
+        if not state.config.scenario_parameters:
+            if not lines:
+                return "- Keine Szenarioparameter konfiguriert."
+            return "\n".join(lines).rstrip()
+
         for param in state.config.scenario_parameters:
+            if state.market_metrics and param.id in state.market_metrics:
+                continue
             desc = f" :: {param.description}" if param.description else ""
             unit = f" {param.unit}" if param.unit else ""
             lines.append(
