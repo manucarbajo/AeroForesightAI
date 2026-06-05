@@ -86,12 +86,39 @@ class LLMConfig(BaseModel):
     max_tokens: int = 2048
 
 
+class PolicyEffect(BaseModel):
+    """Effect applied when a policy rule is active."""
+
+    type: str = "set"
+    value: float = 0.0
+    per_tick: float | None = None
+
+
+class PolicyRule(BaseModel):
+    """Time-gated policy shock for one metric."""
+
+    id: str
+    parameter: str
+    active_from_tick: int = 1
+    active_until_tick: int | None = None
+    effect: PolicyEffect
+
+
+class PolicySchedule(BaseModel):
+    """Tick-based schedule for deterministic policy shocks (M2)."""
+
+    version: int = 1
+    baseline: dict[str, float] = Field(default_factory=dict)
+    rules: list[PolicyRule] = Field(default_factory=list)
+
+
 class SimulationConfig(BaseModel):
     name: str
     description: str
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
     scenario_parameters: list[ScenarioParameter] = Field(default_factory=list)
+    policy_schedule: PolicySchedule | None = None
     change_log: list[ConfigChangeEntry] = Field(default_factory=list)
 
     def update_scenario_parameter(
@@ -146,6 +173,7 @@ class SimulationState(BaseModel):
     round_results: list[RoundResult] = Field(default_factory=list)
     cib_matrix: CIBMatrix | None = None
     cib_history: CIBMatrixHistory | None = None
+    market_metrics: dict[str, float] = Field(default_factory=dict)
 
 
 class InputState(BaseModel):
@@ -180,6 +208,7 @@ class PlaygroundState(InputState):
     current_speech_order: list[str] = Field(default_factory=list)
     current_round_spoken_agents: list[str] = Field(default_factory=list)
     speech_plan: SpeechPlanState | None = Field(default=None)
+    market_metrics: dict[str, float] = Field(default_factory=dict)
 
 
 # deferred imports for forward refs

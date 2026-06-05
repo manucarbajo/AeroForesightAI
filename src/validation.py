@@ -6,8 +6,13 @@ from src.models.population_models import (
     PopulationConfig,
     ScenarioParameter,
 )
-from src.models.state_models import FactorState, SimulationClock, SimulationConfig, SimulationState
-
+from src.models.state_models import (
+    FactorState,
+    PolicySchedule,
+    SimulationClock,
+    SimulationConfig,
+    SimulationState,
+)
 
 class ValidationError(Exception):
     pass
@@ -45,6 +50,9 @@ def validate_config(config: SimulationConfig) -> list[str]:
 
     for param in config.scenario_parameters:
         errors.extend(validate_scenario_parameter(param))
+
+    if config.policy_schedule:
+        errors.extend(validate_policy_schedule(config.policy_schedule))
 
     return errors
 
@@ -135,6 +143,41 @@ def validate_scenario_parameter(param: ScenarioParameter) -> list[str]:
                 f"scenario_parameter '{param.id}': "
                 f"value ({param.value}) muss zwischen min und max liegen"
             )
+
+    return errors
+
+
+def validate_policy_schedule(schedule: PolicySchedule) -> list[str]:
+    errors = []
+    
+    valid_parameters = {
+        "carbon_tax_level", 
+        "fuel_price_change", 
+        "oil_price_index", 
+        "saf_mandate_share", 
+        "efuel_subsidy", 
+        "demand_growth_rate"
+    }
+    
+    for key in schedule.baseline.keys():
+        if key not in valid_parameters:
+            errors.append(f"policy_schedule: baseline parameter '{key}' ist ungueltig")
+
+    for rule in schedule.rules:
+        if rule.parameter not in valid_parameters:
+            errors.append(f"policy_schedule: rule '{rule.id}' referenziert ungueltigen parameter '{rule.parameter}'")
+        
+        if rule.active_from_tick < 1:
+            errors.append(f"policy_schedule: rule '{rule.id}' active_from_tick muss >= 1 sein")
+            
+        if rule.active_until_tick is not None and rule.active_until_tick < rule.active_from_tick:
+            errors.append(f"policy_schedule: rule '{rule.id}' active_until_tick muss >= active_from_tick sein")
+            
+        if rule.effect.type not in ["set", "ramp"]:
+            errors.append(f"policy_schedule: rule '{rule.id}' effect.type '{rule.effect.type}' ungueltig (erwartet 'set' oder 'ramp')")
+            
+        if rule.effect.type == "ramp" and rule.effect.per_tick is None:
+            errors.append(f"policy_schedule: rule '{rule.id}' mit type 'ramp' benoetigt 'per_tick'")
 
     return errors
 

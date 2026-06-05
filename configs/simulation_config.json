@@ -13,6 +13,64 @@
   },
   "seed": null,
   "change_log": [],
+"policy_schedule": {
+    "baseline": {
+      "carbon_tax_level": 0.0,
+      "fuel_price_change": 2.0,
+      "oil_price_index": 100.0,
+      "saf_mandate_share": 0.0,
+      "efuel_subsidy": 0.0,
+      "demand_growth_rate": 3.0
+    },
+    "rules": [
+      {
+        "id": "shock_fuel_tick2",
+        "parameter": "fuel_price_change",
+        "active_from_tick": 2,
+        "effect": {
+          "type": "set",
+          "value": 10.0
+        }
+      },
+      {
+        "id": "shock_saf_tick4",
+        "parameter": "saf_mandate_share",
+        "active_from_tick": 4,
+        "effect": {
+          "type": "ramp",
+          "value": 0.05,
+          "per_tick": 0.05
+        }
+      },
+      {
+        "id": "shock_tax_tick5",
+        "parameter": "carbon_tax_level",
+        "active_from_tick": 5,
+        "effect": {
+          "type": "set",
+          "value": 85.0
+        }
+      },
+      {
+        "id": "shock_demand_tick7",
+        "parameter": "demand_growth_rate",
+        "active_from_tick": 7,
+        "effect": {
+          "type": "set",
+          "value": -4.0
+        }
+      },
+      {
+        "id": "shock_subsidy_tick7",
+        "parameter": "efuel_subsidy",
+        "active_from_tick": 7,
+        "effect": {
+          "type": "set",
+          "value": 2.0
+        }
+      }
+    ]
+  },
   "scenario_parameters": [
     {
       "id": "demand_growth_rate",
