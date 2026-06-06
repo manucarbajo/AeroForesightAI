@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from src.config_loader import build_initial_state
@@ -16,6 +17,7 @@ from src.nodes.agent_node import AgentNode
 from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
+from src.nodes.parallel_round_node import ParallelRoundNode
 from src.nodes.scheduler_node import SchedulerNode
 from src.nodes.scenario_agent_node import ScenarioAgentNode
 from src.simulation_runner import RunnerOptions
@@ -29,10 +31,10 @@ def build_playground_stategraph(
 ):
     """Build and compile the LangGraph stategraph for Studio runs.
 
-    Studio exposes consumer, provider and regulator as separate graph nodes
-    (via ``SchedulerNode`` / Redebedarf routing). The CLI batch runner still
-    uses ``RoundExecutionNode`` in ``simulation_runner.py`` — same agents,
-    same logic, different graph layout for visibility.
+    Default (C4): orchestrator → parallel_round → market → environment — no
+    Redebedarf scheduler. With ``enable_redebedarf`` (CLI ``--redebedarf`` or
+    env ``SIMULATION_REDEBEDARF=1``): legacy scheduler loop with separate
+    consumer / provider / regulator nodes.
     """
 
     try:
@@ -40,9 +42,93 @@ def build_playground_stategraph(
     except Exception as exc:
         raise RuntimeError("langgraph package not available in this environment") from exc
 
-    runner_options = options or RunnerOptions()
+    runner_options = options or _runner_options_from_env()
     if llm is None:
         llm = get_llm()
+
+    if runner_options.enable_redebedarf:
+        return _build_redebedarf_stategraph(llm, runner_options=runner_options)
+    return _build_parallel_stategraph(llm, runner_options=runner_options)
+
+
+def _runner_options_from_env() -> RunnerOptions:
+    redebedarf = os.environ.get("SIMULATION_REDEBEDARF", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    no_market = os.environ.get("SIMULATION_NO_MARKET", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    return RunnerOptions(enable_market=not no_market, enable_redebedarf=redebedarf)
+
+
+def _build_parallel_stategraph(
+    llm: Any,
+    *,
+    runner_options: RunnerOptions,
+):
+    from langgraph.graph import END, StateGraph  # type: ignore
+
+    initial_state = build_initial_state(load_cib=runner_options.enable_cib)
+    agents = initial_state.agents
+
+    orchestrator = OrchestratorNode(agents)
+    parallel_round = ParallelRoundNode(agents, llm=llm)
+    market_node = MarketNode()
+    environment_node = EnvironmentNode(
+        prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
+        llm=llm,
+    )
+    scenario_node = ScenarioAgentNode(llm=llm)
+
+    post_round_target = "market" if runner_options.enable_market else "environment"
+
+    workflow = StateGraph(PlaygroundState, input_schema=InputState)
+    workflow.add_node("initialize_state", initialize_state)
+    workflow.add_node("reset_round_buffer", reset_round_buffer)
+    workflow.add_node("orchestrator", wrap_node(orchestrator.invoke))
+    workflow.add_node("parallel_round", wrap_node(parallel_round.invoke))
+    if runner_options.enable_market:
+        workflow.add_node("market", wrap_node(market_node.invoke))
+    workflow.add_node("environment", wrap_node(environment_node.invoke))
+    workflow.add_node("scenario_agent", wrap_node(scenario_node.invoke))
+
+    workflow.set_entry_point("initialize_state")
+    workflow.add_edge("initialize_state", "reset_round_buffer")
+    workflow.add_edge("reset_round_buffer", "orchestrator")
+    workflow.add_edge("orchestrator", "parallel_round")
+    workflow.add_edge("parallel_round", post_round_target)
+    if runner_options.enable_market:
+        workflow.add_edge("market", "environment")
+
+    def _route_after_environment(payload: Any) -> str:
+        state = to_state(payload)
+        return "reset_round_buffer" if state.clock.current_tick < state.clock.max_ticks else "scenario_agent"
+
+    workflow.add_conditional_edges(
+        "environment",
+        _route_after_environment,
+        {
+            "reset_round_buffer": "reset_round_buffer",
+            "scenario_agent": "scenario_agent",
+        },
+    )
+    workflow.add_edge("scenario_agent", END)
+
+    return workflow.compile()
+
+
+def _build_redebedarf_stategraph(
+    llm: Any,
+    *,
+    runner_options: RunnerOptions,
+):
+    from langgraph.graph import END, StateGraph  # type: ignore
 
     initial_state = build_initial_state(load_cib=runner_options.enable_cib)
     agents = initial_state.agents

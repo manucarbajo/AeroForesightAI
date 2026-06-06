@@ -80,6 +80,9 @@ def coerce_payload(payload: Any | None) -> dict[str, Any]:
         if isinstance(base_payload.get("config"), dict):
             base_payload["config"]["policy_schedule"] = payload_dict["policy_schedule"]
 
+    if payload_dict.get("enable_redebedarf") is not None:
+        base_payload["enable_redebedarf"] = bool(payload_dict["enable_redebedarf"])
+
     return deep_merge(base_payload, payload_dict)
 
 
@@ -147,6 +150,11 @@ def _make_build_options() -> dict:
         return {
             "max_ticks": {"type": "int", "default": 2, "description": "Maximal number of ticks"},
             "enable_market": {"type": "bool", "default": True, "description": "Enable MarketNode"},
+            "enable_redebedarf": {
+                "type": "bool",
+                "default": False,
+                "description": "Use C3 Redebedarf scheduler instead of parallel agents",
+            },
             "llm_model": {"type": "str", "default": "llama3", "description": "LLM model name"},
             "llm_temperature": {"type": "float", "default": 0.7, "description": "LLM temperature"},
             "presets": {
@@ -162,6 +170,11 @@ def _make_build_options() -> dict:
     return {
         "max_ticks": {"type": "int", "default": state.clock.max_ticks, "description": "Maximal number of ticks"},
         "enable_market": {"type": "bool", "default": True, "description": "Enable MarketNode"},
+        "enable_redebedarf": {
+            "type": "bool",
+            "default": False,
+            "description": "Use C3 Redebedarf scheduler instead of parallel agents",
+        },
         "llm_model": {"type": "str", "default": state.config.llm.model, "description": "LLM model name"},
         "llm_temperature": {"type": "float", "default": state.config.llm.temperature, "description": "LLM temperature"},
         "presets": {

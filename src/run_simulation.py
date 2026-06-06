@@ -33,8 +33,8 @@ from src.output_writer import (
     save_scenarios_markdown,
     save_segment_analysis,
 )
-from src.protocol_generator import build_protocol_payload, render_protocol_markdown
-from src.simulation_runner import MultiRunResult, SimulationRunner
+from src.protocol_generator import ProtocolOptions, build_protocol_payload, render_protocol_markdown
+from src.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 from src.studio_helpers import STUDIO_DIR, get_llm, load_env
 
 
@@ -94,6 +94,11 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable minimal MarketNode (no price_history updates).",
     )
+    parser.add_argument(
+        "--redebedarf",
+        action="store_true",
+        help="Use C3 Redebedarf scheduler (sequential, score-based) instead of default parallel agents.",
+    )
     parser.add_argument("--quiet", action="store_true", help="Reduce per-round console output.")
     parser.add_argument("--no-protocol", action="store_true", help="Do not generate protocol output.")
     parser.add_argument("--no-scenarios", action="store_true", help="Do not generate scenarios from CIB matrix.")
@@ -142,7 +147,10 @@ def _save_run_outputs(
     protocol_path = None
     protocol_md_path = None
     if not args.no_protocol:
-        protocol_payload = build_protocol_payload(state)
+        protocol_payload = build_protocol_payload(
+            state,
+            ProtocolOptions(include_redebedarf=bool(getattr(args, "redebedarf", False))),
+        )
         protocol_path = save_protocol(protocol_payload, run_dir=run_dir)
         protocol_md_path = save_protocol_markdown(
             render_protocol_markdown(protocol_payload),
@@ -227,6 +235,7 @@ def _build_run_args(base_args: argparse.Namespace, *, run_index: int, seed: int 
         temperature=base_args.temperature,
         max_tokens=base_args.max_tokens,
         no_market=base_args.no_market,
+        redebedarf=getattr(base_args, "redebedarf", False),
         no_protocol=getattr(base_args, "no_protocol", False),
         no_scenarios=getattr(base_args, "no_scenarios", False),
         quiet=getattr(base_args, "quiet", False),
@@ -326,7 +335,13 @@ def main() -> int:
             )
         )
 
-    runner = SimulationRunner(llm=llm)
+    runner = SimulationRunner(
+        llm=llm,
+        options=RunnerOptions(
+            enable_market=not args.no_market,
+            enable_redebedarf=bool(args.redebedarf),
+        ),
+    )
     repo_root = Path(__file__).resolve().parents[1]
 
     if args.resume is not None and args.runs != 1:
@@ -373,7 +388,8 @@ def main() -> int:
         if not args.quiet:
             print(
                 f"Simulation start: ticks={base_state.clock.max_ticks}, model={args.model}, "
-                f"market={'off' if args.no_market else 'on'}, run_id={run_id}"
+                f"market={'off' if args.no_market else 'on'}, "
+                f"orchestration={'redebedarf' if args.redebedarf else 'parallel'}, run_id={run_id}"
             )
 
         final_state = runner.run(

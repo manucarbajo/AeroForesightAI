@@ -93,11 +93,11 @@ class AgentNode:
         scenario_block = self._format_market_metrics(state)
         population_context = self._build_population_context()
         consumer_segment_analysis = self._format_consumer_segment_analysis(state)
-        goals = "\n".join(f"- {goal}" for goal in self.config.goals) or "- Keine Ziele konfiguriert"
+        goals = "\n".join(f"- {goal}" for goal in self.config.goals) or "- No goals configured"
         constraints = (
             "\n".join(f"- {constraint}" for constraint in self.config.constraints)
             if self.config.constraints
-            else "- Keine Constraints konfiguriert"
+            else "- No constraints configured"
         )
 
         return self._render_template(
@@ -108,7 +108,7 @@ class AgentNode:
                 "agent_description": self.config.description,
                 "round_number": state.clock.current_tick,
                 "global_context": state.environment.global_context
-                or "Kein globaler Kontext gesetzt.",
+                or "No global context set.",
                 "goals": goals,
                 "constraints": constraints,
                 "scenario_block": scenario_block,
@@ -229,7 +229,7 @@ class AgentNode:
 
     def _format_recent_events(self, state: SimulationState) -> str:
         if not state.event_log:
-            return "- Keine vorherigen Events vorhanden."
+            return "- No prior events."
 
         selected = state.event_log[-self.recent_event_limit :]
         lines = []
@@ -245,7 +245,7 @@ class AgentNode:
         """Format policy-driven market metrics for the agent prompt (M2)."""
 
         metrics = state.market_metrics
-        header = "Deterministische Marktmetriken (Python, nicht vom Agenten zu setzen):"
+        header = "Deterministic market metrics (Python; not set by the agent):"
 
         if not metrics and state.config.policy_schedule is not None:
             from src.simulation_functions import compute_market_metrics
@@ -253,12 +253,12 @@ class AgentNode:
             tick = max(1, state.clock.current_tick)
             metrics = compute_market_metrics(tick, state.config.policy_schedule)
             header = (
-                "Deterministische Marktmetriken (Python, Vorschau aus policy_schedule, "
-                "nicht vom Agenten zu setzen):"
+                "Deterministic market metrics (Python; preview from policy_schedule; "
+                "not set by the agent):"
             )
 
         if not metrics:
-            return "- Keine Marktmetriken verfuegbar (policy_schedule / MarketNode)."
+            return "- No market metrics available (policy_schedule / MarketNode)."
 
         lines = [header]
         for metric_id in sorted(metrics.keys()):
@@ -268,7 +268,7 @@ class AgentNode:
     def _build_population_context(self) -> str:
         pop = self.config.population_config
         if not pop or not pop.segments:
-            return "- Kein Populationskontext für dieses Agent."
+            return "- No population context for this agent."
 
         lines: list[str] = [f"- total_population={pop.total_population}, default={pop.default_distribution.value}"]
         for seg in pop.segments:

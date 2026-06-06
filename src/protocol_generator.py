@@ -15,6 +15,7 @@ from src.models.state_models import SimulationState
 @dataclass(frozen=True)
 class ProtocolOptions:
     include_raw_output: bool = False
+    include_redebedarf: bool = False
 
 
 def _safe_first_line(text: str, fallback: str = "") -> str:
@@ -51,7 +52,11 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
     """Build a structured conversation protocol from SimulationState."""
 
     options = options or ProtocolOptions()
-    redebedarf_by_contribution = _resolve_redebedarf_by_contribution(state)
+    redebedarf_by_contribution = (
+        _resolve_redebedarf_by_contribution(state)
+        if options.include_redebedarf
+        else {}
+    )
 
     by_round = _group_round_results(state.round_results)
     rounds: list[dict[str, Any]] = []

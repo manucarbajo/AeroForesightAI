@@ -1,24 +1,24 @@
 [
   {
     "id": "consumer",
-    "name": "Konsumenten",
+    "name": "Consumers",
     "agent_type": "consumer",
-    "description": "Privat- und Geschaeftsreisende, die Reiseentscheidungen treffen",
+    "description": "Private and business travellers making travel decisions",
     "goals": [
-      "Guenstige Flugpreise erhalten",
-      "Reisebeduerfnisse erfuellen",
-      "Auf Marktveraenderungen reagieren"
+      "Obtain affordable fares",
+      "Meet travel needs",
+      "Respond to market changes"
     ],
     "constraints": [
-      "Budgetabhaengig",
-      "Beeinflusst durch gesellschaftlichen Wertewandel",
-      "Reagiert auf Alternativangebote"
+      "Budget-dependent",
+      "Influenced by societal value shifts",
+      "Responds to alternative offers"
     ],
     "population_config": {
       "segments": [
         {
           "id": "business",
-          "name": "Geschaeftsreisende",
+          "name": "Business travellers",
           "share": 0.3,
           "price_elasticity": {
             "type": "normal",
@@ -41,11 +41,11 @@
             "min_value": 0.0,
             "max_value": 1.0
           },
-          "description": "Haeufig fliegende Geschaeftsreisende mit geringer Preissensitivitaet"
+          "description": "Frequent business travellers with low price sensitivity"
         },
         {
           "id": "leisure_price_sensitive",
-          "name": "Privatreisende (preissensitiv)",
+          "name": "Leisure travellers (price-sensitive)",
           "share": 0.5,
           "price_elasticity": {
             "type": "normal",
@@ -68,11 +68,11 @@
             "min_value": 0.0,
             "max_value": 1.0
           },
-          "description": "Preisbewusste Privatreisende mit mittlerem Einkommen"
+          "description": "Price-conscious leisure travellers with moderate income"
         },
         {
           "id": "leisure_eco_conscious",
-          "name": "Privatreisende (umweltbewusst)",
+          "name": "Leisure travellers (eco-conscious)",
           "share": 0.2,
           "price_elasticity": {
             "type": "normal",
@@ -95,7 +95,7 @@
             "min_value": 0.0,
             "max_value": 1.0
           },
-          "description": "Umweltbewusste Reisende, bereit fuer hoehere Preise bei gruenen Optionen"
+          "description": "Environmentally aware travellers willing to pay higher prices for green options"
         }
       ],
       "total_population": 1000,
@@ -104,34 +104,34 @@
   },
   {
     "id": "provider",
-    "name": "Anbieter",
+    "name": "Providers",
     "agent_type": "provider",
-    "description": "Fluggesellschaften, die Preise setzen, Routen planen und investieren",
+    "description": "Airlines setting prices, planning routes, and investing",
     "goals": [
-      "Profitabilitaet sichern",
-      "Marktanteile halten oder ausbauen",
-      "Regulatorische Anforderungen erfuellen"
+      "Ensure profitability",
+      "Maintain or expand market share",
+      "Meet regulatory requirements"
     ],
     "constraints": [
-      "Abhaengig von Treibstoffpreisen und Technologie",
-      "Muss regulatorische Vorgaben einhalten",
-      "Kapazitaetsgrenzen bei Flotte und Infrastruktur"
+      "Dependent on fuel prices and technology",
+      "Must comply with regulatory requirements",
+      "Capacity limits on fleet and infrastructure"
     ]
   },
   {
     "id": "regulator",
-    "name": "Regulatorien",
+    "name": "Regulators",
     "agent_type": "regulator",
-    "description": "EU-Kommission und nationale Regierungen, die Rahmenbedingungen setzen",
+    "description": "European Commission and national governments setting framework conditions",
     "goals": [
-      "Klimaziele erreichen",
-      "Wettbewerbsfaehigkeit der Luftfahrt erhalten",
-      "Verbraucherschutz gewaehrleisten"
+      "Achieve climate targets",
+      "Maintain aviation competitiveness",
+      "Ensure consumer protection"
     ],
     "constraints": [
-      "Internationale Abkommen beachten",
-      "Gesellschaftliche Akzeptanz notwendig",
-      "Wirtschaftliche Auswirkungen abwaegen"
+      "Respect international agreements",
+      "Societal acceptance required",
+      "Weigh economic impacts"
     ]
   }
 ]

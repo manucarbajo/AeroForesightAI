@@ -131,6 +131,10 @@ class InputState(BaseModel):
     llm_model: str = Field(default="llama3.2", description="LLM-Modellname")
     llm_temperature: float = Field(default=0.7, description="LLM-Temperatur")
     llm_max_tokens: int = Field(default=2048, description="Maximale Token pro Antwort")
+    enable_redebedarf: bool = Field(
+        default=False,
+        description="C3 Redebedarf-Scheduler statt paralleler Agenten pro Tick",
+    )
     ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama-Base-URL")
 
 

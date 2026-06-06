@@ -17,6 +17,7 @@ from src.nodes.agent_node import AgentNode, LLMCallable
 from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
+from src.nodes.parallel_round_node import ParallelRoundNode
 from src.nodes.redebedarf_node import RoundExecutionNode
 from src.validation import validate_state
 
@@ -25,6 +26,7 @@ from src.validation import validate_state
 class RunnerOptions:
     enable_market: bool = True
     enable_cib: bool = True  # load frozen CIB from configs/cib_frozen.json
+    enable_redebedarf: bool = False
 
 
 @dataclass(frozen=True)
@@ -69,7 +71,7 @@ class SimulationRunner:
             return self._build_sequential_runner(agents)
 
         orchestrator = OrchestratorNode(agents)
-        round_execution = RoundExecutionNode(agents, llm=self.llm)
+        round_execution = self._build_round_execution(agents)
         market_node = MarketNode()
         environment_node = EnvironmentNode(
             prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
@@ -325,11 +327,11 @@ class SimulationRunner:
     def _create_components(
         self,
         agents: list[AgentConfig],
-    ) -> tuple[OrchestratorNode, RoundExecutionNode, MarketNode, EnvironmentNode]:
+    ) -> tuple[OrchestratorNode, ParallelRoundNode | RoundExecutionNode, MarketNode, EnvironmentNode]:
         """Build the reusable nodes that make up one simulation round."""
 
         orchestrator = OrchestratorNode(agents)
-        round_execution = RoundExecutionNode(agents, llm=self.llm)
+        round_execution = self._build_round_execution(agents)
         market_node = MarketNode()
         environment_node = EnvironmentNode(
             prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
@@ -340,7 +342,12 @@ class SimulationRunner:
     def _run_single_round(
         self,
         state: SimulationState,
-        components: tuple[OrchestratorNode, RoundExecutionNode, MarketNode, EnvironmentNode],
+        components: tuple[
+            OrchestratorNode,
+            ParallelRoundNode | RoundExecutionNode,
+            MarketNode,
+            EnvironmentNode,
+        ],
     ) -> SimulationState:
         """Run a single deterministic round using the configured nodes."""
 
@@ -351,6 +358,14 @@ class SimulationRunner:
             state = market_node.invoke(state)
         state = environment_node.invoke(state)
         return state
+
+    def _build_round_execution(
+        self,
+        agents: list[AgentConfig],
+    ) -> ParallelRoundNode | RoundExecutionNode:
+        if self.options.enable_redebedarf:
+            return RoundExecutionNode(agents, llm=self.llm)
+        return ParallelRoundNode(agents, llm=self.llm)
 
     def _build_sequential_runner(self, agents: list[AgentConfig]) -> Callable[[SimulationState], SimulationState]:
         components = self._create_components(agents)
