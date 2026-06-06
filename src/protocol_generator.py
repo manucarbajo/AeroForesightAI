@@ -76,6 +76,7 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
         rounds.append(
             {
                 "round_number": round_number,
+                "market": _market_snapshot_for_round(state, round_number),
                 "contributions": contributions,
                 "events": [_event_payload(e) for e in _events_for_round(state, round_number)],
             }
@@ -112,12 +113,41 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
             for fid, f in state.environment.factors.items()
         },
         "cib": state.cib_matrix.model_dump() if state.cib_matrix is not None else None,
+        "policy_schedule": (
+            state.config.policy_schedule.model_dump()
+            if state.config.policy_schedule is not None
+            else None
+        ),
+        "price_history": [entry.model_dump() for entry in state.price_history],
     }
     return payload
 
 
 def _events_for_round(state: SimulationState, round_number: int) -> list[EventLogEntry]:
     return [e for e in state.event_log if e.round_number == round_number]
+
+
+def _market_snapshot_for_round(state: SimulationState, round_number: int) -> dict[str, Any]:
+    """Per-tick market data: deterministic demand_level (M2) and sampled booking_rate (M3)."""
+
+    price_entry = next((entry for entry in state.price_history if entry.round_number == round_number), None)
+    pop_stat = next(
+        (entry for entry in state.population_stats if entry.get("round_number") == round_number),
+        None,
+    )
+
+    booking_rate = None
+    if price_entry is not None and price_entry.booking_rate is not None:
+        booking_rate = price_entry.booking_rate
+    elif pop_stat is not None:
+        booking_rate = pop_stat.get("total_demand")
+
+    snapshot: dict[str, Any] = {
+        "price": price_entry.price if price_entry is not None else None,
+        "demand_level": price_entry.demand_level if price_entry is not None else None,
+        "booking_rate": booking_rate,
+    }
+    return snapshot
 
 
 def _event_payload(event: EventLogEntry) -> dict[str, Any]:
@@ -440,6 +470,21 @@ def render_protocol_markdown(payload: dict[str, Any]) -> str:
         round_number = r.get("round_number")
         lines.append("")
         lines.append(f"### Tick {round_number}")
+
+        market = r.get("market") or {}
+        if market:
+            price = market.get("price")
+            demand_level = market.get("demand_level")
+            booking_rate = market.get("booking_rate")
+            market_parts: list[str] = []
+            if price is not None:
+                market_parts.append(f"price={price:.2f}")
+            if demand_level is not None:
+                market_parts.append(f"demand_level={demand_level:.3f}")
+            if booking_rate is not None:
+                market_parts.append(f"booking_rate={booking_rate:.1%}")
+            if market_parts:
+                lines.append(f"- **Markt:** {', '.join(market_parts)}")
 
         for contrib in r.get("contributions", []):
             agent_id = contrib.get("agent_id", "?")

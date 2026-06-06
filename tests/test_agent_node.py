@@ -199,7 +199,7 @@ class AgentNodeTests(unittest.TestCase):
         self.assertIn("business", response.segment_analysis)
         self.assertIn("leisure_price_sensitive", response.segment_analysis)
 
-        # Prompt-Kontext (ohne AP3): ConsumerPrompt muss PopulationConfig und Szenarioparameter enthalten.
+        # Prompt-Kontext: ConsumerPrompt muss PopulationConfig und Marktmetriken (policy_schedule) enthalten.
         self.assertIsNotNone(llm.last_prompt)
         self.assertIn("demand_growth_rate", llm.last_prompt)
         self.assertIn("segment business", llm.last_prompt)

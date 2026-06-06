@@ -90,7 +90,7 @@ class AgentNode:
         template = self._load_prompt_template()
         factors_block = self._format_factors(state)
         recent_events_block = self._format_recent_events(state)
-        scenario_block = self._format_scenario_parameters(state)
+        scenario_block = self._format_market_metrics(state)
         population_context = self._build_population_context()
         consumer_segment_analysis = self._format_consumer_segment_analysis(state)
         goals = "\n".join(f"- {goal}" for goal in self.config.goals) or "- Keine Ziele konfiguriert"
@@ -241,28 +241,28 @@ class AgentNode:
             )
         return "\n".join(lines)
 
-    def _format_scenario_parameters(self, state: SimulationState) -> str:
-        lines: list[str] = []
+    def _format_market_metrics(self, state: SimulationState) -> str:
+        """Format policy-driven market metrics for the agent prompt (M2)."""
 
-        if state.market_metrics:
-            lines.append("Deterministische Marktmetriken (Python, nicht vom Agenten zu setzen):")
-            for metric_id in sorted(state.market_metrics.keys()):
-                lines.append(f"- {metric_id}: {state.market_metrics[metric_id]}")
-            lines.append("")
+        metrics = state.market_metrics
+        header = "Deterministische Marktmetriken (Python, nicht vom Agenten zu setzen):"
 
-        if not state.config.scenario_parameters:
-            if not lines:
-                return "- Keine Szenarioparameter konfiguriert."
-            return "\n".join(lines).rstrip()
+        if not metrics and state.config.policy_schedule is not None:
+            from src.simulation_functions import compute_market_metrics
 
-        for param in state.config.scenario_parameters:
-            if state.market_metrics and param.id in state.market_metrics:
-                continue
-            desc = f" :: {param.description}" if param.description else ""
-            unit = f" {param.unit}" if param.unit else ""
-            lines.append(
-                f"- {param.id} ({param.name}): value={param.value}{unit}{desc}"
+            tick = max(1, state.clock.current_tick)
+            metrics = compute_market_metrics(tick, state.config.policy_schedule)
+            header = (
+                "Deterministische Marktmetriken (Python, Vorschau aus policy_schedule, "
+                "nicht vom Agenten zu setzen):"
             )
+
+        if not metrics:
+            return "- Keine Marktmetriken verfuegbar (policy_schedule / MarketNode)."
+
+        lines = [header]
+        for metric_id in sorted(metrics.keys()):
+            lines.append(f"- {metric_id}: {metrics[metric_id]}")
         return "\n".join(lines)
 
     def _build_population_context(self) -> str:

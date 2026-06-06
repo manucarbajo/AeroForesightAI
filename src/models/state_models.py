@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
-
-from src.models.population_models import ScenarioParameter
-
 
 class FactorState(BaseModel):
     id: str
@@ -14,18 +10,6 @@ class FactorState(BaseModel):
     description: str
     current_state: str
     possible_states: dict[str, str]
-
-
-class ConfigChangeEntry(BaseModel):
-    """Timestamped record of a runtime configuration change."""
-
-    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
-    round_number: int | None = None
-    parameter_id: str
-    old_value: Any
-    new_value: Any
-    source_agent: str = "EnvironmentAgent"
-    reason: str = ""
 
 
 class EnvironmentState(BaseModel):
@@ -117,45 +101,7 @@ class SimulationConfig(BaseModel):
     description: str
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
-    scenario_parameters: list[ScenarioParameter] = Field(default_factory=list)
     policy_schedule: PolicySchedule | None = None
-    change_log: list[ConfigChangeEntry] = Field(default_factory=list)
-
-    def update_scenario_parameter(
-        self,
-        parameter_id: str,
-        new_value: float,
-        *,
-        source_agent: str = "EnvironmentAgent",
-        reason: str = "",
-        round_number: int | None = None,
-    ) -> None:
-        """Update a scenario parameter and append a timestamped change log entry."""
-
-        for parameter in self.scenario_parameters:
-            if parameter.id != parameter_id:
-                continue
-
-            old_value = parameter.value
-            parameter.value = new_value
-            self.change_log.append(
-                ConfigChangeEntry(
-                    round_number=round_number,
-                    parameter_id=parameter_id,
-                    old_value=old_value,
-                    new_value=new_value,
-                    source_agent=source_agent,
-                    reason=reason,
-                )
-            )
-            return
-
-        raise KeyError(f"Unknown scenario parameter: {parameter_id}")
-
-    def runtime_parameter_map(self) -> dict[str, float]:
-        """Return the current scenario parameters as a flat runtime mapping."""
-
-        return {parameter.id: parameter.value for parameter in self.scenario_parameters}
 
 
 class SimulationState(BaseModel):
@@ -186,7 +132,6 @@ class InputState(BaseModel):
     llm_temperature: float = Field(default=0.7, description="LLM-Temperatur")
     llm_max_tokens: int = Field(default=2048, description="Maximale Token pro Antwort")
     ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama-Base-URL")
-    scenario_parameters: list[dict[str, Any]] = Field(default_factory=list, description="Szenarioparameter")
 
 
 class PlaygroundState(InputState):

@@ -252,6 +252,17 @@ def save_final_narrative(
             first_line = resp.reasoning.strip().splitlines()[0] if resp.reasoning else "kein Reasoning"
             lines.append(f"- **{resp.agent_id}:** {first_line}")
 
+        # Markt-Kennzahlen der Runde (M2 demand_level + M3 booking_rate)
+        price_entry = next((entry for entry in state.price_history if entry.round_number == round_number), None)
+        if price_entry is not None:
+            market_line = (
+                f"- **Markt:** Preis {price_entry.price:.2f} €, "
+                f"demand_level {price_entry.demand_level:.3f}"
+            )
+            if price_entry.booking_rate is not None:
+                market_line += f", booking_rate {price_entry.booking_rate:.1%}"
+            lines.append(f"\n{market_line}")
+
         # Events der Runde
         if rr.events:
             lines.append(f"\n**Events ({len(rr.events)}):**")

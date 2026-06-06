@@ -102,7 +102,52 @@ Technology-Lab/
 
 ## Zeitmodell
 
-Ein **Tick ist ein Tick**, keine Kalenderzuordnung (keine Quartale/Jahre in Config, Checkpoints oder Summaries). Intern heißt das Feld weiterhin `current_tick` (1-basierter Tick-Index); in Outputs und Doku wird neutral „Tick N“ verwendet.
+Ein **Tick ist ein Tick**, keine Kalenderzuordnung (keine Quartale/Jahre in Config, Checkpoints oder Summaries). Die Simulationsuhr nutzt `current_tick` / `max_ticks`; in Outputs und Doku wird neutral „Tick N“ verwendet.
+
+## Policy-Schedule (M2)
+
+Preis, Steuer, SAF und Makro-Nachfrage werden **deterministisch** in `src/simulation_functions.py` berechnet — nicht vom LLM und nicht aus Event-Text geparst.
+
+Konfiguration: `configs/simulation_config.json` → `policy_schedule`:
+
+- **`baseline`**: Startwerte der sechs Parameter (Prozentangaben als **Prozentpunkte pro Tick**, z. B. `3.0` = 3 %/Tick)
+- **`rules`**: zeitgesteuerte Shocks (`active_from_tick`, `effect.type`: `set` oder `ramp`)
+
+| Parameter | Bedeutung |
+| --- | --- |
+| `carbon_tax_level` | CO₂-Steuer (EUR/t) |
+| `fuel_price_change` | Treibstoffpreis-Trend (%/Tick) |
+| `oil_price_index` | Ölpreis-Index (Metrik, wird mitgeführt) |
+| `saf_mandate_share` | SAF-Pflichtanteil (0–1) |
+| `efuel_subsidy` | E-Fuel-Förderung (EUR/l, Platzhalter) |
+| `demand_growth_rate` | Nachfragewachstum (%/Tick) → `demand_level` |
+
+Pro Tick im Output:
+
+- **`demand_level`** — Makro-Nachfrage-Index aus `policy_schedule` (M2)
+- **`booking_rate`** — gebuchte Anteile aus Population-Sampler (M3, optional)
+
+### Policy-Shocks testen
+
+**Automatisiert (empfohlen):**
+
+```powershell
+python -m pytest tests/test_policy_schedule.py -v
+```
+
+**Manuell — Mock-Lauf mit Demo-Shocks** (Fuel Tick 2, SAF Tick 4, CO₂ Tick 5, Nachfrage Tick 7):
+
+```powershell
+python src/run_simulation.py --mock-llm --rounds 8 --quiet
+```
+
+Danach im Output-Verzeichnis prüfen:
+
+- `outputs/<run_id>/price_history.json` — `price`, `demand_level`, `booking_rate` pro Tick
+- `outputs/<run_id>/protocol.md` — pro Tick Zeile **Markt:** mit `price`, `demand_level`, `booking_rate`
+- `outputs/<run_id>/protocol.json` — Feld `market` je Runde + `policy_schedule`
+
+Eigene Shocks: `configs/simulation_config.json` → `policy_schedule.rules` anpassen, dann erneut laufen lassen.
 
 ## Meilensteine
 

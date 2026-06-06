@@ -150,10 +150,10 @@ class EnvironmentNode:
                 carbon_tax=carbon_tax
             )
             
-            # Override deterministic demand_level with sampled actual demand
-            state.market_metrics["demand_level"] = pop_stats.total_demand
+            # M3: booking_rate from population sample; demand_level stays deterministic (M2)
+            state.market_metrics["booking_rate"] = pop_stats.total_demand
             if state.price_history and state.price_history[-1].round_number == round_number:
-                state.price_history[-1].demand_level = pop_stats.total_demand
+                state.price_history[-1].booking_rate = pop_stats.total_demand
             
             # Save stats
             if not hasattr(state, "population_stats"):

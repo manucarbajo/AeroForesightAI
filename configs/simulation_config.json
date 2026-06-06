@@ -12,8 +12,7 @@
     "max_tokens": 2048
   },
   "seed": null,
-  "change_log": [],
-"policy_schedule": {
+  "policy_schedule": {
     "baseline": {
       "carbon_tax_level": 0.0,
       "fuel_price_change": 2.0,
@@ -70,34 +69,5 @@
         }
       }
     ]
-  },
-  "scenario_parameters": [
-    {
-      "id": "demand_growth_rate",
-      "name": "Nachfragewachstum",
-      "description": "Jaehrliche Wachstumsrate der Flugnachfrage",
-      "value": 0.03,
-      "unit": "percent_per_year",
-      "min_value": -0.05,
-      "max_value": 0.10
-    },
-    {
-      "id": "fuel_price_change",
-      "name": "Treibstoffpreisentwicklung",
-      "description": "Jaehrliche Veraenderung der Treibstoffkosten",
-      "value": 0.02,
-      "unit": "percent_per_year",
-      "min_value": -0.10,
-      "max_value": 0.20
-    },
-    {
-      "id": "carbon_tax_level",
-      "name": "CO2-Steuer",
-      "description": "CO2-Bepreisung pro Tonne in EUR",
-      "value": 50.0,
-      "unit": "eur_per_tonne",
-      "min_value": 0.0,
-      "max_value": 300.0
-    }
-  ]
+  }
 }

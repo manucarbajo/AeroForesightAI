@@ -18,7 +18,7 @@ Constraints:
 Globaler Kontext:
 {global_context}
 
-Szenarioparameter (WICHTIG: Diese deterministischen Werte sind FIX und koennen von dir NICHT geaendert werden!):
+Marktmetriken (policy_schedule, WICHTIG: deterministisch berechnet — von dir NICHT aenderbar!):
 {scenario_block}
 
 Consumer segment_analysis (Input):

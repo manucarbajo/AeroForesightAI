@@ -295,28 +295,45 @@ Ergebnis:
 | Studio-Deps        | `requirements.txt` → `langgraph-cli[inmem]`                           |
 
 
-### M2 – Deterministischer Kern (ohne CIB-Inhalt)
+### M2 / M2a – Deterministischer Kern (ohne CIB-Inhalt)
 
 Ziel: Preis, Steuer, SAF, Nachfrage nur über Funktionen.
 
+**Status:** Kern umgesetzt (M2a fachlich erfüllt). Offene Punkte siehe unten.
+
 Aufgaben:
 
-- `policy_schedule` in `configs/simulation_config.json` (z. B. CO2-Steuer ab Tick 15)
-- `src/simulation_functions.py` neu
-- `src/nodes/market_node.py` und `src/nodes/environment_node.py` nutzen Funktionen statt Text-Parsing
+- `policy_schedule` in `configs/simulation_config.json` (z. B. CO2-Steuer ab Tick 15) (erledigt)
+- `src/simulation_functions.py` neu (erledigt)
+- `src/nodes/market_node.py` und `src/nodes/environment_node.py` nutzen Funktionen statt Text-Parsing (erledigt)
+- Legacy `scenario_parameters` entfernt; einzige Quelle: `policy_schedule` (erledigt)
+- `tests/test_policy_schedule.py` inkl. Integration (Fuel/Tax/Demand-Shocks) (erledigt)
+- `validate_policy_schedule()` in `validation.py` (erledigt)
+- Agent-Prompts: Marktmetriken aus `policy_schedule`, keine freien Zahlen (erledigt)
+- Output: `price_history.json`, `protocol.json`/`protocol.md` mit `demand_level` + `booking_rate` (erledigt)
+- Studio: `langgraph.json` + `langgraph_adapter` mit `policy_schedule` (erledigt)
+- `README.md` Abschnitt Policy-Schedule + Testanleitung (erledigt)
 
 Policy-Parameter:
 
 
-| ID                   | Bedeutung             | Einheit    |
-| -------------------- | --------------------- | ---------- |
-| `carbon_tax_level`   | CO2-Steuer            | EUR/t      |
-| `fuel_price_change`  | Treibstoffpreis-Trend | %/Tick     |
-| `oil_price_index`    | Ölpreis               | Index      |
-| `saf_mandate_share`  | SAF-Pflichtanteil     | 0–1        |
-| `efuel_subsidy`      | E-Fuel-Förderung      | EUR oder % |
-| `demand_growth_rate` | Nachfrage             | %          |
+| ID                   | Bedeutung             | Einheit    | Implementiert |
+| -------------------- | --------------------- | ---------- | ------------- |
+| `carbon_tax_level`   | CO2-Steuer            | EUR/t      | ja (erledigt) |
+| `fuel_price_change`  | Treibstoffpreis-Trend | %/Tick     | ja (erledigt) |
+| `oil_price_index`    | Ölpreis               | Index      | ja (Metrik; siehe Offen) |
+| `saf_mandate_share`  | SAF-Pflichtanteil     | 0–1        | ja (erledigt) |
+| `efuel_subsidy`      | E-Fuel-Förderung      | EUR oder % | ja (Platzhalter; erledigt) |
+| `demand_growth_rate` | Nachfrage             | %/Tick     | ja (erledigt) |
 
+**Offen nach M2a (nicht blockierend für M3):**
+
+1. **`oil_price_index` in Preisformel:** Index wird berechnet und geloggt, fließt aber noch nicht in `derive_ticket_price()` ein (nur `fuel_price_change`).
+2. **`derive_ticket_price` Kalibrierung:** CO₂-Durchschlag (`tax/10000`) und SAF-Aufschlag sind MVP-Heuristiken — später mit Literatur/Teamwerten hinterlegen.
+3. **Policy-Shocks in Config:** Aktuelle `rules` in `simulation_config.json` sind **Demo-/Testwerte** (Tick 2/4/5/7); für Abgabe ggf. realistisches Szenario (z. B. CO₂ ab Tick 15).
+4. **`--no-market` Randpfad:** Ohne `MarketNode` berechnet `EnvironmentNode` Metriken, schreibt aber keinen `price_history`-Eintrag — selten genutzt, Tests fehlen.
+5. **Tests optional:** SAF-Ramp (Tick 4) auf Preis; Protokoll-`market`-Block nach vollem E2E-Lauf; `--no-market`-Pfad.
+6. **`booking_rate`:** kommt aus M3 (`population_sampler`); bewusst getrennt von M2-`demand_level` — Doku in README erledigt, fachliche Verzahnung optional später.
 
 Ergebnis:
 
@@ -325,6 +342,8 @@ Ergebnis:
 | ---------- | -------------------------------- |
 | Schedule   | `configs/simulation_config.json` |
 | Funktionen | `src/simulation_functions.py`    |
+| Tests      | `tests/test_policy_schedule.py`  |
+| Doku       | `README.md` (Abschnitt Policy-Schedule) |
 
 
 ### M2b – CIB nach Coaching

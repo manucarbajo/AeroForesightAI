@@ -4,7 +4,6 @@ from src.models.population_models import (
     ConsumerSegment,
     DistributionConfig,
     PopulationConfig,
-    ScenarioParameter,
 )
 from src.models.state_models import (
     FactorState,
@@ -47,9 +46,6 @@ def validate_agent(agent: AgentConfig, factor_ids: set[str]) -> list[str]:
 
 def validate_config(config: SimulationConfig) -> list[str]:
     errors = []
-
-    for param in config.scenario_parameters:
-        errors.extend(validate_scenario_parameter(param))
 
     if config.policy_schedule:
         errors.extend(validate_policy_schedule(config.policy_schedule))
@@ -119,30 +115,6 @@ def validate_population_config(pop: PopulationConfig) -> list[str]:
         errors.append("total_population muss mindestens 1 sein")
 
     errors.extend(validate_segments(pop.segments))
-
-    return errors
-
-
-def validate_scenario_parameter(param: ScenarioParameter) -> list[str]:
-    errors = []
-
-    if not param.id:
-        errors.append("scenario_parameter: id darf nicht leer sein")
-
-    if not param.name:
-        errors.append(f"scenario_parameter '{param.id}': name darf nicht leer sein")
-
-    if param.min_value is not None and param.max_value is not None:
-        if param.min_value >= param.max_value:
-            errors.append(
-                f"scenario_parameter '{param.id}': "
-                f"min_value ({param.min_value}) muss kleiner als max_value ({param.max_value}) sein"
-            )
-        if not (param.min_value <= param.value <= param.max_value):
-            errors.append(
-                f"scenario_parameter '{param.id}': "
-                f"value ({param.value}) muss zwischen min und max liegen"
-            )
 
     return errors
 

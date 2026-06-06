@@ -5,7 +5,7 @@ from uuid import uuid4
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
 from src.models.enums import EventType
 from src.models.state_models import SimulationState
-from src.simulation_functions import compute_market_metrics, derive_demand_level, derive_ticket_price
+from src.simulation_functions import compute_market_metrics, derive_ticket_price
 
 
 class MarketNode:
@@ -33,12 +33,14 @@ class MarketNode:
             previous_metrics=state.market_metrics or None,
         )
 
+        demand_level = metrics["demand_level"]
+
         state.price_history.append(
             PriceHistoryEntry(
                 round_number=round_number,
                 agent_id="market",
                 price=price,
-                demand_level=0.0,  # Will be updated by EnvironmentNode
+                demand_level=demand_level,
                 load_factor=0.0,
             )
         )
@@ -51,6 +53,7 @@ class MarketNode:
                 event_type=EventType.MARKET_EVENT,
                 description=(
                     f"Market update (deterministic): price={price:.2f}, "
+                    f"demand_level={demand_level:.2f}, "
                     f"oil_index={metrics['oil_price_index']:.2f}, "
                     f"carbon_tax={metrics['carbon_tax_level']:.2f}"
                 ),

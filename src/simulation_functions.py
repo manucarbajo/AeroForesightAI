@@ -22,11 +22,11 @@ METRIC_IDS = (
 
 DEFAULT_BASELINE: dict[str, float] = {
     "carbon_tax_level": 0.0,
-    "fuel_price_change": 0.02,
+    "fuel_price_change": 2.0,
     "oil_price_index": 100.0,
     "saf_mandate_share": 0.0,
     "efuel_subsidy": 0.0,
-    "demand_growth_rate": 0.03,
+    "demand_growth_rate": 3.0,
 }
 
 
@@ -54,8 +54,6 @@ def _resolve_parameter(tick: int, parameter_id: str, schedule: PolicySchedule | 
         effect = rule.effect
         if effect.type == "set":
             value = effect.value
-        elif effect.type == "increment":
-            value += effect.value
         elif effect.type == "ramp":
             ticks_active = tick - rule.active_from_tick + 1
             per_tick = effect.per_tick if effect.per_tick is not None else 0.0
@@ -121,6 +119,8 @@ def compute_market_metrics(
     prev = previous_metrics or {}
     prev_oil = prev.get("oil_price_index")
 
+    prev_demand = prev.get("demand_level", 1.0)
+
     return {
         "carbon_tax_level": carbon_tax_level(tick, schedule),
         "fuel_price_change": fuel_price_change(tick, schedule),
@@ -128,6 +128,7 @@ def compute_market_metrics(
         "saf_mandate_share": saf_mandate_share(tick, schedule),
         "efuel_subsidy": efuel_subsidy(tick, schedule),
         "demand_growth_rate": demand_growth_rate(tick, schedule),
+        "demand_level": derive_demand_level(tick, schedule, previous_level=prev_demand),
     }
 
 

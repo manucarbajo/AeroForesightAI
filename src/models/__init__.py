@@ -16,7 +16,6 @@ from src.models.population_models import (
     ConsumerSegment,
     DistributionConfig,
     PopulationConfig,
-    ScenarioParameter,
 )
 
 __all__ = [
@@ -45,5 +44,4 @@ __all__ = [
     "ConsumerSegment",
     "DistributionConfig",
     "PopulationConfig",
-    "ScenarioParameter",
 ]

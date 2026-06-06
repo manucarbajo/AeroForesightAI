@@ -75,10 +75,10 @@ def coerce_payload(payload: Any | None) -> dict[str, Any]:
             if payload_dict.get("llm_max_tokens") is not None:
                 base_payload["config"]["llm"]["max_tokens"] = payload_dict["llm_max_tokens"]
 
-    if payload_dict.get("scenario_parameters") is not None:
+    if payload_dict.get("policy_schedule") is not None:
         base_payload.setdefault("config", {})
         if isinstance(base_payload.get("config"), dict):
-            base_payload["config"]["scenario_parameters"] = payload_dict["scenario_parameters"]
+            base_payload["config"]["policy_schedule"] = payload_dict["policy_schedule"]
 
     return deep_merge(base_payload, payload_dict)
 
@@ -176,10 +176,9 @@ def _make_build_options() -> dict:
             },
             "description": "Helpful AP3 starter presets for Studio and playground runs",
         },
-        "scenario_parameters": [
-            {"id": p.id, "name": p.name, "default": p.value, "unit": getattr(p, "unit", None)}
-            for p in state.config.scenario_parameters
-        ],
+        "policy_schedule": state.config.policy_schedule.model_dump()
+        if state.config.policy_schedule is not None
+        else None,
         "agents": [{"id": a.id, "name": a.name, "type": a.agent_type.value} for a in state.agents],
     }
 

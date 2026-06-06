@@ -18,7 +18,7 @@ Constraints:
 Globaler Kontext:
 {global_context}
 
-Szenarioparameter (WICHTIG: Diese deterministischen Werte wie CO2-Steuern sind FIX und koennen von dir NICHT geaendert werden!):
+Marktmetriken (policy_schedule, WICHTIG: deterministisch berechnet — CO2-Steuer, SAF etc. sind FIX und von dir NICHT aenderbar!):
 {scenario_block}
 
 Consumer segment_analysis (Input):
@@ -32,7 +32,7 @@ Letzte Events:
 
 ## Task Prompt
 Treffe fuer diese Runde eine regulatorische Entscheidung:
-1) begruende kurz die politische Leitentscheidung basierend auf den aktuellen deterministischen Werten (z.B. Reaktion auf eine neue CO2-Steuer aus dem Szenarioparameter-Block)
+1) begruende kurz die politische Leitentscheidung basierend auf den aktuellen Marktmetriken (z.B. Reaktion auf eine CO2-Steuer aus policy_schedule)
 2) nenne konkrete Aktionen (ACHTUNG: Du kannst keine Steuern oder Subventionen aendern! Erlasse stattdessen z.B. Aufklaerungskampagnen, Infrastrukturprojekte oder diplomatische Initiativen)
 3) nutze consumer_segment_analysis, um gesellschaftliche Akzeptanz und Nachfrageeffekte segmentiert zu beruecksichtigen
 4) schlage optional konkrete Faktorzustandsaenderungen vor, falls aus deiner Sicht plausibel
