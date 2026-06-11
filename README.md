@@ -104,14 +104,11 @@ Technology-Lab/
 
 Ein **Tick ist ein Tick**, keine Kalenderzuordnung (keine Quartale/Jahre in Config, Checkpoints oder Summaries). Die Simulationsuhr nutzt `current_tick` / `max_ticks`; in Outputs und Doku wird neutral „Tick N“ verwendet.
 
-## Policy-Schedule (M2)
+## System-Properties (M2)
 
 Preis, Steuer, SAF und Makro-Nachfrage werden **deterministisch** in `src/simulation_functions.py` berechnet — nicht vom LLM und nicht aus Event-Text geparst.
 
-Konfiguration: `configs/simulation_config.json`:
-
-- **`scenario_parameters`**: Default-Werte der sechs Parameter (z. B. `fuel_price_change: 0.02` = 2 %/Tick als Dezimalbruch)
-- **`policy_schedule`**: zeitgesteuerte Overrides ab Tick N (`{ "tick": 15, "parameter": "carbon_tax_level", "value": 120.0 }`)
+Konfiguration: `configs/properties.json` — `system_properties` mit `baseline` und `rules` (`set`, `ramp`) oder `step_function`.
 
 | Parameter | Bedeutung |
 | --- | --- |
@@ -124,7 +121,7 @@ Konfiguration: `configs/simulation_config.json`:
 
 Pro Tick im Output:
 
-- **`demand_level`** — Makro-Nachfrage-Index aus `policy_schedule` (M2)
+- **`demand_level`** — Makro-Nachfrage-Index aus `properties.json` (M2)
 - **`booking_rate`** — gebuchte Anteile aus Population-Sampler (M3, optional)
 
 ### Policy-Shocks testen
@@ -145,9 +142,10 @@ Danach im Output-Verzeichnis prüfen:
 
 - `outputs/<run_id>/price_history.json` — `price`, `demand_level`, `booking_rate` pro Tick
 - `outputs/<run_id>/protocol.md` — pro Tick Zeile **Markt:** mit `price`, `demand_level`, `booking_rate`
-- `outputs/<run_id>/protocol.json` — Feld `market` je Runde + `policy_schedule`
+- `outputs/<run_id>/protocol.json` — Feld `market` je Runde + `system_properties`
+- `outputs/<run_id>/timeseries/properties.csv` — System-Properties pro Tick
 
-Eigene Shocks: `configs/simulation_config.json` → `policy_schedule` anpassen, dann erneut laufen lassen.
+Eigene Shocks: `configs/properties.json` → `rules` anpassen (z. B. CO₂ ab Tick 15), dann erneut laufen lassen.
 
 ## Meilensteine
 

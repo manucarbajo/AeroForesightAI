@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.checkpoint_manager import CheckpointManager
 from src.config_loader import build_initial_state
+from src.nodes.environment_node import EnvironmentNode
 
 
 def test_checkpoint_save_and_load_round_boundary():
@@ -32,5 +33,24 @@ def test_checkpoint_save_and_load_round_boundary():
         assert loaded.clock.max_ticks == 3
         # basic fields preserved
         assert loaded.config.name == state.config.name
+    finally:
+        shutil.rmtree(tmpdir)
+
+
+def test_checkpoint_serializes_population_individuals():
+    state = build_initial_state()
+    state.clock.current_tick = 1
+    state.config.seed = 42
+    state = EnvironmentNode().invoke(state)
+
+    assert len(state.population_individuals) > 0
+
+    tmpdir = Path(tempfile.mkdtemp(prefix="cp_pop_test_"))
+    try:
+        manager = CheckpointManager(checkpoint_dir=tmpdir)
+        path = manager.save(state, run_id="run-pop", round_number=1)
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        assert len(payload["state"]["population_individuals"]) == len(state.population_individuals)
+        assert isinstance(payload["state"]["population_individuals"][0]["booked"], bool)
     finally:
         shutil.rmtree(tmpdir)

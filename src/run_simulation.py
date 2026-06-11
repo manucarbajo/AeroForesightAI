@@ -25,6 +25,10 @@ from src.output_writer import (
     save_event_log,
     save_final_narrative,
     save_price_history,
+    save_properties_timeseries,
+    save_population_individuals,
+    save_population_timeseries,
+    save_factors_timeseries,
     save_protocol,
     save_protocol_markdown,
     save_round_history,
@@ -100,6 +104,12 @@ def _parse_args() -> argparse.Namespace:
         help="Use C3 Redebedarf scheduler (sequential, score-based) instead of default parallel agents.",
     )
     parser.add_argument("--quiet", action="store_true", help="Reduce per-round console output.")
+    parser.add_argument(
+        "--checkpoint-interval",
+        type=int,
+        default=5,
+        help="Save a checkpoint every N ticks (default: 5). Final tick is always saved.",
+    )
     parser.add_argument("--no-protocol", action="store_true", help="Do not generate protocol output.")
     parser.add_argument("--no-scenarios", action="store_true", help="Do not generate scenarios from CIB matrix.")
     parser.add_argument(
@@ -133,6 +143,22 @@ def _save_run_outputs(
 
     event_log_path = save_event_log(state.event_log, run_dir=run_dir)
     price_history_path = save_price_history(state.price_history, run_dir=run_dir)
+    properties_timeseries_path = save_properties_timeseries(
+        state.property_timeseries,
+        run_dir=run_dir,
+    )
+    population_timeseries_path = save_population_timeseries(
+        state.population_stats,
+        run_dir=run_dir,
+    )
+    factors_timeseries_path = save_factors_timeseries(
+        state.factor_timeseries,
+        run_dir=run_dir,
+    )
+    population_csv_path = save_population_individuals(
+        state.population_individuals,
+        run_dir=run_dir,
+    )
     round_history_path = save_round_history(state.round_results, run_dir=run_dir)
     metadata_path = save_run_metadata(
         state,
@@ -185,6 +211,9 @@ def _save_run_outputs(
         "protocol_markdown": protocol_md_path,
         "scenarios": scenarios_path,
         "scenarios_markdown": scenarios_md_path,
+        "properties_timeseries": properties_timeseries_path,
+        "population_timeseries": population_timeseries_path,
+        "factors_timeseries": factors_timeseries_path,
     }
 
 
@@ -340,6 +369,8 @@ def main() -> int:
         options=RunnerOptions(
             enable_market=not args.no_market,
             enable_redebedarf=bool(args.redebedarf),
+            checkpoint_interval=max(0, int(args.checkpoint_interval)),
+            verbose_ticks=not args.quiet,
         ),
     )
     repo_root = Path(__file__).resolve().parents[1]

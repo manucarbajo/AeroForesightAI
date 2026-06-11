@@ -20,6 +20,7 @@ from src.nodes.orchestrator_node import OrchestratorNode
 from src.nodes.parallel_round_node import ParallelRoundNode
 from src.nodes.scheduler_node import SchedulerNode
 from src.nodes.scenario_agent_node import ScenarioAgentNode
+from src.factor_dynamics import apply_factor_rules_at_tick_start, record_factor_timeseries
 from src.simulation_runner import RunnerOptions
 from src.studio_helpers import get_llm
 
@@ -31,7 +32,7 @@ def build_playground_stategraph(
 ):
     """Build and compile the LangGraph stategraph for Studio runs.
 
-    Default (C4): orchestrator → parallel_round → market → environment — no
+    Default (C4/M4): orchestrator → parallel_round → environment → consumer → market — no
     Redebedarf scheduler. With ``enable_redebedarf`` (CLI ``--redebedarf`` or
     env ``SIMULATION_REDEBEDARF=1``): legacy scheduler loop with separate
     consumer / provider / regulator nodes.
@@ -84,35 +85,61 @@ def _build_parallel_stategraph(
         prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
         llm=llm,
     )
+    consumer_config = next((agent for agent in agents if agent.id == "consumer"), None)
+    consumer_node = AgentNode(consumer_config, llm=llm) if consumer_config is not None else None
     scenario_node = ScenarioAgentNode(llm=llm)
-
-    post_round_target = "market" if runner_options.enable_market else "environment"
 
     workflow = StateGraph(PlaygroundState, input_schema=InputState)
     workflow.add_node("initialize_state", initialize_state)
     workflow.add_node("reset_round_buffer", reset_round_buffer)
     workflow.add_node("orchestrator", wrap_node(orchestrator.invoke))
+    workflow.add_node("factor_rules", wrap_node(apply_factor_rules_at_tick_start))
     workflow.add_node("parallel_round", wrap_node(parallel_round.invoke))
-    if runner_options.enable_market:
-        workflow.add_node("market", wrap_node(market_node.invoke))
     workflow.add_node("environment", wrap_node(environment_node.invoke))
+    if consumer_node is not None:
+        def _consumer_after_booking(payload: Any) -> Any:
+            state = to_state(payload)
+            state = consumer_node.invoke(state)
+            state = environment_node.apply_consumer_factor_updates(state)
+            return state.model_dump()
+
+        workflow.add_node("consumer", _consumer_after_booking)
+    if runner_options.enable_market:
+        def _market_with_factor_timeseries(payload: Any) -> Any:
+            state = to_state(payload)
+            state = market_node.invoke(state)
+            state = record_factor_timeseries(state)
+            return state.model_dump()
+
+        workflow.add_node("market", _market_with_factor_timeseries)
     workflow.add_node("scenario_agent", wrap_node(scenario_node.invoke))
 
     workflow.set_entry_point("initialize_state")
     workflow.add_edge("initialize_state", "reset_round_buffer")
     workflow.add_edge("reset_round_buffer", "orchestrator")
-    workflow.add_edge("orchestrator", "parallel_round")
-    workflow.add_edge("parallel_round", post_round_target)
-    if runner_options.enable_market:
-        workflow.add_edge("market", "environment")
+    workflow.add_edge("orchestrator", "factor_rules")
+    workflow.add_edge("factor_rules", "parallel_round")
+    workflow.add_edge("parallel_round", "environment")
+    if consumer_node is not None:
+        workflow.add_edge("environment", "consumer")
+        if runner_options.enable_market:
+            workflow.add_edge("consumer", "market")
+    elif runner_options.enable_market:
+        workflow.add_edge("environment", "market")
 
-    def _route_after_environment(payload: Any) -> str:
+    def _route_after_tick(payload: Any) -> str:
         state = to_state(payload)
         return "reset_round_buffer" if state.clock.current_tick < state.clock.max_ticks else "scenario_agent"
 
+    if runner_options.enable_market:
+        tick_end_node = "market"
+    elif consumer_node is not None:
+        tick_end_node = "consumer"
+    else:
+        tick_end_node = "environment"
     workflow.add_conditional_edges(
-        "environment",
-        _route_after_environment,
+        tick_end_node,
+        _route_after_tick,
         {
             "reset_round_buffer": "reset_round_buffer",
             "scenario_agent": "scenario_agent",
@@ -149,7 +176,7 @@ def _build_redebedarf_stategraph(
         "regulator": AgentNode(by_type[AgentType.REGULATOR], llm=llm),
     }
 
-    post_round_target = "market" if runner_options.enable_market else "environment"
+    post_round_target = "environment"
 
     workflow = StateGraph(PlaygroundState, input_schema=InputState)
     workflow.add_node("initialize_state", initialize_state)
@@ -197,7 +224,7 @@ def _build_redebedarf_stategraph(
     def _route_from_scheduler(payload: Any) -> str:
         state = to_state(payload)
         target = SchedulerNode.route_from_scheduler(state)
-        if target == "market" and not runner_options.enable_market:
+        if target == "market":
             return "environment"
         return target
 
@@ -211,15 +238,16 @@ def _build_redebedarf_stategraph(
     workflow.add_edge("provider", "determine_next_speaker")
     workflow.add_edge("regulator", "determine_next_speaker")
     if runner_options.enable_market:
-        workflow.add_edge("market", "environment")
+        workflow.add_edge("environment", "market")
 
-    def _route_after_environment(payload: Any) -> str:
+    def _route_after_tick_redebedarf(payload: Any) -> str:
         state = to_state(payload)
         return "reset_round_buffer" if state.clock.current_tick < state.clock.max_ticks else "scenario_agent"
 
+    tick_end_node = "market" if runner_options.enable_market else "environment"
     workflow.add_conditional_edges(
-        "environment",
-        _route_after_environment,
+        tick_end_node,
+        _route_after_tick_redebedarf,
         {
             "reset_round_buffer": "reset_round_buffer",
             "scenario_agent": "scenario_agent",

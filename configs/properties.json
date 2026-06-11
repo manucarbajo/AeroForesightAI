@@ -1,0 +1,345 @@
+{
+  "system_properties": [
+    {
+      "id": "demand_growth_rate",
+      "type": "numeric",
+      "unit": "fraction_per_tick",
+      "description": "Jaehrliche Wachstumsrate der Flugnachfrage",
+      "source": "trajectory",
+      "min_value": -0.05,
+      "max_value": 0.1,
+      "trajectory": {
+        "baseline": 0.03,
+        "rules": []
+      }
+    },
+    {
+      "id": "fuel_price_change",
+      "type": "numeric",
+      "unit": "fraction_per_tick",
+      "description": "Veraenderung der Treibstoffkosten pro Tick",
+      "source": "trajectory",
+      "min_value": -0.1,
+      "max_value": 0.2,
+      "trajectory": {
+        "baseline": 0.005,
+        "rules": []
+      }
+    },
+    {
+      "id": "carbon_tax_level",
+      "type": "numeric",
+      "unit": "eur_per_tonne",
+      "description": "CO2-Bepreisung pro Tonne in EUR",
+      "source": "trajectory",
+      "min_value": 0.0,
+      "max_value": 300.0,
+      "trajectory": {
+        "baseline": 50.0,
+        "rules": [
+          { "active_from_tick": 1, "effect": { "type": "set", "value": 50.0 } },
+          { "active_from_tick": 15, "effect": { "type": "set", "value": 120.0 } },
+          { "active_from_tick": 30, "effect": { "type": "set", "value": 200.0 } }
+        ]
+      }
+    },
+    {
+      "id": "oil_price_index",
+      "type": "numeric",
+      "unit": "index",
+      "description": "Relativer Index fuer Rohoel (1.0 = Basisjahr)",
+      "source": "trajectory",
+      "min_value": 0.5,
+      "max_value": 3.0,
+      "trajectory": {
+        "baseline": 1.0,
+        "rules": []
+      }
+    },
+    {
+      "id": "saf_mandate_share",
+      "type": "numeric",
+      "unit": "fraction",
+      "description": "Gesetzlich vorgeschriebener Anteil nachhaltiger Treibstoffe",
+      "source": "trajectory",
+      "min_value": 0.0,
+      "max_value": 0.5,
+      "trajectory": {
+        "baseline": 0.0,
+        "rules": [
+          { "active_from_tick": 8, "effect": { "type": "set", "value": 0.02 } },
+          { "active_from_tick": 16, "effect": { "type": "set", "value": 0.05 } }
+        ]
+      }
+    },
+    {
+      "id": "efuel_subsidy",
+      "type": "numeric",
+      "unit": "fraction",
+      "description": "Subventionsrate fuer E-Fuel (0-1)",
+      "source": "trajectory",
+      "min_value": 0.0,
+      "max_value": 1.0,
+      "trajectory": {
+        "baseline": 0.0,
+        "rules": []
+      }
+    },
+    {
+      "id": "provider_markup",
+      "type": "numeric",
+      "unit": "eur",
+      "description": "Runtime-Anbieter-Marge; emergent via market_rules",
+      "source": "runtime",
+      "min_value": 0.0,
+      "trajectory": {
+        "baseline": 28.0,
+        "rules": []
+      }
+    },
+    {
+      "id": "ticket_price",
+      "type": "numeric",
+      "unit": "eur",
+      "description": "Veroeffentlichter Ticketpreis (cost_pressure + provider_markup)",
+      "source": "computed",
+      "min_value": 1.0,
+      "trajectory": {
+        "baseline": 128.0,
+        "rules": []
+      }
+    }
+  ],
+  "individual_properties": [
+    {
+      "id": "business",
+      "type": "boolean",
+      "prevalence": 0.3,
+      "enabled": true
+    },
+    {
+      "id": "price_sensitive",
+      "type": "boolean",
+      "prevalence": 0.5,
+      "enabled": true
+    },
+    {
+      "id": "eco_conscious",
+      "type": "boolean",
+      "prevalence": 0.2,
+      "enabled": true
+    },
+    {
+      "id": "environmental_awareness",
+      "type": "distribution",
+      "distribution": "beta",
+      "alpha": 2,
+      "beta": 5,
+      "enabled": true
+    },
+    {
+      "id": "wtp_eur",
+      "type": "distribution",
+      "distribution": "lognormal",
+      "mean": 120.0,
+      "std_dev": 0.35,
+      "min_value": 50.0,
+      "max_value": 500.0,
+      "enabled": true
+    }
+  ],
+  "shift_rules": [
+    {
+      "id": "f1_substitution_price_sensitivity",
+      "when": { "factor": "F1", "state": "F1.2" },
+      "effect": { "property": "price_sensitivity", "delta": 0.05 },
+      "once": true
+    },
+    {
+      "id": "f2_strict_regulation_awareness",
+      "when": { "factor": "F2", "state": "F2.2" },
+      "effect": { "property": "environmental_awareness", "delta": 0.05 },
+      "once": true
+    },
+    {
+      "id": "f3_saf_breakthrough_awareness",
+      "when": { "factor": "F3", "state": "F3.2" },
+      "effect": { "property": "environmental_awareness", "delta": 0.04 },
+      "once": true
+    },
+    {
+      "id": "f4_recession_price_sensitivity",
+      "when": { "factor": "F4", "state": "F4.2" },
+      "effect": { "property": "price_sensitivity", "delta": 0.07 },
+      "once": true
+    },
+    {
+      "id": "f5_rail_alternative_awareness",
+      "when": { "factor": "F5", "state": "F5.2" },
+      "effect": { "property": "environmental_awareness", "delta": 0.06 },
+      "once": true
+    },
+    {
+      "id": "f6_flight_shaming_awareness",
+      "when": { "factor": "F6", "state": "F6.2" },
+      "effect": { "property": "environmental_awareness", "delta": 0.08 },
+      "once": true
+    },
+    {
+      "id": "f7_geopolitical_price_sensitivity",
+      "when": { "factor": "F7", "state": "F7.2" },
+      "effect": { "property": "price_sensitivity", "delta": 0.05 },
+      "once": true
+    },
+    {
+      "id": "carbon_tax_price_sensitivity",
+      "when": { "system_property": "carbon_tax_level", "above": 50 },
+      "effect": { "property": "price_sensitivity", "delta": 0.12 },
+      "once": true
+    }
+  ],
+  "factor_rules": [
+    {
+      "id": "f1_low_booking_substitution",
+      "factor_id": "F1",
+      "when": { "metric": "booking_rate", "below": 0.45 },
+      "effect": { "set_state": "F1.2" },
+      "priority": 10
+    },
+    {
+      "id": "f1_strong_demand",
+      "factor_id": "F1",
+      "when": { "metric": "booking_rate", "above": 0.68 },
+      "effect": { "set_state": "F1.1" },
+      "priority": 5
+    },
+    {
+      "id": "f2_high_carbon_policy",
+      "factor_id": "F2",
+      "when": { "system_property": "carbon_tax_level", "above": 100 },
+      "effect": { "set_state": "F2.2" },
+      "priority": 10
+    },
+    {
+      "id": "f2_moderate_policy",
+      "factor_id": "F2",
+      "when": { "system_property": "carbon_tax_level", "below": 80 },
+      "effect": { "set_state": "F2.1" },
+      "priority": 4
+    },
+    {
+      "id": "f3_saf_mandate_breakthrough",
+      "factor_id": "F3",
+      "when": { "system_property": "saf_mandate_share", "at_least": 0.05 },
+      "effect": { "set_state": "F3.2" },
+      "priority": 10
+    },
+    {
+      "id": "f3_incremental_tech",
+      "factor_id": "F3",
+      "when": { "system_property": "saf_mandate_share", "below": 0.03 },
+      "effect": { "set_state": "F3.1" },
+      "priority": 3
+    },
+    {
+      "id": "f4_high_cost_pressure",
+      "factor_id": "F4",
+      "when": { "metric": "cost_pressure", "above": 135 },
+      "effect": { "set_state": "F4.2" },
+      "priority": 8
+    },
+    {
+      "id": "f4_stable_growth",
+      "factor_id": "F4",
+      "when": { "metric": "cost_pressure", "below": 115 },
+      "effect": { "set_state": "F4.1" },
+      "priority": 4
+    },
+    {
+      "id": "f5_alternatives_flight_shaming",
+      "factor_id": "F5",
+      "when": { "factor": "F6", "state": "F6.2" },
+      "effect": { "set_state": "F5.2" },
+      "priority": 8
+    },
+    {
+      "id": "f5_no_alternative",
+      "factor_id": "F5",
+      "when": { "factor": "F6", "state": "F6.1" },
+      "effect": { "set_state": "F5.1" },
+      "priority": 4
+    },
+    {
+      "id": "f6_flight_shaming_high_tax",
+      "factor_id": "F6",
+      "when": { "system_property": "carbon_tax_level", "above": 80 },
+      "effect": { "set_state": "F6.2" },
+      "priority": 10
+    },
+    {
+      "id": "f6_accepted_flying",
+      "factor_id": "F6",
+      "when": { "system_property": "carbon_tax_level", "below": 60 },
+      "effect": { "set_state": "F6.1" },
+      "priority": 4
+    },
+    {
+      "id": "f7_oil_stress",
+      "factor_id": "F7",
+      "when": { "system_property": "oil_price_index", "above": 1.15 },
+      "effect": { "set_state": "F7.2" },
+      "priority": 6
+    },
+    {
+      "id": "f7_open_markets",
+      "factor_id": "F7",
+      "when": { "system_property": "oil_price_index", "below": 1.1 },
+      "effect": { "set_state": "F7.1" },
+      "priority": 3
+    }
+  ],
+  "market_rules": [
+    {
+      "id": "provider_yield_feedback",
+      "when": { "enabled": true },
+      "effect": {
+        "type": "booking_yield_feedback",
+        "update_property": "provider_markup",
+        "publish_property": "ticket_price",
+        "compose": "cost_pressure + provider_markup",
+        "target_booking_rate": 0.70,
+        "markup_adjustment_per_tick": 0.08,
+        "max_price_change_fraction": 0.08,
+        "damping": 0.85,
+        "booking_weight": 0.6
+      }
+    }
+  ],
+  "price_model": {
+    "base_price": 100.0,
+    "compound_fuel_on_cost": true,
+    "cost_properties": [
+      "fuel_price_change",
+      "carbon_tax_level",
+      "oil_price_index",
+      "saf_mandate_share",
+      "efuel_subsidy"
+    ],
+    "coefficients": {
+      "carbon_per_tonne": 0.001,
+      "saf_premium_factor": 0.5,
+      "min_ticket_price": 1.0,
+      "margin_reference_fraction": 0.08,
+      "margin_floor_fraction": 0.05,
+      "target_booking_tolerance": 0.9
+    }
+  },
+  "market_feedback": {
+    "enabled": true,
+    "target_booking_rate": 0.70,
+    "markup_adjustment_per_tick": 0.08,
+    "max_price_change_fraction": 0.08,
+    "damping": 0.85,
+    "booking_weight": 0.6
+  }
+}

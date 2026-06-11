@@ -18,23 +18,7 @@
 		"name": "Flugverkehr Szenarioplanung MVP",
 		"description": "Prototypische Multi-Agenten-Simulation fuer Szenarioplanung im Flugverkehr (2025-2035)",
 		"llm": { "model": "llama3", "temperature": 0.7, "max_tokens": 2048 },
-		"seed": null,
-		"change_log": [],
-		"policy_schedule": [
-			{ "tick": 1, "parameter": "carbon_tax_level", "value": 50.0 },
-			{ "tick": 15, "parameter": "carbon_tax_level", "value": 120.0 },
-			{ "tick": 30, "parameter": "carbon_tax_level", "value": 200.0 },
-			{ "tick": 8, "parameter": "saf_mandate_share", "value": 0.02 },
-			{ "tick": 16, "parameter": "saf_mandate_share", "value": 0.05 }
-		],
-		"scenario_parameters": [
-			{ "id": "demand_growth_rate", "name": "Nachfragewachstum", "description": "Jaehrliche Wachstumsrate der Flugnachfrage", "value": 0.03, "unit": "fraction_per_tick", "min_value": -0.05, "max_value": 0.10 },
-			{ "id": "fuel_price_change", "name": "Treibstoffpreisentwicklung", "description": "Veraenderung der Treibstoffkosten pro Tick", "value": 0.02, "unit": "fraction_per_tick", "min_value": -0.10, "max_value": 0.20 },
-			{ "id": "carbon_tax_level", "name": "CO2-Steuer", "description": "CO2-Bepreisung pro Tonne in EUR", "value": 50.0, "unit": "eur_per_tonne", "min_value": 0.0, "max_value": 300.0 },
-			{ "id": "oil_price_index", "name": "Oelpreisindex", "description": "Relativer Index fuer Rohoel (1.0 = Basisjahr)", "value": 1.0, "unit": "index", "min_value": 0.5, "max_value": 3.0 },
-			{ "id": "saf_mandate_share", "name": "SAF-Beimischquote", "description": "Gesetzlich vorgeschriebener Anteil nachhaltiger Treibstoffe", "value": 0.0, "unit": "fraction", "min_value": 0.0, "max_value": 0.5 },
-			{ "id": "efuel_subsidy", "name": "E-Fuel Subvention", "description": "Subventionsrate fuer E-Fuel (0-1)", "value": 0.0, "unit": "fraction", "min_value": 0.0, "max_value": 1.0 }
-		]
+		"seed": null
 	},
 	"clock": {
 		"current_tick": 0,

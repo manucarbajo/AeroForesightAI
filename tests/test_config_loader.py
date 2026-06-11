@@ -7,6 +7,7 @@ from src.config_loader import (
     load_factors,
     load_population_config,
     load_cib_frozen,
+    load_properties_config,
     build_initial_state,
 )
 from src.models.state_models import SimulationState, SimulationConfig, FactorState
@@ -54,12 +55,20 @@ def test_load_population_config():
     assert len(pop_config.segments) > 0
 
 
+def test_load_properties_config():
+    properties = load_properties_config()
+    assert len(properties.system_properties) == 8
+    assert "carbon_tax_level" in properties.system_property_ids()
+
+
 def test_build_initial_state():
     state = build_initial_state()
     assert isinstance(state, SimulationState)
     assert state.clock.current_tick == 0
     assert len(state.agents) > 0
     assert len(state.environment.factors) > 0
+    assert state.properties is not None
+    assert len(state.resolved_properties().system_properties) == 8
     assert state.event_log == []
     assert state.price_history == []
     assert state.round_results == []

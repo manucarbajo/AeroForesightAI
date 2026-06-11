@@ -1,7 +1,22 @@
+"""Persistent population sampling and booking (M3).
+
+Individuals are created once, shifted by config rules each tick, then evaluated
+for booking deterministically from WTP + logit utility.
+"""
+
+from __future__ import annotations
+
 import numpy as np
 from pydantic import BaseModel
 
-from src.models.population_models import PopulationConfig, DistributionConfig
+from src.models.enums import DistributionType
+from src.models.population_models import (
+    SEGMENT_LABEL_MAP,
+    Individual,
+    PopulationConfig,
+)
+from src.models.property_models import IndividualProperty, PropertiesConfig, ShiftRule
+from src.models.state_models import FactorState
 
 
 class SegmentStats(BaseModel):
@@ -19,76 +34,317 @@ class PopulationStats(BaseModel):
     segments: dict[str, SegmentStats]
 
 
-def _sample_distribution(config: DistributionConfig, size: int) -> np.ndarray:
-    if config.type == "lognormal":
-        # Approximation for lognormal mean/sigma from normal mean/std_dev
-        # using the log of the mean for mu
-        mu = np.log(max(0.01, config.mean))
-        values = np.random.lognormal(mean=mu, sigma=max(0.01, config.std_dev), size=size)
-    else:
-        # Fallback for normal and beta (simplified to normal)
-        values = np.random.normal(config.mean, config.std_dev, size)
-        
-    return np.clip(values, config.min_value, config.max_value)
+DEFAULT_LOGIT_THRESHOLD = 0.5
+DEFAULT_GREEN_PREMIUM = 0.1
+HIGH_PRICE_SENSITIVITY_THRESHOLD = 0.8
+HIGH_PRICE_SENSITIVITY_PENALTY = 0.3
+DEFAULT_CARBON_ECO_BASELINE = 50.0
 
 
-def run_population_sampling(config: PopulationConfig, ticket_price: float, carbon_tax: float) -> PopulationStats:
-    """
-    Samples individuals based on PopulationConfig and calculates booking decisions
-    using a Logit-based choice function.
-    """
+def _rng(seed: int) -> np.random.Generator:
+    return np.random.default_rng(seed)
+
+
+def _get_individual_property(
+    properties: PropertiesConfig,
+    prop_id: str,
+) -> IndividualProperty | None:
+    for prop in properties.individual_properties:
+        if prop.id == prop_id:
+            return prop
+    return None
+
+
+def _sample_beta(rng: np.random.Generator, alpha: float, beta: float) -> float:
+    return float(rng.beta(max(0.1, alpha), max(0.1, beta)))
+
+
+def _sample_lognormal(
+    rng: np.random.Generator,
+    *,
+    mean: float,
+    std_dev: float,
+    min_value: float,
+    max_value: float,
+) -> float:
+    mu = np.log(max(0.01, mean))
+    sigma = max(0.01, std_dev)
+    value = float(rng.lognormal(mean=mu, sigma=sigma))
+    return float(np.clip(value, min_value, max_value))
+
+
+def _derive_price_sensitivity(labels: dict[str, bool]) -> float:
+    value = 0.5
+    if labels.get("business"):
+        value -= 0.2
+    if labels.get("price_sensitive"):
+        value += 0.3
+    if labels.get("eco_conscious"):
+        value += 0.05
+    return float(np.clip(value, 0.0, 1.0))
+
+
+def initialize_population(
+    properties: PropertiesConfig,
+    config: PopulationConfig,
+    *,
+    seed: int = 42,
+) -> list[Individual]:
+    """Create N persistent individuals once per simulation run."""
+
+    rng = _rng(seed)
     total_pop = config.total_population
-    
-    segments_stats = {}
-    total_booked = 0
-    
-    for segment in config.segments:
-        n_individuals = int(np.round(total_pop * segment.share))
-        if n_individuals <= 0:
-            continue
-            
-        # Sample attributes for each individual
-        # Note: income_level is generated but currently not used in the simplified utility function,
-        # but could be used to adjust price elasticity.
-        elasticity = _sample_distribution(segment.price_elasticity, n_individuals)
-        awareness = _sample_distribution(segment.environmental_awareness, n_individuals)
-        
-        # Base utility to fly (represents the general desire to travel)
-        base_utility = 2.0
-        
-        # Price penalty
-        # normalized_price ~ 1.0 when ticket price is 100 EUR
-        normalized_price = ticket_price / 100.0 
-        price_penalty = elasticity * normalized_price
-        
-        # Environmental penalty
-        # normalized_tax ~ 1.0 when carbon tax is 100 EUR/t
-        normalized_tax = carbon_tax / 100.0
-        eco_penalty = awareness * normalized_tax
-        
-        # Final Utility
-        utility = base_utility - price_penalty - eco_penalty
-        
-        # Probability of booking (Logit function)
-        prob = np.exp(utility) / (1.0 + np.exp(utility))
-        
-        # Draw random choices based on probability
-        choices = np.random.rand(n_individuals) < prob
-        
-        booked = int(np.sum(choices))
-        total_booked += booked
-        
-        segments_stats[segment.id] = SegmentStats(
-            segment_id=segment.id,
-            share=segment.share,
-            total_individuals=n_individuals,
-            booked_individuals=booked,
-            booking_rate=booked / n_individuals if n_individuals > 0 else 0.0
+    individuals: list[Individual] = []
+
+    awareness_prop = _get_individual_property(properties, "environmental_awareness")
+    wtp_prop = _get_individual_property(properties, "wtp_eur")
+
+    for person_id in range(total_pop):
+        labels: dict[str, bool] = {}
+        for prop in properties.individual_properties:
+            if prop.type != "boolean" or not prop.enabled:
+                continue
+            prevalence = prop.prevalence if prop.prevalence is not None else 0.0
+            labels[prop.id] = bool(rng.random() < float(prevalence))
+
+        if awareness_prop and awareness_prop.distribution == DistributionType.BETA:
+            awareness = _sample_beta(
+                rng,
+                awareness_prop.alpha or 2.0,
+                awareness_prop.beta or 5.0,
+            )
+        else:
+            awareness = float(rng.uniform(0.2, 0.8))
+
+        if wtp_prop and wtp_prop.distribution == DistributionType.LOGNORMAL:
+            wtp = _sample_lognormal(
+                rng,
+                mean=wtp_prop.mean or 120.0,
+                std_dev=wtp_prop.std_dev or 0.35,
+                min_value=wtp_prop.min_value or 50.0,
+                max_value=wtp_prop.max_value or 500.0,
+            )
+        else:
+            wtp = float(rng.uniform(80.0, 200.0))
+
+        if labels.get("business"):
+            wtp *= 1.25
+
+        individuals.append(
+            Individual(
+                id=person_id,
+                age=int(rng.integers(18, 76)),
+                labels=labels,
+                wtp_eur=round(wtp, 2),
+                environmental_awareness=round(awareness, 4),
+                price_sensitivity=_derive_price_sensitivity(labels),
+            )
         )
-        
+
+    return individuals
+
+
+def _rule_matches(
+    rule: ShiftRule,
+    factors: dict[str, FactorState],
+    system_properties: dict[str, float],
+) -> bool:
+    when = rule.when
+    if not when:
+        return False
+
+    if "factor" in when:
+        factor_id = str(when["factor"])
+        expected_state = str(when.get("state", ""))
+        factor = factors.get(factor_id)
+        if factor is None or factor.current_state != expected_state:
+            return False
+
+    if "system_property" in when:
+        prop_id = str(when["system_property"])
+        value = system_properties.get(prop_id)
+        if value is None:
+            return False
+        if "above" in when and value <= float(when["above"]):
+            return False
+        if "below" in when and value >= float(when["below"]):
+            return False
+
+    return True
+
+
+def apply_factor_shifts(
+    individuals: list[Individual],
+    shift_rules: list[ShiftRule],
+    factors: dict[str, FactorState],
+    system_properties: dict[str, float],
+) -> list[Individual]:
+    """Apply config shift rules to numeric individual attributes."""
+
+    if not shift_rules:
+        return individuals
+
+    active_rules = [rule for rule in shift_rules if _rule_matches(rule, factors, system_properties)]
+    if not active_rules:
+        return individuals
+
+    updated: list[Individual] = []
+    for person in individuals:
+        awareness = person.environmental_awareness
+        price_sensitivity = person.price_sensitivity
+        applied_rules = list(person.applied_shift_rules)
+
+        for index, rule in enumerate(active_rules):
+            rule_id = rule.id or f"shift_rule_{index}"
+            if rule.once and rule_id in applied_rules:
+                continue
+            effect = rule.effect
+            prop_id = str(effect.get("property", ""))
+            delta = float(effect.get("delta", 0.0))
+            if prop_id == "environmental_awareness":
+                awareness = float(np.clip(awareness + delta, 0.0, 1.0))
+            elif prop_id == "price_sensitivity":
+                price_sensitivity = float(np.clip(price_sensitivity + delta, 0.0, 1.0))
+            if rule.once:
+                applied_rules.append(rule_id)
+
+        updated.append(
+            person.model_copy(
+                update={
+                    "environmental_awareness": round(awareness, 4),
+                    "price_sensitivity": round(price_sensitivity, 4),
+                    "applied_shift_rules": applied_rules,
+                }
+            )
+        )
+
+    return updated
+
+
+def _booking_probability(
+    person: Individual,
+    *,
+    ticket_price: float,
+    carbon_tax: float,
+    green_premium: float = DEFAULT_GREEN_PREMIUM,
+    logit_threshold: float = DEFAULT_LOGIT_THRESHOLD,
+) -> bool:
+    affordability_limit = person.wtp_eur * (1.0 + green_premium * person.environmental_awareness)
+    if ticket_price > affordability_limit:
+        return False
+
+    base_utility = 2.0
+    normalized_price = ticket_price / 100.0
+    price_penalty = person.price_sensitivity * normalized_price
+    excess_carbon = max(0.0, carbon_tax - DEFAULT_CARBON_ECO_BASELINE)
+    normalized_tax = excess_carbon / 100.0
+    eco_penalty = person.environmental_awareness * normalized_tax
+    if person.price_sensitivity > HIGH_PRICE_SENSITIVITY_THRESHOLD:
+        eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY
+
+    utility = base_utility - price_penalty - eco_penalty
+    probability = float(1.0 / (1.0 + np.exp(-utility)))
+    return bool(probability >= logit_threshold)
+
+
+def evaluate_booking(
+    individuals: list[Individual],
+    *,
+    ticket_price: float,
+    carbon_tax: float,
+) -> tuple[list[Individual], PopulationStats]:
+    """Evaluate booking decisions for persistent individuals."""
+
+    booked_individuals: list[Individual] = []
+    for person in individuals:
+        booked = _booking_probability(
+            person,
+            ticket_price=ticket_price,
+            carbon_tax=carbon_tax,
+        )
+        booked_individuals.append(person.model_copy(update={"booked": bool(booked)}))
+
+    return booked_individuals, aggregate_population_stats(booked_individuals)
+
+
+def aggregate_population_stats(individuals: list[Individual]) -> PopulationStats:
+    """Aggregate booking stats overall and per legacy segment label."""
+
+    total_pop = len(individuals)
+    total_booked = sum(1 for person in individuals if person.booked)
+
+    segments: dict[str, SegmentStats] = {}
+    for segment_id, label_id in SEGMENT_LABEL_MAP.items():
+        members = [person for person in individuals if person.labels.get(label_id)]
+        booked = sum(1 for person in members if person.booked)
+        count = len(members)
+        segments[segment_id] = SegmentStats(
+            segment_id=segment_id,
+            share=count / total_pop if total_pop else 0.0,
+            total_individuals=count,
+            booked_individuals=booked,
+            booking_rate=booked / count if count else 0.0,
+        )
+
     return PopulationStats(
         total_population=total_pop,
         total_booked=total_booked,
-        total_demand=total_booked / total_pop if total_pop > 0 else 0.0,
-        segments=segments_stats
+        total_demand=total_booked / total_pop if total_pop else 0.0,
+        segments=segments,
     )
+
+
+def run_population_tick(
+    properties: PropertiesConfig,
+    config: PopulationConfig,
+    individuals: list[Individual] | None,
+    *,
+    ticket_price: float,
+    carbon_tax: float,
+    factors: dict[str, FactorState],
+    system_properties: dict[str, float],
+    seed: int = 42,
+) -> tuple[list[Individual], PopulationStats]:
+    """Full M3 population pipeline for one tick."""
+
+    if not individuals:
+        individuals = initialize_population(properties, config, seed=seed)
+
+    shifted = apply_factor_shifts(
+        individuals,
+        properties.shift_rules,
+        factors,
+        system_properties,
+    )
+    return evaluate_booking(
+        shifted,
+        ticket_price=ticket_price,
+        carbon_tax=carbon_tax,
+    )
+
+
+def run_population_sampling(
+    config: PopulationConfig,
+    ticket_price: float,
+    carbon_tax: float,
+    *,
+    properties: PropertiesConfig | None = None,
+    seed: int = 42,
+) -> PopulationStats:
+    """Backward-compatible entry point (non-persistent single-tick sample)."""
+
+    from src.config_loader import load_properties_config
+
+    resolved_properties = properties or load_properties_config()
+    individuals, stats = run_population_tick(
+        resolved_properties,
+        config,
+        None,
+        ticket_price=ticket_price,
+        carbon_tax=carbon_tax,
+        factors={},
+        system_properties={},
+        seed=seed,
+    )
+    _ = individuals
+    return stats

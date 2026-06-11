@@ -18,8 +18,10 @@ Constraints:
 Global context:
 {global_context}
 
-Market metrics (policy_schedule — IMPORTANT: deterministically computed; carbon tax, SAF mandate, etc. are FIXED and you must NOT change them!):
+Market metrics (properties.json — IMPORTANT: deterministically computed; carbon tax, SAF mandate, etc. are FIXED and you must NOT change them!):
 {scenario_block}
+
+{prior_booking_block}
 
 Consumer segment_analysis (input):
 {consumer_segment_analysis}
@@ -32,11 +34,11 @@ Recent events:
 
 ## Task Prompt
 Make a regulatory decision for this tick:
-1) briefly justify the policy direction based on current market metrics (e.g. reaction to a carbon tax from policy_schedule)
+1) briefly justify the policy direction based on **prior_tick booking_rate**, scheduled property changes, and market metrics (e.g. reaction to a carbon tax shock this tick)
 2) name concrete actions (NOTE: you cannot change taxes or subsidies! Instead, e.g. launch awareness campaigns, infrastructure projects, or diplomatic initiatives)
-3) use consumer_segment_analysis to account for societal acceptance and demand effects by segment
+3) use consumer_segment_analysis and prior_booking_block to account for societal acceptance and demand effects by segment
 4) optionally propose concrete factor state changes if plausible from your perspective
-5) formulate 1–3 events that follow from your decision. IMPORTANT: NEVER repeat events or statements from "Recent events". Introduce new strategic aspects or choose "NO_OP".
+5) formulate **exactly 1** event per tick (policy narrative). On property shocks, describe a distinct steering measure (campaign, infrastructure, diplomacy). Use actions=["NO_OP"] and events=[] only when stable AND Recent events already cover the topic. Do NOT re-announce the same SAF mandate every tick.
 
 ## Output instruction (strict)
 Respond with exactly one JSON object, no markdown and no code block.

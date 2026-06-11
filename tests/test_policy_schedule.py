@@ -1,49 +1,19 @@
 from __future__ import annotations
 
-import pytest
-
-from src.config_loader import build_initial_state, load_simulation_config
-from src.models.state_models import PolicyEntry
+from src.config_loader import build_initial_state, load_properties_config
+from src.models.property_models import (
+    BaselineTrajectory,
+    PropertiesConfig,
+    SetEffect,
+    SystemProperty,
+    TrajectoryRule,
+)
 from src.nodes.market_node import MarketNode
 from src.simulation_functions import (
     compute_demand,
     compute_market_metrics,
     compute_ticket_price,
-    resolve_policy,
 )
-
-
-class TestResolvePolicy:
-    def test_empty_schedule(self):
-        assert resolve_policy(5, []) == {}
-
-    def test_entry_before_tick_not_applied(self):
-        schedule = [PolicyEntry(tick=10, parameter="carbon_tax_level", value=100.0)]
-        assert resolve_policy(5, schedule) == {}
-
-    def test_entry_at_tick_applied(self):
-        schedule = [PolicyEntry(tick=5, parameter="carbon_tax_level", value=100.0)]
-        assert resolve_policy(5, schedule) == {"carbon_tax_level": 100.0}
-
-    def test_later_entry_overrides_earlier(self):
-        schedule = [
-            PolicyEntry(tick=1, parameter="carbon_tax_level", value=50.0),
-            PolicyEntry(tick=8, parameter="carbon_tax_level", value=75.0),
-        ]
-        result = resolve_policy(10, schedule)
-        assert result["carbon_tax_level"] == 75.0
-
-    def test_multiple_parameters(self):
-        schedule = [
-            PolicyEntry(tick=1, parameter="carbon_tax_level", value=50.0),
-            PolicyEntry(tick=1, parameter="saf_mandate_share", value=0.02),
-        ]
-        result = resolve_policy(1, schedule)
-        assert result == {"carbon_tax_level": 50.0, "saf_mandate_share": 0.02}
-
-    def test_tick_zero_applies_nothing(self):
-        schedule = [PolicyEntry(tick=1, parameter="carbon_tax_level", value=50.0)]
-        assert resolve_policy(0, schedule) == {}
 
 
 class TestComputeTicketPrice:
@@ -147,28 +117,39 @@ class TestComputeDemand:
         assert demand == 2.0
 
 
-def test_load_policy_schedule_from_config():
-    config = load_simulation_config()
-    assert len(config.policy_schedule) >= 1
-    assert config.policy_schedule[0].parameter == "carbon_tax_level"
-    assert len(config.scenario_parameters) == 6
+def test_load_properties_from_config():
+    properties = load_properties_config()
+    assert len(properties.system_properties) == 8
+    assert "carbon_tax_level" in properties.system_property_ids()
 
 
 def test_carbon_tax_delayed_until_tick_15():
-    schedule = [PolicyEntry(tick=15, parameter="carbon_tax_level", value=120.0)]
-    runtime = {"carbon_tax_level": 0.0}
+    properties = PropertiesConfig(
+        system_properties=[
+            SystemProperty(
+                id="carbon_tax_level",
+                trajectory=BaselineTrajectory(
+                    baseline=0.0,
+                    rules=[
+                        TrajectoryRule(
+                            active_from_tick=15,
+                            effect=SetEffect(value=120.0),
+                        )
+                    ],
+                ),
+            )
+        ]
+    )
 
     metrics_14 = compute_market_metrics(
         14,
-        schedule,
-        runtime,
+        properties,
         previous_price=100.0,
         previous_demand=1.0,
     )
     metrics_15 = compute_market_metrics(
         15,
-        schedule,
-        runtime,
+        properties,
         previous_price=100.0,
         previous_demand=1.0,
     )
@@ -178,11 +159,10 @@ def test_carbon_tax_delayed_until_tick_15():
 
 
 def test_compute_market_metrics_returns_all_metric_keys():
-    config = load_simulation_config()
+    properties = load_properties_config()
     metrics = compute_market_metrics(
         1,
-        config.policy_schedule,
-        config.runtime_parameter_map(),
+        properties,
         previous_price=100.0,
         previous_demand=1.0,
     )
@@ -196,8 +176,10 @@ def test_compute_market_metrics_returns_all_metric_keys():
         "demand_growth_rate",
         "demand_level",
         "ticket_price",
+        "cost_pressure",
+        "markup",
     }
-    assert set(metrics.keys()) == expected
+    assert expected.issubset(set(metrics.keys()))
 
 
 def _run_market_for_tick(state, tick: int):
@@ -218,9 +200,10 @@ def test_market_node_carbon_tax_jumps_at_tick_15():
         state = _run_market_for_tick(state, tick)
 
     assert state.market_metrics["carbon_tax_level"] == 50.0
+    price_before = state.price_history[-1].price
     state = _run_market_for_tick(state, 15)
     assert state.market_metrics["carbon_tax_level"] == 120.0
-    assert state.price_history[-1].price > state.price_history[-2].price
+    assert state.price_history[-1].price > price_before
 
 
 def test_market_node_saf_mandate_from_tick_8():

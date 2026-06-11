@@ -13,7 +13,16 @@ from src.models.cib_models import CIBMatrix
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.population_models import PopulationConfig
 from src.models.state_models import SimulationState
-from src.simulation_functions import compute_market_metrics
+from src.property_engine import resolve_system_properties
+from src.population_sampler import run_population_tick
+from src.factor_dynamics import validate_factor_proposals
+from src.market_rules import initial_provider_markup
+from src.simulation_functions import (
+    active_parameters,
+    compose_ticket_price,
+    compute_cost_pressure,
+    update_cost_index,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -113,64 +122,9 @@ class EnvironmentNode:
         round_events = [event for event in state.event_log if event.round_number == round_number]
 
         applied_changes = self._apply_state_changes(state, responses)
-        
-        # Only compute market metrics if MarketNode has not already computed them for this round
-        market_already_computed = False
-        if state.price_history and state.price_history[-1].round_number == round_number:
-            market_already_computed = True
-            
-        if not market_already_computed:
-            last_price = state.price_history[-1].price if state.price_history else 100.0
-            last_demand = state.price_history[-1].demand_level if state.price_history else 1.0
-            state.market_metrics = compute_market_metrics(
-                round_number,
-                state.config.policy_schedule,
-                state.config.runtime_parameter_map(),
-                previous_price=last_price,
-                previous_demand=last_demand,
-            )
-            
-        # Population Update
-        pop_node = EnvironmentAgentNode(llm=self.llm)
-        state = pop_node.invoke(state)
-        
-        # M3 Population Sampling
-        consumer_agent = next((a for a in state.agents if a.id == "consumer"), None)
-        if consumer_agent and consumer_agent.population_config:
-            from src.population_sampler import run_population_sampling
-            
-            # Fetch ticket price from history
-            current_ticket_price = 100.0
-            if state.price_history and state.price_history[-1].round_number == round_number:
-                current_ticket_price = state.price_history[-1].price
-            elif len(state.price_history) > 1:
-                current_ticket_price = state.price_history[-2].price
-                
-            carbon_tax = state.market_metrics.get("carbon_tax_level", 0.0)
-            
-            pop_stats = run_population_sampling(
-                config=consumer_agent.population_config, 
-                ticket_price=current_ticket_price, 
-                carbon_tax=carbon_tax
-            )
-            
-            # M3: booking_rate from population sample; demand_level stays deterministic (M2)
-            state.market_metrics["booking_rate"] = pop_stats.total_demand
-            if state.price_history and state.price_history[-1].round_number == round_number:
-                state.price_history[-1].booking_rate = pop_stats.total_demand
-            
-            # Save stats
-            if not hasattr(state, "population_stats"):
-                state.population_stats = []
-            state.population_stats.append({
-                "round_number": round_number,
-                "total_demand": pop_stats.total_demand,
-                "total_booked": pop_stats.total_booked,
-                "total_population": pop_stats.total_population,
-                "segments": {
-                    k: v.model_dump() for k, v in pop_stats.segments.items()
-                }
-            })
+
+        # M4: booking before market feedback — provisional price from cost + markup
+        state = self._run_population_tick(state, round_number)
 
         summary = self._build_round_summary(state, responses, round_events, applied_changes)
 
@@ -185,6 +139,87 @@ class EnvironmentNode:
             )
         )
 
+        return state
+
+    def apply_consumer_factor_updates(self, state: SimulationState) -> SimulationState:
+        """Apply consumer ``state_changes`` after the consumer runs post-booking."""
+
+        round_number = state.clock.current_tick
+        consumer_responses = [
+            response
+            for round_result in state.round_results
+            if round_result.round_number == round_number
+            for response in round_result.agent_responses
+            if response.agent_id == "consumer"
+        ]
+        if consumer_responses:
+            self._apply_state_changes(state, consumer_responses)
+        return state
+
+    def _run_population_tick(self, state: SimulationState, round_number: int) -> SimulationState:
+        consumer_agent = next((agent for agent in state.agents if agent.id == "consumer"), None)
+        if consumer_agent is None or consumer_agent.population_config is None:
+            return state
+
+        properties = state.resolved_properties()
+        price_model = properties.price_model
+        last_price = state.price_history[-1].price if state.price_history else price_model.base_price
+        previous_markup = state.market_metrics.get(
+            "provider_markup",
+            state.market_metrics.get("markup", initial_provider_markup(properties)),
+        )
+        previous_cost_index = state.market_metrics.get("cost_index", 1.0)
+
+        params = active_parameters(round_number, properties)
+        fuel_change = params.get("fuel_price_change", 0.0)
+        if price_model.compound_fuel_on_cost:
+            cost_index = update_cost_index(previous_cost_index, fuel_change)
+        else:
+            cost_index = previous_cost_index
+        cost_pressure = compute_cost_pressure(round_number, properties, cost_index=cost_index)
+        # Passengers react to last published ticket price; cost+markup only before first market tick.
+        if state.price_history:
+            provisional_price = last_price
+        else:
+            provisional_price = compose_ticket_price(cost_pressure, initial_provider_markup(properties))
+
+        state.market_metrics = {
+            **params,
+            "cost_pressure": cost_pressure,
+            "cost_index": cost_index,
+            "provider_markup": previous_markup,
+            "markup": previous_markup,
+            "ticket_price": provisional_price,
+        }
+
+        carbon_tax = params.get("carbon_tax_level", 0.0)
+        system_properties = resolve_system_properties(round_number, properties)
+        seed = state.config.seed if state.config.seed is not None else 42
+
+        individuals, pop_stats = run_population_tick(
+            state.resolved_properties(),
+            consumer_agent.population_config,
+            state.population_individuals or None,
+            ticket_price=provisional_price,
+            carbon_tax=carbon_tax,
+            factors=state.environment.factors,
+            system_properties=system_properties,
+            seed=seed,
+        )
+        state.population_individuals = individuals
+
+        state.market_metrics["booking_rate"] = pop_stats.total_demand
+        state.market_metrics["booking_evaluated"] = True
+
+        state.population_stats.append(
+            {
+                "round_number": round_number,
+                "total_demand": pop_stats.total_demand,
+                "total_booked": pop_stats.total_booked,
+                "total_population": pop_stats.total_population,
+                "segments": {key: value.model_dump() for key, value in pop_stats.segments.items()},
+            }
+        )
         return state
 
     def _collect_round_responses(self, state: SimulationState, round_number: int) -> list[AgentResponse]:
@@ -214,7 +249,12 @@ class EnvironmentNode:
     def _apply_state_changes(self, state: SimulationState, responses: list[AgentResponse]) -> dict[str, str]:
         changes_by_factor: dict[str, StateChange] = {}
         for response in responses:
-            for change in response.state_changes:
+            gated_changes = validate_factor_proposals(
+                state,
+                response.state_changes,
+                agent_id=response.agent_id,
+            )
+            for change in gated_changes:
                 if change.factor_id not in state.environment.factors:
                     continue
                 factor = state.environment.factors[change.factor_id]

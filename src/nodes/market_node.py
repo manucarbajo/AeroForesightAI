@@ -5,6 +5,7 @@ from uuid import uuid4
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
 from src.models.state_models import SimulationState
+from src.market_rules import initial_provider_markup
 from src.simulation_functions import compute_market_metrics
 
 
@@ -14,18 +15,48 @@ class MarketNode:
 
     def invoke(self, state: SimulationState) -> SimulationState:
         tick = state.clock.current_tick
-        last_price = state.price_history[-1].price if state.price_history else self.base_price
+        properties = state.resolved_properties()
+        price_model = properties.price_model
+
+        last_price = state.price_history[-1].price if state.price_history else price_model.base_price
         last_demand = state.price_history[-1].demand_level if state.price_history else 1.0
+        previous_markup = state.market_metrics.get(
+            "provider_markup",
+            state.market_metrics.get("markup", initial_provider_markup(properties)),
+        )
+        previous_cost_index = state.market_metrics.get("cost_index", 1.0)
+
+        booking_rate = state.market_metrics.get("booking_rate") if state.market_metrics.get("booking_evaluated") else None
 
         metrics = compute_market_metrics(
             tick,
-            state.config.policy_schedule,
-            state.config.runtime_parameter_map(),
+            properties,
             previous_price=last_price,
-            base_price=self.base_price,
+            base_price=price_model.base_price,
             previous_demand=last_demand,
+            previous_markup=previous_markup,
+            previous_cost_index=previous_cost_index,
+            booking_rate=booking_rate,
         )
         state.market_metrics = metrics
+
+        property_row = {"tick": tick, "ticket_price": metrics["ticket_price"]}
+        for prop_id in (
+            "carbon_tax_level",
+            "fuel_price_change",
+            "oil_price_index",
+            "saf_mandate_share",
+            "efuel_subsidy",
+            "demand_growth_rate",
+            "cost_pressure",
+            "cost_index",
+            "provider_markup",
+            "markup",
+        ):
+            property_row[prop_id] = metrics.get(prop_id, 0.0)
+        if booking_rate is not None:
+            property_row["booking_rate"] = booking_rate
+        state.property_timeseries.append(property_row)
 
         price = metrics["ticket_price"]
         demand_level = metrics["demand_level"]
@@ -37,8 +68,15 @@ class MarketNode:
                 price=price,
                 demand_level=demand_level,
                 load_factor=0.0,
+                booking_rate=booking_rate,
             )
         )
+
+        prev_price = last_price
+        price_delta_pct = ((price - prev_price) / prev_price * 100.0) if prev_price > 0 else 0.0
+        booking_note = ""
+        if booking_rate is not None:
+            booking_note = f", booking_rate={booking_rate:.1%}, feedback applied"
 
         state.event_log.append(
             EventLogEntry(
@@ -47,10 +85,9 @@ class MarketNode:
                 source_agent="market",
                 event_type=EventType.MARKET_EVENT,
                 description=(
-                    f"Market update (deterministic): price={price:.2f}, "
-                    f"demand_level={demand_level:.2f}, "
-                    f"oil_index={metrics['oil_price_index']:.2f}, "
-                    f"carbon_tax={metrics['carbon_tax_level']:.2f}"
+                    f"Market update (M4): price={price:.2f} ({price_delta_pct:+.1f}%), "
+                    f"cost={metrics.get('cost_pressure', 0):.2f}, markup={metrics.get('markup', 0):.2f}, "
+                    f"demand_level={demand_level:.2f}{booking_note}"
                 ),
                 affected_factors=[],
                 timestamp="",

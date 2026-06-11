@@ -199,7 +199,7 @@ class AgentNodeTests(unittest.TestCase):
         self.assertIn("business", response.segment_analysis)
         self.assertIn("leisure_price_sensitive", response.segment_analysis)
 
-        # Prompt-Kontext: ConsumerPrompt muss PopulationConfig und Marktmetriken (policy_schedule) enthalten.
+        # Prompt-Kontext: ConsumerPrompt muss PopulationConfig und Marktmetriken (properties.json) enthalten.
         self.assertIsNotNone(llm.last_prompt)
         self.assertIn("demand_growth_rate", llm.last_prompt)
         self.assertIn("segment business", llm.last_prompt)
@@ -317,6 +317,101 @@ class AgentNodeTests(unittest.TestCase):
 
         self.assertEqual(response.actions, ["NO_OP_PARSE_FALLBACK"])
         self.assertEqual(event.event_type.value, "price_change")
+
+    def test_provider_prior_booking_block_in_prompt(self) -> None:
+        state = build_initial_state()
+        state.clock.current_tick = 3
+        state.population_stats = [
+            {
+                "round_number": 1,
+                "total_demand": 0.52,
+                "total_booked": 520,
+                "total_population": 1000,
+                "segments": {
+                    "business": {
+                        "booking_rate": 0.675,
+                        "booked_individuals": 214,
+                        "total_individuals": 317,
+                    }
+                },
+            },
+            {
+                "round_number": 2,
+                "total_demand": 0.775,
+                "total_booked": 775,
+                "total_population": 1000,
+                "segments": {
+                    "business": {
+                        "booking_rate": 0.899,
+                        "booked_individuals": 285,
+                        "total_individuals": 317,
+                    }
+                },
+            },
+        ]
+        provider = next(agent for agent in state.agents if agent.id == "provider")
+        llm = MockLLM(
+            """
+            {
+              "reasoning": "Stable demand",
+              "actions": ["NO_OP"],
+              "state_changes": [],
+              "events": [],
+              "segment_analysis": {}
+            }
+            """
+        )
+        node = AgentNode(config=provider, llm=llm)
+        node.invoke(state)
+
+        self.assertIsNotNone(llm.last_prompt)
+        self.assertIn("prior_tick: 2", llm.last_prompt)
+        self.assertIn("booking_rate: 0.775", llm.last_prompt)
+        self.assertIn("booking_rate_delta_vs_prior: +0.255", llm.last_prompt)
+        self.assertIn("NO_OP", llm.last_prompt)
+
+    def test_explicit_no_op_skips_event_fallback(self) -> None:
+        state = build_initial_state()
+        provider = next(agent for agent in state.agents if agent.id == "provider")
+        events_before = len(state.event_log)
+        llm = MockLLM(
+            """
+            {
+              "reasoning": "Stable demand, no new developments.",
+              "actions": ["NO_OP"],
+              "state_changes": [],
+              "events": [],
+              "segment_analysis": {}
+            }
+            """
+        )
+        node = AgentNode(config=provider, llm=llm)
+        updated = node.invoke(state)
+
+        self.assertEqual(updated.round_results[-1].agent_responses[0].actions, ["NO_OP"])
+        self.assertEqual(len(updated.event_log), events_before)
+
+    def test_regulator_prior_booking_block_first_tick(self) -> None:
+        state = build_initial_state()
+        state.clock.current_tick = 1
+        regulator = next(agent for agent in state.agents if agent.id == "regulator")
+        llm = MockLLM(
+            """
+            {
+              "reasoning": "First tick policy",
+              "actions": ["NO_OP"],
+              "state_changes": [],
+              "events": [],
+              "segment_analysis": {}
+            }
+            """
+        )
+        node = AgentNode(config=regulator, llm=llm)
+        node.invoke(state)
+
+        self.assertIsNotNone(llm.last_prompt)
+        self.assertIn("No prior booking data (first tick)", llm.last_prompt)
+        self.assertIn("scheduled_property_changes_this_tick:", llm.last_prompt)
 
 
 if __name__ == "__main__":

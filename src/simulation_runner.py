@@ -27,6 +27,8 @@ class RunnerOptions:
     enable_market: bool = True
     enable_cib: bool = True  # load frozen CIB from configs/cib_frozen.json
     enable_redebedarf: bool = False
+    checkpoint_interval: int = 5
+    verbose_ticks: bool = True
 
 
 @dataclass(frozen=True)
@@ -97,17 +99,16 @@ class SimulationRunner:
         graph.set_entry_point("orchestrator")
 
         graph.add_edge("orchestrator", "round_execution")
+        graph.add_edge("round_execution", "environment")
         if self.options.enable_market:
-            graph.add_edge("round_execution", "market")
-            graph.add_edge("market", "environment")
-        else:
-            graph.add_edge("round_execution", "environment")
+            graph.add_edge("environment", "market")
 
         def _should_continue(payload: dict) -> str:
             state = SimulationState(**payload)
             return "orchestrator" if state.clock.current_tick < state.clock.max_ticks else END
 
-        graph.add_conditional_edges("environment", _should_continue)
+        tick_end = "market" if self.options.enable_market else "environment"
+        graph.add_conditional_edges(tick_end, _should_continue)
 
         compiled = graph.compile()
 
@@ -317,17 +318,50 @@ class SimulationRunner:
 
         components = self._create_components(state.agents)
 
-        while state.clock.current_tick < state.clock.max_ticks:
+        max_ticks = state.clock.max_ticks
+        while state.clock.current_tick < max_ticks:
             state = self._run_single_round(state, components)
-            if checkpoint_store is not None:
-                checkpoint_store.save(state, run_id=run_id, round_number=state.clock.current_tick)
+            tick = state.clock.current_tick
+            if self.options.verbose_ticks:
+                self._print_tick_progress(state, tick=tick, max_ticks=max_ticks)
+            if checkpoint_store is not None and self._should_save_checkpoint(tick, max_ticks):
+                checkpoint_store.save(state, run_id=run_id, round_number=tick)
 
         return state
+
+    def _should_save_checkpoint(self, tick: int, max_ticks: int) -> bool:
+        interval = self.options.checkpoint_interval
+        if interval <= 0:
+            return False
+        return tick % interval == 0 or tick >= max_ticks
+
+    def _print_tick_progress(self, state: SimulationState, *, tick: int, max_ticks: int) -> None:
+        metrics = state.market_metrics
+        price = metrics.get("ticket_price")
+        if price is None and state.price_history:
+            price = state.price_history[-1].price
+        booking = metrics.get("booking_rate")
+        if booking is None and state.price_history:
+            booking = state.price_history[-1].booking_rate
+        price_text = f"{price:.2f}" if isinstance(price, (int, float)) else "n/a"
+        booking_text = f"{booking:.1%}" if isinstance(booking, (int, float)) else "n/a"
+        carbon = metrics.get("carbon_tax_level", "n/a")
+        print(
+            f"[tick {tick:>3}/{max_ticks}] done - "
+            f"price={price_text} EUR, booking={booking_text}, carbon_tax={carbon}",
+            flush=True,
+        )
 
     def _create_components(
         self,
         agents: list[AgentConfig],
-    ) -> tuple[OrchestratorNode, ParallelRoundNode | RoundExecutionNode, MarketNode, EnvironmentNode]:
+    ) -> tuple[
+        OrchestratorNode,
+        ParallelRoundNode | RoundExecutionNode,
+        EnvironmentNode,
+        AgentNode | None,
+        MarketNode,
+    ]:
         """Build the reusable nodes that make up one simulation round."""
 
         orchestrator = OrchestratorNode(agents)
@@ -337,7 +371,13 @@ class SimulationRunner:
             prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
             llm=self.llm,
         )
-        return orchestrator, round_execution, market_node, environment_node
+        consumer_config = next((agent for agent in agents if agent.id == "consumer"), None)
+        consumer_node = (
+            AgentNode(consumer_config, llm=self.llm)
+            if consumer_config is not None and not self.options.enable_redebedarf
+            else None
+        )
+        return orchestrator, round_execution, environment_node, consumer_node, market_node
 
     def _run_single_round(
         self,
@@ -345,19 +385,26 @@ class SimulationRunner:
         components: tuple[
             OrchestratorNode,
             ParallelRoundNode | RoundExecutionNode,
-            MarketNode,
             EnvironmentNode,
+            AgentNode | None,
+            MarketNode,
         ],
     ) -> SimulationState:
         """Run a single deterministic round using the configured nodes."""
 
-        orchestrator, round_execution, market_node, environment_node = components
+        from src.factor_dynamics import apply_factor_rules_at_tick_start, record_factor_timeseries
+
+        orchestrator, round_execution, environment_node, consumer_node, market_node = components
         state = orchestrator.invoke(state)
+        state = apply_factor_rules_at_tick_start(state)
         state = round_execution.invoke(state)
+        state = environment_node.invoke(state)
+        if consumer_node is not None:
+            state = consumer_node.invoke(state)
+            state = environment_node.apply_consumer_factor_updates(state)
         if self.options.enable_market:
             state = market_node.invoke(state)
-        state = environment_node.invoke(state)
-        return state
+        return record_factor_timeseries(state)
 
     def _build_round_execution(
         self,

@@ -75,10 +75,8 @@ def coerce_payload(payload: Any | None) -> dict[str, Any]:
             if payload_dict.get("llm_max_tokens") is not None:
                 base_payload["config"]["llm"]["max_tokens"] = payload_dict["llm_max_tokens"]
 
-    if payload_dict.get("policy_schedule") is not None:
-        base_payload.setdefault("config", {})
-        if isinstance(base_payload.get("config"), dict):
-            base_payload["config"]["policy_schedule"] = payload_dict["policy_schedule"]
+    if payload_dict.get("properties") is not None:
+        base_payload["properties"] = payload_dict["properties"]
 
     if payload_dict.get("enable_redebedarf") is not None:
         base_payload["enable_redebedarf"] = bool(payload_dict["enable_redebedarf"])
@@ -189,11 +187,7 @@ def _make_build_options() -> dict:
             },
             "description": "Helpful AP3 starter presets for Studio and playground runs",
         },
-        "policy_schedule": (
-            [entry.model_dump() for entry in state.config.policy_schedule]
-            if state.config.policy_schedule
-            else None
-        ),
+        "system_property_ids": state.resolved_properties().system_property_ids(),
         "agents": [{"id": a.id, "name": a.name, "type": a.agent_type.value} for a in state.agents],
     }
 

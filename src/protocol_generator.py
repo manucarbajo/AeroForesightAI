@@ -118,11 +118,7 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
             for fid, f in state.environment.factors.items()
         },
         "cib": state.cib_matrix.model_dump() if state.cib_matrix is not None else None,
-        "policy_schedule": (
-            [entry.model_dump() for entry in state.config.policy_schedule]
-            if state.config.policy_schedule
-            else None
-        ),
+        "system_properties": state.resolved_properties().model_dump(),
         "price_history": [entry.model_dump() for entry in state.price_history],
     }
     return payload

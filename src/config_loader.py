@@ -4,6 +4,7 @@ from pathlib import Path
 from src.models.agent_models import AgentConfig
 from src.models.cib_models import CIBMatrix
 from src.models.population_models import PopulationConfig
+from src.models.property_models import PropertiesConfig
 from src.models.state_models import (
     EnvironmentState,
     FactorState,
@@ -33,6 +34,17 @@ def load_simulation_clock(path: Path | None = None) -> SimulationClock:
     path = path or CONFIGS_DIR / "simulation_config.json"
     data = _read_simulation_config_file(path)
     return SimulationClock(**data.get("clock", {}))
+
+
+def load_properties_config(path: Path | None = None) -> PropertiesConfig:
+    """Load system properties from ``configs/properties.json``."""
+
+    path = path or CONFIGS_DIR / "properties.json"
+    if not path.exists():
+        raise FileNotFoundError(f"Missing properties config: {path}")
+    with open(path, encoding="utf-8") as handle:
+        data = json.load(handle)
+    return PropertiesConfig.model_validate(data)
 
 
 def load_agents(path: Path | None = None) -> list[AgentConfig]:
@@ -68,6 +80,7 @@ def build_initial_state(
     config_path: Path | None = None,
     agents_path: Path | None = None,
     factors_path: Path | None = None,
+    properties_path: Path | None = None,
     *,
     cib_path: Path | None = None,
     load_cib: bool = True,
@@ -77,6 +90,7 @@ def build_initial_state(
     clock = load_simulation_clock(config_file)
     agents = load_agents(agents_path)
     factors = load_factors(factors_path)
+    properties = load_properties_config(properties_path)
 
     environment = EnvironmentState(factors=factors)
 
@@ -84,6 +98,7 @@ def build_initial_state(
 
     return SimulationState(
         config=config,
+        properties=properties,
         clock=clock,
         environment=environment,
         agents=agents,

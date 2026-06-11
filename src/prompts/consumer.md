@@ -18,8 +18,10 @@ Constraints:
 Global context:
 {global_context}
 
-Market metrics (policy_schedule — IMPORTANT: deterministically computed; prices, taxes, and demand are FIXED):
+Market metrics (properties.json — IMPORTANT: deterministically computed; prices, taxes, and demand are FIXED):
 {scenario_block}
+
+{observed_booking_block}
 
 Population context:
 {population_context}
@@ -35,7 +37,7 @@ Make a consumer-oriented decision for this tick:
 1) briefly explain how behaviour is influenced by deterministic market metrics (prices, taxes, demand_level)
 2) name concrete actions (e.g. booking behaviour, abstaining, switching to alternatives)
 3) optionally propose concrete factor state changes if plausible from your perspective
-4) formulate 1–3 events that follow from your decision. IMPORTANT: NEVER repeat events or statements from "Recent events". React to something new or choose "NO_OP".
+4) formulate 1–3 events that follow from your decision and **match observed booking_rate** (if booking_rate > 0.5, do NOT claim everyone switched to trains/buses). IMPORTANT: NEVER repeat events or statements from "Recent events". React to something new or choose "NO_OP".
 5) provide segment_analysis so the expected reaction per segment (from population context) is clearly visible
 
 ## Output instruction (strict)

@@ -44,38 +44,39 @@ class MockLLM:
   "segment_analysis": {}
 }'''
 
-        # default fallback
         return "{\n  \"reasoning\": \"noop\",\n  \"actions\": [],\n  \"state_changes\": [],\n  \"events\": [],\n  \"segment_analysis\": {}\n}"
 
 
 class SimulationRunnerE2ETest(unittest.TestCase):
-    def test_run_with_mock_agents_applies_factor_updates_and_runs(self) -> None:
+    def test_run_with_mock_agents_blocks_ungated_llm_factor_changes(self) -> None:
         state = build_initial_state()
-        # keep the run short for tests
         state.clock.max_ticks = 1
 
         runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
-
-        # Use the deterministic sequential runner to avoid external langgraph differences
         run_graph = runner._build_sequential_runner(state.agents)
         final = run_graph(state)
 
-        # Clock should have advanced to 1 (one round)
         self.assertEqual(final.clock.current_tick, 1)
+        self.assertEqual(final.environment.factors["F1"].current_state, "F1.1")
+        self.assertEqual(final.environment.factors["F2"].current_state, "F2.1")
+        self.assertEqual(len(final.factor_timeseries), 1)
 
-        # Environment factors: F1 should have been proposed by consumer and applied,
-        # F2 proposed by regulator and should be applied (regulator has priority)
-        self.assertIn("F1", final.environment.factors)
-        self.assertIn("F2", final.environment.factors)
-        self.assertEqual(final.environment.factors["F1"].current_state, "F1.2")
-        self.assertEqual(final.environment.factors["F2"].current_state, "F2.2")
-
-        # RoundResults should contain at least one RoundResult for the round
         rounds = [rr for rr in final.round_results if rr.round_number == 1]
         self.assertTrue(len(rounds) >= 1)
-
-        # Price history should have an entry because market is enabled
         self.assertTrue(len(final.price_history) >= 1)
+
+    def test_factor_rules_apply_at_carbon_shock_tick(self) -> None:
+        state = build_initial_state()
+        state.clock.max_ticks = 15
+
+        runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
+        run_graph = runner._build_sequential_runner(state.agents)
+        final = run_graph(state)
+
+        self.assertEqual(final.clock.current_tick, 15)
+        self.assertEqual(final.environment.factors["F2"].current_state, "F2.2")
+        self.assertEqual(final.environment.factors["F6"].current_state, "F6.2")
+        self.assertEqual(len(final.factor_timeseries), 15)
 
 
 if __name__ == "__main__":

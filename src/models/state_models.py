@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from src.models.population_models import ScenarioParameter
+from src.models.population_models import Individual
+from src.models.property_models import PropertiesConfig
 
 class FactorState(BaseModel):
     id: str
@@ -73,70 +73,16 @@ class LLMConfig(BaseModel):
     max_tokens: int = 2048
 
 
-class ConfigChangeEntry(BaseModel):
-    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
-    tick_number: int | None = None
-    parameter_id: str
-    old_value: Any
-    new_value: Any
-    source_agent: str = "EnvironmentAgent"
-    reason: str = ""
-
-
-class PolicyEntry(BaseModel):
-    """One policy shock: from ``tick`` onward, set ``parameter`` to ``value``."""
-
-    tick: int
-    parameter: str
-    value: float
-
-
 class SimulationConfig(BaseModel):
     name: str
     description: str
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
-    policy_schedule: list[PolicyEntry] = Field(default_factory=list)
-    scenario_parameters: list[ScenarioParameter] = Field(default_factory=list)
-    change_log: list[ConfigChangeEntry] = Field(default_factory=list)
-
-    def update_scenario_parameter(
-        self,
-        parameter_id: str,
-        new_value: float,
-        *,
-        source_agent: str = "EnvironmentAgent",
-        reason: str = "",
-        tick_number: int | None = None,
-    ) -> None:
-        for parameter in self.scenario_parameters:
-            if parameter.id != parameter_id:
-                continue
-
-            old_value = parameter.value
-            parameter.value = new_value
-            self.change_log.append(
-                ConfigChangeEntry(
-                    tick_number=tick_number,
-                    parameter_id=parameter_id,
-                    old_value=old_value,
-                    new_value=new_value,
-                    source_agent=source_agent,
-                    reason=reason,
-                )
-            )
-            return
-
-        raise KeyError(f"Unknown scenario parameter: {parameter_id}")
-
-    def runtime_parameter_map(self) -> dict[str, float]:
-        """Return the current scenario parameters as a flat runtime mapping."""
-
-        return {parameter.id: parameter.value for parameter in self.scenario_parameters}
 
 
 class SimulationState(BaseModel):
     config: SimulationConfig
+    properties: PropertiesConfig
     clock: SimulationClock
     environment: EnvironmentState
     agents: list[AgentConfig]
@@ -151,7 +97,31 @@ class SimulationState(BaseModel):
     cib_matrix: CIBMatrix | None = None
     cib_history: CIBMatrixHistory | None = None
     market_metrics: dict[str, float] = Field(default_factory=dict)
+    property_timeseries: list[dict[str, Any]] = Field(default_factory=list)
+    population_individuals: list[Individual] = Field(default_factory=list)
     population_stats: list[dict[str, Any]] = Field(default_factory=list)
+    applied_factor_rule_ids: list[str] = Field(default_factory=list)
+    factor_timeseries: list[dict[str, Any]] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _load_properties_for_legacy_checkpoints(cls, data: Any) -> Any:
+        """Old checkpoints may omit ``properties`` — load from ``properties.json``."""
+
+        if not isinstance(data, dict):
+            return data
+        if data.get("properties") is not None:
+            return data
+
+        from src.config_loader import load_properties_config
+
+        data = dict(data)
+        data["properties"] = load_properties_config().model_dump()
+        return data
+
+    def resolved_properties(self) -> PropertiesConfig:
+        return self.properties
+
 
 class InputState(BaseModel):
     """Studio-facing input defaults for AP3 runs."""

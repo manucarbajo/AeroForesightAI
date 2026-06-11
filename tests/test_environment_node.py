@@ -7,6 +7,7 @@ from src.models.cib_models import CIBMatrix
 from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
 from src.models.population_models import PopulationConfig, ConsumerSegment, DistributionConfig
+from src.config_loader import load_properties_config
 from src.models.state_models import SimulationState, SimulationClock, EnvironmentState, FactorState, SimulationConfig, \
     LLMConfig
 from src.nodes.environment_node import (
@@ -79,6 +80,7 @@ def sample_state(sample_population_config: PopulationConfig) -> SimulationState:
 
     state = SimulationState(
         config=config,
+        properties=load_properties_config(),
         clock=clock,
         environment=environment,
         agents=[consumer_agent],

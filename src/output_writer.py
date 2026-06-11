@@ -4,7 +4,47 @@ from pathlib import Path
 from typing import List
 from datetime import UTC, datetime
 
+from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
+from src.property_engine import property_value_changes_at_tick, scheduled_property_events
+
+_NARRATIVE_AGENT_ORDER = ("provider", "regulator", "consumer")
+
+
+def _agent_responses_for_round(state, round_number: int):
+    """Merge agent responses from all round_results for one tick."""
+
+    by_agent: dict[str, object] = {}
+    for round_result in state.round_results:
+        if round_result.round_number != round_number:
+            continue
+        for response in round_result.agent_responses:
+            by_agent[response.agent_id] = response
+
+    ordered = [by_agent[agent_id] for agent_id in _NARRATIVE_AGENT_ORDER if agent_id in by_agent]
+    for agent_id in sorted(by_agent.keys()):
+        if agent_id not in _NARRATIVE_AGENT_ORDER:
+            ordered.append(by_agent[agent_id])
+    return ordered
+
+
+def _narrative_events_for_round(state, round_number: int) -> list[EventLogEntry]:
+    """Agent events for narrative display (excludes deterministic market updates)."""
+
+    events = [
+        event
+        for event in state.event_log
+        if event.round_number == round_number and event.event_type != EventType.MARKET_EVENT
+    ]
+    order_index = {agent_id: index for index, agent_id in enumerate(_NARRATIVE_AGENT_ORDER)}
+    return sorted(
+        events,
+        key=lambda event: (
+            order_index.get(event.source_agent, len(_NARRATIVE_AGENT_ORDER)),
+            event.timestamp or "",
+            event.id,
+        ),
+    )
 
 # Projekt-Root relativ zu dieser Datei (…/src/output_writer.py → Repo-Root)
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -75,6 +115,154 @@ def save_event_log(
         json.dump(events_data, f, indent=2, ensure_ascii=False)
     
     return filepath
+
+
+def save_population_timeseries(
+    population_stats: list[dict],
+    filename: str = "timeseries/population.csv",
+    *,
+    run_dir: Path | None = None,
+) -> str | None:
+    """Save per-tick segment booking rates derived from population_stats."""
+
+    if not population_stats:
+        return None
+
+    rows: list[dict] = []
+    for tick_stats in population_stats:
+        tick = tick_stats.get("round_number")
+        for segment_id, segment in tick_stats.get("segments", {}).items():
+            rows.append(
+                {
+                    "tick": tick,
+                    "segment_id": segment_id,
+                    "total_individuals": segment.get("total_individuals", 0),
+                    "booked_individuals": segment.get("booked_individuals", 0),
+                    "booking_rate": segment.get("booking_rate", 0.0),
+                }
+            )
+
+    if not rows:
+        return None
+
+    if run_dir is not None:
+        target_path = run_dir / filename
+    else:
+        target_path = Path(_resolve_output_path(filename, run_dir=run_dir))
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    columns = list(rows[0].keys())
+    lines = [",".join(columns)]
+    for row in rows:
+        lines.append(",".join(str(row.get(column, "")) for column in columns))
+
+    with open(target_path, "w", encoding="utf-8") as handle:
+        handle.write("\n".join(lines))
+
+    return str(target_path)
+
+
+def save_population_individuals(
+    individuals: list,
+    filename: str = "population.csv",
+    *,
+    run_dir: Path | None = None,
+) -> str | None:
+    """Save final persistent individuals (age, labels, WTP, booking)."""
+
+    if not individuals:
+        return None
+
+    rows: list[dict] = []
+    for person in individuals:
+        data = person.model_dump() if hasattr(person, "model_dump") else person
+        row = {
+            "id": data.get("id"),
+            "age": data.get("age"),
+            "wtp_eur": data.get("wtp_eur"),
+            "environmental_awareness": data.get("environmental_awareness"),
+            "price_sensitivity": data.get("price_sensitivity"),
+            "booked": data.get("booked"),
+        }
+        for label_id, active in (data.get("labels") or {}).items():
+            row[label_id] = active
+        rows.append(row)
+
+    if run_dir is not None:
+        target_path = run_dir / filename
+    else:
+        target_path = Path(_resolve_output_path(filename, run_dir=run_dir))
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    columns = list(rows[0].keys())
+    lines = [",".join(columns)]
+    for row in rows:
+        lines.append(",".join(str(row.get(column, "")) for column in columns))
+
+    with open(target_path, "w", encoding="utf-8") as handle:
+        handle.write("\n".join(lines))
+
+    return str(target_path)
+
+
+def save_factors_timeseries(
+    rows: list[dict],
+    filename: str = "timeseries/factors.csv",
+    *,
+    output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
+) -> str | None:
+    """Save per-tick factor descriptor states as CSV (M5)."""
+
+    if not rows:
+        return None
+
+    ensure_output_dir()
+    if run_dir is not None:
+        target_path = run_dir / filename
+    else:
+        target_path = Path(_resolve_output_path(filename, output_subdir, run_dir=run_dir))
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    columns = list(rows[0].keys())
+    lines = [",".join(columns)]
+    for row in rows:
+        lines.append(",".join(str(row.get(column, "")) for column in columns))
+
+    with open(target_path, "w", encoding="utf-8") as handle:
+        handle.write("\n".join(lines))
+
+    return str(target_path)
+
+
+def save_properties_timeseries(
+    rows: list[dict],
+    filename: str = "timeseries/properties.csv",
+    *,
+    output_subdir: str | Path | None = None,
+    run_dir: Path | None = None,
+) -> str | None:
+    """Save per-tick system property values as CSV."""
+
+    if not rows:
+        return None
+
+    ensure_output_dir()
+    if run_dir is not None:
+        target_path = run_dir / filename
+    else:
+        target_path = Path(_resolve_output_path(filename, output_subdir, run_dir=run_dir))
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    columns = list(rows[0].keys())
+    lines = [",".join(columns)]
+    for row in rows:
+        lines.append(",".join(str(row.get(column, "")) for column in columns))
+
+    with open(target_path, "w", encoding="utf-8") as handle:
+        handle.write("\n".join(lines))
+
+    return str(target_path)
 
 
 def save_price_history(
@@ -203,6 +391,31 @@ def save_segment_analysis(
 
     return filepath
 
+def _format_property_event_line(event: dict[str, object]) -> str:
+    tick = event["tick"]
+    prop_id = event["property_id"]
+    effect_type = event["effect_type"]
+    value = event["value"]
+    unit = event.get("unit") or ""
+
+    if effect_type == "set":
+        detail = f"set → {value}"
+    elif effect_type == "ramp":
+        duration = event.get("duration_ticks", 1)
+        detail = f"ramp → {value} über {duration} Tick(s)"
+    else:
+        detail = f"step_function → {value}"
+
+    unit_suffix = f" {unit}" if unit else ""
+    description = event.get("description")
+    desc_suffix = f" ({description})" if description else ""
+    return f"- **Tick {tick}:** `{prop_id}` {detail}{unit_suffix}{desc_suffix}"
+
+
+def _format_property_change_line(prop_id: str, old_value: float, new_value: float) -> str:
+    return f"- `{prop_id}`: {old_value:g} → {new_value:g}"
+
+
 def save_final_narrative(
     state,
     filename: str = "final_narrative.md",
@@ -236,19 +449,76 @@ def save_final_narrative(
     lines.append(f"- **Preis Start:** {state.price_history[0].price:.2f} €" if state.price_history else "- **Preis Start:** n/a")
     lines.append(f"- **Preis Ende:** {state.price_history[-1].price:.2f} €" if state.price_history else "- **Preis Ende:** n/a")
 
+    properties = state.resolved_properties()
+    schedule = scheduled_property_events(properties)
+    if schedule:
+        lines.append("\n## Property-Zeitplan (Config)")
+        lines.append("Geplante System-Property-Änderungen aus `properties.json`:")
+        for event in schedule:
+            lines.append(_format_property_event_line(event))
+
+    shift_rules = properties.shift_rules
+    if shift_rules:
+        lines.append("\nDynamische Populations-Shift-Regeln:")
+        for rule in shift_rules:
+            when = rule.when
+            effect = rule.effect
+            when_parts = []
+            if "factor" in when:
+                when_parts.append(f"Faktor {when['factor']} = {when.get('state', '?')}")
+            if "system_property" in when:
+                prop = when["system_property"]
+                if "above" in when:
+                    when_parts.append(f"`{prop}` > {when['above']}")
+                elif "below" in when:
+                    when_parts.append(f"`{prop}` < {when['below']}")
+                else:
+                    when_parts.append(f"`{prop}`")
+            when_label = ", ".join(when_parts) if when_parts else "immer"
+            effect_label = (
+                f"`{effect.get('property', '?')}` "
+                f"{effect.get('delta', 0):+g}"
+            )
+            lines.append(f"- Wenn {when_label}: {effect_label}")
+
+    scheduled_by_tick: dict[int, list[dict[str, object]]] = {}
+    for event in schedule:
+        tick = int(event["tick"])
+        scheduled_by_tick.setdefault(tick, []).append(event)
+
     # Tick-Übersicht
     lines.append("\n## Tick-Übersicht")
-    best_per_round: dict = {}
-    for rr in state.round_results:
-        best_per_round[rr.round_number] = rr
+    round_numbers = sorted(
+        {
+            rr.round_number
+            for rr in state.round_results
+            if rr.round_number >= 1
+        }
+        | {
+            event.round_number
+            for event in state.event_log
+            if event.round_number >= 1
+        }
+    )
 
-    for round_number in sorted(best_per_round.keys()):
-        rr = best_per_round[round_number]
+    for round_number in round_numbers:
         tick_label = state.clock.tick_label(round_number)
         lines.append(f"\n### {tick_label}")
 
-        # Reasoning pro Agent
-        for resp in rr.agent_responses:
+        tick_events = scheduled_by_tick.get(round_number, [])
+        if tick_events:
+            lines.append("\n**Geplante Property-Shocks (dieser Tick):**")
+            for event in tick_events:
+                lines.append(_format_property_event_line(event))
+
+        value_changes = property_value_changes_at_tick(state.property_timeseries, round_number)
+        if value_changes:
+            lines.append("\n**Wirksame Property-Änderungen (Markt):**")
+            for prop_id, old_value, new_value in value_changes:
+                lines.append(_format_property_change_line(prop_id, old_value, new_value))
+
+        agent_responses = _agent_responses_for_round(state, round_number)
+        for resp in agent_responses:
             first_line = resp.reasoning.strip().splitlines()[0] if resp.reasoning else "kein Reasoning"
             lines.append(f"- **{resp.agent_id}:** {first_line}")
 
@@ -263,11 +533,11 @@ def save_final_narrative(
                 market_line += f", booking_rate {price_entry.booking_rate:.1%}"
             lines.append(f"\n{market_line}")
 
-        # Events der Runde
-        if rr.events:
-            lines.append(f"\n**Events ({len(rr.events)}):**")
-            for e in rr.events:
-                lines.append(f"- {e.source_agent}: {e.description}")
+        narrative_events = _narrative_events_for_round(state, round_number)
+        if narrative_events:
+            lines.append(f"\n**Events ({len(narrative_events)}):**")
+            for event in narrative_events:
+                lines.append(f"- {event.source_agent}: {event.description}")
 
         # Population Stats der Runde
         if hasattr(state, "population_stats") and state.population_stats:
