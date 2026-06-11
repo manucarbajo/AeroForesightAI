@@ -11,9 +11,9 @@ class OrchestratorNode:
 
     def invoke(self, state: SimulationState) -> SimulationState:
         # Start einer neuen Runde: Runde inkrementieren, aber niemals ueber max_rounds hinaus.
-        if state.clock.current_round >= state.clock.max_rounds:
+        if state.clock.current_tick >= state.clock.max_ticks:
             return state
-        state.clock.current_round += 1
+        state.clock.current_tick += 1
         return state
 
     def ordered_agent_ids(self) -> list[str]:

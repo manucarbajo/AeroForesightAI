@@ -78,10 +78,10 @@ class SchedulerNode:
 
     def invoke(self, state: SimulationState) -> SimulationState:
         print(f"\n--- SCHEDULER DEBUG ---")
-        print(f"Round: {state.clock.current_round}/{state.clock.max_rounds}")
+        print(f"Round: {state.clock.current_tick}/{state.clock.max_ticks}")
         print(f"Spoken so far: {state.current_round_spoken_agents}")
 
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
         if round_number < 1:
             state.current_speech_order = []
             state.current_speech_candidates = []

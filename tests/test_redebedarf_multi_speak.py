@@ -19,9 +19,9 @@ class DummyAgentNode:
             return state
 
         rr = RoundResult(
-            round_number=state.clock.current_round,
+            round_number=state.clock.current_tick,
             agent_responses=[self.response],
-            events=[EventLogEntry(id=self.agent_id, round_number=state.clock.current_round, source_agent=self.agent_id, event_type=EventType.DEMAND_SHIFT, description="test", affected_factors=[c.factor_id for c in self.response.state_changes], timestamp="" )],
+            events=[EventLogEntry(id=self.agent_id, round_number=state.clock.current_tick, source_agent=self.agent_id, event_type=EventType.DEMAND_SHIFT, description="test", affected_factors=[c.factor_id for c in self.response.state_changes], timestamp="" )],
             environment_snapshot=state.environment,
             summary=f"test {self.agent_id}",
         )
@@ -33,7 +33,7 @@ class DummyAgentNode:
 def test_multi_speak_triggers_provider():
     # Prepare state and agents
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
     agents = load_agents()
     agent_ids = [a.id for a in agents]
 

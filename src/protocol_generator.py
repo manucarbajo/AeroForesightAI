@@ -15,6 +15,7 @@ from src.models.state_models import SimulationState
 @dataclass(frozen=True)
 class ProtocolOptions:
     include_raw_output: bool = False
+    include_redebedarf: bool = False
 
 
 def _safe_first_line(text: str, fallback: str = "") -> str:
@@ -51,7 +52,11 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
     """Build a structured conversation protocol from SimulationState."""
 
     options = options or ProtocolOptions()
-    redebedarf_by_contribution = _resolve_redebedarf_by_contribution(state)
+    redebedarf_by_contribution = (
+        _resolve_redebedarf_by_contribution(state)
+        if options.include_redebedarf
+        else {}
+    )
 
     by_round = _group_round_results(state.round_results)
     rounds: list[dict[str, Any]] = []
@@ -76,6 +81,7 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
         rounds.append(
             {
                 "round_number": round_number,
+                "market": _market_snapshot_for_round(state, round_number),
                 "contributions": contributions,
                 "events": [_event_payload(e) for e in _events_for_round(state, round_number)],
             }
@@ -87,8 +93,9 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
         "run": {
             "name": state.config.name,
             "description": state.config.description,
-            "rounds_completed": state.clock.current_round,
-            "rounds_max": state.clock.max_rounds,
+            "ticks_completed": state.clock.current_tick,
+            "ticks_max": state.clock.max_ticks,
+            "tick_unit": state.clock.tick_unit,
             "seed": state.config.seed,
         },
         "agents": [
@@ -111,12 +118,37 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
             for fid, f in state.environment.factors.items()
         },
         "cib": state.cib_matrix.model_dump() if state.cib_matrix is not None else None,
+        "system_properties": state.resolved_properties().model_dump(),
+        "price_history": [entry.model_dump() for entry in state.price_history],
     }
     return payload
 
 
 def _events_for_round(state: SimulationState, round_number: int) -> list[EventLogEntry]:
     return [e for e in state.event_log if e.round_number == round_number]
+
+
+def _market_snapshot_for_round(state: SimulationState, round_number: int) -> dict[str, Any]:
+    """Per-tick market data: deterministic demand_level (M2) and sampled booking_rate (M3)."""
+
+    price_entry = next((entry for entry in state.price_history if entry.round_number == round_number), None)
+    pop_stat = next(
+        (entry for entry in state.population_stats if entry.get("round_number") == round_number),
+        None,
+    )
+
+    booking_rate = None
+    if price_entry is not None and price_entry.booking_rate is not None:
+        booking_rate = price_entry.booking_rate
+    elif pop_stat is not None:
+        booking_rate = pop_stat.get("total_demand")
+
+    snapshot: dict[str, Any] = {
+        "price": price_entry.price if price_entry is not None else None,
+        "demand_level": price_entry.demand_level if price_entry is not None else None,
+        "booking_rate": booking_rate,
+    }
+    return snapshot
 
 
 def _event_payload(event: EventLogEntry) -> dict[str, Any]:
@@ -266,7 +298,6 @@ def _agent_contribution(
         "events": [_event_payload(e) for e in events],
         "impact": {
             "affected_factors": sorted(affected_factors),
-            "impact_assessment": resp.impact_assessment,
         },
         "redebedarf_score": redebedarf_score,
         "redebedarf_reasons": list(redebedarf_reasons or []),
@@ -283,7 +314,7 @@ def collect_agent_factor_references(payload: dict[str, Any]) -> dict[str, set[st
     """Collect factor references per agent from a structured protocol payload.
 
     The helper walks the real AP2 payload and extracts factors mentioned in
-    state changes, events and impact assessments. This is used by AP3 to build
+    state changes, events and impact summaries. This is used by AP3 to build
     deterministic speech-demand relevance relations from actual data instead of
     a static mock table.
     """
@@ -315,10 +346,7 @@ def collect_contradiction_signals(
 ) -> list[dict[str, Any]]:
     """Detect deterministic contradiction signals from AP2 protocol data.
 
-    Two real-data sources are used:
-    - conflicting state changes for the same factor within one round,
-    - impact assessments that disagree on the sign of the same descriptor pair
-      or contradict the current CIB matrix sign if one is available.
+    Conflicting state changes for the same factor within one round.
     """
 
     signals: list[dict[str, Any]] = []
@@ -329,7 +357,6 @@ def collect_contradiction_signals(
             continue
 
         state_change_votes: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
-        pair_votes: dict[tuple[str, str], dict[int, set[str]]] = defaultdict(lambda: defaultdict(set))
 
         for contribution in round_payload.get("contributions", []):
             agent_id = contribution.get("agent_id")
@@ -349,46 +376,6 @@ def collect_contradiction_signals(
                     continue
                 state_change_votes[factor_id][proposed_state].add(agent_id.strip())
 
-            for item in contribution.get("impact_assessment", []):
-                if not isinstance(item, dict):
-                    continue
-                source_descriptor = item.get("source_descriptor")
-                target_descriptor = item.get("target_descriptor")
-                influence = item.get("influence")
-                if not isinstance(source_descriptor, str) or not isinstance(target_descriptor, str):
-                    continue
-                if not isinstance(influence, int):
-                    try:
-                        influence = int(influence)
-                    except (ValueError, TypeError):
-                        continue
-
-                pair = (source_descriptor.strip(), target_descriptor.strip())
-                if not pair[0] or not pair[1] or influence == 0:
-                    continue
-                pair_votes[pair][1 if influence > 0 else -1].add(agent_id.strip())
-
-                if cib_matrix is not None:
-                    current = 0
-                    try:
-                        current = int(cib_matrix.get_influence(pair[0], pair[1]))
-                    except Exception:
-                        current = 0
-                    if current != 0 and (current > 0) != (influence > 0):
-                        signals.append(
-                            {
-                                "round_number": round_number,
-                                "agent_ids": [agent_id.strip()],
-                                "factor_id": _descriptor_to_factor_id(pair[1]),
-                                "descriptor_pair": pair,
-                                "kind": "cib_conflict",
-                                "reason": (
-                                    f"AP2 impact assessment widerspricht AP1 CIB-Signatur {pair[0]} -> {pair[1]}"
-                                ),
-                                "weight": 2,
-                            }
-                        )
-
         for factor_id, votes in state_change_votes.items():
             if len(votes) <= 1:
                 continue
@@ -405,28 +392,6 @@ def collect_contradiction_signals(
                         "kind": "state_change_conflict",
                         "reason": (
                             f"Konkurrierende Zustandsvorschläge für {factor_id}; Mehrheit: {majority_state}"
-                        ),
-                        "weight": 2,
-                    }
-                )
-
-        for pair, votes in pair_votes.items():
-            if len(votes) <= 1:
-                continue
-            majority_sign = _deterministic_majority_sign(votes)
-            minority_agents = sorted(
-                {agent_id for sign, agents in votes.items() if sign != majority_sign for agent_id in agents}
-            )
-            if minority_agents:
-                signals.append(
-                    {
-                        "round_number": round_number,
-                        "agent_ids": minority_agents,
-                        "factor_id": _descriptor_to_factor_id(pair[1]),
-                        "descriptor_pair": pair,
-                        "kind": "impact_conflict",
-                        "reason": (
-                            f"Widersprüchliche Impact-Assessments für {pair[0]} -> {pair[1]}"
                         ),
                         "weight": 2,
                     }
@@ -458,26 +423,11 @@ def _collect_factor_ids_from_contribution(contribution: dict[str, Any]) -> set[s
             if isinstance(factor_id, str) and factor_id.strip():
                 factor_ids.add(factor_id.strip())
 
-    for item in contribution.get("impact_assessment", []):
-        if not isinstance(item, dict):
-            continue
-        source_factor = _descriptor_to_factor_id(item.get("source_descriptor"))
-        target_factor = _descriptor_to_factor_id(item.get("target_descriptor"))
-        if source_factor:
-            factor_ids.add(source_factor)
-        if target_factor:
-            factor_ids.add(target_factor)
-
     return factor_ids
 
 
 def _deterministic_majority_state(votes: dict[str, set[str]]) -> str:
     ranked = sorted(votes.items(), key=lambda item: (-len(item[1]), item[0]))
-    return ranked[0][0]
-
-
-def _deterministic_majority_sign(votes: dict[int, set[str]]) -> int:
-    ranked = sorted(votes.items(), key=lambda item: (-len(item[1]), -item[0]))
     return ranked[0][0]
 
 
@@ -511,7 +461,7 @@ def render_protocol_markdown(payload: dict[str, Any]) -> str:
 
     lines.append("")
     lines.append("## Überblick")
-    lines.append(f"- **Runden:** {run.get('rounds_completed')} / {run.get('rounds_max')}")
+    lines.append(f"- **Ticks:** {run.get('ticks_completed')} / {run.get('ticks_max')}")
     if run.get("seed") is not None:
         lines.append(f"- **Seed:** {run.get('seed')}")
 
@@ -520,7 +470,22 @@ def render_protocol_markdown(payload: dict[str, Any]) -> str:
     for r in payload.get("rounds", []):
         round_number = r.get("round_number")
         lines.append("")
-        lines.append(f"### Runde {round_number}")
+        lines.append(f"### Tick {round_number}")
+
+        market = r.get("market") or {}
+        if market:
+            price = market.get("price")
+            demand_level = market.get("demand_level")
+            booking_rate = market.get("booking_rate")
+            market_parts: list[str] = []
+            if price is not None:
+                market_parts.append(f"price={price:.2f}")
+            if demand_level is not None:
+                market_parts.append(f"demand_level={demand_level:.3f}")
+            if booking_rate is not None:
+                market_parts.append(f"booking_rate={booking_rate:.1%}")
+            if market_parts:
+                lines.append(f"- **Markt:** {', '.join(market_parts)}")
 
         for contrib in r.get("contributions", []):
             agent_id = contrib.get("agent_id", "?")
@@ -536,14 +501,6 @@ def render_protocol_markdown(payload: dict[str, Any]) -> str:
             impacted = contrib.get("impact", {}).get("affected_factors", [])
             if impacted:
                 lines.append(f"  - impacted_factors: {', '.join(impacted)}")
-
-            ia = contrib.get("impact", {}).get("impact_assessment", [])
-            if isinstance(ia, list) and ia:
-                lines.append("  - impact_assessment:")
-                for item in ia[:8]:
-                    if isinstance(item, dict):
-                        s = json.dumps(item, ensure_ascii=False)
-                        lines.append(f"    - {s}")
 
         events = r.get("events", [])
         if events:

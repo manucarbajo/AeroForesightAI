@@ -2,50 +2,14 @@
   "name": "Flugverkehr Szenarioplanung MVP",
   "description": "Prototypische Multi-Agenten-Simulation fuer Szenarioplanung im Flugverkehr (2025-2035)",
   "clock": {
-    "current_round": 0,
-    "max_rounds": 40,
-    "year_start": 2026,
-    "years_per_round": 1,
-    "tick_unit": "quarter",
-    "timeline_start_year": 2026,
-    "timeline_start_quarter": 1,
-    "timeline_end_year": 2035,
-    "timeline_end_quarter": 4
+    "current_tick": 0,
+    "max_ticks": 40,
+    "tick_unit": "tick"
   },
   "llm": {
     "model": "llama3",
     "temperature": 0.7,
     "max_tokens": 2048
   },
-  "seed": null,
-  "change_log": [],
-  "scenario_parameters": [
-    {
-      "id": "demand_growth_rate",
-      "name": "Nachfragewachstum",
-      "description": "Jaehrliche Wachstumsrate der Flugnachfrage",
-      "value": 0.03,
-      "unit": "percent_per_year",
-      "min_value": -0.05,
-      "max_value": 0.10
-    },
-    {
-      "id": "fuel_price_change",
-      "name": "Treibstoffpreisentwicklung",
-      "description": "Jaehrliche Veraenderung der Treibstoffkosten",
-      "value": 0.02,
-      "unit": "percent_per_year",
-      "min_value": -0.10,
-      "max_value": 0.20
-    },
-    {
-      "id": "carbon_tax_level",
-      "name": "CO2-Steuer",
-      "description": "CO2-Bepreisung pro Tonne in EUR",
-      "value": 50.0,
-      "unit": "eur_per_tonne",
-      "min_value": 0.0,
-      "max_value": 300.0
-    }
-  ]
+  "seed": null
 }

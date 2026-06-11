@@ -53,11 +53,11 @@ def coerce_payload(payload: Any | None) -> dict[str, Any]:
     if not payload_dict:
         return base_payload
 
-    if isinstance(payload_dict.get("max_rounds"), int) or isinstance(payload_dict.get("rounds"), int):
-        rounds = payload_dict.get("max_rounds") or payload_dict.get("rounds")
+    if isinstance(payload_dict.get("max_ticks"), int) or isinstance(payload_dict.get("max_rounds"), int) or isinstance(payload_dict.get("rounds"), int):
+        ticks = payload_dict.get("max_ticks") or payload_dict.get("max_rounds") or payload_dict.get("rounds")
         base_payload.setdefault("clock", {})
         if isinstance(base_payload.get("clock"), dict):
-            base_payload["clock"]["max_rounds"] = int(rounds)
+            base_payload["clock"]["max_ticks"] = int(ticks)
 
     if payload_dict.get("seed") is not None:
         base_payload.setdefault("config", {})
@@ -75,10 +75,11 @@ def coerce_payload(payload: Any | None) -> dict[str, Any]:
             if payload_dict.get("llm_max_tokens") is not None:
                 base_payload["config"]["llm"]["max_tokens"] = payload_dict["llm_max_tokens"]
 
-    if payload_dict.get("scenario_parameters") is not None:
-        base_payload.setdefault("config", {})
-        if isinstance(base_payload.get("config"), dict):
-            base_payload["config"]["scenario_parameters"] = payload_dict["scenario_parameters"]
+    if payload_dict.get("properties") is not None:
+        base_payload["properties"] = payload_dict["properties"]
+
+    if payload_dict.get("enable_redebedarf") is not None:
+        base_payload["enable_redebedarf"] = bool(payload_dict["enable_redebedarf"])
 
     return deep_merge(base_payload, payload_dict)
 
@@ -138,48 +139,55 @@ def append_spoken_agent(state: SimulationState, agent_id: str) -> dict[str, list
 def _make_build_options() -> dict:
     """Return a compact description of editable run options for Studio UI.
 
-    Kept here so the minimal `haiko_playground` adapter can import a ready-made
+    Kept here so the minimal ``langgraph_studio`` adapter can import a ready-made
     build-options payload without owning inspection logic.
     """
     try:
         state = build_initial_state()
     except Exception:
         return {
-            "max_rounds": {"type": "int", "default": 2, "description": "Maximal number of rounds"},
+            "max_ticks": {"type": "int", "default": 2, "description": "Maximal number of ticks"},
             "enable_market": {"type": "bool", "default": True, "description": "Enable MarketNode"},
+            "enable_redebedarf": {
+                "type": "bool",
+                "default": False,
+                "description": "Use C3 Redebedarf scheduler instead of parallel agents",
+            },
             "llm_model": {"type": "str", "default": "llama3", "description": "LLM model name"},
             "llm_temperature": {"type": "float", "default": 0.7, "description": "LLM temperature"},
             "presets": {
                 "type": "object",
                 "default": {
-                    "quick_test": {"max_rounds": 4, "seed": 42, "llm_model": "llama3"},
-                    "full_ap3": {"max_rounds": 40, "seed": 42, "llm_model": "llama3.2"},
+                    "quick_test": {"max_ticks": 4, "seed": 42, "llm_model": "llama3"},
+                    "full_ap3": {"max_ticks": 40, "seed": 42, "llm_model": "llama3.2"},
                 },
                 "description": "Helpful AP3 starter presets for Studio and playground runs",
             },
         }
 
     return {
-        "max_rounds": {"type": "int", "default": state.clock.max_rounds, "description": "Maximal number of rounds"},
+        "max_ticks": {"type": "int", "default": state.clock.max_ticks, "description": "Maximal number of ticks"},
         "enable_market": {"type": "bool", "default": True, "description": "Enable MarketNode"},
+        "enable_redebedarf": {
+            "type": "bool",
+            "default": False,
+            "description": "Use C3 Redebedarf scheduler instead of parallel agents",
+        },
         "llm_model": {"type": "str", "default": state.config.llm.model, "description": "LLM model name"},
         "llm_temperature": {"type": "float", "default": state.config.llm.temperature, "description": "LLM temperature"},
         "presets": {
             "type": "object",
             "default": {
-                "quick_test": {"max_rounds": 4, "seed": 42, "llm_model": state.config.llm.model},
+                    "quick_test": {"max_ticks": 4, "seed": 42, "llm_model": state.config.llm.model},
                 "full_ap3": {
-                    "max_rounds": state.clock.max_rounds,
+                    "max_ticks": state.clock.max_ticks,
                     "seed": state.config.seed,
                     "llm_model": state.config.llm.model,
                 },
             },
             "description": "Helpful AP3 starter presets for Studio and playground runs",
         },
-        "scenario_parameters": [
-            {"id": p.id, "name": p.name, "default": p.value, "unit": getattr(p, "unit", None)}
-            for p in state.config.scenario_parameters
-        ],
+        "system_property_ids": state.resolved_properties().system_property_ids(),
         "agents": [{"id": a.id, "name": a.name, "type": a.agent_type.value} for a in state.agents],
     }
 
@@ -193,5 +201,5 @@ def get_build_options() -> dict:
     try:
         return _make_build_options()
     except Exception:
-        return {"max_rounds": {"type": "int", "default": 2}}
+        return {"max_ticks": {"type": "int", "default": 2}}
 

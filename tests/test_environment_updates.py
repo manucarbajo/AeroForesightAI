@@ -3,7 +3,7 @@ from src.config_loader import build_initial_state
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.enums import EventType
-from src.nodes.environment_node_c2 import EnvironmentNode
+from src.nodes.environment_node import EnvironmentNode
 
 
 def _make_response(agent_id: str, state_changes: list[StateChange] = None) -> AgentResponse:
@@ -30,21 +30,17 @@ def _make_event(agent_id: str, event_type: EventType, affected_factors: list[str
 
 def test_environment_node_applies_valid_state_change():
     state = build_initial_state()
-    state.clock.current_round = 1
-
-    # Ersten Faktor und seinen alternativen Zustand holen
-    factor_id = list(state.environment.factors.keys())[0]
-    factor = state.environment.factors[factor_id]
-    new_state = [s for s in factor.possible_states if s != factor.current_state][0]
+    state.clock.current_tick = 15
+    state.market_metrics = {"cost_pressure": 120.0}
 
     response = _make_response(
         agent_id="regulator",
-        state_changes=[StateChange(factor_id=factor_id, proposed_state=new_state, reasoning="Test")]
+        state_changes=[StateChange(factor_id="F2", proposed_state="F2.2", reasoning="Test")]
     )
 
     # RoundResult mit Response hinzufügen
     state.round_results.append(RoundResult(
-        round_number=1,
+        round_number=15,
         agent_responses=[response],
         events=[],
         environment_snapshot=state.environment,
@@ -53,12 +49,12 @@ def test_environment_node_applies_valid_state_change():
     environment = EnvironmentNode()
     state = environment.invoke(state)
 
-    assert state.environment.factors[factor_id].current_state == new_state
+    assert state.environment.factors["F2"].current_state == "F2.2"
 
 
 def test_environment_node_ignores_invalid_state_change():
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
 
     factor_id = list(state.environment.factors.keys())[0]
     original_state = state.environment.factors[factor_id].current_state
@@ -84,7 +80,7 @@ def test_environment_node_ignores_invalid_state_change():
 
 def test_environment_node_writes_round_result():
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
 
     response = _make_response(agent_id="consumer")
     state.round_results.append(RoundResult(
@@ -105,7 +101,7 @@ def test_environment_node_writes_round_result():
 
 def test_environment_node_summary_contains_round_info():
     state = build_initial_state()
-    state.clock.current_round = 1
+    state.clock.current_tick = 1
 
     response = _make_response(agent_id="consumer")
     state.round_results.append(RoundResult(
@@ -119,4 +115,4 @@ def test_environment_node_summary_contains_round_info():
     state = environment.invoke(state)
 
     last_summary = state.round_results[-1].summary
-    assert "Round 1" in last_summary
+    assert "Tick 1" in last_summary

@@ -308,12 +308,6 @@ class RedebedarfScheduler:
             elif isinstance(value, list):
                 parts.extend(str(item) for item in value if str(item).strip())
 
-        impact = contribution.get("impact", {})
-        if isinstance(impact, Mapping):
-            for item in impact.get("impact_assessment", []) if isinstance(impact.get("impact_assessment", []), list) else []:
-                if isinstance(item, Mapping):
-                    parts.extend(str(item.get(field, "")) for field in ("source_descriptor", "target_descriptor", "reasoning"))
-
         for change in contribution.get("state_changes", []):
             if isinstance(change, Mapping):
                 parts.extend(str(change.get(field, "")) for field in ("factor_id", "proposed_state", "reason"))

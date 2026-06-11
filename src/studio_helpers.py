@@ -1,13 +1,10 @@
-"""Shared Studio helpers moved out of ``haiko_playground``.
-
-This module owns the runtime-only helpers that are reused by LangGraph Studio
-and the playground CLI wrapper: environment loading and LLM selection.
-"""
+"""Shared Studio helpers for LangGraph Studio and the CLI entrypoint."""
 from __future__ import annotations
 
 import json
 import os
 import re
+import sys
 from getpass import getpass
 from pathlib import Path
 from typing import Iterable, Protocol
@@ -42,16 +39,23 @@ def _load_dotenv(path: Path) -> None:
             return
 
 
+STUDIO_DIR = Path(__file__).resolve().parents[1] / "langgraph_studio"
+
+
 def load_env(env_path: str | None = None, prompt_keys: Iterable[str] | None = None) -> None:
     """Load .env file and prompt for missing secrets when needed."""
 
-    root = Path(__file__).resolve().parents[1] / "haiko_playground"
-    env_file = Path(env_path) if env_path else root / ".env"
+    env_file = Path(env_path) if env_path else STUDIO_DIR / ".env"
 
     if env_file.exists():
         _load_dotenv(env_file)
 
-    keys = list(prompt_keys or ["LANGSMITH_API_KEY"])
+    tracing_enabled = os.environ.get("LANGCHAIN_TRACING_V2", "").strip().lower() in {"1", "true", "yes", "on"}
+    default_keys = ["LANGSMITH_API_KEY"] if tracing_enabled else []
+    keys = list(prompt_keys if prompt_keys is not None else default_keys)
+    if not keys or not sys.stdin.isatty():
+        return
+
     for key in keys:
         value = os.environ.get(key)
         if value is not None and str(value).strip() != "":

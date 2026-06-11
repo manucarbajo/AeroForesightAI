@@ -2,9 +2,12 @@ import pytest
 from pathlib import Path
 from src.config_loader import (
     load_simulation_config,
+    load_simulation_clock,
     load_agents,
     load_factors,
     load_population_config,
+    load_cib_frozen,
+    load_properties_config,
     build_initial_state,
 )
 from src.models.state_models import SimulationState, SimulationConfig, FactorState
@@ -14,9 +17,14 @@ from src.models.agent_models import AgentConfig
 def test_load_simulation_config():
     config = load_simulation_config()
     assert isinstance(config, SimulationConfig)
-    assert config.clock.max_rounds >= 1
-    assert config.clock.years_per_round >= 1
     assert config.name != ""
+
+
+def test_load_simulation_clock():
+    clock = load_simulation_clock()
+    assert clock.max_ticks >= 1
+    assert clock.tick_unit == "tick"
+    assert clock.current_tick == 0
 
 
 def test_load_agents():
@@ -47,12 +55,20 @@ def test_load_population_config():
     assert len(pop_config.segments) > 0
 
 
+def test_load_properties_config():
+    properties = load_properties_config()
+    assert len(properties.system_properties) == 8
+    assert "carbon_tax_level" in properties.system_property_ids()
+
+
 def test_build_initial_state():
     state = build_initial_state()
     assert isinstance(state, SimulationState)
-    assert state.clock.current_round == 0
+    assert state.clock.current_tick == 0
     assert len(state.agents) > 0
     assert len(state.environment.factors) > 0
+    assert state.properties is not None
+    assert len(state.resolved_properties().system_properties) == 8
     assert state.event_log == []
     assert state.price_history == []
     assert state.round_results == []
@@ -64,3 +80,22 @@ def test_build_initial_state_agent_ids():
     assert "consumer" in agent_ids
     assert "provider" in agent_ids
     assert "regulator" in agent_ids
+
+
+def test_load_cib_frozen():
+    matrix = load_cib_frozen()
+    assert matrix.is_complete
+    assert matrix.round_generated == 0
+    assert matrix.metadata.get("frozen") is True
+
+
+def test_build_initial_state_loads_frozen_cib():
+    state = build_initial_state()
+    assert state.cib_matrix is not None
+    assert state.cib_matrix.is_complete
+    assert len(state.cib_matrix.cells) == 168
+
+
+def test_build_initial_state_without_cib():
+    state = build_initial_state(load_cib=False)
+    assert state.cib_matrix is None

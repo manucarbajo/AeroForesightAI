@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-from src.models.population_models import ScenarioParameter
-
+from src.models.population_models import Individual
+from src.models.property_models import PropertiesConfig
 
 class FactorState(BaseModel):
     id: str
@@ -14,18 +13,6 @@ class FactorState(BaseModel):
     description: str
     current_state: str
     possible_states: dict[str, str]
-
-
-class ConfigChangeEntry(BaseModel):
-    """Timestamped record of a runtime configuration change."""
-
-    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
-    round_number: int | None = None
-    parameter_id: str
-    old_value: Any
-    new_value: Any
-    source_agent: str = "EnvironmentAgent"
-    reason: str = ""
 
 
 class EnvironmentState(BaseModel):
@@ -52,42 +39,32 @@ class SpeechPlanState(BaseModel):
 
 
 class SimulationClock(BaseModel):
-    current_round: int = 0
-    max_rounds: int = 40
-    year_start: int = 2026
-    years_per_round: int = 1
-    tick_unit: str = "quarter"
-    timeline_start_year: int = 2026
-    timeline_start_quarter: int = 1
-    timeline_end_year: int = 2035
-    timeline_end_quarter: int = 4
+    """Discrete simulation clock. One tick is one tick.  No calendar mapping."""
 
-    def quarter_for_round(self, round_number: int) -> tuple[int, int]:
-        """Return the quarter/year tuple for a 1-based round number."""
+    current_tick: int = 0
+    max_ticks: int = 40
+    tick_unit: str = "tick"
 
-        if round_number < 1:
-            raise ValueError("round_number must be >= 1")
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_legacy_fields(cls, data: Any) -> Any:
+        """Accept legacy ``current_round`` / ``max_rounds`` keys from older checkpoints."""
 
-        offset = round_number - 1
-        year = self.timeline_start_year + (offset // 4)
-        quarter = self.timeline_start_quarter + (offset % 4)
-        if quarter > 4:
-            year += 1
-            quarter -= 4
-        return year, quarter
+        if not isinstance(data, dict):
+            return data
+        normalized = dict(data)
+        if "current_tick" not in normalized and "current_round" in normalized:
+            normalized["current_tick"] = normalized["current_round"]
+        if "max_ticks" not in normalized and "max_rounds" in normalized:
+            normalized["max_ticks"] = normalized["max_rounds"]
+        return normalized
 
-    def quarter_label_for_round(self, round_number: int) -> str:
-        """Return the human readable quarter label for a 1-based round number."""
+    def tick_label(self, tick: int) -> str:
+        """Return the display label for a 1-based tick index."""
 
-        year, quarter = self.quarter_for_round(round_number)
-        return f"Q{quarter} {year}"
-
-    @property
-    def total_quarters(self) -> int:
-        """Total number of supported quarterly ticks in the configured timeline."""
-
-        year_span = self.timeline_end_year - self.timeline_start_year
-        return (year_span * 4) + (self.timeline_end_quarter - self.timeline_start_quarter) + 1
+        if tick < 1:
+            raise ValueError("tick must be >= 1")
+        return f"Tick {tick}"
 
 
 class LLMConfig(BaseModel):
@@ -99,51 +76,13 @@ class LLMConfig(BaseModel):
 class SimulationConfig(BaseModel):
     name: str
     description: str
-    clock: SimulationClock
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
-    scenario_parameters: list[ScenarioParameter] = Field(default_factory=list)
-    change_log: list[ConfigChangeEntry] = Field(default_factory=list)
-
-    def update_scenario_parameter(
-        self,
-        parameter_id: str,
-        new_value: float,
-        *,
-        source_agent: str = "EnvironmentAgent",
-        reason: str = "",
-        round_number: int | None = None,
-    ) -> None:
-        """Update a scenario parameter and append a timestamped change log entry."""
-
-        for parameter in self.scenario_parameters:
-            if parameter.id != parameter_id:
-                continue
-
-            old_value = parameter.value
-            parameter.value = new_value
-            self.change_log.append(
-                ConfigChangeEntry(
-                    round_number=round_number,
-                    parameter_id=parameter_id,
-                    old_value=old_value,
-                    new_value=new_value,
-                    source_agent=source_agent,
-                    reason=reason,
-                )
-            )
-            return
-
-        raise KeyError(f"Unknown scenario parameter: {parameter_id}")
-
-    def runtime_parameter_map(self) -> dict[str, float]:
-        """Return the current scenario parameters as a flat runtime mapping."""
-
-        return {parameter.id: parameter.value for parameter in self.scenario_parameters}
 
 
 class SimulationState(BaseModel):
     config: SimulationConfig
+    properties: PropertiesConfig
     clock: SimulationClock
     environment: EnvironmentState
     agents: list[AgentConfig]
@@ -157,19 +96,47 @@ class SimulationState(BaseModel):
     round_results: list[RoundResult] = Field(default_factory=list)
     cib_matrix: CIBMatrix | None = None
     cib_history: CIBMatrixHistory | None = None
+    market_metrics: dict[str, float] = Field(default_factory=dict)
+    property_timeseries: list[dict[str, Any]] = Field(default_factory=list)
+    population_individuals: list[Individual] = Field(default_factory=list)
+    population_stats: list[dict[str, Any]] = Field(default_factory=list)
+    applied_factor_rule_ids: list[str] = Field(default_factory=list)
+    factor_timeseries: list[dict[str, Any]] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _load_properties_for_legacy_checkpoints(cls, data: Any) -> Any:
+        """Old checkpoints may omit ``properties`` — load from ``properties.json``."""
+
+        if not isinstance(data, dict):
+            return data
+        if data.get("properties") is not None:
+            return data
+
+        from src.config_loader import load_properties_config
+
+        data = dict(data)
+        data["properties"] = load_properties_config().model_dump()
+        return data
+
+    def resolved_properties(self) -> PropertiesConfig:
+        return self.properties
 
 
 class InputState(BaseModel):
     """Studio-facing input defaults for AP3 runs."""
 
-    max_rounds: int = Field(default=40, description="Maximale Anzahl an Quartalen/Runden")
+    max_rounds: int = Field(default=40, description="Maximale Anzahl an Ticks")
     rounds: int = Field(default=4, description="Alias für max_rounds")
     seed: int | None = Field(default=None, description="Seed für Multi-Run")
     llm_model: str = Field(default="llama3.2", description="LLM-Modellname")
     llm_temperature: float = Field(default=0.7, description="LLM-Temperatur")
     llm_max_tokens: int = Field(default=2048, description="Maximale Token pro Antwort")
+    enable_redebedarf: bool = Field(
+        default=False,
+        description="C3 Redebedarf-Scheduler statt paralleler Agenten pro Tick",
+    )
     ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama-Base-URL")
-    scenario_parameters: list[dict[str, Any]] = Field(default_factory=list, description="Szenarioparameter")
 
 
 class PlaygroundState(InputState):
@@ -191,6 +158,7 @@ class PlaygroundState(InputState):
     current_speech_order: list[str] = Field(default_factory=list)
     current_round_spoken_agents: list[str] = Field(default_factory=list)
     speech_plan: SpeechPlanState | None = Field(default=None)
+    market_metrics: dict[str, float] = Field(default_factory=dict)
 
 
 # deferred imports for forward refs

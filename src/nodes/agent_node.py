@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
 from src.models.enums import AgentType, EventType
+from src.property_engine import scheduled_property_events
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.state_models import SimulationState
 
@@ -70,13 +71,13 @@ class AgentNode:
                 }, ensure_ascii=False)
 
         response, raw_event_entries = self._parse_response(
-            raw_output, state.clock.current_round, state=state
+            raw_output, state.clock.current_tick, state=state
         )
         events = self._create_event_entries(state, response, raw_event_entries)
 
         state.round_results.append(
             RoundResult(
-                round_number=state.clock.current_round,
+                round_number=state.clock.current_tick,
                 agent_responses=[response],
                 events=events,
                 environment_snapshot=state.environment,
@@ -90,14 +91,16 @@ class AgentNode:
         template = self._load_prompt_template()
         factors_block = self._format_factors(state)
         recent_events_block = self._format_recent_events(state)
-        scenario_block = self._format_scenario_parameters(state)
+        scenario_block = self._format_market_metrics(state)
         population_context = self._build_population_context()
         consumer_segment_analysis = self._format_consumer_segment_analysis(state)
-        goals = "\n".join(f"- {goal}" for goal in self.config.goals) or "- Keine Ziele konfiguriert"
+        observed_booking_block = self._format_observed_booking_block(state)
+        prior_booking_block = self._format_prior_booking_block(state)
+        goals = "\n".join(f"- {goal}" for goal in self.config.goals) or "- No goals configured"
         constraints = (
             "\n".join(f"- {constraint}" for constraint in self.config.constraints)
             if self.config.constraints
-            else "- Keine Constraints konfiguriert"
+            else "- No constraints configured"
         )
 
         return self._render_template(
@@ -106,9 +109,9 @@ class AgentNode:
                 "agent_id": self.config.id,
                 "agent_name": self.config.name,
                 "agent_description": self.config.description,
-                "round_number": state.clock.current_round,
+                "round_number": state.clock.current_tick,
                 "global_context": state.environment.global_context
-                or "Kein globaler Kontext gesetzt.",
+                or "No global context set.",
                 "goals": goals,
                 "constraints": constraints,
                 "scenario_block": scenario_block,
@@ -116,6 +119,8 @@ class AgentNode:
                 "recent_events_block": recent_events_block,
                 "population_context": population_context,
                 "consumer_segment_analysis": consumer_segment_analysis,
+                "observed_booking_block": observed_booking_block,
+                "prior_booking_block": prior_booking_block,
             },
         )
 
@@ -132,8 +137,6 @@ class AgentNode:
 
         try:
             segment_analysis_raw = payload.get("segment_analysis", {})
-            impact_assessment_raw = payload.get("impact_assessment", [])
-            #print(f"DEBUG segment_analysis_raw: {segment_analysis_raw}")
             if self.config.agent_type != AgentType.CONSUMER:
                 segment_analysis: dict[str, Any] = {}
             elif isinstance(segment_analysis_raw, dict):
@@ -155,12 +158,6 @@ class AgentNode:
             else:
                 segment_analysis = {}
 
-            impact_assessment: list[dict[str, Any]] = []
-            if isinstance(impact_assessment_raw, list):
-                for item in impact_assessment_raw:
-                    if isinstance(item, dict):
-                        impact_assessment.append(item)
-
             response = AgentResponse(
                 agent_id=self.config.id,
                 round_number=round_number,
@@ -168,7 +165,6 @@ class AgentNode:
                 actions=[str(action) for action in payload.get("actions", []) if str(action).strip()],
                 state_changes=self._parse_state_changes(payload.get("state_changes", []), state=state),
                 segment_analysis=segment_analysis,
-                impact_assessment=impact_assessment,
                 raw_output=raw_output,
             )
             if not response.actions:
@@ -184,6 +180,8 @@ class AgentNode:
         raw_event_entries: list[dict[str, Any]],
     ) -> list[EventLogEntry]:
         if not raw_event_entries:
+            if self._is_explicit_no_op(response):
+                return []
             raw_event_entries = [
                 {
                     "event_type": DEFAULT_EVENT_TYPE_BY_AGENT[self.config.agent_type].value,
@@ -194,12 +192,16 @@ class AgentNode:
 
         created: list[EventLogEntry] = []
         for raw_event in raw_event_entries:
+            event_type = self._parse_event_type(raw_event.get("event_type"))
+            if event_type == EventType.MARKET_EVENT:
+                continue
+
             created.append(
                 EventLogEntry(
                     id=str(uuid4()),
-                    round_number=state.clock.current_round,
+                    round_number=state.clock.current_tick,
                     source_agent=self.config.id,
-                    event_type=self._parse_event_type(raw_event.get("event_type")),
+                    event_type=event_type,
                     description=str(raw_event.get("description", "")).strip() or "Ohne Beschreibung",
                     affected_factors=self._filter_factor_ids(
                         raw_event.get("affected_factors", []), state
@@ -209,6 +211,13 @@ class AgentNode:
             )
 
         return created
+
+    @staticmethod
+    def _is_explicit_no_op(response: AgentResponse) -> bool:
+        if not response.actions:
+            return False
+        normalized = {str(action).strip().upper() for action in response.actions if str(action).strip()}
+        return normalized == {"NO_OP"}
 
     def _load_prompt_template(self) -> str:
         prompt_file = PROMPT_FILES[self.config.agent_type]
@@ -234,7 +243,7 @@ class AgentNode:
 
     def _format_recent_events(self, state: SimulationState) -> str:
         if not state.event_log:
-            return "- Keine vorherigen Events vorhanden."
+            return "- No prior events."
 
         selected = state.event_log[-self.recent_event_limit :]
         lines = []
@@ -246,23 +255,41 @@ class AgentNode:
             )
         return "\n".join(lines)
 
-    def _format_scenario_parameters(self, state: SimulationState) -> str:
-        if not state.config.scenario_parameters:
-            return "- Keine Szenarioparameter konfiguriert."
+    def _format_market_metrics(self, state: SimulationState) -> str:
+        """Format policy-driven market metrics for the agent prompt (M2)."""
 
-        lines: list[str] = []
-        for param in state.config.scenario_parameters:
-            desc = f" :: {param.description}" if param.description else ""
-            unit = f" {param.unit}" if param.unit else ""
-            lines.append(
-                f"- {param.id} ({param.name}): value={param.value}{unit}{desc}"
+        metrics = state.market_metrics
+        header = "Deterministic market metrics (Python; not set by the agent):"
+
+        if not metrics and state.resolved_properties().system_properties:
+            from src.simulation_functions import compute_market_metrics
+
+            tick = max(1, state.clock.current_tick)
+            last_price = state.price_history[-1].price if state.price_history else 100.0
+            last_demand = state.price_history[-1].demand_level if state.price_history else 1.0
+            metrics = compute_market_metrics(
+                tick,
+                state.resolved_properties(),
+                previous_price=last_price,
+                previous_demand=last_demand,
             )
+            header = (
+                "Deterministic market metrics (Python; preview from properties.json; "
+                "not set by the agent):"
+            )
+
+        if not metrics:
+            return "- No market metrics available (properties.json / MarketNode)."
+
+        lines = [header]
+        for metric_id in sorted(metrics.keys()):
+            lines.append(f"- {metric_id}: {metrics[metric_id]}")
         return "\n".join(lines)
 
     def _build_population_context(self) -> str:
         pop = self.config.population_config
         if not pop or not pop.segments:
-            return "- Kein Populationskontext für dieses Agent."
+            return "- No population context for this agent."
 
         lines: list[str] = [f"- total_population={pop.total_population}, default={pop.default_distribution.value}"]
         for seg in pop.segments:
@@ -296,8 +323,8 @@ class AgentNode:
         )
 
     def _format_consumer_segment_analysis(self, state: SimulationState) -> str:
-        # Provider/Regulator sollen (im MVP) die Consumer-segmentspezifische Analyse sehen.
-        round_number = state.clock.current_round
+        # Provider/Regulator: latest Python segment booking (prior tick or same tick after consumer).
+        round_number = state.clock.current_tick
         for rr in reversed(state.round_results):
             if rr.round_number != round_number:
                 continue
@@ -306,9 +333,130 @@ class AgentNode:
                     continue
                 if isinstance(agent_response.segment_analysis, dict) and agent_response.segment_analysis:
                     return json.dumps(agent_response.segment_analysis, ensure_ascii=True, indent=2)
-                return "{}"
+
+        if state.population_stats:
+            latest = state.population_stats[-1]
+            segments = latest.get("segments", {})
+            if segments:
+                summary = {
+                    segment_id: {
+                        "booking_rate": stats.get("booking_rate"),
+                        "booked": stats.get("booked_individuals"),
+                        "total": stats.get("total_individuals"),
+                    }
+                    for segment_id, stats in segments.items()
+                    if isinstance(stats, dict)
+                }
+                return json.dumps(summary, ensure_ascii=True, indent=2)
 
         return "{}"
+
+    def _format_observed_booking_block(self, state: SimulationState) -> str:
+        if self.config.agent_type != AgentType.CONSUMER:
+            return "- Not applicable for this agent role."
+
+        metrics = state.market_metrics
+        if not metrics.get("booking_evaluated"):
+            return "- Booking for this tick not yet evaluated."
+
+        lines = [
+            "Observed population booking (Python, this tick — ground truth for your narrative):",
+            f"- booking_rate: {metrics.get('booking_rate')}",
+            f"- ticket_price (provisional, pre-market-feedback): {metrics.get('ticket_price')}",
+            f"- carbon_tax_level: {metrics.get('carbon_tax_level')}",
+        ]
+        if state.population_stats:
+            latest = state.population_stats[-1]
+            if latest.get("round_number") == state.clock.current_tick:
+                lines.append(f"- total_booked: {latest.get('total_booked')}/{latest.get('total_population')}")
+                for segment_id, stats in latest.get("segments", {}).items():
+                    if isinstance(stats, dict):
+                        lines.append(
+                            f"- segment {segment_id}: booking_rate={stats.get('booking_rate')}, "
+                            f"booked={stats.get('booked_individuals')}/{stats.get('total_individuals')}"
+                        )
+        lines.append(
+            "- Events MUST match observed booking_rate (high booking → demand/booking, not mass exit)."
+        )
+        return "\n".join(lines)
+
+    def _format_prior_booking_block(self, state: SimulationState) -> str:
+        if self.config.agent_type not in {AgentType.PROVIDER, AgentType.REGULATOR}:
+            return "- Not applicable for this agent role."
+
+        current_tick = state.clock.current_tick
+        prior_stats: dict[str, Any] | None = None
+        prior_prior_stats: dict[str, Any] | None = None
+
+        for entry in reversed(state.population_stats):
+            round_number = entry.get("round_number")
+            if round_number is None or round_number >= current_tick:
+                continue
+            if prior_stats is None:
+                prior_stats = entry
+            elif prior_prior_stats is None:
+                prior_prior_stats = entry
+                break
+
+        lines = [
+            "Observed population booking from the PRIOR completed tick "
+            "(Python ground truth — react to this; do not invent demand):",
+        ]
+
+        if prior_stats is None:
+            lines.append(
+                "- No prior booking data (first tick). "
+                "Base decisions on market metrics and scheduled policy changes only."
+            )
+        else:
+            prior_tick = prior_stats.get("round_number")
+            booking_rate = prior_stats.get("total_demand")
+            lines.append(f"- prior_tick: {prior_tick}")
+            lines.append(f"- booking_rate: {booking_rate}")
+            lines.append(
+                f"- total_booked: {prior_stats.get('total_booked')}/"
+                f"{prior_stats.get('total_population')}"
+            )
+            for segment_id, stats in prior_stats.get("segments", {}).items():
+                if isinstance(stats, dict):
+                    lines.append(
+                        f"- segment {segment_id}: booking_rate={stats.get('booking_rate')}, "
+                        f"booked={stats.get('booked_individuals')}/"
+                        f"{stats.get('total_individuals')}"
+                    )
+            if prior_prior_stats is not None:
+                prev_rate = prior_prior_stats.get("total_demand")
+                if prev_rate is not None and booking_rate is not None:
+                    delta = float(booking_rate) - float(prev_rate)
+                    lines.append(f"- booking_rate_delta_vs_prior: {delta:+.3f}")
+
+        shocks = [
+            event
+            for event in scheduled_property_events(state.resolved_properties())
+            if int(event["tick"]) == current_tick
+        ]
+        if shocks:
+            lines.append("- scheduled_property_changes_this_tick:")
+            for shock in shocks:
+                lines.append(
+                    f"  - {shock['property_id']} {shock['effect_type']} -> "
+                    f"{shock['value']} ({shock.get('unit', '')})"
+                )
+        else:
+            lines.append("- scheduled_property_changes_this_tick: none")
+
+        lines.extend(
+            [
+                "- demand_level in market metrics is NOT booking_rate; use values above only.",
+                "- Formulate exactly 1 event per tick that reflects your decision for this period.",
+                "- On scheduled_property_changes_this_tick: event must react to the shock (new angle).",
+                "- If prior booking_rate >= 0.5, do NOT describe mass exit to trains/buses/carriers.",
+                "- Use actions=[\"NO_OP\"] and events=[] ONLY when demand is stable "
+                "(|booking_rate_delta| < 0.05), no property shock, and Recent events already cover the topic.",
+                "- NEVER copy wording from Recent events; paraphrase or choose NO_OP.",
+            ]
+        )
+        return "\n".join(lines)
 
     def _extract_json_payload(self, raw_output: str) -> dict[str, Any] | None:
         cleaned = raw_output.strip()

@@ -84,7 +84,7 @@ def _build_cib_prompt(
 
 {factors_context}
 
-## Aktuelle Simulationsrunde: {state.clock.current_round}
+## Aktuelle Simulationsrunde: {state.clock.current_tick}
 
 ## Relevante Events dieser Runde
 
@@ -131,7 +131,7 @@ def _format_factors_context(state: SimulationState) -> str:
 
 
 def _format_events_context(state: SimulationState) -> str:
-    current_round = state.clock.current_round
+    current_round = state.clock.current_tick
     round_events = [e for e in state.event_log if e.round_number == current_round]
 
     if not round_events:
@@ -286,7 +286,7 @@ class CIBExtractorNode:
                 return state
 
             # No events and no LLM: produce a neutral matrix.
-            final = previous.model_copy(deep=True) if previous is not None else _build_neutral_matrix(state.clock.current_round)
+            final = previous.model_copy(deep=True) if previous is not None else _build_neutral_matrix(state.clock.current_tick)
             final.metadata = {
                 **dict(final.metadata or {}),
                 "evaluation_method": "fallback_no_llm",
@@ -302,16 +302,16 @@ class CIBExtractorNode:
         if proposed is None:
             # LLM failed completely: continue with previous matrix if available,
             # otherwise create a neutral matrix.
-            final = previous.model_copy(deep=True) if previous is not None else _build_neutral_matrix(state.clock.current_round)
+            final = previous.model_copy(deep=True) if previous is not None else _build_neutral_matrix(state.clock.current_tick)
             final.metadata = {
                 **dict(final.metadata or {}),
                 "evaluation_method": "fallback_llm_failed",
-                "llm_failure_round": state.clock.current_round,
+                "llm_failure_round": state.clock.current_tick,
             }
         else:
             # Guarantee a complete matrix for AP3 consumers.
             completed = _complete_matrix(
-                round_number=state.clock.current_round,
+                round_number=state.clock.current_tick,
                 proposed_cells=proposed.cells,
                 baseline=previous,
             )
@@ -324,10 +324,10 @@ class CIBExtractorNode:
             final.metadata = {
                 **dict(final.metadata or {}),
                 "evaluation_method": "llm",
-                "llm_round": state.clock.current_round,
+                "llm_round": state.clock.current_tick,
             }
 
-        final.round_generated = state.clock.current_round
+        final.round_generated = state.clock.current_tick
         final.compute_factor_scores()
         history.add(final)
         state.cib_matrix = final
@@ -405,7 +405,7 @@ class CIBExtractorNode:
 
         return CIBMatrix(
             cells=all_cells,
-            round_generated=state.clock.current_round,
+            round_generated=state.clock.current_tick,
             metadata={
                 "total_events": len(state.event_log),
                 "cells_evaluated": len(all_cells),
@@ -467,11 +467,11 @@ class CIBExtractorNode:
 
         state.cib_matrix = CIBMatrix(
             entries=entries,
-            round_generated=state.clock.current_round,
+            round_generated=state.clock.current_tick,
             metadata={
                 "total_events": len(state.event_log),
                 "total_entries": len(entries),
-                "rounds": state.clock.current_round,
+                "rounds": state.clock.current_tick,
                 "evaluation_method": "heuristic",
             },
         )

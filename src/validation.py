@@ -4,10 +4,20 @@ from src.models.population_models import (
     ConsumerSegment,
     DistributionConfig,
     PopulationConfig,
-    ScenarioParameter,
 )
-from src.models.state_models import FactorState, SimulationConfig, SimulationState
-
+from src.models.property_models import (
+    FactorRule,
+    PropertiesConfig,
+    RampEffect,
+    StepFunctionTrajectory,
+    SystemProperty,
+)
+from src.models.state_models import (
+    FactorState,
+    SimulationClock,
+    SimulationConfig,
+    SimulationState,
+)
 
 class ValidationError(Exception):
     pass
@@ -41,16 +51,17 @@ def validate_agent(agent: AgentConfig, factor_ids: set[str]) -> list[str]:
 
 
 def validate_config(config: SimulationConfig) -> list[str]:
+    return []
+
+
+def validate_clock(clock: SimulationClock) -> list[str]:
     errors = []
 
-    if config.clock.max_rounds < 1:
-        errors.append("max_rounds muss mindestens 1 sein")
+    if clock.max_ticks < 1:
+        errors.append("max_ticks muss mindestens 1 sein")
 
-    if config.clock.years_per_round < 1:
-        errors.append("years_per_round muss mindestens 1 sein")
-
-    for param in config.scenario_parameters:
-        errors.extend(validate_scenario_parameter(param))
+    if clock.tick_unit != "tick":
+        errors.append("tick_unit muss 'tick' sein")
 
     return errors
 
@@ -109,25 +120,71 @@ def validate_population_config(pop: PopulationConfig) -> list[str]:
     return errors
 
 
-def validate_scenario_parameter(param: ScenarioParameter) -> list[str]:
+def validate_properties_config(properties: PropertiesConfig) -> list[str]:
     errors = []
+    seen_ids: set[str] = set()
 
-    if not param.id:
-        errors.append("scenario_parameter: id darf nicht leer sein")
+    for index, prop in enumerate(properties.system_properties):
+        prefix = f"system_properties[{index}]"
+        if not prop.id:
+            errors.append(f"{prefix}: id darf nicht leer sein")
+            continue
+        if prop.id in seen_ids:
+            errors.append(f"{prefix}: id '{prop.id}' ist doppelt vergeben")
+        seen_ids.add(prop.id)
 
-    if not param.name:
-        errors.append(f"scenario_parameter '{param.id}': name darf nicht leer sein")
+        if prop.min_value is not None and prop.max_value is not None:
+            if prop.min_value >= prop.max_value:
+                errors.append(
+                    f"{prefix} '{prop.id}': min_value muss kleiner als max_value sein"
+                )
 
-    if param.min_value is not None and param.max_value is not None:
-        if param.min_value >= param.max_value:
+        errors.extend(_validate_trajectory(prop, prefix))
+
+    errors.extend(_validate_factor_rules(properties.factor_rules))
+
+    return errors
+
+
+def _validate_factor_rules(rules: list[FactorRule]) -> list[str]:
+    errors: list[str] = []
+    seen_ids: set[str] = set()
+    for index, rule in enumerate(rules):
+        prefix = f"factor_rules[{index}]"
+        if not rule.id:
+            errors.append(f"{prefix}: id darf nicht leer sein")
+        elif rule.id in seen_ids:
+            errors.append(f"{prefix}: id '{rule.id}' ist doppelt vergeben")
+        seen_ids.add(rule.id)
+        if not rule.factor_id:
+            errors.append(f"{prefix}: factor_id darf nicht leer sein")
+        if not rule.effect.set_state:
+            errors.append(f"{prefix}: effect.set_state darf nicht leer sein")
+    return errors
+
+
+def _validate_trajectory(prop: SystemProperty, prefix: str) -> list[str]:
+    errors: list[str] = []
+    trajectory = prop.trajectory
+
+    if isinstance(trajectory, StepFunctionTrajectory):
+        if not trajectory.points:
+            errors.append(f"{prefix} '{prop.id}': step_function braucht mindestens einen Punkt")
+        for point_index, point in enumerate(trajectory.points):
+            if point.tick < 0:
+                errors.append(
+                    f"{prefix} '{prop.id}': points[{point_index}].tick muss >= 0 sein"
+                )
+        return errors
+
+    for rule_index, rule in enumerate(trajectory.rules):
+        if rule.active_from_tick < 0:
             errors.append(
-                f"scenario_parameter '{param.id}': "
-                f"min_value ({param.min_value}) muss kleiner als max_value ({param.max_value}) sein"
+                f"{prefix} '{prop.id}': rules[{rule_index}].active_from_tick muss >= 0 sein"
             )
-        if not (param.min_value <= param.value <= param.max_value):
+        if isinstance(rule.effect, RampEffect) and rule.effect.duration_ticks < 1:
             errors.append(
-                f"scenario_parameter '{param.id}': "
-                f"value ({param.value}) muss zwischen min und max liegen"
+                f"{prefix} '{prop.id}': rules[{rule_index}].duration_ticks muss >= 1 sein"
             )
 
     return errors
@@ -137,6 +194,8 @@ def validate_state(state: SimulationState) -> list[str]:
     errors = []
 
     errors.extend(validate_config(state.config))
+    errors.extend(validate_properties_config(state.resolved_properties()))
+    errors.extend(validate_clock(state.clock))
 
     factor_ids = set(state.environment.factors.keys())
     for factor in state.environment.factors.values():

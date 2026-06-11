@@ -98,7 +98,7 @@ class RoundExecutionNode:
 
     def invoke(self, state: SimulationState) -> SimulationState:
         scheduler = RedebedarfScheduler.from_simulation_state(state, apply_score_deltas=False)
-        round_number = max(1, state.clock.current_round)
+        round_number = max(1, state.clock.current_tick)
         scheduler._score_by_agent = _initial_score_ledger(state, scheduler, round_number)
         last_spoken_rounds = _last_spoken_rounds(state)
         scheduler._last_spoken_round = {

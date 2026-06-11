@@ -20,6 +20,7 @@ class PriceHistoryEntry(BaseModel):
     agent_id: str
     price: float
     demand_level: float
+    booking_rate: float | None = None
     load_factor: float = 0.0
 
 

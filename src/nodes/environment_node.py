@@ -13,6 +13,16 @@ from src.models.cib_models import CIBMatrix
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.population_models import PopulationConfig
 from src.models.state_models import SimulationState
+from src.property_engine import resolve_system_properties
+from src.population_sampler import run_population_tick
+from src.factor_dynamics import validate_factor_proposals
+from src.market_rules import initial_provider_markup
+from src.simulation_functions import (
+    active_parameters,
+    compose_ticket_price,
+    compute_cost_pressure,
+    update_cost_index,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -101,16 +111,21 @@ Format JSON:
 
 
 class EnvironmentNode:
-    def __init__(self, prefer_agent_order: list[str] | None = None) -> None:
+    def __init__(self, prefer_agent_order: list[str] | None = None, llm: LLMCallable | None = None) -> None:
         self.prefer_agent_order = prefer_agent_order or ["regulator", "provider", "consumer"]
+        self.llm = llm
 
     def invoke(self, state: SimulationState) -> SimulationState:
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
 
         responses = self._collect_round_responses(state, round_number)
         round_events = [event for event in state.event_log if event.round_number == round_number]
 
         applied_changes = self._apply_state_changes(state, responses)
+
+        # M4: booking before market feedback — provisional price from cost + markup
+        state = self._run_population_tick(state, round_number)
+
         summary = self._build_round_summary(state, responses, round_events, applied_changes)
 
         state.environment.global_context = summary
@@ -124,6 +139,87 @@ class EnvironmentNode:
             )
         )
 
+        return state
+
+    def apply_consumer_factor_updates(self, state: SimulationState) -> SimulationState:
+        """Apply consumer ``state_changes`` after the consumer runs post-booking."""
+
+        round_number = state.clock.current_tick
+        consumer_responses = [
+            response
+            for round_result in state.round_results
+            if round_result.round_number == round_number
+            for response in round_result.agent_responses
+            if response.agent_id == "consumer"
+        ]
+        if consumer_responses:
+            self._apply_state_changes(state, consumer_responses)
+        return state
+
+    def _run_population_tick(self, state: SimulationState, round_number: int) -> SimulationState:
+        consumer_agent = next((agent for agent in state.agents if agent.id == "consumer"), None)
+        if consumer_agent is None or consumer_agent.population_config is None:
+            return state
+
+        properties = state.resolved_properties()
+        price_model = properties.price_model
+        last_price = state.price_history[-1].price if state.price_history else price_model.base_price
+        previous_markup = state.market_metrics.get(
+            "provider_markup",
+            state.market_metrics.get("markup", initial_provider_markup(properties)),
+        )
+        previous_cost_index = state.market_metrics.get("cost_index", 1.0)
+
+        params = active_parameters(round_number, properties)
+        fuel_change = params.get("fuel_price_change", 0.0)
+        if price_model.compound_fuel_on_cost:
+            cost_index = update_cost_index(previous_cost_index, fuel_change)
+        else:
+            cost_index = previous_cost_index
+        cost_pressure = compute_cost_pressure(round_number, properties, cost_index=cost_index)
+        # Passengers react to last published ticket price; cost+markup only before first market tick.
+        if state.price_history:
+            provisional_price = last_price
+        else:
+            provisional_price = compose_ticket_price(cost_pressure, initial_provider_markup(properties))
+
+        state.market_metrics = {
+            **params,
+            "cost_pressure": cost_pressure,
+            "cost_index": cost_index,
+            "provider_markup": previous_markup,
+            "markup": previous_markup,
+            "ticket_price": provisional_price,
+        }
+
+        carbon_tax = params.get("carbon_tax_level", 0.0)
+        system_properties = resolve_system_properties(round_number, properties)
+        seed = state.config.seed if state.config.seed is not None else 42
+
+        individuals, pop_stats = run_population_tick(
+            state.resolved_properties(),
+            consumer_agent.population_config,
+            state.population_individuals or None,
+            ticket_price=provisional_price,
+            carbon_tax=carbon_tax,
+            factors=state.environment.factors,
+            system_properties=system_properties,
+            seed=seed,
+        )
+        state.population_individuals = individuals
+
+        state.market_metrics["booking_rate"] = pop_stats.total_demand
+        state.market_metrics["booking_evaluated"] = True
+
+        state.population_stats.append(
+            {
+                "round_number": round_number,
+                "total_demand": pop_stats.total_demand,
+                "total_booked": pop_stats.total_booked,
+                "total_population": pop_stats.total_population,
+                "segments": {key: value.model_dump() for key, value in pop_stats.segments.items()},
+            }
+        )
         return state
 
     def _collect_round_responses(self, state: SimulationState, round_number: int) -> list[AgentResponse]:
@@ -153,7 +249,12 @@ class EnvironmentNode:
     def _apply_state_changes(self, state: SimulationState, responses: list[AgentResponse]) -> dict[str, str]:
         changes_by_factor: dict[str, StateChange] = {}
         for response in responses:
-            for change in response.state_changes:
+            gated_changes = validate_factor_proposals(
+                state,
+                response.state_changes,
+                agent_id=response.agent_id,
+            )
+            for change in gated_changes:
                 if change.factor_id not in state.environment.factors:
                     continue
                 factor = state.environment.factors[change.factor_id]
@@ -168,39 +269,6 @@ class EnvironmentNode:
             state.environment.factors[factor_id].current_state = change.proposed_state
             applied[factor_id] = change.proposed_state
 
-        for response in responses:
-            for action in response.actions:
-                if not isinstance(action, str):
-                    continue
-                act = action.strip()
-                if not act:
-                    continue
-                low = act.lower()
-                if low.startswith("update_scenario_parameter:") or low.startswith("set_param:"):
-                    try:
-                        _, tail = act.split(":", 1)
-                        key, val = tail.split("=", 1)
-                        param_id = key.strip()
-                        new_value_raw = val.strip()
-                        if not param_id or not new_value_raw:
-                            continue
-                        try:
-                            new_value = float(new_value_raw)
-                        except Exception:
-                            continue
-                        try:
-                            state.config.update_scenario_parameter(
-                                parameter_id=param_id,
-                                new_value=new_value,
-                                source_agent=response.agent_id,
-                                round_number=state.clock.current_round,
-                                reason=f"Agent override ({response.agent_id})",
-                            )
-                        except KeyError:
-                            continue
-                    except Exception:
-                        continue
-
         return applied
 
     def _build_round_summary(
@@ -212,8 +280,7 @@ class EnvironmentNode:
     ) -> str:
         lines: list[str] = []
 
-        quarter_label = state.clock.quarter_label_for_round(state.clock.current_round)
-        lines.append(f"Round {state.clock.current_round}/{state.clock.max_rounds} ({quarter_label})")
+        lines.append(f"Tick {state.clock.current_tick}/{state.clock.max_ticks}")
 
         if getattr(state, "current_speech_order", None):
             lines.append("Speech order:")
@@ -237,6 +304,11 @@ class EnvironmentNode:
         else:
             lines.append("Applied factor updates: -")
 
+        if state.market_metrics:
+            lines.append("Market metrics (deterministic):")
+            for metric_id in sorted(state.market_metrics.keys()):
+                lines.append(f"- {metric_id}={state.market_metrics[metric_id]}")
+
         if events:
             lines.append("Events:")
             for event in events:
@@ -246,6 +318,14 @@ class EnvironmentNode:
                 )
         else:
             lines.append("Events: -")
+
+        if hasattr(state, "_population_updates") and state._population_updates:
+            last_update = state._population_updates[-1]
+            if last_update.round_number == state.clock.current_tick and last_update.shifts:
+                lines.append("Population shifts:")
+                for shift in last_update.shifts:
+                    lines.append(f"- {shift.segment_id}: {shift.old_share:.3f} -> {shift.new_share:.3f} ({shift.shift_amount:+.3f})")
+                lines.append(f"  Reasoning: {last_update.total_reasoning}")
 
         segment_analysis = self._collect_segment_analysis(responses)
         if segment_analysis:
@@ -274,7 +354,7 @@ class EnvironmentAgentNode:
         self.llm = llm
 
     def invoke(self, state: SimulationState) -> SimulationState:
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
 
         pop_config = self._extract_population_config(state)
         if pop_config is None:
@@ -393,6 +473,12 @@ class EnvironmentAgentNode:
             segment = next((item for item in pop_config.segments if item.id == shift.segment_id), None)
             if segment is not None:
                 segment.share = shift.new_share
+
+        # Normalize to ensure sum is 1.0 to pass validation
+        total_share = sum(seg.share for seg in pop_config.segments)
+        if total_share > 0 and abs(total_share - 1.0) > 1e-6:
+            for seg in pop_config.segments:
+                seg.share = seg.share / total_share
 
         if not hasattr(state, "_population_updates"):
             state._population_updates = []  # type: ignore[attr-defined]

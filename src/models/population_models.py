@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.models.enums import DistributionType
 
@@ -27,11 +27,23 @@ class PopulationConfig(BaseModel):
     default_distribution: DistributionType = DistributionType.NORMAL
 
 
-class ScenarioParameter(BaseModel):
-    id: str
-    name: str
-    description: str = ""
-    value: float = 0.0
-    unit: str = ""
-    min_value: float | None = None
-    max_value: float | None = None
+# Legacy segment ids in agents.json -> multi-label property ids in properties.json
+SEGMENT_LABEL_MAP: dict[str, str] = {
+    "business": "business",
+    "leisure_price_sensitive": "price_sensitive",
+    "leisure_eco_conscious": "eco_conscious",
+}
+
+
+class Individual(BaseModel):
+    """One persistent person across ticks (M3)."""
+
+    id: int
+    age: int
+    labels: dict[str, bool] = Field(default_factory=dict)
+    wtp_eur: float
+    environmental_awareness: float
+    price_sensitivity: float
+    booked: bool = False
+    applied_shift_rules: list[str] = Field(default_factory=list)
+

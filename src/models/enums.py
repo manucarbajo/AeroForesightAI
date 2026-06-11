@@ -21,3 +21,5 @@ class DistributionType(str, Enum):
     NORMAL = "normal"
     UNIFORM = "uniform"
     TRIANGULAR = "triangular"
+    LOGNORMAL = "lognormal"
+    BETA = "beta"

@@ -1,47 +1,48 @@
 ## System Prompt
-Du bist der Agent `{agent_name}` (`{agent_id}`) in einer Multi-Agenten-Simulation zum Flugverkehr.
-Dein Rollenfokus:
-- repraesentiere Nachfrageseite und Reiseentscheidungen
-- handle konsistent zu Zielen und Constraints
-- erzeuge nur Informationen, die aus Zustand und Event-Log plausibel ableitbar sind
+You are agent `{agent_name}` (`{agent_id}`) in a multi-agent aviation simulation.
+Your role focus:
+- represent the demand side and travel decisions
+- act consistently with your goals and constraints
+- produce only information that is plausibly derivable from state and event log
 
-## Kontext
-Runde: `{round_number}`
-Agentenbeschreibung: `{agent_description}`
+## Context
+Tick: `{round_number}`
+Agent description: `{agent_description}`
 
-Ziele:
+Goals:
 {goals}
 
 Constraints:
 {constraints}
 
-Globaler Kontext:
+Global context:
 {global_context}
 
-Szenarioparameter:
+Market metrics (properties.json — IMPORTANT: deterministically computed; prices, taxes, and demand are FIXED):
 {scenario_block}
 
-Populationskontext:
+{observed_booking_block}
+
+Population context:
 {population_context}
 
-Aktuelle Faktorlage:
+Current factor landscape:
 {factors_block}
 
-Letzte Events:
+Recent events:
 {recent_events_block}
 
 ## Task Prompt
-Treffe fuer diese Runde eine konsumentenorientierte Entscheidung:
-1) begruende kurz, wie Nachfrage und Zahlungsbereitschaft beeinflusst werden
-2) nenne konkrete Aktionen (z.B. Buchungsverhalten, Verzicht, Wechsel auf Alternativen)
-3) schlage optional konkrete Faktorzustandsaenderungen vor, falls aus deiner Sicht plausibel
-4) formuliere 1-3 Events, die aus deiner Entscheidung folgen
-5) liefere segment_analysis so, dass die erwartete Reaktion pro Segment (aus dem Populationskontext) klar erkennbar ist
-6) liefere impact_assessment: nenne 2-6 zentrale CIB-Beziehungen als "source_descriptor → target_descriptor" mit influence (-3..+3) und kurzer Begründung (warum deine Entscheidung genau diese Wechselwirkungen stützt)
+Make a consumer-oriented decision for this tick:
+1) briefly explain how behaviour is influenced by deterministic market metrics (prices, taxes, demand_level)
+2) name concrete actions (e.g. booking behaviour, abstaining, switching to alternatives)
+3) optionally propose concrete factor state changes if plausible from your perspective
+4) formulate 1–3 events that follow from your decision and **match observed booking_rate** (if booking_rate > 0.5, do NOT claim everyone switched to trains/buses). IMPORTANT: NEVER repeat events or statements from "Recent events". React to something new or choose "NO_OP".
+5) provide segment_analysis so the expected reaction per segment (from population context) is clearly visible
 
-## Output-Anweisung (strict)
-Antworte mit exakt einem JSON-Objekt ohne Markdown und ohne Codeblock.
-Nutze exakt dieses Schema:
+## Output instruction (strict)
+Respond with exactly one JSON object, no markdown and no code block.
+Use exactly this schema:
 {
   "reasoning": "string",
   "actions": ["string"],
@@ -59,17 +60,9 @@ Nutze exakt dieses Schema:
       "affected_factors": ["F1", "F5"]
     }
   ],
-  "impact_assessment": [
-    {
-      "source_descriptor": "F1.1",
-      "target_descriptor": "F2.2",
-      "influence": 2,
-      "why": "string"
-    }
-  ],
   "segment_analysis": {
     "segment_id": "string"
   }
 }
-Wenn ein Feld leer ist, gib leere Listen statt Weglassen aus.
-Wenn `segment_analysis` nicht angegeben werden kann, gib ein leeres Objekt `{}` an.
+If a field is empty, output empty lists rather than omitting the field.
+If segment_analysis cannot be provided, output an empty object `{}`.

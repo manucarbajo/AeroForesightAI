@@ -11,14 +11,13 @@ if __package__ in {None, ""}:
 
 from src.config_loader import build_initial_state
 from src.models.agent_models import AgentConfig
-from src.models.cib_models import CIBMatrixHistory
 from src.models.enums import AgentType
 from src.models.state_models import SimulationState
 from src.nodes.agent_node import AgentNode, LLMCallable
-from src.nodes.cib_extractor_node import CIBExtractorNode
 from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
+from src.nodes.parallel_round_node import ParallelRoundNode
 from src.nodes.redebedarf_node import RoundExecutionNode
 from src.validation import validate_state
 
@@ -26,20 +25,10 @@ from src.validation import validate_state
 @dataclass(frozen=True)
 class RunnerOptions:
     enable_market: bool = True
-    enable_cib: bool = True
-
-
-@dataclass(frozen=True)
-class SimulationQuarter:
-    """Representation of one simulated quarter."""
-
-    round_number: int
-    year: int
-    quarter: int
-
-    @property
-    def label(self) -> str:
-        return f"Q{self.quarter} {self.year}"
+    enable_cib: bool = True  # load frozen CIB from configs/cib_frozen.json
+    enable_redebedarf: bool = False
+    checkpoint_interval: int = 5
+    verbose_ticks: bool = True
 
 
 @dataclass(frozen=True)
@@ -49,7 +38,7 @@ class SingleRunResult:
     run_id: str
     seed: int | None
     final_state: SimulationState
-    quarter_timeline: list[SimulationQuarter]
+    ticks_completed: int
     checkpoint_paths: list[Path]
 
 
@@ -71,56 +60,10 @@ class CheckpointStore(Protocol):
         """Restore a previously persisted simulation state."""
 
 
-def _timeline_from_round(round_number: int, start_year: int = 2026) -> SimulationQuarter:
-    """Convert a 1-based round number into a quarterly timestamp."""
-
-    if round_number < 1:
-        raise ValueError("round_number must be >= 1")
-
-    offset = round_number - 1
-    year = start_year + (offset // 4)
-    quarter = (offset % 4) + 1
-    return SimulationQuarter(round_number=round_number, year=year, quarter=quarter)
-
-
 class SimulationRunner:
     def __init__(self, llm: LLMCallable, options: RunnerOptions | None = None) -> None:
         self.llm = llm
         self.options = options or RunnerOptions()
-
-    @property
-    def timeline_start_year(self) -> int:
-        return 2026
-
-    @property
-    def timeline_end_year(self) -> int:
-        return 2035
-
-    @property
-    def timeline_end_quarter(self) -> int:
-        return 4
-
-    @property
-    def max_supported_rounds(self) -> int:
-        years = self.timeline_end_year - self.timeline_start_year
-        return (years * 4) + self.timeline_end_quarter
-
-    def quarter_for_round(self, round_number: int) -> SimulationQuarter:
-        """Return the deterministic quarter label for a 1-based round number."""
-
-        quarter = _timeline_from_round(round_number, start_year=self.timeline_start_year)
-        if quarter.year > self.timeline_end_year or (
-            quarter.year == self.timeline_end_year and quarter.quarter > self.timeline_end_quarter
-        ):
-            raise ValueError(
-                "round_number exceeds the configured Q1 2026 to Q4 2035 timeline"
-            )
-        return quarter
-
-    def timeline_for_rounds(self, total_rounds: int) -> list[SimulationQuarter]:
-        """Build the quarter timeline for the requested number of rounds."""
-
-        return [self.quarter_for_round(index) for index in range(1, total_rounds + 1)]
 
     def build_graph(self, agents: list[AgentConfig]) -> Callable[[SimulationState], SimulationState]:
         # LangGraph ist optional; wenn nicht vorhanden, liefern wir einen deterministischen Runner-Fallback.
@@ -130,10 +73,12 @@ class SimulationRunner:
             return self._build_sequential_runner(agents)
 
         orchestrator = OrchestratorNode(agents)
-        round_execution = RoundExecutionNode(agents, llm=self.llm)
+        round_execution = self._build_round_execution(agents)
         market_node = MarketNode()
-        environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
-        cib_extractor = CIBExtractorNode(llm=self.llm) if self.options.enable_cib else None
+        environment_node = EnvironmentNode(
+            prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
+            llm=self.llm,
+        )
 
         # LangGraph arbeitet intern mit dict-State; wir halten die Public-API als SimulationState.
         def _wrap(node_fn: Callable[[SimulationState], SimulationState]) -> Callable[[dict], dict]:
@@ -150,32 +95,20 @@ class SimulationRunner:
         if self.options.enable_market:
             graph.add_node("market", _wrap(market_node.invoke))
         graph.add_node("environment", _wrap(environment_node.invoke))
-        if cib_extractor is not None:
-            graph.add_node("cib_extractor", _wrap(cib_extractor.invoke))
 
         graph.set_entry_point("orchestrator")
 
         graph.add_edge("orchestrator", "round_execution")
+        graph.add_edge("round_execution", "environment")
         if self.options.enable_market:
-            graph.add_edge("round_execution", "market")
-            graph.add_edge("market", "environment")
-        else:
-            graph.add_edge("round_execution", "environment")
+            graph.add_edge("environment", "market")
 
-        if cib_extractor is not None:
-            graph.add_edge("environment", "cib_extractor")
+        def _should_continue(payload: dict) -> str:
+            state = SimulationState(**payload)
+            return "orchestrator" if state.clock.current_tick < state.clock.max_ticks else END
 
-            def _should_continue(payload: dict) -> str:
-                state = SimulationState(**payload)
-                return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
-
-            graph.add_conditional_edges("cib_extractor", _should_continue)
-        else:
-            def _should_continue(payload: dict) -> str:
-                state = SimulationState(**payload)
-                return "orchestrator" if state.clock.current_round < state.clock.max_rounds else END
-
-            graph.add_conditional_edges("environment", _should_continue)
+        tick_end = "market" if self.options.enable_market else "environment"
+        graph.add_conditional_edges(tick_end, _should_continue)
 
         compiled = graph.compile()
 
@@ -205,9 +138,11 @@ class SimulationRunner:
                 raise ValueError("checkpoint_store is required when resume_from is provided")
             state = checkpoint_store.load(resume_from)
         elif state is None:
-            state = build_initial_state()
+            state = build_initial_state(load_cib=self.options.enable_cib)
 
         state = state.model_copy(deep=True)
+        if not self.options.enable_cib:
+            state.cib_matrix = None
         if seed is not None:
             state.config.seed = seed
 
@@ -235,7 +170,9 @@ class SimulationRunner:
         if runs < 1:
             raise ValueError("runs must be >= 1")
 
-        base_state = (base_state or build_initial_state()).model_copy(deep=True)
+        base_state = (base_state or build_initial_state(load_cib=self.options.enable_cib)).model_copy(deep=True)
+        if not self.options.enable_cib:
+            base_state.cib_matrix = None
         base_seed = base_state.config.seed or 0
         resolved_seeds = self._resolve_seeds(runs=runs, seeds=seeds, base_seed=base_seed)
 
@@ -263,7 +200,7 @@ class SimulationRunner:
                     latest_fn = getattr(checkpoint_store, "latest_checkpoint", None)
                     latest = latest_fn(run_id) if callable(latest_fn) else None
                     if not existing and latest is None:
-                        checkpoint_store.save(final_state, run_id=run_id, round_number=final_state.clock.current_round)
+                        checkpoint_store.save(final_state, run_id=run_id, round_number=final_state.clock.current_tick)
                 except Exception:
                     # Non-fatal: we do not want checkpoint write issues to stop
                     # the multi-run aggregation; they will be visible in logs.
@@ -273,7 +210,7 @@ class SimulationRunner:
                     run_id=run_id,
                     seed=run_seed,
                     final_state=final_state,
-                    quarter_timeline=self.timeline_for_rounds(final_state.clock.current_round),
+                    ticks_completed=final_state.clock.current_tick,
                     checkpoint_paths=self._checkpoint_paths_from_store(checkpoint_store, run_id),
                 )
             )
@@ -287,8 +224,7 @@ class SimulationRunner:
             return {
                 "run_count": 0,
                 "seeds": [],
-                "completed_rounds": [],
-                "final_quarters": [],
+                "ticks_completed": [],
                 "total_events": 0,
                 "total_round_results": 0,
             }
@@ -296,11 +232,7 @@ class SimulationRunner:
         return {
             "run_count": len(run_results),
             "seeds": [result.seed for result in run_results],
-            "completed_rounds": [result.final_state.clock.current_round for result in run_results],
-            "final_quarters": [
-                self.quarter_for_round(result.final_state.clock.current_round).label
-                for result in run_results
-            ],
+            "ticks_completed": [result.ticks_completed for result in run_results],
             "total_events": sum(len(result.final_state.event_log) for result in run_results),
             "total_round_results": sum(len(result.final_state.round_results) for result in run_results),
         }
@@ -386,51 +318,107 @@ class SimulationRunner:
 
         components = self._create_components(state.agents)
 
-        while state.clock.current_round < state.clock.max_rounds:
+        max_ticks = state.clock.max_ticks
+        while state.clock.current_tick < max_ticks:
             state = self._run_single_round(state, components)
-            if checkpoint_store is not None:
-                checkpoint_store.save(state, run_id=run_id, round_number=state.clock.current_round)
+            tick = state.clock.current_tick
+            if self.options.verbose_ticks:
+                self._print_tick_progress(state, tick=tick, max_ticks=max_ticks)
+            if checkpoint_store is not None and self._should_save_checkpoint(tick, max_ticks):
+                checkpoint_store.save(state, run_id=run_id, round_number=tick)
 
         return state
+
+    def _should_save_checkpoint(self, tick: int, max_ticks: int) -> bool:
+        interval = self.options.checkpoint_interval
+        if interval <= 0:
+            return False
+        return tick % interval == 0 or tick >= max_ticks
+
+    def _print_tick_progress(self, state: SimulationState, *, tick: int, max_ticks: int) -> None:
+        metrics = state.market_metrics
+        price = metrics.get("ticket_price")
+        if price is None and state.price_history:
+            price = state.price_history[-1].price
+        booking = metrics.get("booking_rate")
+        if booking is None and state.price_history:
+            booking = state.price_history[-1].booking_rate
+        price_text = f"{price:.2f}" if isinstance(price, (int, float)) else "n/a"
+        booking_text = f"{booking:.1%}" if isinstance(booking, (int, float)) else "n/a"
+        carbon = metrics.get("carbon_tax_level", "n/a")
+        print(
+            f"[tick {tick:>3}/{max_ticks}] done - "
+            f"price={price_text} EUR, booking={booking_text}, carbon_tax={carbon}",
+            flush=True,
+        )
 
     def _create_components(
         self,
         agents: list[AgentConfig],
-    ) -> tuple[OrchestratorNode, RoundExecutionNode, MarketNode, EnvironmentNode, CIBExtractorNode | None]:
+    ) -> tuple[
+        OrchestratorNode,
+        ParallelRoundNode | RoundExecutionNode,
+        EnvironmentNode,
+        AgentNode | None,
+        MarketNode,
+    ]:
         """Build the reusable nodes that make up one simulation round."""
 
         orchestrator = OrchestratorNode(agents)
-        round_execution = RoundExecutionNode(agents, llm=self.llm)
+        round_execution = self._build_round_execution(agents)
         market_node = MarketNode()
-        environment_node = EnvironmentNode(prefer_agent_order=orchestrator.ordered_agent_ids()[::-1])
-        cib_extractor = CIBExtractorNode(llm=self.llm) if self.options.enable_cib else None
-        return orchestrator, round_execution, market_node, environment_node, cib_extractor
+        environment_node = EnvironmentNode(
+            prefer_agent_order=orchestrator.ordered_agent_ids()[::-1],
+            llm=self.llm,
+        )
+        consumer_config = next((agent for agent in agents if agent.id == "consumer"), None)
+        consumer_node = (
+            AgentNode(consumer_config, llm=self.llm)
+            if consumer_config is not None and not self.options.enable_redebedarf
+            else None
+        )
+        return orchestrator, round_execution, environment_node, consumer_node, market_node
 
     def _run_single_round(
         self,
         state: SimulationState,
-        components: tuple[OrchestratorNode, RoundExecutionNode, MarketNode, EnvironmentNode, CIBExtractorNode | None],
+        components: tuple[
+            OrchestratorNode,
+            ParallelRoundNode | RoundExecutionNode,
+            EnvironmentNode,
+            AgentNode | None,
+            MarketNode,
+        ],
     ) -> SimulationState:
         """Run a single deterministic round using the configured nodes."""
 
-        orchestrator, round_execution, market_node, environment_node, cib_extractor = components
+        from src.factor_dynamics import apply_factor_rules_at_tick_start, record_factor_timeseries
+
+        orchestrator, round_execution, environment_node, consumer_node, market_node = components
         state = orchestrator.invoke(state)
+        state = apply_factor_rules_at_tick_start(state)
         state = round_execution.invoke(state)
+        state = environment_node.invoke(state)
+        if consumer_node is not None:
+            state = consumer_node.invoke(state)
+            state = environment_node.apply_consumer_factor_updates(state)
         if self.options.enable_market:
             state = market_node.invoke(state)
-        state = environment_node.invoke(state)
-        if cib_extractor is not None:
-            state = cib_extractor.invoke(state)
-        return state
+        return record_factor_timeseries(state)
+
+    def _build_round_execution(
+        self,
+        agents: list[AgentConfig],
+    ) -> ParallelRoundNode | RoundExecutionNode:
+        if self.options.enable_redebedarf:
+            return RoundExecutionNode(agents, llm=self.llm)
+        return ParallelRoundNode(agents, llm=self.llm)
 
     def _build_sequential_runner(self, agents: list[AgentConfig]) -> Callable[[SimulationState], SimulationState]:
         components = self._create_components(agents)
 
         def _run(state: SimulationState) -> SimulationState:
-            if state.cib_history is None:
-                state.cib_history = CIBMatrixHistory()
-
-            while state.clock.current_round < state.clock.max_rounds:
+            while state.clock.current_tick < state.clock.max_ticks:
                 state = self._run_single_round(state, components)
             return state
 

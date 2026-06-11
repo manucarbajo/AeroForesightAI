@@ -4,10 +4,9 @@ from src.config_loader import build_initial_state
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.enums import EventType
-from src.nodes.environment_node_c2 import EnvironmentNode
+from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
 from src.nodes.orchestrator_node import OrchestratorNode
-from src.nodes.cib_extractor_node import CIBExtractorNode
 from src.nodes.agent_node import AgentNode
 from src.validation import validate_state
 from uuid import uuid4
@@ -49,7 +48,7 @@ def _make_mock_event(agent_id: str, round_number: int) -> EventLogEntry:
 def test_end_to_end_single_round():
     """Testet einen vollständigen Simulationslauf mit einer Runde ohne LLM."""
     state = build_initial_state()
-    state.clock.max_rounds = 1
+    state.clock.max_ticks = 1
 
     validate_state(state)
 
@@ -57,9 +56,9 @@ def test_end_to_end_single_round():
     market = MarketNode()
     environment = EnvironmentNode(prefer_agent_order=["regulator", "provider", "consumer"])
 
-    while state.clock.current_round < state.clock.max_rounds:
+    while state.clock.current_tick < state.clock.max_ticks:
         state = orchestrator.invoke(state)
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
 
         # Mock-Responses statt LLM
         for agent_id in ["consumer", "provider", "regulator"]:
@@ -78,7 +77,7 @@ def test_end_to_end_single_round():
 
     validate_state(state)
 
-    assert state.clock.current_round == 1
+    assert state.clock.current_tick == 1
     assert len(state.event_log) > 0
     assert len(state.price_history) == 1
     assert len(state.round_results) > 0
@@ -87,15 +86,15 @@ def test_end_to_end_single_round():
 def test_end_to_end_multiple_rounds():
     """Testet einen vollständigen Simulationslauf mit mehreren Runden ohne LLM."""
     state = build_initial_state()
-    state.clock.max_rounds = 3
+    state.clock.max_ticks = 3
 
     orchestrator = OrchestratorNode(state.agents)
     market = MarketNode()
     environment = EnvironmentNode(prefer_agent_order=["regulator", "provider", "consumer"])
 
-    while state.clock.current_round < state.clock.max_rounds:
+    while state.clock.current_tick < state.clock.max_ticks:
         state = orchestrator.invoke(state)
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
 
         for agent_id in ["consumer", "provider", "regulator"]:
             response = _make_mock_response(agent_id, round_number, state)
@@ -111,23 +110,31 @@ def test_end_to_end_multiple_rounds():
         state = market.invoke(state)
         state = environment.invoke(state)
 
-    assert state.clock.current_round == 3
+    assert state.clock.current_tick == 3
     assert len(state.price_history) == 3
 
 
-def test_end_to_end_cib_extraction():
-    """Testet ob CIBExtractorNode nach der Simulation eine Matrix erstellt."""
+def test_end_to_end_frozen_cib_loaded():
+    """Frozen CIB matrix is available from build_initial_state without LLM extraction."""
     state = build_initial_state()
-    state.clock.max_rounds = 2
+    assert state.cib_matrix is not None
+    assert state.cib_matrix.is_complete
+    assert len(state.cib_matrix.cells) == 168
+
+
+def test_end_to_end_cib_unchanged_after_rounds():
+    """Simulation rounds must not mutate the frozen CIB matrix."""
+    state = build_initial_state()
+    state.clock.max_ticks = 2
+    original_dump = state.cib_matrix.model_dump() if state.cib_matrix else None
 
     orchestrator = OrchestratorNode(state.agents)
     market = MarketNode()
     environment = EnvironmentNode()
-    cib_extractor = CIBExtractorNode()
 
-    while state.clock.current_round < state.clock.max_rounds:
+    while state.clock.current_tick < state.clock.max_ticks:
         state = orchestrator.invoke(state)
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
 
         for agent_id in ["consumer", "provider", "regulator"]:
             response = _make_mock_response(agent_id, round_number, state)
@@ -143,11 +150,8 @@ def test_end_to_end_cib_extraction():
         state = market.invoke(state)
         state = environment.invoke(state)
 
-    state = cib_extractor.invoke(state)
-
     assert state.cib_matrix is not None
-    assert len(state.cib_matrix.entries) > 0
-    assert state.cib_matrix.round_generated == 2
+    assert state.cib_matrix.model_dump() == original_dump
 
 
 def test_end_to_end_output_files(tmp_path):
@@ -160,18 +164,17 @@ def test_end_to_end_output_files(tmp_path):
         save_segment_analysis,
         save_cib_matrix,
     )
-    from src.nodes.cib_extractor_node import CIBExtractorNode
 
     state = build_initial_state()
-    state.clock.max_rounds = 1
+    state.clock.max_ticks = 1
 
     orchestrator = OrchestratorNode(state.agents)
     market = MarketNode()
     environment = EnvironmentNode()
 
-    while state.clock.current_round < state.clock.max_rounds:
+    while state.clock.current_tick < state.clock.max_ticks:
         state = orchestrator.invoke(state)
-        round_number = state.clock.current_round
+        round_number = state.clock.current_tick
 
         for agent_id in ["consumer", "provider", "regulator"]:
             response = _make_mock_response(agent_id, round_number, state)
@@ -186,8 +189,6 @@ def test_end_to_end_output_files(tmp_path):
 
         state = market.invoke(state)
         state = environment.invoke(state)
-
-    state = CIBExtractorNode().invoke(state)
 
     # In tmp_path speichern
     save_event_log(state.event_log, filename=str(tmp_path / "event_log.json"))
