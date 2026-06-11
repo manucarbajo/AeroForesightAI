@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
+
+from src.models.population_models import ScenarioParameter
 
 class FactorState(BaseModel):
     id: str
@@ -70,30 +73,22 @@ class LLMConfig(BaseModel):
     max_tokens: int = 2048
 
 
-class PolicyEffect(BaseModel):
-    """Effect applied when a policy rule is active."""
+class ConfigChangeEntry(BaseModel):
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    tick_number: int | None = None
+    parameter_id: str
+    old_value: Any
+    new_value: Any
+    source_agent: str = "EnvironmentAgent"
+    reason: str = ""
 
-    type: str = "set"
-    value: float = 0.0
-    per_tick: float | None = None
 
+class PolicyEntry(BaseModel):
+    """One policy shock: from ``tick`` onward, set ``parameter`` to ``value``."""
 
-class PolicyRule(BaseModel):
-    """Time-gated policy shock for one metric."""
-
-    id: str
+    tick: int
     parameter: str
-    active_from_tick: int = 1
-    active_until_tick: int | None = None
-    effect: PolicyEffect
-
-
-class PolicySchedule(BaseModel):
-    """Tick-based schedule for deterministic policy shocks (M2)."""
-
-    version: int = 1
-    baseline: dict[str, float] = Field(default_factory=dict)
-    rules: list[PolicyRule] = Field(default_factory=list)
+    value: float
 
 
 class SimulationConfig(BaseModel):
@@ -101,7 +96,43 @@ class SimulationConfig(BaseModel):
     description: str
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
-    policy_schedule: PolicySchedule | None = None
+    policy_schedule: list[PolicyEntry] = Field(default_factory=list)
+    scenario_parameters: list[ScenarioParameter] = Field(default_factory=list)
+    change_log: list[ConfigChangeEntry] = Field(default_factory=list)
+
+    def update_scenario_parameter(
+        self,
+        parameter_id: str,
+        new_value: float,
+        *,
+        source_agent: str = "EnvironmentAgent",
+        reason: str = "",
+        tick_number: int | None = None,
+    ) -> None:
+        for parameter in self.scenario_parameters:
+            if parameter.id != parameter_id:
+                continue
+
+            old_value = parameter.value
+            parameter.value = new_value
+            self.change_log.append(
+                ConfigChangeEntry(
+                    tick_number=tick_number,
+                    parameter_id=parameter_id,
+                    old_value=old_value,
+                    new_value=new_value,
+                    source_agent=source_agent,
+                    reason=reason,
+                )
+            )
+            return
+
+        raise KeyError(f"Unknown scenario parameter: {parameter_id}")
+
+    def runtime_parameter_map(self) -> dict[str, float]:
+        """Return the current scenario parameters as a flat runtime mapping."""
+
+        return {parameter.id: parameter.value for parameter in self.scenario_parameters}
 
 
 class SimulationState(BaseModel):

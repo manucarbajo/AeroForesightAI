@@ -120,10 +120,14 @@ class EnvironmentNode:
             market_already_computed = True
             
         if not market_already_computed:
+            last_price = state.price_history[-1].price if state.price_history else 100.0
+            last_demand = state.price_history[-1].demand_level if state.price_history else 1.0
             state.market_metrics = compute_market_metrics(
                 round_number,
                 state.config.policy_schedule,
-                previous_metrics=state.market_metrics or None,
+                state.config.runtime_parameter_map(),
+                previous_price=last_price,
+                previous_demand=last_demand,
             )
             
         # Population Update

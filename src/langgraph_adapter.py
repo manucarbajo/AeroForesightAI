@@ -189,9 +189,11 @@ def _make_build_options() -> dict:
             },
             "description": "Helpful AP3 starter presets for Studio and playground runs",
         },
-        "policy_schedule": state.config.policy_schedule.model_dump()
-        if state.config.policy_schedule is not None
-        else None,
+        "policy_schedule": (
+            [entry.model_dump() for entry in state.config.policy_schedule]
+            if state.config.policy_schedule
+            else None
+        ),
         "agents": [{"id": a.id, "name": a.name, "type": a.agent_type.value} for a in state.agents],
     }
 

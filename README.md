@@ -108,19 +108,19 @@ Ein **Tick ist ein Tick**, keine Kalenderzuordnung (keine Quartale/Jahre in Conf
 
 Preis, Steuer, SAF und Makro-Nachfrage werden **deterministisch** in `src/simulation_functions.py` berechnet — nicht vom LLM und nicht aus Event-Text geparst.
 
-Konfiguration: `configs/simulation_config.json` → `policy_schedule`:
+Konfiguration: `configs/simulation_config.json`:
 
-- **`baseline`**: Startwerte der sechs Parameter (Prozentangaben als **Prozentpunkte pro Tick**, z. B. `3.0` = 3 %/Tick)
-- **`rules`**: zeitgesteuerte Shocks (`active_from_tick`, `effect.type`: `set` oder `ramp`)
+- **`scenario_parameters`**: Default-Werte der sechs Parameter (z. B. `fuel_price_change: 0.02` = 2 %/Tick als Dezimalbruch)
+- **`policy_schedule`**: zeitgesteuerte Overrides ab Tick N (`{ "tick": 15, "parameter": "carbon_tax_level", "value": 120.0 }`)
 
 | Parameter | Bedeutung |
 | --- | --- |
 | `carbon_tax_level` | CO₂-Steuer (EUR/t) |
-| `fuel_price_change` | Treibstoffpreis-Trend (%/Tick) |
-| `oil_price_index` | Ölpreis-Index (Metrik, wird mitgeführt) |
+| `fuel_price_change` | Treibstoffpreis-Trend (Dezimalbruch/Tick) |
+| `oil_price_index` | Ölpreis-Index (1.0 = Basisjahr) |
 | `saf_mandate_share` | SAF-Pflichtanteil (0–1) |
-| `efuel_subsidy` | E-Fuel-Förderung (EUR/l, Platzhalter) |
-| `demand_growth_rate` | Nachfragewachstum (%/Tick) → `demand_level` |
+| `efuel_subsidy` | E-Fuel-Subvention (0–1) |
+| `demand_growth_rate` | Nachfragewachstum (Dezimalbruch/Tick) → `demand_level` |
 
 Pro Tick im Output:
 
@@ -135,7 +135,7 @@ Pro Tick im Output:
 python -m pytest tests/test_policy_schedule.py -v
 ```
 
-**Manuell — Mock-Lauf mit Demo-Shocks** (Fuel Tick 2, SAF Tick 4, CO₂ Tick 5, Nachfrage Tick 7):
+**Manuell — Mock-Lauf mit Demo-Shocks** (CO₂ ab Tick 1/15/30, SAF ab Tick 8/16):
 
 ```powershell
 python src/run_simulation.py --mock-llm --rounds 8 --quiet
@@ -147,7 +147,7 @@ Danach im Output-Verzeichnis prüfen:
 - `outputs/<run_id>/protocol.md` — pro Tick Zeile **Markt:** mit `price`, `demand_level`, `booking_rate`
 - `outputs/<run_id>/protocol.json` — Feld `market` je Runde + `policy_schedule`
 
-Eigene Shocks: `configs/simulation_config.json` → `policy_schedule.rules` anpassen, dann erneut laufen lassen.
+Eigene Shocks: `configs/simulation_config.json` → `policy_schedule` anpassen, dann erneut laufen lassen.
 
 ## Meilensteine
 

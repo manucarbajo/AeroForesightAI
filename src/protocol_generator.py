@@ -119,8 +119,8 @@ def build_protocol_payload(state: SimulationState, options: ProtocolOptions | No
         },
         "cib": state.cib_matrix.model_dump() if state.cib_matrix is not None else None,
         "policy_schedule": (
-            state.config.policy_schedule.model_dump()
-            if state.config.policy_schedule is not None
+            [entry.model_dump() for entry in state.config.policy_schedule]
+            if state.config.policy_schedule
             else None
         ),
         "price_history": [entry.model_dump() for entry in state.price_history],

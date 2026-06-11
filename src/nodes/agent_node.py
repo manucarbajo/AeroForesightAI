@@ -251,7 +251,15 @@ class AgentNode:
             from src.simulation_functions import compute_market_metrics
 
             tick = max(1, state.clock.current_tick)
-            metrics = compute_market_metrics(tick, state.config.policy_schedule)
+            last_price = state.price_history[-1].price if state.price_history else 100.0
+            last_demand = state.price_history[-1].demand_level if state.price_history else 1.0
+            metrics = compute_market_metrics(
+                tick,
+                state.config.policy_schedule,
+                state.config.runtime_parameter_map(),
+                previous_price=last_price,
+                previous_demand=last_demand,
+            )
             header = (
                 "Deterministic market metrics (Python; preview from policy_schedule; "
                 "not set by the agent):"

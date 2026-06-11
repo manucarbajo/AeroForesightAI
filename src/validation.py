@@ -4,10 +4,11 @@ from src.models.population_models import (
     ConsumerSegment,
     DistributionConfig,
     PopulationConfig,
+    ScenarioParameter,
 )
 from src.models.state_models import (
     FactorState,
-    PolicySchedule,
+    PolicyEntry,
     SimulationClock,
     SimulationConfig,
     SimulationState,
@@ -46,6 +47,9 @@ def validate_agent(agent: AgentConfig, factor_ids: set[str]) -> list[str]:
 
 def validate_config(config: SimulationConfig) -> list[str]:
     errors = []
+
+    for param in config.scenario_parameters:
+        errors.extend(validate_scenario_parameter(param))
 
     if config.policy_schedule:
         errors.extend(validate_policy_schedule(config.policy_schedule))
@@ -119,37 +123,49 @@ def validate_population_config(pop: PopulationConfig) -> list[str]:
     return errors
 
 
-def validate_policy_schedule(schedule: PolicySchedule) -> list[str]:
+def validate_scenario_parameter(param: ScenarioParameter) -> list[str]:
     errors = []
-    
-    valid_parameters = {
-        "carbon_tax_level", 
-        "fuel_price_change", 
-        "oil_price_index", 
-        "saf_mandate_share", 
-        "efuel_subsidy", 
-        "demand_growth_rate"
-    }
-    
-    for key in schedule.baseline.keys():
-        if key not in valid_parameters:
-            errors.append(f"policy_schedule: baseline parameter '{key}' ist ungueltig")
 
-    for rule in schedule.rules:
-        if rule.parameter not in valid_parameters:
-            errors.append(f"policy_schedule: rule '{rule.id}' referenziert ungueltigen parameter '{rule.parameter}'")
-        
-        if rule.active_from_tick < 1:
-            errors.append(f"policy_schedule: rule '{rule.id}' active_from_tick muss >= 1 sein")
-            
-        if rule.active_until_tick is not None and rule.active_until_tick < rule.active_from_tick:
-            errors.append(f"policy_schedule: rule '{rule.id}' active_until_tick muss >= active_from_tick sein")
-            
-        if rule.effect.type not in ["set", "ramp"]:
-            errors.append(f"policy_schedule: rule '{rule.id}' effect.type '{rule.effect.type}' ungueltig (erwartet 'set' oder 'ramp')")
-            
-        if rule.effect.type == "ramp" and rule.effect.per_tick is None:
-            errors.append(f"policy_schedule: rule '{rule.id}' mit type 'ramp' benoetigt 'per_tick'")
+    if not param.id:
+        errors.append("scenario_parameter: id darf nicht leer sein")
+
+    if not param.name:
+        errors.append(f"scenario_parameter '{param.id}': name darf nicht leer sein")
+
+    if param.min_value is not None and param.max_value is not None:
+        if param.min_value >= param.max_value:
+            errors.append(
+                f"scenario_parameter '{param.id}': "
+                f"min_value ({param.min_value}) muss kleiner als max_value ({param.max_value}) sein"
+            )
+        if not (param.min_value <= param.value <= param.max_value):
+            errors.append(
+                f"scenario_parameter '{param.id}': "
+                f"value ({param.value}) muss zwischen min und max liegen"
+            )
+
+    return errors
+
+
+def validate_policy_schedule(schedule: list[PolicyEntry]) -> list[str]:
+    errors = []
+
+    valid_parameters = {
+        "carbon_tax_level",
+        "fuel_price_change",
+        "oil_price_index",
+        "saf_mandate_share",
+        "efuel_subsidy",
+        "demand_growth_rate",
+    }
+
+    for index, entry in enumerate(schedule):
+        if entry.parameter not in valid_parameters:
+            errors.append(
+                f"policy_schedule[{index}]: parameter '{entry.parameter}' ist ungueltig"
+            )
+        if entry.tick < 0:
+            errors.append(f"policy_schedule[{index}]: tick muss >= 0 sein")
 
     return errors
 

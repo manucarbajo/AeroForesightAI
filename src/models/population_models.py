@@ -26,3 +26,13 @@ class PopulationConfig(BaseModel):
     total_population: int = 1000
     default_distribution: DistributionType = DistributionType.NORMAL
 
+
+class ScenarioParameter(BaseModel):
+    id: str
+    name: str
+    description: str = ""
+    value: float = 0.0
+    unit: str = ""
+    min_value: float | None = None
+    max_value: float | None = None
+
