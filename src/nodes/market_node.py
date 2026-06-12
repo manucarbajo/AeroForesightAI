@@ -28,6 +28,10 @@ class MarketNode:
 
         booking_rate = state.market_metrics.get("booking_rate") if state.market_metrics.get("booking_evaluated") else None
 
+        from src.property_engine import resolve_system_properties
+        system_properties = resolve_system_properties(tick, properties)
+        factors = state.environment.factors
+
         metrics = compute_market_metrics(
             tick,
             properties,
@@ -37,6 +41,8 @@ class MarketNode:
             previous_markup=previous_markup,
             previous_cost_index=previous_cost_index,
             booking_rate=booking_rate,
+            factors=factors,
+            system_properties=system_properties,
         )
         state.market_metrics = metrics
 
