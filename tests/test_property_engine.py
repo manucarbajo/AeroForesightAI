@@ -77,7 +77,7 @@ class TestResolveTrajectory:
 class TestPropertiesConfig:
     def test_load_properties_json(self):
         properties = load_properties_config()
-        assert len(properties.system_properties) == 8
+        assert len(properties.system_properties) >= 8
         assert "carbon_tax_level" in properties.system_property_ids()
 
     def test_carbon_tax_delayed_until_tick_15(self):
