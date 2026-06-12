@@ -28,6 +28,7 @@ from src.output_writer import (
     save_properties_timeseries,
     save_population_individuals,
     save_population_timeseries,
+    save_age_property_csv,
     save_factors_timeseries,
     save_protocol,
     save_protocol_markdown,
@@ -148,6 +149,10 @@ def _save_run_outputs(
         run_dir=run_dir,
     )
     population_timeseries_path = save_population_timeseries(
+        state.population_stats,
+        run_dir=run_dir,
+    )
+    age_property_csv_path = save_age_property_csv(
         state.population_stats,
         run_dir=run_dir,
     )
