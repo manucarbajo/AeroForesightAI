@@ -221,8 +221,6 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 
 ---
 
-# Offene Meilensteine
-
 ## M6 — Regulierung, Verteilungen, Einkommensdynamik — erledigt
 
 **Ziel:** 6 Regulierungs-Instanzen; Bevölkerung step_function; 3 Verteilungstypen; Einkommen über den Lauf.
@@ -266,6 +264,8 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 **Abnahme M6:** F4.2 + fallender `income_index` → booking-Divergenz `price_sensitive` vs. `business`.
 
 ---
+
+# Offene Meilensteine
 
 ## M7 — Agent-Profiling
 
