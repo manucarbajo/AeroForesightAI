@@ -1,4 +1,8 @@
-"""Environment nodes for AP3/AP4 simulation flows."""
+"""Environment nodes for AP3/AP4 simulation flows.
+
+M3.5: Population shifts are fully deterministic via apply_factor_shifts()
+(shift_rules from properties.json). No LLM is used for segment shares.
+"""
 
 from __future__ import annotations
 
@@ -9,9 +13,7 @@ from typing import Any, Protocol
 from pydantic import BaseModel, Field
 
 from src.models.agent_models import AgentResponse, StateChange
-from src.models.cib_models import CIBMatrix
 from src.models.event_models import EventLogEntry, RoundResult
-from src.models.population_models import PopulationConfig
 from src.models.state_models import SimulationState
 from src.property_engine import resolve_system_properties
 from src.population_sampler import run_population_tick
@@ -25,10 +27,6 @@ from src.simulation_functions import (
 )
 
 logger = logging.getLogger(__name__)
-
-MAX_SHARE_CHANGE_PER_ROUND = 0.05  # 5%
-MIN_SEGMENT_SHARE = 0.0
-MAX_SEGMENT_SHARE = 1.0
 
 
 class LLMCallable(Protocol):
@@ -58,56 +56,7 @@ class PopulationUpdateResult(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-POPULATION_UPDATE_SYSTEM_PROMPT = """Du bist ein Experte fuer Bevoelkerungsdynamik und Marktentwicklung im Flugverkehr.
 
-Deine Aufgabe: Prognostiziere die Verschiebung der Konsumenten-Segmente fuer die naechste Runde.
-
-Input:
-- Aktuelle Segment-Anteile
-- Aktuelle Faktor-Zustaende (Mobilitaetsbeduerfnis, Regulierung, Technologie, etc.)
-- CIB-Matrix (wie Faktoren sich gegenseitig beeinflussen)
-- Bisherige Bevoelkerungstrends
-
-Output:
-- Neue Segment-Anteile (prozentual)
-- Begruendung fuer jede Verschiebung
-- Max. 5% Verschiebung pro Segment pro Runde
-
-Wichtig:
-- Begruende mit Faktoren-Zustaenden und CIB-Wechselwirkungen
-- Segmente koennen ueberlappen (ein Passenger kann mehrere Labels haben)
-- Alle Anteile muessen zusammen <= 100% ergeben (erlaubt Ueberlappung)
-"""
-
-
-POPULATION_UPDATE_USER_PROMPT_TEMPLATE = """Runde: {round_number}
-
-Aktuelle Segment-Anteile:
-{segments_json}
-
-Aktuelle Faktor-Zustaende:
-{factors_json}
-
-CIB-Matrix Zusammenfassung (Top 10 Wechselwirkungen):
-{cib_summary}
-
-Bisherige Verschiebungen (letzte 3 Runden):
-{historical_shifts}
-
-Prognostiziere die neuen Segment-Anteile und begruende jede Verschiebung.
-
-Format JSON:
-{{
-  "segments": [
-    {{
-      "id": "segment_id",
-      "new_share": 0.25,
-      "reasoning": "Kurze Begründung mit Faktoren-Bezug"
-    }}
-  ],
-  "overall_reasoning": "Gesamttrends und Wechselwirkungen"
-}}
-"""
 
 
 class EnvironmentNode:
@@ -348,191 +297,4 @@ class EnvironmentNode:
                 merged.update(response.segment_analysis)
         return merged
 
-
-class EnvironmentAgentNode:
-    def __init__(self, llm: LLMCallable | None = None):
-        self.llm = llm
-
-    def invoke(self, state: SimulationState) -> SimulationState:
-        round_number = state.clock.current_tick
-
-        pop_config = self._extract_population_config(state)
-        if pop_config is None:
-            logger.warning("No population config found, skipping population update")
-            return state
-
-        result = self._update_population(state=state, pop_config=pop_config, round_number=round_number)
-        state = self._apply_population_changes(state, result, pop_config)
-
-        if result.shifts:
-            logger.info(
-                f"Round {round_number}: Population update - {len(result.shifts)} segments shifted"
-            )
-
-        return state
-
-    def _extract_population_config(self, state: SimulationState) -> PopulationConfig | None:
-        for agent in state.agents:
-            if agent.id == "consumer" and agent.population_config:
-                return agent.population_config
-        return None
-
-    def _update_population(
-        self,
-        state: SimulationState,
-        pop_config: PopulationConfig,
-        round_number: int,
-    ) -> PopulationUpdateResult:
-        if self.llm:
-            return self._update_with_llm(state, pop_config, round_number)
-        return self._update_with_heuristic(state, pop_config, round_number)
-
-    def _update_with_llm(
-        self,
-        state: SimulationState,
-        pop_config: PopulationConfig,
-        round_number: int,
-    ) -> PopulationUpdateResult:
-        segments_json = json.dumps([segment.model_dump() for segment in pop_config.segments], indent=2)
-        factors_json = json.dumps(
-            {factor_id: factor.current_state for factor_id, factor in state.environment.factors.items()},
-            indent=2,
-        )
-
-        cib_summary = self._build_cib_summary(state.cib_matrix) if state.cib_matrix else "N/A"
-        historical_shifts = self._build_historical_shifts(state, pop_config)
-
-        user_prompt = POPULATION_UPDATE_USER_PROMPT_TEMPLATE.format(
-            round_number=round_number,
-            segments_json=segments_json,
-            factors_json=factors_json,
-            cib_summary=cib_summary,
-            historical_shifts=historical_shifts,
-        )
-
-        try:
-            response = self.llm.call(user_prompt)
-            llm_output = self._parse_llm_response(response)
-        except Exception as exc:
-            logger.error(f"LLM call failed: {exc}, falling back to heuristic")
-            return self._update_with_heuristic(state, pop_config, round_number)
-
-        result = PopulationUpdateResult(
-            round_number=round_number,
-            total_reasoning=llm_output.get("overall_reasoning", ""),
-        )
-
-        for segment in pop_config.segments:
-            seg_update = next((item for item in llm_output.get("segments", []) if item.get("id") == segment.id), None)
-            if seg_update is None:
-                continue
-
-            new_share = seg_update.get("new_share", segment.share)
-            shift = PopulationShift(
-                segment_id=segment.id,
-                segment_name=segment.name,
-                old_share=segment.share,
-                new_share=new_share,
-                shift_amount=new_share - segment.share,
-                reasoning=seg_update.get("reasoning", ""),
-            )
-            result.shifts.append(self._apply_shift_constraints(shift, pop_config))
-
-        return result
-
-    def _update_with_heuristic(
-        self,
-        state: SimulationState,
-        pop_config: PopulationConfig,
-        round_number: int,
-    ) -> PopulationUpdateResult:
-        result = PopulationUpdateResult(round_number=round_number)
-
-        for segment in pop_config.segments:
-            result.shifts.append(
-                PopulationShift(
-                    segment_id=segment.id,
-                    segment_name=segment.name,
-                    old_share=segment.share,
-                    new_share=segment.share,
-                    shift_amount=0.0,
-                    reasoning="Heuristic: No change (waiting for LLM)",
-                )
-            )
-
-        result.total_reasoning = "Fallback heuristic - no population changes"
-        return result
-
-    def _apply_population_changes(
-        self,
-        state: SimulationState,
-        result: PopulationUpdateResult,
-        pop_config: PopulationConfig,
-    ) -> SimulationState:
-        for shift in result.shifts:
-            segment = next((item for item in pop_config.segments if item.id == shift.segment_id), None)
-            if segment is not None:
-                segment.share = shift.new_share
-
-        # Normalize to ensure sum is 1.0 to pass validation
-        total_share = sum(seg.share for seg in pop_config.segments)
-        if total_share > 0 and abs(total_share - 1.0) > 1e-6:
-            for seg in pop_config.segments:
-                seg.share = seg.share / total_share
-
-        if not hasattr(state, "_population_updates"):
-            state._population_updates = []  # type: ignore[attr-defined]
-        state._population_updates.append(result)  # type: ignore[attr-defined]
-
-        return state
-
-    def _apply_shift_constraints(self, shift: PopulationShift, pop_config: PopulationConfig) -> PopulationShift:
-        if not pop_config.segments:
-            return shift
-
-        max_shift = pop_config.segments[0].share * MAX_SHARE_CHANGE_PER_ROUND
-        if abs(shift.shift_amount) > max_shift:
-            clamped_shift = max_shift if shift.shift_amount > 0 else -max_shift
-            shift.new_share = shift.old_share + clamped_shift
-            shift.shift_amount = clamped_shift
-            shift.clamped = True
-
-        shift.new_share = max(MIN_SEGMENT_SHARE, min(MAX_SEGMENT_SHARE, shift.new_share))
-        return shift
-
-    def _parse_llm_response(self, response: str) -> dict[str, Any]:
-        try:
-            start = response.find("{")
-            end = response.rfind("}") + 1
-            if start >= 0 and end > start:
-                return json.loads(response[start:end])
-        except Exception as exc:
-            logger.error(f"Failed to parse LLM response: {exc}")
-
-        return {"segments": [], "overall_reasoning": "Parse failed"}
-
-    def _build_cib_summary(self, cib_matrix: CIBMatrix | None) -> str:
-        if cib_matrix is None:
-            return "No CIB matrix available"
-
-        influences: list[str] = []
-        for cell in list(cib_matrix.cells.values())[:10]:
-            if cell.influence != 0:
-                influences.append(f"{cell.source_descriptor} -> {cell.target_descriptor}: {cell.influence:+d}")
-
-        return "\n".join(influences) if influences else "No strong influences"
-
-    def _build_historical_shifts(self, state: SimulationState, pop_config: PopulationConfig) -> str:
-        updates = getattr(state, "_population_updates", [])[-3:]
-        if not updates:
-            return "No historical shifts yet"
-
-        lines: list[str] = []
-        for update in updates:
-            lines.append(f"Round {update.round_number}:")
-            for shift in update.shifts:
-                lines.append(
-                    f"  {shift.segment_id}: {shift.old_share:.1%} -> {shift.new_share:.1%} ({shift.shift_amount:+.1%})"
-                )
-
-        return "\n".join(lines)
+
