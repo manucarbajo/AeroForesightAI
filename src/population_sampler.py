@@ -420,6 +420,11 @@ def run_population_tick(
             new_individuals[i] = person.model_copy(update={"id": start_id + i})
             
         individuals.extend(new_individuals)
+    elif target_population < len(individuals):
+        # Shrink population randomly
+        rng = _rng(seed + len(individuals))
+        to_keep = rng.choice(individuals, size=target_population, replace=False)
+        individuals = list(to_keep)
 
     income_index = system_properties.get("income_index", 1.0)
     individuals = update_income_factors(individuals, income_index)
