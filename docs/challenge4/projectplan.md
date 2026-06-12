@@ -298,14 +298,14 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 }
 ```
 
-| ID | Aufgabe | Datei | Status |
-| -- | ------- | ----- | ------ |
-| M7.1 | `AgentProfile` Modell | `models/agent_models.py` | offen |
-| M7.2 | Profile laden + Prompt-Injection | `config_loader.py`, `agent_node.py` | offen |
-| M7.3 | Prompts: nur `observes`, keine freien Zahlen | `prompts/*.md` | offen |
-| M7.4 | Reaktion auf `event_log` (letzte N Events) | `agent_node.py` | offen |
-| M7.5 | `agent_profiles.md` Abhängigkeitsgraph | `docs/challenge4/` | offen |
-| M7.6 | Tests | `tests/test_agent_profiling.py` | offen |
+| ID | Aufgabe | Datei | Status | Umsetzung |
+| -- | ------- | ----- | ------ | --------- |
+| M7.1 | `AgentProfile` Modell | `models/agent_models.py` | erledigt | `AgentProfile` Pydantic Modell mit `observes`, `may_propose`, `must_not_output` und `depends_on` hinzugefügt. |
+| M7.2 | Profile laden + Prompt-Injection | `config_loader.py`, `agent_node.py` | erledigt | `configs/agent_profiles.json` angelegt; wird in `load_agents()` an `AgentConfig` angehängt. `AgentNode` filtert nun Metriken/Faktoren und erzwingt `may_propose` hart im Parser. |
+| M7.3 | Prompts: nur `observes`, keine freien Zahlen | `prompts/*.md` | erledigt | Agenten-Prompts (consumer, provider, regulator) angepasst, um Zahlenerfindungen strikt zu verbieten. |
+| M7.4 | Reaktion auf `event_log` (letzte N Events) | `agent_node.py` | erledigt | Agenten müssen laut Prompt zwingend `Recent events` beachten, aber dürfen sie nicht einfach kopieren; NO_OP falls nichts passiert. |
+| M7.5 | `agent_profiles.md` Abhängigkeitsgraph | `docs/challenge4/` | erledigt | Datei `agent_profiles.md` inkl. Mermaid-Diagramm für Output-Abhängigkeiten erstellt. |
+| M7.6 | Tests | `tests/test_agent_profiling.py` | erledigt | Neue Unittests (`test_agent_node_filters_*`) geschrieben, die alle Profileinstellungen erfolgreich prüfen. |
 
 **Abnahme M7:** Provider referenziert Event aus Log; Regulator nur F2/F6; Consumer keine erfundenen Zahlen.
 
