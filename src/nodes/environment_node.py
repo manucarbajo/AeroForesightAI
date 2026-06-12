@@ -141,6 +141,15 @@ class EnvironmentNode:
                     booking_rate=0.0,
                 )
             )
+            state.property_timeseries.append({
+                "tick": 0,
+                "ticket_price": provisional_price,
+                "cost_pressure": cost_pressure,
+                "cost_index": cost_index,
+                "provider_markup": initial_provider_markup(properties),
+                "markup": initial_provider_markup(properties),
+                **params,
+            })
 
         state.market_metrics = {
             **params,
