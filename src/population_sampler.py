@@ -7,7 +7,7 @@ for booking deterministically from WTP + logit utility.
 from __future__ import annotations
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.models.enums import DistributionType
 from src.models.population_models import (
@@ -25,13 +25,26 @@ class SegmentStats(BaseModel):
     total_individuals: int
     booked_individuals: int
     booking_rate: float
+    avg_income_factor: float = 1.0
+
+
+class AgeGroupStats(BaseModel):
+    age_group: str
+    total_individuals: int
+    booked_individuals: int
+    booking_rate: float
+    avg_wtp: float
+    avg_income_factor: float
+    avg_awareness: float
 
 
 class PopulationStats(BaseModel):
     total_population: int
     total_booked: int
     total_demand: float
+    avg_income_factor: float = 1.0
     segments: dict[str, SegmentStats]
+    age_groups: dict[str, AgeGroupStats] = Field(default_factory=dict)
 
 
 DEFAULT_LOGIT_THRESHOLD = 0.5
@@ -57,6 +70,18 @@ def _get_individual_property(
 
 def _sample_beta(rng: np.random.Generator, alpha: float, beta: float) -> float:
     return float(rng.beta(max(0.1, alpha), max(0.1, beta)))
+
+
+def _sample_normal(
+    rng: np.random.Generator,
+    *,
+    mean: float,
+    std_dev: float,
+    min_value: float,
+    max_value: float,
+) -> float:
+    value = float(rng.normal(mean, max(0.001, std_dev)))
+    return float(np.clip(value, min_value, max_value))
 
 
 def _sample_lognormal(
@@ -113,6 +138,14 @@ def initialize_population(
                 awareness_prop.alpha or 2.0,
                 awareness_prop.beta or 5.0,
             )
+        elif awareness_prop and awareness_prop.distribution == DistributionType.NORMAL:
+            awareness = _sample_normal(
+                rng,
+                mean=awareness_prop.mean or 0.5,
+                std_dev=awareness_prop.std_dev or 0.1,
+                min_value=awareness_prop.min_value or 0.0,
+                max_value=awareness_prop.max_value or 1.0,
+            )
         else:
             awareness = float(rng.uniform(0.2, 0.8))
 
@@ -121,6 +154,14 @@ def initialize_population(
                 rng,
                 mean=wtp_prop.mean or 120.0,
                 std_dev=wtp_prop.std_dev or 0.35,
+                min_value=wtp_prop.min_value or 50.0,
+                max_value=wtp_prop.max_value or 500.0,
+            )
+        elif wtp_prop and wtp_prop.distribution == DistributionType.NORMAL:
+            wtp = _sample_normal(
+                rng,
+                mean=wtp_prop.mean or 120.0,
+                std_dev=wtp_prop.std_dev or 20.0,
                 min_value=wtp_prop.min_value or 50.0,
                 max_value=wtp_prop.max_value or 500.0,
             )
@@ -192,6 +233,7 @@ def apply_factor_shifts(
     for person in individuals:
         awareness = person.environmental_awareness
         price_sensitivity = person.price_sensitivity
+        income_factor = person.income_factor
         applied_rules = list(person.applied_shift_rules)
 
         for index, rule in enumerate(active_rules):
@@ -205,6 +247,8 @@ def apply_factor_shifts(
                 awareness = float(np.clip(awareness + delta, 0.0, 1.0))
             elif prop_id == "price_sensitivity":
                 price_sensitivity = float(np.clip(price_sensitivity + delta, 0.0, 1.0))
+            elif prop_id == "income_factor":
+                income_factor = float(np.clip(income_factor + delta, 0.0, 5.0))
             if rule.once:
                 applied_rules.append(rule_id)
 
@@ -213,6 +257,7 @@ def apply_factor_shifts(
                 update={
                     "environmental_awareness": round(awareness, 4),
                     "price_sensitivity": round(price_sensitivity, 4),
+                    "income_factor": round(income_factor, 4),
                     "applied_shift_rules": applied_rules,
                 }
             )
@@ -229,7 +274,11 @@ def _booking_probability(
     green_premium: float = DEFAULT_GREEN_PREMIUM,
     logit_threshold: float = DEFAULT_LOGIT_THRESHOLD,
 ) -> bool:
-    affordability_limit = person.wtp_eur * (1.0 + green_premium * person.environmental_awareness)
+    affordability_limit = (
+        person.wtp_eur
+        * person.income_factor
+        * (1.0 + green_premium * person.environmental_awareness)
+    )
     if ticket_price > affordability_limit:
         return False
 
@@ -272,6 +321,7 @@ def aggregate_population_stats(individuals: list[Individual]) -> PopulationStats
 
     total_pop = len(individuals)
     total_booked = sum(1 for person in individuals if person.booked)
+    total_income_factor = sum(person.income_factor for person in individuals)
 
     segments: dict[str, SegmentStats] = {}
     for segment_id, label_id in SEGMENT_LABEL_MAP.items():
@@ -284,14 +334,61 @@ def aggregate_population_stats(individuals: list[Individual]) -> PopulationStats
             total_individuals=count,
             booked_individuals=booked,
             booking_rate=booked / count if count else 0.0,
+            avg_income_factor=sum(p.income_factor for p in members) / count if count else 1.0,
+        )
+
+    age_groups_dict: dict[str, list[Individual]] = {
+        "18-25": [],
+        "26-35": [],
+        "36-50": [],
+        "51-65": [],
+        "66+": [],
+    }
+    for person in individuals:
+        if person.age <= 25:
+            age_groups_dict["18-25"].append(person)
+        elif person.age <= 35:
+            age_groups_dict["26-35"].append(person)
+        elif person.age <= 50:
+            age_groups_dict["36-50"].append(person)
+        elif person.age <= 65:
+            age_groups_dict["51-65"].append(person)
+        else:
+            age_groups_dict["66+"].append(person)
+
+    age_stats: dict[str, AgeGroupStats] = {}
+    for group, members in age_groups_dict.items():
+        count = len(members)
+        booked = sum(1 for person in members if person.booked)
+        age_stats[group] = AgeGroupStats(
+            age_group=group,
+            total_individuals=count,
+            booked_individuals=booked,
+            booking_rate=booked / count if count else 0.0,
+            avg_wtp=sum(p.wtp_eur for p in members) / count if count else 0.0,
+            avg_income_factor=sum(p.income_factor for p in members) / count if count else 1.0,
+            avg_awareness=sum(p.environmental_awareness for p in members) / count if count else 0.0,
         )
 
     return PopulationStats(
         total_population=total_pop,
         total_booked=total_booked,
         total_demand=total_booked / total_pop if total_pop else 0.0,
+        avg_income_factor=total_income_factor / total_pop if total_pop else 1.0,
         segments=segments,
+        age_groups=age_stats,
     )
+
+
+def update_income_factors(
+    individuals: list[Individual],
+    income_index: float,
+) -> list[Individual]:
+    """Scale each individual's income_factor by the macro income_index."""
+    return [
+        person.model_copy(update={"income_factor": round(income_index, 4)})
+        for person in individuals
+    ]
 
 
 def run_population_tick(
@@ -309,6 +406,23 @@ def run_population_tick(
 
     if not individuals:
         individuals = initialize_population(properties, config, seed=seed)
+
+    target_population = int(system_properties.get("bevoelkerungsentwicklung", len(individuals)))
+    if target_population > len(individuals):
+        needed = target_population - len(individuals)
+        temp_config = config.model_copy(update={"total_population": needed})
+        new_seed = seed + len(individuals)  # unique seed for new batch
+        new_individuals = initialize_population(properties, temp_config, seed=new_seed)
+        
+        # fix IDs so they don't overlap
+        start_id = max((p.id for p in individuals), default=-1) + 1
+        for i, person in enumerate(new_individuals):
+            new_individuals[i] = person.model_copy(update={"id": start_id + i})
+            
+        individuals.extend(new_individuals)
+
+    income_index = system_properties.get("income_index", 1.0)
+    individuals = update_income_factors(individuals, income_index)
 
     shifted = apply_factor_shifts(
         individuals,
