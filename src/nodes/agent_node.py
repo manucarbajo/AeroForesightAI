@@ -550,6 +550,12 @@ class AgentNode:
                 continue
             if factor_id not in valid_factors:
                 continue
+                
+            if self.config.profile and self.config.profile.may_propose is not None:
+                allowed = self.config.profile.may_propose
+                if f"factor_state {factor_id}" not in allowed:
+                    continue
+                    
             factor = valid_factors[factor_id]
             if proposed_state not in factor.possible_states:
                 continue
