@@ -218,7 +218,9 @@ def _save_run_outputs(
         "scenarios_markdown": scenarios_md_path,
         "properties_timeseries": properties_timeseries_path,
         "population_timeseries": population_timeseries_path,
+        "age_property_csv": age_property_csv_path,
         "factors_timeseries": factors_timeseries_path,
+        "population_csv": population_csv_path,
     }
 
 

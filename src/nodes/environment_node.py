@@ -166,7 +166,9 @@ class EnvironmentNode:
                 "total_demand": pop_stats.total_demand,
                 "total_booked": pop_stats.total_booked,
                 "total_population": pop_stats.total_population,
+                "avg_income_factor": pop_stats.avg_income_factor,
                 "segments": {key: value.model_dump() for key, value in pop_stats.segments.items()},
+                "age_groups": {key: value.model_dump() for key, value in pop_stats.age_groups.items()},
             }
         )
         return state
