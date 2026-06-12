@@ -114,3 +114,23 @@ def test_agent_node_adds_must_not_output_to_constraints(base_state):
     assert "Be nice" in prompt
     assert "MUST NOT OUTPUT: ticket_price, booking_rate" in prompt
     assert "MAY PROPOSE ONLY: events" in prompt
+
+def test_agent_node_enforces_may_propose_state_changes(base_state):
+    config = AgentConfig(
+        id="test_regulator",
+        name="Regulator",
+        agent_type=AgentType.REGULATOR,
+        description="Test",
+        goals=[],
+        profile=AgentProfile(
+            may_propose=["factor_state F2"]
+        )
+    )
+    node = AgentNode(config, llm=lambda x: "{}")
+    payload = [
+        {"factor_id": "F2", "proposed_state": "F2.2", "reasoning": "Valid"},
+        {"factor_id": "F1", "proposed_state": "F1.2", "reasoning": "Invalid"}
+    ]
+    changes = node._parse_state_changes(payload, base_state)
+    assert len(changes) == 1
+    assert changes[0].factor_id == "F2"
