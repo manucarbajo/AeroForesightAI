@@ -126,11 +126,21 @@ class EnvironmentNode:
         else:
             cost_index = previous_cost_index
         cost_pressure = compute_cost_pressure(round_number, properties, cost_index=cost_index)
-        # Passengers react to last published ticket price; cost+markup only before first market tick.
         if state.price_history:
             provisional_price = last_price
         else:
             provisional_price = compose_ticket_price(cost_pressure, initial_provider_markup(properties))
+            # Inject initial price as Tick 0 for accurate logging and market anchor
+            from src.models.event_models import PriceHistoryEntry
+            state.price_history.append(
+                PriceHistoryEntry(
+                    round_number=0,
+                    agent_id="system",
+                    price=provisional_price,
+                    demand_level=1.0,
+                    booking_rate=0.0,
+                )
+            )
 
         state.market_metrics = {
             **params,
