@@ -113,6 +113,32 @@ class FactorRule(BaseModel):
     once: bool = False
 
 
+class RegulatoryInfluence(BaseModel):
+    """M6: One EU/national regulatory cost driver (e.g. EU-ETS, RefuelEU)."""
+
+    id: str
+    description: str = ""
+    cost_contribution: float = 0.0
+    when: dict[str, Any] = Field(default_factory=dict)
+    trajectory: BaselineTrajectory | StepFunctionTrajectory = Field(
+        default_factory=BaselineTrajectory
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _parse_trajectory(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        trajectory = data.get("trajectory")
+        if not isinstance(trajectory, dict):
+            return data
+        if trajectory.get("type") == "step_function":
+            data["trajectory"] = StepFunctionTrajectory.model_validate(trajectory)
+        else:
+            data["trajectory"] = BaselineTrajectory.model_validate(trajectory)
+        return data
+
+
 class PriceCoefficientsConfig(BaseModel):
     """M4.13: configurable cost/price formula weights (no magic numbers in code)."""
 
@@ -166,6 +192,7 @@ class PropertiesConfig(BaseModel):
     individual_properties: list[IndividualProperty] = Field(default_factory=list)
     shift_rules: list[ShiftRule] = Field(default_factory=list)
     factor_rules: list[FactorRule] = Field(default_factory=list)
+    regulatory_influences: list[RegulatoryInfluence] = Field(default_factory=list)
     market_rules: list[MarketRule] = Field(default_factory=list)
     price_model: PriceModelConfig = Field(default_factory=PriceModelConfig)
     market_feedback: MarketFeedbackConfig = Field(default_factory=MarketFeedbackConfig)
