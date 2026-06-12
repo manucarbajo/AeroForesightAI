@@ -44,6 +44,7 @@ class Individual(BaseModel):
     wtp_eur: float
     environmental_awareness: float
     price_sensitivity: float
+    income_factor: float = 1.0
     booked: bool = False
     applied_shift_rules: list[str] = Field(default_factory=list)
 
