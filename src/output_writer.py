@@ -139,6 +139,7 @@ def save_population_timeseries(
                     "total_individuals": segment.get("total_individuals", 0),
                     "booked_individuals": segment.get("booked_individuals", 0),
                     "booking_rate": segment.get("booking_rate", 0.0),
+                    "avg_income_factor": segment.get("avg_income_factor", 1.0),
                 }
             )
 
@@ -182,6 +183,7 @@ def save_population_individuals(
             "wtp_eur": data.get("wtp_eur"),
             "environmental_awareness": data.get("environmental_awareness"),
             "price_sensitivity": data.get("price_sensitivity"),
+            "income_factor": data.get("income_factor", 1.0),
             "booked": data.get("booked"),
         }
         for label_id, active in (data.get("labels") or {}).items():
@@ -668,3 +670,50 @@ def save_scenarios_markdown(
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(markdown)
     return filepath
+
+def save_age_property_csv(
+    population_stats: list[dict],
+    filename: str = "timeseries/age_property.csv",
+    *,
+    run_dir: Path | None = None,
+) -> str | None:
+    """Save per-tick age group stats."""
+
+    if not population_stats:
+        return None
+
+    rows: list[dict] = []
+    for tick_stats in population_stats:
+        tick = tick_stats.get("round_number")
+        for age_group, group_stats in tick_stats.get("age_groups", {}).items():
+            rows.append(
+                {
+                    "tick": tick,
+                    "age_group": age_group,
+                    "total_individuals": group_stats.get("total_individuals", 0),
+                    "booked_individuals": group_stats.get("booked_individuals", 0),
+                    "booking_rate": group_stats.get("booking_rate", 0.0),
+                    "avg_wtp": group_stats.get("avg_wtp", 0.0),
+                    "avg_income_factor": group_stats.get("avg_income_factor", 1.0),
+                    "avg_awareness": group_stats.get("avg_awareness", 0.0),
+                }
+            )
+
+    if not rows:
+        return None
+
+    if run_dir is not None:
+        target_path = run_dir / filename
+    else:
+        target_path = Path(_resolve_output_path(filename, run_dir=run_dir))
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    columns = list(rows[0].keys())
+    lines = [",".join(columns)]
+    for row in rows:
+        lines.append(",".join(str(row.get(column, "")) for column in columns))
+
+    with open(target_path, "w", encoding="utf-8") as handle:
+        handle.write("\n".join(lines))
+
+    return str(target_path)
