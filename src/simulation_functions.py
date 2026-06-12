@@ -195,7 +195,13 @@ def compute_cost_pressure(
             traj_val = resolve_trajectory(reg.trajectory, tick)
             regulatory_cost += reg.cost_contribution + traj_val
 
-    return base_cost + regulatory_cost
+    maintenance_idx = sys_props.get("maintenance_cost_index", 1.0)
+    staff_idx = sys_props.get("staff_cost_index", 1.0)
+    
+    # We apply maintenance and staff cost indices to the base_cost
+    adjusted_base_cost = base_cost * maintenance_idx * staff_idx
+
+    return adjusted_base_cost + regulatory_cost
 
 
 
