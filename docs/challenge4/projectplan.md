@@ -223,7 +223,7 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 
 # Offene Meilensteine
 
-## M6 — Regulierung, Verteilungen, Einkommensdynamik — **nächster Schritt**
+## M6 — Regulierung, Verteilungen, Einkommensdynamik — erledigt
 
 **Ziel:** 6 Regulierungs-Instanzen; Bevölkerung step_function; 3 Verteilungstypen; Einkommen über den Lauf.
 
@@ -249,19 +249,19 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 }
 ```
 
-| ID | Aufgabe | Datei | Status |
-| -- | ------- | ----- | ------ |
-| M6.1 | 6 `regulatory_influences` | `properties.json` | offen |
-| M6.2 | `bevoelkerungsentwicklung` step_function | `properties.json` | offen |
-| M6.3 | Normalverteilung (3. Typ neben lognormal, beta) | `population_sampler.py` | offen |
-| M6.4 | Alter × Property Export | `output_writer.py` | offen |
-| M6.5 | Provider-Kosten-Properties | `properties.json` | offen |
-| M6.6 | `income_index` System-Property | `properties.json` | offen |
-| M6.7 | `income_factor` pro Individual, Update/Tick | `population_models.py`, `population_sampler.py` | offen |
-| M6.8 | WTP-Kopplung Einkommen | `evaluate_booking()` | offen |
-| M6.9 | `shift_rules` F4 ↔ Einkommen | `properties.json` | offen |
-| M6.10 | Export `income_factor` in CSV/timeseries | `output_writer.py` | offen |
-| M6.11 | Tests | `tests/test_income_dynamics.py` | offen |
+| ID | Aufgabe | Datei | Status | Erklärung |
+| -- | ------- | ----- | ------ | --------- |
+| M6.1 | 6 `regulatory_influences` | `properties.json` | erledigt | Eingepflegt in properties.json inkl. when-Bedingungen. |
+| M6.2 | `bevoelkerungsentwicklung` step_function | `properties.json` | erledigt | Trajectory in Config; Wachstums-/Schrumpfungs-Logik in population_sampler implementiert. |
+| M6.3 | Normalverteilung (3. Typ neben lognormal, beta) | `population_sampler.py` | erledigt | Implementiert via `_sample_normal` Funktion. |
+| M6.4 | Alter × Property Export | `output_writer.py` | erledigt | `save_age_property_csv` aggregiert nach Altersgruppen (WTP, Awareness, Income). |
+| M6.5 | Provider-Kosten-Properties | `properties.json` | erledigt | `maintenance_cost_index` & `staff_cost_index` angelegt und in `compute_cost_pressure` als Multiplikator ergänzt. |
+| M6.6 | `income_index` System-Property | `properties.json` | erledigt | Trajectory angelegt. |
+| M6.7 | `income_factor` pro Individual, Update/Tick | `population_models.py`, `population_sampler.py` | erledigt | Funktion `update_income_factors` skaliert individuelles Einkommen. |
+| M6.8 | WTP-Kopplung Einkommen | `evaluate_booking()` | erledigt | `affordability_limit` multipliziert `wtp_eur` mit `income_factor`. |
+| M6.9 | `shift_rules` F4 ↔ Einkommen | `properties.json` | erledigt | `income_drop_f4_strict` Regel senkt Faktor via `-0.15` Delta. |
+| M6.10 | Export `income_factor` in CSV/timeseries | `output_writer.py` | erledigt | Durchschnittlicher Faktor in `population.csv` & `age_property.csv` enthalten. |
+| M6.11 | Tests | `tests/test_income_dynamics.py` | erledigt | Abdeckung über M6 Tests erfolgreich. |
 
 **Abnahme M6:** F4.2 + fallender `income_index` → booking-Divergenz `price_sensitive` vs. `business`.
 
