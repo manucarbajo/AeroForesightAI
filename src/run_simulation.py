@@ -129,6 +129,17 @@ def _parse_args() -> argparse.Namespace:
         default=180,
         help="Maximum seconds to wait for local Ollama model to become ready (used with --use-local-ollama).",
     )
+    parser.add_argument(
+        "--deterministic-only",
+        action="store_true",
+        help="Run simulation without LLM agent calls (pure deterministic mode for sweeps/benchmarks).",
+    )
+    parser.add_argument(
+        "--sweep",
+        type=str,
+        default=None,
+        help="Path to a sweep config JSON file. Overrides simulation parameters with sweep settings.",
+    )
     return parser.parse_args()
 
 
@@ -376,6 +387,7 @@ def main() -> int:
         options=RunnerOptions(
             enable_market=not args.no_market,
             enable_redebedarf=bool(args.redebedarf),
+            deterministic_only=bool(getattr(args, "deterministic_only", False)),
             checkpoint_interval=max(0, int(args.checkpoint_interval)),
             verbose_ticks=not args.quiet,
         ),
