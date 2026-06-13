@@ -315,18 +315,21 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 
 **Ziel:** Vier Foresight-Szenarien; 10.000 Ticks ohne LLM; CIB-Scores pro Sweep.
 
-| ID | Aufgabe | Datei | Status |
-| -- | ------- | ----- | ------ |
-| M8.1 | `scenario_sweeps.py` | `src/` | offen |
-| M8.2 | CLI `--deterministic-only`, `--sweep` | `run_simulation.py` | offen |
-| M8.3 | Sweep `co2_delayed.yaml` | `configs/sweeps/` | offen |
-| M8.4 | Sweep `business_as_usual.yaml` (A1+B1) | `configs/sweeps/` | offen |
-| M8.5 | Sweep `freiwillige_wende.yaml` (A2+B2) | `configs/sweeps/` | offen |
-| M8.6 | Sweep `transformation_conflict.yaml` (B2 vs A1) | `configs/sweeps/` | offen |
-| M8.7 | `sweep_summary.json` | `scenario_sweeps.py` | offen |
-| M8.8 | End-Tick → `scenario_scores.json` | `scenario_sweeps.py`, `scenario_consistency.py` | offen |
-| M8.9 | Benchmark 10.000 Ticks | Test | offen |
-| M8.10 | Tests | `tests/test_scenario_sweeps.py` | offen |
+> **Formatentscheidung:** Sweep-Konfigurationen werden als `.json` statt `.yaml` umgesetzt, um Konsistenz mit allen übrigen Konfigurationsdateien (`properties.json`, `factors.json`, `agent_profiles.json`) zu wahren und keine neue Dependency (`pyyaml`) einzuführen.
+
+| ID | Aufgabe | Datei | Status | Umsetzung |
+| -- | ------- | ----- | ------ | --------- |
+| M8.0 | Pydantic Modelle (`SweepConfig`, etc.) | `src/models/sweep_models.py` | erledigt | Pydantic v2 Modelle für Input/Output Typisierung angelegt. |
+| M8.1 | `scenario_sweeps.py` | `src/` | erledigt | Orchestrator mit Batch-Ausführung, Milestone-Auswertung, CIB-Scoring und JSON-Output erstellt. |
+| M8.2 | CLI `--deterministic-only`, `--sweep` | `run_simulation.py` | erledigt | Beide CLI-Argumente hinzugefügt und in `RunnerOptions` verdrahtet. |
+| M8.3 | Sweep `co2_delayed.json` | `configs/sweeps/` | erledigt | CO₂-Steuer verzögert um 10 Ticks; 5 Milestones inkl. Tick 15 und Tick 25 Checks. |
+| M8.4 | Sweep `business_as_usual.json` (A1+B1) | `configs/sweeps/` | erledigt | Keine Regulierung, kein SAF, stabiles Wachstum. Konsistenz 0.573 (höchste). |
+| M8.5 | Sweep `freiwillige_wende.json` (A2+B2) | `configs/sweeps/` | erledigt | Früher SAF-Durchbruch + ambitionierte CO₂-Politik. 7 Milestones, alle bestanden. |
+| M8.6 | Sweep `transformation_conflict.json` (B2 vs A1) | `configs/sweeps/` | erledigt | Strenge Regulierung vs. Technologieträgheit + Rezession + Ölkrise. 7/8 Milestones bestanden. |
+| M8.7 | `sweep_summary.json` | `scenario_sweeps.py` | erledigt | Wird automatisch nach `outputs/sweeps/sweep_summary.json` geschrieben. |
+| M8.8 | End-Tick → `scenario_scores.json` | `scenario_sweeps.py`, `scenario_consistency.py` | erledigt | Nutzt bestehenden `ConsistencyChecker`; Output in `outputs/sweeps/scenario_scores.json`. |
+| M8.9 | Benchmark 10.000 Ticks | Test | erledigt | 10.000 Ticks in 272s (37 ticks/sec), stabil, deterministisch, alle Milestones bestanden. |
+| M8.10 | Tests | `tests/test_scenario_sweeps.py` | erledigt | 6 Tests: Config-Loading, Property-Overrides, Factor-Overrides, Deterministic Mode, E2E Sweep, CO₂-Delayed-Validierung. |
 
 **Abnahme M8:** Vier Sweeps reproduzierbar; 10k stabil; CO₂ Tick 15 messbar in Sweep.
 
