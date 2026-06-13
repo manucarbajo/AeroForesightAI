@@ -27,6 +27,7 @@ class RunnerOptions:
     enable_market: bool = True
     enable_cib: bool = True  # load frozen CIB from configs/cib_frozen.json
     enable_redebedarf: bool = False
+    deterministic_only: bool = False  # M8: skip LLM agent calls entirely
     checkpoint_interval: int = 5
     verbose_ticks: bool = True
 
@@ -397,9 +398,10 @@ class SimulationRunner:
         orchestrator, round_execution, environment_node, consumer_node, market_node = components
         state = orchestrator.invoke(state)
         state = apply_factor_rules_at_tick_start(state)
-        state = round_execution.invoke(state)
+        if not self.options.deterministic_only:
+            state = round_execution.invoke(state)
         state = environment_node.invoke(state)
-        if consumer_node is not None:
+        if consumer_node is not None and not self.options.deterministic_only:
             state = consumer_node.invoke(state)
             state = environment_node.apply_consumer_factor_updates(state)
         if self.options.enable_market:
