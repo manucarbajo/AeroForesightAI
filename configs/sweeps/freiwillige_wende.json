@@ -1,0 +1,76 @@
+{
+  "id": "freiwillige_wende",
+  "name": "Freiwillige Wende (A2+B2)",
+  "description": "Frühzeitiger Technologiedurchbruch (SAF ab Tick 4) kombiniert mit ambitionierter Regulierung (carbon_tax ab Tick 8 auf 120 EUR). Gesellschaft wandelt sich parallel: Einkommen bleibt stabil, Flight Shaming setzt früh ein. Entspricht CIB-Kombination A2 (SAF-Durchbruch) + B2 (strenge Klimapolitik).",
+  "rationale": "A2 = SAF-Durchbruch (F3.2). Das SAF-Mandat wird bereits bei Tick 4 auf 0.02 gesetzt und bei Tick 10 auf 0.05 — deutlich früher als in der Basis (Tick 8/16). Dadurch greift die Regel f3_saf_mandate_breakthrough (saf >= 0.05 → F3.2) bereits bei Tick 10 statt bei Tick 16. B2 = Strenge Klimapolitik. Die CO₂-Steuer wird bei Tick 8 bereits auf 120 EUR angehoben (Basis: Tick 15), sodass F2.2 (Radikale Dekarbonisierung) und F6.2 (Flight Shaming) deutlich früher greifen. Der Einkommensindex bleibt stabil bei 1.0, da die Wirtschaft in diesem optimistischen Szenario nicht einbricht. F5.2 (Schienenausbau) wird durch den frühen F6.2-Zustand kaskadiert.",
+  "max_ticks": 50,
+  "property_overrides": [
+    {
+      "property_id": "carbon_tax_level",
+      "baseline": 50.0,
+      "rules": [
+        { "active_from_tick": 1, "effect": { "type": "set", "value": 50.0 } },
+        { "active_from_tick": 8, "effect": { "type": "set", "value": 120.0 } },
+        { "active_from_tick": 20, "effect": { "type": "set", "value": 200.0 } }
+      ]
+    },
+    {
+      "property_id": "saf_mandate_share",
+      "baseline": 0.0,
+      "rules": [
+        { "active_from_tick": 4, "effect": { "type": "set", "value": 0.02 } },
+        { "active_from_tick": 10, "effect": { "type": "set", "value": 0.05 } }
+      ]
+    },
+    {
+      "property_id": "income_index",
+      "baseline": 1.0,
+      "rules": []
+    },
+    {
+      "property_id": "demand_growth_rate",
+      "baseline": 0.02
+    }
+  ],
+  "factor_overrides": [],
+  "milestones": [
+    {
+      "tick": 8,
+      "description": "CO₂-Steuer springt auf 120 EUR — F2.2 und F6.2 greifen früh",
+      "check_property": "carbon_tax_level",
+      "expected_value": 120.0
+    },
+    {
+      "tick": 8,
+      "description": "F2 wechselt zu F2.2 (Radikale Dekarbonisierung)",
+      "check_factor": "F2"
+    },
+    {
+      "tick": 10,
+      "description": "SAF-Mandat bei 5 % → F3.2 Technologiedurchbruch",
+      "check_property": "saf_mandate_share",
+      "expected_value": 0.05
+    },
+    {
+      "tick": 10,
+      "description": "F3 wechselt zu F3.2 (Durchbruch SAF/E-Fuels)",
+      "check_factor": "F3"
+    },
+    {
+      "tick": 12,
+      "description": "F5 sollte F5.2 sein (Kaskade von F6.2 → Schienenausbau)",
+      "check_factor": "F5"
+    },
+    {
+      "tick": 20,
+      "description": "CO₂-Steuer erreicht 200 EUR — maximaler Regulierungsdruck",
+      "check_property": "carbon_tax_level",
+      "expected_value": 200.0
+    },
+    {
+      "tick": 50,
+      "description": "End-State: Hohe CIB-Konsistenz erwartet (A2+B2 ist selbstverstärkend)",
+      "check_factor": "F6"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "id": "business_as_usual",
+  "name": "Business as Usual (A1+B1)",
+  "description": "Schwache Regulierung, kein Technologiedurchbruch, stabiles Wachstum. Fliegen bleibt billig und gesellschaftlich akzeptiert. Entspricht CIB-Kombination A1 (SAF-Fokus auf inkrementellen Verbesserungen) + B1 (moderate Klimapolitik).",
+  "rationale": "A1 = Technologie F3.1 (SAF teuer, kein Durchbruch) → saf_mandate_share bleibt bei 0. B1 = Regulierung F2.1 (moderater Klimaschutz) → carbon_tax bleibt dauerhaft bei 50 EUR, also unter dem Schwellwert 100 für F2.2. Ohne hohe CO₂-Steuer bleibt F6.1 (Fliegen akzeptiert), da Schwellwert 80 nie erreicht wird. Wirtschaft stabil (F4.1) → oil_price_index bleibt bei 1.0. Nachfrage wächst konstant mit 3 % pro Tick.",
+  "max_ticks": 50,
+  "property_overrides": [
+    {
+      "property_id": "carbon_tax_level",
+      "baseline": 50.0,
+      "rules": [
+        { "active_from_tick": 1, "effect": { "type": "set", "value": 50.0 } }
+      ]
+    },
+    {
+      "property_id": "saf_mandate_share",
+      "baseline": 0.0,
+      "rules": []
+    },
+    {
+      "property_id": "demand_growth_rate",
+      "baseline": 0.03
+    },
+    {
+      "property_id": "oil_price_index",
+      "baseline": 1.0,
+      "rules": []
+    },
+    {
+      "property_id": "income_index",
+      "baseline": 1.0,
+      "rules": []
+    }
+  ],
+  "factor_overrides": [
+    { "factor_id": "F3", "initial_state": "F3.1" },
+    { "factor_id": "F4", "initial_state": "F4.1" },
+    { "factor_id": "F7", "initial_state": "F7.1" }
+  ],
+  "milestones": [
+    {
+      "tick": 10,
+      "description": "CO₂-Steuer bleibt bei 50 — keine Verschärfung",
+      "check_property": "carbon_tax_level",
+      "expected_value": 50.0
+    },
+    {
+      "tick": 15,
+      "description": "Kein CO₂-Anstieg bei Tick 15 (anders als Basis)",
+      "check_property": "carbon_tax_level",
+      "expected_value": 50.0
+    },
+    {
+      "tick": 25,
+      "description": "F2 bleibt moderat (F2.1), da carbon_tax < 100",
+      "check_factor": "F2"
+    },
+    {
+      "tick": 30,
+      "description": "SAF-Mandat bleibt bei 0 — kein Technologiedurchbruch F3.2",
+      "check_property": "saf_mandate_share",
+      "expected_value": 0.0
+    },
+    {
+      "tick": 50,
+      "description": "End-State: F6 sollte F6.1 bleiben (Fliegen akzeptiert)",
+      "check_factor": "F6"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "id": "co2_delayed",
+  "name": "CO₂-Verzögerung",
+  "description": "Die CO₂-Bepreisung bleibt lange niedrig und steigt erst ab Tick 25 steil an. SAF-Mandat ebenfalls verzögert. Simuliert politische Trägheit.",
+  "rationale": "In der Basisversion steigt carbon_tax_level bei Tick 15 auf 120 EUR und bei Tick 30 auf 200 EUR. Dieses Szenario verzögert beide Stufen um 10 Ticks (Tick 25 und Tick 40), sodass die Regulierung viel später greift. SAF-Mandat wird ebenfalls um 8 Ticks verschoben. Damit bleiben F2 (moderate Regulierung) und F6 (Fliegen akzeptiert) länger aktiv, da die Schwellwerte (carbon_tax > 100 für F2.2, carbon_tax > 80 für F6.2) erst spät erreicht werden.",
+  "max_ticks": 50,
+  "property_overrides": [
+    {
+      "property_id": "carbon_tax_level",
+      "baseline": 50.0,
+      "rules": [
+        { "active_from_tick": 1, "effect": { "type": "set", "value": 50.0 } },
+        { "active_from_tick": 25, "effect": { "type": "set", "value": 120.0 } },
+        { "active_from_tick": 40, "effect": { "type": "set", "value": 200.0 } }
+      ]
+    },
+    {
+      "property_id": "saf_mandate_share",
+      "baseline": 0.0,
+      "rules": [
+        { "active_from_tick": 16, "effect": { "type": "set", "value": 0.02 } },
+        { "active_from_tick": 24, "effect": { "type": "set", "value": 0.05 } }
+      ]
+    }
+  ],
+  "factor_overrides": [],
+  "milestones": [
+    {
+      "tick": 15,
+      "description": "CO₂-Steuer sollte bei 50 EUR bleiben (verzögert, kein Anstieg wie in Basis)",
+      "check_property": "carbon_tax_level",
+      "expected_value": 50.0
+    },
+    {
+      "tick": 25,
+      "description": "CO₂-Steuer springt auf 120 EUR — Regulierungsschwelle F2.2 wird erreicht",
+      "check_property": "carbon_tax_level",
+      "expected_value": 120.0
+    },
+    {
+      "tick": 25,
+      "description": "Faktor F2 sollte auf F2.2 (strenge Regulierung) wechseln",
+      "check_factor": "F2"
+    },
+    {
+      "tick": 30,
+      "description": "Flight Shaming F6.2 sollte aktiv sein (carbon_tax > 80 seit Tick 25)",
+      "check_factor": "F6"
+    },
+    {
+      "tick": 40,
+      "description": "CO₂-Steuer erreicht 200 EUR — maximaler Regulierungsdruck",
+      "check_property": "carbon_tax_level",
+      "expected_value": 200.0
+    }
+  ]
+}
