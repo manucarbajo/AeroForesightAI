@@ -1,0 +1,333 @@
+"""Streamlit-UI zum Bearbeiten der vollen Simulations-Konfiguration."""
+
+from __future__ import annotations
+
+import json
+
+import streamlit as st
+
+from dashboard.config_catalog import (
+    CONFIG_FILE_OPTIONS,
+    EDITABLE_PROPERTY_IDS,
+    PROPERTY_LABELS,
+    ConfigDraft,
+    PropertyEditState,
+    apply_sweep_to_draft,
+    default_config_draft,
+    effective_config_summary,
+    extract_property_edits_from_file,
+    extract_factor_states_from_file,
+    factor_options_from_file,
+    list_sweep_presets,
+    load_config_file,
+    save_custom_sweep_preset,
+)
+
+
+def init_config_draft() -> None:
+    if "config_draft" not in st.session_state:
+        st.session_state.config_draft = default_config_draft()
+
+
+def _render_scenario_tab(draft: ConfigDraft) -> ConfigDraft:
+    st.subheader("Szenario")
+    mode_labels = {
+        "Standard (configs/)": "basis",
+        "Szenario-Preset": "sweep",
+        "Eigene Parameter": "custom",
+    }
+    label_list = list(mode_labels.keys())
+    current_label = next(
+        (label for label, mode in mode_labels.items() if mode == draft.scenario_mode),
+        label_list[0],
+    )
+    selected_label = st.radio(
+        "Modus",
+        label_list,
+        index=label_list.index(current_label),
+        horizontal=True,
+    )
+    draft.scenario_mode = mode_labels[selected_label]
+
+    sweeps = list_sweep_presets()
+    if draft.scenario_mode == "sweep" and sweeps:
+        sweep_ids = [s.id for s in sweeps]
+        default_idx = sweep_ids.index(draft.sweep_id) if draft.sweep_id in sweep_ids else 0
+        selected_id = st.selectbox(
+            "Szenario",
+            sweep_ids,
+            index=default_idx,
+            format_func=lambda sid: next(s.name for s in sweeps if s.id == sid),
+        )
+        sweep = next(s for s in sweeps if s.id == selected_id)
+        draft.sweep_id = selected_id
+
+        st.info(sweep.description)
+        if sweep.rationale:
+            with st.expander("Hintergrund zum Szenario", expanded=False):
+                st.markdown(sweep.rationale)
+
+        if st.button("Szenario-Parameter übernehmen", key="apply_sweep"):
+            draft = apply_sweep_to_draft(draft, sweep)
+            st.session_state.config_draft = draft
+            st.success(f"Parameter von «{sweep.name}» übernommen.")
+            st.rerun()
+
+        draft.rounds = st.number_input(
+            "Anzahl Ticks",
+            min_value=1,
+            max_value=500,
+            value=int(sweep.max_ticks),
+            step=1,
+        )
+    elif draft.scenario_mode == "custom":
+        draft.apply_custom_overrides = True
+        st.caption("Properties und Faktoren in den nächsten Tabs anpassen.")
+        draft.rounds = st.number_input("Ticks", min_value=1, max_value=500, value=draft.rounds, step=1)
+    else:
+        draft.sweep_id = None
+        sim = load_config_file(draft.simulation_config_file)
+        default_ticks = int(sim.get("clock", {}).get("max_ticks", draft.rounds))
+        draft.rounds = st.number_input("Ticks", min_value=1, max_value=500, value=default_ticks, step=1)
+
+    with st.expander("Erweitert: alle Szenarien vergleichen", expanded=False):
+        draft.run_all_sweeps = st.checkbox(
+            "Alle Szenario-Presets nacheinander (schnell, ohne Agenten-Dialog)",
+            value=draft.run_all_sweeps,
+        )
+        if draft.run_all_sweeps:
+            st.caption("Ergebnis unter outputs/sweeps/")
+            draft.run_count = 1
+        else:
+            draft.run_count = st.number_input(
+                "Anzahl Läufe (Multi-Run)",
+                min_value=1,
+                max_value=20,
+                value=int(draft.run_count),
+                step=1,
+                help="Mehrere unabhängige Läufe mit gleicher Config; Seeds werden hochgezählt. "
+                "Ergebnis unter outputs/batch_<Zeitstempel>/run_001 …",
+            )
+
+    return draft
+
+
+def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
+    st.subheader("System-Properties")
+    st.caption("Trajektorien aus `properties.json` — Baseline und `set`-Regeln pro Tick.")
+
+    if draft.properties_file != "properties.json":
+        if st.button("Properties aus gewählter Datei neu laden"):
+            draft.property_edits = extract_property_edits_from_file(draft.properties_file)
+            st.rerun()
+
+    draft.apply_custom_overrides = st.checkbox(
+        "Property-Overrides beim Lauf anwenden",
+        value=draft.apply_custom_overrides or draft.scenario_mode == "custom",
+    )
+
+    for prop_id in EDITABLE_PROPERTY_IDS:
+        edit = draft.property_edits.get(prop_id)
+        if edit is None:
+            continue
+        label = PROPERTY_LABELS.get(prop_id, prop_id)
+        with st.expander(label, expanded=prop_id in {"carbon_tax_level", "saf_mandate_share", "income_index"}):
+            baseline = st.number_input(
+                "Baseline",
+                value=float(edit.baseline),
+                format="%.4f",
+                key=f"prop_base_{prop_id}",
+            )
+            st.markdown("**Set-Regeln** (Tick → Wert)")
+            rule_count = st.number_input(
+                "Anzahl Regeln",
+                min_value=0,
+                max_value=8,
+                value=len(edit.rules),
+                step=1,
+                key=f"prop_rule_count_{prop_id}",
+            )
+            new_rules: list[dict] = []
+            for idx in range(int(rule_count)):
+                existing = edit.rules[idx] if idx < len(edit.rules) else {}
+                effect = existing.get("effect") or {}
+                cols = st.columns(2)
+                tick = cols[0].number_input(
+                    f"Tick #{idx + 1}",
+                    min_value=1,
+                    max_value=500,
+                    value=int(existing.get("active_from_tick", 1)),
+                    key=f"prop_rule_tick_{prop_id}_{idx}",
+                )
+                value = cols[1].number_input(
+                    f"Wert #{idx + 1}",
+                    value=float(effect.get("value", baseline)),
+                    format="%.4f",
+                    key=f"prop_rule_val_{prop_id}_{idx}",
+                )
+                new_rules.append(
+                    {
+                        "active_from_tick": int(tick),
+                        "effect": {"type": "set", "value": float(value)},
+                    }
+                )
+            draft.property_edits[prop_id] = PropertyEditState(
+                property_id=prop_id,
+                baseline=float(baseline),
+                rules=new_rules,
+            )
+    return draft
+
+
+def _render_factors_tab(draft: ConfigDraft) -> ConfigDraft:
+    st.subheader("Faktor-Startzustände")
+    options = factor_options_from_file(draft.factors_file)
+    if not options:
+        st.warning("Keine Faktoren in der gewählten Datei.")
+        return draft
+
+    if draft.factors_file != "factors.json":
+        if st.button("Faktoren aus gewählter Datei neu laden"):
+            draft.factor_states = extract_factor_states_from_file(draft.factors_file)
+            st.rerun()
+
+    cols = st.columns(2)
+    factor_ids = sorted(options.keys())
+    for idx, factor_id in enumerate(factor_ids):
+        states = options[factor_id]
+        state_keys = list(states.keys())
+        current = draft.factor_states.get(factor_id, state_keys[0] if state_keys else "")
+        default_idx = state_keys.index(current) if current in state_keys else 0
+        with cols[idx % 2]:
+            selected = st.selectbox(
+                factor_id,
+                state_keys,
+                index=default_idx,
+                format_func=lambda k, st_map=states: f"{k}: {st_map[k][:50]}",
+                key=f"factor_{factor_id}",
+            )
+            draft.factor_states[factor_id] = selected
+    return draft
+
+
+def _render_llm_pipeline_tab(draft: ConfigDraft) -> ConfigDraft:
+    st.subheader("LLM & Pipeline")
+    c1, c2 = st.columns(2)
+    with c1:
+        draft.mock_llm = st.checkbox("Mock-LLM", value=draft.mock_llm)
+        draft.deterministic_only = st.checkbox("Deterministisch (ohne Agenten-LLM)", value=draft.deterministic_only)
+        draft.model = st.text_input("Ollama-Modell", value=draft.model)
+        draft.base_url = st.text_input("Ollama Base-URL", value=draft.base_url)
+    with c2:
+        draft.temperature = st.slider("Temperature", 0.0, 1.5, float(draft.temperature), 0.05)
+        draft.max_tokens = st.number_input("Max Tokens", min_value=256, max_value=8192, value=int(draft.max_tokens))
+        draft.checkpoint_interval = st.number_input("Checkpoint alle N Ticks", min_value=0, value=int(draft.checkpoint_interval))
+        draft.resume_from = st.text_input("Resume (Run-ID oder Pfad)", value=draft.resume_from)
+
+    st.markdown("**Pipeline-Optionen**")
+    p1, p2, p3, p4 = st.columns(4)
+    draft.no_market = p1.checkbox("Markt aus", value=draft.no_market)
+    draft.redebedarf = p2.checkbox("Redebedarf-Modus", value=draft.redebedarf)
+    draft.no_protocol = p3.checkbox("Kein Protocol", value=draft.no_protocol)
+    draft.no_scenarios = p4.checkbox("Keine Szenarien", value=draft.no_scenarios)
+
+    s1, s2 = st.columns(2)
+    draft.use_seed = s1.checkbox("Seed setzen", value=draft.use_seed)
+    draft.seed = s2.number_input("Seed", min_value=0, value=int(draft.seed or 42), step=1)
+    draft.generate_figures = st.checkbox(
+        "Figures nach Lauf erzeugen",
+        value=draft.generate_figures,
+        help="Speichert PNGs unter outputs/<run_id>/figures/ und zeigt sie im Tab «Figures».",
+    )
+
+    return draft
+
+
+def _render_config_files_tab(draft: ConfigDraft) -> ConfigDraft:
+    st.subheader("Config-Dateien")
+    st.caption("Standard liegt unter `configs/` — alternative Dateien für Experimente.")
+
+    file_keys = list(CONFIG_FILE_OPTIONS.keys())
+    c1, c2 = st.columns(2)
+    draft.simulation_config_file = c1.selectbox(
+        "Simulation",
+        file_keys,
+        index=file_keys.index(draft.simulation_config_file) if draft.simulation_config_file in file_keys else 0,
+        format_func=lambda f: CONFIG_FILE_OPTIONS.get(f, f),
+    )
+    draft.properties_file = c2.selectbox(
+        "Properties",
+        file_keys,
+        index=file_keys.index(draft.properties_file) if draft.properties_file in file_keys else 1,
+        format_func=lambda f: CONFIG_FILE_OPTIONS.get(f, f),
+    )
+    c3, c4 = st.columns(2)
+    draft.agents_file = c3.selectbox(
+        "Agents",
+        file_keys,
+        index=file_keys.index(draft.agents_file) if draft.agents_file in file_keys else 2,
+        format_func=lambda f: CONFIG_FILE_OPTIONS.get(f, f),
+    )
+    draft.factors_file = c4.selectbox(
+        "Factors",
+        file_keys,
+        index=file_keys.index(draft.factors_file) if draft.factors_file in file_keys else 4,
+        format_func=lambda f: CONFIG_FILE_OPTIONS.get(f, f),
+    )
+    draft.cib_file = st.selectbox(
+        "Einflussmatrix",
+        file_keys,
+        index=file_keys.index(draft.cib_file) if draft.cib_file in file_keys else 5,
+        format_func=lambda f: CONFIG_FILE_OPTIONS.get(f, f),
+    )
+
+    draft.simulation_name = st.text_input("Run-Name (optional)", value=draft.simulation_name)
+    draft.simulation_description = st.text_area(
+        "Run-Beschreibung (optional)",
+        value=draft.simulation_description,
+        height=80,
+    )
+
+    with st.expander("JSON-Vorschau: simulation_config.json", expanded=False):
+        st.json(load_config_file(draft.simulation_config_file))
+    with st.expander("JSON-Vorschau: properties.json (Auszug)", expanded=False):
+        props = load_config_file(draft.properties_file)
+        st.json({"system_properties": props.get("system_properties", [])[:3], "...": "gekürzt"})
+
+    st.divider()
+    preset_name = st.text_input("Als Szenario speichern (configs/sweeps/)", value="mein_szenario")
+    if st.button("Szenario speichern"):
+        try:
+            path = save_custom_sweep_preset(draft, preset_name)
+            st.success(f"Gespeichert: `{path}`")
+        except Exception as exc:
+            st.error(str(exc))
+
+    return draft
+
+
+def render_config_editor() -> ConfigDraft:
+    init_config_draft()
+    draft: ConfigDraft = st.session_state.config_draft
+
+    if st.button("Auf Standard-Config zurücksetzen"):
+        st.session_state.config_draft = default_config_draft()
+        st.rerun()
+
+    tabs = st.tabs(["Szenario", "Properties", "Faktoren", "LLM & Pipeline", "Config-Dateien", "Vorschau"])
+    with tabs[0]:
+        draft = _render_scenario_tab(draft)
+    with tabs[1]:
+        draft = _render_properties_tab(draft)
+    with tabs[2]:
+        draft = _render_factors_tab(draft)
+    with tabs[3]:
+        draft = _render_llm_pipeline_tab(draft)
+    with tabs[4]:
+        draft = _render_config_files_tab(draft)
+    with tabs[5]:
+        st.subheader("Effektive Konfiguration")
+        st.json(effective_config_summary(draft))
+
+    st.session_state.config_draft = draft
+    return draft

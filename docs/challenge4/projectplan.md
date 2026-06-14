@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| **Stand** | 11.06.2026 (Review nach `run_20260611T155300Z`) |
-| **Branch** | `m3/challenge4` |
+| **Stand** | 14.06.2026 (M10 Figures + Dashboard-Integration) |
+| **Branch** | `m9/challenge4` |
 | **Ziel** | Vollständige Umsetzung C4: Dynamik, Wechselwirkungen, Emergenz, Exploration |
-| **Fortschritt** | **M0–M5 erledigt** · M6–M12 offen · pytest **179** grün |
-| **Nächster Schritt** | **M6** (Regulierung, Einkommen, Verteilungen) |
+| **Fortschritt** | **M0–M10 erledigt** · M11–M12 offen · pytest **217** grün |
+| **Nächster Schritt** | **M11** (Report, Traceability) |
 
 ## Forschungsfrage
 
@@ -27,12 +27,11 @@ Beantwortung über implementierte Mechanismen und `challenge4_report.md` (M11).
 ## Meilenstein-Kette
 
 ```
-M0 ─ M1 ─ M2 ─ M3 ─ M4 ─ M5 (erledigt)
-                              │
-                              ├─► M6 Regulierung + Einkommen + Verteilungen  ← NÄCHSTER SCHRITT
-                         ├─► M7 Agent-Profiling
-                         │
-                         └─► M8 Sweeps ─► M9 Events/Explorer ─► M10 Figures ─► M11 Doku ─► M12 Integration
+M0 ─ M1 ─ … ─ M9 (erledigt)
+                    │
+                    ├─► M10 Figures & Szenario-Outputs — erledigt
+                    │
+                    └─► M11 Doku/Report ─► M12 Integration   ← NÄCHSTER SCHRITT
 ```
 
 **Reihenfolge:** M5 → M6 → M7 → M8 → M9 → M10 → M11 → M12 (M4 abgeschlossen).  
@@ -45,7 +44,7 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 | **C1** Systementwurf (Domäne, F1–F7) | M0–M3 | erledigt |
 | **C2** Workbench (LangGraph, Studio, CLI) | M1 | erledigt |
 | **C3** Statisches Verhalten (CIB-Referenz) | M0 | erledigt |
-| **C4** Dynamik + Emergenz | M4–M12 | **teilweise** (M0–M5 erledigt; M6–M12 offen) |
+| **C4** Dynamik + Emergenz | M4–M12 | **teilweise** (M0–M10 erledigt; M11–M12 offen) |
 
 | C3 (statisch) | C4 (dynamisch) | Meilenstein |
 | ------------- | -------------- | ----------- |
@@ -63,6 +62,7 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 | Variablen über Lauf | Trajectories + Tick-Regeln | M2, M6 |
 | Diskrete Epochen | Orchestrator → Agenten → Markt → Environment | M1 |
 | Zahlen Python, LLM qualitativ | Arbeitsteilung (Anhang A) | M4–M9 |
+| Szenario-Visualisierung | `figure_generator.py` (global + pro Run) | M10 |
 | 1000 heterogene Agenten | Verteilungen, Multi-Label, persistent | M3 |
 | Stabilität vieler Iterationen | Clipping, 10k-Benchmark | M4, M8 |
 | Events aus Deltas | `event_log` | M9 |
@@ -71,21 +71,18 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 | Agent-Profiling | `agent_profiles.json` | M7 |
 | Einkommen über Zeit | `income_index` + `income_factor` | M6 |
 
-## Ist-Zustand (11.06.2026)
+## Ist-Zustand (14.06.2026)
 
 | Bereich | Status | Details |
 | ------- | ------ | ------- |
-| M0–M3 Basis | **erledigt** | Property-Engine, 1000 Individuen, CIB frozen, Pipeline |
-| M4 Markt | **erledigt** | Rückkopplung, `cost_index`, `market_rules`, 30-Tick-Abnahmetest grün |
-| M1 Workbench | **erledigt** | Tick-Terminal, Checkpoints/5, Consumer nach Buchung, Narrative-Aggregation |
-| LLM-Runs (40 Ticks) | **demo-tauglich** | Referenz: `run_20260611T155300Z` — Mechanik ok, Narrative noch repetitiv |
-| Faktoren | **erledigt (M5)** | `factor_rules` F1–F7, `validate_factor_proposals()`, `timeseries/factors.csv` |
-| CIB-Methodik | **teilweise** | `factor_rules` + `cib_rationale.md` (M5); Sweeps fehlen (M8) |
-| Agent-Profiling | **teilweise** | Prompt-Grounding M1.8/M1.9; `agent_profiles.json` fehlt (M7) |
-| Einkommen | **offen (M6)** | Nur Segment-`income_level`; kein `income_index` |
-| Exploration | **offen (M9)** | Checkpoints + `--resume` da; kein `state_explorer` |
-| Sweeps / 10k | **offen (M8)** | — |
-| Figures / Report | **offen (M10–M11)** | — |
+| M0–M5 Basis & Faktoren | **erledigt** | Property-Engine, Population, CIB, Markt, `factor_rules` |
+| M6 Einkommen & Regulierung | **erledigt** | `income_index`, 6 `regulatory_influences`, Verteilungen |
+| M7 Agent-Profiling | **erledigt** | `agent_profiles.json`, Prompt-Filter, `event_log`-Reaktion |
+| M8 Sweeps & 10k | **erledigt** | Vier Szenario-Sweeps, Benchmark, `scenario_scores.json` |
+| M9 Events & Explorer | **erledigt** | `write_events_from_deltas`, `state_explorer.py`, CLI, Tests |
+| M10 Figures & Szenarien | **erledigt** | Global + pro Run; Dashboard-Tab «Figures» |
+| M11–M12 | **offen** | Report, Gesamtabnahme |
+| Präsentations-Dashboard | **erledigt** | Streamlit unter `dashboard/` — optional, kein Meilenstein (s. Abschnitt unten) |
 
 **Ist-Pipeline:** `orchestrator → apply_factor_rules → parallel_round (provider/regulator) → environment (booking, validate_factor_proposals) → consumer → market (market_rules) → factors.csv`.
 
@@ -341,29 +338,149 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 
 | ID | Aufgabe | Datei | Status |
 | -- | ------- | ----- | ------ |
-| M9.1 | `write_events_from_deltas()` | `protocol_generator.py` / neu | offen |
-| M9.2 | Provider-Events bei Preisänderung | `market_node.py` | offen |
-| M9.3 | `state_explorer.py` | `src/` | offen |
-| M9.4 | CLI `state_explorer.py --run-id` | `src/` | offen |
-| M9.5 | Checkpoint-Load Tick N | `checkpoint_manager.py`, `run_simulation.py --resume` | **teilweise** (Load/Resume da; Explorer-Integration fehlt) |
-| M9.6 | Explorer-Prompt: keine erfundenen Zahlen | `state_explorer.py` | offen |
-| M9.7 | Koppelung Profile + `event_log` in Agent-Prompts | `agent_node.py` | offen |
-| M9.8 | Tests | `tests/test_state_explorer.py` | offen |
+| M9.1 | `write_events_from_deltas()` | `protocol_generator.py` / neu | erledigt |
+| M9.2 | Provider-Events bei Preisänderung | `market_node.py` | erledigt |
+| M9.3 | `state_explorer.py` | `src/` | erledigt |
+| M9.4 | CLI `state_explorer.py --run-id` | `src/` | erledigt |
+| M9.5 | Checkpoint-Load Tick N | `checkpoint_manager.py`, `run_simulation.py --resume` | erledigt |
+| M9.6 | Explorer-Prompt: keine erfundenen Zahlen | `state_explorer.py` | erledigt |
+| M9.7 | Koppelung Profile + `event_log` in Agent-Prompts | `agent_node.py` | erledigt |
+| M9.8 | Tests | `tests/test_state_explorer.py` | erledigt |
 
-**Abnahme M9:** `event_log` enthält Preis-/Faktor-Deltas; Chat antwortet nur aus State/CSV.
+**Abnahme M9:** `event_log` enthält Preis-/Faktor-Deltas; CLI-Explorer (`state_explorer.py`) antwortet nur aus Run-Artefakten (grounded, keine erfundenen Zahlen). Abfrage über gesamten Lauf oder einzelnen Tick optional per `--tick` bzw. Tick-Hinweis in der Frage.
+
+> **Abgrenzung:** Das Streamlit-Dashboard unter `dashboard/` ist eine **optionale Präsentationsschicht** für Demos (Lauf starten, Charts, Bericht, Chat-UI). Es ist **kein Meilenstein-Liefergegenstand** und ersetzt weder CLI noch LangGraph Studio. Technische Abnahme M9 erfolgt über `src/state_explorer.py` und Tests.
 
 ---
 
-## M10 — Szenario-Outputs & Figures
+## Präsentations-Dashboard (optional, kein Meilenstein) — erledigt
 
-| ID | Aufgabe | Artefakt | Status |
-| -- | ------- | -------- | ------ |
-| M10.1 | Dokumentierte Sweep-Läufe (≥ 3) | `outputs/` | offen |
-| M10.2 | Figure booking_rate je Property | `docs/challenge4/figures/` | offen |
-| M10.3 | Figure Preis vs. booking (30 Ticks) | `figures/` | offen |
-| M10.4 | Figure CO₂ vor/nach Tick 15 | `figures/` | offen |
-| M10.5 | Figure Alter × Property | `figures/` | offen |
-| M10.6 | Figure Faktor-Zustände über Zeit | `figures/` | offen |
+**Zweck:** Rudimentäre Workbench-Oberfläche für die Präsentation — Szenario konfigurieren, Lauf starten, Ergebnisse ansehen, Run per Chat abfragen.
+
+| ID | Aufgabe | Datei | Status |
+| -- | ------- | ----- | ------ |
+| D.1 | Streamlit-Einstieg, Navigation (Simulation / Ergebnisse) | `dashboard/app.py` | erledigt |
+| D.2 | Konfiguration: Szenario, Properties, Faktoren, LLM, Sweeps | `dashboard/config_ui.py`, `config_catalog.py` | erledigt |
+| D.3 | Run-Liste, Lauf starten, Live-Fortschritt | `dashboard/service.py` | erledigt |
+| D.4 | Übersicht: Metriken, Booking-/Preis-Charts | `dashboard/app.py` | erledigt |
+| D.5 | Tab **Figures**: Run-PNGs aus `outputs/<run_id>/figures/` | `dashboard/app.py`, `service.py` | erledigt |
+| D.6 | Figures nach Lauf (optional) + «Figures neu erzeugen» | `config_ui.py`, `service.py`, `figure_generator.py` | erledigt |
+| D.7 | Bericht: `final_narrative.md` | `dashboard/app.py` | erledigt |
+| D.8 | Abfrage: `StateExplorer` über gesamten Lauf, optional Tick | `dashboard/app.py` | erledigt |
+| D.9 | Dateien: JSON/MD/CSV/PNG im Browser | `dashboard/app.py` | erledigt |
+| D.10 | Multi-Run (`run_count` > 1) | `config_ui.py`, `service.py` | erledigt |
+| D.11 | Starter + Doku | `dashboard/start.ps1`, `dashboard/README.md` | erledigt |
+| D.12 | Tests Service/Config/Figures | `tests/test_dashboard_service.py` | erledigt |
+
+**Abnahme Dashboard:**
+
+- [x] Lauf konfigurieren und starten (Mock-LLM oder Ollama)
+- [x] Ergebnisse ansehen: Übersicht, Figures, Bericht, Abfrage, Dateien
+- [x] Run-Figures automatisch oder manuell unter `outputs/<run_id>/figures/`
+- [x] Chat-Abfrage grounded über Run-Artefakte (gesamter Lauf oder ein Tick)
+- [x] Präsentations-UI ohne Meilenstein-/Challenge-Labels und ohne Emojis
+- [x] Start: `python -m streamlit run dashboard/app.py`
+
+**Traceability:** Ergänzt C2 (Workbench) und C4 (Exploration durch Chat) in der Demo — zählt aber **nicht** zur Meilenstein-Kette M0–M12.
+
+---
+
+## M10 — Szenario-Outputs & Figures — erledigt
+
+**Ziel (C4 / Strategic Foresight):** Ergebnisse der Simulation **sichtbar machen** — plausibel vergleichbare Zukunftsszenarien (Cross-Impact / Foresight-Typologie) und **Systemdynamik** (Emergenz, Policy-Shocks) für Präsentation und Report.
+
+**Traceability:**
+
+| C4-Anforderung | M10-Lieferung |
+| -------------- | ------------- |
+| Dynamisierung (CO₂ ab Tick N) | Figure «CO₂-Policy-Shock» mit erkannten Shock-Ticks |
+| Wechselwirkungen / Emergenz | Figure «Preis vs. Booking», «Systemdynamik» |
+| Explorative Szenarien (BAU, Wende, Konflikt) | Global: Vier-Szenario-Vergleich + CIB-Ranking |
+| Heterogene Population | Figure «Alterssegmente» |
+| Faktor-Dynamik F1–F7 | Figure «Faktor-Zustände» |
+
+> **Korrektur zum ursprünglichen Plan:** „booking_rate je Property“ war unpräzise. Stattdessen: **Properties + Booking gemeinsam** (`system_dynamics.png`) und **Szenario-Vergleich** über die vier Foresight-Sweeps.
+
+### Zwei Ausgabe-Ebenen
+
+| Ebene | Pfad | Wann erzeugt | Inhalt |
+| ----- | ---- | ------------ | ------ |
+| **Global (Foresight)** | `docs/challenge4/figures/` | `python -m src.figure_generator` | Szenario-Vergleich (4 Sweeps), CIB-Scores, Referenzlauf |
+| **Pro Run** | `outputs/<run_id>/figures/` | Nach Simulation (Dashboard, Standard: an) oder `--run-only` | 5 PNGs + `manifest.json` aus Run-Artefakten |
+
+**Datenquellen (grounded, keine LLM-Zahlen in Figures):** `tick_mechanics.json`, `timeseries/properties.csv`, `timeseries/factors.csv`, `timeseries/age_property.csv`, `price_history.json`.
+
+### Implementierung
+
+| ID | Aufgabe | Modul / Pfad | Status |
+| -- | ------- | ------------ | ------ |
+| M10.1 | `generate_all_figures()` — globale Foresight-Batch | `src/figure_generator.py` | erledigt |
+| M10.2 | `generate_run_figures()` — Figures pro Run | `src/figure_generator.py` | erledigt |
+| M10.3 | Vier Sweeps @ 50 Ticks + `scenario_scores.json` | `outputs/sweeps/` | erledigt |
+| M10.4 | Sweep-Zeitreihen-Export | `outputs/sweeps/<id>_timeseries.json` | erledigt |
+| M10.5 | Index-Doku global | `docs/challenge4/scenario_runs.md` | erledigt |
+| M10.6 | Dashboard: Tab «Figures» | `dashboard/app.py` | erledigt |
+| M10.7 | Dashboard: Auto-Generate nach Lauf (Checkbox) | `dashboard/config_ui.py`, `service.py` | erledigt |
+| M10.8 | Dashboard: «Figures neu erzeugen» | `dashboard/app.py` | erledigt |
+| M10.9 | Tests Generator | `tests/test_figure_generator.py` | erledigt |
+| M10.10 | Tests Dashboard-Figures | `tests/test_dashboard_service.py` | erledigt |
+
+### Figure-Inventar
+
+**Global** (`docs/challenge4/figures/`):
+
+| Datei | Inhalt |
+| ----- | ------ |
+| `scenario_comparison_booking.png` | Booking Rate — 4 Foresight-Szenarien |
+| `scenario_comparison_price.png` | Ticketpreis — 4 Foresight-Szenarien |
+| `scenario_cib_scores.png` | CIB Consistency-Ranking |
+| `price_vs_booking.png` | Referenzlauf: Markt-Rückkopplung |
+| `policy_shock_co2_booking.png` | Referenzlauf: CO₂ + Booking |
+| `system_dynamics.png` | Referenzlauf: Properties + Booking |
+| `factor_states.png` | Referenzlauf: F1–F7 |
+| `age_segment_booking.png` | Referenzlauf: Altersgruppen |
+
+**Pro Run** (`outputs/<run_id>/figures/`):
+
+| Datei | Inhalt |
+| ----- | ------ |
+| `price_vs_booking.png` | Preis ↔ Booking |
+| `policy_shock_co2_booking.png` | CO₂-Steuer ↔ Booking (Shocks auto-erkannt) |
+| `system_dynamics.png` | Booking + CO₂ / Einkommen / SAF |
+| `factor_states.png` | Faktor-Zustände |
+| `age_segment_booking.png` | Booking nach Altersgruppe |
+| `manifest.json` | Titel → Dateiname |
+
+### Abnahme M10 — erfüllt
+
+| Kriterium | Status |
+| --------- | ------ |
+| Vier Foresight-Szenarien visuell vergleichbar (deterministisch, 50 Ticks) | ✓ |
+| CIB Consistency-Ranking dokumentiert (`scenario_runs.md`) | ✓ |
+| Emergenz: Preis und Booking gemeinsam sichtbar | ✓ |
+| Policy-Dynamik: CO₂-Shocks in Figure markiert | ✓ |
+| Pro Run: Figures unter `outputs/<run_id>/figures/` | ✓ |
+| Dashboard: Tab «Figures» + optional Auto-Generate | ✓ |
+| Reproduzierbar via CLI und Tests | ✓ |
+
+### Erzeugung
+
+```powershell
+# Global: alle Foresight-Figures + scenario_runs.md
+python -m src.figure_generator
+
+# Nur ein Run (z. B. nach Dashboard-Lauf oder Batch)
+python -m src.figure_generator --run-only run_20260614T112808Z
+python -m src.figure_generator --run-only batch_20260614T121215Z/run_001
+
+# Global ohne Sweeps (nur Referenz aus Run)
+python -m src.figure_generator --skip-sweeps --run-dir outputs/run_.../
+
+# Dashboard: «Figures nach Lauf erzeugen» (LLM & Pipeline, Standard: an)
+python -m streamlit run dashboard/app.py
+```
+
+**Abgrenzung:** Globale Szenario-Figures werden **nicht** bei jedem Einzellauf erzeugt (Laufzeit). Pro-Run-Figures sind leichtgewichtig und laufen standardmäßig mit. Szenario-Vergleich vor Präsentation einmal global generieren.
 
 ---
 
@@ -375,7 +492,7 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 | M11.2 | `cib_rationale.md` (nach M5.8) | `docs/challenge4/` | offen |
 | M11.3 | `agent_profiles.md` (nach M7.5) | `docs/challenge4/` | offen |
 | M11.4 | `traceability_c1_c4.md` | `docs/challenge4/` | offen |
-| M11.5 | README: Sweeps, Explorer, Profile, Emergenz | `README.md` | offen |
+| M11.5 | README: Sweeps, Explorer, Profile, Emergenz | `README.md` | **teilweise** (Explorer, Dashboard dokumentiert; Report fehlt) |
 | M11.6 | `CIBExtractorNode` → `src/legacy/` | Refactor | offen |
 
 ---
@@ -386,7 +503,7 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 | -- | ------- | ------ |
 | M12.1 | E2E: 30 Ticks MockLLM | **teilweise** (`test_simulation_runner_e2e.py`) |
 | M12.2 | E2E: 30 Ticks `deterministic-only` — gleiche Numerik | offen (braucht M8.2 `--deterministic-only`) |
-| M12.3 | Voller `pytest`-Lauf (alle M4–M9 Tests) | **teilweise** (179 Tests M0–M5; M6–M9 Tests fehlen noch) |
+| M12.3 | Voller `pytest`-Lauf (alle M4–M10 Tests) | **erledigt** (217 Tests) |
 | M12.4 | Gesamtabnahme Emergenz (Checkliste Anhang B) | offen |
 
 ---
@@ -488,10 +605,11 @@ State(t)
 | **M7** | Segment-Divergenz `price_sensitive` vs. `business` ≥ 15 pp booking |
 | **M8** | Sweep Transformations-Konflikt reproduzierbar über 3 Seeds |
 | **M9** | Chat-Explorer: grounded, keine erfundenen Zahlen |
+| **M10** | Global: 4-Szenario-Figures + CIB-Ranking; Pro Run: 5 PNGs unter `outputs/<run_id>/figures/` |
 
 ## Anhang B2 — Gesamtabnahme Emergenz (M12.4)
 
-- [ ] M4–M9 Gates alle grün (s. Anhang B)
+- [ ] M4–M10 Gates alle grün (s. Anhang B)
 - [x] Ticketpreis steigt **und** fällt über 30 Ticks (M4)
 - [x] `booking_rate` und `demand_level` gekoppelt (M4)
 - [x] Faktorübergang via `factor_rules` ohne LLM (M5)
@@ -502,6 +620,7 @@ State(t)
 - [ ] Einkommen: F4.2 + fallender `income_index` → booking-Divergenz
 - [ ] Agenten: Narrative in Profil-Grenzen, Reaktion auf `event_log`
 - [ ] Chat-Explorer grounded, keine erfundenen Zahlen
+- [x] Szenario-Figures: global (4 Sweeps) + pro Run (Dashboard/CLI)
 
 ## Anhang C — Verzeichnisstruktur (Ziel)
 
@@ -510,24 +629,30 @@ configs/
   simulation_config.json, properties.json, factors.json
   agents.json, agent_profiles.json, cib_frozen.json
   sweeps/
-    co2_delayed.yaml, business_as_usual.yaml
-    freiwillige_wende.yaml, transformation_conflict.yaml
+    co2_delayed.json, business_as_usual.json
+    freiwillige_wende.json, transformation_conflict.json
+
+dashboard/                    # optional, Präsentation — erledigt, kein Meilenstein
+  app.py, config_ui.py, service.py, README.md
 
 src/
   property_engine.py, factor_dynamics.py, cib_rule_loader.py
   simulation_functions.py, population_sampler.py
   scenario_sweeps.py, scenario_consistency.py, state_explorer.py
+  figure_generator.py
   nodes/market_node.py, nodes/environment_node.py
   legacy/cib_extractor_node.py
 
 docs/challenge4/
   projectplan.md, challenge4_report.md, cib_rationale.md
-  agent_profiles.md, traceability_c1_c4.md, figures/
+  agent_profiles.md, traceability_c1_c4.md, scenario_runs.md
+  figures/
 
 tests/
   test_market_feedback.py, test_factor_dynamics.py
   test_scenario_consistency.py, test_scenario_sweeps.py
   test_agent_profiling.py, test_income_dynamics.py, test_state_explorer.py
+  test_figure_generator.py
   (+ M0–M3 bestehende Tests)
 ```
 
@@ -538,4 +663,5 @@ tests/
 | 6 LLM-Regulator-Agenten | `regulatory_influences` Properties |
 | FEL / SimPy / A2A | LangGraph-Loop + `event_log` |
 | CIB live generieren | Frozen + `factor_rules` |
-| Emergenz aus Chat allein | Python-Kopplungen (M4–M6) |
+| Emergenz aus Chat allein | Python-Kopplungen (M4–M6); Explorer nur grounded (M9) |
+| Streamlit-Dashboard als Abnahmekriterium | Optional für Präsentation; Abnahme über CLI/`src/` |

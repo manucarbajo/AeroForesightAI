@@ -32,6 +32,8 @@ Current factor landscape:
 Recent events:
 {recent_events_block}
 
+Python-derived delta events (source=system, provider, or market; descriptions tagged [delta:...]) are authoritative ground truth. Do not contradict them in your reasoning.
+
 Profile dependencies:
 {depends_on_block}
 

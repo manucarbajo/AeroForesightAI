@@ -640,9 +640,15 @@ def _format_tick_summary_markdown(record: dict[str, object]) -> list[str]:
     shocks = record.get("scheduled_shocks") or []
     if shocks:
         shock_text = ", ".join(
-            _format_shock_short(shock) for shock in shocks if isinstance(shock, dict)
+            part
+            for shock in shocks
+            if isinstance(shock, dict)
+            and shock.get("property_id") != "carbon_tax_level"
+            for part in [_format_shock_short(shock)]
+            if part
         )
-        chunks.append(f"Shocks: {shock_text}")
+        if shock_text:
+            chunks.append(f"Shocks: {shock_text}")
 
     lines: list[str] = []
     if chunks:

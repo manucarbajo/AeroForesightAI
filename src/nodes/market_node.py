@@ -115,4 +115,25 @@ class MarketNode:
             )
         )
 
+        price_delta_abs = abs(price - prev_price)
+        if prev_price > 0 and (price_delta_abs >= 0.5 or abs(price_delta_pct) >= 0.5):
+            markup = metrics.get("markup", metrics.get("provider_markup", 0.0))
+            booking_part = f"{float(booking_rate):.1%}" if booking_rate is not None else "n/a"
+            state.event_log.append(
+                EventLogEntry(
+                    id=str(uuid4()),
+                    round_number=tick,
+                    source_agent="provider",
+                    event_type=EventType.PRICE_CHANGE,
+                    description=(
+                        f"[delta:price] Provider yield feedback: ticket price "
+                        f"{prev_price:.2f} → {price:.2f} ({price_delta_pct:+.1f}%), "
+                        f"markup={float(markup):.2f}, booking_rate={booking_part} "
+                        f"(Python market_rules)"
+                    ),
+                    affected_factors=[],
+                    timestamp="",
+                )
+            )
+
         return state
