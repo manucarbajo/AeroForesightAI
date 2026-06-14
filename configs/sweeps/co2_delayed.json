@@ -40,12 +40,14 @@
     {
       "tick": 25,
       "description": "Faktor F2 sollte auf F2.2 (strenge Regulierung) wechseln",
-      "check_factor": "F2"
+      "check_factor": "F2",
+      "expected_factor_state": "F2.2"
     },
     {
       "tick": 30,
       "description": "Flight Shaming F6.2 sollte aktiv sein (carbon_tax > 80 seit Tick 25)",
-      "check_factor": "F6"
+      "check_factor": "F6",
+      "expected_factor_state": "F6.2"
     },
     {
       "tick": 40,

@@ -117,50 +117,65 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
 # Milestone Evaluation
 # ---------------------------------------------------------------------------
 
+def _property_at_tick(state: Any, tick: int, property_id: str) -> Any:
+    for ts_row in state.property_timeseries:
+        if ts_row.get("tick") == tick and property_id in ts_row:
+            return ts_row[property_id]
+    return state.market_metrics.get(property_id)
+
+
+def _factor_at_tick(state: Any, tick: int, factor_id: str) -> str | None:
+    for ts_row in state.factor_timeseries:
+        if ts_row.get("tick") == tick and factor_id in ts_row:
+            return str(ts_row[factor_id])
+    factor = state.environment.factors.get(factor_id)
+    if factor is not None and state.clock.current_tick == tick:
+        return factor.current_state
+    return None
+
+
+def evaluate_milestone_on_state(state: Any, ms: MilestoneCheck) -> dict[str, Any]:
+    """Evaluate one milestone against a completed simulation state."""
+    result: dict[str, Any] = {
+        "tick": ms.tick,
+        "description": ms.description,
+        "passed": False,
+        "actual_value": None,
+    }
+
+    if ms.check_property:
+        actual = _property_at_tick(state, ms.tick, ms.check_property)
+        result["actual_value"] = actual
+        if actual is not None:
+            if ms.expected_value is not None:
+                tolerance = 0.5 if ms.check_property == "income_index" else 0.01
+                result["passed"] = abs(float(actual) - float(ms.expected_value)) <= tolerance
+            else:
+                result["passed"] = True
+
+    if ms.check_factor:
+        actual = _factor_at_tick(state, ms.tick, ms.check_factor)
+        result["actual_value"] = actual
+        if actual is not None:
+            if ms.expected_factor_state is not None:
+                result["passed"] = actual == ms.expected_factor_state
+            else:
+                result["passed"] = True
+
+    return result
+
+
 def evaluate_milestones(
     state: Any,
     milestones: list[MilestoneCheck],
     tick: int,
 ) -> list[dict[str, Any]]:
     """Evaluate milestones that are due at this tick."""
-    results: list[dict[str, Any]] = []
-
-    for ms in milestones:
-        if ms.tick != tick:
-            continue
-
-        result: dict[str, Any] = {
-            "tick": ms.tick,
-            "description": ms.description,
-            "passed": False,
-            "actual_value": None,
-        }
-
-        if ms.check_property:
-            # Find property value in market_metrics or resolved properties
-            actual = state.market_metrics.get(ms.check_property)
-            if actual is None:
-                # Try to find in properties timeseries
-                for ts_row in reversed(state.property_timeseries):
-                    if ms.check_property in ts_row:
-                        actual = ts_row[ms.check_property]
-                        break
-
-            result["actual_value"] = actual
-            if ms.expected_value is not None and actual is not None:
-                result["passed"] = abs(float(actual) - float(ms.expected_value)) < 0.01
-            elif actual is not None:
-                result["passed"] = True  # Just checking existence
-
-        if ms.check_factor:
-            factor = state.environment.factors.get(ms.check_factor)
-            if factor is not None:
-                result["actual_value"] = factor.current_state
-                result["passed"] = True  # Record the factor state
-
-        results.append(result)
-
-    return results
+    return [
+        evaluate_milestone_on_state(state, ms)
+        for ms in milestones
+        if ms.tick == tick
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -226,44 +241,9 @@ def run_single_sweep(
         if isinstance(value, (int, float)):
             final_props[key] = float(value)
 
-    # Evaluate milestones across all ticks
-    # Since we don't have per-tick access in the final state, we evaluate
-    # milestones against the final state only (for check_factor especially)
-    milestone_results: list[dict[str, Any]] = []
-
-    # For property-based milestones, we can check the property_timeseries
-    for ms in sweep.milestones:
-        result: dict[str, Any] = {
-            "tick": ms.tick,
-            "description": ms.description,
-            "passed": False,
-            "actual_value": None,
-        }
-
-        if ms.check_property:
-            # Search timeseries for the value at the milestone tick
-            for ts_row in final_state.property_timeseries:
-                ts_tick = ts_row.get("tick")
-                if ts_tick == ms.tick and ms.check_property in ts_row:
-                    result["actual_value"] = ts_row[ms.check_property]
-                    if ms.expected_value is not None:
-                        result["passed"] = abs(
-                            float(ts_row[ms.check_property]) - float(ms.expected_value)
-                        ) < 0.5
-                    else:
-                        result["passed"] = True
-                    break
-
-        if ms.check_factor:
-            # For factor milestones, check factor_timeseries
-            for ts_row in final_state.factor_timeseries:
-                ts_tick = ts_row.get("tick")
-                if ts_tick == ms.tick and ms.check_factor in ts_row:
-                    result["actual_value"] = ts_row[ms.check_factor]
-                    result["passed"] = True
-                    break
-
-        milestone_results.append(result)
+    milestone_results = [
+        evaluate_milestone_on_state(final_state, ms) for ms in sweep.milestones
+    ]
 
     # CIB Consistency Scoring
     cib_matrix = load_cib_frozen()

@@ -43,7 +43,8 @@
     {
       "tick": 8,
       "description": "F2 wechselt zu F2.2 (Radikale Dekarbonisierung)",
-      "check_factor": "F2"
+      "check_factor": "F2",
+      "expected_factor_state": "F2.2"
     },
     {
       "tick": 10,
@@ -54,12 +55,14 @@
     {
       "tick": 10,
       "description": "F3 wechselt zu F3.2 (Durchbruch SAF/E-Fuels)",
-      "check_factor": "F3"
+      "check_factor": "F3",
+      "expected_factor_state": "F3.2"
     },
     {
       "tick": 12,
       "description": "F5 sollte F5.2 sein (Kaskade von F6.2 → Schienenausbau)",
-      "check_factor": "F5"
+      "check_factor": "F5",
+      "expected_factor_state": "F5.2"
     },
     {
       "tick": 20,

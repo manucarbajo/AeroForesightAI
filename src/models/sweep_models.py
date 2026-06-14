@@ -33,6 +33,7 @@ class MilestoneCheck(BaseModel):
     check_property: str | None = None  # system property to read
     check_factor: str | None = None    # factor to read
     expected_value: Any = None          # optional expected value for logging
+    expected_factor_state: str | None = None  # e.g. "F2.2"
 
 
 class SweepConfig(BaseModel):

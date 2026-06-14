@@ -171,6 +171,13 @@ def initialize_population(
         if labels.get("business"):
             wtp *= 1.25
 
+        base_income = 1.0
+        if labels.get("business"):
+            base_income += 0.15
+        if labels.get("price_sensitive"):
+            base_income -= 0.15
+        base_income = float(np.clip(base_income + rng.normal(0.0, 0.05), 0.5, 1.5))
+
         individuals.append(
             Individual(
                 id=person_id,
@@ -179,6 +186,8 @@ def initialize_population(
                 wtp_eur=round(wtp, 2),
                 environmental_awareness=round(awareness, 4),
                 price_sensitivity=_derive_price_sensitivity(labels),
+                base_income_factor=round(base_income, 4),
+                income_factor=round(base_income, 4),
             )
         )
 
@@ -233,7 +242,7 @@ def apply_factor_shifts(
     for person in individuals:
         awareness = person.environmental_awareness
         price_sensitivity = person.price_sensitivity
-        income_factor = person.income_factor
+        base_income_factor = person.base_income_factor
         applied_rules = list(person.applied_shift_rules)
 
         for index, rule in enumerate(active_rules):
@@ -248,7 +257,7 @@ def apply_factor_shifts(
             elif prop_id == "price_sensitivity":
                 price_sensitivity = float(np.clip(price_sensitivity + delta, 0.0, 1.0))
             elif prop_id == "income_factor":
-                income_factor = float(np.clip(income_factor + delta, 0.0, 5.0))
+                base_income_factor = float(np.clip(base_income_factor + delta, 0.0, 5.0))
             if rule.once:
                 applied_rules.append(rule_id)
 
@@ -257,7 +266,7 @@ def apply_factor_shifts(
                 update={
                     "environmental_awareness": round(awareness, 4),
                     "price_sensitivity": round(price_sensitivity, 4),
-                    "income_factor": round(income_factor, 4),
+                    "base_income_factor": round(base_income_factor, 4),
                     "applied_shift_rules": applied_rules,
                 }
             )
@@ -384,9 +393,11 @@ def update_income_factors(
     individuals: list[Individual],
     income_index: float,
 ) -> list[Individual]:
-    """Scale each individual's income_factor by the macro income_index."""
+    """Scale each individual's income_factor as base_income_factor × income_index."""
     return [
-        person.model_copy(update={"income_factor": round(income_index, 4)})
+        person.model_copy(
+            update={"income_factor": round(person.base_income_factor * income_index, 4)}
+        )
         for person in individuals
     ]
 
@@ -427,16 +438,16 @@ def run_population_tick(
         individuals = list(to_keep)
 
     income_index = system_properties.get("income_index", 1.0)
-    individuals = update_income_factors(individuals, income_index)
-
     shifted = apply_factor_shifts(
         individuals,
         properties.shift_rules,
         factors,
         system_properties,
     )
+    individuals = update_income_factors(shifted, income_index)
+
     return evaluate_booking(
-        shifted,
+        individuals,
         ticket_price=ticket_price,
         carbon_tax=carbon_tax,
     )

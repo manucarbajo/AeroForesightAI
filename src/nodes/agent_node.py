@@ -13,6 +13,7 @@ from src.models.enums import AgentType, EventType
 from src.property_engine import scheduled_property_events
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.state_models import SimulationState
+from src.agent_dependencies import format_depends_on_block
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 
@@ -96,6 +97,7 @@ class AgentNode:
         consumer_segment_analysis = self._format_consumer_segment_analysis(state)
         observed_booking_block = self._format_observed_booking_block(state)
         prior_booking_block = self._format_prior_booking_block(state)
+        depends_on_block = format_depends_on_block(state, self.config.profile, self.config.id)
         goals = "\n".join(f"- {goal}" for goal in self.config.goals) or "- No goals configured"
         constraints_list = list(self.config.constraints) if self.config.constraints else []
         if self.config.profile:
@@ -104,6 +106,8 @@ class AgentNode:
                 constraints_list.append(f"MUST NOT OUTPUT: {', '.join(p.must_not_output)}")
             if p.may_propose:
                 constraints_list.append(f"MAY PROPOSE ONLY: {', '.join(p.may_propose)}")
+            elif p.may_propose == []:
+                constraints_list.append("MAY PROPOSE ONLY: (nothing — state_changes must be empty)")
 
         constraints = (
             "\n".join(f"- {constraint}" for constraint in constraints_list)
@@ -129,6 +133,7 @@ class AgentNode:
                 "consumer_segment_analysis": consumer_segment_analysis,
                 "observed_booking_block": observed_booking_block,
                 "prior_booking_block": prior_booking_block,
+                "depends_on_block": depends_on_block,
             },
         )
 

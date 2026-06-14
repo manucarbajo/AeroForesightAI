@@ -418,6 +418,371 @@ def _format_property_change_line(prop_id: str, old_value: float, new_value: floa
     return f"- `{prop_id}`: {old_value:g} → {new_value:g}"
 
 
+def _prior_population_stats(state, round_number: int) -> dict | None:
+    for entry in reversed(state.population_stats):
+        tick = entry.get("round_number")
+        if tick is not None and tick < round_number:
+            return entry
+    return None
+
+
+def _prior_price_entry(state, round_number: int) -> PriceHistoryEntry | None:
+    for entry in reversed(state.price_history):
+        if 1 <= entry.round_number < round_number:
+            return entry
+    return None
+
+
+def _scheduled_shocks_for_tick(
+    scheduled_by_tick: dict[int, list[dict[str, object]]],
+    round_number: int,
+) -> list[dict[str, object]]:
+    return [
+        {
+            "property_id": event["property_id"],
+            "effect_type": event["effect_type"],
+            "value": event["value"],
+            "unit": event.get("unit"),
+        }
+        for event in scheduled_by_tick.get(round_number, [])
+    ]
+
+
+def _interpret_tick_mechanics(record: dict[str, object]) -> list[str]:
+    """Generate short causal explanations for counter-intuitive tick patterns."""
+
+    notes: list[str] = []
+    br_delta = record.get("booking_rate_delta")
+    price_delta = record.get("market_price_delta_eur")
+    ref_price = record.get("booking_reference_price_eur")
+    post_price = record.get("market_price_after_feedback_eur")
+    pop_delta = record.get("population_delta")
+
+    if (
+        isinstance(br_delta, (int, float))
+        and br_delta > 0.02
+        and isinstance(price_delta, (int, float))
+        and price_delta > 1.0
+        and isinstance(ref_price, (int, float))
+        and isinstance(post_price, (int, float))
+    ):
+        notes.append(
+            "Buchung stieg, obwohl der **Endpreis** dieses Ticks stieg: Die Entscheidung "
+            f"fiel bei Referenzpreis **{ref_price:.2f} €** (Vortick-Marktpreis). "
+            f"Der Anstieg auf **{post_price:.2f} €** ist **Folge** der Buchung (Markt-Feedback), "
+            "nicht deren Ursache."
+        )
+
+    if (
+        isinstance(br_delta, (int, float))
+        and br_delta < -0.02
+        and isinstance(price_delta, (int, float))
+        and price_delta < -1.0
+    ):
+        notes.append(
+            "Buchung fiel, während der Endpreis sank: Markt-Feedback senkt den Preis bei "
+            "schwacher Buchung — beides hängt am selben Regelkreis."
+        )
+
+    shocks = record.get("scheduled_shocks") or []
+    shock_ids = {str(s.get("property_id")) for s in shocks if isinstance(s, dict)}
+
+    if "carbon_tax_level" in shock_ids and isinstance(br_delta, (int, float)) and br_delta >= -0.01:
+        notes.append(
+            "CO₂-Steuer stieg, Buchung blieb stabil oder stieg: Die Steuer wirkt schwach in "
+            "der Kostenformel (`carbon_per_tonne` sehr klein). Für die Buchung zählt der "
+            "Referenz-Ticketpreis (Vortick), nicht der neue `cost_pressure`. Zusätzlich kann "
+            "Markt-Feedback den Verkaufspreis **senken**, obwohl Kosten steigen."
+        )
+
+    if "income_index" in shock_ids and isinstance(br_delta, (int, float)) and br_delta > 0.02:
+        notes.append(
+            "Einkommensindex stieg — höhere Zahlungsbereitschaft aller Individuen "
+            "erklärt den Buchungsanstieg unabhängig vom späteren Preis-Feedback."
+        )
+
+    if isinstance(pop_delta, int) and pop_delta > 0:
+        notes.append(
+            f"Population wuchs um **+{pop_delta}** Personen. Neue Individuen werden frisch "
+            "gesampelt und fließen direkt in die Buchungsrate ein."
+        )
+
+    cost_pressure = record.get("cost_pressure_eur")
+    if (
+        isinstance(post_price, (int, float))
+        and isinstance(cost_pressure, (int, float))
+        and post_price < cost_pressure - 5
+    ):
+        notes.append(
+            f"Verkaufspreis ({post_price:.2f} €) liegt unter `cost_pressure` "
+            f"({cost_pressure:.2f} €) — der Anbieter verkauft unter Kosten; "
+            "Markt-Feedback und Markup-Regeln entkoppeln Preis und Kosten."
+        )
+
+    return notes
+
+
+def _build_tick_mechanics_record(
+    state,
+    round_number: int,
+    *,
+    scheduled_by_tick: dict[int, list[dict[str, object]]],
+) -> dict[str, object]:
+    ts_row = next(
+        (row for row in state.property_timeseries if row.get("tick") == round_number),
+        None,
+    )
+    stats = next(
+        (s for s in state.population_stats if s.get("round_number") == round_number),
+        None,
+    )
+    prior_stats = _prior_population_stats(state, round_number)
+    price_entry = next(
+        (entry for entry in state.price_history if entry.round_number == round_number),
+        None,
+    )
+
+    ref_price = None
+    post_price = None
+    if ts_row is not None:
+        ref_price = ts_row.get("ticket_price_pre_feedback", ts_row.get("ticket_price"))
+        post_price = ts_row.get("ticket_price")
+
+    booking_rate = stats.get("total_demand") if stats else None
+    prior_booking = prior_stats.get("total_demand") if prior_stats else None
+    br_delta = (
+        float(booking_rate) - float(prior_booking)
+        if booking_rate is not None and prior_booking is not None
+        else None
+    )
+
+    pop = stats.get("total_population") if stats else None
+    prior_pop = prior_stats.get("total_population") if prior_stats else None
+    pop_delta = int(pop) - int(prior_pop) if pop is not None and prior_pop is not None else None
+
+    price_delta = (
+        float(post_price) - float(ref_price)
+        if ref_price is not None and post_price is not None
+        else None
+    )
+
+    record: dict[str, object] = {
+        "tick": round_number,
+        "pipeline_order": [
+            "apply_factor_rules",
+            "agent_round (provider/regulator)",
+            "population_booking (uses prior tick market price as reference)",
+            "consumer_narrative",
+            "market_feedback (sets final ticket price)",
+        ],
+        "scheduled_shocks": _scheduled_shocks_for_tick(scheduled_by_tick, round_number),
+        "booking_reference_price_eur": ref_price,
+        "market_price_after_feedback_eur": post_price,
+        "market_price_delta_eur": price_delta,
+        "booking_rate": booking_rate,
+        "prior_booking_rate": prior_booking,
+        "booking_rate_delta": br_delta,
+        "population": pop,
+        "population_delta": pop_delta,
+        "booked": stats.get("total_booked") if stats else None,
+        "carbon_tax_level": ts_row.get("carbon_tax_level") if ts_row else None,
+        "income_index": ts_row.get("income_index") if ts_row else None,
+        "cost_pressure_eur": ts_row.get("cost_pressure") if ts_row else None,
+        "demand_level": price_entry.demand_level if price_entry else None,
+        "interpretation": [],
+    }
+    record["interpretation"] = _interpret_tick_mechanics(record)
+    return record
+
+
+def _format_shock_short(shock: dict[str, object]) -> str:
+    prop_id = str(shock.get("property_id", ""))
+    value = shock.get("value")
+    labels = {
+        "carbon_tax_level": "CO₂-Steuer",
+        "saf_mandate_share": "SAF-Mandat",
+        "income_index": "Einkommen",
+        "bevoelkerungsentwicklung": "Population",
+        "fuel_price_change": "Treibstoff",
+        "oil_price_index": "Ölpreis",
+    }
+    label = labels.get(prop_id, prop_id)
+    if prop_id == "saf_mandate_share" and isinstance(value, (int, float)):
+        return f"{label} {float(value):.0%}"
+    if isinstance(value, (int, float)) and prop_id != "bevoelkerungsentwicklung":
+        return f"{label} {value:g}"
+    if isinstance(value, (int, float)):
+        return f"{label} {int(value)}"
+    return label
+
+
+def _format_tick_summary_markdown(record: dict[str, object]) -> list[str]:
+    """One compact ground-truth line per tick; interpretation only when surprising."""
+
+    chunks: list[str] = []
+    br = record.get("booking_rate")
+    booked = record.get("booked")
+    pop = record.get("population")
+    br_delta = record.get("booking_rate_delta")
+    ref = record.get("booking_reference_price_eur")
+    post = record.get("market_price_after_feedback_eur")
+
+    if br is not None and booked is not None and pop is not None:
+        booking_part = f"**{float(br):.1%}** gebucht ({booked}/{pop})"
+        if isinstance(br_delta, (int, float)) and abs(float(br_delta)) >= 0.001:
+            booking_part += f", Δ {float(br_delta):+.1%} pp"
+        chunks.append(booking_part)
+
+    if isinstance(ref, (int, float)) and isinstance(post, (int, float)):
+        delta = float(post) - float(ref)
+        chunks.append(f"Preis {float(ref):.2f} → {float(post):.2f} € ({delta:+.2f} €)")
+
+    shocks = record.get("scheduled_shocks") or []
+    if shocks:
+        shock_text = ", ".join(
+            _format_shock_short(shock) for shock in shocks if isinstance(shock, dict)
+        )
+        chunks.append(f"Shocks: {shock_text}")
+
+    lines: list[str] = []
+    if chunks:
+        lines.append("")
+        lines.append(" · ".join(chunks))
+
+    interpretations = record.get("interpretation") or []
+    if interpretations:
+        # Only surface the first note — enough when something looks paradoxical.
+        note = str(interpretations[0]).replace("**", "")
+        lines.append(f"\n→ *{note}*")
+
+    return lines
+
+
+_SEGMENT_LABELS = {
+    "business": "Business",
+    "leisure_price_sensitive": "Preissensitiv",
+    "leisure_eco_conscious": "Öko-bewusst",
+}
+
+_AGENT_LABELS = {
+    "provider": "Provider",
+    "regulator": "Regulator",
+    "consumer": "Consumer",
+}
+
+
+def _format_segment_booking_block(
+    stats_for_round: dict,
+    prior_stats: dict | None,
+) -> list[str]:
+    """Per-segment booking with booked/total, rate, and delta vs prior tick."""
+
+    segments = stats_for_round.get("segments") or {}
+    if not segments:
+        return []
+
+    prior_segments = (prior_stats or {}).get("segments") or {}
+    lines = ["", "#### Segment-Buchung", ""]
+
+    for seg_id, seg_data in segments.items():
+        if not isinstance(seg_data, dict):
+            continue
+        booked = seg_data.get("booked_individuals")
+        total = seg_data.get("total_individuals")
+        rate = seg_data.get("booking_rate")
+        label = _SEGMENT_LABELS.get(seg_id, seg_id)
+        if booked is None or total is None or rate is None:
+            continue
+
+        line = f"- **{label}:** {booked}/{total} gebucht ({float(rate):.1%})"
+        prior_seg = prior_segments.get(seg_id)
+        if isinstance(prior_seg, dict) and prior_seg.get("booking_rate") is not None:
+            delta = float(rate) - float(prior_seg["booking_rate"])
+            if abs(delta) >= 0.001:
+                line += f", Δ {delta:+.1%} pp"
+        lines.append(line)
+
+    return lines
+
+
+def _format_agent_reasoning_block(agent_responses) -> list[str]:
+    if not agent_responses:
+        return []
+
+    lines = ["", "#### Agenten-Einschätzung (LLM-Begründung)", ""]
+    for resp in agent_responses:
+        label = _AGENT_LABELS.get(resp.agent_id, resp.agent_id)
+        first_line = resp.reasoning.strip().splitlines()[0] if resp.reasoning else "kein Reasoning"
+        lines.append(f"- **{label}:** {first_line}")
+    return lines
+
+
+def _format_agent_events_block(events: list[EventLogEntry]) -> list[str]:
+    if not events:
+        return []
+
+    lines = ["", "#### Agenten-Events (Meldung pro Rolle)", ""]
+    for event in events:
+        label = _AGENT_LABELS.get(event.source_agent, event.source_agent)
+        lines.append(f"- **{label}:** {event.description}")
+    return lines
+
+
+def save_tick_mechanics(
+    state,
+    filename: str = "tick_mechanics.json",
+    *,
+    run_dir: Path | None = None,
+) -> str:
+    """Structured per-tick mechanics for narratives and future state explorer (M9)."""
+
+    ensure_output_dir()
+    filepath = _resolve_output_path(filename, run_dir=run_dir)
+
+    properties = state.resolved_properties()
+    schedule = scheduled_property_events(properties)
+    scheduled_by_tick: dict[int, list[dict[str, object]]] = {}
+    for event in schedule:
+        tick = int(event["tick"])
+        scheduled_by_tick.setdefault(tick, []).append(event)
+
+    round_numbers = sorted(
+        {
+            rr.round_number
+            for rr in state.round_results
+            if rr.round_number >= 1
+        }
+        | {
+            event.round_number
+            for event in state.event_log
+            if event.round_number >= 1
+        }
+        | {s.get("round_number") for s in state.population_stats if s.get("round_number")}
+    )
+
+    payload = {
+        "run_id": getattr(state.config, "run_id", None),
+        "reading_guide": (
+            "Booking decisions use the prior tick's market price as reference. "
+            "Final ticket price is set after booking via market feedback. "
+            "Agent narratives may contradict these numbers — trust this file."
+        ),
+        "ticks": [
+            _build_tick_mechanics_record(
+                state,
+                round_number,
+                scheduled_by_tick=scheduled_by_tick,
+            )
+            for round_number in round_numbers
+        ],
+    }
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+
+    return filepath
+
+
 def save_final_narrative(
     state,
     filename: str = "final_narrative.md",
@@ -450,6 +815,17 @@ def save_final_narrative(
     lines.append(f"- **Gesamte Events:** {len(state.event_log)}")
     lines.append(f"- **Preis Start:** {state.price_history[0].price:.2f} €" if state.price_history else "- **Preis Start:** n/a")
     lines.append(f"- **Preis Ende:** {state.price_history[-1].price:.2f} €" if state.price_history else "- **Preis Ende:** n/a")
+
+    lines.append("\n## Leseschlüssel")
+    lines.append(
+        "Pro Tick bucht die Population **zuerst** (Referenzpreis = Endpreis des Vorticks), "
+        "der Markt setzt **danach** den neuen Endpreis. Die Kennzahlen-Zeile ist Python-Ground-Truth."
+    )
+    lines.append(
+        "Pro Tick drei Blöcke: **Segment-Buchung** (wer bucht) → **Agenten-Einschätzung** "
+        "(LLM-Begründung) → **Agenten-Events** (eine Meldung/Aktion pro Rolle — nicht doppelt, "
+        "sondern Reasoning vs. öffentliches Event). Maschinenlesbar: `tick_mechanics.json`."
+    )
 
     properties = state.resolved_properties()
     schedule = scheduled_property_events(properties)
@@ -507,48 +883,26 @@ def save_final_narrative(
         tick_label = state.clock.tick_label(round_number)
         lines.append(f"\n### {tick_label}")
 
-        tick_events = scheduled_by_tick.get(round_number, [])
-        if tick_events:
-            lines.append("\n**Geplante Property-Shocks (dieser Tick):**")
-            for event in tick_events:
-                lines.append(_format_property_event_line(event))
+        mechanics = _build_tick_mechanics_record(
+            state,
+            round_number,
+            scheduled_by_tick=scheduled_by_tick,
+        )
+        lines.extend(_format_tick_summary_markdown(mechanics))
 
-        value_changes = property_value_changes_at_tick(state.property_timeseries, round_number)
-        if value_changes:
-            lines.append("\n**Wirksame Property-Änderungen (Markt):**")
-            for prop_id, old_value, new_value in value_changes:
-                lines.append(_format_property_change_line(prop_id, old_value, new_value))
+        stats_for_round = next(
+            (s for s in state.population_stats if s.get("round_number") == round_number),
+            None,
+        )
+        if stats_for_round:
+            prior_stats = _prior_population_stats(state, round_number)
+            lines.extend(_format_segment_booking_block(stats_for_round, prior_stats))
 
         agent_responses = _agent_responses_for_round(state, round_number)
-        for resp in agent_responses:
-            first_line = resp.reasoning.strip().splitlines()[0] if resp.reasoning else "kein Reasoning"
-            lines.append(f"- **{resp.agent_id}:** {first_line}")
-
-        # Markt-Kennzahlen der Runde (M2 demand_level + M3 booking_rate)
-        price_entry = next((entry for entry in state.price_history if entry.round_number == round_number), None)
-        if price_entry is not None:
-            market_line = (
-                f"- **Markt:** Preis {price_entry.price:.2f} €, "
-                f"demand_level {price_entry.demand_level:.3f}"
-            )
-            if price_entry.booking_rate is not None:
-                market_line += f", booking_rate {price_entry.booking_rate:.1%}"
-            lines.append(f"\n{market_line}")
+        lines.extend(_format_agent_reasoning_block(agent_responses))
 
         narrative_events = _narrative_events_for_round(state, round_number)
-        if narrative_events:
-            lines.append(f"\n**Events ({len(narrative_events)}):**")
-            for event in narrative_events:
-                lines.append(f"- {event.source_agent}: {event.description}")
-
-        # Population Stats der Runde
-        if hasattr(state, "population_stats") and state.population_stats:
-            stats_for_round = next((s for s in state.population_stats if s.get("round_number") == round_number), None)
-            if stats_for_round:
-                lines.append(f"\n**Populations-Statistik:**")
-                lines.append(f"- **Total Demand:** {stats_for_round['total_demand']:.1%} ({stats_for_round['total_booked']} von {stats_for_round['total_population']} gebucht)")
-                for seg_id, seg_data in stats_for_round["segments"].items():
-                    lines.append(f"  - {seg_id}: {seg_data['booked_individuals']}/{seg_data['total_individuals']} (Rate: {seg_data['booking_rate']:.1%})")
+        lines.extend(_format_agent_events_block(narrative_events))
 
     # Finaler Umweltzustand
     lines.append("\n## Finaler Umweltzustand")

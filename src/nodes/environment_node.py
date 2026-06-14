@@ -157,6 +157,7 @@ class EnvironmentNode:
             "cost_index": cost_index,
             "provider_markup": previous_markup,
             "markup": previous_markup,
+            "ticket_price_pre_feedback": provisional_price,
             "ticket_price": provisional_price,
         }
 

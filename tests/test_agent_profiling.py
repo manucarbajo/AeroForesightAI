@@ -134,3 +134,26 @@ def test_agent_node_enforces_may_propose_state_changes(base_state):
     changes = node._parse_state_changes(payload, base_state)
     assert len(changes) == 1
     assert changes[0].factor_id == "F2"
+
+
+def test_agent_node_includes_depends_on_block(base_state):
+    config = AgentConfig(
+        id="regulator",
+        name="Regulator",
+        agent_type=AgentType.REGULATOR,
+        description="Test",
+        goals=[],
+        profile=AgentProfile(
+            observes=["factors F2", "event_log_recent"],
+            depends_on=["provider.events", "consumer.booking_rate"],
+        ),
+    )
+    node = AgentNode(config, llm=lambda x: "{}")
+    original_load = node._load_prompt_template
+    node._load_prompt_template = lambda: "{depends_on_block}"
+    prompt = node._build_prompt(base_state)
+    node._load_prompt_template = original_load
+
+    assert "Profile dependencies" in prompt
+    assert "provider.events" in prompt
+    assert "consumer.booking_rate" in prompt

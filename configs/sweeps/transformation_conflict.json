@@ -51,7 +51,8 @@
     {
       "tick": 5,
       "description": "F6 wechselt zu F6.2 (Flight Shaming)",
-      "check_factor": "F6"
+      "check_factor": "F6",
+      "expected_factor_state": "F6.2"
     },
     {
       "tick": 10,
@@ -68,12 +69,14 @@
     {
       "tick": 15,
       "description": "F3 bleibt F3.1 — kein SAF-Durchbruch trotz Regulierungsdruck",
-      "check_factor": "F3"
+      "check_factor": "F3",
+      "expected_factor_state": "F3.1"
     },
     {
       "tick": 15,
       "description": "Einkommensindex sollte bei ~0.85 liegen (Rezession)",
-      "check_property": "income_index"
+      "check_property": "income_index",
+      "expected_value": 0.85
     },
     {
       "tick": 25,
@@ -84,7 +87,8 @@
     {
       "tick": 50,
       "description": "End-State: Niedrige CIB-Konsistenz erwartet (B2 vs A1 Widerspruch)",
-      "check_factor": "F2"
+      "check_factor": "F2",
+      "expected_factor_state": "F2.2"
     }
   ]
 }

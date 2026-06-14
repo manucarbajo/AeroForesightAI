@@ -44,7 +44,7 @@ class AgentNodeTests(unittest.TestCase):
 
         self.assertEqual(response.agent_id, "consumer")
         self.assertEqual(response.actions[0], "Weniger Freizeitfluege buchen")
-        self.assertEqual(len(response.state_changes), 1)
+        self.assertEqual(len(response.state_changes), 0)
         self.assertEqual(updated.event_log[-1].event_type.value, "demand_shift")
 
     def test_extract_json_from_markdown_codeblock(self) -> None:
@@ -255,9 +255,8 @@ class AgentNodeTests(unittest.TestCase):
 
     def test_state_change_validation_filters_unknown_factor_and_invalid_state(self) -> None:
         state = build_initial_state()
-        consumer = next(agent for agent in state.agents if agent.id == "consumer")
+        regulator = next(agent for agent in state.agents if agent.id == "regulator")
 
-        # Nur der letzte StateChange ist valide (F2.2 existiert in configs/factors.json).
         llm = MockLLM(
             """
             {
@@ -272,15 +271,12 @@ class AgentNodeTests(unittest.TestCase):
             }
             """
         )
-        node = AgentNode(config=consumer, llm=llm)
+        node = AgentNode(config=regulator, llm=llm)
         updated = node.invoke(state)
         response = updated.round_results[-1].agent_responses[0]
-        event = updated.event_log[-1]
 
         self.assertEqual(len(response.state_changes), 1)
         self.assertEqual(response.state_changes[0].factor_id, "F2")
-        self.assertEqual(event.event_type.value, "demand_shift")
-        self.assertEqual(event.affected_factors, ["F2"])
 
     def test_event_type_invalid_defaults_by_agent(self) -> None:
         state = build_initial_state()

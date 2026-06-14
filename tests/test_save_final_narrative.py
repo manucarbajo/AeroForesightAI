@@ -1,4 +1,5 @@
 import tempfile
+import json
 import unittest
 from pathlib import Path
 
@@ -6,7 +7,7 @@ from src.config_loader import build_initial_state
 from src.models.agent_models import AgentResponse
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, PriceHistoryEntry, RoundResult
-from src.output_writer import save_final_narrative
+from src.output_writer import save_final_narrative, save_tick_mechanics
 
 
 class SaveFinalNarrativeTests(unittest.TestCase):
@@ -74,6 +75,28 @@ class SaveFinalNarrativeTests(unittest.TestCase):
                 ),
             ]
         )
+        state.population_stats = [
+            {
+                "round_number": 1,
+                "total_demand": 0.52,
+                "total_booked": 520,
+                "total_population": 1000,
+                "segments": {
+                    "business": {
+                        "booked_individuals": 220,
+                        "total_individuals": 300,
+                        "booking_rate": 0.733,
+                        "share": 0.3,
+                    },
+                    "leisure_price_sensitive": {
+                        "booked_individuals": 200,
+                        "total_individuals": 500,
+                        "booking_rate": 0.4,
+                        "share": 0.5,
+                    },
+                },
+            }
+        ]
         state.event_log.extend(
             [
                 EventLogEntry(
@@ -120,14 +143,60 @@ class SaveFinalNarrativeTests(unittest.TestCase):
             narrative_path = save_final_narrative(state, run_dir=run_dir)
             content = Path(narrative_path).read_text(encoding="utf-8")
 
-        self.assertIn("**provider:** Provider invests in SAF.", content)
-        self.assertIn("**regulator:** Regulator launches awareness campaign.", content)
-        self.assertIn("**consumer:** Consumer books eco-conscious flights.", content)
-        self.assertIn("provider: Airline expands SAF logistics.", content)
-        self.assertIn("regulator: Commission launches SAF awareness campaign.", content)
-        self.assertIn("consumer: Consumers increase eco-conscious bookings.", content)
+        self.assertIn("**Provider:** Provider invests in SAF.", content)
+        self.assertIn("**Regulator:** Regulator launches awareness campaign.", content)
+        self.assertIn("**Consumer:** Consumer books eco-conscious flights.", content)
+        self.assertIn("**Provider:** Airline expands SAF logistics.", content)
+        self.assertIn("**Regulator:** Commission launches SAF awareness campaign.", content)
+        self.assertIn("**Consumer:** Consumers increase eco-conscious bookings.", content)
         self.assertNotIn("market: Market update", content)
-        self.assertIn("**Events (3):**", content)
+        self.assertIn("Leseschlüssel", content)
+        self.assertIn("#### Segment-Buchung", content)
+        self.assertIn("#### Agenten-Einschätzung", content)
+        self.assertIn("#### Agenten-Events", content)
+        self.assertIn("220/300 gebucht", content)
+
+    def test_tick_mechanics_json_structure(self) -> None:
+        state = build_initial_state()
+        state.clock.current_tick = 1
+        state.price_history.append(
+            PriceHistoryEntry(
+                round_number=1,
+                agent_id="market",
+                price=100.0,
+                demand_level=0.9,
+                load_factor=0.0,
+                booking_rate=0.52,
+            )
+        )
+        state.property_timeseries.append(
+            {
+                "tick": 1,
+                "ticket_price": 100.0,
+                "ticket_price_pre_feedback": 99.0,
+                "carbon_tax_level": 50.0,
+                "income_index": 1.0,
+                "cost_pressure": 110.0,
+            }
+        )
+        state.population_stats.append(
+            {
+                "round_number": 1,
+                "total_demand": 0.52,
+                "total_booked": 520,
+                "total_population": 1000,
+                "segments": {},
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            run_dir = Path(tmp_dir)
+            mechanics_path = save_tick_mechanics(state, run_dir=run_dir)
+            payload = json.loads(Path(mechanics_path).read_text(encoding="utf-8"))
+
+        self.assertIn("reading_guide", payload)
+        self.assertEqual(len(payload["ticks"]), 1)
+        self.assertEqual(payload["ticks"][0]["booking_reference_price_eur"], 99.0)
 
 
 if __name__ == "__main__":

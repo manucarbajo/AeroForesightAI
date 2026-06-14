@@ -28,9 +28,14 @@ class MarketNode:
 
         booking_rate = state.market_metrics.get("booking_rate") if state.market_metrics.get("booking_evaluated") else None
 
-        from src.property_engine import resolve_system_properties
+        from src.property_engine import resolve_exogenous_system_properties, resolve_system_properties
         system_properties = resolve_system_properties(tick, properties)
+        exogenous = resolve_exogenous_system_properties(tick, properties)
         factors = state.environment.factors
+
+        pre_feedback_price = state.market_metrics.get("ticket_price_pre_feedback")
+        if pre_feedback_price is None:
+            pre_feedback_price = state.market_metrics.get("ticket_price")
 
         metrics = compute_market_metrics(
             tick,
@@ -46,7 +51,9 @@ class MarketNode:
         )
         state.market_metrics = metrics
 
-        property_row = {"tick": tick, "ticket_price": metrics["ticket_price"]}
+        property_row: dict[str, float | int] = {"tick": tick, "ticket_price": metrics["ticket_price"]}
+        if pre_feedback_price is not None:
+            property_row["ticket_price_pre_feedback"] = float(pre_feedback_price)
         for prop_id in (
             "carbon_tax_level",
             "fuel_price_change",
@@ -54,12 +61,20 @@ class MarketNode:
             "saf_mandate_share",
             "efuel_subsidy",
             "demand_growth_rate",
+            "income_index",
+            "bevoelkerungsentwicklung",
+            "maintenance_cost_index",
+            "staff_cost_index",
             "cost_pressure",
             "cost_index",
             "provider_markup",
             "markup",
         ):
-            property_row[prop_id] = metrics.get(prop_id, 0.0)
+            if prop_id in metrics:
+                property_row[prop_id] = metrics[prop_id]
+            elif prop_id in exogenous:
+                property_row[prop_id] = exogenous[prop_id]
+        booking_rate = metrics.get("booking_rate")
         if booking_rate is not None:
             property_row["booking_rate"] = booking_rate
         state.property_timeseries.append(property_row)

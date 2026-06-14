@@ -24,6 +24,7 @@ from src.output_writer import (
     save_cib_matrix,
     save_event_log,
     save_final_narrative,
+    save_tick_mechanics,
     save_price_history,
     save_properties_timeseries,
     save_population_individuals,
@@ -184,6 +185,7 @@ def _save_run_outputs(
     )
     segment_analysis_path = save_segment_analysis(state.round_results, run_dir=run_dir)
     final_narrative_path = save_final_narrative(state, run_dir=run_dir)
+    tick_mechanics_path = save_tick_mechanics(state, run_dir=run_dir)
     cib_matrix_path = save_cib_matrix(state, run_dir=run_dir)
 
     protocol_path = None
@@ -222,6 +224,7 @@ def _save_run_outputs(
         "run_metadata": metadata_path,
         "segment_analysis": segment_analysis_path,
         "final_narrative": final_narrative_path,
+        "tick_mechanics": tick_mechanics_path,
         "cib_matrix": cib_matrix_path,
         "protocol": protocol_path,
         "protocol_markdown": protocol_md_path,

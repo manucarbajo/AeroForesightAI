@@ -146,6 +146,39 @@ def test_run_single_sweep_short():
     assert len(result.final_factor_states) == 7  # All 7 factors
 
 
+def test_milestone_expected_factor_state():
+    from src.models.state_models import SimulationState, SimulationClock, EnvironmentState, FactorState
+    from src.scenario_sweeps import evaluate_milestone_on_state
+
+    state = SimulationState(
+        run_id="ms",
+        config=build_initial_state(load_cib=False).config,
+        agents=[],
+        clock=SimulationClock(current_tick=8, max_ticks=10),
+        environment=EnvironmentState(
+            factors={
+                "F2": FactorState(
+                    id="F2",
+                    name="F2",
+                    description="",
+                    current_state="F2.1",
+                    possible_states={"F2.1": "A", "F2.2": "B"},
+                )
+            }
+        ),
+        factor_timeseries=[{"tick": 8, "F2": "F2.2"}],
+    )
+    ms = MilestoneCheck(
+        tick=8,
+        description="F2.2 expected",
+        check_factor="F2",
+        expected_factor_state="F2.2",
+    )
+    result = evaluate_milestone_on_state(state, ms)
+    assert result["passed"] is True
+    assert result["actual_value"] == "F2.2"
+
+
 def test_sweep_co2_delayed_loads():
     """The co2_delayed.json sweep should load and have correct structure."""
     path = REPO_ROOT / "configs" / "sweeps" / "co2_delayed.json"
