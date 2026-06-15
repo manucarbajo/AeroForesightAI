@@ -21,6 +21,7 @@ from src.nodes.orchestrator_node import OrchestratorNode
 from src.nodes.parallel_round_node import ParallelRoundNode
 from src.nodes.redebedarf_node import RoundExecutionNode
 from src.validation import validate_state
+from src.output_writer import append_individuals_history
 
 
 @dataclass(frozen=True)
@@ -328,6 +329,16 @@ class SimulationRunner:
         while state.clock.current_tick < max_ticks:
             state = self._run_single_round(state, components)
             tick = state.clock.current_tick
+            
+            # Save individual history for animation
+            run_dir = None
+            if checkpoint_store is not None:
+                if hasattr(checkpoint_store, "checkpoint_dir"):
+                    # CheckpointManager.checkpoint_dir is usually run_dir / "checkpoints"
+                    run_dir = checkpoint_store.checkpoint_dir.parent
+            if run_dir is not None:
+                append_individuals_history(tick, state.population_individuals, run_dir=run_dir)
+                
             if self.options.verbose_ticks:
                 self._print_tick_progress(state, tick=tick, max_ticks=max_ticks)
             if checkpoint_store is not None and self._should_save_checkpoint(tick, max_ticks):

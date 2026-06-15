@@ -182,6 +182,7 @@ def save_population_individuals(
             "age": data.get("age"),
             "wtp_eur": data.get("wtp_eur"),
             "environmental_awareness": data.get("environmental_awareness"),
+            "substitution_readiness": data.get("substitution_readiness"),
             "price_sensitivity": data.get("price_sensitivity"),
             "income_factor": data.get("income_factor", 1.0),
             "booked": data.get("booked"),
@@ -203,6 +204,57 @@ def save_population_individuals(
 
     with open(target_path, "w", encoding="utf-8") as handle:
         handle.write("\n".join(lines))
+
+    return str(target_path)
+
+
+def append_individuals_history(
+    tick: int,
+    individuals: list,
+    filename: str = "individuals_history.csv",
+    *,
+    run_dir: Path | None = None,
+) -> str | None:
+    """Append individual states for a single tick to the history CSV."""
+    if not individuals:
+        return None
+
+    rows: list[dict] = []
+    for person in individuals:
+        data = person.model_dump() if hasattr(person, "model_dump") else person
+        row = {
+            "tick": tick,
+            "id": data.get("id"),
+            "age": data.get("age"),
+            "wtp_eur": data.get("wtp_eur"),
+            "environmental_awareness": data.get("environmental_awareness"),
+            "substitution_readiness": data.get("substitution_readiness"),
+            "price_sensitivity": data.get("price_sensitivity"),
+            "income_factor": data.get("income_factor", 1.0),
+            "booked": data.get("booked"),
+        }
+        for label_id, active in (data.get("labels") or {}).items():
+            row[label_id] = active
+        rows.append(row)
+
+    if run_dir is not None:
+        target_path = run_dir / filename
+    else:
+        target_path = Path(_resolve_output_path(filename, run_dir=run_dir))
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    columns = list(rows[0].keys())
+    
+    file_exists = target_path.is_file()
+    lines = []
+    if not file_exists:
+        lines.append(",".join(columns))
+        
+    for row in rows:
+        lines.append(",".join(str(row.get(column, "")) for column in columns))
+
+    with open(target_path, "a", encoding="utf-8") as handle:
+        handle.write("\n".join(lines) + "\n")
 
     return str(target_path)
 

@@ -106,6 +106,8 @@ def _derive_price_sensitivity(labels: dict[str, bool]) -> float:
         value += 0.3
     if labels.get("eco_conscious"):
         value += 0.05
+    if labels.get("frequent_flyer"):
+        value -= 0.3
     return float(np.clip(value, 0.0, 1.0))
 
 
@@ -123,6 +125,8 @@ def initialize_population(
 
     awareness_prop = _get_individual_property(properties, "environmental_awareness")
     wtp_prop = _get_individual_property(properties, "wtp_eur")
+    age_prop = _get_individual_property(properties, "age")
+    subst_prop = _get_individual_property(properties, "substitution_readiness")
 
     for person_id in range(total_pop):
         labels: dict[str, bool] = {}
@@ -167,13 +171,37 @@ def initialize_population(
             )
         else:
             wtp = float(rng.uniform(80.0, 200.0))
+            
+        if age_prop and age_prop.distribution == DistributionType.NORMAL:
+            age = int(_sample_normal(
+                rng,
+                mean=age_prop.mean or 45.0,
+                std_dev=age_prop.std_dev or 15.0,
+                min_value=age_prop.min_value or 2.0,
+                max_value=age_prop.max_value or 90.0,
+            ))
+        elif age_prop and age_prop.distribution == DistributionType.UNIFORM:
+            age = int(rng.integers(age_prop.min_value or 2.0, (age_prop.max_value or 90.0) + 1))
+        else:
+            age = int(rng.integers(2, 91))
+            
+        if subst_prop and subst_prop.distribution == DistributionType.BETA:
+            substitution_readiness = _sample_beta(rng, subst_prop.alpha or 2.0, subst_prop.beta or 5.0)
+        elif subst_prop and subst_prop.distribution == DistributionType.NORMAL:
+            substitution_readiness = _sample_normal(rng, subst_prop.mean or 0.5, subst_prop.std_dev or 0.2, 0.0, 1.0)
+        else:
+            substitution_readiness = float(rng.uniform(0.1, 0.9))
 
         if labels.get("business"):
             wtp *= 1.25
+        if labels.get("frequent_flyer"):
+            wtp *= 1.5
 
         base_income = 1.0
         if labels.get("business"):
             base_income += 0.15
+        if labels.get("frequent_flyer"):
+            base_income += 0.2
         if labels.get("price_sensitive"):
             base_income -= 0.15
         base_income = float(np.clip(base_income + rng.normal(0.0, 0.05), 0.5, 1.5))
@@ -181,10 +209,11 @@ def initialize_population(
         individuals.append(
             Individual(
                 id=person_id,
-                age=int(rng.integers(18, 76)),
+                age=age,
                 labels=labels,
                 wtp_eur=round(wtp, 2),
                 environmental_awareness=round(awareness, 4),
+                substitution_readiness=round(substitution_readiness, 4),
                 price_sensitivity=_derive_price_sensitivity(labels),
                 base_income_factor=round(base_income, 4),
                 income_factor=round(base_income, 4),
@@ -299,8 +328,10 @@ def _booking_probability(
     eco_penalty = person.environmental_awareness * normalized_tax
     if person.price_sensitivity > HIGH_PRICE_SENSITIVITY_THRESHOLD:
         eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY
+        
+    substitution_penalty = person.substitution_readiness * normalized_price * 1.5
 
-    utility = base_utility - price_penalty - eco_penalty
+    utility = base_utility - price_penalty - eco_penalty - substitution_penalty
     probability = float(1.0 / (1.0 + np.exp(-utility)))
     return bool(probability >= logit_threshold)
 
@@ -347,14 +378,17 @@ def aggregate_population_stats(individuals: list[Individual]) -> PopulationStats
         )
 
     age_groups_dict: dict[str, list[Individual]] = {
+        "<18": [],
         "18-25": [],
         "26-35": [],
         "36-50": [],
         "51-65": [],
-        "66+": [],
+        ">65": [],
     }
     for person in individuals:
-        if person.age <= 25:
+        if person.age < 18:
+            age_groups_dict["<18"].append(person)
+        elif person.age <= 25:
             age_groups_dict["18-25"].append(person)
         elif person.age <= 35:
             age_groups_dict["26-35"].append(person)
@@ -363,7 +397,7 @@ def aggregate_population_stats(individuals: list[Individual]) -> PopulationStats
         elif person.age <= 65:
             age_groups_dict["51-65"].append(person)
         else:
-            age_groups_dict["66+"].append(person)
+            age_groups_dict[">65"].append(person)
 
     age_stats: dict[str, AgeGroupStats] = {}
     for group, members in age_groups_dict.items():

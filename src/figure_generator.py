@@ -47,6 +47,8 @@ class RunSeries:
     factor_values: dict[str, list[float]] = field(default_factory=dict)
     age_ticks: list[int] = field(default_factory=list)
     age_booking: dict[str, list[float]] = field(default_factory=dict)
+    segment_ticks: list[int] = field(default_factory=list)
+    segment_booking: dict[str, list[float]] = field(default_factory=dict)
 
 
 def _factor_state_to_numeric(state_label: str) -> float:
@@ -116,6 +118,14 @@ def extract_series_from_state(state: Any, *, label: str, run_id: str = "") -> Ru
             if booking is None:
                 continue
             series.age_booking.setdefault(str(group), []).append(float(booking))
+            
+        if tick_int not in series.segment_ticks:
+            series.segment_ticks.append(tick_int)
+        for group, group_stats in (stats.get("segments") or {}).items():
+            booking = group_stats.get("booking_rate") if isinstance(group_stats, dict) else None
+            if booking is None:
+                continue
+            series.segment_booking.setdefault(str(group), []).append(float(booking))
 
     return series
 
@@ -167,6 +177,16 @@ def extract_series_from_run_dir(run_dir: Path, *, label: str | None = None) -> R
                 if tick not in series.age_ticks:
                     series.age_ticks.append(tick)
                 series.age_booking.setdefault(group, []).append(float(row["booking_rate"]))
+
+    population_path = run_dir / "timeseries" / "population.csv"
+    if population_path.is_file():
+        with population_path.open(encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                tick = int(row["tick"])
+                group = str(row["segment_id"])
+                if tick not in series.segment_ticks:
+                    series.segment_ticks.append(tick)
+                series.segment_booking.setdefault(group, []).append(float(row["booking_rate"]))
 
     return series
 
@@ -259,6 +279,33 @@ def plot_scenario_comparison(series_list: list[RunSeries], output_path: Path, *,
     ax.set_title(title)
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=8, loc="best")
+    return _save_figure(fig, output_path)
+
+
+def plot_age_segments(series: RunSeries, output_path: Path) -> Path:
+    fig, ax = plt.subplots(figsize=(10, 5))
+    if series.age_booking:
+        for group, rates in series.age_booking.items():
+            ax.plot(series.age_ticks[: len(rates)], rates, label=group, marker="o")
+    ax.set_title(f"Buchungsrate nach Altersgruppe: {series.label}")
+    ax.set_xlabel("Tick")
+    ax.set_ylabel("Buchungsrate")
+    ax.set_ylim(-0.05, 1.05)
+    ax.grid(True, linestyle="--", alpha=0.7)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+    return _save_figure(fig, output_path)
+
+def plot_segment_booking(series: RunSeries, output_path: Path) -> Path:
+    fig, ax = plt.subplots(figsize=(10, 5))
+    if series.segment_booking:
+        for group, rates in series.segment_booking.items():
+            ax.plot(series.segment_ticks[: len(rates)], rates, label=group.replace("_", " ").title(), marker="s")
+    ax.set_title(f"Buchungsrate nach Segment: {series.label}")
+    ax.set_xlabel("Tick")
+    ax.set_ylabel("Buchungsrate")
+    ax.set_ylim(-0.05, 1.05)
+    ax.grid(True, linestyle="--", alpha=0.7)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
     return _save_figure(fig, output_path)
 
 
@@ -456,6 +503,47 @@ def _detect_policy_shock_ticks(series: RunSeries) -> tuple[int, ...]:
     return tuple(shocks) if shocks else (15, 30)
 
 
+def plot_population_distribution(run_path: Path, output_path: Path) -> Path:
+    fig, ax = plt.subplots(figsize=(8, 6))
+    pop_csv = run_path / "population.csv"
+    if not pop_csv.is_file():
+        ax.text(0.5, 0.5, "Keine Populationsdaten", ha="center", va="center")
+        ax.set_axis_off()
+        return _save_figure(fig, output_path)
+
+    try:
+        import pandas as pd
+        df = pd.read_csv(pop_csv)
+        
+        # Color by segment
+        if "business" in df.columns:
+            # Pandas might read booleans as strings depending on format
+            is_business = df["business"].astype(str).str.lower().isin(["true", "1"])
+            colors = is_business.map({True: "#1f77b4", False: "#ff7f0e"}) # Blue/Orange
+            # Create dummy lines for legend
+            ax.scatter([], [], c="#1f77b4", label="Business")
+            ax.scatter([], [], c="#ff7f0e", label="Leisure")
+            ax.legend()
+        else:
+            colors = "#1f77b4"
+            
+        # Optional: scale marker size by income
+        sizes = 20
+        if "income_factor" in df.columns:
+            sizes = df["income_factor"].astype(float) * 20
+
+        ax.scatter(df["wtp_eur"], df["environmental_awareness"], c=colors, s=sizes, alpha=0.6, edgecolors="none")
+        ax.set_xlabel("Zahlungsbereitschaft (WTP in €)")
+        ax.set_ylabel("Umweltbewusstsein (0-1)")
+        ax.set_title("Agenten-Verteilung: Umweltbewusstsein vs. WTP")
+        ax.grid(True, alpha=0.3)
+    except Exception as e:
+        ax.text(0.5, 0.5, f"Fehler:\n{str(e)}", ha="center", va="center")
+        ax.set_axis_off()
+        
+    return _save_figure(fig, output_path)
+
+
 def generate_run_figures(run_dir: Path | str) -> RunFigureGenerationResult:
     """Generate per-run PNG figures under ``outputs/<run_id>/figures/``."""
 
@@ -475,6 +563,7 @@ def generate_run_figures(run_dir: Path | str) -> RunFigureGenerationResult:
         "Systemdynamik": plot_system_dynamics(series, figures_dir / "system_dynamics.png"),
         "Faktor-Zustände": plot_factor_states(series, figures_dir / "factor_states.png"),
         "Alterssegmente": plot_age_segments(series, figures_dir / "age_segment_booking.png"),
+        "Populationsverteilung": plot_population_distribution(run_path, figures_dir / "population_distribution.png"),
     }
 
     manifest = {
@@ -553,6 +642,9 @@ def generate_all_figures(
     )
     figure_paths["Alterssegmente"] = plot_age_segments(
         reference, figures_dir / "age_segment_booking.png"
+    )
+    figure_paths["Buchung nach Segment"] = plot_segment_booking(
+        reference, figures_dir / "market_segment_booking.png"
     )
 
     write_scenario_runs_doc(

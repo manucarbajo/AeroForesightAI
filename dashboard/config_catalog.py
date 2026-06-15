@@ -113,6 +113,20 @@ class PropertyEditState:
 
 
 @dataclass
+class PopulationEditState:
+    id: str
+    type: str
+    prevalence: float | None = None
+    distribution: str | None = None
+    mean: float | None = None
+    std_dev: float | None = None
+    min_value: float | None = None
+    max_value: float | None = None
+    alpha: float | None = None
+    beta: float | None = None
+
+
+@dataclass
 class ConfigDraft:
     """Session-State-freundlicher Entwurf für einen Simulationslauf."""
 
@@ -130,11 +144,13 @@ class ConfigDraft:
 
     simulation_name: str = ""
     simulation_description: str = ""
+    apply_custom_overrides: bool = True
 
     property_edits: dict[str, PropertyEditState] = field(default_factory=dict)
     factor_states: dict[str, str] = field(default_factory=dict)
-    apply_custom_overrides: bool = False
+    population_edits: list[PopulationEditState] = field(default_factory=list)
 
+    # UI State
     mock_llm: bool = True
     deterministic_only: bool = False
     model: str = "llama3.2"
@@ -186,6 +202,7 @@ def default_config_draft() -> ConfigDraft:
     )
     draft.property_edits = extract_property_edits_from_file("properties.json")
     draft.factor_states = extract_factor_states_from_file("factors.json")
+    draft.population_edits = extract_population_edits_from_file("properties.json")
     return draft
 
 
@@ -219,6 +236,56 @@ def extract_property_edits_from_file(filename: str = "properties.json") -> dict[
             continue
         edits[prop.id] = _trajectory_to_edit_state(prop.id, traj)
     return edits
+
+
+def extract_population_edits_from_file(filename: str = "properties.json") -> list[PopulationEditState]:
+    path = CONFIGS_DIR / filename
+    if not path.is_file():
+        return []
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    edits = []
+    for p in data.get("individual_properties", []):
+        edits.append(PopulationEditState(
+            id=p.get("id", ""),
+            type=p.get("type", "boolean"),
+            prevalence=p.get("prevalence"),
+            distribution=p.get("distribution"),
+            mean=p.get("mean"),
+            std_dev=p.get("std_dev"),
+            min_value=p.get("min_value"),
+            max_value=p.get("max_value"),
+            alpha=p.get("alpha"),
+            beta=p.get("beta")
+        ))
+    return edits
+
+
+def save_population_edits_to_file(edits: list[PopulationEditState], filename: str = "properties.json") -> None:
+    path = CONFIGS_DIR / filename
+    if not path.is_file():
+        return
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    
+    new_props = []
+    for e in edits:
+        d = {"id": e.id, "type": e.type, "enabled": True}
+        if e.type == "boolean":
+            if e.prevalence is not None: d["prevalence"] = float(e.prevalence)
+        else:
+            if e.distribution: d["distribution"] = e.distribution
+            if e.mean is not None: d["mean"] = float(e.mean)
+            if e.std_dev is not None: d["std_dev"] = float(e.std_dev)
+            if e.min_value is not None: d["min_value"] = float(e.min_value)
+            if e.max_value is not None: d["max_value"] = float(e.max_value)
+            if e.alpha is not None: d["alpha"] = float(e.alpha)
+            if e.beta is not None: d["beta"] = float(e.beta)
+        new_props.append(d)
+        
+    data["individual_properties"] = new_props
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 def extract_factor_states_from_file(filename: str = "factors.json") -> dict[str, str]:

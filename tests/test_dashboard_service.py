@@ -186,9 +186,10 @@ class TestConfigCatalog:
             _write_minimal_run(run_dir)
             assert list_run_figures(run_dir) == []
             entries = generate_figures_for_run(run_dir)
-            assert len(entries) == 5
+            assert len(entries) == 6
+            assert any("price_vs_booking.png" in e.relative_path for e in entries)
             listed = list_run_figures(run_dir)
-            assert len(listed) == 5
+            assert len(listed) == 6
             assert any(entry.title == "Preis vs. Booking" for entry in listed)
         finally:
             shutil.rmtree(tmpdir)

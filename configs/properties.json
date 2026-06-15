@@ -226,38 +226,66 @@
     {
       "id": "business",
       "type": "boolean",
-      "prevalence": 0.3,
-      "enabled": true
+      "enabled": true,
+      "prevalence": 0.3
     },
     {
       "id": "price_sensitive",
       "type": "boolean",
-      "prevalence": 0.5,
-      "enabled": true
+      "enabled": true,
+      "prevalence": 0.9
     },
     {
       "id": "eco_conscious",
       "type": "boolean",
-      "prevalence": 0.2,
-      "enabled": true
+      "enabled": true,
+      "prevalence": 0.2
     },
     {
       "id": "environmental_awareness",
       "type": "distribution",
+      "enabled": true,
       "distribution": "beta",
-      "alpha": 2,
-      "beta": 5,
-      "enabled": true
+      "min_value": 0.0,
+      "max_value": 1.0,
+      "alpha": 2.0,
+      "beta": 5.0
     },
     {
       "id": "wtp_eur",
       "type": "distribution",
+      "enabled": true,
       "distribution": "lognormal",
       "mean": 120.0,
       "std_dev": 0.35,
       "min_value": 50.0,
-      "max_value": 500.0,
-      "enabled": true
+      "max_value": 500.0
+    },
+    {
+      "id": "age",
+      "type": "distribution",
+      "enabled": true,
+      "distribution": "lognormal",
+      "mean": 73.0,
+      "std_dev": 1.0,
+      "min_value": 2.0,
+      "max_value": 90.0
+    },
+    {
+      "id": "substitution_readiness",
+      "type": "distribution",
+      "enabled": true,
+      "distribution": "beta",
+      "min_value": 0.0,
+      "max_value": 1.0,
+      "alpha": 2.0,
+      "beta": 5.0
+    },
+    {
+      "id": "frequent_flyer",
+      "type": "boolean",
+      "enabled": true,
+      "prevalence": 0.05
     }
   ],
   "shift_rules": [

@@ -24,6 +24,9 @@ from dashboard.config_catalog import (
     list_sweep_presets,
     load_config_file,
     save_custom_sweep_preset,
+    PopulationEditState,
+    save_population_edits_to_file,
+    extract_population_edits_from_file,
 )
 
 
@@ -134,7 +137,7 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
         new_prop_id = c1.text_input("Property ID", placeholder="z.B. airport_fee", key="new_prop_id")
         new_prop_label = c2.text_input("Anzeigename", placeholder="z.B. Airport Fee", key="new_prop_label")
         c3.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        if c3.button("Hinzufügen", use_container_width=True):
+        if c3.button("Hinzufügen", width="stretch"):
             if new_prop_id and new_prop_id.isidentifier():
                 add_custom_property(new_prop_id, new_prop_label, draft.properties_file)
                 draft.property_edits = extract_property_edits_from_file(draft.properties_file)
@@ -390,6 +393,59 @@ def _render_config_files_tab(draft: ConfigDraft) -> ConfigDraft:
     return draft
 
 
+def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
+    st.subheader("Bevölkerungs-Struktur (Agenten)")
+    st.info("Diese Einstellungen steuern die Wahrscheinlichkeitsverteilungen, mit denen individuelle Agenten beim Simulationsstart generiert werden.")
+    
+    if st.button("Populations-Config aus JSON neu laden", key="btn_reload_pop"):
+        draft.population_edits = extract_population_edits_from_file("properties.json")
+        st.rerun()
+
+    st.markdown("### Segment-Anteile (Prevalence)")
+    if not hasattr(draft, "population_edits") or not draft.population_edits:
+        draft.population_edits = extract_population_edits_from_file("properties.json")
+    boolean_props = [p for p in draft.population_edits if p.type == "boolean"]
+    cols = st.columns(3)
+    for i, p in enumerate(boolean_props):
+        with cols[i % 3]:
+            label = p.id.replace("_", " ").title()
+            val = float(p.prevalence) if p.prevalence is not None else 0.0
+            new_val = st.slider(f"{label}", 0.0, 1.0, val, 0.05, key=f"pop_prev_{p.id}")
+            p.prevalence = new_val
+
+    st.markdown("### Eigenschaften-Verteilungen")
+    dist_props = [p for p in draft.population_edits if p.type == "distribution"]
+    for p in dist_props:
+        label = p.id.replace("_", " ").title()
+        if p.id == "wtp_eur": label = "Zahlungsbereitschaft (WTP in Euro)"
+        if p.id == "environmental_awareness": label = "Umweltbewusstsein (0-1)"
+        
+        with st.expander(label, expanded=True):
+            dist_opts = ["normal", "beta", "lognormal", "uniform"]
+            current_dist = p.distribution if p.distribution in dist_opts else "normal"
+            dist_type = st.selectbox("Verteilungstyp", dist_opts, index=dist_opts.index(current_dist), key=f"pop_dist_{p.id}")
+            p.distribution = dist_type
+            
+            c1, c2, c3, c4 = st.columns(4)
+            if dist_type in ("normal", "lognormal"):
+                with c1: p.mean = st.number_input("Mittelwert", value=p.mean or 0.0, format="%.2f", key=f"pop_mean_{p.id}")
+                with c2: p.std_dev = st.number_input("Std Dev", value=p.std_dev or 1.0, format="%.2f", key=f"pop_std_{p.id}")
+                with c3: p.min_value = st.number_input("Min", value=p.min_value or 0.0, format="%.2f", key=f"pop_min_{p.id}")
+                with c4: p.max_value = st.number_input("Max", value=p.max_value or 1.0, format="%.2f", key=f"pop_max_{p.id}")
+            elif dist_type == "beta":
+                with c1: p.alpha = st.number_input("Alpha", value=p.alpha or 2.0, format="%.2f", key=f"pop_alpha_{p.id}")
+                with c2: p.beta = st.number_input("Beta", value=p.beta or 5.0, format="%.2f", key=f"pop_beta_{p.id}")
+                with c3: p.min_value = st.number_input("Min", value=p.min_value or 0.0, format="%.2f", key=f"pop_min_{p.id}")
+                with c4: p.max_value = st.number_input("Max", value=p.max_value or 1.0, format="%.2f", key=f"pop_max_{p.id}")
+                
+    st.divider()
+    if st.button("Änderungen an Population speichern", type="primary"):
+        save_population_edits_to_file(draft.population_edits, "properties.json")
+        st.success("Populations-Konfiguration erfolgreich gespeichert!")
+
+    return draft
+
+
 def render_config_editor() -> ConfigDraft:
     init_config_draft()
     draft: ConfigDraft = st.session_state.config_draft
@@ -398,18 +454,20 @@ def render_config_editor() -> ConfigDraft:
         st.session_state.config_draft = default_config_draft()
         st.rerun()
 
-    tabs = st.tabs(["Szenario", "Properties", "Faktoren", "LLM & Pipeline", "Config-Dateien", "Vorschau"])
+    tabs = st.tabs(["Szenario", "Bevölkerung", "Properties", "Faktoren", "LLM & Pipeline", "Config-Dateien", "Vorschau"])
     with tabs[0]:
         draft = _render_scenario_tab(draft)
     with tabs[1]:
-        draft = _render_properties_tab(draft)
+        draft = _render_population_tab(draft)
     with tabs[2]:
-        draft = _render_factors_tab(draft)
+        draft = _render_properties_tab(draft)
     with tabs[3]:
-        draft = _render_llm_pipeline_tab(draft)
+        draft = _render_factors_tab(draft)
     with tabs[4]:
-        draft = _render_config_files_tab(draft)
+        draft = _render_llm_pipeline_tab(draft)
     with tabs[5]:
+        draft = _render_config_files_tab(draft)
+    with tabs[6]:
         st.subheader("Effektive Konfiguration")
         st.json(effective_config_summary(draft))
 

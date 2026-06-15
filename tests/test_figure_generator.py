@@ -89,7 +89,7 @@ class TestFigureGenerator:
             run_dir = Path(tmpdir) / "run_test"
             _write_sample_run(run_dir)
             result = generate_run_figures(run_dir)
-            assert len(result.figure_paths) == 5
+            assert len(result.figure_paths) == 6
             assert (run_dir / "figures" / "manifest.json").is_file()
             assert (run_dir / "figures" / "price_vs_booking.png").is_file()
         finally:
