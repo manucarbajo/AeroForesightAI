@@ -23,7 +23,7 @@ CONFIG_FILE_OPTIONS: dict[str, str] = {
     "cib_frozen.json": "Fixe CIB-Matrix",
 }
 
-EDITABLE_PROPERTY_IDS: tuple[str, ...] = (
+STANDARD_PROPERTY_IDS: tuple[str, ...] = (
     "carbon_tax_level",
     "saf_mandate_share",
     "demand_growth_rate",
@@ -32,6 +32,10 @@ EDITABLE_PROPERTY_IDS: tuple[str, ...] = (
     "fuel_price_change",
     "efuel_subsidy",
     "bevoelkerungsentwicklung",
+    "provider_markup",
+    "ticket_price",
+    "maintenance_cost_index",
+    "staff_cost_index",
 )
 
 PROPERTY_LABELS: dict[str, str] = {
@@ -46,11 +50,66 @@ PROPERTY_LABELS: dict[str, str] = {
 }
 
 
+def get_editable_property_ids(properties_file: str = "properties.json") -> list[str]:
+    """Liest alle dynamisch verfügbaren Properties aus der JSON-Datei."""
+    path = CONFIGS_DIR / properties_file
+    if not path.is_file():
+        return list(STANDARD_PROPERTY_IDS)
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    props = data.get("system_properties", [])
+    return [p.get("id") for p in props if isinstance(p, dict) and "id" in p]
+
+
+def add_custom_property(property_id: str, label: str = "", properties_file: str = "properties.json") -> None:
+    """Fügt eine neue Property dauerhaft in die properties.json ein."""
+    path = CONFIGS_DIR / properties_file
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    if "system_properties" not in data or not isinstance(data["system_properties"], list):
+        data["system_properties"] = []
+    
+    props = data["system_properties"]
+    if not any(p.get("id") == property_id for p in props if isinstance(p, dict)):
+        props.append({
+            "id": property_id,
+            "type": "numeric",
+            "unit": "custom",
+            "description": label or "Custom Property",
+            "source": "trajectory",
+            "trajectory": {
+                "baseline": 0.0,
+                "rules": []
+            }
+        })
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    if label:
+        PROPERTY_LABELS[property_id] = label
+
+
+def delete_custom_property(property_id: str, properties_file: str = "properties.json") -> None:
+    """Löscht eine Property dauerhaft aus der properties.json."""
+    if property_id in STANDARD_PROPERTY_IDS:
+        return
+    path = CONFIGS_DIR / properties_file
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    if "system_properties" in data and isinstance(data["system_properties"], list):
+        data["system_properties"] = [
+            p for p in data["system_properties"] 
+            if not (isinstance(p, dict) and p.get("id") == property_id)
+        ]
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+
 @dataclass
 class PropertyEditState:
     property_id: str
     baseline: float
     rules: list[dict[str, Any]] = field(default_factory=list)
+    is_active: bool = True
 
 
 @dataclass
@@ -149,8 +208,9 @@ def extract_property_edits_from_file(filename: str = "properties.json") -> dict[
         return {}
     properties = load_properties_config(path)
     edits: dict[str, PropertyEditState] = {}
+    editable_ids = get_editable_property_ids(filename)
     for prop in properties.system_properties:
-        if prop.id not in EDITABLE_PROPERTY_IDS:
+        if prop.id not in editable_ids:
             continue
         traj = prop.trajectory
         if traj is None:
@@ -216,6 +276,15 @@ def apply_sweep_to_draft(draft: ConfigDraft, sweep: SweepConfig) -> ConfigDraft:
 def property_overrides_from_edits(edits: dict[str, PropertyEditState]) -> list[PropertyOverride]:
     overrides: list[PropertyOverride] = []
     for prop_id, edit in edits.items():
+        if not edit.is_active:
+            overrides.append(
+                PropertyOverride(
+                    property_id=prop_id,
+                    baseline=0.0,
+                    rules=[],
+                )
+            )
+            continue
         overrides.append(
             PropertyOverride(
                 property_id=prop_id,
@@ -234,10 +303,14 @@ def factor_overrides_from_states(states: dict[str, str]) -> list[FactorOverride]
     ]
 
 
-def build_custom_sweep_from_draft(draft: ConfigDraft) -> SweepConfig:
+def build_custom_sweep_from_draft(draft: ConfigDraft, filename: str = "") -> SweepConfig:
+    sweep_name = draft.simulation_name
+    if not sweep_name or sweep_name == "Flugverkehr Szenarioplanung MVP":
+        sweep_name = filename or "Dashboard Custom"
+    
     return SweepConfig(
         id="dashboard_custom",
-        name=draft.simulation_name or "Dashboard Custom",
+        name=sweep_name,
         description=draft.simulation_description or "Benutzerdefinierte Overrides aus dem Dashboard",
         max_ticks=draft.rounds,
         property_overrides=property_overrides_from_edits(draft.property_edits),
@@ -340,7 +413,7 @@ def save_custom_sweep_preset(draft: ConfigDraft, filename: str) -> Path:
     safe_name = filename.strip().replace(" ", "_").lower()
     if not safe_name.endswith(".json"):
         safe_name = f"{safe_name}.json"
-    sweep = build_custom_sweep_from_draft(draft)
+    sweep = build_custom_sweep_from_draft(draft, filename=Path(safe_name).stem)
     payload = sweep.model_dump(mode="json")
     payload["id"] = Path(safe_name).stem
     payload["rationale"] = "Erstellt im Dashboard als benutzerdefiniertes Szenario."

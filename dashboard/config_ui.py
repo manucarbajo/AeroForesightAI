@@ -8,7 +8,10 @@ import streamlit as st
 
 from dashboard.config_catalog import (
     CONFIG_FILE_OPTIONS,
-    EDITABLE_PROPERTY_IDS,
+    STANDARD_PROPERTY_IDS,
+    get_editable_property_ids,
+    add_custom_property,
+    delete_custom_property,
     PROPERTY_LABELS,
     ConfigDraft,
     PropertyEditState,
@@ -114,7 +117,7 @@ def _render_scenario_tab(draft: ConfigDraft) -> ConfigDraft:
 
 def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
     st.subheader("System-Properties")
-    st.caption("Trajektorien aus `properties.json` — Baseline und `set`-Regeln pro Tick.")
+    st.caption("Trajektorien aus `properties.json` — Baseline und Regeln pro Tick.")
 
     if draft.properties_file != "properties.json":
         if st.button("Properties aus gewählter Datei neu laden"):
@@ -126,19 +129,59 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
         value=draft.apply_custom_overrides or draft.scenario_mode == "custom",
     )
 
-    for prop_id in EDITABLE_PROPERTY_IDS:
+    with st.expander("➕ Neue Property hinzufügen", expanded=False):
+        c1, c2, c3 = st.columns([2, 2, 1])
+        new_prop_id = c1.text_input("Property ID", placeholder="z.B. airport_fee", key="new_prop_id")
+        new_prop_label = c2.text_input("Anzeigename", placeholder="z.B. Airport Fee", key="new_prop_label")
+        c3.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        if c3.button("Hinzufügen", use_container_width=True):
+            if new_prop_id and new_prop_id.isidentifier():
+                add_custom_property(new_prop_id, new_prop_label, draft.properties_file)
+                draft.property_edits = extract_property_edits_from_file(draft.properties_file)
+                st.success(f"Property {new_prop_id} hinzugefügt!")
+                st.rerun()
+            else:
+                st.error("Ungültige ID")
+
+    for prop_id in get_editable_property_ids(draft.properties_file):
         edit = draft.property_edits.get(prop_id)
         if edit is None:
             continue
         label = PROPERTY_LABELS.get(prop_id, prop_id)
         with st.expander(label, expanded=prop_id in {"carbon_tax_level", "saf_mandate_share", "income_index"}):
+            is_active = st.checkbox("In dieser Simulation aktiv", value=edit.is_active, key=f"prop_active_{prop_id}")
+            
+            edit.is_active = is_active
+            
+            if not is_active:
+                # We still need to render the "Erweitert" expander so they can delete it when inactive
+                with st.expander("Erweitert", expanded=False):
+                    confirm_key = f"confirm_del_{prop_id}"
+                    if st.session_state.get(confirm_key, False):
+                        st.warning(f"Wollen Sie Property '{prop_id}' wirklich dauerhaft aus der JSON löschen?")
+                        c1, c2 = st.columns(2)
+                        if c1.button("Ja, endgültig löschen", key=f"do_del_inactive_{prop_id}"):
+                            st.session_state[confirm_key] = False
+                            delete_custom_property(prop_id, draft.properties_file)
+                            draft.property_edits = extract_property_edits_from_file(draft.properties_file)
+                            st.success(f"Property {prop_id} gelöscht!")
+                            st.rerun()
+                        if c2.button("Abbrechen", key=f"cancel_del_inactive_{prop_id}"):
+                            st.session_state[confirm_key] = False
+                            st.rerun()
+                    else:
+                        if st.button(f"🗑️ Property '{prop_id}' löschen", key=f"init_del_inactive_{prop_id}"):
+                            st.session_state[confirm_key] = True
+                            st.rerun()
+                continue
+
             baseline = st.number_input(
                 "Baseline",
                 value=float(edit.baseline),
                 format="%.4f",
                 key=f"prop_base_{prop_id}",
             )
-            st.markdown("**Set-Regeln** (Tick → Wert)")
+            st.markdown("**Regeln** (Tick → Effekt)")
             rule_count = st.number_input(
                 "Anzahl Regeln",
                 min_value=0,
@@ -151,7 +194,9 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
             for idx in range(int(rule_count)):
                 existing = edit.rules[idx] if idx < len(edit.rules) else {}
                 effect = existing.get("effect") or {}
-                cols = st.columns(2)
+                effect_type = effect.get("type", "set")
+                
+                cols = st.columns([1, 1, 1, 1])
                 tick = cols[0].number_input(
                     f"Tick #{idx + 1}",
                     min_value=1,
@@ -159,23 +204,62 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
                     value=int(existing.get("active_from_tick", 1)),
                     key=f"prop_rule_tick_{prop_id}_{idx}",
                 )
-                value = cols[1].number_input(
+                r_type = cols[1].selectbox(
+                    f"Typ #{idx + 1}",
+                    ["set", "ramp"],
+                    index=0 if effect_type == "set" else 1,
+                    key=f"prop_rule_type_{prop_id}_{idx}",
+                )
+                value = cols[2].number_input(
                     f"Wert #{idx + 1}",
                     value=float(effect.get("value", baseline)),
                     format="%.4f",
                     key=f"prop_rule_val_{prop_id}_{idx}",
                 )
+                
+                new_effect = {"type": r_type, "value": float(value)}
+                if r_type == "ramp":
+                    duration = cols[3].number_input(
+                        f"Dauer (Ticks) #{idx + 1}",
+                        min_value=1,
+                        max_value=100,
+                        value=int(effect.get("duration_ticks", 5)),
+                        key=f"prop_rule_dur_{prop_id}_{idx}",
+                    )
+                    new_effect["duration_ticks"] = int(duration)
+
                 new_rules.append(
                     {
                         "active_from_tick": int(tick),
-                        "effect": {"type": "set", "value": float(value)},
+                        "effect": new_effect,
                     }
                 )
             draft.property_edits[prop_id] = PropertyEditState(
                 property_id=prop_id,
                 baseline=float(baseline),
                 rules=new_rules,
+                is_active=is_active,
             )
+
+            if prop_id not in STANDARD_PROPERTY_IDS and is_active:
+                with st.expander("Erweitert", expanded=False):
+                    confirm_key = f"confirm_del_{prop_id}"
+                    if st.session_state.get(confirm_key, False):
+                        st.warning(f"Wollen Sie Property '{prop_id}' wirklich dauerhaft aus der JSON löschen?")
+                        c1, c2 = st.columns(2)
+                        if c1.button("Ja, endgültig löschen", key=f"do_del_active_{prop_id}"):
+                            st.session_state[confirm_key] = False
+                            delete_custom_property(prop_id, draft.properties_file)
+                            draft.property_edits = extract_property_edits_from_file(draft.properties_file)
+                            st.success(f"Property {prop_id} gelöscht!")
+                            st.rerun()
+                        if c2.button("Abbrechen", key=f"cancel_del_active_{prop_id}"):
+                            st.session_state[confirm_key] = False
+                            st.rerun()
+                    else:
+                        if st.button(f"🗑️ Property '{prop_id}' löschen", key=f"init_del_active_{prop_id}"):
+                            st.session_state[confirm_key] = True
+                            st.rerun()
     return draft
 
 
