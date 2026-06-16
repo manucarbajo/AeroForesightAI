@@ -35,6 +35,12 @@ def init_config_draft() -> None:
         st.session_state.config_draft = default_config_draft()
 
 
+def _clear_factor_widget_keys(draft: ConfigDraft) -> None:
+    """Remove stale Streamlit keys so factor selectboxes follow ``draft.factor_states``."""
+    for factor_id in factor_options_from_file(draft.factors_file):
+        st.session_state.pop(f"factor_{factor_id}", None)
+
+
 def _render_scenario_tab(draft: ConfigDraft) -> ConfigDraft:
     st.subheader("Szenario")
     mode_labels = {
@@ -75,6 +81,7 @@ def _render_scenario_tab(draft: ConfigDraft) -> ConfigDraft:
 
         if st.button("Szenario-Parameter übernehmen", key="apply_sweep"):
             draft = apply_sweep_to_draft(draft, sweep)
+            _clear_factor_widget_keys(draft)
             st.session_state.config_draft = draft
             st.success(f"Parameter von «{sweep.name}» übernommen.")
             st.rerun()
@@ -128,8 +135,9 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
             st.rerun()
 
     draft.apply_custom_overrides = st.checkbox(
-        "Property-Overrides beim Lauf anwenden",
+        "Property- und Faktor-Overrides beim Lauf anwenden",
         value=draft.apply_custom_overrides or draft.scenario_mode == "custom",
+        help="Startwerte aus den Tabs «Properties» und «Faktoren» in die Simulation übernehmen.",
     )
 
     with st.expander("➕ Neue Property hinzufügen", expanded=False):
@@ -268,6 +276,15 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
 
 def _render_factors_tab(draft: ConfigDraft) -> ConfigDraft:
     st.subheader("Faktor-Startzustände")
+    st.caption(
+        "Startzustände F1–F7 vor dem Lauf. Während der Simulation wechseln Faktoren "
+        "automatisch über `factor_rules` in `properties.json` (z. B. bei CO₂-Schock oder Booking)."
+    )
+    if not (draft.apply_custom_overrides or draft.scenario_mode == "custom"):
+        st.warning(
+            "Overrides sind deaktiviert — Änderungen hier wirken erst nach Aktivierung "
+            "von «Property- und Faktor-Overrides beim Lauf anwenden» (Tab Properties)."
+        )
     options = factor_options_from_file(draft.factors_file)
     if not options:
         st.warning("Keine Faktoren in der gewählten Datei.")
@@ -276,6 +293,7 @@ def _render_factors_tab(draft: ConfigDraft) -> ConfigDraft:
     if draft.factors_file != "factors.json":
         if st.button("Faktoren aus gewählter Datei neu laden"):
             draft.factor_states = extract_factor_states_from_file(draft.factors_file)
+            _clear_factor_widget_keys(draft)
             st.rerun()
 
     cols = st.columns(2)
@@ -291,7 +309,6 @@ def _render_factors_tab(draft: ConfigDraft) -> ConfigDraft:
                 state_keys,
                 index=default_idx,
                 format_func=lambda k, st_map=states: f"{k}: {st_map[k][:50]}",
-                key=f"factor_{factor_id}",
             )
             draft.factor_states[factor_id] = selected
     return draft
@@ -451,7 +468,9 @@ def render_config_editor() -> ConfigDraft:
     draft: ConfigDraft = st.session_state.config_draft
 
     if st.button("Auf Standard-Config zurücksetzen"):
-        st.session_state.config_draft = default_config_draft()
+        draft = default_config_draft()
+        _clear_factor_widget_keys(draft)
+        st.session_state.config_draft = draft
         st.rerun()
 
     tabs = st.tabs(["Szenario", "Bevölkerung", "Properties", "Faktoren", "LLM & Pipeline", "Config-Dateien", "Vorschau"])
