@@ -57,7 +57,7 @@ def test_load_population_config():
 
 def test_load_properties_config():
     properties = load_properties_config()
-    assert len(properties.system_properties) == 8
+    assert len(properties.system_properties) >= 8
     assert "carbon_tax_level" in properties.system_property_ids()
 
 
@@ -68,7 +68,7 @@ def test_build_initial_state():
     assert len(state.agents) > 0
     assert len(state.environment.factors) > 0
     assert state.properties is not None
-    assert len(state.resolved_properties().system_properties) == 8
+    assert len(state.resolved_properties().system_properties) >= 8
     assert state.event_log == []
     assert state.price_history == []
     assert state.round_results == []

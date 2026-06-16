@@ -28,6 +28,15 @@ class MarketNode:
 
         booking_rate = state.market_metrics.get("booking_rate") if state.market_metrics.get("booking_evaluated") else None
 
+        from src.property_engine import resolve_exogenous_system_properties, resolve_system_properties
+        system_properties = resolve_system_properties(tick, properties)
+        exogenous = resolve_exogenous_system_properties(tick, properties)
+        factors = state.environment.factors
+
+        pre_feedback_price = state.market_metrics.get("ticket_price_pre_feedback")
+        if pre_feedback_price is None:
+            pre_feedback_price = state.market_metrics.get("ticket_price")
+
         metrics = compute_market_metrics(
             tick,
             properties,
@@ -37,10 +46,14 @@ class MarketNode:
             previous_markup=previous_markup,
             previous_cost_index=previous_cost_index,
             booking_rate=booking_rate,
+            factors=factors,
+            system_properties=system_properties,
         )
         state.market_metrics = metrics
 
-        property_row = {"tick": tick, "ticket_price": metrics["ticket_price"]}
+        property_row: dict[str, float | int] = {"tick": tick, "ticket_price": metrics["ticket_price"]}
+        if pre_feedback_price is not None:
+            property_row["ticket_price_pre_feedback"] = float(pre_feedback_price)
         for prop_id in (
             "carbon_tax_level",
             "fuel_price_change",
@@ -48,12 +61,20 @@ class MarketNode:
             "saf_mandate_share",
             "efuel_subsidy",
             "demand_growth_rate",
+            "income_index",
+            "bevoelkerungsentwicklung",
+            "maintenance_cost_index",
+            "staff_cost_index",
             "cost_pressure",
             "cost_index",
             "provider_markup",
             "markup",
         ):
-            property_row[prop_id] = metrics.get(prop_id, 0.0)
+            if prop_id in metrics:
+                property_row[prop_id] = metrics[prop_id]
+            elif prop_id in exogenous:
+                property_row[prop_id] = exogenous[prop_id]
+        booking_rate = metrics.get("booking_rate")
         if booking_rate is not None:
             property_row["booking_rate"] = booking_rate
         state.property_timeseries.append(property_row)
@@ -93,5 +114,26 @@ class MarketNode:
                 timestamp="",
             )
         )
+
+        price_delta_abs = abs(price - prev_price)
+        if prev_price > 0 and (price_delta_abs >= 0.5 or abs(price_delta_pct) >= 0.5):
+            markup = metrics.get("markup", metrics.get("provider_markup", 0.0))
+            booking_part = f"{float(booking_rate):.1%}" if booking_rate is not None else "n/a"
+            state.event_log.append(
+                EventLogEntry(
+                    id=str(uuid4()),
+                    round_number=tick,
+                    source_agent="provider",
+                    event_type=EventType.PRICE_CHANGE,
+                    description=(
+                        f"[delta:price] Provider yield feedback: ticket price "
+                        f"{prev_price:.2f} → {price:.2f} ({price_delta_pct:+.1f}%), "
+                        f"markup={float(markup):.2f}, booking_rate={booking_part} "
+                        f"(Python market_rules)"
+                    ),
+                    affected_factors=[],
+                    timestamp="",
+                )
+            )
 
         return state

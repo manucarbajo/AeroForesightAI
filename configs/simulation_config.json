@@ -1,6 +1,6 @@
 {
   "name": "Flugverkehr Szenarioplanung MVP",
-  "description": "Prototypische Multi-Agenten-Simulation fuer Szenarioplanung im Flugverkehr (2025-2035)",
+  "description": "Prototypische Multi-Agenten-Simulation fuer Szenarioplanung im Flugverkehr",
   "clock": {
     "current_tick": 0,
     "max_ticks": 40,

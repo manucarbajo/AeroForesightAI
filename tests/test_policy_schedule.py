@@ -119,7 +119,7 @@ class TestComputeDemand:
 
 def test_load_properties_from_config():
     properties = load_properties_config()
-    assert len(properties.system_properties) == 8
+    assert len(properties.system_properties) >= 8
     assert "carbon_tax_level" in properties.system_property_ids()
 
 

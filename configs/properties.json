@@ -37,9 +37,27 @@
       "trajectory": {
         "baseline": 50.0,
         "rules": [
-          { "active_from_tick": 1, "effect": { "type": "set", "value": 50.0 } },
-          { "active_from_tick": 15, "effect": { "type": "set", "value": 120.0 } },
-          { "active_from_tick": 30, "effect": { "type": "set", "value": 200.0 } }
+          {
+            "active_from_tick": 1,
+            "effect": {
+              "type": "set",
+              "value": 50.0
+            }
+          },
+          {
+            "active_from_tick": 15,
+            "effect": {
+              "type": "set",
+              "value": 120.0
+            }
+          },
+          {
+            "active_from_tick": 30,
+            "effect": {
+              "type": "set",
+              "value": 200.0
+            }
+          }
         ]
       }
     },
@@ -67,8 +85,20 @@
       "trajectory": {
         "baseline": 0.0,
         "rules": [
-          { "active_from_tick": 8, "effect": { "type": "set", "value": 0.02 } },
-          { "active_from_tick": 16, "effect": { "type": "set", "value": 0.05 } }
+          {
+            "active_from_tick": 8,
+            "effect": {
+              "type": "set",
+              "value": 0.02
+            }
+          },
+          {
+            "active_from_tick": 16,
+            "effect": {
+              "type": "set",
+              "value": 0.05
+            }
+          }
         ]
       }
     },
@@ -108,93 +138,263 @@
         "baseline": 128.0,
         "rules": []
       }
+    },
+    {
+      "id": "income_index",
+      "type": "numeric",
+      "unit": "index",
+      "description": "Makroökonomischer Einkommensindex (1.0 = Basisniveau). Skaliert WTP aller Individuen.",
+      "source": "trajectory",
+      "min_value": 0.5,
+      "max_value": 1.5,
+      "trajectory": {
+        "baseline": 1.0,
+        "rules": [
+          {
+            "active_from_tick": 10,
+            "effect": {
+              "type": "ramp",
+              "value": 0.92,
+              "duration_ticks": 5
+            }
+          },
+          {
+            "active_from_tick": 20,
+            "effect": {
+              "type": "set",
+              "value": 1.05
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "bevoelkerungsentwicklung",
+      "type": "numeric",
+      "unit": "persons",
+      "source": "trajectory",
+      "trajectory": {
+        "type": "step_function",
+        "points": [
+          {
+            "tick": 1,
+            "value": 1000
+          },
+          {
+            "tick": 10,
+            "value": 1020
+          },
+          {
+            "tick": 20,
+            "value": 1050
+          },
+          {
+            "tick": 30,
+            "value": 1080
+          }
+        ]
+      }
+    },
+    {
+      "id": "maintenance_cost_index",
+      "type": "numeric",
+      "unit": "index",
+      "description": "Index for maintenance costs",
+      "source": "trajectory",
+      "min_value": 0.5,
+      "max_value": 2.0,
+      "trajectory": {
+        "baseline": 1.0,
+        "rules": []
+      }
+    },
+    {
+      "id": "staff_cost_index",
+      "type": "numeric",
+      "unit": "index",
+      "description": "Index for staff costs",
+      "source": "trajectory",
+      "min_value": 0.5,
+      "max_value": 2.0,
+      "trajectory": {
+        "baseline": 1.0,
+        "rules": []
+      }
     }
   ],
   "individual_properties": [
     {
       "id": "business",
       "type": "boolean",
-      "prevalence": 0.3,
-      "enabled": true
+      "enabled": true,
+      "prevalence": 0.3
     },
     {
       "id": "price_sensitive",
       "type": "boolean",
-      "prevalence": 0.5,
-      "enabled": true
+      "enabled": true,
+      "prevalence": 0.9
     },
     {
       "id": "eco_conscious",
       "type": "boolean",
-      "prevalence": 0.2,
-      "enabled": true
+      "enabled": true,
+      "prevalence": 0.2
     },
     {
       "id": "environmental_awareness",
       "type": "distribution",
+      "enabled": true,
       "distribution": "beta",
-      "alpha": 2,
-      "beta": 5,
-      "enabled": true
+      "min_value": 0.0,
+      "max_value": 1.0,
+      "alpha": 2.0,
+      "beta": 5.0
     },
     {
       "id": "wtp_eur",
       "type": "distribution",
+      "enabled": true,
       "distribution": "lognormal",
       "mean": 120.0,
       "std_dev": 0.35,
       "min_value": 50.0,
-      "max_value": 500.0,
-      "enabled": true
+      "max_value": 500.0
+    },
+    {
+      "id": "age",
+      "type": "distribution",
+      "enabled": true,
+      "distribution": "lognormal",
+      "mean": 73.0,
+      "std_dev": 1.0,
+      "min_value": 2.0,
+      "max_value": 90.0
+    },
+    {
+      "id": "substitution_readiness",
+      "type": "distribution",
+      "enabled": true,
+      "distribution": "beta",
+      "min_value": 0.0,
+      "max_value": 1.0,
+      "alpha": 2.0,
+      "beta": 5.0
+    },
+    {
+      "id": "frequent_flyer",
+      "type": "boolean",
+      "enabled": true,
+      "prevalence": 0.05
     }
   ],
   "shift_rules": [
     {
       "id": "f1_substitution_price_sensitivity",
-      "when": { "factor": "F1", "state": "F1.2" },
-      "effect": { "property": "price_sensitivity", "delta": 0.05 },
+      "when": {
+        "factor": "F1",
+        "state": "F1.2"
+      },
+      "effect": {
+        "property": "price_sensitivity",
+        "delta": 0.05
+      },
       "once": true
     },
     {
       "id": "f2_strict_regulation_awareness",
-      "when": { "factor": "F2", "state": "F2.2" },
-      "effect": { "property": "environmental_awareness", "delta": 0.05 },
+      "when": {
+        "factor": "F2",
+        "state": "F2.2"
+      },
+      "effect": {
+        "property": "environmental_awareness",
+        "delta": 0.05
+      },
       "once": true
     },
     {
       "id": "f3_saf_breakthrough_awareness",
-      "when": { "factor": "F3", "state": "F3.2" },
-      "effect": { "property": "environmental_awareness", "delta": 0.04 },
+      "when": {
+        "factor": "F3",
+        "state": "F3.2"
+      },
+      "effect": {
+        "property": "environmental_awareness",
+        "delta": 0.04
+      },
       "once": true
     },
     {
       "id": "f4_recession_price_sensitivity",
-      "when": { "factor": "F4", "state": "F4.2" },
-      "effect": { "property": "price_sensitivity", "delta": 0.07 },
+      "when": {
+        "factor": "F4",
+        "state": "F4.2"
+      },
+      "effect": {
+        "property": "price_sensitivity",
+        "delta": 0.07
+      },
       "once": true
     },
     {
       "id": "f5_rail_alternative_awareness",
-      "when": { "factor": "F5", "state": "F5.2" },
-      "effect": { "property": "environmental_awareness", "delta": 0.06 },
+      "when": {
+        "factor": "F5",
+        "state": "F5.2"
+      },
+      "effect": {
+        "property": "environmental_awareness",
+        "delta": 0.06
+      },
       "once": true
     },
     {
       "id": "f6_flight_shaming_awareness",
-      "when": { "factor": "F6", "state": "F6.2" },
-      "effect": { "property": "environmental_awareness", "delta": 0.08 },
+      "when": {
+        "factor": "F6",
+        "state": "F6.2"
+      },
+      "effect": {
+        "property": "environmental_awareness",
+        "delta": 0.08
+      },
       "once": true
     },
     {
       "id": "f7_geopolitical_price_sensitivity",
-      "when": { "factor": "F7", "state": "F7.2" },
-      "effect": { "property": "price_sensitivity", "delta": 0.05 },
+      "when": {
+        "factor": "F7",
+        "state": "F7.2"
+      },
+      "effect": {
+        "property": "price_sensitivity",
+        "delta": 0.05
+      },
       "once": true
     },
     {
       "id": "carbon_tax_price_sensitivity",
-      "when": { "system_property": "carbon_tax_level", "above": 50 },
-      "effect": { "property": "price_sensitivity", "delta": 0.12 },
+      "when": {
+        "system_property": "carbon_tax_level",
+        "above": 50
+      },
+      "effect": {
+        "property": "price_sensitivity",
+        "delta": 0.12
+      },
+      "once": true
+    },
+    {
+      "id": "income_drop_f4_strict",
+      "when": {
+        "factor": "F4",
+        "state": "F4.2"
+      },
+      "effect": {
+        "property": "income_factor",
+        "delta": -0.05
+      },
       "once": true
     }
   ],
@@ -202,112 +402,184 @@
     {
       "id": "f1_low_booking_substitution",
       "factor_id": "F1",
-      "when": { "metric": "booking_rate", "below": 0.45 },
-      "effect": { "set_state": "F1.2" },
+      "when": {
+        "metric": "booking_rate",
+        "below": 0.45
+      },
+      "effect": {
+        "set_state": "F1.2"
+      },
       "priority": 10
     },
     {
       "id": "f1_strong_demand",
       "factor_id": "F1",
-      "when": { "metric": "booking_rate", "above": 0.68 },
-      "effect": { "set_state": "F1.1" },
+      "when": {
+        "metric": "booking_rate",
+        "above": 0.68
+      },
+      "effect": {
+        "set_state": "F1.1"
+      },
       "priority": 5
     },
     {
       "id": "f2_high_carbon_policy",
       "factor_id": "F2",
-      "when": { "system_property": "carbon_tax_level", "above": 100 },
-      "effect": { "set_state": "F2.2" },
+      "when": {
+        "system_property": "carbon_tax_level",
+        "above": 100
+      },
+      "effect": {
+        "set_state": "F2.2"
+      },
       "priority": 10
     },
     {
       "id": "f2_moderate_policy",
       "factor_id": "F2",
-      "when": { "system_property": "carbon_tax_level", "below": 80 },
-      "effect": { "set_state": "F2.1" },
+      "when": {
+        "system_property": "carbon_tax_level",
+        "below": 80
+      },
+      "effect": {
+        "set_state": "F2.1"
+      },
       "priority": 4
     },
     {
       "id": "f3_saf_mandate_breakthrough",
       "factor_id": "F3",
-      "when": { "system_property": "saf_mandate_share", "at_least": 0.05 },
-      "effect": { "set_state": "F3.2" },
+      "when": {
+        "system_property": "saf_mandate_share",
+        "at_least": 0.05
+      },
+      "effect": {
+        "set_state": "F3.2"
+      },
       "priority": 10
     },
     {
       "id": "f3_incremental_tech",
       "factor_id": "F3",
-      "when": { "system_property": "saf_mandate_share", "below": 0.03 },
-      "effect": { "set_state": "F3.1" },
+      "when": {
+        "system_property": "saf_mandate_share",
+        "below": 0.03
+      },
+      "effect": {
+        "set_state": "F3.1"
+      },
       "priority": 3
     },
     {
       "id": "f4_high_cost_pressure",
       "factor_id": "F4",
-      "when": { "metric": "cost_pressure", "above": 135 },
-      "effect": { "set_state": "F4.2" },
+      "when": {
+        "metric": "cost_pressure",
+        "above": 135
+      },
+      "effect": {
+        "set_state": "F4.2"
+      },
       "priority": 8
     },
     {
       "id": "f4_stable_growth",
       "factor_id": "F4",
-      "when": { "metric": "cost_pressure", "below": 115 },
-      "effect": { "set_state": "F4.1" },
+      "when": {
+        "metric": "cost_pressure",
+        "below": 115
+      },
+      "effect": {
+        "set_state": "F4.1"
+      },
       "priority": 4
     },
     {
       "id": "f5_alternatives_flight_shaming",
       "factor_id": "F5",
-      "when": { "factor": "F6", "state": "F6.2" },
-      "effect": { "set_state": "F5.2" },
+      "when": {
+        "factor": "F6",
+        "state": "F6.2"
+      },
+      "effect": {
+        "set_state": "F5.2"
+      },
       "priority": 8
     },
     {
       "id": "f5_no_alternative",
       "factor_id": "F5",
-      "when": { "factor": "F6", "state": "F6.1" },
-      "effect": { "set_state": "F5.1" },
+      "when": {
+        "factor": "F6",
+        "state": "F6.1"
+      },
+      "effect": {
+        "set_state": "F5.1"
+      },
       "priority": 4
     },
     {
       "id": "f6_flight_shaming_high_tax",
       "factor_id": "F6",
-      "when": { "system_property": "carbon_tax_level", "above": 80 },
-      "effect": { "set_state": "F6.2" },
+      "when": {
+        "system_property": "carbon_tax_level",
+        "above": 80
+      },
+      "effect": {
+        "set_state": "F6.2"
+      },
       "priority": 10
     },
     {
       "id": "f6_accepted_flying",
       "factor_id": "F6",
-      "when": { "system_property": "carbon_tax_level", "below": 60 },
-      "effect": { "set_state": "F6.1" },
+      "when": {
+        "system_property": "carbon_tax_level",
+        "below": 60
+      },
+      "effect": {
+        "set_state": "F6.1"
+      },
       "priority": 4
     },
     {
       "id": "f7_oil_stress",
       "factor_id": "F7",
-      "when": { "system_property": "oil_price_index", "above": 1.15 },
-      "effect": { "set_state": "F7.2" },
+      "when": {
+        "system_property": "oil_price_index",
+        "above": 1.15
+      },
+      "effect": {
+        "set_state": "F7.2"
+      },
       "priority": 6
     },
     {
       "id": "f7_open_markets",
       "factor_id": "F7",
-      "when": { "system_property": "oil_price_index", "below": 1.1 },
-      "effect": { "set_state": "F7.1" },
+      "when": {
+        "system_property": "oil_price_index",
+        "below": 1.1
+      },
+      "effect": {
+        "set_state": "F7.1"
+      },
       "priority": 3
     }
   ],
   "market_rules": [
     {
       "id": "provider_yield_feedback",
-      "when": { "enabled": true },
+      "when": {
+        "enabled": true
+      },
       "effect": {
         "type": "booking_yield_feedback",
         "update_property": "provider_markup",
         "publish_property": "ticket_price",
         "compose": "cost_pressure + provider_markup",
-        "target_booking_rate": 0.70,
+        "target_booking_rate": 0.7,
         "markup_adjustment_per_tick": 0.08,
         "max_price_change_fraction": 0.08,
         "damping": 0.85,
@@ -323,7 +595,9 @@
       "carbon_tax_level",
       "oil_price_index",
       "saf_mandate_share",
-      "efuel_subsidy"
+      "efuel_subsidy",
+      "maintenance_cost_index",
+      "staff_cost_index"
     ],
     "coefficients": {
       "carbon_per_tonne": 0.001,
@@ -336,10 +610,63 @@
   },
   "market_feedback": {
     "enabled": true,
-    "target_booking_rate": 0.70,
+    "target_booking_rate": 0.7,
     "markup_adjustment_per_tick": 0.08,
     "max_price_change_fraction": 0.08,
     "damping": 0.85,
     "booking_weight": 0.6
-  }
+  },
+  "regulatory_influences": [
+    {
+      "id": "eu_ets",
+      "description": "EU Emissionshandel",
+      "cost_contribution": 5.0,
+      "when": {
+        "factor": "F2",
+        "state": "F2.2"
+      }
+    },
+    {
+      "id": "refueleu",
+      "description": "SAF-Beimischungspflicht RefuelEU",
+      "cost_contribution": 10.0,
+      "when": {
+        "factor": "F6",
+        "state": "F6.2"
+      }
+    },
+    {
+      "id": "corsia",
+      "description": "ICAO CORSIA Offsets",
+      "cost_contribution": 2.0,
+      "when": {
+        "factor": "F4",
+        "state": "F4.2"
+      }
+    },
+    {
+      "id": "national_aviation_tax",
+      "description": "Nationale Luftverkehrssteuer",
+      "cost_contribution": 8.0,
+      "when": {
+        "factor": "F2",
+        "state": "F2.1"
+      }
+    },
+    {
+      "id": "airport_infrastructure_levy",
+      "description": "Flughafeninfrastrukturabgabe",
+      "cost_contribution": 3.0,
+      "when": {}
+    },
+    {
+      "id": "noise_surcharge",
+      "description": "Lärmschutzabgabe",
+      "cost_contribution": 4.0,
+      "when": {
+        "factor": "F4",
+        "state": "F4.2"
+      }
+    }
+  ]
 }

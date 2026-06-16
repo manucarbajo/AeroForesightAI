@@ -6,6 +6,23 @@ from src.models.enums import AgentType
 from src.models.population_models import PopulationConfig
 
 
+class AgentProfile(BaseModel):
+    observes: list[str] = Field(default_factory=list)
+    may_propose: list[str] = Field(default_factory=list)
+    must_not_output: list[str] = Field(default_factory=list)
+    depends_on: list[str] = Field(default_factory=list)
+
+    @property
+    def observed_factors(self) -> list[str]:
+        """Extract explicit factor IDs from observes list (e.g., 'factors F1,F5,F6')."""
+        factors = []
+        for item in self.observes:
+            if item.startswith("factors "):
+                parts = item.replace("factors ", "").split(",")
+                factors.extend([p.strip() for p in parts if p.strip()])
+        return factors
+
+
 class AgentConfig(BaseModel):
     id: str
     name: str
@@ -14,6 +31,7 @@ class AgentConfig(BaseModel):
     goals: list[str]
     constraints: list[str] = []
     population_config: PopulationConfig | None = None
+    profile: AgentProfile | None = None
 
 
 class StateChange(BaseModel):

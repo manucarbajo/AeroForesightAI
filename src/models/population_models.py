@@ -43,7 +43,10 @@ class Individual(BaseModel):
     labels: dict[str, bool] = Field(default_factory=dict)
     wtp_eur: float
     environmental_awareness: float
+    substitution_readiness: float = 0.5
     price_sensitivity: float
+    base_income_factor: float = 1.0
+    income_factor: float = 1.0
     booked: bool = False
     applied_shift_rules: list[str] = Field(default_factory=list)
 

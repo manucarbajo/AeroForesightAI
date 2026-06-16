@@ -32,13 +32,20 @@ Current factor landscape:
 Recent events:
 {recent_events_block}
 
+Python-derived delta events (source=system, provider, or market; descriptions tagged [delta:...]) are authoritative ground truth. Do not contradict them in your reasoning.
+
+Profile dependencies:
+{depends_on_block}
+
 ## Task Prompt
 Make a consumer-oriented decision for this tick:
 1) briefly explain how behaviour is influenced by deterministic market metrics (prices, taxes, demand_level)
 2) name concrete actions (e.g. booking behaviour, abstaining, switching to alternatives)
-3) optionally propose concrete factor state changes if plausible from your perspective
-4) formulate 1–3 events that follow from your decision and **match observed booking_rate** (if booking_rate > 0.5, do NOT claim everyone switched to trains/buses). IMPORTANT: NEVER repeat events or statements from "Recent events". React to something new or choose "NO_OP".
+3) formulate 1 event that follows from your decision and **matches the observed booking_rate**.
+4) IMPORTANT: Always consider and react to `Recent events` in your reasoning, but NEVER simply repeat them. Formulate a new response or choose NO_OP.
 5) provide segment_analysis so the expected reaction per segment (from population context) is clearly visible
+
+Do NOT propose factor state changes — your profile forbids `state_changes` (leave the list empty).
 
 ## Output instruction (strict)
 Respond with exactly one JSON object, no markdown and no code block.

@@ -13,6 +13,7 @@ from src.models.enums import AgentType, EventType
 from src.property_engine import scheduled_property_events
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.state_models import SimulationState
+from src.agent_dependencies import format_depends_on_block
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 
@@ -96,10 +97,21 @@ class AgentNode:
         consumer_segment_analysis = self._format_consumer_segment_analysis(state)
         observed_booking_block = self._format_observed_booking_block(state)
         prior_booking_block = self._format_prior_booking_block(state)
+        depends_on_block = format_depends_on_block(state, self.config.profile, self.config.id)
         goals = "\n".join(f"- {goal}" for goal in self.config.goals) or "- No goals configured"
+        constraints_list = list(self.config.constraints) if self.config.constraints else []
+        if self.config.profile:
+            p = self.config.profile
+            if p.must_not_output:
+                constraints_list.append(f"MUST NOT OUTPUT: {', '.join(p.must_not_output)}")
+            if p.may_propose:
+                constraints_list.append(f"MAY PROPOSE ONLY: {', '.join(p.may_propose)}")
+            elif p.may_propose == []:
+                constraints_list.append("MAY PROPOSE ONLY: (nothing — state_changes must be empty)")
+
         constraints = (
-            "\n".join(f"- {constraint}" for constraint in self.config.constraints)
-            if self.config.constraints
+            "\n".join(f"- {constraint}" for constraint in constraints_list)
+            if constraints_list
             else "- No constraints configured"
         )
 
@@ -121,6 +133,7 @@ class AgentNode:
                 "consumer_segment_analysis": consumer_segment_analysis,
                 "observed_booking_block": observed_booking_block,
                 "prior_booking_block": prior_booking_block,
+                "depends_on_block": depends_on_block,
             },
         )
 
@@ -231,17 +244,34 @@ class AgentNode:
         return rendered
 
     def _format_factors(self, state: SimulationState) -> str:
+        if self.config.profile and "factors F1,F5,F6" not in self.config.profile.observes:
+            pass # We should dynamically check observed_factors
+        
+        allowed_factors = None
+        if self.config.profile:
+            allowed_factors = self.config.profile.observed_factors
+            if not allowed_factors:
+                return "- No factors observed by this agent."
+
         lines: list[str] = []
         for factor in state.environment.factors.values():
+            if allowed_factors is not None and factor.id not in allowed_factors:
+                continue
             options = ", ".join(
                 f"{sid}={desc}" for sid, desc in factor.possible_states.items()
             )
             lines.append(
                 f"- {factor.id} | {factor.name} | current={factor.current_state} | options: {options}"
             )
+        
+        if not lines:
+            return "- No observed factors."
         return "\n".join(lines)
 
     def _format_recent_events(self, state: SimulationState) -> str:
+        if self.config.profile and "event_log_recent" not in self.config.profile.observes:
+            return "- Event log not observed by this agent."
+
         if not state.event_log:
             return "- No prior events."
 
@@ -257,6 +287,10 @@ class AgentNode:
 
     def _format_market_metrics(self, state: SimulationState) -> str:
         """Format policy-driven market metrics for the agent prompt (M2)."""
+        if self.config.profile:
+            obs = self.config.profile.observes
+            if "market_metrics" not in obs and "cost_pressure" not in obs and "booking_rate" not in obs:
+                return "- Market metrics not observed by this agent."
 
         metrics = state.market_metrics
         header = "Deterministic market metrics (Python; not set by the agent):"
@@ -283,10 +317,17 @@ class AgentNode:
 
         lines = [header]
         for metric_id in sorted(metrics.keys()):
+            if self.config.profile:
+                obs = self.config.profile.observes
+                if "market_metrics" not in obs and metric_id not in obs:
+                    continue
             lines.append(f"- {metric_id}: {metrics[metric_id]}")
         return "\n".join(lines)
 
     def _build_population_context(self) -> str:
+        if self.config.profile and "population_stats" not in self.config.profile.observes:
+            return "- Population stats not observed by this agent."
+
         pop = self.config.population_config
         if not pop or not pop.segments:
             return "- No population context for this agent."
@@ -514,6 +555,12 @@ class AgentNode:
                 continue
             if factor_id not in valid_factors:
                 continue
+                
+            if self.config.profile and self.config.profile.may_propose is not None:
+                allowed = self.config.profile.may_propose
+                if f"factor_state {factor_id}" not in allowed:
+                    continue
+                    
             factor = valid_factors[factor_id]
             if proposed_state not in factor.possible_states:
                 continue

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
+from src.agent_dependencies import resolve_parallel_agent_order
 from src.models.agent_models import AgentConfig
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.state_models import SimulationState
@@ -12,13 +12,11 @@ from src.nodes.orchestrator_node import OrchestratorNode
 
 @dataclass
 class ParallelRoundNode:
-    """Run provider and regulator once per tick (default C4 orchestration).
+    """Run provider then regulator once per tick (depends_on order).
 
     Consumer runs after environment booking (see SimulationRunner) so narrative
-    and events align with observed ``booking_rate``. Provider and regulator run
-    in parallel here.
+    and events align with observed ``booking_rate``.
     """
-
     agents: list[AgentConfig]
     llm: LLMCallable
 
@@ -36,16 +34,16 @@ class ParallelRoundNode:
         if round_number < 1:
             return state
 
-        parallel_ids = [agent_id for agent_id in self._agent_order if agent_id != "consumer"]
+        parallel_ids = [
+            agent_id
+            for agent_id in resolve_parallel_agent_order(self.agents)
+            if agent_id in self._agent_nodes
+        ]
         if not parallel_ids:
             return state
 
-        with ThreadPoolExecutor(max_workers=len(parallel_ids)) as pool:
-            parallel_results = list(
-                pool.map(self._invoke_agent_isolated, parallel_ids, [state] * len(parallel_ids))
-            )
-
-        for new_round_results, new_events in parallel_results:
+        for agent_id in parallel_ids:
+            new_round_results, new_events = self._invoke_agent_isolated(agent_id, state)
             state.round_results.extend(new_round_results)
             state.event_log.extend(new_events)
 

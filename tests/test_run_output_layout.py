@@ -58,5 +58,5 @@ def test_final_narrative_includes_property_schedule(tmp_path):
     assert "## Property-Zeitplan (Config)" in content
     assert "Tick 8" in content
     assert "saf_mandate_share" in content
-    assert "**Geplante Property-Shocks (dieser Tick):**" in content
-    assert "**Wirksame Property-Änderungen (Markt):**" in content
+    assert "Leseschlüssel" in content
+    assert "gebucht (" in content

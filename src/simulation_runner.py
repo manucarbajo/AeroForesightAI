@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import random
+import time
 from pathlib import Path
 import sys
 from typing import Any, Callable, Protocol, Sequence
@@ -20,6 +21,7 @@ from src.nodes.orchestrator_node import OrchestratorNode
 from src.nodes.parallel_round_node import ParallelRoundNode
 from src.nodes.redebedarf_node import RoundExecutionNode
 from src.validation import validate_state
+from src.output_writer import append_individuals_history
 
 
 @dataclass(frozen=True)
@@ -27,8 +29,10 @@ class RunnerOptions:
     enable_market: bool = True
     enable_cib: bool = True  # load frozen CIB from configs/cib_frozen.json
     enable_redebedarf: bool = False
+    deterministic_only: bool = False  # M8: skip LLM agent calls entirely
     checkpoint_interval: int = 5
     verbose_ticks: bool = True
+    tick_progress_callback: Callable[[str], None] | None = None
 
 
 @dataclass(frozen=True)
@@ -148,6 +152,9 @@ class SimulationRunner:
 
         self._seed_runtime(seed if seed is not None else state.config.seed)
         validate_state(state)
+
+        self._progress_started_at = time.perf_counter()
+        self._progress_last_tick_at = self._progress_started_at
 
         state = self._run_to_completion(
             state,
@@ -322,6 +329,16 @@ class SimulationRunner:
         while state.clock.current_tick < max_ticks:
             state = self._run_single_round(state, components)
             tick = state.clock.current_tick
+            
+            # Save individual history for animation
+            run_dir = None
+            if checkpoint_store is not None:
+                if hasattr(checkpoint_store, "checkpoint_dir"):
+                    # CheckpointManager.checkpoint_dir is usually run_dir / "checkpoints"
+                    run_dir = checkpoint_store.checkpoint_dir.parent
+            if run_dir is not None:
+                append_individuals_history(tick, state.population_individuals, run_dir=run_dir)
+                
             if self.options.verbose_ticks:
                 self._print_tick_progress(state, tick=tick, max_ticks=max_ticks)
             if checkpoint_store is not None and self._should_save_checkpoint(tick, max_ticks):
@@ -345,12 +362,21 @@ class SimulationRunner:
             booking = state.price_history[-1].booking_rate
         price_text = f"{price:.2f}" if isinstance(price, (int, float)) else "n/a"
         booking_text = f"{booking:.1%}" if isinstance(booking, (int, float)) else "n/a"
-        carbon = metrics.get("carbon_tax_level", "n/a")
-        print(
-            f"[tick {tick:>3}/{max_ticks}] done - "
-            f"price={price_text} EUR, booking={booking_text}, carbon_tax={carbon}",
-            flush=True,
+
+        now = time.perf_counter()
+        tick_elapsed = now - getattr(self, "_progress_last_tick_at", now)
+        total_elapsed = now - getattr(self, "_progress_started_at", now)
+        self._progress_last_tick_at = now
+        rate = tick / total_elapsed if total_elapsed > 0 else 0.0
+
+        msg = (
+            f"[tick {tick:>3}/{max_ticks}] {tick_elapsed:.2f}s "
+            f"({rate:.2f} ticks/s) — price={price_text} €, booking={booking_text}"
         )
+        print(msg, flush=True)
+        callback = self.options.tick_progress_callback
+        if callback is not None:
+            callback(msg)
 
     def _create_components(
         self,
@@ -392,19 +418,22 @@ class SimulationRunner:
     ) -> SimulationState:
         """Run a single deterministic round using the configured nodes."""
 
+        from src.event_deltas import write_events_from_deltas
         from src.factor_dynamics import apply_factor_rules_at_tick_start, record_factor_timeseries
 
         orchestrator, round_execution, environment_node, consumer_node, market_node = components
         state = orchestrator.invoke(state)
         state = apply_factor_rules_at_tick_start(state)
-        state = round_execution.invoke(state)
+        if not self.options.deterministic_only:
+            state = round_execution.invoke(state)
         state = environment_node.invoke(state)
-        if consumer_node is not None:
+        if consumer_node is not None and not self.options.deterministic_only:
             state = consumer_node.invoke(state)
             state = environment_node.apply_consumer_factor_updates(state)
         if self.options.enable_market:
             state = market_node.invoke(state)
-        return record_factor_timeseries(state)
+        state = record_factor_timeseries(state)
+        return write_events_from_deltas(state)
 
     def _build_round_execution(
         self,

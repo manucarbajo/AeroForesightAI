@@ -24,10 +24,12 @@ from src.output_writer import (
     save_cib_matrix,
     save_event_log,
     save_final_narrative,
+    save_tick_mechanics,
     save_price_history,
     save_properties_timeseries,
     save_population_individuals,
     save_population_timeseries,
+    save_age_property_csv,
     save_factors_timeseries,
     save_protocol,
     save_protocol_markdown,
@@ -128,6 +130,17 @@ def _parse_args() -> argparse.Namespace:
         default=180,
         help="Maximum seconds to wait for local Ollama model to become ready (used with --use-local-ollama).",
     )
+    parser.add_argument(
+        "--deterministic-only",
+        action="store_true",
+        help="Run simulation without LLM agent calls (pure deterministic mode for sweeps/benchmarks).",
+    )
+    parser.add_argument(
+        "--sweep",
+        type=str,
+        default=None,
+        help="Path to a sweep config JSON file. Overrides simulation parameters with sweep settings.",
+    )
     return parser.parse_args()
 
 
@@ -151,6 +164,10 @@ def _save_run_outputs(
         state.population_stats,
         run_dir=run_dir,
     )
+    age_property_csv_path = save_age_property_csv(
+        state.population_stats,
+        run_dir=run_dir,
+    )
     factors_timeseries_path = save_factors_timeseries(
         state.factor_timeseries,
         run_dir=run_dir,
@@ -168,6 +185,7 @@ def _save_run_outputs(
     )
     segment_analysis_path = save_segment_analysis(state.round_results, run_dir=run_dir)
     final_narrative_path = save_final_narrative(state, run_dir=run_dir)
+    tick_mechanics_path = save_tick_mechanics(state, run_dir=run_dir)
     cib_matrix_path = save_cib_matrix(state, run_dir=run_dir)
 
     protocol_path = None
@@ -206,6 +224,7 @@ def _save_run_outputs(
         "run_metadata": metadata_path,
         "segment_analysis": segment_analysis_path,
         "final_narrative": final_narrative_path,
+        "tick_mechanics": tick_mechanics_path,
         "cib_matrix": cib_matrix_path,
         "protocol": protocol_path,
         "protocol_markdown": protocol_md_path,
@@ -213,7 +232,9 @@ def _save_run_outputs(
         "scenarios_markdown": scenarios_md_path,
         "properties_timeseries": properties_timeseries_path,
         "population_timeseries": population_timeseries_path,
+        "age_property_csv": age_property_csv_path,
         "factors_timeseries": factors_timeseries_path,
+        "population_csv": population_csv_path,
     }
 
 
@@ -369,6 +390,7 @@ def main() -> int:
         options=RunnerOptions(
             enable_market=not args.no_market,
             enable_redebedarf=bool(args.redebedarf),
+            deterministic_only=bool(getattr(args, "deterministic_only", False)),
             checkpoint_interval=max(0, int(args.checkpoint_interval)),
             verbose_ticks=not args.quiet,
         ),

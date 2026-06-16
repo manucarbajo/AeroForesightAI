@@ -49,9 +49,22 @@ def load_properties_config(path: Path | None = None) -> PropertiesConfig:
 
 def load_agents(path: Path | None = None) -> list[AgentConfig]:
     path = path or CONFIGS_DIR / "agents.json"
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
-    return [AgentConfig(**agent) for agent in data]
+    
+    agents = [AgentConfig(**agent) for agent in data]
+    
+    profiles_path = CONFIGS_DIR / "agent_profiles.json"
+    if profiles_path.exists():
+        with open(profiles_path, encoding="utf-8") as f:
+            profiles_data = json.load(f)
+            
+        from src.models.agent_models import AgentProfile
+        for agent in agents:
+            if agent.id in profiles_data:
+                agent.profile = AgentProfile(**profiles_data[agent.id])
+                
+    return agents
 
 
 def load_factors(path: Path | None = None) -> dict[str, FactorState]:
