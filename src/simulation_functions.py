@@ -340,9 +340,19 @@ def apply_market_feedback(
 
         raw_price = max(raw_price, cost_pressure * (1.0 + target_margin))
 
+    # Hard Floor (Die Rote Linie): Der Preis darf niemals unter die nackten Kosten + Steuern + Gebühren fallen.
+    # Das entspricht einer Gewinnmarge von exakt 0.0 für die Airline (Break-Even ohne Profit).
+    floor_price = compose_ticket_price(cost_pressure, 0.0, properties=properties, tick=tick)
+    raw_price = max(raw_price, floor_price)
+
     new_price = clip_price_change(raw_price, anchor, config.max_price_change_fraction)
 
-    new_markup = max(0.0, new_price - cost_pressure)
+    params = active_parameters(tick, properties) if properties else {}
+    total_tax_rate = sum(params.get(sp.id, 0.0) for sp in properties.system_properties if sp.price_component_type == "tax") if properties else 0.0
+    total_fees = sum(params.get(sp.id, 0.0) for sp in properties.system_properties if sp.price_component_type == "fee") if properties else 0.0
+
+    base_price_no_tax = (new_price - total_fees) / (1.0 + total_tax_rate)
+    new_markup = max(0.0, base_price_no_tax - cost_pressure)
 
     return new_price, new_markup
 
@@ -532,7 +542,11 @@ def compute_market_metrics(
 
         ticket_price = clip_price_change(ticket_price, anchor_price, feedback.max_price_change_fraction)
 
-        provider_markup = max(0.0, ticket_price - cost_pressure)
+        total_tax_rate = sum(params.get(sp.id, 0.0) for sp in properties.system_properties if sp.price_component_type == "tax") if properties else 0.0
+        total_fees = sum(params.get(sp.id, 0.0) for sp in properties.system_properties if sp.price_component_type == "fee") if properties else 0.0
+        base_price_no_tax = (ticket_price - total_fees) / (1.0 + total_tax_rate)
+
+        provider_markup = max(0.0, base_price_no_tax - cost_pressure)
 
         price_delta = (ticket_price - anchor_price) / anchor_price if anchor_price > 0 else 0.0
 

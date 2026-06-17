@@ -220,6 +220,18 @@
         "baseline": 1.0,
         "rules": []
       }
+    },
+    {
+      "id": "airport_fee",
+      "type": "numeric",
+      "unit": "EUR",
+      "description": "Airport Fee",
+      "source": "trajectory",
+      "price_component_type": "fee",
+      "trajectory": {
+        "baseline": 0.0,
+        "rules": []
+      }
     }
   ],
   "individual_properties": [

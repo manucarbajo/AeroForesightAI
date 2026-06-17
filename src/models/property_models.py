@@ -173,7 +173,7 @@ class MarketFeedbackConfig(BaseModel):
     """M4: provider markup adjusts toward target booking rate."""
 
     enabled: bool = True
-    target_booking_rate: float = 0.75
+    target_booking_rate: float = 0.84
     markup_adjustment_per_tick: float = 0.06
     max_price_change_fraction: float = 0.08
     damping: float = 0.85
