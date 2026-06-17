@@ -134,9 +134,9 @@ Vor P2-Implementierung: Eintrag in P1. Nach P2: P1 aktualisieren.
 | F-P3 | **Kostendruck (Tick)** | \(C_t = \underbrace{p_{\mathrm{cost}}(b \cdot I_t, \ldots)}_{\text{F-P1}} \cdot m \cdot w + R_t\) | `maintenance_cost_index` \(m\); `staff_cost_index` \(w\); \(R_t\)=regulatorische Zusatzkosten | `compute_cost_pressure` | Regulatorik aus Config |
 | F-P4 | **Veröffentlichter Preis** | \(p_t = C_t + \max(0,\, \mu_t)\) | `provider_markup` \(\mu\) | `compose_ticket_price` | Kosten + Marge |
 | F-P5 | **Preis-Clipping** | \(\|\Delta p\| \leq \alpha \cdot p_{t-1}\) | `max_price_change_fraction` \(\alpha\)=0.08 | `clip_price_change` | Numerische Stabilität |
-| F-P6 | **Yield-Feedback (Markup)** | \(\Delta\mu = \lambda \cdot g \cdot \beta \cdot \max(\mu_{t-1},\, C_t \cdot \rho_m)\); \(g = \mathrm{BR}_t - \mathrm{BR}^*\) | `damping` \(\lambda\)=0.85; `markup_adjustment_per_tick` \(\beta\)=0.06; `target_booking_rate` \(\mathrm{BR}^*\)=0.75; `margin_reference_fraction` \(\rho_m\)=0.08 | `apply_market_feedback` | Belobaba Revenue Management; heuristisch |
+| F-P6 | **Yield-Feedback (Markup)** | \(\Delta\mu = \lambda \cdot g \cdot \beta \cdot \max(\mu_{t-1},\, C_t \cdot \rho_m)\); \(g = \mathrm{BR}_t - \mathrm{BR}^*\) | `damping` \(\lambda\)=0.85; `markup_adjustment_per_tick` \(\beta\)=0.06; `target_booking_rate` \(\mathrm{BR}^*\)=**0.84**; `margin_reference_fraction` \(\rho_m\)=0.08 | `apply_market_feedback` | Belobaba Revenue Management; IATA Benchmark |
 | F-P7 | **Yield-Feedback (Preispfad)** | \(p^{\mathrm{yield}} = p_{t-1} \cdot (1 + \lambda \cdot g \cdot \beta)\); Auswahl min/max mit Markup-Pfad je nach \(g\) | — | `apply_market_feedback` | Preisanpassung bei Unter-/Überbuchung |
-| F-P8 | **Margen-Untergrenze** | Wenn \(\mathrm{BR}_t \geq 0.9 \cdot \mathrm{BR}^*\): \(p \geq C_t \cdot (1 + \max(\rho_f,\, \mu/C))\) | `margin_floor_fraction` \(\rho_f\)=0.05 | `apply_market_feedback` | Mindestmarge bei hoher Auslastung |
+| F-P8 | **Marginal Cost Floor** | Der Ticketpreis fällt niemals unter Grenzkosten + Steuern/Gebühren. | `marginal_cost_fraction` = 0.33 (33% der Basis-Kosten sind echte Grenzkosten) | `apply_market_feedback` | Airlines betreiben Loss-Leading für Fixkosten, aber kein Dumping unter Grenzkosten |
 
 ### 8.2 Nachfrage und Elastizität (Makro vs. Mikro)
 
@@ -275,6 +275,15 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 | P2.5.1 | `emergence_evidence.md` (Run-IDs) | offen |
 | P2.5.2 | Test ohne CO₂-Shock, Preis-Umkehr | offen |
 | P2.5.3 | Kein Random-Shock-Generator | Regel |
+
+## P2.6 Yield Management & Pricing Dynamik
+
+| ID | Aufgabe | Status | Umsetzung |
+| -- | ------- | ------ | --------- |
+| P2.6.1 | Dynamische Steuern & Gebühren | erledigt | `SystemProperty` Typen `tax` (relativ) und `fee` (absolut) in Frontend & Modellen implementiert (`compose_ticket_price`). |
+| P2.6.2 | Markup-Bugfix (Tax-in-Markup) | erledigt | `apply_market_feedback` rechnet Steuern/Gebühren aus dem Zielpreis heraus, um reine Airline-Marge exakt zu berechnen. |
+| P2.6.3 | IATA-Auslastungsrate | erledigt | `target_booking_rate` in `MarketFeedbackConfig` von 0.75 auf 0.84 (84%) angehoben (IATA-Referenz). |
+| P2.6.4 | Marginal Cost Floor (Rote Linie) | erledigt | `marginal_cost_fraction` (0.33) eingeführt. Airline darf Loss-Leading betreiben, Preise fallen aber nie unter Grenzkosten + volle Steuern. |
 
 ---
 
