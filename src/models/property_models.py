@@ -52,6 +52,7 @@ class SystemProperty(BaseModel):
     unit: str = ""
     description: str = ""
     source: Literal["trajectory", "runtime", "computed"] = "trajectory"
+    price_component_type: Literal["none", "tax", "fee"] = "none"
     min_value: float | None = None
     max_value: float | None = None
     trajectory: BaselineTrajectory | StepFunctionTrajectory = Field(

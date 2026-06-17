@@ -140,26 +140,54 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
         help="Startwerte aus den Tabs «Properties» und «Faktoren» in die Simulation übernehmen.",
     )
 
-    with st.expander("➕ Neue Property hinzufügen", expanded=False):
-        c1, c2, c3 = st.columns([2, 2, 1])
+    with st.expander(" Neue Property hinzufügen", expanded=False):
+        c1, c2 = st.columns([2, 2])
         new_prop_id = c1.text_input("Property ID", placeholder="z.B. airport_fee", key="new_prop_id")
         new_prop_label = c2.text_input("Anzeigename", placeholder="z.B. Airport Fee", key="new_prop_label")
-        c3.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        if c3.button("Hinzufügen", width="stretch"):
+        c3, c4 = st.columns([2, 1])
+        price_category_options = {
+            "Keine Preisbindung": "none",
+            "Steuer (Prozentual auf Ticketpreis)": "tax",
+            "Gebühr (Absoluter EUR-Betrag)": "fee",
+        }
+        selected_category = c3.selectbox(
+            "Preiskategorie",
+            options=list(price_category_options.keys()),
+            index=0,
+            key="new_prop_price_category",
+            help="Steuern werden prozentual auf den Ticketpreis aufgeschlagen (z.B. 0.19 = 19%). "
+                 "Gebühren werden als absoluter EUR-Betrag addiert (z.B. 10.0 = 10 €).",
+        )
+        price_component_type = price_category_options[selected_category]
+        c4.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        if c4.button("Hinzufügen", width="stretch"):
             if new_prop_id and new_prop_id.isidentifier():
-                add_custom_property(new_prop_id, new_prop_label, draft.properties_file)
+                add_custom_property(new_prop_id, new_prop_label, draft.properties_file, price_component_type)
                 draft.property_edits = extract_property_edits_from_file(draft.properties_file)
-                st.success(f"Property {new_prop_id} hinzugefügt!")
+                st.success(f"Property «{new_prop_label or new_prop_id}» als {selected_category} hinzugefügt!")
                 st.rerun()
             else:
                 st.error("Ungültige ID")
+
+    # Load price_component_type mapping from properties.json for badge display
+    _props_data = load_config_file(draft.properties_file)
+    _price_component_map: dict[str, str] = {}
+    for _sp in _props_data.get("system_properties", []):
+        if isinstance(_sp, dict) and _sp.get("price_component_type"):
+            _price_component_map[_sp["id"]] = _sp["price_component_type"]
 
     for prop_id in get_editable_property_ids(draft.properties_file):
         edit = draft.property_edits.get(prop_id)
         if edit is None:
             continue
         label = PROPERTY_LABELS.get(prop_id, prop_id)
-        with st.expander(label, expanded=prop_id in {"carbon_tax_level", "saf_mandate_share", "income_index"}):
+        pct = _price_component_map.get(prop_id, "none")
+        badge = ""
+        if pct == "tax":
+            badge = " Steuer (%)"
+        elif pct == "fee":
+            badge = " Gebühr (€)"
+        with st.expander(f"{label}{badge}", expanded=prop_id in {"carbon_tax_level", "saf_mandate_share", "income_index"}):
             is_active = st.checkbox("In dieser Simulation aktiv", value=edit.is_active, key=f"prop_active_{prop_id}")
             
             edit.is_active = is_active

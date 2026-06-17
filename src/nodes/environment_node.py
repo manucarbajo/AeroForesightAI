@@ -129,7 +129,7 @@ class EnvironmentNode:
         if state.price_history:
             provisional_price = last_price
         else:
-            provisional_price = compose_ticket_price(cost_pressure, initial_provider_markup(properties))
+            provisional_price = compose_ticket_price(cost_pressure, initial_provider_markup(properties), properties=properties, tick=round_number)
             # Inject initial price as Tick 0 for accurate logging and market anchor
             from src.models.event_models import PriceHistoryEntry
             state.price_history.append(

@@ -61,7 +61,12 @@ def get_editable_property_ids(properties_file: str = "properties.json") -> list[
     return [p.get("id") for p in props if isinstance(p, dict) and "id" in p]
 
 
-def add_custom_property(property_id: str, label: str = "", properties_file: str = "properties.json") -> None:
+def add_custom_property(
+    property_id: str,
+    label: str = "",
+    properties_file: str = "properties.json",
+    price_component_type: str = "none",
+) -> None:
     """Fügt eine neue Property dauerhaft in die properties.json ein."""
     path = CONFIGS_DIR / properties_file
     with open(path, encoding="utf-8") as f:
@@ -74,9 +79,10 @@ def add_custom_property(property_id: str, label: str = "", properties_file: str 
         props.append({
             "id": property_id,
             "type": "numeric",
-            "unit": "custom",
+            "unit": "%" if price_component_type == "tax" else ("EUR" if price_component_type == "fee" else "custom"),
             "description": label or "Custom Property",
             "source": "trajectory",
+            "price_component_type": price_component_type,
             "trajectory": {
                 "baseline": 0.0,
                 "rules": []
