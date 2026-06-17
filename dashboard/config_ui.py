@@ -187,7 +187,7 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
             badge = " Steuer (%)"
         elif pct == "fee":
             badge = " Gebühr (€)"
-        with st.expander(f"{label}{badge}", expanded=prop_id in {"carbon_tax_level", "saf_mandate_share", "income_index"}):
+        with st.expander(f"{label}{badge}", expanded=False):
             is_active = st.checkbox("In dieser Simulation aktiv", value=edit.is_active, key=f"prop_active_{prop_id}")
             
             edit.is_active = is_active
@@ -465,7 +465,7 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
         if p.id == "wtp_eur": label = "Zahlungsbereitschaft (WTP in Euro)"
         if p.id == "environmental_awareness": label = "Umweltbewusstsein (0-1)"
         
-        with st.expander(label, expanded=True):
+        with st.expander(label, expanded=False):
             dist_opts = ["normal", "beta", "lognormal", "uniform"]
             current_dist = p.distribution if p.distribution in dist_opts else "normal"
             dist_type = st.selectbox("Verteilungstyp", dist_opts, index=dist_opts.index(current_dist), key=f"pop_dist_{p.id}")
