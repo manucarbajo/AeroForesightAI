@@ -340,9 +340,10 @@ def apply_market_feedback(
 
         raw_price = max(raw_price, cost_pressure * (1.0 + target_margin))
 
-    # Hard Floor (Die Rote Linie): Der Preis darf niemals unter die nackten Kosten + Steuern + Gebühren fallen.
-    # Das entspricht einer Gewinnmarge von exakt 0.0 für die Airline (Break-Even ohne Profit).
-    floor_price = compose_ticket_price(cost_pressure, 0.0, properties=properties, tick=tick)
+    # Hard Floor (Die Rote Linie): Der Preis darf niemals unter die Grenzkosten + Steuern + Gebühren fallen.
+    # Das erlaubt Loss-Leading zur Deckung von Fixkosten, verbietet aber Dumping unter die echten Grenzkosten.
+    marginal_cost = cost_pressure * config.marginal_cost_fraction
+    floor_price = compose_ticket_price(marginal_cost, 0.0, properties=properties, tick=tick)
     raw_price = max(raw_price, floor_price)
 
     new_price = clip_price_change(raw_price, anchor, config.max_price_change_fraction)

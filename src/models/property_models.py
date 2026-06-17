@@ -178,6 +178,7 @@ class MarketFeedbackConfig(BaseModel):
     max_price_change_fraction: float = 0.08
     damping: float = 0.85
     booking_weight: float = 0.6
+    marginal_cost_fraction: float = 0.33
 
 
 class MarketRule(BaseModel):
