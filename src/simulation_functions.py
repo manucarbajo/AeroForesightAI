@@ -51,13 +51,34 @@ def active_parameters(tick: int, properties: PropertiesConfig) -> dict[str, floa
 
 
 
-def compose_ticket_price(cost_pressure: float, provider_markup: float) -> float:
+def compose_ticket_price(
+    cost_pressure: float,
+    provider_markup: float,
+    *,
+    properties: PropertiesConfig | None = None,
+    tick: int = 0,
+) -> float:
+    """M4.13: published ticket price from cost layer + runtime margin property.
 
-    """M4.13: published ticket price from cost layer + runtime margin property."""
+    Custom taxes (percentage on base) and fees (absolute surcharges) defined
+    via ``price_component_type`` on system properties are applied here:
+        final = (base) * (1 + sum_of_tax_rates) + sum_of_absolute_fees
+    """
+    base = cost_pressure + max(0.0, provider_markup)
 
+    if properties is None:
+        return base
 
+    params = active_parameters(tick, properties)
+    total_tax_rate = 0.0
+    total_fees = 0.0
+    for sp in properties.system_properties:
+        if sp.price_component_type == "tax":
+            total_tax_rate += params.get(sp.id, 0.0)
+        elif sp.price_component_type == "fee":
+            total_fees += params.get(sp.id, 0.0)
 
-    return cost_pressure + max(0.0, provider_markup)
+    return base * (1.0 + total_tax_rate) + total_fees
 
 
 
@@ -255,6 +276,10 @@ def apply_market_feedback(
 
     coefficients: PriceCoefficientsConfig | None = None,
 
+    properties: PropertiesConfig | None = None,
+
+    tick: int = 0,
+
 ) -> tuple[float, float]:
 
     """M4: adjust provider_markup from observed booking rate vs target."""
@@ -271,7 +296,7 @@ def apply_market_feedback(
 
         price = clip_price_change(
 
-            compose_ticket_price(cost_pressure, markup),
+            compose_ticket_price(cost_pressure, markup, properties=properties, tick=tick),
 
             previous_ticket_price,
 
@@ -285,7 +310,7 @@ def apply_market_feedback(
 
     gap = booking_rate - config.target_booking_rate
 
-    anchor = previous_ticket_price if previous_ticket_price > 0 else compose_ticket_price(cost_pressure, previous_markup)
+    anchor = previous_ticket_price if previous_ticket_price > 0 else compose_ticket_price(cost_pressure, previous_markup, properties=properties, tick=tick)
 
     scale = max(cost_pressure, 1.0)
 
@@ -301,7 +326,7 @@ def apply_market_feedback(
 
     )
 
-    markup_path_price = compose_ticket_price(cost_pressure, max(0.0, previous_markup + markup_delta))
+    markup_path_price = compose_ticket_price(cost_pressure, max(0.0, previous_markup + markup_delta), properties=properties, tick=tick)
 
     yield_multiplier = 1.0 + config.damping * gap * config.markup_adjustment_per_tick
 
@@ -481,6 +506,10 @@ def compute_market_metrics(
 
             coefficients=coefficients,
 
+            properties=properties,
+
+            tick=tick,
+
         )
 
         demand_level = sync_demand_level(
@@ -499,7 +528,7 @@ def compute_market_metrics(
 
     else:
 
-        ticket_price = compose_ticket_price(cost_pressure, provider_markup)
+        ticket_price = compose_ticket_price(cost_pressure, provider_markup, properties=properties, tick=tick)
 
         ticket_price = clip_price_change(ticket_price, anchor_price, feedback.max_price_change_fraction)
 
