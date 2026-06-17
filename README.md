@@ -4,6 +4,8 @@ Multi-Agenten-Simulation für Szenarioplanung im Flugverkehr. Challenge 4 fokuss
 
 **Kernprinzip:** Zahlen kommen aus Python (`tick_mechanics`, `price_history`, Population) — LLM-Agenten liefern qualitative Narrative und Events. Der **State Explorer** (M9) antwortet nur aus diesen Run-Daten.
 
+**Dokumentation C4:** [`docs/challenge4/challenge4_report.md`](docs/challenge4/challenge4_report.md) · [Projektplan](docs/challenge4/projectplan.md) · [Traceability C1–C4](docs/challenge4/traceability_c1_c4.md)
+
 ## Schnellstart
 
 ### Batch-Lauf (CLI)
@@ -46,6 +48,20 @@ python -m src.state_explorer --run-id run_20260614T112808Z --tick 15 --question 
 python -m src.state_explorer --run-id run_20260614T112808Z   # interaktiv
 python -m src.state_explorer --run-id run_20260614T112808Z --mock-llm --question "Test"
 ```
+
+Kontext: `tick_mechanics.json`, `price_history.json`, `event_log.json`, optional Checkpoints. Gleiche Logik im Dashboard-Tab **Abfrage**.
+
+### Szenario-Sweeps (M8)
+
+Vier Foresight-Presets deterministisch vergleichen:
+
+```powershell
+python -m src.scenario_sweeps
+python -m src.scenario_sweeps --sweep transformation_conflict
+python -m src.scenario_sweeps --ticks 10000 --quiet
+```
+
+Outputs: `outputs/sweeps/sweep_summary.json`, `scenario_scores.json`. Details: [`docs/challenge4/scenario_runs.md`](docs/challenge4/scenario_runs.md)
 
 ### LangGraph Studio (interaktiv)
 
@@ -119,14 +135,22 @@ Technology-Lab/
 │   ├── service.py                 # Run-Liste, Lauf starten, Artefakte laden
 │   ├── start.ps1                  # Windows-Starter
 │   └── README.md
-├── docs/challenge4/               # Projektplan, Agent-Profile, Traceability
+├── docs/challenge4/               # Projektplan, Report, Traceability, Profile
+│   ├── challenge4_report.md       # Abschlussbericht C4 (M11)
+│   ├── traceability_c1_c4.md
+│   ├── agent_profiles.md
+│   ├── cib_rationale.md
+│   └── scenario_runs.md
 ├── langgraph_studio/              # Studio (.env, langgraph.json)
 ├── src/
 │   ├── run_simulation.py          # CLI: Batch, Resume, --studio
 │   ├── simulation_runner.py       # Orchestrierung + Checkpoints
 │   ├── state_explorer.py          # Grounded Q&A (M9)
 │   ├── event_deltas.py            # Delta-Events aus Python (M9)
+│   ├── scenario_sweeps.py         # Szenario-Sweeps (M8)
+│   ├── figure_generator.py        # Figures global + pro Run (M10)
 │   ├── output_writer.py           # final_narrative, tick_mechanics, …
+│   ├── legacy/                    # Challenge 2/3 Legacy (CIBExtractorNode)
 │   └── nodes/                     # Agent, Market, Environment, …
 ├── tests/
 └── outputs/<run_id>/              # Laufzeit-Artefakte (gitignored)
@@ -181,6 +205,25 @@ python -m src.figure_generator --run-only run_20260614T112808Z
 ```
 
 Im Dashboard: Tab **Figures** unter «Ergebnisse ansehen».
+
+## Agent-Profile (M7)
+
+Informationsgrenzen pro Agent (`observes`, `may_propose`, `must_not_output`, `depends_on`):
+
+- Config: `configs/agent_profiles.json`
+- Doku: [`docs/challenge4/agent_profiles.md`](docs/challenge4/agent_profiles.md)
+
+Regulator darf F2/F6 vorschlagen (Python-validiert); Provider/Consumer nur Events.
+
+## Emergenz
+
+Nicht-triviale Verläufe entstehen aus **gekoppelten Python-Mechanismen** — nicht aus freier LLM-Interpretation:
+
+- Property-Shocks (CO₂, SAF) → Kosten → Booking → Markt-Feedback
+- `factor_rules` (F1–F7) → Population-`shift_rules` → Segmentreaktionen
+- Szenario-Unterschiede über Sweeps (`business_as_usual` … `transformation_conflict`)
+
+CIB als **Referenz** (`cib_frozen.json`), Lauf-Dynamik über Regeln: [`docs/challenge4/cib_rationale.md`](docs/challenge4/cib_rationale.md)
 
 ## Dashboard
 
@@ -248,4 +291,4 @@ Relevante Suites u. a. `test_state_explorer.py`, `test_dashboard_service.py`, `t
 
 ## Meilensteine
 
-Aktueller Stand und Abnahmekriterien: [`docs/challenge4/projectplan.md`](docs/challenge4/projectplan.md).
+Aktueller Stand und Abnahmekriterien: [`docs/challenge4/projectplan.md`](docs/challenge4/projectplan.md). Abschlussbericht: [`docs/challenge4/challenge4_report.md`](docs/challenge4/challenge4_report.md).

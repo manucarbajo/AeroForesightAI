@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| **Stand** | 14.06.2026 (M10 Figures + Dashboard-Integration) |
-| **Branch** | `m9/challenge4` |
+| **Stand** | 16.06.2026 (M11 Doku & Report) |
+| **Branch** | `m9_dashboard/challenge4` |
 | **Ziel** | Vollständige Umsetzung C4: Dynamik, Wechselwirkungen, Emergenz, Exploration |
-| **Fortschritt** | **M0–M10 erledigt** · M11–M12 offen · pytest **217** grün |
-| **Nächster Schritt** | **M11** (Report, Traceability) |
+| **Fortschritt** | **M0–M11 erledigt** · M12 offen · pytest **217** grün |
+| **Nächster Schritt** | **M12** (Gesamtabnahme Emergenz) |
 
 ## Forschungsfrage
 
@@ -44,7 +44,7 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 | **C1** Systementwurf (Domäne, F1–F7) | M0–M3 | erledigt |
 | **C2** Workbench (LangGraph, Studio, CLI) | M1 | erledigt |
 | **C3** Statisches Verhalten (CIB-Referenz) | M0 | erledigt |
-| **C4** Dynamik + Emergenz | M4–M12 | **teilweise** (M0–M10 erledigt; M11–M12 offen) |
+| **C4** Dynamik + Emergenz | M4–M12 | **teilweise** (M0–M11 erledigt; M12 offen) |
 
 | C3 (statisch) | C4 (dynamisch) | Meilenstein |
 | ------------- | -------------- | ----------- |
@@ -81,7 +81,8 @@ M5/M6/M7 vor M8 (Sweeps brauchen Faktor-Regeln, Einkommen, Profile).
 | M8 Sweeps & 10k | **erledigt** | Vier Szenario-Sweeps, Benchmark, `scenario_scores.json` |
 | M9 Events & Explorer | **erledigt** | `write_events_from_deltas`, `state_explorer.py`, CLI, Tests |
 | M10 Figures & Szenarien | **erledigt** | Global + pro Run; Dashboard-Tab «Figures» |
-| M11–M12 | **offen** | Report, Gesamtabnahme |
+| M11 Doku & Report | **erledigt** | Report, Traceability, README, Legacy-Refactor |
+| M12 Integration | **offen** | Gesamtabnahme Emergenz |
 | Präsentations-Dashboard | **erledigt** | Streamlit unter `dashboard/` — optional, kein Meilenstein (s. Abschnitt unten) |
 
 **Ist-Pipeline:** `orchestrator → apply_factor_rules → parallel_round (provider/regulator) → environment (booking, validate_factor_proposals) → consumer → market (market_rules) → factors.csv`.
@@ -484,16 +485,16 @@ python -m streamlit run dashboard/app.py
 
 ---
 
-## M11 — Doku & Report
+## M11 — Doku & Report — erledigt
 
 | ID | Aufgabe | Datei | Status |
 | -- | ------- | ----- | ------ |
-| M11.1 | `challenge4_report.md` (Forschungsfrage, Qualität, Grenzen Framework) | `docs/challenge4/` | offen |
-| M11.2 | `cib_rationale.md` (nach M5.8) | `docs/challenge4/` | offen |
-| M11.3 | `agent_profiles.md` (nach M7.5) | `docs/challenge4/` | offen |
-| M11.4 | `traceability_c1_c4.md` | `docs/challenge4/` | offen |
-| M11.5 | README: Sweeps, Explorer, Profile, Emergenz | `README.md` | **teilweise** (Explorer, Dashboard dokumentiert; Report fehlt) |
-| M11.6 | `CIBExtractorNode` → `src/legacy/` | Refactor | offen |
+| M11.1 | `challenge4_report.md` (Forschungsfrage, Qualität, Grenzen Framework) | `docs/challenge4/` | erledigt |
+| M11.2 | `cib_rationale.md` (nach M5.8) | `docs/challenge4/` | erledigt |
+| M11.3 | `agent_profiles.md` (nach M7.5) | `docs/challenge4/` | erledigt |
+| M11.4 | `traceability_c1_c4.md` | `docs/challenge4/` | erledigt |
+| M11.5 | README: Sweeps, Explorer, Profile, Emergenz | `README.md` | erledigt |
+| M11.6 | `CIBExtractorNode` → `src/legacy/` | Refactor | erledigt |
 
 ---
 

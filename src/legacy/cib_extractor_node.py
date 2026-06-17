@@ -1,4 +1,8 @@
-"""LLM-based CIB matrix extractor node.
+"""LLM-based CIB matrix extractor node (Challenge 2/3 legacy).
+
+Not part of the Challenge 4 simulation loop. C4 uses a frozen reference matrix
+(`configs/cib_frozen.json`) plus deterministic `factor_rules` for runtime
+dynamics. Kept for tests and post-hoc CIB extraction experiments.
 
 Evaluates cross-impact influences between factor descriptors using an LLM.
 Enforces delta constraint (max ±1 per cell per round) for iterative updates.
