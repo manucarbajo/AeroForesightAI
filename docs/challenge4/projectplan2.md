@@ -86,7 +86,7 @@ Reihenfolge: **P1 → P2 → P3 → P4 → P5 → P6**. M12-Gates (ehem. P0) **a
 | Pipeline, Population, Faktoren, CIB, Sweeps, Explorer, Dashboard | erledigt |
 | `tick_mechanics`, Timeseries, `final_narrative.md` (Qualität offen) | teilweise |
 | **P2.1 Sättigungseffekt** (Kontinuierliches `saturation_level`, Decay-Raten, Logit-Penalty) | **erledigt** |
-| **P2.2 Segmente SSOT** (dynamische Segment-Keys, Dashboard-Prevalences) | **erledigt** |
+| **P2.2 Segmente SSOT & Dashboard** (dynamische Segment-Keys, Modifikatoren bearbeiten, UI-Delete mit Legacy-Schutz) | **erledigt** |
 | **P2.3 Basispreis konfigurierbar** (Sweep + Dashboard) | **erledigt** |
 | **P2.4 Faktordynamik** (3 neue CIB-Regeln: F4→F1, F5→F1, F3→F6) | **erledigt** |
 | **P2.5 Emergenz-Nachweis** (`emergence_evidence.md`, Test ohne CO₂-Shock) | **erledigt** |
@@ -269,6 +269,7 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 
 **Umsetzung (18.06.2026):** `aggregate_population_stats()` leitet Segment-Keys dynamisch aus `individual_properties[boolean]` ab. Dashboard unterstützt Segment-Prevalences und Decay-Raten.
 *   **Realistische Demografie:** Die Segmente wurden exakt an reale Flugstatistiken angepasst: 63 % Nicht-/Seltenflieger (`eco_conscious`: 60 %), 29 % Gelegenheitsflieger (`price_sensitive`: 30 %), 8 % Vielflieger (`business`: 8 %, `frequent_flyer`: 3 %).
+*   **Dashboard-Konfiguration:** Segmente können nun komplett über das Frontend verwaltet werden (inkl. Neuanlage und Löschung mit Schutz für Legacy-Segmente). Die 4 Verhaltens-Modifikatoren (WTP, Einkommen, Preissensibilität, Wechselbereitschaft) sind direkt in der UI als Eingabefelder zugänglich und an das Backend (`properties.json`) gekoppelt.
 
 ## P2.3 Basispreis
 
