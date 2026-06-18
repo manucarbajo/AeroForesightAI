@@ -239,19 +239,22 @@
       "id": "business",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.3
+      "prevalence": 0.08,
+      "saturation_decay": 0.3
     },
     {
       "id": "price_sensitive",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.45
+      "prevalence": 0.30,
+      "saturation_decay": 0.15
     },
     {
       "id": "eco_conscious",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.2
+      "prevalence": 0.60,
+      "saturation_decay": 0.05
     },
     {
       "id": "environmental_awareness",
@@ -297,7 +300,8 @@
       "id": "frequent_flyer",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.05
+      "prevalence": 0.03,
+      "saturation_decay": 1.0
     }
   ],
   "shift_rules": [
@@ -627,7 +631,7 @@
         "update_property": "provider_markup",
         "publish_property": "ticket_price",
         "compose": "cost_pressure + provider_markup",
-        "target_booking_rate": 0.7,
+        "target_booking_rate": 0.37,
         "markup_adjustment_per_tick": 0.08,
         "max_price_change_fraction": 0.08,
         "damping": 0.85,
@@ -658,7 +662,7 @@
   },
   "market_feedback": {
     "enabled": true,
-    "target_booking_rate": 0.7,
+    "target_booking_rate": 0.37,
     "markup_adjustment_per_tick": 0.08,
     "max_price_change_fraction": 0.08,
     "damping": 0.85,

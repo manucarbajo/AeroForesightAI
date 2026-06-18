@@ -79,6 +79,7 @@ class IndividualProperty(BaseModel):
     type: Literal["boolean", "distribution", "numeric"] = "boolean"
     prevalence: float | None = None
     enabled: bool = True
+    saturation_decay: float | None = None
     distribution: DistributionType | None = None
     mean: float | None = None
     std_dev: float | None = None

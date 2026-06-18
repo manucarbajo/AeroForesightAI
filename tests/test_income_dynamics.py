@@ -96,7 +96,7 @@ def test_shift_rules_modify_base_before_index_scaling():
 
 def test_falling_income_index_reduces_booking_more_for_price_sensitive():
     properties = load_properties_config()
-    config = PopulationConfig(segments=[], total_population=1000)
+    config = PopulationConfig(segments=[], total_population=5000)
     individuals = initialize_population(properties, config, seed=42)
 
     factors = {

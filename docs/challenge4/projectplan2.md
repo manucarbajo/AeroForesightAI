@@ -85,7 +85,7 @@ Reihenfolge: **P1 → P2 → P3 → P4 → P5 → P6**. M12-Gates (ehem. P0) **a
 | --- | --- |
 | Pipeline, Population, Faktoren, CIB, Sweeps, Explorer, Dashboard | erledigt |
 | `tick_mechanics`, Timeseries, `final_narrative.md` (Qualität offen) | teilweise |
-| **P2.1 Sättigungseffekt** (Cooldown, `last_booked_tick`, Export) | **erledigt** |
+| **P2.1 Sättigungseffekt** (Kontinuierliches `saturation_level`, Decay-Raten, Logit-Penalty) | **erledigt** |
 | **P2.2 Segmente SSOT** (dynamische Segment-Keys, Dashboard-Prevalences) | **erledigt** |
 | **P2.3 Basispreis konfigurierbar** (Sweep + Dashboard) | **erledigt** |
 | **P2.4 Faktordynamik** (3 neue CIB-Regeln: F4→F1, F5→F1, F3→F6) | **erledigt** |
@@ -212,7 +212,7 @@ Kap. 8 schließt mit einer **eigenen Tabelle aller Symbole** (\(p_t, C_t, \varep
 | Markt-Feedback | `simulation_functions.py` | Yield-Heuristik | F-P6, F-P7, F-D2 | Belobaba | Emergenz-Pfad | … |
 | Faktor-Regeln | `factor_dynamics.py` | CIB → bedingte Übergänge | F-FAC1 | Gausemeier; Kap. 5 | … | … |
 | CIB-Score | `scenario_consistency.py` | Paarweise Konflikte | F-CIB1…F-CIB3 | Projekt-CIB | … | … |
-| Sättigung | P2.1 | Cooldown / habituation | F-POP4 | P1.8 (Literatur) | … | … |
+| Sättigung | P2.1 | Kontinuierliches Sättigungslevel / Decay | F-POP4 | P1.8 (Literatur) | … | … |
 | LLM Agenten-Narrativ | `agent_node.py`, Prompts | Grounded NLG | — | White; Kap. 7 | LLM erfindet keine Zahlen | … |
 | LLM Run-Szenario | P3 Generator | Grounded Synthese | — | Kap. 7 | Kontext aus Run-Artefakten | … |
 | Explorer / Chat | `state_explorer.py` | RAG auf Run-State | — | Kap. 7 | … | … |
@@ -252,12 +252,14 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 | ID | Aufgabe | Datei | Status |
 | -- | ------- | ----- | ------ |
 | P2.1.1 | P1.9 Literatur + Formel F-POP4 | `scientific_foundation.md` Kap. 8 | offen (P1) |
-| P2.1.2 | `last_booked_tick` | `population_models.py` | **erledigt** |
-| P2.1.3 | Cooldown | `population_sampler.py` | **erledigt** |
-| P2.1.4 | Checkpoint + Export | `output_writer.py` | **erledigt** |
-| P2.1.5 | Test | `tests/test_population_sampler.py` | **erledigt** (3 neue Tests) |
+| P2.1.2 | `saturation_level` | `population_models.py` | **erledigt** |
+| P2.1.3 | Kontinuierlicher Decay & Logit Penalty | `population_sampler.py` | **erledigt** |
+| P2.1.4 | Dashboard Konfiguration für Decay-Raten | `config_ui.py` | **erledigt** |
+| P2.1.5 | Test auf kontinuierliche Sättigung | `tests/test_population_sampler.py` | **erledigt** (3 neue Tests) |
 
-**Umsetzung (18.06.2026):** `Individual.last_booked_tick`, `PropertiesConfig.saturation_cooldown_ticks` (Default 0), Cooldown-Gate in `_booking_probability`/`evaluate_booking`/`run_population_tick`. Aktivierung: `"saturation_cooldown_ticks": 3` in `properties.json`. Export in `population.csv` + `individuals_history.csv`.
+**Umsetzung (18.06.2026):** Harter Cooldown (`last_booked_tick`) wurde durch kontinuierliches `saturation_level` ersetzt. Bei Buchung steigt Level um +0.6. Sättigung erzeugt Penalty im Logit-Modell.
+*   Decay-Raten wurden verlangsamt, um den Sättigungsabbau über mehrere *abstrakte Ticks* (Epochen) organisch zu verteilen: `frequent_flyer` (1.0), `business` (0.3), `price_sensitive` (0.15), `eco_conscious` (0.05).
+*   `target_booking_rate` wurde auf 0.37 justiert, um exakt der durchschnittlichen jährlichen Flugquote der deutschen Bevölkerung zu entsprechen.
 
 ## P2.2 Segmente
 
@@ -265,7 +267,8 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 | -- | ------- | ----- | ------ |
 | P2.2.1–P2.2.6 | SSOT, Dashboard, Sweeps, Legacy | s. Plan 1 | **erledigt** |
 
-**Umsetzung (18.06.2026):** `aggregate_population_stats()` leitet Segment-Keys dynamisch aus `individual_properties[boolean]` ab (optionaler `properties`-Parameter; fallback auf Legacy `SEGMENT_LABEL_MAP`). Dashboard hatte bereits Prevalence-Slider. 2 neue Tests.
+**Umsetzung (18.06.2026):** `aggregate_population_stats()` leitet Segment-Keys dynamisch aus `individual_properties[boolean]` ab. Dashboard unterstützt Segment-Prevalences und Decay-Raten.
+*   **Realistische Demografie:** Die Segmente wurden exakt an reale Flugstatistiken angepasst: 63 % Nicht-/Seltenflieger (`eco_conscious`: 60 %), 29 % Gelegenheitsflieger (`price_sensitive`: 30 %), 8 % Vielflieger (`business`: 8 %, `frequent_flyer`: 3 %).
 
 ## P2.3 Basispreis
 

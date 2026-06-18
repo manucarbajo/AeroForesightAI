@@ -176,62 +176,62 @@ def test_shift_rule_once_does_not_stack():
 
 
 # ---------------------------------------------------------------------------
-# P2.1 — Sättigungseffekt (Cooldown)
+# P2.1 — Sättigungseffekt (Saturation utility model)
 # ---------------------------------------------------------------------------
 
-def test_cooldown_blocks_rebooking_within_cooldown_period():
-    """P2.1: Person who just booked cannot book again before cooldown expires."""
+def test_saturation_increases_on_booking():
+    """P2.1: Booking a flight increases saturation_level."""
     properties = load_properties_config()
     config = PopulationConfig(segments=[], total_population=200)
     individuals = initialize_population(properties, config, seed=7)
 
     # Tick 1: book at low price
     booked_t1, stats_t1 = evaluate_booking(
-        individuals, ticket_price=80.0, carbon_tax=30.0, current_tick=1, cooldown_ticks=3
+        individuals, ticket_price=80.0, carbon_tax=30.0, current_tick=1
     )
-    booked_count_t1 = stats_t1.total_booked
-
-    # Tick 2: same low price but within cooldown — bookers from tick 1 cannot rebook
-    booked_t2, stats_t2 = evaluate_booking(
-        booked_t1, ticket_price=80.0, carbon_tax=30.0, current_tick=2, cooldown_ticks=3
-    )
-    # Everyone who booked at tick 1 is blocked → count cannot exceed those who did NOT book at tick 1
-    never_booked_t1 = sum(1 for p in booked_t1 if p.last_booked_tick is None)
-    assert stats_t2.total_booked <= never_booked_t1
+    for person in booked_t1:
+        if person.booked:
+            assert person.saturation_level >= 0.6
+        else:
+            assert person.saturation_level == 0.0
 
 
-def test_cooldown_reactivates_after_expiry():
-    """P2.1: Booking is allowed again once cooldown_ticks have passed."""
-    properties = load_properties_config()
-    config = PopulationConfig(segments=[], total_population=200)
-    individuals = initialize_population(properties, config, seed=7)
-    cooldown = 2
-
-    # Tick 1: book
-    booked_t1, stats_t1 = evaluate_booking(
-        individuals, ticket_price=80.0, carbon_tax=30.0, current_tick=1, cooldown_ticks=cooldown
-    )
-    # Tick 4: cooldown (2) has expired → (4 - 1 = 3 >= 2) everyone can book again
-    booked_t4, stats_t4 = evaluate_booking(
-        booked_t1, ticket_price=80.0, carbon_tax=30.0, current_tick=4, cooldown_ticks=cooldown
-    )
-    # Booking rate at tick 4 should be at least as high as tick 1
-    assert stats_t4.total_demand >= stats_t1.total_demand * 0.9
-
-
-def test_last_booked_tick_is_set_on_booking():
-    """P2.1: last_booked_tick is set to current_tick when a person books."""
+def test_saturation_decays_per_tick():
+    """P2.1: Saturation level decays in run_population_tick."""
+    from src.population_sampler import run_population_tick
     properties = load_properties_config()
     config = PopulationConfig(segments=[], total_population=100)
     individuals = initialize_population(properties, config, seed=7)
+    
+    # Manually set high saturation
+    for person in individuals:
+        person.saturation_level = 0.8
+        
+    individuals_t2, _ = run_population_tick(
+        properties, config, individuals, ticket_price=1000.0, carbon_tax=50.0, factors={}, system_properties={}, current_tick=2
+    )
+    
+    for person in individuals_t2:
+        assert person.saturation_level < 0.8
 
-    booked, _ = evaluate_booking(individuals, ticket_price=80.0, carbon_tax=30.0, current_tick=5)
-    for person in booked:
-        if person.booked:
-            assert person.last_booked_tick == 5
-        else:
-            # Non-bookers retain their previous last_booked_tick (None if never booked)
-            assert person.last_booked_tick is None
+
+def test_high_saturation_reduces_booking_probability():
+    """P2.1: High saturation level reduces the probability of booking."""
+    properties = load_properties_config()
+    config = PopulationConfig(segments=[], total_population=500)
+    individuals = initialize_population(properties, config, seed=7)
+
+    # Base case (saturation = 0)
+    _, stats_base = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=50.0)
+
+    # Saturated case (saturation = 1.0)
+    saturated_individuals = []
+    for person in individuals:
+        saturated_individuals.append(person.model_copy(update={"saturation_level": 1.0}))
+        
+    _, stats_saturated = evaluate_booking(saturated_individuals, ticket_price=100.0, carbon_tax=50.0)
+
+    assert stats_saturated.total_demand < stats_base.total_demand
 
 
 # ---------------------------------------------------------------------------

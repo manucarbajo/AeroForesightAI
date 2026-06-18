@@ -69,7 +69,7 @@ class TestM413ConfigurablePrice:
         properties = load_properties_config()
         config = resolve_market_feedback_config(properties)
         assert config.enabled is True
-        assert config.target_booking_rate == 0.70
+        assert config.target_booking_rate == 0.37
 
     def test_runtime_properties_excluded_from_exogenous_resolve(self):
         properties = load_properties_config()

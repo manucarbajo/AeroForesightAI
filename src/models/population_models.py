@@ -47,5 +47,4 @@ class Individual(BaseModel):
     income_factor: float = 1.0
     booked: bool = False
     applied_shift_rules: list[str] = Field(default_factory=list)
-    last_booked_tick: int | None = None
-
+    saturation_level: float = Field(default=0.0, ge=0.0, le=1.0)

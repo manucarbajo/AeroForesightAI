@@ -123,6 +123,7 @@ class PopulationEditState:
     id: str
     type: str
     prevalence: float | None = None
+    saturation_decay: float | None = None
     distribution: str | None = None
     mean: float | None = None
     std_dev: float | None = None
@@ -257,6 +258,7 @@ def extract_population_edits_from_file(filename: str = "properties.json") -> lis
             id=p.get("id", ""),
             type=p.get("type", "boolean"),
             prevalence=p.get("prevalence"),
+            saturation_decay=p.get("saturation_decay"),
             distribution=p.get("distribution"),
             mean=p.get("mean"),
             std_dev=p.get("std_dev"),
@@ -280,6 +282,7 @@ def save_population_edits_to_file(edits: list[PopulationEditState], filename: st
         d = {"id": e.id, "type": e.type, "enabled": True}
         if e.type == "boolean":
             if e.prevalence is not None: d["prevalence"] = float(e.prevalence)
+            if e.saturation_decay is not None: d["saturation_decay"] = float(e.saturation_decay)
         else:
             if e.distribution: d["distribution"] = e.distribution
             if e.mean is not None: d["mean"] = float(e.mean)

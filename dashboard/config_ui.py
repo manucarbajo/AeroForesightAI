@@ -473,7 +473,7 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
         draft.population_edits = extract_population_edits_from_file("properties.json")
         st.rerun()
 
-    st.markdown("### Segment-Anteile (Prevalence)")
+    st.markdown("### Segmente (Anteile & Verhalten)")
     if not hasattr(draft, "population_edits") or not draft.population_edits:
         draft.population_edits = extract_population_edits_from_file("properties.json")
     boolean_props = [p for p in draft.population_edits if p.type == "boolean"]
@@ -481,9 +481,16 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
     for i, p in enumerate(boolean_props):
         with cols[i % 3]:
             label = p.id.replace("_", " ").title()
-            val = float(p.prevalence) if p.prevalence is not None else 0.0
-            new_val = st.slider(f"{label}", 0.0, 1.0, val, 0.05, key=f"pop_prev_{p.id}")
-            p.prevalence = new_val
+            with st.container(border=True):
+                st.markdown(f"**{label}**")
+                
+                val_prev = float(p.prevalence) if p.prevalence is not None else 0.0
+                new_prev = st.slider("Anteil (Prevalence)", 0.0, 1.0, val_prev, 0.05, key=f"pop_prev_{p.id}")
+                p.prevalence = new_prev
+                
+                val_decay = float(p.saturation_decay) if p.saturation_decay is not None else 0.2
+                new_decay = st.slider("Erholung pro Tick (Decay)", 0.0, 1.0, val_decay, 0.05, key=f"pop_decay_{p.id}", help="Wieviel Sättigung wird pro Zeiteinheit abgebaut (0.0=nie, 1.0=sofort)")
+                p.saturation_decay = new_decay
 
     st.markdown("### Eigenschaften-Verteilungen")
     dist_props = [p for p in draft.population_edits if p.type == "distribution"]

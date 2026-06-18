@@ -322,11 +322,7 @@ def _booking_probability(
     green_premium: float = DEFAULT_GREEN_PREMIUM,
     logit_threshold: float = DEFAULT_LOGIT_THRESHOLD,
     current_tick: int = 0,
-    cooldown_ticks: int = 0,
 ) -> bool:
-    if cooldown_ticks > 0 and person.last_booked_tick is not None:
-        if current_tick - person.last_booked_tick < cooldown_ticks:
-            return False
 
     affordability_limit = (
         person.wtp_eur
@@ -346,8 +342,9 @@ def _booking_probability(
         eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY * min(1.0, normalized_tax)
         
     substitution_penalty = person.substitution_readiness * normalized_price * 1.5
+    saturation_penalty = person.saturation_level * 1.0
 
-    utility = base_utility - price_penalty - eco_penalty - substitution_penalty
+    utility = base_utility - price_penalty - eco_penalty - substitution_penalty - saturation_penalty
     probability = float(1.0 / (1.0 + np.exp(-utility)))
     return bool(probability >= logit_threshold)
 
@@ -358,7 +355,6 @@ def evaluate_booking(
     ticket_price: float,
     carbon_tax: float,
     current_tick: int = 0,
-    cooldown_ticks: int = 0,
     properties: "PropertiesConfig | None" = None,
 ) -> tuple[list[Individual], PopulationStats]:
     """Evaluate booking decisions for persistent individuals."""
@@ -370,11 +366,11 @@ def evaluate_booking(
             ticket_price=ticket_price,
             carbon_tax=carbon_tax,
             current_tick=current_tick,
-            cooldown_ticks=cooldown_ticks,
         )
         update: dict[str, object] = {"booked": bool(booked)}
         if booked:
-            update["last_booked_tick"] = current_tick
+            new_saturation = min(1.0, person.saturation_level + 0.6)
+            update["saturation_level"] = round(new_saturation, 4)
         booked_individuals.append(person.model_copy(update=update))
 
     return booked_individuals, aggregate_population_stats(booked_individuals, properties=properties)
@@ -477,6 +473,15 @@ def update_income_factors(
     ]
 
 
+def get_decay_rate(person: Individual, properties: PropertiesConfig) -> float:
+    max_decay = 0.2
+    for prop in properties.individual_properties:
+        if prop.type == "boolean" and person.labels.get(prop.id):
+            if prop.saturation_decay is not None:
+                max_decay = max(max_decay, prop.saturation_decay)
+    return max_decay
+
+
 def run_population_tick(
     properties: PropertiesConfig,
     config: PopulationConfig,
@@ -517,13 +522,17 @@ def run_population_tick(
         system_properties,
     )
     individuals = update_income_factors(shifted, income_index)
+    
+    # Apply saturation decay
+    for person in individuals:
+        decay = get_decay_rate(person, properties)
+        person.saturation_level = max(0.0, round(person.saturation_level - decay, 4))
 
     return evaluate_booking(
         individuals,
         ticket_price=ticket_price,
         carbon_tax=carbon_tax,
         current_tick=current_tick,
-        cooldown_ticks=properties.saturation_cooldown_ticks,
         properties=properties,
     )
 
