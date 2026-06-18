@@ -98,19 +98,6 @@ def _sample_lognormal(
     return float(np.clip(value, min_value, max_value))
 
 
-def _derive_price_sensitivity(labels: dict[str, bool]) -> float:
-    value = 0.5
-    if labels.get("business"):
-        value -= 0.2
-    if labels.get("price_sensitive"):
-        value += 0.3
-    if labels.get("eco_conscious"):
-        value += 0.05
-    if labels.get("frequent_flyer"):
-        value -= 0.3
-    return float(np.clip(value, 0.0, 1.0))
-
-
 def initialize_population(
     properties: PropertiesConfig,
     config: PopulationConfig,
@@ -200,21 +187,23 @@ def initialize_population(
         else:
             substitution_readiness = float(rng.uniform(0.1, 0.9))
 
-        if labels.get("business"):
-            wtp *= 1.25
-        if labels.get("frequent_flyer"):
-            wtp *= 1.5
-            # Frequent flyers are modal-fixed on air travel — lower substitution readiness
-            substitution_readiness *= 0.4
-
         base_income = 1.0
-        if labels.get("business"):
-            base_income += 0.15
-        if labels.get("frequent_flyer"):
-            base_income += 0.2
-        if labels.get("price_sensitive"):
-            base_income -= 0.15
+        price_sensitivity = 0.5
+
+        for prop in properties.individual_properties:
+            if prop.type == "boolean" and labels.get(prop.id):
+                mods = prop.modifiers
+                if "wtp_multiplier" in mods:
+                    wtp *= mods["wtp_multiplier"]
+                if "substitution_readiness_multiplier" in mods:
+                    substitution_readiness *= mods["substitution_readiness_multiplier"]
+                if "base_income_delta" in mods:
+                    base_income += mods["base_income_delta"]
+                if "price_sensitivity_delta" in mods:
+                    price_sensitivity += mods["price_sensitivity_delta"]
+
         base_income = float(np.clip(base_income + rng.normal(0.0, 0.05), 0.5, 1.5))
+        price_sensitivity = float(np.clip(price_sensitivity, 0.0, 1.0))
 
         individuals.append(
             Individual(
@@ -224,7 +213,7 @@ def initialize_population(
                 wtp_eur=round(wtp, 2),
                 environmental_awareness=round(awareness, 4),
                 substitution_readiness=round(substitution_readiness, 4),
-                price_sensitivity=_derive_price_sensitivity(labels),
+                price_sensitivity=round(price_sensitivity, 4),
                 base_income_factor=round(base_income, 4),
                 income_factor=round(base_income, 4),
             )

@@ -87,6 +87,7 @@ class IndividualProperty(BaseModel):
     max_value: float | None = None
     alpha: float | None = None
     beta: float | None = None
+    modifiers: dict[str, float] = Field(default_factory=dict)
 
 
 class ShiftRule(BaseModel):

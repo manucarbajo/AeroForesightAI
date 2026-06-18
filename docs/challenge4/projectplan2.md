@@ -306,7 +306,7 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 | -- | ------- | ------ | --------- |
 | P2.6.1 | Dynamische Steuern & Gebühren | erledigt | `SystemProperty` Typen `tax` (relativ) und `fee` (absolut) in Frontend & Modellen implementiert (`compose_ticket_price`). |
 | P2.6.2 | Markup-Bugfix (Tax-in-Markup) | erledigt | `apply_market_feedback` rechnet Steuern/Gebühren aus dem Zielpreis heraus, um reine Airline-Marge exakt zu berechnen. |
-| P2.6.3 | IATA-Auslastungsrate | erledigt | `target_booking_rate` in `MarketFeedbackConfig` von 0.75 auf 0.84 (84%) angehoben (IATA-Referenz). |
+| P2.6.3 | Target Booking Rate (Populationsauslastung) | erledigt | `target_booking_rate` in `MarketFeedbackConfig` wurde final auf 0.37 (37%) justiert, um exakt dem Flugverhalten der realen Bevölkerungsdemografie zu entsprechen (zuvor kurzzeitig 0.84 als IATA-Flugzeug-Auslastungs-Referenz). |
 | P2.6.4 | Marginal Cost Floor (Rote Linie) | erledigt | `marginal_cost_fraction` (0.33) eingeführt. Airline darf Loss-Leading betreiben, Preise fallen aber nie unter Grenzkosten + volle Steuern. |
 
 ---

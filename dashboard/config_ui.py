@@ -167,11 +167,12 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
         help="Startwerte aus den Tabs «Properties» und «Faktoren» in die Simulation übernehmen.",
     )
 
-    with st.expander(" Neue Property hinzufügen", expanded=False):
-        c1, c2 = st.columns([2, 2])
+    with st.container(border=True):
+        st.markdown("**Neue Property hinzufügen**")
+        c1, c2, c3 = st.columns([2, 2, 2])
         new_prop_id = c1.text_input("Property ID", placeholder="z.B. airport_fee", key="new_prop_id")
         new_prop_label = c2.text_input("Anzeigename", placeholder="z.B. Airport Fee", key="new_prop_label")
-        c3, c4 = st.columns([2, 1])
+        
         price_category_options = {
             "Keine Preisbindung": "none",
             "Steuer (Prozentual auf Ticketpreis)": "tax",
@@ -186,8 +187,8 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
                  "Gebühren werden als absoluter EUR-Betrag addiert (z.B. 10.0 = 10 €).",
         )
         price_component_type = price_category_options[selected_category]
-        c4.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        if c4.button("Hinzufügen", width="stretch"):
+        
+        if st.button("Property Hinzufügen", type="primary", use_container_width=True):
             if new_prop_id and new_prop_id.isidentifier():
                 add_custom_property(new_prop_id, new_prop_label, draft.properties_file, price_component_type)
                 draft.property_edits = extract_property_edits_from_file(draft.properties_file)
@@ -236,7 +237,8 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
                             st.session_state[confirm_key] = False
                             st.rerun()
                     else:
-                        if st.button(f"🗑️ Property '{prop_id}' löschen", key=f"init_del_inactive_{prop_id}"):
+                        st.markdown('<span class="delete-btn-marker"></span>', unsafe_allow_html=True)
+                        if st.button(f"Property '{prop_id}' löschen", key=f"init_del_inactive_{prop_id}"):
                             st.session_state[confirm_key] = True
                             st.rerun()
                 continue
@@ -323,7 +325,8 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
                             st.session_state[confirm_key] = False
                             st.rerun()
                     else:
-                        if st.button(f"🗑️ Property '{prop_id}' löschen", key=f"init_del_active_{prop_id}"):
+                        st.markdown('<span class="delete-btn-marker"></span>', unsafe_allow_html=True)
+                        if st.button(f"Property '{prop_id}' löschen", key=f"init_del_active_{prop_id}"):
                             st.session_state[confirm_key] = True
                             st.rerun()
     return draft
@@ -476,6 +479,27 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
     st.markdown("### Segmente (Anteile & Verhalten)")
     if not hasattr(draft, "population_edits") or not draft.population_edits:
         draft.population_edits = extract_population_edits_from_file("properties.json")
+
+    with st.container(border=True):
+        st.markdown("**Neues Segment hinzufügen**")
+        c1, c2 = st.columns([3, 1])
+        new_seg_id = c1.text_input("Segment ID (z.B. family_traveler)", key="new_seg_id")
+        c2.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        if c2.button("Segment Hinzufügen", key="btn_add_seg", type="primary", use_container_width=True):
+            if new_seg_id and new_seg_id.isidentifier():
+                if any(e.id == new_seg_id for e in draft.population_edits):
+                    st.error("Ein Segment mit dieser ID existiert bereits!")
+                else:
+                    new_seg = PopulationEditState(
+                        id=new_seg_id, type="boolean", prevalence=0.1, saturation_decay=0.2
+                    )
+                    draft.population_edits.insert(0, new_seg)
+                    save_population_edits_to_file(draft.population_edits, "properties.json")
+                    st.success(f"Segment '{new_seg_id}' angelegt!")
+                    st.rerun()
+            else:
+                st.error("Ungültige ID. Bitte nur Buchstaben und Unterstriche verwenden.")
+
     boolean_props = [p for p in draft.population_edits if p.type == "boolean"]
     cols = st.columns(3)
     for i, p in enumerate(boolean_props):
@@ -491,6 +515,39 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
                 val_decay = float(p.saturation_decay) if p.saturation_decay is not None else 0.2
                 new_decay = st.slider("Erholung pro Tick (Decay)", 0.0, 1.0, val_decay, 0.05, key=f"pop_decay_{p.id}", help="Wieviel Sättigung wird pro Zeiteinheit abgebaut (0.0=nie, 1.0=sofort)")
                 p.saturation_decay = new_decay
+
+                with st.expander("Modifikatoren (Verhalten)", expanded=False):
+                    wtp = st.number_input("Zahlungsbereitschaft (WTP) Multiplikator", value=float(p.modifiers.get("wtp_multiplier", 1.0)), step=0.05, format="%.2f", key=f"mod_wtp_{p.id}")
+                    inc = st.number_input("Einkommen Delta", value=float(p.modifiers.get("base_income_delta", 0.0)), step=0.05, format="%.2f", key=f"mod_inc_{p.id}")
+                    price = st.number_input("Preissensibilität Delta", value=float(p.modifiers.get("price_sensitivity_delta", 0.0)), step=0.05, format="%.2f", key=f"mod_price_{p.id}")
+                    subst = st.number_input("Bahn-Wechselbereitschaft Multiplikator", value=float(p.modifiers.get("substitution_readiness_multiplier", 1.0)), step=0.05, format="%.2f", key=f"mod_subst_{p.id}")
+                    
+                    p.modifiers["wtp_multiplier"] = wtp
+                    p.modifiers["base_income_delta"] = inc
+                    p.modifiers["price_sensitivity_delta"] = price
+                    p.modifiers["substitution_readiness_multiplier"] = subst
+
+                    LEGACY_SEGMENTS = {"business", "price_sensitive", "eco_conscious", "frequent_flyer"}
+                    if p.id not in LEGACY_SEGMENTS:
+                        st.divider()
+                        confirm_key = f"confirm_del_seg_{p.id}"
+                        if st.session_state.get(confirm_key, False):
+                            st.warning(f"Segment '{p.id}' wirklich löschen?")
+                            c1, c2 = st.columns(2)
+                            if c1.button("Ja, löschen", key=f"do_del_seg_{p.id}"):
+                                st.session_state[confirm_key] = False
+                                draft.population_edits = [e for e in draft.population_edits if e.id != p.id]
+                                save_population_edits_to_file(draft.population_edits, "properties.json")
+                                st.success(f"Segment {p.id} gelöscht!")
+                                st.rerun()
+                            if c2.button("Abbruch", key=f"cancel_del_seg_{p.id}"):
+                                st.session_state[confirm_key] = False
+                                st.rerun()
+                        else:
+                            st.markdown('<span class="delete-btn-marker"></span>', unsafe_allow_html=True)
+                            if st.button(f"Segment '{p.id}' löschen", key=f"init_del_seg_{p.id}", use_container_width=True):
+                                st.session_state[confirm_key] = True
+                                st.rerun()
 
     st.markdown("### Eigenschaften-Verteilungen")
     dist_props = [p for p in draft.population_edits if p.type == "distribution"]
@@ -526,6 +583,20 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
 
 
 def render_config_editor() -> ConfigDraft:
+    st.markdown("""
+        <style>
+        div.element-container:has(.delete-btn-marker) + div.element-container button {
+            background-color: #8b0000 !important;
+            color: white !important;
+            border-color: #8b0000 !important;
+        }
+        div.element-container:has(.delete-btn-marker) + div.element-container button:hover {
+            background-color: #ff4b4b !important;
+            border-color: #ff4b4b !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     init_config_draft()
     draft: ConfigDraft = st.session_state.config_draft
 

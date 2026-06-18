@@ -236,25 +236,51 @@
   ],
   "individual_properties": [
     {
+      "id": "family",
+      "type": "boolean",
+      "enabled": true,
+      "prevalence": 0.1,
+      "saturation_decay": 0.2,
+      "modifiers": {}
+    },
+    {
       "id": "business",
       "type": "boolean",
       "enabled": true,
       "prevalence": 0.08,
-      "saturation_decay": 0.3
+      "saturation_decay": 0.3,
+      "modifiers": {
+        "wtp_multiplier": 1.25,
+        "base_income_delta": 0.15,
+        "price_sensitivity_delta": -0.2,
+        "substitution_readiness_multiplier": 1.0
+      }
     },
     {
       "id": "price_sensitive",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.30,
-      "saturation_decay": 0.15
+      "prevalence": 0.3,
+      "saturation_decay": 0.15,
+      "modifiers": {
+        "base_income_delta": -0.15,
+        "price_sensitivity_delta": 0.3,
+        "wtp_multiplier": 1.0,
+        "substitution_readiness_multiplier": 1.0
+      }
     },
     {
       "id": "eco_conscious",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.60,
-      "saturation_decay": 0.05
+      "prevalence": 0.6,
+      "saturation_decay": 0.05,
+      "modifiers": {
+        "price_sensitivity_delta": 0.05,
+        "wtp_multiplier": 1.0,
+        "base_income_delta": 0.0,
+        "substitution_readiness_multiplier": 1.0
+      }
     },
     {
       "id": "environmental_awareness",
@@ -301,7 +327,13 @@
       "type": "boolean",
       "enabled": true,
       "prevalence": 0.03,
-      "saturation_decay": 1.0
+      "saturation_decay": 1.0,
+      "modifiers": {
+        "wtp_multiplier": 1.5,
+        "base_income_delta": 0.2,
+        "substitution_readiness_multiplier": 0.4,
+        "price_sensitivity_delta": -0.3
+      }
     }
   ],
   "shift_rules": [

@@ -131,6 +131,7 @@ class PopulationEditState:
     max_value: float | None = None
     alpha: float | None = None
     beta: float | None = None
+    modifiers: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -265,7 +266,8 @@ def extract_population_edits_from_file(filename: str = "properties.json") -> lis
             min_value=p.get("min_value"),
             max_value=p.get("max_value"),
             alpha=p.get("alpha"),
-            beta=p.get("beta")
+            beta=p.get("beta"),
+            modifiers=p.get("modifiers", {})
         ))
     return edits
 
@@ -283,6 +285,7 @@ def save_population_edits_to_file(edits: list[PopulationEditState], filename: st
         if e.type == "boolean":
             if e.prevalence is not None: d["prevalence"] = float(e.prevalence)
             if e.saturation_decay is not None: d["saturation_decay"] = float(e.saturation_decay)
+            d["modifiers"] = e.modifiers
         else:
             if e.distribution: d["distribution"] = e.distribution
             if e.mean is not None: d["mean"] = float(e.mean)
