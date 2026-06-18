@@ -204,8 +204,7 @@ def test_saturation_decays_per_tick():
     individuals = initialize_population(properties, config, seed=7)
     
     # Manually set high saturation
-    for person in individuals:
-        person.saturation_level = 0.8
+    individuals = [person.model_copy(update={"saturation_level": 0.8}) for person in individuals]
         
     individuals_t2, _ = run_population_tick(
         properties, config, individuals, ticket_price=1000.0, carbon_tax=50.0, factors={}, system_properties={}, current_tick=2

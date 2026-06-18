@@ -474,12 +474,15 @@ def update_income_factors(
 
 
 def get_decay_rate(person: Individual, properties: PropertiesConfig) -> float:
-    max_decay = 0.2
+    found_decay: float | None = None
     for prop in properties.individual_properties:
         if prop.type == "boolean" and person.labels.get(prop.id):
             if prop.saturation_decay is not None:
-                max_decay = max(max_decay, prop.saturation_decay)
-    return max_decay
+                if found_decay is None:
+                    found_decay = prop.saturation_decay
+                else:
+                    found_decay = max(found_decay, prop.saturation_decay)
+    return found_decay if found_decay is not None else 0.2
 
 
 def run_population_tick(
@@ -523,10 +526,12 @@ def run_population_tick(
     )
     individuals = update_income_factors(shifted, income_index)
     
-    # Apply saturation decay
-    for person in individuals:
-        decay = get_decay_rate(person, properties)
-        person.saturation_level = max(0.0, round(person.saturation_level - decay, 4))
+    individuals = [
+        person.model_copy(
+            update={"saturation_level": max(0.0, round(person.saturation_level - get_decay_rate(person, properties), 4))}
+        )
+        for person in individuals
+    ]
 
     return evaluate_booking(
         individuals,
