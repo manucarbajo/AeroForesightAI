@@ -352,7 +352,7 @@ def apply_market_feedback(
     total_tax_rate = sum(params.get(sp.id, 0.0) for sp in properties.system_properties if sp.price_component_type == "tax") if properties else 0.0
     total_fees = sum(params.get(sp.id, 0.0) for sp in properties.system_properties if sp.price_component_type == "fee") if properties else 0.0
 
-    base_price_no_tax = (new_price - total_fees) / (1.0 + total_tax_rate)
+    base_price_no_tax = (new_price - total_fees) / max(1e-6, 1.0 + total_tax_rate)
     new_markup = max(0.0, base_price_no_tax - cost_pressure)
 
     return new_price, new_markup
@@ -545,7 +545,7 @@ def compute_market_metrics(
 
         total_tax_rate = sum(params.get(sp.id, 0.0) for sp in properties.system_properties if sp.price_component_type == "tax") if properties else 0.0
         total_fees = sum(params.get(sp.id, 0.0) for sp in properties.system_properties if sp.price_component_type == "fee") if properties else 0.0
-        base_price_no_tax = (ticket_price - total_fees) / (1.0 + total_tax_rate)
+        base_price_no_tax = (ticket_price - total_fees) / max(1e-6, 1.0 + total_tax_rate)
 
         provider_markup = max(0.0, base_price_no_tax - cost_pressure)
 

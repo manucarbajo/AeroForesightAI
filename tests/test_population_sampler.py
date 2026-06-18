@@ -116,6 +116,43 @@ def test_apply_factor_shifts_f6_awareness_rule():
     assert shifted[0].environmental_awareness == round(before + 0.02, 4)
 
 
+def test_eco_penalty_only_applies_when_carbon_tax_exceeds_baseline():
+    """eco_penalty for price-sensitive individuals must be 0 when carbon_tax <= 50 (baseline)."""
+    properties = load_properties_config()
+    config = PopulationConfig(segments=[], total_population=500)
+    individuals = initialize_population(properties, config, seed=42)
+
+    _, stats_no_tax = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=0.0)
+    _, stats_with_tax = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=150.0)
+
+    # With high carbon tax, price-sensitive individuals should book less
+    assert stats_with_tax.total_demand < stats_no_tax.total_demand
+
+
+def test_eco_penalty_scales_with_carbon_tax():
+    """eco_penalty should increase proportionally as carbon_tax rises above baseline."""
+    properties = load_properties_config()
+    config = PopulationConfig(segments=[], total_population=500)
+    individuals = initialize_population(properties, config, seed=42)
+
+    _, stats_low_tax = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=75.0)
+    _, stats_high_tax = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=200.0)
+
+    assert stats_high_tax.total_demand < stats_low_tax.total_demand
+
+
+def test_eco_penalty_zero_at_baseline():
+    """At exactly the carbon_tax baseline (50), eco_penalty must be 0 for all individuals."""
+    properties = load_properties_config()
+    config = PopulationConfig(segments=[], total_population=500)
+    individuals = initialize_population(properties, config, seed=42)
+
+    _, stats_at_baseline = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=50.0)
+    _, stats_below_baseline = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=0.0)
+
+    assert stats_at_baseline.total_demand == stats_below_baseline.total_demand
+
+
 def test_shift_rule_once_does_not_stack():
     properties = load_properties_config()
     individuals = initialize_population(properties, _minimal_population_config(), seed=5)

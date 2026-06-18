@@ -245,7 +245,7 @@
       "id": "price_sensitive",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.9
+      "prevalence": 0.45
     },
     {
       "id": "eco_conscious",

@@ -146,7 +146,6 @@ class TestM4Pipeline:
     def test_m4_emergence_over_30_ticks(self):
         """M4 Abnahme: sichtbare Rückkopplung, nicht Thermostat-Drift."""
         state = build_initial_state()
-        state.resolved_properties().market_feedback.target_booking_rate = 0.75
         prices: list[float] = []
         bookings: list[float] = []
         margins: list[float] = []

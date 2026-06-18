@@ -180,6 +180,14 @@ def initialize_population(
                 min_value=age_prop.min_value or 2.0,
                 max_value=age_prop.max_value or 90.0,
             ))
+        elif age_prop and age_prop.distribution == DistributionType.LOGNORMAL:
+            age = int(_sample_lognormal(
+                rng,
+                mean=age_prop.mean or 45.0,
+                std_dev=age_prop.std_dev or 15.0,
+                min_value=age_prop.min_value or 2.0,
+                max_value=age_prop.max_value or 90.0,
+            ))
         elif age_prop and age_prop.distribution == DistributionType.UNIFORM:
             age = int(rng.integers(age_prop.min_value or 2.0, (age_prop.max_value or 90.0) + 1))
         else:
@@ -196,6 +204,8 @@ def initialize_population(
             wtp *= 1.25
         if labels.get("frequent_flyer"):
             wtp *= 1.5
+            # Frequent flyers are modal-fixed on air travel — lower substitution readiness
+            substitution_readiness *= 0.4
 
         base_income = 1.0
         if labels.get("business"):
@@ -326,8 +336,8 @@ def _booking_probability(
     excess_carbon = max(0.0, carbon_tax - DEFAULT_CARBON_ECO_BASELINE)
     normalized_tax = excess_carbon / 100.0
     eco_penalty = person.environmental_awareness * normalized_tax
-    if person.price_sensitivity > HIGH_PRICE_SENSITIVITY_THRESHOLD:
-        eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY
+    if person.price_sensitivity > HIGH_PRICE_SENSITIVITY_THRESHOLD and normalized_tax > 0:
+        eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY * min(1.0, normalized_tax)
         
     substitution_penalty = person.substitution_readiness * normalized_price * 1.5
 
