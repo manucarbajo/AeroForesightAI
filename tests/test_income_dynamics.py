@@ -131,8 +131,8 @@ def test_falling_income_index_reduces_booking_more_for_price_sensitive():
 
     business_high = high_income_stats.segments["business"].booking_rate
     business_low = low_income_stats.segments["business"].booking_rate
-    ps_high = high_income_stats.segments["leisure_price_sensitive"].booking_rate
-    ps_low = low_income_stats.segments["leisure_price_sensitive"].booking_rate
+    ps_high = high_income_stats.segments["price_sensitive"].booking_rate
+    ps_low = low_income_stats.segments["price_sensitive"].booking_rate
 
     business_drop = business_high - business_low
     ps_drop = ps_high - ps_low

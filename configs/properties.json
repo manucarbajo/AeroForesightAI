@@ -578,6 +578,42 @@
         "set_state": "F7.1"
       },
       "priority": 3
+    },
+    {
+      "id": "f1_recession_demand_drop",
+      "factor_id": "F1",
+      "when": {
+        "factor": "F4",
+        "state": "F4.2"
+      },
+      "effect": {
+        "set_state": "F1.2"
+      },
+      "priority": 6
+    },
+    {
+      "id": "f1_alternatives_substitution",
+      "factor_id": "F1",
+      "when": {
+        "factor": "F5",
+        "state": "F5.2"
+      },
+      "effect": {
+        "set_state": "F1.2"
+      },
+      "priority": 5
+    },
+    {
+      "id": "f6_tech_breakthrough_acceptance",
+      "factor_id": "F6",
+      "when": {
+        "factor": "F3",
+        "state": "F3.2"
+      },
+      "effect": {
+        "set_state": "F6.1"
+      },
+      "priority": 3
     }
   ],
   "market_rules": [
@@ -628,6 +664,7 @@
     "damping": 0.85,
     "booking_weight": 0.6
   },
+  "saturation_cooldown_ticks": 3,
   "regulatory_influences": [
     {
       "id": "eu_ets",

@@ -1,12 +1,9 @@
-"""Scenario Sweeps — M8 Orchestrator
+"""Scenario sweeps: runs parameter-sweep scenarios in deterministic mode
+and evaluates end-states against the CIB consistency matrix.
 
-Runs multiple parameter-sweep scenarios in deterministic-only mode
-(no LLM calls) and evaluates the resulting end-states against the
-CIB consistency matrix.
-
-Usage:
-    python src/scenario_sweeps.py                    # all sweeps in configs/sweeps/
-    python src/scenario_sweeps.py --ticks 10000      # benchmark: 10k ticks
+CLI usage:
+    python src/scenario_sweeps.py                           # all sweeps in configs/sweeps/
+    python src/scenario_sweeps.py --ticks 10000             # 10k-tick benchmark
     python src/scenario_sweeps.py --sweep co2_delayed.json  # single sweep
 """
 
@@ -19,12 +16,10 @@ import time
 from pathlib import Path
 from typing import Any
 
-# Ensure repo root is importable
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-# Fix Windows cp1252 encoding for Unicode output
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -42,9 +37,7 @@ SWEEPS_DIR = REPO_ROOT / "configs" / "sweeps"
 SWEEP_OUTPUT_DIR = REPO_ROOT / "outputs" / "sweeps"
 
 
-# ---------------------------------------------------------------------------
-# Sweep Config Loading
-# ---------------------------------------------------------------------------
+
 
 def load_sweep_config(path: Path) -> SweepConfig:
     """Load a single sweep configuration from a JSON file."""
@@ -62,9 +55,7 @@ def load_all_sweep_configs(directory: Path | None = None) -> list[SweepConfig]:
     return configs
 
 
-# ---------------------------------------------------------------------------
-# State Override Application
-# ---------------------------------------------------------------------------
+
 
 def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
     """Apply sweep overrides to an initial SimulationState.
@@ -74,15 +65,12 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
     - Overrides initial factor states
     - Sets max_ticks from sweep config
     """
-    # Override max_ticks
     state.clock.max_ticks = sweep.max_ticks
 
-    # Build lookup for system properties
     prop_lookup: dict[str, Any] = {}
     for prop in state.properties.system_properties:
         prop_lookup[prop.id] = prop
 
-    # Apply property overrides
     for override in sweep.property_overrides:
         prop = prop_lookup.get(override.property_id)
         if prop is None:
@@ -97,25 +85,24 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
 
         if override.rules is not None:
             if hasattr(traj, "rules"):
-                # Rebuild rules from the override data
                 from src.models.property_models import TrajectoryRule
                 new_rules = []
                 for rule_data in override.rules:
                     new_rules.append(TrajectoryRule.model_validate(rule_data))
                 traj.rules = new_rules
 
-    # Apply factor overrides
     for factor_override in sweep.factor_overrides:
         factor = state.environment.factors.get(factor_override.factor_id)
         if factor is not None and factor_override.initial_state in factor.possible_states:
             factor.current_state = factor_override.initial_state
 
+    if sweep.base_price is not None:
+        state.properties.price_model.base_price = sweep.base_price
+
     return state
 
 
-# ---------------------------------------------------------------------------
-# Milestone Evaluation
-# ---------------------------------------------------------------------------
+
 
 def _property_at_tick(state: Any, tick: int, property_id: str) -> Any:
     for ts_row in state.property_timeseries:
@@ -178,9 +165,7 @@ def evaluate_milestones(
     ]
 
 
-# ---------------------------------------------------------------------------
-# Single Sweep Execution
-# ---------------------------------------------------------------------------
+
 
 def run_single_sweep(
     sweep: SweepConfig,
@@ -284,9 +269,7 @@ def run_single_sweep(
     )
 
 
-# ---------------------------------------------------------------------------
-# Batch Execution
-# ---------------------------------------------------------------------------
+
 
 def run_all_sweeps(
     *,
@@ -375,9 +358,7 @@ def _save_sweep_outputs(summary: SweepSummary) -> None:
     print(f"Saved: {scores_path}")
 
 
-# ---------------------------------------------------------------------------
-# CLI Entry Point
-# ---------------------------------------------------------------------------
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run parameter-sweep scenarios (M8)")

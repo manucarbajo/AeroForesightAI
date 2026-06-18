@@ -1,4 +1,4 @@
-"""Persistent population sampling and booking (M3).
+"""Persistent population sampling and booking.
 
 Individuals are created once, shifted by config rules each tick, then evaluated
 for booking deterministically from WTP + logit utility.
@@ -321,7 +321,13 @@ def _booking_probability(
     carbon_tax: float,
     green_premium: float = DEFAULT_GREEN_PREMIUM,
     logit_threshold: float = DEFAULT_LOGIT_THRESHOLD,
+    current_tick: int = 0,
+    cooldown_ticks: int = 0,
 ) -> bool:
+    if cooldown_ticks > 0 and person.last_booked_tick is not None:
+        if current_tick - person.last_booked_tick < cooldown_ticks:
+            return False
+
     affordability_limit = (
         person.wtp_eur
         * person.income_factor
@@ -351,6 +357,9 @@ def evaluate_booking(
     *,
     ticket_price: float,
     carbon_tax: float,
+    current_tick: int = 0,
+    cooldown_ticks: int = 0,
+    properties: "PropertiesConfig | None" = None,
 ) -> tuple[list[Individual], PopulationStats]:
     """Evaluate booking decisions for persistent individuals."""
 
@@ -360,21 +369,43 @@ def evaluate_booking(
             person,
             ticket_price=ticket_price,
             carbon_tax=carbon_tax,
+            current_tick=current_tick,
+            cooldown_ticks=cooldown_ticks,
         )
-        booked_individuals.append(person.model_copy(update={"booked": bool(booked)}))
+        update: dict[str, object] = {"booked": bool(booked)}
+        if booked:
+            update["last_booked_tick"] = current_tick
+        booked_individuals.append(person.model_copy(update=update))
 
-    return booked_individuals, aggregate_population_stats(booked_individuals)
+    return booked_individuals, aggregate_population_stats(booked_individuals, properties=properties)
 
 
-def aggregate_population_stats(individuals: list[Individual]) -> PopulationStats:
-    """Aggregate booking stats overall and per legacy segment label."""
+def aggregate_population_stats(
+    individuals: list[Individual],
+    properties: "PropertiesConfig | None" = None,
+) -> PopulationStats:
+    """Aggregate booking stats overall and per segment label.
+
+    When *properties* is provided, segments are derived dynamically from all
+    boolean ``individual_properties`` (P2.2 SSOT).  Falls back to the legacy
+    ``SEGMENT_LABEL_MAP`` when called without properties.
+    """
 
     total_pop = len(individuals)
     total_booked = sum(1 for person in individuals if person.booked)
     total_income_factor = sum(person.income_factor for person in individuals)
 
+    if properties is not None:
+        segment_label_pairs = [
+            (prop.id, prop.id)
+            for prop in properties.individual_properties
+            if prop.type == "boolean" and prop.enabled
+        ]
+    else:
+        segment_label_pairs = list(SEGMENT_LABEL_MAP.items())
+
     segments: dict[str, SegmentStats] = {}
-    for segment_id, label_id in SEGMENT_LABEL_MAP.items():
+    for segment_id, label_id in segment_label_pairs:
         members = [person for person in individuals if person.labels.get(label_id)]
         booked = sum(1 for person in members if person.booked)
         count = len(members)
@@ -456,8 +487,9 @@ def run_population_tick(
     factors: dict[str, FactorState],
     system_properties: dict[str, float],
     seed: int = 42,
+    current_tick: int = 0,
 ) -> tuple[list[Individual], PopulationStats]:
-    """Full M3 population pipeline for one tick."""
+    """Full population pipeline for one tick."""
 
     if not individuals:
         individuals = initialize_population(properties, config, seed=seed)
@@ -466,17 +498,13 @@ def run_population_tick(
     if target_population > len(individuals):
         needed = target_population - len(individuals)
         temp_config = config.model_copy(update={"total_population": needed})
-        new_seed = seed + len(individuals)  # unique seed for new batch
+        new_seed = seed + len(individuals)
         new_individuals = initialize_population(properties, temp_config, seed=new_seed)
-        
-        # fix IDs so they don't overlap
         start_id = max((p.id for p in individuals), default=-1) + 1
         for i, person in enumerate(new_individuals):
             new_individuals[i] = person.model_copy(update={"id": start_id + i})
-            
         individuals.extend(new_individuals)
     elif target_population < len(individuals):
-        # Shrink population randomly
         rng = _rng(seed + len(individuals))
         to_keep = rng.choice(individuals, size=target_population, replace=False)
         individuals = list(to_keep)
@@ -494,6 +522,9 @@ def run_population_tick(
         individuals,
         ticket_price=ticket_price,
         carbon_tax=carbon_tax,
+        current_tick=current_tick,
+        cooldown_ticks=properties.saturation_cooldown_ticks,
+        properties=properties,
     )
 
 

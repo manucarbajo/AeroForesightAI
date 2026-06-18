@@ -89,8 +89,6 @@ class IndividualProperty(BaseModel):
 
 
 class ShiftRule(BaseModel):
-    """M3/M4 placeholder for population shift rules."""
-
     id: str = ""
     when: dict[str, Any] = Field(default_factory=dict)
     effect: dict[str, Any] = Field(default_factory=dict)
@@ -98,13 +96,11 @@ class ShiftRule(BaseModel):
 
 
 class FactorRuleEffect(BaseModel):
-    """M5: set a factor to a concrete descriptor state."""
-
     set_state: str
 
 
 class FactorRule(BaseModel):
-    """M5: deterministic factor transition from runtime metrics / properties."""
+    """Deterministic factor transition triggered by runtime metrics / system properties."""
 
     id: str
     factor_id: str
@@ -115,7 +111,7 @@ class FactorRule(BaseModel):
 
 
 class RegulatoryInfluence(BaseModel):
-    """M6: One EU/national regulatory cost driver (e.g. EU-ETS, RefuelEU)."""
+    """One regulatory cost driver (e.g. EU-ETS, RefuelEU) with conditional activation."""
 
     id: str
     description: str = ""
@@ -141,7 +137,7 @@ class RegulatoryInfluence(BaseModel):
 
 
 class PriceCoefficientsConfig(BaseModel):
-    """M4.13: configurable cost/price formula weights (no magic numbers in code)."""
+    """Configurable cost/price formula weights."""
 
     carbon_per_tonne: float = 0.001
     saf_premium_factor: float = 0.5
@@ -152,7 +148,7 @@ class PriceCoefficientsConfig(BaseModel):
 
 
 class PriceModelConfig(BaseModel):
-    """M4: ticket cost from fixed base + policy properties (no compounding on prior price)."""
+    """Ticket cost from fixed base + policy properties."""
 
     base_price: float = 100.0
     initial_markup: float = 0.0
@@ -170,7 +166,7 @@ class PriceModelConfig(BaseModel):
 
 
 class MarketFeedbackConfig(BaseModel):
-    """M4: provider markup adjusts toward target booking rate."""
+    """Provider markup adjusts each tick toward the target booking rate."""
 
     enabled: bool = True
     target_booking_rate: float = 0.84
@@ -182,7 +178,7 @@ class MarketFeedbackConfig(BaseModel):
 
 
 class MarketRule(BaseModel):
-    """M4.13: declarative market feedback (same when/effect pattern as shift_rules)."""
+    """Declarative market feedback rule (same when/effect pattern as shift_rules)."""
 
     id: str
     when: dict[str, Any] = Field(default_factory=dict)
@@ -198,6 +194,7 @@ class PropertiesConfig(BaseModel):
     market_rules: list[MarketRule] = Field(default_factory=list)
     price_model: PriceModelConfig = Field(default_factory=PriceModelConfig)
     market_feedback: MarketFeedbackConfig = Field(default_factory=MarketFeedbackConfig)
+    saturation_cooldown_ticks: int = 0
 
     def system_property_ids(self) -> list[str]:
         return [prop.id for prop in self.system_properties]

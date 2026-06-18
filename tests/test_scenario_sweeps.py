@@ -187,3 +187,42 @@ def test_sweep_co2_delayed_loads():
     assert len(config.milestones) >= 3
     assert any(m.tick == 15 for m in config.milestones), "CO2 Tick 15 milestone missing"
     assert any(m.tick == 25 for m in config.milestones), "CO2 Tick 25 milestone missing"
+
+
+# ---------------------------------------------------------------------------
+# P2.3 — Basispreis konfigurierbar via SweepConfig.base_price
+# ---------------------------------------------------------------------------
+
+def test_sweep_base_price_override_raises_ticket_price():
+    """P2.3: A sweep with base_price=200 should produce higher ticket prices than base_price=80."""
+    from src.scenario_sweeps import run_single_sweep
+
+    sweep_low = SweepConfig(
+        id="low_base",
+        name="Low Base Price",
+        description="base_price=80",
+        max_ticks=5,
+        base_price=80.0,
+    )
+    sweep_high = SweepConfig(
+        id="high_base",
+        name="High Base Price",
+        description="base_price=200",
+        max_ticks=5,
+        base_price=200.0,
+    )
+
+    result_low = run_single_sweep(sweep_low, verbose=False)
+    result_high = run_single_sweep(sweep_high, verbose=False)
+
+    low_price = result_low.final_properties.get("ticket_price", 0.0)
+    high_price = result_high.final_properties.get("ticket_price", 0.0)
+    assert high_price > low_price, f"Expected high base_price → higher ticket, got {low_price:.1f} vs {high_price:.1f}"
+
+
+def test_sweep_base_price_none_uses_default():
+    """P2.3: base_price=None should leave default (100.0) unchanged."""
+    state = build_initial_state(load_cib=False)
+    sweep = SweepConfig(id="no_bp", name="No BP", description="no override", max_ticks=5)
+    state = apply_sweep_overrides(state, sweep)
+    assert state.properties.price_model.base_price == 100.0

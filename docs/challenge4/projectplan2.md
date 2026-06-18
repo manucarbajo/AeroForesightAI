@@ -2,12 +2,14 @@
 
 | | |
 | --- | --- |
-| **Stand** | 17.06.2026 |
+| **Stand** | 18.06.2026 |
 | **Abgabe** | 30.06.2026 — Gesamtsystem auf GitHub (40 Punkte, Challenge 4) |
 | **Vorgänger** | [`projectplan.md`](projectplan.md) M0–M11 |
 | **Ziel** | Endabgabe: C4-Aufgabenstellung, Coaching-Punkte, Forschungsfrage, belegbare Wissenschaft |
 | **Branch** | `m9_dashboard/challenge4` |
-| **Tests** | 217 pytest grün |
+| **Tests** | 231 pytest grün |
+| **Fortschritt** | **P2 erledigt** · P1, P3, P4, P5, P6 offen |
+| **Nächster Schritt** | **P1** (scientific_foundation.md) oder **P3** (LLM-Szenario pro Run) |
 
 ## Forschungsfrage
 
@@ -64,26 +66,31 @@ Jeder Lauf schreibt **alles** unter `outputs/<run_id>/` — kein separates Figur
 
 | Punkt | Plan 2 | Status |
 | --- | --- | --- |
-| Sättigungseffekt | P2.1 | offen |
-| Segmente erstellen/ändern | P2.2 | offen |
+| Sättigungseffekt | P2.1 | **erledigt** |
+| Segmente erstellen/ändern | P2.2 | **erledigt** |
 | CIB Rolle & Korrektheit | P4 | offen |
 | Qualitatives Narrativ / Szenario (LLM) | P3 | offen |
-| Faktoren dynamisieren | P2.4 | prüfen |
-| Emergenz vs. Random Shocks | P2.5 | offen |
-| Basispreis konfigurierbar | P2.3 | offen |
+| Faktoren dynamisieren | P2.4 | **erledigt** |
+| Emergenz vs. Random Shocks | P2.5 | **erledigt** |
+| Basispreis konfigurierbar | P2.3 | **erledigt** |
 | Wissenschaftliche Fundierung | P1 | offen |
 
 Reihenfolge: **P1 → P2 → P3 → P4 → P5 → P6**. M12-Gates (ehem. P0) **am Ende** in P6.
 
 ---
 
-## Systemstand M0–M11
+## Systemstand M0–M11 + P2
 
 | Bereich | Status |
 | --- | --- |
 | Pipeline, Population, Faktoren, CIB, Sweeps, Explorer, Dashboard | erledigt |
 | `tick_mechanics`, Timeseries, `final_narrative.md` (Qualität offen) | teilweise |
-| LLM-Run-Szenario, P1-Doku, P2-Coaching, Run-Figures standardmäßig | offen |
+| **P2.1 Sättigungseffekt** (Cooldown, `last_booked_tick`, Export) | **erledigt** |
+| **P2.2 Segmente SSOT** (dynamische Segment-Keys, Dashboard-Prevalences) | **erledigt** |
+| **P2.3 Basispreis konfigurierbar** (Sweep + Dashboard) | **erledigt** |
+| **P2.4 Faktordynamik** (3 neue CIB-Regeln: F4→F1, F5→F1, F3→F6) | **erledigt** |
+| **P2.5 Emergenz-Nachweis** (`emergence_evidence.md`, Test ohne CO₂-Shock) | **erledigt** |
+| LLM-Run-Szenario, P1-Doku, P3-Coaching, Run-Figures standardmäßig | offen |
 
 ---
 
@@ -244,37 +251,51 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 
 | ID | Aufgabe | Datei | Status |
 | -- | ------- | ----- | ------ |
-| P2.1.1 | P1.9 Literatur + Formel F-POP4 | `scientific_foundation.md` Kap. 8 | offen |
-| P2.1.2 | `last_booked_tick` | `population_models.py` | offen |
-| P2.1.3 | Cooldown | `population_sampler.py` | offen |
-| P2.1.4 | Checkpoint + Export | `output_writer.py` | offen |
-| P2.1.5 | Test | `tests/test_population_sampler.py` | offen |
+| P2.1.1 | P1.9 Literatur + Formel F-POP4 | `scientific_foundation.md` Kap. 8 | offen (P1) |
+| P2.1.2 | `last_booked_tick` | `population_models.py` | **erledigt** |
+| P2.1.3 | Cooldown | `population_sampler.py` | **erledigt** |
+| P2.1.4 | Checkpoint + Export | `output_writer.py` | **erledigt** |
+| P2.1.5 | Test | `tests/test_population_sampler.py` | **erledigt** (3 neue Tests) |
+
+**Umsetzung (18.06.2026):** `Individual.last_booked_tick`, `PropertiesConfig.saturation_cooldown_ticks` (Default 0), Cooldown-Gate in `_booking_probability`/`evaluate_booking`/`run_population_tick`. Aktivierung: `"saturation_cooldown_ticks": 3` in `properties.json`. Export in `population.csv` + `individuals_history.csv`.
 
 ## P2.2 Segmente
 
 | ID | Aufgabe | Datei | Status |
 | -- | ------- | ----- | ------ |
-| P2.2.1–P2.2.6 | SSOT, Dashboard, Sweeps, Legacy | s. Plan 1 | offen |
+| P2.2.1–P2.2.6 | SSOT, Dashboard, Sweeps, Legacy | s. Plan 1 | **erledigt** |
+
+**Umsetzung (18.06.2026):** `aggregate_population_stats()` leitet Segment-Keys dynamisch aus `individual_properties[boolean]` ab (optionaler `properties`-Parameter; fallback auf Legacy `SEGMENT_LABEL_MAP`). Dashboard hatte bereits Prevalence-Slider. 2 neue Tests.
 
 ## P2.3 Basispreis
 
 | ID | Aufgabe | Status |
 | -- | ------- | ------ |
-| P2.3.1–P2.3.3 | Dashboard, Sweep, Test; **P1.6.1:** `base_price` in F-P1 dokumentieren | offen |
+| P2.3.1–P2.3.3 | Dashboard, Sweep, Test; **P1.6.1:** `base_price` in F-P1 dokumentieren | **erledigt** (P1.6.1 offen) |
+
+**Umsetzung (18.06.2026):** `SweepConfig.base_price: float | None`, `apply_sweep_overrides()` setzt `price_model.base_price`. Dashboard Properties-Tab: Checkbox + Number-Input. `ConfigDraft.base_price` → `build_custom_sweep_from_draft()`. 2 neue Tests.
 
 ## P2.4 Faktordynamik
 
 | ID | Aufgabe | Status |
 | -- | ------- | ------ |
-| P2.4.1–P2.4.4 | Inventar, Lücken, **P1.6.4** (F-FAC1 pro Regel), Test | offen |
+| P2.4.1–P2.4.4 | Inventar, Lücken, **P1.6.4** (F-FAC1 pro Regel), Test | **erledigt** (P1.6.4 offen) |
+
+**Umsetzung (18.06.2026):** 3 neue CIB-gestützte `factor_rules` ergänzt:
+- `f1_recession_demand_drop`: F4.2 → F1.2 (CIB: F4.2→F1.2: −3)
+- `f1_alternatives_substitution`: F5.2 → F1.2 (CIB: F5.2→F1.2: +2)
+- `f6_tech_breakthrough_acceptance`: F3.2 → F6.1 (CIB: F3.2→F6.1: +3)
+3 neue Tests in `TestNewFactorRules`.
 
 ## P2.5 Emergenz
 
 | ID | Aufgabe | Status |
 | -- | ------- | ------ |
-| P2.5.1 | `emergence_evidence.md` (Run-IDs) | offen |
-| P2.5.2 | Test ohne CO₂-Shock, Preis-Umkehr | offen |
-| P2.5.3 | Kein Random-Shock-Generator | Regel |
+| P2.5.1 | `emergence_evidence.md` (Run-IDs) | **erledigt** |
+| P2.5.2 | Test ohne CO₂-Shock, Preis-Umkehr | **erledigt** |
+| P2.5.3 | Kein Random-Shock-Generator | Regel ✓ |
+
+**Umsetzung (18.06.2026):** `docs/challenge4/emergence_evidence.md` erstellt. Neuer Test `test_price_reversal_from_yield_feedback_only`: flacht alle exogenen Trajektorien ab → ≥1 Preis-Umkehr aus reinem Yield-Feedback belegt.
 
 ## P2.6 Yield Management & Pricing Dynamik
 

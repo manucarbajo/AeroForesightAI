@@ -1,4 +1,4 @@
-"""M5: deterministic factor transitions and gated LLM factor proposals."""
+"""Deterministic factor transitions and gated LLM factor proposals."""
 
 from __future__ import annotations
 

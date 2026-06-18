@@ -129,6 +129,33 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
     st.subheader("System-Properties")
     st.caption("Trajektorien aus `properties.json` — Baseline und Regeln pro Tick.")
 
+    # P2.3: Basispreis konfigurierbar
+    st.markdown("#### Preismodell")
+    col_bp1, col_bp2 = st.columns([1, 3])
+    with col_bp1:
+        enable_base_price = st.checkbox(
+            "Basispreis überschreiben",
+            value=draft.base_price is not None,
+            key="enable_base_price",
+        )
+    with col_bp2:
+        if enable_base_price:
+            draft.base_price = st.number_input(
+                "Basispreis (EUR)",
+                min_value=1.0,
+                max_value=1000.0,
+                value=float(draft.base_price) if draft.base_price is not None else 100.0,
+                step=5.0,
+                format="%.1f",
+                key="base_price_input",
+                help="Überschreibt price_model.base_price in properties.json für diesen Lauf.",
+            )
+        else:
+            draft.base_price = None
+            st.caption("Standard: 100.0 € (aus `properties.json → price_model.base_price`)")
+
+    st.divider()
+
     if draft.properties_file != "properties.json":
         if st.button("Properties aus gewählter Datei neu laden"):
             draft.property_edits = extract_property_edits_from_file(draft.properties_file)

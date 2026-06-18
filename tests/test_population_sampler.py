@@ -173,3 +173,98 @@ def test_shift_rule_once_does_not_stack():
 
     assert second[0].price_sensitivity == first[0].price_sensitivity
     assert "carbon_tax_price_sensitivity" in second[0].applied_shift_rules
+
+
+# ---------------------------------------------------------------------------
+# P2.1 — Sättigungseffekt (Cooldown)
+# ---------------------------------------------------------------------------
+
+def test_cooldown_blocks_rebooking_within_cooldown_period():
+    """P2.1: Person who just booked cannot book again before cooldown expires."""
+    properties = load_properties_config()
+    config = PopulationConfig(segments=[], total_population=200)
+    individuals = initialize_population(properties, config, seed=7)
+
+    # Tick 1: book at low price
+    booked_t1, stats_t1 = evaluate_booking(
+        individuals, ticket_price=80.0, carbon_tax=30.0, current_tick=1, cooldown_ticks=3
+    )
+    booked_count_t1 = stats_t1.total_booked
+
+    # Tick 2: same low price but within cooldown — bookers from tick 1 cannot rebook
+    booked_t2, stats_t2 = evaluate_booking(
+        booked_t1, ticket_price=80.0, carbon_tax=30.0, current_tick=2, cooldown_ticks=3
+    )
+    # Everyone who booked at tick 1 is blocked → count cannot exceed those who did NOT book at tick 1
+    never_booked_t1 = sum(1 for p in booked_t1 if p.last_booked_tick is None)
+    assert stats_t2.total_booked <= never_booked_t1
+
+
+def test_cooldown_reactivates_after_expiry():
+    """P2.1: Booking is allowed again once cooldown_ticks have passed."""
+    properties = load_properties_config()
+    config = PopulationConfig(segments=[], total_population=200)
+    individuals = initialize_population(properties, config, seed=7)
+    cooldown = 2
+
+    # Tick 1: book
+    booked_t1, stats_t1 = evaluate_booking(
+        individuals, ticket_price=80.0, carbon_tax=30.0, current_tick=1, cooldown_ticks=cooldown
+    )
+    # Tick 4: cooldown (2) has expired → (4 - 1 = 3 >= 2) everyone can book again
+    booked_t4, stats_t4 = evaluate_booking(
+        booked_t1, ticket_price=80.0, carbon_tax=30.0, current_tick=4, cooldown_ticks=cooldown
+    )
+    # Booking rate at tick 4 should be at least as high as tick 1
+    assert stats_t4.total_demand >= stats_t1.total_demand * 0.9
+
+
+def test_last_booked_tick_is_set_on_booking():
+    """P2.1: last_booked_tick is set to current_tick when a person books."""
+    properties = load_properties_config()
+    config = PopulationConfig(segments=[], total_population=100)
+    individuals = initialize_population(properties, config, seed=7)
+
+    booked, _ = evaluate_booking(individuals, ticket_price=80.0, carbon_tax=30.0, current_tick=5)
+    for person in booked:
+        if person.booked:
+            assert person.last_booked_tick == 5
+        else:
+            # Non-bookers retain their previous last_booked_tick (None if never booked)
+            assert person.last_booked_tick is None
+
+
+# ---------------------------------------------------------------------------
+# P2.2 — Segmente SSOT: dynamische Segment-Keys
+# ---------------------------------------------------------------------------
+
+def test_segment_keys_match_boolean_individual_properties():
+    """P2.2: aggregate_population_stats derives segment keys from boolean individual_properties."""
+    from src.population_sampler import aggregate_population_stats
+
+    properties = load_properties_config()
+    config = PopulationConfig(segments=[], total_population=200)
+    individuals = initialize_population(properties, config, seed=11)
+    booked, stats_dynamic = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=50.0)
+
+    # Re-aggregate with properties to get dynamic keys
+    stats = aggregate_population_stats(booked, properties=properties)
+    expected_keys = {
+        prop.id
+        for prop in properties.individual_properties
+        if prop.type == "boolean" and prop.enabled
+    }
+    assert set(stats.segments.keys()) == expected_keys
+
+
+def test_dynamic_segments_all_have_valid_booking_rates():
+    """P2.2: every dynamic segment has a valid booking_rate in [0, 1]."""
+    from src.population_sampler import aggregate_population_stats
+
+    properties = load_properties_config()
+    config = PopulationConfig(segments=[], total_population=500)
+    individuals = initialize_population(properties, config, seed=99)
+    booked, _ = evaluate_booking(individuals, ticket_price=110.0, carbon_tax=50.0)
+    stats = aggregate_population_stats(booked, properties=properties)
+    for seg_id, seg in stats.segments.items():
+        assert 0.0 <= seg.booking_rate <= 1.0, f"{seg_id} booking_rate out of range: {seg.booking_rate}"

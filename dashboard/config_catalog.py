@@ -175,6 +175,7 @@ class ConfigDraft:
     sweep_batch_deterministic: bool = True
     run_count: int = 1
     generate_figures: bool = True
+    base_price: float | None = None  # P2.3: override price_model.base_price
 
 
 def configs_dir() -> Path:
@@ -380,12 +381,13 @@ def build_custom_sweep_from_draft(draft: ConfigDraft, filename: str = "") -> Swe
     sweep_name = draft.simulation_name
     if not sweep_name or sweep_name == "Flugverkehr Szenarioplanung MVP":
         sweep_name = filename or "Dashboard Custom"
-    
+
     return SweepConfig(
         id="dashboard_custom",
         name=sweep_name,
         description=draft.simulation_description or "Benutzerdefinierte Overrides aus dem Dashboard",
         max_ticks=draft.rounds,
+        base_price=draft.base_price,
         property_overrides=property_overrides_from_edits(draft.property_edits),
         factor_overrides=factor_overrides_from_states(draft.factor_states),
         milestones=[],

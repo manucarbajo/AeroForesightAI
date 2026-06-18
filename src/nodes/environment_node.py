@@ -1,8 +1,4 @@
-"""Environment nodes for AP3/AP4 simulation flows.
-
-M3.5: Population shifts are fully deterministic via apply_factor_shifts()
-(shift_rules from properties.json). No LLM is used for segment shares.
-"""
+"""Environment node: applies agent responses, runs population booking, and builds tick summary."""
 
 from __future__ import annotations
 
@@ -72,7 +68,7 @@ class EnvironmentNode:
 
         applied_changes = self._apply_state_changes(state, responses)
 
-        # M4: booking before market feedback — provisional price from cost + markup
+        # Booking must happen before market feedback so the feedback uses current booking rate
         state = self._run_population_tick(state, round_number)
 
         summary = self._build_round_summary(state, responses, round_events, applied_changes)
@@ -130,7 +126,6 @@ class EnvironmentNode:
             provisional_price = last_price
         else:
             provisional_price = compose_ticket_price(cost_pressure, initial_provider_markup(properties), properties=properties, tick=round_number)
-            # Inject initial price as Tick 0 for accurate logging and market anchor
             from src.models.event_models import PriceHistoryEntry
             state.price_history.append(
                 PriceHistoryEntry(
@@ -174,6 +169,7 @@ class EnvironmentNode:
             factors=state.environment.factors,
             system_properties=system_properties,
             seed=seed,
+            current_tick=round_number,
         )
         state.population_individuals = individuals
 
