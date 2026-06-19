@@ -347,18 +347,19 @@ Das Szenario ist **LLM-basiert und textuell** — kein reines Template. Kennzahl
 
 ## Aufgaben
 
-| ID | Aufgabe | Datei | Status |
-| -- | ------- | ----- | ------ |
-| P3.1 | `run_scenario_generator.py` — LLM-Prompt mit Run-Kontext (tick_mechanics, factors, segments, events) | `src/` | **erledigt** |
-| P3.2 | Grounding-Regeln: Zahlen nur aus Kontext; Validierung / Post-Check | Generator | **erledigt** |
-| P3.3 | Nach Lauf automatisch: `run_scenario.md` + JSON | `run_simulation.py`, Dashboard | **erledigt** |
-| P3.4 | CLI Regenerierung: `--run-id` | Generator | **erledigt** |
-| P3.5 | Prompts Agenten: demand/booking, SAF/F3/F6, Segment-Bezug | `prompts/*.md` | offen |
-| P3.6 | `final_narrative.md` — qualitative Agenten-Blöcke verbessern | `output_writer.py` | offen |
-| P3.7 | Explorer: `run_scenario.md` im Kontext | `state_explorer.py` | **erledigt** |
-| P3.8 | Sweeps: voller Run-Output inkl. LLM-Szenario | `scenario_sweeps.py` | offen |
-| P3.9 | Tests: Generator lädt Run-Artefakte; Mock-LLM mit Fixture | `tests/` | **erledigt** |
-| P3.10 | P1 Kap. 7 + Kap. 8: Methodik LLM-Szenario; keine erfundenen Formelwerte | `scientific_foundation.md` | offen |
+| ID | Aufgabe | Datei | Status | Umsetzung |
+| -- | ------- | ----- | ------ | --------- |
+| P3.1 | `run_scenario_generator.py` — LLM-Prompt mit Run-Kontext (tick_mechanics, factors, segments, events) | `src/` | **erledigt** | Prompt-Reihenfolge korrigiert (Instruktionen nach Kontext). Regex-Fix für Trailing Commas in `_extract_json_object`. |
+| P3.2 | Grounding-Regeln: Zahlen nur aus Kontext; Validierung / Post-Check | Generator | **erledigt** | Anti-Halluzinations-Filter in `validate_scenario_narrative` entspannt (erlaubt CIB-Scores ohne Fallback-Abbruch). |
+| P3.3 | Nach Lauf automatisch: `run_scenario.md` + JSON | `run_simulation.py`, Dashboard | **erledigt** | Aufruf des Generators am Ende von `run_simulation.py` integriert; Dashboard zeigt Ergebnisse automatisch an. |
+| P3.4 | CLI Regenerierung: `--run-id` | Generator | **erledigt** | `argparse` in `run_scenario_generator.py` ergänzt, um Szenarien für existierende Runs via CLI nachträglich zu erzeugen. |
+| P3.5 | Prompts Agenten: demand/booking, SAF/F3/F6, Segment-Bezug | `prompts/*.md` | offen | — |
+| P3.6 | `final_narrative.md` — qualitative Agenten-Blöcke verbessern | `output_writer.py` | offen | — |
+| P3.7 | Explorer: `run_scenario.md` im Kontext | `state_explorer.py` | **erledigt** | `state_explorer.py` liest nun `run_scenario.md` ein, sodass Chat-Queries mit Bezug zum qualitativen Szenario beantwortet werden. |
+| P3.8 | Sweeps: voller Run-Output inkl. LLM-Szenario | `scenario_sweeps.py` | offen | — |
+| P3.9 | Tests: Generator lädt Run-Artefakte; Mock-LLM mit Fixture | `tests/` | **erledigt** | Unit-Tests für Generator erstellt. `pytest`-Fixture für Mock-LLM integriert, um deterministische Tests ohne echte API-Kosten zu ermöglichen. |
+| P3.10 | P1 Kap. 7 + Kap. 8: Methodik LLM-Szenario; keine erfundenen Formelwerte | `scientific_foundation.md` | offen | — |
+| P3.11 | LLM-Szenario: Entkopplung von Vorlesungs-Archetypen, dynamische Titel, Inline-Faktor-Belege, 3-Stufen CIB | Generator / Prompts | **erledigt** | Zuweisungs-Logik (`_slide_scenario_title`) gelöscht. 3-Stufen-CIB und Inline-Faktor-Referenzen in Prompt ergänzt. Dynamische Titel etabliert. |
 
 ## Inhalt `run_scenario.md` (LLM-generiert, strukturiert)
 
