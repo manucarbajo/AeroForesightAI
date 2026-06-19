@@ -1,6 +1,6 @@
 # Emergence Evidence — Challenge 4
 
-Stand: 18.06.2026
+Stand: 19.06.2026
 
 ## Was ist Emergenz im System?
 
@@ -37,34 +37,58 @@ Booking ↑ → Markup ↑ → Preis ↑ → Booking ↓ → Markup ↓ → Prei
 
 ---
 
-### 2. Emergenz ohne exogenen CO₂-Shock (P2.5) — NEU belegt
+### 2. Emergenz ohne exogenen CO₂-Shock (P2.5) — belegt
 
 **Test:** `test_price_reversal_from_yield_feedback_only` in `tests/test_market_feedback.py`
 
-**Setup:** Alle Trajektorien flatten (carbon_tax=const, oil=const, saf=const, income=const, fuel=const)
-→ keinerlei exogene Stufen oder Rampen.
+**Setup:** Alle Trajektorien flatten (`resolve_trajectory` Tick 1) → konstante Exogenwerte, keine Stufen/Rampen.
 
 **Ergebnis:** ≥ 1 Preis-Richtungswechsel entsteht allein aus dem Yield-Feedback-Loop.
 
-**Interpretation:** Das System ist inherent oszillierend — nicht ein Thermostat, sondern ein
-gedämpfter Schwingkreis (damping=0.85, adjustment=0.06).
+**Interpretation:** Gedämpfter Schwingkreis (`damping=0.85`, `markup_adjustment_per_tick=0.08`).
 
 ---
 
-### 3. Segment-Divergenz bei CO₂-Schock + Einkommensdynamik (M7/M6)
+### 3. Segment-Divergenz business vs. price_sensitive (M7 / P6.G2) — belegt
 
-**Gate:** `price_sensitive` vs. `business` Buchungsrate divergiert um ≥ 15 Prozentpunkte
-wenn F4.2 (Rezession) + fallender `income_index` aktiv sind.
+**Tests:**
+- `test_stress_tick_business_vs_price_sensitive_at_least_15pp` in `tests/test_segment_divergence.py`
+- `test_e2e_40_ticks_deterministic_segment_gap_and_saturation` in `tests/test_segment_divergence.py`
+
+**Gate:** Buchungsrate `price_sensitive` vs. `business` divergiert um **≥ 15 Prozentpunkte**.
 
 **Mechanismus:**
-- `income_index` ramp Tick 10→15 (1.0 → 0.92)
-- F4.2 → shift_rule `income_drop_f4_strict` (−0.05 income_factor)
-- `price_sensitive` Individuen: WTP × income_factor sinkt → Logit-Schwelle nicht mehr erreicht
-- `business` Individuen: WTP bleibt hoch genug → weiterhin Buchung
+- F4.2 (Rezession) aktiv → `income_drop_f4_strict` senkt `income_factor`
+- `income_index`-Rampe ab Tick 10 (1.0 → 0.92) in `properties.json`
+- `price_sensitive`: niedrigeres Einkommen/WTP → Logit-Schwelle seltener erreicht
+- `business`: höhere WTP/Einkommen → Buchung bleibt höher
+
+**Referenzlauf (E2E, 40 Ticks, deterministic-only, seed 42):** `run_20260619_p2_saturation_e2e`
+- Max. Segment-Gap **59,1 pp** bei Tick 12 (`business` 0,69 vs. `price_sensitive` 0,10)
+- Tick 40: `business` 33,3 % vs. `price_sensitive` 7,6 % (25,7 pp)
+- Artefakte: `timeseries/population.csv`, `tick_mechanics.json`, `population.csv`
+
+**Reproduktion:**
+```bash
+python -m src.run_simulation --deterministic-only --rounds 40 --seed 42 \
+  --run-id run_20260619_p2_saturation_e2e --no-protocol --no-scenarios
+```
 
 ---
 
-### 4. Faktor-Ketten (M5/P2.4) — neu belegt
+### 4. Sättigung über volle Pipeline (P2.1 E2E) — belegt
+
+**Test:** `test_e2e_40_ticks_deterministic_segment_gap_and_saturation` (s. oben)
+
+**Referenzlauf:** `run_20260619_p2_saturation_e2e`
+- Nach 40 Ticks: `saturation_level > 0` bei **624** von 1080 Individuen
+- `max(saturation_level) = 1.0` (kontinuierliches Modell, kein Cooldown)
+
+**Config:** `properties.json → saturation` (`booking_increase`, `utility_penalty_factor`); segment-spezifische Decay-Raten in `individual_properties`.
+
+---
+
+### 5. Faktor-Ketten (M5/P2.4) — belegt
 
 **Tests (P2.4):** `tests/test_factor_dynamics.py::TestNewFactorRules`
 
@@ -72,8 +96,6 @@ wenn F4.2 (Rezession) + fallender `income_index` aktiv sind.
 - F4.2 (Rezession) → F1.2 (Nachfragerückgang) → Booking ↓ → Markup ↓ → Preis ↓
 - F5.2 (Alternativen) → F1.2 (Substitution) → gleicher Pfad
 - F3.2 (SAF-Durchbruch) → F6.1 (Fliegen akzeptiert) → weniger eco_penalty → Booking ↑
-
-Diese 3 neuen CIB-gestützten Regeln (P2.4) schließen kritische Kanten der 14×14 CIB-Matrix.
 
 ---
 
@@ -91,6 +113,6 @@ Diese 3 neuen CIB-gestützten Regeln (P2.4) schließen kritische Kanten der 14×
 
 ## Lücken (noch offen)
 
-- Sweep Transformations-Konflikt über 3 Seeds reproduzierbar (M12.4)
-- Konkrete Run-IDs für Segment-Divergenz-Nachweis (M7 Gate)
-- LLM-Run mit 40+ Ticks nach Saturation-Cooldown (P2.1 Ende-zu-Ende)
+- Sweep Transformations-Konflikt über 3 Seeds reproduzierbar (P6.G3)
+- CIB-Ranking Konflikt < BAU automatisieren (P6.G4)
+- P1: Literatur/Formeln für Sättigung, Yield-Kalibrierung (0.37), Segment-Überlappung

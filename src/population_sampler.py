@@ -98,6 +98,48 @@ def _sample_lognormal(
     return float(np.clip(value, min_value, max_value))
 
 
+def _assign_boolean_labels(
+    rng: np.random.Generator,
+    properties: PropertiesConfig,
+) -> dict[str, bool]:
+    """Assign boolean labels.
+
+  By default each label is drawn independently (a person may have several).
+  Properties sharing the same ``exclusive_group`` are mutually exclusive —
+  use only when segments are meant as personas, not overlapping traits.
+    """
+
+    labels: dict[str, bool] = {}
+    grouped: dict[str, list[IndividualProperty]] = {}
+    independent: list[IndividualProperty] = []
+
+    for prop in properties.individual_properties:
+        if prop.type != "boolean" or not prop.enabled:
+            continue
+        if prop.exclusive_group:
+            grouped.setdefault(prop.exclusive_group, []).append(prop)
+        else:
+            independent.append(prop)
+
+    for prop in independent:
+        prevalence = prop.prevalence if prop.prevalence is not None else 0.0
+        labels[prop.id] = bool(rng.random() < float(prevalence))
+
+    for group_props in grouped.values():
+        weights = [max(0.0, float(prop.prevalence or 0.0)) for prop in group_props]
+        total = sum(weights)
+        if total <= 0:
+            for prop in group_props:
+                labels[prop.id] = False
+            continue
+        probs = [weight / total for weight in weights]
+        chosen_idx = int(rng.choice(len(group_props), p=probs))
+        for index, prop in enumerate(group_props):
+            labels[prop.id] = index == chosen_idx
+
+    return labels
+
+
 def initialize_population(
     properties: PropertiesConfig,
     config: PopulationConfig,
@@ -116,12 +158,7 @@ def initialize_population(
     subst_prop = _get_individual_property(properties, "substitution_readiness")
 
     for person_id in range(total_pop):
-        labels: dict[str, bool] = {}
-        for prop in properties.individual_properties:
-            if prop.type != "boolean" or not prop.enabled:
-                continue
-            prevalence = prop.prevalence if prop.prevalence is not None else 0.0
-            labels[prop.id] = bool(rng.random() < float(prevalence))
+        labels = _assign_boolean_labels(rng, properties)
 
         if awareness_prop and awareness_prop.distribution == DistributionType.BETA:
             awareness = _sample_beta(
@@ -310,7 +347,7 @@ def _booking_probability(
     carbon_tax: float,
     green_premium: float = DEFAULT_GREEN_PREMIUM,
     logit_threshold: float = DEFAULT_LOGIT_THRESHOLD,
-    current_tick: int = 0,
+    saturation_penalty_factor: float = 1.0,
 ) -> bool:
 
     affordability_limit = (
@@ -331,7 +368,7 @@ def _booking_probability(
         eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY * min(1.0, normalized_tax)
         
     substitution_penalty = person.substitution_readiness * normalized_price * 1.5
-    saturation_penalty = person.saturation_level * 1.0
+    saturation_penalty = person.saturation_level * saturation_penalty_factor
 
     utility = base_utility - price_penalty - eco_penalty - substitution_penalty - saturation_penalty
     probability = float(1.0 / (1.0 + np.exp(-utility)))
@@ -343,10 +380,13 @@ def evaluate_booking(
     *,
     ticket_price: float,
     carbon_tax: float,
-    current_tick: int = 0,
-    properties: "PropertiesConfig | None" = None,
+    properties: PropertiesConfig | None = None,
 ) -> tuple[list[Individual], PopulationStats]:
     """Evaluate booking decisions for persistent individuals."""
+
+    saturation = properties.saturation if properties is not None else None
+    booking_increase = saturation.booking_increase if saturation is not None else 0.6
+    penalty_factor = saturation.utility_penalty_factor if saturation is not None else 1.0
 
     booked_individuals: list[Individual] = []
     for person in individuals:
@@ -354,11 +394,11 @@ def evaluate_booking(
             person,
             ticket_price=ticket_price,
             carbon_tax=carbon_tax,
-            current_tick=current_tick,
+            saturation_penalty_factor=penalty_factor,
         )
         update: dict[str, object] = {"booked": bool(booked)}
         if booked:
-            new_saturation = min(1.0, person.saturation_level + 0.6)
+            new_saturation = min(1.0, person.saturation_level + booking_increase)
             update["saturation_level"] = round(new_saturation, 4)
         booked_individuals.append(person.model_copy(update=update))
 
@@ -526,7 +566,6 @@ def run_population_tick(
         individuals,
         ticket_price=ticket_price,
         carbon_tax=carbon_tax,
-        current_tick=current_tick,
         properties=properties,
     )
 

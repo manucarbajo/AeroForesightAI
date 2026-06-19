@@ -28,12 +28,29 @@ def test_initialize_population_is_deterministic_with_seed():
     assert first[-1].id == 99
 
 
-def test_individuals_support_multi_label():
+def test_individuals_can_have_multiple_labels():
+    """Boolean traits are independent — one person may belong to several segments."""
     properties = load_properties_config()
     individuals = initialize_population(properties, _minimal_population_config(), seed=1)
 
     multi_label = [person for person in individuals if sum(person.labels.values()) > 1]
     assert len(multi_label) > 0
+
+
+def test_exclusive_group_optional_for_persona_segments():
+    """exclusive_group is opt-in when segments must be mutually exclusive personas."""
+    from src.models.property_models import IndividualProperty, PropertiesConfig, SaturationConfig
+
+    properties = PropertiesConfig(
+        individual_properties=[
+            IndividualProperty(id="type_a", type="boolean", prevalence=0.5, exclusive_group="persona"),
+            IndividualProperty(id="type_b", type="boolean", prevalence=0.5, exclusive_group="persona"),
+        ],
+        saturation=SaturationConfig(),
+    )
+    individuals = initialize_population(properties, _minimal_population_config(), seed=3)
+    for person in individuals:
+        assert person.labels.get("type_a") != person.labels.get("type_b")
 
 
 def test_persistence_same_ids_across_ticks():
@@ -187,7 +204,7 @@ def test_saturation_increases_on_booking():
 
     # Tick 1: book at low price
     booked_t1, stats_t1 = evaluate_booking(
-        individuals, ticket_price=80.0, carbon_tax=30.0, current_tick=1
+        individuals, ticket_price=80.0, carbon_tax=30.0, properties=properties
     )
     for person in booked_t1:
         if person.booked:
@@ -212,6 +229,27 @@ def test_saturation_decays_per_tick():
     
     for person in individuals_t2:
         assert person.saturation_level < 0.8
+
+
+def test_saturation_config_drives_booking_increase():
+    """P2.1: booking_increase comes from properties.saturation."""
+    from src.models.property_models import SaturationConfig
+
+    properties = load_properties_config()
+    properties = properties.model_copy(
+        update={"saturation": SaturationConfig(booking_increase=0.4, utility_penalty_factor=1.0)}
+    )
+    config = PopulationConfig(segments=[], total_population=200)
+    individuals = initialize_population(properties, config, seed=7)
+
+    booked, _ = evaluate_booking(
+        individuals, ticket_price=80.0, carbon_tax=30.0, properties=properties
+    )
+    for person in booked:
+        if person.booked:
+            assert person.saturation_level >= 0.4
+        else:
+            assert person.saturation_level == 0.0
 
 
 def test_high_saturation_reduces_booking_probability():

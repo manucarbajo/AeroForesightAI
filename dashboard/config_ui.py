@@ -27,12 +27,22 @@ from dashboard.config_catalog import (
     PopulationEditState,
     save_population_edits_to_file,
     extract_population_edits_from_file,
+    save_saturation_to_file,
+    extract_saturation_from_file,
+    save_market_feedback_to_file,
+    extract_market_feedback_from_file,
 )
 
 
 def init_config_draft() -> None:
     if "config_draft" not in st.session_state:
         st.session_state.config_draft = default_config_draft()
+        return
+    draft: ConfigDraft = st.session_state.config_draft
+    if not hasattr(draft, "saturation_edit"):
+        draft.saturation_edit = extract_saturation_from_file(draft.properties_file)
+    if not hasattr(draft, "market_feedback_edit"):
+        draft.market_feedback_edit = extract_market_feedback_from_file(draft.properties_file)
 
 
 def _clear_factor_widget_keys(draft: ConfigDraft) -> None:
@@ -153,6 +163,77 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
         else:
             draft.base_price = None
             st.caption("Standard: 100.0 € (aus `properties.json → price_model.base_price`)")
+
+    st.markdown("#### Yield / Markt-Feedback")
+    st.caption(
+        "Steuert, wie stark der Anbieter Preis und Marge an die beobachtete Buchungsrate anpasst. "
+        "Wird in `properties.json` gespeichert (`market_feedback` + `market_rules`)."
+    )
+    mf = draft.market_feedback_edit
+    mf.enabled = st.checkbox("Markt-Feedback aktiv", value=mf.enabled, key="mf_enabled")
+    col_mf1, col_mf2, col_mf3 = st.columns(3)
+    with col_mf1:
+        mf.target_booking_rate = st.number_input(
+            "Ziel-Buchungsrate",
+            min_value=0.05,
+            max_value=1.0,
+            value=float(mf.target_booking_rate),
+            step=0.01,
+            format="%.2f",
+            key="mf_target_br",
+            help="Yield-Feedback zielt auf diesen Anteil buchender Personen pro Tick.",
+        )
+        mf.marginal_cost_fraction = st.number_input(
+            "Grenzkosten-Anteil",
+            min_value=0.05,
+            max_value=1.0,
+            value=float(mf.marginal_cost_fraction),
+            step=0.01,
+            format="%.2f",
+            key="mf_marginal_cost",
+            help="Untergrenze: Grenzkosten + Steuern/Gebühren (Anteil der Kostenbasis).",
+        )
+    with col_mf2:
+        mf.markup_adjustment_per_tick = st.number_input(
+            "Markup-Anpassung / Tick",
+            min_value=0.01,
+            max_value=0.5,
+            value=float(mf.markup_adjustment_per_tick),
+            step=0.01,
+            format="%.2f",
+            key="mf_markup_adj",
+        )
+        mf.damping = st.number_input(
+            "Dämpfung",
+            min_value=0.1,
+            max_value=1.0,
+            value=float(mf.damping),
+            step=0.05,
+            format="%.2f",
+            key="mf_damping",
+        )
+    with col_mf3:
+        mf.max_price_change_fraction = st.number_input(
+            "Max. Preisänderung / Tick",
+            min_value=0.01,
+            max_value=0.5,
+            value=float(mf.max_price_change_fraction),
+            step=0.01,
+            format="%.2f",
+            key="mf_max_price_chg",
+        )
+        mf.booking_weight = st.number_input(
+            "Booking-Gewicht (Makro-Nachfrage)",
+            min_value=0.0,
+            max_value=1.0,
+            value=float(mf.booking_weight),
+            step=0.05,
+            format="%.2f",
+            key="mf_booking_weight",
+        )
+    if st.button("Markt-Feedback speichern", key="btn_save_market_feedback", type="secondary"):
+        save_market_feedback_to_file(mf, draft.properties_file)
+        st.success("Markt-Feedback in properties.json gespeichert.")
 
     st.divider()
 
@@ -470,11 +551,45 @@ def _render_config_files_tab(draft: ConfigDraft) -> ConfigDraft:
 
 def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
     st.subheader("Bevölkerungs-Struktur (Agenten)")
-    st.info("Diese Einstellungen steuern die Wahrscheinlichkeitsverteilungen, mit denen individuelle Agenten beim Simulationsstart generiert werden.")
+    st.info(
+        "Diese Einstellungen steuern die Wahrscheinlichkeitsverteilungen beim Simulationsstart. "
+        "Segment-Anteile sind **unabhängig** — eine Person kann mehreren Segmenten gleichzeitig angehören "
+        "(z. B. business und price_sensitive)."
+    )
     
     if st.button("Populations-Config aus JSON neu laden", key="btn_reload_pop"):
         draft.population_edits = extract_population_edits_from_file("properties.json")
+        draft.saturation_edit = extract_saturation_from_file("properties.json")
         st.rerun()
+
+    st.markdown("### Sättigung (global)")
+    st.caption(
+        "Nach einer Buchung steigt das Sättigungslevel; es baut sich pro Tick über die segment-spezifische "
+        "Erholungsrate wieder ab und reduziert die Logit-Buchungswahrscheinlichkeit."
+    )
+    sat = draft.saturation_edit
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+        sat.booking_increase = st.number_input(
+            "Sättigungs-Anstieg bei Buchung",
+            min_value=0.0,
+            max_value=1.0,
+            value=float(sat.booking_increase),
+            step=0.05,
+            format="%.2f",
+            key="sat_booking_increase",
+        )
+    with col_s2:
+        sat.utility_penalty_factor = st.number_input(
+            "Logit-Penalty-Faktor",
+            min_value=0.0,
+            max_value=3.0,
+            value=float(sat.utility_penalty_factor),
+            step=0.1,
+            format="%.2f",
+            key="sat_penalty_factor",
+            help="Multiplikator auf saturation_level in der Nutzenfunktion.",
+        )
 
     st.markdown("### Segmente (Anteile & Verhalten)")
     if not hasattr(draft, "population_edits") or not draft.population_edits:
@@ -511,6 +626,10 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
                 val_prev = float(p.prevalence) if p.prevalence is not None else 0.0
                 new_prev = st.slider("Anteil (Prevalence)", 0.0, 1.0, val_prev, 0.05, key=f"pop_prev_{p.id}")
                 p.prevalence = new_prev
+                if p.exclusive_group:
+                    st.caption(
+                        f"Exklusive Gruppe `{p.exclusive_group}`: nur ein Segment dieser Gruppe pro Person."
+                    )
                 
                 val_decay = float(p.saturation_decay) if p.saturation_decay is not None else 0.2
                 new_decay = st.slider("Erholung pro Tick (Decay)", 0.0, 1.0, val_decay, 0.05, key=f"pop_decay_{p.id}", help="Wieviel Sättigung wird pro Zeiteinheit abgebaut (0.0=nie, 1.0=sofort)")
@@ -577,7 +696,8 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
     st.divider()
     if st.button("Änderungen an Population speichern", type="primary"):
         save_population_edits_to_file(draft.population_edits, "properties.json")
-        st.success("Populations-Konfiguration erfolgreich gespeichert!")
+        save_saturation_to_file(draft.saturation_edit, "properties.json")
+        st.success("Populations- und Sättigungs-Konfiguration gespeichert!")
 
     return draft
 

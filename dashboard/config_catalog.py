@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from src.config_loader import CONFIGS_DIR, build_initial_state, load_properties_config
+from src.market_rules import resolve_market_feedback_config
 from src.models.property_models import BaselineTrajectory, StepFunctionTrajectory
 from src.models.sweep_models import FactorOverride, PropertyOverride, SweepConfig
 from src.scenario_sweeps import SWEEPS_DIR, apply_sweep_overrides, load_all_sweep_configs, load_sweep_config
@@ -123,6 +124,7 @@ class PopulationEditState:
     id: str
     type: str
     prevalence: float | None = None
+    exclusive_group: str | None = None
     saturation_decay: float | None = None
     distribution: str | None = None
     mean: float | None = None
@@ -132,6 +134,23 @@ class PopulationEditState:
     alpha: float | None = None
     beta: float | None = None
     modifiers: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass
+class SaturationEditState:
+    booking_increase: float = 0.6
+    utility_penalty_factor: float = 1.0
+
+
+@dataclass
+class MarketFeedbackEditState:
+    enabled: bool = True
+    target_booking_rate: float = 0.37
+    marginal_cost_fraction: float = 0.33
+    markup_adjustment_per_tick: float = 0.08
+    max_price_change_fraction: float = 0.08
+    damping: float = 0.85
+    booking_weight: float = 0.6
 
 
 @dataclass
@@ -157,6 +176,8 @@ class ConfigDraft:
     property_edits: dict[str, PropertyEditState] = field(default_factory=dict)
     factor_states: dict[str, str] = field(default_factory=dict)
     population_edits: list[PopulationEditState] = field(default_factory=list)
+    saturation_edit: SaturationEditState = field(default_factory=SaturationEditState)
+    market_feedback_edit: MarketFeedbackEditState = field(default_factory=MarketFeedbackEditState)
 
     # UI State
     mock_llm: bool = True
@@ -212,6 +233,8 @@ def default_config_draft() -> ConfigDraft:
     draft.property_edits = extract_property_edits_from_file("properties.json")
     draft.factor_states = extract_factor_states_from_file("factors.json")
     draft.population_edits = extract_population_edits_from_file("properties.json")
+    draft.saturation_edit = extract_saturation_from_file("properties.json")
+    draft.market_feedback_edit = extract_market_feedback_from_file("properties.json")
     return draft
 
 
@@ -259,6 +282,7 @@ def extract_population_edits_from_file(filename: str = "properties.json") -> lis
             id=p.get("id", ""),
             type=p.get("type", "boolean"),
             prevalence=p.get("prevalence"),
+            exclusive_group=p.get("exclusive_group"),
             saturation_decay=p.get("saturation_decay"),
             distribution=p.get("distribution"),
             mean=p.get("mean"),
@@ -284,6 +308,7 @@ def save_population_edits_to_file(edits: list[PopulationEditState], filename: st
         d = {"id": e.id, "type": e.type, "enabled": True}
         if e.type == "boolean":
             if e.prevalence is not None: d["prevalence"] = float(e.prevalence)
+            if e.exclusive_group: d["exclusive_group"] = e.exclusive_group
             if e.saturation_decay is not None: d["saturation_decay"] = float(e.saturation_decay)
             d["modifiers"] = e.modifiers
         else:
@@ -297,6 +322,87 @@ def save_population_edits_to_file(edits: list[PopulationEditState], filename: st
         new_props.append(d)
         
     data["individual_properties"] = new_props
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def extract_saturation_from_file(filename: str = "properties.json") -> SaturationEditState:
+    path = CONFIGS_DIR / filename
+    if not path.is_file():
+        return SaturationEditState()
+    properties = load_properties_config(path)
+    return SaturationEditState(
+        booking_increase=float(properties.saturation.booking_increase),
+        utility_penalty_factor=float(properties.saturation.utility_penalty_factor),
+    )
+
+
+def save_saturation_to_file(edit: SaturationEditState, filename: str = "properties.json") -> None:
+    path = CONFIGS_DIR / filename
+    if not path.is_file():
+        return
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    data["saturation"] = {
+        "booking_increase": float(edit.booking_increase),
+        "utility_penalty_factor": float(edit.utility_penalty_factor),
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def extract_market_feedback_from_file(filename: str = "properties.json") -> MarketFeedbackEditState:
+    path = CONFIGS_DIR / filename
+    if not path.is_file():
+        return MarketFeedbackEditState()
+    properties = load_properties_config(path)
+    config = resolve_market_feedback_config(properties)
+    return MarketFeedbackEditState(
+        enabled=bool(config.enabled),
+        target_booking_rate=float(config.target_booking_rate),
+        marginal_cost_fraction=float(config.marginal_cost_fraction),
+        markup_adjustment_per_tick=float(config.markup_adjustment_per_tick),
+        max_price_change_fraction=float(config.max_price_change_fraction),
+        damping=float(config.damping),
+        booking_weight=float(config.booking_weight),
+    )
+
+
+def save_market_feedback_to_file(edit: MarketFeedbackEditState, filename: str = "properties.json") -> None:
+    path = CONFIGS_DIR / filename
+    if not path.is_file():
+        return
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    payload = {
+        "enabled": bool(edit.enabled),
+        "target_booking_rate": float(edit.target_booking_rate),
+        "marginal_cost_fraction": float(edit.marginal_cost_fraction),
+        "markup_adjustment_per_tick": float(edit.markup_adjustment_per_tick),
+        "max_price_change_fraction": float(edit.max_price_change_fraction),
+        "damping": float(edit.damping),
+        "booking_weight": float(edit.booking_weight),
+    }
+    data["market_feedback"] = payload
+
+    sync_keys = (
+        "target_booking_rate",
+        "marginal_cost_fraction",
+        "markup_adjustment_per_tick",
+        "max_price_change_fraction",
+        "damping",
+        "booking_weight",
+    )
+    for rule in data.get("market_rules", []):
+        if not isinstance(rule, dict):
+            continue
+        effect = rule.get("effect")
+        if isinstance(effect, dict) and effect.get("type") == "booking_yield_feedback":
+            for key in sync_keys:
+                effect[key] = payload[key]
+            break
+
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
@@ -472,6 +578,19 @@ def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:
             "protocol": not draft.no_protocol,
             "scenarios": not draft.no_scenarios,
             "checkpoint_interval": draft.checkpoint_interval,
+        },
+        "saturation": {
+            "booking_increase": draft.saturation_edit.booking_increase,
+            "utility_penalty_factor": draft.saturation_edit.utility_penalty_factor,
+        },
+        "market_feedback": {
+            "enabled": draft.market_feedback_edit.enabled,
+            "target_booking_rate": draft.market_feedback_edit.target_booking_rate,
+            "marginal_cost_fraction": draft.market_feedback_edit.marginal_cost_fraction,
+            "markup_adjustment_per_tick": draft.market_feedback_edit.markup_adjustment_per_tick,
+            "max_price_change_fraction": draft.market_feedback_edit.max_price_change_fraction,
+            "damping": draft.market_feedback_edit.damping,
+            "booking_weight": draft.market_feedback_edit.booking_weight,
         },
     }
     if draft.apply_custom_overrides or draft.scenario_mode == "custom":

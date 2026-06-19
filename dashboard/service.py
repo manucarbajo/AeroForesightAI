@@ -35,6 +35,9 @@ class RunSummary:
     timestamp: str | None
     has_narrative: bool
     has_tick_mechanics: bool
+    has_run_scenario: bool
+    scenario_title: str | None
+    scenario_summary: str | None
 
 
 @dataclass(frozen=True)
@@ -199,6 +202,80 @@ def _load_json(path: Path) -> dict[str, Any] | list[Any] | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _read_run_scenario_preview(run_dir: Path) -> tuple[bool, str | None, str | None]:
+    scenario_path = run_dir / "run_scenario.json"
+    if not scenario_path.is_file():
+        return False, None, None
+    payload = _load_json(scenario_path)
+    if not isinstance(payload, dict):
+        return True, None, None
+    title = payload.get("title")
+    summary = payload.get("summary")
+    scenarios = payload.get("scenarios")
+    if isinstance(scenarios, list) and scenarios:
+        first = scenarios[0] if isinstance(scenarios[0], dict) else {}
+        preview_title = first.get("title")
+        archetypes = ", ".join(
+            str(item.get("archetype"))
+            for item in scenarios[:3]
+            if isinstance(item, dict) and item.get("archetype")
+        )
+        if summary and archetypes:
+            preview_summary = f"{summary} · Top-3: {archetypes}"
+        elif archetypes:
+            preview_summary = f"Top-3: {archetypes}"
+        else:
+            preview_summary = summary
+        return (
+            True,
+            str(preview_title or title) if (preview_title or title) else None,
+            str(preview_summary) if preview_summary else None,
+        )
+    return (
+        True,
+        str(title) if title else None,
+        str(summary) if summary else None,
+    )
+
+
+def load_run_scenario(run_dir: Path | str) -> dict[str, Any] | None:
+    payload = _load_json(Path(run_dir) / "run_scenario.json")
+    return payload if isinstance(payload, dict) else None
+
+
+def regenerate_run_scenario(
+    run_id: str,
+    *,
+    run_dir: Path | str | None = None,
+    mock_llm: bool = True,
+    deterministic_only: bool = False,
+    model: str = "llama3.2",
+    base_url: str = "http://localhost:11434",
+    temperature: float = 0.7,
+    max_tokens: int = 2048,
+) -> dict[str, Any]:
+    from src.run_scenario_generator import generate_and_save_run_scenario
+
+    directory = Path(run_dir) if run_dir is not None else resolve_run_output_dir(run_id)
+    if mock_llm:
+        llm = get_llm()
+    else:
+        llm = OllamaClient(
+            OllamaConfig(
+                base_url=base_url,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        )
+    return generate_and_save_run_scenario(
+        run_id,
+        llm,
+        run_dir=directory,
+        prefer_llm=not deterministic_only,
+    )
+
+
 def list_runs(root: Path | str | None = None) -> list[RunSummary]:
     base = outputs_root(root)
     if not base.is_dir():
@@ -209,6 +286,7 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
     def _append_run(run_dir: Path, run_id: str) -> None:
         metadata = _load_json(run_dir / "run_metadata.json")
         meta_dict = metadata if isinstance(metadata, dict) else {}
+        has_scenario, scenario_title, scenario_summary = _read_run_scenario_preview(run_dir)
         summaries.append(
             RunSummary(
                 run_id=run_id,
@@ -220,6 +298,9 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
                 timestamp=meta_dict.get("timestamp"),
                 has_narrative=(run_dir / "final_narrative.md").is_file(),
                 has_tick_mechanics=(run_dir / "tick_mechanics.json").is_file(),
+                has_run_scenario=has_scenario,
+                scenario_title=scenario_title,
+                scenario_summary=scenario_summary,
             )
         )
 
@@ -556,6 +637,7 @@ def launch_simulation(
                 redebedarf=config.redebedarf,
                 no_protocol=config.no_protocol,
                 no_scenarios=config.no_scenarios,
+                deterministic_only=config.deterministic_only,
                 quiet=False,
                 run_id=batch_id,
                 checkpoint_dir=str(ck_path),
@@ -617,6 +699,7 @@ def launch_simulation(
             redebedarf=config.redebedarf,
             no_protocol=config.no_protocol,
             no_scenarios=config.no_scenarios,
+            deterministic_only=config.deterministic_only,
             quiet=False,
             run_id=run_id,
             checkpoint_dir=str(ck_path),

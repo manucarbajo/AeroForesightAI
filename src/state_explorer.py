@@ -50,6 +50,7 @@ class RunExplorerContext:
     price_history: list[dict[str, Any]]
     factors_timeseries: list[dict[str, Any]]
     metadata: dict[str, Any]
+    run_scenario: dict[str, Any] | None
     focus_tick: int | None
     checkpoint_tick: int | None
     checkpoint_snapshot: dict[str, Any] | None
@@ -109,6 +110,8 @@ def load_run_context(
     price_history = _load_json(run_dir / "price_history.json", [])
     factors_timeseries = _load_json(run_dir / "factors_timeseries.json", [])
     metadata = _load_json(run_dir / "run_metadata.json", {})
+    run_scenario_raw = _load_json(run_dir / "run_scenario.json", None)
+    run_scenario = run_scenario_raw if isinstance(run_scenario_raw, dict) else None
 
     checkpoint_snapshot = None
     checkpoint_tick = None
@@ -127,6 +130,7 @@ def load_run_context(
         price_history=price_history,
         factors_timeseries=factors_timeseries,
         metadata=metadata,
+        run_scenario=run_scenario,
         focus_tick=focus_tick,
         checkpoint_tick=checkpoint_tick,
         checkpoint_snapshot=checkpoint_snapshot,
@@ -254,6 +258,22 @@ def build_grounded_context_block(context: RunExplorerContext) -> str:
         if factor_rows:
             lines.append("factors_timeseries:")
             lines.append(json.dumps(factor_rows, ensure_ascii=False, indent=2))
+
+    if context.run_scenario:
+        scenario_excerpt = {
+            "title": context.run_scenario.get("title"),
+            "summary": context.run_scenario.get("summary"),
+            "run_narrative": context.run_scenario.get("run_narrative")
+            or (context.run_scenario.get("narrative") or {}).get("run_narrative"),
+            "factor_profile": context.run_scenario.get("factor_profile")
+            or (context.run_scenario.get("narrative") or {}).get("factor_profile"),
+            "scenario_alignment": context.run_scenario.get("scenario_alignment"),
+            "scenarios": context.run_scenario.get("scenarios")
+            or (context.run_scenario.get("narrative") or {}).get("scenarios"),
+            "ground_truth": context.run_scenario.get("ground_truth"),
+        }
+        lines.append("run_scenario:")
+        lines.append(json.dumps(scenario_excerpt, ensure_ascii=False, indent=2))
 
     if context.checkpoint_snapshot is not None:
         lines.append(f"checkpoint_tick_{context.checkpoint_tick}:")

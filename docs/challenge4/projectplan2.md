@@ -2,13 +2,13 @@
 
 | | |
 | --- | --- |
-| **Stand** | 18.06.2026 |
+| **Stand** | 19.06.2026 |
 | **Abgabe** | 30.06.2026 — Gesamtsystem auf GitHub (40 Punkte, Challenge 4) |
 | **Vorgänger** | [`projectplan.md`](projectplan.md) M0–M11 |
 | **Ziel** | Endabgabe: C4-Aufgabenstellung, Coaching-Punkte, Forschungsfrage, belegbare Wissenschaft |
 | **Branch** | `m9_dashboard/challenge4` |
-| **Tests** | 231 pytest grün |
-| **Fortschritt** | **P2 erledigt** · P1, P3, P4, P5, P6 offen |
+| **Tests** | 238 pytest grün |
+| **Fortschritt** | **P2 Mechanik + Gates G1/G2/G7** · P1, P3, P4, P5, P6 Rest offen |
 | **Nächster Schritt** | **P1** (scientific_foundation.md) oder **P3** (LLM-Szenario pro Run) |
 
 ## Forschungsfrage
@@ -50,8 +50,8 @@ Jeder Lauf schreibt **alles** unter `outputs/<run_id>/` — kein separates Figur
 
 | Datei / Ordner | Rolle | Status |
 | --- | --- | --- |
-| `run_scenario.md` | **LLM-Szenario:** qualitative Storyline — was konnte passieren | offen (P3) |
-| `run_scenario.json` | Struktur + Metadaten + Ground-Truth-Kennzahlen (für Chat/Explorer) | offen (P3) |
+| `run_scenario.md` | **LLM-Szenario:** qualitative Storyline — was konnte passieren | **erledigt (P3)** |
+| `run_scenario.json` | Struktur + Metadaten + Ground-Truth-Kennzahlen (für Chat/Explorer) | **erledigt (P3)** |
 | `final_narrative.md` | Tick-Protokoll inkl. Agenten-Narrativ (LLM, verbessert) | teilweise |
 | `figures/` | Charts nur aus diesem Run (`generate_run_figures`) | teilweise |
 | `tick_mechanics.json` | Ground Truth pro Tick | erledigt |
@@ -85,11 +85,12 @@ Reihenfolge: **P1 → P2 → P3 → P4 → P5 → P6**. M12-Gates (ehem. P0) **a
 | --- | --- |
 | Pipeline, Population, Faktoren, CIB, Sweeps, Explorer, Dashboard | erledigt |
 | `tick_mechanics`, Timeseries, `final_narrative.md` (Qualität offen) | teilweise |
-| **P2.1 Sättigungseffekt** (Kontinuierliches `saturation_level`, Decay-Raten, Logit-Penalty) | **erledigt** |
-| **P2.2 Segmente SSOT & Dashboard** (dynamische Segment-Keys, Modifikatoren bearbeiten, UI-Delete mit Legacy-Schutz) | **erledigt** |
+| **P2.1 Sättigungseffekt** (kontinuierliches `saturation_level`, Config + Dashboard, E2E-Lauf) | **erledigt** |
+| **P2.2 Segmente SSOT & Dashboard** (überlappende Boolean-Labels, Modifikatoren, Markt/Sättigung UI) | **erledigt** |
 | **P2.3 Basispreis konfigurierbar** (Sweep + Dashboard) | **erledigt** |
 | **P2.4 Faktordynamik** (3 neue CIB-Regeln: F4→F1, F5→F1, F3→F6) | **erledigt** |
-| **P2.5 Emergenz-Nachweis** (`emergence_evidence.md`, Test ohne CO₂-Shock) | **erledigt** |
+| **P2.5 Emergenz-Nachweis** (`emergence_evidence.md`, Tests inkl. Segment-Divergenz) | **erledigt** |
+| **P6.G2 Segment-Divergenz** (`tests/test_segment_divergence.py`, Run `run_20260619_p2_saturation_e2e`) | **erledigt** |
 | LLM-Run-Szenario, P1-Doku, P3-Coaching, Run-Figures standardmäßig | offen |
 
 ---
@@ -141,7 +142,7 @@ Vor P2-Implementierung: Eintrag in P1. Nach P2: P1 aktualisieren.
 | F-P3 | **Kostendruck (Tick)** | \(C_t = \underbrace{p_{\mathrm{cost}}(b \cdot I_t, \ldots)}_{\text{F-P1}} \cdot m \cdot w + R_t\) | `maintenance_cost_index` \(m\); `staff_cost_index` \(w\); \(R_t\)=regulatorische Zusatzkosten | `compute_cost_pressure` | Regulatorik aus Config |
 | F-P4 | **Veröffentlichter Preis** | \(p_t = C_t + \max(0,\, \mu_t)\) | `provider_markup` \(\mu\) | `compose_ticket_price` | Kosten + Marge |
 | F-P5 | **Preis-Clipping** | \(\|\Delta p\| \leq \alpha \cdot p_{t-1}\) | `max_price_change_fraction` \(\alpha\)=0.08 | `clip_price_change` | Numerische Stabilität |
-| F-P6 | **Yield-Feedback (Markup)** | \(\Delta\mu = \lambda \cdot g \cdot \beta \cdot \max(\mu_{t-1},\, C_t \cdot \rho_m)\); \(g = \mathrm{BR}_t - \mathrm{BR}^*\) | `damping` \(\lambda\)=0.85; `markup_adjustment_per_tick` \(\beta\)=0.06; `target_booking_rate` \(\mathrm{BR}^*\)=**0.84**; `margin_reference_fraction` \(\rho_m\)=0.08 | `apply_market_feedback` | Belobaba Revenue Management; IATA Benchmark |
+| F-P6 | **Yield-Feedback (Markup)** | \(\Delta\mu = \lambda \cdot g \cdot \beta \cdot \max(\mu_{t-1},\, C_t \cdot \rho_m)\); \(g = \mathrm{BR}_t - \mathrm{BR}^*\) | `damping` \(\lambda\)=0.85; `markup_adjustment_per_tick` \(\beta\)=0.08; `target_booking_rate` \(\mathrm{BR}^*\)=**0.37**; `margin_reference_fraction` \(\rho_m\)=0.08 | `apply_market_feedback` | Belobaba Revenue Management; DE-Flugquote (Kalibrierung P1) |
 | F-P7 | **Yield-Feedback (Preispfad)** | \(p^{\mathrm{yield}} = p_{t-1} \cdot (1 + \lambda \cdot g \cdot \beta)\); Auswahl min/max mit Markup-Pfad je nach \(g\) | — | `apply_market_feedback` | Preisanpassung bei Unter-/Überbuchung |
 | F-P8 | **Marginal Cost Floor** | Der Ticketpreis fällt niemals unter Grenzkosten + Steuern/Gebühren. | `marginal_cost_fraction` = 0.33 (33% der Basis-Kosten sind echte Grenzkosten) | `apply_market_feedback` | Airlines betreiben Loss-Leading für Fixkosten, aber kein Dumping unter Grenzkosten |
 
@@ -174,7 +175,7 @@ Vor P2-Implementierung: Eintrag in P1. Nach P2: P1 aktualisieren.
 | F-POP1 | WTP-Sampling | Lognormal(\(\mu\), \(\sigma\)) oder Normal, segmentbedingte Multiplikatoren (business ×1.25, frequent ×1.5) | `initialize_population` |
 | F-POP2 | `income_factor` | Base 1.0 ± Labels + \(\mathcal{N}(0, 0.05)\), clip [0.5, 1.5] | idem |
 | F-POP3 | Property-Shifts | \(\Delta x\) aus `shift_rules` pro Tick | `apply_shift_rules` |
-| F-POP4 | Sättigung (P2.1) | Cooldown nach Buchung — **Formel in P1.8 + P2.1** | geplant |
+| F-POP4 | Sättigung (P2.1) | `saturation_level` +0.6 bei Buchung; Penalty in Logit; Decay pro Segment | `saturation` in `properties.json`; Dashboard | geplant (P1.9) |
 
 ### 8.5 CIB & Faktoren
 
@@ -254,12 +255,13 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 | P2.1.1 | P1.9 Literatur + Formel F-POP4 | `scientific_foundation.md` Kap. 8 | offen (P1) |
 | P2.1.2 | `saturation_level` | `population_models.py` | **erledigt** |
 | P2.1.3 | Kontinuierlicher Decay & Logit Penalty | `population_sampler.py` | **erledigt** |
-| P2.1.4 | Dashboard Konfiguration für Decay-Raten | `config_ui.py` | **erledigt** |
-| P2.1.5 | Test auf kontinuierliche Sättigung | `tests/test_population_sampler.py` | **erledigt** (3 neue Tests) |
+| P2.1.4 | Dashboard: Decay-Raten + globale Sättigung (`saturation`) | `config_ui.py` | **erledigt** |
+| P2.1.5 | Test auf kontinuierliche Sättigung | `tests/test_population_sampler.py` | **erledigt** |
+| P2.1.6 | E2E 40 Ticks + Sättigung aktiv | `tests/test_segment_divergence.py`, Run `run_20260619_p2_saturation_e2e` | **erledigt** |
 
-**Umsetzung (18.06.2026):** Harter Cooldown (`last_booked_tick`) wurde durch kontinuierliches `saturation_level` ersetzt. Bei Buchung steigt Level um +0.6. Sättigung erzeugt Penalty im Logit-Modell.
-*   Decay-Raten wurden verlangsamt, um den Sättigungsabbau über mehrere *abstrakte Ticks* (Epochen) organisch zu verteilen: `frequent_flyer` (1.0), `business` (0.3), `price_sensitive` (0.15), `eco_conscious` (0.05).
-*   `target_booking_rate` wurde auf 0.37 justiert, um exakt der durchschnittlichen jährlichen Flugquote der deutschen Bevölkerung zu entsprechen.
+**Umsetzung (18.–19.06.2026):** Harter Cooldown wurde durch kontinuierliches `saturation_level` ersetzt. Parameter in `properties.json → saturation` (Dashboard: Tab Bevölkerung). Bei Buchung steigt Level um `booking_increase` (Default 0.6); Logit-Penalty über `utility_penalty_factor`.
+*   Decay-Raten segment-spezifisch: `frequent_flyer` (1.0), `business` (0.3), `price_sensitive` (0.15), `eco_conscious` (0.05).
+*   `target_booking_rate` = 0.37 (Dashboard: Tab Properties); Kalibrierungsbegründung → **P1 offen**.
 
 ## P2.2 Segmente
 
@@ -267,9 +269,10 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 | -- | ------- | ----- | ------ |
 | P2.2.1–P2.2.6 | SSOT, Dashboard, Sweeps, Legacy | s. Plan 1 | **erledigt** |
 
-**Umsetzung (18.06.2026):** `aggregate_population_stats()` leitet Segment-Keys dynamisch aus `individual_properties[boolean]` ab. Dashboard unterstützt Segment-Prevalences und Decay-Raten.
-*   **Realistische Demografie:** Die Segmente wurden exakt an reale Flugstatistiken angepasst: 63 % Nicht-/Seltenflieger (`eco_conscious`: 60 %), 29 % Gelegenheitsflieger (`price_sensitive`: 30 %), 8 % Vielflieger (`business`: 8 %, `frequent_flyer`: 3 %).
-*   **Dashboard-Konfiguration:** Segmente können nun komplett über das Frontend verwaltet werden (inkl. Neuanlage und Löschung mit Schutz für Legacy-Segmente). Die 4 Verhaltens-Modifikatoren (WTP, Einkommen, Preissensibilität, Wechselbereitschaft) sind direkt in der UI als Eingabefelder zugänglich und an das Backend (`properties.json`) gekoppelt.
+**Umsetzung (18.–19.06.2026):** `aggregate_population_stats()` leitet Segment-Keys dynamisch aus `individual_properties[boolean]` ab. Dashboard: Prevalence, Decay, Modifikatoren, Markt-Feedback.
+*   **Überlappende Labels:** Boolean-Segmente sind **unabhängig** gezogen — eine Person kann mehrere Merkmale haben (z. B. `business` + `price_sensitive`). Prevalences sind **marginale** Wahrscheinlichkeiten, keine Partition.
+*   **Demografie (Näherung):** `eco_conscious` 60 %, `price_sensitive` 30 %, `business` 8 %, `frequent_flyer` 3 % — optional `exclusive_group` für exklusive Personas.
+*   **Dashboard:** Segmente anlegen/löschen (Legacy geschützt); globale Sättigung + Yield-Parameter editierbar.
 
 ## P2.3 Basispreis
 
@@ -295,11 +298,12 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 
 | ID | Aufgabe | Status |
 | -- | ------- | ------ |
-| P2.5.1 | `emergence_evidence.md` (Run-IDs) | **erledigt** |
+| P2.5.1 | `emergence_evidence.md` (Run-IDs, Tests) | **erledigt** |
 | P2.5.2 | Test ohne CO₂-Shock, Preis-Umkehr | **erledigt** |
 | P2.5.3 | Kein Random-Shock-Generator | Regel ✓ |
+| P2.5.4 | Segment-Divergenz ≥ 15 pp (`test_segment_divergence.py`) | **erledigt** |
 
-**Umsetzung (18.06.2026):** `docs/challenge4/emergence_evidence.md` erstellt. Neuer Test `test_price_reversal_from_yield_feedback_only`: flacht alle exogenen Trajektorien ab → ≥1 Preis-Umkehr aus reinem Yield-Feedback belegt.
+**Umsetzung (18.–19.06.2026):** `emergence_evidence.md` aktualisiert. Neuer Test `test_price_reversal_from_yield_feedback_only`. Segment-Gap-Tests + E2E-Run `run_20260619_p2_saturation_e2e` (40 Ticks, seed 42, max. Gap 59,1 pp).
 
 ## P2.6 Yield Management & Pricing Dynamik
 
@@ -339,40 +343,39 @@ Das Szenario ist **LLM-basiert und textuell** — kein reines Template. Kennzahl
 | Szenario | fehlt | `run_scenario.md` — LLM, qualitativ, pro Run |
 | Tick-Narrativ | `final_narrative.md`, schwach bei Mock | LLM-Agenten + verbesserte Prompts |
 | Chat | Explorer auf Run-Daten | + Bezug zu `run_scenario.md` |
-| Legacy C3 | `ScenarioAgentNode` | ersetzen durch P3-Pipeline |
+| Legacy C3 | `ScenarioAgentNode` | parallel zu P3-Pipeline (CIB-Szenarien) |
 
 ## Aufgaben
 
 | ID | Aufgabe | Datei | Status |
 | -- | ------- | ----- | ------ |
-| P3.1 | `run_scenario_generator.py` — LLM-Prompt mit Run-Kontext (tick_mechanics, factors, segments, events) | `src/` | offen |
-| P3.2 | Grounding-Regeln: Zahlen nur aus Kontext; Validierung / Post-Check | Generator | offen |
-| P3.3 | Nach Lauf automatisch: `run_scenario.md` + JSON | `run_simulation.py`, Dashboard | offen |
-| P3.4 | CLI Regenerierung: `--run-id` | Generator | offen |
+| P3.1 | `run_scenario_generator.py` — LLM-Prompt mit Run-Kontext (tick_mechanics, factors, segments, events) | `src/` | **erledigt** |
+| P3.2 | Grounding-Regeln: Zahlen nur aus Kontext; Validierung / Post-Check | Generator | **erledigt** |
+| P3.3 | Nach Lauf automatisch: `run_scenario.md` + JSON | `run_simulation.py`, Dashboard | **erledigt** |
+| P3.4 | CLI Regenerierung: `--run-id` | Generator | **erledigt** |
 | P3.5 | Prompts Agenten: demand/booking, SAF/F3/F6, Segment-Bezug | `prompts/*.md` | offen |
 | P3.6 | `final_narrative.md` — qualitative Agenten-Blöcke verbessern | `output_writer.py` | offen |
-| P3.7 | Explorer: `run_scenario.md` im Kontext | `state_explorer.py` | offen |
+| P3.7 | Explorer: `run_scenario.md` im Kontext | `state_explorer.py` | **erledigt** |
 | P3.8 | Sweeps: voller Run-Output inkl. LLM-Szenario | `scenario_sweeps.py` | offen |
-| P3.9 | Tests: Generator lädt Run-Artefakte; Mock-LLM mit Fixture | `tests/` | offen |
+| P3.9 | Tests: Generator lädt Run-Artefakte; Mock-LLM mit Fixture | `tests/` | **erledigt** |
 | P3.10 | P1 Kap. 7 + Kap. 8: Methodik LLM-Szenario; keine erfundenen Formelwerte | `scientific_foundation.md` | offen |
 
 ## Inhalt `run_scenario.md` (LLM-generiert, strukturiert)
 
-1. Titel und Kurzsummary (2–3 Sätze)
-2. Ausgangslage und Annahmen
-3. Verlauf — was ist passiert, in welchen Phasen (mit Tick-Bezug aus Ground Truth)
-4. Segment- und Akteurs-Perspektive (qualitativ)
-5. Einordnung: Nähe BAU / Wende / Konflikt; was **hätte sonst** eintreten können (explorativ)
-6. CIB-Einordnung (Score aus Python, Interpretation LLM)
-7. Grenzen und Unsicherheiten
+1. **Lauf-Narrativ** — was im Simulationslauf passiert ist (F1–F7, Wechsel, Markt, Events)
+2. **Faktorprofil** — Endzustände und Übergänge aus `timeseries/factors.csv`
+3. **Top-3 explorative Szenarien** — Cross-Impact-Kombinationen (Fortsetzung / Alternative / Spannung):
+   - explizite `factor_constellation` F1–F7
+   - was **eintreten könnte** (Strategic Foresight, nicht Prognose)
+4. CIB-Einordnung · Grenzen · Ground Truth (Python)
 
 ## Abnahme P3
 
-- [ ] Jeder Lauf: LLM-`run_scenario.md` + JSON
-- [ ] Text qualitativ, für Präsentation lesbar
-- [ ] Keine erfundenen Kennzahlen (Ground-Check)
-- [ ] Explorer beantwortet „Was ist passiert?“ / „Warum?“ zum Run
-- [ ] Zwei Configs → zwei unterschiedliche Szenario-Texte
+- [x] Jeder Lauf: LLM-`run_scenario.md` + JSON (Template-Fallback bei Mock/deterministic)
+- [x] Text qualitativ, für Präsentation lesbar
+- [x] Keine erfundenen Kennzahlen (Ground-Check + `ground_truth`-Block)
+- [x] Explorer beantwortet „Was ist passiert?“ / „Warum?“ zum Run (Szenario im Kontext)
+- [x] Zwei Configs → zwei unterschiedliche Szenario-Texte (Template-Test)
 
 ---
 
@@ -407,12 +410,12 @@ Dashboard = **Workbench für Präsentation und Exploration**. Qualitatives Narra
 | P5.2 | ~~Globale Figures~~ — entfällt; nur Run-Figures | — |
 | P5.3 | README: Output pro Run | offen |
 | P5.4 | `challenge4_report.md` — Forschungsfrage, Narrativ-Säule, P1-Verweis | offen |
-| P5.5 | **Dashboard Run-Ansicht (Hauptpunkt):** | offen |
-| P5.5.1 | Tab/Prominenz: **`run_scenario.md`** (LLM-Szenario) — erste Lesart nach Lauf | offen |
-| P5.5.2 | Tab: `final_narrative.md` (Tick-Detail) | offen |
+| P5.5 | **Dashboard Run-Ansicht (Hauptpunkt):** | **teilweise** |
+| P5.5.1 | Tab/Prominenz: **`run_scenario.md`** (LLM-Szenario) — erste Lesart nach Lauf | **erledigt** |
+| P5.5.2 | Tab: `final_narrative.md` (Tick-Detail) | erledigt |
 | P5.5.3 | Tab: **Figures** aus `outputs/<run_id>/figures/` | teilweise |
 | P5.5.4 | Tab: **Chat/Explorer** — grounded, selber Run | teilweise |
-| P5.5.5 | Run-Liste: Szenario-Titel/Summary als Preview | offen |
+| P5.5.5 | Run-Liste: Szenario-Titel/Summary als Preview | **erledigt** |
 | P5.6 | Sweep-Läufe: gleiche Run-Struktur unter `outputs/sweeps/<id>/` | offen |
 
 Präsentations-Demo: Dashboard öffnen → Run wählen → **Szenario lesen** → Figure → Chat-Frage stellen.
@@ -430,14 +433,14 @@ Präsentations-Demo: Dashboard öffnen → Run wählen → **Szenario lesen** �
 ### Coaching
 
 - [ ] P2 vollständig
-- [ ] P3: LLM-Szenario pro Run
+- [x] P3: LLM-Szenario pro Run
 - [ ] P1: `scientific_foundation.md` (inkl. **Kap. 8 Formeln**) + `presentation_references.md`
 - [ ] P4: CIB dokumentiert
 
 ### Narrativ & Dashboard
 
 - [ ] Run-Ordner vollständig: Szenario, Narrativ, Figures, Timeseries
-- [ ] Dashboard zeigt Szenario prominent (P5.5)
+- [x] Dashboard zeigt Szenario prominent (P5.5)
 
 ### Abgabe
 
@@ -450,13 +453,13 @@ Technische Abnahme aus Plan 1, **nach** P1–P5. Nur schließen, wenn Mechanik u
 
 | ID | Gate | Status |
 | -- | ---- | ------ |
-| P6.G1 | E2E 30 Ticks `deterministic-only` | offen |
-| P6.G2 | Segment-Divergenz ≥ 15 pp | offen |
+| P6.G1 | E2E 30 Ticks `deterministic-only` | **erledigt** (40 Ticks in `test_segment_divergence.py` + `run_20260619_p2_saturation_e2e`) |
+| P6.G2 | Segment-Divergenz ≥ 15 pp | **erledigt** (`tests/test_segment_divergence.py`) |
 | P6.G3 | Sweep Konflikt, 3 Seeds | offen |
 | P6.G4 | CIB-Ranking Konflikt < BAU | offen |
-| P6.G5 | Einkommen F4.2 → Divergenz | offen |
+| P6.G5 | Einkommen F4.2 → Divergenz | **erledigt** (in Segment-Divergenz-Test mit F4.2) |
 | P6.G6 | Agent-Narrative, Profile | Review |
-| P6.G7 | pytest grün | erledigt (217) |
+| P6.G7 | pytest grün | erledigt (238) |
 
 Referenz: Anhang B2 in [`projectplan.md`](projectplan.md).
 

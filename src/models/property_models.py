@@ -74,11 +74,19 @@ class SystemProperty(BaseModel):
         return data
 
 
+class SaturationConfig(BaseModel):
+    """Continuous saturation after booking (P2.1)."""
+
+    booking_increase: float = 0.6
+    utility_penalty_factor: float = 1.0
+
+
 class IndividualProperty(BaseModel):
     id: str
     type: Literal["boolean", "distribution", "numeric"] = "boolean"
     prevalence: float | None = None
     enabled: bool = True
+    exclusive_group: str | None = None
     saturation_decay: float | None = None
     distribution: DistributionType | None = None
     mean: float | None = None
@@ -171,8 +179,9 @@ class MarketFeedbackConfig(BaseModel):
     """Provider markup adjusts each tick toward the target booking rate."""
 
     enabled: bool = True
-    target_booking_rate: float = 0.84
-    markup_adjustment_per_tick: float = 0.06
+    # Target share of population booking per tick (calibrated ~DE annual flight rate).
+    target_booking_rate: float = 0.37
+    markup_adjustment_per_tick: float = 0.08
     max_price_change_fraction: float = 0.08
     damping: float = 0.85
     booking_weight: float = 0.6
@@ -196,7 +205,7 @@ class PropertiesConfig(BaseModel):
     market_rules: list[MarketRule] = Field(default_factory=list)
     price_model: PriceModelConfig = Field(default_factory=PriceModelConfig)
     market_feedback: MarketFeedbackConfig = Field(default_factory=MarketFeedbackConfig)
-    saturation_cooldown_ticks: int = 0
+    saturation: SaturationConfig = Field(default_factory=SaturationConfig)
 
     def system_property_ids(self) -> list[str]:
         return [prop.id for prop in self.system_properties]

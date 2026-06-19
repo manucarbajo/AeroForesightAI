@@ -115,6 +115,34 @@ def _write_sample_run(run_dir: Path, run_id: str) -> None:
         json.dumps({"simulation_name": "Test Run"}),
         encoding="utf-8",
     )
+    (run_dir / "run_scenario.json").write_text(
+        json.dumps(
+            {
+                "title": "Lauf-Narrativ",
+                "summary": "Faktorbasierter Lauf.",
+                "run_narrative": "F1 wechselt im Verlauf.",
+                "factor_profile": {
+                    "end": [
+                        {
+                            "factor_id": "F1",
+                            "factor_name": "Nachfrage",
+                            "state_id": "F1.1",
+                            "state_label": "Boom",
+                        }
+                    ]
+                },
+                "scenarios": [
+                    {
+                        "rank": 1,
+                        "title": "Fortsetzung: Business as usual",
+                        "what_could_happen": "Der Markt bleibt auf vertrautem Pfad.",
+                    }
+                ],
+                "ground_truth": {"booking_rate_end": 0.62},
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 class TestStateExplorer:
@@ -162,6 +190,19 @@ class TestStateExplorer:
             assert "Never invent numbers" in llm.last_prompt
             assert "booking_rate" in llm.last_prompt
             assert "132.5" in llm.last_prompt
+        finally:
+            shutil.rmtree(tmpdir)
+
+    def test_grounded_context_contains_run_scenario(self):
+        tmpdir = Path(tempfile.mkdtemp(prefix="explorer_scenario_"))
+        try:
+            run_id = "run_test_explorer"
+            _write_sample_run(tmpdir / run_id, run_id)
+            context = load_run_context(run_id, outputs_root=tmpdir)
+            assert context.run_scenario is not None
+            block = build_grounded_context_block(context)
+            assert "run_scenario" in block
+            assert "F1" in block
         finally:
             shutil.rmtree(tmpdir)
 

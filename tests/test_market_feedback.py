@@ -82,6 +82,11 @@ class TestM413ConfigurablePrice:
         properties = load_properties_config()
         assert initial_provider_markup(properties) == 28.0
 
+    def test_market_rules_resolve_marginal_cost_fraction(self):
+        properties = load_properties_config()
+        config = resolve_market_feedback_config(properties)
+        assert config.marginal_cost_fraction == 0.33
+
 
 class TestApplyMarketFeedback:
     def test_low_booking_reduces_price(self):
@@ -179,14 +184,21 @@ class TestEmergenceWithoutCO2Shock:
     def test_price_reversal_from_yield_feedback_only(self):
         """P2.5: Price direction change must occur from internal coupling alone (no CO₂ shock)."""
         from src.models.property_models import BaselineTrajectory
+        from src.property_engine import resolve_trajectory
 
         state = build_initial_state()
 
-        # Flatten all exogenous trajectories → constant (no CO₂ shock, no oil change)
+        flat_ids = (
+            "carbon_tax_level",
+            "saf_mandate_share",
+            "oil_price_index",
+            "demand_growth_rate",
+            "fuel_price_change",
+            "income_index",
+        )
         for prop in state.properties.system_properties:
-            if prop.id in ("carbon_tax_level", "saf_mandate_share", "oil_price_index",
-                           "demand_growth_rate", "fuel_price_change", "income_index"):
-                current_val = getattr(prop.trajectory, "baseline", 50.0)
+            if prop.id in flat_ids:
+                current_val = resolve_trajectory(prop.trajectory, tick=1)
                 prop.trajectory = BaselineTrajectory(baseline=current_val, rules=[])
 
         prices: list[float] = []

@@ -23,9 +23,11 @@ from dashboard.service import (
     list_runs,
     load_event_log,
     load_price_series,
+    load_run_scenario,
     load_tick_mechanics,
     outputs_root,
     read_run_file,
+    regenerate_run_scenario,
 )
 from src.state_explorer import (
     StateExplorer,
@@ -85,6 +87,78 @@ def _render_overview(run_dir: Path, run_id: str) -> None:
 
     fig.tight_layout()
     st.pyplot(fig, clear_figure=True)
+
+
+def _render_scenario(run_dir: Path, run_id: str) -> None:
+    scenario = load_run_scenario(run_dir)
+    md_path = run_dir / "run_scenario.md"
+
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        regenerate = st.button("Szenarien neu erzeugen", width="stretch")
+    with col2:
+        st.caption("P3 — Szenarien aus dem Lauf: Tick-Anhaltspunkte und sachliche Beschreibung.")
+
+    if regenerate:
+        with st.spinner("Szenarien werden erzeugt …"):
+            try:
+                regenerate_run_scenario(run_id, run_dir=run_dir, mock_llm=True, deterministic_only=True)
+                st.success("Szenarien aktualisiert.")
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Szenario-Erzeugung fehlgeschlagen: {exc}")
+                return
+
+    if scenario:
+        title = scenario.get("title")
+        summary = scenario.get("summary")
+        if title:
+            st.subheader(str(title))
+        if summary:
+            st.markdown(str(summary))
+
+        narrative = scenario.get("narrative") if isinstance(scenario.get("narrative"), dict) else {}
+        run_story = scenario.get("run_narrative") or narrative.get("run_narrative") or scenario.get("observed_run")
+        if run_story:
+            st.markdown("**Lauf-Narrativ — was im Lauf passiert ist**")
+            st.markdown(str(run_story))
+
+        scenarios = scenario.get("scenarios") or narrative.get("scenarios") or []
+        if scenarios:
+            st.markdown("### Szenarien")
+            for item in scenarios:
+                if not isinstance(item, dict):
+                    continue
+                rank = item.get("rank", "?")
+                header = f"{rank}. {item.get('title', 'Szenario')}"
+                with st.expander(header, expanded=int(item.get("rank", 99)) == 1):
+                    st.markdown("**Anhaltspunkte aus dem Lauf (Ticks)**")
+                    st.markdown(str(item.get("tick_grounding", "")))
+                    st.markdown("**Szenario-Beschreibung**")
+                    st.markdown(str(item.get("story") or item.get("what_could_happen", "")))
+
+        source = scenario.get("source")
+        if source:
+            st.caption(f"Quelle: `{source}`")
+        warnings = scenario.get("grounding_warnings") or []
+        if warnings:
+            st.warning("Grounding-Hinweise: " + "; ".join(str(item) for item in warnings[:5]))
+
+        ground_truth = scenario.get("ground_truth")
+        if isinstance(ground_truth, dict) and ground_truth:
+            with st.expander("Ground Truth (Python-Kennzahlen)", expanded=False):
+                st.json(ground_truth)
+
+    if md_path.is_file() and not scenario:
+        st.markdown(read_run_file(md_path))
+    elif md_path.is_file():
+        with st.expander("Vollständiges Markdown (`run_scenario.md`)", expanded=False):
+            st.markdown(read_run_file(md_path))
+    elif not scenario:
+        st.warning(
+            "`run_scenario.md` fehlt in diesem Run. "
+            "Starten Sie eine neue Simulation oder klicken Sie auf «Szenarien neu erzeugen»."
+        )
 
 
 def _render_narrative(run_dir: Path) -> None:
@@ -534,6 +608,7 @@ def _render_launch_page() -> None:
             st.success(
                 f"Run `{result.run_id}` — {result.ticks_completed} Ticks, {result.total_events} Events."
             )
+            st.caption("Tab «Szenario» in Ergebnisse ansehen — erste Lesart nach dem Lauf.")
             if draft.generate_figures:
                 st.caption("Figures liegen unter `figures/` — Tab «Figures» in Ergebnisse ansehen.")
 
@@ -545,35 +620,47 @@ def _render_run_browser() -> None:
         return
 
     run_ids = [run.run_id for run in runs]
+    run_labels = []
+    for run in runs:
+        label = run.run_id
+        if run.scenario_title:
+            label = f"{run.run_id} — {run.scenario_title}"
+        run_labels.append(label)
+
     default_index = 0
     if st.session_state.selected_run_id in run_ids:
         default_index = run_ids.index(st.session_state.selected_run_id)
     elif st.session_state.last_launched_run_id in run_ids:
         default_index = run_ids.index(st.session_state.last_launched_run_id)
 
-    selected_run_id = st.selectbox("Run", run_ids, index=default_index)
+    selected_label = st.selectbox("Run", run_labels, index=default_index)
+    selected_run_id = run_ids[run_labels.index(selected_label)]
     st.session_state.selected_run_id = selected_run_id
     summary = next(run for run in runs if run.run_id == selected_run_id)
     run_dir = summary.run_dir
 
+    preview = summary.scenario_summary or "Kein Szenario-Preview — Run ohne `run_scenario.json`."
     st.caption(
         f"{summary.timestamp or '—'} · "
         f"{summary.ticks_completed or '?'} Ticks · "
         f"Modell {summary.model or '—'}"
     )
+    st.info(preview)
 
-    tabs = st.tabs(["Übersicht", "Animation", "Figures", "Bericht", "Abfrage", "Dateien"])
+    tabs = st.tabs(["Szenario", "Übersicht", "Animation", "Figures", "Bericht", "Abfrage", "Dateien"])
     with tabs[0]:
-        _render_overview(run_dir, selected_run_id)
+        _render_scenario(run_dir, selected_run_id)
     with tabs[1]:
-        _render_animation(run_dir)
+        _render_overview(run_dir, selected_run_id)
     with tabs[2]:
-        _render_figures(run_dir)
+        _render_animation(run_dir)
     with tabs[3]:
-        _render_narrative(run_dir)
+        _render_figures(run_dir)
     with tabs[4]:
-        _render_explorer(selected_run_id)
+        _render_narrative(run_dir)
     with tabs[5]:
+        _render_explorer(selected_run_id)
+    with tabs[6]:
         _render_files(run_dir)
 
 
