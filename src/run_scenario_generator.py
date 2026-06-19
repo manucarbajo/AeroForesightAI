@@ -298,19 +298,14 @@ def _flip_state(state_id: str) -> str:
     return f"{factor_id}.{flipped}"
 
 
-def _slide_scenario_title(states: dict[str, str]) -> tuple[str, str]:
-    """Map F1/F2 constellation to Aufgabenfolie-Logik (A=Nachfrage, B=Regulatorik)."""
-    f1 = states.get("F1", "F1.1")
-    f2 = states.get("F2", "F2.1")
-    if f1.endswith(".1") and f2.endswith(".1"):
-        return "Business as usual", "Fortsetzung"
-    if f1.endswith(".2") and f2.endswith(".2"):
-        return "Freiwillige Wende", "Wende"
-    if f1.endswith(".1") and f2.endswith(".2"):
-        return "Transformations-Konflikt", "Konflikt"
-    if f1.endswith(".2") and f2.endswith(".1"):
-        return "Gebremste Transformation", "gemischt"
-    return "Cross-Impact-Pfad", "explorativ"
+def _slide_scenario_title(scenario_kind: str) -> str:
+    if scenario_kind == "fortsetzung":
+        return "Trend-Fortsetzung"
+    if scenario_kind == "alternative":
+        return "Alternativ-Szenario"
+    if scenario_kind == "spannung":
+        return "Spannungs-Szenario"
+    return "Exploratives Szenario"
 
 
 def _phase_label(index: int) -> str:
@@ -402,13 +397,8 @@ def _build_constellation_scenario(
     factor_profile: dict[str, Any],
     catalog: dict[str, Any],
 ) -> dict[str, Any]:
-    slide_title, _archetype = _slide_scenario_title(states)
-    if scenario_kind == "fortsetzung":
-        title = slide_title
-    elif scenario_kind == "alternative":
-        title = f"Alternativer Pfad: {slide_title}"
-    else:
-        title = slide_title
+    slide_title = _slide_scenario_title(scenario_kind)
+    title = slide_title
 
     tick_grounding = build_scenario_tick_grounding(
         context, factor_profile, catalog, states
@@ -495,7 +485,31 @@ def build_explorative_scenarios(
         factor_profile=factor_profile,
         catalog=catalog,
     )
-    return [continuation, alternative, tension]
+    
+    scenarios = [continuation, alternative, tension]
+    
+    # Calculate CIB Consistency Scores
+    if isinstance(context.cib_matrix, dict):
+        try:
+            from src.models.cib_models import CIBMatrix
+            from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
+            
+            matrix_obj = CIBMatrix.model_validate(context.cib_matrix)
+            checker = ConsistencyChecker(matrix_obj)
+            
+            for sc in scenarios:
+                desc = ScenarioDescriptor(factor_states=sc["factor_constellation"])
+                score = checker.compute_consistency_score(desc)
+                sc["consistency_score"] = round(score, 3)
+        except Exception as e:
+            # Fallback if matrix validation fails
+            for sc in scenarios:
+                sc["consistency_score"] = None
+    else:
+        for sc in scenarios:
+            sc["consistency_score"] = None
+
+    return scenarios
 
 
 def _select_phase_ticks(ticks: list[dict[str, Any]], *, max_phases: int = 3) -> list[dict[str, Any]]:
@@ -546,23 +560,7 @@ def load_run_scenario_context(
     )
 
 
-def _infer_scenario_alignment(context: RunScenarioContext) -> str:
-    factors_end = context.summary_metrics.get("factor_states_end") or {}
-    conflict_signals = sum(
-        1
-        for state in factors_end.values()
-        if isinstance(state, str) and state.endswith(".2")
-    )
-    booking_end = context.summary_metrics.get("booking_rate_end")
-    if conflict_signals >= 4:
-        return "Konflikt"
-    if factors_end.get("F3") == "F3.2" or factors_end.get("F6") == "F6.1":
-        return "Wende"
-    if booking_end is not None and booking_end < 0.25:
-        return "Konflikt"
-    if conflict_signals <= 1:
-        return "BAU"
-    return "gemischt"
+# _infer_scenario_alignment and _rank_archetypes removed to decouple from lecture archetypes.
 
 
 def _cib_score(context: RunScenarioContext) -> float | None:
@@ -610,13 +608,7 @@ def _price_trend(metrics: dict[str, Any]) -> str:
     return "stabil"
 
 
-def _rank_archetypes(primary: str) -> list[str]:
-    """Legacy helper — ranking now follows factor constellations."""
-    order = ["BAU", "Wende", "Konflikt"]
-    if primary not in order:
-        return order
-    rest = [item for item in order if item != primary]
-    return [primary, *rest]
+
 
 
 def _plausibility_for_rank(rank: int) -> str:
@@ -628,43 +620,52 @@ def _observed_run_brief(context: RunScenarioContext, factor_profile: dict[str, A
 
 
 def _normalize_scenarios(raw: Any, *, context: RunScenarioContext, factor_profile: dict[str, Any], catalog: dict[str, Any]) -> list[dict[str, Any]]:
+    template_scenarios = build_explorative_scenarios(context, factor_profile, catalog)
+    
     if not isinstance(raw, list):
-        return build_explorative_scenarios(context, factor_profile, catalog)
+        return template_scenarios
+
     scenarios: list[dict[str, Any]] = []
-    for index, item in enumerate(raw[:3], start=1):
+    for index, item in enumerate(raw[:3]):
         if not isinstance(item, dict):
             continue
-        constellation = item.get("factor_constellation")
-        if not isinstance(constellation, dict):
-            constellation = factor_profile.get("end_by_id") or {}
+        
+        # Match with our precalculated scenario by rank/index
+        rank_val = int(item.get("rank") or index + 1)
+        template_match = next((t for t in template_scenarios if t["rank"] == rank_val), template_scenarios[index] if index < len(template_scenarios) else template_scenarios[-1])
+
+        constellation = template_match.get("factor_constellation", {})
+        tick_grounding = template_match.get("tick_grounding", "")
+        consistency_score = template_match.get("consistency_score")
+        scenario_kind = template_match.get("scenario_kind", "explorativ")
+
         story = str(item.get("story") or item.get("what_could_happen") or item.get("narrative") or "").strip()
-        tick_grounding = str(item.get("tick_grounding") or "").strip()
-        if not tick_grounding and isinstance(constellation, dict):
-            tick_grounding = build_scenario_tick_grounding(
-                context, factor_profile, catalog, constellation
-            )
+        
         scenarios.append(
             {
-                "rank": int(item.get("rank") or index),
-                "id": str(item.get("id") or f"S{index}"),
-                "title": str(item.get("title") or f"Szenario {index}"),
-                "scenario_kind": str(item.get("scenario_kind") or "explorativ"),
-                "plausibility": str(item.get("plausibility") or _plausibility_for_rank(index)),
+                "rank": rank_val,
+                "id": f"S{rank_val}",
+                "title": str(item.get("title") or template_match.get("title")),
+                "scenario_kind": scenario_kind,
+                "plausibility": str(item.get("plausibility") or _plausibility_for_rank(rank_val)),
+                "consistency_score": consistency_score,
                 "factor_constellation": dict(constellation),
                 "tick_grounding": tick_grounding,
                 "story": story,
                 "what_could_happen": story,
             }
         )
+
+    # Fill up if LLM returned fewer than 3
     if len(scenarios) < 3:
-        template_scenarios = build_explorative_scenarios(context, factor_profile, catalog)
-        existing_titles = {item["title"] for item in scenarios}
+        existing_ranks = {item["rank"] for item in scenarios}
         for item in template_scenarios:
-            if item["title"] in existing_titles:
+            if item["rank"] in existing_ranks:
                 continue
             scenarios.append(item)
             if len(scenarios) >= 3:
                 break
+
     scenarios.sort(key=lambda item: int(item.get("rank") or 99))
     for index, item in enumerate(scenarios[:3], start=1):
         item["rank"] = index
@@ -677,8 +678,6 @@ def build_run_summary(
     context: RunScenarioContext,
     factor_profile: dict[str, Any],
     scenarios: list[dict[str, Any]],
-    *,
-    alignment: str,
 ) -> str:
     """Kurze sachliche Einordnung — ohne Wiederholung des Lauf-Narrativs."""
     metrics = context.summary_metrics
@@ -708,7 +707,6 @@ def build_template_scenario(context: RunScenarioContext) -> dict[str, Any]:
         context,
         factor_profile,
         scenarios,
-        alignment=_infer_scenario_alignment(context),
     )
 
     return {
@@ -728,6 +726,19 @@ def build_template_scenario(context: RunScenarioContext) -> dict[str, Any]:
 def build_scenario_prompt(context: RunScenarioContext) -> str:
     catalog = _load_factor_catalog()
     factor_profile = build_factor_profile(context, catalog)
+    precalculated_scenarios = build_explorative_scenarios(context, factor_profile, catalog)
+    
+    # Clean up the output to avoid deeply nested huge objects in the prompt if we don't need them
+    clean_scenarios = []
+    for sc in precalculated_scenarios:
+        clean_scenarios.append({
+            "rank": sc.get("rank"),
+            "scenario_kind": sc.get("scenario_kind"),
+            "consistency_score": sc.get("consistency_score"),
+            "factor_constellation": sc.get("factor_constellation"),
+            "tick_grounding": sc.get("tick_grounding")
+        })
+
     payload = {
         "run_id": context.run_id,
         "metadata": context.metadata,
@@ -737,59 +748,30 @@ def build_scenario_prompt(context: RunScenarioContext) -> str:
         "events_sample": context.event_log[-12:],
         "segment_booking_end": context.summary_metrics.get("segment_booking_end"),
         "cib_consistency_score": _cib_score(context),
-        "inferred_alignment_hint": _infer_scenario_alignment(context),
         "booking_trend": _booking_trend(context.summary_metrics),
         "price_trend": _price_trend(context.summary_metrics),
+        "precalculated_scenarios": clean_scenarios,
     }
-    return f"""{RUN_SCENARIO_MARKER}
-
-Du schreibst **sachliche** explorative Szenarien nach einem abgeschlossenen Simulationslauf (Flugverkehr). Keine erfundenen Geschichten, keine Prognose.
-
-**Aufbau:**
-1. **summary** — 1–2 Sätze: Lauf, Faktor-Endlage, drei Pfade.
-2. **run_narrative** — kompakt: Ticks, Nachfrage-/Preistrend, wichtigste Faktorwechsel, Endlage.
-3. **Drei Szenarien** — je mit:
-   - **tick_grounding**: kurze Tick-Kennzahlen, Szenario-Faktoren, Abweichung zur Lauf-Endlage
-   - **story**: 4–6 sachliche Sätze aus Faktoren ableiten, keine Fiktion
-
-Kein BAU/Wende/Konflikt-Label, keine CIB-Einordnung, keine Meta-Kommentare (z. B. „Environmental Scanning“).
-
-Antworte mit **einem JSON-Objekt** (kein Markdown, kein Codeblock):
-{{
-  "title": "kurzer Gesamttitel",
-  "summary": "1–2 sachliche Sätze",
-  "run_narrative": "kompakter Laufverlauf",
-  "scenarios": [
-    {{
-      "rank": 1,
-      "id": "S1",
-      "title": "prägnanter Titel",
-      "scenario_kind": "fortsetzung|alternative|spannung",
-      "plausibility": "hoch|mittel|niedrig",
-      "factor_constellation": {{"F1": "F1.1", "F2": "F2.1", "F3": "F3.1", "F4": "F4.1", "F5": "F5.1", "F6": "F6.1", "F7": "F7.1"}},
-      "tick_grounding": "kurze Anhaltspunkte",
-      "story": "4–6 sachliche Sätze"
-    }}
-  ],
-  "limitations": "kurzer Hinweis"
-}}
-
-Regeln:
-- Genau **3** Szenarien
-- tick_grounding vor story — erst Laufbelege, dann sachliche Beschreibung
-- story: sachlich, nicht erzählend
-
-RUN CONTEXT (Ground Truth):
-{json.dumps(payload, ensure_ascii=False, indent=2)}
-"""
-
+    
+    prompt_path = Path("src/prompts/run_scenario.md")
+    if prompt_path.exists():
+        prompt_template = prompt_path.read_text(encoding="utf-8")
+    else:
+        # Fallback if file is missing
+        prompt_template = f"Bitte erstelle 3 Szenarien. Lese die Daten aus RUN CONTEXT.\n"
+        
+    return f"{RUN_SCENARIO_MARKER}\n\nRUN CONTEXT (Ground Truth):\n```json\n{json.dumps(payload, ensure_ascii=False, indent=2)}\n```\n\n{prompt_template}\n"
 
 def _extract_json_object(text: str) -> dict[str, Any] | None:
     text = text.strip()
     if not text:
         return None
+    
+    def _clean_json(s: str) -> str:
+        return re.sub(r",\s*([\]}])", r"\1", s)
+        
     try:
-        parsed = json.loads(text)
+        parsed = json.loads(_clean_json(text))
         return parsed if isinstance(parsed, dict) else None
     except json.JSONDecodeError:
         pass
@@ -797,7 +779,7 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
     if not match:
         return None
     try:
-        parsed = json.loads(match.group(0))
+        parsed = json.loads(_clean_json(match.group(0)))
         return parsed if isinstance(parsed, dict) else None
     except json.JSONDecodeError:
         return None
@@ -820,6 +802,21 @@ def _allowed_number_tokens(context: RunScenarioContext) -> set[str]:
     for row in context.phase_ticks:
         if row.get("tick") is not None:
             allowed.add(str(int(row["tick"])))
+            
+    # Allow scenario ranks and CIB scores
+    allowed.update({"1", "2", "3"})
+    cib_score = _cib_score(context)
+    if cib_score is not None:
+        allowed.update(_number_tokens(cib_score))
+        
+    catalog = _load_factor_catalog()
+    factor_profile = build_factor_profile(context, catalog)
+    precalc = build_explorative_scenarios(context, factor_profile, catalog)
+    for sc in precalc:
+        score = sc.get("consistency_score")
+        if score is not None:
+            allowed.update(_number_tokens(float(score)))
+            
     return allowed
 
 
@@ -878,7 +875,6 @@ def build_ground_truth_block(context: RunScenarioContext) -> dict[str, Any]:
     block = dict(context.summary_metrics)
     block["run_id"] = context.run_id
     block["cib_consistency_score"] = _cib_score(context)
-    block["scenario_alignment_inferred"] = _infer_scenario_alignment(context)
     block["factor_profile"] = factor_profile
     return block
 
@@ -924,14 +920,6 @@ def render_run_scenario_markdown(payload: dict[str, Any], ground_truth: dict[str
             ]
         )
 
-    lines.extend(
-        [
-            "## Ground Truth (Python)",
-            "```json",
-            json.dumps(ground_truth, ensure_ascii=False, indent=2),
-            "```",
-        ]
-    )
     return "\n".join(lines).strip() + "\n"
 
 
@@ -952,6 +940,7 @@ def generate_run_scenario(
 
     if prefer_llm and llm is not None:
         raw = llm.call(build_scenario_prompt(context))
+        print("RAW LLM OUTPUT:\n", raw)
         parsed = _extract_json_object(raw)
         scenarios_raw = parsed.get("scenarios") if isinstance(parsed, dict) else None
         if (
@@ -972,9 +961,10 @@ def generate_run_scenario(
                 catalog=catalog,
             )
             grounding_warnings = validate_scenario_narrative(parsed, context)
-            if not grounding_warnings:
-                narrative = parsed
-                narrative["source"] = "llm"
+            narrative = parsed
+            narrative["source"] = "llm"
+            if grounding_warnings:
+                narrative["grounding_warnings"] = grounding_warnings
 
     if narrative is None:
         narrative = build_template_scenario(context)

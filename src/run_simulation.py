@@ -197,6 +197,18 @@ def _save_run_outputs(
     segment_analysis_path = save_segment_analysis(state.round_results, run_dir=run_dir)
     final_narrative_path = save_final_narrative(state, run_dir=run_dir)
     tick_mechanics_path = save_tick_mechanics(state, run_dir=run_dir)
+    if state.cib_matrix is not None:
+        from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
+        
+        checker = ConsistencyChecker(state.cib_matrix)
+        final_factors = {k: v.current_state for k, v in state.environment.factors.items() if v.current_state}
+        scenario_desc = ScenarioDescriptor(factor_states=final_factors)
+        consistency_score = checker.compute_consistency_score(scenario_desc)
+        
+        if state.cib_matrix.metadata is None:
+            state.cib_matrix.metadata = {}
+        state.cib_matrix.metadata["consistency_score"] = consistency_score
+
     cib_matrix_path = save_cib_matrix(state, run_dir=run_dir)
 
     protocol_path = None
