@@ -17,6 +17,15 @@ RUN_SCENARIO_MARKER = "RUN_SCENARIO_GENERATOR"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FACTOR_CATALOG = REPO_ROOT / "configs" / "factors.json"
 FACTOR_IDS = tuple(f"F{i}" for i in range(1, 8))
+AGENT_IDS = ("consumer", "provider", "regulator")
+AGENT_LABELS = {
+    "consumer": "Passagiere (Consumer)",
+    "provider": "Airlines (Provider)",
+    "regulator": "Politik (Regulator)",
+}
+_EMPTY_AGENT_REASONING = frozenset(
+    {"mock", "noop", "fallback", "kein reasoning geliefert.", "kein reasoning geliefert"}
+)
 
 
 class LLMCallable(Protocol):
@@ -36,6 +45,7 @@ class RunScenarioContext:
     cib_matrix: dict[str, Any] | None
     summary_metrics: dict[str, Any]
     phase_ticks: list[dict[str, Any]]
+    agent_digest: dict[str, Any]
 
 
 def _load_json(path: Path, default: Any) -> Any:
@@ -212,6 +222,267 @@ def build_factor_profile(
     }
 
 
+def _truncate_text(text: str, *, max_len: int = 320) -> str:
+    cleaned = " ".join(str(text).split())
+    if len(cleaned) <= max_len:
+        return cleaned
+    return cleaned[: max_len - 1].rstrip() + "…"
+
+
+def _is_meaningful_agent_payload(agent_data: dict[str, Any]) -> bool:
+    reasoning = str(agent_data.get("reasoning") or "").strip().lower()
+    if reasoning and reasoning not in _EMPTY_AGENT_REASONING:
+        return True
+    actions = [
+        str(action).strip().upper()
+        for action in (agent_data.get("actions") or [])
+        if str(action).strip()
+    ]
+    if actions and actions != ["NO_OP"]:
+        return True
+    segment_analysis = agent_data.get("segment_analysis")
+    return isinstance(segment_analysis, dict) and bool(segment_analysis)
+
+
+def _load_segment_analysis_rounds(run_dir: Path) -> list[dict[str, Any]]:
+    raw = _load_json(run_dir / "segment_analysis.json", [])
+    return raw if isinstance(raw, list) else []
+
+
+def _phase_tick_numbers(phase_ticks: list[dict[str, Any]]) -> list[int]:
+    ticks: list[int] = []
+    for row in phase_ticks:
+        tick = row.get("tick")
+        if tick is not None:
+            ticks.append(int(tick))
+    return ticks
+
+
+def _select_segment_rows_for_phases(
+    rounds: list[dict[str, Any]],
+    phase_ticks: list[int],
+) -> list[dict[str, Any]]:
+    by_tick = {
+        int(row["tick"]): row for row in rounds if row.get("tick") is not None
+    }
+    selected = [by_tick[tick] for tick in phase_ticks if tick in by_tick]
+    if selected or not rounds:
+        return selected
+
+    indices = [0, len(rounds) // 2, len(rounds) - 1]
+    seen: set[int] = set()
+    fallback: list[dict[str, Any]] = []
+    for index in indices:
+        if index in seen:
+            continue
+        seen.add(index)
+        fallback.append(rounds[index])
+    return fallback
+
+
+def _compact_agent_entry(agent_data: dict[str, Any]) -> dict[str, Any]:
+    actions = [
+        str(action)
+        for action in (agent_data.get("actions") or [])
+        if str(action).strip() and str(action).strip().upper() != "NO_OP"
+    ]
+    entry: dict[str, Any] = {
+        "reasoning": _truncate_text(str(agent_data.get("reasoning") or ""), max_len=400),
+        "actions": actions[:4],
+    }
+    segment_analysis = agent_data.get("segment_analysis")
+    if isinstance(segment_analysis, dict) and segment_analysis:
+        entry["segment_analysis"] = {
+            str(segment_id): _truncate_text(str(text), max_len=200)
+            for segment_id, text in list(segment_analysis.items())[:6]
+            if text
+        }
+    return entry
+
+
+def _aggregate_agent_themes(segment_rows: list[dict[str, Any]]) -> dict[str, list[str]]:
+    themes: dict[str, list[str]] = {}
+    for row in segment_rows:
+        agents = row.get("agents") or {}
+        consumer = agents.get("consumer") or {}
+        segment_analysis = consumer.get("segment_analysis") or {}
+        if not isinstance(segment_analysis, dict):
+            continue
+        for segment_id, text in segment_analysis.items():
+            if not text:
+                continue
+            key = str(segment_id)
+            snippet = _truncate_text(str(text), max_len=160)
+            bucket = themes.setdefault(key, [])
+            if snippet not in bucket:
+                bucket.append(snippet)
+            if len(bucket) >= 2:
+                break
+    return themes
+
+
+def _sample_agent_narrative_events(
+    event_log: list[dict[str, Any]],
+    *,
+    limit: int = 6,
+) -> list[dict[str, Any]]:
+    agent_ids = set(AGENT_IDS)
+    items: list[dict[str, Any]] = []
+    for event in reversed(event_log):
+        source = str(event.get("source_agent") or "")
+        if source not in agent_ids:
+            continue
+        description = str(event.get("description") or "")
+        if "[delta:" in description or not description.strip():
+            continue
+        items.append(
+            {
+                "tick": event.get("round_number"),
+                "agent_id": source,
+                "event_type": event.get("event_type"),
+                "description": _truncate_text(description, max_len=220),
+            }
+        )
+        if len(items) >= limit:
+            break
+    return list(reversed(items))
+
+
+def _rollup_by_agent(segment_rows: list[dict[str, Any]]) -> dict[str, str]:
+    rollups: dict[str, list[str]] = {agent_id: [] for agent_id in AGENT_IDS}
+    for row in segment_rows:
+        tick = row.get("tick")
+        agents = row.get("agents") or {}
+        for agent_id in AGENT_IDS:
+            data = agents.get(agent_id)
+            if not isinstance(data, dict) or not _is_meaningful_agent_payload(data):
+                continue
+            reasoning = _truncate_text(str(data.get("reasoning") or ""), max_len=180)
+            if reasoning.lower() in _EMPTY_AGENT_REASONING:
+                continue
+            rollups[agent_id].append(f"Tick {tick}: {reasoning}")
+
+    return {
+        agent_id: _truncate_text(" | ".join(snippets[:3]), max_len=500)
+        for agent_id, snippets in rollups.items()
+        if snippets
+    }
+
+
+def build_agent_digest(
+    *,
+    run_dir: Path,
+    phase_ticks: list[dict[str, Any]],
+    event_log: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Aggregate tick-level agent narratives for P3 scenario synthesis (Option B)."""
+
+    rounds = _load_segment_analysis_rounds(run_dir)
+    phase_numbers = _phase_tick_numbers(phase_ticks)
+    phase_rows = _select_segment_rows_for_phases(rounds, phase_numbers)
+
+    phase_highlights: list[dict[str, Any]] = []
+    for index, row in enumerate(phase_rows):
+        tick = row.get("tick")
+        agents = row.get("agents") or {}
+        agents_block: dict[str, Any] = {}
+        for agent_id in AGENT_IDS:
+            data = agents.get(agent_id)
+            if not isinstance(data, dict) or not _is_meaningful_agent_payload(data):
+                continue
+            agents_block[agent_id] = _compact_agent_entry(data)
+        if agents_block:
+            phase_highlights.append(
+                {
+                    "tick": tick,
+                    "phase": _phase_label(min(index, 2)),
+                    "agents": agents_block,
+                }
+            )
+
+    summary_by_agent = _rollup_by_agent(phase_rows if phase_rows else rounds[:3])
+    segment_themes = _aggregate_agent_themes(rounds)
+    agent_events = _sample_agent_narrative_events(event_log)
+    has_content = bool(
+        phase_highlights or summary_by_agent or segment_themes or agent_events
+    )
+
+    return {
+        "has_agent_content": has_content,
+        "reading_note": (
+            "Agent texts are interpretive perspectives from the tick protocol "
+            "(segment_analysis.json / event_log). Numeric ground truth in "
+            "summary_metrics and phase_ticks takes precedence."
+        ),
+        "summary_by_agent": summary_by_agent,
+        "phase_highlights": phase_highlights,
+        "segment_themes": segment_themes,
+        "agent_events_sample": agent_events,
+    }
+
+
+def render_agent_perspectives_markdown(agent_digest: dict[str, Any]) -> str:
+    if not agent_digest.get("has_agent_content"):
+        return (
+            "_Keine Agenten-Perspektiven im Lauf protokolliert "
+            "(Mock-Lauf oder leere Antworten)._"
+        )
+
+    lines: list[str] = []
+    summary = agent_digest.get("summary_by_agent") or {}
+    if summary:
+        lines.extend(["### Rollenüberblick", ""])
+        for agent_id in AGENT_IDS:
+            text = summary.get(agent_id)
+            if text:
+                lines.append(f"- **{AGENT_LABELS[agent_id]}:** {text}")
+        lines.append("")
+
+    for block in agent_digest.get("phase_highlights") or []:
+        if not lines or lines[-1] != "### Phasen-Highlights":
+            lines.extend(["### Phasen-Highlights", ""])
+        lines.append(f"#### Tick {block.get('tick')} — {block.get('phase', '')}")
+        for agent_id, data in (block.get("agents") or {}).items():
+            label = AGENT_LABELS.get(str(agent_id), str(agent_id))
+            reasoning = data.get("reasoning") or ""
+            actions = data.get("actions") or []
+            lines.append(f"- **{label}:** {reasoning}")
+            if actions:
+                lines.append(f"  - Aktionen: {', '.join(actions)}")
+            for segment_id, segment_text in (data.get("segment_analysis") or {}).items():
+                lines.append(f"  - Segment `{segment_id}`: {segment_text}")
+        lines.append("")
+
+    themes = agent_digest.get("segment_themes") or {}
+    if themes:
+        lines.extend(["### Segment-Themen (Consumer)", ""])
+        for segment_id, snippets in themes.items():
+            lines.append(f"- **{segment_id}:** {' / '.join(snippets[:2])}")
+        lines.append("")
+
+    events = agent_digest.get("agent_events_sample") or []
+    if events:
+        lines.extend(["### Agenten-Events (Auswahl)", ""])
+        for event in events:
+            label = AGENT_LABELS.get(str(event.get("agent_id")), str(event.get("agent_id")))
+            lines.append(f"- Tick {event.get('tick')} **{label}:** {event.get('description')}")
+
+    return "\n".join(lines).strip()
+
+
+def _agent_perspective_clause(agent_digest: dict[str, Any]) -> str:
+    if not agent_digest.get("has_agent_content"):
+        return ""
+    parts: list[str] = []
+    for agent_id in AGENT_IDS:
+        text = (agent_digest.get("summary_by_agent") or {}).get(agent_id)
+        if text:
+            parts.append(f"{AGENT_LABELS[agent_id]} ({text})")
+    if not parts:
+        return ""
+    return " Laut Tick-Protokoll: " + "; ".join(parts[:3]) + "."
+
+
 def _sample_delta_events(event_log: list[dict[str, Any]], *, limit: int = 6) -> list[str]:
     lines: list[str] = []
     for event in reversed(event_log):
@@ -358,8 +629,11 @@ def _build_scenario_description(
     context: RunScenarioContext,
     catalog: dict[str, Any],
     states: dict[str, str],
+    agent_digest: dict[str, Any] | None = None,
 ) -> str:
-    """Sachliche Szenario-Beschreibung — nur aus Faktoren und Lauf ableiten."""
+    """Sachliche Szenario-Beschreibung — aus Faktoren, Lauf und Agenten-Perspektiven."""
+    agent_digest = agent_digest or context.agent_digest
+    agent_clause = _agent_perspective_clause(agent_digest)
     f1 = _factor_state_label(catalog, "F1", states.get("F1", ""))
     f2 = _factor_state_label(catalog, "F2", states.get("F2", ""))
     f3 = _factor_state_label(catalog, "F3", states.get("F3", ""))
@@ -372,7 +646,7 @@ def _build_scenario_description(
             f"«{slide_title}»: Die im Lauf erreichte Faktorlage setzt sich fort "
             f"({f1}; {f2}). Nachfrage und Preis würden den im Lauf {booking}en Trend "
             f"plausibel fortsetzen. {f3} und {f5} bleiben Rahmenbedingungen. {f6} prägt "
-            f"die gesellschaftliche Akzeptanz von Flugreisen."
+            f"die gesellschaftliche Akzeptanz von Flugreisen.{agent_clause}"
         )
 
     if scenario_kind == "alternative":
@@ -380,11 +654,13 @@ def _build_scenario_description(
             f"«{slide_title}»: Gegenüber der Lauf-Endlage weicht mindestens ein Faktor ab "
             f"(siehe oben). Typisch: Verschiebungen bei {f1} und {f2}. {f5} und {f6} "
             f"können Modal Shift verstärken oder dämpfen. Explorative Konstellation, keine Prognose."
+            f"{agent_clause}"
         )
 
     return (
         f"«{slide_title}»: Widersprüchliche Faktortrends ({f1} vs. {f2}). "
         f"Anpassungsdruck auf Politik, Anbieter und Nachfrage. {f6} kann Spannungen verstärken."
+        f"{agent_clause}"
     )
 
 
@@ -487,29 +763,134 @@ def build_explorative_scenarios(
     )
     
     scenarios = [continuation, alternative, tension]
-    
-    # Calculate CIB Consistency Scores
+    _score_constellations(context, scenarios)
+    return scenarios
+
+
+def _plausibility_from_score(score: float | None, *, rank: int | None = None) -> str:
+    """Map a CIB consistency score to a qualitative plausibility band.
+
+    Plausibility is thereby grounded in the CIB matrix instead of the mere
+    presentation rank. Falls back to rank-based bands when no score exists.
+    """
+    if score is None:
+        return _plausibility_for_rank(rank) if rank is not None else "mittel"
+    if score >= 0.7:
+        return "hoch"
+    if score >= 0.4:
+        return "mittel"
+    return "niedrig"
+
+
+def _score_constellations(
+    context: RunScenarioContext,
+    scenarios: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Attach the CIB consistency_score and score-based plausibility in place."""
     if isinstance(context.cib_matrix, dict):
         try:
             from src.models.cib_models import CIBMatrix
             from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
-            
+
             matrix_obj = CIBMatrix.model_validate(context.cib_matrix)
             checker = ConsistencyChecker(matrix_obj)
-            
             for sc in scenarios:
                 desc = ScenarioDescriptor(factor_states=sc["factor_constellation"])
-                score = checker.compute_consistency_score(desc)
-                sc["consistency_score"] = round(score, 3)
-        except Exception as e:
-            # Fallback if matrix validation fails
+                sc["consistency_score"] = round(
+                    checker.compute_consistency_score(desc), 3
+                )
+        except Exception:
             for sc in scenarios:
                 sc["consistency_score"] = None
     else:
         for sc in scenarios:
             sc["consistency_score"] = None
 
+    for sc in scenarios:
+        sc["plausibility"] = _plausibility_from_score(
+            sc.get("consistency_score"), rank=sc.get("rank")
+        )
     return scenarios
+
+
+def _delta_from_end(end_states: dict[str, str], states: dict[str, str]) -> list[str]:
+    """Human-readable factor differences of a constellation vs. the run end state."""
+    diffs: list[str] = []
+    for factor_id in FACTOR_IDS:
+        target = states.get(factor_id)
+        base = end_states.get(factor_id)
+        if target and base and target != base:
+            diffs.append(f"{factor_id} {base}→{target}")
+    return diffs
+
+
+def build_candidate_constellations(
+    context: RunScenarioContext,
+    factor_profile: dict[str, Any],
+    catalog: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Deterministic set of CIB-scored future constellations for LLM *selection*.
+
+    Python derives every candidate (continuation, single-factor alternatives,
+    cross-impact tension) from the run end state and scores each with the CIB
+    matrix. The LLM later selects and justifies three of them — it never invents
+    factor states, which keeps the scenario space reproducible and grounded.
+    """
+    end_states = dict(factor_profile.get("end_by_id") or {})
+    if not end_states:
+        end_states = {f"F{i}": f"F{i}.1" for i in range(1, 8)}
+
+    transitions = factor_profile.get("transitions") or []
+    raw: list[tuple[str, dict[str, str]]] = [("fortsetzung", dict(end_states))]
+
+    pivots: list[str] = []
+    for item in transitions:
+        fid = str(item.get("factor_id") or "")
+        if fid and fid not in pivots:
+            pivots.append(fid)
+    for fid in ("F1", "F2", "F3", "F5", "F6"):
+        if fid not in pivots:
+            pivots.append(fid)
+    for fid in pivots:
+        if fid not in end_states:
+            continue
+        alt = dict(end_states)
+        alt[fid] = _flip_state(str(alt[fid]))
+        raw.append(("alternative", alt))
+
+    raw.append(("spannung", _pick_tension_constellation(end_states)))
+
+    seen: set[frozenset] = set()
+    candidates: list[dict[str, Any]] = []
+    for kind, states in raw:
+        key = frozenset(states.items())
+        if key in seen:
+            continue
+        seen.add(key)
+        candidates.append(
+            {
+                "scenario_kind": kind,
+                "factor_constellation": dict(states),
+                "tick_grounding": build_scenario_tick_grounding(
+                    context, factor_profile, catalog, states
+                ),
+                "delta_from_end": _delta_from_end(end_states, states),
+            }
+        )
+
+    _score_constellations(context, candidates)
+
+    def _sort_key(item: dict[str, Any]) -> tuple[int, float]:
+        kind_rank = 0 if item.get("scenario_kind") == "fortsetzung" else 1
+        score = item.get("consistency_score")
+        score = float(score) if isinstance(score, (int, float)) else -1.0
+        return (kind_rank, -score)
+
+    candidates.sort(key=_sort_key)
+    candidates = candidates[:7]
+    for index, item in enumerate(candidates, start=1):
+        item["candidate_id"] = f"C{index}"
+    return candidates
 
 
 def _select_phase_ticks(ticks: list[dict[str, Any]], *, max_phases: int = 3) -> list[dict[str, Any]]:
@@ -540,12 +921,15 @@ def load_run_scenario_context(
     ticks = list(tick_mechanics.get("ticks") or [])
     population_segments = _load_csv(directory / "timeseries" / "population.csv")
     factors = _load_csv(directory / "timeseries" / "factors.csv")
+    phase_ticks = _select_phase_ticks(ticks)
+    event_log = _load_json(directory / "event_log.json", [])
+    event_log = event_log if isinstance(event_log, list) else []
     return RunScenarioContext(
         run_id=run_id,
         run_dir=directory,
         metadata=metadata if isinstance(metadata, dict) else {},
         tick_mechanics=tick_mechanics if isinstance(tick_mechanics, dict) else {"ticks": []},
-        event_log=_load_json(directory / "event_log.json", []),
+        event_log=event_log,
         price_history=_load_json(directory / "price_history.json", []),
         population_segments=population_segments,
         factors=factors,
@@ -556,7 +940,12 @@ def load_run_scenario_context(
             factors,
             metadata if isinstance(metadata, dict) else {},
         ),
-        phase_ticks=_select_phase_ticks(ticks),
+        phase_ticks=phase_ticks,
+        agent_digest=build_agent_digest(
+            run_dir=directory,
+            phase_ticks=phase_ticks,
+            event_log=event_log,
+        ),
     )
 
 
@@ -619,59 +1008,105 @@ def _observed_run_brief(context: RunScenarioContext, factor_profile: dict[str, A
     return build_run_narrative(context, factor_profile)
 
 
-def _normalize_scenarios(raw: Any, *, context: RunScenarioContext, factor_profile: dict[str, Any], catalog: dict[str, Any]) -> list[dict[str, Any]]:
-    template_scenarios = build_explorative_scenarios(context, factor_profile, catalog)
-    
-    if not isinstance(raw, list):
-        return template_scenarios
+SCENARIO_MIN_STORY_LEN = 200
 
-    scenarios: list[dict[str, Any]] = []
-    for index, item in enumerate(raw[:3]):
-        if not isinstance(item, dict):
-            continue
-        
-        # Match with our precalculated scenario by rank/index
-        rank_val = int(item.get("rank") or index + 1)
-        template_match = next((t for t in template_scenarios if t["rank"] == rank_val), template_scenarios[index] if index < len(template_scenarios) else template_scenarios[-1])
 
-        constellation = template_match.get("factor_constellation", {})
-        tick_grounding = template_match.get("tick_grounding", "")
-        consistency_score = template_match.get("consistency_score")
-        scenario_kind = template_match.get("scenario_kind", "explorativ")
+def _fallback_story_for_candidate(
+    candidate: dict[str, Any],
+    *,
+    context: RunScenarioContext,
+    catalog: dict[str, Any],
+) -> str:
+    """Deterministic story used when the LLM story is missing or too thin."""
+    return _build_scenario_description(
+        scenario_kind=candidate.get("scenario_kind", "explorativ"),
+        slide_title=_slide_scenario_title(candidate.get("scenario_kind", "")),
+        context=context,
+        catalog=catalog,
+        states=candidate.get("factor_constellation", {}),
+    )
 
-        story = str(item.get("story") or item.get("what_could_happen") or item.get("narrative") or "").strip()
-        
-        scenarios.append(
-            {
-                "rank": rank_val,
-                "id": f"S{rank_val}",
-                "title": str(item.get("title") or template_match.get("title")),
-                "scenario_kind": scenario_kind,
-                "plausibility": str(item.get("plausibility") or _plausibility_for_rank(rank_val)),
-                "consistency_score": consistency_score,
-                "factor_constellation": dict(constellation),
-                "tick_grounding": tick_grounding,
-                "story": story,
-                "what_could_happen": story,
-            }
-        )
 
-    # Fill up if LLM returned fewer than 3
-    if len(scenarios) < 3:
-        existing_ranks = {item["rank"] for item in scenarios}
-        for item in template_scenarios:
-            if item["rank"] in existing_ranks:
+def _normalize_scenarios(
+    raw: Any,
+    *,
+    context: RunScenarioContext,
+    factor_profile: dict[str, Any],
+    catalog: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Map the LLM's candidate *selection* back to Python-owned constellations.
+
+    The LLM only contributes title + story and chooses which candidate to use
+    via ``candidate_id``. Factor states, CIB score and tick grounding are taken
+    verbatim from the deterministic candidate so nothing numeric is invented.
+    """
+    candidates = build_candidate_constellations(context, factor_profile, catalog)
+    candidates_by_id = {c["candidate_id"]: c for c in candidates}
+    canonical = build_explorative_scenarios(context, factor_profile, catalog)
+
+    selected: list[dict[str, Any]] = []
+    used_keys: set[frozenset] = set()
+
+    if isinstance(raw, list):
+        for index, item in enumerate(raw):
+            if len(selected) >= 3 or not isinstance(item, dict):
                 continue
-            scenarios.append(item)
-            if len(scenarios) >= 3:
+            cand_id = str(item.get("candidate_id") or "").strip().upper()
+            candidate = candidates_by_id.get(cand_id)
+            if candidate is None and index < len(candidates):
+                candidate = candidates[index]
+            if candidate is None:
+                continue
+            key = frozenset(candidate["factor_constellation"].items())
+            if key in used_keys:
+                continue
+            used_keys.add(key)
+
+            story = str(
+                item.get("story")
+                or item.get("what_could_happen")
+                or item.get("narrative")
+                or ""
+            ).strip()
+            if len(story) < SCENARIO_MIN_STORY_LEN:
+                story = _fallback_story_for_candidate(
+                    candidate, context=context, catalog=catalog
+                )
+
+            scenario_kind = candidate.get("scenario_kind", "explorativ")
+            selected.append(
+                {
+                    "title": str(item.get("title") or _slide_scenario_title(scenario_kind)),
+                    "scenario_kind": scenario_kind,
+                    "consistency_score": candidate.get("consistency_score"),
+                    "factor_constellation": dict(candidate.get("factor_constellation", {})),
+                    "tick_grounding": candidate.get("tick_grounding", ""),
+                    "candidate_id": candidate.get("candidate_id"),
+                    "story": story,
+                    "what_could_happen": story,
+                }
+            )
+
+    # Guarantee three distinct paths: fill from the canonical fortsetzung/
+    # alternative/spannung defaults if the LLM selected fewer.
+    if len(selected) < 3:
+        for fallback in canonical:
+            key = frozenset((fallback.get("factor_constellation") or {}).items())
+            if key in used_keys:
+                continue
+            used_keys.add(key)
+            selected.append(dict(fallback))
+            if len(selected) >= 3:
                 break
 
-    scenarios.sort(key=lambda item: int(item.get("rank") or 99))
-    for index, item in enumerate(scenarios[:3], start=1):
+    selected = selected[:3]
+    for index, item in enumerate(selected, start=1):
         item["rank"] = index
         item["id"] = f"S{index}"
-        item["plausibility"] = _plausibility_for_rank(index)
-    return scenarios[:3]
+        item["plausibility"] = _plausibility_from_score(
+            item.get("consistency_score"), rank=index
+        )
+    return selected
 
 
 def build_run_summary(
@@ -715,6 +1150,7 @@ def build_template_scenario(context: RunScenarioContext) -> dict[str, Any]:
         "run_narrative": run_narrative,
         "observed_run": run_narrative,
         "factor_profile": factor_profile,
+        "agent_digest": context.agent_digest,
         "scenarios": scenarios,
         "limitations": (
             "Explorative Szenarien, sachlich aus dem Lauf abgeleitet — keine Prognose, keine Fiktion."
@@ -726,17 +1162,20 @@ def build_template_scenario(context: RunScenarioContext) -> dict[str, Any]:
 def build_scenario_prompt(context: RunScenarioContext) -> str:
     catalog = _load_factor_catalog()
     factor_profile = build_factor_profile(context, catalog)
-    precalculated_scenarios = build_explorative_scenarios(context, factor_profile, catalog)
-    
-    # Clean up the output to avoid deeply nested huge objects in the prompt if we don't need them
-    clean_scenarios = []
-    for sc in precalculated_scenarios:
-        clean_scenarios.append({
-            "rank": sc.get("rank"),
+    candidates = build_candidate_constellations(context, factor_profile, catalog)
+
+    # Expose the candidate constellations the LLM may select from. The LLM picks
+    # by candidate_id; factor states stay Python-owned (grounding/reproducibility).
+    clean_candidates = []
+    for sc in candidates:
+        clean_candidates.append({
+            "candidate_id": sc.get("candidate_id"),
             "scenario_kind": sc.get("scenario_kind"),
             "consistency_score": sc.get("consistency_score"),
+            "plausibility": sc.get("plausibility"),
             "factor_constellation": sc.get("factor_constellation"),
-            "tick_grounding": sc.get("tick_grounding")
+            "delta_from_end": sc.get("delta_from_end"),
+            "tick_grounding": sc.get("tick_grounding"),
         })
 
     payload = {
@@ -750,7 +1189,8 @@ def build_scenario_prompt(context: RunScenarioContext) -> str:
         "cib_consistency_score": _cib_score(context),
         "booking_trend": _booking_trend(context.summary_metrics),
         "price_trend": _price_trend(context.summary_metrics),
-        "precalculated_scenarios": clean_scenarios,
+        "candidate_scenarios": clean_candidates,
+        "agent_digest": context.agent_digest,
     }
     
     prompt_path = Path("src/prompts/run_scenario.md")
@@ -811,12 +1251,11 @@ def _allowed_number_tokens(context: RunScenarioContext) -> set[str]:
         
     catalog = _load_factor_catalog()
     factor_profile = build_factor_profile(context, catalog)
-    precalc = build_explorative_scenarios(context, factor_profile, catalog)
-    for sc in precalc:
+    for sc in build_candidate_constellations(context, factor_profile, catalog):
         score = sc.get("consistency_score")
         if score is not None:
             allowed.update(_number_tokens(float(score)))
-            
+
     return allowed
 
 
@@ -879,7 +1318,18 @@ def build_ground_truth_block(context: RunScenarioContext) -> dict[str, Any]:
     return block
 
 
-def render_run_scenario_markdown(payload: dict[str, Any], ground_truth: dict[str, Any]) -> str:
+def render_run_scenario_markdown(
+    payload: dict[str, Any],
+    ground_truth: dict[str, Any],
+    *,
+    agent_digest: dict[str, Any] | None = None,
+) -> str:
+    digest = (
+        agent_digest
+        or payload.get("agent_digest")
+        or (payload.get("narrative") or {}).get("agent_digest")
+        or {}
+    )
     lines = [
         f"# {payload.get('title', 'Run-Szenarien')}",
         "",
@@ -889,9 +1339,22 @@ def render_run_scenario_markdown(payload: dict[str, Any], ground_truth: dict[str
         "## Lauf-Narrativ",
         str(payload.get("run_narrative", payload.get("observed_run", ""))),
         "",
-        "## Szenarien",
-        "",
     ]
+
+    selection_reasoning = str(payload.get("selection_reasoning", "")).strip()
+    if selection_reasoning:
+        lines.extend(["## Auswahl der Szenarien", selection_reasoning, ""])
+
+    lines.extend(
+        [
+            "## Akteur-Perspektiven",
+            "",
+            render_agent_perspectives_markdown(digest),
+            "",
+            "## Szenarien",
+            "",
+        ]
+    )
 
     scenarios = payload.get("scenarios") or []
     if not scenarios:
@@ -940,7 +1403,6 @@ def generate_run_scenario(
 
     if prefer_llm and llm is not None:
         raw = llm.call(build_scenario_prompt(context))
-        print("RAW LLM OUTPUT:\n", raw)
         parsed = _extract_json_object(raw)
         scenarios_raw = parsed.get("scenarios") if isinstance(parsed, dict) else None
         if (
@@ -951,6 +1413,7 @@ def generate_run_scenario(
             and len(scenarios_raw) >= 2
         ):
             parsed["factor_profile"] = factor_profile
+            parsed["agent_digest"] = context.agent_digest
             if not parsed.get("run_narrative"):
                 parsed["run_narrative"] = parsed.get("observed_run", "")
             parsed["observed_run"] = parsed.get("run_narrative", "")
@@ -968,9 +1431,11 @@ def generate_run_scenario(
 
     if narrative is None:
         narrative = build_template_scenario(context)
-    elif len(str(narrative.get("summary") or "")) < 200:
-        template = build_template_scenario(context)
-        narrative["summary"] = template["summary"]
+    else:
+        narrative.setdefault("agent_digest", context.agent_digest)
+        if len(str(narrative.get("summary") or "")) < 200:
+            template = build_template_scenario(context)
+            narrative["summary"] = template["summary"]
 
     scenarios = narrative.get("scenarios") or _normalize_scenarios(
         [],
@@ -978,7 +1443,11 @@ def generate_run_scenario(
         factor_profile=factor_profile,
         catalog=catalog,
     )
-    markdown = render_run_scenario_markdown(narrative, ground_truth)
+    markdown = render_run_scenario_markdown(
+        narrative,
+        ground_truth,
+        agent_digest=context.agent_digest,
+    )
     return {
         "run_id": context.run_id,
         "title": narrative.get("title", ""),
@@ -986,6 +1455,7 @@ def generate_run_scenario(
         "scenarios": scenarios,
         "source": narrative.get("source", "template"),
         "grounding_warnings": grounding_warnings,
+        "agent_digest": context.agent_digest,
         "narrative": narrative,
         "ground_truth": ground_truth,
         "markdown": markdown,
@@ -1005,12 +1475,15 @@ def save_run_scenario_artifacts(
         "run_id": result.get("run_id"),
         "title": result.get("title"),
         "summary": result.get("summary"),
+        "selection_reasoning": (result.get("narrative") or {}).get("selection_reasoning"),
         "run_narrative": (result.get("narrative") or {}).get("run_narrative"),
         "factor_profile": (result.get("narrative") or {}).get("factor_profile")
         or result.get("ground_truth", {}).get("factor_profile"),
         "scenarios": result.get("scenarios") or (result.get("narrative") or {}).get("scenarios"),
         "source": result.get("source"),
         "grounding_warnings": result.get("grounding_warnings", []),
+        "agent_digest": result.get("agent_digest")
+        or (result.get("narrative") or {}).get("agent_digest"),
         "narrative": result.get("narrative"),
         "ground_truth": result.get("ground_truth"),
     }

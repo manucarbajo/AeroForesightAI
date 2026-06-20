@@ -7,7 +7,7 @@
 | **Vorgänger** | [`projectplan.md`](projectplan.md) M0–M11 |
 | **Ziel** | Endabgabe: C4-Aufgabenstellung, Coaching-Punkte, Forschungsfrage, belegbare Wissenschaft |
 | **Branch** | `m9_dashboard/challenge4` |
-| **Tests** | 238 pytest grün |
+| **Tests** | 253 pytest grün |
 | **Fortschritt** | **P2 Mechanik + Gates G1/G2/G7** · P1, P3, P4, P5, P6 Rest offen |
 | **Nächster Schritt** | **P1** (scientific_foundation.md) oder **P3** (LLM-Szenario pro Run) |
 
@@ -322,11 +322,11 @@ Implementierung nur mit P1-Bezug. (Inhalt unverändert zu vorher — Sättigung,
 
 | Ebene | Wer | Was |
 | --- | --- | --- |
-| **Python** | Simulation | Zahlen, Faktoren, Booking, Events — Ground Truth |
-| **LLM** | Nach Lauf | **Qualitativer Text:** Welche plausible Zukunft ist in diesem Lauf entstanden? Was könnte das bedeuten? |
+| **Python** | Simulation | Zahlen, Faktoren, Booking, Events — Ground Truth. Erzeugt N **CIB-bewertete Kandidat-Konstellationen** (`build_candidate_constellations`) aus dem Lauf-Endzustand |
+| **LLM** | Nach Lauf | **Auswahl + qualitativer Text:** wählt 3 Kandidaten per `candidate_id` aus, begründet die Auswahl (`selection_reasoning`) und erzählt die plausiblen Zukünfte — erfindet aber **keine** Faktoren/Zahlen |
 | **Explorer/Chat** | Nutzer | Nachfragen zum Run — antwortet grounded auf dieselben Artefakte + Szenario-Text |
 
-Das Szenario ist **LLM-basiert und textuell** — kein reines Template. Kennzahlen im Prompt kommen aus `tick_mechanics` / Timeseries; das LLM **interpretiert und erzählt**, erfindet aber **keine** Zahlen.
+Das Szenario ist **LLM-basiert und textuell** — kein reines Template. Die Faktor-Konstellationen und CIB-Scores sind **Python-Ground-Truth**; das LLM **selektiert, begründet und erzählt** auf dieser Basis, erfindet aber **keine** Zahlen. Damit ist der MAS-/LLM-Einsatz auch für die Szenario-Säule belegbar (nicht nur Dekoration eines fixen Templates).
 
 ## Begriffe
 
@@ -359,7 +359,10 @@ Das Szenario ist **LLM-basiert und textuell** — kein reines Template. Kennzahl
 | P3.8 | Sweeps: voller Run-Output inkl. LLM-Szenario | `scenario_sweeps.py` | **erledigt** | OutputWriter Logik aus `run_simulation` integriert. Alle Artefakte (CSV/JSON) und LLM-Szenario (`generate_and_save_run_scenario`) werden generiert. `sweep_filter` Bug im UI behoben. |
 | P3.9 | Tests: Generator lädt Run-Artefakte; Mock-LLM mit Fixture | `tests/` | **erledigt** | Unit-Tests für Generator erstellt. `pytest`-Fixture für Mock-LLM integriert, um deterministische Tests ohne echte API-Kosten zu ermöglichen. |
 | P3.10 | P1 Kap. 7 + Kap. 8: Methodik LLM-Szenario; keine erfundenen Formelwerte | `scientific_foundation.md` | offen | — |
-| P3.11 | LLM-Szenario: Entkopplung von Vorlesungs-Archetypen, dynamische Titel, Inline-Faktor-Belege, 3-Stufen CIB | Generator / Prompts | **erledigt** | Zuweisungs-Logik (`_slide_scenario_title`) gelöscht. 3-Stufen-CIB und Inline-Faktor-Referenzen in Prompt ergänzt. Dynamische Titel etabliert. |
+| P3.11 | LLM-Szenario: Entkopplung von Vorlesungs-Archetypen, dynamische Titel, Inline-Faktor-Belege, 3-Stufen CIB | Generator / Prompts | **erledigt** | 3-Stufen-CIB und Inline-Faktor-Referenzen in Prompt ergänzt. Dynamische LLM-Titel etabliert; `_slide_scenario_title` bleibt nur als Fallback-Titel für Template-/deterministische Läufe. |
+| P3.12 | **LLM wählt Szenarien aus** (statt nur 3 fixe zu betexten): `build_candidate_constellations` erzeugt N CIB-bewertete Pfade; LLM selektiert 3 per `candidate_id` + `selection_reasoning` | `run_scenario_generator.py`, `prompts/run_scenario.md` | **erledigt** | Faktor-Konstellationen bleiben Python-Eigentum (reproduzierbar/grounded), das LLM trägt Auswahl + Begründung + Narrativ bei. Plausibilität jetzt aus CIB-Score abgeleitet (`_plausibility_from_score`). |
+| P3.13 | **Grounding härter:** Mindestlänge der LLM-Story (sonst Template-Fallback), Kandidaten-CIB-Scores in `allowed_number_tokens` | Generator | **erledigt** | `SCENARIO_MIN_STORY_LEN`; dünne LLM-Stories fallen auf deterministische Beschreibung zurück. |
+| P3.14 | **Prompt↔Permission-Konsistenz:** Agenten-Prompts an `AGENT_FACTOR_PERMISSIONS` angeglichen (Consumer/Provider: keine Faktor-Vorschläge; Regulator: nur F2/F6) | `prompts/consumer.md`, `provider.md`, `regulator.md` | **erledigt** | Beseitigt verworfene Faktor-Vorschläge (Consumer F1/F6, Provider F3, Regulator F5 waren nie erlaubt). |
 
 ## Inhalt `run_scenario.md` (LLM-generiert, strukturiert)
 
@@ -374,7 +377,9 @@ Das Szenario ist **LLM-basiert und textuell** — kein reines Template. Kennzahl
 
 - [x] Jeder Lauf: LLM-`run_scenario.md` + JSON (Template-Fallback bei Mock/deterministic)
 - [x] Text qualitativ, für Präsentation lesbar
-- [x] Keine erfundenen Kennzahlen (Ground-Check + `ground_truth`-Block)
+- [x] Keine erfundenen Kennzahlen (Ground-Check + `ground_truth`-Block; CIB-Scores in `allowed_number_tokens`)
+- [x] **LLM wählt 3 Pfade aus CIB-bewerteten Kandidaten** (`candidate_id`) und begründet die Auswahl — Faktoren bleiben Python-Ground-Truth
+- [x] Dünne LLM-Stories fallen auf deterministische Beschreibung zurück (`SCENARIO_MIN_STORY_LEN`)
 - [x] Explorer beantwortet „Was ist passiert?“ / „Warum?“ zum Run (Szenario im Kontext)
 - [x] Zwei Configs → zwei unterschiedliche Szenario-Texte (Template-Test)
 
@@ -460,7 +465,7 @@ Technische Abnahme aus Plan 1, **nach** P1–P5. Nur schließen, wenn Mechanik u
 | P6.G4 | CIB-Ranking Konflikt < BAU | offen |
 | P6.G5 | Einkommen F4.2 → Divergenz | **erledigt** (in Segment-Divergenz-Test mit F4.2) |
 | P6.G6 | Agent-Narrative, Profile | Review |
-| P6.G7 | pytest grün | erledigt (238) |
+| P6.G7 | pytest grün | erledigt (253) |
 
 Referenz: Anhang B2 in [`projectplan.md`](projectplan.md).
 

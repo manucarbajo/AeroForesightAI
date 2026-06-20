@@ -44,7 +44,7 @@ Make a consumer-oriented decision for this tick:
 3) formulate 1 event that follows from your decision and **matches the observed booking_rate**.
 4) IMPORTANT: Always consider and react to `Recent events` in your reasoning, but NEVER simply repeat them. Formulate a new response or choose NO_OP.
 5) provide segment_analysis so the expected reaction per segment (from population context) is clearly visible
-6) propose factor state changes **only for F1 or F6** when justified by a collective shift in demand or values. Other factors are exogenous to you.
+6) you do NOT steer factors directly: always output `"state_changes": []`. You observe F1, F5 and F6, but factor transitions are derived by the Python model (deterministic factor_rules) and by the regulator. Express demand/value shifts through your reasoning, actions and events instead.
 
 ## Output instruction (strict)
 Respond with exactly one JSON object, no markdown and no code block.
@@ -52,13 +52,7 @@ Use exactly this schema:
 {
   "reasoning": "string",
   "actions": ["string"],
-  "state_changes": [
-    {
-      "factor_id": "F1",
-      "proposed_state": "F1.2",
-      "reasoning": "string"
-    }
-  ],
+  "state_changes": [],
   "events": [
     {
       "event_type": "demand_shift",

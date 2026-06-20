@@ -267,6 +267,8 @@ def build_grounded_context_block(context: RunExplorerContext) -> str:
             or (context.run_scenario.get("narrative") or {}).get("run_narrative"),
             "factor_profile": context.run_scenario.get("factor_profile")
             or (context.run_scenario.get("narrative") or {}).get("factor_profile"),
+            "agent_digest": context.run_scenario.get("agent_digest")
+            or (context.run_scenario.get("narrative") or {}).get("agent_digest"),
             "scenario_alignment": context.run_scenario.get("scenario_alignment"),
             "scenarios": context.run_scenario.get("scenarios")
             or (context.run_scenario.get("narrative") or {}).get("scenarios"),
