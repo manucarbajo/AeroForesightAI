@@ -180,6 +180,7 @@ def save_population_individuals(
             "substitution_readiness": data.get("substitution_readiness"),
             "price_sensitivity": data.get("price_sensitivity"),
             "income_factor": data.get("income_factor", 1.0),
+            "saturation_level": data.get("saturation_level", 0.0),
             "booked": data.get("booked"),
             "last_booked_tick": data.get("last_booked_tick"),
         }
@@ -227,6 +228,7 @@ def append_individuals_history(
             "substitution_readiness": data.get("substitution_readiness"),
             "price_sensitivity": data.get("price_sensitivity"),
             "income_factor": data.get("income_factor", 1.0),
+            "saturation_level": data.get("saturation_level", 0.0),
             "booked": data.get("booked"),
             "last_booked_tick": data.get("last_booked_tick"),
         }
@@ -381,6 +383,8 @@ def save_run_metadata(
     metadata = {
         "timestamp": datetime.now(UTC).isoformat(),
         "run_id": run_id or (run_dir.name if run_dir is not None else None),
+        "simulation_name": getattr(args, "simulation_name", None),
+        "simulation_description": getattr(args, "simulation_description", None),
         "model": args.model,
         "base_url": args.base_url,
         "temperature": args.temperature,

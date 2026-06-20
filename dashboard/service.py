@@ -287,6 +287,16 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
         metadata = _load_json(run_dir / "run_metadata.json")
         meta_dict = metadata if isinstance(metadata, dict) else {}
         has_scenario, scenario_title, scenario_summary = _read_run_scenario_preview(run_dir)
+        
+        sim_name = meta_dict.get("simulation_name")
+        sim_desc = meta_dict.get("simulation_description")
+        
+        # Manuelle Namen aus der UI überschreiben automatisch generierte Szenario-Titel
+        if sim_name:
+            scenario_title = sim_name
+        if sim_desc:
+            scenario_summary = sim_desc
+            
         summaries.append(
             RunSummary(
                 run_id=run_id,
@@ -720,6 +730,8 @@ def launch_simulation(
             quiet=False,
             run_id=run_id,
             checkpoint_dir=str(ck_path),
+            simulation_name=config.simulation_name,
+            simulation_description=config.simulation_description,
         )
 
         if config.resume_from:

@@ -331,6 +331,8 @@ def _build_run_args(base_args: argparse.Namespace, *, run_index: int, seed: int 
         quiet=getattr(base_args, "quiet", False),
         run_index=run_index,
         seed=seed,
+        simulation_name=getattr(base_args, "simulation_name", None),
+        simulation_description=getattr(base_args, "simulation_description", None),
     )
 
 

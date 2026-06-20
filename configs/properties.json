@@ -673,7 +673,7 @@
         "max_price_change_fraction": 0.08,
         "damping": 0.85,
         "booking_weight": 0.6,
-        "marginal_cost_fraction": 0.33
+        "marginal_cost_fraction": 0.25
       }
     }
   ],
@@ -701,11 +701,11 @@
   "market_feedback": {
     "enabled": true,
     "target_booking_rate": 0.37,
+    "marginal_cost_fraction": 0.25,
     "markup_adjustment_per_tick": 0.08,
     "max_price_change_fraction": 0.08,
     "damping": 0.85,
-    "booking_weight": 0.6,
-    "marginal_cost_fraction": 0.33
+    "booking_weight": 0.6
   },
   "saturation": {
     "booking_increase": 0.6,
