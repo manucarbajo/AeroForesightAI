@@ -43,6 +43,7 @@ from src.output_writer import (
     save_factors_timeseries,
     save_round_history,
     save_run_metadata,
+    save_price_history,
     save_segment_analysis,
 )
 from src.run_scenario_generator import generate_and_save_run_scenario
@@ -277,6 +278,7 @@ def run_single_sweep(
     save_population_timeseries(final_state.population_stats, run_dir=run_dir_path)
     save_factors_timeseries(final_state.factor_timeseries, run_dir=run_dir_path)
     save_round_history(final_state.round_results, run_dir=run_dir_path)
+    save_price_history(final_state.price_history, run_dir=run_dir_path)
     save_segment_analysis(final_state.round_results, run_dir=run_dir_path)
     save_final_narrative(final_state, run_dir=run_dir_path)
     
@@ -294,6 +296,16 @@ def run_single_sweep(
         run_dir=run_dir_path,
         prefer_llm=True, # Always prefer LLM for the final scenario text
     )
+
+    try:
+        from src.figure_generator import generate_run_figures
+
+        generate_run_figures(run_dir_path)
+        if verbose:
+            print(f"  Figures saved under {run_dir_path / 'figures'}")
+    except Exception as exc:
+        if verbose:
+            print(f"  Warning: figure generation failed: {exc}")
 
     if verbose:
         ticks_done = final_state.clock.current_tick

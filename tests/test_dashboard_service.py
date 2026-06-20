@@ -298,6 +298,17 @@ class TestConfigCatalog:
         finally:
             shutil.rmtree(tmpdir)
 
+    def test_list_runs_includes_sweep_runs(self):
+        tmpdir = Path(tempfile.mkdtemp(prefix="dash_sweep_"))
+        try:
+            sweep_dir = tmpdir / "sweeps" / "sweep_business_as_usual"
+            _write_minimal_run(sweep_dir)
+            runs = list_runs(tmpdir)
+            run_ids = {run.run_id for run in runs}
+            assert "sweeps/sweep_business_as_usual" in run_ids
+        finally:
+            shutil.rmtree(tmpdir)
+
     def test_list_run_figures_and_generate(self):
         tmpdir = Path(tempfile.mkdtemp(prefix="dash_fig_"))
         try:

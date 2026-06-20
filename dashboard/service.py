@@ -318,6 +318,14 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
             for child_dir in child_dirs:
                 if (child_dir / "run_metadata.json").is_file():
                     _append_run(child_dir, f"{entry.name}/{child_dir.name}")
+            continue
+        if entry.name == "sweeps":
+            for sweep_dir in sorted(
+                (child for child in entry.iterdir() if child.is_dir() and child.name.startswith("sweep_")),
+                reverse=True,
+            ):
+                if (sweep_dir / "run_metadata.json").is_file():
+                    _append_run(sweep_dir, f"sweeps/{sweep_dir.name}")
 
     return summaries
 
@@ -593,14 +601,23 @@ def launch_simulation(
                 verbose=True,
             )
             summary_path = SWEEP_OUTPUT_DIR / "sweep_summary.json"
+            child_run_ids: list[str] = []
+            if config.generate_figures:
+                for sweep_dir in sorted(SWEEP_OUTPUT_DIR.glob("sweep_*")):
+                    if sweep_dir.is_dir() and (sweep_dir / "run_metadata.json").is_file():
+                        _maybe_generate_figures(sweep_dir)
+            for sweep_dir in sorted(SWEEP_OUTPUT_DIR.glob("sweep_*"), reverse=True):
+                if sweep_dir.is_dir() and (sweep_dir / "run_metadata.json").is_file():
+                    child_run_ids.append(f"sweeps/{sweep_dir.name}")
             return RunLaunchResult(
-                run_id="sweep-batch",
-                run_dir=SWEEP_OUTPUT_DIR,
+                run_id=child_run_ids[0] if child_run_ids else "sweep-batch",
+                run_dir=SWEEP_OUTPUT_DIR / child_run_ids[0].split("/", 1)[1] if child_run_ids else SWEEP_OUTPUT_DIR,
                 ticks_completed=config.rounds,
                 total_events=0,
                 artifacts={"sweep_summary": str(summary_path)},
                 sweep_batch=True,
                 sweep_summary_path=str(summary_path),
+                child_run_ids=tuple(child_run_ids),
             )
 
         runs = max(1, int(config.runs))

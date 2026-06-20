@@ -8,7 +8,7 @@
 | **Ziel** | Endabgabe: C4-Aufgabenstellung, Coaching-Punkte, Forschungsfrage, belegbare Wissenschaft |
 | **Branch** | `m9_dashboard/challenge4` |
 | **Tests** | 253 pytest grün |
-| **Fortschritt** | **P2 Mechanik + Gates G1/G2/G7** · P1, P3, P4, P5, P6 Rest offen |
+| **Fortschritt** | **P2 + P3 + P4.0–P4.5 + P5** (P5.7 Explorer-Prüfung offen) · P4.6–P4.8, P1, P6 Rest offen |
 | **Nächster Schritt** | **P1** (scientific_foundation.md) oder **P3** (LLM-Szenario pro Run) |
 
 ## Forschungsfrage
@@ -68,8 +68,8 @@ Jeder Lauf schreibt **alles** unter `outputs/<run_id>/` — kein separates Figur
 | --- | --- | --- |
 | Sättigungseffekt | P2.1 | **erledigt** |
 | Segmente erstellen/ändern | P2.2 | **erledigt** |
-| CIB Rolle & Korrektheit | P4 | offen |
-| Qualitatives Narrativ / Szenario (LLM) | P3 | offen |
+| CIB Rolle & Korrektheit | P4 | **teilweise** (P4.0–P4.5 erledigt; offen: s. P4 Offene Punkte) |
+| Qualitatives Narrativ / Szenario (LLM) | P3 | **erledigt** |
 | Faktoren dynamisieren | P2.4 | **erledigt** |
 | Emergenz vs. Random Shocks | P2.5 | **erledigt** |
 | Basispreis konfigurierbar | P2.3 | **erledigt** |
@@ -387,14 +387,61 @@ Das Szenario ist **LLM-basiert und textuell** — kein reines Template. Die Fakt
 
 # P4 — CIB
 
+## P4 Prinzip
+
+Die **Referenz-CIB** (`configs/cib_frozen.json`) ist eine **statische, domänen-definierte** 14×14-Matrix (Weimer-Jehle). Sie wird **nicht** aus Simulationsläufen abgeleitet, sondern dient als feste Brille für Konsistenz-Scores, Sweep-Vergleiche und P3-Kandidaten-Bewertung.
+
+| Komponente | Rolle |
+| --- | --- |
+| `cib_frozen.json` | Referenz-Matrix (eingefroren, v2 domänenkorrekt) |
+| `factor_rules` | Laufzeit-Übersetzung starker CIB-Kanten in bedingte Faktor-Übergänge |
+| `scenario_consistency.py` | Score-Berechnung (F-CIB1…3) gegen Referenz-Matrix |
+| `build_candidate_constellations` (P3) | CIB-bewerteter Kandidaten-Pool für LLM-Szenario-Auswahl |
+
+**Umsetzung (20.06.2026):** Platzhalter-Matrix (`deterministic_seed_42`) durch **domänenkorrekte v2-Matrix** ersetzt (`scripts/rebuild_cib_frozen.py`). Alle 168 Kanten nach Vorlesungsfolien (F19–22) und Faktoren F1–F7 neu definiert; 27 logische Widersprüche der alten Matrix beseitigt. Metadata in `cib_frozen.json` korrigiert.
+
+### Empirisches Ranking (Referenz-Matrix v2)
+
+| Szenario | Consistency | Stability | Konflikte |
+| --- | ---: | ---: | ---: |
+| Business as Usual (A1+B1) | **0.973** | **1.000** | 0 |
+| Transformationskonflikt (B2 vs A1) | 0.867 | 0.952 | 2 |
+| Freiwillige Wende (A2+B2) | 0.603 | 0.810 | 8 |
+
+**Kernnachweis P4.3:** BAU > Konflikt > Wende (Consistency-Score). BAU ist perfekt selbstverstärkend (0 Konflikte). Wende hat die meisten Konflikte, weil F3.2 (SAF-Durchbruch) F2.2 und F6.2 untergräbt — valider CIB-Befund.
+
+## Aufgaben
+
 | ID | Aufgabe | Status |
 | -- | ------- | ------ |
-| P4.1 | `cib_role.md` | offen |
-| P4.2 | [`cib_rationale.md`](cib_rationale.md) ergänzen | offen |
-| P4.3 | Ranking BAU > Konflikt | offen |
-| P4.4 | CIB-Kante ↔ Regel | offen |
-| P4.5 | Test Ranking | offen |
-| P4.6 | CIB in P1 Kap. 5 + **F-CIB1…3 in Kap. 8** + Präsentations-Referenz | offen |
+| P4.0 | **Referenz-Matrix v2:** `cib_frozen.json` domänenkorrekt neu definiert; Platzhalter-Metadata entfernt | **erledigt** |
+| P4.1 | [`cib_role.md`](cib_role.md) — Rolle der CIB, Systemüberblick, empirisches Ranking | **erledigt** |
+| P4.2 | [`cib_rationale.md`](cib_rationale.md) — P2.4-Regeln, P3-Kandidaten, CIB-Kante ↔ Regel | **erledigt** |
+| P4.3 | Ranking BAU (0.973) > Konflikt (0.867) > Wende (0.603) quantitativ nachgewiesen | **erledigt** |
+| P4.4 | CIB-Kante ↔ Regel vollständig dokumentiert — alle 14 `factor_rules` mit CIB-Einfluss-Werten | **erledigt** |
+| P4.5 | `tests/test_cib_ranking.py` — 12 Tests, alle grün; BAU > Konflikt; Stability-Index-Ranking | **erledigt** |
+| P4.6 | CIB in P1 Kap. 5 + **F-CIB1…3 in Kap. 8** + Präsentations-Referenz (`scientific_foundation.md`) | offen |
+| P4.7 | `reasoning`-Felder in `cib_frozen.json` — Begründung pro Kante (168 Zellen, Verteidigung/Prüfung) | offen |
+| P4.8 | **Validierung & Limitationen:** Herkunft der Matrix (domänenbasiert, kein Delphi/ScenarioWizard); Einfluss-Stärken (+2 vs. +3) als Annahmen → `cib_rationale.md` oder Kap. 5/10 | offen |
+
+## Offene Punkte (P4)
+
+Mechanik, Tests und Doku **P4.0–P4.5 sind erledigt**. Für eine vollständige wissenschaftliche Verteidigung fehlen noch:
+
+- **P4.6** — CIB in `scientific_foundation.md` (Kap. 5 + F-CIB1…3 in Kap. 8.5)
+- **P4.7** — `reasoning`-Felder in `cib_frozen.json` leer (168 Kanten ohne Begründung)
+- **P4.8** — Kein formaler Experten-Workshop; Einzelwerte (+2 vs. +3) sind Urteilsfragen, nicht eindeutig „wahr“
+
+## P4 Abnahme-Checkliste
+
+- [x] Referenz-Matrix ist statisch und domänen-definiert (kein Best-Run-Vergleich)
+- [x] Matrix v2 domänenkorrekt (Platzhalter `deterministic_seed_42` ersetzt)
+- [x] `cib_role.md` und `cib_rationale.md` vorhanden und aktuell
+- [x] Alle `factor_rules` mit CIB-Kanten begründet
+- [x] Ranking BAU > Konflikt per Test abgesichert (`test_cib_ranking.py`, 12 Tests)
+- [ ] **`reasoning`-Felder** in `cib_frozen.json` für alle 168 Kanten ergänzt (P4.7)
+- [ ] **Validierung/Limitationen** dokumentiert: kein Experten-Workshop, Urteilsfragen bei Einfluss-Stärke (P4.8)
+- [ ] **P4.6:** CIB in `scientific_foundation.md` Kap. 5 + F-CIB1…3 in Kap. 8.5 eingebunden
 
 ---
 
@@ -405,26 +452,61 @@ Dashboard = **Workbench für Präsentation und Exploration**. Qualitatives Narra
 ## Figures
 
 - Nur **`outputs/<run_id>/figures/`** — erzeugt nach Lauf via `generate_run_figures(run_dir)`
-- **Kein** globales `docs/challenge4/figures/`, **kein** separater Batch `python -m src.figure_generator` ohne Run
-- Optional: Checkbox „Figures nach Lauf“ (bestehend) — alles bleibt im Run-Ordner
+- Sweep-Runs: **`outputs/sweeps/sweep_<preset>/figures/`**
+- **Kein** globales `docs/challenge4/figures/` — Checkbox «Figures nach Lauf erzeugen» (Standard: an)
+
+## Präsentations-Demo
+
+Dashboard öffnen → Run wählen → **Szenario** lesen → **Figures** → **Abfrage** (Chat-Frage stellen).
+
+Dokumentiert in [`scenario_runs.md`](scenario_runs.md).
 
 ## Aufgaben
 
 | ID | Aufgabe | Status |
 | -- | ------- | ------ |
-| P5.1 | `scenario_runs.md` — Workflow: Lauf → Szenario → Figures → Chat | offen |
+| P5.1 | [`scenario_runs.md`](scenario_runs.md) — Workflow: Lauf → Szenario → Figures → Chat | **erledigt** |
 | P5.2 | ~~Globale Figures~~ — entfällt; nur Run-Figures | — |
-| P5.3 | README: Output pro Run | offen |
-| P5.4 | `challenge4_report.md` — Forschungsfrage, Narrativ-Säule, P1-Verweis | offen |
-| P5.5 | **Dashboard Run-Ansicht (Hauptpunkt):** | **teilweise** |
-| P5.5.1 | Tab/Prominenz: **`run_scenario.md`** (LLM-Szenario) — erste Lesart nach Lauf | **erledigt** |
-| P5.5.2 | Tab: `final_narrative.md` (Tick-Detail) | erledigt |
-| P5.5.3 | Tab: **Figures** aus `outputs/<run_id>/figures/` | teilweise |
-| P5.5.4 | Tab: **Chat/Explorer** — grounded, selber Run | teilweise |
+| P5.3 | README + `dashboard/README.md`: Output pro Run (6 PNGs, `run_scenario`, Sweeps) | **erledigt** |
+| P5.4 | [`challenge4_report.md`](challenge4_report.md) — Narrativ-Säule, Dashboard-Demo, P1-Verweis | **erledigt** |
+| P5.5 | **Dashboard Run-Ansicht (Hauptpunkt):** | **erledigt** |
+| P5.5.1 | Tab **Szenario** (`run_scenario.md`) — erste Lesart nach Lauf | **erledigt** |
+| P5.5.2 | Tab **Bericht** (`final_narrative.md`) | **erledigt** |
+| P5.5.3 | Tab **Figures** aus Run-Ordner; Sweeps mit Figures | **erledigt** |
+| P5.5.4 | Tab **Abfrage** — grounded Explorer; Faktoren aus CSV; Artefakt-Checks | **erledigt** |
 | P5.5.5 | Run-Liste: Szenario-Titel/Summary als Preview | **erledigt** |
-| P5.6 | Sweep-Läufe: gleiche Run-Struktur unter `outputs/sweeps/<id>/` | offen |
+| P5.6 | Sweep-Läufe: gleiche Run-Struktur, in Dashboard wählbar (`sweeps/sweep_*`) | **erledigt** |
+| P5.7 | **Explorer ausgiebig prüfen** — manuelle Abnahme Tab **Abfrage** + CLI (s. unten) | **offen** |
 
-Präsentations-Demo: Dashboard öffnen → Run wählen → **Szenario lesen** → Figure → Chat-Frage stellen.
+## P5 Abnahme-Checkliste
+
+- [x] `scenario_runs.md` mit Demo-Workflow
+- [x] README dokumentiert alle Run-Artefakte inkl. `run_scenario` und `figures/`
+- [x] `challenge4_report.md` aktualisiert (Narrativ-Säule, Dashboard, 267 Tests)
+- [x] Dashboard: Szenario-Tab prominent, Figures (6 PNGs), Abfrage grounded
+- [x] Sweep-Runs in Run-Liste und mit Figures/Szenario-Struktur
+- [ ] **Explorer manuell geprüft** (P5.7) — siehe Checkliste unten
+
+## Explorer-Prüfung (P5.7 — vor Abgabe ausführlich durchtesten)
+
+Automatisierte Tests (`tests/test_state_explorer.py`) decken Kontext-Laden und Grounding-Prompt ab — **reichen nicht** für die Abgabe. Vor Demo/Prüfung den Explorer **manuell** mit echtem Run (idealerweise Ollama, nicht nur Mock) verifizieren:
+
+**Setup:** Dashboard → Run mit vollständigen Artefakten wählen (Szenario, `timeseries/factors.csv`, min. 20 Ticks). Optional zweiter Run / Sweep-Run zum Vergleich.
+
+| # | Prüffall | Erwartung |
+| - | -------- | --------- |
+| E1 | „Was ist in diesem Lauf passiert?“ | Antwort aus `run_scenario.md` + Kennzahlen aus `tick_mechanics` / `price_history` — keine erfundenen Werte |
+| E2 | „Warum ist die Booking-Rate gefallen/gestiegen?“ | Bezug auf konkrete Ticks, Events (`[delta:…]`) oder Markt-Feedback |
+| E3 | „Was passierte bei Tick N?“ (N existiert) | Fokus auf Tick N; Zahlen stimmen mit `tick_mechanics` überein |
+| E4 | Faktor-Frage („Welcher Faktor hat sich geändert?“) | Endzustände/Verlauf aus `timeseries/factors.csv` |
+| E5 | Szenario-Bezug („Was sagt das explorative Szenario?“) | Inhalt aus Top-3-Szenarien in `run_scenario.md`, nicht frei erfunden |
+| E6 | Zwei verschiedene Runs | Antworten unterscheiden sich sinnvoll (nicht generisch identisch) |
+| E7 | Sweep-Run (`sweeps/sweep_*`) | Tab **Abfrage** funktioniert; Kontext lädt ohne Fehler |
+| E8 | Expander **Artefakt-Checks** | Konsistenz-Hinweise sichtbar; keine fehlenden Pflicht-Artefakte |
+| E9 | Halluzinations-Check | Keine Kennzahlen in der Antwort, die weder in Artefakten noch im Szenario vorkommen |
+| E10 | CLI (optional): `python -m src.state_explorer --run-id …` | Gleiche grounded Qualität wie Dashboard-Tab |
+
+**Abnahme P5.7:** Alle Punkte E1–E9 dokumentiert durchgespielt (Notizen reichen); E10 optional.
 
 ---
 
@@ -434,19 +516,20 @@ Präsentations-Demo: Dashboard öffnen → Run wählen → **Szenario lesen** �
 
 ### C4
 
-- [ ] Faktordynamik, Emergenz, Explorer grounded
+- [ ] Faktordynamik, Emergenz, Explorer grounded (**P5.7 manuell geprüft**)
 
 ### Coaching
 
 - [ ] P2 vollständig
 - [x] P3: LLM-Szenario pro Run
 - [ ] P1: `scientific_foundation.md` (inkl. **Kap. 8 Formeln**) + `presentation_references.md`
-- [ ] P4: CIB dokumentiert
+- [ ] P4: CIB **teilweise** — P4.0–P4.5 erledigt; offen: P4.6 (scientific_foundation), P4.7 (reasoning), P4.8 (Validierung/Limitationen)
 
 ### Narrativ & Dashboard
 
-- [ ] Run-Ordner vollständig: Szenario, Narrativ, Figures, Timeseries
-- [x] Dashboard zeigt Szenario prominent (P5.5)
+- [x] Run-Ordner vollständig: Szenario, Narrativ, Figures, Timeseries (s. [`scenario_runs.md`](scenario_runs.md))
+- [x] Dashboard zeigt Szenario prominent (P5)
+- [ ] Explorer ausgiebig manuell geprüft (P5.7, Checkliste oben)
 
 ### Abgabe
 
@@ -462,10 +545,11 @@ Technische Abnahme aus Plan 1, **nach** P1–P5. Nur schließen, wenn Mechanik u
 | P6.G1 | E2E 30 Ticks `deterministic-only` | **erledigt** (40 Ticks in `test_segment_divergence.py` + `run_20260619_p2_saturation_e2e`) |
 | P6.G2 | Segment-Divergenz ≥ 15 pp | **erledigt** (`tests/test_segment_divergence.py`) |
 | P6.G3 | Sweep Konflikt, 3 Seeds | offen |
-| P6.G4 | CIB-Ranking Konflikt < BAU | offen |
+| P6.G4 | CIB-Ranking Konflikt < BAU | **erledigt** (`tests/test_cib_ranking.py`, 12 Tests; BAU=0.973 > Konflikt=0.867) |
 | P6.G5 | Einkommen F4.2 → Divergenz | **erledigt** (in Segment-Divergenz-Test mit F4.2) |
 | P6.G6 | Agent-Narrative, Profile | Review |
-| P6.G7 | pytest grün | erledigt (253) |
+| P6.G7 | pytest grün | erledigt (267) |
+| P6.G8 | Explorer manuell geprüft (P5.7, E1–E9) | offen |
 
 Referenz: Anhang B2 in [`projectplan.md`](projectplan.md).
 
@@ -478,7 +562,7 @@ Referenz: Anhang B2 in [`projectplan.md`](projectplan.md).
 | 17.–20.06. | P1 (Fundierung + **Kap. 8 Formel-Audit**) |
 | 20.–24.06. | P2 Mechanik |
 | 24.–27.06. | **P3 LLM-Szenario** (Kern) |
-| 27.–28.06. | P4 CIB, P5 Dashboard |
+| 27.–28.06. | ~~P4 CIB~~ (teilweise), ~~P5 Dashboard~~ (erledigt) |
 | 29.–30.06. | P6 Endcheck + M12-Gates |
 
 ---

@@ -162,6 +162,27 @@ class TestStateExplorer:
         finally:
             shutil.rmtree(tmpdir)
 
+    def test_load_factors_from_csv(self):
+        tmpdir = Path(tempfile.mkdtemp(prefix="explorer_factors_"))
+        try:
+            run_id = "run_factors_csv"
+            run_dir = tmpdir / run_id
+            _write_sample_run(run_dir, run_id)
+            ts_dir = run_dir / "timeseries"
+            ts_dir.mkdir(parents=True, exist_ok=True)
+            (ts_dir / "factors.csv").write_text(
+                "tick,F1,F2\n15,F1.1,F2.2\n",
+                encoding="utf-8",
+            )
+            context = load_run_context(run_id, focus_tick=15, outputs_root=tmpdir)
+            assert len(context.factors_timeseries) == 1
+            assert context.factors_timeseries[0]["F2"] == "F2.2"
+            block = build_grounded_context_block(context)
+            assert "factors_timeseries" in block
+            assert "F2.2" in block
+        finally:
+            shutil.rmtree(tmpdir)
+
     def test_grounded_context_contains_tick_and_delta_events(self):
         tmpdir = Path(tempfile.mkdtemp(prefix="explorer_ctx_"))
         try:

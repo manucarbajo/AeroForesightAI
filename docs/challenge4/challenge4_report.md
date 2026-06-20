@@ -6,7 +6,7 @@
 | **Challenge** | C4 — Dynamik, Wechselwirkungen, Emergenz, Exploration |
 | **Domäne** | Europäischer Flugverkehr (F1–F7, 3 Agenten, 1000 Individuen) |
 | **Stack** | Python, LangGraph, Ollama / Mock-LLM, Streamlit (optional) |
-| **Stand** | Juni 2026 · M0–M11 · **217** pytest-Tests grün |
+| **Stand** | Juni 2026 · M0–M11 · **267** pytest-Tests grün |
 
 ---
 
@@ -18,7 +18,9 @@
 
 Challenge 4 zeigt, dass **qualitative Szenarien über Zeiträume simulierbar** sind, wenn numerische Systemdynamik **deterministisch in Python** liegt und LLM-Agenten **nur narrativ** ergänzen (Events, Begründungen, begrenzte Faktorvorschläge). Wechselwirkungen entstehen **emergent** aus gekoppelten Mechanismen (Properties → Kosten → Booking → Markt-Feedback → Faktorregeln → Population-Shifts), nicht aus freier LLM-Interpretation.
 
-**Qualität** wird über reproduzierbare Artefakte (`tick_mechanics.json`, `timeseries/*.csv`, Sweeps, CIB-Consistency-Score) und **217 automatisierte Tests** abgesichert. Der **State Explorer** (M9) antwortet ausschließlich aus Run-Daten — keine erfundenen Kennzahlen.
+**Qualität** wird über reproduzierbare Artefakte (`tick_mechanics.json`, `timeseries/*.csv`, Sweeps, CIB-Consistency-Score, **`run_scenario.md`**) und **267 automatisierte Tests** abgesichert. Der **State Explorer** (M9) antwortet ausschließlich aus Run-Daten — keine erfundenen Kennzahlen.
+
+Wissenschaftliche Fundierung (Formeln, Literatur): geplant in `scientific_foundation.md` (P1) — siehe [`projectplan2.md`](projectplan2.md) Kap. 1/8.
 
 ---
 
@@ -87,14 +89,17 @@ CIB dient als **Referenzrahmen** (`cib_frozen.json`), nicht als live generierte 
 
 `agent_profiles.json` steuert `observes`, `may_propose`, `must_not_output`, `depends_on`. Prompt-Filter und harte Parser-Grenzen verhindern erfundene Kennzahlen. Details: [`agent_profiles.md`](agent_profiles.md).
 
-### 4.5 Szenario-Sweeps (M8)
+### 4.5 Narrativ-Säule & Szenario-Sweeps (P3 / M8)
 
-Vier Presets unter `configs/sweeps/`: `business_as_usual`, `co2_delayed`, `freiwillige_wende`, `transformation_conflict`. Deterministische Läufe bis 10.000 Ticks; Auswertung via `scenario_scores.json` und CIB-Consistency. Anleitung: [`scenario_runs.md`](scenario_runs.md).
+**Explorative Szenarien pro Lauf (P3):** Nach jedem Lauf erzeugt `run_scenario_generator.py` ein qualitatives Szenario (`run_scenario.md` / `.json`). Python liefert CIB-bewertete Kandidat-Konstellationen; das LLM **wählt 3 aus**, begründet die Auswahl und schreibt die Narrative — Faktorzustände und Scores bleiben Python-Ground-Truth.
 
-### 4.6 Exploration & Figures (M9–M10)
+Vier Foresight-Presets unter `configs/sweeps/`: `business_as_usual`, `co2_delayed`, `freiwillige_wende`, `transformation_conflict`. Deterministische Läufe; Auswertung via `scenario_scores.json` und CIB-Consistency. Jeder Sweep-Run hat dieselbe Ordnerstruktur wie ein Normallauf (inkl. `run_scenario`, `figures/`). Anleitung: [`scenario_runs.md`](scenario_runs.md).
 
-- **State Explorer:** CLI + Dashboard-Chat, Kontext aus `tick_mechanics`, `price_history`, `event_log`.
-- **Figures:** Global (4-Szenario-Vergleich) und pro Run (5 PNGs + Manifest).
+### 4.6 Exploration, Dashboard & Figures (M9–M10 / P5)
+
+- **State Explorer:** CLI + Dashboard-Tab **Abfrage** — Kontext aus `tick_mechanics`, `price_history`, `event_log`, `timeseries/factors.csv`, `run_scenario.json`.
+- **Dashboard (Workbench):** Präsentations-Oberfläche — Demo-Pfad: Run wählen → Tab **Szenario** → **Figures** → **Abfrage**. Siehe [`scenario_runs.md`](scenario_runs.md).
+- **Figures:** 6 PNGs pro Run unter `outputs/<run_id>/figures/` (+ Sweep-Runs unter `outputs/sweeps/sweep_*/figures/`).
 
 ---
 
@@ -109,15 +114,18 @@ Nach jedem Lauf unter `outputs/<run_id>/`:
 | `event_log.json` | Agenten-Events + `[delta:…]` |
 | `timeseries/factors.csv` | Faktorzustände F1–F7 |
 | `timeseries/properties.csv` | System-Properties |
-| `final_narrative.md` | Lesbarer Bericht |
+| `final_narrative.md` | Lesbarer Tick-Bericht |
+| `run_scenario.md` / `.json` | Exploratives LLM-Szenario (P3) |
+| `figures/` | 6 PNGs + Manifest (M10) |
 | `checkpoints/` | Resume + Explorer |
-| `figures/` | Optional (M10) |
+
+Sweep-Läufe: `outputs/sweeps/sweep_<preset>/` — gleiche Struktur inkl. Szenario und Figures.
 
 ---
 
 ## 6. Testabdeckung
 
-**217 Tests** (Stand M11), u. a.:
+**267 Tests** (Stand Juni 2026), u. a.:
 
 | Bereich | Testdateien |
 | --- | --- |
@@ -145,7 +153,7 @@ python -m pytest
 | **Ticks ≠ Kalenderjahre** | Epochen/Iterationen, keine Datumsachse |
 | **LLM-Narrative** | Gelegentliche Verwechslung `demand_level` / `booking_rate`; Fallback-Events bei Parse-Fehlern |
 | **Emergenz-Gates M7/M8** | Segment-Divergenz und Konflikt-Sweep teils noch offen (M12.4) |
-| **Dashboard** | Optionale Präsentationsschicht, kein Abnahme-Kriterium |
+| **Dashboard** | Workbench für Präsentation (Szenario → Figures → Abfrage); siehe [`scenario_runs.md`](scenario_runs.md) |
 
 Legacy: `CIBExtractorNode` (Challenge 2/3) liegt unter `src/legacy/` — nicht Teil der C4-Pipeline.
 

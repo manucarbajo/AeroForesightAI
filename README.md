@@ -170,11 +170,13 @@ Nach jedem Lauf unter `outputs/<run_id>/`:
 | Datei | Inhalt |
 | --- | --- |
 | `final_narrative.md` | Lesbarer Bericht (Kennzahlen, Segment-Buchung, Agenten) |
+| `run_scenario.md` / `run_scenario.json` | **Exploratives Szenario** (P3): LLM wählt 3 CIB-Kandidaten, schreibt Narrativ |
 | `tick_mechanics.json` | **Ground Truth** pro Tick: Booking, Preis vor/nach Feedback, Shocks |
 | `event_log.json` | Agenten-Events + Python-Deltas (`[delta:…]`, source=system/provider/market) |
 | `price_history.json` | Preis, demand_level, booking_rate pro Tick |
 | `protocol.md` / `.json` | Vollständiges Protokoll |
-| `timeseries/*.csv` | Properties, Population, Faktoren |
+| `timeseries/*.csv` | Properties, Population, Faktoren F1–F7 |
+| `figures/` | 6 PNGs + `manifest.json` (pro Run, siehe unten) |
 | `checkpoints/` | State pro Tick (Resume + Explorer) |
 
 **Pipeline pro Tick:** Faktoren → Agenten (Provider/Regulator) → Booking (Referenzpreis = Vortick-Marktpreis) → Consumer → Markt-Feedback (finaler Ticketpreis) → Delta-Events → Export.
@@ -195,16 +197,15 @@ Nach jedem Lauf unter `outputs/<run_id>/`:
 
 ### Figures (M10)
 
-Zwei Ebenen:
+**Pro Run** (Hauptweg): `outputs/<run_id>/figures/` — 6 PNGs + `manifest.json`
 
-- **Global** (Foresight-Szenario-Vergleich): [`docs/challenge4/scenario_runs.md`](docs/challenge4/scenario_runs.md) — `python -m src.figure_generator`
-- **Pro Run** (nach Simulation): `outputs/<run_id>/figures/` — automatisch im Dashboard (Checkbox «Figures nach Lauf erzeugen») oder:
+- Automatisch im Dashboard (Checkbox «Figures nach Lauf erzeugen», Standard: an)
+- Oder manuell: `python -m src.figure_generator --run-only <run_id>`
+- Im Dashboard: Tab **Figures** unter «Ergebnisse ansehen»
 
-```powershell
-python -m src.figure_generator --run-only run_20260614T112808Z
-```
+Workflow und Sweep-Läufe: [`docs/challenge4/scenario_runs.md`](docs/challenge4/scenario_runs.md)
 
-Im Dashboard: Tab **Figures** unter «Ergebnisse ansehen».
+Sweep-Runs liegen unter `outputs/sweeps/sweep_<preset>/` mit derselben Struktur.
 
 ## Agent-Profile (M7)
 

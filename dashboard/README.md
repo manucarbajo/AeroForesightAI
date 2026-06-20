@@ -15,8 +15,10 @@ Browser: `http://localhost:8501`
 | Bereich | Inhalt |
 | --- | --- |
 | **Simulation starten** | Szenario, Properties, Faktoren, LLM, Multi-Run, Figures nach Lauf |
-| **Ergebnisse ansehen** | Übersicht, **Figures**, Bericht, Abfrage, Dateien |
+| **Ergebnisse ansehen** | Tab **Szenario** (Hauptansicht), Übersicht, Figures, Bericht, Abfrage, Dateien |
 
-Run-Figures landen unter `outputs/<run_id>/figures/` (5 PNGs + `manifest.json`), wenn «Figures nach Lauf erzeugen» aktiv ist (Standard).
+**Präsentations-Demo:** Run wählen → **Szenario** lesen → **Figures** → **Abfrage** (Chat). Details: [`../docs/challenge4/scenario_runs.md`](../docs/challenge4/scenario_runs.md)
+
+Run-Figures: `outputs/<run_id>/figures/` (6 PNGs + `manifest.json`) bei aktivierter Option «Figures nach Lauf erzeugen» (Standard). Sweep-Runs: `outputs/sweeps/sweep_<preset>/`.
 
 Projekt-README: [`../README.md`](../README.md)

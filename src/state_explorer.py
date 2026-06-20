@@ -98,6 +98,35 @@ def _summarize_checkpoint(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _load_factors_timeseries(run_dir: Path) -> list[dict[str, Any]]:
+    """Load factor rows from JSON (legacy) or ``timeseries/factors.csv`` (standard)."""
+
+    json_path = run_dir / "factors_timeseries.json"
+    if json_path.is_file():
+        payload = _load_json(json_path, [])
+        if isinstance(payload, list):
+            return payload
+
+    csv_path = run_dir / "timeseries" / "factors.csv"
+    if not csv_path.is_file():
+        return []
+
+    import csv
+
+    rows: list[dict[str, Any]] = []
+    with csv_path.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            parsed: dict[str, Any] = dict(row)
+            tick_raw = parsed.get("tick")
+            if tick_raw not in (None, ""):
+                try:
+                    parsed["tick"] = int(tick_raw)
+                except ValueError:
+                    pass
+            rows.append(parsed)
+    return rows
+
+
 def load_run_context(
     run_id: str,
     *,
@@ -108,7 +137,7 @@ def load_run_context(
     tick_mechanics = _load_json(run_dir / "tick_mechanics.json", {"ticks": []})
     event_log = _load_json(run_dir / "event_log.json", [])
     price_history = _load_json(run_dir / "price_history.json", [])
-    factors_timeseries = _load_json(run_dir / "factors_timeseries.json", [])
+    factors_timeseries = _load_factors_timeseries(run_dir)
     metadata = _load_json(run_dir / "run_metadata.json", {})
     run_scenario_raw = _load_json(run_dir / "run_scenario.json", None)
     run_scenario = run_scenario_raw if isinstance(run_scenario_raw, dict) else None

@@ -28,6 +28,7 @@ from dashboard.service import (
     outputs_root,
     read_run_file,
     regenerate_run_scenario,
+    run_consistency_checks,
 )
 from src.state_explorer import (
     StateExplorer,
@@ -191,14 +192,26 @@ def _render_explorer(run_id: str) -> None:
             value=0,
             step=1,
         )
-        use_mock = st.checkbox("Demo ohne Ollama (Mock)", value=True)
+        use_mock = st.checkbox(
+            "Demo ohne Ollama (Mock)",
+            value=False,
+            help="Deaktivieren für echte Antworten via Ollama (Modell in .env).",
+        )
         show_context = st.checkbox("Datenkontext anzeigen", value=False)
+        show_checks = st.checkbox("Artefakt-Checks anzeigen", value=False)
 
     messages = st.session_state.explorer_messages.setdefault(run_id, [])
 
     question = st.chat_input("Frage zur Simulation …")
     focus_tick = _resolve_focus_tick(int(manual_tick), question or "")
     context = load_run_context(run_id, focus_tick=focus_tick)
+
+    if show_checks:
+        with st.expander("Konsistenz-Checks (Ground Truth)", expanded=False):
+            checks = run_consistency_checks(context.run_dir)
+            for check in checks:
+                icon = {"ok": "✅", "warn": "⚠️", "fail": "❌"}.get(check.status, "•")
+                st.markdown(f"{icon} **{check.title}** — {check.detail}")
 
     if show_context:
         with st.expander("Daten, die an die Abfrage übergeben werden", expanded=False):
@@ -591,7 +604,17 @@ def _render_launch_page() -> None:
             status.update(label="Fertig", state="complete")
             if result.sweep_batch:
                 st.success("Szenario-Vergleich abgeschlossen.")
-                st.json(result.artifacts)
+                if result.sweep_summary_path:
+                    st.caption(f"Summary: `{result.sweep_summary_path}`")
+                if result.child_run_ids:
+                    st.session_state.last_launched_run_id = result.child_run_ids[0]
+                    st.session_state.selected_run_id = result.child_run_ids[0]
+                    st.info(
+                        "Einzelne Sweep-Runs unter **Ergebnisse ansehen** wählen: "
+                        + ", ".join(f"`{rid}`" for rid in result.child_run_ids)
+                    )
+                else:
+                    st.json(result.artifacts)
                 return
             if result.multi_run_batch:
                 st.session_state.last_launched_run_id = result.run_id
