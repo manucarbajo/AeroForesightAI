@@ -32,6 +32,21 @@ from src.models.sweep_models import (
 )
 from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.simulation_runner import RunnerOptions, SimulationRunner
+from src.output_writer import (
+    resolve_run_output_dir,
+    save_cib_matrix,
+    save_event_log,
+    save_final_narrative,
+    save_tick_mechanics,
+    save_properties_timeseries,
+    save_population_timeseries,
+    save_factors_timeseries,
+    save_round_history,
+    save_run_metadata,
+    save_segment_analysis,
+)
+from src.run_scenario_generator import generate_and_save_run_scenario
+from src.llm_client import OllamaClient, OllamaConfig
 
 SWEEPS_DIR = REPO_ROOT / "configs" / "sweeps"
 SWEEP_OUTPUT_DIR = REPO_ROOT / "outputs" / "sweeps"
@@ -207,10 +222,11 @@ def run_single_sweep(
     )
 
     start_time = time.time()
+    run_id_str = f"sweeps/sweep_{sweep.id}"
     final_state = runner.run(
         state,
         seed=42,
-        run_id=f"sweep-{sweep.id}",
+        run_id=run_id_str,
     )
     elapsed = time.time() - start_time
 
@@ -237,6 +253,47 @@ def run_single_sweep(
     consistency_score = checker.compute_consistency_score(scenario)
     stability_index = checker.compute_stability_index(scenario)
     check_result = checker.check_scenario(scenario)
+    
+    # Save artifacts like a normal run
+    run_dir_path = resolve_run_output_dir(run_id_str)
+    
+    # We need a dummy args namespace for save_run_metadata
+    from types import SimpleNamespace
+    dummy_args = SimpleNamespace(
+        sweep=sweep.id, 
+        deterministic_only=True, 
+        seed=42,
+        model="dummy_for_sweeps",
+        base_url="dummy",
+        temperature=0.0,
+        max_tokens=0,
+        no_market=False
+    )
+    
+    save_run_metadata(final_state, dummy_args, run_dir=run_dir_path, run_id=run_id_str)
+    save_event_log(final_state.event_log, run_dir=run_dir_path)
+    save_tick_mechanics(final_state, run_dir=run_dir_path)
+    save_properties_timeseries(final_state.property_timeseries, run_dir=run_dir_path)
+    save_population_timeseries(final_state.population_stats, run_dir=run_dir_path)
+    save_factors_timeseries(final_state.factor_timeseries, run_dir=run_dir_path)
+    save_round_history(final_state.round_results, run_dir=run_dir_path)
+    save_segment_analysis(final_state.round_results, run_dir=run_dir_path)
+    save_final_narrative(final_state, run_dir=run_dir_path)
+    
+    if final_state.cib_matrix is not None:
+        if final_state.cib_matrix.metadata is None:
+            final_state.cib_matrix.metadata = {}
+        final_state.cib_matrix.metadata["consistency_score"] = consistency_score
+    save_cib_matrix(final_state, run_dir=run_dir_path)
+
+    # Generate LLM Scenario
+    llm = OllamaClient(OllamaConfig())
+    generate_and_save_run_scenario(
+        run_id_str,
+        llm,
+        run_dir=run_dir_path,
+        prefer_llm=True, # Always prefer LLM for the final scenario text
+    )
 
     if verbose:
         ticks_done = final_state.clock.current_tick

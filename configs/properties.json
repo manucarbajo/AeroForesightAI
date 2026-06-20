@@ -241,7 +241,12 @@
       "enabled": true,
       "prevalence": 0.1,
       "saturation_decay": 0.2,
-      "modifiers": {}
+      "modifiers": {
+        "wtp_multiplier": 0.9,
+        "base_income_delta": 0.0,
+        "price_sensitivity_delta": 0.0,
+        "substitution_readiness_multiplier": 1.0
+      }
     },
     {
       "id": "business",
@@ -277,7 +282,7 @@
       "saturation_decay": 0.05,
       "modifiers": {
         "price_sensitivity_delta": 0.05,
-        "wtp_multiplier": 1.0,
+        "wtp_multiplier": 1.2,
         "base_income_delta": 0.0,
         "substitution_readiness_multiplier": 1.0
       }
@@ -297,7 +302,7 @@
       "type": "distribution",
       "enabled": true,
       "distribution": "lognormal",
-      "mean": 120.0,
+      "mean": 150.0,
       "std_dev": 0.35,
       "min_value": 50.0,
       "max_value": 500.0
@@ -452,7 +457,7 @@
       "factor_id": "F1",
       "when": {
         "metric": "booking_rate",
-        "below": 0.45
+        "below": 0.25
       },
       "effect": {
         "set_state": "F1.2"
@@ -464,7 +469,7 @@
       "factor_id": "F1",
       "when": {
         "metric": "booking_rate",
-        "above": 0.68
+        "above": 0.35
       },
       "effect": {
         "set_state": "F1.1"

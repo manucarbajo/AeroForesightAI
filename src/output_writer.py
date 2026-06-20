@@ -758,22 +758,51 @@ def _format_agent_reasoning_block(agent_responses) -> list[str]:
     if not agent_responses:
         return []
 
-    lines = ["", "#### Agenten-Einschätzung (LLM-Begründung)", ""]
+    lines = ["", "#### Agenten-Begründungen & Handlungen", ""]
     for resp in agent_responses:
         label = _AGENT_LABELS.get(resp.agent_id, resp.agent_id)
-        first_line = resp.reasoning.strip().splitlines()[0] if resp.reasoning else "kein Reasoning"
-        lines.append(f"- **{label}:** {first_line}")
+        
+        lines.append(f"**{label}**")
+        
+        if resp.reasoning:
+            reasoning_formatted = "\n".join([f"> {line}" for line in resp.reasoning.strip().splitlines()])
+            lines.append(reasoning_formatted)
+        else:
+            lines.append("> *(Keine Begründung angegeben)*")
+            
+        actions_line = []
+        if hasattr(resp, "actions") and resp.actions:
+            actions_list = [a for a in resp.actions if a.upper() != "NO_OP"]
+            if actions_list:
+                actions_line.append(f"**Aktionen:** {', '.join(actions_list)}")
+                
+        if hasattr(resp, "state_changes") and resp.state_changes:
+            changes_list = []
+            for sc in resp.state_changes:
+                if isinstance(sc, dict):
+                    f_id = sc.get('factor_id')
+                    s_id = sc.get('proposed_state')
+                    changes_list.append(f"`{f_id}→{s_id}`")
+                elif hasattr(sc, "factor_id"):
+                    changes_list.append(f"`{sc.factor_id}→{sc.proposed_state}`")
+            if changes_list:
+                actions_line.append(f"**Faktor-Vorschläge:** {', '.join(changes_list)}")
+                
+        if actions_line:
+            lines.append("\n" + " | ".join(actions_line))
+            
+        lines.append("")
     return lines
 
 
-def _format_agent_events_block(events: list[EventLogEntry]) -> list[str]:
+def _format_agent_events_block(events) -> list[str]:
     if not events:
         return []
 
-    lines = ["", "#### Agenten-Events (Meldung pro Rolle)", ""]
+    lines = ["", "#### Öffentliche Events & Markteffekte", ""]
     for event in events:
         label = _AGENT_LABELS.get(event.source_agent, event.source_agent)
-        lines.append(f"- **{label}:** {event.description}")
+        lines.append(f"- **[{label}]** {event.description}")
     return lines
 
 

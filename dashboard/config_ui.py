@@ -558,8 +558,8 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
     )
     
     if st.button("Populations-Config aus JSON neu laden", key="btn_reload_pop"):
-        draft.population_edits = extract_population_edits_from_file("properties.json")
-        draft.saturation_edit = extract_saturation_from_file("properties.json")
+        draft.population_edits = extract_population_edits_from_file(draft.properties_file)
+        draft.saturation_edit = extract_saturation_from_file(draft.properties_file)
         st.rerun()
 
     st.markdown("### Sättigung (global)")
@@ -593,7 +593,7 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
 
     st.markdown("### Segmente (Anteile & Verhalten)")
     if not hasattr(draft, "population_edits") or not draft.population_edits:
-        draft.population_edits = extract_population_edits_from_file("properties.json")
+        draft.population_edits = extract_population_edits_from_file(draft.properties_file)
 
     with st.container(border=True):
         st.markdown("**Neues Segment hinzufügen**")
@@ -609,7 +609,7 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
                         id=new_seg_id, type="boolean", prevalence=0.1, saturation_decay=0.2
                     )
                     draft.population_edits.insert(0, new_seg)
-                    save_population_edits_to_file(draft.population_edits, "properties.json")
+                    save_population_edits_to_file(draft.population_edits, draft.properties_file)
                     st.success(f"Segment '{new_seg_id}' angelegt!")
                     st.rerun()
             else:
@@ -656,7 +656,7 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
                             if c1.button("Ja, löschen", key=f"do_del_seg_{p.id}"):
                                 st.session_state[confirm_key] = False
                                 draft.population_edits = [e for e in draft.population_edits if e.id != p.id]
-                                save_population_edits_to_file(draft.population_edits, "properties.json")
+                                save_population_edits_to_file(draft.population_edits, draft.properties_file)
                                 st.success(f"Segment {p.id} gelöscht!")
                                 st.rerun()
                             if c2.button("Abbruch", key=f"cancel_del_seg_{p.id}"):
@@ -695,8 +695,8 @@ def _render_population_tab(draft: ConfigDraft) -> ConfigDraft:
                 
     st.divider()
     if st.button("Änderungen an Population speichern", type="primary"):
-        save_population_edits_to_file(draft.population_edits, "properties.json")
-        save_saturation_to_file(draft.saturation_edit, "properties.json")
+        save_population_edits_to_file(draft.population_edits, draft.properties_file)
+        save_saturation_to_file(draft.saturation_edit, draft.properties_file)
         st.success("Populations- und Sättigungs-Konfiguration gespeichert!")
 
     return draft

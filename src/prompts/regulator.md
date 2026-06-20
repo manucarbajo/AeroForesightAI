@@ -42,7 +42,7 @@ Make a regulatory decision for this tick:
 1) briefly justify the policy direction based on **prior_tick booking_rate**, scheduled property changes, and market metrics (e.g. reaction to a carbon tax shock this tick).
 2) name concrete actions (NOTE: you cannot change taxes or subsidies! Instead, e.g. launch awareness campaigns, infrastructure projects, or diplomatic initiatives).
 3) use consumer_segment_analysis and prior_booking_block to account for societal acceptance and demand effects by segment.
-4) propose factor state changes **only for F2 or F6** when justified (see MAY PROPOSE in constraints).
+4) propose factor state changes **only for F2 or F5** when justified by policy shifts or infrastructure projects. Other factors are exogenous or driven by other agents.
 5) formulate **exactly 1** event per tick (policy narrative). On property shocks, describe a distinct steering measure (campaign, infrastructure, diplomacy). Use actions=["NO_OP"] and events=[] only when stable AND Recent events already cover the topic. Do NOT re-announce the same SAF mandate every tick.
 6) IMPORTANT: Always consider and react to `Recent events` in your reasoning. NEVER repeat the same wording from "Recent events".
 
@@ -63,7 +63,7 @@ Use exactly this schema:
     {
       "event_type": "policy_change",
       "description": "string",
-      "affected_factors": ["F2", "F6"]
+      "affected_factors": ["F2", "F5"]
     }
   ],
   "segment_analysis": {}

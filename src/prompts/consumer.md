@@ -44,8 +44,7 @@ Make a consumer-oriented decision for this tick:
 3) formulate 1 event that follows from your decision and **matches the observed booking_rate**.
 4) IMPORTANT: Always consider and react to `Recent events` in your reasoning, but NEVER simply repeat them. Formulate a new response or choose NO_OP.
 5) provide segment_analysis so the expected reaction per segment (from population context) is clearly visible
-
-Do NOT propose factor state changes — your profile forbids `state_changes` (leave the list empty).
+6) propose factor state changes **only for F1 or F6** when justified by a collective shift in demand or values. Other factors are exogenous to you.
 
 ## Output instruction (strict)
 Respond with exactly one JSON object, no markdown and no code block.

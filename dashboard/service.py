@@ -589,7 +589,7 @@ def launch_simulation(
         if config.run_all_sweeps:
             run_all_sweeps(
                 ticks_override=int(config.rounds) if config.rounds else None,
-                sweep_filter=config.sweep_id,
+                sweep_filter=None,
                 verbose=True,
             )
             summary_path = SWEEP_OUTPUT_DIR / "sweep_summary.json"
