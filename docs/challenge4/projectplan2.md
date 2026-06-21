@@ -2,14 +2,14 @@
 
 | | |
 | --- | --- |
-| **Stand** | 19.06.2026 |
+| **Stand** | 21.06.2026 |
 | **Abgabe** | 30.06.2026 — Gesamtsystem auf GitHub (40 Punkte, Challenge 4) |
 | **Vorgänger** | [`projectplan.md`](projectplan.md) M0–M11 |
 | **Ziel** | Endabgabe: C4-Aufgabenstellung, Coaching-Punkte, Forschungsfrage, belegbare Wissenschaft |
 | **Branch** | `m9_dashboard/challenge4` |
-| **Tests** | 253 pytest grün |
+| **Tests** | 267 pytest (aktuell 3 Fails) |
 | **Fortschritt** | **P2 + P3 + P4.0–P4.5 + P5** (P5.7 Explorer-Prüfung offen) · P4.6–P4.8, P1, P6 Rest offen |
-| **Nächster Schritt** | **P1** (scientific_foundation.md) oder **P3** (LLM-Szenario pro Run) |
+| **Nächster Schritt** | **P1** (scientific_foundation.md) oder **P4.6–P4.8** (CIB Reasoning) |
 
 ## Forschungsfrage
 
@@ -91,7 +91,7 @@ Reihenfolge: **P1 → P2 → P3 → P4 → P5 → P6**. M12-Gates (ehem. P0) **a
 | **P2.4 Faktordynamik** (3 neue CIB-Regeln: F4→F1, F5→F1, F3→F6) | **erledigt** |
 | **P2.5 Emergenz-Nachweis** (`emergence_evidence.md`, Tests inkl. Segment-Divergenz) | **erledigt** |
 | **P6.G2 Segment-Divergenz** (`tests/test_segment_divergence.py`, Run `run_20260619_p2_saturation_e2e`) | **erledigt** |
-| LLM-Run-Szenario, P1-Doku, P3-Coaching, Run-Figures standardmäßig | offen |
+| P1-Doku (Kap. 8), P4 CIB-Validierung (P4.6-P4.8), Explorer-Prüfung (P5.7) | offen |
 
 ---
 
@@ -477,6 +477,11 @@ Dokumentiert in [`scenario_runs.md`](scenario_runs.md).
 | P5.5.5 | Run-Liste: Szenario-Titel/Summary als Preview | **erledigt** |
 | P5.6 | Sweep-Läufe: gleiche Run-Struktur, in Dashboard wählbar (`sweeps/sweep_*`) | **erledigt** |
 | P5.7 | **Explorer ausgiebig prüfen** — manuelle Abnahme Tab **Abfrage** + CLI (s. unten) | **offen** |
+| P5.8 | **Dashboard UX/UI Polishing & Bugfixes:** | **erledigt** |
+| P5.8.1 | Run-Name Synchronisation beim Speichern von Presets repariert | **erledigt** |
+| P5.8.2 | Farbpalette für dynamische Segment-Ergänzungen (hell/dunkel) überarbeitet | **erledigt** |
+| P5.8.3 | Jitter-Fix: Statische Demographie-Daten (Alter etc.) im Plot fixiert | **erledigt** |
+| P5.8.4 | Erfolgsmeldung beim Szenario-Speichern in Session-State ausgelagert | **erledigt** |
 
 ## P5 Abnahme-Checkliste
 
@@ -548,7 +553,7 @@ Technische Abnahme aus Plan 1, **nach** P1–P5. Nur schließen, wenn Mechanik u
 | P6.G4 | CIB-Ranking Konflikt < BAU | **erledigt** (`tests/test_cib_ranking.py`, 12 Tests; BAU=0.973 > Konflikt=0.867) |
 | P6.G5 | Einkommen F4.2 → Divergenz | **erledigt** (in Segment-Divergenz-Test mit F4.2) |
 | P6.G6 | Agent-Narrative, Profile | Review |
-| P6.G7 | pytest grün | erledigt (267) |
+| P6.G7 | pytest grün | offen (264 grün, 3 Fails) |
 | P6.G8 | Explorer manuell geprüft (P5.7, E1–E9) | offen |
 
 Referenz: Anhang B2 in [`projectplan.md`](projectplan.md).
