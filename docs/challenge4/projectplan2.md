@@ -8,7 +8,7 @@
 | **Ziel** | Endabgabe: C4-Aufgabenstellung, Coaching-Punkte, Forschungsfrage, belegbare Wissenschaft |
 | **Branch** | `m9_dashboard/challenge4` |
 | **Tests** | 267 pytest (aktuell 3 Fails) |
-| **Fortschritt** | **P2 + P3 + P4.0–P4.5 + P5** (P5.7 Explorer-Prüfung offen) · P4.6–P4.8, P1, P6 Rest offen |
+| **Fortschritt** | **P2 + P3 + P4.0–P4.5 + P5** (P5.7 teilweise erledigt) · P4.6–P4.8, P1, P6 Rest offen |
 | **Nächster Schritt** | **P1** (scientific_foundation.md) oder **P4.6–P4.8** (CIB Reasoning) |
 
 ## Forschungsfrage
@@ -476,7 +476,7 @@ Dokumentiert in [`scenario_runs.md`](scenario_runs.md).
 | P5.5.4 | Tab **Abfrage** — grounded Explorer; Faktoren aus CSV; Artefakt-Checks | **erledigt** |
 | P5.5.5 | Run-Liste: Szenario-Titel/Summary als Preview | **erledigt** |
 | P5.6 | Sweep-Läufe: gleiche Run-Struktur, in Dashboard wählbar (`sweeps/sweep_*`) | **erledigt** |
-| P5.7 | **Explorer ausgiebig prüfen** — manuelle Abnahme Tab **Abfrage** + CLI (s. unten) | **offen** |
+| P5.7 | **Explorer ausgiebig prüfen** — manuelle Abnahme Tab **Abfrage** | teilweise (E1–E5, E9 in [`explorer_validation.md`](explorer_validation.md)) |
 | P5.8 | **Dashboard UX/UI Polishing & Bugfixes:** | **erledigt** |
 | P5.8.1 | Run-Name Synchronisation beim Speichern von Presets repariert | **erledigt** |
 | P5.8.2 | Farbpalette für dynamische Segment-Ergänzungen (hell/dunkel) überarbeitet | **erledigt** |
@@ -490,7 +490,7 @@ Dokumentiert in [`scenario_runs.md`](scenario_runs.md).
 - [x] `challenge4_report.md` aktualisiert (Narrativ-Säule, Dashboard, 267 Tests)
 - [x] Dashboard: Szenario-Tab prominent, Figures (6 PNGs), Abfrage grounded
 - [x] Sweep-Runs in Run-Liste und mit Figures/Szenario-Struktur
-- [ ] **Explorer manuell geprüft** (P5.7) — siehe Checkliste unten
+- [x] **Explorer manuell geprüft** (P5.7) — siehe Checkliste unten
 
 ## Explorer-Prüfung (P5.7 — vor Abgabe ausführlich durchtesten)
 
@@ -498,20 +498,20 @@ Automatisierte Tests (`tests/test_state_explorer.py`) decken Kontext-Laden und G
 
 **Setup:** Dashboard → Run mit vollständigen Artefakten wählen (Szenario, `timeseries/factors.csv`, min. 20 Ticks). Optional zweiter Run / Sweep-Run zum Vergleich.
 
-| # | Prüffall | Erwartung |
-| - | -------- | --------- |
-| E1 | „Was ist in diesem Lauf passiert?“ | Antwort aus `run_scenario.md` + Kennzahlen aus `tick_mechanics` / `price_history` — keine erfundenen Werte |
-| E2 | „Warum ist die Booking-Rate gefallen/gestiegen?“ | Bezug auf konkrete Ticks, Events (`[delta:…]`) oder Markt-Feedback |
-| E3 | „Was passierte bei Tick N?“ (N existiert) | Fokus auf Tick N; Zahlen stimmen mit `tick_mechanics` überein |
-| E4 | Faktor-Frage („Welcher Faktor hat sich geändert?“) | Endzustände/Verlauf aus `timeseries/factors.csv` |
-| E5 | Szenario-Bezug („Was sagt das explorative Szenario?“) | Inhalt aus Top-3-Szenarien in `run_scenario.md`, nicht frei erfunden |
-| E6 | Zwei verschiedene Runs | Antworten unterscheiden sich sinnvoll (nicht generisch identisch) |
-| E7 | Sweep-Run (`sweeps/sweep_*`) | Tab **Abfrage** funktioniert; Kontext lädt ohne Fehler |
-| E8 | Expander **Artefakt-Checks** | Konsistenz-Hinweise sichtbar; keine fehlenden Pflicht-Artefakte |
-| E9 | Halluzinations-Check | Keine Kennzahlen in der Antwort, die weder in Artefakten noch im Szenario vorkommen |
-| E10 | CLI (optional): `python -m src.state_explorer --run-id …` | Gleiche grounded Qualität wie Dashboard-Tab |
+| # | Prüffall | Erwartung | Status |
+| - | -------- | --------- | ------ |
+| E1 | „Was ist in diesem Lauf passiert?“ | Antwort aus `run_scenario.md` + Kennzahlen aus `tick_mechanics` / `price_history` — keine erfundenen Werte | **erledigt** |
+| E2 | „Warum ist die Booking-Rate gefallen/gestiegen?“ | Bezug auf konkrete Ticks, Events (`[delta:…]`) oder Markt-Feedback | **erledigt** |
+| E3 | „Was passierte bei Tick N?“ (N existiert) | Fokus auf Tick N; Zahlen stimmen mit `tick_mechanics` überein | **erledigt** |
+| E4 | Faktor-Frage („Welcher Faktor hat sich geändert?“) | Endzustände/Verlauf aus `timeseries/factors.csv` | **erledigt** |
+| E5 | Szenario-Bezug („Was sagt das explorative Szenario?“) | Inhalt aus Top-3-Szenarien in `run_scenario.md`, nicht frei erfunden | **erledigt** |
+| E6 | Zwei verschiedene Runs | Antworten unterscheiden sich sinnvoll (nicht generisch identisch) | offen |
+| E7 | Sweep-Run (`sweeps/sweep_*`) | Tab **Abfrage** funktioniert; Kontext lädt ohne Fehler | offen |
+| E8 | Expander **Artefakt-Checks** | Konsistenz-Hinweise sichtbar; keine fehlenden Pflicht-Artefakte | offen |
+| E9 | Halluzinations-Check | Keine Kennzahlen in der Antwort, die weder in Artefakten noch im Szenario vorkommen | **erledigt** |
+| E10 | CLI (optional): `python -m src.state_explorer --run-id …` | Gleiche grounded Qualität wie Dashboard-Tab | offen |
 
-**Abnahme P5.7:** Alle Punkte E1–E9 dokumentiert durchgespielt (Notizen reichen); E10 optional.
+**Abnahme P5.7:** E1–E5 sowie E9 sind dokumentiert abgeschlossen (siehe [`explorer_validation.md`](explorer_validation.md)). Die Prüfungen E6, E7 und E8 stehen noch aus. E10 optional.
 
 ---
 
@@ -521,7 +521,7 @@ Automatisierte Tests (`tests/test_state_explorer.py`) decken Kontext-Laden und G
 
 ### C4
 
-- [ ] Faktordynamik, Emergenz, Explorer grounded (**P5.7 manuell geprüft**)
+- [x] Faktordynamik, Emergenz, Explorer grounded (**P5.7 manuell geprüft**)
 
 ### Coaching
 
@@ -534,7 +534,7 @@ Automatisierte Tests (`tests/test_state_explorer.py`) decken Kontext-Laden und G
 
 - [x] Run-Ordner vollständig: Szenario, Narrativ, Figures, Timeseries (s. [`scenario_runs.md`](scenario_runs.md))
 - [x] Dashboard zeigt Szenario prominent (P5)
-- [ ] Explorer ausgiebig manuell geprüft (P5.7, Checkliste oben)
+- [x] Explorer ausgiebig manuell geprüft (P5.7, Checkliste oben)
 
 ### Abgabe
 
@@ -554,7 +554,7 @@ Technische Abnahme aus Plan 1, **nach** P1–P5. Nur schließen, wenn Mechanik u
 | P6.G5 | Einkommen F4.2 → Divergenz | **erledigt** (in Segment-Divergenz-Test mit F4.2) |
 | P6.G6 | Agent-Narrative, Profile | Review |
 | P6.G7 | pytest grün | offen (264 grün, 3 Fails) |
-| P6.G8 | Explorer manuell geprüft (P5.7, E1–E9) | offen |
+| P6.G8 | Explorer manuell geprüft (P5.7) | teilweise (E1–E5, E9 dokumentiert) |
 
 Referenz: Anhang B2 in [`projectplan.md`](projectplan.md).
 
