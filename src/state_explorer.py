@@ -13,17 +13,16 @@ from src.checkpoint_manager import CheckpointManager
 from src.llm_client import OllamaClient, OllamaConfig
 from src.output_writer import OUTPUT_DIR
 
-EXPLORER_INSTRUCTIONS = """You are a simulation explorer for an aviation scenario run.
-Answer ONLY using the GROUND TRUTH DATA block below.
+EXPLORER_INSTRUCTIONS = """You are an expert data analyst and simulation explorer for an aviation foresight scenario.
+Your task is to answer the user's question comprehensively and helpfully using ONLY the GROUND TRUTH DATA block below.
 
-Rules:
-- Never invent numbers, ticks, prices, booking rates, or events.
-- If the answer is not contained in the data, reply exactly:
-  "Nicht in den Run-Daten enthalten."
-- Prefer tick_mechanics and structured run_summary over agent narratives.
-- Booking decisions use the prior tick market price; final ticket price is set after market feedback.
-- Cite tick numbers when referencing metrics.
-- Answer in the same language as the user question (German if the question is German).
+Rules for your answers:
+1. Be Detailed: Explain the 'why' and 'how' based on the data. Do not just give 1-sentence answers if the data allows for a deeper explanation.
+2. Grounding: Never invent numbers, ticks, prices, booking rates, or events. Only use what is in the data.
+3. Missing Data: If the answer cannot be deduced from the data at all, reply: "Das ist nicht in den Run-Daten enthalten."
+4. Structure: Use bullet points or short paragraphs for readability.
+5. Citations: Always cite the specific tick numbers (e.g. "Ab Tick 15...") when you reference metrics or events.
+6. Language: Answer in German (unless the user explicitly asks in another language).
 """
 
 
@@ -50,6 +49,7 @@ class RunExplorerContext:
     price_history: list[dict[str, Any]]
     factors_timeseries: list[dict[str, Any]]
     metadata: dict[str, Any]
+    run_scenario: dict[str, Any] | None
     focus_tick: int | None
     checkpoint_tick: int | None
     checkpoint_snapshot: dict[str, Any] | None
@@ -97,6 +97,35 @@ def _summarize_checkpoint(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _load_factors_timeseries(run_dir: Path) -> list[dict[str, Any]]:
+    """Load factor rows from JSON (legacy) or ``timeseries/factors.csv`` (standard)."""
+
+    json_path = run_dir / "factors_timeseries.json"
+    if json_path.is_file():
+        payload = _load_json(json_path, [])
+        if isinstance(payload, list):
+            return payload
+
+    csv_path = run_dir / "timeseries" / "factors.csv"
+    if not csv_path.is_file():
+        return []
+
+    import csv
+
+    rows: list[dict[str, Any]] = []
+    with csv_path.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            parsed: dict[str, Any] = dict(row)
+            tick_raw = parsed.get("tick")
+            if tick_raw not in (None, ""):
+                try:
+                    parsed["tick"] = int(tick_raw)
+                except ValueError:
+                    pass
+            rows.append(parsed)
+    return rows
+
+
 def load_run_context(
     run_id: str,
     *,
@@ -107,8 +136,10 @@ def load_run_context(
     tick_mechanics = _load_json(run_dir / "tick_mechanics.json", {"ticks": []})
     event_log = _load_json(run_dir / "event_log.json", [])
     price_history = _load_json(run_dir / "price_history.json", [])
-    factors_timeseries = _load_json(run_dir / "factors_timeseries.json", [])
+    factors_timeseries = _load_factors_timeseries(run_dir)
     metadata = _load_json(run_dir / "run_metadata.json", {})
+    run_scenario_raw = _load_json(run_dir / "run_scenario.json", None)
+    run_scenario = run_scenario_raw if isinstance(run_scenario_raw, dict) else None
 
     checkpoint_snapshot = None
     checkpoint_tick = None
@@ -127,6 +158,7 @@ def load_run_context(
         price_history=price_history,
         factors_timeseries=factors_timeseries,
         metadata=metadata,
+        run_scenario=run_scenario,
         focus_tick=focus_tick,
         checkpoint_tick=checkpoint_tick,
         checkpoint_snapshot=checkpoint_snapshot,
@@ -254,6 +286,24 @@ def build_grounded_context_block(context: RunExplorerContext) -> str:
         if factor_rows:
             lines.append("factors_timeseries:")
             lines.append(json.dumps(factor_rows, ensure_ascii=False, indent=2))
+
+    if context.run_scenario:
+        scenario_excerpt = {
+            "title": context.run_scenario.get("title"),
+            "summary": context.run_scenario.get("summary"),
+            "run_narrative": context.run_scenario.get("run_narrative")
+            or (context.run_scenario.get("narrative") or {}).get("run_narrative"),
+            "factor_profile": context.run_scenario.get("factor_profile")
+            or (context.run_scenario.get("narrative") or {}).get("factor_profile"),
+            "agent_digest": context.run_scenario.get("agent_digest")
+            or (context.run_scenario.get("narrative") or {}).get("agent_digest"),
+            "scenario_alignment": context.run_scenario.get("scenario_alignment"),
+            "scenarios": context.run_scenario.get("scenarios")
+            or (context.run_scenario.get("narrative") or {}).get("scenarios"),
+            "ground_truth": context.run_scenario.get("ground_truth"),
+        }
+        lines.append("run_scenario:")
+        lines.append(json.dumps(scenario_excerpt, ensure_ascii=False, indent=2))
 
     if context.checkpoint_snapshot is not None:
         lines.append(f"checkpoint_tick_{context.checkpoint_tick}:")

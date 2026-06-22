@@ -1,4 +1,4 @@
-"""Persistent population sampling and booking (M3).
+"""Persistent population sampling and booking.
 
 Individuals are created once, shifted by config rules each tick, then evaluated
 for booking deterministically from WTP + logit utility.
@@ -98,17 +98,46 @@ def _sample_lognormal(
     return float(np.clip(value, min_value, max_value))
 
 
-def _derive_price_sensitivity(labels: dict[str, bool]) -> float:
-    value = 0.5
-    if labels.get("business"):
-        value -= 0.2
-    if labels.get("price_sensitive"):
-        value += 0.3
-    if labels.get("eco_conscious"):
-        value += 0.05
-    if labels.get("frequent_flyer"):
-        value -= 0.3
-    return float(np.clip(value, 0.0, 1.0))
+def _assign_boolean_labels(
+    rng: np.random.Generator,
+    properties: PropertiesConfig,
+) -> dict[str, bool]:
+    """Assign boolean labels.
+
+  By default each label is drawn independently (a person may have several).
+  Properties sharing the same ``exclusive_group`` are mutually exclusive —
+  use only when segments are meant as personas, not overlapping traits.
+    """
+
+    labels: dict[str, bool] = {}
+    grouped: dict[str, list[IndividualProperty]] = {}
+    independent: list[IndividualProperty] = []
+
+    for prop in properties.individual_properties:
+        if prop.type != "boolean" or not prop.enabled:
+            continue
+        if prop.exclusive_group:
+            grouped.setdefault(prop.exclusive_group, []).append(prop)
+        else:
+            independent.append(prop)
+
+    for prop in independent:
+        prevalence = prop.prevalence if prop.prevalence is not None else 0.0
+        labels[prop.id] = bool(rng.random() < float(prevalence))
+
+    for group_props in grouped.values():
+        weights = [max(0.0, float(prop.prevalence or 0.0)) for prop in group_props]
+        total = sum(weights)
+        if total <= 0:
+            for prop in group_props:
+                labels[prop.id] = False
+            continue
+        probs = [weight / total for weight in weights]
+        chosen_idx = int(rng.choice(len(group_props), p=probs))
+        for index, prop in enumerate(group_props):
+            labels[prop.id] = index == chosen_idx
+
+    return labels
 
 
 def initialize_population(
@@ -129,12 +158,7 @@ def initialize_population(
     subst_prop = _get_individual_property(properties, "substitution_readiness")
 
     for person_id in range(total_pop):
-        labels: dict[str, bool] = {}
-        for prop in properties.individual_properties:
-            if prop.type != "boolean" or not prop.enabled:
-                continue
-            prevalence = prop.prevalence if prop.prevalence is not None else 0.0
-            labels[prop.id] = bool(rng.random() < float(prevalence))
+        labels = _assign_boolean_labels(rng, properties)
 
         if awareness_prop and awareness_prop.distribution == DistributionType.BETA:
             awareness = _sample_beta(
@@ -180,6 +204,14 @@ def initialize_population(
                 min_value=age_prop.min_value or 2.0,
                 max_value=age_prop.max_value or 90.0,
             ))
+        elif age_prop and age_prop.distribution == DistributionType.LOGNORMAL:
+            age = int(_sample_lognormal(
+                rng,
+                mean=age_prop.mean or 45.0,
+                std_dev=age_prop.std_dev or 15.0,
+                min_value=age_prop.min_value or 2.0,
+                max_value=age_prop.max_value or 90.0,
+            ))
         elif age_prop and age_prop.distribution == DistributionType.UNIFORM:
             age = int(rng.integers(age_prop.min_value or 2.0, (age_prop.max_value or 90.0) + 1))
         else:
@@ -192,19 +224,23 @@ def initialize_population(
         else:
             substitution_readiness = float(rng.uniform(0.1, 0.9))
 
-        if labels.get("business"):
-            wtp *= 1.25
-        if labels.get("frequent_flyer"):
-            wtp *= 1.5
-
         base_income = 1.0
-        if labels.get("business"):
-            base_income += 0.15
-        if labels.get("frequent_flyer"):
-            base_income += 0.2
-        if labels.get("price_sensitive"):
-            base_income -= 0.15
+        price_sensitivity = 0.5
+
+        for prop in properties.individual_properties:
+            if prop.type == "boolean" and labels.get(prop.id):
+                mods = prop.modifiers
+                if "wtp_multiplier" in mods:
+                    wtp *= mods["wtp_multiplier"]
+                if "substitution_readiness_multiplier" in mods:
+                    substitution_readiness *= mods["substitution_readiness_multiplier"]
+                if "base_income_delta" in mods:
+                    base_income += mods["base_income_delta"]
+                if "price_sensitivity_delta" in mods:
+                    price_sensitivity += mods["price_sensitivity_delta"]
+
         base_income = float(np.clip(base_income + rng.normal(0.0, 0.05), 0.5, 1.5))
+        price_sensitivity = float(np.clip(price_sensitivity, 0.0, 1.0))
 
         individuals.append(
             Individual(
@@ -214,7 +250,7 @@ def initialize_population(
                 wtp_eur=round(wtp, 2),
                 environmental_awareness=round(awareness, 4),
                 substitution_readiness=round(substitution_readiness, 4),
-                price_sensitivity=_derive_price_sensitivity(labels),
+                price_sensitivity=round(price_sensitivity, 4),
                 base_income_factor=round(base_income, 4),
                 income_factor=round(base_income, 4),
             )
@@ -311,7 +347,9 @@ def _booking_probability(
     carbon_tax: float,
     green_premium: float = DEFAULT_GREEN_PREMIUM,
     logit_threshold: float = DEFAULT_LOGIT_THRESHOLD,
+    saturation_penalty_factor: float = 1.0,
 ) -> bool:
+
     affordability_limit = (
         person.wtp_eur
         * person.income_factor
@@ -326,12 +364,13 @@ def _booking_probability(
     excess_carbon = max(0.0, carbon_tax - DEFAULT_CARBON_ECO_BASELINE)
     normalized_tax = excess_carbon / 100.0
     eco_penalty = person.environmental_awareness * normalized_tax
-    if person.price_sensitivity > HIGH_PRICE_SENSITIVITY_THRESHOLD:
-        eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY
+    if person.price_sensitivity > HIGH_PRICE_SENSITIVITY_THRESHOLD and normalized_tax > 0:
+        eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY * min(1.0, normalized_tax)
         
     substitution_penalty = person.substitution_readiness * normalized_price * 1.5
+    saturation_penalty = person.saturation_level * saturation_penalty_factor
 
-    utility = base_utility - price_penalty - eco_penalty - substitution_penalty
+    utility = base_utility - price_penalty - eco_penalty - substitution_penalty - saturation_penalty
     probability = float(1.0 / (1.0 + np.exp(-utility)))
     return bool(probability >= logit_threshold)
 
@@ -341,8 +380,13 @@ def evaluate_booking(
     *,
     ticket_price: float,
     carbon_tax: float,
+    properties: PropertiesConfig | None = None,
 ) -> tuple[list[Individual], PopulationStats]:
     """Evaluate booking decisions for persistent individuals."""
+
+    saturation = properties.saturation if properties is not None else None
+    booking_increase = saturation.booking_increase if saturation is not None else 0.6
+    penalty_factor = saturation.utility_penalty_factor if saturation is not None else 1.0
 
     booked_individuals: list[Individual] = []
     for person in individuals:
@@ -350,21 +394,43 @@ def evaluate_booking(
             person,
             ticket_price=ticket_price,
             carbon_tax=carbon_tax,
+            saturation_penalty_factor=penalty_factor,
         )
-        booked_individuals.append(person.model_copy(update={"booked": bool(booked)}))
+        update: dict[str, object] = {"booked": bool(booked)}
+        if booked:
+            new_saturation = min(1.0, person.saturation_level + booking_increase)
+            update["saturation_level"] = round(new_saturation, 4)
+        booked_individuals.append(person.model_copy(update=update))
 
-    return booked_individuals, aggregate_population_stats(booked_individuals)
+    return booked_individuals, aggregate_population_stats(booked_individuals, properties=properties)
 
 
-def aggregate_population_stats(individuals: list[Individual]) -> PopulationStats:
-    """Aggregate booking stats overall and per legacy segment label."""
+def aggregate_population_stats(
+    individuals: list[Individual],
+    properties: "PropertiesConfig | None" = None,
+) -> PopulationStats:
+    """Aggregate booking stats overall and per segment label.
+
+    When *properties* is provided, segments are derived dynamically from all
+    boolean ``individual_properties`` (P2.2 SSOT).  Falls back to the legacy
+    ``SEGMENT_LABEL_MAP`` when called without properties.
+    """
 
     total_pop = len(individuals)
     total_booked = sum(1 for person in individuals if person.booked)
     total_income_factor = sum(person.income_factor for person in individuals)
 
+    if properties is not None:
+        segment_label_pairs = [
+            (prop.id, prop.id)
+            for prop in properties.individual_properties
+            if prop.type == "boolean" and prop.enabled
+        ]
+    else:
+        segment_label_pairs = list(SEGMENT_LABEL_MAP.items())
+
     segments: dict[str, SegmentStats] = {}
-    for segment_id, label_id in SEGMENT_LABEL_MAP.items():
+    for segment_id, label_id in segment_label_pairs:
         members = [person for person in individuals if person.labels.get(label_id)]
         booked = sum(1 for person in members if person.booked)
         count = len(members)
@@ -436,6 +502,18 @@ def update_income_factors(
     ]
 
 
+def get_decay_rate(person: Individual, properties: PropertiesConfig) -> float:
+    found_decay: float | None = None
+    for prop in properties.individual_properties:
+        if prop.type == "boolean" and person.labels.get(prop.id):
+            if prop.saturation_decay is not None:
+                if found_decay is None:
+                    found_decay = prop.saturation_decay
+                else:
+                    found_decay = max(found_decay, prop.saturation_decay)
+    return found_decay if found_decay is not None else 0.2
+
+
 def run_population_tick(
     properties: PropertiesConfig,
     config: PopulationConfig,
@@ -446,8 +524,9 @@ def run_population_tick(
     factors: dict[str, FactorState],
     system_properties: dict[str, float],
     seed: int = 42,
+    current_tick: int = 0,
 ) -> tuple[list[Individual], PopulationStats]:
-    """Full M3 population pipeline for one tick."""
+    """Full population pipeline for one tick."""
 
     if not individuals:
         individuals = initialize_population(properties, config, seed=seed)
@@ -456,17 +535,13 @@ def run_population_tick(
     if target_population > len(individuals):
         needed = target_population - len(individuals)
         temp_config = config.model_copy(update={"total_population": needed})
-        new_seed = seed + len(individuals)  # unique seed for new batch
+        new_seed = seed + len(individuals)
         new_individuals = initialize_population(properties, temp_config, seed=new_seed)
-        
-        # fix IDs so they don't overlap
         start_id = max((p.id for p in individuals), default=-1) + 1
         for i, person in enumerate(new_individuals):
             new_individuals[i] = person.model_copy(update={"id": start_id + i})
-            
         individuals.extend(new_individuals)
     elif target_population < len(individuals):
-        # Shrink population randomly
         rng = _rng(seed + len(individuals))
         to_keep = rng.choice(individuals, size=target_population, replace=False)
         individuals = list(to_keep)
@@ -479,11 +554,19 @@ def run_population_tick(
         system_properties,
     )
     individuals = update_income_factors(shifted, income_index)
+    
+    individuals = [
+        person.model_copy(
+            update={"saturation_level": max(0.0, round(person.saturation_level - get_decay_rate(person, properties), 4))}
+        )
+        for person in individuals
+    ]
 
     return evaluate_booking(
         individuals,
         ticket_price=ticket_price,
         carbon_tax=carbon_tax,
+        properties=properties,
     )
 
 

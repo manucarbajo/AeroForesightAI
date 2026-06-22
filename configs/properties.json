@@ -220,26 +220,72 @@
         "baseline": 1.0,
         "rules": []
       }
+    },
+    {
+      "id": "airport_fee",
+      "type": "numeric",
+      "unit": "EUR",
+      "description": "Airport Fee",
+      "source": "trajectory",
+      "price_component_type": "fee",
+      "trajectory": {
+        "baseline": 0.0,
+        "rules": []
+      }
     }
   ],
   "individual_properties": [
     {
+      "id": "family",
+      "type": "boolean",
+      "enabled": true,
+      "prevalence": 0.1,
+      "saturation_decay": 0.2,
+      "modifiers": {
+        "wtp_multiplier": 0.9,
+        "base_income_delta": 0.0,
+        "price_sensitivity_delta": 0.0,
+        "substitution_readiness_multiplier": 1.0
+      }
+    },
+    {
       "id": "business",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.3
+      "prevalence": 0.08,
+      "saturation_decay": 0.3,
+      "modifiers": {
+        "wtp_multiplier": 1.25,
+        "base_income_delta": 0.15,
+        "price_sensitivity_delta": -0.2,
+        "substitution_readiness_multiplier": 1.0
+      }
     },
     {
       "id": "price_sensitive",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.9
+      "prevalence": 0.3,
+      "saturation_decay": 0.15,
+      "modifiers": {
+        "base_income_delta": -0.15,
+        "price_sensitivity_delta": 0.3,
+        "wtp_multiplier": 1.0,
+        "substitution_readiness_multiplier": 1.0
+      }
     },
     {
       "id": "eco_conscious",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.2
+      "prevalence": 0.6,
+      "saturation_decay": 0.05,
+      "modifiers": {
+        "price_sensitivity_delta": 0.05,
+        "wtp_multiplier": 1.2,
+        "base_income_delta": 0.0,
+        "substitution_readiness_multiplier": 1.0
+      }
     },
     {
       "id": "environmental_awareness",
@@ -256,7 +302,7 @@
       "type": "distribution",
       "enabled": true,
       "distribution": "lognormal",
-      "mean": 120.0,
+      "mean": 150.0,
       "std_dev": 0.35,
       "min_value": 50.0,
       "max_value": 500.0
@@ -285,7 +331,14 @@
       "id": "frequent_flyer",
       "type": "boolean",
       "enabled": true,
-      "prevalence": 0.05
+      "prevalence": 0.03,
+      "saturation_decay": 1.0,
+      "modifiers": {
+        "wtp_multiplier": 1.5,
+        "base_income_delta": 0.2,
+        "substitution_readiness_multiplier": 0.4,
+        "price_sensitivity_delta": -0.3
+      }
     }
   ],
   "shift_rules": [
@@ -404,7 +457,7 @@
       "factor_id": "F1",
       "when": {
         "metric": "booking_rate",
-        "below": 0.45
+        "below": 0.25
       },
       "effect": {
         "set_state": "F1.2"
@@ -416,7 +469,7 @@
       "factor_id": "F1",
       "when": {
         "metric": "booking_rate",
-        "above": 0.68
+        "above": 0.35
       },
       "effect": {
         "set_state": "F1.1"
@@ -566,6 +619,42 @@
         "set_state": "F7.1"
       },
       "priority": 3
+    },
+    {
+      "id": "f1_recession_demand_drop",
+      "factor_id": "F1",
+      "when": {
+        "factor": "F4",
+        "state": "F4.2"
+      },
+      "effect": {
+        "set_state": "F1.2"
+      },
+      "priority": 6
+    },
+    {
+      "id": "f1_alternatives_substitution",
+      "factor_id": "F1",
+      "when": {
+        "factor": "F5",
+        "state": "F5.2"
+      },
+      "effect": {
+        "set_state": "F1.2"
+      },
+      "priority": 5
+    },
+    {
+      "id": "f6_tech_breakthrough_acceptance",
+      "factor_id": "F6",
+      "when": {
+        "factor": "F3",
+        "state": "F3.2"
+      },
+      "effect": {
+        "set_state": "F6.1"
+      },
+      "priority": 3
     }
   ],
   "market_rules": [
@@ -579,11 +668,12 @@
         "update_property": "provider_markup",
         "publish_property": "ticket_price",
         "compose": "cost_pressure + provider_markup",
-        "target_booking_rate": 0.7,
+        "target_booking_rate": 0.37,
         "markup_adjustment_per_tick": 0.08,
         "max_price_change_fraction": 0.08,
         "damping": 0.85,
-        "booking_weight": 0.6
+        "booking_weight": 0.6,
+        "marginal_cost_fraction": 0.25
       }
     }
   ],
@@ -610,11 +700,16 @@
   },
   "market_feedback": {
     "enabled": true,
-    "target_booking_rate": 0.7,
+    "target_booking_rate": 0.37,
+    "marginal_cost_fraction": 0.25,
     "markup_adjustment_per_tick": 0.08,
     "max_price_change_fraction": 0.08,
     "damping": 0.85,
     "booking_weight": 0.6
+  },
+  "saturation": {
+    "booking_increase": 0.6,
+    "utility_penalty_factor": 1.0
   },
   "regulatory_influences": [
     {

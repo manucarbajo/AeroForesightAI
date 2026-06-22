@@ -25,7 +25,7 @@ from src.models.cib_models import (
 )
 from src.models.state_models import SimulationState
 from src.config_loader import build_initial_state
-from src.nodes.cib_extractor_node import CIBExtractorNode, _parse_cib_response
+from src.legacy.cib_extractor_node import CIBExtractorNode, _parse_cib_response
 
 
 # ---------------------------------------------------------------------------

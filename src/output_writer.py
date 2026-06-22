@@ -46,7 +46,6 @@ def _narrative_events_for_round(state, round_number: int) -> list[EventLogEntry]
         ),
     )
 
-# Projekt-Root relativ zu dieser Datei (…/src/output_writer.py → Repo-Root)
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = str(_REPO_ROOT / "outputs")
 
@@ -107,13 +106,9 @@ def save_event_log(
     """
     ensure_output_dir()
     filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
-    
-    # Konvertiere alle Events zu Dictionaries für JSON
     events_data = [event.model_dump() for event in events]
-    
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(events_data, f, indent=2, ensure_ascii=False)
-    
     return filepath
 
 
@@ -185,7 +180,9 @@ def save_population_individuals(
             "substitution_readiness": data.get("substitution_readiness"),
             "price_sensitivity": data.get("price_sensitivity"),
             "income_factor": data.get("income_factor", 1.0),
+            "saturation_level": data.get("saturation_level", 0.0),
             "booked": data.get("booked"),
+            "last_booked_tick": data.get("last_booked_tick"),
         }
         for label_id, active in (data.get("labels") or {}).items():
             row[label_id] = active
@@ -231,7 +228,9 @@ def append_individuals_history(
             "substitution_readiness": data.get("substitution_readiness"),
             "price_sensitivity": data.get("price_sensitivity"),
             "income_factor": data.get("income_factor", 1.0),
+            "saturation_level": data.get("saturation_level", 0.0),
             "booked": data.get("booked"),
+            "last_booked_tick": data.get("last_booked_tick"),
         }
         for label_id, active in (data.get("labels") or {}).items():
             row[label_id] = active
@@ -336,13 +335,9 @@ def save_price_history(
     """
     ensure_output_dir()
     filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
-    
-    # Konvertiere alle Einträge zu Dictionaries für JSON
     price_data = [entry.model_dump() for entry in price_entries]
-    
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(price_data, f, indent=2, ensure_ascii=False)
-    
     return filepath
 
 def save_round_history(
@@ -388,6 +383,8 @@ def save_run_metadata(
     metadata = {
         "timestamp": datetime.now(UTC).isoformat(),
         "run_id": run_id or (run_dir.name if run_dir is not None else None),
+        "simulation_name": getattr(args, "simulation_name", None),
+        "simulation_description": getattr(args, "simulation_description", None),
         "model": args.model,
         "base_url": args.base_url,
         "temperature": args.temperature,
@@ -421,7 +418,6 @@ def save_segment_analysis(
     ensure_output_dir()
     filepath = _resolve_output_path(filename, output_subdir, run_dir=run_dir)
 
-    # Gruppiere nach Rundennummer
     rounds: dict = {}
     for round_result in round_results:
         round_number = round_result.round_number
@@ -430,7 +426,6 @@ def save_segment_analysis(
                 "tick": round_number,
                 "agents": {}
             }
-        # Alle Agenten speichern
         for response in round_result.agent_responses:
             rounds[round_number]["agents"][response.agent_id] = {
                 "reasoning": response.reasoning,
@@ -767,22 +762,51 @@ def _format_agent_reasoning_block(agent_responses) -> list[str]:
     if not agent_responses:
         return []
 
-    lines = ["", "#### Agenten-Einschätzung (LLM-Begründung)", ""]
+    lines = ["", "#### Agenten-Begründungen & Handlungen", ""]
     for resp in agent_responses:
         label = _AGENT_LABELS.get(resp.agent_id, resp.agent_id)
-        first_line = resp.reasoning.strip().splitlines()[0] if resp.reasoning else "kein Reasoning"
-        lines.append(f"- **{label}:** {first_line}")
+        
+        lines.append(f"**{label}**")
+        
+        if resp.reasoning:
+            reasoning_formatted = "\n".join([f"> {line}" for line in resp.reasoning.strip().splitlines()])
+            lines.append(reasoning_formatted)
+        else:
+            lines.append("> *(Keine Begründung angegeben)*")
+            
+        actions_line = []
+        if hasattr(resp, "actions") and resp.actions:
+            actions_list = [a for a in resp.actions if a.upper() != "NO_OP"]
+            if actions_list:
+                actions_line.append(f"**Aktionen:** {', '.join(actions_list)}")
+                
+        if hasattr(resp, "state_changes") and resp.state_changes:
+            changes_list = []
+            for sc in resp.state_changes:
+                if isinstance(sc, dict):
+                    f_id = sc.get('factor_id')
+                    s_id = sc.get('proposed_state')
+                    changes_list.append(f"`{f_id}→{s_id}`")
+                elif hasattr(sc, "factor_id"):
+                    changes_list.append(f"`{sc.factor_id}→{sc.proposed_state}`")
+            if changes_list:
+                actions_line.append(f"**Faktor-Vorschläge:** {', '.join(changes_list)}")
+                
+        if actions_line:
+            lines.append("\n" + " | ".join(actions_line))
+            
+        lines.append("")
     return lines
 
 
-def _format_agent_events_block(events: list[EventLogEntry]) -> list[str]:
+def _format_agent_events_block(events) -> list[str]:
     if not events:
         return []
 
-    lines = ["", "#### Agenten-Events (Meldung pro Rolle)", ""]
+    lines = ["", "#### Öffentliche Events & Markteffekte", ""]
     for event in events:
         label = _AGENT_LABELS.get(event.source_agent, event.source_agent)
-        lines.append(f"- **{label}:** {event.description}")
+        lines.append(f"- **[{label}]** {event.description}")
     return lines
 
 
@@ -861,11 +885,9 @@ def save_final_narrative(
     start_tick = 1 if state.clock.current_tick >= 1 else None
     end_tick = state.clock.current_tick if state.clock.current_tick >= 1 else None
 
-    # Titel
     lines.append(f"# Simulationsbericht: {state.config.name}")
     lines.append(f"\n{state.config.description}\n")
 
-    # Überblick
     lines.append("## Überblick")
     lines.append(f"- **Simulierte Ticks:** {state.clock.current_tick} / {state.clock.max_ticks}")
     if start_tick is not None and end_tick is not None:
@@ -922,7 +944,6 @@ def save_final_narrative(
         tick = int(event["tick"])
         scheduled_by_tick.setdefault(tick, []).append(event)
 
-    # Tick-Übersicht
     lines.append("\n## Tick-Übersicht")
     round_numbers = sorted(
         {
@@ -962,13 +983,11 @@ def save_final_narrative(
         narrative_events = _narrative_events_for_round(state, round_number)
         lines.extend(_format_agent_events_block(narrative_events))
 
-    # Finaler Umweltzustand
     lines.append("\n## Finaler Umweltzustand")
     for factor_id, factor in state.environment.factors.items():
         state_label = factor.possible_states.get(factor.current_state, factor.current_state)
         lines.append(f"- **{factor.name}:** {factor.current_state} – {state_label}")
 
-    # Population Stats
     if hasattr(state, "population_stats") and state.population_stats:
         last_stats = state.population_stats[-1]
         lines.append("\n## Populations-Statistik (Aktueller Stand)")

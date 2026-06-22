@@ -143,17 +143,19 @@ class SaveFinalNarrativeTests(unittest.TestCase):
             narrative_path = save_final_narrative(state, run_dir=run_dir)
             content = Path(narrative_path).read_text(encoding="utf-8")
 
-        self.assertIn("**Provider:** Provider invests in SAF.", content)
-        self.assertIn("**Regulator:** Regulator launches awareness campaign.", content)
-        self.assertIn("**Consumer:** Consumer books eco-conscious flights.", content)
-        self.assertIn("**Provider:** Airline expands SAF logistics.", content)
-        self.assertIn("**Regulator:** Commission launches SAF awareness campaign.", content)
-        self.assertIn("**Consumer:** Consumers increase eco-conscious bookings.", content)
+        # Agent reasoning is rendered as a blockquote under the reasoning block (P3.6)
+        self.assertIn("> Provider invests in SAF.", content)
+        self.assertIn("> Regulator launches awareness campaign.", content)
+        self.assertIn("> Consumer books eco-conscious flights.", content)
+        # Public events are rendered as a bullet list with a role tag
+        self.assertIn("**[Provider]** Airline expands SAF logistics.", content)
+        self.assertIn("**[Regulator]** Commission launches SAF awareness campaign.", content)
+        self.assertIn("**[Consumer]** Consumers increase eco-conscious bookings.", content)
         self.assertNotIn("market: Market update", content)
         self.assertIn("Leseschlüssel", content)
         self.assertIn("#### Segment-Buchung", content)
-        self.assertIn("#### Agenten-Einschätzung", content)
-        self.assertIn("#### Agenten-Events", content)
+        self.assertIn("#### Agenten-Begründungen & Handlungen", content)
+        self.assertIn("#### Öffentliche Events & Markteffekte", content)
         self.assertIn("220/300 gebucht", content)
 
     def test_tick_mechanics_json_structure(self) -> None:

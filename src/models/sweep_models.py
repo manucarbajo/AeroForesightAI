@@ -43,6 +43,7 @@ class SweepConfig(BaseModel):
     description: str
     rationale: str = ""  # Why these parameters were chosen
     max_ticks: int = 50
+    base_price: float | None = None  # P2.3: override price_model.base_price
     property_overrides: list[PropertyOverride] = Field(default_factory=list)
     factor_overrides: list[FactorOverride] = Field(default_factory=list)
     milestones: list[MilestoneCheck] = Field(default_factory=list)

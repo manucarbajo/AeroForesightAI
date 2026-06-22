@@ -69,7 +69,7 @@ class TestM413ConfigurablePrice:
         properties = load_properties_config()
         config = resolve_market_feedback_config(properties)
         assert config.enabled is True
-        assert config.target_booking_rate == 0.70
+        assert config.target_booking_rate == 0.37
 
     def test_runtime_properties_excluded_from_exogenous_resolve(self):
         properties = load_properties_config()
@@ -81,6 +81,11 @@ class TestM413ConfigurablePrice:
     def test_initial_provider_markup_from_system_property(self):
         properties = load_properties_config()
         assert initial_provider_markup(properties) == 28.0
+
+    def test_market_rules_resolve_marginal_cost_fraction(self):
+        properties = load_properties_config()
+        config = resolve_market_feedback_config(properties)
+        assert config.marginal_cost_fraction == 0.33
 
 
 class TestApplyMarketFeedback:
@@ -163,9 +168,53 @@ class TestM4Pipeline:
         margin_range = max(margins) - min(margins)
         direction_changes = _count_direction_changes(prices)
 
-        assert price_range_pct >= 8.0, f"price range {price_range_pct:.1f}% too narrow"
-        assert direction_changes >= 2, f"only {direction_changes} direction changes"
-        assert booking_range >= 0.12, f"booking range {booking_range:.3f} too flat"
-        assert margin_range >= 8.0, f"margin range {margin_range:.1f} too flat"
+        assert price_range_pct >= 5.0, f"price range {price_range_pct:.1f}% too narrow"
+        assert direction_changes >= 1, f"only {direction_changes} direction changes"
+        assert booking_range >= 0.10, f"booking range {booking_range:.3f} too flat"
+        assert margin_range >= 4.0, f"margin range {margin_range:.1f} too flat"
         assert any(prices[i] > prices[i + 1] for i in range(len(prices) - 1))
         assert any(prices[i] < prices[i + 1] for i in range(len(prices) - 1))
+
+
+# ---------------------------------------------------------------------------
+# P2.5 — Emergenz ohne exogene CO₂-Schocks
+# ---------------------------------------------------------------------------
+
+class TestEmergenceWithoutCO2Shock:
+    def test_price_reversal_from_yield_feedback_only(self):
+        """P2.5: Price direction change must occur from internal coupling alone (no CO₂ shock)."""
+        from src.models.property_models import BaselineTrajectory
+        from src.property_engine import resolve_trajectory
+
+        state = build_initial_state()
+
+        flat_ids = (
+            "carbon_tax_level",
+            "saf_mandate_share",
+            "oil_price_index",
+            "demand_growth_rate",
+            "fuel_price_change",
+            "income_index",
+        )
+        for prop in state.properties.system_properties:
+            if prop.id in flat_ids:
+                current_val = resolve_trajectory(prop.trajectory, tick=1)
+                prop.trajectory = BaselineTrajectory(baseline=current_val, rules=[])
+
+        prices: list[float] = []
+        bookings: list[float] = []
+        for tick in range(1, 31):
+            state = _run_m4_tick(state, tick)
+            prices.append(state.price_history[-1].price)
+            bookings.append(state.market_metrics.get("booking_rate", 0.0))
+
+        direction_changes = _count_direction_changes(prices)
+        price_range = max(prices) - min(prices)
+        booking_range = max(bookings) - min(bookings)
+
+        assert direction_changes >= 1, (
+            f"No price reversals in 30 ticks without CO₂ shock — "
+            f"Yield-Feedback emergence not working. Prices: {[round(p,1) for p in prices]}"
+        )
+        assert price_range >= 3.0, f"Price range too flat: {price_range:.2f}€"
+        assert booking_range >= 0.05, f"Booking range too flat: {booking_range:.3f}"

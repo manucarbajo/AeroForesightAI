@@ -52,6 +52,7 @@ class SystemProperty(BaseModel):
     unit: str = ""
     description: str = ""
     source: Literal["trajectory", "runtime", "computed"] = "trajectory"
+    price_component_type: Literal["none", "tax", "fee"] = "none"
     min_value: float | None = None
     max_value: float | None = None
     trajectory: BaselineTrajectory | StepFunctionTrajectory = Field(
@@ -73,11 +74,20 @@ class SystemProperty(BaseModel):
         return data
 
 
+class SaturationConfig(BaseModel):
+    """Continuous saturation after booking (P2.1)."""
+
+    booking_increase: float = 0.6
+    utility_penalty_factor: float = 1.0
+
+
 class IndividualProperty(BaseModel):
     id: str
     type: Literal["boolean", "distribution", "numeric"] = "boolean"
     prevalence: float | None = None
     enabled: bool = True
+    exclusive_group: str | None = None
+    saturation_decay: float | None = None
     distribution: DistributionType | None = None
     mean: float | None = None
     std_dev: float | None = None
@@ -85,11 +95,10 @@ class IndividualProperty(BaseModel):
     max_value: float | None = None
     alpha: float | None = None
     beta: float | None = None
+    modifiers: dict[str, float] = Field(default_factory=dict)
 
 
 class ShiftRule(BaseModel):
-    """M3/M4 placeholder for population shift rules."""
-
     id: str = ""
     when: dict[str, Any] = Field(default_factory=dict)
     effect: dict[str, Any] = Field(default_factory=dict)
@@ -97,13 +106,11 @@ class ShiftRule(BaseModel):
 
 
 class FactorRuleEffect(BaseModel):
-    """M5: set a factor to a concrete descriptor state."""
-
     set_state: str
 
 
 class FactorRule(BaseModel):
-    """M5: deterministic factor transition from runtime metrics / properties."""
+    """Deterministic factor transition triggered by runtime metrics / system properties."""
 
     id: str
     factor_id: str
@@ -114,7 +121,7 @@ class FactorRule(BaseModel):
 
 
 class RegulatoryInfluence(BaseModel):
-    """M6: One EU/national regulatory cost driver (e.g. EU-ETS, RefuelEU)."""
+    """One regulatory cost driver (e.g. EU-ETS, RefuelEU) with conditional activation."""
 
     id: str
     description: str = ""
@@ -140,7 +147,7 @@ class RegulatoryInfluence(BaseModel):
 
 
 class PriceCoefficientsConfig(BaseModel):
-    """M4.13: configurable cost/price formula weights (no magic numbers in code)."""
+    """Configurable cost/price formula weights."""
 
     carbon_per_tonne: float = 0.001
     saf_premium_factor: float = 0.5
@@ -151,7 +158,7 @@ class PriceCoefficientsConfig(BaseModel):
 
 
 class PriceModelConfig(BaseModel):
-    """M4: ticket cost from fixed base + policy properties (no compounding on prior price)."""
+    """Ticket cost from fixed base + policy properties."""
 
     base_price: float = 100.0
     initial_markup: float = 0.0
@@ -169,18 +176,20 @@ class PriceModelConfig(BaseModel):
 
 
 class MarketFeedbackConfig(BaseModel):
-    """M4: provider markup adjusts toward target booking rate."""
+    """Provider markup adjusts each tick toward the target booking rate."""
 
     enabled: bool = True
-    target_booking_rate: float = 0.75
-    markup_adjustment_per_tick: float = 0.06
+    # Target share of population booking per tick (calibrated ~DE annual flight rate).
+    target_booking_rate: float = 0.37
+    markup_adjustment_per_tick: float = 0.08
     max_price_change_fraction: float = 0.08
     damping: float = 0.85
     booking_weight: float = 0.6
+    marginal_cost_fraction: float = 0.33
 
 
 class MarketRule(BaseModel):
-    """M4.13: declarative market feedback (same when/effect pattern as shift_rules)."""
+    """Declarative market feedback rule (same when/effect pattern as shift_rules)."""
 
     id: str
     when: dict[str, Any] = Field(default_factory=dict)
@@ -196,6 +205,7 @@ class PropertiesConfig(BaseModel):
     market_rules: list[MarketRule] = Field(default_factory=list)
     price_model: PriceModelConfig = Field(default_factory=PriceModelConfig)
     market_feedback: MarketFeedbackConfig = Field(default_factory=MarketFeedbackConfig)
+    saturation: SaturationConfig = Field(default_factory=SaturationConfig)
 
     def system_property_ids(self) -> list[str]:
         return [prop.id for prop in self.system_properties]

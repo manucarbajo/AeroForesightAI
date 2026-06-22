@@ -37,11 +37,12 @@ def resolve_market_feedback_config(properties: PropertiesConfig) -> MarketFeedba
         enabled = when.get("enabled", True)
         return MarketFeedbackConfig(
             enabled=bool(enabled),
-            target_booking_rate=float(effect.get("target_booking_rate", 0.75)),
-            markup_adjustment_per_tick=float(effect.get("markup_adjustment_per_tick", 0.06)),
+            target_booking_rate=float(effect.get("target_booking_rate", 0.37)),
+            markup_adjustment_per_tick=float(effect.get("markup_adjustment_per_tick", 0.08)),
             max_price_change_fraction=float(effect.get("max_price_change_fraction", 0.08)),
             damping=float(effect.get("damping", 0.85)),
             booking_weight=float(effect.get("booking_weight", 0.6)),
+            marginal_cost_fraction=float(effect.get("marginal_cost_fraction", 0.33)),
         )
     return properties.market_feedback
 

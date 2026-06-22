@@ -115,6 +115,34 @@ def _write_sample_run(run_dir: Path, run_id: str) -> None:
         json.dumps({"simulation_name": "Test Run"}),
         encoding="utf-8",
     )
+    (run_dir / "run_scenario.json").write_text(
+        json.dumps(
+            {
+                "title": "Lauf-Narrativ",
+                "summary": "Faktorbasierter Lauf.",
+                "run_narrative": "F1 wechselt im Verlauf.",
+                "factor_profile": {
+                    "end": [
+                        {
+                            "factor_id": "F1",
+                            "factor_name": "Nachfrage",
+                            "state_id": "F1.1",
+                            "state_label": "Boom",
+                        }
+                    ]
+                },
+                "scenarios": [
+                    {
+                        "rank": 1,
+                        "title": "Fortsetzung: Business as usual",
+                        "what_could_happen": "Der Markt bleibt auf vertrautem Pfad.",
+                    }
+                ],
+                "ground_truth": {"booking_rate_end": 0.62},
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 class TestStateExplorer:
@@ -131,6 +159,27 @@ class TestStateExplorer:
             assert context.run_id == run_id
             assert context.focus_tick == 15
             assert len(context.tick_mechanics["ticks"]) == 1
+        finally:
+            shutil.rmtree(tmpdir)
+
+    def test_load_factors_from_csv(self):
+        tmpdir = Path(tempfile.mkdtemp(prefix="explorer_factors_"))
+        try:
+            run_id = "run_factors_csv"
+            run_dir = tmpdir / run_id
+            _write_sample_run(run_dir, run_id)
+            ts_dir = run_dir / "timeseries"
+            ts_dir.mkdir(parents=True, exist_ok=True)
+            (ts_dir / "factors.csv").write_text(
+                "tick,F1,F2\n15,F1.1,F2.2\n",
+                encoding="utf-8",
+            )
+            context = load_run_context(run_id, focus_tick=15, outputs_root=tmpdir)
+            assert len(context.factors_timeseries) == 1
+            assert context.factors_timeseries[0]["F2"] == "F2.2"
+            block = build_grounded_context_block(context)
+            assert "factors_timeseries" in block
+            assert "F2.2" in block
         finally:
             shutil.rmtree(tmpdir)
 
@@ -162,6 +211,19 @@ class TestStateExplorer:
             assert "Never invent numbers" in llm.last_prompt
             assert "booking_rate" in llm.last_prompt
             assert "132.5" in llm.last_prompt
+        finally:
+            shutil.rmtree(tmpdir)
+
+    def test_grounded_context_contains_run_scenario(self):
+        tmpdir = Path(tempfile.mkdtemp(prefix="explorer_scenario_"))
+        try:
+            run_id = "run_test_explorer"
+            _write_sample_run(tmpdir / run_id, run_id)
+            context = load_run_context(run_id, outputs_root=tmpdir)
+            assert context.run_scenario is not None
+            block = build_grounded_context_block(context)
+            assert "run_scenario" in block
+            assert "F1" in block
         finally:
             shutil.rmtree(tmpdir)
 

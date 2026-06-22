@@ -27,7 +27,7 @@ class PopulationConfig(BaseModel):
     default_distribution: DistributionType = DistributionType.NORMAL
 
 
-# Legacy segment ids in agents.json -> multi-label property ids in properties.json
+# Fallback-Mapping für Legacy-Segmentnamen (agents.json → properties.json label-IDs)
 SEGMENT_LABEL_MAP: dict[str, str] = {
     "business": "business",
     "leisure_price_sensitive": "price_sensitive",
@@ -36,8 +36,6 @@ SEGMENT_LABEL_MAP: dict[str, str] = {
 
 
 class Individual(BaseModel):
-    """One persistent person across ticks (M3)."""
-
     id: int
     age: int
     labels: dict[str, bool] = Field(default_factory=dict)
@@ -49,4 +47,4 @@ class Individual(BaseModel):
     income_factor: float = 1.0
     booked: bool = False
     applied_shift_rules: list[str] = Field(default_factory=list)
-
+    saturation_level: float = Field(default=0.0, ge=0.0, le=1.0)

@@ -18,6 +18,7 @@ from src.checkpoint_manager import CheckpointManager
 from src.config_loader import build_initial_state
 from src.llm_client import OllamaClient, OllamaConfig
 from src.nodes.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
+from src.run_scenario_generator import generate_and_save_run_scenario
 from src.output_writer import (
     create_run_id,
     resolve_run_output_dir,
@@ -115,6 +116,16 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--no-protocol", action="store_true", help="Do not generate protocol output.")
     parser.add_argument("--no-scenarios", action="store_true", help="Do not generate scenarios from CIB matrix.")
     parser.add_argument(
+        "--no-run-scenario",
+        action="store_true",
+        help="Do not generate P3 run_scenario.md/json after the run.",
+    )
+    parser.add_argument(
+        "--generate-run-scenario-only",
+        action="store_true",
+        help="Only regenerate run_scenario.md/json for --run-id (no simulation).",
+    )
+    parser.add_argument(
         "--mock-llm",
         action="store_true",
         help="Use the Studio mock LLM backend (or LocalOllama/transformers via env) instead of OllamaClient.",
@@ -186,6 +197,18 @@ def _save_run_outputs(
     segment_analysis_path = save_segment_analysis(state.round_results, run_dir=run_dir)
     final_narrative_path = save_final_narrative(state, run_dir=run_dir)
     tick_mechanics_path = save_tick_mechanics(state, run_dir=run_dir)
+    if state.cib_matrix is not None:
+        from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
+        
+        checker = ConsistencyChecker(state.cib_matrix)
+        final_factors = {k: v.current_state for k, v in state.environment.factors.items() if v.current_state}
+        scenario_desc = ScenarioDescriptor(factor_states=final_factors)
+        consistency_score = checker.compute_consistency_score(scenario_desc)
+        
+        if state.cib_matrix.metadata is None:
+            state.cib_matrix.metadata = {}
+        state.cib_matrix.metadata["consistency_score"] = consistency_score
+
     cib_matrix_path = save_cib_matrix(state, run_dir=run_dir)
 
     protocol_path = None
@@ -215,6 +238,19 @@ def _save_run_outputs(
             run_dir=run_dir,
         )
 
+    run_scenario_md_path = None
+    run_scenario_json_path = None
+    if not getattr(args, "no_run_scenario", False):
+        scenario_result = generate_and_save_run_scenario(
+            run_id,
+            llm,
+            run_dir=run_dir,
+            prefer_llm=not bool(getattr(args, "deterministic_only", False)),
+        )
+        paths = scenario_result.get("paths") or {}
+        run_scenario_md_path = paths.get("markdown")
+        run_scenario_json_path = paths.get("json")
+
     return {
         "run_id": run_id,
         "output_dir": str(run_dir),
@@ -230,6 +266,8 @@ def _save_run_outputs(
         "protocol_markdown": protocol_md_path,
         "scenarios": scenarios_path,
         "scenarios_markdown": scenarios_md_path,
+        "run_scenario": run_scenario_json_path,
+        "run_scenario_markdown": run_scenario_md_path,
         "properties_timeseries": properties_timeseries_path,
         "population_timeseries": population_timeseries_path,
         "age_property_csv": age_property_csv_path,
@@ -288,9 +326,13 @@ def _build_run_args(base_args: argparse.Namespace, *, run_index: int, seed: int 
         redebedarf=getattr(base_args, "redebedarf", False),
         no_protocol=getattr(base_args, "no_protocol", False),
         no_scenarios=getattr(base_args, "no_scenarios", False),
+        no_run_scenario=getattr(base_args, "no_run_scenario", False),
+        deterministic_only=getattr(base_args, "deterministic_only", False),
         quiet=getattr(base_args, "quiet", False),
         run_index=run_index,
         seed=seed,
+        simulation_name=getattr(base_args, "simulation_name", None),
+        simulation_description=getattr(base_args, "simulation_description", None),
     )
 
 
@@ -329,6 +371,32 @@ def main() -> int:
         if args.runs != 1:
             raise ValueError("--studio cannot be combined with --runs")
         return _launch_studio()
+
+    if args.generate_run_scenario_only:
+        if not args.run_id:
+            raise ValueError("--generate-run-scenario-only requires --run-id")
+        if args.mock_llm:
+            llm = get_llm()
+        else:
+            llm = OllamaClient(
+                OllamaConfig(
+                    base_url=args.base_url,
+                    model=args.model,
+                    temperature=args.temperature,
+                    max_tokens=args.max_tokens,
+                )
+            )
+        run_dir = resolve_run_output_dir(args.run_id)
+        result = generate_and_save_run_scenario(
+            args.run_id,
+            llm,
+            run_dir=run_dir,
+            prefer_llm=not args.deterministic_only,
+        )
+        if not args.quiet:
+            print(result["paths"]["markdown"])
+            print(result["paths"]["json"])
+        return 0
 
     if args.mock_llm:
         llm = get_llm()
