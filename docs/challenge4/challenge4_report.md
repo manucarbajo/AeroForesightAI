@@ -5,7 +5,7 @@
 | **Projekt** | Multi-Agenten-Simulation für Szenarioplanung im Flugverkehr |
 | **Challenge** | C4 — Dynamik, Wechselwirkungen, Emergenz, Exploration |
 | **Domäne** | Europäischer Flugverkehr (F1–F7, 3 Agenten, 1000 Individuen) |
-| **Stack** | Python, LangGraph, Ollama / Mock-LLM, Streamlit (optional) |
+| **Stack** | Python, Ollama / Mock-LLM, Streamlit (Dashboard) |
 | **Stand** | Juni 2026 · M0–M11 · **267** pytest-Tests grün |
 
 ---
@@ -20,7 +20,7 @@ Challenge 4 zeigt, dass **qualitative Szenarien über Zeiträume simulierbar** s
 
 **Qualität** wird über reproduzierbare Artefakte (`tick_mechanics.json`, `timeseries/*.csv`, Sweeps, CIB-Consistency-Score, **`run_scenario.md`**) und **267 automatisierte Tests** abgesichert. Der **State Explorer** (M9) antwortet ausschließlich aus Run-Daten — keine erfundenen Kennzahlen.
 
-Wissenschaftliche Fundierung (Formeln, Literatur): geplant in `scientific_foundation.md` (P1) — siehe [`projectplan2.md`](projectplan2.md) Kap. 1/8.
+Wissenschaftliche Fundierung (Formeln, Verhaltensmodelle, Literaturquellen): vollständig dokumentiert in [`references.md`](../references/references.md).
 
 ---
 
@@ -114,7 +114,6 @@ Nach jedem Lauf unter `outputs/<run_id>/`:
 | `event_log.json` | Agenten-Events + `[delta:…]` |
 | `timeseries/factors.csv` | Faktorzustände F1–F7 |
 | `timeseries/properties.csv` | System-Properties |
-| `final_narrative.md` | Lesbarer Tick-Bericht |
 | `run_scenario.md` / `.json` | Exploratives LLM-Szenario (P3) |
 | `figures/` | 6 PNGs + Manifest (M10) |
 | `checkpoints/` | Resume + Explorer |
@@ -155,7 +154,7 @@ python -m pytest
 | **Emergenz-Gates M7/M8** | Segment-Divergenz und Konflikt-Sweep teils noch offen (M12.4) |
 | **Dashboard** | Workbench für Präsentation (Szenario → Figures → Abfrage); siehe [`scenario_runs.md`](scenario_runs.md) |
 
-Legacy: `CIBExtractorNode` (Challenge 2/3) liegt unter `src/legacy/` — nicht Teil der C4-Pipeline.
+Legacy & Architektur-Evolution: LangGraph und Redebedarf (`final_narrative.md`) wurden nach Betreuer-Feedback bewusst zugunsten einer deterministischen Python-First-Pipeline verabschiedet. `CIBExtractorNode` (Challenge 2/3) liegt unter `src/legacy/`.
 
 ---
 
