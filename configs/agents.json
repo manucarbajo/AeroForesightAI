@@ -1,0 +1,137 @@
+[
+  {
+    "id": "consumer",
+    "name": "Consumers",
+    "agent_type": "consumer",
+    "description": "Private and business travellers making travel decisions",
+    "goals": [
+      "Obtain affordable fares",
+      "Meet travel needs",
+      "Respond to market changes"
+    ],
+    "constraints": [
+      "Budget-dependent",
+      "Influenced by societal value shifts",
+      "Responds to alternative offers"
+    ],
+    "population_config": {
+      "segments": [
+        {
+          "id": "business",
+          "name": "Business travellers",
+          "share": 0.3,
+          "price_elasticity": {
+            "type": "normal",
+            "mean": 0.3,
+            "std_dev": 0.1,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "income_level": {
+            "type": "normal",
+            "mean": 0.8,
+            "std_dev": 0.1,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "environmental_awareness": {
+            "type": "normal",
+            "mean": 0.3,
+            "std_dev": 0.15,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "description": "Frequent business travellers with low price sensitivity"
+        },
+        {
+          "id": "leisure_price_sensitive",
+          "name": "Leisure travellers (price-sensitive)",
+          "share": 0.5,
+          "price_elasticity": {
+            "type": "normal",
+            "mean": 0.8,
+            "std_dev": 0.1,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "income_level": {
+            "type": "normal",
+            "mean": 0.4,
+            "std_dev": 0.15,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "environmental_awareness": {
+            "type": "normal",
+            "mean": 0.4,
+            "std_dev": 0.2,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "description": "Price-conscious leisure travellers with moderate income"
+        },
+        {
+          "id": "leisure_eco_conscious",
+          "name": "Leisure travellers (eco-conscious)",
+          "share": 0.2,
+          "price_elasticity": {
+            "type": "normal",
+            "mean": 0.5,
+            "std_dev": 0.15,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "income_level": {
+            "type": "normal",
+            "mean": 0.6,
+            "std_dev": 0.15,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "environmental_awareness": {
+            "type": "normal",
+            "mean": 0.85,
+            "std_dev": 0.1,
+            "min_value": 0.0,
+            "max_value": 1.0
+          },
+          "description": "Environmentally aware travellers willing to pay higher prices for green options"
+        }
+      ],
+      "total_population": 1000,
+      "default_distribution": "normal"
+    }
+  },
+  {
+    "id": "provider",
+    "name": "Providers",
+    "agent_type": "provider",
+    "description": "Airlines setting prices, planning routes, and investing",
+    "goals": [
+      "Ensure profitability",
+      "Maintain or expand market share",
+      "Meet regulatory requirements"
+    ],
+    "constraints": [
+      "Dependent on fuel prices and technology",
+      "Must comply with regulatory requirements",
+      "Capacity limits on fleet and infrastructure"
+    ]
+  },
+  {
+    "id": "regulator",
+    "name": "Regulators",
+    "agent_type": "regulator",
+    "description": "European Commission and national governments setting framework conditions",
+    "goals": [
+      "Achieve climate targets",
+      "Maintain aviation competitiveness",
+      "Ensure consumer protection"
+    ],
+    "constraints": [
+      "Respect international agreements",
+      "Societal acceptance required",
+      "Weigh economic impacts"
+    ]
+  }
+]

@@ -1,0 +1,94 @@
+{
+  "id": "transformation_conflict",
+  "name": "Transformationskonflikt (B2 vs A1)",
+  "description": "Strenge Regulierung (B2) trifft auf technologische Trägheit (A1). Die CO₂-Steuer wird früh und aggressiv angehoben, aber der SAF-Durchbruch bleibt aus. Gleichzeitig steigt der Ölpreis und die Wirtschaft gerät unter Druck. Ein inhärent widersprüchliches Szenario.",
+  "rationale": "B2 = Ambitionierte Klimapolitik → CO₂-Steuer wird bei Tick 5 schon auf 90 EUR und bei Tick 12 auf 180 EUR gesetzt. Dies erzwingt F2.2 und F6.2 früh. A1 = Kein Technologiedurchbruch → saf_mandate_share bleibt bei 0 (F3.1 bleibt bestehen). Der Konflikt entsteht, weil hohe Regulierungskosten den Ticketpreis treiben, ohne dass SAF-Effizienz die Kosten senken kann. Zusätzlich wird der oil_price_index auf 1.2 bei Tick 10 gesetzt (→ F7.2 Fragmentierung), und der income_index fällt ab Tick 8 auf 0.85 (→ Rezessionsdruck, F4.2). Das Szenario produziert viele CIB-Konflikte: F2.2 + F3.1 (strenge Politik ohne Technik), F4.2 + F6.2 (Rezession + Klimabewusstsein), F7.2 + F2.2 (Fragmentierung + strenge Regulierung).",
+  "max_ticks": 50,
+  "property_overrides": [
+    {
+      "property_id": "carbon_tax_level",
+      "baseline": 50.0,
+      "rules": [
+        { "active_from_tick": 1, "effect": { "type": "set", "value": 50.0 } },
+        { "active_from_tick": 5, "effect": { "type": "set", "value": 90.0 } },
+        { "active_from_tick": 12, "effect": { "type": "set", "value": 180.0 } },
+        { "active_from_tick": 25, "effect": { "type": "set", "value": 250.0 } }
+      ]
+    },
+    {
+      "property_id": "saf_mandate_share",
+      "baseline": 0.0,
+      "rules": []
+    },
+    {
+      "property_id": "oil_price_index",
+      "baseline": 1.0,
+      "rules": [
+        { "active_from_tick": 10, "effect": { "type": "set", "value": 1.2 } }
+      ]
+    },
+    {
+      "property_id": "income_index",
+      "baseline": 1.0,
+      "rules": [
+        { "active_from_tick": 8, "effect": { "type": "ramp", "value": 0.85, "duration_ticks": 5 } },
+        { "active_from_tick": 30, "effect": { "type": "set", "value": 0.9 } }
+      ]
+    },
+    {
+      "property_id": "demand_growth_rate",
+      "baseline": 0.01
+    }
+  ],
+  "factor_overrides": [],
+  "milestones": [
+    {
+      "tick": 5,
+      "description": "CO₂-Steuer steigt auf 90 EUR — F6.2 greift (Schwellwert 80)",
+      "check_property": "carbon_tax_level",
+      "expected_value": 90.0
+    },
+    {
+      "tick": 5,
+      "description": "F6 wechselt zu F6.2 (Flight Shaming)",
+      "check_factor": "F6",
+      "expected_factor_state": "F6.2"
+    },
+    {
+      "tick": 10,
+      "description": "Ölpreis steigt auf 1.2 → F7.2 (Fragmentierung)",
+      "check_property": "oil_price_index",
+      "expected_value": 1.2
+    },
+    {
+      "tick": 12,
+      "description": "CO₂-Steuer auf 180 EUR — F2.2 (strenge Regulierung) aktiv",
+      "check_property": "carbon_tax_level",
+      "expected_value": 180.0
+    },
+    {
+      "tick": 15,
+      "description": "F3 bleibt F3.1 — kein SAF-Durchbruch trotz Regulierungsdruck",
+      "check_factor": "F3",
+      "expected_factor_state": "F3.1"
+    },
+    {
+      "tick": 15,
+      "description": "Einkommensindex sollte bei ~0.85 liegen (Rezession)",
+      "check_property": "income_index",
+      "expected_value": 0.85
+    },
+    {
+      "tick": 25,
+      "description": "CO₂-Steuer erreicht 250 EUR — maximaler Druck",
+      "check_property": "carbon_tax_level",
+      "expected_value": 250.0
+    },
+    {
+      "tick": 50,
+      "description": "End-State: Niedrige CIB-Konsistenz erwartet (B2 vs A1 Widerspruch)",
+      "check_factor": "F2",
+      "expected_factor_state": "F2.2"
+    }
+  ]
+}

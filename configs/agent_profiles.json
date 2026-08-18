@@ -1,0 +1,20 @@
+{
+  "consumer": {
+    "observes": ["market_metrics", "population_stats", "event_log_recent", "factors F1,F5,F6"],
+    "may_propose": [],
+    "must_not_output": ["ticket_price", "booking_rate", "numeric_shares"],
+    "depends_on": ["provider.events", "regulator.proposed_state"]
+  },
+  "provider": {
+    "observes": ["market_metrics", "booking_rate", "cost_pressure", "event_log_recent", "factors F3,F4"],
+    "may_propose": ["events"],
+    "must_not_output": ["ticket_price", "carbon_tax_level"],
+    "depends_on": ["regulatory_influences", "consumer.booking_rate"]
+  },
+  "regulator": {
+    "observes": ["market_metrics", "factors F2,F6,F7", "event_log_recent", "population_stats"],
+    "may_propose": ["factor_state F2", "factor_state F6"],
+    "must_not_output": ["ticket_price", "tax_level_numeric"],
+    "depends_on": ["provider.events", "consumer.booking_rate"]
+  }
+}
