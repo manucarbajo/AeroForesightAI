@@ -12,7 +12,7 @@ if str(_REPO_ROOT) not in sys.path:
 import streamlit as st
 
 from dashboard.config_ui import render_config_editor
-from dashboard.service import generate_figures_for_run, list_run_figures
+from dashboard.run_browser import generate_figures_for_run, list_run_figures
 from dashboard.shared_views import run_dashboard
 
 

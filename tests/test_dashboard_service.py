@@ -17,16 +17,16 @@ from dashboard.config_catalog import (
     save_market_feedback_to_file,
     save_saturation_to_file,
 )
-from dashboard.service import (
-    draft_to_launch_config,
+from dashboard.consistency_report import run_consistency_checks
+from dashboard.run_browser import (
     generate_figures_for_run,
     list_run_figures,
     list_run_files,
     list_runs,
     load_run_scenario,
     regenerate_run_scenario,
-    run_consistency_checks,
 )
+from dashboard.run_launcher import draft_to_launch_config
 
 
 def _write_minimal_run(run_dir: Path) -> None:

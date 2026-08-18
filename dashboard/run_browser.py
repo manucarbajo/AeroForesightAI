@@ -1,0 +1,292 @@
+"""Read-only access to run artifacts under outputs/: listing, loading, regenerating."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from src.llm import OllamaClient, OllamaConfig, get_llm
+from src.reporting.output_writer import OUTPUT_DIR, resolve_run_output_dir
+
+
+@dataclass(frozen=True)
+class RunSummary:
+    run_id: str
+    run_dir: Path
+    ticks_completed: int | None
+    ticks_max: int | None
+    total_events: int | None
+    model: str | None
+    timestamp: str | None
+    has_narrative: bool
+    has_tick_mechanics: bool
+    has_run_scenario: bool
+    scenario_title: str | None
+    scenario_summary: str | None
+
+
+@dataclass(frozen=True)
+class RunFileEntry:
+    relative_path: str
+    absolute_path: Path
+    size_bytes: int
+    kind: str
+
+
+@dataclass(frozen=True)
+class RunFigureEntry:
+    title: str
+    relative_path: str
+    absolute_path: Path
+
+
+def outputs_root(path: Path | str | None = None) -> Path:
+    return Path(path or OUTPUT_DIR)
+
+
+def _load_json(path: Path) -> dict[str, Any] | list[Any] | None:
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _read_run_scenario_preview(run_dir: Path) -> tuple[bool, str | None, str | None]:
+    scenario_path = run_dir / "run_scenario.json"
+    if not scenario_path.is_file():
+        return False, None, None
+    payload = _load_json(scenario_path)
+    if not isinstance(payload, dict):
+        return True, None, None
+    title = payload.get("title")
+    summary = payload.get("summary")
+    scenarios = payload.get("scenarios")
+    if isinstance(scenarios, list) and scenarios:
+        first = scenarios[0] if isinstance(scenarios[0], dict) else {}
+        preview_title = first.get("title")
+        archetypes = ", ".join(
+            str(item.get("archetype"))
+            for item in scenarios[:3]
+            if isinstance(item, dict) and item.get("archetype")
+        )
+        if summary and archetypes:
+            preview_summary = f"{summary} · Top-3: {archetypes}"
+        elif archetypes:
+            preview_summary = f"Top-3: {archetypes}"
+        else:
+            preview_summary = summary
+        return (
+            True,
+            str(preview_title or title) if (preview_title or title) else None,
+            str(preview_summary) if preview_summary else None,
+        )
+    return (
+        True,
+        str(title) if title else None,
+        str(summary) if summary else None,
+    )
+
+
+def load_run_scenario(run_dir: Path | str) -> dict[str, Any] | None:
+    payload = _load_json(Path(run_dir) / "run_scenario.json")
+    return payload if isinstance(payload, dict) else None
+
+
+def regenerate_run_scenario(
+    run_id: str,
+    *,
+    run_dir: Path | str | None = None,
+    mock_llm: bool = True,
+    deterministic_only: bool = False,
+    model: str = "llama3.2",
+    base_url: str = "http://localhost:11434",
+    temperature: float = 0.7,
+    max_tokens: int = 2048,
+) -> dict[str, Any]:
+    from src.reporting.run_scenario_generator import generate_and_save_run_scenario
+
+    directory = Path(run_dir) if run_dir is not None else resolve_run_output_dir(run_id)
+    if mock_llm:
+        llm = get_llm()
+    else:
+        llm = OllamaClient(
+            OllamaConfig(
+                base_url=base_url,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        )
+    return generate_and_save_run_scenario(
+        run_id,
+        llm,
+        run_dir=directory,
+        prefer_llm=not deterministic_only,
+    )
+
+
+def list_runs(root: Path | str | None = None) -> list[RunSummary]:
+    base = outputs_root(root)
+    if not base.is_dir():
+        return []
+
+    summaries: list[RunSummary] = []
+
+    def _append_run(run_dir: Path, run_id: str) -> None:
+        metadata = _load_json(run_dir / "run_metadata.json")
+        meta_dict = metadata if isinstance(metadata, dict) else {}
+        has_scenario, scenario_title, scenario_summary = _read_run_scenario_preview(run_dir)
+
+        sim_name = meta_dict.get("simulation_name")
+        sim_desc = meta_dict.get("simulation_description")
+
+        # Manuelle Namen aus der UI überschreiben automatisch generierte Szenario-Titel
+        if sim_name:
+            scenario_title = sim_name
+        if sim_desc:
+            scenario_summary = sim_desc
+
+        summaries.append(
+            RunSummary(
+                run_id=run_id,
+                run_dir=run_dir,
+                ticks_completed=meta_dict.get("ticks_completed"),
+                ticks_max=meta_dict.get("ticks_max"),
+                total_events=meta_dict.get("total_events"),
+                model=meta_dict.get("model"),
+                timestamp=meta_dict.get("timestamp"),
+                has_narrative=(run_dir / "final_narrative.md").is_file(),
+                has_tick_mechanics=(run_dir / "tick_mechanics.json").is_file(),
+                has_run_scenario=has_scenario,
+                scenario_title=scenario_title,
+                scenario_summary=scenario_summary,
+            )
+        )
+
+    for entry in sorted(base.iterdir(), reverse=True):
+        if not entry.is_dir():
+            continue
+        if entry.name.startswith("run_"):
+            _append_run(entry, entry.name)
+            continue
+        if entry.name.startswith("batch_"):
+            child_dirs = sorted(
+                (
+                    child
+                    for child in entry.iterdir()
+                    if child.is_dir() and child.name.startswith("run_")
+                ),
+                reverse=True,
+            )
+            for child_dir in child_dirs:
+                if (child_dir / "run_metadata.json").is_file():
+                    _append_run(child_dir, f"{entry.name}/{child_dir.name}")
+            continue
+        if entry.name == "sweeps":
+            for sweep_dir in sorted(
+                (
+                    child
+                    for child in entry.iterdir()
+                    if child.is_dir() and child.name.startswith("sweep_")
+                ),
+                reverse=True,
+            ):
+                if (sweep_dir / "run_metadata.json").is_file():
+                    _append_run(sweep_dir, f"sweeps/{sweep_dir.name}")
+
+    return summaries
+
+
+def list_run_figures(run_dir: Path | str) -> list[RunFigureEntry]:
+    base = Path(run_dir) / "figures"
+    if not base.is_dir():
+        return []
+
+    manifest_path = base / "manifest.json"
+    if manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        title_map = manifest.get("figures") or {}
+        entries: list[RunFigureEntry] = []
+        for title, filename in title_map.items():
+            path = base / filename
+            if path.is_file():
+                entries.append(
+                    RunFigureEntry(
+                        title=str(title),
+                        relative_path=f"figures/{filename}",
+                        absolute_path=path,
+                    )
+                )
+        if entries:
+            return entries
+
+    entries = []
+    for path in sorted(base.glob("*.png")):
+        entries.append(
+            RunFigureEntry(
+                title=path.stem.replace("_", " ").title(),
+                relative_path=f"figures/{path.name}",
+                absolute_path=path,
+            )
+        )
+    return entries
+
+
+def generate_figures_for_run(run_dir: Path | str) -> list[RunFigureEntry]:
+    from src.reporting.figure_generator import generate_run_figures
+
+    result = generate_run_figures(run_dir)
+    return list_run_figures(result.run_dir)
+
+
+def list_run_files(run_dir: Path | str) -> list[RunFileEntry]:
+    base = Path(run_dir)
+    if not base.is_dir():
+        return []
+
+    entries: list[RunFileEntry] = []
+    for path in sorted(base.rglob("*")):
+        if not path.is_file():
+            continue
+        suffix = path.suffix.lower()
+        if suffix in {".json", ".md", ".csv", ".txt"}:
+            kind = suffix.lstrip(".")
+        elif suffix == ".png":
+            kind = "png"
+        else:
+            kind = "other"
+        entries.append(
+            RunFileEntry(
+                relative_path=str(path.relative_to(base)).replace("\\", "/"),
+                absolute_path=path,
+                size_bytes=path.stat().st_size,
+                kind=kind,
+            )
+        )
+    return entries
+
+
+def read_run_file(path: Path | str, *, max_chars: int = 250_000) -> str:
+    text = Path(path).read_text(encoding="utf-8", errors="replace")
+    if len(text) > max_chars:
+        return text[:max_chars] + f"\n\n… [gekürzt, {len(text) - max_chars} Zeichen ausgeblendet]"
+    return text
+
+
+def load_price_series(run_dir: Path | str) -> list[dict[str, Any]]:
+    payload = _load_json(Path(run_dir) / "price_history.json")
+    return payload if isinstance(payload, list) else []
+
+
+def load_tick_mechanics(run_dir: Path | str) -> list[dict[str, Any]]:
+    payload = _load_json(Path(run_dir) / "tick_mechanics.json")
+    if isinstance(payload, dict):
+        ticks = payload.get("ticks")
+        return ticks if isinstance(ticks, list) else []
+    return []
+
+
+def load_event_log(run_dir: Path | str) -> list[dict[str, Any]]:
+    payload = _load_json(Path(run_dir) / "event_log.json")
+    return payload if isinstance(payload, list) else []

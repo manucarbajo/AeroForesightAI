@@ -17,9 +17,8 @@ from typing import Callable
 import matplotlib.pyplot as plt
 import streamlit as st
 
-from dashboard.service import (
-    REPO_ROOT,
-    launch_from_draft,
+from dashboard.consistency_report import run_consistency_checks
+from dashboard.run_browser import (
     list_run_files,
     list_runs,
     load_price_series,
@@ -28,8 +27,8 @@ from dashboard.service import (
     outputs_root,
     read_run_file,
     regenerate_run_scenario,
-    run_consistency_checks,
 )
+from dashboard.run_launcher import REPO_ROOT, launch_from_draft
 from src.reporting.state_explorer import (
     StateExplorer,
     build_grounded_context_block,
