@@ -6,7 +6,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import unittest
 
 from src.config_loader import build_initial_state
-from src.simulation_runner import RunnerOptions, SimulationRunner
+from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 
 
 class MockLLM:

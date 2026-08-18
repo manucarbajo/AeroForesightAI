@@ -6,7 +6,7 @@ from src.market.market_node import MarketNode
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, RoundResult
-from src.nodes.environment_node import EnvironmentNode
+from src.orchestration.environment_node import EnvironmentNode
 from src.validation import validate_state
 
 

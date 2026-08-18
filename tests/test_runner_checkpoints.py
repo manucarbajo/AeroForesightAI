@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.simulation_runner import RunnerOptions, SimulationRunner
+from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 
 
 class _DummyLLM:

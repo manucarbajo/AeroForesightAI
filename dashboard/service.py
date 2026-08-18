@@ -13,10 +13,10 @@ from dashboard.config_catalog import (
     PropertyEditState,
     prepare_simulation_state,
 )
-from src.checkpoint_manager import CheckpointManager
 from src.llm import OllamaClient, OllamaConfig, get_llm
+from src.orchestration.checkpoint_manager import CheckpointManager
+from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.output_writer import OUTPUT_DIR, create_run_id, resolve_run_output_dir
-from src.simulation_runner import RunnerOptions, SimulationRunner
 
 CheckStatus = Literal["ok", "warn", "fail"]
 
@@ -578,8 +578,8 @@ def launch_simulation(
     import contextlib
     import sys
 
+    from src.orchestration.scenario_sweeps import SWEEP_OUTPUT_DIR, run_all_sweeps
     from src.run_simulation import _build_run_args, _save_run_outputs, _write_multi_run_summary
-    from src.scenario_sweeps import SWEEP_OUTPUT_DIR, run_all_sweeps
 
     def _maybe_generate_figures(run_directory: Path) -> None:
         if not config.generate_figures:

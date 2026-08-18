@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -32,6 +32,7 @@ from src.models.sweep_models import (
     SweepResult,
     SweepSummary,
 )
+from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.output_writer import (
     resolve_run_output_dir,
     save_cib_matrix,
@@ -47,7 +48,6 @@ from src.output_writer import (
     save_tick_mechanics,
 )
 from src.run_scenario_generator import generate_and_save_run_scenario
-from src.simulation_runner import RunnerOptions, SimulationRunner
 
 SWEEPS_DIR = REPO_ROOT / "configs" / "sweeps"
 SWEEP_OUTPUT_DIR = REPO_ROOT / "outputs" / "sweeps"

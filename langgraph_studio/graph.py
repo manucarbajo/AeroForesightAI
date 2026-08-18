@@ -9,8 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from src.langgraph_adapter import get_build_options
-from src.langgraph_workflow import build_playground_stategraph
+from src.orchestration.langgraph_adapter import get_build_options
+from src.orchestration.langgraph_workflow import build_playground_stategraph
 
 
 def build_stategraph():

@@ -5,8 +5,8 @@ from __future__ import annotations
 from src.config_loader import build_initial_state, load_properties_config
 from src.models.population_models import PopulationConfig
 from src.models.state_models import FactorState
+from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.population.population_sampler import initialize_population, run_population_tick
-from src.simulation_runner import RunnerOptions, SimulationRunner
 
 
 def _max_business_price_sensitive_gap(population_stats: list) -> tuple[float, int]:

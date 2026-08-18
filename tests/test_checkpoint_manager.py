@@ -5,9 +5,9 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from src.checkpoint_manager import CheckpointManager
 from src.config_loader import build_initial_state
-from src.nodes.environment_node import EnvironmentNode
+from src.orchestration.checkpoint_manager import CheckpointManager
+from src.orchestration.environment_node import EnvironmentNode
 
 
 def test_checkpoint_save_and_load_round_boundary():

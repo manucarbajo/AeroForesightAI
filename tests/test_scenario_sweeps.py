@@ -13,8 +13,12 @@ if str(REPO_ROOT) not in sys.path:
 
 from src.config_loader import build_initial_state
 from src.models.sweep_models import FactorOverride, MilestoneCheck, PropertyOverride, SweepConfig
-from src.scenario_sweeps import apply_sweep_overrides, load_sweep_config, run_single_sweep
-from src.simulation_runner import RunnerOptions, SimulationRunner
+from src.orchestration.scenario_sweeps import (
+    apply_sweep_overrides,
+    load_sweep_config,
+    run_single_sweep,
+)
+from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 
 # ---------------------------------------------------------------------------
 # Unit Tests
@@ -152,7 +156,7 @@ def test_milestone_expected_factor_state():
         SimulationClock,
         SimulationState,
     )
-    from src.scenario_sweeps import evaluate_milestone_on_state
+    from src.orchestration.scenario_sweeps import evaluate_milestone_on_state
 
     state = SimulationState(
         run_id="ms",
@@ -200,7 +204,7 @@ def test_sweep_co2_delayed_loads():
 
 def test_sweep_base_price_override_raises_ticket_price():
     """P2.3: A sweep with base_price=200 should produce higher ticket prices than base_price=80."""
-    from src.scenario_sweeps import run_single_sweep
+    from src.orchestration.scenario_sweeps import run_single_sweep
 
     sweep_low = SweepConfig(
         id="low_base",

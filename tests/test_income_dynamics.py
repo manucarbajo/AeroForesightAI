@@ -5,12 +5,12 @@ from __future__ import annotations
 from src.config_loader import build_initial_state, load_properties_config
 from src.models.population_models import Individual, PopulationConfig
 from src.models.state_models import FactorState
+from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.population.population_sampler import (
     initialize_population,
     run_population_tick,
     update_income_factors,
 )
-from src.simulation_runner import RunnerOptions, SimulationRunner
 
 
 def _minimal_population_config() -> PopulationConfig:

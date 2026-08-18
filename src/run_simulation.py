@@ -14,10 +14,11 @@ import requests
 if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from src.checkpoint_manager import CheckpointManager
 from src.cib.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 from src.config_loader import build_initial_state
 from src.llm import STUDIO_DIR, OllamaClient, OllamaConfig, get_llm, load_env
+from src.orchestration.checkpoint_manager import CheckpointManager
+from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 from src.output_writer import (
     create_run_id,
     resolve_run_output_dir,
@@ -41,7 +42,6 @@ from src.output_writer import (
 )
 from src.protocol_generator import ProtocolOptions, build_protocol_payload, render_protocol_markdown
 from src.run_scenario_generator import generate_and_save_run_scenario
-from src.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 
 
 def _parse_args() -> argparse.Namespace:

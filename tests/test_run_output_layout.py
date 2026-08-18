@@ -4,7 +4,7 @@ from src.config_loader import build_initial_state
 from src.market.market_node import MarketNode
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry
-from src.nodes.environment_node import EnvironmentNode
+from src.orchestration.environment_node import EnvironmentNode
 from src.output_writer import (
     OUTPUT_DIR,
     create_run_id,

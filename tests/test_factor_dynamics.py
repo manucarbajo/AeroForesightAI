@@ -11,7 +11,7 @@ from src.market.factor_dynamics import (
 from src.market.market_node import MarketNode
 from src.market.simulation_functions import compute_cost_pressure
 from src.models.agent_models import StateChange
-from src.nodes.environment_node import EnvironmentNode
+from src.orchestration.environment_node import EnvironmentNode
 
 
 def _run_deterministic_tick(state, tick: int):

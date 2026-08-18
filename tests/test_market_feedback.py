@@ -12,7 +12,7 @@ from src.market.simulation_functions import (
     sync_demand_level,
     update_cost_index,
 )
-from src.nodes.environment_node import EnvironmentNode
+from src.orchestration.environment_node import EnvironmentNode
 
 
 def _count_direction_changes(values: list[float]) -> int:

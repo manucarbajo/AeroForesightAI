@@ -11,7 +11,7 @@ from src.config_loader import CONFIGS_DIR, build_initial_state, load_properties_
 from src.market.market_rules import resolve_market_feedback_config
 from src.models.property_models import BaselineTrajectory, StepFunctionTrajectory
 from src.models.sweep_models import FactorOverride, PropertyOverride, SweepConfig
-from src.scenario_sweeps import (
+from src.orchestration.scenario_sweeps import (
     SWEEPS_DIR,
     apply_sweep_overrides,
     load_all_sweep_configs,

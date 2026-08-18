@@ -9,8 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from src.checkpoint_manager import CheckpointManager
 from src.llm import OllamaClient, OllamaConfig
+from src.orchestration.checkpoint_manager import CheckpointManager
 from src.output_writer import OUTPUT_DIR
 
 EXPLORER_INSTRUCTIONS = """You are an expert data analyst and simulation explorer for an aviation foresight scenario.

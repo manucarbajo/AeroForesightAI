@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Callable, Protocol, Sequence
 
 if __package__ in {None, ""}:
-    sys.path.append(str(Path(__file__).resolve().parents[1]))
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from src.agents.agent_node import AgentNode, LLMCallable
 from src.agents.orchestrator_node import OrchestratorNode
@@ -19,7 +19,7 @@ from src.market.market_node import MarketNode
 from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
 from src.models.state_models import SimulationState
-from src.nodes.environment_node import EnvironmentNode
+from src.orchestration.environment_node import EnvironmentNode
 from src.output_writer import append_individuals_history, resolve_run_output_dir
 from src.validation import validate_state
 
@@ -425,11 +425,11 @@ class SimulationRunner:
     ) -> SimulationState:
         """Run a single deterministic round using the configured nodes."""
 
-        from src.event_deltas import write_events_from_deltas
         from src.market.factor_dynamics import (
             apply_factor_rules_at_tick_start,
             record_factor_timeseries,
         )
+        from src.orchestration.event_deltas import write_events_from_deltas
 
         orchestrator, round_execution, environment_node, consumer_node, market_node = components
         state = orchestrator.invoke(state)

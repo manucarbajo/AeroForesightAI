@@ -2,7 +2,7 @@ from src.config_loader import build_initial_state
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, RoundResult
-from src.nodes.environment_node import EnvironmentNode
+from src.orchestration.environment_node import EnvironmentNode
 
 
 def _make_response(agent_id: str, state_changes: list[StateChange] = None) -> AgentResponse:

@@ -17,13 +17,13 @@ import matplotlib.pyplot as plt
 
 from src.config_loader import build_initial_state
 from src.models.sweep_models import SweepConfig
-from src.output_writer import OUTPUT_DIR
-from src.scenario_sweeps import (
+from src.orchestration.scenario_sweeps import (
     SWEEP_OUTPUT_DIR,
     apply_sweep_overrides,
     load_all_sweep_configs,
 )
-from src.simulation_runner import RunnerOptions, SimulationRunner
+from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
+from src.output_writer import OUTPUT_DIR
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FIGURES_DIR = REPO_ROOT / "docs" / "challenge4" / "figures"
