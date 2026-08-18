@@ -3,6 +3,14 @@ from __future__ import annotations
 import pytest
 
 from src.config_loader import load_properties_config
+from src.market.property_engine import (
+    property_value_changes_at_tick,
+    resolve_property,
+    resolve_system_properties,
+    resolve_trajectory,
+    scheduled_property_events,
+)
+from src.market.simulation_functions import compute_market_metrics
 from src.models.property_models import (
     BaselineTrajectory,
     RampEffect,
@@ -11,14 +19,6 @@ from src.models.property_models import (
     StepPoint,
     TrajectoryRule,
 )
-from src.property_engine import (
-    property_value_changes_at_tick,
-    resolve_property,
-    resolve_system_properties,
-    resolve_trajectory,
-    scheduled_property_events,
-)
-from src.simulation_functions import compute_market_metrics
 
 
 class TestResolveTrajectory:

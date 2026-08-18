@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from src.config_loader import build_initial_state, load_properties_config
-from src.market_rules import initial_provider_markup, resolve_market_feedback_config
-from src.nodes.environment_node import EnvironmentNode
-from src.nodes.market_node import MarketNode
-from src.property_engine import resolve_exogenous_system_properties
-from src.simulation_functions import (
+from src.market.market_node import MarketNode
+from src.market.market_rules import initial_provider_markup, resolve_market_feedback_config
+from src.market.property_engine import resolve_exogenous_system_properties
+from src.market.simulation_functions import (
     apply_market_feedback,
     clip_price_change,
     compute_cost_pressure,
@@ -13,6 +12,7 @@ from src.simulation_functions import (
     sync_demand_level,
     update_cost_index,
 )
+from src.nodes.environment_node import EnvironmentNode
 
 
 def _count_direction_changes(values: list[float]) -> int:
@@ -196,8 +196,8 @@ class TestM4Pipeline:
 class TestEmergenceWithoutCO2Shock:
     def test_price_reversal_from_yield_feedback_only(self):
         """P2.5: Price direction change must occur from internal coupling alone (no CO₂ shock)."""
+        from src.market.property_engine import resolve_trajectory
         from src.models.property_models import BaselineTrajectory
-        from src.property_engine import resolve_trajectory
 
         state = build_initial_state()
 

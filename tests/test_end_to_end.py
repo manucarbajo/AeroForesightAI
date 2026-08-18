@@ -2,11 +2,11 @@ from uuid import uuid4
 
 from src.agents.orchestrator_node import OrchestratorNode
 from src.config_loader import build_initial_state
+from src.market.market_node import MarketNode
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, RoundResult
 from src.nodes.environment_node import EnvironmentNode
-from src.nodes.market_node import MarketNode
 from src.validation import validate_state
 
 

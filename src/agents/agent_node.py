@@ -9,11 +9,11 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from src.agents.agent_dependencies import format_depends_on_block
+from src.market.property_engine import scheduled_property_events
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
 from src.models.enums import AgentType, EventType
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.state_models import SimulationState
-from src.property_engine import scheduled_property_events
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 
@@ -310,7 +310,7 @@ class AgentNode:
         header = "Deterministic market metrics (Python; not set by the agent):"
 
         if not metrics and state.resolved_properties().system_properties:
-            from src.simulation_functions import compute_market_metrics
+            from src.market.simulation_functions import compute_market_metrics
 
             tick = max(1, state.clock.current_tick)
             last_price = state.price_history[-1].price if state.price_history else 100.0

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from src.market.property_engine import resolve_trajectory
 from src.models.property_models import MarketFeedbackConfig, MarketRule, PropertiesConfig
-from src.property_engine import resolve_trajectory
 
 BOOKING_YIELD_FEEDBACK = "booking_yield_feedback"
 

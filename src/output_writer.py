@@ -4,9 +4,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import List
 
+from src.market.property_engine import scheduled_property_events
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
-from src.property_engine import scheduled_property_events
 
 _NARRATIVE_AGENT_ORDER = ("provider", "regulator", "consumer")
 

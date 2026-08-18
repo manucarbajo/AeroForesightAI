@@ -6,7 +6,8 @@ never parsed from LLM output.
 
 from __future__ import annotations
 
-from src.market_rules import initial_provider_markup, resolve_market_feedback_config
+from src.market.market_rules import initial_provider_markup, resolve_market_feedback_config
+from src.market.property_engine import MARKET_PROPERTY_IDS, resolve_exogenous_system_properties
 from src.models.property_models import (
     MarketFeedbackConfig,
     PriceCoefficientsConfig,
@@ -14,7 +15,6 @@ from src.models.property_models import (
     PropertiesConfig,
 )
 from src.models.state_models import FactorState
-from src.property_engine import MARKET_PROPERTY_IDS, resolve_exogenous_system_properties
 
 METRIC_IDS = MARKET_PROPERTY_IDS
 
@@ -139,7 +139,7 @@ def compute_cost_pressure(
                 elif "below" in when and value >= float(when["below"]):
                     active = False
         if active:
-            from src.property_engine import resolve_trajectory
+            from src.market.property_engine import resolve_trajectory
 
             traj_val = resolve_trajectory(reg.trajectory, tick)
             regulatory_cost += reg.cost_contribution + traj_val

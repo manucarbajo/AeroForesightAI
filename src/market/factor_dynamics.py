@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.market.property_engine import resolve_system_properties
+from src.market.simulation_functions import active_parameters
 from src.models.agent_models import StateChange
 from src.models.property_models import FactorRule, PropertiesConfig
 from src.models.state_models import FactorState, SimulationState
-from src.property_engine import resolve_system_properties
-from src.simulation_functions import active_parameters
 
 AGENT_FACTOR_PERMISSIONS: dict[str, set[str]] = {
     "regulator": {"F2", "F6"},

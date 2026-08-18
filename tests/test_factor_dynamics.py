@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from src.config_loader import build_initial_state
-from src.factor_dynamics import (
+from src.market.factor_dynamics import (
     apply_factor_rules,
     apply_factor_rules_at_tick_start,
     build_runtime_metrics,
     record_factor_timeseries,
     validate_factor_proposals,
 )
+from src.market.market_node import MarketNode
+from src.market.simulation_functions import compute_cost_pressure
 from src.models.agent_models import StateChange
 from src.nodes.environment_node import EnvironmentNode
-from src.nodes.market_node import MarketNode
-from src.simulation_functions import compute_cost_pressure
 
 
 def _run_deterministic_tick(state, tick: int):

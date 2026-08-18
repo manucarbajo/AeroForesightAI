@@ -15,11 +15,11 @@ from src.agents.orchestrator_node import OrchestratorNode
 from src.agents.parallel_round_node import ParallelRoundNode
 from src.agents.redebedarf_node import RoundExecutionNode
 from src.config_loader import build_initial_state
+from src.market.market_node import MarketNode
 from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
 from src.models.state_models import SimulationState
 from src.nodes.environment_node import EnvironmentNode
-from src.nodes.market_node import MarketNode
 from src.output_writer import append_individuals_history, resolve_run_output_dir
 from src.validation import validate_state
 
@@ -426,7 +426,10 @@ class SimulationRunner:
         """Run a single deterministic round using the configured nodes."""
 
         from src.event_deltas import write_events_from_deltas
-        from src.factor_dynamics import apply_factor_rules_at_tick_start, record_factor_timeseries
+        from src.market.factor_dynamics import (
+            apply_factor_rules_at_tick_start,
+            record_factor_timeseries,
+        )
 
         orchestrator, round_execution, environment_node, consumer_node, market_node = components
         state = orchestrator.invoke(state)

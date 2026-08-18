@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from src.market_rules import initial_provider_markup
+from src.market.market_rules import initial_provider_markup
+from src.market.simulation_functions import compute_market_metrics
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
 from src.models.state_models import SimulationState
-from src.simulation_functions import compute_market_metrics
 
 
 class MarketNode:
@@ -34,7 +34,7 @@ class MarketNode:
             else None
         )
 
-        from src.property_engine import (
+        from src.market.property_engine import (
             resolve_exogenous_system_properties,
             resolve_system_properties,
         )

@@ -9,8 +9,8 @@ import pytest
 
 from src.config_loader import build_initial_state
 from src.event_deltas import write_events_from_deltas
+from src.market.market_node import MarketNode
 from src.nodes.environment_node import EnvironmentNode
-from src.nodes.market_node import MarketNode
 from src.state_explorer import (
     EXPLORER_INSTRUCTIONS,
     StateExplorer,
@@ -33,7 +33,7 @@ def _run_deterministic_tick(state, tick: int):
     state.clock.current_tick = tick
     state = EnvironmentNode().invoke(state)
     state = MarketNode().invoke(state)
-    from src.factor_dynamics import record_factor_timeseries
+    from src.market.factor_dynamics import record_factor_timeseries
 
     state = record_factor_timeseries(state)
     return write_events_from_deltas(state)

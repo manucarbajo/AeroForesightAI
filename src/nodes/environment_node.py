@@ -8,19 +8,19 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, Field
 
-from src.factor_dynamics import validate_factor_proposals
-from src.market_rules import initial_provider_markup
-from src.models.agent_models import AgentResponse, StateChange
-from src.models.event_models import EventLogEntry, RoundResult
-from src.models.state_models import SimulationState
-from src.population_sampler import run_population_tick
-from src.property_engine import resolve_system_properties
-from src.simulation_functions import (
+from src.market.factor_dynamics import validate_factor_proposals
+from src.market.market_rules import initial_provider_markup
+from src.market.property_engine import resolve_system_properties
+from src.market.simulation_functions import (
     active_parameters,
     compose_ticket_price,
     compute_cost_pressure,
     update_cost_index,
 )
+from src.models.agent_models import AgentResponse, StateChange
+from src.models.event_models import EventLogEntry, RoundResult
+from src.models.state_models import SimulationState
+from src.population_sampler import run_population_tick
 
 logger = logging.getLogger(__name__)
 
