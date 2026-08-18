@@ -7,7 +7,7 @@ from src.config_loader import build_initial_state
 from src.models.agent_models import AgentResponse
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, PriceHistoryEntry, RoundResult
-from src.output_writer import save_final_narrative, save_tick_mechanics
+from src.reporting.output_writer import save_final_narrative, save_tick_mechanics
 
 
 class SaveFinalNarrativeTests(unittest.TestCase):

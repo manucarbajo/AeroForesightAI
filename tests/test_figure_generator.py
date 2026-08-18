@@ -5,7 +5,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from src.figure_generator import (
+from src.reporting.figure_generator import (
     RunSeries,
     extract_series_from_run_dir,
     generate_all_figures,

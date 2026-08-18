@@ -5,7 +5,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from src.run_scenario_generator import (
+from src.reporting.run_scenario_generator import (
     build_candidate_constellations,
     build_factor_profile,
     build_run_narrative,

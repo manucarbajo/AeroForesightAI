@@ -11,7 +11,7 @@ from typing import Any, Protocol
 
 from src.llm import OllamaClient, OllamaConfig
 from src.orchestration.checkpoint_manager import CheckpointManager
-from src.output_writer import OUTPUT_DIR
+from src.reporting.output_writer import OUTPUT_DIR
 
 EXPLORER_INSTRUCTIONS = """You are an expert data analyst and simulation explorer for an aviation foresight scenario.
 Your task is to answer the user's question comprehensively and helpfully using ONLY the GROUND TRUTH DATA block below.

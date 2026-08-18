@@ -29,7 +29,7 @@ from dashboard.service import (
     regenerate_run_scenario,
     run_consistency_checks,
 )
-from src.state_explorer import (
+from src.reporting.state_explorer import (
     StateExplorer,
     build_grounded_context_block,
     load_run_context,

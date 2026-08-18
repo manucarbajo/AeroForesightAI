@@ -19,7 +19,7 @@ from src.config_loader import build_initial_state
 from src.llm import STUDIO_DIR, OllamaClient, OllamaConfig, get_llm, load_env
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
-from src.output_writer import (
+from src.reporting.output_writer import (
     create_run_id,
     resolve_run_output_dir,
     save_age_property_csv,
@@ -40,8 +40,12 @@ from src.output_writer import (
     save_segment_analysis,
     save_tick_mechanics,
 )
-from src.protocol_generator import ProtocolOptions, build_protocol_payload, render_protocol_markdown
-from src.run_scenario_generator import generate_and_save_run_scenario
+from src.reporting.protocol_generator import (
+    ProtocolOptions,
+    build_protocol_payload,
+    render_protocol_markdown,
+)
+from src.reporting.run_scenario_generator import generate_and_save_run_scenario
 
 
 def _parse_args() -> argparse.Namespace:

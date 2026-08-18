@@ -5,7 +5,7 @@ from src.market.market_node import MarketNode
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry
 from src.orchestration.environment_node import EnvironmentNode
-from src.output_writer import (
+from src.reporting.output_writer import (
     OUTPUT_DIR,
     create_run_id,
     resolve_run_output_dir,

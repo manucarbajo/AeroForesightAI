@@ -16,7 +16,7 @@ from dashboard.config_catalog import (
 from src.llm import OllamaClient, OllamaConfig, get_llm
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
-from src.output_writer import OUTPUT_DIR, create_run_id, resolve_run_output_dir
+from src.reporting.output_writer import OUTPUT_DIR, create_run_id, resolve_run_output_dir
 
 CheckStatus = Literal["ok", "warn", "fail"]
 
@@ -253,7 +253,7 @@ def regenerate_run_scenario(
     temperature: float = 0.7,
     max_tokens: int = 2048,
 ) -> dict[str, Any]:
-    from src.run_scenario_generator import generate_and_save_run_scenario
+    from src.reporting.run_scenario_generator import generate_and_save_run_scenario
 
     directory = Path(run_dir) if run_dir is not None else resolve_run_output_dir(run_id)
     if mock_llm:
@@ -390,7 +390,7 @@ def list_run_figures(run_dir: Path | str) -> list[RunFigureEntry]:
 
 
 def generate_figures_for_run(run_dir: Path | str) -> list[RunFigureEntry]:
-    from src.figure_generator import generate_run_figures
+    from src.reporting.figure_generator import generate_run_figures
 
     result = generate_run_figures(run_dir)
     return list_run_figures(result.run_dir)

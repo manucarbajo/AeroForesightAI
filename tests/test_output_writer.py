@@ -9,7 +9,7 @@ from pathlib import Path
 
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
-from src.output_writer import save_event_log, save_price_history
+from src.reporting.output_writer import save_event_log, save_price_history
 
 print("=" * 70)
 print("TEST: SIMULIERE 5 RUNDEN MIT EVENT-LOGS UND PREIS-HISTORIEN")

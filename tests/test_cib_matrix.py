@@ -392,7 +392,7 @@ class TestParseResponse:
 
 class TestCIBVisualizer:
     def test_heatmap_creates_file(self, tmp_path):
-        from src.cib_visualizer import render_heatmap
+        from src.reporting.cib_visualizer import render_heatmap
 
         m = CIBMatrix.empty(round_generated=0)
         m.set_cell(CIBCell(source_descriptor="F1.1", target_descriptor="F2.1", influence=2))
@@ -402,7 +402,7 @@ class TestCIBVisualizer:
         assert out.stat().st_size > 0
 
     def test_network_creates_file(self, tmp_path):
-        from src.cib_visualizer import render_network
+        from src.reporting.cib_visualizer import render_network
 
         rng = np.random.default_rng(42)
         data = rng.integers(-2, 3, size=(MATRIX_SIZE, MATRIX_SIZE))
@@ -416,7 +416,7 @@ class TestCIBVisualizer:
         assert out.stat().st_size > 0
 
     def test_bar_chart_creates_file(self, tmp_path):
-        from src.cib_visualizer import render_active_passive_bar
+        from src.reporting.cib_visualizer import render_active_passive_bar
 
         m = CIBMatrix.empty(round_generated=0)
         m.set_cell(CIBCell(source_descriptor="F1.1", target_descriptor="F2.1", influence=3))

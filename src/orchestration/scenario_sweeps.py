@@ -33,7 +33,7 @@ from src.models.sweep_models import (
     SweepSummary,
 )
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
-from src.output_writer import (
+from src.reporting.output_writer import (
     resolve_run_output_dir,
     save_cib_matrix,
     save_event_log,
@@ -47,7 +47,7 @@ from src.output_writer import (
     save_segment_analysis,
     save_tick_mechanics,
 )
-from src.run_scenario_generator import generate_and_save_run_scenario
+from src.reporting.run_scenario_generator import generate_and_save_run_scenario
 
 SWEEPS_DIR = REPO_ROOT / "configs" / "sweeps"
 SWEEP_OUTPUT_DIR = REPO_ROOT / "outputs" / "sweeps"
@@ -286,7 +286,7 @@ def run_single_sweep(
     )
 
     try:
-        from src.figure_generator import generate_run_figures
+        from src.reporting.figure_generator import generate_run_figures
 
         generate_run_figures(run_dir_path)
         if verbose:

@@ -7,7 +7,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from src.config_loader import build_initial_state
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
-from src.protocol_generator import ProtocolOptions, build_protocol_payload
+from src.reporting.protocol_generator import ProtocolOptions, build_protocol_payload
 
 
 class MockLLM:

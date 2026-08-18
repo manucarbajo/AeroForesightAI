@@ -4,7 +4,7 @@ from src.config_loader import build_initial_state
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, RoundResult
-from src.protocol_generator import (
+from src.reporting.protocol_generator import (
     ProtocolOptions,
     _replay_redebedarf_by_contribution,
     build_protocol_payload,

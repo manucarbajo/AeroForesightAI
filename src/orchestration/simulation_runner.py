@@ -20,7 +20,7 @@ from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
 from src.models.state_models import SimulationState
 from src.orchestration.environment_node import EnvironmentNode
-from src.output_writer import append_individuals_history, resolve_run_output_dir
+from src.reporting.output_writer import append_individuals_history, resolve_run_output_dir
 from src.validation import validate_state
 
 

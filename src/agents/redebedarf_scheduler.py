@@ -22,7 +22,7 @@ from src.config_loader import load_agents, load_factors
 from src.models.agent_models import AgentConfig
 from src.models.cib_models import CIBMatrix
 from src.models.state_models import FactorState, SimulationState
-from src.protocol_generator import (
+from src.reporting.protocol_generator import (
     build_protocol_payload,
     collect_agent_factor_references,
     collect_contradiction_signals,

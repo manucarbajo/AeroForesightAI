@@ -11,7 +11,7 @@ from src.config_loader import build_initial_state
 from src.market.market_node import MarketNode
 from src.orchestration.environment_node import EnvironmentNode
 from src.orchestration.event_deltas import write_events_from_deltas
-from src.state_explorer import (
+from src.reporting.state_explorer import (
     EXPLORER_INSTRUCTIONS,
     StateExplorer,
     build_grounded_context_block,

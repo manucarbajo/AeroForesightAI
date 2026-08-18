@@ -160,7 +160,7 @@ def test_end_to_end_output_files(tmp_path):
     """Testet ob alle Output-Dateien korrekt geschrieben werden."""
     import json
 
-    from src.output_writer import (
+    from src.reporting.output_writer import (
         save_cib_matrix,
         save_event_log,
         save_price_history,
