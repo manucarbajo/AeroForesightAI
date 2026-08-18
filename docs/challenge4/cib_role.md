@@ -74,7 +74,7 @@ CIB leistet hier drei Dinge:
 
 Die Referenz-CIB wurde deterministisch mit Seed 42 erzeugt und ist **eingefroren**
 (`"frozen": true`). Sie enthält 14 Deskriptoren (F1.1, F1.2, …, F7.1, F7.2) mit
-168 Cross-Factor-Zellen (14×14 − 7×4 Diagonal-Blöcke).
+168 Cross-Factor-Zellen (14×14 − 7×4 Diagonal-Blöcke)..
 
 Active/Passive-Scores aus der Matrix (Faktor-Wichtigkeit):
 
