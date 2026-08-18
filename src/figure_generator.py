@@ -236,8 +236,8 @@ def run_sweep_series(
     final_state = runner.run(state, seed=seed, run_id=f"sweep-{sweep.id}")
     series = extract_series_from_state(final_state, label=sweep.name, run_id=sweep.id)
 
+    from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
     from src.config_loader import load_cib_frozen
-    from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 
     final_factors = {
         fid: factor.current_state for fid, factor in final_state.environment.factors.items()

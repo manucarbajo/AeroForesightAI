@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from src.models.cib_models import CIBCell, CIBMatrix
-from src.scenario_consistency import (
+from src.cib.scenario_consistency import (
     ConsistencyChecker,
     ConsistencyCheckResult,
     ScenarioDeriver,
     ScenarioDescriptor,
 )
+from src.models.cib_models import CIBCell, CIBMatrix
 
 
 class TestScenarioDescriptor:

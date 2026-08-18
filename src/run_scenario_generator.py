@@ -780,8 +780,8 @@ def _score_constellations(
     """Attach the CIB consistency_score and score-based plausibility in place."""
     if isinstance(context.cib_matrix, dict):
         try:
+            from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
             from src.models.cib_models import CIBMatrix
-            from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 
             matrix_obj = CIBMatrix.model_validate(context.cib_matrix)
             checker = ConsistencyChecker(matrix_obj)

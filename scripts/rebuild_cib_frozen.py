@@ -298,8 +298,8 @@ def main() -> None:
     print(f"\nWritten {len(cells)} cells to {out}")
 
     # Quick sanity: compute scores for three archetypes
+    from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
     from src.models.cib_models import CIBMatrix
-    from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 
     matrix = CIBMatrix.model_validate(result)
     checker = ConsistencyChecker(matrix)

@@ -15,9 +15,9 @@ if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from src.checkpoint_manager import CheckpointManager
+from src.cib.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 from src.config_loader import build_initial_state
 from src.llm import STUDIO_DIR, OllamaClient, OllamaConfig, get_llm, load_env
-from src.nodes.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 from src.output_writer import (
     create_run_id,
     resolve_run_output_dir,
@@ -201,7 +201,7 @@ def _save_run_outputs(
     final_narrative_path = save_final_narrative(state, run_dir=run_dir)
     tick_mechanics_path = save_tick_mechanics(state, run_dir=run_dir)
     if state.cib_matrix is not None:
-        from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
+        from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 
         checker = ConsistencyChecker(state.cib_matrix)
         final_factors = {

@@ -7,6 +7,7 @@ from src.agents.agent_node import AgentNode
 from src.agents.orchestrator_node import OrchestratorNode
 from src.agents.parallel_round_node import ParallelRoundNode
 from src.agents.scheduler_node import SchedulerNode
+from src.cib.scenario_agent_node import ScenarioAgentNode
 from src.config_loader import build_initial_state
 from src.langgraph_adapter import (
     append_spoken_agent,
@@ -21,7 +22,6 @@ from src.market.market_node import MarketNode
 from src.models.enums import AgentType
 from src.models.state_models import InputState, PlaygroundState
 from src.nodes.environment_node import EnvironmentNode
-from src.nodes.scenario_agent_node import ScenarioAgentNode
 from src.simulation_runner import RunnerOptions
 
 

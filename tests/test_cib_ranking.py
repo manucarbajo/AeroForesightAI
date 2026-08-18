@@ -36,8 +36,8 @@ from pathlib import Path
 
 import pytest
 
+from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.models.cib_models import CIBMatrix
-from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CIB_PATH = REPO_ROOT / "configs" / "cib_frozen.json"

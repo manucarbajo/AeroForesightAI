@@ -5,9 +5,9 @@ import logging
 from pathlib import Path
 from typing import Any, Protocol
 
+from src.cib.scenario_consistency import ScenarioDeriver, scenarios_to_dict
 from src.models.cib_models import DESCRIPTOR_IDS, MAX_INFLUENCE, MIN_INFLUENCE, CIBMatrix
 from src.models.state_models import SimulationState
-from src.scenario_consistency import ScenarioDeriver, scenarios_to_dict
 
 logger = logging.getLogger(__name__)
 

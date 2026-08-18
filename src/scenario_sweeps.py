@@ -23,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
+from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
 from src.models.sweep_models import (
@@ -46,7 +47,6 @@ from src.output_writer import (
     save_tick_mechanics,
 )
 from src.run_scenario_generator import generate_and_save_run_scenario
-from src.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.simulation_runner import RunnerOptions, SimulationRunner
 
 SWEEPS_DIR = REPO_ROOT / "configs" / "sweeps"
