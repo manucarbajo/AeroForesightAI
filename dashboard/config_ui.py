@@ -17,7 +17,6 @@ from dashboard.config_catalog import (
     delete_custom_property,
     effective_config_summary,
     extract_factor_states_from_file,
-    extract_market_feedback_from_file,
     extract_population_edits_from_file,
     extract_property_edits_from_file,
     extract_saturation_from_file,
@@ -30,23 +29,11 @@ from dashboard.config_catalog import (
     save_population_edits_to_file,
     save_saturation_to_file,
 )
-
-
-def init_config_draft() -> None:
-    if "config_draft" not in st.session_state:
-        st.session_state.config_draft = default_config_draft()
-        return
-    draft: ConfigDraft = st.session_state.config_draft
-    if not hasattr(draft, "saturation_edit"):
-        draft.saturation_edit = extract_saturation_from_file(draft.properties_file)
-    if not hasattr(draft, "market_feedback_edit"):
-        draft.market_feedback_edit = extract_market_feedback_from_file(draft.properties_file)
-
-
-def _clear_factor_widget_keys(draft: ConfigDraft) -> None:
-    """Remove stale Streamlit keys so factor selectboxes follow ``draft.factor_states``."""
-    for factor_id in factor_options_from_file(draft.factors_file):
-        st.session_state.pop(f"factor_{factor_id}", None)
+from dashboard.config_fields import (
+    clear_factor_widget_keys,
+    init_config_draft,
+    render_llm_pipeline_tab,
+)
 
 
 def _render_scenario_tab(draft: ConfigDraft) -> ConfigDraft:
@@ -89,7 +76,7 @@ def _render_scenario_tab(draft: ConfigDraft) -> ConfigDraft:
 
         if st.button("Szenario-Parameter übernehmen", key="apply_sweep"):
             draft = apply_sweep_to_draft(draft, sweep)
-            _clear_factor_widget_keys(draft)
+            clear_factor_widget_keys(draft)
             st.session_state.config_draft = draft
             st.success(f"Parameter von «{sweep.name}» übernommen.")
             st.rerun()
@@ -460,7 +447,7 @@ def _render_factors_tab(draft: ConfigDraft) -> ConfigDraft:
     if draft.factors_file != "factors.json":
         if st.button("Faktoren aus gewählter Datei neu laden"):
             draft.factor_states = extract_factor_states_from_file(draft.factors_file)
-            _clear_factor_widget_keys(draft)
+            clear_factor_widget_keys(draft)
             st.rerun()
 
     cols = st.columns(2)
@@ -478,45 +465,6 @@ def _render_factors_tab(draft: ConfigDraft) -> ConfigDraft:
                 format_func=lambda k, st_map=states: f"{k}: {st_map[k][:50]}",
             )
             draft.factor_states[factor_id] = selected
-    return draft
-
-
-def _render_llm_pipeline_tab(draft: ConfigDraft) -> ConfigDraft:
-    st.subheader("LLM & Pipeline")
-    c1, c2 = st.columns(2)
-    with c1:
-        draft.mock_llm = st.checkbox("Mock-LLM", value=draft.mock_llm)
-        draft.deterministic_only = st.checkbox(
-            "Deterministisch (ohne Agenten-LLM)", value=draft.deterministic_only
-        )
-        draft.model = st.text_input("Ollama-Modell", value=draft.model)
-        draft.base_url = st.text_input("Ollama Base-URL", value=draft.base_url)
-    with c2:
-        draft.temperature = st.slider("Temperature", 0.0, 1.5, float(draft.temperature), 0.05)
-        draft.max_tokens = st.number_input(
-            "Max Tokens", min_value=256, max_value=8192, value=int(draft.max_tokens)
-        )
-        draft.checkpoint_interval = st.number_input(
-            "Checkpoint alle N Ticks", min_value=0, value=int(draft.checkpoint_interval)
-        )
-        draft.resume_from = st.text_input("Resume (Run-ID oder Pfad)", value=draft.resume_from)
-
-    st.markdown("**Pipeline-Optionen**")
-    p1, p2, p3, p4 = st.columns(4)
-    draft.no_market = p1.checkbox("Markt aus", value=draft.no_market)
-    draft.redebedarf = p2.checkbox("Redebedarf-Modus", value=draft.redebedarf)
-    draft.no_protocol = p3.checkbox("Kein Protocol", value=draft.no_protocol)
-    draft.no_scenarios = p4.checkbox("Keine Szenarien", value=draft.no_scenarios)
-
-    s1, s2 = st.columns(2)
-    draft.use_seed = s1.checkbox("Seed setzen", value=draft.use_seed)
-    draft.seed = s2.number_input("Seed", min_value=0, value=int(draft.seed or 42), step=1)
-    draft.generate_figures = st.checkbox(
-        "Figures nach Lauf erzeugen",
-        value=draft.generate_figures,
-        help="Speichert PNGs unter outputs/<run_id>/figures/ und zeigt sie im Tab «Figures».",
-    )
-
     return draft
 
 
@@ -845,7 +793,7 @@ def render_config_editor() -> ConfigDraft:
 
     if st.button("Auf Standard-Config zurücksetzen"):
         draft = default_config_draft()
-        _clear_factor_widget_keys(draft)
+        clear_factor_widget_keys(draft)
         st.session_state.config_draft = draft
         st.rerun()
 
@@ -869,7 +817,7 @@ def render_config_editor() -> ConfigDraft:
     with tabs[3]:
         draft = _render_factors_tab(draft)
     with tabs[4]:
-        draft = _render_llm_pipeline_tab(draft)
+        draft = render_llm_pipeline_tab(draft)
     with tabs[5]:
         draft = _render_config_files_tab(draft)
     with tabs[6]:
