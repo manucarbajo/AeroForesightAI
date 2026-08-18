@@ -1,0 +1,24 @@
+# Ausgangspunkt für das Hetzner-Deployment (Dashboard + lokales Ollama).
+# Noch nicht produktionsfertig verkabelt (keine Volumes für outputs/ Persistenz-
+# Strategie, kein Reverse Proxy/TLS, kein Resource-Limit-Tuning für das LLM).
+services:
+  dashboard:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - ollama
+    volumes:
+      - ./outputs:/app/outputs
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  ollama_data:

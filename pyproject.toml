@@ -1,0 +1,50 @@
+[project]
+name = "aeroforesight"
+version = "0.1.0"
+description = "Hybride Multi-Agenten-Simulationsplattform für strategische Zukunftsplanung im Luftverkehr: deterministische Massensimulation kombiniert mit generativer KI, abgesichert durch CIB-Konsistenzfilter."
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2,<3",
+    "langgraph>=0.2",
+    "langgraph-cli[inmem]>=0.2",
+    "requests>=2.0",
+    "langchain-ollama>=0.3.10",
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+    "networkx>=3.0",
+    "streamlit>=1.32",
+    "plotly",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "black",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312"]
+extend-exclude = "docs/"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["outputs", "docs", "*/__pycache__"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+# E501: Zeilenlänge wird von black gehandhabt.
+# E402: mehrere Einstiegspunkte (run_simulation.py, langgraph_studio/*, scenario_sweeps.py)
+# fügen das Repo-Root per sys.path.append VOR den lokalen Imports hinzu — das ist beabsichtigt
+# und kein Formatierungsfehler.
+ignore = ["E501", "E402"]
+
+[tool.ruff.lint.per-file-ignores]
+# Import order here is load-bearing (breaks a state_models/event_models circular
+# import if alphabetized) — see comment in the file itself.
+"src/models/__init__.py" = ["I001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

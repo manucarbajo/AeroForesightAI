@@ -1,17 +1,23 @@
-# Directories
-Technology-Lab/
-node_modules/
-__pycache__/
-venv/
-env/
-
-# Node
-npm-debug.log
-yarn-error.log
-
 # Python
+__pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.venv312/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
 
 # IDE
 .vscode/
@@ -23,6 +29,12 @@ yarn-error.log
 .DS_Store
 Thumbs.db
 
-# Environment
+# Environment / secrets
 .env
 .env.local
+langgraph_studio/.env
+langgraph_studio/.langgraph_api/
+
+# Simulation run artifacts (reproducible, not source)
+outputs/*
+!outputs/.gitkeep
