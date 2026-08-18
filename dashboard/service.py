@@ -14,10 +14,9 @@ from dashboard.config_catalog import (
     prepare_simulation_state,
 )
 from src.checkpoint_manager import CheckpointManager
-from src.llm_client import OllamaClient, OllamaConfig
+from src.llm import OllamaClient, OllamaConfig, get_llm
 from src.output_writer import OUTPUT_DIR, create_run_id, resolve_run_output_dir
 from src.simulation_runner import RunnerOptions, SimulationRunner
-from src.studio_helpers import get_llm
 
 CheckStatus = Literal["ok", "warn", "fail"]
 

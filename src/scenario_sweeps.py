@@ -24,7 +24,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from src.config_loader import build_initial_state, load_cib_frozen
-from src.llm_client import OllamaClient, OllamaConfig
+from src.llm import OllamaClient, OllamaConfig
 from src.models.sweep_models import (
     MilestoneCheck,
     SweepConfig,

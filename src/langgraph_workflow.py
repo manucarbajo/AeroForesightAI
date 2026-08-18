@@ -12,6 +12,7 @@ from src.langgraph_adapter import (
     to_state,
     wrap_node,
 )
+from src.llm import get_llm
 from src.models.enums import AgentType
 from src.models.state_models import InputState, PlaygroundState
 from src.nodes.agent_node import AgentNode
@@ -22,7 +23,6 @@ from src.nodes.parallel_round_node import ParallelRoundNode
 from src.nodes.scenario_agent_node import ScenarioAgentNode
 from src.nodes.scheduler_node import SchedulerNode
 from src.simulation_runner import RunnerOptions
-from src.studio_helpers import get_llm
 
 
 def build_playground_stategraph(

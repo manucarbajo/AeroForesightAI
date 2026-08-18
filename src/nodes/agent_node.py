@@ -54,7 +54,7 @@ class AgentNode:
         except Exception as exc:
             # Best-effort fallback to Studio mock LLM to avoid aborting the whole run
             try:
-                from src.studio_helpers import get_llm
+                from src.llm import get_llm
 
                 print(
                     f"LLM call failed for agent {self.config.id}: {exc}. Falling back to mock LLM."

@@ -1514,7 +1514,7 @@ def main(argv: list[str] | None = None) -> int:
 
     llm = None
     if not args.template_only:
-        from src.studio_helpers import get_llm
+        from src.llm import get_llm
 
         llm = get_llm()
 

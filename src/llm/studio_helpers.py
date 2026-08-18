@@ -39,7 +39,7 @@ def _load_dotenv(path: Path) -> None:
             return
 
 
-STUDIO_DIR = Path(__file__).resolve().parents[1] / "langgraph_studio"
+STUDIO_DIR = Path(__file__).resolve().parents[2] / "langgraph_studio"
 
 
 def load_env(env_path: str | None = None, prompt_keys: Iterable[str] | None = None) -> None:
