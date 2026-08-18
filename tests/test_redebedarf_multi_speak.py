@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from src.agents.redebedarf_node import RoundExecutionNode
+from src.agents.redebedarf_scheduler import RedebedarfScheduler
 from src.config_loader import build_initial_state, load_agents
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, RoundResult
-from src.nodes.redebedarf_node import RoundExecutionNode
-from src.redebedarf_scheduler import RedebedarfScheduler
 
 
 class DummyAgentNode:

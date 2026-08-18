@@ -10,16 +10,16 @@ from typing import Any, Callable, Protocol, Sequence
 if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[1]))
 
+from src.agents.agent_node import AgentNode, LLMCallable
+from src.agents.orchestrator_node import OrchestratorNode
+from src.agents.parallel_round_node import ParallelRoundNode
+from src.agents.redebedarf_node import RoundExecutionNode
 from src.config_loader import build_initial_state
 from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
 from src.models.state_models import SimulationState
-from src.nodes.agent_node import AgentNode, LLMCallable
 from src.nodes.environment_node import EnvironmentNode
 from src.nodes.market_node import MarketNode
-from src.nodes.orchestrator_node import OrchestratorNode
-from src.nodes.parallel_round_node import ParallelRoundNode
-from src.nodes.redebedarf_node import RoundExecutionNode
 from src.output_writer import append_individuals_history, resolve_run_output_dir
 from src.validation import validate_state
 

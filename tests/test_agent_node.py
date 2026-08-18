@@ -1,9 +1,9 @@
 import unittest
 
+from src.agents.agent_node import AgentNode
 from src.config_loader import build_initial_state
 from src.models.agent_models import AgentResponse
 from src.models.event_models import RoundResult
-from src.nodes.agent_node import AgentNode
 
 
 class MockLLM:

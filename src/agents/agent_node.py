@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
-from src.agent_dependencies import format_depends_on_block
+from src.agents.agent_dependencies import format_depends_on_block
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
 from src.models.enums import AgentType, EventType
 from src.models.event_models import EventLogEntry, RoundResult

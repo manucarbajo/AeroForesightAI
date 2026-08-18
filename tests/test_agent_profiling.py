@@ -2,6 +2,7 @@ from uuid import uuid4
 
 import pytest
 
+from src.agents.agent_node import AgentNode
 from src.models.agent_models import AgentConfig, AgentProfile
 from src.models.enums import AgentType
 from src.models.event_models import EventLogEntry, EventType
@@ -12,7 +13,6 @@ from src.models.state_models import (
     SimulationConfig,
     SimulationState,
 )
-from src.nodes.agent_node import AgentNode
 
 
 @pytest.fixture

@@ -208,8 +208,8 @@ def _replay_redebedarf_by_contribution(
 ) -> dict[tuple[int, int], dict[str, Any]]:
     """Replay AP3 scheduler logic to reconstruct per-contribution scores."""
 
-    from src.nodes.redebedarf_node import _initial_score_ledger
-    from src.redebedarf_scheduler import FactorChangeObservation, RedebedarfScheduler
+    from src.agents._scheduling_helpers import initial_score_ledger as _initial_score_ledger
+    from src.agents.redebedarf_scheduler import FactorChangeObservation, RedebedarfScheduler
 
     result: dict[tuple[int, int], dict[str, Any]] = {}
     by_round = _group_round_results(state.round_results)
