@@ -1,14 +1,17 @@
-# Node
+# Directories
+Technology-Lab/
 node_modules/
+__pycache__/
+venv/
+env/
+
+# Node
 npm-debug.log
 yarn-error.log
 
 # Python
-__pycache__/
 *.py[cod]
 *$py.class
-venv/
-env/
 
 # IDE
 .vscode/
