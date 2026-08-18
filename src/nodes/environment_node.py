@@ -6,8 +6,6 @@ import json
 import logging
 from typing import Any, Protocol
 
-from pydantic import BaseModel, Field
-
 from src.market.factor_dynamics import validate_factor_proposals
 from src.market.market_rules import initial_provider_markup
 from src.market.property_engine import resolve_system_properties
@@ -20,7 +18,7 @@ from src.market.simulation_functions import (
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.state_models import SimulationState
-from src.population_sampler import run_population_tick
+from src.population.population_sampler import run_population_tick
 
 logger = logging.getLogger(__name__)
 
@@ -29,27 +27,6 @@ class LLMCallable(Protocol):
     """Protocol for LLM clients."""
 
     def call(self, prompt: str) -> str: ...
-
-
-class PopulationShift(BaseModel):
-    """Population shift for one segment."""
-
-    segment_id: str
-    segment_name: str
-    old_share: float
-    new_share: float
-    shift_amount: float
-    reasoning: str
-    clamped: bool = False
-
-
-class PopulationUpdateResult(BaseModel):
-    """Result of a population update."""
-
-    round_number: int
-    shifts: list[PopulationShift] = Field(default_factory=list)
-    total_reasoning: str = ""
-    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class EnvironmentNode:

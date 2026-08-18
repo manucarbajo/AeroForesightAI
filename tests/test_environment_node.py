@@ -7,7 +7,7 @@ Hinweis: EnvironmentAgentNode (LLM-gestützte Segment-Verschiebung) wurde mit M3
 
 from __future__ import annotations
 
-from src.nodes.environment_node import (
+from src.models.population_models import (
     PopulationShift,
     PopulationUpdateResult,
 )

@@ -7,45 +7,18 @@ for booking deterministically from WTP + logit utility.
 from __future__ import annotations
 
 import numpy as np
-from pydantic import BaseModel, Field
 
 from src.models.enums import DistributionType
 from src.models.population_models import (
     SEGMENT_LABEL_MAP,
+    AgeGroupStats,
     Individual,
     PopulationConfig,
+    PopulationStats,
+    SegmentStats,
 )
 from src.models.property_models import IndividualProperty, PropertiesConfig, ShiftRule
 from src.models.state_models import FactorState
-
-
-class SegmentStats(BaseModel):
-    segment_id: str
-    share: float
-    total_individuals: int
-    booked_individuals: int
-    booking_rate: float
-    avg_income_factor: float = 1.0
-
-
-class AgeGroupStats(BaseModel):
-    age_group: str
-    total_individuals: int
-    booked_individuals: int
-    booking_rate: float
-    avg_wtp: float
-    avg_income_factor: float
-    avg_awareness: float
-
-
-class PopulationStats(BaseModel):
-    total_population: int
-    total_booked: int
-    total_demand: float
-    avg_income_factor: float = 1.0
-    segments: dict[str, SegmentStats]
-    age_groups: dict[str, AgeGroupStats] = Field(default_factory=dict)
-
 
 DEFAULT_LOGIT_THRESHOLD = 0.5
 DEFAULT_GREEN_PREMIUM = 0.1

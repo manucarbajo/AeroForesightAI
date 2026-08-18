@@ -4,7 +4,7 @@ from src.config_loader import load_properties_config
 from src.models.population_models import PopulationConfig
 from src.models.property_models import ShiftRule
 from src.models.state_models import FactorState
-from src.population_sampler import (
+from src.population.population_sampler import (
     apply_factor_shifts,
     evaluate_booking,
     initialize_population,
@@ -225,7 +225,7 @@ def test_saturation_increases_on_booking():
 
 def test_saturation_decays_per_tick():
     """P2.1: Saturation level decays in run_population_tick."""
-    from src.population_sampler import run_population_tick
+    from src.population.population_sampler import run_population_tick
 
     properties = load_properties_config()
     config = PopulationConfig(segments=[], total_population=100)
@@ -298,7 +298,7 @@ def test_high_saturation_reduces_booking_probability():
 
 def test_segment_keys_match_boolean_individual_properties():
     """P2.2: aggregate_population_stats derives segment keys from boolean individual_properties."""
-    from src.population_sampler import aggregate_population_stats
+    from src.population.population_sampler import aggregate_population_stats
 
     properties = load_properties_config()
     config = PopulationConfig(segments=[], total_population=200)
@@ -317,7 +317,7 @@ def test_segment_keys_match_boolean_individual_properties():
 
 def test_dynamic_segments_all_have_valid_booking_rates():
     """P2.2: every dynamic segment has a valid booking_rate in [0, 1]."""
-    from src.population_sampler import aggregate_population_stats
+    from src.population.population_sampler import aggregate_population_stats
 
     properties = load_properties_config()
     config = PopulationConfig(segments=[], total_population=500)
