@@ -49,9 +49,9 @@ Details: [`dashboard/README.md`](dashboard/README.md)
 Grounded Q&A über abgeschlossene Runs — keine erfundenen Zahlen:
 
 ```powershell
-python -m src.state_explorer --run-id run_20260614T112808Z --tick 15 --question "Warum fiel booking?"
-python -m src.state_explorer --run-id run_20260614T112808Z   # interaktiv
-python -m src.state_explorer --run-id run_20260614T112808Z --mock-llm --question "Test"
+python -m src.reporting.state_explorer --run-id run_20260614T112808Z --tick 15 --question "Warum fiel booking?"
+python -m src.reporting.state_explorer --run-id run_20260614T112808Z   # interaktiv
+python -m src.reporting.state_explorer --run-id run_20260614T112808Z --mock-llm --question "Test"
 ```
 
 Kontext: `tick_mechanics.json`, `price_history.json`, `event_log.json`, optional Checkpoints. Gleiche Logik im Dashboard-Tab **Abfrage**.
@@ -61,9 +61,9 @@ Kontext: `tick_mechanics.json`, `price_history.json`, `event_log.json`, optional
 Vier Foresight-Presets deterministisch vergleichen:
 
 ```powershell
-python -m src.scenario_sweeps
-python -m src.scenario_sweeps --sweep transformation_conflict
-python -m src.scenario_sweeps --ticks 10000 --quiet
+python -m src.orchestration.scenario_sweeps
+python -m src.orchestration.scenario_sweeps --sweep transformation_conflict
+python -m src.orchestration.scenario_sweeps --ticks 10000 --quiet
 ```
 
 Outputs: `outputs/sweeps/sweep_summary.json`, `scenario_scores.json`. Details: [`docs/scenario_runs.md`](docs/scenario_runs.md)
@@ -78,7 +78,7 @@ Weitere Hinweise: [`langgraph_studio/README.langgraph.md`](langgraph_studio/READ
 
 ## Umgebung (.env) einrichten
 
-Die CLI lädt beim Start automatisch `langgraph_studio/.env` (siehe `src/studio_helpers.load_env`). Diese Datei ist **gitignored** — Secrets gehören nicht ins Repository. Vorlage: `langgraph_studio/.env.example` kopieren und anpassen.
+Die CLI lädt beim Start automatisch `langgraph_studio/.env` (siehe `src/llm/studio_helpers.load_env`). Diese Datei ist **gitignored** — Secrets gehören nicht ins Repository. Vorlage: `langgraph_studio/.env.example` kopieren und anpassen.
 
 ### Schritt 1: `.env` anlegen
 
@@ -105,7 +105,7 @@ OLLAMA_BASE_URL=http://127.0.0.1:11434
 | **HTTP-LLM** | `LLAMA_HTTP_URL=http://…` |
 | **Transformers lokal** | `LLAMA_TRANSFORMERS_MODEL=…` |
 
-Backend-Auswahl in Code: `src/studio_helpers.get_llm()` (Priorität: Ollama → HTTP → Transformers → Mock).
+Backend-Auswahl in Code: `src/llm/studio_helpers.get_llm()` (Priorität: Ollama → HTTP → Transformers → Mock).
 
 ### Schritt 3: LangSmith (optional)
 
@@ -131,11 +131,16 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 
 ## Projektstruktur
 
+`src/` ist nach fachlichen Paketen sortiert, nicht nach technischem Typ. Details zu jedem Paket: [CLAUDE.md](CLAUDE.md#architektur-map).
+
 ```text
 ├── configs/                        # simulation_config, properties, agents, sweeps
 ├── dashboard/                       # Präsentations-UI (Streamlit)
-│   ├── app.py                       # Einstieg: Simulation starten, Ergebnisse ansehen
-│   ├── service.py                   # Run-Liste, Lauf starten, Artefakte laden
+│   ├── app.py / app_researcher.py   # Einstieg: Simulation starten, Ergebnisse ansehen
+│   ├── run_launcher.py              # Lauf starten/orchestrieren
+│   ├── run_browser.py               # Run-Liste, Artefakte laden
+│   ├── consistency_report.py        # Konsistenz-Checks
+│   ├── config_fields.py             # Gemeinsame Config-UI-Bausteine
 │   ├── start.ps1                    # Windows-Starter
 │   └── README.md
 ├── docs/                            # Technische Doku (CIB-Methodik, Agent-Profile, Workflow)
@@ -143,14 +148,17 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 ├── langgraph_studio/                # Studio (.env.example, langgraph.json)
 ├── src/
 │   ├── run_simulation.py            # CLI: Batch, Resume, --studio
-│   ├── simulation_runner.py         # Orchestrierung + Checkpoints
-│   ├── state_explorer.py            # Grounded Q&A
-│   ├── event_deltas.py              # Delta-Events aus Python
-│   ├── scenario_sweeps.py           # Szenario-Sweeps
-│   ├── figure_generator.py          # Figures global + pro Run
-│   ├── output_writer.py             # final_narrative, tick_mechanics, …
-│   ├── legacy/                      # Legacy CIBExtractorNode (nicht in der Pipeline)
-│   └── nodes/                       # Agent, Market, Environment, …
+│   ├── config_loader.py / validation.py
+│   ├── agents/                      # Agent-Node, Orchestrator, Scheduler, Redebedarf-Logik
+│   ├── market/                      # Preis-/Kosten-/Nachfrage-Mathematik, Market-Node
+│   ├── population/                  # Bevölkerungs-Sampling, Buchungs-Logit-Modell
+│   ├── cib/                         # CIB-Konsistenzbewertung + Szenario-Narrative
+│   ├── orchestration/                # Tick-Loop, LangGraph-Wiring, Checkpointing, Sweeps
+│   ├── reporting/                   # output_writer/, run_scenario_generator/, figure_generator/, protocol_generator.py, state_explorer.py
+│   ├── llm/                          # LLM-Backend-Auswahl, Ollama-Client
+│   ├── models/                       # Pydantic-Datenmodelle (State, Events, Agenten, …)
+│   ├── prompts/                      # Prompt-Templates pro Agent
+│   └── legacy/                       # Abgelöste Komponenten (z. B. CIBExtractorNode)
 ├── tests/
 └── outputs/<run_id>/                # Laufzeit-Artefakte (gitignored)
     ├── final_narrative.md           # Lesbarer Simulationsbericht
@@ -199,7 +207,7 @@ Nach jedem Lauf unter `outputs/<run_id>/`:
 **Pro Run** (Hauptweg): `outputs/<run_id>/figures/` — 6 PNGs + `manifest.json`
 
 - Automatisch im Dashboard (Checkbox «Figures nach Lauf erzeugen», Standard: an)
-- Oder manuell: `python -m src.figure_generator --run-only <run_id>`
+- Oder manuell: `python -m src.reporting.figure_generator.cli --run-only <run_id>`
 - Im Dashboard: Tab **Figures** unter «Ergebnisse ansehen»
 
 Workflow und Sweep-Läufe: [`docs/scenario_runs.md`](docs/scenario_runs.md)
@@ -231,7 +239,7 @@ Ein **Tick ist ein Tick**, keine Kalenderzuordnung (keine Quartale/Jahre in Conf
 
 ## System-Properties
 
-Preis, Steuer, SAF und Makro-Nachfrage werden **deterministisch** in `src/simulation_functions.py` berechnet — nicht vom LLM und nicht aus Event-Text geparst.
+Preis, Steuer, SAF und Makro-Nachfrage werden **deterministisch** in `src/market/simulation_functions.py` berechnet — nicht vom LLM und nicht aus Event-Text geparst.
 
 Konfiguration: `configs/properties.json` — `system_properties` mit `baseline` und `rules` (`set`, `ramp`) oder `step_function`.
 
