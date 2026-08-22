@@ -76,13 +76,20 @@ http://localhost:8511
 ```
 
 Das ist der Port der `dashboard`-Konfiguration aus `.claude/launch.json`
-(`streamlit run dashboard/app.py --server.port=8511`). Für ein Deployment muss
-diese URL auf den öffentlichen Dashboard-Einstieg umgestellt werden — Suche nach
+(`python -m dashboard.web.app --port=8511`). Für ein Deployment muss diese URL
+auf den öffentlichen Dashboard-Einstieg umgestellt werden — Suche nach
 `href="http://localhost:8511"` in allen fünf HTML-Dateien.
 
+Seit der Ablösung von Streamlit ist das Dashboard eine Plotly-Dash-App, die
+dieselben Design-Tokens verwendet wie diese Seite (`design/color-tokens.json`).
+Der Übergang von Landingpage zu Dashboard ist damit ohne Stilbruch — beide
+Seiten teilen Navy-Palette, Plus Jakarta Sans / Inter und die 8px-Radien.
+Rückweg: das Logo in der Dashboard-Navigation zeigt auf die Landingpage
+(`LANDING_URL` in `dashboard/web/app.py` — ebenfalls fürs Deployment anzupassen).
+
 Empfohlene Zielarchitektur auf dem Hetzner-Server: statische Seiten und
-Streamlit hinter demselben Reverse Proxy (nginx/Caddy), `/` auf die statischen
-Dateien, `/dashboard` auf die Streamlit-App. Dann genügt ein relativer Link
+Dash-App hinter demselben Reverse Proxy (nginx/Caddy), `/` auf die statischen
+Dateien, `/dashboard` auf die Dash-App. Dann genügt ein relativer Link
 `/dashboard` und die URL muss pro Umgebung nicht mehr angepasst werden.
 
 ### Offene Punkte
@@ -92,7 +99,15 @@ Dateien, `/dashboard` auf die Streamlit-App. Dann genügt ein relativer Link
 2. **Rechtstexte sind Platzhalter.** Alle mit `[…]` markierten Stellen müssen
    ersetzt und rechtlich geprüft werden. Der gelbe Hinweisblock auf den drei
    Seiten muss vor Veröffentlichung raus.
-3. **Tailwind über CDN.** Für Produktion sollte ein gebautes CSS-Bundle her.
+3. **Tailwind über CDN.** Für Produktion sollte ein gebautes CSS-Bundle her —
+   das betrifft Landingpage **und** Dashboard, beide laden Tailwind und die
+   Google Fonts von extern. Für ein Deployment mit Datenhoheit müssen beide
+   Ressourcen lokal ausgeliefert werden.
+4. **`rounded-DEFAULT` erzeugt 0px.** Die Landingpage nutzt an Buttons und
+   Eingabefeldern die Klasse `rounded-DEFAULT`; Tailwind generiert für den
+   Schlüssel `DEFAULT` aber nur `.rounded`. Alle Buttons sind dadurch
+   eckig — entgegen `design/DESIGN.md`, das 8px vorsieht. Das Dashboard
+   verwendet deshalb `rounded`.
 
 Details in `aeroforesight-ai-landing-page/DEPLOY.md`.
 
