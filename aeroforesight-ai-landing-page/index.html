@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+
+<html class="light" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AeroForesight AI | Die Zukunft des Luftverkehrs berechenbar machen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            50: '#f0f4f9',
+                            100: '#e0eaf3',
+                            200: '#c2d5e7',
+                            300: '#94b8d7',
+                            400: '#6094c1',
+                            500: '#3e76a6',
+                            600: '#2d5e8a',
+                            700: '#244b70',
+                            800: '#1E3A5F', // Primary Navy
+                            900: '#1c3453',
+                            950: '#122238',
+                        }
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans", "sans-serif"],
+                        "display": ["Plus Jakarta Sans", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Zurückhaltende Scroll-Einblendung. Wird per IntersectionObserver
+           ausgelöst, nicht zeitgesteuert, damit nichts vorab abläuft. */
+        .reveal {
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity .7s cubic-bezier(.2, .7, .2, 1),
+                        transform .7s cubic-bezier(.2, .7, .2, 1);
+        }
+        .reveal.is-visible { opacity: 1; transform: none; }
+
+        /* Karten heben sich beim Hover leicht an. */
+        .lift { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+        .lift:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px -14px rgba(30, 58, 95, .30);
+            border-color: #c2d5e7;
+        }
+
+        /* Verbindungslinie der Ablauf-Schritte zeichnet sich beim Einblenden. */
+        .step-line {
+            transform: scaleX(0);
+            transform-origin: left center;
+            transition: transform 1s cubic-bezier(.3, .7, .2, 1) .15s;
+        }
+        .is-visible .step-line { transform: scaleX(1); }
+
+        /* Nummernkreis des aktiven Schritts. */
+        .step-dot { transition: background-color .25s ease, color .25s ease, border-color .25s ease; }
+        .step:hover .step-dot {
+            background-color: #1E3A5F;
+            border-color: #1E3A5F;
+            color: #fff;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal, .lift, .step-line, .step-dot { transition: none; }
+            .reveal { opacity: 1; transform: none; }
+            .step-line { transform: scaleX(1); }
+        }
+
+        /* Koordinatengitter im Hintergrund. Zwei Ebenen: ein dauerhaft
+           sichtbares, sehr blasses Raster und ein kräftigeres darüber, das
+           per Maske nur rund um den Mauszeiger sichtbar wird. */
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+            /* Weicher Auslauf zu den Rändern, damit das Raster nicht abrupt endet. */
+            -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 45%, #000 50%, transparent 100%);
+            mask-image: radial-gradient(ellipse 85% 70% at 50% 45%, #000 50%, transparent 100%);
+        }
+        .grid-bg__base,
+        .grid-bg__glow {
+            position: absolute;
+            inset: -1px;
+            background-image:
+                linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+            background-size: 56px 56px;
+            /* Beide Ebenen driften identisch, sonst würden die kräftigen
+               Glow-Linien gegen die blassen Basislinien versetzt laufen. */
+            animation: gridDrift 30s linear infinite;
+        }
+
+        /* Eine volle Rasterzelle pro Durchlauf, dadurch nahtlose Schleife.
+           56px in 30s sind knapp 2px pro Sekunde: sichtbar lebendig,
+           aber nicht ablenkend. */
+        @keyframes gridDrift {
+            from { background-position: 0 0, 0 0; }
+            to { background-position: 56px 56px, 56px 56px; }
+        }
+        .grid-bg__base { --grid-line: rgba(30, 58, 95, .07); }
+        .grid-bg__glow {
+            --grid-line: rgba(30, 58, 95, .32);
+            opacity: 0;
+            transition: opacity .45s ease;
+            -webkit-mask-image: radial-gradient(200px circle at var(--mx, 50%) var(--my, 50%), #000 0%, rgba(0, 0, 0, .5) 45%, transparent 72%);
+            mask-image: radial-gradient(200px circle at var(--mx, 50%) var(--my, 50%), #000 0%, rgba(0, 0, 0, .5) 45%, transparent 72%);
+        }
+        .grid-bg.is-active .grid-bg__glow { opacity: 1; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .grid-bg__glow { display: none; }
+            .grid-bg__base { animation: none; }
+        }
+
+        /* Anker-Sprünge dürfen nicht unter der fixierten Navigation landen. */
+        section[id], [id]:target { scroll-margin-top: 5.5rem; }
+        html { scroll-behavior: smooth; }
+        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    </style>
+</head>
+<body class="bg-white text-slate-800 font-body antialiased selection:bg-navy-200 selection:text-navy-900">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 transition-all duration-300" id="navbar">
+<div class="flex justify-between items-center px-5 sm:px-8 py-4 max-w-7xl mx-auto">
+<a class="text-lg sm:text-xl font-headline font-bold text-navy-800 tracking-tight" href="index.html">AeroForesight AI</a>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="#problem">Problem</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="#ablauf">Ablauf</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="#akteure">Akteure</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="#methodik">Methodik</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="#output">Output</a>
+</div>
+<div class="hidden md:flex items-center gap-4">
+<a href="demo-anfragen.html" class="inline-flex items-center justify-center px-5 py-2.5 bg-transparent border border-navy-800 text-navy-800 font-body text-sm font-medium rounded-DEFAULT hover:bg-slate-50 transition-colors duration-200" role="button">Demo anfragen</a>
+<a href="http://localhost:8511" class="inline-flex items-center justify-center px-5 py-2.5 bg-navy-800 text-white font-body text-sm font-medium rounded-DEFAULT hover:bg-navy-700 transition-colors duration-200 shadow-sm" role="button">Login</a>
+</div>
+<button class="md:hidden -mr-2 p-2 text-slate-600 hover:text-navy-800" id="nav-toggle" type="button" aria-controls="mobile-menu" aria-expanded="false" aria-label="Menü öffnen">
+<span class="material-symbols-outlined" id="nav-toggle-icon">menu</span>
+</button>
+</div>
+<!-- Mobile-Menü, per Burger-Button geschaltet -->
+<div class="hidden md:hidden border-t border-slate-100 bg-white shadow-lg" id="mobile-menu">
+<div class="px-5 py-3 flex flex-col divide-y divide-slate-100">
+<div class="flex flex-col pb-3">
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="#problem">Problem</a>
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="#ablauf">Ablauf</a>
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="#akteure">Akteure</a>
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="#methodik">Methodik</a>
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="#output">Output</a>
+</div>
+<div class="flex flex-col gap-3 pt-4 pb-2">
+<a href="demo-anfragen.html" class="w-full text-center px-5 py-3 bg-transparent border border-navy-800 text-navy-800 font-body text-sm font-medium rounded-DEFAULT" role="button">Demo anfragen</a>
+<a href="http://localhost:8511" class="w-full text-center px-5 py-3 bg-navy-800 text-white font-body text-sm font-medium rounded-DEFAULT shadow-sm" role="button">Login</a>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="pt-24 pb-16">
+<!-- Hero Section -->
+<section class="relative pt-12 pb-20 md:pt-20 md:pb-32 overflow-hidden" data-grid>
+<div class="grid-bg" aria-hidden="true">
+<div class="grid-bg__base"></div>
+<div class="grid-bg__glow"></div>
+</div>
+<div class="max-w-7xl mx-auto px-5 sm:px-8 relative z-10 text-center">
+<div class="max-w-4xl mx-auto" data-stagger>
+<h1 class="reveal font-headline font-bold text-3xl sm:text-5xl md:text-7xl leading-[1.1] text-slate-900 mb-6 tracking-tight">
+                        Die Zukunft des Luftverkehrs <span class="text-navy-800">berechenbar</span> machen, statt nur zu raten.
+                    </h1>
+<p class="reveal font-body text-lg sm:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+                        Unsere deterministische Simulation liefert die harten Zahlen, während KI sie präzise interpretiert. Premium B2B Analytics für strategische Planung.
+                    </p>
+<div class="reveal flex flex-col sm:flex-row items-center justify-center gap-4">
+<a href="demo-anfragen.html" class="w-full sm:w-auto px-8 py-3.5 bg-navy-800 text-white font-body font-medium rounded-DEFAULT hover:bg-navy-700 transition-all duration-200 shadow-sm flex items-center justify-center gap-2" role="button">Demo anfragen<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+<a href="#ablauf" class="w-full sm:w-auto px-8 py-3.5 bg-transparent text-navy-800 border border-slate-200 font-body font-medium rounded-DEFAULT hover:bg-slate-50 transition-all duration-200 flex items-center justify-center gap-2" role="button">Wie es funktioniert</a>
+</div>
+</div>
+</div>
+<!-- Abstract background shape -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-navy-50 rounded-full blur-3xl opacity-50 -z-10 pointer-events-none"></div>
+</section>
+<!-- Problem & Lösung (Bento Grid Style) -->
+<section class="py-16 md:py-24 bg-slate-50 border-y border-slate-100" id="problem">
+<div class="max-w-7xl mx-auto px-5 sm:px-8">
+<div class="text-center mb-16 max-w-3xl mx-auto">
+<h2 class="font-headline font-bold text-2xl sm:text-3xl md:text-4xl text-slate-900 mb-4 tracking-tight">Klarheit durch deterministische Simulation</h2>
+<p class="font-body text-lg text-slate-600">Wir ersetzen strategische Ungewissheit durch nachvollziehbare, faktenbasierte Vorhersagemodelle.</p>
+</div>
+<div class="grid md:grid-cols-2 gap-8" data-stagger>
+<!-- Problem Card -->
+<div class="reveal lift bg-white p-6 sm:p-10 rounded-xl border border-slate-100 shadow-sm h-full flex flex-col">
+<div class="w-12 h-12 bg-rose-50 rounded-lg flex items-center justify-center text-rose-600 mb-6">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<h3 class="font-headline font-semibold text-2xl text-slate-900 mb-4">Das Problem: Strategische Ungewissheit</h3>
+<p class="font-body text-slate-600 mb-6 flex-grow leading-relaxed">
+                            Traditionelle Planung im Luftverkehr verlässt sich oft auf starre Extrapolationen oder Bauchgefühl. Die Interaktionen zwischen Passagieren, Airlines und Regulatoren sind jedoch hochkomplex und dynamisch.
+                        </p>
+<div class="rounded-lg overflow-hidden border border-slate-100 bg-slate-50">
+<svg class="w-full h-48" viewBox="0 0 400 192" fill="none" role="img" aria-label="Ungeordnete, sich kreuzende Verlaufslinien als Bild für unklare Entwicklungspfade">
+<g stroke="#e2e8f0" stroke-width="1">
+<line x1="0" y1="48" x2="400" y2="48"></line>
+<line x1="0" y1="96" x2="400" y2="96"></line>
+<line x1="0" y1="144" x2="400" y2="144"></line>
+<line x1="100" y1="0" x2="100" y2="192"></line>
+<line x1="200" y1="0" x2="200" y2="192"></line>
+<line x1="300" y1="0" x2="300" y2="192"></line>
+</g>
+<g fill="none" stroke-linecap="round">
+<path d="M12 158 C 62 62, 112 172, 162 92 S 252 42, 302 132 S 372 62, 392 108" stroke="#94a3b8" stroke-width="1.6" opacity=".85"></path>
+<path d="M8 92 C 72 154, 122 38, 192 142 S 282 172, 344 58" stroke="#cbd5e1" stroke-width="1.6"></path>
+<path d="M22 38 C 92 122, 152 28, 222 102 S 312 152, 392 36" stroke="#fda4af" stroke-width="1.6" opacity=".9"></path>
+<path d="M60 176 C 130 104, 190 168, 268 96" stroke="#cbd5e1" stroke-width="1.4" opacity=".8"></path>
+</g>
+<g fill="#94a3b8">
+<circle cx="162" cy="92" r="2.5"></circle>
+<circle cx="222" cy="102" r="2.5"></circle>
+<circle cx="302" cy="132" r="2.5"></circle>
+</g>
+<circle cx="392" cy="36" r="3.5" fill="#f43f5e" opacity=".75"></circle>
+</svg>
+</div>
+</div>
+<!-- Solution Card -->
+<div class="reveal lift bg-navy-800 p-6 sm:p-10 rounded-xl shadow-md h-full flex flex-col text-white">
+<div class="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center text-blue-300 mb-6 backdrop-blur-sm">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<h3 class="font-headline font-semibold text-2xl text-white mb-4">Die Lösung: AeroForesight AI</h3>
+<p class="font-body text-blue-100 mb-6 flex-grow leading-relaxed">
+                            Unsere deterministische Plattform simuliert das Verhalten aller Akteure (Multi-Agent Simulation) auf Basis harter Daten. KI wird nur genutzt, um die exakt berechneten Ergebnisse präzise und verständlich zu interpretieren.
+                        </p>
+<div class="rounded-lg overflow-hidden border border-white/20 bg-navy-900">
+<svg class="w-full h-48" viewBox="0 0 400 192" fill="none" role="img" aria-label="Drei Eingangspfade laufen in einem geprüften Knoten zusammen und münden in einen klaren Ergebnispfad">
+<g stroke="#ffffff" stroke-width="1" opacity=".12">
+<line x1="0" y1="48" x2="400" y2="48"></line>
+<line x1="0" y1="96" x2="400" y2="96"></line>
+<line x1="0" y1="144" x2="400" y2="144"></line>
+<line x1="100" y1="0" x2="100" y2="192"></line>
+<line x1="200" y1="0" x2="200" y2="192"></line>
+<line x1="300" y1="0" x2="300" y2="192"></line>
+</g>
+<g fill="none" stroke="#94b8d7" stroke-width="1.5" stroke-linecap="round" opacity=".85">
+<path d="M18 158 Q 140 142, 244 100"></path>
+<path d="M18 96 L 244 96"></path>
+<path d="M18 34 Q 140 52, 244 92"></path>
+</g>
+<g fill="#94b8d7" opacity=".85">
+<circle cx="18" cy="158" r="2.5"></circle>
+<circle cx="18" cy="96" r="2.5"></circle>
+<circle cx="18" cy="34" r="2.5"></circle>
+</g>
+<circle cx="244" cy="96" r="13" fill="none" stroke="#ffffff" stroke-width="1" opacity=".35"></circle>
+<circle cx="244" cy="96" r="6" fill="#ffffff" opacity=".92"></circle>
+<path d="M244 96 L 384 44" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"></path>
+<circle cx="384" cy="44" r="4.5" fill="#ffffff"></circle>
+<circle cx="384" cy="44" r="10" fill="none" stroke="#ffffff" stroke-width="1" opacity=".4"></circle>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Statistics Section -->
+<section class="py-16 md:py-24 bg-white border-b border-slate-100">
+<div class="max-w-7xl mx-auto px-5 sm:px-8">
+<div class="grid md:grid-cols-3 gap-12 text-center divide-y md:divide-y-0 md:divide-x divide-slate-100" data-stagger>
+<div class="reveal pt-12 md:pt-0 first:pt-0">
+<div class="text-5xl md:text-6xl font-headline font-bold text-navy-800 mb-4 tracking-tight">7</div>
+<p class="font-body text-slate-600 max-w-xs mx-auto leading-relaxed">Interdependente Faktoren, von Regulierung über Technologie bis Marktstruktur</p>
+</div>
+<div class="reveal pt-12 md:pt-0">
+<div class="text-5xl md:text-6xl font-headline font-bold text-navy-800 mb-4 tracking-tight">128</div>
+<p class="font-body text-slate-600 max-w-xs mx-auto leading-relaxed">Mögliche Konstellationen, jede Kombination wirkt anders auf den Markt</p>
+</div>
+<div class="reveal pt-12 md:pt-0">
+<div class="text-5xl md:text-6xl font-headline font-bold text-navy-800 mb-4 tracking-tight">3</div>
+<p class="font-body text-slate-600 max-w-xs mx-auto leading-relaxed">Szenarien pro Lauf: Trendfortsetzung, Strukturwende, Krisenkonflikt</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Workflow Section -->
+<section class="py-16 md:py-24" id="ablauf">
+<div class="max-w-7xl mx-auto px-5 sm:px-8">
+<h2 class="font-headline font-bold text-2xl sm:text-3xl md:text-4xl text-slate-900 mb-4 text-center tracking-tight">So läuft ein Durchlauf</h2>
+<p class="font-body text-lg text-slate-600 text-center max-w-2xl mx-auto mb-16">Vier Stationen von der Konfiguration bis zum fertigen Szenario-Report.</p>
+<div class="reveal relative">
+<!-- Durchgehende Linie auf Höhe der Nummernkreise; zeichnet sich beim Einblenden. -->
+<div class="hidden md:block absolute top-7 left-[12.5%] right-[12.5%] h-px bg-slate-200 step-line"></div>
+<div class="grid md:grid-cols-4 gap-10 md:gap-8 relative">
+<div class="step group relative pl-20 md:pl-0 min-h-14">
+<div class="md:hidden absolute left-7 top-14 -bottom-10 w-px bg-slate-200" aria-hidden="true"></div>
+<div class="step-dot w-14 h-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-headline font-bold text-navy-800 absolute left-0 top-0 md:static md:mb-6 z-10">01</div>
+<h3 class="font-headline font-semibold text-lg text-slate-900 mb-2 group-hover:text-navy-800 transition-colors">Konfiguration</h3>
+<p class="font-body text-sm text-slate-600 leading-relaxed">Szenario-Modus, Ticks und Population festlegen.</p>
+</div>
+<div class="step group relative pl-20 md:pl-0 min-h-14">
+<div class="md:hidden absolute left-7 top-14 -bottom-10 w-px bg-slate-200" aria-hidden="true"></div>
+<div class="step-dot w-14 h-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-headline font-bold text-navy-800 absolute left-0 top-0 md:static md:mb-6 z-10">02</div>
+<h3 class="font-headline font-semibold text-lg text-slate-900 mb-2 group-hover:text-navy-800 transition-colors">Simulation</h3>
+<p class="font-body text-sm text-slate-600 leading-relaxed">Consumer, Provider und Regulator laufen tick-basiert über den Zustandsgraphen.</p>
+</div>
+<div class="step group relative pl-20 md:pl-0 min-h-14">
+<div class="md:hidden absolute left-7 top-14 -bottom-10 w-px bg-slate-200" aria-hidden="true"></div>
+<div class="step-dot w-14 h-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-headline font-bold text-navy-800 absolute left-0 top-0 md:static md:mb-6 z-10">03</div>
+<h3 class="font-headline font-semibold text-lg text-slate-900 mb-2 group-hover:text-navy-800 transition-colors">CIB-Prüfung</h3>
+<p class="font-body text-sm text-slate-600 leading-relaxed">Jede Faktor-Konstellation wird gegen die eingefrorene Matrix geprüft.</p>
+</div>
+<div class="step group relative pl-20 md:pl-0 min-h-14">
+<div class="step-dot w-14 h-14 rounded-full bg-white border border-slate-200 flex items-center justify-center font-headline font-bold text-navy-800 absolute left-0 top-0 md:static md:mb-6 z-10">04</div>
+<h3 class="font-headline font-semibold text-lg text-slate-900 mb-2 group-hover:text-navy-800 transition-colors">Szenario-Report</h3>
+<p class="font-body text-sm text-slate-600 leading-relaxed">Tripleset aus Trendfortsetzung, Strukturwende und Krisenkonflikt.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Actors Section -->
+<section class="py-16 md:py-24 bg-white" id="akteure">
+<div class="max-w-7xl mx-auto px-5 sm:px-8">
+<h2 class="font-headline font-bold text-2xl sm:text-3xl md:text-4xl text-slate-900 mb-4 text-center tracking-tight">Drei Akteure, ein Zustandsgraph</h2>
+<p class="font-body text-lg text-slate-600 text-center max-w-2xl mx-auto mb-16">Jeder Akteur handelt tick-basiert, mit klar begrenzten Beobachtungen und Handlungsrechten.</p>
+<div class="grid md:grid-cols-3 gap-8" data-stagger>
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100 shadow-sm">
+<div class="w-12 h-12 rounded-lg bg-navy-50 text-navy-800 flex items-center justify-center mb-6 group-hover:bg-navy-800 group-hover:text-white transition-colors duration-300">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+<circle cx="12" cy="7" r="3.4" stroke="currentColor" stroke-width="1.5"></circle>
+<path d="M4.5 20c1.2-4 4-6 7.5-6s6.3 2 7.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+</svg>
+</div>
+<div class="font-body text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Consumer</div>
+<h3 class="font-headline font-semibold text-xl text-slate-900 mb-4">Population &amp; Nachfrage</h3>
+<p class="font-body text-slate-600 leading-relaxed">
+                    Simulierte Reisende treffen Buchungsentscheidungen nach einem mikroökonomischen Logit-Modell, das Preis, Umweltbewusstsein und Substitutionsbereitschaft einschließt.
+                </p>
+</div>
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100 shadow-sm">
+<div class="w-12 h-12 rounded-lg bg-navy-50 text-navy-800 flex items-center justify-center mb-6 group-hover:bg-navy-800 group-hover:text-white transition-colors duration-300">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+<rect x="5" y="9" width="14" height="12" stroke="currentColor" stroke-width="1.5"></rect>
+<path d="M9 21v-5h6v5" stroke="currentColor" stroke-width="1.5"></path>
+<path d="M8 9V4l4-1.5L16 4v5" stroke="currentColor" stroke-width="1.5"></path>
+</svg>
+</div>
+<div class="font-body text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Provider</div>
+<h3 class="font-headline font-semibold text-xl text-slate-900 mb-4">Markt &amp; Preisbildung</h3>
+<p class="font-body text-slate-600 leading-relaxed">
+                    Fluggesellschaften reagieren auf Nachfrage und Kosten. Preis- und Kapazitätsdynamik ergeben sich deterministisch aus Marktregeln.
+                </p>
+</div>
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100 shadow-sm">
+<div class="w-12 h-12 rounded-lg bg-navy-50 text-navy-800 flex items-center justify-center mb-6 group-hover:bg-navy-800 group-hover:text-white transition-colors duration-300">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+<path d="M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6l7-3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+<path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div class="font-body text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Regulator</div>
+<h3 class="font-headline font-semibold text-xl text-slate-900 mb-4">Politik &amp; Regulierung</h3>
+<p class="font-body text-slate-600 leading-relaxed">
+                    Regulatorische Eingriffe wirken über klar definierte Faktoren: vorgeschlagen vom Agenten, geprüft und validiert in Python.
+                </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Questions Section -->
+<section class="py-16 md:py-24 bg-slate-50 border-t border-slate-100">
+<div class="max-w-7xl mx-auto px-5 sm:px-8">
+<h2 class="font-headline font-bold text-2xl sm:text-3xl md:text-4xl text-slate-900 mb-4 text-center tracking-tight">Welche Fragen beantwortet AeroForesight?</h2>
+<p class="font-body text-lg text-slate-600 text-center max-w-2xl mx-auto mb-16">Unterschiedliche Akteure, unterschiedliche Perspektiven, dieselbe Plattform.</p>
+<div class="grid md:grid-cols-2 gap-6" data-stagger>
+
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden">
+<span aria-hidden="true" class="absolute -top-4 right-5 font-headline text-8xl leading-none text-navy-50 select-none pointer-events-none transition-colors duration-300 group-hover:text-navy-100">&ldquo;</span>
+<div class="flex items-center gap-4 mb-5 relative">
+<div class="w-12 h-12 shrink-0 rounded-full bg-navy-800 text-white flex items-center justify-center font-headline font-bold text-sm">AS</div>
+<div>
+<div class="font-headline font-semibold text-slate-900">Airline-Stratege</div>
+<div class="font-body text-xs text-slate-500">Provider-Perspektive</div>
+</div>
+</div>
+<div class="inline-block font-body text-xs font-semibold text-navy-800 bg-navy-50 rounded px-2.5 py-1 mb-4 relative">ETS-Cap trifft SAF-Quote</div>
+<p class="font-body text-lg text-slate-800 leading-relaxed relative">Was passiert mit unseren Margen, wenn die EU das ETS-Cap senkt und gleichzeitig SAF-Beimischungsquoten steigen?</p>
+</div>
+
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden">
+<span aria-hidden="true" class="absolute -top-4 right-5 font-headline text-8xl leading-none text-navy-50 select-none pointer-events-none transition-colors duration-300 group-hover:text-navy-100">&ldquo;</span>
+<div class="flex items-center gap-4 mb-5 relative">
+<div class="w-12 h-12 shrink-0 rounded-full bg-navy-800 text-white flex items-center justify-center font-headline font-bold text-sm">RB</div>
+<div>
+<div class="font-headline font-semibold text-slate-900">Regulierungsbehörde</div>
+<div class="font-body text-xs text-slate-500">Regulator-Perspektive</div>
+</div>
+</div>
+<div class="inline-block font-body text-xs font-semibold text-navy-800 bg-navy-50 rounded px-2.5 py-1 mb-4 relative">Marktgleichgewicht</div>
+<p class="font-body text-lg text-slate-800 leading-relaxed relative">Welche Faktor-Konstellationen führen zu einem stabilen Marktgleichgewicht und welche zu Marktaustritten?</p>
+</div>
+
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden">
+<span aria-hidden="true" class="absolute -top-4 right-5 font-headline text-8xl leading-none text-navy-50 select-none pointer-events-none transition-colors duration-300 group-hover:text-navy-100">&ldquo;</span>
+<div class="flex items-center gap-4 mb-5 relative">
+<div class="w-12 h-12 shrink-0 rounded-full bg-navy-800 text-white flex items-center justify-center font-headline font-bold text-sm">IP</div>
+<div>
+<div class="font-headline font-semibold text-slate-900">Infrastruktur-Planer</div>
+<div class="font-body text-xs text-slate-500">Systemische Perspektive</div>
+</div>
+</div>
+<div class="inline-block font-body text-xs font-semibold text-navy-800 bg-navy-50 rounded px-2.5 py-1 mb-4 relative">Substitution durch die Bahn</div>
+<p class="font-body text-lg text-slate-800 leading-relaxed relative">Wie verändert sich die Nachfrage, wenn Kurzstreckenflüge zunehmend durch Bahnalternativen substituiert werden?</p>
+</div>
+
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden">
+<span aria-hidden="true" class="absolute -top-4 right-5 font-headline text-8xl leading-none text-navy-50 select-none pointer-events-none transition-colors duration-300 group-hover:text-navy-100">&ldquo;</span>
+<div class="flex items-center gap-4 mb-5 relative">
+<div class="w-12 h-12 shrink-0 rounded-full bg-navy-800 text-white flex items-center justify-center font-headline font-bold text-sm">FA</div>
+<div>
+<div class="font-headline font-semibold text-slate-900">Forscher und Analyst</div>
+<div class="font-body text-xs text-slate-500">Consumer-Perspektive</div>
+</div>
+</div>
+<div class="inline-block font-body text-xs font-semibold text-navy-800 bg-navy-50 rounded px-2.5 py-1 mb-4 relative">Preis trifft Umweltbewusstsein</div>
+<p class="font-body text-lg text-slate-800 leading-relaxed relative">Wie reagiert das System, wenn Kerosinpreise und Umweltbewusstsein gleichzeitig ansteigen?</p>
+</div>
+
+</div>
+</div>
+</section>
+<!-- Trust Pillars Section -->
+<section class="py-16 md:py-24 bg-white" id="methodik">
+<div class="max-w-7xl mx-auto px-5 sm:px-8">
+<h2 class="font-headline font-bold text-2xl sm:text-3xl md:text-4xl text-slate-900 mb-4 text-center tracking-tight">Warum Sie den Ergebnissen vertrauen können</h2>
+<p class="font-body text-lg text-slate-600 text-center max-w-2xl mx-auto mb-16">Drei architektonische Prinzipien schützen vor erfundenen Zahlen.</p>
+<div class="grid md:grid-cols-3 gap-8" data-stagger>
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100">
+<div class="w-11 h-11 rounded-full bg-navy-50 text-navy-800 flex items-center justify-center font-headline font-bold text-sm mb-6 transition-colors duration-300 group-hover:bg-navy-800 group-hover:text-white">01</div>
+<h3 class="font-headline font-semibold text-xl text-slate-900 mb-4">Python rechnet, KI erzählt</h3>
+<p class="font-body text-slate-600 leading-relaxed">Preise, Buchungsraten und Faktorzustände werden deterministisch berechnet. LLM-Agenten liefern ausschließlich narrative Einordnung, nie Zahlenwerte.</p>
+</div>
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100">
+<div class="w-11 h-11 rounded-full bg-navy-50 text-navy-800 flex items-center justify-center font-headline font-bold text-sm mb-6 transition-colors duration-300 group-hover:bg-navy-800 group-hover:text-white">02</div>
+<h3 class="font-headline font-semibold text-xl text-slate-900 mb-4">Eingefrorener Maßstab</h3>
+<p class="font-body text-slate-600 leading-relaxed">Die CIB-Matrix ist bewusst eingefroren und wird nie aus Simulationsergebnissen abgeleitet. Der Maßstab bleibt vom Messobjekt getrennt, es entsteht keine Zirkularität.</p>
+</div>
+<div class="reveal lift group bg-white p-6 sm:p-8 rounded-xl border border-slate-100">
+<div class="w-11 h-11 rounded-full bg-navy-50 text-navy-800 flex items-center justify-center font-headline font-bold text-sm mb-6 transition-colors duration-300 group-hover:bg-navy-800 group-hover:text-white">03</div>
+<h3 class="font-headline font-semibold text-xl text-slate-900 mb-4">Vollständig nachvollziehbar</h3>
+<p class="font-body text-slate-600 leading-relaxed">Jeder Simulationslauf erzeugt transparente Artefakte: Tick-Mechanik, Preishistorie, Event-Log. Kein Ergebnis ohne Herleitung.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Trust Statement -->
+<section class="py-20 md:py-32 bg-slate-900 text-center relative overflow-hidden">
+<div class="max-w-4xl mx-auto px-5 sm:px-8 relative z-10" data-stagger>
+<span class="reveal material-symbols-outlined text-4xl text-blue-300 mb-6 block">verified_user</span>
+<h2 class="reveal font-headline font-bold text-2xl sm:text-3xl md:text-5xl text-white mb-8 tracking-tight leading-tight">
+                    Datenintegrität ist unser Fundament.
+                </h2>
+<p class="reveal font-body text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto font-light">
+                    Alle Zahlen werden deterministisch berechnet, nie halluziniert. Die KI interpretiert lediglich die Fakten.
+                    Ihre Daten verbleiben zu 100% in Ihrer eigenen, sicheren Infrastruktur.
+                </p>
+</div>
+<!-- Subtle background accent -->
+<div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-navy-800/20 to-transparent pointer-events-none"></div>
+</section>
+<!-- Outlooks Section -->
+<section class="py-16 md:py-24 bg-white" id="output">
+<div class="max-w-7xl mx-auto px-5 sm:px-8">
+<div class="text-center mb-16 max-w-3xl mx-auto">
+<h2 class="font-headline font-bold text-2xl sm:text-3xl md:text-4xl text-slate-900 mb-4 tracking-tight">Ein Lauf, drei Ausblicke</h2>
+<p class="font-body text-lg text-slate-600">Jede Simulation erzeugt ein Tripleset aus Trendfortsetzung, Strukturwende und Krisenkonflikt: quantitativ hergeleitet, narrativ eingeordnet.</p>
+</div>
+<div class="grid md:grid-cols-3 gap-8" data-stagger>
+<div class="reveal lift bg-slate-50 p-6 sm:p-8 rounded-xl border border-slate-100 border-t-2 border-t-navy-300">
+<svg class="w-full h-16 mb-6" viewBox="0 0 240 64" fill="none" aria-hidden="true">
+<path d="M8 48 L 68 40 L 128 30 L 188 20 L 232 12" stroke="#94b8d7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+<circle cx="232" cy="12" r="3.5" fill="#3e76a6"></circle>
+</svg>
+<h3 class="font-headline font-semibold text-xl text-slate-900 mb-3">Trendfortsetzung</h3>
+<p class="font-body text-slate-600 leading-relaxed">Extrapolation aktueller Entwicklungen ohne disruptive Brüche.</p>
+</div>
+<div class="reveal lift bg-slate-50 p-6 sm:p-8 rounded-xl border border-slate-100 border-t-2 border-t-navy-600">
+<svg class="w-full h-16 mb-6" viewBox="0 0 240 64" fill="none" aria-hidden="true">
+<path d="M8 46 L 78 42 L 120 40" stroke="#94b8d7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M120 40 L 150 16 L 232 10" stroke="#2d5e8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+<line x1="120" y1="6" x2="120" y2="56" stroke="#c2d5e7" stroke-width="1" stroke-dasharray="3 3"></line>
+<circle cx="232" cy="10" r="3.5" fill="#2d5e8a"></circle>
+</svg>
+<h3 class="font-headline font-semibold text-xl text-slate-900 mb-3">Strukturwende</h3>
+<p class="font-body text-slate-600 leading-relaxed">Fundamentale Marktverschiebung durch neue Regulierung oder Technologie.</p>
+</div>
+<div class="reveal lift bg-slate-50 p-6 sm:p-8 rounded-xl border border-slate-100 border-t-2 border-t-rose-400">
+<svg class="w-full h-16 mb-6" viewBox="0 0 240 64" fill="none" aria-hidden="true">
+<path d="M8 40 L 48 34 L 88 44 L 118 14 L 148 54 L 178 22 L 208 46 L 232 32" stroke="#fb7185" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+<circle cx="232" cy="32" r="3.5" fill="#f43f5e"></circle>
+</svg>
+<h3 class="font-headline font-semibold text-xl text-slate-900 mb-3">Krisenkonflikt</h3>
+<p class="font-body text-slate-600 leading-relaxed">Extreme Schockszenarien mit starken Verwerfungen im System.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA Section -->
+<section class="py-16 md:py-24 bg-navy-50 border-t border-slate-100">
+<div class="max-w-4xl mx-auto px-5 sm:px-8 text-center" data-stagger>
+<h2 class="reveal font-headline font-bold text-2xl sm:text-3xl md:text-4xl text-slate-900 mb-6 tracking-tight">Sehen Sie Ihre Szenarien in Zahlen.</h2>
+<p class="reveal font-body text-xl text-slate-600 mb-10 max-w-2xl mx-auto">Wir zeigen Ihnen in einer persönlichen Demo, wie AeroForesight AI Ihre strategischen Fragen durchrechnet.</p>
+<a href="demo-anfragen.html" class="reveal inline-flex px-8 py-4 bg-navy-800 text-white font-body font-medium rounded-DEFAULT hover:bg-navy-700 hover:-translate-y-0.5 transition-all duration-200 shadow-sm items-center justify-center gap-2 text-lg" role="button">Demo anfragen<span class="material-symbols-outlined text-base">arrow_forward</span></a>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-white border-t border-slate-100 w-full py-12 md:py-16">
+<div class="max-w-7xl mx-auto px-5 sm:px-8">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+<div class="col-span-1 md:col-span-1">
+<div class="text-xl font-headline font-bold text-navy-800 mb-4">AeroForesight AI</div>
+<p class="font-body text-sm text-slate-500 mb-6">Hybride Multi-Agenten-Simulation für strategische Zukunftsplanung im Luftverkehr.</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">Python</span>
+<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">LangGraph</span>
+<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">CIB</span>
+<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">Ollama</span>
+</div>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-slate-900 mb-4">Navigation</h4>
+<ul class="space-y-3">
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="#problem">Problem</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="#ablauf">Ablauf</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="#akteure">Akteure</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="#methodik">Methodik</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="#output">Output</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-slate-900 mb-4">Kontakt</h4>
+<ul class="space-y-3">
+<li class="font-body text-sm text-slate-500">info@aeroforesight.ai</li>
+<li class="font-body text-sm text-slate-500">Hochschule der Medien</li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-slate-900 mb-4">Rechtliches</h4>
+<ul class="space-y-3">
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="impressum.html">Impressum</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="datenschutz.html">Datenschutz</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="agb.html">AGB</a></li>
+</ul>
+</div>
+</div>
+<div class="border-t border-slate-100 pt-8 flex justify-center">
+<div class="font-body text-xs text-slate-400">
+            © 2026 AeroForesightAI · Alle Rechte vorbehalten
+        </div>
+</div>
+</div>
+</footer>
+<script>
+        // Simple scroll effect for navbar
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 20) {
+                nav.classList.add('shadow-sm');
+            } else {
+                nav.classList.remove('shadow-sm');
+            }
+        });
+
+        // Blendet Elemente mit .reveal ein, sobald sie in den Viewport kommen.
+        // Elemente innerhalb einer [data-stagger]-Gruppe folgen leicht versetzt.
+        (function () {
+            const items = document.querySelectorAll('.reveal');
+            if (!items.length) return;
+
+            if (!('IntersectionObserver' in window)) {
+                items.forEach((el) => el.classList.add('is-visible'));
+                return;
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+                    const el = entry.target;
+                    const group = el.closest('[data-stagger]');
+                    const index = group ? [...group.querySelectorAll('.reveal')].indexOf(el) : 0;
+                    el.style.transitionDelay = `${Math.min(index, 5) * 90}ms`;
+                    el.classList.add('is-visible');
+                    observer.unobserve(el);
+                });
+            }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
+
+            items.forEach((el) => observer.observe(el));
+        })();
+
+        // Lässt das Hintergrundraster rund um den Mauszeiger aufleuchten.
+        // Nur an Geräten mit echtem Hover; Position wird pro Frame gesetzt,
+        // damit mousemove nicht bei jedem Event Layout anstößt.
+        (function () {
+            if (!window.matchMedia('(hover: hover)').matches) return;
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            document.querySelectorAll('[data-grid]').forEach((host) => {
+                const grid = host.querySelector('.grid-bg');
+                if (!grid) return;
+
+                let frame = null;
+                let x = 0;
+                let y = 0;
+
+                host.addEventListener('pointermove', (event) => {
+                    const rect = host.getBoundingClientRect();
+                    x = event.clientX - rect.left;
+                    y = event.clientY - rect.top;
+                    if (frame) return;
+                    frame = requestAnimationFrame(() => {
+                        grid.style.setProperty('--mx', x + 'px');
+                        grid.style.setProperty('--my', y + 'px');
+                        frame = null;
+                    });
+                });
+
+                host.addEventListener('pointerenter', () => grid.classList.add('is-active'));
+                host.addEventListener('pointerleave', () => {
+                    grid.classList.remove('is-active');
+                    if (frame) {
+                        cancelAnimationFrame(frame);
+                        frame = null;
+                    }
+                });
+            });
+        })();
+    </script>
+<script>
+        // Burger-Menü. Schließt sich beim Klick auf einen Link und ab der
+        // md-Breakpoint-Breite, damit es beim Drehen nicht offen hängen bleibt.
+        (function () {
+            const toggle = document.getElementById('nav-toggle');
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('nav-toggle-icon');
+            if (!toggle || !menu) return;
+
+            const setOpen = (open) => {
+                menu.classList.toggle('hidden', !open);
+                toggle.setAttribute('aria-expanded', String(open));
+                toggle.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+                if (icon) icon.textContent = open ? 'close' : 'menu';
+            };
+
+            toggle.addEventListener('click', () => {
+                setOpen(menu.classList.contains('hidden'));
+            });
+
+            menu.querySelectorAll('a').forEach((link) => {
+                link.addEventListener('click', () => setOpen(false));
+            });
+
+            window.matchMedia('(min-width: 768px)').addEventListener('change', (e) => {
+                if (e.matches) setOpen(false);
+            });
+        })();
+    </script>
+</body></html>
