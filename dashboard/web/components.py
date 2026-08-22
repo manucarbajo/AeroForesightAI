@@ -106,12 +106,24 @@ def button(label: str, *, variant: str = "primary", icon_name: str | None = None
     return html.Button(children, className=f"{class_name} {extra}".strip(), n_clicks=0, **kwargs)
 
 
+def hint_text(hint: str | None, *, class_name: str = "") -> Any:
+    """Erklärung unter einem Feld.
+
+    Als Markdown, weil die Texte aus dem Glossar den technischen Feldnamen in
+    Backticks mitführen — als reiner Text stünden die Zeichen sichtbar da.
+    """
+
+    if not hint:
+        return None
+    return dcc.Markdown(hint, className=f"af-hint af-md af-md--tight {class_name}".strip())
+
+
 def field(label: str, control: Any, *, hint: str | None = None, class_name: str = "") -> html.Div:
     return html.Div(
         [
             html.Label(label, className=LABEL),
             control,
-            html.P(hint, className=HINT) if hint else None,
+            hint_text(hint),
         ],
         className=class_name,
     )
@@ -130,7 +142,7 @@ def checkbox(label: str, *, value: bool, hint: str | None = None, **kwargs: Any)
                 labelClassName="af-check__label",
                 **kwargs,
             ),
-            html.P(hint, className=f"{HINT} ml-6") if hint else None,
+            hint_text(hint, class_name="ml-6"),
         ]
     )
 
@@ -195,6 +207,59 @@ def accordion(title: Any, *children: Any, open: bool = False, badge: str | None 
         open=open,
         className=f"af-acc {CARD} mb-2",
     )
+
+
+def expert(
+    *children: Any,
+    count: int | None = None,
+    title: str = "Feinabstimmung",
+    names: str | None = None,
+) -> html.Details:
+    """Aufklappbarer Block für Parameter, die selten angefasst werden.
+
+    Bewusst schlichter als `accordion`: keine Karte, kleinere Schrift. Der
+    Block soll erkennbar zweitrangig sein — die Standardwerte tragen einen
+    sinnvollen Lauf, wer hier aufklappt, weiß in der Regel warum.
+    """
+
+    heading = title if count is None else f"{title} ({count} Parameter)"
+    return html.Details(
+        [
+            html.Summary(
+                [
+                    icon("chevron_right", "af-acc__chevron text-base text-slate-400"),
+                    html.Span(heading, className="font-body text-sm text-slate-600"),
+                    (
+                        html.Span(names, className=f"{CAPTION} truncate hidden sm:inline")
+                        if names
+                        else None
+                    ),
+                ],
+                className="af-acc__summary flex items-center gap-2 cursor-pointer select-none py-2",
+            ),
+            html.Div(list(children), className="pt-3 pb-1 pl-6"),
+        ],
+        className="af-acc af-expert border-t border-slate-100 mt-5",
+    )
+
+
+def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
+    """Erklärender Fließtext ohne Alarmcharakter — Kontext, keine Meldung."""
+
+    return html.Div(
+        [
+            icon(icon_name, "text-base text-slate-400 shrink-0 mt-0.5"),
+            dcc.Markdown(text, className="af-md af-md--tight"),
+        ],
+        className="flex items-start gap-2.5 font-body text-sm text-slate-600 "
+        "bg-slate-50 border border-slate-200 rounded px-4 py-3",
+    )
+
+
+def lede(text: str) -> html.P:
+    """Einleitungssatz über einem Block — sagt, wozu die Einstellungen dienen."""
+
+    return html.P(text, className="font-body text-sm text-slate-600 max-w-3xl mb-4 leading-relaxed")
 
 
 def code_block(text: str, *, max_height: str = "24rem") -> html.Pre:

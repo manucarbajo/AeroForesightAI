@@ -17,6 +17,7 @@ from typing import Any, Iterable
 from dash import dcc, html
 
 from dashboard.web import components as ui
+from dashboard.web.config_editor import glossary
 
 #: Skalare Felder (Zahl, Text, Auswahl, Schieberegler).
 CFG = "cfg"
@@ -120,21 +121,42 @@ def apply_inputs(data: dict, entries: Iterable[tuple[dict, Any]]) -> dict:
 
 
 # --- Felder ----------------------------------------------------------------
+# Jedes Feld zieht Beschriftung und Erklärung aus `glossary.py`. Das hält die
+# Tab-Module frei von Fließtext und sorgt dafür, dass derselbe Parameter
+# überall gleich heißt und gleich erklärt wird.
+
+
+def _described(
+    field: str, key: str | None, label: str | None, hint: str | None
+) -> tuple[str, str | None]:
+    """Beschriftung und Hinweis bestimmen — Glossar, sofern nichts übergeben ist.
+
+    `key` weicht dort vom Pfad ab, wo derselbe Parameter mehrfach vorkommt:
+    jedes Segment hat eine eigene `prevalence`, erklärt wird sie einmal.
+    """
+
+    param = glossary.get(key or field)
+    resolved_label = label or (param.label if param else field)
+    if hint is not None:
+        return resolved_label, hint
+    return resolved_label, (param.hint() if param else None)
 
 
 def number(
-    label: str,
     field: str,
     value: Any,
     *,
+    label: str | None = None,
+    hint: str | None = None,
+    key: str | None = None,
     min: float | None = None,
     max: float | None = None,
     step: float | None = None,
-    hint: str | None = None,
     class_name: str = "",
 ) -> html.Div:
+    text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
-        label,
+        text_label,
         dcc.Input(
             id=cfg_id(field),
             type="number",
@@ -145,22 +167,24 @@ def number(
             className="af-input",
             debounce=True,
         ),
-        hint=hint,
+        hint=text_hint,
         class_name=class_name,
     )
 
 
 def text(
-    label: str,
     field: str,
     value: Any,
     *,
-    placeholder: str = "",
+    label: str | None = None,
     hint: str | None = None,
+    key: str | None = None,
+    placeholder: str = "",
     class_name: str = "",
 ) -> html.Div:
+    text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
-        label,
+        text_label,
         dcc.Input(
             id=cfg_id(field),
             type="text",
@@ -169,36 +193,45 @@ def text(
             className="af-input",
             debounce=True,
         ),
-        hint=hint,
+        hint=text_hint,
         class_name=class_name,
     )
 
 
 def textarea(
-    label: str, field: str, value: Any, *, hint: str | None = None, class_name: str = ""
+    field: str,
+    value: Any,
+    *,
+    label: str | None = None,
+    hint: str | None = None,
+    key: str | None = None,
+    class_name: str = "",
 ) -> html.Div:
+    text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
-        label,
+        text_label,
         # dcc.Textarea kennt kein `debounce` — der Wert läuft pro Tastendruck
         # in den Store. Bei einem Beschreibungsfeld ist das verkraftbar.
         dcc.Textarea(id=cfg_id(field), value=value or "", className="af-input"),
-        hint=hint,
+        hint=text_hint,
         class_name=class_name,
     )
 
 
 def select(
-    label: str,
     field: str,
     value: Any,
     options: list[dict],
     *,
+    label: str | None = None,
     hint: str | None = None,
+    key: str | None = None,
     clearable: bool = False,
     class_name: str = "",
 ) -> html.Div:
+    text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
-        label,
+        text_label,
         dcc.Dropdown(
             id=cfg_id(field),
             options=options,
@@ -206,25 +239,27 @@ def select(
             clearable=clearable,
             className="af-dropdown",
         ),
-        hint=hint,
+        hint=text_hint,
         class_name=class_name,
     )
 
 
 def slider(
-    label: str,
     field: str,
     value: float,
     *,
+    label: str | None = None,
+    hint: str | None = None,
+    key: str | None = None,
     min: float = 0.0,
     max: float = 1.0,
     step: float = 0.05,
-    hint: str | None = None,
     class_name: str = "",
 ) -> html.Div:
+    text_label, text_hint = _described(field, key, label, hint)
     marks = {min: f"{min:g}", max: f"{max:g}"}
     return ui.field(
-        label,
+        text_label,
         html.Div(
             dcc.Slider(
                 id=cfg_id(field),
@@ -238,10 +273,18 @@ def slider(
             ),
             className="pt-1",
         ),
-        hint=hint,
+        hint=text_hint,
         class_name=class_name,
     )
 
 
-def check(label: str, field: str, value: bool, *, hint: str | None = None) -> html.Div:
-    return ui.checkbox(label, value=bool(value), id=cfg_id(field, CFG_BOOL), hint=hint)
+def check(
+    field: str,
+    value: bool,
+    *,
+    label: str | None = None,
+    hint: str | None = None,
+    key: str | None = None,
+) -> html.Div:
+    text_label, text_hint = _described(field, key, label, hint)
+    return ui.checkbox(text_label, value=bool(value), id=cfg_id(field, CFG_BOOL), hint=text_hint)
