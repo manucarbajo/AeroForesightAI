@@ -1,0 +1,70 @@
+{
+  "status": "review",
+  "project": {
+    "id": "15314319780426933898",
+    "title": "AeroForesight AI Landing Page"
+  },
+  "designSystem": {
+    "assetId": "5668261838902430145",
+    "theme": {
+      "colorMode": "LIGHT",
+      "colorVariant": "TONAL_SPOT",
+      "customColor": "#1E3A5F",
+      "headlineFont": "PLUS_JAKARTA_SANS",
+      "bodyFont": "INTER",
+      "labelFont": "INTER",
+      "roundness": "ROUND_EIGHT"
+    }
+  },
+  "interview": {
+    "projectName": "AeroForesight AI",
+    "pitch": "Hybride Multi-Agenten-Simulationsplattform für strategische Zukunftsplanung im Luftverkehr. Deterministische Simulation liefert die Zahlen, generative KI ausschließlich die narrative Ausdeutung.",
+    "targetUsers": "B2B-Entscheider, Investoren und spätere Unternehmensnutzer, die das Tool noch nicht kennen",
+    "primaryCta": "Demo anfragen",
+    "adjectives": [
+      "innovativ",
+      "präzise",
+      "vertrauenswürdig",
+      "premium",
+      "technisch"
+    ],
+    "reference": [
+      "Notion",
+      "Apple"
+    ],
+    "colorMode": "hell",
+    "accent": "seriöses Navy-Blau",
+    "typography": "klar, geometrisch, serifenlos",
+    "shapes": "moderat abgerundet",
+    "language": "Deutsch"
+  },
+  "screens": {
+    "desktop": {
+      "current": "e3d94dd8ee7745d3b703efcb45337857",
+      "history": [
+        {
+          "version": "v1",
+          "screenId": "c072c69e39a4431db542c332055e5be3",
+          "file": "C:\\Users\\manue\\Documents\\Neuer Ordner\\AeroForesightAI\\.claude\\worktrees\\brand-landingpage-skill-d6e711\\.stitch\\designs\\desktop-v1.html",
+          "imgUrl": "https://lh3.googleusercontent.com/aida/AEtjO1U5EFPM3JRAhj6A8sKp9uyAstqeiNSV4QiyQPGTgSXgSd5Z5i_5NEsX8i95a1VTzVx8wLZhob1AVHYZ5Fb1gwFYGdDk3V2Zi-m2nb_mlbMIl2zJQlPJLypMzayORR8ERnxlvau0ekRftOgkyazD5Kln9zmFl4dnhUdcBaYaueZvXrpfyT1dXnHnhhlOshL8ZXYpZVmw95Y_dpEtSqYFGR-6L7FuBiFM1LMtDUf5yCdanmEZyobNB4jbsnub"
+        },
+        {
+          "version": "v2",
+          "screenId": "e3d94dd8ee7745d3b703efcb45337857",
+          "file": "C:\\Users\\manue\\Documents\\Neuer Ordner\\AeroForesightAI\\.claude\\worktrees\\brand-landingpage-skill-d6e711\\.stitch\\designs\\desktop-v2.html",
+          "imgUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VZzRxHzv-M-C-62-nP3QfPPemq1nKQ3NfSED1nOiaabXOjOIG2zw0PWWDt2WD3VslHIkO3IcCLWrBaQ3qp6lBpxzF4XIm4XbNw-TW3qrYQ5Zwjms83-kcTYIjR30H7XHa9eYJpUXXRImJG8Q2ispN1uf_YRtl2JIbjVpbK-PoaVqXLScZH3KuExHMYDQpYMHe6PIve41FCC1HZhrey_YFYD01CK-iompvT26CdmKPSlZ3Lus5J-lO7d_9m"
+        }
+      ]
+    },
+    "mobile": {
+      "current": null,
+      "history": []
+    }
+  },
+  "pages": {
+    "demo-anfragen": {
+      "screenId": "39c7c70c6f1b4ec39bab6dc6b2383698",
+      "file": "C:\\Users\\manue\\Documents\\Neuer Ordner\\AeroForesightAI\\.claude\\worktrees\\brand-landingpage-skill-d6e711\\.stitch\\designs\\demo-anfragen.html"
+    }
+  }
+}

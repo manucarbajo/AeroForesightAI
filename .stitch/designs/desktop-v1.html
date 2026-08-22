@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html class="light" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AeroForesight AI - Die Zukunft des Luftverkehrs berechenbar machen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            50: '#f0f4f9',
+                            100: '#e0eaf3',
+                            200: '#c2d5e7',
+                            300: '#94b8d7',
+                            400: '#6094c1',
+                            500: '#3e76a6',
+                            600: '#2d5e8a',
+                            700: '#244b70',
+                            800: '#1E3A5F', // Primary Navy
+                            900: '#1c3453',
+                            950: '#122238',
+                        }
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans", "sans-serif"],
+                        "display": ["Plus Jakarta Sans", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-white text-slate-800 font-body antialiased selection:bg-navy-200 selection:text-navy-900">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 transition-all duration-300" id="navbar">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<a class="text-xl font-headline font-bold text-navy-800 tracking-tight" href="#">AeroForesight AI</a>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-body text-sm font-medium text-navy-800 font-semibold hover:text-navy-800 transition-colors duration-200" href="#loesungen">Lösungen</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="#plattform">Plattform</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="#anwendungsfaelle">Anwendungsfälle</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="#ueber-uns">Über uns</a>
+</div>
+<button class="hidden md:inline-flex items-center justify-center px-5 py-2.5 bg-navy-800 text-white font-body text-sm font-medium rounded-DEFAULT hover:bg-navy-700 transition-colors duration-200 shadow-sm">
+                Demo anfragen
+            </button>
+<button class="md:hidden text-slate-600 hover:text-navy-800">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="pt-24 pb-16">
+<!-- Hero Section -->
+<section class="relative pt-20 pb-32 overflow-hidden">
+<div class="max-w-7xl mx-auto px-8 relative z-10 text-center">
+<div class="max-w-4xl mx-auto">
+<h1 class="font-headline font-bold text-5xl md:text-7xl leading-tight text-slate-900 mb-6 tracking-tight">
+                        Die Zukunft des Luftverkehrs <span class="text-navy-800">berechenbar</span> machen – statt nur zu raten.
+                    </h1>
+<p class="font-body text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+                        Unsere deterministische Simulation liefert die harten Zahlen, während KI sie präzise interpretiert. Premium B2B Analytics für strategische Planung.
+                    </p>
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+<button class="w-full sm:w-auto px-8 py-3.5 bg-navy-800 text-white font-body font-medium rounded-DEFAULT hover:bg-navy-700 transition-all duration-200 shadow-sm flex items-center justify-center gap-2">
+                            Demo anfragen
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+<button class="w-full sm:w-auto px-8 py-3.5 bg-transparent text-navy-800 border border-slate-200 font-body font-medium rounded-DEFAULT hover:bg-slate-50 transition-all duration-200 flex items-center justify-center gap-2">
+                            Wie es funktioniert
+                        </button>
+</div>
+</div>
+</div>
+<!-- Abstract background shape -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-navy-50 rounded-full blur-3xl opacity-50 -z-10 pointer-events-none"></div>
+</section>
+<!-- Problem & Lösung (Bento Grid Style) -->
+<section class="py-24 bg-slate-50 border-y border-slate-100" id="loesungen">
+<div class="max-w-7xl mx-auto px-8">
+<div class="text-center mb-16 max-w-3xl mx-auto">
+<h2 class="font-headline font-bold text-3xl md:text-4xl text-slate-900 mb-4 tracking-tight">Klarheit durch deterministische Simulation</h2>
+<p class="font-body text-lg text-slate-600">Wir ersetzen strategische Ungewissheit durch nachvollziehbare, faktenbasierte Vorhersagemodelle.</p>
+</div>
+<div class="grid md:grid-cols-2 gap-8">
+<!-- Problem Card -->
+<div class="bg-white p-10 rounded-xl border border-slate-100 shadow-sm h-full flex flex-col">
+<div class="w-12 h-12 bg-rose-50 rounded-lg flex items-center justify-center text-rose-600 mb-6">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<h3 class="font-headline font-semibold text-2xl text-slate-900 mb-4">Das Problem: Strategische Ungewissheit</h3>
+<p class="font-body text-slate-600 mb-6 flex-grow leading-relaxed">
+                            Traditionelle Planung im Luftverkehr verlässt sich oft auf starre Extrapolationen oder Bauchgefühl. Die Interaktionen zwischen Passagieren, Airlines und Regulatoren sind jedoch hochkomplex und dynamisch.
+                        </p>
+<div class="rounded-lg overflow-hidden border border-slate-100">
+<div class="bg-cover bg-center w-full h-48" data-alt="A professional, clean, light-mode abstract representation of chaotic, tangled lines in subtle red and grey tones, illustrating confusion and uncertainty in business strategy, set against a pristine white background. Minimalist B2B tech aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA8L6jKYWNmWxM4kjeQ-FnK0zL6VlBh_vWMqFO6Jk1GtMeyjhhplQFfb8HnQnu-gLrm5SZn7jh6JdMP7XTmiNMVGxK90XrqbaBxuzYyJlJ-dLDm6N_xFQrIM7HPO2_GE-Ru1CpTX76QUTHbr6mFbB-se-DQzqqlhhfJHB3_kjBPSR0nocFLDOZFKWXlmeZBIinGUHddIDeZo56IGgXqjeeIlxGjGG3S5b_36ytYJsgHCUdW21NJxq1YnHkhbORwXC_hETY4LsJpbyvr')"></div>
+</div>
+</div>
+<!-- Solution Card -->
+<div class="bg-navy-800 p-10 rounded-xl shadow-md h-full flex flex-col text-white">
+<div class="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center text-blue-300 mb-6 backdrop-blur-sm">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<h3 class="font-headline font-semibold text-2xl text-white mb-4">Die Lösung: AeroForesight AI</h3>
+<p class="font-body text-blue-100 mb-6 flex-grow leading-relaxed">
+                            Unsere deterministische Plattform simuliert das Verhalten aller Akteure (Multi-Agent Simulation) auf Basis harter Daten. KI wird nur genutzt, um die exakt berechneten Ergebnisse präzise und verständlich zu interpretieren.
+                        </p>
+<div class="rounded-lg overflow-hidden border border-white/20">
+<div class="bg-cover bg-center w-full h-48" data-alt="A clean, highly professional data visualization showing clear, converging lines forming a structured, glowing geometric pattern in crisp navy blue and white. Represents clarity, deterministic calculation, and order. Light mode B2B software aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB4onaDd1h1PY6lTxBmwcDl053H25Yj8VUN3bD-ELxXBrOXb5txNq740xp9GcBiYzUgPRfTFsMIft9Sp9hv2rTnFfuXeMFwiWl3FVE6kN3bfbY-1OQ0hs4ubY5Swj053-M_g3tHyIW3TDEOafkBYe4-JciANGS_GP2JSGVWYOcmDs7a9UQ7DS0spjGTaTsxhWX5SZnhWnm5PV_zeByNSDtq1RirEhDjx7R4z56394RI6FFL5PhVrgizUNtjLsP5ykeYwLLVWJIhpT8x')"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Features -->
+<section class="py-24" id="plattform">
+<div class="max-w-7xl mx-auto px-8">
+<div class="mb-16">
+<h2 class="font-headline font-bold text-3xl md:text-4xl text-slate-900 mb-4 tracking-tight">Kernfunktionen der Plattform</h2>
+<p class="font-body text-lg text-slate-600 max-w-2xl">Vier Säulen für belastbare, strategische Entscheidungen im Luftfahrtsektor.</p>
+</div>
+<div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Feature 1 -->
+<div class="bg-white p-8 rounded-xl border border-slate-100 hover:border-navy-200 hover:shadow-md transition-all duration-300 group">
+<div class="w-10 h-10 rounded-lg bg-navy-50 text-navy-800 flex items-center justify-center mb-6 group-hover:bg-navy-800 group-hover:text-white transition-colors duration-300">
+<span class="material-symbols-outlined">shopping_cart</span>
+</div>
+<h3 class="font-headline font-semibold text-lg text-slate-900 mb-3">Kaufentscheidungen simulieren</h3>
+<p class="font-body text-sm text-slate-600 leading-relaxed">
+                            Deterministische Simulation von Passagier- und Anbieterentscheidungen basierend auf Preis, Präferenz und Verfügbarkeit.
+                        </p>
+</div>
+<!-- Feature 2 -->
+<div class="bg-white p-8 rounded-xl border border-slate-100 hover:border-navy-200 hover:shadow-md transition-all duration-300 group">
+<div class="w-10 h-10 rounded-lg bg-navy-50 text-navy-800 flex items-center justify-center mb-6 group-hover:bg-navy-800 group-hover:text-white transition-colors duration-300">
+<span class="material-symbols-outlined">fact_check</span>
+</div>
+<h3 class="font-headline font-semibold text-lg text-slate-900 mb-3">Konsistenzprüfung</h3>
+<p class="font-body text-sm text-slate-600 leading-relaxed">
+                            Validierung von Faktorkonstellationen für belastbare Vorhersagen. Vermeidung logischer Brüche in der strategischen Planung.
+                        </p>
+</div>
+<!-- Feature 3 -->
+<div class="bg-white p-8 rounded-xl border border-slate-100 hover:border-navy-200 hover:shadow-md transition-all duration-300 group">
+<div class="w-10 h-10 rounded-lg bg-navy-50 text-navy-800 flex items-center justify-center mb-6 group-hover:bg-navy-800 group-hover:text-white transition-colors duration-300">
+<span class="material-symbols-outlined">auto_graph</span>
+</div>
+<h3 class="font-headline font-semibold text-lg text-slate-900 mb-3">Automatische Szenarien</h3>
+<p class="font-body text-sm text-slate-600 leading-relaxed">
+                            Trendfortschreibung, Strukturwandel und Krisenkonflikte werden algorithmisch auf Basis historischer Daten modelliert.
+                        </p>
+</div>
+<!-- Feature 4 -->
+<div class="bg-white p-8 rounded-xl border border-slate-100 hover:border-navy-200 hover:shadow-md transition-all duration-300 group">
+<div class="w-10 h-10 rounded-lg bg-navy-50 text-navy-800 flex items-center justify-center mb-6 group-hover:bg-navy-800 group-hover:text-white transition-colors duration-300">
+<span class="material-symbols-outlined">groups</span>
+</div>
+<h3 class="font-headline font-semibold text-lg text-slate-900 mb-3">Akteursrollen</h3>
+<p class="font-body text-sm text-slate-600 leading-relaxed">
+                            Detaillierte Interaktion zwischen Konsumenten, Anbietern und Regulatoren im geschlossenen Ökosystem.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Trust Statement -->
+<section class="py-32 bg-slate-900 text-center relative overflow-hidden">
+<div class="max-w-4xl mx-auto px-8 relative z-10">
+<span class="material-symbols-outlined text-4xl text-blue-300 mb-6 block">verified_user</span>
+<h2 class="font-headline font-bold text-3xl md:text-5xl text-white mb-8 tracking-tight leading-tight">
+                    Datenintegrität ist unser Fundament.
+                </h2>
+<p class="font-body text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto font-light">
+                    Alle Zahlen werden deterministisch berechnet, nie halluziniert. Die KI interpretiert lediglich die Fakten. 
+                    Ihre Daten verbleiben zu 100% in Ihrer eigenen, sicheren Infrastruktur.
+                </p>
+</div>
+<!-- Subtle background accent -->
+<div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-navy-800/20 to-transparent pointer-events-none"></div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-white border-t border-slate-100 w-full py-12">
+<div class="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="text-lg font-headline font-bold text-navy-800">
+                AeroForesight AI
+            </div>
+<div class="flex flex-wrap items-center gap-6 justify-center">
+<a class="font-body text-xs text-slate-500 hover:underline transition-all cursor-pointer" href="#">Impressum</a>
+<a class="font-body text-xs text-slate-500 hover:underline transition-all cursor-pointer" href="#">Datenschutz</a>
+<a class="font-body text-xs text-slate-500 hover:underline transition-all cursor-pointer" href="#">AGB</a>
+<a class="font-body text-xs text-slate-500 hover:underline transition-all cursor-pointer" href="#">Kontakt</a>
+</div>
+<div class="font-body text-xs text-slate-500">
+                © 2024 AeroForesight AI. Alle Rechte vorbehalten.
+            </div>
+</div>
+</footer>
+<script>
+        // Simple scroll effect for navbar
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 20) {
+                nav.classList.add('shadow-sm');
+            } else {
+                nav.classList.remove('shadow-sm');
+            }
+        });
+    </script>
+</body></html>
