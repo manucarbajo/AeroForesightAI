@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="de"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Alte Landingpage (Vergleich) | AeroForesight AI</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #FAFBFC;
+  --bg-elevated: #FFFFFF;
+  --surface: #F1F4F8;
+  --sidebar: #F5F7FA;
+  --border: #E1E7EF;
+  --border-strong: #C6D0DD;
+  --text: #18202E;
+  --text-secondary: #48546A;
+  --text-muted: #5E6A7D;
+  --accent: #1A5FA8;
+  --accent-strong: #134781;
+  --accent-soft: #E7F0FA;
+  --amber: #965900;
+  --amber-soft: #FBF0DA;
+  --ok: #1B7A4B;
+  --on-accent: #FFFFFF;
+  --line: #D3DCE7;
+  --shadow-sm: 0 1px 2px rgba(24, 32, 46, 0.06);
+  --shadow-md: 0 6px 20px rgba(24, 32, 46, 0.10);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.wrap { max-width: 1100px; margin: 0 auto; padding: 28px 40px 60px; }
+h1, h2, h3 { color: var(--text); }
+.hero-row {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: 40px;
+  align-items: center;
+  margin: 40px 0 8px;
+}
+.nav-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.hero-cta { display: flex; align-items: center; gap: 24px; }
+@media (max-width: 900px) {
+  .hero-row { grid-template-columns: 1fr; }
+  .wrap { padding: 20px 20px 48px; }
+}
+.compare-banner {
+  position: sticky; top: 0; z-index: 999;
+  background: var(--amber-soft); border-bottom: 1px solid var(--border);
+  padding: 10px 20px; font-size: 13px; color: var(--text-secondary);
+}
+.compare-banner a { color: var(--accent); font-weight: 600; }
+</style>
+
+<style>
+/* Hide sidebar and header toolbar on landing page */
+[data-testid="stSidebar"],
+button[data-testid="stSidebarNavCollapseButton"],
+button[data-testid="stSidebarNavExpandButton"],
+[data-testid="collapsedControl"] {
+  display: none !important;
+}
+
+.eyebrow{font-family:'IBM Plex Sans', system-ui, sans-serif; font-size:12.5px; color:var(--text-muted); font-weight:600;}
+.mono-num{font-family:'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums;}
+.card{background:var(--bg-elevated); border:1px solid var(--border); border-radius:12px; transition:transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;}
+.card:hover{transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:var(--border-strong);}
+
+a.landing-nav-link, a.landing-nav-link:visited{font-size:13px; color:var(--text-secondary) !important; text-decoration:none !important; font-weight:500; padding:6px 14px; border-radius:8px; background:var(--surface); border:1px solid var(--border); transition:color 0.2s ease, background 0.2s ease, border-color 0.2s ease;}
+a.landing-nav-link:hover{color:var(--text) !important; background:var(--bg-elevated); border-color:var(--border-strong);}
+a.landing-footer-link, a.landing-footer-link:visited{font-size:13px; color:var(--text-secondary) !important; text-decoration:none !important; transition:color 0.2s ease;}
+a.landing-footer-link:hover{color:var(--text) !important;}
+
+.landing-usp-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:24px;}
+.landing-problem-stats{display:grid; grid-template-columns:repeat(3, 1fr); gap:18px;}
+.landing-problem-gaps{display:grid; grid-template-columns:repeat(2, 1fr); gap:24px;}
+.landing-pipeline-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:18px;}
+.landing-actors-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:18px;}
+.landing-personas-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:20px;}
+.landing-trust-pillars{display:grid; grid-template-columns:repeat(3, 1fr); gap:20px;}
+.landing-cib-grid{display:grid; grid-template-columns:1.1fr 0.9fr; gap:40px; align-items:center;}
+.landing-tripleset-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;}
+.landing-preview-stats{display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;}
+
+@keyframes fadeUp{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
+@keyframes drawLine{ from{ stroke-dashoffset:1; } to{ stroke-dashoffset:0; } }
+@keyframes radarPulse{ 0%{ transform:scale(0.9); opacity:0.9; } 70%{ transform:scale(2.6); opacity:0; } 100%{ transform:scale(2.6); opacity:0; } }
+@keyframes softFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+
+.fx-up{opacity:0; animation:fadeUp 0.7s cubic-bezier(.2,.7,.2,1) forwards;}
+.route-path{stroke-dasharray:1; stroke-dashoffset:1; animation:drawLine 1.6s cubic-bezier(.3,.7,.2,1) forwards;}
+.radar-ring{transform-origin:center; animation:radarPulse 2.6s ease-out infinite;}
+.hero-card{animation:softFloat 5s ease-in-out infinite;}
+
+@media (max-width: 768px) {
+  .landing-usp-grid{grid-template-columns:1fr;}
+  .landing-problem-stats{grid-template-columns:1fr;}
+  .landing-problem-gaps{grid-template-columns:1fr;}
+  .landing-pipeline-grid{grid-template-columns:repeat(2, 1fr);}
+  .landing-actors-grid{grid-template-columns:1fr;}
+  .landing-personas-grid{grid-template-columns:1fr;}
+  .landing-trust-pillars{grid-template-columns:1fr;}
+  .landing-cib-grid{grid-template-columns:1fr;}
+  .landing-tripleset-grid{grid-template-columns:1fr;}
+  .landing-preview-stats{grid-template-columns:repeat(2, 1fr);}
+  footer > div:first-child{grid-template-columns:1fr 1fr !important;}
+}
+@media (max-width: 480px) {
+  .landing-pipeline-grid{grid-template-columns:1fr;}
+  .landing-preview-stats{grid-template-columns:1fr;}
+}
+</style>
+
+</head>
+<body>
+<div class="compare-banner">
+  <strong>Alte Landingpage</strong> — statischer Nachbau aus <code>dashboard/landing.py</code> zum Vergleich.
+  &nbsp;·&nbsp; <a href="/aeroforesight-ai-landing-page/index.html">Zur neuen Landingpage →</a>
+</div>
+<div class="wrap">
+  <div class="nav-row">
+    
+<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+  <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+    <path d="M2 22L14 4" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M8 22L16 9" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+    <path d="M14 22L18 15" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+    <circle cx="14" cy="4" r="2" fill="var(--amber)"/>
+  </svg>
+  <span style="font-weight:600; font-size:16px; letter-spacing:-0.01em;">AeroForesight AI</span>
+  <nav style="display:flex; gap:20px; margin-left:20px;">
+    <a class="landing-nav-link" href="#problem">Problem</a>
+    <a class="landing-nav-link" href="#ablauf">Ablauf</a>
+    <a class="landing-nav-link" href="#akteure">Akteure</a>
+    <a class="landing-nav-link" href="#methodik">Methodik</a>
+    <a class="landing-nav-link" href="#output">Output</a>
+  </nav>
+</div>
+
+    <a href="#" style="display:inline-flex; align-items:center; justify-content:center; padding:8px 18px; background:var(--accent); color:var(--on-accent); border-radius:8px; font-size:13px; font-weight:600; text-decoration:none;">Anmelden</a>
+  </div>
+  <div class="hero-row">
+    <div>
+      
+<h1 class="fx-up" style="font-size:44px; line-height:1.15; font-weight:600; letter-spacing:-0.015em; margin:0 0 24px; animation-delay:0.05s;">
+  Was passiert mit dem Luftverkehr, wenn Politik, Markt und Nachfrage sich gleichzeitig verschieben?
+</h1>
+<p class="fx-up" style="font-size:16px; line-height:1.65; color:var(--text-secondary); margin:0 0 28px; animation-delay:0.28s;">
+  AeroForesight AI kombiniert deterministische Massensimulation mit KI-gestützter Ausdeutung.
+  Logit-Modelle berechnen individuelle Buchungsentscheidungen, ein CIB-Konsistenzfilter nach
+  Weimer-Jehle prüft jede Faktor-Konstellation auf Widerspruchsfreiheit. Die Zahlen kommen aus
+  Python, nie vom Sprachmodell.
+</p>
+
+      <div class="hero-cta">
+        <a href="#" style="display:inline-flex; align-items:center; justify-content:center; padding:10px 20px; background:var(--accent); color:var(--on-accent); border-radius:8px; font-size:14px; font-weight:600; text-decoration:none;">Zur Plattform →</a>
+        <a href="#methodik" style="font-size:14px; font-weight:500; color:var(--text-secondary); text-decoration:none;">Wie die Simulation funktioniert</a>
+      </div>
+    </div>
+    <div>
+<div class="fx-up" style="position:relative; height:400px; animation-delay:0.35s;">
+  <svg width="100%" height="100%" viewBox="0 0 560 400" fill="none" style="overflow:visible;">
+    <g opacity="0.55">
+      <path class="route-path" d="M40 340 Q 260 40 520 180" stroke="var(--line)" stroke-width="1" fill="none" style="animation-delay:0.6s;"/>
+      <path class="route-path" d="M20 270 Q 220 120 500 310" stroke="var(--line)" stroke-width="1" fill="none" style="animation-delay:0.8s;"/>
+      <path class="route-path" d="M80 380 Q 300 200 540 70" stroke="var(--line)" stroke-width="1" fill="none" style="animation-delay:1.0s;"/>
+      <path class="route-path" d="M60 180 Q 240 30 460 50" stroke="var(--line)" stroke-width="1" fill="none" style="animation-delay:1.2s;"/>
+    </g>
+    <g>
+      <circle cx="40" cy="340" r="2.5" fill="var(--accent)"/>
+      <circle cx="520" cy="180" r="2.5" fill="var(--accent)"/>
+      <circle cx="500" cy="310" r="2.5" fill="var(--accent)"/>
+      <circle cx="80" cy="380" r="2.5" fill="var(--accent)"/>
+      <circle class="radar-ring" cx="540" cy="70" r="3.5" fill="none" stroke="var(--amber)" stroke-width="1.2"/>
+      <circle cx="540" cy="70" r="3.5" fill="var(--amber)"/>
+      <circle cx="60" cy="180" r="2.5" fill="var(--accent)"/>
+      <circle cx="460" cy="50" r="2.5" fill="var(--accent)"/>
+    </g>
+    <g opacity="0.4" stroke="var(--border-strong)" stroke-width="1">
+      <line x1="0" y1="100" x2="560" y2="100"/>
+      <line x1="0" y1="200" x2="560" y2="200"/>
+      <line x1="0" y1="300" x2="560" y2="300"/>
+      <line x1="140" y1="0" x2="140" y2="400"/>
+      <line x1="280" y1="0" x2="280" y2="400"/>
+      <line x1="420" y1="0" x2="420" y2="400"/>
+    </g>
+  </svg>
+  <div class="card hero-card" style="position:absolute; right:0; top:30px; width:190px; padding:14px 16px; box-shadow:var(--shadow-md);">
+    <div class="eyebrow" style="margin-bottom:8px;">Buchungsrate</div>
+    <div class="mono-num" style="font-size:24px; font-weight:600;">0.62</div>
+    <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Tick 24 &middot; CIB-konsistent</div>
+  </div>
+</div>
+</div>
+  </div>
+
+<div id="versprechen" style="margin:40px 0 16px;">
+  <div class="eyebrow" style="margin-bottom:10px;">Unser Ansatz</div>
+  <h2 style="font-size:24px; font-weight:600; letter-spacing:-0.01em; margin:0 0 24px;">Was AeroForesight anders macht</h2>
+  <div class="landing-usp-grid">
+    <div class="card fx-up" style="padding:28px; text-align:center; animation-delay:0.4s;">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style="margin-bottom:14px;">
+        <rect x="4" y="4" width="24" height="24" rx="4" stroke="var(--accent)" stroke-width="1.5"/>
+        <path d="M10 20L14 12L18 17L22 10" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h3 style="font-size:16px; font-weight:600; margin:0 0 8px;">Deterministisch</h3>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Alle Kennzahlen &mdash; Preise, Buchungsraten, Faktorzust&auml;nde &mdash; werden in Python berechnet. Kein LLM erfindet Zahlen.</p>
+    </div>
+    <div class="card fx-up" style="padding:28px; text-align:center; animation-delay:0.5s;">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style="margin-bottom:14px;">
+        <path d="M16 4L26 9V17C26 22 22 26 16 28C10 26 6 22 6 17V9L16 4Z" stroke="var(--amber)" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M11 16L14 19L21 12" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h3 style="font-size:16px; font-weight:600; margin:0 0 8px;">Konsistent</h3>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Die CIB-Matrix nach Weimer-Jehle pr&uuml;ft jede Faktor-Konstellation auf Widerspruchsfreiheit &mdash; unabh&auml;ngig vom einzelnen Lauf.</p>
+    </div>
+    <div class="card fx-up" style="padding:28px; text-align:center; animation-delay:0.6s;">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" style="margin-bottom:14px;">
+        <rect x="5" y="6" width="22" height="16" rx="3" stroke="var(--accent)" stroke-width="1.5"/>
+        <path d="M10 14H22M10 18H17" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round"/>
+        <path d="M10 10H15" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <h3 style="font-size:16px; font-weight:600; margin:0 0 8px;">Narrativ</h3>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Generative KI liefert die Ausdeutung &mdash; Szenarien werden nicht nur berechnet, sondern kontextuell eingeordnet.</p>
+    </div>
+  </div>
+</div>
+
+
+<div id="problem" style="margin:24px 0 48px; padding-top:40px; border-top:1px solid var(--border);">
+  <div class="eyebrow" style="margin-bottom:10px;">Herausforderung</div>
+  <h2 style="font-size:28px; font-weight:600; letter-spacing:-0.015em; margin:0 0 10px;">Europ&auml;ischer Luftverkehr im Umbruch</h2>
+  <p style="font-size:15px; line-height:1.65; color:var(--text-secondary); margin:0 0 28px; max-width:680px;">
+    ETS-Versch&auml;rfung, SAF-Mandate, Post-Covid-Nachfrageverschiebung, Bahnalternativen,
+    geopolitische Unsicherheit &mdash; die Einflussfaktoren wirken gleichzeitig und in
+    Wechselwirkung. Kein Strategieteam kann alle Konstellationen manuell durchspielen.
+  </p>
+  <div class="landing-problem-stats" style="margin-bottom:32px;">
+    <div class="card fx-up" style="padding:24px; text-align:center; animation-delay:0.1s;">
+      <div class="mono-num" style="font-size:36px; font-weight:700; color:var(--accent);">7</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-top:6px; line-height:1.5;">Interdependente Faktoren &mdash; von Regulierung &uuml;ber Technologie bis Marktstruktur</div>
+    </div>
+    <div class="card fx-up" style="padding:24px; text-align:center; animation-delay:0.2s;">
+      <div class="mono-num" style="font-size:36px; font-weight:700; color:var(--amber);">128</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-top:6px; line-height:1.5;">M&ouml;gliche Konstellationen &mdash; jede Kombination wirkt anders auf den Markt</div>
+    </div>
+    <div class="card fx-up" style="padding:24px; text-align:center; animation-delay:0.3s;">
+      <div class="mono-num" style="font-size:36px; font-weight:700; color:var(--text);">3</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-top:6px; line-height:1.5;">Szenarien pro Lauf &mdash; Trendfortsetzung, Strukturwende, Krisenkonflikt</div>
+    </div>
+  </div>
+  <div class="landing-problem-gaps">
+    <div class="card fx-up" style="padding:24px; animation-delay:0.35s;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin-bottom:12px;">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent)" stroke-width="1.5"/>
+        <path d="M8 8L16 16M8 16L16 8" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <h3 style="font-size:15px; font-weight:600; margin:0 0 8px;">Komplexit&auml;tsl&uuml;cke</h3>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Sieben Faktoren mit je zwei Zust&auml;nden erzeugen ein kombinatorisches Feld, das kein Team manuell beherrscht. Wechselwirkungen zwischen Regulierung, Technologie und Nachfrage bleiben in klassischen Planungsprozessen unsichtbar.</p>
+    </div>
+    <div class="card fx-up" style="padding:24px; animation-delay:0.45s;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin-bottom:12px;">
+        <circle cx="12" cy="12" r="9" stroke="var(--amber)" stroke-width="1.5"/>
+        <path d="M12 7V12L15 14" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <h3 style="font-size:15px; font-weight:600; margin:0 0 8px;">Strategiel&uuml;cke</h3>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Strategische Planung arbeitet in Jahreszyklen &mdash; aber EU-Verordnungen, SAF-Kosten und Nachfrageverhalten &auml;ndern sich in Monaten. Wenn der Strategiebericht fertig ist, hat sich die Grundlage verschoben.</p>
+    </div>
+  </div>
+</div>
+
+
+<div id="ablauf" style="margin:16px 0 48px; padding-top:40px; border-top:1px solid var(--border);">
+  <div class="eyebrow" style="margin-bottom:10px;">Ablauf</div>
+  <h2 style="font-size:24px; font-weight:600; letter-spacing:-0.01em; margin:0 0 28px;">So l&auml;uft ein Durchlauf</h2>
+  <div class="landing-pipeline-grid" style="position:relative;">
+    <svg width="100%" height="2" style="position:absolute; top:19px; left:0; z-index:0;" viewBox="0 0 1000 2" preserveAspectRatio="none">
+      <line class="route-path" x1="0" y1="1" x2="1000" y2="1" stroke="var(--border-strong)" stroke-width="2" style="animation-delay:0.3s;"/>
+    </svg>
+    <div class="fx-up" style="position:relative; z-index:1; animation-delay:0.1s;">
+      <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-elevated); border:1.5px solid var(--accent); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px; color:var(--accent); margin-bottom:14px;">01</div>
+      <h3 style="font-size:14.5px; font-weight:600; margin:0 0 6px;">Konfiguration</h3>
+      <p style="font-size:12.5px; line-height:1.55; color:var(--text-secondary); margin:0;">Szenario-Modus, Ticks und Population festlegen.</p>
+    </div>
+    <div class="fx-up" style="position:relative; z-index:1; animation-delay:0.2s;">
+      <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-elevated); border:1.5px solid var(--accent); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px; color:var(--accent); margin-bottom:14px;">02</div>
+      <h3 style="font-size:14.5px; font-weight:600; margin:0 0 6px;">Simulation</h3>
+      <p style="font-size:12.5px; line-height:1.55; color:var(--text-secondary); margin:0;">Consumer, Provider und Regulator laufen tick-basiert &uuml;ber den Zustandsgraphen.</p>
+    </div>
+    <div class="fx-up" style="position:relative; z-index:1; animation-delay:0.3s;">
+      <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-elevated); border:1.5px solid var(--amber); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px; color:var(--amber); margin-bottom:14px;">03</div>
+      <h3 style="font-size:14.5px; font-weight:600; margin:0 0 6px;">CIB-Pr&uuml;fung</h3>
+      <p style="font-size:12.5px; line-height:1.55; color:var(--text-secondary); margin:0;">Jede Faktor-Konstellation wird gegen die eingefrorene Matrix gepr&uuml;ft.</p>
+    </div>
+    <div class="fx-up" style="position:relative; z-index:1; animation-delay:0.4s;">
+      <div style="width:38px; height:38px; border-radius:50%; background:var(--bg-elevated); border:1.5px solid var(--accent); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px; color:var(--accent); margin-bottom:14px;">04</div>
+      <h3 style="font-size:14.5px; font-weight:600; margin:0 0 6px;">Szenario-Report</h3>
+      <p style="font-size:12.5px; line-height:1.55; color:var(--text-secondary); margin:0;">Tripleset aus Trendfortsetzung, Strukturwende und Krisenkonflikt.</p>
+    </div>
+  </div>
+</div>
+
+
+<div style="margin:0 0 48px;">
+  <div class="eyebrow" style="margin-bottom:10px;">Vorschau</div>
+  <h2 style="font-size:24px; font-weight:600; letter-spacing:-0.01em; margin:0 0 20px;">Ein Blick ins Dashboard</h2>
+  <div class="card fx-up" style="padding:0; overflow:hidden; animation-delay:0.15s;">
+    <div style="display:flex; gap:22px; padding:14px 20px; border-bottom:1px solid var(--border); font-size:13px; color:var(--text-muted); overflow-x:auto;">
+      <span style="color:var(--text); font-weight:600; border-bottom:2px solid var(--accent); padding-bottom:12px; margin-bottom:-13px; white-space:nowrap;">&Uuml;bersicht</span>
+      <span style="white-space:nowrap;">Animation</span>
+      <span style="white-space:nowrap;">Figures</span>
+      <span style="white-space:nowrap;">Bericht</span>
+      <span style="white-space:nowrap;">Abfrage</span>
+    </div>
+    <div class="landing-preview-stats" style="padding:20px 20px 4px;">
+      <div style="border:1px solid var(--border); border-radius:8px; padding:12px 14px;">
+        <div class="eyebrow" style="font-size:11px; margin-bottom:6px;">Ticks</div>
+        <div class="mono-num" style="font-size:18px; font-weight:600;">24 <span style="font-size:12px; color:var(--text-muted); font-weight:400;">/ 40</span></div>
+      </div>
+      <div style="border:1px solid var(--border); border-radius:8px; padding:12px 14px;">
+        <div class="eyebrow" style="font-size:11px; margin-bottom:6px;">Events</div>
+        <div class="mono-num" style="font-size:18px; font-weight:600;">1.248</div>
+      </div>
+      <div style="border:1px solid var(--border); border-radius:8px; padding:12px 14px;">
+        <div class="eyebrow" style="font-size:11px; margin-bottom:6px;">Modell</div>
+        <div class="mono-num" style="font-size:14px; font-weight:600; padding-top:3px;">qwen2.5:14b</div>
+      </div>
+      <div style="border:1px solid var(--border); border-radius:8px; padding:12px 14px;">
+        <div class="eyebrow" style="font-size:11px; margin-bottom:6px;">Markt</div>
+        <div style="display:flex; align-items:center; gap:6px; padding-top:4px;">
+          <span style="width:6px; height:6px; border-radius:50%; background:var(--ok, var(--accent));"></span>
+          <span style="font-size:14px; font-weight:600;">Aktiv</span>
+        </div>
+      </div>
+    </div>
+    <div style="padding:8px 20px 20px;">
+      <svg width="100%" height="70" viewBox="0 0 600 70">
+        <path class="route-path" d="M10 55 L100 45 L200 38 L300 30 L400 22 L500 16 L590 10" stroke="var(--accent)" stroke-width="1.8" fill="none" stroke-linecap="round" style="animation-delay:0.5s;"/>
+      </svg>
+    </div>
+    <div style="padding:10px 20px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-muted);">Vorschau &middot; Beispiellauf</div>
+  </div>
+</div>
+
+
+<div id="zielgruppen" style="margin:48px 0; padding-top:40px; border-top:1px solid var(--border);">
+  <div class="eyebrow" style="margin-bottom:10px;">Zielgruppen</div>
+  <h2 style="font-size:24px; font-weight:600; letter-spacing:-0.01em; margin:0 0 10px;">Welche Fragen beantwortet AeroForesight?</h2>
+  <p style="font-size:14.5px; line-height:1.6; color:var(--text-secondary); margin:0 0 28px; max-width:620px;">Unterschiedliche Akteure, unterschiedliche Perspektiven &mdash; aber dieselbe Plattform.</p>
+  <div class="landing-personas-grid">
+    <div class="card fx-up" style="padding:24px; animation-delay:0.1s;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <div style="width:36px; height:36px; border-radius:50%; background:var(--accent-soft); display:flex; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M2 20L9 6L16 14L22 4" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div style="font-size:14px; font-weight:600;">Airline-Stratege</div>
+          <div style="font-size:11.5px; color:var(--text-muted);">Provider-Perspektive</div>
+        </div>
+      </div>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0; font-style:italic;">&bdquo;Was passiert mit unseren Margen, wenn die EU das ETS-Cap senkt und gleichzeitig SAF-Beimischungsquoten steigen?&ldquo;</p>
+    </div>
+    <div class="card fx-up" style="padding:24px; animation-delay:0.2s;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <div style="width:36px; height:36px; border-radius:50%; background:var(--accent-soft); display:flex; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3L20 7V13C20 18 16 21 12 22C8 21 4 18 4 13V7L12 3Z" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div style="font-size:14px; font-weight:600;">Regulierungsbeh&ouml;rde</div>
+          <div style="font-size:11.5px; color:var(--text-muted);">Regulator-Perspektive</div>
+        </div>
+      </div>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0; font-style:italic;">&bdquo;Welche Faktor-Konstellationen f&uuml;hren zu einem stabilen Marktgleichgewicht &mdash; und welche zu Marktaustritten?&ldquo;</p>
+    </div>
+    <div class="card fx-up" style="padding:24px; animation-delay:0.3s;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <div style="width:36px; height:36px; border-radius:50%; background:var(--accent-soft); display:flex; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 21H21M5 21V7L12 3L19 7V21" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="13" width="6" height="8" stroke="var(--accent)" stroke-width="1.3"/></svg>
+        </div>
+        <div>
+          <div style="font-size:14px; font-weight:600;">Infrastruktur-Planer</div>
+          <div style="font-size:11.5px; color:var(--text-muted);">Systemische Perspektive</div>
+        </div>
+      </div>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0; font-style:italic;">&bdquo;Wie ver&auml;ndert sich die Nachfrage, wenn Kurzstreckenfl&uuml;ge zunehmend durch Bahnalternativen substituiert werden?&ldquo;</p>
+    </div>
+    <div class="card fx-up" style="padding:24px; animation-delay:0.4s;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <div style="width:36px; height:36px; border-radius:50%; background:var(--accent-soft); display:flex; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="var(--accent)" stroke-width="1.5"/><path d="M16 16L21 21" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div style="font-size:14px; font-weight:600;">Forscher &middot; Analyst</div>
+          <div style="font-size:11.5px; color:var(--text-muted);">Consumer-Perspektive</div>
+        </div>
+      </div>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0; font-style:italic;">&bdquo;Wie reagiert das System, wenn Kerosinpreise und Umweltbewusstsein gleichzeitig ansteigen?&ldquo;</p>
+    </div>
+  </div>
+</div>
+
+
+<div id="akteure" style="margin:56px 0 8px; padding-top:40px; border-top:1px solid var(--border);">
+  <div class="eyebrow" style="margin-bottom:10px;">Modell</div>
+  <h2 style="font-size:26px; font-weight:600; letter-spacing:-0.01em; margin:0 0 10px;">Drei Akteure, ein Zustandsgraph</h2>
+  <p style="font-size:15px; line-height:1.6; color:var(--text-secondary); margin:0 0 28px; max-width:640px;">
+    Consumer, Provider und Regulator agieren tick-basiert &uuml;ber einen LangGraph-Zustandsgraphen,
+    jeder mit klar begrenzten Beobachtungen und Handlungsrechten.
+  </p>
+  <div class="landing-actors-grid">
+    <div class="card" style="padding:24px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="margin-bottom:16px;"><circle cx="12" cy="7" r="3.4" stroke="var(--accent)" stroke-width="1.5"/><path d="M4.5 20c1.2-4 4-6 7.5-6s6.3 2 7.5 6" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <h3 style="font-size:15.5px; font-weight:600; margin:0 0 6px;">Consumer &middot; Population &amp; Nachfrage</h3>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Simulierte Reisende treffen Buchungsentscheidungen nach einem mikro&ouml;konomischen Logit-Modell, das Preis, Umweltbewusstsein und Substitutionsbereitschaft einschlie&szlig;t.</p>
+    </div>
+    <div class="card" style="padding:24px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="margin-bottom:16px;"><rect x="5" y="9" width="14" height="12" stroke="var(--accent)" stroke-width="1.5"/><path d="M9 21v-5h6v5" stroke="var(--accent)" stroke-width="1.5"/><path d="M8 9V4l4-1.5L16 4v5" stroke="var(--accent)" stroke-width="1.5"/></svg>
+      <h3 style="font-size:15.5px; font-weight:600; margin:0 0 6px;">Provider &middot; Markt &amp; Preisbildung</h3>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Fluggesellschaften reagieren auf Nachfrage und Kosten; Preis- und Kapazit&auml;tsdynamik ergeben sich deterministisch aus Marktregeln.</p>
+    </div>
+    <div class="card" style="padding:24px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="margin-bottom:16px;"><path d="M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6l7-3z" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="var(--amber)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h3 style="font-size:15.5px; font-weight:600; margin:0 0 6px;">Regulator &middot; Politik &amp; Regulierung</h3>
+      <p style="font-size:13.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Regulatorische Eingriffe wirken &uuml;ber klar definierte Faktoren: vorgeschlagen vom Agenten, gepr&uuml;ft und validiert in Python.</p>
+    </div>
+  </div>
+</div>
+
+
+<div id="methodik" style="margin:48px 0 8px; padding-top:40px; border-top:1px solid var(--border);">
+  <div class="eyebrow" style="margin-bottom:10px;">Vertrauen &middot; Methodik</div>
+  <h2 style="font-size:26px; font-weight:600; letter-spacing:-0.01em; margin:0 0 10px;">Warum Sie den Ergebnissen vertrauen k&ouml;nnen</h2>
+  <p style="font-size:15px; line-height:1.6; color:var(--text-secondary); margin:0 0 28px; max-width:640px;">
+    Drei architektonische Prinzipien sch&uuml;tzen vor LLM-Halluzination und garantieren nachvollziehbare Ergebnisse.
+  </p>
+  <div class="landing-trust-pillars" style="margin-bottom:32px;">
+    <div class="card fx-up" style="padding:24px; animation-delay:0.1s;">
+      <div style="width:38px; height:38px; border-radius:50%; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; margin-bottom:14px;">
+        <span class="mono-num" style="font-size:14px; font-weight:700; color:var(--accent);">01</span>
+      </div>
+      <h3 style="font-size:15px; font-weight:600; margin:0 0 8px;">Python rechnet, KI erz&auml;hlt</h3>
+      <p style="font-size:13px; line-height:1.6; color:var(--text-secondary); margin:0;">Preise, Buchungsraten, Faktorzust&auml;nde &mdash; alle Kennzahlen werden deterministisch berechnet. LLM-Agenten liefern ausschlie&szlig;lich narrative Einordnung, nie Zahlenwerte.</p>
+    </div>
+    <div class="card fx-up" style="padding:24px; animation-delay:0.2s;">
+      <div style="width:38px; height:38px; border-radius:50%; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; margin-bottom:14px;">
+        <span class="mono-num" style="font-size:14px; font-weight:700; color:var(--accent);">02</span>
+      </div>
+      <h3 style="font-size:15px; font-weight:600; margin:0 0 8px;">Eingefrorener Ma&szlig;stab</h3>
+      <p style="font-size:13px; line-height:1.6; color:var(--text-secondary); margin:0;">Die CIB-Matrix ist bewusst eingefroren und wird nie aus Simulationsergebnissen abgeleitet. Der Ma&szlig;stab bleibt vom Messobjekt getrennt &mdash; keine Zirkularit&auml;t.</p>
+    </div>
+    <div class="card fx-up" style="padding:24px; animation-delay:0.3s;">
+      <div style="width:38px; height:38px; border-radius:50%; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; margin-bottom:14px;">
+        <span class="mono-num" style="font-size:14px; font-weight:700; color:var(--accent);">03</span>
+      </div>
+      <h3 style="font-size:15px; font-weight:600; margin:0 0 8px;">Vollst&auml;ndig nachvollziehbar</h3>
+      <p style="font-size:13px; line-height:1.6; color:var(--text-secondary); margin:0;">Jeder Simulationslauf erzeugt transparente Artefakte: Tick-Mechanik, Preishistorie, Event-Log. Kein Ergebnis ohne Herleitung.</p>
+    </div>
+  </div>
+  <div class="landing-cib-grid" style="padding:40px; background:var(--surface); border:1px solid var(--border); border-radius:14px;">
+    <div>
+      <div class="eyebrow" style="margin-bottom:10px;">CIB &middot; Weimer-Jehle</div>
+      <h3 style="font-size:20px; font-weight:600; letter-spacing:-0.01em; margin:0 0 12px;">Konsistenz ist keine Meinungssache</h3>
+      <p style="font-size:14px; line-height:1.65; color:var(--text-secondary); margin:0;">Die Cross-Impact-Balance-Matrix bewertet, welche Faktor-Konstellationen (F1&ndash;F7, je zwei Zust&auml;nde) intern widerspruchsfrei sind. Der Ma&szlig;stab wird nie aus dem Messobjekt gewonnen &mdash; er ist wissenschaftlich fundiert und eingefroren.</p>
+    </div>
+    <div class="card" style="padding:20px;">
+      <div class="eyebrow" style="margin-bottom:12px;">Faktor-Konsistenz &middot; Ausschnitt</div>
+      <svg width="100%" height="150" viewBox="0 0 400 150">
+        <g stroke="var(--border)" stroke-width="1">
+          <line x1="60" y1="10" x2="60" y2="140"/><line x1="120" y1="10" x2="120" y2="140"/>
+          <line x1="180" y1="10" x2="180" y2="140"/><line x1="240" y1="10" x2="240" y2="140"/>
+          <line x1="300" y1="10" x2="300" y2="140"/><line x1="360" y1="10" x2="360" y2="140"/>
+          <line x1="0" y1="30" x2="400" y2="30"/><line x1="0" y1="70" x2="400" y2="70"/><line x1="0" y1="110" x2="400" y2="110"/>
+        </g>
+        <g>
+          <circle cx="60" cy="30" r="5" fill="var(--accent)" opacity="0.8"/>
+          <circle cx="180" cy="70" r="5" fill="var(--amber)" opacity="0.85"/>
+          <circle cx="300" cy="30" r="4" fill="var(--accent)" opacity="0.5"/>
+          <circle cx="360" cy="70" r="5" fill="var(--accent)" opacity="0.8"/>
+          <circle cx="120" cy="110" r="4" fill="var(--accent)" opacity="0.45"/>
+          <circle cx="240" cy="110" r="5" fill="var(--amber)" opacity="0.7"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+
+<div id="output" style="margin:48px 0 40px; padding-top:40px; border-top:1px solid var(--border);">
+  <div class="eyebrow" style="margin-bottom:10px;">Output</div>
+  <h2 style="font-size:24px; font-weight:600; letter-spacing:-0.01em; margin:0 0 10px;">Ein Lauf, drei Ausblicke</h2>
+  <p style="font-size:14.5px; line-height:1.6; color:var(--text-secondary); margin:0 0 24px; max-width:620px;">Jede Simulation erzeugt ein Tripleset aus Trendfortsetzung, Strukturwende und Krisenkonflikt: quantitativ hergeleitet, narrativ eingeordnet.</p>
+  <div class="landing-tripleset-grid">
+    <div class="card" style="padding:22px;">
+      <svg width="100%" height="46" viewBox="0 0 200 46" style="margin-bottom:14px;"><path d="M4 36 L60 27 L120 20 L196 8" stroke="var(--accent)" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+      <h3 style="font-size:14.5px; font-weight:600; margin:0 0 5px;">Trendfortsetzung</h3>
+      <p style="font-size:12.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Heutige Entwicklungen setzen sich linear fort, ohne strukturellen Bruch.</p>
+    </div>
+    <div class="card" style="padding:22px;">
+      <svg width="100%" height="46" viewBox="0 0 200 46" style="margin-bottom:14px;"><path d="M4 40 L70 36 L100 36 L120 10 L196 5" stroke="var(--amber)" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+      <h3 style="font-size:14.5px; font-weight:600; margin:0 0 5px;">Strukturwende</h3>
+      <p style="font-size:12.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Ein regulatorischer oder technologischer Bruch verschiebt das System dauerhaft.</p>
+    </div>
+    <div class="card" style="padding:22px;">
+      <svg width="100%" height="46" viewBox="0 0 200 46" style="margin-bottom:14px;"><path d="M4 18 L40 36 L70 10 L100 32 L130 14 L160 34 L196 9" stroke="var(--text-secondary)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h3 style="font-size:14.5px; font-weight:600; margin:0 0 5px;">Krisenkonflikt</h3>
+      <p style="font-size:12.5px; line-height:1.6; color:var(--text-secondary); margin:0;">Widerspr&uuml;chliche Faktoren erzeugen Volatilit&auml;t und Konfliktpotenzial im System.</p>
+    </div>
+  </div>
+</div>
+
+
+<footer style="margin:48px 0 0; padding:40px 0 16px; border-top:1px solid var(--border);">
+  <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:32px; margin-bottom:36px;">
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+          <path d="M2 22L14 4" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M8 22L16 9" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+          <circle cx="14" cy="4" r="2" fill="var(--amber)"/>
+        </svg>
+        <span style="font-weight:600; font-size:15px;">AeroForesight AI</span>
+      </div>
+      <p style="font-size:13px; line-height:1.6; color:var(--text-muted); margin:0 0 12px; max-width:280px;">Hybride Multi-Agenten-Simulation f&uuml;r strategische Zukunftsplanung im europ&auml;ischen Luftverkehr.</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <span style="font-size:11px; color:var(--text-muted); background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:3px 8px;">Python</span>
+        <span style="font-size:11px; color:var(--text-muted); background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:3px 8px;">LangGraph</span>
+        <span style="font-size:11px; color:var(--text-muted); background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:3px 8px;">CIB</span>
+        <span style="font-size:11px; color:var(--text-muted); background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:3px 8px;">Ollama</span>
+      </div>
+    </div>
+    <div>
+      <div class="eyebrow" style="margin-bottom:14px;">Navigation</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <a href="#problem" class="landing-footer-link">Problem</a>
+        <a href="#ablauf" class="landing-footer-link">Ablauf</a>
+        <a href="#akteure" class="landing-footer-link">Akteure</a>
+        <a href="#methodik" class="landing-footer-link">Methodik</a>
+        <a href="#output" class="landing-footer-link">Output</a>
+      </div>
+    </div>
+    <div>
+      <div class="eyebrow" style="margin-bottom:14px;">Kontakt</div>
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:13px; color:var(--text-secondary);">
+        <span>info@aeroforesight.ai</span>
+        <span>Hochschule der Medien</span>
+        <span>AeroForesight AI</span>
+      </div>
+    </div>
+    <div>
+      <div class="eyebrow" style="margin-bottom:14px;">Rechtliches</div>
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:13px; color:var(--text-secondary);">
+        <span>Impressum</span>
+        <span>Datenschutz</span>
+        <span>Nutzungsbedingungen</span>
+      </div>
+    </div>
+  </div>
+  <div style="padding-top:16px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+    <div style="font-size:12px; color:var(--text-muted);">&copy; 2026 AeroForesight AI &middot; Alle Rechte vorbehalten</div>
+    <div class="eyebrow">Build Preview</div>
+  </div>
+</footer>
+
+</div>
+</body></html>
