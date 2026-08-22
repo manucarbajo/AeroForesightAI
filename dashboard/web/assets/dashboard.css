@@ -1,0 +1,553 @@
+/* Ergänzt die Tailwind-Utilities um alles, was sich an Dash-Komponenten
+   (Dropdown, Tabs, Slider, Tabelle, Plotly) nicht per Klassenname stylen lässt.
+   Farben sind die Navy-/Slate-Tokens der Landingpage — bewusst als CSS-Variablen,
+   damit hier und in `theme.py` derselbe Wert steht. */
+
+:root {
+    --navy-50: #f0f4f9;
+    --navy-100: #e0eaf3;
+    --navy-200: #c2d5e7;
+    --navy-300: #94b8d7;
+    --navy-500: #3e76a6;
+    --navy-700: #244b70;
+    --navy-800: #1e3a5f;
+    --navy-900: #1c3453;
+
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-900: #0f172a;
+
+    --radius: 0.5rem;
+    --font-body: "Inter", sans-serif;
+    --font-headline: "Plus Jakarta Sans", sans-serif;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-body);
+    color: var(--slate-700);
+    background: var(--slate-50);
+}
+
+.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    line-height: 1;
+}
+
+/* --- Formularelemente ---------------------------------------------------- */
+/* Tailwind-Preflight nimmt Inputs ihr Aussehen; hier bekommen sie es
+   einheitlich zurück, statt es an jeder Fundstelle einzeln zu setzen. */
+
+.af-input,
+input[type="text"].af-input,
+input[type="number"].af-input,
+textarea.af-input {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--slate-800, #1e293b);
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius);
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.af-input:focus,
+textarea.af-input:focus {
+    outline: none;
+    border-color: var(--navy-500);
+    box-shadow: 0 0 0 3px rgba(62, 118, 166, 0.15);
+}
+
+.af-input:disabled {
+    background: var(--slate-50);
+    color: var(--slate-400);
+}
+
+textarea.af-input {
+    min-height: 5rem;
+    resize: vertical;
+}
+
+/* --- Dropdown (dcc.Dropdown / react-select) ------------------------------ */
+
+.af-dropdown .Select-control,
+.af-dropdown .is-focused:not(.is-open) > .Select-control {
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius);
+    background: #fff;
+    box-shadow: none;
+    min-height: 2.375rem;
+}
+
+.af-dropdown.is-focused:not(.is-open) > .Select-control {
+    border-color: var(--navy-500);
+    box-shadow: 0 0 0 3px rgba(62, 118, 166, 0.15);
+}
+
+.af-dropdown .Select-placeholder,
+.af-dropdown .Select-value-label,
+.af-dropdown .Select-input > input {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--slate-700);
+    line-height: 2.25rem;
+}
+
+.af-dropdown .Select-menu-outer {
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 28px -14px rgba(30, 58, 95, 0.3);
+    margin-top: 0.25rem;
+    overflow: hidden;
+    z-index: 40;
+}
+
+.af-dropdown .VirtualizedSelectOption,
+.af-dropdown .Select-option {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--slate-700);
+    padding: 0.5rem 0.75rem;
+}
+
+.af-dropdown .VirtualizedSelectFocusedOption,
+.af-dropdown .Select-option.is-focused {
+    background: var(--navy-50);
+    color: var(--navy-900);
+}
+
+.af-dropdown .Select-option.is-selected {
+    background: var(--navy-100);
+    color: var(--navy-900);
+    font-weight: 500;
+}
+
+/* --- Checkbox / Radio ---------------------------------------------------- */
+
+.af-check label,
+.af-radio label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--slate-700);
+    cursor: pointer;
+    padding: 0.125rem 0;
+}
+
+.af-check input[type="checkbox"],
+.af-radio input[type="radio"] {
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+    border: 1px solid var(--slate-300);
+    background: #fff;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.af-check input[type="checkbox"] {
+    border-radius: 0.25rem;
+}
+
+.af-radio input[type="radio"] {
+    border-radius: 9999px;
+}
+
+.af-check input[type="checkbox"]:checked,
+.af-radio input[type="radio"]:checked {
+    background: var(--navy-800);
+    border-color: var(--navy-800);
+}
+
+.af-check input[type="checkbox"]:checked::after {
+    content: "";
+    display: block;
+    width: 0.25rem;
+    height: 0.5rem;
+    margin: 0.075rem 0 0 0.3rem;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.af-radio input[type="radio"]:checked::after {
+    content: "";
+    display: block;
+    width: 0.375rem;
+    height: 0.375rem;
+    margin: 0.25rem;
+    border-radius: 9999px;
+    background: #fff;
+}
+
+.af-radio--stack label {
+    display: flex;
+    padding: 0.25rem 0;
+}
+
+/* --- Slider -------------------------------------------------------------- */
+
+.af-slider .rc-slider-track {
+    background: var(--navy-800);
+}
+
+.af-slider .rc-slider-rail {
+    background: var(--slate-200);
+}
+
+.af-slider .rc-slider-handle {
+    border-color: var(--navy-800);
+    background: #fff;
+    opacity: 1;
+}
+
+.af-slider .rc-slider-handle:active,
+.af-slider .rc-slider-handle-click-focused:focus {
+    border-color: var(--navy-800);
+    box-shadow: 0 0 0 4px rgba(30, 58, 95, 0.15);
+}
+
+.af-slider .rc-slider-mark-text {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    color: var(--slate-500);
+}
+
+/* --- Tabs (dcc.Tabs) ----------------------------------------------------- */
+
+.af-tabs .af-tabs__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--slate-200);
+    margin-bottom: 1.5rem;
+}
+
+/* dcc.Tabs verteilt die Breite per styled-jsx gleichmäßig auf alle Tabs und
+   spritzt sein <style> zur Laufzeit hinter diese Datei. Gleiche Spezifität
+   würde also verlieren — daher hier eine Stufe höher. */
+.af-tabs .af-tabs__list .af-tab {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+.af-tabs .af-tab {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--slate-500);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.625rem 0.875rem;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.af-tabs .af-tab:hover {
+    color: var(--navy-800);
+}
+
+.af-tabs .af-tab--selected {
+    color: var(--navy-800);
+    background: transparent;
+    border-bottom-color: var(--navy-800);
+    font-weight: 600;
+}
+
+/* Untergeordnete Tab-Leisten (z. B. innerhalb von «Figures») treten
+   zurück, damit die Hierarchie lesbar bleibt. */
+.af-tabs--sub .af-tabs__list {
+    border-bottom: none;
+    margin-bottom: 1rem;
+}
+
+.af-tabs--sub .af-tab {
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+.af-tabs--sub .af-tab--selected {
+    background: var(--navy-50);
+    border-color: var(--navy-100);
+    color: var(--navy-800);
+}
+
+/* --- Accordion (html.Details) -------------------------------------------- */
+
+.af-acc__summary::-webkit-details-marker,
+.af-acc__summary::marker {
+    display: none;
+    content: "";
+}
+
+.af-acc__summary:hover {
+    background: var(--slate-50);
+}
+
+.af-acc__chevron {
+    transition: transform 0.2s ease;
+}
+
+.af-acc[open] > .af-acc__summary .af-acc__chevron {
+    transform: rotate(90deg);
+}
+
+/* --- Markdown ------------------------------------------------------------ */
+
+.af-md {
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--slate-700);
+}
+
+.af-md > *:first-child {
+    margin-top: 0;
+}
+
+.af-md > *:last-child {
+    margin-bottom: 0;
+}
+
+.af-md h1,
+.af-md h2,
+.af-md h3,
+.af-md h4 {
+    font-family: var(--font-headline);
+    font-weight: 600;
+    color: var(--slate-900);
+    line-height: 1.3;
+    margin: 1.75rem 0 0.75rem;
+}
+
+.af-md h1 {
+    font-size: 1.5rem;
+}
+
+.af-md h2 {
+    font-size: 1.25rem;
+}
+
+.af-md h3 {
+    font-size: 1.0625rem;
+}
+
+.af-md p,
+.af-md ul,
+.af-md ol {
+    margin: 0 0 1rem;
+}
+
+.af-md ul,
+.af-md ol {
+    padding-left: 1.375rem;
+}
+
+.af-md ul {
+    list-style: disc;
+}
+
+.af-md ol {
+    list-style: decimal;
+}
+
+.af-md li {
+    margin-bottom: 0.375rem;
+}
+
+.af-md strong {
+    color: var(--slate-900);
+    font-weight: 600;
+}
+
+.af-md a {
+    color: var(--navy-800);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.af-md code {
+    font-size: 0.8125em;
+    background: var(--slate-100);
+    border: 1px solid var(--slate-200);
+    border-radius: 0.25rem;
+    padding: 0.1em 0.35em;
+}
+
+.af-md pre {
+    background: var(--slate-50);
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius);
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 0 0 1rem;
+}
+
+.af-md pre code {
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.af-md blockquote {
+    border-left: 3px solid var(--navy-200);
+    padding-left: 1rem;
+    color: var(--slate-600);
+    margin: 0 0 1rem;
+}
+
+.af-md table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+    display: block;
+    overflow-x: auto;
+}
+
+.af-md th,
+.af-md td {
+    border: 1px solid var(--slate-200);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+.af-md th {
+    background: var(--slate-50);
+    font-weight: 600;
+    color: var(--slate-900);
+}
+
+/* --- Log-Fenster --------------------------------------------------------- */
+
+.af-log {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--navy-100);
+    background: var(--navy-950, #122238);
+    border-radius: var(--radius);
+    padding: 1rem;
+    max-height: 22rem;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* --- Tabelle (dash_table.DataTable) -------------------------------------- */
+
+.af-table .dash-spreadsheet-container .dash-spreadsheet-inner td,
+.af-table .dash-spreadsheet-container .dash-spreadsheet-inner th {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+}
+
+.af-table .dash-spreadsheet-container .dash-spreadsheet-inner th {
+    font-family: var(--font-headline);
+    font-weight: 600;
+}
+
+/* --- Plotly -------------------------------------------------------------- */
+
+.js-plotly-plot .plotly .modebar {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.js-plotly-plot:hover .plotly .modebar {
+    opacity: 1;
+}
+
+.js-plotly-plot .plotly .modebar-btn path {
+    fill: var(--slate-400);
+}
+
+.js-plotly-plot .plotly .modebar-btn:hover path {
+    fill: var(--navy-800);
+}
+
+/* Play-/Pause-Leiste der Animationen. */
+.js-plotly-plot .updatemenu-button rect {
+    fill: #fff;
+    stroke: var(--slate-200);
+}
+
+/* --- Ladeanzeige --------------------------------------------------------- */
+
+._dash-loading {
+    display: none;
+}
+
+.af-spinner-host {
+    min-height: 6rem;
+}
+
+/* --- Scrollbars ---------------------------------------------------------- */
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--slate-300) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--slate-300);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--slate-400);
+    background-clip: content-box;
+}
+
+/* --- Chat ---------------------------------------------------------------- */
+
+.af-chat-user {
+    background: var(--navy-800);
+    color: #fff;
+}
+
+.af-chat-user .af-md,
+.af-chat-user .af-md strong,
+.af-chat-user .af-md code {
+    color: #fff;
+}
+
+.af-chat-user .af-md code {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
