@@ -41,15 +41,33 @@ Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
 | `files_route.py` | Flask-Route für PNGs und Downloads aus `outputs/` |
 | `pages/` | `launch.py` (Simulation starten), `runs.py` (Ergebnisse ansehen) |
 | `views/` | die sieben Tabs des Run-Browsers |
-| `config_editor/` | die fünf Tabs des Config-Editors |
+| `config_editor/` | die sechs Tabs des Config-Editors |
+| `config_editor/glossary.py` | **alle Erklärtexte an einer Stelle** — Beschriftung, Wirkung, technischer Feldname je Parameter |
 | `assets/dashboard.css` | Styling für alles, was Tailwind-Utilities nicht erreichen |
 
 ## Funktionen
 
 | Bereich | Inhalt |
 | --- | --- |
-| **Simulation starten** | Szenario-Modus (Standard/Preset/eigene Parameter), Ticks, Multi-Run, Config-Dateien, Faktoren F1–F7, System-Properties samt Regeln, Population und Verteilungen, Markt-Feedback, Sättigung, LLM- und Pipeline-Schalter, Preset speichern, Start mit Live-Log |
+| **Simulation starten** | Sechs Tabs: **Überblick** (die fünf Entscheidungen, die einen Lauf prägen), **Rahmenbedingungen** (Faktoren F1–F7, Systemgrößen samt Regeln), **Nachfrage & Preisbildung** (Yield Management, Sättigung, Segmente, Verteilungen), **Lauf & Ablage** (Benennung, Mehrfachläufe, Config-Dateien), **Technik** (Sprachmodell, Reproduzierbarkeit, Ausgaben), **Kontrolle** (Klartext-Zusammenfassung, Warnungen, Preset sichern). Start mit Live-Log. |
 | **Ergebnisse ansehen** | **Szenario** (Hauptansicht), Übersicht, Animation, Figures, Bericht, Abfrage, Dateien |
+
+### Aufbau des Config-Editors
+
+Die Oberfläche richtet sich an **Anwender**, nicht an Modellbauer. Daraus
+folgen drei Regeln, die für jeden neuen Parameter gelten:
+
+1. **Beschriftung in der Sprache der Sache**, nicht des Codes. Aus
+   «Logit-Penalty-Faktor» wird «Wirkung der Sättigung auf die Buchungsneigung».
+2. **Jedes Feld erklärt seine Wirkung** — was sich am Ergebnis ändert und in
+   welche Richtung. Die Texte stehen in `web/config_editor/glossary.py`, nicht
+   verstreut in den Tab-Modulen.
+3. **Pro Block steht vorn, was die Wirkung bestimmt.** Alles Übrige liegt in
+   einem «Feinabstimmung»-Block darunter. Sichtbar sind dadurch beim Einstieg
+   sechs Felder statt rund 160 — verborgen ist keines.
+
+Der technische Feldname (`market_feedback.damping`) steht klein am Ende jeder
+Erklärung, damit sich Oberfläche und `configs/*.json` zuordnen lassen.
 
 **Demo-Ablauf:** Run wählen → **Szenario** lesen → **Figures** → **Abfrage**
 (Chat). Details: [`../docs/scenario_runs.md`](../docs/scenario_runs.md)

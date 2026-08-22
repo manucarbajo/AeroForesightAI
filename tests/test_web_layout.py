@@ -152,13 +152,15 @@ def test_every_editor_tab_renders_in_every_scenario_mode(tab, mode):
 
 
 def test_sweep_mode_offers_the_preset_controls():
+    """Geprüft wird die Aktion, nicht ihre Beschriftung — Texte dürfen sich ändern."""
+
     draft = initial_draft_dict()
     draft["scenario_mode"] = "sweep"
 
     rendered = _text(config_editor.tab_layout("experiment", draft))
 
-    assert "Szenario-Parameter übernehmen" in rendered
-    assert "apply-sweep" in rendered
+    assert "'action': 'apply-sweep'" in rendered
+    assert "'field': 'sweep_id'" in rendered
 
 
 def test_macro_tab_offers_delete_for_an_inactive_property():
@@ -168,7 +170,49 @@ def test_macro_tab_offers_delete_for_an_inactive_property():
 
     rendered = _text(config_editor.tab_layout("macro", draft))
 
-    assert "Property dauerhaft löschen" in rendered
+    assert f"'type': 'cfg-prop-delete', 'prop': '{prop_id}'" in rendered
+
+
+def test_every_parameter_field_has_an_explanation():
+    """Kein Eingabefeld ohne Klartext — das war der Anlass für das Glossar.
+
+    Geprüft wird das Glossar selbst: Jeder Eintrag braucht Beschriftung und
+    Wirkungsbeschreibung, und die Beschriftung darf nicht der rohe Feldname
+    sein (dann wäre der Eintrag nur ein Platzhalter).
+    """
+
+    from dashboard.web.config_editor import glossary
+
+    assert glossary.PARAMS, "Glossar ist leer"
+    for path, param in glossary.PARAMS.items():
+        assert param.label and not param.label.startswith(path.split(".")[-1]), path
+        assert len(param.effect) > 40, f"Erklärung zu knapp: {path}"
+        assert param.hint(), path
+
+
+def test_overview_summarises_the_draft_in_plain_language():
+    from dashboard.web.config_editor import overview
+
+    draft = initial_draft_dict()
+    draft.update({"rounds": 12, "run_count": 3, "mock_llm": True, "deterministic_only": False})
+
+    sentence = overview.summary_sentence(draft)
+
+    assert "3 Läufe" in sentence
+    assert "12 Ticks" in sentence
+    assert "ohne Ollama" in sentence
+
+
+def test_control_panel_warns_about_settings_that_surprise_later():
+    draft = initial_draft_dict()
+    draft["no_scenarios"] = True
+    draft["apply_custom_overrides"] = False
+    draft["scenario_mode"] = "basis"
+
+    rendered = _text(config_editor.tab_layout("save", draft))
+
+    assert "Tab «Szenario» bleibt" in rendered
+    assert "wirken in diesem Lauf nicht" in rendered
 
 
 def test_reset_action_returns_the_default_draft():
