@@ -33,20 +33,31 @@ from dashboard.config_catalog import (
 )
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
-from dashboard.web.config_editor import experiment, llm_pipeline, macro, micro, save_start
+from dashboard.web.config_editor import (
+    experiment,
+    llm_pipeline,
+    macro,
+    micro,
+    overview,
+    save_start,
+)
 from dashboard.web.state import STORE_ID, draft_from_dict, draft_to_dict
 
+# Reihenfolge ist die Lesereihenfolge: erst das, was jeder einstellen muss,
+# dann die Annahmen von grob nach fein, zuletzt Technik und Kontrolle.
 TABS = [
-    ("Experiment & Datenbasis", "experiment"),
-    ("Makro-Parameter", "macro"),
-    ("Mikro-Parameter & Bevölkerung", "micro"),
-    ("LLM & Pipeline", "llm"),
-    ("Speichern & Starten", "save"),
+    ("Überblick", "overview"),
+    ("Rahmenbedingungen", "macro"),
+    ("Nachfrage & Preisbildung", "micro"),
+    ("Lauf & Ablage", "experiment"),
+    ("Technik", "llm"),
+    ("Kontrolle", "save"),
 ]
 
-DEFAULT_TAB = "experiment"
+DEFAULT_TAB = "overview"
 
 _LAYOUTS = {
+    "overview": overview.layout,
     "experiment": experiment.layout,
     "macro": macro.layout,
     "micro": micro.layout,
@@ -168,6 +179,17 @@ def register_callbacks(app) -> None:
             edit["rules"] = _rules_from_entries(cells)
 
         return _normalise(updated)
+
+    @app.callback(
+        Output({"type": overview.SUMMARY, "slot": ALL}, "children"),
+        Input(STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def _summaries(draft: dict | None):
+        """Klartext-Zusammenfassungen mitziehen, sobald sich etwas ändert."""
+
+        sentence = ui.markdown(overview.summary_sentence(draft or {}))
+        return [sentence] * len(ctx.outputs_list)
 
     @app.callback(
         Output({"type": macro.RULE_HOST, "prop": MATCH}, "children"),

@@ -1,8 +1,11 @@
-"""Tab «Mikro-Parameter & Bevölkerung».
+"""Tab «Nachfrage & Preisbildung».
 
-Markt-Rückkopplung, Sättigung, die Segmente der Population und die
-Verteilungen ihrer Eigenschaften. Die «Speichern»-Knöpfe schreiben direkt in
-`configs/properties.json` — sie wirken also über den einzelnen Lauf hinaus.
+Zwei Fragen: Wie reagiert die Airline auf die Auslastung, und wer sind die
+Menschen, die buchen? Je Block steht vorn die Stellschraube, die die Wirkung
+bestimmt; die Feinabstimmung liegt aufklappbar darunter.
+
+Die «Speichern»-Knöpfe schreiben direkt in `configs/properties.json` — sie
+wirken also über den einzelnen Lauf hinaus.
 """
 
 from __future__ import annotations
@@ -17,80 +20,63 @@ SEGMENT_DELETE = "cfg-segment-delete"
 DISTRIBUTIONS = ["normal", "beta", "lognormal", "uniform"]
 
 _DISTRIBUTION_LABELS = {
-    "wtp_eur": "Zahlungsbereitschaft (WTP in Euro)",
-    "environmental_awareness": "Umweltbewusstsein (0–1)",
+    "wtp_eur": "Zahlungsbereitschaft (in Euro)",
+    "environmental_awareness": "Umweltbewusstsein",
 }
 
 _MODIFIERS = [
-    ("wtp_multiplier", "WTP-Multiplikator", 1.0),
-    ("base_income_delta", "Einkommen-Delta", 0.0),
-    ("price_sensitivity_delta", "Preissensibilität-Delta", 0.0),
-    ("substitution_readiness_multiplier", "Bahn-Wechselbereitschaft", 1.0),
+    ("wtp_multiplier", 1.0),
+    ("base_income_delta", 0.0),
+    ("price_sensitivity_delta", 0.0),
+    ("substitution_readiness_multiplier", 1.0),
+]
+
+_FEEDBACK_FINE = [
+    ("marginal_cost_fraction", 0.33, 0.05, 1.0, 0.01),
+    ("markup_adjustment_per_tick", 0.08, 0.01, 0.5, 0.01),
+    ("damping", 0.85, 0.1, 1.0, 0.05),
+    ("max_price_change_fraction", 0.08, 0.01, 0.5, 0.01),
+    ("booking_weight", 0.6, 0.0, 1.0, 0.05),
 ]
 
 
 def _market_feedback(draft: dict) -> html.Div:
     feedback = draft.get("market_feedback_edit") or {}
     prefix = "market_feedback_edit"
+
     return ui.card(
-        c.check("Markt-Feedback aktiv", f"{prefix}.enabled", feedback.get("enabled", True)),
+        c.check(f"{prefix}.enabled", feedback.get("enabled", True)),
         html.Div(
+            c.number(
+                f"{prefix}.target_booking_rate",
+                float(feedback.get("target_booking_rate", 0.37)),
+                min=0.05,
+                max=1.0,
+                step=0.01,
+                class_name="max-w-sm",
+            ),
+            className="mt-5",
+        ),
+        ui.expert(
             ui.grid(
-                c.number(
-                    "Ziel-Buchungsrate",
-                    f"{prefix}.target_booking_rate",
-                    float(feedback.get("target_booking_rate", 0.37)),
-                    min=0.05,
-                    max=1.0,
-                    step=0.01,
-                ),
-                c.number(
-                    "Grenzkosten-Anteil",
-                    f"{prefix}.marginal_cost_fraction",
-                    float(feedback.get("marginal_cost_fraction", 0.33)),
-                    min=0.05,
-                    max=1.0,
-                    step=0.01,
-                ),
-                c.number(
-                    "Markup-Anpassung / Tick",
-                    f"{prefix}.markup_adjustment_per_tick",
-                    float(feedback.get("markup_adjustment_per_tick", 0.08)),
-                    min=0.01,
-                    max=0.5,
-                    step=0.01,
-                ),
-                c.number(
-                    "Dämpfung",
-                    f"{prefix}.damping",
-                    float(feedback.get("damping", 0.85)),
-                    min=0.1,
-                    max=1.0,
-                    step=0.05,
-                ),
-                c.number(
-                    "Max. Preisänderung / Tick",
-                    f"{prefix}.max_price_change_fraction",
-                    float(feedback.get("max_price_change_fraction", 0.08)),
-                    min=0.01,
-                    max=0.5,
-                    step=0.01,
-                ),
-                c.number(
-                    "Booking-Gewicht",
-                    f"{prefix}.booking_weight",
-                    float(feedback.get("booking_weight", 0.6)),
-                    min=0.0,
-                    max=1.0,
-                    step=0.05,
-                ),
+                *[
+                    c.number(
+                        f"{prefix}.{name}",
+                        float(feedback.get(name, default)),
+                        min=low,
+                        max=high,
+                        step=step,
+                    )
+                    for name, default, low, high, step in _FEEDBACK_FINE
+                ],
                 cols="md:grid-cols-2 xl:grid-cols-3",
             ),
-            className="mt-4",
+            count=len(_FEEDBACK_FINE),
+            names="Preisuntergrenze, Reaktionsstärke, Dämpfung, Preisdeckel, Kopplung",
         ),
         html.Div(
             ui.button(
-                "Markt-Feedback speichern",
+                "Als Standard speichern",
                 id=c.action_id("save-market-feedback"),
                 variant="secondary",
                 icon_name="save",
@@ -103,26 +89,34 @@ def _market_feedback(draft: dict) -> html.Div:
 def _saturation(draft: dict) -> html.Div:
     saturation = draft.get("saturation_edit") or {}
     return ui.card(
-        ui.grid(
+        c.number(
+            "saturation_edit.booking_increase",
+            float(saturation.get("booking_increase", 0.6)),
+            min=0.0,
+            max=1.0,
+            step=0.05,
+            class_name="max-w-sm",
+        ),
+        ui.expert(
             c.number(
-                "Sättigungs-Anstieg bei Buchung",
-                "saturation_edit.booking_increase",
-                float(saturation.get("booking_increase", 0.6)),
-                min=0.0,
-                max=1.0,
-                step=0.05,
-            ),
-            c.number(
-                "Logit-Penalty-Faktor",
                 "saturation_edit.utility_penalty_factor",
                 float(saturation.get("utility_penalty_factor", 1.0)),
                 min=0.0,
                 max=3.0,
                 step=0.1,
+                class_name="max-w-sm",
             ),
-            cols="sm:grid-cols-2",
-        )
+            count=1,
+            names="Wirkung auf die Buchungsneigung",
+        ),
     )
+
+
+def _exclusive_hint(segment: dict) -> str | None:
+    group = segment.get("exclusive_group")
+    if not group:
+        return None
+    return f"Exklusive Gruppe «{group}» — pro Person kann nur ein Segment dieser Gruppe zutreffen."
 
 
 def _segment_card(index: int, segment: dict) -> html.Div:
@@ -130,10 +124,17 @@ def _segment_card(index: int, segment: dict) -> html.Div:
     label = segment_id.replace("_", " ").title()
     path = f"population_edits.{index}"
     modifiers = segment.get("modifiers") or {}
+    decay = segment.get("saturation_decay")
+
     return ui.card(
         html.Div(
             [
-                html.P(label, className=ui.H3),
+                html.Div(
+                    [
+                        html.P(label, className=ui.H3),
+                        html.Code(segment_id, className=f"{ui.CAPTION} text-slate-500"),
+                    ]
+                ),
                 ui.button(
                     "Entfernen",
                     id={"type": SEGMENT_DELETE, "segment": segment_id},
@@ -145,44 +146,34 @@ def _segment_card(index: int, segment: dict) -> html.Div:
             className="flex items-start justify-between gap-3 mb-4",
         ),
         c.slider(
-            "Anteil (Prevalence)",
             f"{path}.prevalence",
             float(segment.get("prevalence") or 0.0),
-            hint=(
-                f"Exklusive Gruppe «{segment['exclusive_group']}»: nur ein Segment dieser "
-                "Gruppe pro Person."
-                if segment.get("exclusive_group")
-                else None
-            ),
+            key="segment.prevalence",
+            hint=_exclusive_hint(segment),
         ),
-        html.Div(
+        ui.expert(
             c.slider(
-                "Erholung pro Tick (Decay)",
                 f"{path}.saturation_decay",
-                float(
-                    segment.get("saturation_decay")
-                    if segment.get("saturation_decay") is not None
-                    else 0.2
+                float(decay if decay is not None else 0.2),
+                key="segment.saturation_decay",
+            ),
+            html.Div(
+                ui.grid(
+                    *[
+                        c.number(
+                            f"{path}.modifiers.{name}",
+                            float(modifiers.get(name, fallback)),
+                            key=f"segment.{name}",
+                            step=0.05,
+                        )
+                        for name, fallback in _MODIFIERS
+                    ],
+                    cols="sm:grid-cols-2",
                 ),
-                hint="Wie viel Sättigung pro Zeiteinheit abgebaut wird (0.0 = nie, 1.0 = sofort).",
+                className="mt-5",
             ),
-            className="mt-5",
-        ),
-        ui.accordion(
-            "Modifikatoren",
-            ui.grid(
-                *[
-                    c.number(
-                        title,
-                        f"{path}.modifiers.{key}",
-                        float(modifiers.get(key, fallback)),
-                        step=0.05,
-                    )
-                    for key, title, fallback in _MODIFIERS
-                ],
-                cols="sm:grid-cols-2",
-            ),
-            open=False,
+            count=1 + len(_MODIFIERS),
+            title="Verhalten dieses Segments",
         ),
         class_name="h-full",
     )
@@ -195,41 +186,70 @@ def _distribution_card(index: int, segment: dict) -> html.Details:
     kind = segment.get("distribution") if segment.get("distribution") in DISTRIBUTIONS else "normal"
 
     if kind == "beta":
-        fields = [
-            c.number("Alpha", f"{path}.alpha", float(segment.get("alpha") or 2.0), step=0.01),
-            c.number("Beta", f"{path}.beta", float(segment.get("beta") or 5.0), step=0.01),
+        shape = [
+            c.number(f"{path}.alpha", float(segment.get("alpha") or 2.0), label="Alpha", step=0.01),
+            c.number(f"{path}.beta", float(segment.get("beta") or 5.0), label="Beta", step=0.01),
         ]
     else:
-        fields = [
-            c.number("Mittelwert", f"{path}.mean", float(segment.get("mean") or 0.0), step=0.01),
-            c.number("Std Dev", f"{path}.std_dev", float(segment.get("std_dev") or 1.0), step=0.01),
+        shape = [
+            c.number(
+                f"{path}.mean",
+                float(segment.get("mean") or 0.0),
+                label="Mittelwert",
+                hint="Der typische Wert in der Bevölkerung.",
+                step=0.01,
+            ),
+            c.number(
+                f"{path}.std_dev",
+                float(segment.get("std_dev") or 1.0),
+                label="Streuung",
+                hint="Wie weit die Menschen um diesen Wert auseinanderliegen.",
+                step=0.01,
+            ),
         ]
-    fields += [
-        c.number("Min", f"{path}.min_value", float(segment.get("min_value") or 0.0), step=0.01),
-        c.number("Max", f"{path}.max_value", float(segment.get("max_value") or 1.0), step=0.01),
+    bounds = [
+        c.number(
+            f"{path}.min_value",
+            float(segment.get("min_value") or 0.0),
+            label="Minimum",
+            hint="Werte darunter kommen nicht vor.",
+            step=0.01,
+        ),
+        c.number(
+            f"{path}.max_value",
+            float(segment.get("max_value") or 1.0),
+            label="Maximum",
+            hint="Werte darüber kommen nicht vor.",
+            step=0.01,
+        ),
     ]
 
     return ui.accordion(
         label,
         c.select(
-            "Verteilungstyp",
             f"{path}.distribution",
             kind,
             [{"label": name, "value": name} for name in DISTRIBUTIONS],
-            class_name="max-w-xs mb-4",
+            key="distribution.kind",
+            class_name="max-w-xs mb-5",
         ),
-        ui.grid(*fields, cols="sm:grid-cols-2 lg:grid-cols-4"),
+        ui.grid(*shape, *bounds, cols="sm:grid-cols-2 lg:grid-cols-4"),
         open=False,
     )
 
 
 def _add_segment_block() -> html.Div:
     return ui.card(
-        html.P("Neues Segment hinzufügen", className=f"{ui.H3} mb-4"),
+        html.P("Neues Segment anlegen", className=f"{ui.H3} mb-1"),
+        html.P(
+            "Ein Segment ist eine Personengruppe mit eigenem Verhalten — etwa Vielflieger "
+            "oder preissensible Urlauber.",
+            className=f"{ui.CAPTION} mb-4",
+        ),
         html.Div(
             [
                 ui.field(
-                    "Segment-ID",
+                    "Kurzname",
                     dcc.Input(
                         id=c.free_id("new-segment-id"),
                         type="text",
@@ -237,10 +257,11 @@ def _add_segment_block() -> html.Div:
                         placeholder="z. B. frequent_flyer",
                         className="af-input",
                     ),
+                    hint="Kleinbuchstaben und Unterstriche, keine Leerzeichen.",
                     class_name="flex-1 min-w-[16rem]",
                 ),
                 html.Div(
-                    ui.button("Segment hinzufügen", id=c.action_id("add-segment"), icon_name="add"),
+                    ui.button("Segment anlegen", id=c.action_id("add-segment"), icon_name="add"),
                     className="pt-7",
                 ),
             ],
@@ -258,17 +279,27 @@ def layout(draft: dict) -> html.Div:
     return html.Div(
         [
             ui.section(
-                "Yield / Markt-Feedback",
+                "Preisverhalten der Airline",
+                ui.lede(
+                    "Wie der Anbieter auf die beobachtete Auslastung reagiert. Das ist der "
+                    "Regelkreis, der Preis und Nachfrage im Lauf aneinander koppelt."
+                ),
                 _market_feedback(draft),
-                subtitle="Wie stark der Anbieter Preis und Marge an die Buchungslage anpasst.",
             ),
             ui.section(
-                "Sättigung (global)",
+                "Sättigung",
+                ui.lede(
+                    "Wer gerade geflogen ist, bucht so schnell nicht wieder. Diese beiden "
+                    "Werte bestimmen, wie stark dieser Effekt die Nachfrage bremst."
+                ),
                 _saturation(draft),
-                subtitle="Wie stark eine Buchung die weitere Buchungsneigung dämpft.",
             ),
             ui.section(
-                "Segmente",
+                "Wer fliegt?",
+                ui.lede(
+                    "Die Bevölkerung besteht aus Segmenten mit eigenem Verhalten. Der Anteil "
+                    "bestimmt, wie stark ein Segment das Gesamtergebnis prägt."
+                ),
                 _add_segment_block(),
                 (
                     ui.grid(
@@ -276,11 +307,15 @@ def layout(draft: dict) -> html.Div:
                         cols="lg:grid-cols-2 2xl:grid-cols-3",
                     )
                     if booleans
-                    else ui.alert("Keine Boolean-Segmente definiert.", "info")
+                    else ui.alert("Keine Segmente definiert.", "info")
                 ),
             ),
             ui.section(
-                "Eigenschaften-Verteilungen",
+                "Streuung der Eigenschaften",
+                ui.lede(
+                    "Zahlungsbereitschaft und Umweltbewusstsein sind nicht bei allen gleich. "
+                    "Hier legen Sie fest, wie breit sie über die Bevölkerung streuen."
+                ),
                 (
                     html.Div([_distribution_card(i, s) for i, s in distributions])
                     if distributions
@@ -289,7 +324,7 @@ def layout(draft: dict) -> html.Div:
             ),
             html.Div(
                 ui.button(
-                    "Änderungen an Population speichern",
+                    "Bevölkerung als Standard speichern",
                     id=c.action_id("save-population"),
                     icon_name="save",
                 ),
