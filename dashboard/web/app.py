@@ -23,6 +23,7 @@ from dash import Dash, Input, Output, dcc, html
 from dashboard.run_browser import outputs_root
 from dashboard.web import components as ui
 from dashboard.web import files_route, state, theme
+from dashboard.web.pages import docs as docs_page
 from dashboard.web.pages import launch as launch_page
 from dashboard.web.pages import runs as runs_page
 
@@ -36,6 +37,7 @@ LANDING_URL = "http://localhost:8522/aeroforesight-ai-landing-page/index.html"
 ROUTES = [
     ("/", "Simulation starten"),
     ("/runs", "Ergebnisse ansehen"),
+    ("/doku", "Dokumentation"),
 ]
 
 _HIDDEN = {"display": "none"}
@@ -177,6 +179,7 @@ def serve_layout() -> html.Div:
                 [
                     html.Div(launch_page.layout(state.initial_draft_dict()), id="page-launch"),
                     html.Div(runs_page.layout(selection), id="page-runs", style=_HIDDEN),
+                    html.Div(docs_page.layout(), id="page-docs", style=_HIDDEN),
                 ],
                 className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 min-h-[70vh]",
             ),
@@ -202,15 +205,17 @@ def create_app() -> Dash:
         Output("navbar-host", "children"),
         Output("page-launch", "style"),
         Output("page-runs", "style"),
+        Output("page-docs", "style"),
         Input("url", "pathname"),
     )
     def _route(pathname: str | None):
         path = (pathname or "/").rstrip("/") or "/"
-        on_runs = path == "/runs"
+        active = path if path in {href for href, _ in ROUTES} else "/"
         return (
-            _navbar("/runs" if on_runs else "/"),
-            (_HIDDEN if on_runs else _VISIBLE),
-            (_VISIBLE if on_runs else _HIDDEN),
+            _navbar(active),
+            _VISIBLE if active == "/" else _HIDDEN,
+            _VISIBLE if active == "/runs" else _HIDDEN,
+            _VISIBLE if active == "/doku" else _HIDDEN,
         )
 
     @app.callback(

@@ -186,8 +186,13 @@ def test_every_parameter_field_has_an_explanation():
     assert glossary.PARAMS, "Glossar ist leer"
     for path, param in glossary.PARAMS.items():
         assert param.label and not param.label.startswith(path.split(".")[-1]), path
-        assert len(param.effect) > 40, f"Erklärung zu knapp: {path}"
-        assert param.hint(), path
+        # Der Hinweis unter dem Feld ist eine Zeile — lang genug, um etwas zu
+        # sagen, kurz genug, um beim Arbeiten nicht zu stoeren.
+        assert 15 < len(param.short) <= 70, f"Kurzhinweis unpassend lang: {path}"
+        assert param.full_label()
+
+    documented = {path for group in glossary.GROUPS for path in group.paths}
+    assert documented <= set(glossary.PARAMS), "Doku verweist auf unbekannte Parameter"
 
 
 def test_overview_summarises_the_draft_in_plain_language():

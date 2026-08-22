@@ -240,7 +240,7 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
                 [
                     html.P("Zeitlicher Verlauf", className=f"{ui.H3} mt-6 mb-1"),
                     html.P(
-                        rule_param.effect if rule_param else "",
+                        rule_param.short if rule_param else "",
                         className=f"{ui.CAPTION} mb-4 max-w-2xl",
                     ),
                     _rule_count_input(prop_id, len(rules)),

@@ -1,16 +1,8 @@
-"""Klartext zu jedem Parameter — an einer Stelle, zum Lesen am Stück.
+"""Beschriftungen und Erklärungen aller Parameter.
 
-Die Oberfläche richtet sich an Anwender, nicht an Modellbauer. Deshalb gilt
-für jeden Eintrag hier:
-
-- **Beschriftung** in der Sprache der Sache (Luftverkehr, Preisbildung,
-  Nachfrage), nicht in der des Codes. Aus «Logit-Penalty-Faktor» wird
-  «Wirkung der Sättigung auf die Buchungsneigung».
-- **Wirkung** sagt, was sich am *Ergebnis* ändert, und in welche Richtung.
-  Nicht, welche Formel angefasst wird.
-- **technisch** nennt den Feldnamen in `configs/*.json`. Er bleibt sichtbar,
-  damit sich Oberfläche und Konfigurationsdateien zuordnen lassen — nur
-  eben klein und nachrangig.
+Jeder Eintrag trägt zwei Texte. `short` steht unter dem Eingabefeld und ist
+bewusst eine Zeile — im Editor soll man arbeiten, nicht lesen. `detail` steht
+auf der Seite «Dokumentation» und erklärt die Wirkung im Zusammenhang.
 
 Die Wirkungsbeschreibungen sind aus `src/market/simulation_functions.py`,
 `src/market/market_rules.py` und `src/population/population_sampler.py`
@@ -19,301 +11,390 @@ abgeleitet. Ändert sich dort die Mechanik, gehört der Text hier nachgezogen.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
 class Param:
-    """Ein Parameter, wie ihn ein Anwender sehen soll."""
-
     label: str
-    effect: str
-    technical: str = ""
+    short: str
+    detail: str = ""
     unit: str = ""
+    technical: str = ""
 
-    def hint(self) -> str:
-        """Erklärung plus Einheit und technischer Name als eine Zeile."""
-
-        parts = [self.effect]
-        if self.unit:
-            parts.append(f"Einheit: {self.unit}.")
-        if self.technical:
-            parts.append(f"`{self.technical}`")
-        return " ".join(parts)
+    def full_label(self) -> str:
+        return f"{self.label} ({self.unit})" if self.unit else self.label
 
 
-#: Schlüssel ist der Pfad im Draft — derselbe, den das Eingabefeld trägt.
+@dataclass(frozen=True)
+class Group:
+    """Ein Themenblock der Dokumentationsseite."""
+
+    title: str
+    intro: str
+    paths: list[str] = field(default_factory=list)
+
+
 PARAMS: dict[str, Param] = {
     # --- Lauf ------------------------------------------------------------
     "scenario_mode": Param(
         label="Womit starten?",
-        effect="«Standard» rechnet mit den Dateien unter `configs/`. «Szenario-Preset» "
-        "lädt eine vorbereitete Annahmenwelt. «Eigene Parameter» geht von dem aus, "
-        "was Sie in den folgenden Tabs einstellen.",
+        short="Standard, ein fertiges Szenario oder Ihre eigenen Einstellungen.",
+        detail="«Standard» rechnet mit den Dateien unter `configs/`. «Szenario-Preset» lädt "
+        "eine vorbereitete Annahmenwelt, die Sie danach anpassen können. «Eigene Parameter» "
+        "geht von dem aus, was in den übrigen Tabs eingestellt ist.",
     ),
     "sweep_id": Param(
         label="Szenario-Preset",
-        effect="Ein fertiges Bündel von Annahmen — Faktorlage, Politik, Kosten. "
-        "Guter Ausgangspunkt, den Sie danach anpassen können.",
+        short="Ein fertiges Bündel von Annahmen als Ausgangspunkt.",
+        detail="Ein Preset legt Faktorlage, Politik und Kosten in einem Zug fest. Über "
+        "«Werte übernehmen» wandern sie in den Entwurf und lassen sich einzeln verändern.",
     ),
     "rounds": Param(
         label="Länge des Laufs",
-        effect="Anzahl der Simulationsrunden. Ein Tick ist eine Modellrunde und steht "
-        "bewusst für keinen Kalenderzeitraum — mehr Ticks heißt nicht «mehr Jahre», "
-        "sondern mehr Gelegenheiten für Anpassung und Rückkopplung.",
+        short="Modellrunden, kein Kalenderzeitraum.",
         unit="Ticks",
+        detail="Ein Tick ist eine Runde des Modells und steht bewusst für keinen Zeitraum. "
+        "Mehr Ticks heißt nicht «mehr Jahre», sondern mehr Gelegenheiten für Anpassung und "
+        "Rückkopplung zwischen Preis und Nachfrage.",
     ),
     "run_count": Param(
         label="Wiederholungen",
-        effect="Wie oft derselbe Aufbau unabhängig gerechnet wird; der Zufallsstartwert "
-        "zählt dabei hoch. Zeigt, wie stabil ein Ergebnis ist — weichen die Läufe stark "
-        "voneinander ab, trägt die Aussage nicht.",
+        short="Zeigt, wie stabil ein Ergebnis ist.",
+        detail="Derselbe Aufbau wird mehrfach gerechnet, der Zufallsstartwert zählt dabei "
+        "hoch. Weichen die Läufe stark voneinander ab, trägt die Aussage nicht.",
     ),
     "run_all_sweeps": Param(
-        label="Alle Szenarien nacheinander vergleichen",
-        effect="Rechnet jedes hinterlegte Preset einmal durch, ohne Agenten-Dialog. "
-        "Ergebnis landet unter `outputs/sweeps/`.",
+        label="Alle Szenarien vergleichen",
+        short="Rechnet jedes Preset einmal durch.",
+        detail="Läuft ohne Agenten-Dialog und damit deutlich schneller. Das Ergebnis landet "
+        "unter `outputs/sweeps/`.",
     ),
     "simulation_name": Param(
         label="Name des Laufs",
-        effect="Erscheint in der Run-Liste und im Bericht. Ohne Namen wird die Run-ID "
-        "verwendet — bei mehreren Läufen schnell unübersichtlich.",
+        short="Erscheint in der Run-Liste und im Bericht.",
+        detail="Ohne Namen wird die Run-ID verwendet. Bei mehreren Läufen ist die Liste dann "
+        "kaum noch zu lesen.",
     ),
     "simulation_description": Param(
         label="Fragestellung",
-        effect="Wozu dieser Lauf gerechnet wird. Landet im Bericht und hilft später, "
-        "einen Lauf wiederzuerkennen.",
+        short="Wozu dieser Lauf gerechnet wird.",
+        detail="Landet im Bericht und hilft später, einen Lauf wiederzuerkennen.",
     ),
     # --- Rahmenbedingungen -----------------------------------------------
     "base_price": Param(
         label="Startpreis eines Tickets",
-        effect="Preis in der ersten Runde, bevor Kosten und Marktreaktion darauf wirken. "
-        "Setzt den Maßstab für den gesamten Preisverlauf.",
+        short="Preis in der ersten Runde.",
         unit="EUR",
         technical="price_model.base_price",
+        detail="Setzt den Maßstab für den gesamten Preisverlauf, bevor Kosten und "
+        "Marktreaktion darauf wirken.",
     ),
     "apply_custom_overrides": Param(
         label="Eigene Werte anwenden",
-        effect="Aus: Der Lauf nutzt die Dateien unter `configs/` unverändert, alle "
-        "Anpassungen in diesem Editor bleiben wirkungslos.",
+        short="Aus: Der Lauf nutzt nur die Dateien unter `configs/`.",
+        detail="Ist der Schalter aus, bleiben alle Anpassungen an Faktoren und Systemgrößen "
+        "wirkungslos. Das ist die häufigste Ursache dafür, dass eine Änderung im Ergebnis "
+        "nicht auftaucht.",
     ),
     # --- Preisbildung ----------------------------------------------------
     "market_feedback_edit.enabled": Param(
-        label="Airline passt den Preis an die Nachfrage an",
-        effect="Aus: Der Ticketpreis folgt allein den Kosten. An: Die Airline steuert "
-        "den Preis aktiv über die beobachtete Auslastung — das übliche Yield Management.",
+        label="Airline passt den Preis an",
+        short="Aus: Der Preis folgt allein den Kosten.",
         technical="market_feedback.enabled",
+        detail="Eingeschaltet steuert die Airline den Preis aktiv über die beobachtete "
+        "Auslastung — das übliche Yield Management. Ausgeschaltet bleibt nur die "
+        "Kostenseite übrig, was die Nachfrageseite isoliert sichtbar macht.",
     ),
     "market_feedback_edit.target_booking_rate": Param(
         label="Ziel-Auslastung",
-        effect="Die Auslastung, auf die die Airline hinsteuert. Liegt die tatsächliche "
-        "Buchungsrate darüber, erhöht sie den Preis — darunter senkt sie ihn. Ein "
-        "niedrigerer Zielwert führt deshalb tendenziell zu höheren Preisen: Die Airline "
-        "zieht schon bei schwächerer Auslastung an.",
-        unit="Anteil 0–1",
+        short="Darüber steigt der Preis, darunter fällt er.",
+        unit="0–1",
         technical="market_feedback.target_booking_rate",
+        detail="Die Auslastung, auf die die Airline hinsteuert. Ein niedrigerer Zielwert "
+        "führt tendenziell zu höheren Preisen, weil die Airline schon bei schwächerer "
+        "Auslastung anzieht. Dieser Wert ist der Steuerungspunkt des gesamten Preismodells.",
     ),
     "market_feedback_edit.marginal_cost_fraction": Param(
         label="Preisuntergrenze",
-        effect="Welcher Teil der Stückkosten als echte Grenzkosten gilt. Darunter wird "
-        "kein Ticket verkauft, auch bei schwacher Nachfrage nicht. Höher heißt: Die "
-        "Airline kann einen Preiskampf weniger weit mitgehen.",
-        unit="Anteil der Kosten, 0–1",
+        short="Darunter wird kein Ticket verkauft.",
+        unit="Anteil der Kosten",
         technical="market_feedback.marginal_cost_fraction",
+        detail="Welcher Teil der Stückkosten als echte Grenzkosten gilt. Ein höherer Wert "
+        "heißt, dass die Airline einen Preiskampf weniger weit mitgehen kann.",
     ),
     "market_feedback_edit.markup_adjustment_per_tick": Param(
-        label="Reaktionsstärke je Runde",
-        effect="Wie kräftig die Airline nachsteuert, wenn die Auslastung vom Ziel "
-        "abweicht. Höher = schnellere, nervösere Preisbewegungen.",
+        label="Reaktionsstärke",
+        short="Höher heißt nervösere Preisbewegungen.",
+        unit="je Runde",
         technical="market_feedback.markup_adjustment_per_tick",
+        detail="Wie kräftig die Airline nachsteuert, wenn die Auslastung vom Ziel abweicht.",
     ),
     "market_feedback_edit.damping": Param(
         label="Dämpfung",
-        effect="Bremst diese Reaktion zusätzlich. Niedriger = ruhigere Preisverläufe, "
-        "höher = die Airline folgt jeder Schwankung.",
+        short="Niedriger heißt ruhigere Preise.",
         technical="market_feedback.damping",
+        detail="Bremst die Reaktion zusätzlich ab. Bei hohen Werten folgt die Airline jeder "
+        "Schwankung der Nachfrage.",
     ),
     "market_feedback_edit.max_price_change_fraction": Param(
-        label="Maximale Preisänderung je Runde",
-        effect="Harter Deckel: So weit darf sich der Ticketpreis in einer Runde "
-        "höchstens bewegen, nach oben wie nach unten. Verhindert Preissprünge, die "
-        "kein realer Anbieter durchsetzen könnte.",
-        unit="Anteil 0–1",
+        label="Preisdeckel",
+        short="So weit darf sich der Preis je Runde bewegen.",
+        unit="0–1",
         technical="market_feedback.max_price_change_fraction",
+        detail="Harte Obergrenze nach oben wie nach unten. Verhindert Sprünge, die kein "
+        "realer Anbieter durchsetzen könnte.",
     ),
     "market_feedback_edit.booking_weight": Param(
-        label="Kopplung an die tatsächlichen Buchungen",
-        effect="Woran sich die Nachfrage der nächsten Runde orientiert. 0 = allein am "
-        "Wachstumstrend, 1 = allein an den beobachteten Buchungen. Höher macht das "
-        "Modell reaktiver, aber auch schwankungsanfälliger.",
-        unit="Anteil 0–1",
+        label="Kopplung an die Buchungen",
+        short="0 folgt dem Trend, 1 den tatsächlichen Buchungen.",
+        unit="0–1",
         technical="market_feedback.booking_weight",
+        detail="Woran sich die Nachfrage der nächsten Runde orientiert. Höhere Werte machen "
+        "das Modell reaktiver, aber auch schwankungsanfälliger.",
     ),
     # --- Sättigung -------------------------------------------------------
     "saturation_edit.booking_increase": Param(
         label="Sättigung nach einer Buchung",
-        effect="Wie stark eine gebuchte Reise den Wunsch nach der nächsten dämpft. "
-        "1.0 heißt: Wer einmal gebucht hat, fällt vorerst ganz als Nachfrager aus. "
-        "0 heißt: Eine Buchung ändert nichts.",
-        unit="Anteil 0–1",
+        short="1 heißt: vorerst kein weiterer Flug.",
+        unit="0–1",
         technical="saturation.booking_increase",
+        detail="Wie stark eine gebuchte Reise den Wunsch nach der nächsten dämpft. Bei 0 "
+        "ändert eine Buchung nichts.",
     ),
     "saturation_edit.utility_penalty_factor": Param(
-        label="Wirkung der Sättigung auf die Buchungsneigung",
-        effect="Wie stark sich aufgebaute Sättigung in der Kaufentscheidung "
-        "niederschlägt. Höher = gesättigte Personen buchen deutlich seltener, selbst "
-        "wenn der Preis stimmt.",
+        label="Wirkung der Sättigung",
+        short="Höher heißt: Gesättigte buchen deutlich seltener.",
         technical="saturation.utility_penalty_factor",
+        detail="Wie stark sich aufgebaute Sättigung in der Kaufentscheidung niederschlägt, "
+        "auch wenn der Preis stimmt.",
     ),
     # --- Segmente --------------------------------------------------------
     "segment.prevalence": Param(
         label="Anteil an der Bevölkerung",
-        effect="Wie viele der simulierten Personen zu diesem Segment gehören. "
-        "Die Anteile sind unabhängig — eine Person kann mehreren Segmenten angehören.",
-        unit="Anteil 0–1",
+        short="Wie viele Personen zu diesem Segment gehören.",
+        unit="0–1",
+        detail="Die Anteile sind unabhängig voneinander — eine Person kann mehreren "
+        "Segmenten angehören, sofern sie nicht in derselben exklusiven Gruppe liegen.",
     ),
     "segment.saturation_decay": Param(
         label="Erholung je Runde",
-        effect="Wie schnell die Sättigung wieder abgebaut wird. 0 = wer gebucht hat, "
-        "kommt nie zurück. 1 = schon in der nächsten Runde wieder voll buchbereit.",
-        unit="Anteil 0–1",
+        short="0 kommt nie zurück, 1 schon in der nächsten Runde.",
+        unit="0–1",
+        detail="Wie schnell die Sättigung dieses Segments wieder abgebaut wird.",
     ),
     "segment.wtp_multiplier": Param(
         label="Zahlungsbereitschaft",
-        effect="Faktor auf die Zahlungsbereitschaft dieses Segments. 1.3 heißt: Dieses "
-        "Segment zahlt 30 % mehr als der Durchschnitt.",
+        short="1.3 heißt: zahlt 30 % mehr als der Durchschnitt.",
         technical="modifiers.wtp_multiplier",
+        detail="Faktor auf die Zahlungsbereitschaft dieses Segments.",
     ),
     "segment.base_income_delta": Param(
-        label="Einkommen (Zu-/Abschlag)",
-        effect="Wird auf das Basiseinkommen dieses Segments aufgeschlagen. Höheres "
-        "Einkommen macht unempfindlicher gegenüber dem Preis.",
+        label="Einkommen",
+        short="Zuschlag auf das Basiseinkommen.",
         technical="modifiers.base_income_delta",
+        detail="Höheres Einkommen macht ein Segment unempfindlicher gegenüber dem Preis.",
     ),
     "segment.price_sensitivity_delta": Param(
-        label="Preisempfindlichkeit (Zu-/Abschlag)",
-        effect="Höher = dieses Segment reagiert stärker auf Preisänderungen und "
-        "storniert die Reise eher, wenn es teurer wird.",
+        label="Preisempfindlichkeit",
+        short="Höher heißt: storniert eher, wenn es teurer wird.",
         technical="modifiers.price_sensitivity_delta",
+        detail="Zuschlag auf die Preisempfindlichkeit dieses Segments.",
     ),
     "segment.substitution_readiness_multiplier": Param(
-        label="Wechselbereitschaft zur Bahn",
-        effect="Faktor darauf, wie leicht dieses Segment auf die Bahn ausweicht. "
-        "Über 1 heißt: wechselt schneller als der Durchschnitt.",
+        label="Wechsel zur Bahn",
+        short="Über 1 heißt: weicht schneller aus als der Durchschnitt.",
         technical="modifiers.substitution_readiness_multiplier",
+        detail="Faktor darauf, wie leicht dieses Segment die Reise auf die Schiene verlegt.",
     ),
-    # --- Verteilungen ----------------------------------------------------
     "distribution.kind": Param(
         label="Verteilungstyp",
-        effect="Wie die Eigenschaft über die Bevölkerung streut. «normal» für "
-        "symmetrische Streuung um einen Mittelwert, «beta» für Anteile zwischen zwei "
-        "Grenzen, «lognormal» für rechtsschiefe Größen wie Einkommen.",
+        short="Wie die Eigenschaft über die Bevölkerung streut.",
+        detail="«normal» für symmetrische Streuung um einen Mittelwert, «beta» für Anteile "
+        "zwischen zwei Grenzen, «lognormal» für rechtsschiefe Größen wie Einkommen.",
     ),
     # --- Technik ---------------------------------------------------------
     "mock_llm": Param(
         label="Ohne Ollama rechnen",
-        effect="Die Kennzahlen bleiben identisch — sie kommen ohnehin aus Python. "
-        "Nur die erzählenden Texte der Agenten sind dann Platzhalter. Für schnelle "
-        "Läufe ohne lokales Sprachmodell.",
+        short="Zahlen bleiben gleich, Agenten-Texte sind Platzhalter.",
+        detail="Für schnelle Läufe ohne lokales Sprachmodell. Die Kennzahlen kommen ohnehin "
+        "aus dem Rechenmodell und ändern sich dadurch nicht.",
     ),
     "deterministic_only": Param(
-        label="Ganz ohne Agenten-Dialog",
-        effect="Überspringt die Sprachmodell-Agenten vollständig. Schnellster Modus; "
-        "liefert die Zahlen, aber keine Ereignisse aus dem Zusammenspiel der Akteure.",
+        label="Ohne Agenten-Dialog",
+        short="Schnellster Modus, nur die berechneten Kennzahlen.",
+        detail="Überspringt die Sprachmodell-Agenten vollständig. Es entstehen keine "
+        "Ereignisse aus dem Zusammenspiel der Akteure.",
     ),
     "model": Param(
         label="Ollama-Modell",
-        effect="Name des lokal laufenden Modells, das die Agenten-Narrative schreibt.",
+        short="Das lokal laufende Modell für die Narrative.",
     ),
     "base_url": Param(
         label="Ollama-Adresse",
-        effect="Wo Ollama erreichbar ist. Läuft es auf demselben Rechner, bleibt der "
-        "Standard richtig.",
+        short="Läuft Ollama lokal, bleibt der Standard richtig.",
     ),
     "temperature": Param(
         label="Kreativität der Agenten",
-        effect="Höher = überraschendere Formulierungen und Ereignisse, niedriger = "
-        "nüchterner und besser reproduzierbar. Betrifft ausschließlich Texte, nie Zahlen.",
+        short="Betrifft nur Texte, nie Zahlen.",
+        detail="Höhere Werte liefern überraschendere Formulierungen, niedrigere sind "
+        "nüchterner und besser reproduzierbar.",
     ),
     "max_tokens": Param(
-        label="Maximale Antwortlänge",
-        effect="Obergrenze je Agenten-Antwort. Zu knapp führt zu abgeschnittenen "
-        "Narrativen, zu großzügig kostet Rechenzeit.",
+        label="Antwortlänge",
+        short="Zu knapp schneidet Narrative ab.",
     ),
     "checkpoint_interval": Param(
         label="Zwischenstand sichern",
-        effect="Alle wie viel Runden ein Zwischenstand geschrieben wird. Nötig, um "
-        "einen Lauf später fortzusetzen oder im Tab «Abfrage» einzelne Runden "
-        "nachzuschlagen. 0 schaltet das ab.",
+        short="Nötig zum Fortsetzen und für die Abfrage einzelner Runden.",
         unit="Ticks",
+        detail="0 schaltet die Zwischenstände ab. Ohne sie lässt sich ein Lauf später weder "
+        "fortsetzen noch im Tab «Abfrage» auf einzelne Runden hin befragen.",
     ),
     "resume_from": Param(
         label="Lauf fortsetzen",
-        effect="Run-ID oder Pfad eines früheren Laufs, an dessen Zwischenstand "
-        "angeknüpft wird. Leer lassen für einen neuen Lauf.",
+        short="Run-ID eines früheren Laufs, sonst leer lassen.",
     ),
     "use_seed": Param(
         label="Zufallsstartwert festlegen",
-        effect="An: Derselbe Aufbau liefert exakt dasselbe Ergebnis — Voraussetzung, "
-        "um zwei Läufe sauber zu vergleichen.",
+        short="Voraussetzung, um zwei Läufe sauber zu vergleichen.",
+        detail="Mit festem Startwert liefert derselbe Aufbau exakt dasselbe Ergebnis. Ohne "
+        "ihn lässt sich ein Unterschied nicht der geänderten Annahme zuordnen.",
     ),
     "seed": Param(
         label="Startwert",
-        effect="Die Zahl, aus der die Zufallsentscheidungen abgeleitet werden. "
-        "Gleicher Wert, gleiches Ergebnis.",
+        short="Gleicher Wert, gleiches Ergebnis.",
     ),
     "generate_figures": Param(
         label="Auswertungsgrafiken erzeugen",
-        effect="Legt nach dem Lauf sechs Diagramme als PNG ab — für Berichte und "
-        "Präsentationen. Zu finden unter «Ergebnisse ansehen» → «Figures» → «PNG-Export».",
+        short="Sechs Diagramme als PNG für Berichte.",
+        detail="Zu finden unter «Ergebnisse ansehen», Tab «Figures», Abschnitt «PNG-Export».",
     ),
     "no_market": Param(
         label="Marktmodell abschalten",
-        effect="Der Preis bleibt unverändert; nur die Nachfrageseite wird simuliert. "
-        "Nützlich, um die Wirkung der Bevölkerung isoliert zu sehen.",
+        short="Preis bleibt fest, nur die Nachfrage wird simuliert.",
     ),
     "redebedarf": Param(
         label="Redebedarf-Modus",
-        effect="Agenten melden sich nur zu Wort, wenn sich für sie etwas Wesentliches "
-        "geändert hat, statt in jeder Runde. Kürzere, dichtere Protokolle.",
+        short="Agenten melden sich nur bei wesentlichen Änderungen.",
+        detail="Führt zu kürzeren, dichteren Protokollen als der Dialog in jeder Runde.",
     ),
     "no_protocol": Param(
-        label="Kein Protokoll schreiben",
-        effect="Spart Zeit und Speicher, kostet aber die Nachvollziehbarkeit des "
-        "Agenten-Dialogs.",
+        label="Kein Protokoll",
+        short="Spart Zeit, kostet die Nachvollziehbarkeit.",
     ),
     "no_scenarios": Param(
         label="Keine Szenarien erzeugen",
-        effect="Überspringt die Szenario-Auswertung am Ende. Der Tab «Szenario» bleibt "
-        "dann leer — er ist normalerweise die Hauptansicht nach einem Lauf.",
+        short="Der Tab «Szenario» bleibt danach leer.",
+        detail="Überspringt die Szenario-Auswertung am Ende, obwohl sie normalerweise die "
+        "Hauptansicht nach einem Lauf ist.",
     ),
-    # --- Properties ------------------------------------------------------
+    # --- Systemgrößen ----------------------------------------------------
     "property.baseline": Param(
         label="Startwert",
-        effect="Gilt ab der ersten Runde, solange keine Regel etwas anderes vorgibt.",
+        short="Gilt, solange keine Regel etwas anderes vorgibt.",
     ),
     "property.rules": Param(
         label="Zeitlicher Verlauf",
-        effect="Regeln verändern den Wert im Lauf: «set» springt ab der genannten "
-        "Runde auf einen neuen Wert, «ramp» fährt ihn über mehrere Runden hoch. "
-        "So bilden Sie etwa eine schrittweise steigende CO₂-Abgabe ab.",
+        short="«set» springt auf den Wert, «ramp» fährt ihn hoch.",
+        detail="Regeln verändern eine Größe im Lauf, etwa für eine schrittweise steigende "
+        "CO₂-Abgabe.",
     ),
     "property.is_active": Param(
         label="In diesem Lauf aktiv",
-        effect="Aus: Die Größe wird im Lauf nicht angewendet.",
+        short="Aus: Die Größe wird nicht angewendet.",
     ),
 }
 
 
+#: Gliederung der Dokumentationsseite. Reihenfolge ist Lesereihenfolge.
+GROUPS: list[Group] = [
+    Group(
+        "Lauf",
+        "Was gerechnet wird und in welchem Umfang.",
+        [
+            "scenario_mode",
+            "sweep_id",
+            "rounds",
+            "run_count",
+            "run_all_sweeps",
+            "simulation_name",
+            "simulation_description",
+        ],
+    ),
+    Group(
+        "Rahmenbedingungen",
+        "Die exogenen Größen: Startpreis und die Frage, ob eigene Werte überhaupt greifen.",
+        [
+            "base_price",
+            "apply_custom_overrides",
+            "property.baseline",
+            "property.rules",
+            "property.is_active",
+        ],
+    ),
+    Group(
+        "Preisbildung",
+        "Der Regelkreis zwischen Auslastung und Ticketpreis. Die Airline beobachtet die "
+        "Buchungsrate und steuert dagegen; diese sechs Werte bestimmen, wie entschlossen "
+        "sie das tut und wo ihre Grenzen liegen.",
+        [
+            "market_feedback_edit.enabled",
+            "market_feedback_edit.target_booking_rate",
+            "market_feedback_edit.marginal_cost_fraction",
+            "market_feedback_edit.markup_adjustment_per_tick",
+            "market_feedback_edit.damping",
+            "market_feedback_edit.max_price_change_fraction",
+            "market_feedback_edit.booking_weight",
+        ],
+    ),
+    Group(
+        "Sättigung",
+        "Wer gerade geflogen ist, bucht so schnell nicht wieder. Ohne diesen Effekt würde "
+        "die Nachfrage allein am Preis hängen.",
+        [
+            "saturation_edit.booking_increase",
+            "saturation_edit.utility_penalty_factor",
+            "segment.saturation_decay",
+        ],
+    ),
+    Group(
+        "Bevölkerung",
+        "Die Nachfrageseite besteht aus Segmenten mit eigenem Verhalten. Anteil und "
+        "Modifikatoren bestimmen, wie stark ein Segment das Gesamtergebnis prägt.",
+        [
+            "segment.prevalence",
+            "segment.wtp_multiplier",
+            "segment.base_income_delta",
+            "segment.price_sensitivity_delta",
+            "segment.substitution_readiness_multiplier",
+            "distribution.kind",
+        ],
+    ),
+    Group(
+        "Technik",
+        "Sprachmodell, Reproduzierbarkeit und Ausgaben. Nichts davon verändert die "
+        "berechneten Zahlen, mit einer Ausnahme: dem Zufallsstartwert.",
+        [
+            "mock_llm",
+            "deterministic_only",
+            "model",
+            "base_url",
+            "temperature",
+            "max_tokens",
+            "use_seed",
+            "seed",
+            "checkpoint_interval",
+            "resume_from",
+            "generate_figures",
+            "no_market",
+            "redebedarf",
+            "no_protocol",
+            "no_scenarios",
+        ],
+    ),
+]
+
+
 def get(path: str) -> Param | None:
     return PARAMS.get(path)
-
-
-def label(path: str, fallback: str = "") -> str:
-    param = PARAMS.get(path)
-    return param.label if param else fallback
-
-
-def hint(path: str, fallback: str | None = None) -> str | None:
-    param = PARAMS.get(path)
-    return param.hint() if param else fallback

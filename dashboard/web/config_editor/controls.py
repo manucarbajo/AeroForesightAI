@@ -129,17 +129,21 @@ def apply_inputs(data: dict, entries: Iterable[tuple[dict, Any]]) -> dict:
 def _described(
     field: str, key: str | None, label: str | None, hint: str | None
 ) -> tuple[str, str | None]:
-    """Beschriftung und Hinweis bestimmen — Glossar, sofern nichts übergeben ist.
+    """Beschriftung und Kurzhinweis bestimmen — Glossar, sofern nichts übergeben ist.
+
+    Unter dem Feld steht nur die eine Zeile aus `short`. Die ausführliche
+    Erklärung samt technischem Feldnamen steht auf der Seite «Dokumentation»;
+    im Editor wäre sie im Weg.
 
     `key` weicht dort vom Pfad ab, wo derselbe Parameter mehrfach vorkommt:
     jedes Segment hat eine eigene `prevalence`, erklärt wird sie einmal.
     """
 
     param = glossary.get(key or field)
-    resolved_label = label or (param.label if param else field)
+    resolved_label = label or (param.full_label() if param else field)
     if hint is not None:
         return resolved_label, hint
-    return resolved_label, (param.hint() if param else None)
+    return resolved_label, (param.short if param else None)
 
 
 def number(
