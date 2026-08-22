@@ -29,7 +29,7 @@ from dashboard.config_catalog import (
     save_population_edits_to_file,
     save_saturation_to_file,
 )
-from dashboard.config_fields import (
+from dashboard.legacy_streamlit.config_fields import (
     clear_factor_widget_keys,
     init_config_draft,
     render_llm_pipeline_tab,

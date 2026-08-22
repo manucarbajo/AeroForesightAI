@@ -5,15 +5,15 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 import streamlit as st
 
-from dashboard.config_ui import render_config_editor
+from dashboard.legacy_streamlit.config_ui import render_config_editor
+from dashboard.legacy_streamlit.shared_views import run_dashboard
 from dashboard.run_browser import generate_figures_for_run, list_run_figures
-from dashboard.shared_views import run_dashboard
 
 
 def _render_animation(run_dir: Path) -> None:
