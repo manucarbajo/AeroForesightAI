@@ -12,6 +12,7 @@ from dash import html
 
 from dashboard.config_catalog import list_sweep_presets
 from dashboard.web import components as ui
+from dashboard.web.config_editor import compute_mode
 from dashboard.web.config_editor import controls as c
 
 #: Der Klartext-Satz steht auf derselben Seite wie die Felder, die ihn
@@ -51,9 +52,9 @@ def summary_sentence(draft: dict) -> str:
     ticks = draft.get("rounds", "?")
 
     if draft.get("deterministic_only"):
-        mode = "ohne Agenten-Dialog — nur die berechneten Kennzahlen"
+        mode = "nur mit den berechneten Zahlen, ohne Agenten-Dialog"
     elif draft.get("mock_llm"):
-        mode = "ohne Ollama; die Zahlen stimmen, die Agenten-Texte sind Platzhalter"
+        mode = "ohne Sprachmodell; die Zahlen stimmen, die Agenten-Texte sind Platzhalter"
     else:
         mode = f"mit dem Sprachmodell «{draft.get('model', '?')}» für die Agenten-Narrative"
 
@@ -104,19 +105,16 @@ def _scope_card(draft: dict) -> html.Div:
 def _mode_card(draft: dict) -> html.Div:
     return ui.card(
         ui.note(
-            "**Die Zahlen kommen immer aus dem Rechenmodell, nie aus dem Sprachmodell.** "
-            "Preise, Buchungsraten und Faktorzustände werden deterministisch berechnet. "
-            "Die Agenten liefern ausschließlich die Deutung dazu — die Einstellung hier "
-            "ändert also, wie viel *erzählt* wird, nicht was herauskommt.",
+            "**Die Zahlen sind in allen drei Fällen dieselben.** Preise, Buchungsraten und "
+            "Faktorzustände berechnet immer das Rechenmodell. Die Auswahl bestimmt nur, "
+            "wie viel dazu *erzählt* wird.",
             icon_name="shield",
         ),
         html.Div(
-            [
-                c.check("mock_llm", draft.get("mock_llm", True)),
-                c.check("deterministic_only", draft.get("deterministic_only", False)),
-            ],
-            className="space-y-3 mt-5",
+            ui.radio(compute_mode.OPTIONS, value=compute_mode.of(draft), id=compute_mode.FIELD_ID),
+            className="mt-5",
         ),
+        html.Div(compute_mode.availability(draft), className="mt-5 pt-4 border-t border-slate-100"),
     )
 
 

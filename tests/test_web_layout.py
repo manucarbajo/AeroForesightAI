@@ -205,7 +205,7 @@ def test_overview_summarises_the_draft_in_plain_language():
 
     assert "3 Läufe" in sentence
     assert "12 Ticks" in sentence
-    assert "ohne Ollama" in sentence
+    assert "ohne Sprachmodell" in sentence
 
 
 def test_control_panel_warns_about_settings_that_surprise_later():

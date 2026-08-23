@@ -10,6 +10,7 @@ from __future__ import annotations
 from dash import html
 
 from dashboard.web import components as ui
+from dashboard.web.config_editor import compute_mode
 from dashboard.web.config_editor import controls as c
 
 _PIPELINE_SWITCHES = ["no_market", "redebedarf", "no_protocol", "no_scenarios"]
@@ -32,11 +33,16 @@ def layout(draft: dict) -> html.Div:
                         icon_name="shield",
                     ),
                     html.Div(
-                        [
-                            c.check("mock_llm", draft.get("mock_llm", True)),
-                            c.check("deterministic_only", draft.get("deterministic_only", False)),
-                        ],
-                        className="space-y-3 mt-5",
+                        ui.radio(
+                            compute_mode.OPTIONS,
+                            value=compute_mode.of(draft),
+                            id=compute_mode.FIELD_ID,
+                        ),
+                        className="mt-5",
+                    ),
+                    html.Div(
+                        compute_mode.availability(draft),
+                        className="mt-5 pt-4 border-t border-slate-100",
                     ),
                     ui.expert(
                         ui.grid(

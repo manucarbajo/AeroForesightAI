@@ -215,16 +215,17 @@ PARAMS: dict[str, Param] = {
     ),
     # --- Technik ---------------------------------------------------------
     "mock_llm": Param(
-        label="Ohne Ollama rechnen",
+        label="Rechenmodus «Ohne Sprachmodell»",
         short="Zahlen bleiben gleich, Agenten-Texte sind Platzhalter.",
-        detail="Für schnelle Läufe ohne lokales Sprachmodell. Die Kennzahlen kommen ohnehin "
-        "aus dem Rechenmodell und ändern sich dadurch nicht.",
+        detail="Für schnelle Läufe ohne laufendes Ollama. Die Kennzahlen kommen ohnehin aus "
+        "dem Rechenmodell und ändern sich dadurch nicht. Im Editor steht dieser Modus "
+        "zusammen mit den beiden anderen als eine Auswahl unter «Rechenmodus».",
     ),
     "deterministic_only": Param(
-        label="Ohne Agenten-Dialog",
-        short="Schnellster Modus, nur die berechneten Kennzahlen.",
+        label="Rechenmodus «Nur Zahlen»",
+        short="Kein Agenten-Dialog, kürzeste Laufzeit.",
         detail="Überspringt die Sprachmodell-Agenten vollständig. Es entstehen keine "
-        "Ereignisse aus dem Zusammenspiel der Akteure.",
+        "Ereignisse aus dem Zusammenspiel der Akteure, und der Tab «Bericht» bleibt dünn.",
     ),
     "model": Param(
         label="Ollama-Modell",

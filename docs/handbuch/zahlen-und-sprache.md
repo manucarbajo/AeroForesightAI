@@ -32,9 +32,14 @@ sondern nur, wie viel dazu erzählt wird.
 
 | Modus | Zahlen | Narrative |
 |---|---|---|
-| Mit Ollama | aus dem Rechenmodell | vom Sprachmodell geschrieben |
-| Ohne Ollama (Mock) | aus dem Rechenmodell | Platzhaltertexte |
-| Ohne Agenten-Dialog | aus dem Rechenmodell | keine |
+| Mit Sprachmodell | aus dem Rechenmodell | von Ollama geschrieben |
+| Ohne Sprachmodell | aus dem Rechenmodell | Platzhaltertexte |
+| Nur Zahlen | aus dem Rechenmodell | keine |
+
+Der Editor zeigt unter «Rechenmodus» zugleich an, ob Ollama gerade erreichbar
+ist und ob das eingestellte Modell dort vorliegt. Läuft der Dienst nicht,
+stehen die beiden unteren Modi weiterhin zur Verfügung — die Zahlen ändern
+sich dadurch nicht.
 
 Für einen schnellen Test der Zahlen brauchen Sie also kein Sprachmodell. Für die
 Präsentation eines Szenarios brauchen Sie eines, weil die Deutung dort den

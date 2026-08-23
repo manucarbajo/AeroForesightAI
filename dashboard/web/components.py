@@ -161,6 +161,42 @@ def checkbox(label: str, *, value: bool, hint: str | None = None, **kwargs: Any)
     )
 
 
+def radio(options: list[dict], *, value: Any, **kwargs: Any) -> dcc.RadioItems:
+    """Auswahl unter sich ausschließenden Möglichkeiten.
+
+    Wie bei `checkbox` muss das Layout inline gesetzt werden — `dcc.RadioItems`
+    schreibt selbst inline und überstimmt damit jede Regel aus dem Stylesheet.
+    """
+
+    return dcc.RadioItems(
+        options=options,
+        value=value,
+        className="af-radio",
+        inputClassName="af-radio__input",
+        labelClassName="af-radio__label",
+        labelStyle=CHECK_LABEL_STYLE,
+        **kwargs,
+    )
+
+
+def status_dot(ok: bool, text: str, *, hint: str | None = None) -> html.Div:
+    """Zustandsanzeige für etwas, das erreichbar sein kann oder nicht."""
+
+    tone = "bg-teal-600" if ok else "bg-slate-300"
+    return html.Div(
+        [
+            html.Span(className=f"inline-block w-2 h-2 rounded-full shrink-0 mt-1.5 {tone}"),
+            html.Div(
+                [
+                    html.Span(text, className="font-body text-sm text-slate-700"),
+                    html.P(hint, className=HINT) if hint else None,
+                ]
+            ),
+        ],
+        className="flex items-start gap-2.5",
+    )
+
+
 def metric_tile(label: str, value: Any, hint: str | None = None) -> html.Div:
     return html.Div(
         [

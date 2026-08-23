@@ -32,8 +32,8 @@ from dashboard.config_catalog import (
     save_saturation_to_file,
 )
 from dashboard.web import components as ui
-from dashboard.web.config_editor import controls as c
 from dashboard.web.config_editor import (
+    compute_mode,
     experiment,
     llm_pipeline,
     macro,
@@ -41,6 +41,7 @@ from dashboard.web.config_editor import (
     overview,
     save_start,
 )
+from dashboard.web.config_editor import controls as c
 from dashboard.web.state import STORE_ID, draft_from_dict, draft_to_dict
 
 # Reihenfolge ist die Lesereihenfolge: erst das, was jeder einstellen muss,
@@ -140,6 +141,10 @@ def _normalise(draft: dict) -> dict:
             draft["base_price"] = None
         elif draft.get("base_price") is None:
             draft["base_price"] = 100.0
+
+    # Der Rechenmodus ist eine Auswahl über zwei Draft-Felder.
+    if compute_mode.FIELD in draft:
+        draft = compute_mode.apply(draft, draft.get(compute_mode.FIELD))
     return draft
 
 
