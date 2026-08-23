@@ -130,6 +130,7 @@ def layout(draft: dict) -> html.Div:
                     "Sie können danach in den anderen Tabs einzelne Annahmen verändern."
                 ),
                 _scenario_card(draft),
+                actions=ui.doc_link("presets"),
             ),
             ui.section(
                 "Umfang",
@@ -138,6 +139,7 @@ def layout(draft: dict) -> html.Div:
                     "Mehrere Wiederholungen zeigen, ob ein Ergebnis trägt oder Zufall war."
                 ),
                 _scope_card(draft),
+                actions=ui.doc_link("tick-und-lauf"),
             ),
             ui.section(
                 "Rechenmodus",

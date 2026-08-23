@@ -1,5 +1,7 @@
 # Rolle der Cross-Impact-Balance-Analyse im System
 
+> Anwendernahe Fassung im Dashboard unter «Dokumentation → CIB-Konsistenzprüfung».
+
 > Referenz: Weimer-Jehle, W. (2023). *Einführung in die Cross-Impact-Bilanzanalyse (CIB):
 > Wege zur qualitativen System- und Szenarioanalyse.*
 

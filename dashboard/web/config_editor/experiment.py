@@ -127,6 +127,7 @@ def layout(draft: dict) -> html.Div:
                         className="mt-5",
                     ),
                 ),
+                actions=ui.doc_link("vergleiche"),
             ),
             ui.section(
                 "Datengrundlage",
@@ -151,6 +152,7 @@ def layout(draft: dict) -> html.Div:
                     count=len(_FILE_FIELDS),
                     title="Konfigurationsdateien wechseln",
                 ),
+                actions=ui.doc_link("ref-config"),
             ),
         ]
     )

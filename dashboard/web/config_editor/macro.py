@@ -375,6 +375,7 @@ def layout(draft: dict) -> html.Div:
                     )
                 ),
                 ui.card(_factor_block(draft)),
+                actions=ui.doc_link("faktoren-konzept"),
             ),
             ui.section(
                 "Systemgrößen",
@@ -415,6 +416,7 @@ def layout(draft: dict) -> html.Div:
                 reload_button,
                 _add_property_block(),
                 html.Div(cards),
+                actions=ui.doc_link("ref-systemgroessen"),
             ),
         ]
     )

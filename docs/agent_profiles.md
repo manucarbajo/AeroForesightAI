@@ -11,7 +11,8 @@ Agenten sind **informationsbeschränkt**: Sie sehen nur das, was in `configs/age
 | `must_not_output` | Verbotene Begriffe/Felder (z. B. `ticket_price`, `booking_rate`) |
 | `depends_on` | Logische Abhängigkeit von anderen Agenten/Umgebung |
 
-Implementierung: `src/agent_dependencies.py`, Filter in `src/nodes/agent_node.py`.
+Implementierung: `src/agents/agent_dependencies.py`, Filter in `src/agents/agent_node.py`.
+Anwendernahe Fassung im Dashboard unter «Dokumentation → Die drei Akteure».
 
 ## Abhängigkeitsgraph
 

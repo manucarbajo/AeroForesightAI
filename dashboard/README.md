@@ -39,7 +39,8 @@ Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
 | `state.py` | `ConfigDraft` ⇄ `dcc.Store` |
 | `runner.py` | Lauf im Hintergrund-Thread, Fortschritt über eine Queue |
 | `files_route.py` | Flask-Route für PNGs und Downloads aus `outputs/` |
-| `pages/` | `launch.py` (Simulation starten), `runs.py` (Ergebnisse ansehen) |
+| `pages/` | `launch.py` (Simulation starten), `runs.py` (Ergebnisse ansehen), `docs.py` (Handbuch) |
+| `pages/docs_reference.py` | Referenzkapitel, aus Glossar und `configs/` erzeugt |
 | `views/` | die sieben Tabs des Run-Browsers |
 | `config_editor/` | die sechs Tabs des Config-Editors |
 | `config_editor/glossary.py` | **alle Erklärtexte an einer Stelle** — Beschriftung, Wirkung, technischer Feldname je Parameter |
@@ -51,6 +52,7 @@ Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
 | --- | --- |
 | **Simulation starten** | Sechs Tabs: **Überblick** (die fünf Entscheidungen, die einen Lauf prägen), **Rahmenbedingungen** (Faktoren F1–F7, Systemgrößen samt Regeln), **Nachfrage & Preisbildung** (Yield Management, Sättigung, Segmente, Verteilungen), **Lauf & Ablage** (Benennung, Mehrfachläufe, Config-Dateien), **Technik** (Sprachmodell, Reproduzierbarkeit, Ausgaben), **Kontrolle** (Klartext-Zusammenfassung, Warnungen, Preset sichern). Start mit Live-Log. |
 | **Ergebnisse ansehen** | **Szenario** (Hauptansicht), Übersicht, Animation, Figures, Bericht, Abfrage, Dateien |
+| **Dokumentation** | Handbuch mit 28 Kapiteln in sechs Teilen, Kapitelnavigation und Volltextsuche |
 
 ### Aufbau des Config-Editors
 
@@ -66,8 +68,25 @@ folgen drei Regeln, die für jeden neuen Parameter gelten:
    einem «Feinabstimmung»-Block darunter. Sichtbar sind dadurch beim Einstieg
    sechs Felder statt rund 160 — verborgen ist keines.
 
-Der technische Feldname (`market_feedback.damping`) steht klein am Ende jeder
-Erklärung, damit sich Oberfläche und `configs/*.json` zuordnen lassen.
+Im Editor steht je Feld nur eine Zeile. Die ausführliche Erklärung samt Einheit
+und Config-Feldname steht im Handbuch; jeder Abschnitt des Editors verlinkt in
+das passende Kapitel.
+
+## Handbuch
+
+Die Seite **Dokumentation** (`/doku`) ist als Nachschlagewerk aufgebaut:
+Kapitelnavigation links, Text rechts, Volltextsuche, jede Zwischenüberschrift
+verlinkbar über `/doku/<kapitel>`.
+
+Kapitel kommen aus zwei Quellen. Erklärende Texte liegen als Markdown unter
+[`../docs/handbuch/`](../docs/handbuch/) und lassen sich ohne Python ändern.
+Referenzkapitel — alle Einstellungen, Faktoren, Systemgrößen, Presets, Rechte
+der Akteure — erzeugt `web/pages/docs_reference.py` aus dem Glossar und den
+Dateien unter `configs/`; sie können dadurch nicht veralten.
+
+`tests/test_web_docs.py` hält die Vollständigkeit fest: Eine neue Einstellung,
+Systemgröße oder ein neues Preset ohne Eintrag im Handbuch lässt die Suite
+fehlschlagen.
 
 **Demo-Ablauf:** Run wählen → **Szenario** lesen → **Figures** → **Abfrage**
 (Chat). Details: [`../docs/scenario_runs.md`](../docs/scenario_runs.md)

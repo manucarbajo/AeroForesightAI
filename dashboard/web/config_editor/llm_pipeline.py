@@ -62,6 +62,7 @@ def layout(draft: dict) -> html.Div:
                         names="Modell, Adresse, Kreativität, Antwortlänge",
                     ),
                 ),
+                actions=ui.doc_link("zahlen-und-sprache"),
             ),
             ui.section(
                 "Reproduzierbarkeit",
@@ -91,6 +92,7 @@ def layout(draft: dict) -> html.Div:
                         className="mt-5",
                     ),
                 ),
+                actions=ui.doc_link("vergleiche"),
             ),
             ui.section(
                 "Ausgaben",

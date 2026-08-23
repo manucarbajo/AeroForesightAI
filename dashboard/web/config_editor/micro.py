@@ -285,6 +285,7 @@ def layout(draft: dict) -> html.Div:
                     "Regelkreis, der Preis und Nachfrage im Lauf aneinander koppelt."
                 ),
                 _market_feedback(draft),
+                actions=ui.doc_link("preisbildung"),
             ),
             ui.section(
                 "Sättigung",
@@ -293,6 +294,7 @@ def layout(draft: dict) -> html.Div:
                     "Werte bestimmen, wie stark dieser Effekt die Nachfrage bremst."
                 ),
                 _saturation(draft),
+                actions=ui.doc_link("saettigung"),
             ),
             ui.section(
                 "Wer fliegt?",
@@ -309,6 +311,7 @@ def layout(draft: dict) -> html.Div:
                     if booleans
                     else ui.alert("Keine Segmente definiert.", "info")
                 ),
+                actions=ui.doc_link("kaufentscheidung"),
             ),
             ui.section(
                 "Streuung der Eigenschaften",
