@@ -256,6 +256,21 @@ def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
     )
 
 
+def doc_link(slug: str, label: str = "Im Handbuch nachlesen") -> Any:
+    """Verweis von einer Einstellung ins zugehörige Kapitel.
+
+    Bewusst leise: Wer weiß, was er tut, soll nicht daran vorbeilesen müssen —
+    wer nicht, findet die Erklärung genau dort, wo die Frage entsteht.
+    """
+
+    return dcc.Link(
+        [label, icon("arrow_forward", "text-xs")],
+        href=f"/doku/{slug}",
+        className="inline-flex items-center gap-1 font-body text-xs text-slate-500 "
+        "hover:text-navy-800 transition-colors",
+    )
+
+
 def lede(text: str) -> html.P:
     """Einleitungssatz über einem Block — sagt, wozu die Einstellungen dienen."""
 

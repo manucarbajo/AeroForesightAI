@@ -124,7 +124,7 @@ def _navbar(pathname: str) -> html.Nav:
                 ),
                 html.Div(
                     [_nav_link(href, label, pathname == href) for href, label in ROUTES],
-                    className="flex items-center gap-1",
+                    className="af-nav__links flex items-center gap-1",
                 ),
             ],
             className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4",
@@ -210,7 +210,11 @@ def create_app() -> Dash:
     )
     def _route(pathname: str | None):
         path = (pathname or "/").rstrip("/") or "/"
-        active = path if path in {href for href, _ in ROUTES} else "/"
+        # Das Handbuch hat Unterseiten (`/doku/cib`) — hier zählt der Anfang.
+        if path.startswith(docs_page.ROUTE):
+            active = docs_page.ROUTE
+        else:
+            active = path if path in {href for href, _ in ROUTES} else "/"
         return (
             _navbar(active),
             _VISIBLE if active == "/" else _HIDDEN,
@@ -229,6 +233,7 @@ def create_app() -> Dash:
 
     launch_page.register_callbacks(app)
     runs_page.register_callbacks(app)
+    docs_page.register_callbacks(app)
     return app
 
 

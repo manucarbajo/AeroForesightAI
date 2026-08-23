@@ -487,6 +487,66 @@ textarea.af-input {
     color: var(--slate-900);
 }
 
+/* --- Kopfnavigation ------------------------------------------------------ */
+/* Auf schmalen Geräten passen die Bereichslinks nicht mehr nebeneinander.
+   Statt sie umbrechen oder die Seite überlaufen zu lassen, schiebt sich die
+   Leiste seitlich — ohne sichtbaren Rollbalken. */
+
+.af-nav__links {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.af-nav__links::-webkit-scrollbar {
+    display: none;
+}
+
+.af-nav__links > a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* --- Handbuch ------------------------------------------------------------ */
+/* Zweispaltig wie eine klassische Dokumentation: Kapitel links, Text rechts.
+   Unter 1024px wandert die Navigation über den Inhalt. */
+
+.af-docs {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.af-docs__nav {
+    min-width: 0;
+}
+
+@media (min-width: 1024px) {
+    .af-docs {
+        grid-template-columns: 16rem minmax(0, 1fr);
+        gap: 3.5rem;
+    }
+
+    .af-docs__nav {
+        position: sticky;
+        /* Unter der klebenden Kopfzeile (3.5rem) plus etwas Luft. */
+        top: 4.5rem;
+        align-self: start;
+        max-height: calc(100vh - 6rem);
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+}
+
+/* Sprungziel nicht unter die Kopfzeile schieben. */
+.af-docs [id] {
+    scroll-margin-top: 5rem;
+}
+
+.af-docs__nav input[type="search"] {
+    font-size: 0.8125rem;
+}
+
 /* --- Log-Fenster --------------------------------------------------------- */
 
 .af-log {

@@ -1,141 +1,481 @@
-"""Seite «Dokumentation»: was die Parameter bedeuten und wie das Modell rechnet.
+"""Seite «Dokumentation» — das Handbuch.
 
-Alles, was zum Verstehen nötig ist, aber im Editor im Weg stünde. Der Editor
-zeigt je Feld eine Zeile; hier steht die Erklärung im Zusammenhang.
+Aufbau wie eine klassische Dokumentation: links die Kapitel mit Suchfeld,
+rechts der Text, jede Zwischenüberschrift verlinkbar. Erreichbar über
+`/doku` und `/doku/<kapitel>`.
+
+Kapitel kommen aus zwei Quellen. Erklärende Texte liegen als Markdown unter
+`docs/handbuch/` und lassen sich ohne Python ändern. Referenzkapitel erzeugt
+`docs_reference.py` aus dem Glossar und den Dateien unter `configs/` — sie
+können dadurch nicht veralten. Beide liefern Markdown und laufen durch
+dieselbe Darstellung.
 """
 
 from __future__ import annotations
 
-from dash import html
+import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable
+
+from dash import Input, Output, dcc, html
 
 from dashboard.web import components as ui
-from dashboard.web.config_editor import glossary
+from dashboard.web.pages import docs_reference as ref
 
-GRUNDLAGEN = [
-    (
-        "Ein Tick ist eine Modellrunde",
-        "Ticks haben keine Kalenderbedeutung. Sie stehen weder für Quartale noch für Jahre. "
-        "Ein längerer Lauf bildet nicht mehr Zeit ab, sondern mehr Gelegenheiten für "
-        "Anpassung und Rückkopplung zwischen Preis und Nachfrage.",
+ROUTE = "/doku"
+
+#: Wo die geschriebenen Kapitel liegen.
+HANDBOOK_DIR = Path(__file__).resolve().parents[3] / "docs" / "handbuch"
+
+
+@dataclass(frozen=True)
+class Chapter:
+    slug: str
+    title: str
+    part: str
+    summary: str
+    markdown: str | None = None
+    builder: Callable[[], str] | None = None
+
+    @property
+    def href(self) -> str:
+        return f"{ROUTE}/{self.slug}"
+
+    def source(self) -> str:
+        """Markdown-Quelltext des Kapitels."""
+
+        if self.builder is not None:
+            return self.builder()
+        if self.markdown:
+            path = HANDBOOK_DIR / self.markdown
+            if path.is_file():
+                return path.read_text(encoding="utf-8")
+            return f"Kapitel fehlt: `docs/handbuch/{self.markdown}`"
+        return ""
+
+
+CHAPTERS: list[Chapter] = [
+    # --- Einstieg ---------------------------------------------------------
+    Chapter(
+        "was-ist-das",
+        "Was diese Plattform tut",
+        "Einstieg",
+        "Wofür die Simulation gedacht ist und wofür nicht.",
+        markdown="was-ist-das.md",
     ),
-    (
-        "Die Zahlen kommen aus dem Rechenmodell",
-        "Preise, Buchungsraten und Faktorzustände entstehen deterministisch in Python. Das "
-        "Sprachmodell liefert ausschließlich die Deutung dazu. Wer den Rechenmodus umstellt, "
-        "ändert also, wie viel erzählt wird, nicht was herauskommt.",
+    Chapter(
+        "erste-simulation",
+        "Die erste Simulation",
+        "Einstieg",
+        "In fünf Minuten vom Start zum fertigen Szenario.",
+        markdown="erste-simulation.md",
     ),
-    (
-        "Buchungen entstehen einzeln, nicht als Quote",
-        "Für jede simulierte Person wird die Kaufentscheidung einzeln gerechnet, aus "
-        "Zahlungsbereitschaft, Preisempfindlichkeit, Umweltbewusstsein und Sättigung. Die "
-        "Buchungsrate ist das Ergebnis dieser Entscheidungen, keine Vorgabe.",
+    Chapter(
+        "ergebnisse-lesen",
+        "Ergebnisse lesen",
+        "Einstieg",
+        "In welcher Reihenfolge man die sieben Ansichten liest.",
+        markdown="ergebnisse-lesen.md",
     ),
-    (
-        "Die sieben Faktoren beschreiben die Welt",
-        "F1 bis F7 fassen Nachfrage, Regulierung, Technologie, Wirtschaft, Alternativen, "
-        "Gesellschaft und Geopolitik in je zwei möglichen Zuständen. Aus ihrer Kombination "
-        "bewertet die CIB-Matrix, ob eine Konstellation in sich stimmig ist. Diese Matrix "
-        "ist eingefroren und wird nicht aus Läufen abgeleitet, sonst würde der Maßstab aus "
-        "dem Messobjekt gewonnen.",
+    # --- Konzepte ---------------------------------------------------------
+    Chapter(
+        "tick-und-lauf",
+        "Tick, Lauf und Szenario",
+        "Konzepte",
+        "Warum ein Tick kein Zeitraum ist.",
+        markdown="tick-und-lauf.md",
     ),
-    (
-        "Der Preis hat eine Untergrenze",
-        "Unter die Grenzkosten samt Steuern und Gebühren fällt der Ticketpreis nie. Das "
-        "erlaubt Verkäufe unter Vollkosten, verbietet aber Dumping.",
+    Chapter(
+        "zahlen-und-sprache",
+        "Zahlen und Sprache",
+        "Konzepte",
+        "Die Trennlinie zwischen Rechenmodell und Sprachmodell.",
+        markdown="zahlen-und-sprache.md",
+    ),
+    Chapter(
+        "akteure",
+        "Die drei Akteure",
+        "Konzepte",
+        "Consumer, Provider, Regulator und ihre Informationsgrenzen.",
+        markdown="akteure.md",
+    ),
+    Chapter(
+        "faktoren-konzept",
+        "Die sieben Faktoren",
+        "Konzepte",
+        "Wie die Faktoren die Welt eines Laufs beschreiben.",
+        markdown="faktoren.md",
+    ),
+    Chapter(
+        "cib",
+        "CIB-Konsistenzprüfung",
+        "Konzepte",
+        "Wie bewertet wird, ob ein Szenario in sich stimmig ist.",
+        markdown="cib.md",
+    ),
+    Chapter(
+        "kaufentscheidung",
+        "Wie eine Buchung entsteht",
+        "Konzepte",
+        "Die Kaufentscheidung einer einzelnen Person.",
+        markdown="kaufentscheidung.md",
+    ),
+    Chapter(
+        "preisbildung",
+        "Wie der Preis entsteht",
+        "Konzepte",
+        "Der Regelkreis aus Auslastung, Kosten und Preis.",
+        markdown="preisbildung.md",
+    ),
+    Chapter(
+        "saettigung",
+        "Sättigung",
+        "Konzepte",
+        "Warum Nachfrage nicht allein am Preis hängt.",
+        markdown="saettigung.md",
+    ),
+    # --- Bedienung --------------------------------------------------------
+    Chapter(
+        "lauf-konfigurieren",
+        "Einen Lauf konfigurieren",
+        "Bedienung",
+        "Die sechs Tabs des Editors und wofür jeder da ist.",
+        markdown="lauf-konfigurieren.md",
+    ),
+    Chapter(
+        "lauf-starten",
+        "Einen Lauf starten",
+        "Bedienung",
+        "Start, Fortschritt und die drei möglichen Ausgänge.",
+        markdown="lauf-starten.md",
+    ),
+    Chapter(
+        "ergebnisse",
+        "Die Ergebnis-Ansichten",
+        "Bedienung",
+        "Alle sieben Tabs im Einzelnen.",
+        markdown="ergebnisse.md",
+    ),
+    Chapter(
+        "abfrage",
+        "Läufe abfragen",
+        "Bedienung",
+        "Was der State Explorer kann und was ihn begrenzt.",
+        markdown="abfrage.md",
+    ),
+    Chapter(
+        "presets",
+        "Szenarien sichern und vergleichen",
+        "Bedienung",
+        "Eigene Annahmenwelten ablegen und wiederverwenden.",
+        markdown="presets.md",
+    ),
+    # --- Referenz ---------------------------------------------------------
+    Chapter(
+        "ref-parameter",
+        "Alle Einstellungen",
+        "Referenz",
+        "Jeder Parameter des Editors mit Einheit und Config-Feld.",
+        builder=ref.parameter,
+    ),
+    Chapter(
+        "ref-faktoren",
+        "Faktoren F1–F7",
+        "Referenz",
+        "Alle Faktoren mit beiden Zuständen.",
+        builder=ref.faktoren,
+    ),
+    Chapter(
+        "ref-systemgroessen",
+        "Systemgrößen",
+        "Referenz",
+        "Politik, Kosten, Konjunktur mit Einheit und Wertebereich.",
+        builder=ref.systemgroessen,
+    ),
+    Chapter(
+        "ref-presets",
+        "Szenario-Presets",
+        "Referenz",
+        "Die hinterlegten Annahmenwelten samt Begründung.",
+        builder=ref.presets,
+    ),
+    Chapter(
+        "ref-akteure",
+        "Rechte der Akteure",
+        "Referenz",
+        "Was jeder Agent sieht und vorschlagen darf.",
+        builder=ref.akteure,
+    ),
+    Chapter(
+        "ref-ausgaben",
+        "Ausgabedateien",
+        "Referenz",
+        "Was ein Lauf erzeugt und wofür es gut ist.",
+        markdown="ref-ausgaben.md",
+    ),
+    Chapter(
+        "ref-config",
+        "Konfigurationsdateien",
+        "Referenz",
+        "Was in welcher Datei unter configs/ steht.",
+        markdown="ref-config.md",
+    ),
+    # --- Praxis -----------------------------------------------------------
+    Chapter(
+        "fragestellungen",
+        "Typische Fragestellungen",
+        "Praxis",
+        "Konkrete Fragen und der Weg zur Antwort.",
+        markdown="fragestellungen.md",
+    ),
+    Chapter(
+        "vergleiche",
+        "Läufe vergleichen",
+        "Praxis",
+        "Zwei Annahmen sauber gegeneinander stellen.",
+        markdown="vergleiche.md",
+    ),
+    Chapter(
+        "fehlerbilder",
+        "Auffällige Verläufe deuten",
+        "Praxis",
+        "Was es heißt, wenn Zahlen aus dem Ruder laufen.",
+        markdown="fehlerbilder.md",
+    ),
+    Chapter(
+        "grenzen",
+        "Grenzen des Modells",
+        "Praxis",
+        "Wo Ergebnisse nicht mehr tragen.",
+        markdown="grenzen.md",
+    ),
+    # --- Nachschlagen -----------------------------------------------------
+    Chapter(
+        "glossar",
+        "Glossar",
+        "Nachschlagen",
+        "Begriffe von Auslastung bis Yield Management.",
+        markdown="glossar.md",
     ),
 ]
 
+PARTS = ["Einstieg", "Konzepte", "Bedienung", "Referenz", "Praxis", "Nachschlagen"]
 
-def _param_row(path: str) -> html.Div:
-    param = glossary.get(path)
-    if param is None:
-        return html.Div()
+BY_SLUG = {chapter.slug: chapter for chapter in CHAPTERS}
+DEFAULT_SLUG = CHAPTERS[0].slug
 
-    meta = []
-    if param.unit:
-        meta.append(html.Span(param.unit, className="font-body text-xs text-slate-500"))
-    if param.technical:
-        meta.append(html.Code(param.technical, className="text-xs text-slate-500"))
+
+def slug_from_path(pathname: str | None) -> str:
+    """`/doku/cib` → `cib`; alles Unbekannte auf das erste Kapitel."""
+
+    path = (pathname or "").rstrip("/")
+    if path.startswith(f"{ROUTE}/"):
+        slug = path[len(ROUTE) + 1 :]
+        if slug in BY_SLUG:
+            return slug
+    return DEFAULT_SLUG
+
+
+# --- Darstellung -----------------------------------------------------------
+
+
+def anchor(text: str) -> str:
+    """Überschrift in eine ID überführen, die sich verlinken lässt."""
+
+    lowered = text.lower()
+    for old, new in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss")):
+        lowered = lowered.replace(old, new)
+    return re.sub(r"-{2,}", "-", re.sub(r"[^a-z0-9]+", "-", lowered)).strip("-") or "abschnitt"
+
+
+def split_sections(markdown: str) -> list[tuple[str | None, str]]:
+    """Text an `##`-Überschriften teilen.
+
+    Jeder Abschnitt wird eine eigene `<section>` mit ID. Das ist der Grund für
+    die Zerlegung: `dcc.Markdown` vergibt keine IDs, und ohne IDs lässt sich
+    keine Stelle im Handbuch verlinken.
+    """
+
+    sections: list[tuple[str | None, str]] = []
+    title: str | None = None
+    body: list[str] = []
+    in_code = False
+
+    for line in markdown.splitlines():
+        if line.lstrip().startswith("```"):
+            in_code = not in_code
+        if not in_code and line.startswith("## "):
+            sections.append((title, "\n".join(body).strip()))
+            title = line[3:].strip()
+            body = []
+            continue
+        body.append(line)
+
+    sections.append((title, "\n".join(body).strip()))
+    return [item for item in sections if item[0] or item[1]]
+
+
+def render(chapter: Chapter) -> html.Div:
+    sections = split_sections(chapter.source())
+    blocks: list = []
+    for title, body in sections:
+        children: list = []
+        if title:
+            children.append(html.H2(title, className=f"{ui.H2} mb-3 scroll-mt-24"))
+        if body:
+            children.append(ui.markdown(body))
+        # `id` nur setzen, wenn es eine Überschrift gibt — Dash lehnt `id=None`
+        # ab, und der Vorspann eines Kapitels braucht kein Sprungziel.
+        extra = {"id": anchor(title)} if title else {}
+        blocks.append(html.Section(children, className="mb-10", **extra))
 
     return html.Div(
         [
-            html.Div(
-                [
-                    html.Span(
-                        param.label, className="font-body text-sm font-medium text-slate-900"
-                    ),
-                    html.Div(meta, className="flex items-center gap-3 shrink-0") if meta else None,
-                ],
-                className="flex items-baseline justify-between gap-4 flex-wrap",
-            ),
             html.P(
-                param.detail or param.short,
-                className="font-body text-sm text-slate-600 leading-relaxed mt-1 max-w-3xl",
+                chapter.part.upper(), className="font-body text-xs tracking-wider text-slate-500"
             ),
+            html.H1(chapter.title, className=f"{ui.H1} mt-1"),
+            html.P(chapter.summary, className="font-body text-slate-600 mt-2 mb-8 max-w-3xl"),
+            *blocks,
+            _chapter_footer(chapter),
         ],
-        className="py-4 border-b border-slate-100 last:border-0",
+        className="max-w-3xl",
     )
 
 
-def _group(group: glossary.Group) -> html.Section:
-    return ui.section(
-        group.title,
-        ui.lede(group.intro),
-        ui.card(
-            html.Div([_param_row(path) for path in group.paths]),
-            pad=False,
-            class_name="px-5 sm:px-6",
-        ),
+def _chapter_footer(chapter: Chapter) -> html.Div:
+    """Blättern zum vorigen und nächsten Kapitel."""
+
+    index = next((i for i, item in enumerate(CHAPTERS) if item.slug == chapter.slug), 0)
+    previous = CHAPTERS[index - 1] if index > 0 else None
+    following = CHAPTERS[index + 1] if index + 1 < len(CHAPTERS) else None
+
+    def link(target: Chapter | None, label: str, align: str):
+        if target is None:
+            return html.Div()
+        return dcc.Link(
+            [
+                html.Span(label, className=f"{ui.CAPTION} block"),
+                html.Span(
+                    target.title,
+                    className="font-body text-sm font-medium text-navy-800",
+                ),
+            ],
+            href=target.href,
+            className=f"block {align} hover:opacity-70 transition-opacity",
+        )
+
+    return html.Div(
+        [link(previous, "Zurück", "text-left"), link(following, "Weiter", "text-right")],
+        className="flex items-start justify-between gap-6 border-t border-slate-200 pt-6 mt-12",
     )
+
+
+# --- Navigation ------------------------------------------------------------
+
+
+def _search_index() -> dict[str, str]:
+    """Kleingeschriebener Volltext je Kapitel, für die Suche."""
+
+    index = {}
+    for chapter in CHAPTERS:
+        try:
+            body = chapter.source()
+        except Exception:  # noqa: BLE001 - ein kaputtes Kapitel darf die Suche nicht kippen
+            body = ""
+        index[chapter.slug] = f"{chapter.title} {chapter.summary} {body}".lower()
+    return index
+
+
+def navigation(active_slug: str, query: str = "") -> html.Div:
+    needle = (query or "").strip().lower()
+    if needle:
+        index = _search_index()
+        visible = {slug for slug, text in index.items() if needle in text}
+    else:
+        visible = set(BY_SLUG)
+
+    blocks: list = []
+    for part in PARTS:
+        chapters = [c for c in CHAPTERS if c.part == part and c.slug in visible]
+        if not chapters:
+            continue
+        blocks.append(
+            html.P(
+                part.upper(),
+                className="font-body text-xs tracking-wider text-slate-400 mt-6 mb-2 first:mt-0",
+            )
+        )
+        blocks.append(
+            html.Ul(
+                [
+                    html.Li(
+                        dcc.Link(
+                            chapter.title,
+                            href=chapter.href,
+                            className=(
+                                "block py-1.5 font-body text-sm border-l-2 pl-3 -ml-px "
+                                + (
+                                    "border-navy-800 text-navy-800 font-medium"
+                                    if chapter.slug == active_slug
+                                    else "border-transparent text-slate-600 hover:text-navy-800"
+                                )
+                            ),
+                        )
+                    )
+                    for chapter in chapters
+                ],
+                className="border-l border-slate-200",
+            )
+        )
+
+    if not blocks:
+        blocks.append(
+            html.P(
+                f"Nichts gefunden zu «{query}».",
+                className="font-body text-sm text-slate-500 py-2",
+            )
+        )
+    return html.Div(blocks)
 
 
 def layout() -> html.Div:
     return html.Div(
         [
-            ui.page_heading(
-                "Dokumentation",
-                "Wie das Modell rechnet und was die einzelnen Einstellungen bewirken.",
-            ),
-            ui.section(
-                "Grundlagen",
-                ui.card(
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.P(title, className=f"{ui.H3} mb-1"),
-                                    html.P(
-                                        body,
-                                        className="font-body text-sm text-slate-600 "
-                                        "leading-relaxed max-w-3xl",
-                                    ),
-                                ],
-                                className="py-4 border-b border-slate-100 last:border-0",
-                            )
-                            for title, body in GRUNDLAGEN
-                        ]
+            html.Aside(
+                [
+                    dcc.Input(
+                        id="docs-search",
+                        type="search",
+                        placeholder="Im Handbuch suchen …",
+                        value="",
+                        className="af-input mb-2",
                     ),
-                    pad=False,
-                    class_name="px-5 sm:px-6",
-                ),
+                    html.Div(navigation(DEFAULT_SLUG), id="docs-nav"),
+                ],
+                className="af-docs__nav",
             ),
-            *[_group(group) for group in glossary.GROUPS],
-            ui.section(
-                "Weiterführend",
-                ui.card(
-                    ui.markdown(
-                        "Zur CIB-Methodik und ihrer Begründung: `docs/cib_role.md` und "
-                        "`docs/cib_rationale.md`. Zu den Rechten der Agenten: "
-                        "`docs/agent_profiles.md`. Die Rohwerte aller Einstellungen liegen "
-                        "unter `configs/`, die technischen Feldnamen oben verweisen darauf."
-                    )
-                ),
-            ),
-        ]
+            html.Div(render(BY_SLUG[DEFAULT_SLUG]), id="docs-content", className="min-w-0"),
+        ],
+        className="af-docs",
     )
 
 
 def register_callbacks(app) -> None:
-    """Die Seite ist statisch — sie braucht keine."""
+    @app.callback(
+        Output("docs-content", "children"),
+        Input("url", "pathname"),
+        prevent_initial_call=True,
+    )
+    def _chapter(pathname: str | None):
+        return render(BY_SLUG[slug_from_path(pathname)])
 
-    return None
+    @app.callback(
+        Output("docs-nav", "children"),
+        Input("url", "pathname"),
+        Input("docs-search", "value"),
+        prevent_initial_call=True,
+    )
+    def _nav(pathname: str | None, query: str | None):
+        return navigation(slug_from_path(pathname), query or "")

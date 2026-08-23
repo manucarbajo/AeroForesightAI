@@ -1,0 +1,48 @@
+Sieben Faktoren beschreiben die Welt, in der ein Lauf stattfindet. Sie sind die
+grobe Ebene über den konkreten Zahlen: Nicht «CO₂-Abgabe 120 EUR», sondern
+«radikale Dekarbonisierung» oder «moderater Klimaschutz».
+
+Die vollständige Liste mit beiden Zuständen je Faktor steht unter
+[Faktoren F1–F7](/doku/ref-faktoren).
+
+## Warum nur zwei Zustände
+
+Jeder Faktor kennt genau zwei mögliche Zustände. Das ist keine Vereinfachung aus
+Bequemlichkeit, sondern Voraussetzung für die Konsistenzprüfung: Bei sieben
+Faktoren mit je zwei Zuständen gibt es 128 mögliche Weltbilder — wenige genug,
+um jede Kombination zu bewerten, und viele genug, um interessante Spannungen zu
+enthalten.
+
+Feinere Abstufungen finden auf der Ebene der Systemgrößen statt. Dort ist die
+CO₂-Abgabe eine Zahl mit Verlauf, nicht eine Kategorie.
+
+## Wie Faktoren und Zahlen zusammenhängen
+
+Die Faktoren setzen den Rahmen, die Systemgrößen füllen ihn aus. Ein Lauf im
+Zustand «radikale Dekarbonisierung» wird typischerweise mit einer hohen
+CO₂-Abgabe und einer strengen SAF-Quote konfiguriert. Zwingend ist das nicht —
+Sie können beides unabhängig einstellen.
+
+Genau hier setzt die Konsistenzprüfung an. Sie merkt, wenn Faktorzustände
+gewählt sind, die schlecht zusammenpassen, und weist das Ergebnis als weniger
+stimmig aus. Sie verbietet es aber nicht.
+
+## Was sich im Lauf verändert
+
+Faktoren sind nicht eingefroren. Der Regulator darf zwei von ihnen verschieben,
+nämlich die regulatorische Strenge und den gesellschaftlichen Wertewandel. Die
+übrigen fünf bleiben über den Lauf konstant, sofern sie nicht durch ein Preset
+mit einem zeitlichen Verlauf versehen wurden.
+
+Im Tab **Figures** zeigt der Abschnitt «CIB-Faktoren» die Trajektorien als
+Treppenlinien — dort sieht man, wann welcher Zustand gewechselt hat.
+
+## Wo Sie sie einstellen
+
+Unter **Simulation starten** im Tab **Rahmenbedingungen**. Jeder Faktor trägt
+dort seinen Namen und seine Leitfrage, etwa «F1 · Mobilitätsbedürfnis / Nachfrage
+— Wie stark wollen Menschen fliegen?».
+
+Achten Sie darauf, dass **Eigene Werte anwenden** eingeschaltet ist. Sonst
+rechnet der Lauf mit der Ausgangslage aus den Konfigurationsdateien, und Ihre
+Auswahl bleibt wirkungslos.
