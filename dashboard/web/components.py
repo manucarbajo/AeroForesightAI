@@ -129,6 +129,19 @@ def field(label: str, control: Any, *, hint: str | None = None, class_name: str 
     )
 
 
+#: `dcc.Checklist` schreibt `display: block` als **Inline-Style** auf das Label.
+#: Inline schlägt Stylesheet — Abstand und Ausrichtung müssen deshalb hier
+#: gesetzt werden, nicht in `dashboard.css`.
+CHECK_LABEL_STYLE = {
+    "display": "flex",
+    "alignItems": "flex-start",
+    "gap": "0.625rem",
+    "padding": "0.3125rem 0",
+    "lineHeight": "1.5",
+    "cursor": "pointer",
+}
+
+
 def checkbox(label: str, *, value: bool, hint: str | None = None, **kwargs: Any) -> html.Div:
     """Einzelne Checkbox mit Beschriftung — ersetzt ``st.checkbox``."""
 
@@ -140,9 +153,10 @@ def checkbox(label: str, *, value: bool, hint: str | None = None, **kwargs: Any)
                 className="af-check",
                 inputClassName="af-check__input",
                 labelClassName="af-check__label",
+                labelStyle=CHECK_LABEL_STYLE,
                 **kwargs,
             ),
-            hint_text(hint, class_name="ml-6"),
+            hint_text(hint, class_name="af-check__hint"),
         ]
     )
 

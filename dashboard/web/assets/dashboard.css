@@ -135,17 +135,21 @@ textarea.af-input {
 
 /* --- Checkbox / Radio ---------------------------------------------------- */
 
+/* Layout (display, gap, Ausrichtung) steht als Inline-Style in
+   `components.CHECK_LABEL_STYLE` — dcc.Checklist schreibt selbst inline und
+   wuerde jede Regel von hier ueberstimmen. Hier bleibt nur die Typografie. */
 .af-check label,
 .af-radio label {
-    display: flex;
-    /* flex-start statt center: bei zweizeiligen Beschriftungen soll das
-       Kaestchen an der ersten Zeile sitzen, nicht in der Mitte schweben. */
-    align-items: flex-start;
-    gap: 0.625rem;
     font-family: var(--font-body);
     font-size: 0.875rem;
-    line-height: 1.5;
     color: var(--slate-700);
+}
+
+.af-radio label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    line-height: 1.5;
     cursor: pointer;
     padding: 0.3125rem 0;
 }
@@ -340,10 +344,11 @@ textarea.af-input {
 /* Erklärung unter einem Eingabefeld: leise, aber lesbar. Der technische
    Feldname am Ende steht bewusst als Code — er ist Nachschlagehilfe, nicht
    Teil des Satzes. */
-.af-check + .af-hint,
+.af-check__hint,
 .af-radio + .af-hint {
     /* Kaestchen (1rem) plus Abstand (0.625rem) — buendig zum Beschriftungstext. */
     margin-left: 1.625rem;
+    margin-top: 0.125rem;
 }
 
 .af-hint {
