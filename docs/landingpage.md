@@ -44,11 +44,6 @@ in der Tailwind-Konfiguration in `dashboard/web/app.py`.
 3. **Tailwind und Schriften über CDN.** Betrifft Landingpage und Dashboard
    gleichermaßen. Für ein Deployment mit Datenhoheit müssen beide Ressourcen
    lokal ausgeliefert werden.
-4. **`rounded-DEFAULT` erzeugt 0px.** Die Landingpage nutzt an Buttons und
-   Eingabefeldern die Klasse `rounded-DEFAULT`; Tailwind generiert für den
-   Schlüssel `DEFAULT` aber nur `.rounded`. Alle Buttons sind dadurch eckig —
-   entgegen `design/DESIGN.md`, das 8px vorsieht. Das Dashboard verwendet
-   deshalb `rounded`.
 
 Deployment-Schritte: `aeroforesight-ai-landing-page/DEPLOY.md`.
 
