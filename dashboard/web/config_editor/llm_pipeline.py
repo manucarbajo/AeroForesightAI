@@ -41,7 +41,7 @@ def layout(draft: dict) -> html.Div:
                         className="mt-5",
                     ),
                     html.Div(
-                        compute_mode.availability(draft),
+                        compute_mode.placeholder("technik"),
                         className="mt-5 pt-4 border-t border-slate-100",
                     ),
                     ui.expert(

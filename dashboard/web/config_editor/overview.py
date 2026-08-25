@@ -114,7 +114,9 @@ def _mode_card(draft: dict) -> html.Div:
             ui.radio(compute_mode.OPTIONS, value=compute_mode.of(draft), id=compute_mode.FIELD_ID),
             className="mt-5",
         ),
-        html.Div(compute_mode.availability(draft), className="mt-5 pt-4 border-t border-slate-100"),
+        html.Div(
+            compute_mode.placeholder("overview"), className="mt-5 pt-4 border-t border-slate-100"
+        ),
     )
 
 

@@ -197,6 +197,21 @@ def register_callbacks(app) -> None:
         return [sentence] * len(ctx.outputs_list)
 
     @app.callback(
+        Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),
+        Input("cfg-tab-content", "children"),
+        State(STORE_ID, "data"),
+    )
+    def _llm_status(_content, draft: dict | None):
+        """Erreichbarkeit von Ollama nachreichen, sobald ein Tab steht.
+
+        Bewusst nach dem Rendern: Die Abfrage kann mehrere Sekunden dauern —
+        unter Windows laeuft `localhost` erst in einen IPv6-Timeout — und so
+        lange soll die Seite nicht warten.
+        """
+
+        return [compute_mode.availability(draft or {})] * len(ctx.outputs_list)
+
+    @app.callback(
         Output({"type": macro.RULE_HOST, "prop": MATCH}, "children"),
         Input({"type": macro.RULE_COUNT, "prop": MATCH}, "value"),
         State(STORE_ID, "data"),

@@ -21,6 +21,25 @@ from dashboard.web import components as ui
 FIELD = "compute_mode"
 FIELD_ID = {"type": "cfg", "field": FIELD}
 
+#: Die Erreichbarkeits-Anzeige. Pattern-Matching-ID, weil sie nur in zwei von
+#: sechs Tabs steht — ein Callback auf eine feste, gerade nicht vorhandene ID
+#: quittiert Dash im Browser mit einem Fehler.
+STATUS = "cfg-llm-status"
+
+
+def status_id(slot: str) -> dict:
+    return {"type": STATUS, "slot": slot}
+
+
+def placeholder(slot: str) -> html.Div:
+    """Steht im Layout, bis der Callback die Auskunft nachreicht."""
+
+    return html.Div(
+        ui.status_dot(False, "Ollama wird geprüft …"),
+        id=status_id(slot),
+    )
+
+
 WITH_LLM = "llm"
 MOCK = "mock"
 NUMBERS_ONLY = "numbers"
@@ -70,6 +89,10 @@ def availability(draft: dict) -> html.Div:
 
     Ohne diese Zeile merkt man erst nach Minuten, dass Ollama nicht läuft —
     der Lauf bricht dann mitten in der Simulation ab.
+
+    Wird aus einem Callback gerufen, nicht beim Aufbau des Tabs: Die Abfrage
+    darf mehrere Sekunden dauern, und so lange soll niemand auf die Seite
+    warten.
     """
 
     base_url = draft.get("base_url") or "http://localhost:11434"

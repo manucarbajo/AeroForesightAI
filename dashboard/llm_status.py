@@ -15,10 +15,13 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 
-#: Wie lange eine Antwort auf sich warten lassen darf. Kurz gehalten: Die
-#: Abfrage blockiert den Seitenaufbau, und ein nicht laufender Dienst
-#: antwortet ohnehin sofort mit «Verbindung abgelehnt».
-TIMEOUT_SECONDS = 1.5
+#: Wie lange eine Antwort auf sich warten lassen darf.
+#:
+#: Nicht zu knapp: Unter Windows loest `localhost` zuerst auf `::1` auf. Lauscht
+#: Ollama nur auf IPv4, laeuft dieser Versuch erst in einen Timeout — gemessen
+#: rund zwei Sekunden, bevor ueberhaupt die richtige Adresse probiert wird. Ein
+#: kuerzerer Wert meldet einen laufenden Dienst faelschlich als tot.
+TIMEOUT_SECONDS = 5.0
 
 #: Wie lange eine Auskunft wiederverwendet wird. Ollama startet und stoppt
 #: nicht im Sekundentakt; öfter zu fragen kostet nur Zeit.
