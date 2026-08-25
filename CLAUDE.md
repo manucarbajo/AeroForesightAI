@@ -2,7 +2,26 @@
 
 Hybride Multi-Agenten-Simulationsplattform für strategische Zukunftsplanung im europäischen Luftverkehr. Deterministische Massensimulation (Logit-Modelle für Mikro-Kaufentscheidungen, CIB-Konsistenzfilter nach Weimer-Jehle) liefert die Zahlen, generative KI liefert ausschließlich die narrative Ausdeutung. Drei Akteure — Consumer, Provider, Regulator — interagieren über einen tick-basierten LangGraph-Zustandsgraphen; jeder Lauf erzeugt ein Tripleset aus Trendfortsetzung, Strukturwende und Krisenkonflikt.
 
-Details und Quickstart: [README.md](README.md).
+Details und Quickstart: [README.md](README.md). Was als Nächstes ansteht und in welcher Reihenfolge: [docs/projektplan.md](docs/projektplan.md).
+
+## Doku-Pflicht
+
+**Gilt für alle im Team und für jede Claude-Session.** Code ohne mitgezogene Doku gilt als nicht fertig. Ein `UserPromptSubmit`-Hook in [`.claude/settings.json`](.claude/settings.json) blendet diese Regel bei jedem Prompt ein, damit sie niemand überliest.
+
+Im selben Commit mitpflegen:
+
+| Wenn die Änderung … | … dann anpassen |
+| --- | --- |
+| Paketstruktur, Modulzuschnitt oder Datenfluss ändert | **CLAUDE.md** (Architektur-Map) |
+| eine Invariante, Konvention oder ein Dev-Kommando betrifft | **CLAUDE.md** (Invarianten bzw. Dev-Workflow) |
+| einen Begriff neu einführt oder seine Bedeutung verschiebt | **CLAUDE.md** (Domain-Glossar) + `docs/handbuch/glossar.md` |
+| sichtbares Verhalten von Dashboard oder CLI ändert | passende Kapitel in `docs/handbuch/`, bei CLI zusätzlich `README.md` |
+| Config-Felder oder Run-Artefakte ändert | `docs/handbuch/ref-config.md`, `docs/handbuch/ref-ausgaben.md` |
+| ein Arbeitspaket aus dem Projektplan abschließt oder verschiebt | **`docs/projektplan.md`** (Stand-Zeile mitziehen) |
+| einen Bug aus `docs/audit_findings.md` behebt | Finding dort entfernen, nicht abhaken |
+| eine neue Schwachstelle findet, die nicht sofort gefixt wird | Finding in `docs/audit_findings.md` ergänzen |
+
+Zwei Regeln dazu: Was der Code nicht tut, darf die Doku nicht behaupten — lieber die Formulierung abschwächen als eine Aussage stehen lassen, die ein Fachprüfer widerlegt. Und wenn eine Änderung eine dieser Zeilen auslöst, aber die Doku bewusst unverändert bleibt, gehört der Grund in die Commit-Message.
 
 ## Architektur-Map
 
@@ -35,9 +54,9 @@ Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 ## Domain-Glossar
 
 - **Tick** — kleinste Simulationseinheit, hat **keine** Kalenderbedeutung (kein Quartal/Jahr). Uhr: `current_tick` / `max_ticks`.
-- **CIB-Matrix** (Cross-Impact-Balance, Weimer-Jehle) — eingefrorene Referenzmatrix (`configs/cib_frozen.json`), bewertet die interne Konsistenz von Faktor-Konstellationen. Details: [`docs/cib_role.md`](docs/cib_role.md), [`docs/cib_rationale.md`](docs/cib_rationale.md).
-- **Faktoren F1–F7** — Zustandsvariablen des soziotechnischen Systems (Mobilitätsnachfrage, Regulierung, Technologie/SAF, Wirtschaft, Alternativen, Gesellschaft, Marktstruktur), je zwei Zustände (z. B. F1.1/F1.2).
-- **Logit-Modell** — deterministisches mikroökonomisches Modell für Kaufentscheidungen der simulierten Population.
+- **CIB-Matrix** (Cross-Impact-Balance, Weimer-Jehle) — eingefrorene Referenzmatrix (`configs/cib_frozen.json`), bewertet die interne Konsistenz von Faktor-Konstellationen. **Stand heute** prüft `scenario_consistency.py` einzelne Zellen gegen einen Schwellwert und summiert Konflikte — das ist eine eigene Heuristik, nicht das Impact-Balance-Kriterium der Methode. Bis [P2.2](docs/projektplan.md) umgesetzt ist, nicht als "Algorithmus nach Weimer-Jehle" bezeichnen. Details: [`docs/cib_role.md`](docs/cib_role.md), [`docs/cib_rationale.md`](docs/cib_rationale.md).
+- **Faktoren F1–F7** — Zustandsvariablen des soziotechnischen Systems (Mobilitätsnachfrage, Regulierung, Technologie/SAF, Wirtschaft, Alternativen, Gesellschaft, Geopolitik), je zwei Zustände (z. B. F1.1/F1.2). **Achtung F7-Drift:** `configs/factors.json` führt F7 als "Geopolitische Stabilitaet", `configs/cib_frozen.json` wurde für "Marktstruktur" bewertet — offener Widerspruch, siehe [P0.2](docs/projektplan.md).
+- **Logit-Modell** — mikroökonomisches Nutzenmodell für Kaufentscheidungen der simulierten Population. **Stand heute** ist es keine Logit-Ziehung: `_booking_probability` rechnet die Sigmoid und vergleicht sie gegen 0.5, was einer deterministischen Schwelle auf dem Nutzen entspricht (`src/population/population_sampler.py:355`). Die Formulierung nach außen entsprechend vorsichtig halten, bis [P2.1](docs/projektplan.md) umgesetzt ist.
 - **Agent-Profile** (Consumer, Provider, Regulator) — informationsbeschränkte LLM-Agenten; erlaubte Beobachtungen/Outputs pro Rolle in `configs/agent_profiles.json`. Details: [`docs/agent_profiles.md`](docs/agent_profiles.md).
 - **State Explorer** — grounded Q&A ausschließlich über abgeschlossene Run-Daten (`tick_mechanics.json`, `price_history.json`, `event_log.json`) — keine erfundenen Zahlen.
 
@@ -65,7 +84,12 @@ python -m dashboard.web.app --port 8511                       # Landingpage auf 
 python -m streamlit run dashboard/legacy_streamlit/app_researcher.py --server.port=8512   # Legacy-Vergleich
 ```
 
-`black` + `ruff` vor jedem Commit laufen lassen (CI in `.github/workflows/tests.yml` prüft beides plus Tests). Bekannte, umgebungsbedingte Testfehler ohne lokalen Ollama: `test_run_single_sweep_short`, `test_sweep_base_price_override_raises_ticket_price`. Ein echter (vorbestehender) Bug: `test_market_rules_resolve_marginal_cost_fraction`.
+`black` + `ruff` vor jedem Commit laufen lassen (CI in `.github/workflows/tests.yml` prüft beides plus Tests).
+
+Drei Tests brauchen Aufmerksamkeit (Stand 2026-08-25, verifiziert):
+
+- `test_run_single_sweep_short` und `test_sweep_base_price_override_raises_ticket_price` (`tests/test_scenario_sweeps.py`) **hängen** ohne lokalen Ollama minutenlang, statt sauber zu skippen — nicht einfach "bekannte Fehler". Behebung in P4.2.
+- `test_market_rules_resolve_marginal_cost_fraction` (`tests/test_market_feedback.py::TestM413ConfigurablePrice`) ist **kein Code-Bug**: der Test erwartet den Default `0.33`, `configs/properties.json` liefert `0.25`, die Auflösung in `market_rules.py:45` arbeitet korrekt. Zu klären ist nur, welcher Wert fachlich stimmt — dann Test oder Config nachziehen.
 
 Import-Reihenfolge in `src/models/__init__.py` ist bewusst nicht alphabetisch (löst einen circular import zwischen `state_models` und `event_models`) — Kommentar dort beachten, nicht von Formattern umsortieren lassen.
 
@@ -73,7 +97,14 @@ Import-Reihenfolge in `src/models/__init__.py` ist bewusst nicht alphabetisch (l
 
 Hetzner Cloud Server mit lokal laufendem Ollama (Datenhoheit, keine externen LLM-Calls für sensible B2B-Daten). `Dockerfile`/`docker-compose.yml` sind ein Ausgangspunkt, noch nicht produktionsscharf.
 
-## Bekannte Backlog-Punkte (nicht ungefragt anfassen)
+## Backlog
 
-- `docs/audit_findings.md` enthält ~30 gefundene Bugs/Inkonsistenzen (u. a. zwei divergierende Ollama-Clients, zwei auseinandergelaufene Rule-Evaluatoren, ein `validate_config`-Stub, der immer `[]` zurückgibt) — bewusst nicht gefixt, Priorisierung steht noch aus.
-- Kein API-Layer für Multi-Tenant-B2B-Nutzung vorhanden.
+**[docs/projektplan.md](docs/projektplan.md) ist die verbindliche Reihenfolge** — dort steht, was wann drankommt, mit Fundstelle und Abnahmekriterium pro Paket. Nichts davon ungefragt vorziehen, aber auch nichts mehr als "bekannt und bewusst offen" abtun: seit 2026-08-25 ist **jedes** Finding aus `docs/audit_findings.md` einem Arbeitspaket zugeordnet (Zuordnungstabelle am Ende des Plans).
+
+- **Phase 0** — Vertrauens-Blocker vor dem nächsten Demo: sichtbarer LLM-Ausfall, F7-Drift, `validate_config`, die zwei auseinandergelaufenen Rule-Evaluatoren, Faktor-Berechtigungen aus einer Quelle.
+- **Phase 1** — aktueller Schwerpunkt: Start-Flow, Ergebnisdarstellung, Szenariogestaltung.
+- **Phase 2** — Modellsubstanz: echte Ziehung im Buchungsmodell, Impact-Balance, Matrix-Provenienz, Alterung der Population.
+- **Phasen 3–5** — Engine-Härtung, Testfundament, Altlasten (inkl. Entfernen von `dashboard/legacy_streamlit/`).
+- **Phase 6** — API-Layer und Multi-Tenant-B2B: bewusst noch nicht im Scope.
+
+`docs/audit_findings.md` bleibt die Detailliste (Befund, Auswirkung, Fundstelle). Behobene Findings dort **entfernen**, neu gefundene ergänzen und im Projektplan einplanen.
