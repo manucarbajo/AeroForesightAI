@@ -38,11 +38,12 @@ Web-Oberfläche zum Konfigurieren von Läufen, Ansehen von Ergebnissen und **Abf
 python -m dashboard.web.app --port 8511
 ```
 
-Browser: `http://localhost:8511`
+Browser: `http://localhost:8511` — dort steht die **Landingpage**, der Login-Button
+führt ins Dashboard unter `/app/`.
 
-Gebaut mit Plotly Dash, im Design der Landingpage. Die abgelöste
-Streamlit-Oberfläche liegt zum Vergleich unter `dashboard/legacy_streamlit/`
-und wird nach der Abnahme entfernt.
+Gebaut mit Plotly Dash. Landingpage und Dashboard teilen sich Server und
+Design-Tokens. Die abgelöste Streamlit-Oberfläche liegt zum Vergleich unter
+`dashboard/legacy_streamlit/` und wird nach der Abnahme entfernt.
 
 Details: [`dashboard/README.md`](dashboard/README.md)
 

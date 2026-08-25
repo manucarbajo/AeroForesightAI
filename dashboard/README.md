@@ -10,8 +10,17 @@ Landingpage (`aeroforesight-ai-landing-page/`).
 python -m dashboard.web.app --port 8511
 ```
 
-Browser: `http://localhost:8511` — dieselbe Adresse, auf die der Login-Button
-der Landingpage zeigt.
+| Adresse | Inhalt |
+| --- | --- |
+| `http://localhost:8511/` | Landingpage |
+| `http://localhost:8511/app/` | Simulation starten |
+| `http://localhost:8511/app/runs` | Ergebnisse ansehen |
+| `http://localhost:8511/app/doku` | Handbuch |
+
+Ein Server für beides. Die Landingpage (`aeroforesight-ai-landing-page/`) wird
+als statisches HTML ausgeliefert, das Dashboard läuft darunter auf `/app/`.
+Alle Verweise zwischen beiden sind relativ — es gibt keine fest verdrahtete
+Adresse mehr, die fürs Deployment angefasst werden müsste.
 
 ## Aufbau
 

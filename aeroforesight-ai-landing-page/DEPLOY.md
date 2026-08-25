@@ -27,9 +27,9 @@
    Gerüst. Alle mit `[…]` markierten Stellen müssen durch die tatsächlichen Angaben ersetzt und
    rechtlich geprüft werden. Die Seiten tragen oben einen sichtbaren Platzhalter-Hinweis — dieser
    Hinweisblock muss vor Veröffentlichung entfernt werden.
-2. **Login-Ziel verdrahten.** Alle „Login“-Buttons zeigen aktuell auf `http://localhost:8511`,
-   den lokalen Streamlit-Port aus `.claude/launch.json`. Für das Deployment auf die öffentliche
-   Dashboard-URL umbiegen (Suche nach `href="http://localhost:8511"` in allen fünf Seiten).
+2. **Login-Ziel.** Nichts zu tun. Alle „Login“-Buttons zeigen auf `/app/`, also auf das
+   Dashboard in derselben Anwendung. Der Pfad ist relativ und stimmt damit unter jeder Domain.
+   Ausgeliefert wird beides von `python -m dashboard.web.app`; die Landingpage liegt auf `/`.
 3. **Formular-Backend anbinden.** Das Formular in `demo-anfragen.html` hat `action="#"` und
    `method="POST"`. Ein Endpunkt muss ergänzt werden (eigener Handler, Formspree, o. ä.), sonst
    geht die Anfrage ins Leere.
