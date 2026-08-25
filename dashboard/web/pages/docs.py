@@ -21,9 +21,11 @@ from typing import Callable
 from dash import Input, Output, dcc, html
 
 from dashboard.web import components as ui
+from dashboard.web import routing
 from dashboard.web.pages import docs_reference as ref
 
-ROUTE = "/doku"
+#: Interner Pfad des Handbuchs, relativ zum Dashboard-Präfix.
+ROUTE = "doku"
 
 #: Wo die geschriebenen Kapitel liegen.
 HANDBOOK_DIR = Path(__file__).resolve().parents[3] / "docs" / "handbuch"
@@ -40,7 +42,7 @@ class Chapter:
 
     @property
     def href(self) -> str:
-        return f"{ROUTE}/{self.slug}"
+        return routing.url(f"{ROUTE}/{self.slug}")
 
     def source(self) -> str:
         """Markdown-Quelltext des Kapitels."""
@@ -267,11 +269,11 @@ DEFAULT_SLUG = CHAPTERS[0].slug
 
 
 def slug_from_path(pathname: str | None) -> str:
-    """`/doku/cib` → `cib`; alles Unbekannte auf das erste Kapitel."""
+    """`/app/doku/cib` → `cib`; alles Unbekannte auf das erste Kapitel."""
 
-    path = (pathname or "").rstrip("/")
-    if path.startswith(f"{ROUTE}/"):
-        slug = path[len(ROUTE) + 1 :]
+    relative = routing.relative(pathname)
+    if relative.startswith(f"{ROUTE}/"):
+        slug = relative[len(ROUTE) + 1 :]
         if slug in BY_SLUG:
             return slug
     return DEFAULT_SLUG
@@ -316,8 +318,18 @@ def split_sections(markdown: str) -> list[tuple[str | None, str]]:
     return [item for item in sections if item[0] or item[1]]
 
 
+def with_prefix(markdown: str) -> str:
+    """Querverweise auf das Dashboard-Präfix umschreiben.
+
+    In den Markdown-Dateien steht `](/doku/grenzen)` — kurz, lesbar und auch
+    auf GitHub sinnvoll. Im Browser muss daraus `](/app/doku/grenzen)` werden.
+    """
+
+    return markdown.replace(f"](/{ROUTE}/", f"]({routing.url(ROUTE)}/")
+
+
 def render(chapter: Chapter) -> html.Div:
-    sections = split_sections(chapter.source())
+    sections = split_sections(with_prefix(chapter.source()))
     blocks: list = []
     for title, body in sections:
         children: list = []

@@ -13,6 +13,8 @@ from typing import Any, Iterable
 
 from dash import dcc, html
 
+from dashboard.web import routing
+
 # --- Klassenbausteine ------------------------------------------------------
 
 CARD = "bg-white border border-slate-200 rounded-lg"
@@ -315,7 +317,7 @@ def doc_link(slug: str, label: str = "Im Handbuch nachlesen") -> Any:
 
     return dcc.Link(
         [label, icon("arrow_forward", "text-xs")],
-        href=f"/doku/{slug}",
+        href=routing.url(f"doku/{slug}"),
         className="inline-flex items-center gap-1 font-body text-xs text-slate-500 "
         "hover:text-navy-800 transition-colors",
     )

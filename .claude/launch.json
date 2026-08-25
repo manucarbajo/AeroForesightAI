@@ -18,12 +18,6 @@
       "runtimeExecutable": "C:/Users/manue/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0/python.exe",
       "runtimeArgs": ["-m", "streamlit", "run", "dashboard/legacy_streamlit/app.py", "--server.headless=true", "--server.port=8513"],
       "port": 8513
-    },
-    {
-      "name": "landing-page",
-      "runtimeExecutable": "C:/Users/manue/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0/python.exe",
-      "runtimeArgs": ["-m", "http.server", "8522", "--directory", "."],
-      "port": 8522
     }
   ]
 }

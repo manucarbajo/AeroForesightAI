@@ -22,7 +22,7 @@ from dash import Dash, Input, Output, dcc, html
 
 from dashboard.run_browser import outputs_root
 from dashboard.web import components as ui
-from dashboard.web import files_route, state, theme
+from dashboard.web import files_route, landing_route, routing, state, theme
 from dashboard.web.pages import docs as docs_page
 from dashboard.web.pages import launch as launch_page
 from dashboard.web.pages import runs as runs_page
@@ -30,14 +30,15 @@ from dashboard.web.pages import runs as runs_page
 TITLE = "Technology Lab · Simulation"
 SUBTITLE = "Prototypische Workbench für Szenarioplanung im Flugverkehr"
 
-#: URL der Landingpage. Für ein Deployment auf die öffentliche Adresse ändern —
-#: dieselbe Stelle wie der Login-Link in `aeroforesight-ai-landing-page/`.
-LANDING_URL = "http://localhost:8522/aeroforesight-ai-landing-page/index.html"
+#: Die Landingpage liegt in derselben Anwendung auf `/` — deshalb ein
+#: relativer Pfad, der in jeder Umgebung stimmt.
+LANDING_URL = routing.LANDING_PATH
 
+#: Bereiche des Dashboards, jeweils relativ zu `routing.BASE_PATH`.
 ROUTES = [
-    ("/", "Simulation starten"),
-    ("/runs", "Ergebnisse ansehen"),
-    ("/doku", "Dokumentation"),
+    ("", "Simulation starten"),
+    ("runs", "Ergebnisse ansehen"),
+    ("doku", "Dokumentation"),
 ]
 
 _HIDDEN = {"display": "none"}
@@ -104,7 +105,7 @@ def _nav_link(href: str, label: str, active: bool) -> html.A:
     return dcc.Link(label, href=href, className=f"{base} {tone}")
 
 
-def _navbar(pathname: str) -> html.Nav:
+def _navbar(active: str) -> html.Nav:
     return html.Nav(
         html.Div(
             [
@@ -123,7 +124,10 @@ def _navbar(pathname: str) -> html.Nav:
                     className="flex items-center gap-3",
                 ),
                 html.Div(
-                    [_nav_link(href, label, pathname == href) for href, label in ROUTES],
+                    [
+                        _nav_link(routing.url(route), label, route == active)
+                        for route, label in ROUTES
+                    ],
                     className="af-nav__links flex items-center gap-1",
                 ),
             ],
@@ -197,8 +201,11 @@ def create_app() -> Dash:
         update_title=None,
         suppress_callback_exceptions=True,
         index_string=_INDEX,
+        # Das Dashboard liegt unter `/app/`, damit `/` der Landingpage gehört.
+        url_base_pathname=routing.BASE_PATH,
     )
     files_route.register(app.server)
+    landing_route.register(app.server)
     app.layout = serve_layout
 
     @app.callback(
@@ -209,17 +216,17 @@ def create_app() -> Dash:
         Input("url", "pathname"),
     )
     def _route(pathname: str | None):
-        path = (pathname or "/").rstrip("/") or "/"
-        # Das Handbuch hat Unterseiten (`/doku/cib`) — hier zählt der Anfang.
-        if path.startswith(docs_page.ROUTE):
-            active = docs_page.ROUTE
+        relative = routing.relative(pathname)
+        # Das Handbuch hat Unterseiten (`doku/cib`) — hier zählt der Anfang.
+        if relative.startswith("doku"):
+            active = "doku"
         else:
-            active = path if path in {href for href, _ in ROUTES} else "/"
+            active = relative if relative in {route for route, _ in ROUTES} else ""
         return (
             _navbar(active),
-            _VISIBLE if active == "/" else _HIDDEN,
-            _VISIBLE if active == "/runs" else _HIDDEN,
-            _VISIBLE if active == "/doku" else _HIDDEN,
+            _VISIBLE if active == "" else _HIDDEN,
+            _VISIBLE if active == "runs" else _HIDDEN,
+            _VISIBLE if active == "doku" else _HIDDEN,
         )
 
     @app.callback(
