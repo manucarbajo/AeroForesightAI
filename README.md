@@ -35,12 +35,15 @@ Outputs landen unter `outputs/<run_id>/` (z. B. `outputs/run_20260614T112808Z/`)
 Web-Oberfläche zum Konfigurieren von Läufen, Ansehen von Ergebnissen und **Abfrage per Chat** — liegt bewusst getrennt unter `dashboard/`:
 
 ```powershell
-python -m streamlit run dashboard/app.py
+python -m dashboard.web.app --port 8511
 ```
 
-Browser: `http://localhost:8501`
+Browser: `http://localhost:8511` — dort steht die **Landingpage**, der Login-Button
+führt ins Dashboard unter `/app/`.
 
-> Unter Windows oft **`python -m streamlit`** statt `streamlit` direkt (Scripts-Ordner nicht im PATH).
+Gebaut mit Plotly Dash. Landingpage und Dashboard teilen sich Server und
+Design-Tokens. Die abgelöste Streamlit-Oberfläche liegt zum Vergleich unter
+`dashboard/legacy_streamlit/` und wird nach der Abnahme entfernt.
 
 Details: [`dashboard/README.md`](dashboard/README.md)
 
@@ -121,7 +124,7 @@ Tracing abschalten: `LANGCHAIN_TRACING_V2=false`.
 
 ```powershell
 python src/run_simulation.py --mock-llm --rounds 1 --quiet
-python -m streamlit run dashboard/app.py
+python -m dashboard.web.app --port 8511
 python src/run_simulation.py --studio
 ```
 
@@ -135,13 +138,13 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 
 ```text
 ├── configs/                        # simulation_config, properties, agents, sweeps
-├── dashboard/                       # Präsentations-UI (Streamlit)
-│   ├── app.py / app_researcher.py   # Einstieg: Simulation starten, Ergebnisse ansehen
+├── dashboard/                       # Präsentations-UI
+│   ├── config_catalog.py            # ConfigDraft, Presets, Config-Persistenz
 │   ├── run_launcher.py              # Lauf starten/orchestrieren
 │   ├── run_browser.py               # Run-Liste, Artefakte laden
 │   ├── consistency_report.py        # Konsistenz-Checks
-│   ├── config_fields.py             # Gemeinsame Config-UI-Bausteine
-│   ├── start.ps1                    # Windows-Starter
+│   ├── web/                         # Plotly-Dash-Oberfläche (aktiv)
+│   ├── legacy_streamlit/            # abgelöste Streamlit-UI (nur Vergleich)
 │   └── README.md
 ├── docs/                            # Technische Doku (CIB-Methodik, Agent-Profile, Workflow)
 │   └── research/                    # Fachliteratur, Studien

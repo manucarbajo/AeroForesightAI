@@ -10,10 +10,14 @@ dependencies = [
     "requests>=2.0",
     "langchain-ollama>=0.3.10",
     "numpy>=1.24",
+    "pandas>=2.0",
     "matplotlib>=3.7",
     "networkx>=3.0",
-    "streamlit>=1.32",
     "plotly",
+    "dash>=2.18",
+    # Legacy: nur noch fuer dashboard/legacy_streamlit/ (Vergleichsreferenz).
+    # Faellt zusammen mit dem Paket weg, sobald die Dash-App abgenommen ist.
+    "streamlit>=1.32",
 ]
 
 [project.optional-dependencies]

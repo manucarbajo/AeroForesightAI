@@ -1,11 +1,19 @@
+# Laufzeit-Abhaengigkeiten. Muss mit [project].dependencies in pyproject.toml
+# uebereinstimmen — tests/test_packaging.py haelt das fest.
+#
+# Diese Datei existiert, weil CI und Dockerfile sie lesen; die inhaltliche
+# Wahrheit steht in pyproject.toml. Werkzeuge fuer die Entwicklung (pytest,
+# ruff, black) stehen dort unter [project.optional-dependencies].dev und
+# gehoeren nicht hierher.
 pydantic>=2,<3
 langgraph>=0.2
 langgraph-cli[inmem]>=0.2
 requests>=2.0
 langchain-ollama>=0.3.10
 numpy>=1.24
+pandas>=2.0
 matplotlib>=3.7
 networkx>=3.0
-pytest
-streamlit>=1.32
 plotly
+dash>=2.18
+streamlit>=1.32

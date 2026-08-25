@@ -1,0 +1,71 @@
+Der Editor unter **Simulation starten** hat sechs Tabs. Sie sind so geordnet,
+dass die ersten Entscheidungen zuerst kommen — wer nur den ersten Tab anfasst,
+bekommt bereits einen sinnvollen Lauf.
+
+## Überblick
+
+Die fünf Entscheidungen, die einen Lauf prägen: von welcher Annahmenwelt er
+ausgeht, wie lang er ist, wie oft er wiederholt wird und ob mit oder ohne
+Sprachmodell gerechnet wird. Ganz unten steht in einem Satz, was gleich passiert;
+er läuft beim Tippen mit.
+
+Für die meisten Fragen reicht dieser Tab.
+
+## Rahmenbedingungen
+
+Die Ausgangslage. Oben die sieben Faktoren mit Namen und Leitfrage, darunter die
+Systemgrößen für Politik, Kosten und Konjunktur.
+
+Jede Systemgröße hat einen Startwert und kann über Regeln einen zeitlichen
+Verlauf bekommen: «ab Runde 10 springt die CO₂-Abgabe auf 120» oder «ab Runde 5
+über acht Runden hochfahren auf 200». Aufklappen, Anzahl der Regeln setzen,
+Werte eintragen.
+
+Der Schalter **Eigene Werte anwenden** ist hier der wichtigste. Steht er auf aus,
+rechnet der Lauf mit den Konfigurationsdateien und ignoriert alles, was Sie auf
+diesem Tab eingestellt haben.
+
+## Nachfrage & Preisbildung
+
+Zwei Regelkreise. Oben das Preisverhalten der Airline, bei dem die Zielauslastung
+die entscheidende Größe ist. Darunter die Sättigung. Dann die Segmente der
+Bevölkerung mit ihren Anteilen, und zuletzt die Verteilungen für
+Zahlungsbereitschaft und Umweltbewusstsein.
+
+Die beiden Speichern-Knöpfe auf diesem Tab schreiben in `configs/properties.json`
+und wirken damit über den einzelnen Lauf hinaus. Alles andere im Editor gilt nur
+für den nächsten Start.
+
+## Lauf & Ablage
+
+Name und Fragestellung des Laufs, Mehrfachläufe, und in der Feinabstimmung die
+Auswahl der Konfigurationsdateien. Name und Fragestellung erscheinen im Bericht
+und in der Run-Liste; ohne sie sind mehrere Läufe später schwer auseinanderzuhalten.
+
+## Technik
+
+Sprachmodell, Reproduzierbarkeit und Ausgaben. Nichts davon verändert die
+berechneten Zahlen — mit einer Ausnahme, dem Zufallsstartwert.
+
+Wer zwei Läufe vergleichen will, setzt hier einen festen Startwert. Ohne ihn
+unterscheiden sich die Läufe schon dadurch, dass eine andere Bevölkerung gezogen
+wurde.
+
+## Kontrolle
+
+Der letzte Blick vor dem Start. Oben in Klartext, was gleich passiert, darunter
+sechs Kacheln mit den Werten, die einen zweiten Blick lohnen.
+
+Darunter erscheinen Warnungen für die drei Fälle, die später enttäuschen:
+Wiederholungen ohne festen Zufallsstartwert, abgeschaltete Szenario-Erzeugung und
+abgeschaltete eigene Werte. Ganz unten lässt sich der Stand als eigenes Preset
+sichern.
+
+## Feinabstimmung
+
+In jedem Block steht vorn die Einstellung, die die Wirkung bestimmt. Alles
+Weitere liegt hinter «Feinabstimmung». Verborgen ist nichts — die Vorgabewerte
+tragen einen sinnvollen Lauf, und wer aufklappt, weiß in der Regel warum.
+
+Die vollständige Liste aller Einstellungen mit Einheit und Config-Feld steht
+unter [Alle Einstellungen](/doku/ref-parameter).

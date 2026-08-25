@@ -1,0 +1,93 @@
+Begriffe, wie sie in dieser Anwendung gebraucht werden.
+
+## A bis F
+
+**Agent** — Einer der drei Akteure, umgesetzt als Sprachmodell mit beschränkter
+Sicht und beschränkten Rechten. Siehe [Die drei Akteure](/doku/akteure).
+
+**Annahmenwelt** — Die Ausgangslage eines Laufs: Faktorzustände plus die
+zugehörigen Zahlen für Politik, Kosten und Konjunktur. Als Datei gespeichert
+heißt sie Preset.
+
+**Auslastung** — Hier gleichbedeutend mit Buchungsrate. Nicht die Auslastung
+eines einzelnen Flugzeugs.
+
+**Buchungsrate** — Anteil der simulierten Bevölkerung, der sich in einer Runde
+für eine Reise entscheidet. Ergebnis vieler Einzelentscheidungen, kein
+Parameter.
+
+**CIB** — Cross-Impact-Bilanzanalyse. Verfahren, das bewertet, ob eine
+Kombination von Faktorzuständen in sich stimmig ist. Siehe
+[CIB-Konsistenzprüfung](/doku/cib).
+
+**Dämpfung** — Bremst die Preisreaktion der Airline. Niedrige Werte ergeben
+ruhigere Preisverläufe.
+
+**Faktor** — Eine von sieben Zustandsvariablen, die die Welt in groben Zügen
+beschreiben, jeweils mit zwei möglichen Zuständen. Siehe
+[Faktoren F1–F7](/doku/ref-faktoren).
+
+## G bis P
+
+**Grenzkosten** — Der Teil der Stückkosten, unter den der Ticketpreis nie fällt.
+Über die Preisuntergrenze einstellbar.
+
+**Konsistenz** — Maß dafür, wie gut die gleichzeitig angenommenen Faktorzustände
+zusammenpassen. Ergebnis der CIB-Bewertung.
+
+**Lauf** — Eine Folge von Ticks aus einer festgelegten Ausgangslage. Erzeugt ein
+eigenes Verzeichnis unter `outputs/`.
+
+**Logit-Modell** — Das Verfahren, mit dem aus den Merkmalen einer Person eine
+Buchungsentscheidung wird. Siehe
+[Wie eine Buchung entsteht](/doku/kaufentscheidung).
+
+**Marge** — Der Aufschlag der Airline auf die Kosten. Zusammen mit dem
+Kostenanteil ergibt er den Ticketpreis.
+
+**Mock** — Betrieb ohne Sprachmodell. Die Kennzahlen sind unverändert, die
+Agenten-Texte sind Platzhalter.
+
+**Preset** — Eine gespeicherte Annahmenwelt unter `configs/sweeps/`. Siehe
+[Szenario-Presets](/doku/ref-presets).
+
+## R bis Z
+
+**Redebedarf** — Betriebsart, in der sich Akteure nur äußern, wenn sich für sie
+etwas Wesentliches geändert hat.
+
+**Run-ID** — Eindeutige Kennung eines Laufs, zugleich der Name seines
+Ausgabeverzeichnisses.
+
+**SAF** — Sustainable Aviation Fuel, nachhaltiger Flugtreibstoff. Als Quote eine
+Systemgröße, die die Kosten der Airline erhöht.
+
+**Sättigung** — Dämpfung der Buchungsneigung nach einer Reise. Siehe
+[Sättigung](/doku/saettigung).
+
+**Segment** — Eine Personengruppe mit eigenem Verhalten, etwa Vielflieger oder
+preissensible Reisende. Anteile sind unabhängig; eine Person kann mehreren
+Segmenten angehören.
+
+**Systemgröße** — Eine der Zahlen hinter den Faktoren: CO₂-Abgabe, SAF-Quote,
+Ölpreis, Einkommensindex und weitere. Siehe
+[Systemgrößen](/doku/ref-systemgroessen).
+
+**Szenario** — Eine mögliche Fortsetzung nach dem Lauf, nicht der Lauf selbst.
+Jeder Lauf erzeugt drei davon.
+
+**Tick** — Eine Modellrunde. Ohne Kalenderbedeutung. Siehe
+[Tick, Lauf und Szenario](/doku/tick-und-lauf).
+
+**Tripleset** — Die drei Szenarien am Ende eines Laufs: Trend-Fortsetzung,
+Alternative und Spannungs-Szenario.
+
+**Yield Management** — Die Praxis, Preise laufend an die beobachtete Nachfrage
+anzupassen. Im Modell der Regelkreis unter
+[Wie der Preis entsteht](/doku/preisbildung).
+
+**Zahlungsbereitschaft** — Der Betrag, den eine Person höchstens für ein Ticket
+auszugeben bereit ist. Im Englischen WTP, willingness to pay.
+
+**Zufallsstartwert** — Legt fest, welche Bevölkerung gezogen wird. Fest gesetzt,
+ist ein Lauf reproduzierbar.

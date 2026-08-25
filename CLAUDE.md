@@ -22,10 +22,14 @@ Details und Quickstart: [README.md](README.md).
 
 Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 
-- `dashboard/` — Streamlit-UI: `shared_views.py` (gemeinsame Tabs für beide Varianten), `app.py`/`app_researcher.py` (nur noch Animation/Figures-Tab + Config-Editor unterschiedlich), `config_fields.py` (gemeinsame Config-Bausteine), `run_launcher.py`/`run_browser.py`/`consistency_report.py` (ex-`service.py`, nach Zuständigkeit aufgeteilt)
+- `dashboard/` — Präsentations-UI. Der oberflächenfreie Service-Layer liegt direkt darin (`config_catalog.py`, `run_browser.py`, `run_launcher.py`, `consistency_report.py`) und wird von beiden Oberflächen geteilt:
+  - `dashboard/web/` — **aktive** Plotly-Dash-App im Design der Landingpage. `app.py` (Rahmen/Routing), `theme.py` (Design-Tokens + Plotly-Template), `components.py`, `state.py` (`ConfigDraft` ⇄ `dcc.Store`), `runner.py` (Lauf im Hintergrund-Thread), `pages/` (inkl. `docs.py` — Handbuch mit Kapitelregistry und Suche), `views/` (die sieben Run-Tabs), `config_editor/` (die sechs Editor-Tabs, Erklärtexte gebündelt in `glossary.py`)
+  - `dashboard/legacy_streamlit/` — abgelöste Streamlit-UI, nur noch zum Vergleich lauffähig; **keine neuen Funktionen dort einbauen**
+- `aeroforesight-ai-landing-page/` — statische Landingpage. Wird von der Dash-App selbst ausgeliefert: Landingpage auf `/`, Dashboard auf `/app/` (`dashboard/web/landing_route.py`, Pfade in `dashboard/web/routing.py`). Ihre Design-Tokens (`design/color-tokens.json`) sind die Quelle für das Dashboard-Theme
 - `langgraph_studio/` — interaktive Graph-Entwicklung (LangGraph Studio)
 - `configs/` — Simulationskonfiguration (`simulation_config.json`, `properties.json`, `agents.json`, `agent_profiles.json`, `cib_frozen.json`, `sweeps/`)
-- `tests/` — pytest-Suite (~270 Tests)
+- `tests/` — pytest-Suite (~330 Tests); `test_dashboard_service.py` deckt den Service-Layer ab, `test_web_state.py` die Draft-Serialisierung, `test_web_layout.py` jede Ansicht der Dash-App (auch mit unvollständigen Run-Verzeichnissen)
+- `docs/handbuch/` — die geschriebenen Kapitel des Dashboard-Handbuchs (Markdown, vom Dashboard unter `/doku` gerendert); Referenzkapitel entstehen zur Laufzeit aus `configs/`
 - `docs/` — technische Doku (CIB-Methodik, Agent-Profile, Szenario-Workflow) und `docs/audit_findings.md` (bekannte Bugs/Inkonsistenzen, bewusst nicht gefixt — bitte durchgehen und priorisieren); `docs/research/` — Fachliteratur
 
 ## Domain-Glossar
@@ -57,7 +61,8 @@ ruff check .               # Linting
 black --check .            # Formatierung prüfen (black . zum Formatieren)
 
 python -m src.run_simulation --mock-llm --rounds 1 --quiet   # Smoke-Test ohne Ollama
-python -m streamlit run dashboard/app.py                      # Dashboard
+python -m dashboard.web.app --port 8511                       # Landingpage auf /, Dashboard auf /app/
+python -m streamlit run dashboard/legacy_streamlit/app_researcher.py --server.port=8512   # Legacy-Vergleich
 ```
 
 `black` + `ruff` vor jedem Commit laufen lassen (CI in `.github/workflows/tests.yml` prüft beides plus Tests). Bekannte, umgebungsbedingte Testfehler ohne lokalen Ollama: `test_run_single_sweep_short`, `test_sweep_base_price_override_raises_ticket_price`. Ein echter (vorbestehender) Bug: `test_market_rules_resolve_marginal_cost_fraction`.

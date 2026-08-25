@@ -1,5 +1,7 @@
 # CIB-Methodik
 
+> Anwendernahe Fassung im Dashboard unter «Dokumentation → CIB-Konsistenzprüfung».
+
 ## Referenz vs. Lauf
 
 - **Referenz:** `configs/cib_frozen.json` (14×14 Deskriptoren, eingefroren)

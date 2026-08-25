@@ -1,0 +1,27 @@
+{
+  "primary": "#1E3A5F",
+  "colorMode": "LIGHT",
+  "colorVariant": "TONAL_SPOT",
+  "roundness": {
+    "enum": "ROUND_EIGHT",
+    "css": "0.5rem"
+  },
+  "fonts": {
+    "headline": "Plus Jakarta Sans",
+    "body": "Inter",
+    "label": "Inter"
+  },
+  "palette": {
+    "navy-50": "#f0f4f9",
+    "navy-100": "#e0eaf3",
+    "navy-200": "#c2d5e7",
+    "navy-300": "#94b8d7",
+    "navy-400": "#6094c1",
+    "navy-500": "#3e76a6",
+    "navy-600": "#2d5e8a",
+    "navy-700": "#244b70",
+    "navy-800": "#1E3A5F",
+    "navy-900": "#1c3453",
+    "navy-950": "#122238"
+  }
+}

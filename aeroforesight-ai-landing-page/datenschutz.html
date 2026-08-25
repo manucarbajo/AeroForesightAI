@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html class="light" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Datenschutzerklärung | AeroForesight AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            50: '#f0f4f9',
+                            100: '#e0eaf3',
+                            200: '#c2d5e7',
+                            300: '#94b8d7',
+                            400: '#6094c1',
+                            500: '#3e76a6',
+                            600: '#2d5e8a',
+                            700: '#244b70',
+                            800: '#1E3A5F', // Primary Navy
+                            900: '#1c3453',
+                            950: '#122238',
+                        }
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans", "sans-serif"],
+                        "display": ["Plus Jakarta Sans", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Zurückhaltende Scroll-Einblendung. Wird per IntersectionObserver
+           ausgelöst, nicht zeitgesteuert, damit nichts vorab abläuft. */
+        .reveal {
+            opacity: 0;
+            transform: translateY(16px);
+            transition: opacity .7s cubic-bezier(.2, .7, .2, 1),
+                        transform .7s cubic-bezier(.2, .7, .2, 1);
+        }
+        .reveal.is-visible { opacity: 1; transform: none; }
+
+        /* Karten heben sich beim Hover leicht an. */
+        .lift { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+        .lift:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px -14px rgba(30, 58, 95, .30);
+            border-color: #c2d5e7;
+        }
+
+        /* Verbindungslinie der Ablauf-Schritte zeichnet sich beim Einblenden. */
+        .step-line {
+            transform: scaleX(0);
+            transform-origin: left center;
+            transition: transform 1s cubic-bezier(.3, .7, .2, 1) .15s;
+        }
+        .is-visible .step-line { transform: scaleX(1); }
+
+        /* Nummernkreis des aktiven Schritts. */
+        .step-dot { transition: background-color .25s ease, color .25s ease, border-color .25s ease; }
+        .step:hover .step-dot {
+            background-color: #1E3A5F;
+            border-color: #1E3A5F;
+            color: #fff;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal, .lift, .step-line, .step-dot { transition: none; }
+            .reveal { opacity: 1; transform: none; }
+            .step-line { transform: scaleX(1); }
+        }
+
+        /* Anker-Sprünge dürfen nicht unter der fixierten Navigation landen. */
+        section[id], [id]:target { scroll-margin-top: 5.5rem; }
+        html { scroll-behavior: smooth; }
+        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    </style>
+</head>
+<body class="bg-white text-slate-800 font-body antialiased min-h-screen flex flex-col selection:bg-navy-200 selection:text-navy-900">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 transition-all duration-300" id="navbar">
+<div class="flex justify-between items-center px-5 sm:px-8 py-4 max-w-7xl mx-auto">
+<a class="text-lg sm:text-xl font-headline font-bold text-navy-800 tracking-tight" href="index.html">AeroForesight AI</a>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="index.html#problem">Problem</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="index.html#ablauf">Ablauf</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="index.html#akteure">Akteure</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="index.html#methodik">Methodik</a>
+<a class="font-body text-sm font-medium text-slate-600 hover:text-navy-800 transition-colors duration-200" href="index.html#output">Output</a>
+</div>
+<div class="hidden md:flex items-center gap-4">
+<a href="demo-anfragen.html" class="inline-flex items-center justify-center px-5 py-2.5 bg-transparent border border-navy-800 text-navy-800 font-body text-sm font-medium rounded-DEFAULT hover:bg-slate-50 transition-colors duration-200" role="button">Demo anfragen</a>
+<a href="/app/" class="inline-flex items-center justify-center px-5 py-2.5 bg-navy-800 text-white font-body text-sm font-medium rounded-DEFAULT hover:bg-navy-700 transition-colors duration-200 shadow-sm" role="button">Login</a>
+</div>
+<button class="md:hidden -mr-2 p-2 text-slate-600 hover:text-navy-800" id="nav-toggle" type="button" aria-controls="mobile-menu" aria-expanded="false" aria-label="Menü öffnen">
+<span class="material-symbols-outlined" id="nav-toggle-icon">menu</span>
+</button>
+</div>
+<!-- Mobile-Menü, per Burger-Button geschaltet -->
+<div class="hidden md:hidden border-t border-slate-100 bg-white shadow-lg" id="mobile-menu">
+<div class="px-5 py-3 flex flex-col divide-y divide-slate-100">
+<div class="flex flex-col pb-3">
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="index.html#problem">Problem</a>
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="index.html#ablauf">Ablauf</a>
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="index.html#akteure">Akteure</a>
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="index.html#methodik">Methodik</a>
+<a class="font-body text-base font-medium text-slate-700 hover:text-navy-800 py-2.5" href="index.html#output">Output</a>
+</div>
+<div class="flex flex-col gap-3 pt-4 pb-2">
+<a href="demo-anfragen.html" class="w-full text-center px-5 py-3 bg-transparent border border-navy-800 text-navy-800 font-body text-sm font-medium rounded-DEFAULT" role="button">Demo anfragen</a>
+<a href="/app/" class="w-full text-center px-5 py-3 bg-navy-800 text-white font-body text-sm font-medium rounded-DEFAULT shadow-sm" role="button">Login</a>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow pt-28 md:pt-32 pb-16 md:pb-24 px-5 sm:px-8 max-w-3xl mx-auto w-full">
+<h1 class="font-headline font-bold text-3xl sm:text-4xl md:text-5xl text-navy-800 mb-6 tracking-tight">Datenschutzerklärung</h1>
+<p class="font-body text-lg text-slate-600 leading-relaxed mb-12">Informationen zur Verarbeitung personenbezogener Daten nach Art. 13 DSGVO.</p>
+<div class="mb-12 rounded-xl border border-amber-200 bg-amber-50 px-6 py-5">
+<p class="font-body text-sm text-amber-900"><span class="font-semibold">Platzhalter.</span> Dieser Text ist ein
+unverbindliches Gerüst und ersetzt keine Rechtsberatung. Alle mit <code class="rounded bg-amber-100 px-1.5 py-0.5 text-xs">[…]</code>
+markierten Stellen müssen vor Veröffentlichung durch die tatsächlichen Angaben ersetzt und rechtlich geprüft werden.</p>
+</div>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">1. Verantwortlicher</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br/>[Name und Anschrift des Verantwortlichen]<br/>E-Mail: info@aeroforesight.ai</p>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">2. Allgemeines zur Datenverarbeitung</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">Wir verarbeiten personenbezogene Daten unserer Nutzer grundsätzlich nur, soweit dies zur Bereitstellung einer funktionsfähigen Website sowie unserer Inhalte und Leistungen erforderlich ist. Rechtsgrundlagen sind insbesondere Art. 6 Abs. 1 lit. a, b und f DSGVO.</p>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">3. Server-Logfiles</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">Beim Aufruf dieser Website erhebt der Hosting-Provider automatisch Informationen, die Ihr Browser übermittelt:</p>
+<ul class="list-disc pl-6 space-y-2 mb-4 font-body text-slate-600 leading-relaxed"><li>Browsertyp und Browserversion</li><li>verwendetes Betriebssystem</li><li>Referrer-URL</li><li>Hostname des zugreifenden Rechners</li><li>Uhrzeit der Serveranfrage</li><li>IP-Adresse in gekürzter Form</li></ul>
+<p class="font-body text-slate-600 leading-relaxed mb-4">Diese Daten werden nicht mit anderen Datenquellen zusammengeführt und nach [Aufbewahrungsdauer] gelöscht. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO.</p>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">4. Kontakt- und Demo-Anfragen</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">Wenn Sie uns über das Formular „Demo anfragen“ kontaktieren, verarbeiten wir die von Ihnen angegebenen Daten (Name, geschäftliche E-Mail-Adresse, Unternehmen, Position, Rolle, optional Telefonnummer und Ihre Nachricht) ausschließlich zur Bearbeitung Ihrer Anfrage. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b bzw. lit. f DSGVO. Die Daten werden gelöscht, sobald sie für die Zweckerreichung nicht mehr erforderlich sind, spätestens nach [Aufbewahrungsdauer].</p>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">5. Cookies</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">[Angabe, ob und welche Cookies eingesetzt werden. Technisch notwendige Cookies auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO; alle weiteren nur nach ausdrücklicher Einwilligung.]</p>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">6. Empfänger und Auftragsverarbeiter</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">[Auflistung eingesetzter Dienstleister, etwa Hosting-Provider, inklusive Sitz und Grundlage der Auftragsverarbeitung nach Art. 28 DSGVO.]</p>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">7. Ihre Rechte</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">Sie haben gegenüber uns folgende Rechte hinsichtlich der Sie betreffenden personenbezogenen Daten:</p>
+<ul class="list-disc pl-6 space-y-2 mb-4 font-body text-slate-600 leading-relaxed"><li>Recht auf Auskunft (Art. 15 DSGVO)</li><li>Recht auf Berichtigung (Art. 16 DSGVO)</li><li>Recht auf Löschung (Art. 17 DSGVO)</li><li>Recht auf Einschränkung der Verarbeitung (Art. 18 DSGVO)</li><li>Recht auf Datenübertragbarkeit (Art. 20 DSGVO)</li><li>Widerspruchsrecht gegen die Verarbeitung (Art. 21 DSGVO)</li><li>Recht auf Widerruf einer erteilten Einwilligung (Art. 7 Abs. 3 DSGVO)</li></ul>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">8. Beschwerderecht bei der Aufsichtsbehörde</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">Unbeschadet anderweitiger Rechtsbehelfe steht Ihnen ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde zu, insbesondere in dem Mitgliedstaat Ihres Aufenthaltsorts. Zuständige Aufsichtsbehörde: [Behörde und Anschrift].</p>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">9. Datenverarbeitung im Produktbetrieb</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">Simulationsläufe der Plattform werden auf der Infrastruktur des jeweiligen Kunden ausgeführt. Es erfolgen keine Aufrufe externer Sprachmodell-Dienste mit kundenseitigen Daten. Einzelheiten regelt der jeweilige Vertrag.</p>
+<h2 class="font-headline font-semibold text-xl text-slate-900 mt-12 mb-4">10. Änderungen dieser Datenschutzerklärung</h2>
+<p class="font-body text-slate-600 leading-relaxed mb-4">Wir behalten uns vor, diese Datenschutzerklärung anzupassen, damit sie stets den aktuellen rechtlichen Anforderungen entspricht. Stand: [Datum].</p>
+</main>
+
+<!-- Footer -->
+<footer class="bg-white border-t border-slate-100 w-full py-12 md:py-16">
+<div class="max-w-7xl mx-auto px-5 sm:px-8">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+<div class="col-span-1 md:col-span-1">
+<div class="text-xl font-headline font-bold text-navy-800 mb-4">AeroForesight AI</div>
+<p class="font-body text-sm text-slate-500 mb-6">Hybride Multi-Agenten-Simulation für strategische Zukunftsplanung im Luftverkehr.</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">Python</span>
+<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">LangGraph</span>
+<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">CIB</span>
+<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">Ollama</span>
+</div>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-slate-900 mb-4">Navigation</h4>
+<ul class="space-y-3">
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="index.html#problem">Problem</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="index.html#ablauf">Ablauf</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="index.html#akteure">Akteure</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="index.html#methodik">Methodik</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="index.html#output">Output</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-slate-900 mb-4">Kontakt</h4>
+<ul class="space-y-3">
+<li class="font-body text-sm text-slate-500">info@aeroforesight.ai</li>
+<li class="font-body text-sm text-slate-500">Hochschule der Medien</li>
+</ul>
+</div>
+<div>
+<h4 class="font-headline font-semibold text-slate-900 mb-4">Rechtliches</h4>
+<ul class="space-y-3">
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="impressum.html">Impressum</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="datenschutz.html">Datenschutz</a></li>
+<li><a class="font-body text-sm text-slate-500 hover:text-navy-800 transition-colors" href="agb.html">AGB</a></li>
+</ul>
+</div>
+</div>
+<div class="border-t border-slate-100 pt-8 flex justify-center">
+<div class="font-body text-xs text-slate-400">
+            © 2026 AeroForesightAI · Alle Rechte vorbehalten
+        </div>
+</div>
+</div>
+</footer>
+<script>
+        // Simple scroll effect for navbar
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 20) {
+                nav.classList.add('shadow-sm');
+            } else {
+                nav.classList.remove('shadow-sm');
+            }
+        });
+    </script>
+<script>
+        // Blendet Elemente mit .reveal ein, sobald sie in den Viewport kommen.
+        // Elemente innerhalb einer [data-stagger]-Gruppe folgen leicht versetzt.
+        (function () {
+            const items = document.querySelectorAll('.reveal');
+            if (!items.length) return;
+
+            if (!('IntersectionObserver' in window)) {
+                items.forEach((el) => el.classList.add('is-visible'));
+                return;
+            }
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+                    const el = entry.target;
+                    const group = el.closest('[data-stagger]');
+                    const index = group ? [...group.querySelectorAll('.reveal')].indexOf(el) : 0;
+                    el.style.transitionDelay = `${Math.min(index, 5) * 90}ms`;
+                    el.classList.add('is-visible');
+                    observer.unobserve(el);
+                });
+            }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
+
+            items.forEach((el) => observer.observe(el));
+        })();
+    </script>
+<script>
+        // Burger-Menü. Schließt sich beim Klick auf einen Link und ab der
+        // md-Breakpoint-Breite, damit es beim Drehen nicht offen hängen bleibt.
+        (function () {
+            const toggle = document.getElementById('nav-toggle');
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('nav-toggle-icon');
+            if (!toggle || !menu) return;
+
+            const setOpen = (open) => {
+                menu.classList.toggle('hidden', !open);
+                toggle.setAttribute('aria-expanded', String(open));
+                toggle.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+                if (icon) icon.textContent = open ? 'close' : 'menu';
+            };
+
+            toggle.addEventListener('click', () => {
+                setOpen(menu.classList.contains('hidden'));
+            });
+
+            menu.querySelectorAll('a').forEach((link) => {
+                link.addEventListener('click', () => setOpen(false));
+            });
+
+            window.matchMedia('(min-width: 768px)').addEventListener('change', (e) => {
+                if (e.matches) setOpen(false);
+            });
+        })();
+    </script>
+</body></html>

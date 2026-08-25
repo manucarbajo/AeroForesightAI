@@ -4,7 +4,7 @@ Anleitung: Wie aus einem Simulationslauf ein exploratives Szenario wird und wie 
 
 ## Präsentations-Demo (empfohlene Reihenfolge)
 
-1. **Dashboard starten:** `python -m streamlit run dashboard/app.py`
+1. **Dashboard starten:** `python -m dashboard.web.app --port 8511`
 2. **Simulation starten** — Szenario wählen, Ticks setzen, optional «Figures nach Lauf erzeugen»
 3. **Ergebnisse ansehen** → Run wählen
 4. Tab **Szenario** — LLM-generiertes exploratives Szenario (`run_scenario.md`) lesen (Hauptartefakt)
