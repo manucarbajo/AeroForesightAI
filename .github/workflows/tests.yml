@@ -27,10 +27,18 @@ jobs:
         run: black --check .
 
       - name: Tests (pytest)
-        # Deselects the known, environment-dependent/pre-existing failures documented
-        # in CLAUDE.md: two tests need a local Ollama server (never available on the
-        # CI runner), one is a real pre-existing bug in market_rules.py tracked
-        # separately. Remove a deselect once its underlying issue is fixed.
+        # Deselects three tests documented in CLAUDE.md and scheduled as P4.2 in
+        # docs/projektplan.md:
+        #   - the two sweep tests need a local Ollama server (never available on the
+        #     CI runner) and *hang* rather than fail without one; they need a skipif
+        #     with a hard timeout, not a deselect.
+        #   - test_market_rules_resolve_marginal_cost_fraction is NOT a code bug
+        #     (re-assessed 2026-08-25): the test expects the 0.33 default from
+        #     market_rules.py:45 while configs/properties.json supplies 0.25, and the
+        #     resolution correctly lets the config win. Open question is which
+        #     marginal-cost fraction is right, then test or config follows.
+        # All three deselects go away with P4.2. Do not add a fourth: a deselect here
+        # hides the problem from CI, which is exactly how these three survived so long.
         run: |
           pytest -q \
             --deselect tests/test_scenario_sweeps.py::test_run_single_sweep_short \

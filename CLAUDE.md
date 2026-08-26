@@ -47,7 +47,7 @@ Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 - `aeroforesight-ai-landing-page/` — statische Landingpage. Wird von der Dash-App selbst ausgeliefert: Landingpage auf `/`, Dashboard auf `/app/` (`dashboard/web/landing_route.py`, Pfade in `dashboard/web/routing.py`). Ihre Design-Tokens (`design/color-tokens.json`) sind die Quelle für das Dashboard-Theme
 - `langgraph_studio/` — interaktive Graph-Entwicklung (LangGraph Studio)
 - `configs/` — Simulationskonfiguration (`simulation_config.json`, `properties.json`, `agents.json`, `agent_profiles.json`, `cib_frozen.json`, `sweeps/`)
-- `tests/` — pytest-Suite (~330 Tests); `test_dashboard_service.py` deckt den Service-Layer ab, `test_web_state.py` die Draft-Serialisierung, `test_web_layout.py` jede Ansicht der Dash-App (auch mit unvollständigen Run-Verzeichnissen)
+- `tests/` — pytest-Suite (über 500 Tests; die genaue Zahl liefert `pytest --collect-only -q`, sie gehört bewusst nicht als feste Zahl in die Doku — siehe P4.3); `test_dashboard_service.py` deckt den Service-Layer ab, `test_web_state.py` die Draft-Serialisierung, `test_web_layout.py` jede Ansicht der Dash-App (auch mit unvollständigen Run-Verzeichnissen)
 - `docs/handbuch/` — die geschriebenen Kapitel des Dashboard-Handbuchs (Markdown, vom Dashboard unter `/doku` gerendert); Referenzkapitel entstehen zur Laufzeit aus `configs/`
 - `docs/` — technische Doku (CIB-Methodik, Agent-Profile, Szenario-Workflow) und `docs/audit_findings.md` (bekannte Bugs/Inkonsistenzen, bewusst nicht gefixt — bitte durchgehen und priorisieren); `docs/research/` — Fachliteratur
 
@@ -58,7 +58,7 @@ Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 - **Faktoren F1–F7** — Zustandsvariablen des soziotechnischen Systems (Mobilitätsnachfrage, Regulierung, Technologie/SAF, Wirtschaft, Alternativen, Gesellschaft, Geopolitik), je zwei Zustände (z. B. F1.1/F1.2). **Achtung F7-Drift:** `configs/factors.json` führt F7 als "Geopolitische Stabilitaet", `configs/cib_frozen.json` wurde für "Marktstruktur" bewertet — offener Widerspruch, siehe [P0.2](docs/projektplan.md).
 - **Logit-Modell** — mikroökonomisches Nutzenmodell für Kaufentscheidungen der simulierten Population. **Stand heute** ist es keine Logit-Ziehung: `_booking_probability` rechnet die Sigmoid und vergleicht sie gegen 0.5, was einer deterministischen Schwelle auf dem Nutzen entspricht (`src/population/population_sampler.py:355`). Die Formulierung nach außen entsprechend vorsichtig halten, bis [P2.1](docs/projektplan.md) umgesetzt ist.
 - **Agent-Profile** (Consumer, Provider, Regulator) — informationsbeschränkte LLM-Agenten; erlaubte Beobachtungen/Outputs pro Rolle in `configs/agent_profiles.json`. Details: [`docs/agent_profiles.md`](docs/agent_profiles.md).
-- **State Explorer** — grounded Q&A ausschließlich über abgeschlossene Run-Daten (`tick_mechanics.json`, `price_history.json`, `event_log.json`) — keine erfundenen Zahlen.
+- **State Explorer** — Q&A über abgeschlossene Run-Daten (`tick_mechanics.json`, `price_history.json`, `event_log.json`). Das Modell bekommt ausschließlich diese Daten als Kontext. **Stand heute** wird die Antwort danach *nicht* gegen den Kontext geprüft — die Zusage "keine erfundenen Zahlen" ist eine Prompt-Anweisung, keine Schranke. Bis [P2.5](docs/projektplan.md) umgesetzt ist, entsprechend vorsichtig formulieren.
 
 ## Harte Architektur-Invarianten
 
@@ -86,7 +86,7 @@ python -m streamlit run dashboard/legacy_streamlit/app_researcher.py --server.po
 
 `black` + `ruff` vor jedem Commit laufen lassen (CI in `.github/workflows/tests.yml` prüft beides plus Tests).
 
-Drei Tests brauchen Aufmerksamkeit (Stand 2026-08-25, verifiziert):
+Drei Tests brauchen Aufmerksamkeit (Stand 2026-08-26, verifiziert). **Alle drei sind in [`.github/workflows/tests.yml`](.github/workflows/tests.yml) per `--deselect` ausgeklammert** — die CI ist deshalb grün, ein lokaler `pytest`-Lauf ohne Ollama ist es nicht. Die drei Zeilen fallen mit [P4.2](docs/projektplan.md):
 
 - `test_run_single_sweep_short` und `test_sweep_base_price_override_raises_ticket_price` (`tests/test_scenario_sweeps.py`) **hängen** ohne lokalen Ollama minutenlang, statt sauber zu skippen — nicht einfach "bekannte Fehler". Behebung in P4.2.
 - `test_market_rules_resolve_marginal_cost_fraction` (`tests/test_market_feedback.py::TestM413ConfigurablePrice`) ist **kein Code-Bug**: der Test erwartet den Default `0.33`, `configs/properties.json` liefert `0.25`, die Auflösung in `market_rules.py:45` arbeitet korrekt. Zu klären ist nur, welcher Wert fachlich stimmt — dann Test oder Config nachziehen.
@@ -101,10 +101,12 @@ Hetzner Cloud Server mit lokal laufendem Ollama (Datenhoheit, keine externen LLM
 
 **[docs/projektplan.md](docs/projektplan.md) ist die verbindliche Reihenfolge** — dort steht, was wann drankommt, mit Fundstelle und Abnahmekriterium pro Paket. Nichts davon ungefragt vorziehen, aber auch nichts mehr als "bekannt und bewusst offen" abtun: seit 2026-08-25 ist **jedes** Finding aus `docs/audit_findings.md` einem Arbeitspaket zugeordnet (Zuordnungstabelle am Ende des Plans).
 
-- **Phase 0** — Vertrauens-Blocker vor dem nächsten Demo: sichtbarer LLM-Ausfall, F7-Drift, `validate_config`, die zwei auseinandergelaufenen Rule-Evaluatoren, Faktor-Berechtigungen aus einer Quelle.
-- **Phase 1** — aktueller Schwerpunkt: Start-Flow, Ergebnisdarstellung, Szenariogestaltung.
-- **Phase 2** — Modellsubstanz: echte Ziehung im Buchungsmodell, Impact-Balance, Matrix-Provenienz, Alterung der Population.
+- **Phase 0** — Vertrauens-Blocker vor dem nächsten Demo: sichtbarer LLM-Ausfall, F7-Drift, `validate_config`, die zwei auseinandergelaufenen Rule-Evaluatoren, Faktor-Berechtigungen aus einer Quelle, und ein Run-Artefakt, das Seed und Rechenmodus überhaupt festhält.
+- **Phase 1** — aktueller Schwerpunkt: Start-Flow, Ergebnisdarstellung, Szenariogestaltung, Landingpage produktionsreif.
+- **Phase 2** — Modellsubstanz: echte Ziehung im Buchungsmodell, Impact-Balance, Matrix-Provenienz, Alterung der Population, Grounding des State Explorers.
 - **Phasen 3–5** — Engine-Härtung, Testfundament, Altlasten (inkl. Entfernen von `dashboard/legacy_streamlit/`).
-- **Phase 6** — API-Layer und Multi-Tenant-B2B: bewusst noch nicht im Scope.
+- **Phase 6** — API-Layer und Multi-Tenant-B2B: bewusst noch nicht im Scope. Das Tor dorthin ist in Phase 6 des Plans benannt; es hängt an vier abgehakten Phase-1-Paketen, nicht an einem Gefühl.
+
+Drei Fallstricke aus der Gegenprobe vom 2026-08-26, die beim Anfassen der betroffenen Pakete zuerst zu lesen sind: **P3.5 nicht vor P0.1** (das Fortschritts-Log des Dashboards hängt an `print()`), **P2.1 braucht einen Zufallsstrom pro Tick** (sonst buchen in jedem Tick dieselben Individuen), und **P2.2 braucht vorher eine Entscheidung**, was gilt, wenn die Impact Balance weniger als drei konsistente Szenarien liefert.
 
 `docs/audit_findings.md` bleibt die Detailliste (Befund, Auswirkung, Fundstelle). Behobene Findings dort **entfernen**, neu gefundene ergänzen und im Projektplan einplanen.
