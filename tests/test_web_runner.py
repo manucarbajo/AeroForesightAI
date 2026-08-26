@@ -190,3 +190,70 @@ def test_the_log_does_not_grow_without_bound(monkeypatch):
 
     assert len(job.lines) == runner.MAX_LOG_LINES
     assert job.lines[-1] == f"Zeile {ueberzaehlig - 1}", "die jüngsten Zeilen bleiben"
+
+
+# --- Der Start-Knopf selbst -------------------------------------------------
+
+
+class _MitschreibendeApp:
+    """Nimmt die Callbacks entgegen, statt eine echte Dash-App zu bauen.
+
+    So lässt sich `_start` mitsamt seiner Verdrahtung prüfen — auch die
+    Reihenfolge des Rückgabe-Tupels, die zu den fünf `Output`s passen muss.
+    Ein Fehler dort würde die Meldung in der falschen Komponente landen lassen,
+    ohne dass irgendetwas rot wird.
+    """
+
+    def __init__(self) -> None:
+        self.callbacks: list[tuple[list[str], object]] = []
+
+    def callback(self, *outputs, **kwargs):
+        ids = [o.component_id for o in outputs if hasattr(o, "component_id")]
+
+        def decorator(fn):
+            self.callbacks.append((ids, fn))
+            return fn
+
+        return decorator
+
+
+def _start_callback():
+    from dashboard.web.pages import launch as launch_page
+
+    app = _MitschreibendeApp()
+    launch_page.register_callbacks(app)
+    for _ids, fn in app.callbacks:
+        if fn.__name__ == "_start":
+            return fn
+    raise AssertionError("Start-Callback nicht gefunden")
+
+
+#: Die fünf Outputs in ihrer Reihenfolge — job-store, poll, status, log, knopf.
+_STATUS = 2
+_KNOPF = 4
+
+
+def test_the_start_button_refuses_a_config_that_cannot_run(monkeypatch):
+    """P0.3 verspricht, dass «Start» abweist — geprüft war bisher nur die Ansicht."""
+
+    gestartet: list[dict] = []
+    monkeypatch.setattr(runner, "start", lambda draft: gestartet.append(draft) or "job")
+
+    draft = initial_draft_dict()
+    draft["use_seed"] = True
+    draft["seed"] = -1
+
+    ergebnis = _start_callback()(1, draft)
+
+    assert gestartet == [], "es darf kein Lauf angefangen haben"
+    assert "seed" in str(ergebnis[_STATUS])
+    assert ergebnis[_KNOPF] is False, "der Knopf muss wieder bedienbar sein"
+
+
+def test_the_start_button_starts_a_healthy_config(monkeypatch):
+    monkeypatch.setattr(runner, "start", lambda draft: "job-4711")
+
+    ergebnis = _start_callback()(1, initial_draft_dict())
+
+    assert ergebnis[0] == "job-4711"
+    assert ergebnis[_KNOPF] is True, "während des Laufs ist der Knopf gesperrt"
