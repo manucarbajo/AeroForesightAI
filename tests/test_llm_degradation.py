@@ -34,6 +34,29 @@ class _FailingLLM:
         raise RuntimeError(self.message)
 
 
+def _stub_context(run_id, *, run_dir=None):
+    """Ein leerer, aber vollständiger Kontext — hier zählt nur der Ausfallpfad."""
+
+    from pathlib import Path
+
+    from src.reporting.run_scenario_generator.context import RunScenarioContext
+
+    return RunScenarioContext(
+        run_id=run_id,
+        run_dir=Path(run_dir) if run_dir is not None else Path("."),
+        metadata={},
+        tick_mechanics={},
+        event_log=[],
+        price_history=[],
+        population_segments=[],
+        factors=[],
+        cib_matrix=None,
+        summary_metrics={},
+        phase_ticks=[],
+        agent_digest={},
+    )
+
+
 def _consumer_node(llm) -> tuple[AgentNode, object]:
     state = build_initial_state()
     consumer = next(agent for agent in state.agents if agent.id == "consumer")
@@ -221,6 +244,44 @@ def test_incident_file_is_written_only_when_there_are_incidents(tmp_path) -> Non
     written = json.loads((tmp_path / "llm_incidents.json").read_text(encoding="utf-8"))
     assert written[0]["caller"] == "scenario_node"
     assert written[0]["tick"] == 2
+
+
+# --- Ein Ausfall darf den fertig gerechneten Lauf nicht mitreißen ----------
+
+
+def test_scenario_generation_falls_back_to_the_template(tmp_path, monkeypatch) -> None:
+    """Ein Ausfall am Ende darf nicht alles wegwerfen, was schon gerechnet war.
+
+    Die Szenario-Erzeugung läuft **nach** der Simulation. Riss ihr LLM-Aufruf
+    den Prozess mit, entstand kein `run_metadata.json`, kein Eintrag in der
+    Run-Liste und damit auch kein Warnbanner — die Degradation wäre unsichtbar
+    gewesen, weil überhaupt nichts ankommt.
+    """
+
+    from src.reporting.run_scenario_generator import pipeline
+
+    monkeypatch.setattr(pipeline, "load_run_scenario_context", _stub_context)
+    monkeypatch.setattr(pipeline, "build_scenario_prompt", lambda context: "prompt")
+
+    result = pipeline.generate_run_scenario("run_x", _FailingLLM(), run_dir=tmp_path)
+
+    assert result["source"] == "template"
+    assert "Ollama nicht erreichbar" in result["llm_error"]
+
+
+def test_a_working_scenario_call_reports_no_error(tmp_path, monkeypatch) -> None:
+    from src.reporting.run_scenario_generator import pipeline
+
+    monkeypatch.setattr(pipeline, "load_run_scenario_context", _stub_context)
+    monkeypatch.setattr(pipeline, "build_scenario_prompt", lambda context: "prompt")
+
+    class _EmptyLLM:
+        def call(self, prompt: str) -> str:
+            return "{}"
+
+    result = pipeline.generate_run_scenario("run_x", _EmptyLLM(), run_dir=tmp_path)
+
+    assert result["llm_error"] is None
 
 
 # --- Der Weg ins Fortschrittsfenster ---------------------------------------

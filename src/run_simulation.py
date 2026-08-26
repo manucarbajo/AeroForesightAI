@@ -19,6 +19,7 @@ from src.cib.scenario_agent_node import ScenarioAgentNode, render_scenarios_mark
 from src.config_loader import build_initial_state
 from src.llm import STUDIO_DIR, MockLLM, OllamaClient, OllamaConfig, load_env
 from src.logging_setup import configure_logging
+from src.models.llm_models import LLMIncident
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 from src.reporting.output_writer import (
@@ -259,6 +260,20 @@ def _save_run_outputs(
         paths = scenario_result.get("paths") or {}
         run_scenario_md_path = paths.get("markdown")
         run_scenario_json_path = paths.get("json")
+        # Die Pipeline fällt bei einem Ausfall auf ihr deterministisches Template
+        # zurück, statt den fertig gerechneten Lauf mitzureißen. Damit das Ergebnis
+        # nicht als vollwertiges Narrativ durchgeht, wird der Ausfall hier zum
+        # Vorfall — und landet damit in `llm_incidents.json` und im Warnbanner.
+        scenario_llm_error = scenario_result.get("llm_error")
+        if scenario_llm_error:
+            state.llm_incidents.append(
+                LLMIncident(
+                    tick=state.clock.current_tick,
+                    caller="run_scenario_generator",
+                    kind="call_failed",
+                    error=str(scenario_llm_error),
+                )
+            )
 
     # Zuletzt, damit auch ein Ausfall im Szenario-Narrativ noch mitgezaehlt wird.
     llm_incidents_path = save_llm_incidents(state.llm_incidents, run_dir=run_dir)
