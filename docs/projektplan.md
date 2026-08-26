@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-26 — P0.1 und P0.3 erledigt, **P0.2 wartet auf eine Entscheidung von Manu** ([Details](#p02--f7-drift-auflösen)) · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-26 — P0.1 und P0.3 erledigt und gegengeprüft, **P0.2 entschieden: F7 ist „Geopolitische Stabilität"** ([Details](#p02--f7-drift-auflösen)), damit umsetzbar nach Variante A · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -55,27 +55,53 @@ Zwei Dinge, die bei der Umsetzung auffielen und über den Plan hinausgingen:
 - **Ein Ausfall am Ende riss den ganzen Lauf mit.** Die Erzeugung des Lauf-Szenarios läuft **nach** der Simulation und rief das LLM ungeschützt auf. Mit dem jetzt lauten Client bedeutete das: fertig gerechnet, dann `RuntimeError` — kein `run_metadata.json`, kein Eintrag in der Run-Liste, kein Warnbanner. Die Degradation wäre unsichtbar geworden, weil überhaupt nichts ankommt. Die Pipeline hatte bereits ein deterministisches Template als Fallback; sie fällt jetzt darauf zurück und meldet den Ausfall als Vorfall. Aufgefallen erst beim Nachstellen des Dashboard-Pfades — die erste Prüfung lief mit `--no-run-scenario` und ging daran vorbei.
 - **`ParallelRoundNode` verwirft, was es nicht ausdrücklich einsammelt.** Die Agenten laufen auf tiefen Kopien; zurückgetragen wurden nur `round_results` und `event_log`. Provider- und Regulator-Vorfälle gingen deshalb zunächst verloren — sichtbar erst im Lauf gegen einen toten Endpunkt, nicht im Test. Jetzt werden Vorfälle mitgeerntet, ein Regressionstest hält das fest. **Für P3.5 und jeden künftigen Zustand am `SimulationState` gilt dasselbe:** wer dort ein Feld ergänzt, das ein Agent füllt, muss `_invoke_agent_isolated` mitziehen.
 
-**Nachgeprüft am 2026-08-26.** Hält: kein stiller Mock-Pfad mehr (`_build_mock_response` wird nur noch von `MockLLM` aufgerufen), Vorfälle überleben Checkpoint und Resume, `run_multi` isoliert die Läufe sauber, der Redebedarf-Pfad braucht kein Einsammeln (er arbeitet auf dem echten State), Sweeps schreiben die `degraded`-Felder mit, und `llm_incidents.json` erscheint tatsächlich im Tab «Dateien». Zwei Kleinigkeiten korrigiert: `OLLAMA_TIMEOUT_SECONDS` war seit der Client-Zusammenführung wirkungslos — `LocalOllama` las die Variable weiter, `call` delegierte aber an den Client, der nur `OLLAMA_READ_TIMEOUT` kennt; `OllamaConfig` hat jetzt ein `read_timeout`, das durchgereicht wird. Und Invariante 1 in `CLAUDE.md` galt pauschal für „einen LLM-Aufruf", trifft aber nur die Aufrufer **innerhalb eines Laufs** — der State Explorer hat keinen State und bekommt seine Zusage in P2.5.
+**Nachgeprüft am 2026-08-26.** Hält: kein stiller Mock-Pfad mehr (`_build_mock_response` wird nur noch von `MockLLM` aufgerufen), Vorfälle überleben Checkpoint und Resume, `run_multi` isoliert die Läufe sauber, der Redebedarf-Pfad braucht kein Einsammeln (er arbeitet auf dem echten State), und `llm_incidents.json` erscheint tatsächlich im Tab «Dateien». Zwei Kleinigkeiten korrigiert: `OLLAMA_TIMEOUT_SECONDS` war seit der Client-Zusammenführung wirkungslos — `LocalOllama` las die Variable weiter, `call` delegierte aber an den Client, der nur `OLLAMA_READ_TIMEOUT` kennt; `OllamaConfig` hat jetzt ein `read_timeout`, das durchgereicht wird. Und Invariante 1 in `CLAUDE.md` galt pauschal für „einen LLM-Aufruf", trifft aber nur die Aufrufer **innerhalb eines Laufs** — der State Explorer hat keinen State und bekommt seine Zusage in P2.5.
+
+**Gegengeprüft am 2026-08-26 (zweite Person, frisches venv).** Tests, Linting und Formatierung
+sind sauber; der einzige Fehlschlag ist der bekannte `marginal_cost_fraction` aus P4.2. Alle
+Zusagen des Pakets wurden am laufenden System nachgestellt: ein Lauf gegen einen toten Endpunkt
+rechnet zu Ende und protokolliert alle Vorfälle inklusive Provider und Regulator, das
+Fortschrittsfenster zeigt `print`- **und** `logging`-Zeilen ohne Dopplung, ein bewusster
+Mock-Lauf gilt korrekt nicht als degradiert, und die Prüfungen aus P0.3 greifen an CLI und
+Dashboard. **Drei Punkte hat die Gegenprobe zusätzlich gefunden** — keiner blockiert den Merge,
+alle drei sind unten eingeplant:
+
+- **Ein Sweep kann nicht als degradiert markiert werden.** Eingeplant in [P0.6](#p06--ein-lauf-sagt-wie-er-entstanden-ist).
+- **`get_llm()` wählt weiterhin still den Mock**, wenn keine Umgebungsvariable gesetzt ist. Eingeplant in [P3.4](#p34--llm-konfiguration-zentralisieren).
+- **Ein Config-Fehler auf der CLI kommt als roher Traceback.** Eingeplant in [P3.3](#p33--fehlermeldungen-die-auch-greifen).
+
+Der erste Punkt war in der Nachprüfung oben als erledigt vermerkt („Sweeps schreiben die
+`degraded`-Felder mit"). Die Aussage stimmt wörtlich und führt trotzdem in die Irre: Geprüft war,
+dass die Felder in der Datei landen — nicht, ob sie je `true` werden können. Der Satz ist deshalb
+entfernt. **Als Prüfmuster mitnehmen:** Bei einem Feld, das einen Ausfall melden soll, ist "steht
+drin" nicht die Frage, sondern "wird es gesetzt, wenn der Ausfall eintritt".
 
 **Doku zieht mit:** `docs/handbuch/fehlerbilder.md`, `docs/handbuch/ref-ausgaben.md`, `README.md`, `CLAUDE.md` (Invariante 1 um "Ausfall ist sichtbar" ergänzt).
 
 ### P0.2 — F7-Drift auflösen
 
-> ## ⏳ OFFENE ENTSCHEIDUNG — dieses Paket wartet auf Manu
+> ## ✅ ENTSCHIEDEN am 2026-08-26: **F7 ist „Geopolitische Stabilität"**
 >
-> **Frage:** Bedeutet **F7** „Geopolitische Stabilität" oder „Marktstruktur"?
+> **Frage war:** Bedeutet **F7** „Geopolitische Stabilität" oder „Marktstruktur"?
 >
 > | Wer | Position | Stand |
 > | --- | --- | --- |
 > | **Haiko** | **Geopolitische Stabilität** | festgelegt am 2026-08-26 |
-> | **Manu** | — | **steht aus** ← hier fehlt die Antwort |
+> | **Manu** | **Geopolitische Stabilität** | bestätigt am 2026-08-26 |
 >
-> Die Begründung steht unten unter *Entscheidungsgrundlage*; sie empfiehlt dieselbe Lesart wie Haiko.
+> Beide Positionen decken sich mit der *Entscheidungsgrundlage* unten. Damit gilt **Variante A**
+> (siehe *Umsetzung nach der Entscheidung*): Der Blocker ist weg, das Paket ist umsetzbar.
 >
-> **Manu, wenn du das mit Claude durchgehst:** Es braucht von dir genau einen Satz — „F7 ist
-> Geopolitische Stabilität" oder „F7 ist Marktstruktur". Danach kann P0.2 sofort umgesetzt
-> werden; beide Wege sind unten unter *Umsetzung nach der Entscheidung* fertig ausgearbeitet,
-> Datei für Datei. Trag deine Antwort in die Tabelle oben ein, dann ist der Blocker weg.
+> **Was die Entscheidung kostet — bewusst mitentschieden:** 48 der 168 Matrixzellen kodieren
+> heute eine Marktlogik und sind damit sachlich falsch. Sie müssen neu bewertet werden, und
+> zwar mit der Begründung aus [P2.3](#p23--matrix-provenienz-herstellen) in einem Zug — zweimal
+> durchgehen ist der teure Weg. P0.2 ist deshalb **kein kleines Umbenennungs-Paket**; wer es
+> anfasst, plant die Zellendurchsicht mit ein.
+>
+> **Und eine Vorbedingung, die daraus folgt:** F7 wird in
+> [P2.2](#p22--cib-impact-balance-kriterium-implementieren) pro Szenario als fixierter
+> Deskriptor behandelt. Grund ist der Einwand unten: Geopolitik wirkt stark nach außen und wird
+> kaum zurückbeeinflusst — die eingehende Spalte wird nach der Neubewertung dünn.
 
 **Befund:** Die eingefrorene Matrix wurde für **F7 Marktstruktur** bewertet, die Simulation läuft mit **F7 Geopolitische Stabilität**. Die Zustände passen semantisch zufällig (offen/fragmentiert), die Bedeutung nicht. Matrix, Config, Doku und Outputs widersprechen sich — bei einem Produkt, dessen Verkaufsargument Reproduzierbarkeit ist, ist das teuer.
 
@@ -123,7 +149,7 @@ Die Drift ist **kein späterer Umbenennungsfehler**: Im allerersten Commit des R
 5. Test wie in Variante A, Schritt 5.
 6. `CLAUDE.md` (Glossar), `docs/handbuch/faktoren.md`, `docs/cib_role.md`, `docs/cib_rationale.md`.
 
-**Fertig wenn:** Faktorname in Config, Matrix, Doku und Run-Output identisch; Test grün; die Entscheidungstabelle oben trägt Manus Antwort.
+**Fertig wenn:** Faktorname in Config, Matrix, Doku und Run-Output identisch; die 48 F7-Zellen sind unter der geopolitischen Lesart neu bewertet und je mit Begründung versehen; der mechanische Namensabgleich zwischen `factors.json` und `cib_frozen.json` läuft als Test grün.
 
 **Doku zieht mit:** `docs/handbuch/faktoren.md`, `docs/cib_role.md`, `docs/cib_rationale.md`, `CLAUDE.md` (Glossar).
 
@@ -191,9 +217,19 @@ Bewusst **nicht** hier behoben: dass `state.config.llm` von niemandem gelesen wi
 
 **Fundstelle:** [`src/reporting/output_writer/metadata.py:28-43`](../src/reporting/output_writer/metadata.py) (`save_run_metadata`); Aufrufer in [`src/run_simulation.py`](../src/run_simulation.py) und [`dashboard/run_launcher.py`](../dashboard/run_launcher.py).
 
-**Was zu tun ist:** `seed`, `mock_llm`, `deterministic_only`, einen Hash der geladenen Config-Dateien und den Codestand (Git-Commit, sofern verfügbar) in `run_metadata.json` schreiben. Die Ansicht «Ergebnisse ansehen» zeigt Seed und Rechenmodus im Überblick, damit ein Mock-Lauf nicht als echter Lauf präsentiert wird. Fällt mit P0.1 zusammen — der Degradations-Marker (`degraded`, Fallback-Zähler) gehört in dieselbe Datei und dieselbe Anzeige, also beides in einem Zug.
+**Dazugekommen aus der P0.1-Gegenprobe (2026-08-26): der Sweep-Pfad schreibt an P0.1 vorbei.**
+[`scenario_sweeps.py:262`](../src/orchestration/scenario_sweeps.py) ruft `save_run_metadata`
+**vor** `generate_and_save_run_scenario` (Zeile 281), verwirft den zurückgegebenen `llm_error`
+und ruft `save_llm_incidents` überhaupt nicht. Ein Sweep läuft `deterministic_only`, hat also
+genau eine Ausfallquelle — den Szenario-Text am Ende. Fällt der auf das Template zurück, steht
+im Sweep trotzdem `degraded: false`, und es entsteht kein `llm_incidents.json`. Sweeps stehen in
+derselben Run-Liste wie normale Läufe; der Warnbanner bleibt aus, obwohl das Narrativ nicht vom
+Modell stammt. Auffindbar ist es nur an `"source": "template"` in `run_scenario.json` — also
+genau die stille Degradation, gegen die P0.1 angetreten ist, nur auf dem Sweep-Pfad.
 
-**Fertig wenn:** Aus `run_metadata.json` allein ist erkennbar, mit welchem Seed und in welchem Rechenmodus ein Lauf entstanden ist; ein Test hält die Felder fest.
+**Was zu tun ist:** `seed`, `mock_llm`, `deterministic_only`, einen Hash der geladenen Config-Dateien und den Codestand (Git-Commit, sofern verfügbar) in `run_metadata.json` schreiben. Die Ansicht «Ergebnisse ansehen» zeigt Seed und Rechenmodus im Überblick, damit ein Mock-Lauf nicht als echter Lauf präsentiert wird. Fällt mit P0.1 zusammen — der Degradations-Marker (`degraded`, Fallback-Zähler) gehört in dieselbe Datei und dieselbe Anzeige, also beides in einem Zug. **Dabei den Sweep-Pfad mitziehen:** Metadaten erst nach der Szenario-Erzeugung schreiben, `llm_error` als Vorfall aufnehmen und `save_llm_incidents` aufrufen — dieselbe Kette wie in `run_simulation._save_run_outputs`, die dort bereits richtig herum steht.
+
+**Fertig wenn:** Aus `run_metadata.json` allein ist erkennbar, mit welchem Seed und in welchem Rechenmodus ein Lauf entstanden ist; ein Test hält die Felder fest. Ein Sweep gegen einen toten Endpunkt ist als degradiert markiert und hat ein `llm_incidents.json` — ebenfalls per Test.
 
 **Doku zieht mit:** `docs/handbuch/ref-ausgaben.md`, `docs/handbuch/lauf-starten.md`, `README.md`.
 
@@ -359,8 +395,10 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Befund:** Zwei Stellen, an denen Fehlerbehandlung nur so aussieht: In `langgraph_workflow` steht ein `try: pass` mit `except`, das nie feuern kann — die beabsichtigte freundliche Meldung bei fehlendem `langgraph` bleibt aus, stattdessen kommt später ein roher `ImportError`. In `create_graph.py` verschluckt ein `except Exception: pass` auch den absichtlich re-raisten Graph-Build-Fehler, und das Skript schreibt trotzdem ein statisches `graph.json`.
 **Fundstelle:** [`src/orchestration/langgraph_workflow.py:41-44`](../src/orchestration/langgraph_workflow.py), [`langgraph_studio/create_graph.py:16-24`](../langgraph_studio/create_graph.py).
-**Was zu tun ist:** Echten Import in den `try`-Block ziehen; im Studio-Skript den Build-Fehler durchreichen statt ein irreführendes `graph.json` zu schreiben.
-**Fertig wenn:** Fehlendes `langgraph` erzeugt die gemeinte Meldung; ein kaputter Graph-Build bricht sichtbar ab. **Doku:** `docs/handbuch/fehlerbilder.md`.
+**Dazugekommen aus der P0.1-Gegenprobe (2026-08-26): der dritte Fall ist die CLI.** Seit P0.3 weist ein Lauf mit kaputter Config sauber ab — im Dashboard als roter Kasten mit allen Befunden, auf der CLI als **roher Python-Traceback**. `main()` in [`src/run_simulation.py`](../src/run_simulation.py) lässt `ValidationError` einfach durchschlagen; wer `--temperature 99` tippt, sieht zwanzig Zeilen Stack, in denen die eigentliche Meldung untergeht, und bekommt keinen sprechenden Exit-Code. Die Prüfung ist richtig, ihre Darstellung nicht.
+
+**Was zu tun ist:** Echten Import in den `try`-Block ziehen; im Studio-Skript den Build-Fehler durchreichen statt ein irreführendes `graph.json` zu schreiben. `ValidationError` in `main()` abfangen und als Fehlerliste auf `stderr` ausgeben, mit Exit-Code ungleich 0 statt Traceback.
+**Fertig wenn:** Fehlendes `langgraph` erzeugt die gemeinte Meldung; ein kaputter Graph-Build bricht sichtbar ab; eine kaputte Config auf der CLI erzeugt dieselbe lesbare Liste wie im Dashboard. **Doku:** `docs/handbuch/fehlerbilder.md`, `README.md` (CLI).
 
 ### P3.4 — LLM-Konfiguration zentralisieren
 
@@ -368,8 +406,10 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 **Fundstelle:** `src/run_simulation.py`, `src/llm/llm_client.py`, `src/models/state_models.py`, `src/orchestration/langgraph_adapter.py`, `dashboard/config_catalog.py`, `dashboard/llm_status.py`, `dashboard/run_browser.py`, `dashboard/run_launcher.py`, `dashboard/web/config_editor/compute_mode.py`, `dashboard/web/config_editor/llm_pipeline.py` (plus `tests/test_web_compute_mode.py`, `tests/test_web_layout.py`).
 **Verschärft am 2026-08-26 (Fund aus der P0.3-Nachprüfung):** Es geht nicht nur um verstreute Defaults, sondern um ein Feld, das gar nichts tut. `state.config.llm` (`model`, `temperature`, `max_tokens`) wird von **keinem Laufpfad gelesen** — die einzigen Leser sind `langgraph_adapter.py` für die Studio-Schema-Defaults. Der echte Client entsteht aus `RunLaunchConfig` bzw. den CLI-Argumenten. Sichtbarster Beleg: `configs/simulation_config.json` führt `llm.model: "llama3"`, während überall sonst `"llama3.2"` steht — und niemandem fällt es auf, weil der Wert nirgends ankommt.
 
-**Was zu tun ist:** Eine Defaults-Quelle (Config plus `.env`-Override), alle Stellen darauf ziehen — und dabei `state.config.llm` entweder wirklich anschließen (Draft und CLI schreiben hinein, der Client liest daraus) oder ersatzlos entfernen. Halb stehenlassen ist die schlechteste der drei Möglichkeiten. Fällt mit der Client-Zusammenführung aus P0.1 zusammen.
-**Fertig wenn:** Ein Endpoint-Wechsel erfordert genau eine Änderung. **Doku:** `README.md` (Umgebung), `docs/handbuch/ref-config.md`.
+**Dazugekommen aus der P0.1-Gegenprobe (2026-08-26): `get_llm()` wählt still den Mock.** P0.1 hat den stillen Mock **bei Fehlern** beseitigt — die Auswahl davor ist geblieben. [`studio_helpers.get_llm()`](../src/llm/studio_helpers.py) fällt am Ende seiner Kette kommentarlos auf `MockLLM()` zurück, wenn weder `OLLAMA_MODEL` noch `LLAMA_HTTP_URL` noch `LLAMA_TRANSFORMERS_MODEL` gesetzt ist. Zwei Aufrufer hängen noch daran: [`langgraph_workflow.py:48`](../src/orchestration/langgraph_workflow.py) (der Graph für LangGraph Studio) und [`run_scenario_generator/cli.py:33`](../src/reporting/run_scenario_generator/cli.py). Wer Studio ohne gesetzte Umgebung startet, bekommt erfundene Agenten-Antworten, ohne sie angefordert zu haben — kein `--mock-llm`, kein Hinweis, und nach der Definition aus Invariante 1 auch kein „Ausfall", weil nie ein Aufruf gescheitert ist. Der bewusste Mock (`--mock-llm`, «Ohne Sprachmodell») ist davon unberührt und richtig so.
+
+**Was zu tun ist:** Eine Defaults-Quelle (Config plus `.env`-Override), alle Stellen darauf ziehen — und dabei `state.config.llm` entweder wirklich anschließen (Draft und CLI schreiben hinein, der Client liest daraus) oder ersatzlos entfernen. Halb stehenlassen ist die schlechteste der drei Möglichkeiten. Fällt mit der Client-Zusammenführung aus P0.1 zusammen. **Dazu die Backend-Auswahl entscheidbar machen:** `get_llm()` sagt über `logging`, welches Backend es gewählt hat, und der Griff zum Mock passiert nur auf ausdrückliche Ansage (Parameter oder Umgebungsvariable) statt als letzter Zweig einer `if`-Kette.
+**Fertig wenn:** Ein Endpoint-Wechsel erfordert genau eine Änderung, und kein Codepfad rechnet mit dem Mock, ohne dass es jemand angefordert hat oder mindestens im Log steht. **Doku:** `README.md` (Umgebung), `docs/handbuch/ref-config.md`.
 
 ### P3.5 — Stille Klemmungen und Debug-Ausgaben
 
@@ -480,8 +520,8 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Faktoren / Modellsubstanz | P0.2, P2.1, P2.2, P2.3, P2.4 |
 | Markt / Preisbildung | P0.4 (Rule-Evaluatoren, `market_rules`), P0.5 (Berechtigungen), P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen, ungenutztes `current_tick`) |
 | Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), P3.5 (Klemmung, `print`), P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
-| Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`) |
-| LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, P3.4 (hartcodierte Defaults) |
+| Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, P0.6 (Sweep-Pfad an P0.1 vorbei), P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`, CLI-Traceback) |
+| LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`) |
 | Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), P3.6 (private Imports), P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen) |
 | LangGraph Studio | P3.3 |
 | Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests, der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction` und der drei `--deselect`-Zeilen in der CI) |
