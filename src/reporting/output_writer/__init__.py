@@ -2,6 +2,7 @@
 
 from src.reporting.output_writer.cib import save_cib_matrix
 from src.reporting.output_writer.events import save_event_log
+from src.reporting.output_writer.llm_incidents import save_llm_incidents
 from src.reporting.output_writer.metadata import save_run_metadata
 from src.reporting.output_writer.narrative import save_final_narrative
 from src.reporting.output_writer.paths import (
@@ -31,6 +32,7 @@ __all__ = [
     "ensure_output_dir",
     "resolve_run_output_dir",
     "save_event_log",
+    "save_llm_incidents",
     "save_population_timeseries",
     "save_population_individuals",
     "append_individuals_history",

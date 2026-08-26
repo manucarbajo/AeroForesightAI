@@ -12,6 +12,7 @@ import json
 
 import pytest
 
+from dashboard.run_browser import RunSummary
 from dashboard.web import app as web_app
 from dashboard.web import components as ui
 from dashboard.web import config_editor
@@ -135,6 +136,47 @@ def test_runs_page_render_tab_survives_a_missing_directory(tmp_path):
     selection = {"run_id": "weg", "run_dir": str(tmp_path / "gibt-es-nicht")}
 
     assert "Run-Verzeichnis fehlt" in _text(runs_page.render_tab("overview", selection))
+
+
+def _summary(tmp_path, **overrides) -> RunSummary:
+    fields = dict(
+        run_id="run_test",
+        run_dir=tmp_path,
+        ticks_completed=3,
+        ticks_max=3,
+        total_events=5,
+        model="llama3.2",
+        timestamp="2026-08-26T00:00:00Z",
+        has_narrative=False,
+        has_tick_mechanics=False,
+        has_run_scenario=False,
+        scenario_title=None,
+        scenario_summary=None,
+    )
+    fields.update(overrides)
+    return RunSummary(**fields)
+
+
+def test_degraded_run_is_flagged_above_every_tab(tmp_path):
+    """P0.1: Der Banner sitzt im Kopf der Seite, nicht in einer einzelnen Ansicht."""
+
+    rendered = _text(runs_page._meta(_summary(tmp_path, degraded=True, llm_incident_count=3)))
+
+    assert "beeinträchtigt" in rendered
+    assert "3 Aufrufe" in rendered
+    assert "llm_incidents.json" in rendered
+
+
+def test_a_single_incident_is_phrased_in_the_singular(tmp_path):
+    rendered = _text(runs_page._meta(_summary(tmp_path, degraded=True, llm_incident_count=1)))
+
+    assert "ein Aufruf" in rendered
+
+
+def test_a_clean_run_gets_no_warning(tmp_path):
+    rendered = _text(runs_page._meta(_summary(tmp_path)))
+
+    assert "beeinträchtigt" not in rendered
 
 
 # --- Config-Editor ---------------------------------------------------------

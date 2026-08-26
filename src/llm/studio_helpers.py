@@ -112,13 +112,24 @@ def _build_mock_response(prompt: str) -> str:
 
 
 class LocalOllama:
+    """Ollama-Backend, konfiguriert über Umgebungsvariablen.
+
+    Seit P0.1 nur noch die Env-Übersetzung: gerechnet wird in `OllamaClient`.
+    Vorher hatte diese Klasse eine eigene HTTP-Schleife, die bei jedem
+    Netzwerkfehler still `_build_mock_response` zurückgab — eine erfundene
+    Antwort, die im Output von einer echten nicht zu unterscheiden war. Genau
+    dieser Zweig ist entfallen; ein Ausfall wirft jetzt, wie überall sonst.
+    """
+
     def __init__(self, model: str | None = None, base_url: str | None = None) -> None:
-        self.model = model or os.environ.get("OLLAMA_MODEL")
-        if not self.model:
+        model_name = model or os.environ.get("OLLAMA_MODEL")
+        if not model_name:
             raise RuntimeError("OLLAMA_MODEL nicht gesetzt")
+        self.model = model_name
 
         base = base_url or os.environ.get("OLLAMA_BASE_URL") or "http://127.0.0.1:11434"
-        self.url = base.rstrip("/") + "/api/generate"
+        self.base_url = base.rstrip("/")
+        self.url = self.base_url + "/api/generate"
         try:
             self.temperature = float(os.environ.get("OLLAMA_TEMPERATURE", "0.7"))
         except ValueError:
@@ -134,31 +145,17 @@ class LocalOllama:
             self.request_timeout = 180.0
 
     def call(self, prompt: str) -> str:
-        payload = {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": self.temperature,
-                "num_predict": self.max_tokens,
-            },
-        }
-        if self.system_prompt:
-            payload["system"] = self.system_prompt
+        from src.llm.llm_client import OllamaClient, OllamaConfig
 
-        read_timeout = self.request_timeout
-        if "Zu bewertende Paare" in prompt:
-            read_timeout = min(read_timeout, 120.0)
-
-        try:
-            response = requests.post(self.url, json=payload, timeout=(10, read_timeout))
-            response.raise_for_status()
-            data = response.json()
-            return str(
-                data.get("response") or data.get("text") or data.get("output") or json.dumps(data)
+        client = OllamaClient(
+            OllamaConfig(
+                base_url=self.base_url,
+                model=self.model,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
             )
-        except requests.RequestException:
-            return _build_mock_response(prompt)
+        )
+        return client.call(prompt, system_prompt=self.system_prompt)
 
 
 class LocalLlamaHTTP:

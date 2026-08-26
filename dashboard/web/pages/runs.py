@@ -74,6 +74,30 @@ def default_selection() -> dict | None:
     return {"run_id": runs[0].run_id, "run_dir": str(runs[0].run_dir)}
 
 
+def _degraded_banner(summary: RunSummary) -> html.Div | None:
+    """Warnung über allen Tabs, wenn das Sprachmodell während des Laufs ausfiel.
+
+    Steht bewusst hier und nicht in einer der sieben Ansichten: Die Einschränkung
+    betrifft jede von ihnen, und wer direkt in «Figures» einsteigt, soll sie
+    genauso sehen wie jemand, der bei «Szenario» anfängt.
+    """
+
+    if not summary.degraded:
+        return None
+
+    count = summary.llm_incident_count
+    calls = "ein Aufruf" if count == 1 else f"{count} Aufrufe"
+    return ui.alert(
+        f"**Dieser Lauf ist beeinträchtigt.** {calls} an das Sprachmodell blieben "
+        "unbeantwortet. Die gerechneten Zahlen sind davon unberührt — Preise, "
+        "Buchungsraten und Faktorzustände kommen aus Python. Fehlen können "
+        "Beiträge der Akteure und Teile der Deutung. Einzelheiten in "
+        "`llm_incidents.json` unter «Dateien».",
+        "warning",
+        class_name="mb-3",
+    )
+
+
 def _meta(summary: RunSummary) -> html.Div:
     preview = summary.scenario_summary or "Kein Szenario-Preview — Run ohne `run_scenario.json`."
     return html.Div(
@@ -84,6 +108,7 @@ def _meta(summary: RunSummary) -> html.Div:
                 f"Modell {summary.model or '—'}",
                 className=f"{ui.CAPTION} mb-2",
             ),
+            _degraded_banner(summary),
             ui.alert(preview, "info"),
         ]
     )

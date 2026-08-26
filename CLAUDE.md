@@ -33,11 +33,11 @@ Zwei Regeln dazu: Was der Code nicht tut, darf die Doku nicht behaupten — lieb
 - `src/cib/` — CIB-Konsistenzbewertung (`scenario_consistency.py`) plus die darauf aufbauende LLM-Szenario-Narrative-Schicht
 - `src/orchestration/` — Tick-Loop, LangGraph-Wiring, Checkpointing, Szenario-Sweeps (`simulation_runner.py`, `langgraph_workflow.py`, `scenario_sweeps.py`, Environment-Node)
 - `src/reporting/` — alles, was nach/während eines Laufs geschrieben oder dargestellt wird: `output_writer/`, `run_scenario_generator/`, `figure_generator/` (jeweils eigene Unterpakete), plus `protocol_generator.py`, `state_explorer.py`, `cib_visualizer.py`
-- `src/llm/` — LLM-Backend-Auswahl und Ollama-Client
+- `src/llm/` — LLM-Backend-Auswahl und **der eine** Ollama-Client (`llm_client.OllamaClient`: Retry mit Backoff, dann `RuntimeError`). `studio_helpers.LocalOllama` ist nur noch die Env-Übersetzung davor; einen zweiten, still mockenden Client gibt es seit P0.1 nicht mehr
 - `src/models/` — Pydantic-Datenmodelle (State, Events, Agenten, Population, Properties, CIB) — bewusst eine gemeinsame Schicht, nicht weiter aufgeteilt (fragile Import-Reihenfolge, siehe unten)
 - `src/prompts/` — Prompt-Templates pro Agent (`consumer.md`, `provider.md`, `regulator.md`)
 - `src/legacy/` — abgelöste Komponenten (z. B. `CIBExtractorNode`), nicht Teil der aktiven Pipeline
-- `src/run_simulation.py`, `src/config_loader.py`, `src/validation.py` — bleiben bewusst Top-Level (CLI-Einstieg bzw. von mehreren Paketen genutzt)
+- `src/run_simulation.py`, `src/config_loader.py`, `src/validation.py`, `src/logging_setup.py` — bleiben bewusst Top-Level (CLI-Einstieg bzw. von mehreren Paketen genutzt)
 
 Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 
@@ -65,6 +65,7 @@ Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 Diese Prinzipien sind der eigentliche USP des Produkts (Schutz vor LLM-Halluzination) und dürfen nie aufgeweicht werden:
 
 1. **Zahlen kommen immer aus Python, nie vom LLM.** Preise, Booking-Raten, Faktorzustände etc. werden deterministisch berechnet (`src/market/simulation_functions.py`, `src/market/market_rules.py`, `src/market/factor_dynamics.py`). LLM-Agenten liefern ausschließlich Narrative/Events, nie Kennzahlen.
+   **Und ein Ausfall ist sichtbar.** Kein Codepfad darf eine erfundene Antwort an die Stelle einer echten setzen, ohne das festzuhalten. Fällt ein LLM-Aufruf aus, wird er über `logging` gemeldet, landet als `LLMIncident` in `state.llm_incidents`, wird nach `llm_incidents.json` geschrieben und markiert den Lauf in `run_metadata.json` als `degraded` — das Dashboard zeigt ihn dann mit Warnbanner. Ein bewusster Mock-Lauf (`--mock-llm`) ist **kein** Ausfall und wird nicht so markiert. Wer einen neuen LLM-Aufrufer baut, hängt ihn an diese Kette an.
 2. **Agenten dürfen nur vorschlagen, was ihr Profil erlaubt.** Regulator darf F2/F6 vorschlagen (Python-validiert über `AGENT_FACTOR_PERMISSIONS`), Provider/Consumer nur Events. Nicht ohne Rücksprache erweitern.
 3. **Die CIB-Matrix ist bewusst eingefroren** (`"frozen": true`). Sie darf sich nicht aus Simulationsläufen ableiten — sonst wird der Maßstab aus dem Messobjekt gewonnen (zirkulär).
 4. **Pydantic-Typisierung an allen Agenten-Grenzen** — jede Cross-Boundary-Datenstruktur ist ein typisiertes Modell in `src/models/`, keine rohen Dicts.

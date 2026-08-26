@@ -4,6 +4,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+from src.models.llm_models import LLMDegradation
 from src.reporting.output_writer.paths import ensure_output_dir, resolve_output_path
 
 
@@ -42,6 +43,14 @@ def save_run_metadata(
         "total_round_results": len(state.round_results),
         "total_price_history": len(state.price_history),
     }
+
+    # P0.1: Ein Lauf, dessen Sprachmodell ausgefallen ist, sagt das hier. Die
+    # drei Felder stehen immer in der Datei — auch bei einem sauberen Lauf —,
+    # damit ihre Abwesenheit nur eines heissen kann: aelter als P0.1.
+    degradation = LLMDegradation.from_incidents(list(getattr(state, "llm_incidents", []) or []))
+    metadata["degraded"] = degradation.degraded
+    metadata["llm_incident_count"] = degradation.incident_count
+    metadata["llm_degraded_ticks"] = degradation.degraded_ticks
 
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2, ensure_ascii=False)

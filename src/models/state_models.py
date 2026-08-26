@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
+from src.models.llm_models import LLMIncident
 from src.models.population_models import Individual
 from src.models.property_models import PropertiesConfig
 
@@ -103,6 +104,9 @@ class SimulationState(BaseModel):
     population_stats: list[dict[str, Any]] = Field(default_factory=list)
     applied_factor_rule_ids: list[str] = Field(default_factory=list)
     factor_timeseries: list[dict[str, Any]] = Field(default_factory=list)
+    #: Nicht beantwortete LLM-Aufrufe. Leer bei einem sauberen Lauf; der Default
+    #: macht ältere Checkpoints ohne dieses Feld weiterhin ladbar.
+    llm_incidents: list[LLMIncident] = Field(default_factory=list)
 
     @model_validator(mode="before")
     @classmethod
