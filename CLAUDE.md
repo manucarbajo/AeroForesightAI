@@ -37,7 +37,7 @@ Zwei Regeln dazu: Was der Code nicht tut, darf die Doku nicht behaupten — lieb
 - `src/models/` — Pydantic-Datenmodelle (State, Events, Agenten, Population, Properties, CIB) — bewusst eine gemeinsame Schicht, nicht weiter aufgeteilt (fragile Import-Reihenfolge, siehe unten)
 - `src/prompts/` — Prompt-Templates pro Agent (`consumer.md`, `provider.md`, `regulator.md`)
 - `src/legacy/` — abgelöste Komponenten (z. B. `CIBExtractorNode`), nicht Teil der aktiven Pipeline
-- `src/run_simulation.py`, `src/config_loader.py`, `src/validation.py`, `src/logging_setup.py` — bleiben bewusst Top-Level (CLI-Einstieg bzw. von mehreren Paketen genutzt)
+- `src/run_simulation.py`, `src/config_loader.py`, `src/validation.py`, `src/logging_setup.py` — bleiben bewusst Top-Level (CLI-Einstieg bzw. von mehreren Paketen genutzt). In `validation.py` gibt es zwei Wege in dieselbe Prüfung: `collect_state_errors` sammelt und wirft nicht (für Oberflächen, die alle Befunde auf einmal zeigen wollen), `validate_state` wirft (für den Runner). Neue Prüfungen gehören hierher, **nicht** in Eingabefelder des Dashboards — die CLI und handgeschriebene Configs kommen sonst daran vorbei
 
 Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 

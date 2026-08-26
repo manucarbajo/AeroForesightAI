@@ -61,6 +61,23 @@ Wiederholungen ohne festen Zufallsstartwert, abgeschaltete Szenario-Erzeugung un
 abgeschaltete eigene Werte. Ganz unten lässt sich der Stand als eigenes Preset
 sichern.
 
+Steht dort ein **roter Kasten**, ist die Konfiguration nicht lauffähig. Er nennt
+jeden Fehler einzeln — und der Knopf «Start» weist den Lauf dann auch ab, statt
+ihn anzufangen und unterwegs scheitern zu lassen. Geprüft wird:
+
+| Einstellung | Zulässig |
+|---|---|
+| Zufallsstartwert | 0 oder größer |
+| Kreativität der Agenten | 0 bis 2 |
+| Antwortlänge | mindestens 1 |
+| Ollama-Modell, Name des Laufs | nicht leer |
+| Länge des Laufs | mindestens 1 Tick |
+
+Dazu kommt die Referenz-Integrität: Verweist ein Agentenprofil in
+`agent_profiles.json` auf einen Faktor, den es nicht gibt, oder auf eine
+unbekannte Abhängigkeit, wird das ebenfalls hier gemeldet. Beides würde sonst
+lautlos ins Leere laufen — der Agent sähe den Faktor einfach nicht.
+
 ## Feinabstimmung
 
 In jedem Block steht vorn die Einstellung, die die Wirkung bestimmt. Alles

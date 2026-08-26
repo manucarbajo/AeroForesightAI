@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dash import dcc, html
 
-from dashboard.config_catalog import effective_config_summary, load_config_file
+from dashboard.config_catalog import effective_config_summary, load_config_file, validate_draft
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
 from dashboard.web.config_editor.overview import summary_id, summary_sentence
@@ -66,7 +66,20 @@ def layout(draft: dict) -> html.Div:
     ) as exc:  # noqa: BLE001 - eine kaputte Config soll erklärt, nicht verschluckt werden
         summary = {"Fehler": str(exc)}
 
+    # Fehler zuerst und sichtbar abgesetzt: Die Hinweise darunter sind Ratschläge,
+    # das hier verhindert den Start. Beides in einem Topf zu zeigen, würde genau
+    # die Unterscheidung verwischen, auf die es ankommt.
     warnings = []
+    config_errors = validate_draft(draft_from_dict(draft))
+    if config_errors:
+        warnings.append(
+            ui.alert(
+                "**Der Lauf kann so nicht starten.** "
+                + " · ".join(f"`{error}`" for error in config_errors),
+                "error",
+            )
+        )
+
     if not draft.get("use_seed") and int(draft.get("run_count") or 1) > 1:
         warnings.append(
             ui.alert(

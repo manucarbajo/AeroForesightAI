@@ -17,6 +17,7 @@ from src.orchestration.scenario_sweeps import (
     load_all_sweep_configs,
     load_sweep_config,
 )
+from src.validation import collect_state_errors
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -586,6 +587,23 @@ def prepare_simulation_state(draft: ConfigDraft):
         state.config.seed = int(draft.seed)
 
     return state
+
+
+def validate_draft(draft: ConfigDraft) -> list[str]:
+    """Was an dieser Konfiguration einen Lauf scheitern lassen würde.
+
+    Leere Liste heißt startklar. Absichtlich nicht werfend: Die Oberfläche will
+    alle Befunde auf einmal zeigen, statt sie einzeln aus Ausnahmen zu klauben.
+    Scheitert schon das Bauen des States (fehlende oder kaputte Config-Datei),
+    ist das ebenfalls ein Befund und keine Ausnahme, die nach oben durchschlägt.
+    """
+
+    try:
+        state = prepare_simulation_state(draft)
+    except Exception as exc:  # noqa: BLE001 - eine unlesbare Config ist ein Befund, kein Absturz
+        return [f"Konfiguration konnte nicht geladen werden: {exc}"]
+
+    return collect_state_errors(state)
 
 
 def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:

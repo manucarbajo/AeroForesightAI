@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-26 — P0.1 erledigt, **P0.2 wartet auf eine Entscheidung von Manu** ([Details](#p02--f7-drift-auflösen)) · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-26 — P0.1 und P0.3 erledigt, **P0.2 wartet auf eine Entscheidung von Manu** ([Details](#p02--f7-drift-auflösen)) · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -125,15 +125,23 @@ Die Drift ist **kein späterer Umbenennungsfehler**: Im allerersten Commit des R
 
 **Doku zieht mit:** `docs/handbuch/faktoren.md`, `docs/cib_role.md`, `docs/cib_rationale.md`, `CLAUDE.md` (Glossar).
 
-### P0.3 — `validate_config` implementieren
+### P0.3 — `validate_config` implementieren ✅ erledigt 2026-08-26
 
-**Befund:** `validate_config` gibt bedingungslos `[]` zurück, wird aber von `validate_state` behandelt, als würde echt geprüft. Fehlerhafte Configs laufen unbemerkt durch.
+**Befund (behoben):** `validate_config` gab bedingungslos `[]` zurück, wurde aber von `validate_state` behandelt, als würde echt geprüft. Fehlerhafte Configs liefen unbemerkt durch.
 
 **Fundstelle:** [`src/validation.py:54-55`](../src/validation.py); vestigieller Parameter `factor_ids` in `validate_agent` (Zeile 42-51) gleich mitnehmen.
 
 **Was zu tun ist:** Pflichtfelder, Wertebereiche (`llm.temperature`, `max_ticks`, Seeds) und Referenz-Integrität prüfen — insbesondere, ob Agenten auf existierende Faktor-IDs verweisen (dafür ist `factor_ids` gedacht). Fehler als Liste zurückgeben, im Dashboard vor dem Start anzeigen.
 
 **Fertig wenn:** Eine absichtlich kaputte Config wird beim Start mit klarer Meldung abgewiesen, Tests decken die Fälle ab.
+
+**Umgesetzt am 2026-08-26.** `validate_config` prüft Name, Modellname, `llm.temperature` (0–2), `llm.max_tokens` und den Seed; `validate_agent` benutzt endlich seinen `factor_ids`-Parameter und schlägt an, wenn ein Profil auf einen unbekannten Faktor oder eine unbekannte Abhängigkeit zeigt. Neu daneben: `collect_state_errors` sammelt alle Befunde, ohne zu werfen — `validate_state` bleibt der werfende Weg für den Runner. Das Dashboard zeigt die Liste im Tab «Kontrolle» und weist den Start ab, statt den Lauf anfangen zu lassen. `max_ticks` war bereits in `validate_clock` abgedeckt und wurde nicht dupliziert.
+
+Drei Dinge, die bei der Umsetzung dazukamen:
+
+- **Der Befund war belegbar, nicht theoretisch.** Ein negativer Seed kam durch alle Prüfungen und riss den Lauf erst im ersten Tick mit `ValueError: expected non-negative integer` aus numpy ab — im Dashboard sichtbar als „Lauf fehlgeschlagen: expected non-negative integer", ohne jeden Bezug zum Seed. Jetzt wird er vor dem Start mit Namensnennung abgewiesen.
+- **`depends_on` war die stillste Lücke.** `check_depends_on` kennt genau vier gültige Werte; alles andere landet im `else`-Zweig und gilt in **jedem** Tick als unerfüllt. Ein Tippfehler in `agent_profiles.json` hätte den Agentenkontext dauerhaft und lautlos beschnitten. Das Vokabular liegt jetzt als `KNOWN_DEPENDENCIES` in `agent_dependencies.py`, und die Validierung prüft dagegen — bewusst **eine** Quelle, keine zweite Liste (genau die Doppelung räumt P0.5 an anderer Stelle ab).
+- **Reihenfolge im Runner korrigiert.** `_seed_runtime` lief vor `validate_state`; jetzt umgekehrt. Erst prüfen, dann handeln.
 
 **Doku zieht mit:** `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/fehlerbilder.md`.
 
@@ -458,9 +466,9 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Faktoren / Modellsubstanz | P0.2, P2.1, P2.2, P2.3, P2.4 |
 | Markt / Preisbildung | P0.4 (Rule-Evaluatoren, `market_rules`), P0.5 (Berechtigungen), P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen, ungenutztes `current_tick`) |
 | Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), P3.5 (Klemmung, `print`), P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
-| Validierung / Checkpointing / Orchestrierung | P0.3 (`validate_config`, `factor_ids`), P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`) |
+| Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`) |
 | LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, P3.4 (hartcodierte Defaults) |
-| Dashboard | P1.2 (Teilstand über den Glob-Fallback), P3.6 (private Imports), P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen) |
+| Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), P3.6 (private Imports), P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen) |
 | LangGraph Studio | P3.3 |
 | Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests, der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction` und der drei `--deselect`-Zeilen in der CI) |
 | Sonstiges | P5.3 |

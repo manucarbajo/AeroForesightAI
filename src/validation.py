@@ -1,3 +1,4 @@
+from src.agents.agent_dependencies import KNOWN_DEPENDENCIES
 from src.models.agent_models import AgentConfig
 from src.models.enums import DistributionType
 from src.models.population_models import (
@@ -18,6 +19,11 @@ from src.models.state_models import (
     SimulationConfig,
     SimulationState,
 )
+
+#: Zulässiger Bereich für `llm.temperature`. Ollama nimmt Werte darüber
+#: entgegen, liefert aber nur noch Rauschen.
+MIN_TEMPERATURE = 0.0
+MAX_TEMPERATURE = 2.0
 
 
 class ValidationError(Exception):
@@ -40,6 +46,13 @@ def validate_factor(factor: FactorState) -> list[str]:
 
 
 def validate_agent(agent: AgentConfig, factor_ids: set[str]) -> list[str]:
+    """Prüft einen Agenten — inklusive der Faktoren, auf die sein Profil zeigt.
+
+    *factor_ids* wurde bis P0.3 entgegengenommen und nie benutzt. Genau dafür war
+    der Parameter gedacht: Ein Tippfehler in `agent_profiles.json` lässt den
+    Agenten den Faktor sonst einfach nicht sehen — ohne Fehler, ohne Hinweis.
+    """
+
     errors = []
 
     if not agent.goals:
@@ -48,11 +61,83 @@ def validate_agent(agent: AgentConfig, factor_ids: set[str]) -> list[str]:
     if agent.population_config:
         errors.extend(validate_population_config(agent.population_config))
 
+    errors.extend(_validate_agent_profile(agent, factor_ids))
+
+    return errors
+
+
+def _validate_agent_profile(agent: AgentConfig, factor_ids: set[str]) -> list[str]:
+    profile = agent.profile
+    if profile is None:
+        return []
+
+    errors: list[str] = []
+    known = ", ".join(sorted(factor_ids)) if factor_ids else "keine"
+
+    for factor_id in profile.observed_factors:
+        if factor_id not in factor_ids:
+            errors.append(
+                f"agent '{agent.id}': observes verweist auf unbekannten Faktor "
+                f"'{factor_id}' (bekannt: {known})"
+            )
+
+    for entry in profile.may_propose:
+        if not entry.startswith("factor_state "):
+            continue
+        factor_id = entry.removeprefix("factor_state ").strip()
+        if factor_id not in factor_ids:
+            errors.append(
+                f"agent '{agent.id}': may_propose verweist auf unbekannten Faktor "
+                f"'{factor_id}' (bekannt: {known})"
+            )
+
+    for dependency in profile.depends_on:
+        if dependency not in KNOWN_DEPENDENCIES:
+            errors.append(
+                f"agent '{agent.id}': depends_on '{dependency}' ist unbekannt und würde in "
+                f"jedem Tick als unerfüllt gelten (erlaubt: "
+                f"{', '.join(sorted(KNOWN_DEPENDENCIES))})"
+            )
+
     return errors
 
 
 def validate_config(config: SimulationConfig) -> list[str]:
-    return []
+    """Pflichtfelder und Wertebereiche der Lauf-Konfiguration.
+
+    Bis P0.3 stand hier `return []` — die Funktion wurde von `validate_state`
+    aufgerufen, als würde sie prüfen. Gemeldet wird nur, was einen Lauf falsch
+    oder unmöglich macht; eine leere `description` etwa blockiert nichts und
+    bleibt erlaubt.
+    """
+
+    errors: list[str] = []
+
+    if not config.name.strip():
+        errors.append("config: name darf nicht leer sein")
+
+    if not config.llm.model.strip():
+        errors.append("config: llm.model darf nicht leer sein")
+
+    if not (MIN_TEMPERATURE <= config.llm.temperature <= MAX_TEMPERATURE):
+        errors.append(
+            f"config: llm.temperature ({config.llm.temperature}) muss zwischen "
+            f"{MIN_TEMPERATURE} und {MAX_TEMPERATURE} liegen"
+        )
+
+    if config.llm.max_tokens < 1:
+        errors.append(f"config: llm.max_tokens ({config.llm.max_tokens}) muss mindestens 1 sein")
+
+    # Der einzige Wert hier, der heute schon einen Lauf zerreißt: `default_rng`
+    # im Bevölkerungs-Sampling wirft bei negativem Seed `ValueError: expected
+    # non-negative integer` — mitten im ersten Tick, ohne Bezug zum Seed.
+    if config.seed is not None and config.seed < 0:
+        errors.append(
+            f"config: seed ({config.seed}) muss 0 oder größer sein — "
+            "negative Werte brechen die Bevölkerungsziehung ab"
+        )
+
+    return errors
 
 
 def validate_clock(clock: SimulationClock) -> list[str]:
@@ -195,8 +280,16 @@ def _validate_trajectory(prop: SystemProperty, prefix: str) -> list[str]:
     return errors
 
 
-def validate_state(state: SimulationState) -> list[str]:
-    errors = []
+def collect_state_errors(state: SimulationState) -> list[str]:
+    """Alle Befunde einsammeln, ohne zu werfen.
+
+    Der Einstieg für alles, was Fehler *anzeigen* statt abbrechen will — das
+    Dashboard weist einen Lauf damit vor dem Start ab, statt ihn mitten im
+    ersten Tick scheitern zu lassen. Gesammelt wird vollständig: Wer eine Config
+    repariert, will alle Fehler auf einmal sehen und nicht einen pro Anlauf.
+    """
+
+    errors: list[str] = []
 
     errors.extend(validate_config(state.config))
     errors.extend(validate_properties_config(state.resolved_properties()))
@@ -214,6 +307,19 @@ def validate_state(state: SimulationState) -> list[str]:
 
     if not state.environment.factors:
         errors.append("keine faktoren konfiguriert")
+
+    return errors
+
+
+def validate_state(state: SimulationState) -> list[str]:
+    """Wie `collect_state_errors`, wirft aber bei Befunden.
+
+    Der werfende Weg für den Runner: ein Lauf mit kaputter Config soll gar nicht
+    erst anfangen. Der Rückgabewert ist deshalb immer die leere Liste — wer die
+    Befunde *lesen* will, nimmt `collect_state_errors`.
+    """
+
+    errors = collect_state_errors(state)
 
     if errors:
         raise ValidationError("validierungsfehler:\n" + "\n".join(f"  - {e}" for e in errors))

@@ -250,6 +250,25 @@ def test_overview_summarises_the_draft_in_plain_language():
     assert "ohne Sprachmodell" in sentence
 
 
+def test_control_panel_refuses_a_config_that_cannot_run():
+    """P0.3: Fehler stehen im Tab «Kontrolle», bevor jemand auf Start drückt."""
+
+    draft = initial_draft_dict()
+    draft["use_seed"] = True
+    draft["seed"] = -1
+
+    rendered = _text(config_editor.tab_layout("save", draft))
+
+    assert "kann so nicht starten" in rendered
+    assert "seed" in rendered
+
+
+def test_control_panel_stays_quiet_for_a_healthy_config():
+    rendered = _text(config_editor.tab_layout("save", initial_draft_dict()))
+
+    assert "kann so nicht starten" not in rendered
+
+
 def test_control_panel_warns_about_settings_that_surprise_later():
     draft = initial_draft_dict()
     draft["no_scenarios"] = True

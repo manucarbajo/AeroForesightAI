@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from dash import Input, Output, State, dcc, html, no_update
 
+from dashboard.config_catalog import validate_draft
 from dashboard.web import components as ui
 from dashboard.web import config_editor, runner
-from dashboard.web.state import STORE_ID, initial_draft_dict
+from dashboard.web.state import STORE_ID, draft_from_dict, initial_draft_dict
 
 #: Abstand, in dem das Log nachgezogen wird. Kürzer wirkt hektisch und erzeugt
 #: nur Last; länger lässt den Lauf tot wirken.
@@ -138,6 +139,24 @@ def register_callbacks(app) -> None:
     def _start(n_clicks: int | None, draft: dict | None):
         if not n_clicks:
             return no_update, no_update, no_update, no_update, no_update
+
+        # Vor dem Start prüfen, nicht danach: Ohne das läuft eine kaputte Config
+        # an und scheitert irgendwo im ersten Tick — ein negativer Seed etwa mit
+        # «expected non-negative integer» aus numpy, ohne Bezug zum Seed.
+        config_errors = validate_draft(draft_from_dict(draft or {}))
+        if config_errors:
+            return (
+                no_update,
+                no_update,
+                ui.alert(
+                    "**Lauf nicht gestartet — die Konfiguration hat Fehler:**\n\n"
+                    + "\n".join(f"- {error}" for error in config_errors),
+                    "error",
+                ),
+                no_update,
+                False,
+            )
+
         try:
             job_id = runner.start(draft or {})
         except Exception as exc:  # noqa: BLE001 - «läuft schon» ist ein normaler Fall

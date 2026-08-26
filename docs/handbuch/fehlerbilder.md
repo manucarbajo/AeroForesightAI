@@ -63,6 +63,20 @@ Entweder wurde der Lauf mit «Keine Szenarien erzeugen» gerechnet, oder er wurd
 abgebrochen, bevor die Auswertung lief. Im ersten Fall hilft der Knopf «Szenarien
 neu erzeugen» im selben Tab — der Lauf muss dafür nicht wiederholt werden.
 
+## Der Lauf startet gar nicht erst
+
+Statt eines Fortschrittsfensters erscheint ein roter Kasten mit einer Liste. Dann
+hat die Konfiguration einen Fehler, der den Lauf sicher scheitern ließe — er wird
+deshalb abgewiesen, bevor er anfängt.
+
+Die häufigsten Fälle: ein negativer Zufallsstartwert, eine Kreativität außerhalb
+von 0 bis 2, eine Antwortlänge von 0, oder ein Agentenprofil, das auf einen
+Faktor verweist, den es nicht gibt. Jeder Punkt der Liste nennt das betroffene
+Feld; im Tab **Kontrolle** steht dieselbe Liste schon vor dem Klick auf «Start».
+
+Angezeigt werden immer **alle** Fehler auf einmal, nicht einer nach dem anderen —
+eine Konfiguration lässt sich so in einem Durchgang reparieren.
+
 ## Der Lauf ist als beeinträchtigt markiert
 
 Über den Tabs steht ein gelber Hinweis, dass Aufrufe an das Sprachmodell

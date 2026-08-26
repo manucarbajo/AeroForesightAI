@@ -5,6 +5,22 @@ from __future__ import annotations
 from src.models.agent_models import AgentConfig, AgentProfile
 from src.models.state_models import SimulationState
 
+#: Die einzigen `depends_on`-Werte, die `check_depends_on` unten auflösen kann.
+#: Alles andere landet dort im `else`-Zweig und gilt in **jedem** Tick als
+#: unerfüllt — ein Tippfehler in `agent_profiles.json` würde den Agentenkontext
+#: also dauerhaft und lautlos beschneiden. `src/validation.py` prüft gegen diese
+#: Konstante, damit so etwas beim Start auffällt statt nie. Bewusst eine Quelle:
+#: eine zweite Liste in der Validierung wäre genau die Doppelung, die P0.5
+#: gerade an anderer Stelle abräumt.
+KNOWN_DEPENDENCIES: frozenset[str] = frozenset(
+    {
+        "provider.events",
+        "regulator.proposed_state",
+        "consumer.booking_rate",
+        "regulatory_influences",
+    }
+)
+
 
 def resolve_parallel_agent_order(agents: list[AgentConfig]) -> list[str]:
     """Return provider/regulator agent ids in depends_on-safe execution order."""
