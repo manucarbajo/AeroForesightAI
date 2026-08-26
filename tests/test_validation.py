@@ -80,7 +80,10 @@ def test_empty_name_is_rejected():
 
 
 def test_empty_model_is_rejected():
-    assert "llm.model" in _messages(validate_config(_config(llm=LLMConfig(model=""))))
+    errors = validate_config(_config(llm=LLMConfig(model="")))
+
+    assert "Modellname" in _messages(errors)
+    assert "config.llm" in _messages(errors)
 
 
 def test_empty_description_is_allowed():
@@ -194,6 +197,56 @@ def test_the_dashboard_reports_nothing_for_a_healthy_draft():
     from dashboard.config_catalog import ConfigDraft, validate_draft
 
     assert validate_draft(ConfigDraft(rounds=2)) == []
+
+
+def test_the_dashboard_checks_the_llm_values_it_actually_uses():
+    """Die Lücke, die der erste Anlauf von P0.3 offen ließ.
+
+    `prepare_simulation_state` überträgt vom Draft nur den Seed; Modellname,
+    Temperatur und Antwortlänge gehen über `RunLaunchConfig` direkt an den
+    Client. Geprüft wurde vorher `state.config.llm` — ein Feld, das kein
+    Laufpfad liest. Ein Draft mit diesen Werten galt deshalb als fehlerfrei.
+    """
+
+    from dashboard.config_catalog import ConfigDraft, validate_draft
+
+    errors = validate_draft(ConfigDraft(rounds=2, temperature=5.0, max_tokens=0, model=""))
+
+    assert len(errors) == 3
+    assert "temperature" in _messages(errors)
+    assert "max_tokens" in _messages(errors)
+    assert "Modellname" in _messages(errors)
+
+
+# --- Eine Regelquelle für drei Herkunftsorte -------------------------------
+
+
+def test_llm_rules_live_in_one_place():
+    """Config, Draft und CLI müssen denselben Wert gleich beurteilen."""
+
+    from dashboard.config_catalog import ConfigDraft, validate_draft
+    from src.validation import validate_llm_settings
+
+    direct = validate_llm_settings("llama3.2", 5.0, 2048, context="X")
+    from_draft = validate_draft(ConfigDraft(rounds=2, temperature=5.0))
+    from_config = validate_config(_config(llm=LLMConfig(temperature=5.0)))
+
+    assert len(direct) == 1
+    # Gleicher Befund, nur mit dem jeweiligen Herkunftsort davor.
+    for errors in (direct, from_draft, from_config):
+        assert "temperature (5.0) muss zwischen 0.0 und 2.0 liegen" in _messages(errors)
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [("config.llm", "config.llm:"), ("Technik", "Technik:"), ("CLI", "CLI:")],
+)
+def test_the_message_names_where_the_value_came_from(context, expected):
+    from src.validation import validate_llm_settings
+
+    errors = validate_llm_settings("m", 9.0, 1, context=context)
+
+    assert _messages(errors).startswith(expected)
 
 
 def test_an_unreadable_config_file_becomes_a_finding_not_a_crash():

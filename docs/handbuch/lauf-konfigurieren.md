@@ -70,8 +70,11 @@ ihn anzufangen und unterwegs scheitern zu lassen. Geprüft wird:
 | Zufallsstartwert | 0 oder größer |
 | Kreativität der Agenten | 0 bis 2 |
 | Antwortlänge | mindestens 1 |
-| Ollama-Modell, Name des Laufs | nicht leer |
+| Ollama-Modell | nicht leer |
 | Länge des Laufs | mindestens 1 Tick |
+
+Der **Name des Laufs** darf leer bleiben — dann greift der Name aus
+`simulation_config.json`. Leer sein darf er nur dort nicht.
 
 Dazu kommt die Referenz-Integrität: Verweist ein Agentenprofil in
 `agent_profiles.json` auf einen Faktor, den es nicht gibt, oder auf eine

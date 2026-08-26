@@ -84,6 +84,32 @@ def test_local_ollama_raises_instead_of_faking_an_answer(monkeypatch) -> None:
     assert "connection refused" in str(excinfo.value)
 
 
+def test_local_ollama_passes_its_own_timeout_variable_through(monkeypatch) -> None:
+    """`OLLAMA_TIMEOUT_SECONDS` war nach der Client-Zusammenführung wirkungslos.
+
+    `LocalOllama.__init__` las die Variable weiter in `self.request_timeout`,
+    aber `call` delegierte an den Client, der nur `OLLAMA_READ_TIMEOUT` kennt —
+    totes Attribut, still geänderte Bedeutung.
+    """
+
+    monkeypatch.setenv("OLLAMA_MODEL", "llama3.2")
+    monkeypatch.setenv("OLLAMA_TIMEOUT_SECONDS", "42")
+
+    seen: dict[str, object] = {}
+
+    def _capture(url, json=None, timeout=None, **kwargs):
+        seen["timeout"] = timeout
+        raise requests.ConnectionError("kein Server")
+
+    monkeypatch.setattr(requests, "post", _capture)
+
+    with pytest.raises(RuntimeError):
+        LocalOllama().call("Frage")
+
+    # (connect_timeout, read_timeout) — die 42 muss durchgereicht worden sein.
+    assert seen["timeout"][1] == 42.0
+
+
 def test_mock_llm_stays_a_deliberate_backend() -> None:
     """`--mock-llm` ist kein Ausfall: `MockLLM` antwortet weiterhin ohne Fehler."""
 

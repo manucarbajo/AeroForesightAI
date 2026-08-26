@@ -102,6 +102,42 @@ def _validate_agent_profile(agent: AgentConfig, factor_ids: set[str]) -> list[st
     return errors
 
 
+def validate_llm_settings(
+    model: str,
+    temperature: float,
+    max_tokens: int,
+    *,
+    context: str,
+) -> list[str]:
+    """Die Regeln für Modellname, Temperatur und Antwortlänge — an *einer* Stelle.
+
+    Diese Werte stehen im Projekt an drei Orten: in `simulation_config.json`
+    (`config.llm`), im Dashboard-Draft und in den CLI-Argumenten. Nur die letzten
+    beiden erreichen tatsächlich den `OllamaClient` — `config.llm` liest heute
+    kein Laufpfad (siehe P3.4). Geprüft werden trotzdem alle drei, aber gegen
+    dieselbe Regel: eine zweite Regelquelle wäre genau die Doppelung, die P0.4
+    und P0.5 an anderer Stelle abräumen.
+
+    *context* sagt, wo der Wert herkommt, damit die Meldung zum Ort passt.
+    """
+
+    errors: list[str] = []
+
+    if not str(model).strip():
+        errors.append(f"{context}: Modellname darf nicht leer sein")
+
+    if not (MIN_TEMPERATURE <= temperature <= MAX_TEMPERATURE):
+        errors.append(
+            f"{context}: temperature ({temperature}) muss zwischen "
+            f"{MIN_TEMPERATURE} und {MAX_TEMPERATURE} liegen"
+        )
+
+    if max_tokens < 1:
+        errors.append(f"{context}: max_tokens ({max_tokens}) muss mindestens 1 sein")
+
+    return errors
+
+
 def validate_config(config: SimulationConfig) -> list[str]:
     """Pflichtfelder und Wertebereiche der Lauf-Konfiguration.
 
@@ -116,17 +152,14 @@ def validate_config(config: SimulationConfig) -> list[str]:
     if not config.name.strip():
         errors.append("config: name darf nicht leer sein")
 
-    if not config.llm.model.strip():
-        errors.append("config: llm.model darf nicht leer sein")
-
-    if not (MIN_TEMPERATURE <= config.llm.temperature <= MAX_TEMPERATURE):
-        errors.append(
-            f"config: llm.temperature ({config.llm.temperature}) muss zwischen "
-            f"{MIN_TEMPERATURE} und {MAX_TEMPERATURE} liegen"
+    errors.extend(
+        validate_llm_settings(
+            config.llm.model,
+            config.llm.temperature,
+            config.llm.max_tokens,
+            context="config.llm",
         )
-
-    if config.llm.max_tokens < 1:
-        errors.append(f"config: llm.max_tokens ({config.llm.max_tokens}) muss mindestens 1 sein")
+    )
 
     # Der einzige Wert hier, der heute schon einen Lauf zerreißt: `default_rng`
     # im Bevölkerungs-Sampling wirft bei negativem Seed `ValueError: expected

@@ -17,7 +17,7 @@ from src.orchestration.scenario_sweeps import (
     load_all_sweep_configs,
     load_sweep_config,
 )
-from src.validation import collect_state_errors
+from src.validation import collect_state_errors, validate_llm_settings
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -603,7 +603,23 @@ def validate_draft(draft: ConfigDraft) -> list[str]:
     except Exception as exc:  # noqa: BLE001 - eine unlesbare Config ist ein Befund, kein Absturz
         return [f"Konfiguration konnte nicht geladen werden: {exc}"]
 
-    return collect_state_errors(state)
+    errors = collect_state_errors(state)
+
+    # Die Sprachmodell-Felder des Drafts landen **nicht** im State — sie gehen
+    # über `RunLaunchConfig` direkt an den `OllamaClient` (das Durchschreiben
+    # nach `config.llm` ist P3.4). Ohne diese Zeilen prüfte die Oberfläche
+    # deshalb die Werte aus der Config-Datei statt die eingestellten: ein Draft
+    # mit temperature=5.0 und max_tokens=0 galt als fehlerfrei.
+    errors.extend(
+        validate_llm_settings(
+            draft.model,
+            draft.temperature,
+            draft.max_tokens,
+            context="Technik",
+        )
+    )
+
+    return errors
 
 
 def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:

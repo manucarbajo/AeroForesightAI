@@ -50,6 +50,7 @@ from src.reporting.protocol_generator import (
     render_protocol_markdown,
 )
 from src.reporting.run_scenario_generator import generate_and_save_run_scenario
+from src.validation import ValidationError, validate_llm_settings
 
 
 def _parse_args() -> argparse.Namespace:
@@ -407,6 +408,17 @@ def main() -> int:
     # soll auch im stillen Modus zu sehen sein.
     configure_logging(logging.WARNING if args.quiet else logging.INFO)
     load_env()
+
+    # Diese drei gehen direkt an den `OllamaClient` und nie durch `validate_state`
+    # — ohne die Prüfung hier käme ein `--temperature 99` erst beim Modell an.
+    llm_errors = validate_llm_settings(
+        args.model,
+        args.temperature,
+        args.max_tokens,
+        context="CLI",
+    )
+    if llm_errors:
+        raise ValidationError("validierungsfehler:\n" + "\n".join(f"  - {e}" for e in llm_errors))
 
     if args.studio:
         if args.resume is not None:

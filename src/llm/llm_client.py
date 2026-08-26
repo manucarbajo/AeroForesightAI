@@ -27,6 +27,12 @@ class OllamaConfig:
     model: str = "llama3.2"
     temperature: float = 0.7
     max_tokens: int = 2048
+    #: Lesetimeout der ersten Runde in Sekunden. ``None`` heißt: aus
+    #: ``OLLAMA_READ_TIMEOUT`` nehmen (Default 120). Explizit gesetzt, damit
+    #: Aufrufer mit eigener Timeout-Quelle — `LocalOllama` liest
+    #: ``OLLAMA_TIMEOUT_SECONDS`` — sie durchreichen können, statt sie still
+    #: verfallen zu lassen.
+    read_timeout: float | None = None
 
 
 class OllamaClient:
@@ -48,10 +54,13 @@ class OllamaClient:
             payload["system"] = system_prompt
 
         # Configurable timeouts/retries. Use env vars to tune behaviour if needed.
-        try:
-            read_timeout_base = float(os.environ.get("OLLAMA_READ_TIMEOUT", "120"))
-        except ValueError:
-            read_timeout_base = 120.0
+        if self.config.read_timeout is not None:
+            read_timeout_base = float(self.config.read_timeout)
+        else:
+            try:
+                read_timeout_base = float(os.environ.get("OLLAMA_READ_TIMEOUT", "120"))
+            except ValueError:
+                read_timeout_base = 120.0
         try:
             retries = int(os.environ.get("OLLAMA_RETRIES", "3"))
         except ValueError:

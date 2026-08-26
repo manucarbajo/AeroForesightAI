@@ -153,6 +153,11 @@ class LocalOllama:
                 model=self.model,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
+                # `OLLAMA_TIMEOUT_SECONDS` ist die Timeout-Quelle dieser Klasse.
+                # Ohne diese Zeile läse `__init__` sie weiter aus und niemand
+                # benutzte sie — ein totes Attribut und eine still wirkungslose
+                # Umgebungsvariable.
+                read_timeout=self.request_timeout,
             )
         )
         return client.call(prompt, system_prompt=self.system_prompt)
