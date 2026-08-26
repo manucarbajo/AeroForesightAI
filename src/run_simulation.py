@@ -411,14 +411,19 @@ def main() -> int:
 
     # Diese drei gehen direkt an den `OllamaClient` und nie durch `validate_state`
     # — ohne die Prüfung hier käme ein `--temperature 99` erst beim Modell an.
-    llm_errors = validate_llm_settings(
-        args.model,
-        args.temperature,
-        args.max_tokens,
-        context="CLI",
-    )
-    if llm_errors:
-        raise ValidationError("validierungsfehler:\n" + "\n".join(f"  - {e}" for e in llm_errors))
+    # Mit `--mock-llm` wird gar kein Client gebaut, dann wäre die Prüfung eine
+    # Schranke vor einer Tür, durch die niemand geht.
+    if not args.mock_llm:
+        llm_errors = validate_llm_settings(
+            args.model,
+            args.temperature,
+            args.max_tokens,
+            context="CLI",
+        )
+        if llm_errors:
+            raise ValidationError(
+                "validierungsfehler:\n" + "\n".join(f"  - {e}" for e in llm_errors)
+            )
 
     if args.studio:
         if args.resume is not None:

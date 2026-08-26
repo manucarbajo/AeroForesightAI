@@ -69,10 +69,12 @@ Statt eines Fortschrittsfensters erscheint ein roter Kasten mit einer Liste. Dan
 hat die Konfiguration einen Fehler, der den Lauf sicher scheitern ließe — er wird
 deshalb abgewiesen, bevor er anfängt.
 
-Die häufigsten Fälle: ein negativer Zufallsstartwert, eine Kreativität außerhalb
-von 0 bis 2, eine Antwortlänge von 0, oder ein Agentenprofil, das auf einen
-Faktor verweist, den es nicht gibt. Jeder Punkt der Liste nennt das betroffene
-Feld; im Tab **Kontrolle** steht dieselbe Liste schon vor dem Klick auf «Start».
+Die häufigsten Fälle: ein negativer Zufallsstartwert, ein Lauf über null Ticks,
+oder ein Agentenprofil, das auf einen Faktor verweist, den es nicht gibt. Im
+Modus «Mit Sprachmodell» kommen die Ollama-Einstellungen dazu — Kreativität
+außerhalb von 0 bis 2, Antwortlänge 0, leerer Modellname. Jeder Punkt der Liste
+nennt das betroffene Feld; im Tab **Kontrolle** steht dieselbe Liste schon vor
+dem Klick auf «Start».
 
 Angezeigt werden immer **alle** Fehler auf einmal, nicht einer nach dem anderen —
 eine Konfiguration lässt sich so in einem Durchgang reparieren.

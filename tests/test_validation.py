@@ -210,12 +210,42 @@ def test_the_dashboard_checks_the_llm_values_it_actually_uses():
 
     from dashboard.config_catalog import ConfigDraft, validate_draft
 
-    errors = validate_draft(ConfigDraft(rounds=2, temperature=5.0, max_tokens=0, model=""))
+    errors = validate_draft(
+        ConfigDraft(rounds=2, mock_llm=False, temperature=5.0, max_tokens=0, model="")
+    )
 
     assert len(errors) == 3
     assert "temperature" in _messages(errors)
     assert "max_tokens" in _messages(errors)
     assert "Modellname" in _messages(errors)
+
+
+def test_a_run_without_a_language_model_is_not_blocked_by_ollama_settings():
+    """Die Prüfung darf keine Tür verriegeln, durch die niemand geht.
+
+    Beide unteren Rechenmodi («Ohne Sprachmodell» und «Nur Zahlen») setzen
+    `mock_llm`, und dann liefert `_build_llm()` ein `MockLLM` — Modellname,
+    Temperatur und Antwortlänge werden nie angefasst. Ein leeres Modellfeld darf
+    dort also keinen Lauf verhindern.
+    """
+
+    from dashboard.config_catalog import ConfigDraft, validate_draft
+
+    ohne_sprachmodell = ConfigDraft(rounds=2, mock_llm=True, model="", max_tokens=0)
+    nur_zahlen = ConfigDraft(
+        rounds=2, mock_llm=True, deterministic_only=True, model="", temperature=9.0
+    )
+
+    assert validate_draft(ohne_sprachmodell) == []
+    assert validate_draft(nur_zahlen) == []
+
+
+def test_with_a_language_model_the_settings_are_checked():
+    from dashboard.config_catalog import ConfigDraft, validate_draft
+
+    errors = validate_draft(ConfigDraft(rounds=2, mock_llm=False, temperature=5.0))
+
+    assert "temperature" in _messages(errors)
 
 
 # --- Eine Regelquelle für drei Herkunftsorte -------------------------------
@@ -228,7 +258,7 @@ def test_llm_rules_live_in_one_place():
     from src.validation import validate_llm_settings
 
     direct = validate_llm_settings("llama3.2", 5.0, 2048, context="X")
-    from_draft = validate_draft(ConfigDraft(rounds=2, temperature=5.0))
+    from_draft = validate_draft(ConfigDraft(rounds=2, mock_llm=False, temperature=5.0))
     from_config = validate_config(_config(llm=LLMConfig(temperature=5.0)))
 
     assert len(direct) == 1

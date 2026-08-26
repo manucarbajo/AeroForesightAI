@@ -610,14 +610,20 @@ def validate_draft(draft: ConfigDraft) -> list[str]:
     # nach `config.llm` ist P3.4). Ohne diese Zeilen prüfte die Oberfläche
     # deshalb die Werte aus der Config-Datei statt die eingestellten: ein Draft
     # mit temperature=5.0 und max_tokens=0 galt als fehlerfrei.
-    errors.extend(
-        validate_llm_settings(
-            draft.model,
-            draft.temperature,
-            draft.max_tokens,
-            context="Technik",
+    #
+    # Nur wenn sie auch benutzt werden: `mock_llm` bedeutet `MockLLM()`, und
+    # dann fasst niemand Modellname, Temperatur oder Antwortlänge an. Beide
+    # unteren Rechenmodi («Ohne Sprachmodell» und «Nur Zahlen») setzen das Feld,
+    # also darf ein leeres Modellfeld dort keinen Lauf verhindern.
+    if not draft.mock_llm:
+        errors.extend(
+            validate_llm_settings(
+                draft.model,
+                draft.temperature,
+                draft.max_tokens,
+                context="Technik",
+            )
         )
-    )
 
     return errors
 

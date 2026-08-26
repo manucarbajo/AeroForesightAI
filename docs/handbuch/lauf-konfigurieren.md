@@ -65,13 +65,17 @@ Steht dort ein **roter Kasten**, ist die Konfiguration nicht lauffähig. Er nenn
 jeden Fehler einzeln — und der Knopf «Start» weist den Lauf dann auch ab, statt
 ihn anzufangen und unterwegs scheitern zu lassen. Geprüft wird:
 
-| Einstellung | Zulässig |
-|---|---|
-| Zufallsstartwert | 0 oder größer |
-| Kreativität der Agenten | 0 bis 2 |
-| Antwortlänge | mindestens 1 |
-| Ollama-Modell | nicht leer |
-| Länge des Laufs | mindestens 1 Tick |
+| Einstellung | Zulässig | Wann geprüft |
+|---|---|---|
+| Zufallsstartwert | 0 oder größer | immer |
+| Länge des Laufs | mindestens 1 Tick | immer |
+| Ollama-Modell | nicht leer | nur bei «Mit Sprachmodell» |
+| Kreativität der Agenten | 0 bis 2 | nur bei «Mit Sprachmodell» |
+| Antwortlänge | mindestens 1 | nur bei «Mit Sprachmodell» |
+
+Die letzten drei betreffen ausschließlich Ollama. In den Modi «Ohne
+Sprachmodell» und «Nur Zahlen» wird gar kein Client aufgebaut — dort dürfen die
+Felder also stehen, wie sie wollen, und blockieren nichts.
 
 Der **Name des Laufs** darf leer bleiben — dann greift der Name aus
 `simulation_config.json`. Leer sein darf er nur dort nicht.
