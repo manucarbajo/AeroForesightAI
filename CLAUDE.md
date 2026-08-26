@@ -73,9 +73,17 @@ Diese Prinzipien sind der eigentliche USP des Produkts (Schutz vor LLM-Halluzina
 
 ## Dev-Workflow
 
-```powershell
-pip install -e ".[dev]"
+**Immer im venv arbeiten — und zwar in `.venv` im Repo-Wurzelverzeichnis.** Kein globales Python, kein anders benanntes Verzeichnis. Der Ordner ist in `.gitignore`, jede und jeder legt ihn lokal selbst an:
 
+```powershell
+py -3.12 -m venv .venv          # oder eine neuere 3.x; pyproject verlangt >= 3.11
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+```
+
+Alle folgenden Befehle setzen ein **aktiviertes** venv voraus:
+
+```powershell
 pytest                    # volle Test-Suite
 ruff check .               # Linting
 black --check .            # Formatierung prüfen (black . zum Formatieren)
@@ -84,6 +92,10 @@ python -m src.run_simulation --mock-llm --rounds 1 --quiet   # Smoke-Test ohne O
 python -m dashboard.web.app --port 8511                       # Landingpage auf /, Dashboard auf /app/
 python -m streamlit run dashboard/legacy_streamlit/app_researcher.py --server.port=8512   # Legacy-Vergleich
 ```
+
+Ohne Aktivierung liegen `pytest`, `ruff` und `black` nicht auf dem PATH — dann entweder aktivieren oder direkt aufrufen: `.\.venv\Scripts\ruff.exe check .`. Ein `python`, das nicht aus `.venv` kommt, findet das Paket `src` nicht, weil `pip install -e` nur ins venv geschrieben hat.
+
+**Warum das eine Konvention und keine Empfehlung ist:** [`.claude/launch.json`](.claude/launch.json) startet das Dashboard über `.venv/Scripts/python.exe`. Diese relative Angabe funktioniert auf jedem Rechner — aber nur, wenn das venv wirklich `.venv` heißt und dort liegt. Bis 2026-08-26 stand dort ein absoluter Pfad in ein fremdes Benutzerverzeichnis; das Dashboard ließ sich damit auf keinem anderen Rechner starten. Die Datei bleibt deshalb bewusst **versioniert** und gehört nicht in `.gitignore`: eine relative Angabe ist für alle richtig, eine ignorierte Datei müsste jede und jeder neu erfinden.
 
 `black` + `ruff` vor jedem Commit laufen lassen (CI in `.github/workflows/tests.yml` prüft beides plus Tests).
 

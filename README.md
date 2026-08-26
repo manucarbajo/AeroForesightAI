@@ -8,9 +8,15 @@ Drei Akteure (Consumer, Provider, Regulator) interagieren über einen tick-basie
 
 ## Setup
 
+Immer in einem venv arbeiten, und zwar in `.venv` im Repo-Wurzelverzeichnis — `.claude/launch.json` startet das Dashboard über genau diesen Pfad:
+
 ```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 ```
+
+Alle weiteren Befehle in dieser Datei setzen ein aktiviertes venv voraus.
 
 Für Formatierung/Linting vor jedem Commit:
 
