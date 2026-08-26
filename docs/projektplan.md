@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-26 — P0.1 erledigt · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-26 — P0.1 erledigt, **P0.2 wartet auf eine Entscheidung von Manu** ([Details](#p02--f7-drift-auflösen)) · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -59,11 +59,27 @@ Zwei Dinge, die bei der Umsetzung auffielen und über den Plan hinausgingen:
 
 ### P0.2 — F7-Drift auflösen
 
+> ## ⏳ OFFENE ENTSCHEIDUNG — dieses Paket wartet auf Manu
+>
+> **Frage:** Bedeutet **F7** „Geopolitische Stabilität" oder „Marktstruktur"?
+>
+> | Wer | Position | Stand |
+> | --- | --- | --- |
+> | **Haiko** | **Geopolitische Stabilität** | festgelegt am 2026-08-26 |
+> | **Manu** | — | **steht aus** ← hier fehlt die Antwort |
+>
+> Die Begründung steht unten unter *Entscheidungsgrundlage*; sie empfiehlt dieselbe Lesart wie Haiko.
+>
+> **Manu, wenn du das mit Claude durchgehst:** Es braucht von dir genau einen Satz — „F7 ist
+> Geopolitische Stabilität" oder „F7 ist Marktstruktur". Danach kann P0.2 sofort umgesetzt
+> werden; beide Wege sind unten unter *Umsetzung nach der Entscheidung* fertig ausgearbeitet,
+> Datei für Datei. Trag deine Antwort in die Tabelle oben ein, dann ist der Blocker weg.
+
 **Befund:** Die eingefrorene Matrix wurde für **F7 Marktstruktur** bewertet, die Simulation läuft mit **F7 Geopolitische Stabilität**. Die Zustände passen semantisch zufällig (offen/fragmentiert), die Bedeutung nicht. Matrix, Config, Doku und Outputs widersprechen sich — bei einem Produkt, dessen Verkaufsargument Reproduzierbarkeit ist, ist das teuer.
 
 **Fundstelle:** [`configs/factors.json`](../configs/factors.json) (F7 = "Geopolitische Stabilitaet") gegen [`configs/cib_frozen.json`](../configs/cib_frozen.json) (`metadata.note`, 168 Zellen inkl. `F*.*|F7.*`).
 
-**Entscheidungsgrundlage (erarbeitet am 2026-08-26) — die Entscheidung selbst steht noch aus.**
+**Entscheidungsgrundlage (erarbeitet am 2026-08-26).**
 
 Die Drift ist **kein späterer Umbenennungsfehler**: Im allerersten Commit des Repos (`7692a91`) steht in `factors.json` bereits "Geopolitische Stabilitaet" und in `cib_frozen.json` bereits "F7 Marktstruktur". Es gibt keine ursprüngliche Absicht, die wiederherzustellen wäre — die Lesart ist frei zu wählen.
 
@@ -84,9 +100,30 @@ Die Drift ist **kein späterer Umbenennungsfehler**: Im allerersten Commit des R
 
 **Abgrenzung zu P2.3 — abhängig von der Entscheidung:** Fällt sie auf **Marktstruktur**, ist hier nur umzubenennen und die 168 Einflusswerte bleiben unberührt; Phase 0 hängt dann nicht an einer Zellendurchsicht. Fällt sie auf **Geopolitische Stabilität** (die Empfehlung oben), sind die 48 F7-Zellen sachlich falsch und müssen neu bewertet werden — dann gehört P2.3 für diese Zellen vorgezogen, weil zweimal durchgehen der teure Weg ist. In beiden Fällen bleibt der mechanische Namensabgleich zwischen `factors.json` und `cib_frozen.json` Teil dieses Pakets.
 
-**Fertig wenn:** Faktorname in Config, Matrix, Doku und Run-Output identisch; Test grün.
+**Umsetzung nach der Entscheidung.** Beide Wege sind hier vollständig ausgeschrieben, damit nach dem einen fehlenden Satz nichts mehr zu klären ist.
 
-**Doku zieht mit:** `docs/handbuch/faktoren.md`, `docs/cib_role.md`, `CLAUDE.md` (Glossar).
+*Variante A — **Geopolitische Stabilität*** (Haikos Position und Empfehlung dieser Auswertung):
+
+1. `configs/factors.json`: Zustandsbezeichnungen entmischen — `F7.1` von „Offene Maerkte, Kooperation" auf „Offene Lufträume, multilaterale Kooperation", `F7.2` von „Fragmentierung, Konflikte" auf „Fragmentierung, Sperrungen, Konflikte". Name und Beschreibung bleiben.
+2. `configs/cib_frozen.json`: `metadata.factors` auf „F7 Geopolitische Stabilität" ziehen, `metadata.note` nachführen — **und die 48 F7-Zellen neu bewerten**, weil die heutigen Werte eine Marktlogik kodieren. Für diese Zellen [P2.3](#p23--matrix-provenienz-herstellen) vorziehen: Begründung gleich mitschreiben statt zweimal durchgehen. Die Matrix bleibt eingefroren (Invariante 3).
+3. [`scripts/rebuild_cib_frozen.py`](../scripts/rebuild_cib_frozen.py) mitziehen, damit ein Neubau dieselben Werte erzeugt.
+4. `docs/cib_role.md`: die Active/Passive-Tabelle enthält F7-Scores, die aus den alten Zellen stammen — nach der Neubewertung neu rechnen. `docs/cib_rationale.md`: die Zeilen zu `f7_oil_stress` und `f7_open_markets` sprechen von „Marktfragmentierung" und „offene, integrierte Märkte" und müssen auf die geopolitische Lesart (Ölpreis als Indikator geopolitischer Spannung) umgeschrieben werden.
+5. Test, der Faktor-IDs **und -Namen** zwischen `factors.json` und `cib_frozen.json` mechanisch vergleicht — damit die Drift nicht wiederkommt.
+6. Die Vorbedingung in [P2.2](#p22--cib-impact-balance-kriterium-implementieren) festschreiben: F7 wird pro Szenario als fixierter Deskriptor behandelt.
+7. `CLAUDE.md` (Glossar), `docs/handbuch/faktoren.md`.
+
+*Variante B — **Marktstruktur***:
+
+1. `configs/factors.json`: F7-Name auf „Marktstruktur", Beschreibung von „Offene Luftraeume, Konflikte, Pandemien" auf eine Marktbeschreibung; `F7.1`/`F7.2` auf „Offener, wettbewerblicher Markt" bzw. „Konsolidierung/Fragmentierung".
+2. `configs/cib_frozen.json` bleibt unberührt — das ist der Vorteil dieser Variante.
+3. Die beiden F7-Regeln überdenken: `oil_price_index` als **einzige** Ursache von Marktstruktur ist schwach, und die Wirkrichtung „Ölschock → Fragmentierung" ist ökonomisch eher umgekehrt (Ölschock → Insolvenzen → *Konsolidierung*).
+4. **Offene Schuld eintragen:** Die Engine kennt keinen Wettbewerbsbegriff (kein `competition`, `concentration`, `market_share`, `n_carriers`; ein Provider, ein Markup, ein Preis). F7 trüge dann einen Namen, den die Simulation nicht einlösen kann. Das gehört als neues Finding in `docs/audit_findings.md` und als eigenes Paket in Phase 2 — sonst entsteht genau die Sorte Claim-ohne-Deckung, die P2.1, P2.2 und P2.5 gerade abräumen.
+5. Test wie in Variante A, Schritt 5.
+6. `CLAUDE.md` (Glossar), `docs/handbuch/faktoren.md`, `docs/cib_role.md`, `docs/cib_rationale.md`.
+
+**Fertig wenn:** Faktorname in Config, Matrix, Doku und Run-Output identisch; Test grün; die Entscheidungstabelle oben trägt Manus Antwort.
+
+**Doku zieht mit:** `docs/handbuch/faktoren.md`, `docs/cib_role.md`, `docs/cib_rationale.md`, `CLAUDE.md` (Glossar).
 
 ### P0.3 — `validate_config` implementieren
 
