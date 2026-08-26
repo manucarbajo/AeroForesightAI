@@ -1,10 +1,20 @@
 # Projektplan
 
-**Stand:** 2026-08-25 · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-26 · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
 > **Verifiziert am 2026-08-25:** Jedes Finding wurde vor der Aufnahme einzeln gegen den Codestand geprüft. **Keines hat sich stillschweigend erledigt.** Drei Korrekturen gegenüber dem Audit-Text: die Streamlit-Duplikate betreffen nur noch `dashboard/legacy_streamlit/` (P5.2), die hartcodierten LLM-Defaults sind von 7 auf 10 Produktionsdateien gewachsen (P3.4), und der als "echter Bug" geführte Testfehler ist eine veraltete Testerwartung, kein Code-Fehler (P4.2).
+
+> **Gegengeprüft am 2026-08-26:** Nach dem Dash-Umbau und der neuen Landingpage wurde jede
+> Fundstelle noch einmal aufgeschlagen. **Siebzehn von zwanzig Paketen beschreiben den Codestand
+> unverändert korrekt.** Drei Befunde waren falsch oder überholt und sind unten ausgetauscht
+> (P1.1 Start-Flow, P1.2 Manifest, Testzahl in Phase 4); sechs Pakete haben einen technischen
+> Fallstrick bekommen, der vor der Umsetzung zu entscheiden ist (jeweils als **Fallstrick:**
+> ausgewiesen). Neu aufgenommen wurden vier Pakete für Themen, die bisher gar nicht im Plan
+> standen: **P0.6** (Run-Artefakte belegen den Reproduzierbarkeits-Claim nicht), **P1.4**
+> (die Landingpage kam im Plan nicht vor), **P2.5** (State-Explorer-Grounding) und **P4.3**
+> (Doku-Zahlen mechanisch halten).
 
 Gepflegt wird bei jeder abgeschlossenen Aufgabe (siehe [Doku-Pflicht in CLAUDE.md](../CLAUDE.md#doku-pflicht)). Jedes Arbeitspaket nennt **Befund**, **Fundstelle**, **Was zu tun ist**, **Fertig wenn** und **Doku, die mitzieht**. Ein behobenes Finding wird in `audit_findings.md` **entfernt**, nicht abgehakt.
 
@@ -13,6 +23,11 @@ Gepflegt wird bei jeder abgeschlossenen Aufgabe (siehe [Doku-Pflicht in CLAUDE.m
 - **API-Layer / Multi-Tenancy / Auth / Billing** — noch nicht im Scope (Phase 6).
 - **Kundengespräche und Vertrieb** — läuft außerhalb des Repos.
 - **IP-/Autorenschaftsfrage** — geklärt, kein Arbeitspaket mehr.
+- **Laufzeit und Skalierung** — bewusst offen, aber benannt: wie lange ein realistischer
+  LLM-Lauf tatsächlich dauert, steht nirgends. `dashboard/web/runner.py` sagt im eigenen
+  Docstring "Ein Lauf dauert Minuten", der 10.000-Tick-Benchmark lief mit `dummy_llm`
+  (siehe Phase 6). Für P1.1 ist das eine Annahme, kein gemessener Wert. Wird ein Paket,
+  sobald Phase 1 den Start-Flow festgezurrt hat.
 
 ---
 
@@ -28,7 +43,9 @@ Fünf Punkte, die das Kernversprechen "Zahlen aus Python, Narrativ vom LLM" dire
 
 **Was zu tun ist:** Jeden Fallback über `logging` statt `print` melden; im Run-Artefakt ein Feld `degraded: true` plus Zähler der Fallback-Ticks in `run_metadata.json` schreiben; im Dashboard einen sichtbaren Warnbanner auf jedem Lauf, der degradiert lief. Die zwei Clients auf einen zusammenführen und die laute Philosophie (Retry mit Backoff, dann `RuntimeError`) zum Standard machen.
 
-**Fertig wenn:** Ein Lauf mit abgeschaltetem Ollama ist im Dashboard auf den ersten Blick als degradiert erkennbar, und ein Test deckt das ab.
+**Fallstrick (2026-08-26):** "`print` durch `logging` ersetzen" bricht das Fortschritts-Log des Dashboards. [`dashboard/run_launcher.py:397`](../dashboard/run_launcher.py) fängt die Laufausgabe mit `contextlib.redirect_stdout(_StdoutTee())` ab — die Live-Zeilen unter «Simulation starten» werden **ausschließlich** von `print()` gespeist. Ohne einen `logging.Handler`, der in denselben Tee schreibt, bleibt das Fenster danach leer. Dieser Handler ist Teil dieses Pakets und muss **vor** P3.5 stehen, das dieselbe Umstellung im Scheduler macht.
+
+**Fertig wenn:** Ein Lauf mit abgeschaltetem Ollama ist im Dashboard auf den ersten Blick als degradiert erkennbar, das Fortschritts-Log zeigt weiterhin jede Zeile, und ein Test deckt beides ab.
 
 **Doku zieht mit:** `docs/handbuch/fehlerbilder.md`, `CLAUDE.md` (Invariante 1 um "Ausfall ist sichtbar" ergänzen).
 
@@ -39,6 +56,8 @@ Fünf Punkte, die das Kernversprechen "Zahlen aus Python, Narrativ vom LLM" dire
 **Fundstelle:** [`configs/factors.json`](../configs/factors.json) (F7 = "Geopolitische Stabilitaet") gegen [`configs/cib_frozen.json`](../configs/cib_frozen.json) (`metadata.note`, 168 Zellen inkl. `F*.*|F7.*`).
 
 **Was zu tun ist:** Entscheiden, welche Bedeutung F7 trägt. Dann Matrix, `factors.json`, Glossar und Handbuch auf **eine** Lesart ziehen. Danach ein Test, der Faktor-IDs und -Namen zwischen `factors.json` und `cib_frozen.json` mechanisch vergleicht, damit die Drift nicht wiederkommt.
+
+**Abgrenzung zu P2.3 (2026-08-26):** Hier fällt **nur die Benennung** — die 168 Einflusswerte bleiben unberührt. Das ist bewusst so geschnitten, damit Phase 0 nicht an einer Zellendurchsicht hängt. Der Preis: wer später in P2.3 jede Zelle begründet, geht sie ein zweites Mal durch. Wird P2.3 vorgezogen, fällt die F7-Entscheidung dort ohnehin an und dieses Paket schrumpft auf den Test.
 
 **Fertig wenn:** Faktorname in Config, Matrix, Doku und Run-Output identisch; Test grün.
 
@@ -62,7 +81,7 @@ Fünf Punkte, die das Kernversprechen "Zahlen aus Python, Narrativ vom LLM" dire
 
 **Fundstelle:** [`src/market/factor_dynamics.py:87`](../src/market/factor_dynamics.py) (`rule_matches`), [`src/population/population_sampler.py:243`](../src/population/population_sampler.py) (`_rule_matches`), [`src/market/market_rules.py`](../src/market/market_rules.py).
 
-**Verifiziert am 2026-08-25:** `rule_matches` (Zeile 87) kennt `tick`, `metric`, `at_least` und `system_property` — `_rule_matches` (Zeile 243) nur `system_property`. Die Divergenz ist real und unverändert.
+**Verifiziert am 2026-08-26:** `rule_matches` (Zeile 87) kennt `tick` (`gte`/`lte`/`eq`), `factor`, `metric` (`above`/`below`/`at_most`/`at_least`) und `system_property` (inkl. `at_least`) — `_rule_matches` (Zeile 243) nur exaktes `factor`-Matching und `system_property` mit `above`/`below`. Die Divergenz ist real und unverändert. (Die frühere Fassung dieser Zeile sagte "nur `system_property`" und widersprach damit dem eigenen Befund oben; `factor` kann der Sampler sehr wohl.)
 
 **Was zu tun ist:** Einen gemeinsamen Evaluator bauen, beide Aufrufer darauf ziehen. Unbekannte Bedingungstypen müssen **laut fehlschlagen** statt still `False` zurückzugeben — genau das hat die Divergenz so lange versteckt. `market_rules.py` entsprechend seinem tatsächlichen Inhalt benennen oder auflösen.
 
@@ -78,9 +97,23 @@ Fünf Punkte, die das Kernversprechen "Zahlen aus Python, Narrativ vom LLM" dire
 
 **Was zu tun ist:** Berechtigungen ausschließlich aus `configs/agent_profiles.json` ableiten, das Dict entfernen. Test, der eine in der JSON ergänzte Berechtigung end-to-end durchreicht.
 
-**Fertig wenn:** `agent_profiles.json` ist die einzige Quelle; eine Änderung dort wirkt ohne Codeänderung.
+**Fallstrick (2026-08-26):** Eine gemeinsame Quelle reicht nicht — es gibt auch zwei **Prüfstellen**. `agent_node.py` wertet `profile.may_propose` unabhängig von `factor_dynamics.validate_factor_proposals` aus. Beide nur auf dieselbe JSON zu ziehen, verschiebt die Doppelung, statt sie aufzulösen: die Regel steht dann weiterhin an zwei Orten und kann weiterhin auseinanderlaufen. Zusammenführen auf **eine** Funktion, die beide Aufrufer benutzen.
+
+**Fertig wenn:** `agent_profiles.json` ist die einzige Quelle **und** es gibt genau eine Funktion, die eine Berechtigung prüft; eine Änderung in der JSON wirkt ohne Codeänderung.
 
 **Doku zieht mit:** `docs/agent_profiles.md`, `CLAUDE.md` (Invariante 2).
+
+### P0.6 — Ein Lauf sagt, wie er entstanden ist
+
+**Befund (neu am 2026-08-26):** `run_metadata.json` belegt den Reproduzierbarkeits-Claim nicht. Geschrieben werden Modell, `base_url`, Temperatur, `max_tokens` und Tick-Zahlen — **nicht** der Seed, nicht `mock_llm`, nicht `deterministic_only`, kein Hash der verwendeten Configs, kein Codestand. An einem echten Artefakt geprüft (`outputs/sweeps/sweep_low_base/run_metadata.json`): dort steht `"model": "dummy_for_sweeps"`, aber weder mit welchem Seed gezogen wurde noch ob überhaupt ein LLM beteiligt war. Aus den Artefakten allein lässt sich ein Lauf heute nicht nachstellen — bei einem Produkt, dessen Verkaufsargument Reproduzierbarkeit ist, die teuerste Lücke in Phase 0.
+
+**Fundstelle:** [`src/reporting/output_writer/metadata.py:28-43`](../src/reporting/output_writer/metadata.py) (`save_run_metadata`); Aufrufer in [`src/run_simulation.py`](../src/run_simulation.py) und [`dashboard/run_launcher.py`](../dashboard/run_launcher.py).
+
+**Was zu tun ist:** `seed`, `mock_llm`, `deterministic_only`, einen Hash der geladenen Config-Dateien und den Codestand (Git-Commit, sofern verfügbar) in `run_metadata.json` schreiben. Die Ansicht «Ergebnisse ansehen» zeigt Seed und Rechenmodus im Überblick, damit ein Mock-Lauf nicht als echter Lauf präsentiert wird. Fällt mit P0.1 zusammen — der Degradations-Marker (`degraded`, Fallback-Zähler) gehört in dieselbe Datei und dieselbe Anzeige, also beides in einem Zug.
+
+**Fertig wenn:** Aus `run_metadata.json` allein ist erkennbar, mit welchem Seed und in welchem Rechenmodus ein Lauf entstanden ist; ein Test hält die Felder fest.
+
+**Doku zieht mit:** `docs/handbuch/ref-ausgaben.md`, `docs/handbuch/lauf-starten.md`, `README.md`.
 
 ---
 
@@ -88,25 +121,29 @@ Fünf Punkte, die das Kernversprechen "Zahlen aus Python, Narrativ vom LLM" dire
 
 ### P1.1 — "Simulation starten" neu bauen
 
-**Befund:** Der Start-Flow ist UX-seitig der schwächste Teil des Dashboards. Wer zum ersten Mal einen Lauf startet, versteht nicht, was er einstellt und was passiert.
+**Befund (korrigiert am 2026-08-26):** Der Start-Flow ist UX-seitig der schwächste Teil des Dashboards. Wer zum ersten Mal einen Lauf startet, versteht nicht, was er einstellt. Der Config-Editor ist mit rund 1.700 Zeilen über sechs Tabs zu tief, die Presets aus `configs/sweeps/` stehen nicht vorn, und die Erklärtexte in `config_editor/glossary.py` (401 Zeilen) stehen nicht dort, wo entschieden wird.
+
+**Was hier nicht mehr gilt:** Die ursprüngliche Fassung nannte einen "blockierenden Wartezustand". Den gibt es nicht mehr — [`dashboard/web/runner.py`](../dashboard/web/runner.py) fährt den Lauf in einem Worker-Thread mit Queue, und [`pages/launch.py:37,147-182`](../dashboard/web/pages/launch.py) holt die Fortschrittszeilen per `dcc.Interval` ab. Fortschrittsanzeige ist erledigt und kein Teil dieses Pakets mehr.
 
 **Fundstelle:** [`dashboard/web/pages/launch.py`](../dashboard/web/pages/launch.py), [`dashboard/web/config_editor/save_start.py`](../dashboard/web/config_editor/save_start.py), [`dashboard/web/runner.py`](../dashboard/web/runner.py), die sechs Editor-Tabs in [`dashboard/web/config_editor/`](../dashboard/web/config_editor/).
 
-**Was zu tun ist:** Den Weg von "Preset wählen" bis "Lauf läuft" auf einen geführten Ablauf reduzieren, mit sichtbarem Fortschritt statt eines blockierenden Wartezustands. Presets nach vorn (`configs/sweeps/`), Expertenparameter dahinter. Erklärtexte aus `config_editor/glossary.py` dort zeigen, wo entschieden wird, nicht in einem eigenen Tab. Fehlermeldungen aus P0.3 direkt am Feld.
+**Was zu tun ist:** Den Weg von "Preset wählen" bis "Lauf läuft" auf einen geführten Ablauf reduzieren. Presets nach vorn (`configs/sweeps/`), Expertenparameter dahinter. Erklärtexte aus `config_editor/glossary.py` dort zeigen, wo entschieden wird, nicht in einem eigenen Tab. Fehlermeldungen aus P0.3 direkt am Feld. Seed und Rechenmodus aus P0.6 sichtbar machen, damit vor dem Start klar ist, ob ein echter oder ein Mock-Lauf entsteht.
 
-**Fertig wenn:** Jemand ohne Vorwissen startet einen sinnvollen Lauf ohne Rückfragen, und `test_web_layout.py` deckt den neuen Flow ab.
+**Fertig wenn:** Jemand ohne Vorwissen startet einen sinnvollen Lauf ohne Rückfragen, und `test_web_layout.py` deckt den neuen Flow ab. **Messbar gemacht (2026-08-26):** Der geführte Ablauf braucht bis zum Start höchstens drei Entscheidungen, jede davon mit ihrem Erklärtext an Ort und Stelle. Dieses Kriterium ist zugleich das Tor für P5.2 und Phase 6 — siehe dort.
 
 **Doku zieht mit:** `docs/handbuch/erste-simulation.md`, `docs/handbuch/lauf-starten.md`, `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`.
 
 ### P1.2 — Ergebnisse und Plots refactoren
 
-**Befund:** Die Ergebnisdarstellung überzeugt inhaltlich nicht — die Plots zeigen nicht das, was eine Strategieabteilung sehen will. Dazu ein Robustheitsproblem: Bricht die Figure-Erzeugung mittendrin ab, bleibt ein teilweise befülltes `manifest.json` liegen, und die nächste Ansicht zeigt den unvollständigen Satz ohne Hinweis.
+**Befund:** Die Ergebnisdarstellung überzeugt inhaltlich nicht — die Plots zeigen nicht das, was eine Strategieabteilung sehen will. Dazu ein Robustheitsproblem: Bricht die Figure-Erzeugung mittendrin ab, zeigt die nächste Ansicht den unvollständigen Satz ohne Hinweis.
 
-**Fundstelle:** [`dashboard/web/views/figures.py`](../dashboard/web/views/figures.py) (441 Zeilen), [`dashboard/web/views/animation.py`](../dashboard/web/views/animation.py), [`dashboard/web/views/overview.py`](../dashboard/web/views/overview.py), Erzeugung und Manifest in [`src/reporting/figure_generator/run_figures.py`](../src/reporting/figure_generator/run_figures.py).
+**Mechanismus korrigiert am 2026-08-26:** Die ursprüngliche Fassung sprach von einem "teilweise befüllten `manifest.json`". Das kann nicht passieren: [`run_figures.py:48-68`](../src/reporting/figure_generator/run_figures.py) baut alle sechs Figures in **einem** Dict-Literal und schreibt das Manifest erst danach — bricht ein Plot ab, entsteht **gar kein** Manifest. Der stille Teilstand entsteht an zwei anderen Stellen: [`dashboard/run_browser.py:224-231`](../dashboard/run_browser.py) fällt bei fehlendem Manifest auf `base.glob("*.png")` zurück und zeigt die halb geschriebenen PNGs mit aus dem Dateinamen erzeugten Titeln; und ein **altes** Manifest aus einem früheren Lauf bleibt liegen und passt dann nicht mehr zu den frisch überschriebenen PNGs.
 
-**Was zu tun ist:** Zuerst festlegen, welche **drei bis fünf Aussagen** ein Lauf beantworten soll — dann die Plots dafür bauen und den Rest streichen. Ein durchgehendes Farb- und Achsensystem aus `theme.py` statt pro Figur eigener Entscheidungen. Das Tripleset (Trendfortsetzung / Strukturwende / Krisenkonflikt) vergleichbar nebeneinander, nicht in getrennten Tabs. Das Manifest erst schreiben, wenn alle Figures stehen, oder den Teilstand explizit als unvollständig kennzeichnen.
+**Fundstelle:** [`dashboard/web/views/figures.py`](../dashboard/web/views/figures.py) (441 Zeilen), [`dashboard/web/views/animation.py`](../dashboard/web/views/animation.py), [`dashboard/web/views/overview.py`](../dashboard/web/views/overview.py), Erzeugung in [`src/reporting/figure_generator/run_figures.py`](../src/reporting/figure_generator/run_figures.py), Glob-Fallback in [`dashboard/run_browser.py:201-231`](../dashboard/run_browser.py) (`list_run_figures`).
 
-**Fertig wenn:** Ein Lauf lässt sich in einem Screenshot erklären; ein abgebrochener Figure-Lauf hinterlässt keinen stillen Teilstand.
+**Was zu tun ist:** Zuerst festlegen, welche **drei bis fünf Aussagen** ein Lauf beantworten soll — dann die Plots dafür bauen und den Rest streichen. Ein durchgehendes Farb- und Achsensystem aus `theme.py` statt pro Figur eigener Entscheidungen. Das Tripleset (Trendfortsetzung / Strukturwende / Krisenkonflikt) vergleichbar nebeneinander, nicht in getrennten Tabs. Für den Teilstand: Figures in ein temporäres Verzeichnis schreiben und erst nach dem letzten Plot samt Manifest atomar an ihren Platz ziehen — dann gibt es nur ganz oder gar nicht. Den Glob-Fallback in `list_run_figures` entweder streichen oder das Ergebnis sichtbar als "ohne Manifest, Vollständigkeit unbekannt" kennzeichnen.
+
+**Fertig wenn:** Ein Lauf lässt sich in einem Screenshot erklären; ein abgebrochener Figure-Lauf hinterlässt keinen stillen Teilstand — weder über den Glob-Fallback noch über ein stehengebliebenes Manifest.
 
 **Doku zieht mit:** `docs/handbuch/ergebnisse.md`, `docs/handbuch/ergebnisse-lesen.md`, `docs/handbuch/vergleiche.md`, `docs/handbuch/ref-ausgaben.md`.
 
@@ -122,6 +159,22 @@ Fünf Punkte, die das Kernversprechen "Zahlen aus Python, Narrativ vom LLM" dire
 
 **Doku zieht mit:** `docs/handbuch/zahlen-und-sprache.md`, `docs/handbuch/fragestellungen.md`, `docs/cib_role.md`.
 
+### P1.4 — Landingpage produktionsreif
+
+**Befund (neu am 2026-08-26):** Die Landingpage kam in diesem Plan bisher nicht vor, obwohl Phase 1 "Funktionalität und UI" heißt und sie die einzige öffentlich sichtbare Oberfläche ist. [`docs/landingpage.md`](landingpage.md) führt drei offene Punkte, keiner davon war eingeplant:
+
+1. **Das Demo-Formular geht ins Leere.** `demo-anfragen.html:151` hat `action="#"` — jede Anfrage über die Kontaktseite wird verworfen, ohne dass der Absender es merkt.
+2. **Impressum, Datenschutz und AGB sind Platzhalter** mit `[…]`-Stellen und einem gelben Warnblock, der vor Veröffentlichung raus muss.
+3. **Tailwind und Schriften kommen von CDNs** — auf der Landingpage (`index.html:7-9`) **und im Dashboard** (`dashboard/web/app.py:53-56`). Das widerspricht dem erklärten Deployment-Ziel Datenhoheit direkt: jeder Seitenaufruf meldet die IP des Betrachters an zwei fremde Hosts. Bei Google Fonts kommt die deutsche Rechtslage dazu.
+
+**Fundstelle:** [`aeroforesight-ai-landing-page/`](../aeroforesight-ai-landing-page/) (5 Seiten, 1.928 Zeilen), [`dashboard/web/app.py:53-56`](../dashboard/web/app.py), [`dashboard/web/landing_route.py`](../dashboard/web/landing_route.py), [`docs/landingpage.md`](landingpage.md) (Abschnitt "Offene Punkte").
+
+**Was zu tun ist:** Einen Endpunkt für das Demo-Formular anlegen (die Landingpage wird ohnehin von der Flask-App unter `landing_route.py` ausgeliefert — die Route gehört dorthin) samt Bestätigung für den Absender und einer Ablage, die niemand übersieht. Rechtstexte durch geprüfte Fassungen ersetzen und den Warnblock entfernen. Tailwind und die Schriften lokal ausliefern, für Landingpage und Dashboard in einem Zug, damit das Ergebnis nicht halb bleibt.
+
+**Fertig wenn:** Ein Seitenaufruf erzeugt keine Anfrage an einen externen Host, keine `[…]`-Stelle und kein Warnblock ist mehr übrig, und eine abgeschickte Demo-Anfrage kommt nachweislich an.
+
+**Doku zieht mit:** `docs/landingpage.md` ("Offene Punkte" leeren), `aeroforesight-ai-landing-page/DEPLOY.md`, `CLAUDE.md` (Deployment-Ziel, Datenhoheit).
+
 ---
 
 ## Phase 2 — Modellsubstanz (Claims und Code in Deckung bringen)
@@ -134,9 +187,13 @@ Diese Punkte entscheiden, ob die wissenschaftlichen Aussagen einem Fachprüfer s
 
 **Fundstelle:** [`src/population/population_sampler.py:355`](../src/population/population_sampler.py) (`_booking_probability`), Schwelle `DEFAULT_LOGIT_THRESHOLD = 0.5` in Zeile 23.
 
-**Was zu tun ist:** Gegen die Wahrscheinlichkeit ziehen (`rng.random() < p`) mit dem Lauf-Seed, damit Reproduzierbarkeit erhalten bleibt. Koeffizienten nach `configs/properties.json` auslagern und ihre Herkunft dokumentieren — die Literatur liegt bereits in `docs/research/literature/` (Preiselastizitäten im Luftverkehr). **Vorbedingung:** Der Seed-Pfad ist heute wirkungslos — `_seed_runtime` ([`simulation_runner.py:269-281`](../src/orchestration/simulation_runner.py)) seedet das globale `np.random`, gezogen wird über `default_rng`. Das muss vorher geradegezogen werden, sonst ist die Reproduzierbarkeit mit dem ersten echten Zufall weg.
+**Was zu tun ist:** Gegen die Wahrscheinlichkeit ziehen (`rng.random() < p`) mit einem aus dem Lauf-Seed abgeleiteten Strom, damit Reproduzierbarkeit erhalten bleibt. Koeffizienten nach `configs/properties.json` auslagern und ihre Herkunft dokumentieren — die Literatur liegt bereits in `docs/research/literature/` (Preiselastizitäten im Luftverkehr).
 
-**Fertig wenn:** Buchungsentscheidungen sind stochastisch, bei gleichem Seed reproduzierbar, und jeder Koeffizient hat eine benannte Quelle.
+**Fallstrick (2026-08-26) — "mit dem Lauf-Seed" reicht nicht:** `evaluate_booking` bekommt heute **überhaupt keinen** RNG, und `run_population_tick` wird in jedem Tick mit demselben `state.config.seed` aufgerufen ([`environment_node.py:157`](../src/orchestration/environment_node.py)). Wer dort naiv `rng.random() < p` mit dem Lauf-Seed einbaut, zieht in jedem Tick dieselbe Zahlenfolge: es buchen immer dieselben Individuen, und die Buchungsrate wird zur Stufenfunktion. Reproduzierbar, aber falsch — und schwer zu bemerken, weil die Zahlen plausibel aussehen. Nötig ist ein Strom pro **(Lauf, Tick)**, z. B. `default_rng(SeedSequence([seed, tick]))`. Der Einstiegspunkt existiert schon: `run_population_tick` nimmt `current_tick` entgegen und **benutzt es nirgends** (einziges Vorkommen: die Signatur in Zeile 508).
+
+**Zur Vorbedingung (richtiggestellt am 2026-08-26):** `_seed_runtime` ([`simulation_runner.py:269-281`](../src/orchestration/simulation_runner.py)) seedet das globale `np.random`, gezogen wird über `default_rng` — die Funktion ist also tatsächlich wirkungslos und gehört aufgeräumt. Die Reproduzierbarkeit des Samplers hängt aber **nicht** daran: `state.config.seed` wird explizit durchgereicht (`environment_node.py:157` → `run_population_tick` → `_rng`). Die frühere Formulierung, ohne diese Korrektur sei "die Reproduzierbarkeit mit dem ersten echten Zufall weg", trifft nicht zu. Das eigentliche Risiko ist der Fallstrick oben.
+
+**Fertig wenn:** Buchungsentscheidungen sind stochastisch, unterscheiden sich zwischen Ticks, sind bei gleichem Seed reproduzierbar, und jeder Koeffizient hat eine benannte Quelle. Ein Test zeigt beides: gleicher Seed gleiches Ergebnis, aufeinanderfolgende Ticks unterschiedliche Ziehung.
 
 **Doku zieht mit:** `docs/handbuch/kaufentscheidung.md`, `docs/handbuch/saettigung.md`, `README.md`, `CLAUDE.md` (Glossar "Logit-Modell").
 
@@ -148,7 +205,11 @@ Diese Punkte entscheiden, ob die wissenschaftlichen Aussagen einem Fachprüfer s
 
 **Was zu tun ist:** Impact-Balance als eigenständige Prüfung implementieren: pro Faktor die Einflusssumme je Zustand bilden, prüfen ob der gewählte Zustand das Maximum ist, Szenario nur dann konsistent nennen. Die bisherige Heuristik darf als zusätzlicher Score bleiben — aber unter eigenem Namen.
 
-**Fertig wenn:** Für ein bekanntes Referenzszenario stimmt das Ergebnis mit dem Impact-Balance-Kriterium überein; Tests decken konsistente und inkonsistente Fälle ab.
+**Aufwand (geprüft am 2026-08-26):** kleiner als der Umfang dieses Pakets vermuten lässt. `derive_scenarios` iteriert bereits über alle 2^7 = 128 Kombinationen ([`scenario_consistency.py:209`](../src/cib/scenario_consistency.py)) — die Impact-Balance-Prüfung ist dort eine Ergänzung von rund zwanzig Zeilen innerhalb der bestehenden Schleife.
+
+**Fallstrick (2026-08-26) — vorher entscheiden, sonst bricht P1.3:** Echte Impact Balance liefert **null, eine oder viele** konsistente Konstellationen; die heutige Heuristik liefert immer eine sortierte Liste, aus der `top_n=3` gegriffen wird. Das Produktversprechen ist aber ein festes **Tripleset** (Trendfortsetzung / Strukturwende / Krisenkonflikt). Was passiert, wenn weniger als drei Szenarien das Kriterium erfüllen — oder gar keines —, muss **vor** der Umsetzung entschieden sein: entweder das Tripleset aufgeben und zeigen, was tatsächlich konsistent ist, oder die konsistenten Szenarien als solche kennzeichnen und den Rest sichtbar als "nächstbeste, nicht konsistent" danebenstellen. Ohne diese Entscheidung bricht P2.2 die Ergebnisdarstellung aus P1.3 und die Außendarstellung gleich mit.
+
+**Fertig wenn:** Für ein bekanntes Referenzszenario stimmt das Ergebnis mit dem Impact-Balance-Kriterium überein; Tests decken konsistente und inkonsistente Fälle ab **und** den Fall "weniger als drei konsistente Szenarien".
 
 **Doku zieht mit:** `docs/cib_role.md`, `docs/cib_rationale.md`, `docs/handbuch/cib.md`, `CLAUDE.md` (Glossar).
 
@@ -157,6 +218,8 @@ Diese Punkte entscheiden, ob die wissenschaftlichen Aussagen einem Fachprüfer s
 **Befund:** Alle 168 Zellen in `cib_frozen.json` haben ein leeres `reasoning`-Feld; `metadata.source` sagt `expert_defined_aviation_domain_v2` (Basis: Vorlesungsfolien, Experte = das Team selbst). Für einen Prototyp legitim — aber die Kalibrierung ist genau das Asset, das später verkauft wird.
 
 **Fundstelle:** [`configs/cib_frozen.json`](../configs/cib_frozen.json), erzeugt von [`scripts/rebuild_cib_frozen.py`](../scripts/rebuild_cib_frozen.py).
+
+**Zusätzlich (2026-08-26):** Neben dem befüllten `cells`-Dict liegt in derselben Datei ein zweites, durchgängig leeres `entries: []`. Eine unbenutzte Struktur mitten im eingefrorenen Asset — beim Durchgehen mit entfernen oder befüllen, je nachdem, wofür sie gedacht war.
 
 **Was zu tun ist:** Pro Zelle eine Begründung und eine Quelle eintragen — beim Durchgehen fallen erfahrungsgemäß auch inhaltliche Fehler auf. Das Skript so erweitern, dass es leere `reasoning`-Felder als Fehler meldet statt sie zu erzeugen. Die Matrix bleibt eingefroren (Invariante 3). Sinnvoll gemeinsam mit P0.2 zu erledigen — beim Durchgehen der Zellen fällt die F7-Entscheidung ohnehin an.
 
@@ -176,18 +239,30 @@ Diese Punkte entscheiden, ob die wissenschaftlichen Aussagen einem Fachprüfer s
 
 **Doku zieht mit:** `docs/handbuch/akteure.md`, `docs/handbuch/grenzen.md`, `docs/handbuch/tick-und-lauf.md`.
 
+### P2.5 — State Explorer: Grounding durchsetzen statt darum bitten
+
+**Befund (neu am 2026-08-26):** Der State Explorer ist im Glossar als "grounded Q&A ausschließlich über abgeschlossene Run-Daten — keine erfundenen Zahlen" beschrieben. Durchgesetzt wird davon nichts: `build_grounded_context_block` baut einen Kontextblock, `ask()` reicht ihn samt Frage ans LLM weiter und gibt die Antwort unverändert zurück. Ob die Antwort nur Zahlen aus diesem Block enthält, prüft niemand — die Zusage ist ein Prompt, keine Schranke. Dieselbe Klasse wie P2.1 und P2.2: ein Claim, den der Code nicht einlöst, nur an der Oberfläche, an der ein Kunde ihn zuerst ausprobiert.
+
+**Fundstelle:** [`src/reporting/state_explorer.py:241`](../src/reporting/state_explorer.py) (`build_grounded_context_block`), [`:323-334`](../src/reporting/state_explorer.py) (`build_prompt`, `ask`), Ansicht in [`dashboard/web/views/explorer.py`](../dashboard/web/views/explorer.py).
+
+**Was zu tun ist:** Nach dem LLM-Aufruf die Zahlen aus der Antwort ziehen und gegen die Zahlen im Kontextblock abgleichen. Was sich nicht wiederfindet, wird markiert oder die Antwort zurückgewiesen — welche der beiden Härten die richtige ist, ist eine Produktentscheidung und gehört ins Paket. Bis dahin die Formulierung im Glossar und im Handbuch abschwächen (siehe die Regel "Was der Code nicht tut, darf die Doku nicht behaupten").
+
+**Fertig wenn:** Eine Antwort mit einer nicht im Kontext belegten Zahl wird erkannt; Tests decken den belegten und den erfundenen Fall ab.
+
+**Doku zieht mit:** `docs/handbuch/abfrage.md`, `docs/handbuch/zahlen-und-sprache.md`, `CLAUDE.md` (Glossar "State Explorer").
+
 ---
 
 ## Phase 3 — Engine-Härtung
 
 Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes Paket ist klein; zusammen entscheiden sie, ob die Engine trägt.
 
-### P3.1 — System-Properties liefern Laufzeitwerte
+### P3.1 — System-Properties täuschen keine Laufzeitwerte mehr vor
 
 **Befund:** Für Properties mit `source in {"runtime","computed"}` (z. B. `provider_markup`, `ticket_price`) liefert `resolve_system_properties` laut eigenem Docstring die statische Trajektorien-Baseline, nicht den Laufzeitwert. Folgenlos nur, solange keine ausgelieferte Regel diese IDs per `system_property`-Bedingung referenziert — eine neue Regel darauf würde still gegen eine veraltete Zahl prüfen.
 **Fundstelle:** [`src/market/property_engine.py:127-136`](../src/market/property_engine.py).
-**Was zu tun ist:** Laufzeitwert durchreichen, oder den Zugriff für diese Quellen hart ablehnen statt eine Baseline vorzutäuschen. Zusammen mit P0.4 erledigen — dieselbe Regelmechanik.
-**Fertig wenn:** Eine Regel auf `ticket_price` prüft nachweislich gegen den echten Marktwert. **Doku:** `docs/handbuch/ref-config.md`.
+**Was zu tun ist:** **Vorgabe (2026-08-26): den Zugriff hart ablehnen.** Eine unbekannte oder laufzeitgebundene Property in einer `when`-Bedingung wird ein Konfigurationsfehler, keine stille Baseline. Grund: Laufzeitwerte durchzureichen macht die Regelauswertung innerhalb eines Ticks reihenfolgeabhängig — `apply_factor_rules_at_tick_start` läuft **vor** der Preisberechnung in `environment_node._run_population_tick`, eine Regel auf `ticket_price` würde also je nach Einhängepunkt gegen den Preis von vorhin oder von jetzt prüfen. Das ist eine Modellentscheidung, keine Implementierungsdetailfrage, und sie gehört nicht nebenbei getroffen. Wer die Laufzeitwerte später wirklich braucht, führt sie mit einer bewussten Tick-Phase ein. Zusammen mit P0.4 erledigen — dieselbe Regelmechanik, und dort wird ohnehin festgelegt, dass unbekannte Bedingungstypen laut fehlschlagen.
+**Fertig wenn:** Eine Regel, die `ticket_price` oder `provider_markup` per `system_property` referenziert, wird beim Laden mit klarer Meldung abgewiesen statt still gegen eine Baseline zu prüfen. **Doku:** `docs/handbuch/ref-config.md`.
 
 ### P3.2 — Checkpoint-Version wirklich prüfen
 
@@ -215,7 +290,8 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 **Befund:** `threshold` und `max_contributions_per_agent` werden ohne Warnung auf einen Wunschbereich geklemmt — wer bewusst `threshold=1` setzt, bekommt stillschweigend 3. Dazu acht `print()`-Debugausgaben im Scheduler, die bei jedem Tick unbedingt laufen.
 **Fundstelle:** [`src/agents/redebedarf_scheduler.py:73,75`](../src/agents/redebedarf_scheduler.py), [`src/agents/scheduler_node.py`](../src/agents/scheduler_node.py) (8 Vorkommen).
 **Was zu tun ist:** Klemmung protokollieren oder als Konfigurationsfehler abweisen; `print()` durch `logging` mit Level-Guard ersetzen.
-**Fertig wenn:** Ein geklemmter Wert erzeugt eine sichtbare Warnung; ein normaler Lauf ist auf stdout still. **Doku:** `docs/handbuch/ref-config.md`, `docs/handbuch/akteure.md`.
+**Reihenfolge (2026-08-26):** **nicht vor P0.1.** Das Fortschritts-Log des Dashboards wird ausschließlich von `print()` gespeist (`run_launcher.py:397` leitet `stdout` in einen Tee um). Der Logging-Handler, der in denselben Tee schreibt, entsteht in P0.1; landet P3.5 vorher, verschwinden die Scheduler-Zeilen aus dem Live-Log, ohne dass jemand einen Fehler sieht.
+**Fertig wenn:** Ein geklemmter Wert erzeugt eine sichtbare Warnung; ein normaler Lauf ist auf stdout still, und das Fortschritts-Log im Dashboard zeigt weiterhin, was es vorher zeigte. **Doku:** `docs/handbuch/ref-config.md`, `docs/handbuch/akteure.md`.
 
 ### P3.6 — Stabiler Vertrag für den Run-Launcher
 
@@ -228,7 +304,7 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 ## Phase 4 — Testfundament
 
-267 Tests sind eine gute Grundlage, aber die Suite hat drei Eigenschaften, die beim Ausbau bremsen.
+Über 500 Tests sind eine gute Grundlage, aber die Suite hat drei Eigenschaften, die beim Ausbau bremsen. (Die Zahl stand hier bis 2026-08-26 als "267" und in `CLAUDE.md` als "~330"; `pytest --collect-only` sammelt tatsächlich 506. Genau diese Drift ist der Anlass für P4.3.)
 
 ### P4.1 — Gemeinsame Fixtures
 
@@ -248,9 +324,25 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Fundstelle:** `tests/test_scenario_sweeps.py:119,205`, `tests/test_market_feedback.py:94`, `tests/debug_run_sequential.py`, `tests/test_parallel_round.py`, `tests/test_simulation_runner_e2e.py`, `tests/test_agent_node.py`, `tests/test_save_final_narrative.py`.
 
-**Was zu tun ist:** Die Ollama-abhängigen Tests per `pytest.mark.skipif` auf einen erreichbaren Endpoint überspringen (Priorität — sie kosten heute jeden vollen Lauf). Beim Grenzkostenanteil fachlich entscheiden und Test **oder** Config nachziehen. Dann auf funktionalen Stil vereinheitlichen, `sys.path.append` entfernen, Debug-Skript in ein Werkzeug umwandeln oder löschen.
+**Ergänzung am 2026-08-26 — die CI hängt mit drin:** [`.github/workflows/tests.yml`](../.github/workflows/tests.yml) deselektiert bereits genau diese drei Tests. Der Kommentar dort nennt `test_market_rules_resolve_marginal_cost_fraction` weiterhin "a real pre-existing bug" — also genau die Fehlbewertung, die oben korrigiert wurde. Die drei `--deselect`-Zeilen sind der eigentliche Grund, warum das Problem so lange unbemerkt blieb, und sie verschwinden mit diesem Paket.
 
-**Fertig wenn:** `pytest` läuft ohne lokales Ollama vollständig durch und ist grün — keine "bekannten Fehler" mehr in `CLAUDE.md`. **Doku:** `CLAUDE.md` (Dev-Workflow), `README.md`.
+**Was zu tun ist:** Die Ollama-abhängigen Tests per `pytest.mark.skipif` auf einen erreichbaren Endpoint überspringen (Priorität — sie kosten heute jeden vollen lokalen Lauf). Beim Grenzkostenanteil fachlich entscheiden und Test **oder** Config nachziehen. Dann die drei `--deselect`-Zeilen aus der CI entfernen. Danach auf funktionalen Stil vereinheitlichen, `sys.path.append` entfernen, Debug-Skript in ein Werkzeug umwandeln oder löschen.
+
+**Fallstrick (2026-08-26):** `skipif` allein reicht nicht. Die Tests hängen, weil `OllamaClient` mit Backoff wiederholt — eine Erreichbarkeitsprobe ohne kurzen expliziten Timeout hängt in einem gefilterten Netz selbst und verlagert das Problem nur von der Ausführung in die Sammlung. Die Probe braucht einen harten Timeout (etwa eine Sekunde) und muss auf Modulebene zwischengespeichert werden, damit sie nicht pro Test erneut läuft.
+
+**Fertig wenn:** `pytest` läuft ohne lokales Ollama vollständig durch und ist grün, die CI startet ohne `--deselect` — keine "bekannten Fehler" mehr in `CLAUDE.md`. **Doku:** `CLAUDE.md` (Dev-Workflow), `README.md`, `.github/workflows/tests.yml`.
+
+### P4.3 — Doku-Zahlen mechanisch halten
+
+**Befund (neu am 2026-08-26):** Die Doku-Pflicht steht in `CLAUDE.md`, aber nichts prüft sie — und genau die Zahlen, die Vertrauen schaffen sollen, driften still ab. Zwei Fälle allein bei dieser Gegenprobe: die Testanzahl stand an drei Orten in drei Fassungen (Projektplan 267, `CLAUDE.md` "~330", tatsächlich 506), und der CI-Kommentar behauptete Wochen nach der Korrektur weiterhin einen "real pre-existing bug". Beides sind Aussagen, die ein Fachprüfer in einer Minute widerlegt.
+
+**Fundstelle:** `CLAUDE.md` (Abschnitte Architektur-Map und Dev-Workflow), `docs/projektplan.md` (Phase 4), `.github/workflows/tests.yml`.
+
+**Was zu tun ist:** Einen kleinen Test ergänzen, der die in der Doku genannten überprüfbaren Zahlen gegen die Realität hält — Testanzahl, Anzahl der CIB-Zellen, Anzahl der Editor-Tabs. Wo eine Zahl nicht stabil zu halten ist, gehört sie nicht in die Doku, sondern durch eine Größenordnung ersetzt.
+
+**Fertig wenn:** Eine veraltete Zahl in `CLAUDE.md` lässt die Suite rot werden.
+
+**Doku zieht mit:** `CLAUDE.md` (Doku-Pflicht um "prüfbare Zahlen gehören in einen Test" ergänzen).
 
 ---
 
@@ -260,7 +352,7 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 
 ### P5.1 — Toter Code und irreführende Namen
 
-**Befund:** Mehrere Konstrukte, die Funktionalität vortäuschen: `initial_ticket_price` und `active_market_rule` (keine Referenz), `run_population_sampling` ("backward-compatible entry point", nirgends aufgerufen), `speech_plan.aborted` (Feld existiert nicht), der leere `pass`-Zweig in `_format_factors` mit hartcodiertem Agenten-String, und der `state._population_updates`-Pfad — ein komplettes Population-Shift-Feature mit Modellen und Unit-Tests, das der Laufzeitpfad nie erzeugt. Dazu die irreführende Paarung `compute_ticket_price` / `compose_ticket_price`: die erste berechnet **nicht** den Kundenpreis.
+**Befund:** Mehrere Konstrukte, die Funktionalität vortäuschen: `initial_ticket_price` und `active_market_rule` (keine Referenz), `run_population_sampling` ("backward-compatible entry point", nirgends aufgerufen), `speech_plan.aborted` (Feld existiert nicht), der leere `pass`-Zweig in `_format_factors` mit hartcodiertem Agenten-String, der `state._population_updates`-Pfad — ein komplettes Population-Shift-Feature mit Modellen und Unit-Tests, das der Laufzeitpfad nie erzeugt — und (neu am 2026-08-26) der Parameter `current_tick` in `run_population_tick`, der entgegengenommen und im ganzen Funktionskörper nie benutzt wird. Letzterer ist der einzige der Liste, der **nicht** entfernt werden sollte: P2.1 braucht genau ihn, um pro Tick einen eigenen Zufallsstrom abzuleiten. Dazu die irreführende Paarung `compute_ticket_price` / `compose_ticket_price`: die erste berechnet **nicht** den Kundenpreis.
 **Fundstelle:** [`src/market/market_rules.py`](../src/market/market_rules.py), [`src/population/population_sampler.py:558`](../src/population/population_sampler.py), [`src/agents/scheduler_node.py:123`](../src/agents/scheduler_node.py), [`src/agents/agent_node.py:258-260`](../src/agents/agent_node.py), [`src/orchestration/environment_node.py:282-283`](../src/orchestration/environment_node.py), [`src/market/simulation_functions.py`](../src/market/simulation_functions.py).
 **Was zu tun ist:** Pro Konstrukt entscheiden — entfernen oder anschließen. Beim Population-Shift-Feature ist die Frage produktinhaltlich (gehört es zu P1.3?), nicht technisch. Die zwei Preisfunktionen so benennen, dass die Rolle aus dem Namen hervorgeht.
 **Fertig wenn:** Kein Modul mehr, das nur von seiner eigenen Definition oder einem Test am Leben gehalten wird. **Doku:** `CLAUDE.md` (Architektur-Map), `docs/handbuch/preisbildung.md`.
@@ -270,6 +362,8 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 **Befund:** `dashboard/legacy_streamlit/` hält zwei Doppelpaare am Leben (`app.py`/`app_researcher.py`, `config_ui.py`/`config_ui_researcher.py`), die inhaltlich auseinanderlaufen — u. a. eine nur dort gepflegte längere `_render_animation` und verlorene Guillemets in der Researcher-Variante. Drei Audit-Findings betreffen ausschließlich diesen Ordner und lösen sich mit ihm auf.
 **Fundstelle:** [`dashboard/legacy_streamlit/`](../dashboard/legacy_streamlit/).
 **Was zu tun ist:** Nach Abschluss von Phase 1 prüfen, ob die Dash-App alles abdeckt, was der Researcher-Modus konnte — insbesondere die zusätzlichen Plotly-Charts der Legacy-Animation. Dann das Paket löschen, samt Streamlit-Abhängigkeit und `.streamlit/`.
+
+**Tor benannt (2026-08-26):** "Nach Abschluss von Phase 1" war bisher nicht entscheidbar, weil Phase 1 nur qualitative Kriterien hatte — und solange niemand sagen kann, wann das Tor aufgeht, bleibt `streamlit>=1.32` in `pyproject.toml`, in `requirements.txt` und in jeder CI-Installation. Konkret aufzuschreiben ist deshalb **vor** dem Löschen: welche Charts aus `_render_animation` der Researcher-Variante in der Dash-App vorhanden sein müssen. Diese Liste ist das Abnahmekriterium; ist sie abgehakt, fällt das Paket, unabhängig davon, ob P1.1 und P1.2 im Übrigen schon final sind.
 **Fertig wenn:** Kein Streamlit mehr im Repo und in den Abhängigkeiten. **Doku:** `CLAUDE.md`, `README.md`, `dashboard/README.md`.
 
 ### P5.3 — `src/legacy/` entscheiden
@@ -285,6 +379,8 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 
 Wird erst geplant, wenn Phase 1 steht: API-Layer, Mandantentrennung, Persistenz, Auth, Billing, produktionsscharfes Hetzner-Deployment. Der heutige `Dockerfile`/`docker-compose.yml` ist ein Ausgangspunkt, kein Deployment.
 
+**"Phase 1 steht" heißt (festgelegt am 2026-08-26):** P1.1 erfüllt sein Drei-Entscheidungen-Kriterium, P1.2 beantwortet drei bis fünf benannte Fragen ohne stillen Teilstand, P1.3 trennt gerechnete von erzählten Zahlen im Datenschema, und P1.4 lädt keine externen Hosts mehr. Dasselbe Tor gilt für P5.2. Ohne diese vier Haken bleibt Phase 6 ungeplant — und Streamlit im Repo.
+
 Eine Randnotiz fürs Marketing, kein Arbeitspaket: Der 10.000-Tick-Benchmark lief mit `dummy_llm` ([`scenario_sweeps.py:200`](../src/orchestration/scenario_sweeps.py)). Die Zahl stimmt, misst aber die deterministische Hälfte — nicht als "unsere KI simuliert 10k Ticks" verwenden.
 
 ---
@@ -296,11 +392,18 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Audit-Abschnitt | Pakete |
 | --- | --- |
 | Faktoren / Modellsubstanz | P0.2, P2.1, P2.2, P2.3, P2.4 |
-| Markt / Preisbildung | P0.4 (Rule-Evaluatoren, `market_rules`), P0.5 (Berechtigungen), P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen) |
+| Markt / Preisbildung | P0.4 (Rule-Evaluatoren, `market_rules`), P0.5 (Berechtigungen), P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen, ungenutztes `current_tick`) |
 | Agenten / Scheduling | P0.1 (Silent-Fallback), P1.3 (Szenario-Schlüssel), P3.5 (Klemmung, `print`), P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
 | Validierung / Checkpointing / Orchestrierung | P0.3 (`validate_config`, `factor_ids`), P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`) |
 | LLM-Anbindung | P0.1 (zwei Clients), P3.4 (hartcodierte Defaults) |
-| Dashboard | P1.2 (Manifest-Teilstand), P3.6 (private Imports), P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen) |
+| Dashboard | P1.2 (Teilstand über den Glob-Fallback), P3.6 (private Imports), P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen) |
 | LangGraph Studio | P3.3 |
-| Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests und der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction`) |
+| Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests, der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction` und der drei `--deselect`-Zeilen in der CI) |
 | Sonstiges | P5.3 |
+| **Landingpage** (neu 2026-08-26) | P1.4 (Formular-Endpunkt, Rechtstexte, CDN-Abhängigkeiten) |
+| **Reproduzierbarkeit / Run-Artefakte** (neu 2026-08-26) | P0.6 (Seed, Rechenmodus, Config-Hash in `run_metadata.json`) |
+| **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) |
+| **Doku-Konsistenz** (neu 2026-08-26) | P4.3 (Zahlen in `CLAUDE.md` und diesem Plan mechanisch halten) |
+
+Die vier neuen Zeilen stammen nicht aus `audit_findings.md`, sondern aus der Gegenprobe vom
+2026-08-26 — sie sind dort nachgetragen, damit die Detailliste vollständig bleibt.
