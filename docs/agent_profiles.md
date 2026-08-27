@@ -73,6 +73,8 @@ Bis P0.5 gab es die Angabe doppelt: zusätzlich als hartcodiertes Dict `AGENT_FA
 
 Geprüft wird an **einer** Stelle: [`src/agents/agent_permissions.py`](../src/agents/agent_permissions.py) — `may_propose_factor(profile, factor_id)`. Sowohl der Parser in `agent_node` als auch die Durchsetzung in `factor_dynamics.validate_factor_proposals` rufen sie. Vorher prüfte jede für sich, mit gegenläufigem Verhalten ohne Profil: Der Parser ließ dann alles durch, die Durchsetzung nichts. **Ohne Profil ist jetzt nichts erlaubt** — wer nicht ausdrücklich darf, darf nicht.
 
+**Und ein fehlendes Profil ist ein Fehler, kein Sonderfall** (ergänzt 2026-08-27). Genau daran hängt der Preis der Vereinfachung: `config_loader` vergibt kein Profil, wenn `agent_profiles.json` fehlt oder den Agenten nicht kennt — und seit P0.5 heißt das *nichts erlaubt*. Nachgestellt: Datei weggeschoben, Lauf gestartet; er rechnet klaglos zu Ende, kein Agent kann noch einen Faktor vorschlagen, und nichts sagt es. Vor P0.5 blieb derselbe Fall folgenlos, weil das hartcodierte Dict die Rechte trug. `validation.py` weist einen Agenten ohne Profil deshalb jetzt ab, bevor der Lauf beginnt.
+
 Heute erlaubt: Regulator `F2`, `F6`. Provider und Consumer nichts.
 
 ## Reaktion auf Events

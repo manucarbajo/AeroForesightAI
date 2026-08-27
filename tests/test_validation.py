@@ -8,6 +8,9 @@ Bezug zum Seed.
 
 from __future__ import annotations
 
+import shutil
+from pathlib import Path
+
 import pytest
 
 from src.config_loader import build_initial_state
@@ -137,12 +140,46 @@ def test_the_shipped_profiles_reference_only_existing_factors():
         assert validate_agent(agent, factor_ids) == [], f"agent {agent.id}"
 
 
-def test_an_agent_without_a_profile_is_fine():
+def test_an_agent_without_a_profile_is_rejected():
+    """Bis P0.5 hieß dieser Test "…is_fine" — und das stimmte damals auch.
+
+    Ohne Profil ließ der Parser alles durch, die Durchsetzung nahm die Rechte
+    aus dem hartcodierten `AGENT_FACTOR_PERMISSIONS`, und der Lauf verhielt
+    sich richtig. P0.5 hat das Dict entfernt und `agent_profiles.json` zur
+    einzigen Quelle gemacht: Seitdem heißt "kein Profil" **nichts erlaubt**.
+
+    Damit ist ein fehlendes Profil kein harmloser Sonderfall mehr, sondern
+    schaltet still ab, was Invariante 2 durchsetzen soll. Nachgestellt am
+    2026-08-27: `configs/agent_profiles.json` weggeschoben, und der Lauf
+    rechnet klaglos zu Ende — kein Agent kann noch einen Faktor vorschlagen,
+    keine Meldung sagt es. `config_loader` vergibt nämlich schlicht kein
+    Profil, wenn die Datei fehlt oder den Agenten nicht kennt.
+    """
+
     state = build_initial_state()
     agent = state.agents[0]
     agent.profile = None
 
-    assert validate_agent(agent, set(state.environment.factors)) == []
+    errors = validate_agent(agent, set(state.environment.factors))
+    assert "kein Profil" in _messages(errors)
+
+
+def test_a_missing_profiles_file_does_not_pass_silently(tmp_path, monkeypatch):
+    """Der Weg dorthin, nicht nur die Funktion: Fehlt die Datei, muss die
+    Prüfung anschlagen — vorher lief der Lauf ohne jede Berechtigung durch."""
+
+    import src.config_loader as config_loader
+
+    monkeypatch.setattr(config_loader, "CONFIGS_DIR", tmp_path)
+    for name in ("simulation_config.json", "agents.json", "properties.json", "factors.json"):
+        shutil.copy(Path("configs") / name, tmp_path / name)
+    # agent_profiles.json bewusst nicht mitkopiert.
+
+    state = config_loader.build_initial_state(load_cib=False)
+    fehler = collect_state_errors(state)
+
+    ohne_profil = [message for message in fehler if "kein Profil" in message]
+    assert len(ohne_profil) == len(state.agents)
 
 
 # --- Der Vertrag: sammeln vs. werfen ---------------------------------------

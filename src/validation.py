@@ -73,7 +73,19 @@ def validate_agent(agent: AgentConfig, factor_ids: set[str]) -> list[str]:
 def _validate_agent_profile(agent: AgentConfig, factor_ids: set[str]) -> list[str]:
     profile = agent.profile
     if profile is None:
-        return []
+        # Seit P0.5 ist `agent_profiles.json` die **einzige** Quelle der
+        # Faktor-Berechtigungen, und ohne Profil ist nichts erlaubt. Ein
+        # fehlendes Profil schaltet damit still ab, was Invariante 2 durchsetzen
+        # soll: `config_loader` vergibt keines, wenn die Datei fehlt oder den
+        # Agenten nicht kennt, der Lauf rechnet klaglos zu Ende, und kein
+        # Vorschlag kommt je durch. Vor P0.5 trug das hartcodierte Dict die
+        # Rechte und der Fall blieb folgenlos — deshalb schwieg diese Prüfung.
+        # Jetzt ist er der Ausfall selbst. Gefunden 2026-08-27.
+        return [
+            f"agent '{agent.id}': kein Profil in agent_profiles.json. "
+            "Ohne Profil darf der Agent nichts vorschlagen — die Berechtigungen "
+            "kämen still gar nicht erst zustande."
+        ]
 
     errors: list[str] = []
     known = ", ".join(sorted(factor_ids)) if factor_ids else "keine"
