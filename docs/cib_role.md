@@ -82,13 +82,19 @@ Active/Passive-Scores aus der Matrix (Faktor-Wichtigkeit):
 
 | Faktor | Active Score | Passive Score | Interpretation |
 |--------|-------------|---------------|----------------|
-| F1 Mobilitätsnachfrage | 37 | 30 | Aktiv beeinflussend, mittel beeinflussbar |
-| F2 Regulierung         | 37 | 32 | Stark aktiv und passiv — zentraler Steuerungsfaktor |
-| F3 Technologie (SAF)   | 36 | 40 | Stark beeinflussbar — reagiert auf Regulierung und Markt |
-| F4 Wirtschaft          | 41 | 42 | Höchste Gesamtwirkung — treibt das gesamte System |
-| F5 Alternativen        | 29 | 41 | Stark abhängig (von F6), wenig aktiv |
-| F6 Gesellschaft        | 42 | 32 | Stärkstes aktives Element — beeinflusst alle anderen |
-| F7 Marktstruktur       | 33 | 38 | Mittel aktiv, stärker beeinflussbar |
+| F1 Mobilitätsnachfrage | 41 | 47 | Aktiv und zugleich am stärksten beeinflussbar |
+| F2 Regulierung         | 47 | 37 | Stärkstes aktives Element — zentraler Steuerungsfaktor |
+| F3 Technologie (SAF)   | 33 | 33 | Ausgeglichen — reagiert und wirkt in gleichem Maß |
+| F4 Wirtschaft          | 38 | 40 | Hohe Gesamtwirkung, beide Richtungen |
+| F5 Alternativen        | 24 | 39 | Stark abhängig, wenig aktiv |
+| F6 Gesellschaft        | 42 | 39 | Aktiv und passiv stark |
+| F7 Geopolitische Stabilität | 29 | 19 | Wirkt nach außen, wird kaum zurückbeeinflusst — exogen |
+
+Die Zahlen stammen aus `factor_scores` in `configs/cib_frozen.json` und werden von
+`scripts/rebuild_cib_frozen.py` mitberechnet. **Korrigiert am 2026-08-26:** Die
+frühere Tabelle stimmte mit keiner einzigen Zeile — sie war irgendwann von Hand
+eingetragen und nie nachgezogen worden. Der niedrige Passive-Score von F7 ist
+kein Fehler, sondern das erwartete Bild eines exogenen Faktors (siehe P0.2).
 
 ## Empirisches Ranking der drei Sweep-Archetypen
 
@@ -97,11 +103,11 @@ Berechnet mit `scenario_consistency.ConsistencyChecker` auf `cib_frozen.json`
 
 | Szenario | Consistency Score | Stability Index | Konflikte |
 |----------|:-----------------:|:---------------:|:---------:|
-| Business as Usual (A1+B1) | **0.973** | **1.000** | 0 |
+| Business as Usual (A1+B1) | **0.970** | **1.000** | 0 |
 | Transformationskonflikt (B2 vs A1) | 0.867 | 0.952 | 2 |
-| Freiwillige Wende (A2+B2) | 0.603 | 0.810 | 8 |
+| Freiwillige Wende (A2+B2) | 0.629 | 0.833 | 7 |
 
-**Kernnachweis**: BAU (0.973) > Transformationskonflikt (0.867) ✓
+**Kernnachweis**: BAU (0.970) > Transformationskonflikt (0.867) ✓ — die Neubewertung der F7-Zellen in P0.2 hat daran nichts geändert.
 
 BAU ist das perfekt selbstverstärkende Szenario (0 Konflikte, Stability = 1.0). Alle
 Faktorkombinationen in BAU unterstützen sich gegenseitig.

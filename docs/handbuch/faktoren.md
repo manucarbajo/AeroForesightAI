@@ -16,6 +16,22 @@ enthalten.
 Feinere Abstufungen finden auf der Ebene der Systemgrößen statt. Dort ist die
 CO₂-Abgabe eine Zahl mit Verlauf, nicht eine Kategorie.
 
+## Ein Faktor kommt von außen
+
+Sechs der sieben Faktoren beschreiben etwas, das der Luftverkehr mitgestaltet:
+Nachfrage, Regulierung, Technik, Wirtschaft, Alternativen, gesellschaftliche
+Haltung. Der siebte nicht. **F7 «Geopolitische Stabilität»** — offene Lufträume
+und multilaterale Kooperation auf der einen Seite, Fragmentierung, Sperrungen
+und Konflikte auf der anderen — wirkt auf das System, ohne nennenswert
+zurückbeeinflusst zu werden. Ob in Europa die Schiene ausgebaut wird, ändert
+nichts an der Weltlage; eine geschlossene Luftstraße oder eine Pandemie ändern
+den Luftverkehr dagegen sofort und stark.
+
+Das ist beabsichtigt und in der Einflussmatrix auch so hinterlegt: F7 hat den
+mit Abstand niedrigsten Wert für «wird beeinflusst». Praktisch heißt das, dass
+sich F7 am besten als Annahme lesen lässt, die Sie einem Lauf mitgeben — nicht
+als Ergebnis, das er hervorbringt.
+
 ## Wie Faktoren und Zahlen zusammenhängen
 
 Die Faktoren setzen den Rahmen, die Systemgrößen füllen ihn aus. Ein Lauf im
