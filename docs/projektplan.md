@@ -92,11 +92,17 @@ drin" nicht die Frage, sondern "wird es gesetzt, wenn der Ausfall eintritt".
 > Beide Positionen decken sich mit der *Entscheidungsgrundlage* unten. Damit gilt **Variante A**
 > (siehe *Umsetzung nach der Entscheidung*): Der Blocker ist weg, das Paket ist umsetzbar.
 >
-> **Was die Entscheidung kostet — bewusst mitentschieden:** 48 der 168 Matrixzellen kodieren
-> heute eine Marktlogik und sind damit sachlich falsch. Sie müssen neu bewertet werden, und
-> zwar mit der Begründung aus [P2.3](#p23--matrix-provenienz-herstellen) in einem Zug — zweimal
-> durchgehen ist der teure Weg. P0.2 ist deshalb **kein kleines Umbenennungs-Paket**; wer es
-> anfasst, plant die Zellendurchsicht mit ein.
+> **Was die Entscheidung kostet — bewusst mitentschieden:** 48 der 168 Matrixzellen wurden
+> unter der Marktlesart bewertet und müssen deshalb **alle neu geprüft** werden. Nachgezählt am
+> 2026-08-26: **acht davon sind unter der geopolitischen Lesart nachweislich falsch** — die
+> Zeilen `F5.x → F7.x` und `F6.x → F7.x`, denn gesellschaftliche Flugakzeptanz und
+> Schienenausbau treiben keine Weltpolitik; `F6.1 → F7.1 = +3` ist dabei der höchste Wert der
+> ganzen eingehenden Spalte. Der Rest reicht von plausibel (`F2.x`, `F4.x` lesen sich unter
+> beiden Bedeutungen) bis vertretbar — verlassen kann man sich darauf trotzdem nicht, weil er
+> unter einer anderen Bedeutung entstanden ist. Neu bewertet wird mit der Begründung aus
+> [P2.3](#p23--matrix-provenienz-herstellen) in einem Zug — zweimal durchgehen ist der teure
+> Weg. P0.2 ist deshalb **kein kleines Umbenennungs-Paket**; wer es anfasst, plant die
+> Zellendurchsicht mit ein.
 >
 > **Und eine Vorbedingung, die daraus folgt:** F7 wird in
 > [P2.2](#p22--cib-impact-balance-kriterium-implementieren) pro Szenario als fixierter
@@ -126,7 +132,7 @@ Die Drift ist **kein späterer Umbenennungsfehler**: Im allerersten Commit des R
 
 **Was zu tun ist:** Entscheiden, welche Bedeutung F7 trägt. Dann Matrix, `factors.json`, Glossar und Handbuch auf **eine** Lesart ziehen. Danach ein Test, der Faktor-IDs und -Namen zwischen `factors.json` und `cib_frozen.json` mechanisch vergleicht, damit die Drift nicht wiederkommt.
 
-**Abgrenzung zu P2.3 — abhängig von der Entscheidung:** Fällt sie auf **Marktstruktur**, ist hier nur umzubenennen und die 168 Einflusswerte bleiben unberührt; Phase 0 hängt dann nicht an einer Zellendurchsicht. Fällt sie auf **Geopolitische Stabilität** (die Empfehlung oben), sind die 48 F7-Zellen sachlich falsch und müssen neu bewertet werden — dann gehört P2.3 für diese Zellen vorgezogen, weil zweimal durchgehen der teure Weg ist. In beiden Fällen bleibt der mechanische Namensabgleich zwischen `factors.json` und `cib_frozen.json` Teil dieses Pakets.
+**Abgrenzung zu P2.3 — abhängig von der Entscheidung:** Fällt sie auf **Marktstruktur**, ist hier nur umzubenennen und die 168 Einflusswerte bleiben unberührt; Phase 0 hängt dann nicht an einer Zellendurchsicht. Fällt sie auf **Geopolitische Stabilität** (die Empfehlung oben), sind alle 48 F7-Zellen neu zu bewerten — acht davon nachweislich falsch, der Rest unter einer anderen Bedeutung entstanden und damit nicht belastbar — dann gehört P2.3 für diese Zellen vorgezogen, weil zweimal durchgehen der teure Weg ist. In beiden Fällen bleibt der mechanische Namensabgleich zwischen `factors.json` und `cib_frozen.json` Teil dieses Pakets.
 
 **Umsetzung nach der Entscheidung.** Beide Wege sind hier vollständig ausgeschrieben, damit nach dem einen fehlenden Satz nichts mehr zu klären ist.
 
