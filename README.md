@@ -210,7 +210,9 @@ Konfiguration keinen nennt, dann als der benutzte Standardwert. Der
 `config_fingerprint` beschreibt die tatsächlich benutzte Konfiguration, beim
 Start des Laufs genommen — nicht die Dateien, die gerade in `configs/` liegen,
 denn ein Lauf aus dem Dashboard arbeitet mit einem Entwurf. Zwei Läufe mit
-gleichem Fingerabdruck und gleichem Seed sind derselbe Lauf.
+gleichem Fingerabdruck und gleichem Seed sind derselbe Lauf. Lief kein
+Sprachmodell mit, stehen `model`, `base_url`, `temperature` und `max_tokens`
+auf `null` — die Datei behauptet kein Modell, das nie gefragt wurde.
 
 **Pipeline pro Tick:** Faktoren → Agenten (Provider/Regulator) → Booking (Referenzpreis = Vortick-Marktpreis) → Consumer → Markt-Feedback (finaler Ticketpreis) → Delta-Events → Export.
 
