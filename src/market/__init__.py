@@ -2,7 +2,6 @@
 "numbers only from Python" surface for the market side of the simulation."""
 
 from src.market.factor_dynamics import (
-    AGENT_FACTOR_PERMISSIONS,
     apply_factor_rules,
     apply_factor_rules_at_tick_start,
     record_factor_timeseries,
@@ -24,7 +23,6 @@ from src.market.simulation_functions import (
 )
 
 __all__ = [
-    "AGENT_FACTOR_PERMISSIONS",
     "apply_factor_rules",
     "apply_factor_rules_at_tick_start",
     "record_factor_timeseries",

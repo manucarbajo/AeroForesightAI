@@ -1,4 +1,5 @@
 from src.agents.agent_dependencies import KNOWN_DEPENDENCIES
+from src.agents.agent_permissions import parse_factor_permission
 from src.models.agent_models import AgentConfig
 from src.models.enums import DistributionType
 from src.models.population_models import (
@@ -85,9 +86,9 @@ def _validate_agent_profile(agent: AgentConfig, factor_ids: set[str]) -> list[st
             )
 
     for entry in profile.may_propose:
-        if not entry.startswith("factor_state "):
+        factor_id = parse_factor_permission(entry)
+        if factor_id is None:
             continue
-        factor_id = entry.removeprefix("factor_state ").strip()
         if factor_id not in factor_ids:
             errors.append(
                 f"agent '{agent.id}': may_propose verweist auf unbekannten Faktor "

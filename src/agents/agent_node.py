@@ -10,6 +10,7 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from src.agents.agent_dependencies import format_depends_on_block
+from src.agents.agent_permissions import may_propose_factor
 from src.market.property_engine import scheduled_property_events
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
 from src.models.enums import AgentType, EventType
@@ -589,10 +590,11 @@ class AgentNode:
             if factor_id not in valid_factors:
                 continue
 
-            if self.config.profile and self.config.profile.may_propose is not None:
-                allowed = self.config.profile.may_propose
-                if f"factor_state {factor_id}" not in allowed:
-                    continue
+            # Dieselbe Prüfung wie in `validate_factor_proposals` (P0.5) —
+            # vorher stand hier eine zweite, die ohne Profil alles durchließ,
+            # während die Durchsetzung ohne Profil nichts durchließ.
+            if not may_propose_factor(self.config.profile, factor_id):
+                continue
 
             factor = valid_factors[factor_id]
             if proposed_state not in factor.possible_states:

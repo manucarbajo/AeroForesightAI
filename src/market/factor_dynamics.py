@@ -4,18 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.agents.agent_permissions import may_propose_factor
 from src.market.property_engine import resolve_system_properties
 from src.market.simulation_functions import active_parameters
 from src.models.agent_models import StateChange
 from src.models.property_models import FactorRule, PropertiesConfig
 from src.models.state_models import SimulationState
 from src.rule_engine import RuleContext, RuntimeMetrics, rule_matches
-
-AGENT_FACTOR_PERMISSIONS: dict[str, set[str]] = {
-    "regulator": {"F2", "F6"},
-    "provider": set(),
-    "consumer": set(),
-}
 
 
 @dataclass
@@ -172,7 +167,12 @@ def validate_factor_proposals(
         return []
 
     allowed_targets = allowed_factor_targets(state)
-    permitted_factors = AGENT_FACTOR_PERMISSIONS.get(agent_id, set())
+    # Die Berechtigung kommt seit P0.5 ausschließlich aus `agent_profiles.json`
+    # und wird von derselben Funktion geprüft, die auch der Parser benutzt.
+    profile = next(
+        (agent.profile for agent in state.agents if agent.id == agent_id),
+        None,
+    )
     validated: list[StateChange] = []
 
     for change in proposals:
@@ -183,7 +183,7 @@ def validate_factor_proposals(
             continue
         if change.proposed_state == factor.current_state:
             continue
-        if change.factor_id not in permitted_factors:
+        if not may_propose_factor(profile, change.factor_id):
             continue
         if change.proposed_state not in allowed_targets.get(change.factor_id, set()):
             continue
