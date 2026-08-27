@@ -69,6 +69,20 @@ def _line_chart(
     return dcc.Graph(figure=fig, config=theme.GRAPH_CONFIG)
 
 
+def _model_label(metadata: dict) -> str:
+    """Der Modellname — aber nur, wenn überhaupt eines beteiligt war.
+
+    Die Argumente tragen den Modellnamen auch dann, wenn gar nicht gefragt
+    wurde. «Modell llama3.2» neben «Rechenmodus: Ohne Sprachmodell» ist genau
+    der Widerspruch, den P0.6 abstellen soll: Ein Lauf ohne Sprachmodell darf
+    nicht wie ein vollwertiger aussehen.
+    """
+
+    if metadata.get("compute_mode") in {"mock_llm", "deterministic_only"}:
+        return "keins"
+    return metadata.get("model") or "—"
+
+
 def _provenance(metadata: dict) -> html.Div:
     """Seed und Rechenmodus (P0.6).
 
@@ -138,7 +152,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
                     f"{metadata.get('ticks_completed', '?')} / {metadata.get('ticks_max', '?')}",
                 ),
                 ui.metric_tile("Events", metadata.get("total_events", "?")),
-                ui.metric_tile("Modell", metadata.get("model", "—")),
+                ui.metric_tile("Modell", _model_label(metadata)),
                 ui.metric_tile("Markt", "an" if metadata.get("market_enabled", True) else "aus"),
                 cols="sm:grid-cols-2 lg:grid-cols-4",
             )

@@ -563,3 +563,179 @@ class TestValidierungDerKlauseln:
             )
         )
         assert any("unbekannte Bedingung" in error for error in errors)
+
+
+class TestVerdrahtungImEchtenLauf:
+    """Die Gegenprobe vom 2026-08-27 fand hier eine Lücke.
+
+    Die Tests oben rufen `apply_factor_shifts` direkt und reichen Tick und
+    Metriken selbst hinein. Ob die **Pipeline** sie durchreicht, prüfte keiner
+    — man konnte `tick=current_tick` im Sampler durch `tick=0` ersetzen und
+    `metrics=metrics` im Environment-Node durch `metrics=None`, ohne dass ein
+    Test rot wurde. Genau diese Verdrahtung ist aber die Zusage des Pakets:
+    Eine `shift_rule` mit `tick`- oder `at_least`-Bedingung soll im echten Lauf
+    greifen, nicht nur in einem Direktaufruf.
+    """
+
+    @staticmethod
+    def _awareness_over_ticks(rules: list, ticks=(1, 2, 3)) -> list[tuple[float, float]]:
+        from src.config_loader import build_initial_state
+        from src.orchestration.environment_node import EnvironmentNode
+
+        state = build_initial_state()
+        state.properties.shift_rules = rules
+        node = EnvironmentNode()
+        seen: list[tuple[float, float]] = []
+        for tick in ticks:
+            state.clock.current_tick = tick
+            state = node.invoke(state)
+            person = state.population_individuals[0]
+            seen.append((person.price_sensitivity, person.environmental_awareness))
+        return seen
+
+    def test_tick_rule_fires_only_in_its_tick(self) -> None:
+        from src.models.property_models import ShiftRule
+
+        ohne = self._awareness_over_ticks([])
+        mit = self._awareness_over_ticks(
+            [
+                ShiftRule(
+                    id="tick_probe",
+                    when={"tick": 2},
+                    effect={"property": "price_sensitivity", "delta": 0.2},
+                )
+            ]
+        )
+        assert mit[0][0] == ohne[0][0], "Tick 1: Regel darf nicht greifen"
+        assert mit[1][0] > ohne[1][0], "Tick 2: Regel muss greifen"
+
+    def test_metric_rule_reaches_the_sampler(self) -> None:
+        """`cost_pressure` steht nur in den Metriken — kommen die nicht an,
+        bleibt die Regel wirkungslos."""
+
+        from src.models.property_models import ShiftRule
+
+        ohne = self._awareness_over_ticks([])
+        mit = self._awareness_over_ticks(
+            [
+                ShiftRule(
+                    id="metric_probe",
+                    when={"metric": "cost_pressure", "at_least": 50},
+                    effect={"property": "environmental_awareness", "delta": 0.2},
+                )
+            ]
+        )
+        assert all(m[1] > o[1] for m, o in zip(mit, ohne, strict=True))
+
+
+class TestOnceBleibtErhalten:
+    """`once` ist seit P0.4 kein Teil des Prädikats mehr — die Aufrufer führen
+    es selbst. Ungeprüft war, ob sie es auch tun."""
+
+    @staticmethod
+    def _state_with_once_rule():
+        from src.config_loader import build_initial_state
+        from src.models.property_models import FactorRule, FactorRuleEffect
+
+        state = build_initial_state()
+        state.clock.current_tick = 3
+        state.market_metrics = {"cost_pressure": 150.0}
+        state.environment.factors["F4"].current_state = "F4.1"
+        state.properties.factor_rules = [
+            FactorRule(
+                id="einmalig",
+                factor_id="F4",
+                once=True,
+                when={"metric": "cost_pressure", "at_least": 100},
+                effect=FactorRuleEffect(set_state="F4.2"),
+            )
+        ]
+        return state
+
+    def test_once_rule_applies_only_once(self) -> None:
+        from src.market.factor_dynamics import apply_factor_rules
+
+        state = self._state_with_once_rule()
+        assert [a.rule_id for a in apply_factor_rules(state)] == ["einmalig"]
+        assert state.applied_factor_rule_ids == ["einmalig"]
+
+        state.environment.factors["F4"].current_state = "F4.1"
+        assert apply_factor_rules(state) == []
+        assert state.environment.factors["F4"].current_state == "F4.1"
+
+    def test_once_rule_is_no_longer_an_allowed_target(self) -> None:
+        """Auch der Vorschlags-Filter muss `once` beachten — sonst könnte ein
+        Agent den Zustand herbeiführen, den die Regel schon verbraucht hat."""
+
+        from src.market.factor_dynamics import allowed_factor_targets, apply_factor_rules
+
+        state = self._state_with_once_rule()
+        assert "F4.2" in allowed_factor_targets(state)["F4"]
+
+        apply_factor_rules(state)
+        state.environment.factors["F4"].current_state = "F4.1"
+        assert "F4.2" not in allowed_factor_targets(state)["F4"]
+
+
+class TestProtokollUndAuswertungAusEinerQuelle:
+    """`narrative.py` hatte seine eigene, unvollständige Lesart einer Klausel.
+    Ungeprüft war, ob es die gemeinsame jetzt tatsächlich benutzt."""
+
+    @staticmethod
+    def _narrative(rules: list, tmp_path) -> str:
+        from pathlib import Path
+
+        from src.config_loader import build_initial_state
+        from src.reporting.output_writer.narrative import save_final_narrative
+
+        state = build_initial_state()
+        state.clock.current_tick = 1
+        state.properties.shift_rules = rules
+        return Path(save_final_narrative(state, run_dir=tmp_path)).read_text(encoding="utf-8")
+
+    def test_metric_rule_is_described(self, tmp_path) -> None:
+        """Die alte Fassung kannte `metric` nicht und schrieb für eine solche
+        Regel «immer» ins Protokoll — also das Gegenteil."""
+
+        from src.models.property_models import ShiftRule
+
+        text = self._narrative(
+            [
+                ShiftRule(
+                    id="probe",
+                    when={"metric": "booking_rate", "below": 0.25},
+                    effect={"property": "price_sensitivity", "delta": 0.1},
+                )
+            ],
+            tmp_path,
+        )
+        assert "`booking_rate` < 0.25" in text
+        assert "Wenn immer" not in text
+
+    def test_at_least_is_described(self, tmp_path) -> None:
+        from src.models.property_models import ShiftRule
+
+        text = self._narrative(
+            [
+                ShiftRule(
+                    id="probe",
+                    when={"system_property": "carbon_tax_level", "at_least": 80},
+                    effect={"property": "price_sensitivity", "delta": 0.1},
+                )
+            ],
+            tmp_path,
+        )
+        assert "≥ 80" in text
+
+    def test_description_matches_the_evaluator(self, tmp_path) -> None:
+        """Der eigentliche Punkt: dieselbe Klausel, dieselbe Quelle."""
+
+        from src.models.property_models import ShiftRule
+        from src.rule_engine import describe_when
+
+        when = {"factor": "F4", "state": "F4.2"}
+        text = self._narrative(
+            [ShiftRule(id="probe", when=when, effect={"property": "price_sensitivity"})],
+            tmp_path,
+        )
+        assert describe_when(when) in text

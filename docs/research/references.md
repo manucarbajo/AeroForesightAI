@@ -12,7 +12,7 @@
 ### Bevölkerungsentwicklung
 Zielbevölkerung pro Tick wird gesetzt und kann wachsen/schrumpfen.
 - **`run_population_tick`**
-- **`src/population_sampler.py`**
+- **`src/population/population_sampler.py`**
 
 &rarr; Smith, S. K., Tayman, J., & Swanson, D. A. State and Local Population Projections: Methodology and Analysis <br>
 - **Quelle:** Demografische Projektionen nutzen Zeitreihen-/Szenariofortschreibungen; in der Literatur meist als Populationsprojektion (P_{t+1}=P_t + B - D + M) oder als Szenarioverlauf beschrieben.

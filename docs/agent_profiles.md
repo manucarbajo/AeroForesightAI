@@ -77,7 +77,7 @@ Heute erlaubt: Regulator `F2`, `F6`. Provider und Consumer nichts.
 
 ## Reaktion auf Events
 
-Agenten erhalten `event_log_recent` und `depends_on`-Kontext. Delta-Events (`[delta:booking:…]`, `[delta:price:…]`) stammen aus Python (`src/event_deltas.py`) und dienen als **verbindliche** Referenz für Narrative.
+Agenten erhalten `event_log_recent` und `depends_on`-Kontext. Delta-Events (`[delta:booking:…]`, `[delta:price:…]`) stammen aus Python (`src/orchestration/event_deltas.py`) und dienen als **verbindliche** Referenz für Narrative.
 
 ## Tests
 

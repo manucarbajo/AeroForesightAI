@@ -114,3 +114,32 @@ def test_the_deselected_tests_exist():
     for eintrag in re.findall(r"--deselect (\S+)", workflow):
         datei = eintrag.split("::")[0]
         assert (ROOT / datei).is_file(), f"{datei} gibt es nicht mehr"
+
+
+def test_documented_module_paths_exist():
+    """Kein Doku-Kapitel darf auf ein Modul zeigen, das es nicht gibt.
+
+    Gefunden bei der Gegenprobe zu P0.4–P0.6 (2026-08-27): fünf tote Pfade,
+    zwei davon in **offenen** Findings — `market_rules.py` war umbenannt,
+    `src/event_deltas.py`, `src/scenario_consistency.py` und
+    `src/population_sampler.py` lagen längst in ihren Paketen. Ein Pfad, den es
+    nicht gibt, ist die einfachste Form von "die Doku behauptet, was der Code
+    nicht tut" — und die einzige, die sich mechanisch ausschließen lässt.
+
+    Geprüft wird jeder Pfad in Backticks, der auf `.py` endet — ohne Ausnahmen.
+    Ein früherer Modulname gehört in den Fließtext ("hieß bis P0.4
+    market_rules.py"), nicht in eine Pfadangabe. Eine Ausnahmeliste wäre wieder
+    die Sorte Aufzählung, die dem Code davonläuft.
+    """
+
+    repo = Path(__file__).resolve().parents[1]
+    docs = list((repo / "docs").rglob("*.md")) + [repo / "CLAUDE.md", repo / "README.md"]
+
+    stale: list[str] = []
+    for doc in docs:
+        for number, line in enumerate(doc.read_text(encoding="utf-8").splitlines(), start=1):
+            for match in re.findall(r"`(src/[A-Za-z0-9_/]+\.py)`", line):
+                if not (repo / match).exists():
+                    stale.append(f"{doc.relative_to(repo)}:{number}: {match}")
+
+    assert not stale, "Doku zeigt auf Module, die es nicht gibt:\n  " + "\n  ".join(stale)

@@ -271,3 +271,79 @@ class TestDerFingerabdruckWandertNicht:
             f"Diese Schlüssel schreibt ein Lauf in die Matrix, ohne dass der "
             f"Fingerabdruck sie kennt: {sorted(undeclared)}"
         )
+
+
+class TestMultiRunTraegtDenRechenmodus:
+    """Gegenprobe 2026-08-27: `_build_run_args` ließ sich `mock_llm` entziehen,
+    ohne dass ein Test rot wurde — dann verlöre jeder Teillauf eines Multi-Runs
+    seinen Rechenmodus."""
+
+    def test_run_args_carry_the_compute_mode(self) -> None:
+        from src.run_simulation import _build_run_args
+
+        base = _args(mock_llm=True, deterministic_only=False)
+        built = _build_run_args(base, run_index=2, seed=77)
+        assert compute_mode(built) == "mock_llm"
+        assert built.seed == 77
+
+    def test_metadata_of_a_sub_run_says_mock(self, tmp_path) -> None:
+        from src.run_simulation import _build_run_args
+
+        state = build_initial_state()
+        state.config.seed = 78
+        metadata = _write(
+            tmp_path, state, _build_run_args(_args(mock_llm=True), run_index=2, seed=78)
+        )
+        assert metadata["compute_mode"] == "mock_llm"
+        assert metadata["seed"] == 78
+
+
+class TestDasDashboardZeigtDieHerkunft:
+    """Die Ansicht war von keinem Test berührt — dieselbe Lücke, die die dritte
+    Nachprüfung von P0.3 für den Start-Callback gefunden hat."""
+
+    @staticmethod
+    def _render(tmp_path, metadata: dict) -> str:
+        from dashboard.web.views import overview
+
+        (tmp_path / "run_metadata.json").write_text(
+            json.dumps(metadata, ensure_ascii=False), encoding="utf-8"
+        )
+        return str(overview.render(tmp_path, "run_test"))
+
+    def test_mode_and_seed_are_shown(self, tmp_path) -> None:
+        rendered = self._render(
+            tmp_path,
+            {"compute_mode": "llm", "seed": 4242, "model": "llama3.2", "ticks_completed": 3},
+        )
+        assert "Mit Sprachmodell" in rendered
+        assert "4242" in rendered
+
+    def test_mock_run_carries_a_hint(self, tmp_path) -> None:
+        """Ein Lauf ohne Sprachmodell darf nicht wie ein vollwertiger aussehen."""
+
+        rendered = self._render(
+            tmp_path, {"compute_mode": "mock_llm", "seed": 1, "model": "llama3.2"}
+        )
+        assert "Ohne Sprachmodell (Mock)" in rendered
+        assert "ohne Sprachmodell entstanden" in rendered
+
+    def test_mock_run_does_not_claim_a_model(self, tmp_path) -> None:
+        """Gegenprobe-Fund: Die Kachel «Modell» zeigte `llama3.2` auch bei einem
+        Mock-Lauf — der Modellname steht in den Argumenten, auch wenn nie
+        gefragt wurde."""
+
+        rendered = self._render(
+            tmp_path, {"compute_mode": "mock_llm", "seed": 1, "model": "llama3.2"}
+        )
+        assert "llama3.2" not in rendered
+
+    def test_llm_run_still_names_its_model(self, tmp_path) -> None:
+        rendered = self._render(tmp_path, {"compute_mode": "llm", "seed": 1, "model": "llama3.2"})
+        assert "llama3.2" in rendered
+
+    def test_old_run_says_so_instead_of_inventing(self, tmp_path) -> None:
+        """Läufe von vor P0.6 kennen die Felder nicht."""
+
+        rendered = self._render(tmp_path, {"ticks_completed": 3, "model": "llama3.2"})
+        assert "nicht festgehalten" in rendered
