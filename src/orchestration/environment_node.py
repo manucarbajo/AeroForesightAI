@@ -89,7 +89,9 @@ class EnvironmentNode:
         )
         previous_markup = state.market_metrics.get(
             "provider_markup",
-            state.market_metrics.get("markup", initial_provider_markup(properties)),
+            state.market_metrics.get(
+                "markup", initial_provider_markup(properties, tick=round_number)
+            ),
         )
         previous_cost_index = state.market_metrics.get("cost_index", 1.0)
 
@@ -120,7 +122,7 @@ class EnvironmentNode:
         else:
             provisional_price = compose_ticket_price(
                 cost_pressure,
-                initial_provider_markup(properties),
+                initial_provider_markup(properties, tick=round_number),
                 properties=properties,
                 tick=round_number,
             )
@@ -141,8 +143,8 @@ class EnvironmentNode:
                     "ticket_price": provisional_price,
                     "cost_pressure": cost_pressure,
                     "cost_index": cost_index,
-                    "provider_markup": initial_provider_markup(properties),
-                    "markup": initial_provider_markup(properties),
+                    "provider_markup": initial_provider_markup(properties, tick=round_number),
+                    "markup": initial_provider_markup(properties, tick=round_number),
                     **params,
                 }
             )

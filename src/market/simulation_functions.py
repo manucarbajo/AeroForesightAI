@@ -35,14 +35,21 @@ def compose_ticket_price(
     cost_pressure: float,
     provider_markup: float,
     *,
-    properties: PropertiesConfig | None = None,
-    tick: int = 0,
+    properties: PropertiesConfig | None,
+    tick: int,
 ) -> float:
     """published ticket price from cost layer + runtime margin property.
 
     Custom taxes (percentage on base) and fees (absolute surcharges) defined
     via ``price_component_type`` on system properties are applied here:
         final = (base) * (1 + sum_of_tax_rates) + sum_of_absolute_fees
+
+    *properties* und *tick* sind **Pflicht** — dieselbe Regel wie bei
+    `compute_cost_pressure` (P0.7). Beide hatten Defaults, und beide verschoben
+    das Ergebnis still: ohne *properties* fielen Steuern und Gebühren ganz weg,
+    und ``tick=0`` löste die Trajektorien vor ihrem ersten definierten Tick auf.
+    Wer wirklich nur die Kostenschicht will, schreibt ``properties=None`` —
+    eine Aussage statt eines Versehens.
     """
     base = cost_pressure + max(0.0, provider_markup)
 
@@ -186,8 +193,8 @@ def apply_market_feedback(
     config: MarketFeedbackConfig,
     *,
     coefficients: PriceCoefficientsConfig | None = None,
-    properties: PropertiesConfig | None = None,
-    tick: int = 0,
+    properties: PropertiesConfig | None,
+    tick: int,
 ) -> tuple[float, float]:
     """adjust provider_markup from observed booking rate vs target."""
     coeffs = coefficients or PriceCoefficientsConfig()
@@ -321,13 +328,15 @@ def compute_demand(
     return max(0.0, min(2.0, demand))
 
 
-def _runtime_markup(properties: PropertiesConfig, previous_markup: float | None) -> float:
+def _runtime_markup(
+    properties: PropertiesConfig, previous_markup: float | None, *, tick: int
+) -> float:
 
     if previous_markup is not None:
 
         return previous_markup
 
-    return initial_provider_markup(properties)
+    return initial_provider_markup(properties, tick=tick)
 
 
 def compute_market_metrics(
@@ -362,7 +371,7 @@ def compute_market_metrics(
 
     anchor_price = previous_price if previous_price > 0 else base_price
 
-    provider_markup = _runtime_markup(properties, previous_markup)
+    provider_markup = _runtime_markup(properties, previous_markup, tick=tick)
 
     fuel_change = params.get("fuel_price_change", 0.0)
 

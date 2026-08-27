@@ -51,6 +51,8 @@ class TestSegmentDivergence:
             factors=_recession_factors(),
             system_properties={"income_index": 0.85, "carbon_tax_level": 80.0},
             seed=42,
+            current_tick=1,
+            metrics=None,
         )
 
         business = stats.segments["business"].booking_rate

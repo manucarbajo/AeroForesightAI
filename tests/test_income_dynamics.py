@@ -69,6 +69,8 @@ def test_shift_rules_modify_base_before_index_scaling():
         factors=factors,
         system_properties={"income_index": 1.0, "carbon_tax_level": 50.0},
         seed=11,
+        current_tick=1,
+        metrics=None,
     )
     avg_with_shift = stats_default.avg_income_factor
 
@@ -89,6 +91,8 @@ def test_shift_rules_modify_base_before_index_scaling():
         },
         system_properties={"income_index": 1.0, "carbon_tax_level": 50.0},
         seed=11,
+        current_tick=1,
+        metrics=None,
     )
 
     assert avg_with_shift < stats_no_shift.avg_income_factor
@@ -117,6 +121,8 @@ def test_falling_income_index_reduces_booking_more_for_price_sensitive():
         factors=factors,
         system_properties={"income_index": 1.0, "carbon_tax_level": 50.0},
         seed=42,
+        current_tick=1,
+        metrics=None,
     )
     _, low_income_stats = run_population_tick(
         properties,
@@ -127,6 +133,8 @@ def test_falling_income_index_reduces_booking_more_for_price_sensitive():
         factors=factors,
         system_properties={"income_index": 0.85, "carbon_tax_level": 50.0},
         seed=42,
+        current_tick=1,
+        metrics=None,
     )
 
     business_high = high_income_stats.segments["business"].booking_rate

@@ -71,6 +71,8 @@ def test_persistence_same_ids_across_ticks():
         factors={},
         system_properties={"carbon_tax_level": 50.0},
         seed=seed,
+        current_tick=1,
+        metrics=None,
     )
     tick_two_people, _ = run_population_tick(
         properties,
@@ -81,6 +83,8 @@ def test_persistence_same_ids_across_ticks():
         factors={},
         system_properties={"carbon_tax_level": 80.0},
         seed=seed,
+        current_tick=1,
+        metrics=None,
     )
 
     assert [person.id for person in tick_one_people] == [person.id for person in tick_two_people]
@@ -108,6 +112,8 @@ def test_apply_factor_shifts_carbon_tax_rule():
         properties.shift_rules,
         factors={},
         system_properties={"carbon_tax_level": 120.0},
+        tick=1,
+        metrics=None,
     )
 
     assert shifted[0].price_sensitivity > before
@@ -137,6 +143,8 @@ def test_apply_factor_shifts_f6_awareness_rule():
         ],
         factors=factors,
         system_properties={},
+        tick=1,
+        metrics=None,
     )
 
     assert shifted[0].environmental_awareness == round(before + 0.02, 4)
@@ -189,12 +197,16 @@ def test_shift_rule_once_does_not_stack():
         [rule],
         factors={},
         system_properties={"carbon_tax_level": 120.0},
+        tick=1,
+        metrics=None,
     )
     second = apply_factor_shifts(
         first,
         [rule],
         factors={},
         system_properties={"carbon_tax_level": 200.0},
+        tick=1,
+        metrics=None,
     )
 
     assert second[0].price_sensitivity == first[0].price_sensitivity
@@ -243,6 +255,7 @@ def test_saturation_decays_per_tick():
         factors={},
         system_properties={},
         current_tick=2,
+        metrics=None,
     )
 
     for person in individuals_t2:

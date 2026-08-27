@@ -93,7 +93,21 @@ class TestM413ConfigurablePrice:
 
     def test_initial_provider_markup_from_system_property(self):
         properties = load_properties_config()
-        assert initial_provider_markup(properties) == 28.0
+        assert initial_provider_markup(properties, tick=1) == 28.0
+
+    def test_the_markup_baseline_is_flat_today(self):
+        """Warum der Pflicht-Tick heute nichts verschiebt — und wann er es täte.
+
+        `provider_markup` ist im ausgelieferten Config eine flache Baseline, also
+        liefert jeder Tick denselben Wert. Genau deshalb blieb der Default
+        `tick=0` in allen sechs Aufrufern folgenlos. Gibt ihr jemand im Editor
+        eine Stufenfunktion oder Regeln, wird er still falsch — dieser Test
+        hält fest, worauf die heutige Harmlosigkeit beruht.
+        """
+
+        properties = load_properties_config()
+        werte = {initial_provider_markup(properties, tick=t) for t in (0, 1, 5, 20, 40)}
+        assert len(werte) == 1
 
     def test_market_rules_resolve_marginal_cost_fraction(self):
         properties = load_properties_config()
@@ -107,8 +121,15 @@ class TestApplyMarketFeedback:
         config = resolve_market_feedback_config(properties)
         coeffs = properties.price_model.coefficients
         cost = 110.0
-        price_high, _ = apply_market_feedback(cost, 0.9, 10.0, 120.0, config, coefficients=coeffs)
-        price_low, _ = apply_market_feedback(cost, 0.3, 10.0, 120.0, config, coefficients=coeffs)
+        # `properties=None, tick=1` ausdrücklich: Der Test prüft die
+        # Rückkopplung, nicht die Preiskomponenten. Seit die beiden Pflicht
+        # sind, steht das da, statt aus Defaults zu folgen.
+        price_high, _ = apply_market_feedback(
+            cost, 0.9, 10.0, 120.0, config, coefficients=coeffs, properties=None, tick=1
+        )
+        price_low, _ = apply_market_feedback(
+            cost, 0.3, 10.0, 120.0, config, coefficients=coeffs, properties=None, tick=1
+        )
         assert price_low < price_high
 
     def test_clipping_limits_large_drop(self):

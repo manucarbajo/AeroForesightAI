@@ -168,3 +168,76 @@ class TestBeideAufrufstellenStimmenUeberein:
             system_properties=resolve_system_properties(10, properties),
         )["cost_pressure"]
         assert gezeigt == pytest.approx(richtig)
+
+
+class TestKeinKontextparameterHatEinenDefault:
+    """Die Verallgemeinerung von P0.7 — als Test statt als Vorsatz.
+
+    Der Befund war nie „diese eine Funktion hat einen Default". Er war: Ein
+    Parameter, der den Kontext eines Ticks trägt, darf keinen haben, weil sein
+    Weglassen kein Fehler ist, sondern eine **andere Zahl**. `factors=None`
+    hieß "kein Faktor steht irgendwo", `tick=0` hieß "es gibt keinen Tick" —
+    beides ohne Meldung, beides mit stillen Folgen im Ergebnis.
+
+    P0.7 hat das für die zwei Marktfunktionen geschlossen. Bei der Prüfung des
+    Pakets (2026-08-27) lagen dieselben Defaults noch in der
+    Bevölkerungshälfte: `apply_factor_shifts(tick=0, metrics=None)` und
+    `run_population_tick(current_tick=0, metrics=None)`. Eine `shift_rule` mit
+    `tick`- oder `metric`-Bedingung wäre bei einem vergessenen Argument wieder
+    still nie gegriffen — genau der Zustand, den P0.4 beseitigen sollte.
+
+    Dieser Test hält die Regel für alle vier Stellen fest, damit sie nicht ein
+    fünftes Mal einzeln gefunden werden muss. Wer eine neue Funktion mit
+    Tick-Kontext baut, trägt sie hier ein.
+    """
+
+    #: (Modul, Funktion, Parameter, die keinen Default haben dürfen)
+    KONTEXTPARAMETER = [
+        (
+            "src.market.simulation_functions",
+            "compute_cost_pressure",
+            ("factors", "system_properties"),
+        ),
+        (
+            "src.market.simulation_functions",
+            "compute_market_metrics",
+            ("factors", "system_properties"),
+        ),
+        ("src.population.population_sampler", "apply_factor_shifts", ("tick", "metrics")),
+        ("src.population.population_sampler", "run_population_tick", ("current_tick", "metrics")),
+        ("src.market.simulation_functions", "compose_ticket_price", ("properties", "tick")),
+        ("src.market.simulation_functions", "apply_market_feedback", ("properties", "tick")),
+        ("src.market.market_feedback", "initial_provider_markup", ("tick",)),
+        ("src.market.market_feedback", "initial_ticket_price", ("tick",)),
+    ]
+
+    @pytest.mark.parametrize(("modul", "funktion", "parameter"), KONTEXTPARAMETER)
+    def test_it_has_no_default(self, modul: str, funktion: str, parameter: tuple[str, ...]) -> None:
+        import importlib
+        import inspect
+
+        signatur = inspect.signature(getattr(importlib.import_module(modul), funktion))
+
+        for name in parameter:
+            assert name in signatur.parameters, f"{funktion} kennt '{name}' nicht mehr"
+            p = signatur.parameters[name]
+            assert p.default is inspect.Parameter.empty, (
+                f"{funktion}({name}=...) hat wieder einen Default. Ein weggelassener "
+                "Kontext liefert damit still ein anderes Ergebnis, statt laut zu "
+                "scheitern — siehe P0.7."
+            )
+
+    @pytest.mark.parametrize(("modul", "funktion", "parameter"), KONTEXTPARAMETER)
+    def test_it_is_keyword_only(
+        self, modul: str, funktion: str, parameter: tuple[str, ...]
+    ) -> None:
+        """Positionell übergeben ließe sich der Kontext still vertauschen."""
+
+        import importlib
+        import inspect
+
+        signatur = inspect.signature(getattr(importlib.import_module(modul), funktion))
+        for name in parameter:
+            assert (
+                signatur.parameters[name].kind is inspect.Parameter.KEYWORD_ONLY
+            ), f"{funktion}({name}) ist nicht keyword-only"
