@@ -143,3 +143,33 @@ def test_documented_module_paths_exist():
                     stale.append(f"{doc.relative_to(repo)}:{number}: {match}")
 
     assert not stale, "Doku zeigt auf Module, die es nicht gibt:\n  " + "\n  ".join(stale)
+
+
+def test_internal_doc_anchors_point_somewhere():
+    """Ein Verweis auf eine Überschrift, die es nicht mehr gibt, führt ins Leere.
+
+    Gefunden bei der zweiten Gegenprobe (2026-08-27): Zwei Links im Projektplan
+    zeigten auf `#p05--…` und `#p06--…`, aber die Überschriften hatten
+    inzwischen ein "✅ erledigt 2026-08-27" bekommen — und damit einen anderen
+    Anker. Dieselbe Sorte stiller Doku-Drift wie die toten Modulpfade darüber,
+    nur eine Ebene höher: Der Text stimmt, das Ziel ist weg.
+
+    Geprüft werden nur Anker **innerhalb derselben Datei** (`](#…)`); Links auf
+    andere Dokumente hängen an deren Überschriften und gehören dorthin.
+    """
+
+    def slug(heading: str) -> str:
+        heading = re.sub(r"[^\w\s-]", "", heading.strip().lower(), flags=re.UNICODE)
+        return heading.strip().replace(" ", "-")
+
+    docs = list((ROOT / "docs").rglob("*.md")) + [ROOT / "CLAUDE.md", ROOT / "README.md"]
+
+    tot: list[str] = []
+    for doc in docs:
+        text = doc.read_text(encoding="utf-8")
+        ueberschriften = {slug(m) for m in re.findall(r"^#{1,6}\s+(.*)$", text, re.M)}
+        for anker in sorted(set(re.findall(r"\]\(#([^)]+)\)", text))):
+            if anker not in ueberschriften:
+                tot.append(f"{doc.relative_to(ROOT)}: #{anker}")
+
+    assert not tot, "Verweise auf Überschriften, die es nicht gibt:\n  " + "\n  ".join(tot)
