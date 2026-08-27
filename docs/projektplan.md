@@ -576,12 +576,30 @@ und Endlagen. Die Aufrufer übergaben die Werte bereits — neu ist nur, dass si
    und hält danach jeden Unterschied für belastbar. In `lauf-konfigurieren.md` war die
    Unterscheidung schon richtig getroffen, hier fehlte sie.
 
-**Ein Finding wurde verschärft statt behoben:** Die `run_multi`-Pfadabhängigkeit (Folge beginnt
-bei 0, Einzellauf bei `DEFAULT_SEED`) trägt inzwischen eine **dokumentierte Arbeitsweise** — die
-Streuungsmessung oben funktioniert nur, weil `run_multi` bei 0 beginnt. Ein Finding, auf dem eine
-Produktzusage ruht, gehört entschieden: entweder zur benannten Eigenschaft erklärt und ins
-Handbuch geschrieben, oder angeglichen — dann braucht `run_multi` eine andere Quelle für Vielfalt
-als den fehlenden Seed. Die Entscheidung steht aus und liegt nicht bei der Review.
+**Und eine Entscheidung ist gefallen: `run_multi` ist angeglichen.** Die Pfadabhängigkeit —
+Wiederholungen begannen ihre Seed-Folge bei 0, ein Einzellauf rechnete mit `DEFAULT_SEED` —
+stand als Finding im Audit und trug zugleich eine **dokumentierte Arbeitsweise**: Die
+Streuungsmessung in `fragestellungen.md` und `vergleiche.md` beruht auf ihr. Ein Finding, auf dem
+eine Produktzusage ruht, gehört entschieden statt verwaltet; entschieden wurde für Angleichen.
+
+**Die Sorge dabei war unbegründet, und das ist der eigentliche Ertrag der Prüfung.** Die Frage
+lautete, ob `run_multi` ohne die Abweichung eine andere Quelle für Vielfalt braucht. Sie braucht
+keine: Die Wiederholungen unterscheiden sich durch `base_seed + index`, nicht durch den fehlenden
+Seed. Das Angleichen kostet also nichts und bringt eine Eigenschaft ein, die vorher fehlte — die
+**erste Wiederholung ist jetzt derselbe Lauf wie ein Einzellauf**, statt ein vierter, unerklärter
+Fall zu sein. `or 0` ist dabei zu `is None` geworden: Ein ausdrücklich gesetzter Seed 0 ist eine
+Angabe, kein fehlender Wert.
+
+**Was das sichtbar verschiebt:** Wiederholungen ohne eigenen Startwert rechnen jetzt mit
+42, 43, 44 … statt 0, 1, 2 … — andere Zahlen, dieselbe Methode. Die Aussagen, die jemand aus der
+Streuung älterer Wiederholungen gezogen hat, bleiben gültig; ihre Einzelwerte nicht.
+`docs/handbuch/vergleiche.md` nennt den Schnitt neben dem aus P0.7.
+
+**Dabei aufgefallen:** `run_multi` hatte **keinen einzigen Test** — eine Funktion, auf der zwei
+Handbuchkapitel eine Methode aufbauen. `tests/test_run_multi_seeds.py` deckt jetzt den Startwert
+der Folge, den Vorrang eines gesetzten Seeds, die ausdrückliche 0, übergebene Seed-Listen, die
+Verschiedenheit der Wiederholungen und den Seed jedes Teillaufs im Artefakt ab. Drei davon
+werden rot, wenn man `or 0` zurückschreibt.
 
 **Zwei eigene Fehlgriffe, protokolliert** — beide von den Wächtern aus der zweiten Runde gefangen,
 nicht von Aufmerksamkeit: Das Skript, das die Testaufrufe auf die neuen Pflichtparameter

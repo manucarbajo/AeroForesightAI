@@ -59,9 +59,16 @@ deshalb billiger, und die Nachfrage weicht später aus — im Standardlauf kippt
 die Mobilitätsnachfrage seither in Runde 4 statt in Runde 15. Die Endzustände
 der Faktoren sind dieselben geblieben, der Weg dorthin nicht.
 
+Am selben Tag wurde ein zweiter Unterschied begradigt: **Wiederholungen ohne
+eigenen Startwert** begannen ihre Folge bei einem anderen Wert als ein
+Einzellauf. Beides beginnt jetzt gleich, wodurch die erste Wiederholung
+derselbe Lauf ist wie ein einzeln gestarteter. Wiederholungen aus der Zeit
+davor tragen andere Startwerte und damit andere Zahlen — die Aussagen, die man
+aus ihrer Streuung gezogen hat, bleiben gültig, die Einzelwerte nicht.
+
 Woran Sie es erkennen: `run_metadata.json` hält unter `code_version` fest, mit
-welchem Stand ein Lauf gerechnet wurde. Unterscheiden sich zwei Läufe dort,
-gehören ihre Verläufe nicht nebeneinander.
+welchem Stand ein Lauf gerechnet wurde, und unter `seed`, mit welchem Startwert.
+Unterscheiden sich zwei Läufe dort, gehören ihre Verläufe nicht nebeneinander.
 
 ## Wo Sie vergleichen
 
