@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from src.market.market_rules import initial_provider_markup
+from src.market.market_feedback import initial_provider_markup
 from src.market.simulation_functions import compute_market_metrics
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
@@ -142,7 +142,7 @@ class MarketNode:
                         f"[delta:price] Provider yield feedback: ticket price "
                         f"{prev_price:.2f} → {price:.2f} ({price_delta_pct:+.1f}%), "
                         f"markup={float(markup):.2f}, booking_rate={booking_part} "
-                        f"(Python market_rules)"
+                        f"(Python, market_rules aus properties.json)"
                     ),
                     affected_factors=[],
                     timestamp="",

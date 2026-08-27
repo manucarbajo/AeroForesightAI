@@ -363,7 +363,18 @@ def launch_simulation(
                 checkpoint_store=checkpoint_manager,
                 run_id=run_id,
             )
-            seed = config.seed
+            # Nicht `config.seed`: Das ist der *angeforderte* Wert und bleibt
+            # leer, wenn niemand einen genannt hat. Der Runner hat ihn da schon
+            # aufgelöst — der State trägt den tatsächlich benutzten.
+            #
+            # Heute ist das eine Gürtel-und-Hosenträger-Zeile und **kein** Test
+            # kann sie decken: `save_run_metadata` liest den Seed ohnehin
+            # zuerst aus `state.config.seed` und greift auf diesen Wert nur
+            # zurück, wenn dort keiner steht — was nach einem Runner-Lauf nicht
+            # vorkommt. Sie steht trotzdem hier, weil sie load-bearing würde,
+            # sobald jemand diese Reihenfolge umdreht. Festgestellt bei der
+            # Mutationsprüfung am 2026-08-27.
+            seed = final_state.config.seed
 
         artifacts = _save_run_outputs(
             final_state,

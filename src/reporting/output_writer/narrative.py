@@ -11,6 +11,7 @@ from src.reporting.output_writer.tick_mechanics import (
     format_shock_short,
     prior_population_stats,
 )
+from src.rule_engine import describe_when
 
 _SEGMENT_LABELS = {
     "business": "Business",
@@ -222,20 +223,12 @@ def save_final_narrative(
     if shift_rules:
         lines.append("\nDynamische Populations-Shift-Regeln:")
         for rule in shift_rules:
-            when = rule.when
             effect = rule.effect
-            when_parts = []
-            if "factor" in when:
-                when_parts.append(f"Faktor {when['factor']} = {when.get('state', '?')}")
-            if "system_property" in when:
-                prop = when["system_property"]
-                if "above" in when:
-                    when_parts.append(f"`{prop}` > {when['above']}")
-                elif "below" in when:
-                    when_parts.append(f"`{prop}` < {when['below']}")
-                else:
-                    when_parts.append(f"`{prop}`")
-            when_label = ", ".join(when_parts) if when_parts else "immer"
+            # Beschreibung und Auswertung kommen seit P0.4 aus derselben Quelle.
+            # Vorher stand hier eine eigene, ärmere Lesart: `metric` und
+            # `at_least` fehlten, und eine Regel ohne Bedingung wurde als
+            # "immer" beschrieben, obwohl der Code sie nie greifen ließ.
+            when_label = describe_when(rule.when)
             effect_label = f"`{effect.get('property', '?')}` " f"{effect.get('delta', 0):+g}"
             lines.append(f"- Wenn {when_label}: {effect_label}")
 

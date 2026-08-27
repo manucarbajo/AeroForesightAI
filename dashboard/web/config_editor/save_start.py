@@ -13,6 +13,7 @@ from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
 from dashboard.web.config_editor.overview import summary_id, summary_sentence
 from dashboard.web.state import draft_from_dict
+from src.models.state_models import DEFAULT_SEED
 
 
 def _highlights(draft: dict) -> list:
@@ -44,8 +45,8 @@ def _highlights(draft: dict) -> list:
         ui.metric_tile("Aktive Systemgrößen", len(active_properties)),
         ui.metric_tile(
             "Zufallsstartwert",
-            draft.get("seed", "—") if draft.get("use_seed") else "frei",
-            hint="Ohne festen Startwert weichen Wiederholungen voneinander ab.",
+            draft.get("seed", "—") if draft.get("use_seed") else f"{DEFAULT_SEED} (Standard)",
+            hint="Ohne eigenen Startwert rechnet der Lauf mit dem Standardwert.",
         ),
     ]
     return tiles

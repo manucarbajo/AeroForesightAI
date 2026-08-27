@@ -6,6 +6,8 @@ for booking deterministically from WTP + logit utility.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 import numpy as np
 
 from src.models.enums import DistributionType
@@ -19,6 +21,7 @@ from src.models.population_models import (
 )
 from src.models.property_models import IndividualProperty, PropertiesConfig, ShiftRule
 from src.models.state_models import FactorState
+from src.rule_engine import KNOWN_METRICS, RuleContext, rule_matches
 
 DEFAULT_LOGIT_THRESHOLD = 0.5
 DEFAULT_GREEN_PREMIUM = 0.1
@@ -240,47 +243,35 @@ def initialize_population(
     return individuals
 
 
-def _rule_matches(
-    rule: ShiftRule,
-    factors: dict[str, FactorState],
-    system_properties: dict[str, float],
-) -> bool:
-    when = rule.when
-    if not when:
-        return False
-
-    if "factor" in when:
-        factor_id = str(when["factor"])
-        expected_state = str(when.get("state", ""))
-        factor = factors.get(factor_id)
-        if factor is None or factor.current_state != expected_state:
-            return False
-
-    if "system_property" in when:
-        prop_id = str(when["system_property"])
-        value = system_properties.get(prop_id)
-        if value is None:
-            return False
-        if "above" in when and value <= float(when["above"]):
-            return False
-        if "below" in when and value >= float(when["below"]):
-            return False
-
-    return True
-
-
 def apply_factor_shifts(
     individuals: list[Individual],
     shift_rules: list[ShiftRule],
     factors: dict[str, FactorState],
     system_properties: dict[str, float],
+    *,
+    tick: int = 0,
+    metrics: Mapping[str, float | None] | None = None,
 ) -> list[Individual]:
-    """Apply config shift rules to numeric individual attributes."""
+    """Apply config shift rules to numeric individual attributes.
+
+    *tick* und *metrics* kamen mit P0.4 dazu: Bis dahin hatte dieses Modul einen
+    eigenen, ärmeren Evaluator, und eine ``shift_rule`` mit ``tick``- oder
+    ``at_least``-Bedingung griff hier still nie. Jetzt wertet dieselbe Funktion
+    aus wie für die Faktor-Regeln — dafür braucht sie denselben Kontext.
+    """
 
     if not shift_rules:
         return individuals
 
-    active_rules = [rule for rule in shift_rules if _rule_matches(rule, factors, system_properties)]
+    context = RuleContext(
+        tick=tick,
+        factors=factors,
+        metrics=metrics if metrics is not None else {name: None for name in KNOWN_METRICS},
+        system_properties=system_properties,
+    )
+    active_rules = [
+        rule for rule in shift_rules if rule_matches(rule.when, context, rule_id=rule.id)
+    ]
     if not active_rules:
         return individuals
 
@@ -506,8 +497,15 @@ def run_population_tick(
     system_properties: dict[str, float],
     seed: int = 42,
     current_tick: int = 0,
+    metrics: Mapping[str, float | None] | None = None,
 ) -> tuple[list[Individual], PopulationStats]:
-    """Full population pipeline for one tick."""
+    """Full population pipeline for one tick.
+
+    *current_tick* wurde bis P0.4 entgegengenommen und nie benutzt. Es ist
+    genau der Wert, den eine ``shift_rule`` mit ``tick``-Bedingung braucht, und
+    wird jetzt an die Regelauswertung durchgereicht. *metrics* ist der
+    dazugehörige Rest des Kontexts (`RuntimeMetrics.as_mapping()`).
+    """
 
     if not individuals:
         individuals = initialize_population(properties, config, seed=seed)
@@ -533,6 +531,8 @@ def run_population_tick(
         properties.shift_rules,
         factors,
         system_properties,
+        tick=current_tick,
+        metrics=metrics,
     )
     individuals = update_income_factors(shifted, income_index)
 

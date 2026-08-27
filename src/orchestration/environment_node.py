@@ -6,8 +6,8 @@ import json
 import logging
 from typing import Any, Protocol
 
-from src.market.factor_dynamics import validate_factor_proposals
-from src.market.market_rules import initial_provider_markup
+from src.market.factor_dynamics import build_runtime_metrics, validate_factor_proposals
+from src.market.market_feedback import initial_provider_markup
 from src.market.property_engine import resolve_system_properties
 from src.market.simulation_functions import (
     active_parameters,
@@ -17,7 +17,7 @@ from src.market.simulation_functions import (
 )
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.event_models import EventLogEntry, RoundResult
-from src.models.state_models import SimulationState
+from src.models.state_models import DEFAULT_SEED, SimulationState
 from src.population.population_sampler import run_population_tick
 
 logger = logging.getLogger(__name__)
@@ -144,7 +144,19 @@ class EnvironmentNode:
 
         carbon_tax = params.get("carbon_tax_level", 0.0)
         system_properties = resolve_system_properties(round_number, properties)
-        seed = state.config.seed if state.config.seed is not None else 42
+        # `SimulationRunner.run` löst den Seed auf, bevor ein Tick läuft;
+        # hier steht er also normalerweise schon. Der Rückfall bleibt für
+        # die Aufrufer, die den Node ohne Runner benutzen (Studio, Tests) —
+        # aber mit derselben Konstante, nicht mehr mit einer eigenen 42.
+        seed = state.config.seed if state.config.seed is not None else DEFAULT_SEED
+
+        # Kontext für die Shift-Regeln (P0.4): dieselbe Momentaufnahme, gegen die
+        # auch die Faktor-Regeln geprüft werden. `booking_rate` steht hier noch
+        # nicht — sie entsteht erst aus diesem Aufruf. `build_runtime_metrics`
+        # fällt deshalb auf die Rate des Vorticks zurück, und genau das ist die
+        # gewollte Lesart: Eine Regel, die auf die Buchungsrate reagiert, reagiert
+        # auf die zuletzt beobachtete.
+        metrics = build_runtime_metrics(state).as_mapping()
 
         individuals, pop_stats = run_population_tick(
             state.resolved_properties(),
@@ -156,6 +168,7 @@ class EnvironmentNode:
             system_properties=system_properties,
             seed=seed,
             current_tick=round_number,
+            metrics=metrics,
         )
         state.population_individuals = individuals
 

@@ -75,11 +75,41 @@ class LLMConfig(BaseModel):
     max_tokens: int = 2048
 
 
+#: Der Seed, mit dem gerechnet wird, wenn die Konfiguration keinen nennt.
+#:
+#: Der Wert stand bis dahin als Literal in `environment_node`, und nur dort:
+#: Ein Lauf ohne konfigurierten Seed zog seine Bevölkerung reproduzierbar mit
+#: 42, während `run_metadata.json` `null` schrieb und die Oberfläche den Lauf
+#: "frei" nannte. Beides war falsch — der Lauf war reproduzierbar, sagte es nur
+#: niemandem. Aufgelöst wird der Seed jetzt einmal in
+#: `SimulationRunner.run`; diese Konstante ist seine einzige Quelle.
+DEFAULT_SEED = 42
+
+
 class SimulationConfig(BaseModel):
     name: str
     description: str
     llm: LLMConfig = LLMConfig()
     seed: int | None = None
+
+
+class ConfigFingerprint(BaseModel):
+    """Je ein Kurzhash über die Eingaben, aus denen ein Lauf entstanden ist.
+
+    Wird **beim Start** eines Laufs genommen, nicht am Ende. Der Unterschied
+    ist nicht kosmetisch: `factors` enthält den Zustand jedes Deskriptors, und
+    den verschiebt der Lauf selbst. Am Ende gehasht trugen zwei Läufe derselben
+    Konfiguration mit verschiedenen Seeds verschiedene Fingerabdrücke — womit
+    der Abdruck genau die Frage nicht mehr beantwortete, für die er da ist.
+    Weglassen ließ sich der Zustand nicht: Der **Start**zustand ist eine
+    Eingabe, jeder Sweep setzt ihn über `FactorOverride.initial_state`.
+    """
+
+    simulation_config: str
+    properties: str
+    factors: str
+    agent_profiles: str
+    cib_matrix: str | None = None
 
 
 class SimulationState(BaseModel):
@@ -88,6 +118,10 @@ class SimulationState(BaseModel):
     clock: SimulationClock
     environment: EnvironmentState
     agents: list[AgentConfig]
+    #: Fingerabdruck der Eingaben, gesetzt von `SimulationRunner.run` vor dem
+    #: ersten Tick. Bleibt danach unverändert — auch beim Fortsetzen aus einem
+    #: Checkpoint, der Lauf setzt ja dieselbe Konfiguration fort.
+    config_fingerprint: ConfigFingerprint | None = None
     redebedarf_scores: dict[str, int] = Field(default_factory=dict)
     current_speech_candidates: list[SpeechCandidateState] = Field(default_factory=list)
     current_speech_order: list[str] = Field(default_factory=list)

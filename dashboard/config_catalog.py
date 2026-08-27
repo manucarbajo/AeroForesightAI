@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from src.config_loader import CONFIGS_DIR, build_initial_state, load_properties_config
-from src.market.market_rules import resolve_market_feedback_config
+from src.market.market_feedback import resolve_market_feedback_config
 from src.models.property_models import BaselineTrajectory, StepFunctionTrajectory
 from src.models.sweep_models import FactorOverride, PropertyOverride, SweepConfig
 from src.orchestration.scenario_sweeps import (

@@ -1,4 +1,4 @@
-"""Run metadata (model, backend, tick counts) persistence."""
+"""Run metadata: Modell, Backend, Tick-Zahlen — und wie der Lauf entstanden ist."""
 
 import json
 from datetime import UTC, datetime
@@ -6,6 +6,11 @@ from pathlib import Path
 
 from src.models.llm_models import LLMDegradation
 from src.reporting.output_writer.paths import ensure_output_dir, resolve_output_path
+from src.reporting.output_writer.provenance import (
+    code_version,
+    compute_mode,
+    recorded_fingerprint,
+)
 
 
 def save_run_metadata(
@@ -43,6 +48,20 @@ def save_run_metadata(
         "total_round_results": len(state.round_results),
         "total_price_history": len(state.price_history),
     }
+
+    # P0.6: Woraus dieser Lauf entstanden ist. Ohne diese Felder ließ sich ein
+    # Lauf aus seinen Artefakten nicht nachstellen — bei einem Produkt, dessen
+    # Verkaufsargument Reproduzierbarkeit ist, die teuerste Lücke in Phase 0.
+    # Der Seed kommt aus dem State, nicht aus den Argumenten: Dort steht der
+    # tatsächlich benutzte, während `args.seed` bei einem Multi-Run nur der
+    # Ausgangswert der Folge ist.
+    state_seed = getattr(getattr(state, "config", None), "seed", None)
+    metadata["seed"] = state_seed if state_seed is not None else getattr(args, "seed", None)
+    metadata["compute_mode"] = compute_mode(args)
+    metadata["mock_llm"] = bool(getattr(args, "mock_llm", False))
+    metadata["deterministic_only"] = bool(getattr(args, "deterministic_only", False))
+    metadata["config_fingerprint"] = recorded_fingerprint(state).model_dump()
+    metadata["code_version"] = code_version()
 
     # P0.1: Ein Lauf, dessen Sprachmodell ausgefallen ist, sagt das hier. Die
     # drei Felder stehen immer in der Datei — auch bei einem sauberen Lauf —,

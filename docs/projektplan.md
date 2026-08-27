@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-26 — P0.1, P0.2 und P0.3 erledigt und gegengeprüft. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-27 — P0.1 bis P0.6 erledigt und **dreifach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, und die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)). Offen in Phase 0: nur noch das aus P0.4 neu hinzugekommene **P0.7** (der Kostendruck wird an zwei Stellen berechnet, und nur eine kennt die regulatorischen Kostentreiber). Es liegt zusammen mit P0.4 bis P0.6 auf `feat/phase-0-p04-p05-p06`. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -33,7 +33,7 @@ Gepflegt wird bei jeder abgeschlossenen Aufgabe (siehe [Doku-Pflicht in CLAUDE.m
 
 ## Phase 0 — Vertrauens-Blocker (vor dem nächsten Demo)
 
-Fünf Punkte, die das Kernversprechen "Zahlen aus Python, Narrativ vom LLM" direkt angreifen. Zwei davon produzieren still falsche Ergebnisse — die gehören nach vorn, nicht in eine Hygiene-Liste.
+Punkte, die das Kernversprechen "Zahlen aus Python, Narrativ vom LLM" direkt angreifen. Zwei davon produzieren still falsche Ergebnisse — die gehören nach vorn, nicht in eine Hygiene-Liste.
 
 ### P0.1 — Stiller LLM-Ausfall wird sichtbar ✅ erledigt 2026-08-26
 
@@ -66,7 +66,7 @@ Mock-Lauf gilt korrekt nicht als degradiert, und die Prüfungen aus P0.3 greifen
 Dashboard. **Drei Punkte hat die Gegenprobe zusätzlich gefunden** — keiner blockiert den Merge,
 alle drei sind unten eingeplant:
 
-- **Ein Sweep kann nicht als degradiert markiert werden.** Eingeplant in [P0.6](#p06--ein-lauf-sagt-wie-er-entstanden-ist).
+- **Ein Sweep kann nicht als degradiert markiert werden.** Eingeplant in [P0.6](#p06--ein-lauf-sagt-wie-er-entstanden-ist--erledigt-2026-08-27).
 - **`get_llm()` wählt weiterhin still den Mock**, wenn keine Umgebungsvariable gesetzt ist. Eingeplant in [P3.4](#p34--llm-konfiguration-zentralisieren).
 - **Ein Config-Fehler auf der CLI kommt als roher Traceback.** Eingeplant in [P3.3](#p33--fehlermeldungen-die-auch-greifen).
 
@@ -201,21 +201,60 @@ Bewusst **nicht** hier behoben: dass `state.config.llm` von niemandem gelesen wi
 
 **Doku zieht mit:** `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/fehlerbilder.md`.
 
-### P0.4 — Regelauswertung vereinheitlichen
+### P0.4 — Regelauswertung vereinheitlichen ✅ erledigt 2026-08-27
 
-**Befund:** Die generische "when/effect"-Regelauswertung existiert **zweimal unabhängig** und ist bereits auseinandergelaufen: `factor_dynamics.rule_matches` kennt `tick`, `metric` und `system_property`, `population_sampler._rule_matches` nur exaktes `factor`-Matching und `system_property`. Eine `shift_rule` mit `at_least`- oder `tick`-Bedingung greift im Sampler **still nie** — kein Fehler, kein Hinweis, einfach kein Effekt. Das ist kein Stilproblem, das sind falsche Zahlen. Dazu: `market_rules.py` behandelt trotz generischem Namen nur einen einzigen hartcodierten Regeltyp (`booking_yield_feedback`).
+**Befund:** Die generische "when/effect"-Regelauswertung existiert **dreimal unabhängig** und ist bereits auseinandergelaufen: `factor_dynamics.rule_matches` kennt `tick`, `metric` und `system_property`, `population_sampler._rule_matches` nur exaktes `factor`-Matching und `system_property`, und die Aktivierung der `regulatory_influences` in `simulation_functions` wertet dieselbe Klausel ein drittes Mal aus. Eine `shift_rule` mit `at_least`- oder `tick`-Bedingung greift im Sampler **still nie** — kein Fehler, kein Hinweis, einfach kein Effekt. Dazu: `market_rules.py` behandelt trotz generischem Namen nur einen einzigen hartcodierten Regeltyp (`booking_yield_feedback`).
 
-**Fundstelle:** [`src/market/factor_dynamics.py:87`](../src/market/factor_dynamics.py) (`rule_matches`), [`src/population/population_sampler.py:243`](../src/population/population_sampler.py) (`_rule_matches`), [`src/market/market_rules.py`](../src/market/market_rules.py).
+**Fundstelle:** [`src/market/factor_dynamics.py:87`](../src/market/factor_dynamics.py) (`rule_matches`), [`src/population/population_sampler.py:243`](../src/population/population_sampler.py) (`_rule_matches`), [`src/market/simulation_functions.py:124`](../src/market/simulation_functions.py) (`regulatory_influences`), [`src/market/market_feedback.py`](../src/market/market_feedback.py) — hieß zum Zeitpunkt des Befunds `market_rules.py`.
 
 **Verifiziert am 2026-08-26:** `rule_matches` (Zeile 87) kennt `tick` (`gte`/`lte`/`eq`), `factor`, `metric` (`above`/`below`/`at_most`/`at_least`) und `system_property` (inkl. `at_least`) — `_rule_matches` (Zeile 243) nur exaktes `factor`-Matching und `system_property` mit `above`/`below`. Die Divergenz ist real und unverändert. (Die frühere Fassung dieser Zeile sagte "nur `system_property`" und widersprach damit dem eigenen Befund oben; `factor` kann der Sampler sehr wohl.)
 
-**Was zu tun ist:** Einen gemeinsamen Evaluator bauen, beide Aufrufer darauf ziehen. Unbekannte Bedingungstypen müssen **laut fehlschlagen** statt still `False` zurückzugeben — genau das hat die Divergenz so lange versteckt. `market_rules.py` entsprechend seinem tatsächlichen Inhalt benennen oder auflösen.
+**Gegengeprüft am 2026-08-27 — eine Entschärfung, vier Ergänzungen.**
 
-**Fertig wenn:** Dieselbe Regel liefert an beiden Aufrufstellen dasselbe Ergebnis; ein Test deckt `at_least` und `tick` im Sampler-Pfad ab.
+*Die Entschärfung:* Alle `when`-Klauseln aller Configs wurden inventarisiert. **Keine ausgelieferte `shift_rule` benutzt heute `at_least` oder `tick`** — die neun Shift-Regeln in `properties.json` nutzen ausschließlich `factor`/`state` und ein `system_property` mit `above`, also genau die Schnittmenge, die beide Evaluatoren beherrschen. `configs/sweeps/` enthält überhaupt keine Regeln, und die Oberfläche kann keine schreiben: Shift-Regeln werden von Hand in `properties.json` gepflegt. Die Divergenz produziert also **noch keine** falschen Zahlen, sie ist eine scharf gestellte Falle für die nächste Regel. Der frühere Satz "das sind falsche Zahlen" stand im Präsens und ist deshalb hier ersetzt — die Priorität bleibt, die Behauptung wird korrekt.
 
-**Doku zieht mit:** `docs/handbuch/ref-config.md`, `docs/handbuch/preisbildung.md`.
+*Die Ergänzungen:*
 
-### P0.5 — Faktor-Berechtigungen aus einer Quelle
+1. **Ein dritter Evaluator, bisher weder im Plan noch im Audit.** [`simulation_functions.py:124`](../src/market/simulation_functions.py) wertet `regulatory_influences[].when` eigenständig aus und kennt nur `factor` und `system_property`.
+2. **Und er hat einen echten Bug.** Seine Vergleiche sind per `elif` verkettet (Zeilen 137–139): stehen `above` **und** `below` in derselben Klausel, wird `below` nie geprüft. Latent — keine heutige Config nutzt beides.
+3. **`factor` ohne `state` greift in allen drei Evaluatoren still nie.** Überall steht `str(when.get("state", ""))`, verglichen wird gegen `""`. Ein vergessenes `state` ist dieselbe lautlose Wirkungslosigkeit, gegen die dieses Paket antritt.
+4. **Doku und Code widersprechen sich beim leeren `when`.** [`narrative.py:238`](../src/reporting/output_writer/narrative.py) schreibt für eine Regel ohne Bedingung "immer" ins Protokoll — der Code lässt sie nie greifen (`if not when: return False`). Derselbe Renderer kennt `metric` und `at_least` nicht und stellt solche Regeln unvollständig dar.
+
+**Entschieden am 2026-08-27 (Haiko).** Zwei Fragen, die den Umfang bzw. das Verhalten ändern, sind vor der Umsetzung geklärt:
+
+- **Alle drei Evaluatoren werden zusammengeführt**, nicht nur die zwei aus dem ursprünglichen Befund. Zwei von drei zu vereinigen würde die Doppelung verschieben statt auflösen — derselbe Fallstrick, den [P0.5](#p05--faktor-berechtigungen-aus-einer-quelle--erledigt-2026-08-27) für die Berechtigungen beschreibt. Der `elif`-Bug verschwindet dabei von selbst.
+- **Ein leeres `when` heißt "keine Bedingung", also wahr** — die semantisch richtige Lesart, die auch das Protokoll schon behauptet. Damit eine bedingungslose `factor_rule` oder `shift_rule` nicht plötzlich in jedem Tick feuert, wird sie stattdessen in `validation.py` **laut abgewiesen**: eine Regel ohne Bedingung ist fast sicher ein Config-Fehler. `regulatory_influences` dürfen unbedingt gelten und bleiben erlaubt. Prüfen statt raten — dieselbe Linie wie [P0.3](#p03--validate_config-implementieren--erledigt-2026-08-26).
+
+**Was zu tun ist:** Einen gemeinsamen Evaluator bauen, alle drei Aufrufer darauf ziehen. Unbekannte Bedingungstypen müssen **laut fehlschlagen** statt still `False` zurückzugeben — genau das hat die Divergenz so lange versteckt. `market_rules.py` entsprechend seinem tatsächlichen Inhalt benennen oder auflösen.
+
+**Vorgesehener Schnitt (2026-08-27).** Neues Top-Level-Modul `src/rule_engine.py` — dieselbe Begründung wie bei `validation.py` und `config_loader.py`: von mehreren Paketen genutzt. `src/population` importiert heute nichts aus `src/market`, und diese Richtung soll nicht neu entstehen.
+
+1. `RuleContext` (Tick, Faktoren, Metriken, System-Properties) und **ein** `rule_matches(when, context)`.
+2. `UnknownRuleConditionError` bei unbekanntem Schlüssel, bei einem Operator ohne Subjekt (`above` ohne `metric`/`system_property`/`tick`) und bei `factor` ohne `state`.
+3. `once` fliegt aus dem Prädikat heraus — es ist keine `when`-Bedingung, und beide Aufrufer führen ihre Buchhaltung ohnehin getrennt (`applied_factor_rule_ids` global, `applied_shift_rules` pro Person).
+4. Tick und Metriken werden bis in den Sampler durchgereicht. `build_runtime_metrics` bleibt in `factor_dynamics`, weil es den `SimulationState` braucht; der Evaluator sieht nur eine Zuordnung von Metrik-Namen auf Werte.
+5. `narrative.py` beschreibt Regeln über **eine** Funktion des neuen Moduls, damit Protokolltext und Auswertung nicht wieder auseinanderlaufen.
+
+**Nebenbefund, der sich mitauflöst:** `run_population_tick` nimmt bereits ein `current_tick`, das nirgends benutzt wird — in [P5.1](#p51--toter-code-und-irreführende-namen) als toter Parameter geführt. Es ist genau der Wert, den der gemeinsame Evaluator für `tick`-Bedingungen braucht. Das Audit sagt zu diesem Parameter bereits, er solle **nicht** entfernt werden, weil P2.1 ihn braucht — P0.4 macht ihn schlicht schon vorher benutzt, womit er aufhört, vestigiell zu sein. Der tote Code **in** `market_rules.py` (`initial_ticket_price`, `active_market_rule`) bleibt dagegen bei P5.1 und wird hier nicht vorgezogen.
+
+**Fertig wenn:** Dieselbe Regel liefert an allen drei Aufrufstellen dasselbe Ergebnis; ein Test deckt `at_least` und `tick` im Sampler-Pfad ab; eine unbekannte Bedingung und ein `factor` ohne `state` schlagen sichtbar fehl statt still zu verpuffen; eine Regel ohne Bedingung wird von der Config-Prüfung abgewiesen; der Protokolltext beschreibt dieselbe Bedingung, die auch ausgewertet wird.
+
+**Umgesetzt am 2026-08-27.** `src/rule_engine.py` ist die eine Auswertung; `factor_dynamics.rule_matches`, `population_sampler._rule_matches` und der Zweig in `simulation_functions` sind ersatzlos weg. `market_rules.py` heißt jetzt `market_feedback.py` — der Config-Schlüssel `market_rules` bleibt, umbenannt wurde nur das Modul. `describe_when` speist den Protokolltext, damit Beschreibung und Auswertung dieselbe Quelle haben. Neue Invariante 6 in `CLAUDE.md`.
+
+Vier Dinge, die bei der Umsetzung über den Plan hinausgingen:
+
+- **Das Vokabular ist jetzt für alle Bezugsgrößen dasselbe.** Vorher kannte `metric` ein `at_most`, `system_property` nicht, und `tick` hatte mit `gte`/`lte`/`eq` einen dritten Satz. Jetzt gelten `above`, `below`, `at_least`, `at_most`, `eq` überall; `gte`/`lte` bleiben als Altnamen gültig.
+- **Zwei numerische Bezugsgrößen in einer Klausel sind jetzt ein Fehler.** Die alte Fassung wandte denselben Operator unabhängig auf `metric` **und** `system_property` an — ein Vergleich ließ sich keiner von beiden zuordnen. Das ist keine Bedingung mehr, sondern eine Meldung.
+- **`metric` ist bei `regulatory_influences` nicht auswertbar** und wird jetzt abgewiesen. Die Kostenrechnung läuft, bevor es Laufzeitmetriken gibt (`cost_pressure` ist selbst eine davon). Das laut zu sagen ist billiger als eine Regel, die nie greift — genau der Befund dieses Pakets, nur an einer Stelle, wo die Fähigkeit wirklich fehlt.
+- **Namen prüft `validation.py`, nicht der Evaluator.** Zur Laufzeit sieht ein Tippfehler in `metric` oder `system_property` aus wie ein Wert, den es in diesem Tick eben noch nicht gibt — ununterscheidbar. Beim Laden sind beide Vokabulare bekannt, dort fällt er auf. Ein leeres `when` wird bei `factor_rules` und `shift_rules` abgewiesen, bei `regulatory_influences` erlaubt.
+
+**Was die Zahlen macht:** nichts. Die ausgelieferte `properties.json` läuft durch alle neuen Prüfungen fehlerfrei, und keine ihrer Regeln benutzte eine Bedingung, die vorher an einer Stelle anders gelesen wurde. 649 Tests grün, davon 80 neue in `tests/test_rule_engine.py`; der einzige Fehlschlag bleibt der bekannte `marginal_cost_fraction` aus P4.2.
+
+**Ein Fund, der hier bewusst liegen bleibt:** Der Kostendruck wird an zwei Stellen berechnet, und nur eine übergibt Faktoren und Systemgrößen — siehe [P0.7](#p07--kostendruck-aus-einer-quelle). Die Korrektur verschiebt Faktorverläufe und damit Laufergebnisse; das ist eine Modelländerung und gehört nicht in ein Paket, das Auswertungen vereinheitlicht.
+
+**Doku zieht mit:** `docs/handbuch/ref-config.md`, `docs/handbuch/preisbildung.md`, `CLAUDE.md` (Architektur-Map, Invariante 6, Glossar-Eintrag `when`-Klausel).
+
+### P0.5 — Faktor-Berechtigungen aus einer Quelle ✅ erledigt 2026-08-27
 
 **Befund:** Zwei unabhängige Quellen für "welcher Agent darf welchen Faktor ändern": ein hartcodiertes Dict `AGENT_FACTOR_PERMISSIONS` und `may_propose` in `agent_profiles.json`. Beide stimmen heute überein, werden aber nicht mechanisch synchron gehalten — und die hartcodierte ist die durchsetzende. Eine neue Berechtigung in der JSON würde still ins Leere laufen. Das greift Invariante 2 direkt an.
 
@@ -227,9 +266,16 @@ Bewusst **nicht** hier behoben: dass `state.config.llm` von niemandem gelesen wi
 
 **Fertig wenn:** `agent_profiles.json` ist die einzige Quelle **und** es gibt genau eine Funktion, die eine Berechtigung prüft; eine Änderung in der JSON wirkt ohne Codeänderung.
 
-**Doku zieht mit:** `docs/agent_profiles.md`, `CLAUDE.md` (Invariante 2).
+**Umgesetzt am 2026-08-27.** `AGENT_FACTOR_PERMISSIONS` ist entfernt, `configs/agent_profiles.json` ist die einzige Quelle. Geprüft wird in `src/agents/agent_permissions.may_propose_factor` — Parser und Durchsetzung rufen dieselbe Funktion, der Fallstrick ist damit adressiert. Der Abnahmetest baut ein Konfigurationsverzeichnis mit **einer** zusätzlichen Zeile in `may_propose` und zeigt, dass sie bis in `validate_factor_proposals` durchreicht; er prüft vorher, dass dieselbe Berechtigung ohne diese Zeile abgewiesen wird — sonst prüfte er nichts.
 
-### P0.6 — Ein Lauf sagt, wie er entstanden ist
+Zwei Dinge, die dabei auffielen:
+
+- **Die zwei Prüfstellen hatten gegenläufige Voreinstellungen.** Ohne Profil ließ der Parser in `agent_node` **alles** durch (`if self.config.profile and ...`), die Durchsetzung ließ **nichts** durch (`.get(agent_id, set())`). Das fiel nie auf, weil die Durchsetzung als zweite läuft und das Ergebnis rettete. Für eine Berechtigungsregel ist nur eine Richtung vertretbar: Wer nicht ausdrücklich darf, darf nicht. Beide Stellen verhalten sich jetzt so.
+- **Die Grammatik `factor_state F2` stand an drei Stellen als Zeichenkette** — Parser, Durchsetzung und `validation.py`. Sie liegt jetzt einmal in `agent_permissions.py`; `validation.py` benutzt denselben Parser, statt das Präfix erneut zu buchstabieren.
+
+**Doku zieht mit:** `docs/agent_profiles.md`, `CLAUDE.md` (Invariante 2, Architektur-Map).
+
+### P0.6 — Ein Lauf sagt, wie er entstanden ist ✅ erledigt 2026-08-27
 
 **Befund (neu am 2026-08-26):** `run_metadata.json` belegt den Reproduzierbarkeits-Claim nicht. Geschrieben werden Modell, `base_url`, Temperatur, `max_tokens` und Tick-Zahlen — **nicht** der Seed, nicht `mock_llm`, nicht `deterministic_only`, kein Hash der verwendeten Configs, kein Codestand. An einem echten Artefakt geprüft (`outputs/sweeps/sweep_low_base/run_metadata.json`): dort steht `"model": "dummy_for_sweeps"`, aber weder mit welchem Seed gezogen wurde noch ob überhaupt ein LLM beteiligt war. Aus den Artefakten allein lässt sich ein Lauf heute nicht nachstellen — bei einem Produkt, dessen Verkaufsargument Reproduzierbarkeit ist, die teuerste Lücke in Phase 0.
 
@@ -249,7 +295,175 @@ genau die stille Degradation, gegen die P0.1 angetreten ist, nur auf dem Sweep-P
 
 **Fertig wenn:** Aus `run_metadata.json` allein ist erkennbar, mit welchem Seed und in welchem Rechenmodus ein Lauf entstanden ist; ein Test hält die Felder fest. Ein Sweep gegen einen toten Endpunkt ist als degradiert markiert und hat ein `llm_incidents.json` — ebenfalls per Test.
 
+**Umgesetzt am 2026-08-27.** `run_metadata.json` trägt jetzt `seed`, `compute_mode`, `mock_llm`, `deterministic_only`, `config_fingerprint` und `code_version`. Die Ansicht «Ergebnisse ansehen» zeigt Rechenmodus, Seed und Codestand im Tab «Übersicht»; ein Lauf ohne Sprachmodell trägt dort einen Hinweis, damit er nicht als vollwertiger durchgeht. Der Sweep-Pfad schreibt die Metadaten jetzt **nach** der Szenario-Erzeugung, nimmt den `llm_error` als Vorfall auf und ruft `save_llm_incidents` — dieselbe Kette wie `run_simulation._save_run_outputs`.
+
+Vier Dinge, die dabei über den Plan hinausgingen:
+
+- **Der Fingerabdruck hasht den Lauf, nicht die Dateien.** Der Plan sagte „Hash der geladenen Config-Dateien". Das wäre falsch gewesen: Ein Lauf aus dem Dashboard arbeitet mit einem Entwurf, der `configs/` gar nicht anfasst — ein Dateihash behauptete dort eine Gleichheit, die es nicht gibt. Gehasht werden die Konfigurationsobjekte aus dem `SimulationState`.
+- **Und er wanderte zuerst.** Die erste Fassung lieferte für zwei Läufe derselben Konfiguration verschiedene Werte, weil die CIB-Matrix **während** des Laufs beschrieben wird (`consistency_score`, `scenarios`, `scenario_candidates`, `scenario_consistency`, `scenario_llm_payload` — fünf Schlüssel, von denen die erste Fassung zwei kannte). Diese Schlüssel stehen jetzt als benannte Menge im Code, **und ein Test liest alle Schreibzugriffe auf `cib_matrix.metadata[...]` aus `src/` und vergleicht sie damit**. Wer einen sechsten einführt, bekommt einen roten Test statt eines still wandernden Fingerabdrucks. Eine Aufzählung ohne Wächter wäre genau die Sorte Drift, die diese Phase abräumt.
+- **Der Seed kommt aus dem State, nicht aus den Argumenten.** `args.seed` ist bei einem Multi-Run nur der Ausgangswert der Folge; der tatsächlich benutzte steht in `state.config.seed`. Nebenbei musste `_build_run_args` `mock_llm` mittragen — sonst wäre der Rechenmodus bei jedem Multi-Run-Teillauf verloren gegangen.
+- **Der Sweep behauptete `deterministic_only`.** Er rechnet zwar deterministisch, erzeugt den Szenariotext am Ende aber mit `prefer_llm=True`. Das Artefakt hätte also gesagt, es sei kein Modell beteiligt gewesen — und ein Ausfall genau dieses Aufrufs wäre wieder unsichtbar geworden. Die Metadaten-Argumente liegen jetzt in `sweep_metadata_args()`, damit prüfbar ist, was sie behaupten; der Sweep-Seed stand zweimal als Literal und ist jetzt eine Konstante.
+
+**Nachgestellt:** Zwei Läufe mit verschiedenen Seeds (1234, 9999) tragen denselben Fingerabdruck und verschiedene Seeds — genau die Trennung, für die er da ist.
+
 **Doku zieht mit:** `docs/handbuch/ref-ausgaben.md`, `docs/handbuch/lauf-starten.md`, `README.md`.
+
+### Gegenprobe zu P0.4–P0.6 (2026-08-27)
+
+Jede Zusage der drei Pakete wurde einzeln im Code abgeschaltet, um zu sehen, ob ein Test das merkt — dasselbe mechanische Prüfmuster wie in der dritten Nachprüfung von P0.3. **36 Zusagen, im ersten Durchgang 29 gedeckt.** Alle sechs Lücken waren Testlücken, nicht Codefehler: Jede der sechs Zusagen wurde am laufenden System einzeln nachgestellt und hielt. Die Lücken sind geschlossen, der zweite Durchgang steht bei 36 von 36.
+
+Was fehlte, hatte ein Muster — es war **jeweils der Weg zur Funktion, nicht die Funktion**:
+
+- **Die Verdrahtung der Shift-Regeln.** Die Tests riefen `apply_factor_shifts` direkt und reichten Tick und Metriken selbst hinein. Man konnte `tick=current_tick` im Sampler durch `tick=0` ersetzen und `metrics=metrics` im Environment-Node durch `metrics=None` — kein Test wurde rot. Ausgerechnet die Kernzusage von P0.4 („eine `shift_rule` mit `at_least` oder `tick` greift jetzt") hing damit an ungeprüftem Draht. Nachgestellt: Eine `tick`-Regel greift genau in ihrem Tick, eine `cost_pressure`-Regel in jedem — beides jetzt als Test durch `EnvironmentNode`.
+- **`once`.** P0.4 hat es aus dem Prädikat herausgezogen; dass die Aufrufer es weiterhin führen, prüfte niemand.
+- **Der Protokolltext.** Dass `narrative.py` `describe_when` tatsächlich benutzt, war ungedeckt.
+- **`mock_llm` in `_build_run_args`** und **die Dashboard-Anzeige der Herkunft** — Letzteres exakt dieselbe Lücke, die die dritte Nachprüfung von P0.3 für den Start-Callback gefunden hat.
+
+**Zwei echte Befunde kamen dazu:**
+
+- **Ein Mock-Lauf behauptete ein Modell.** Die Kachel «Modell» zeigte `llama3.2` neben «Rechenmodus: Ohne Sprachmodell» — der Modellname steht in den Argumenten, auch wenn nie gefragt wurde. Genau der Widerspruch, den P0.6 abstellen soll. Behoben: Ohne Sprachmodell steht dort «keins».
+- **Fünf tote Modulpfade in der Doku**, zwei davon in **offenen** Findings (P5.1 und P4.2 zeigten auf das umbenannte `market_rules.py`; drei weitere Kapitel nannten `event_deltas`, `scenario_consistency` und `population_sampler` noch auf oberster Ebene, obwohl sie längst in ihren Paketen liegen). Behoben, und `tests/test_packaging.py` prüft jetzt jeden in Backticks genannten `src/…py`-Pfad gegen das Dateisystem. Ohne Ausnahmeliste: Ein früherer Modulname gehört in den Fließtext, nicht in eine Pfadangabe.
+
+**Am laufenden System nachgestellt**, weil kein Test es erreicht: Ein Sweep gegen einen toten Endpunkt rechnet zu Ende, ist in `run_metadata.json` als `degraded: true` markiert, hat ein `llm_incidents.json` mit dem echten Verbindungsfehler, und das Dashboard zeigt den Warnbanner — das «Fertig wenn» von P0.6 wörtlich. Der Mock-Lauf zeigt Rechenmodus, Seed und Codestand im Tab «Übersicht». Ein Multi-Run gibt jedem Teillauf seinen eigenen Seed (77, 78) und den Rechenmodus mit.
+
+**Ein Nebenbefund ging an P3.4:** `OllamaConfig` liest keine einzige Umgebungsvariable — `OLLAMA_BASE_URL` blieb beim Nachstellen wirkungslos.
+
+### Zweite Gegenprobe zu P0.6 (Manu, 2026-08-27)
+
+Haikos Gegenprobe oben hat 36 von 36 Zusagen geprüft und sechs Testlücken geschlossen. Diese
+zweite Runde hat den Branch **am laufenden System** nachgestellt statt am Testobjekt — frisches
+venv, echte Läufe, Artefakte aufgeschlagen. Mechanik war sauber (701 Tests, nur der bekannte
+`marginal_cost_fraction` rot; `ruff` und `black` grün). **Drei Zusagen von P0.6 hielten
+trotzdem nicht**, alle drei im selben Muster: geprüft war die Funktion, nicht der Weg dorthin.
+
+**Zum Gegenprüfen, Haiko** — jeder Punkt nennt, wie er sich in einer Minute widerlegen ließe.
+
+**1. Der Fingerabdruck hat den Lauf mitgehasht.** Zwei echte Läufe derselben Konfiguration mit
+Seed 1 und Seed 2: vier Komponenten gleich, `factors` verschieden. `config_fingerprint` lief über
+den **finalen** State, und `FactorState.current_state` ist Ergebnis, nicht Eingabe — dieselbe
+Klasse Fehler, gegen die `RUN_PRODUCED_MATRIX_METADATA` bereits absichert, ein Feld daneben.
+Damit beantwortete der Abdruck genau die Frage nicht mehr, für die er da ist.
+*Der naheliegende Fix wäre falsch gewesen:* `current_state` einfach wegzulassen macht ihn blind
+für den Faktor-Startzustand — und der ist eine Eingabe, jeder Sweep setzt ihn über
+`FactorOverride.initial_state`. Behoben über den **Zeitpunkt**: `SimulationRunner.run` nimmt die
+Momentaufnahme vor dem ersten Tick und legt sie in `state.config_fingerprint`
+(neues Feld, `ConfigFingerprint`) ab; `save_run_metadata` liest sie von dort. Beim Fortsetzen aus
+einem Checkpoint bleibt der ursprüngliche Abdruck stehen.
+*Nachstellen:* zwei Läufe mit `--seed 1` und `--seed 2`, `config_fingerprint` in beiden
+`run_metadata.json` vergleichen — muss identisch sein.
+
+**2. `seed: null` bei jedem Standardlauf.** `configs/simulation_config.json` nennt keinen Seed,
+also schrieb das Artefakt `null` und das Dashboard «nicht festgehalten». Gezogen wurde trotzdem
+reproduzierbar: `environment_node` fiel still auf `42` zurück. Gemessen sind zwei Wiederholungen
+ohne Seed **bitgleich** — während der Editor den Lauf «frei» nannte und abweichende
+Wiederholungen versprach. Das «Fertig wenn» von P0.6 verlangt das Gegenteil, und die 42 war
+nirgends benannt. Behoben: `DEFAULT_SEED` in `src/models/state_models.py` als einzige Quelle,
+aufgelöst **einmal** in `SimulationRunner.run` und in den State geschrieben; `environment_node`
+zeigt nur noch auf die Konstante, `run_launcher` liest den aufgelösten statt des angeforderten
+Werts. Die beiden Oberflächentexte, die Nicht-Determinismus behaupteten, sind mitkorrigiert.
+*Nachstellen:* `python -m src.run_simulation --mock-llm --rounds 3 --quiet`, dann
+`run_metadata.json` — dort steht jetzt `"seed": 42`.
+
+**3. Der Sweep tauschte eine Falschaussage gegen eine andere.** `sweep_metadata_args` setzte
+`deterministic_only=False`, damit das Artefakt nicht behauptet, es sei kein Modell beteiligt
+gewesen. Damit behauptete es die Gegenrichtung: Das Dashboard zeigte «Mit Sprachmodell» und
+«Modell: dummy_for_sweeps» für einen Lauf, dessen Ticks mit
+`RunnerOptions(deterministic_only=True)` gerechnet werden. Die Begründung trägt zudem nicht —
+`degraded` leitet `save_run_metadata` allein aus den Vorfällen ab, der Ausfall des
+Abschlusstextes bleibt also auch ohne gebeugten Rechenmodus sichtbar. Behoben mit einem vierten,
+ehrlichen Modus `deterministic_with_llm_narrative` («Nur Zahlen, Abschlusstext vom Modell») und
+dem Modellnamen aus `OllamaConfig` statt `dummy_for_sweeps`.
+
+**Dazu eine Kleinigkeit:** `code_version()` war `@lru_cache`-gepuffert. Das Dashboard läuft als
+ein Prozess über Stunden — Commit und `dirty` wären beim Prozessstart eingefroren, und jeder
+spätere Lauf trüge den Codestand von damals. Cache entfernt.
+
+**Was die Tests daraus gelernt haben.** Jeder Fix ist einzeln abgeschaltet worden, um zu sehen,
+ob ein Test rot wird — Haikos Muster. Der erste Anlauf hat dabei **zwei eigene Testlücken**
+aufgedeckt, beide lehrreich:
+
+- Der Regressionstest zum Fingerabdruck verglich `final.config_fingerprint` beider Läufe direkt
+  und blieb beim Abschalten grün: Ohne den Fix ist das Feld auf beiden Seiten `None`, und
+  `None == None` hält. Er läuft jetzt über `save_run_metadata`, also über das Artefakt, das der
+  Nutzer sieht.
+- Der Kontrolltest fragte, ob sich ein Faktor gegenüber dem Startzustand bewegt hat — bei vier
+  Ticks tut er das für Seed 1 nicht, und der Test darüber hätte nichts gezeigt. Worauf es
+  ankommt, ist die Divergenz der **beiden** Läufe.
+
+**Beim zweiten Durchgang kamen drei weitere Befunde dazu** — diesmal in P0.4 und P0.5, gefunden
+durch Abtasten der Ränder statt durch Lesen:
+
+- **`{"factor": "F1", "state": null}` blieb still wirkungslos.** Der Leerstring wurde abgewiesen,
+  `null` nicht: `str(None)` ist `"None"` und damit wahrheitswertig, die Klausel kam durch
+  `check_when` und wurde danach gegen den Zustand `"None"` verglichen. Dasselbe galt für jede
+  Nicht-Zeichenkette. Genau die Klasse Fehler, gegen die P0.4 angetreten ist — im Prüfer selbst.
+- **`{"tick": 3.7}` griff in Tick 3.** `rule_matches` vergleicht über `int(...)`, das die
+  Nachkommastelle abschneidet; `check_when` prüfte nur, *dass* es eine Zahl ist. Ein Zahlendreher
+  sah damit aus wie eine Regel, die eben woanders greift. Ein Tick ist ein Tick (Invariante 5).
+  `3.0` bleibt zulässig — JSON kennt keinen eigenen Ganzzahltyp.
+- **Ein fehlendes Profil schaltete Invariante 2 lautlos ab.** `config_loader` vergibt kein Profil,
+  wenn `agent_profiles.json` fehlt oder den Agenten nicht kennt — und seit P0.5 heißt „kein
+  Profil" *nichts erlaubt*. Nachgestellt: Datei weggeschoben, Lauf gestartet; er rechnet klaglos
+  zu Ende, kein Agent kann noch einen Faktor vorschlagen, `collect_state_errors` meldet nichts.
+  Vor P0.5 blieb derselbe Fall folgenlos, weil das hartcodierte Dict die Rechte trug — das ist
+  der Preis der Vereinfachung, und er war nicht bezahlt. `validation.py` weist einen Agenten ohne
+  Profil jetzt ab. Der Test, der das Gegenteil festschrieb (`test_an_agent_without_a_profile_is_fine`),
+  war zum Zeitpunkt seiner Entstehung richtig und ist mit P0.5 falsch geworden; er ist umgedreht.
+- **Zwei tote Anker im Plan selbst.** Die Verweise auf P0.5 und P0.6 zeigten noch auf die
+  Überschriften ohne „✅ erledigt" und liefen ins Leere — dieselbe stille Doku-Drift wie die fünf
+  toten Modulpfade der ersten Gegenprobe, eine Ebene höher. Behoben, und
+  `tests/test_packaging.py` prüft jetzt jeden Anker innerhalb einer Datei gegen ihre
+  Überschriften. Im ganzen Repo waren es genau diese zwei.
+
+**Bewusst nicht angefasst**, beides gehört gemeldet statt still geändert:
+
+- **`run_multi` hat einen anderen Standard.** `base_seed = base_state.config.seed or 0` ergibt
+  ohne konfigurierten Seed die Folge 0, 1, 2 …, während ein Einzellauf jetzt 42 nimmt. Falsche
+  Angaben entstehen dadurch keine — jeder Teillauf schreibt seinen eigenen Seed mit —, aber
+  derselbe Aufbau rechnet je nach Pfad anders. Das anzugleichen verschiebt Zahlen und ist damit
+  eine Modelländerung, kein Review-Fix.
+- **`run_population_sampling`** reicht weiterhin weder `current_tick` noch `metrics` durch; eine
+  `tick`-Regel wäre dort wirkungslos. Es ist der Rest genau des Bugs, den P0.4 abgeräumt hat —
+  aber toter Code, der in `audit_findings.md` bereits zum Entfernen steht. Dort ergänzt.
+
+
+---
+
+### Dritte Runde: Manus Gegenprobe nachgeprüft (Haiko, 2026-08-27)
+
+Manus vier Commits sind einzeln nachgestellt worden — jede Behauptung am laufenden System, nicht am Commit-Text. **Alle drei Befunde von P0.6 halten**, ebenso die zwei Randfälle in P0.4 und der fehlende-Profil-Fall in P0.5. Dazu ein Mutationslauf über **49 Zusagen** (meine 36 aus der ersten Runde, sechs davon an den geänderten Code angepasst, plus seine 13 neuen): **46 gedeckt.**
+
+**Nachgestellt und bestätigt:**
+
+- *Der Fingerabdruck hat den Lauf mitgehasht.* Seine Kopfzeile stimmt aufs Wort: Seeds 1 und 2 über vier Ticks mit aktivem CIB — vier Komponenten gleich, `factors` verschieden, weil F1 auseinanderläuft. (Mein erster Reproduktionsversuch mit abgeschaltetem CIB über 40 Ticks zeigte nichts, weil beide Läufe bis dahin wieder in derselben Endlage ankommen. Der Aufbau entscheidet, nicht der Befund.) Deutlicher noch ohne Seed-Unterschied: **dieselbe Konfiguration, derselbe Seed, nur 5 statt 40 Ticks** ergab am Ende `31e57fbb…` gegen `1b6de2d0…`, beim Start beidemal `31e57fbb…`.
+- *Der Abdruck überlebt Checkpoint und Fortsetzen.* 30-Tick-Lauf mit Checkpoints: Der Startabdruck steht im Checkpoint, wird beim Fortsetzen nicht neu genommen, obwohl die Faktoren sich bewegt haben. Alte Checkpoints (ohne das Feld) laden weiterhin — sie bekommen beim Fortsetzen allerdings einen Abdruck aus bereits gelaufenem Zustand. Enger Randfall, gehört in die Zuständigkeit von [P3.2](#p32--checkpoint-version-wirklich-prüfen).
+- *`seed: null` bei jedem Standardlauf.* Bestätigt und behoben: Ein Lauf ohne `--seed` schreibt jetzt `42`, und zwei solche Läufe sind in `price_history.json`, `tick_mechanics.json` und `factors.csv` **bitgleich** — die Reproduzierbarkeit war schon vorher da, nur sagte es niemand.
+- *Der Sweep-Modus.* Ein Sweep gegen einen toten Endpunkt trägt jetzt `deterministic_with_llm_narrative`, den echten Modellnamen, `degraded: true` und ein `llm_incidents.json` mit dem Verbindungsfehler. Das «Fertig wenn» von P0.6 hält unverändert.
+- *Beide Audit-Findings.* `run_multi` beginnt seine Folge tatsächlich bei 0 und 1, während ein Einzellauf 42 nimmt — gemessen. `run_population_sampling` reicht Tick und Metriken wirklich nicht durch. Beide zu Recht ins Audit statt in einen Fix.
+
+**Drei Lücken, die der Mutationslauf fand — alle in den neuen Tests, keine im Code:**
+
+- **Der Resume-Test bewies nichts.** `test_a_resumed_run_keeps_the_original` lief über vier Ticks, und bei vier Ticks steht kein Faktor anders als beim Start — ein Neuberechnen liefert dann zufällig dasselbe. Genau die Schwäche, die Manu eine Zeile weiter oben als `None == None`-Falle beschreibt, nur anders verkleidet. Der Test läuft jetzt über 16 Ticks (die Grenze, ab der sich Faktoren bewegen) und sichert diese Vorbedingung als eigene Zusicherung ab.
+- **Die Prüfung des Seed-Rückfalls las nur den Quelltext.** Sie verlangt `DEFAULT_SEED` und verbietet `else 42` — ein `else 999` erfüllt beides. Daneben steht jetzt eine, die die gezogene Bevölkerung vergleicht.
+- **Der Dashboard-Pfad war ungedeckt.** Neu: ein Lauf über `launch_simulation` ohne Seed muss `DEFAULT_SEED` ins Artefakt schreiben.
+
+**Und eine Zeile, die keine Prüfung decken kann.** `run_launcher` liest den aufgelösten Seed statt des angeforderten — das ist richtig, heute aber **wirkungslos**: `save_run_metadata` bevorzugt ohnehin `state.config.seed` und greift auf den Argumentwert nur zurück, wenn dort keiner steht, was nach einem Runner-Lauf nicht vorkommt. Die Zeile bleibt (sie wird load-bearing, sobald jemand diese Reihenfolge umdreht), trägt aber jetzt einen Kommentar, der das sagt. Eine Zusage, die sich nicht widerlegen lässt, als "gedeckt" zu zählen, wäre genau die Art Buchführung, die diese Runden abschaffen sollen.
+
+---
+
+### P0.7 — Kostendruck aus einer Quelle
+
+**Befund (neu am 2026-08-27, gefunden bei der Umsetzung von P0.4):** `compute_cost_pressure` wird an zwei Stellen gerufen, aber nur eine übergibt `factors` und `system_properties`. [`environment_node.py:101`](../src/orchestration/environment_node.py) übergibt **keins von beiden** — dort kann deshalb kein einziger regulatorischer Kostentreiber aktiv werden, weil alle fünf ausgelieferten an einer `factor`-Bedingung hängen. [`simulation_functions.py:359`](../src/market/simulation_functions.py) übergibt sie korrekt.
+
+**Gemessen:** Bei F2.2 (strenge Regulierung) liefert der Environment-Pfad 103.06, der Market-Pfad 108.06 — die 5.00 des EU-ETS. Der Environment-Wert landet als `cost_pressure` in `state.market_metrics` und ist genau die Größe, gegen die `f4_high_cost_pressure` (> 135) und `f4_stable_growth` (< 115) schwellen. **Die F4-Übergänge urteilen also über einen Kostendruck ohne Regulierungskosten, während die Kundschaft den vollen Preis zahlt.**
+
+**Was zu tun ist:** Den Environment-Pfad die Faktoren und Systemgrößen mitgeben lassen, die er ohnehin zur Hand hat (`state.environment.factors`, `resolve_system_properties(round_number, properties)` steht dort neun Zeilen später). Danach prüfen, ob der Parameter überhaupt optional bleiben darf — ein Default, der still ein anderes Ergebnis liefert, ist dieselbe Klasse Problem.
+
+**Was das kostet — vor der Umsetzung zu wissen:** Der Kostendruck steigt in Läufen mit strenger Regulierung, F4 kippt früher, und damit ändern sich Faktorverläufe, Konsistenzwerte und die drei erzeugten Szenarien. Das ist eine **Modelländerung**, kein Refactoring. Die Kennzahlen aus P0.2 (BAU 0.970, Konflikt 0.867, Wende 0.629) sind danach neu zu erheben, `test_cib_ranking.py` mitzuziehen. Deshalb wurde der Fund in P0.4 bewusst nicht mitbehoben.
+
+**Fertig wenn:** Beide Aufrufstellen liefern für denselben Zustand denselben Kostendruck, ein Test hält das fest, und die verschobenen Kennzahlen sind in `docs/cib_role.md` und `test_cib_ranking.py` nachgezogen.
+
+**Doku zieht mit:** `docs/handbuch/preisbildung.md` (der Hinweis auf die auseinanderlaufenden Zahlen fällt dann weg), `docs/cib_role.md`.
 
 ---
 
@@ -424,6 +638,8 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 **Fundstelle:** `src/run_simulation.py`, `src/llm/llm_client.py`, `src/models/state_models.py`, `src/orchestration/langgraph_adapter.py`, `dashboard/config_catalog.py`, `dashboard/llm_status.py`, `dashboard/run_browser.py`, `dashboard/run_launcher.py`, `dashboard/web/config_editor/compute_mode.py`, `dashboard/web/config_editor/llm_pipeline.py` (plus `tests/test_web_compute_mode.py`, `tests/test_web_layout.py`).
 **Verschärft am 2026-08-26 (Fund aus der P0.3-Nachprüfung):** Es geht nicht nur um verstreute Defaults, sondern um ein Feld, das gar nichts tut. `state.config.llm` (`model`, `temperature`, `max_tokens`) wird von **keinem Laufpfad gelesen** — die einzigen Leser sind `langgraph_adapter.py` für die Studio-Schema-Defaults. Der echte Client entsteht aus `RunLaunchConfig` bzw. den CLI-Argumenten. Sichtbarster Beleg: `configs/simulation_config.json` führt `llm.model: "llama3"`, während überall sonst `"llama3.2"` steht — und niemandem fällt es auf, weil der Wert nirgends ankommt.
 
+**Dazugekommen aus der Gegenprobe zu P0.4–P0.6 (2026-08-27): `OllamaConfig` liest keine einzige Umgebungsvariable.** Beim Nachstellen eines Sweeps gegen einen toten Endpunkt sollte `OLLAMA_BASE_URL=http://127.0.0.1:9` den Endpunkt umlenken — im Vorfall stand trotzdem `http://127.0.0.1:11434`. Grund: [`OllamaConfig`](../src/llm/llm_client.py) trägt reine Dataclass-Defaults; die Env-Übersetzung sitzt ausschließlich in `LocalOllama` (`studio_helpers.py`). Jeder Aufrufer, der `OllamaClient(OllamaConfig())` direkt baut — der Sweep-Pfad tut genau das — ignoriert `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_TEMPERATURE` und `OLLAMA_MAX_TOKENS` stillschweigend. `OLLAMA_READ_TIMEOUT` und `OLLAMA_RETRIES` werden dagegen gelesen, aber erst im `call`. Die Variable zu setzen und nichts zu bewirken ist dieselbe Klasse von Problem wie die hartcodierten Defaults selbst. Gehört in dieses Paket.
+
 **Dazugekommen aus der P0.1-Gegenprobe (2026-08-26): `get_llm()` wählt still den Mock.** P0.1 hat den stillen Mock **bei Fehlern** beseitigt — die Auswahl davor ist geblieben. [`studio_helpers.get_llm()`](../src/llm/studio_helpers.py) fällt am Ende seiner Kette kommentarlos auf `MockLLM()` zurück, wenn weder `OLLAMA_MODEL` noch `LLAMA_HTTP_URL` noch `LLAMA_TRANSFORMERS_MODEL` gesetzt ist. Zwei Aufrufer hängen noch daran: [`langgraph_workflow.py:48`](../src/orchestration/langgraph_workflow.py) (der Graph für LangGraph Studio) und [`run_scenario_generator/cli.py:33`](../src/reporting/run_scenario_generator/cli.py). Wer Studio ohne gesetzte Umgebung startet, bekommt erfundene Agenten-Antworten, ohne sie angefordert zu haben — kein `--mock-llm`, kein Hinweis, und nach der Definition aus Invariante 1 auch kein „Ausfall", weil nie ein Aufruf gescheitert ist. Der bewusste Mock (`--mock-llm`, «Ohne Sprachmodell») ist davon unberührt und richtig so.
 
 **Was zu tun ist:** Eine Defaults-Quelle (Config plus `.env`-Override), alle Stellen darauf ziehen — und dabei `state.config.llm` entweder wirklich anschließen (Draft und CLI schreiben hinein, der Client liest daraus) oder ersatzlos entfernen. Halb stehenlassen ist die schlechteste der drei Möglichkeiten. Fällt mit der Client-Zusammenführung aus P0.1 zusammen. **Dazu die Backend-Auswahl entscheidbar machen:** `get_llm()` sagt über `logging`, welches Backend es gewählt hat, und der Griff zum Mock passiert nur auf ausdrückliche Ansage (Parameter oder Umgebungsvariable) statt als letzter Zweig einer `if`-Kette.
@@ -464,7 +680,7 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 **Verifiziert am 2026-08-25, zwei Korrekturen am bisherigen Bild:**
 
 1. Die beiden Sweep-Tests **hängen** ohne Ollama, sie schlagen nicht fehl — ein Lauf brach nach über sieben Minuten ohne Ergebnis ab. Das blockiert jeden vollständigen Testlauf, nicht nur zwei Zeilen im Report.
-2. `test_market_rules_resolve_marginal_cost_fraction` ist **kein Code-Bug**. Der Test erwartet `0.33` (den Default aus `market_rules.py:45`), `configs/properties.json` liefert `0.25`, und die Auflösung arbeitet korrekt — der Config-Wert gewinnt, wie gewollt. Zu entscheiden ist nur, welcher Grenzkostenanteil fachlich stimmt.
+2. `test_market_rules_resolve_marginal_cost_fraction` ist **kein Code-Bug**. Der Test erwartet `0.33` (den Default aus `market_feedback.py`, bis P0.4 `market_rules.py`), `configs/properties.json` liefert `0.25`, und die Auflösung arbeitet korrekt — der Config-Wert gewinnt, wie gewollt. Zu entscheiden ist nur, welcher Grenzkostenanteil fachlich stimmt.
 
 **Fundstelle:** `tests/test_scenario_sweeps.py:119,205`, `tests/test_market_feedback.py:94`, `tests/debug_run_sequential.py`, `tests/test_parallel_round.py`, `tests/test_simulation_runner_e2e.py`, `tests/test_agent_node.py`, `tests/test_save_final_narrative.py`.
 
@@ -497,7 +713,7 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 ### P5.1 — Toter Code und irreführende Namen
 
 **Befund:** Mehrere Konstrukte, die Funktionalität vortäuschen: `initial_ticket_price` und `active_market_rule` (keine Referenz), `run_population_sampling` ("backward-compatible entry point", nirgends aufgerufen), `speech_plan.aborted` (Feld existiert nicht), der leere `pass`-Zweig in `_format_factors` mit hartcodiertem Agenten-String, der `state._population_updates`-Pfad — ein komplettes Population-Shift-Feature mit Modellen und Unit-Tests, das der Laufzeitpfad nie erzeugt — und (neu am 2026-08-26) der Parameter `current_tick` in `run_population_tick`, der entgegengenommen und im ganzen Funktionskörper nie benutzt wird. Letzterer ist der einzige der Liste, der **nicht** entfernt werden sollte: P2.1 braucht genau ihn, um pro Tick einen eigenen Zufallsstrom abzuleiten. Dazu die irreführende Paarung `compute_ticket_price` / `compose_ticket_price`: die erste berechnet **nicht** den Kundenpreis.
-**Fundstelle:** [`src/market/market_rules.py`](../src/market/market_rules.py), [`src/population/population_sampler.py:558`](../src/population/population_sampler.py), [`src/agents/scheduler_node.py:123`](../src/agents/scheduler_node.py), [`src/agents/agent_node.py:258-260`](../src/agents/agent_node.py), [`src/orchestration/environment_node.py:282-283`](../src/orchestration/environment_node.py), [`src/market/simulation_functions.py`](../src/market/simulation_functions.py).
+**Fundstelle:** [`src/market/market_feedback.py`](../src/market/market_feedback.py) (bis P0.4 `market_rules.py`), [`src/population/population_sampler.py:558`](../src/population/population_sampler.py), [`src/agents/scheduler_node.py:123`](../src/agents/scheduler_node.py), [`src/agents/agent_node.py:258-260`](../src/agents/agent_node.py), [`src/orchestration/environment_node.py:282-283`](../src/orchestration/environment_node.py), [`src/market/simulation_functions.py`](../src/market/simulation_functions.py).
 **Was zu tun ist:** Pro Konstrukt entscheiden — entfernen oder anschließen. Beim Population-Shift-Feature ist die Frage produktinhaltlich (gehört es zu P1.3?), nicht technisch. Die zwei Preisfunktionen so benennen, dass die Rolle aus dem Namen hervorgeht.
 **Fertig wenn:** Kein Modul mehr, das nur von seiner eigenen Definition oder einem Test am Leben gehalten wird. **Doku:** `CLAUDE.md` (Architektur-Map), `docs/handbuch/preisbildung.md`.
 
@@ -536,16 +752,16 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Audit-Abschnitt | Pakete |
 | --- | --- |
 | Faktoren / Modellsubstanz | ~~P0.2 (F7-Drift)~~ ✅, P2.1, P2.2, P2.3 (die übrigen 120 Zellen), P2.4 |
-| Markt / Preisbildung | P0.4 (Rule-Evaluatoren, `market_rules`), P0.5 (Berechtigungen), P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen, ungenutztes `current_tick`) |
+| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, P0.7 (Kostendruck an zwei Stellen), P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen) |
 | Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), P3.5 (Klemmung, `print`), P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
-| Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, P0.6 (Sweep-Pfad an P0.1 vorbei), P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`, CLI-Traceback) |
+| Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, ~~P0.6 (Sweep-Pfad an P0.1 vorbei)~~ ✅, P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`, CLI-Traceback) |
 | LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`) |
 | Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), P3.6 (private Imports), P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen) |
 | LangGraph Studio | P3.3 |
 | Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests, der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction` und der drei `--deselect`-Zeilen in der CI) |
 | Sonstiges | P5.3 |
 | **Landingpage** (neu 2026-08-26) | P1.4 (Formular-Endpunkt, Rechtstexte, CDN-Abhängigkeiten) |
-| **Reproduzierbarkeit / Run-Artefakte** (neu 2026-08-26) | P0.6 (Seed, Rechenmodus, Config-Hash in `run_metadata.json`) |
+| **Reproduzierbarkeit / Run-Artefakte** (neu 2026-08-26) | ~~P0.6 (Seed, Rechenmodus, Config-Hash in `run_metadata.json`)~~ ✅ |
 | **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) |
 | **Doku-Konsistenz** (neu 2026-08-26) | P4.3 (Zahlen in `CLAUDE.md` und diesem Plan mechanisch halten) |
 

@@ -5,7 +5,7 @@ bewusst eine Zeile — im Editor soll man arbeiten, nicht lesen. `detail` steht
 auf der Seite «Dokumentation» und erklärt die Wirkung im Zusammenhang.
 
 Die Wirkungsbeschreibungen sind aus `src/market/simulation_functions.py`,
-`src/market/market_rules.py` und `src/population/population_sampler.py`
+`src/market/market_feedback.py` und `src/population/population_sampler.py`
 abgeleitet. Ändert sich dort die Mechanik, gehört der Text hier nachgezogen.
 """
 
@@ -257,10 +257,13 @@ PARAMS: dict[str, Param] = {
         short="Run-ID eines früheren Laufs, sonst leer lassen.",
     ),
     "use_seed": Param(
-        label="Zufallsstartwert festlegen",
-        short="Voraussetzung, um zwei Läufe sauber zu vergleichen.",
-        detail="Mit festem Startwert liefert derselbe Aufbau exakt dasselbe Ergebnis. Ohne "
-        "ihn lässt sich ein Unterschied nicht der geänderten Annahme zuordnen.",
+        label="Eigenen Zufallsstartwert festlegen",
+        short="Nur nötig, wenn Sie einen anderen als den Standardwert wollen.",
+        detail="Derselbe Aufbau liefert exakt dasselbe Ergebnis — auch ohne diese "
+        "Angabe, dann mit dem Standardwert. Einen eigenen Startwert brauchen Sie, "
+        "wenn Sie denselben Aufbau mehrfach mit unterschiedlicher Ziehung sehen "
+        "wollen. Welcher Wert tatsächlich gerechnet wurde, steht nach dem Lauf "
+        "unter «Ergebnisse ansehen» im Tab «Übersicht».",
     ),
     "seed": Param(
         label="Startwert",

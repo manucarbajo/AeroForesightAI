@@ -14,6 +14,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -26,6 +27,7 @@ if hasattr(sys.stdout, "reconfigure"):
 from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
+from src.models.llm_models import LLMIncident
 from src.models.sweep_models import (
     MilestoneCheck,
     SweepConfig,
@@ -39,6 +41,7 @@ from src.reporting.output_writer import (
     save_event_log,
     save_factors_timeseries,
     save_final_narrative,
+    save_llm_incidents,
     save_population_timeseries,
     save_price_history,
     save_properties_timeseries,
@@ -48,6 +51,48 @@ from src.reporting.output_writer import (
     save_tick_mechanics,
 )
 from src.reporting.run_scenario_generator import generate_and_save_run_scenario
+
+#: Sweeps laufen bewusst mit festem Seed — sie sollen vergleichbar sein,
+#: nicht variabel. Stand bis P0.6 zweimal als Literal im Modul: einmal im
+#: Lauf, einmal in den Metadaten, die ihn behaupteten.
+SWEEP_SEED = 42
+
+
+def sweep_metadata_args(sweep_id: str) -> SimpleNamespace:
+    """Die Argumente, unter denen ein Sweep sein `run_metadata.json` schreibt.
+
+    Eigene Funktion, damit prüfbar ist, was dort behauptet wird. Der Sweep
+    **rechnet** deterministisch, erzeugt den Szenariotext am Ende aber mit
+    ``prefer_llm=True`` — er ist damit weder das eine noch das andere und
+    trägt den eigenen Modus ``deterministic_with_llm_narrative``.
+
+    Zwei Angaben waren hier vorher unwahr. ``deterministic_only=False`` machte
+    aus dem Sweep im Dashboard einen Lauf «Mit Sprachmodell», obwohl an seinen
+    Zahlen keines beteiligt ist. Und ``model="dummy_for_sweeps"`` benannte ein
+    Modell, das es nicht gibt — befragt wird das Modell aus `OllamaConfig`,
+    dasselbe, das die Szenario-Erzeugung unten benutzt. Beides steht jetzt so
+    da, wie es ist.
+
+    Der Degradations-Marker hängt an keiner dieser Angaben: `save_run_metadata`
+    leitet ``degraded`` allein aus den Vorfällen ab. Ein Ausfall des
+    Abschlusstextes bleibt also sichtbar, ohne dass der Rechenmodus dafür
+    gebeugt werden müsste.
+    """
+
+    llm_defaults = OllamaConfig()
+    return SimpleNamespace(
+        sweep=sweep_id,
+        deterministic_only=True,
+        llm_narrative=True,
+        mock_llm=False,
+        seed=SWEEP_SEED,
+        model=llm_defaults.model,
+        base_url=llm_defaults.base_url,
+        temperature=llm_defaults.temperature,
+        max_tokens=llm_defaults.max_tokens,
+        no_market=False,
+    )
+
 
 SWEEPS_DIR = REPO_ROOT / "configs" / "sweeps"
 SWEEP_OUTPUT_DIR = REPO_ROOT / "outputs" / "sweeps"
@@ -216,7 +261,7 @@ def run_single_sweep(
     run_id_str = f"sweeps/sweep_{sweep.id}"
     final_state = runner.run(
         state,
-        seed=42,
+        seed=SWEEP_SEED,
         run_id=run_id_str,
     )
     elapsed = time.time() - start_time
@@ -245,21 +290,8 @@ def run_single_sweep(
     # Save artifacts like a normal run
     run_dir_path = resolve_run_output_dir(run_id_str)
 
-    # We need a dummy args namespace for save_run_metadata
-    from types import SimpleNamespace
+    dummy_args = sweep_metadata_args(sweep.id)
 
-    dummy_args = SimpleNamespace(
-        sweep=sweep.id,
-        deterministic_only=True,
-        seed=42,
-        model="dummy_for_sweeps",
-        base_url="dummy",
-        temperature=0.0,
-        max_tokens=0,
-        no_market=False,
-    )
-
-    save_run_metadata(final_state, dummy_args, run_dir=run_dir_path, run_id=run_id_str)
     save_event_log(final_state.event_log, run_dir=run_dir_path)
     save_tick_mechanics(final_state, run_dir=run_dir_path)
     save_properties_timeseries(final_state.property_timeseries, run_dir=run_dir_path)
@@ -278,12 +310,32 @@ def run_single_sweep(
 
     # Generate LLM Scenario
     llm = OllamaClient(OllamaConfig())
-    generate_and_save_run_scenario(
+    scenario_result = generate_and_save_run_scenario(
         run_id_str,
         llm,
         run_dir=run_dir_path,
         prefer_llm=True,  # Always prefer LLM for the final scenario text
     )
+    # P0.6: Bis hierher schrieb der Sweep an P0.1 vorbei — die Metadaten
+    # entstanden *vor* der Szenario-Erzeugung, der zurückgegebene `llm_error`
+    # wurde verworfen, und `save_llm_incidents` lief nie. Ein Sweep rechnet
+    # deterministisch und hat damit genau eine Ausfallquelle: diesen Text.
+    # Fiel er auf das Template zurück, stand im Sweep trotzdem
+    # `degraded: false`. Dieselbe Kette wie in `run_simulation._save_run_outputs`,
+    # und in derselben Reihenfolge: erst der Vorfall, dann die Metadaten.
+    scenario_llm_error = scenario_result.get("llm_error")
+    if scenario_llm_error:
+        final_state.llm_incidents.append(
+            LLMIncident(
+                tick=final_state.clock.current_tick,
+                caller="run_scenario_generator",
+                kind="call_failed",
+                error=str(scenario_llm_error),
+            )
+        )
+
+    save_llm_incidents(final_state.llm_incidents, run_dir=run_dir_path)
+    save_run_metadata(final_state, dummy_args, run_dir=run_dir_path, run_id=run_id_str)
 
     try:
         from src.reporting.figure_generator import generate_run_figures

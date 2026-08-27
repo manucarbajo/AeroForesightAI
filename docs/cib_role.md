@@ -140,6 +140,6 @@ Der Extractor liegt daher jetzt unter **`src/legacy/`** und ist nicht Teil der P
 
 - `docs/cib_rationale.md` — CIB-Kanten-zu-Regel-Mapping
 - `configs/cib_frozen.json` — Vollständige Referenz-Matrix
-- `src/scenario_consistency.py` — Score-Implementierung (F-CIB1/2/3)
+- `src/cib/scenario_consistency.py` — Score-Implementierung (F-CIB1/2/3)
 - `tests/test_cib_ranking.py` — Quantitativer Nachweis P4.3/P4.5
 - `tests/test_scenario_consistency.py` — Score-Unit-Tests
