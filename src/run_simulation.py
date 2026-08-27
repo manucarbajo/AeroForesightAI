@@ -365,6 +365,9 @@ def _build_run_args(
         no_scenarios=getattr(base_args, "no_scenarios", False),
         no_run_scenario=getattr(base_args, "no_run_scenario", False),
         deterministic_only=getattr(base_args, "deterministic_only", False),
+        # P0.6: Der Rechenmodus gehört ins Run-Artefakt — ohne ihn hier wäre er
+        # bei jedem Multi-Run-Teillauf verloren.
+        mock_llm=getattr(base_args, "mock_llm", False),
         quiet=getattr(base_args, "quiet", False),
         run_index=run_index,
         seed=seed,

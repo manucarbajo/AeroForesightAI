@@ -44,6 +44,20 @@ eingeschaltet war — wird jedes Preset einmal durchgerechnet. Die Ergebnisse
 liegen unter `outputs/sweeps/`, dazu entsteht eine Zusammenfassung. Auch hier
 erscheinen die einzelnen Läufe in der Run-Liste.
 
+## Was der Lauf über sich festhält
+
+Jeder Lauf schreibt mit, unter welchen Bedingungen er entstanden ist: Seed,
+Rechenmodus und Codestand. Sie finden das nach dem Lauf unter «Ergebnisse
+ansehen» im Tab **Übersicht**, direkt unter den Kennzahlen.
+
+Das ist keine Buchhaltung um ihrer selbst willen. Wer ein Ergebnis
+weiterverwendet, muss sehen können, ob überhaupt ein Sprachmodell beteiligt war
+— ein Lauf im Modus «Ohne Sprachmodell» liefert vollwertige Zahlen, aber
+Platzhaltertexte statt Akteurs-Narrativen. Und wer denselben Lauf noch einmal
+rechnen will, braucht den Seed. Alle Felder stehen auch in
+`run_metadata.json`, beschrieben unter
+[Was ein Lauf hinterlässt](/doku/ref-ausgaben).
+
 ## Wenn etwas schiefgeht
 
 Bricht der Lauf ab, erscheint die Fehlermeldung im Statusbereich, und das

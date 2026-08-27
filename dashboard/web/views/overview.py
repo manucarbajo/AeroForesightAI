@@ -15,6 +15,7 @@ from dash import dcc, html
 from dashboard.run_browser import load_price_series, load_tick_mechanics
 from dashboard.web import components as ui
 from dashboard.web import theme
+from src.reporting.output_writer.provenance import COMPUTE_MODE_LABELS
 
 
 def _metadata(run_dir: Path) -> dict:
@@ -68,6 +69,63 @@ def _line_chart(
     return dcc.Graph(figure=fig, config=theme.GRAPH_CONFIG)
 
 
+def _provenance(metadata: dict) -> html.Div:
+    """Seed und Rechenmodus (P0.6).
+
+    Ein Lauf ohne Sprachmodell darf nicht wie ein vollwertiger aussehen. Vor
+    P0.6 stand beides in keinem Artefakt — man konnte einem fertigen Lauf nicht
+    ansehen, ob überhaupt ein Modell beteiligt war.
+
+    Ältere Läufe kennen die Felder nicht. Dann steht hier ein ehrliches
+    «nicht festgehalten» statt einer erfundenen Angabe.
+    """
+
+    mode = metadata.get("compute_mode")
+    mode_label = COMPUTE_MODE_LABELS.get(mode, "nicht festgehalten")
+
+    seed = metadata.get("seed")
+    seed_label = str(seed) if seed is not None else "nicht festgehalten"
+
+    code = metadata.get("code_version") or {}
+    commit = code.get("commit")
+    if commit:
+        code_label = commit[:8] + (" + Änderungen" if code.get("dirty") else "")
+    else:
+        code_label = "nicht festgehalten"
+
+    tiles = [
+        ui.metric_tile("Rechenmodus", mode_label),
+        ui.metric_tile("Seed", seed_label, hint="Gleicher Seed, gleiche Ziehung"),
+        ui.metric_tile("Codestand", code_label),
+    ]
+
+    children: list = [html.Div(ui.grid(*tiles, cols="sm:grid-cols-3"), className="mt-4")]
+
+    if mode in {"mock_llm", "deterministic_only"}:
+        children.append(
+            ui.alert(
+                "Dieser Lauf ist ohne Sprachmodell entstanden. Die Zahlen sind vollwertig — "
+                "die Texte der Akteure stammen aus Platzhaltern, nicht aus einem Modell.",
+                "info",
+                class_name="mt-4",
+            )
+        )
+
+    fingerprint = metadata.get("config_fingerprint") or {}
+    if fingerprint:
+        parts = ", ".join(
+            f"{name}: {value}" for name, value in sorted(fingerprint.items()) if value
+        )
+        children.append(
+            html.P(
+                f"Konfigurations-Fingerabdruck — {parts}",
+                className=f"{ui.CAPTION} mt-3 break-all",
+            )
+        )
+
+    return html.Div(children)
+
+
 def render(run_dir: Path, run_id: str) -> html.Div:
     children: list = []
     metadata = _metadata(run_dir)
@@ -85,6 +143,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
                 cols="sm:grid-cols-2 lg:grid-cols-4",
             )
         )
+        children.append(_provenance(metadata))
         children.append(
             html.P(
                 [
