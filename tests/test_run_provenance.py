@@ -498,16 +498,32 @@ class TestDerFingerabdruckBeschreibtDieEingabe:
 
     def test_a_resumed_run_keeps_the_original(self) -> None:
         """Beim Fortsetzen sind die Faktoren des Checkpoints bereits Ergebnis.
-        Neu berechnen hieße, das Ergebnis zur Eingabe zu erklären."""
+        Neu berechnen hieße, das Ergebnis zur Eingabe zu erklären.
 
-        final = _lauf(seed=1)
+        **16 Ticks, nicht die vier der anderen Tests.** Die erste Fassung lief
+        über `_lauf(seed=1)`, und bei vier Ticks steht kein Faktor anders als
+        beim Start — dann liefert ein Neuberechnen zufällig dasselbe, und der
+        Test bleibt grün, auch wenn der Runner den Abdruck beim Fortsetzen
+        verwirft. Gefunden bei der Mutationsprüfung am 2026-08-27: dieselbe
+        Schwäche wie die `None == None`-Falle eine Zeile weiter oben, nur
+        anders verkleidet. Die Vorbedingung steht deshalb jetzt als eigene
+        Zusicherung im Test.
+        """
+
+        from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
+
         fremd = config_fingerprint(build_initial_state())
+        final = _lauf(seed=1, ticks=16)
         assert final.config_fingerprint == fremd
+
+        bewegt = config_fingerprint(final).factors != fremd.factors
+        assert bewegt, (
+            "die Faktoren stehen nach dem Lauf noch auf dem Startzustand — dann "
+            "zeigt dieser Test nichts, weil Neuberechnen dasselbe ergäbe"
+        )
 
         # Zustand mit gesetztem Feld erneut durch den Runner: bleibt stehen.
         final.clock.max_ticks = final.clock.current_tick + 1
-        from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
-
         runner = SimulationRunner(
             llm=_StummesLLM(),
             options=RunnerOptions(deterministic_only=True, checkpoint_interval=0),
@@ -571,6 +587,34 @@ class TestDerSeedStehtImArtefakt:
         assert "DEFAULT_SEED" in quelle
         assert "else 42" not in quelle
 
+    def test_the_fallback_really_is_the_constant(self) -> None:
+        """Und zwar dem Verhalten nach, nicht nur dem Wortlaut.
+
+        Die Prüfung darüber liest den Quelltext — sie hält fest, dass dort
+        `DEFAULT_SEED` steht und keine 42 mehr. Bei der Mutationsprüfung am
+        2026-08-27 fiel auf: Ein `else 999` erfüllt beide Zusicherungen und
+        blieb grün. Der Rückfall gilt den Aufrufern, die den Node **ohne**
+        Runner benutzen (Studio, Tests) — für die zählt der Wert, nicht das
+        Wort. Gemessen wird deshalb an der gezogenen Bevölkerung.
+        """
+
+        from src.models.state_models import DEFAULT_SEED
+        from src.orchestration.environment_node import EnvironmentNode
+
+        def erste_person(seed):
+            state = build_initial_state()
+            state.config.seed = seed
+            state.clock.current_tick = 1
+            gelaufen = EnvironmentNode().invoke(state)
+            return gelaufen.population_individuals[0]
+
+        ohne = erste_person(None)
+        mit = erste_person(DEFAULT_SEED)
+        assert (ohne.wtp_eur, ohne.environmental_awareness) == (
+            mit.wtp_eur,
+            mit.environmental_awareness,
+        )
+
     def test_the_dashboard_does_not_call_an_unseeded_run_free(self) -> None:
         """Der Editor nannte einen Lauf ohne eigenen Startwert «frei» und
         versprach abweichende Wiederholungen. Beides war gemessen falsch."""
@@ -580,6 +624,37 @@ class TestDerSeedStehtImArtefakt:
         quelle = Path("dashboard/web/config_editor/save_start.py").read_text(encoding="utf-8")
         assert '"frei"' not in quelle
         assert "DEFAULT_SEED" in quelle
+
+
+class TestDerDashboardPfadMeldetDenBenutztenSeed:
+    """Der Weg über `launch_simulation`, nicht nur über den Runner.
+
+    Gefunden bei der Mutationsprüfung am 2026-08-27: `run_launcher` ließ sich
+    auf `config.seed` zurückdrehen — den **angeforderten** Wert, der leer
+    bleibt, wenn niemand einen nennt — ohne dass ein Test rot wurde. Dass der
+    Runner den Seed auflöst, prüfte `TestDerSeedStehtImArtefakt`; dass die
+    Oberfläche den aufgelösten weiterreicht, niemand.
+    """
+
+    def test_a_dashboard_run_without_a_seed_records_the_default(self, tmp_path) -> None:
+        from dashboard.run_launcher import RunLaunchConfig, launch_simulation
+        from src.models.state_models import DEFAULT_SEED
+
+        ergebnis = launch_simulation(
+            RunLaunchConfig(
+                rounds=1,
+                seed=None,
+                mock_llm=True,
+                deterministic_only=True,
+                checkpoint_interval=0,
+                no_protocol=True,
+                no_scenarios=True,
+                generate_figures=False,
+                run_id=f"seedprobe_{tmp_path.name}",
+            )
+        )
+        metadata = json.loads((ergebnis.run_dir / "run_metadata.json").read_text(encoding="utf-8"))
+        assert metadata["seed"] == DEFAULT_SEED
 
 
 class TestDerHybridModusDesSweeps:

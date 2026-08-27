@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-27 — P0.1 bis P0.6 erledigt und **zweifach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)). Offen in Phase 0: nur noch das aus P0.4 neu hinzugekommene **P0.7** (der Kostendruck wird an zwei Stellen berechnet, und nur eine kennt die regulatorischen Kostentreiber). Es liegt zusammen mit P0.4 bis P0.6 auf `feat/phase-0-p04-p05-p06`. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-27 — P0.1 bis P0.6 erledigt und **dreifach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, und die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)). Offen in Phase 0: nur noch das aus P0.4 neu hinzugekommene **P0.7** (der Kostendruck wird an zwei Stellen berechnet, und nur eine kennt die regulatorischen Kostentreiber). Es liegt zusammen mit P0.4 bis P0.6 auf `feat/phase-0-p04-p05-p06`. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -426,6 +426,28 @@ durch Abtasten der Ränder statt durch Lesen:
   `tick`-Regel wäre dort wirkungslos. Es ist der Rest genau des Bugs, den P0.4 abgeräumt hat —
   aber toter Code, der in `audit_findings.md` bereits zum Entfernen steht. Dort ergänzt.
 
+
+---
+
+### Dritte Runde: Manus Gegenprobe nachgeprüft (Haiko, 2026-08-27)
+
+Manus vier Commits sind einzeln nachgestellt worden — jede Behauptung am laufenden System, nicht am Commit-Text. **Alle drei Befunde von P0.6 halten**, ebenso die zwei Randfälle in P0.4 und der fehlende-Profil-Fall in P0.5. Dazu ein Mutationslauf über **49 Zusagen** (meine 36 aus der ersten Runde, sechs davon an den geänderten Code angepasst, plus seine 13 neuen): **46 gedeckt.**
+
+**Nachgestellt und bestätigt:**
+
+- *Der Fingerabdruck hat den Lauf mitgehasht.* Seine Kopfzeile stimmt aufs Wort: Seeds 1 und 2 über vier Ticks mit aktivem CIB — vier Komponenten gleich, `factors` verschieden, weil F1 auseinanderläuft. (Mein erster Reproduktionsversuch mit abgeschaltetem CIB über 40 Ticks zeigte nichts, weil beide Läufe bis dahin wieder in derselben Endlage ankommen. Der Aufbau entscheidet, nicht der Befund.) Deutlicher noch ohne Seed-Unterschied: **dieselbe Konfiguration, derselbe Seed, nur 5 statt 40 Ticks** ergab am Ende `31e57fbb…` gegen `1b6de2d0…`, beim Start beidemal `31e57fbb…`.
+- *Der Abdruck überlebt Checkpoint und Fortsetzen.* 30-Tick-Lauf mit Checkpoints: Der Startabdruck steht im Checkpoint, wird beim Fortsetzen nicht neu genommen, obwohl die Faktoren sich bewegt haben. Alte Checkpoints (ohne das Feld) laden weiterhin — sie bekommen beim Fortsetzen allerdings einen Abdruck aus bereits gelaufenem Zustand. Enger Randfall, gehört in die Zuständigkeit von [P3.2](#p32--checkpoint-version-wirklich-prüfen).
+- *`seed: null` bei jedem Standardlauf.* Bestätigt und behoben: Ein Lauf ohne `--seed` schreibt jetzt `42`, und zwei solche Läufe sind in `price_history.json`, `tick_mechanics.json` und `factors.csv` **bitgleich** — die Reproduzierbarkeit war schon vorher da, nur sagte es niemand.
+- *Der Sweep-Modus.* Ein Sweep gegen einen toten Endpunkt trägt jetzt `deterministic_with_llm_narrative`, den echten Modellnamen, `degraded: true` und ein `llm_incidents.json` mit dem Verbindungsfehler. Das «Fertig wenn» von P0.6 hält unverändert.
+- *Beide Audit-Findings.* `run_multi` beginnt seine Folge tatsächlich bei 0 und 1, während ein Einzellauf 42 nimmt — gemessen. `run_population_sampling` reicht Tick und Metriken wirklich nicht durch. Beide zu Recht ins Audit statt in einen Fix.
+
+**Drei Lücken, die der Mutationslauf fand — alle in den neuen Tests, keine im Code:**
+
+- **Der Resume-Test bewies nichts.** `test_a_resumed_run_keeps_the_original` lief über vier Ticks, und bei vier Ticks steht kein Faktor anders als beim Start — ein Neuberechnen liefert dann zufällig dasselbe. Genau die Schwäche, die Manu eine Zeile weiter oben als `None == None`-Falle beschreibt, nur anders verkleidet. Der Test läuft jetzt über 16 Ticks (die Grenze, ab der sich Faktoren bewegen) und sichert diese Vorbedingung als eigene Zusicherung ab.
+- **Die Prüfung des Seed-Rückfalls las nur den Quelltext.** Sie verlangt `DEFAULT_SEED` und verbietet `else 42` — ein `else 999` erfüllt beides. Daneben steht jetzt eine, die die gezogene Bevölkerung vergleicht.
+- **Der Dashboard-Pfad war ungedeckt.** Neu: ein Lauf über `launch_simulation` ohne Seed muss `DEFAULT_SEED` ins Artefakt schreiben.
+
+**Und eine Zeile, die keine Prüfung decken kann.** `run_launcher` liest den aufgelösten Seed statt des angeforderten — das ist richtig, heute aber **wirkungslos**: `save_run_metadata` bevorzugt ohnehin `state.config.seed` und greift auf den Argumentwert nur zurück, wenn dort keiner steht, was nach einem Runner-Lauf nicht vorkommt. Die Zeile bleibt (sie wird load-bearing, sobald jemand diese Reihenfolge umdreht), trägt aber jetzt einen Kommentar, der das sagt. Eine Zusage, die sich nicht widerlegen lässt, als "gedeckt" zu zählen, wäre genau die Art Buchführung, die diese Runden abschaffen sollen.
 
 ---
 
