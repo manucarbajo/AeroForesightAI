@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-26 — P0.1, P0.2 und P0.3 erledigt und gegengeprüft. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-27 — P0.1, P0.2 und P0.3 erledigt und gegengeprüft; **P0.4 ist gegengeprüft, entschieden und umsetzungsbereit** (Umfang auf den dritten Evaluator erweitert, Semantik des leeren `when` festgelegt). Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -203,17 +203,43 @@ Bewusst **nicht** hier behoben: dass `state.config.llm` von niemandem gelesen wi
 
 ### P0.4 — Regelauswertung vereinheitlichen
 
-**Befund:** Die generische "when/effect"-Regelauswertung existiert **zweimal unabhängig** und ist bereits auseinandergelaufen: `factor_dynamics.rule_matches` kennt `tick`, `metric` und `system_property`, `population_sampler._rule_matches` nur exaktes `factor`-Matching und `system_property`. Eine `shift_rule` mit `at_least`- oder `tick`-Bedingung greift im Sampler **still nie** — kein Fehler, kein Hinweis, einfach kein Effekt. Das ist kein Stilproblem, das sind falsche Zahlen. Dazu: `market_rules.py` behandelt trotz generischem Namen nur einen einzigen hartcodierten Regeltyp (`booking_yield_feedback`).
+**Befund:** Die generische "when/effect"-Regelauswertung existiert **dreimal unabhängig** und ist bereits auseinandergelaufen: `factor_dynamics.rule_matches` kennt `tick`, `metric` und `system_property`, `population_sampler._rule_matches` nur exaktes `factor`-Matching und `system_property`, und die Aktivierung der `regulatory_influences` in `simulation_functions` wertet dieselbe Klausel ein drittes Mal aus. Eine `shift_rule` mit `at_least`- oder `tick`-Bedingung greift im Sampler **still nie** — kein Fehler, kein Hinweis, einfach kein Effekt. Dazu: `market_rules.py` behandelt trotz generischem Namen nur einen einzigen hartcodierten Regeltyp (`booking_yield_feedback`).
 
-**Fundstelle:** [`src/market/factor_dynamics.py:87`](../src/market/factor_dynamics.py) (`rule_matches`), [`src/population/population_sampler.py:243`](../src/population/population_sampler.py) (`_rule_matches`), [`src/market/market_rules.py`](../src/market/market_rules.py).
+**Fundstelle:** [`src/market/factor_dynamics.py:87`](../src/market/factor_dynamics.py) (`rule_matches`), [`src/population/population_sampler.py:243`](../src/population/population_sampler.py) (`_rule_matches`), [`src/market/simulation_functions.py:124`](../src/market/simulation_functions.py) (`regulatory_influences`), [`src/market/market_rules.py`](../src/market/market_rules.py).
 
 **Verifiziert am 2026-08-26:** `rule_matches` (Zeile 87) kennt `tick` (`gte`/`lte`/`eq`), `factor`, `metric` (`above`/`below`/`at_most`/`at_least`) und `system_property` (inkl. `at_least`) — `_rule_matches` (Zeile 243) nur exaktes `factor`-Matching und `system_property` mit `above`/`below`. Die Divergenz ist real und unverändert. (Die frühere Fassung dieser Zeile sagte "nur `system_property`" und widersprach damit dem eigenen Befund oben; `factor` kann der Sampler sehr wohl.)
 
-**Was zu tun ist:** Einen gemeinsamen Evaluator bauen, beide Aufrufer darauf ziehen. Unbekannte Bedingungstypen müssen **laut fehlschlagen** statt still `False` zurückzugeben — genau das hat die Divergenz so lange versteckt. `market_rules.py` entsprechend seinem tatsächlichen Inhalt benennen oder auflösen.
+**Gegengeprüft am 2026-08-27 — eine Entschärfung, vier Ergänzungen.**
 
-**Fertig wenn:** Dieselbe Regel liefert an beiden Aufrufstellen dasselbe Ergebnis; ein Test deckt `at_least` und `tick` im Sampler-Pfad ab.
+*Die Entschärfung:* Alle `when`-Klauseln aller Configs wurden inventarisiert. **Keine ausgelieferte `shift_rule` benutzt heute `at_least` oder `tick`** — die neun Shift-Regeln in `properties.json` nutzen ausschließlich `factor`/`state` und ein `system_property` mit `above`, also genau die Schnittmenge, die beide Evaluatoren beherrschen. `configs/sweeps/` enthält überhaupt keine Regeln, und die Oberfläche kann keine schreiben: Shift-Regeln werden von Hand in `properties.json` gepflegt. Die Divergenz produziert also **noch keine** falschen Zahlen, sie ist eine scharf gestellte Falle für die nächste Regel. Der frühere Satz "das sind falsche Zahlen" stand im Präsens und ist deshalb hier ersetzt — die Priorität bleibt, die Behauptung wird korrekt.
 
-**Doku zieht mit:** `docs/handbuch/ref-config.md`, `docs/handbuch/preisbildung.md`.
+*Die Ergänzungen:*
+
+1. **Ein dritter Evaluator, bisher weder im Plan noch im Audit.** [`simulation_functions.py:124`](../src/market/simulation_functions.py) wertet `regulatory_influences[].when` eigenständig aus und kennt nur `factor` und `system_property`.
+2. **Und er hat einen echten Bug.** Seine Vergleiche sind per `elif` verkettet (Zeilen 137–139): stehen `above` **und** `below` in derselben Klausel, wird `below` nie geprüft. Latent — keine heutige Config nutzt beides.
+3. **`factor` ohne `state` greift in allen drei Evaluatoren still nie.** Überall steht `str(when.get("state", ""))`, verglichen wird gegen `""`. Ein vergessenes `state` ist dieselbe lautlose Wirkungslosigkeit, gegen die dieses Paket antritt.
+4. **Doku und Code widersprechen sich beim leeren `when`.** [`narrative.py:238`](../src/reporting/output_writer/narrative.py) schreibt für eine Regel ohne Bedingung "immer" ins Protokoll — der Code lässt sie nie greifen (`if not when: return False`). Derselbe Renderer kennt `metric` und `at_least` nicht und stellt solche Regeln unvollständig dar.
+
+**Entschieden am 2026-08-27 (Haiko).** Zwei Fragen, die den Umfang bzw. das Verhalten ändern, sind vor der Umsetzung geklärt:
+
+- **Alle drei Evaluatoren werden zusammengeführt**, nicht nur die zwei aus dem ursprünglichen Befund. Zwei von drei zu vereinigen würde die Doppelung verschieben statt auflösen — derselbe Fallstrick, den [P0.5](#p05--faktor-berechtigungen-aus-einer-quelle) für die Berechtigungen beschreibt. Der `elif`-Bug verschwindet dabei von selbst.
+- **Ein leeres `when` heißt "keine Bedingung", also wahr** — die semantisch richtige Lesart, die auch das Protokoll schon behauptet. Damit eine bedingungslose `factor_rule` oder `shift_rule` nicht plötzlich in jedem Tick feuert, wird sie stattdessen in `validation.py` **laut abgewiesen**: eine Regel ohne Bedingung ist fast sicher ein Config-Fehler. `regulatory_influences` dürfen unbedingt gelten und bleiben erlaubt. Prüfen statt raten — dieselbe Linie wie [P0.3](#p03--validate_config-implementieren--erledigt-2026-08-26).
+
+**Was zu tun ist:** Einen gemeinsamen Evaluator bauen, alle drei Aufrufer darauf ziehen. Unbekannte Bedingungstypen müssen **laut fehlschlagen** statt still `False` zurückzugeben — genau das hat die Divergenz so lange versteckt. `market_rules.py` entsprechend seinem tatsächlichen Inhalt benennen oder auflösen.
+
+**Vorgesehener Schnitt (2026-08-27).** Neues Top-Level-Modul `src/rule_engine.py` — dieselbe Begründung wie bei `validation.py` und `config_loader.py`: von mehreren Paketen genutzt. `src/population` importiert heute nichts aus `src/market`, und diese Richtung soll nicht neu entstehen.
+
+1. `RuleContext` (Tick, Faktoren, Metriken, System-Properties) und **ein** `rule_matches(when, context)`.
+2. `UnknownRuleConditionError` bei unbekanntem Schlüssel, bei einem Operator ohne Subjekt (`above` ohne `metric`/`system_property`/`tick`) und bei `factor` ohne `state`.
+3. `once` fliegt aus dem Prädikat heraus — es ist keine `when`-Bedingung, und beide Aufrufer führen ihre Buchhaltung ohnehin getrennt (`applied_factor_rule_ids` global, `applied_shift_rules` pro Person).
+4. Tick und Metriken werden bis in den Sampler durchgereicht. `build_runtime_metrics` bleibt in `factor_dynamics`, weil es den `SimulationState` braucht; der Evaluator sieht nur eine Zuordnung von Metrik-Namen auf Werte.
+5. `narrative.py` beschreibt Regeln über **eine** Funktion des neuen Moduls, damit Protokolltext und Auswertung nicht wieder auseinanderlaufen.
+
+**Nebenbefund, der sich mitauflöst:** `run_population_tick` nimmt bereits ein `current_tick`, das nirgends benutzt wird — in [P5.1](#p51--toter-code-und-irreführende-namen) als toter Parameter geführt. Es ist genau der Wert, den der gemeinsame Evaluator für `tick`-Bedingungen braucht. Das Audit sagt zu diesem Parameter bereits, er solle **nicht** entfernt werden, weil P2.1 ihn braucht — P0.4 macht ihn schlicht schon vorher benutzt, womit er aufhört, vestigiell zu sein. Der tote Code **in** `market_rules.py` (`initial_ticket_price`, `active_market_rule`) bleibt dagegen bei P5.1 und wird hier nicht vorgezogen.
+
+**Fertig wenn:** Dieselbe Regel liefert an allen drei Aufrufstellen dasselbe Ergebnis; ein Test deckt `at_least` und `tick` im Sampler-Pfad ab; eine unbekannte Bedingung und ein `factor` ohne `state` schlagen sichtbar fehl statt still zu verpuffen; eine Regel ohne Bedingung wird von der Config-Prüfung abgewiesen; der Protokolltext beschreibt dieselbe Bedingung, die auch ausgewertet wird.
+
+**Doku zieht mit:** `docs/handbuch/ref-config.md`, `docs/handbuch/preisbildung.md`, `CLAUDE.md` (Architektur-Map: neues Top-Level-Modul, Umbenennung von `market_rules.py`).
 
 ### P0.5 — Faktor-Berechtigungen aus einer Quelle
 
