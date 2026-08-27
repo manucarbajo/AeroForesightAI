@@ -15,7 +15,11 @@ from dash import dcc, html
 from dashboard.run_browser import load_price_series, load_tick_mechanics
 from dashboard.web import components as ui
 from dashboard.web import theme
-from src.reporting.output_writer.provenance import COMPUTE_MODE_LABELS
+from src.reporting.output_writer.provenance import (
+    COMPUTE_MODE_LABELS,
+    MODES_WITHOUT_ANY_LLM,
+    MODES_WITHOUT_LLM_TICKS,
+)
 
 
 def _metadata(run_dir: Path) -> dict:
@@ -78,7 +82,7 @@ def _model_label(metadata: dict) -> str:
     nicht wie ein vollwertiger aussehen.
     """
 
-    if metadata.get("compute_mode") in {"mock_llm", "deterministic_only"}:
+    if metadata.get("compute_mode") in MODES_WITHOUT_ANY_LLM:
         return "keins"
     return metadata.get("model") or "—"
 
@@ -115,11 +119,20 @@ def _provenance(metadata: dict) -> html.Div:
 
     children: list = [html.Div(ui.grid(*tiles, cols="sm:grid-cols-3"), className="mt-4")]
 
-    if mode in {"mock_llm", "deterministic_only"}:
+    if mode in MODES_WITHOUT_ANY_LLM:
         children.append(
             ui.alert(
                 "Dieser Lauf ist ohne Sprachmodell entstanden. Die Zahlen sind vollwertig — "
                 "die Texte der Akteure stammen aus Platzhaltern, nicht aus einem Modell.",
+                "info",
+                class_name="mt-4",
+            )
+        )
+    elif mode in MODES_WITHOUT_LLM_TICKS:
+        children.append(
+            ui.alert(
+                "Die Zahlen dieses Laufs sind rein deterministisch entstanden, ohne Agenten-"
+                "Dialog. Ein Sprachmodell war nur am Abschlusstext beteiligt.",
                 "info",
                 class_name="mt-4",
             )

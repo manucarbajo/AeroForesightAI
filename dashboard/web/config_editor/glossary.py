@@ -257,10 +257,13 @@ PARAMS: dict[str, Param] = {
         short="Run-ID eines früheren Laufs, sonst leer lassen.",
     ),
     "use_seed": Param(
-        label="Zufallsstartwert festlegen",
-        short="Voraussetzung, um zwei Läufe sauber zu vergleichen.",
-        detail="Mit festem Startwert liefert derselbe Aufbau exakt dasselbe Ergebnis. Ohne "
-        "ihn lässt sich ein Unterschied nicht der geänderten Annahme zuordnen.",
+        label="Eigenen Zufallsstartwert festlegen",
+        short="Nur nötig, wenn Sie einen anderen als den Standardwert wollen.",
+        detail="Derselbe Aufbau liefert exakt dasselbe Ergebnis — auch ohne diese "
+        "Angabe, dann mit dem Standardwert. Einen eigenen Startwert brauchen Sie, "
+        "wenn Sie denselben Aufbau mehrfach mit unterschiedlicher Ziehung sehen "
+        "wollen. Welcher Wert tatsächlich gerechnet wurde, steht nach dem Lauf "
+        "unter «Ergebnisse ansehen» im Tab «Übersicht».",
     ),
     "seed": Param(
         label="Startwert",

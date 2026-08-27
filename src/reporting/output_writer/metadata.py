@@ -9,7 +9,7 @@ from src.reporting.output_writer.paths import ensure_output_dir, resolve_output_
 from src.reporting.output_writer.provenance import (
     code_version,
     compute_mode,
-    config_fingerprint,
+    recorded_fingerprint,
 )
 
 
@@ -60,7 +60,7 @@ def save_run_metadata(
     metadata["compute_mode"] = compute_mode(args)
     metadata["mock_llm"] = bool(getattr(args, "mock_llm", False))
     metadata["deterministic_only"] = bool(getattr(args, "deterministic_only", False))
-    metadata["config_fingerprint"] = config_fingerprint(state)
+    metadata["config_fingerprint"] = recorded_fingerprint(state).model_dump()
     metadata["code_version"] = code_version()
 
     # P0.1: Ein Lauf, dessen Sprachmodell ausgefallen ist, sagt das hier. Die

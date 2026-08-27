@@ -58,6 +58,13 @@ rechnen will, braucht den Seed. Alle Felder stehen auch in
 `run_metadata.json`, beschrieben unter
 [Was ein Lauf hinterlässt](/doku/ref-ausgaben).
 
+**Auch ohne eigenen Startwert ist ein Lauf wiederholbar.** Lassen Sie das Feld
+«Eigenen Zufallsstartwert festlegen» aus, rechnet der Lauf mit einem
+Standardwert — nicht zufällig. Zwei Wiederholungen desselben Aufbaus liefern
+dann dasselbe Ergebnis, und welcher Wert es war, steht nach dem Lauf im Tab
+**Übersicht**. Einen eigenen Startwert brauchen Sie erst, wenn Sie denselben
+Aufbau bewusst mit einer anderen Ziehung sehen wollen.
+
 ## Wenn etwas schiefgeht
 
 Bricht der Lauf ab, erscheint die Fehlermeldung im Statusbereich, und das

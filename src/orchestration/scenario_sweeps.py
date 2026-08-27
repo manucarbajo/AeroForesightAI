@@ -63,21 +63,33 @@ def sweep_metadata_args(sweep_id: str) -> SimpleNamespace:
 
     Eigene Funktion, damit prüfbar ist, was dort behauptet wird. Der Sweep
     **rechnet** deterministisch, erzeugt den Szenariotext am Ende aber mit
-    ``prefer_llm=True``. Der Rechenmodus ist deshalb bewusst nicht
-    ``deterministic_only``: Das Artefakt behauptete sonst, es sei kein Modell
-    beteiligt gewesen — und ein Ausfall dieses einen Aufrufs wäre genau die
-    stille Degradation, gegen die P0.1 angetreten ist.
+    ``prefer_llm=True`` — er ist damit weder das eine noch das andere und
+    trägt den eigenen Modus ``deterministic_with_llm_narrative``.
+
+    Zwei Angaben waren hier vorher unwahr. ``deterministic_only=False`` machte
+    aus dem Sweep im Dashboard einen Lauf «Mit Sprachmodell», obwohl an seinen
+    Zahlen keines beteiligt ist. Und ``model="dummy_for_sweeps"`` benannte ein
+    Modell, das es nicht gibt — befragt wird das Modell aus `OllamaConfig`,
+    dasselbe, das die Szenario-Erzeugung unten benutzt. Beides steht jetzt so
+    da, wie es ist.
+
+    Der Degradations-Marker hängt an keiner dieser Angaben: `save_run_metadata`
+    leitet ``degraded`` allein aus den Vorfällen ab. Ein Ausfall des
+    Abschlusstextes bleibt also sichtbar, ohne dass der Rechenmodus dafür
+    gebeugt werden müsste.
     """
 
+    llm_defaults = OllamaConfig()
     return SimpleNamespace(
         sweep=sweep_id,
-        deterministic_only=False,
+        deterministic_only=True,
+        llm_narrative=True,
         mock_llm=False,
         seed=SWEEP_SEED,
-        model="dummy_for_sweeps",
-        base_url="dummy",
-        temperature=0.0,
-        max_tokens=0,
+        model=llm_defaults.model,
+        base_url=llm_defaults.base_url,
+        temperature=llm_defaults.temperature,
+        max_tokens=llm_defaults.max_tokens,
         no_market=False,
     )
 

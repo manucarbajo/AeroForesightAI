@@ -40,8 +40,8 @@ welchen Bedingungen er lief.
 
 | Feld | Bedeutung |
 |---|---|
-| `seed` | Der tatsächlich benutzte Startwert der Zufallsziehung. Gleicher Seed und gleiche Konfiguration ergeben denselben Lauf. |
-| `compute_mode` | `llm` (mit Sprachmodell), `mock_llm` (ohne, mit Platzhaltertexten) oder `deterministic_only` (nur Zahlen). |
+| `seed` | Der tatsächlich benutzte Startwert der Zufallsziehung — auch dann, wenn Sie keinen angegeben haben: Dann steht hier der Standardwert, mit dem gerechnet wurde. Gleicher Seed und gleiche Konfiguration ergeben denselben Lauf. |
+| `compute_mode` | `llm` (mit Sprachmodell), `mock_llm` (ohne, mit Platzhaltertexten), `deterministic_only` (nur Zahlen) oder `deterministic_with_llm_narrative` (Zahlen deterministisch, Abschlusstext vom Modell — so laufen die Sweeps). |
 | `mock_llm`, `deterministic_only` | Die beiden Schalter einzeln, für die maschinelle Auswertung. |
 | `config_fingerprint` | Je ein Kurzhash über Simulationskonfiguration, Systemgrößen, Faktoren, Akteursprofile und Einflussmatrix. |
 | `code_version` | Git-Commit, Branch und ob der Arbeitsbaum dabei ungesicherte Änderungen trug. `null`, wenn kein Repository verfügbar war. |
@@ -53,6 +53,14 @@ demselben Fingerabdruck sind aus derselben Konfiguration entstanden, auch wenn
 die Dateien inzwischen anders aussehen. Der Seed geht bewusst **nicht** in den
 Fingerabdruck ein — sonst könnten zwei Läufe derselben Konfiguration ihn nie
 teilen; er steht als eigenes Feld daneben.
+
+Genommen wird er **beim Start** des Laufs. Auch das ist kein Detail: Zu den
+Eingaben gehört der Startzustand der Faktoren, und den verschiebt der Lauf
+selbst. Am Ende genommen trügen zwei Läufe derselben Konfiguration mit
+verschiedenen Startwerten verschiedene Fingerabdrücke — und der Abdruck
+beantwortete genau die Frage nicht mehr, für die er da ist. Ein Lauf, den Sie
+aus einem Checkpoint fortsetzen, behält den Fingerabdruck des ursprünglichen
+Laufs: Er setzt dieselbe Konfiguration fort.
 
 Im Dashboard zeigt der Tab **Übersicht** Rechenmodus, Seed und Codestand direkt
 unter den Kennzahlen. Ein Lauf ohne Sprachmodell trägt dort einen Hinweis: Die

@@ -17,7 +17,7 @@ from src.market.simulation_functions import (
 )
 from src.models.agent_models import AgentResponse, StateChange
 from src.models.event_models import EventLogEntry, RoundResult
-from src.models.state_models import SimulationState
+from src.models.state_models import DEFAULT_SEED, SimulationState
 from src.population.population_sampler import run_population_tick
 
 logger = logging.getLogger(__name__)
@@ -144,7 +144,11 @@ class EnvironmentNode:
 
         carbon_tax = params.get("carbon_tax_level", 0.0)
         system_properties = resolve_system_properties(round_number, properties)
-        seed = state.config.seed if state.config.seed is not None else 42
+        # `SimulationRunner.run` löst den Seed auf, bevor ein Tick läuft;
+        # hier steht er also normalerweise schon. Der Rückfall bleibt für
+        # die Aufrufer, die den Node ohne Runner benutzen (Studio, Tests) —
+        # aber mit derselben Konstante, nicht mehr mit einer eigenen 42.
+        seed = state.config.seed if state.config.seed is not None else DEFAULT_SEED
 
         # Kontext für die Shift-Regeln (P0.4): dieselbe Momentaufnahme, gegen die
         # auch die Faktor-Regeln geprüft werden. `booking_rate` steht hier noch

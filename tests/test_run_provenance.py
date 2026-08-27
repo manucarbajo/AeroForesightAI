@@ -97,7 +97,15 @@ class TestSeed:
 
     def test_seed_field_exists_even_without_one(self, tmp_path) -> None:
         """Das Feld steht immer in der Datei. Seine Abwesenheit kann damit nur
-        eines heißen: älter als P0.6."""
+        eines heißen: älter als P0.6.
+
+        Der Fall hier — State **und** Argumente ohne Seed — erreicht keinen
+        echten Lauf mehr: `SimulationRunner.run` löst den Seed vorher auf.
+        Er bleibt als Zusicherung für Aufrufer stehen, die `save_run_metadata`
+        ohne Runner benutzen. Dass ein *Lauf* ohne genannten Seed den
+        tatsächlich benutzten festhält, prüft
+        `TestDerSeedStehtImArtefakt`.
+        """
 
         state = build_initial_state()
         state.config.seed = None
@@ -126,14 +134,14 @@ class TestFingerabdruck:
         state = build_initial_state()
         before = config_fingerprint(state)
         state.properties.price_model.base_price += 1.0
-        assert config_fingerprint(state)["properties"] != before["properties"]
+        assert config_fingerprint(state).properties != before.properties
 
     def test_changed_factor_state_changes_it(self) -> None:
         state = build_initial_state()
         before = config_fingerprint(state)
         factor = state.environment.factors["F2"]
         factor.current_state = next(s for s in factor.possible_states if s != factor.current_state)
-        assert config_fingerprint(state)["factors"] != before["factors"]
+        assert config_fingerprint(state).factors != before.factors
 
     def test_changed_permission_changes_it(self) -> None:
         """Die Berechtigungen aus P0.5 gehören zur Herkunft eines Laufs."""
@@ -142,7 +150,7 @@ class TestFingerabdruck:
         before = config_fingerprint(state)
         regulator = next(agent for agent in state.agents if agent.id == "regulator")
         regulator.profile.may_propose = [*regulator.profile.may_propose, "factor_state F4"]
-        assert config_fingerprint(state)["agent_profiles"] != before["agent_profiles"]
+        assert config_fingerprint(state).agent_profiles != before.agent_profiles
 
     def test_consistency_score_does_not_change_it(self) -> None:
         """Der Wert wird *nach* dem Lauf in die Matrix geschrieben. Er
@@ -153,7 +161,7 @@ class TestFingerabdruck:
         if state.cib_matrix.metadata is None:
             state.cib_matrix.metadata = {}
         state.cib_matrix.metadata["consistency_score"] = 0.87
-        assert config_fingerprint(state)["cib_matrix"] == before["cib_matrix"]
+        assert config_fingerprint(state).cib_matrix == before.cib_matrix
 
 
 class TestCodestand:
@@ -195,16 +203,33 @@ class TestSweepSchreibtNichtMehrVorbei:
 
         assert isinstance(SWEEP_SEED, int)
 
-    def test_sweep_does_not_claim_deterministic_only(self) -> None:
+    def test_sweep_names_its_own_mode(self) -> None:
         """Der Sweep rechnet deterministisch, erzeugt den Szenariotext aber mit
-        `prefer_llm=True`. `deterministic_only` im Artefakt hätte behauptet, es
-        sei kein Modell beteiligt gewesen."""
+        `prefer_llm=True` — er ist keines von beidem.
+
+        Vorher stand hier `compute_mode(args) == "llm"`, weil `deterministic_only`
+        behauptet hätte, es sei kein Modell beteiligt gewesen. Das war die
+        Gegenrichtung desselben Fehlers: Das Dashboard zeigte «Mit
+        Sprachmodell» für einen Lauf, an dessen Zahlen keines beteiligt ist.
+        """
 
         from src.orchestration.scenario_sweeps import SWEEP_SEED, sweep_metadata_args
 
         args = sweep_metadata_args("demo")
-        assert compute_mode(args) == "llm"
+        assert compute_mode(args) == "deterministic_with_llm_narrative"
         assert args.seed == SWEEP_SEED
+
+    def test_sweep_names_the_model_it_actually_asks(self) -> None:
+        """`dummy_for_sweeps` benannte ein Modell, das es nicht gibt. Befragt
+        wird das aus `OllamaConfig` — dasselbe, das der Sweep-Pfad für den
+        Abschlusstext instanziiert."""
+
+        from src.llm import OllamaConfig
+        from src.orchestration.scenario_sweeps import sweep_metadata_args
+
+        args = sweep_metadata_args("demo")
+        assert args.model == OllamaConfig().model
+        assert args.base_url == OllamaConfig().base_url
 
     def test_incident_marks_the_run_degraded(self, tmp_path) -> None:
         """Der Kern: Ein Ausfall im Szenariotext muss den Sweep als degradiert
@@ -235,14 +260,14 @@ class TestDerFingerabdruckWandertNicht:
         from src.reporting.output_writer.provenance import RUN_PRODUCED_MATRIX_METADATA
 
         state = build_initial_state()
-        before = config_fingerprint(state)["cib_matrix"]
+        before = config_fingerprint(state).cib_matrix
 
         if state.cib_matrix.metadata is None:
             state.cib_matrix.metadata = {}
         for key in RUN_PRODUCED_MATRIX_METADATA:
             state.cib_matrix.metadata[key] = {"irgendwas": "aus diesem Lauf"}
 
-        assert config_fingerprint(state)["cib_matrix"] == before
+        assert config_fingerprint(state).cib_matrix == before
 
     def test_every_run_written_key_is_declared(self) -> None:
         """Der Wächter: Wer einen neuen Schlüssel in `cib_matrix.metadata`
@@ -347,3 +372,299 @@ class TestDasDashboardZeigtDieHerkunft:
 
         rendered = self._render(tmp_path, {"ticks_completed": 3, "model": "llama3.2"})
         assert "nicht festgehalten" in rendered
+
+
+# --- Gegenprobe zur Gegenprobe (2026-08-27) ---------------------------------
+#
+# Drei Zusagen von P0.6 hielten am laufenden System nicht, und keine davon
+# hätte ein Test bemerkt: Die Tests riefen `config_fingerprint` und
+# `save_run_metadata` direkt und reichten den Zustand selbst hinein. Geprüft
+# war damit die Funktion, nicht der Weg dorthin — dasselbe Muster, das die
+# erste Gegenprobe bei den Shift-Regeln gefunden hat. Die folgenden Tests
+# fahren deshalb einen echten Lauf.
+
+
+class _StummesLLM:
+    """Antwortet gültig und ohne Inhalt — die Zahlen entstehen ohnehin in Python."""
+
+    def call(self, prompt: str) -> str:
+        return (
+            '{"reasoning": "", "actions": [], "state_changes": [], '
+            '"events": [], "segment_analysis": {}}'
+        )
+
+
+def _lauf(*, seed=None, ticks: int = 4):
+    """Ein vollständiger Lauf über den Runner — der Weg, den die Tests bisher umgingen."""
+
+    from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
+
+    state = build_initial_state()
+    state.clock.max_ticks = ticks
+    runner = SimulationRunner(
+        llm=_StummesLLM(),
+        options=RunnerOptions(
+            enable_market=True,
+            enable_cib=True,
+            deterministic_only=True,
+            checkpoint_interval=0,
+            verbose_ticks=False,
+        ),
+    )
+    return runner.run(state, seed=seed, run_id="run_test")
+
+
+class TestDerFingerabdruckBeschreibtDieEingabe:
+    """Er wurde am Ende genommen und hat den Lauf mitgehasht.
+
+    Gemessen an zwei echten Läufen derselben Konfiguration mit den Seeds 1
+    und 2: vier Komponenten gleich, `factors` verschieden. Grund war nicht
+    die Formel, sondern der Zeitpunkt — `factors` trägt den Zustand jedes
+    Deskriptors, und den verschiebt der Lauf. Damit beantwortete der
+    Fingerabdruck genau die Frage nicht mehr, für die er da ist.
+    """
+
+    def test_two_runs_of_one_config_share_it(self, tmp_path) -> None:
+        """Der Befund selbst — und bewusst über das Artefakt geprüft.
+
+        Die erste Fassung verglich `final.config_fingerprint` der beiden Läufe
+        direkt. Beim Abschalten des Fixes blieb sie grün: Ohne ihn ist das Feld
+        auf beiden Seiten `None`, und `None == None` hält. Ein Test, der nur
+        greift, solange der Code funktioniert, ist keiner. Über
+        `save_run_metadata` fällt der fehlende Wert dagegen auf den am Ende
+        genommenen Abdruck zurück — und der geht auseinander.
+        """
+
+        erster = _write(tmp_path / "a", _lauf(seed=1), _args(seed=1))
+        zweiter = _write(tmp_path / "b", _lauf(seed=2), _args(seed=2))
+
+        assert erster["config_fingerprint"] == zweiter["config_fingerprint"]
+        assert erster["seed"] != zweiter["seed"]
+
+    def test_the_two_runs_really_diverged(self) -> None:
+        """Der Kontrolltest zum vorigen — und er ist nicht redundant.
+
+        Beim ersten Versuch stand hier "ein Faktor hat sich vom Startzustand
+        bewegt"; bei vier Ticks trifft das für Seed 1 nicht zu, und der Test
+        oben wäre grün gewesen, ohne etwas zu zeigen. Worauf es ankommt, ist
+        die Divergenz der **beiden Läufe**: Nur wenn ihre Endzustände
+        auseinandergehen, belegt ein gemeinsamer Fingerabdruck, dass er das
+        Ergebnis nicht mehr mithasht.
+        """
+
+        erster = {k: v.current_state for k, v in _lauf(seed=1).environment.factors.items()}
+        zweiter = {k: v.current_state for k, v in _lauf(seed=2).environment.factors.items()}
+
+        assert erster != zweiter, (
+            "beide Läufe enden im selben Faktorzustand — dann wäre der Test oben "
+            "auch mit dem alten, am Ende genommenen Fingerabdruck grün"
+        )
+
+    def test_the_old_way_would_have_differed(self) -> None:
+        """Und dass der alte Weg wirklich der Fehler war: derselbe Abdruck,
+        am Ende genommen, geht auseinander."""
+
+        am_ende_erster = config_fingerprint(_lauf(seed=1))
+        am_ende_zweiter = config_fingerprint(_lauf(seed=2))
+
+        assert am_ende_erster.factors != am_ende_zweiter.factors
+
+    def test_it_is_taken_before_the_first_tick(self) -> None:
+        final = _lauf(seed=1)
+        assert final.config_fingerprint == config_fingerprint(build_initial_state())
+
+    def test_a_changed_start_state_still_changes_it(self) -> None:
+        """Der naheliegende Fix — `current_state` einfach weglassen — wäre
+        falsch gewesen: Der **Start**zustand ist eine Eingabe, jeder Sweep
+        setzt ihn über `FactorOverride.initial_state`."""
+
+        from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
+
+        state = build_initial_state()
+        state.clock.max_ticks = 1
+        factor = state.environment.factors["F2"]
+        factor.current_state = next(s for s in factor.possible_states if s != factor.current_state)
+
+        runner = SimulationRunner(
+            llm=_StummesLLM(),
+            options=RunnerOptions(deterministic_only=True, checkpoint_interval=0),
+        )
+        verschoben = runner.run(state, seed=1, run_id="run_test")
+
+        assert (
+            verschoben.config_fingerprint.factors
+            != _lauf(seed=1, ticks=1).config_fingerprint.factors
+        )
+
+    def test_a_resumed_run_keeps_the_original(self) -> None:
+        """Beim Fortsetzen sind die Faktoren des Checkpoints bereits Ergebnis.
+        Neu berechnen hieße, das Ergebnis zur Eingabe zu erklären."""
+
+        final = _lauf(seed=1)
+        fremd = config_fingerprint(build_initial_state())
+        assert final.config_fingerprint == fremd
+
+        # Zustand mit gesetztem Feld erneut durch den Runner: bleibt stehen.
+        final.clock.max_ticks = final.clock.current_tick + 1
+        from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
+
+        runner = SimulationRunner(
+            llm=_StummesLLM(),
+            options=RunnerOptions(deterministic_only=True, checkpoint_interval=0),
+        )
+        fortgesetzt = runner.run(final, seed=1, run_id="run_test")
+        assert fortgesetzt.config_fingerprint == fremd
+
+    def test_the_artifact_carries_the_recorded_one(self, tmp_path) -> None:
+        """Der Weg bis in die Datei — nicht nur das Feld im State."""
+
+        final = _lauf(seed=1)
+        metadata = _write(tmp_path, final, _args(seed=1))
+        assert (
+            metadata["config_fingerprint"] == config_fingerprint(build_initial_state()).model_dump()
+        )
+
+
+class TestDerSeedStehtImArtefakt:
+    """`seed: null` bei jedem Standardlauf — obwohl der Lauf reproduzierbar war.
+
+    `configs/simulation_config.json` nennt keinen Seed, also schrieb das
+    Artefakt `null` und das Dashboard zeigte «nicht festgehalten». Gezogen
+    wurde trotzdem reproduzierbar: `environment_node` fiel still auf 42
+    zurück. Zwei Wiederholungen waren bitgleich, während die Oberfläche den
+    Lauf «frei» nannte. Das Abnahmekriterium von P0.6 verlangt das Gegenteil.
+    """
+
+    def test_a_run_without_a_configured_seed_records_the_one_it_used(self, tmp_path) -> None:
+        from src.models.state_models import DEFAULT_SEED
+
+        final = _lauf(seed=None)
+        metadata = _write(tmp_path, final, _args(seed=None))
+
+        assert metadata["seed"] == DEFAULT_SEED
+
+    def test_an_explicit_seed_still_wins(self, tmp_path) -> None:
+        metadata = _write(tmp_path, _lauf(seed=4711), _args(seed=None))
+        assert metadata["seed"] == 4711
+
+    def test_two_runs_without_a_seed_are_identical(self) -> None:
+        """Die Zusage, die die Oberfläche jetzt macht — gemessen, nicht behauptet."""
+
+        erster = _lauf(seed=None)
+        zweiter = _lauf(seed=None)
+
+        assert [entry.model_dump() for entry in erster.price_history] == [
+            entry.model_dump() for entry in zweiter.price_history
+        ]
+        assert erster.population_stats == zweiter.population_stats
+
+    def test_the_default_seed_has_exactly_one_source(self) -> None:
+        """Die 42 stand als Literal in `environment_node` und nirgends sonst.
+
+        Genau deshalb kannte das Artefakt sie nicht: Sie war eine lokale
+        Notlösung, kein benannter Standard.
+        """
+
+        from pathlib import Path
+
+        quelle = Path("src/orchestration/environment_node.py").read_text(encoding="utf-8")
+        assert "DEFAULT_SEED" in quelle
+        assert "else 42" not in quelle
+
+    def test_the_dashboard_does_not_call_an_unseeded_run_free(self) -> None:
+        """Der Editor nannte einen Lauf ohne eigenen Startwert «frei» und
+        versprach abweichende Wiederholungen. Beides war gemessen falsch."""
+
+        from pathlib import Path
+
+        quelle = Path("dashboard/web/config_editor/save_start.py").read_text(encoding="utf-8")
+        assert '"frei"' not in quelle
+        assert "DEFAULT_SEED" in quelle
+
+
+class TestDerHybridModusDesSweeps:
+    """Ein Sweep ist weder «Mit Sprachmodell» noch «Nur Zahlen».
+
+    P0.6 setzte `deterministic_only=False`, damit das Artefakt nicht behauptet,
+    es sei kein Modell beteiligt gewesen. Damit behauptete es die Gegenrichtung:
+    Das Dashboard zeigte «Mit Sprachmodell» und «Modell: dummy_for_sweeps» für
+    einen Lauf, dessen Ticks mit `RunnerOptions(deterministic_only=True)`
+    gerechnet werden. Beide Angaben waren unwahr.
+    """
+
+    def test_the_sweep_computes_its_ticks_deterministically(self) -> None:
+        """Der Beleg für die Prämisse — sonst stritte der Test über nichts."""
+
+        from pathlib import Path
+
+        quelle = Path("src/orchestration/scenario_sweeps.py").read_text(encoding="utf-8")
+        runner_at = quelle.index("runner = SimulationRunner(")
+        optionen = quelle[runner_at : quelle.index("start_time = time.time()", runner_at)]
+        assert "deterministic_only=True" in optionen
+        assert "prefer_llm=True" in quelle
+
+    def test_the_mode_says_both_halves(self) -> None:
+        from src.orchestration.scenario_sweeps import sweep_metadata_args
+
+        modus = compute_mode(sweep_metadata_args("demo"))
+        label = COMPUTE_MODE_LABELS[modus]
+        assert "Nur Zahlen" in label
+        assert "Modell" in label
+
+    def test_degradation_does_not_depend_on_the_mode(self, tmp_path) -> None:
+        """Die Begründung für die gebeugte Angabe trägt nicht: `degraded`
+        kommt allein aus den Vorfällen, nicht aus dem Rechenmodus."""
+
+        state = build_initial_state()
+        state.llm_incidents.append(
+            LLMIncident(tick=3, caller="run_scenario_generator", kind="call_failed", error="tot")
+        )
+        from src.orchestration.scenario_sweeps import sweep_metadata_args
+
+        metadata = _write(tmp_path, state, sweep_metadata_args("demo"))
+        assert metadata["compute_mode"] == "deterministic_with_llm_narrative"
+        assert metadata["degraded"] is True
+
+    def test_the_dashboard_separates_the_two_halves(self, tmp_path) -> None:
+        rendered = TestDasDashboardZeigtDieHerkunft._render(
+            tmp_path,
+            {
+                "compute_mode": "deterministic_with_llm_narrative",
+                "seed": 42,
+                "model": "llama3.2",
+            },
+        )
+        # Der Text ist da: die Zahlen deterministisch, das Modell nur am Schluss.
+        assert "rein deterministisch" in rendered
+        # Und das Modell wird genannt — es *wurde* eines befragt.
+        assert "llama3.2" in rendered
+        assert "keins" not in rendered
+
+
+class TestDerCodestandFriertNichtEin:
+    """Das Dashboard läuft als ein Prozess über Stunden. Ein `lru_cache` hätte
+    Commit und `dirty` beim Prozessstart festgehalten, und jeder spätere Lauf
+    trüge den Codestand von damals."""
+
+    def test_code_version_is_not_cached(self) -> None:
+        from src.reporting.output_writer import provenance
+
+        assert not hasattr(provenance.code_version, "cache_info")
+
+    def test_a_second_call_asks_git_again(self, monkeypatch) -> None:
+        from src.reporting.output_writer import provenance
+
+        aufrufe: list[tuple[str, ...]] = []
+        echtes_run = provenance.subprocess.run
+
+        def zaehlend(args, **kwargs):
+            aufrufe.append(tuple(args))
+            return echtes_run(args, **kwargs)
+
+        monkeypatch.setattr(provenance.subprocess, "run", zaehlend)
+        provenance.code_version()
+        erste_runde = len(aufrufe)
+        provenance.code_version()
+
+        assert erste_runde > 0
+        assert len(aufrufe) > erste_runde

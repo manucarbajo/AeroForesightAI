@@ -18,9 +18,10 @@ from src.config_loader import build_initial_state
 from src.market.market_node import MarketNode
 from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
-from src.models.state_models import SimulationState
+from src.models.state_models import DEFAULT_SEED, SimulationState
 from src.orchestration.environment_node import EnvironmentNode
 from src.reporting.output_writer import append_individuals_history, resolve_run_output_dir
+from src.reporting.output_writer.provenance import config_fingerprint
 from src.validation import validate_state
 
 
@@ -149,13 +150,30 @@ class SimulationRunner:
         state = state.model_copy(deep=True)
         if not self.options.enable_cib:
             state.cib_matrix = None
+
+        # Der Seed wird hier **einmal** aufgelöst und in den State geschrieben.
+        # Vorher blieb er `None`, wenn ihn niemand nannte — die Bevölkerung zog
+        # trotzdem reproduzierbar, weil `environment_node` still auf 42
+        # zurückfiel. Das Artefakt schrieb daraufhin `seed: null` und die
+        # Oberfläche nannte den Lauf "frei", obwohl zwei Wiederholungen
+        # bitgleich waren. Wer ab hier den Seed liest — Bevölkerung, Metadaten,
+        # Dashboard —, liest denselben Wert.
         if seed is not None:
             state.config.seed = seed
+        elif state.config.seed is None:
+            state.config.seed = DEFAULT_SEED
 
         # Erst prüfen, dann handeln: `_seed_runtime` mit einem ungültigen Seed
         # aufzurufen und den Fehler danach zu melden, hieße halb anfangen.
         validate_state(state)
-        self._seed_runtime(seed if seed is not None else state.config.seed)
+        self._seed_runtime(state.config.seed)
+
+        # Der Fingerabdruck der Eingaben, genommen **bevor** ein Tick etwas
+        # daran verschiebt. Beim Fortsetzen aus einem Checkpoint steht er schon
+        # da und bleibt stehen: Der Lauf setzt dieselbe Konfiguration fort, und
+        # die Faktoren des Checkpoints sind bereits Ergebnis, nicht Eingabe.
+        if state.config_fingerprint is None:
+            state.config_fingerprint = config_fingerprint(state)
 
         self._progress_started_at = time.perf_counter()
         self._progress_last_tick_at = self._progress_started_at

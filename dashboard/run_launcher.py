@@ -363,7 +363,10 @@ def launch_simulation(
                 checkpoint_store=checkpoint_manager,
                 run_id=run_id,
             )
-            seed = config.seed
+            # Nicht `config.seed`: Das ist der *angeforderte* Wert und bleibt
+            # leer, wenn niemand einen genannt hat. Der Runner hat ihn da schon
+            # aufgelöst — der State trägt den tatsächlich benutzten.
+            seed = final_state.config.seed
 
         artifacts = _save_run_outputs(
             final_state,

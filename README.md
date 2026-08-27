@@ -205,10 +205,12 @@ Nach jedem Lauf unter `outputs/<run_id>/`:
 | `llm_incidents.json` | Nur bei Ausfällen: Tick, Aufrufer, Fehler |
 
 **Einen Lauf nachstellen:** `run_metadata.json` sagt, mit welchem Seed und in
-welchem Rechenmodus gerechnet wurde. Der `config_fingerprint` beschreibt die
-tatsächlich benutzte Konfiguration — nicht die Dateien, die gerade in `configs/`
-liegen, denn ein Lauf aus dem Dashboard arbeitet mit einem Entwurf. Zwei Läufe
-mit gleichem Fingerabdruck und gleichem Seed sind derselbe Lauf.
+welchem Rechenmodus gerechnet wurde — der Seed steht auch dann dort, wenn die
+Konfiguration keinen nennt, dann als der benutzte Standardwert. Der
+`config_fingerprint` beschreibt die tatsächlich benutzte Konfiguration, beim
+Start des Laufs genommen — nicht die Dateien, die gerade in `configs/` liegen,
+denn ein Lauf aus dem Dashboard arbeitet mit einem Entwurf. Zwei Läufe mit
+gleichem Fingerabdruck und gleichem Seed sind derselbe Lauf.
 
 **Pipeline pro Tick:** Faktoren → Agenten (Provider/Regulator) → Booking (Referenzpreis = Vortick-Marktpreis) → Consumer → Markt-Feedback (finaler Ticketpreis) → Delta-Events → Export.
 

@@ -10,6 +10,14 @@ liegt.** Gehasht werden die Konfigurationsobjekte aus dem `SimulationState`,
 nicht die Dateien unter `configs/`. Der Unterschied ist wesentlich: Ein Lauf aus
 dem Dashboard arbeitet mit einem Entwurf, der die Dateien gar nicht anfasst. Ein
 Dateihash würde dort eine Gleichheit behaupten, die es nicht gibt.
+
+**Und er wird beim Start genommen, nicht am Ende.** `config_fingerprint` ist
+eine Momentaufnahme des Zustands, in dem sie aufgerufen wird — richtig ist
+deshalb allein der Aufrufzeitpunkt. `SimulationRunner.run` nimmt sie vor dem
+ersten Tick und legt sie im State ab; `save_run_metadata` liest sie von dort.
+Am Ende genommen hätte sie den Lauf mitgehasht: `factors` trägt den Zustand
+jedes Deskriptors, und den verschiebt der Lauf. Zwei Läufe derselben
+Konfiguration mit verschiedenen Seeds bekamen so verschiedene Abdrücke.
 """
 
 from __future__ import annotations
@@ -17,9 +25,10 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
+
+from src.models.state_models import ConfigFingerprint
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -60,13 +69,13 @@ def _dump(model: Any) -> Any:
     return model
 
 
-def config_fingerprint(state) -> dict[str, str | None]:
-    """Je ein Hash über die Bestandteile, die das Modell bestimmen.
+def config_fingerprint(state) -> ConfigFingerprint:
+    """Momentaufnahme der Eingaben — **im Zustand des Aufrufzeitpunkts**.
 
-    Der ``seed`` ist aus dem Simulations-Config-Hash ausgenommen: Er
-    unterscheidet zwei Läufe **derselben** Konfiguration, und der Fingerabdruck
-    soll genau diese Gleichheit sichtbar machen. Er steht als eigenes Feld
-    daneben.
+    Aufzurufen ist sie vor dem ersten Tick; siehe Modul-Docstring. Der ``seed``
+    ist aus dem Simulations-Config-Hash ausgenommen: Er unterscheidet zwei Läufe
+    **derselben** Konfiguration, und der Fingerabdruck soll genau diese
+    Gleichheit sichtbar machen. Er steht als eigenes Feld daneben.
     """
 
     simulation_config = _dump(getattr(state, "config", None)) or {}
@@ -92,22 +101,42 @@ def config_fingerprint(state) -> dict[str, str | None]:
         }
         cib_matrix = {**cib_matrix, "metadata": metadata}
 
-    return {
-        "simulation_config": _digest(simulation_config),
-        "properties": _digest(_dump(getattr(state, "properties", None))),
-        "factors": _digest(factors),
-        "agent_profiles": _digest(agent_profiles),
-        "cib_matrix": _digest(cib_matrix) if cib_matrix is not None else None,
-    }
+    return ConfigFingerprint(
+        simulation_config=_digest(simulation_config),
+        properties=_digest(_dump(getattr(state, "properties", None))),
+        factors=_digest(factors),
+        agent_profiles=_digest(agent_profiles),
+        cib_matrix=_digest(cib_matrix) if cib_matrix is not None else None,
+    )
 
 
-@lru_cache(maxsize=1)
+def recorded_fingerprint(state) -> ConfigFingerprint:
+    """Der beim Start abgelegte Abdruck — sonst einer von jetzt.
+
+    Der Rückfall gilt Aufrufern, die ohne `SimulationRunner` an
+    `save_run_metadata` kommen (Tests, Skripte). Er beschreibt dann den
+    Zustand beim Schreiben, nicht beim Starten; für einen echten Lauf greift
+    er nie, weil der Runner das Feld setzt.
+    """
+
+    recorded = getattr(state, "config_fingerprint", None)
+    if isinstance(recorded, ConfigFingerprint):
+        return recorded
+    return config_fingerprint(state)
+
+
 def code_version() -> dict[str, Any] | None:
     """Git-Commit und ob der Arbeitsbaum dabei sauber war — oder ``None``.
 
     Ohne Git (installiertes Paket, Container ohne Repo) ist das schlicht nicht
     feststellbar. Dann steht ``null`` in der Datei, statt eine Herkunft zu
     behaupten, die niemand prüfen kann.
+
+    Bewusst **nicht** zwischengespeichert: Das Dashboard läuft als ein Prozess
+    über Stunden. Ein `lru_cache` hätte Commit und `dirty` beim Prozessstart
+    eingefroren, und jeder spätere Lauf trüge den Codestand von damals — die
+    Sorte Angabe, die stimmt, bis sie gebraucht wird. Drei `git`-Aufrufe pro
+    Lauf sind neben der Simulation nicht messbar.
     """
 
     def _git(*args: str) -> str | None:
@@ -141,11 +170,24 @@ def code_version() -> dict[str, Any] | None:
 def compute_mode(args) -> str:
     """Wie gerechnet wurde — in derselben Sprache wie das Dashboard.
 
-    Die drei Modi entsprechen den Auswahlmöglichkeiten unter «Rechenmodus»:
-    Ein Lauf ohne Sprachmodell darf nicht wie ein vollwertiger aussehen.
+    Die ersten drei Modi entsprechen den Auswahlmöglichkeiten unter
+    «Rechenmodus»: Ein Lauf ohne Sprachmodell darf nicht wie ein vollwertiger
+    aussehen.
+
+    Der vierte hat keinen Schalter, weil ihn nur der Sweep-Pfad erzeugt: Der
+    rechnet seine Ticks deterministisch, lässt den Abschlusstext am Ende aber
+    vom Modell schreiben (`prefer_llm=True`). Beide vorhandenen Modi hätten
+    dort etwas Falsches behauptet — `deterministic_only`, es sei kein Modell
+    beteiligt gewesen, `llm`, die Zahlen kämen aus einem Dialog mit ihm. Ein
+    eigener Modus ist billiger als eine gebeugte Angabe.
     """
 
-    if bool(getattr(args, "deterministic_only", False)):
+    deterministic = bool(getattr(args, "deterministic_only", False))
+    llm_narrative = bool(getattr(args, "llm_narrative", False))
+
+    if deterministic and llm_narrative:
+        return "deterministic_with_llm_narrative"
+    if deterministic:
         return "deterministic_only"
     if bool(getattr(args, "mock_llm", False)):
         return "mock_llm"
@@ -156,4 +198,16 @@ COMPUTE_MODE_LABELS = {
     "llm": "Mit Sprachmodell",
     "mock_llm": "Ohne Sprachmodell (Mock)",
     "deterministic_only": "Nur Zahlen (deterministisch)",
+    "deterministic_with_llm_narrative": "Nur Zahlen, Abschlusstext vom Modell",
 }
+
+#: Modi, in denen kein Sprachmodell an den **Zahlen** beteiligt war. Der Hybrid
+#: steht hier mit drin: Seine Ticks sind so deterministisch wie die eines
+#: reinen Zahlenlaufs, befragt wird das Modell erst danach.
+MODES_WITHOUT_LLM_TICKS = frozenset(
+    {"mock_llm", "deterministic_only", "deterministic_with_llm_narrative"}
+)
+
+#: Modi, in denen überhaupt kein Sprachmodell befragt wurde. Nur hier ist die
+#: Angabe eines Modellnamens sinnlos.
+MODES_WITHOUT_ANY_LLM = frozenset({"mock_llm", "deterministic_only"})
