@@ -79,8 +79,21 @@ class TestFaktorbedingung:
     def test_factor_without_state_raises(self) -> None:
         """Bis P0.4 wurde gegen "" verglichen — die Regel griff still nie."""
 
-        with pytest.raises(UnknownRuleConditionError, match="ohne 'state'"):
+        with pytest.raises(UnknownRuleConditionError, match="braucht ein 'state'"):
             rule_matches({"factor": "F1"}, _context(factors=_factors(F1="F1.1")))
+
+    @pytest.mark.parametrize("state", [None, "", "   ", 5, ["F1.1"]])
+    def test_state_must_be_a_non_empty_text(self, state) -> None:
+        """Gegenprobe 2026-08-27: Der Leerstring wurde abgewiesen, `null` nicht.
+
+        `str(None)` ist "None" und damit wahrheitswertig — die Klausel kam
+        durch die Prüfung und wurde danach gegen den Zustand "None" verglichen.
+        Sichtbar fehlte ihr nichts, sie traf nur nie zu. Dasselbe galt für jede
+        Nicht-Zeichenkette.
+        """
+
+        with pytest.raises(UnknownRuleConditionError, match="braucht ein 'state'"):
+            rule_matches({"factor": "F1", "state": state}, _context(factors=_factors(F1="F1.1")))
 
     def test_state_without_factor_raises(self) -> None:
         with pytest.raises(UnknownRuleConditionError, match="ohne 'factor'"):
@@ -137,6 +150,21 @@ class TestTick:
         when = {"metric": "tick", "at_least": 3}
         assert rule_matches(when, _context(tick=3)) is True
         assert rule_matches(when, _context(tick=2)) is False
+
+    @pytest.mark.parametrize("tick", [3.7, 0.5, -1.5])
+    def test_a_fractional_tick_raises(self, tick) -> None:
+        """Gegenprobe 2026-08-27: `rule_matches` verglich über `int(...)`, das
+        die Nachkommastelle abschneidet — `{"tick": 3.7}` griff in Tick 3. Ein
+        Zahlendreher sah damit aus wie eine Regel, die woanders greift.
+        Ein Tick ist ein Tick (Invariante 5)."""
+
+        with pytest.raises(UnknownRuleConditionError, match="ganze Zahl"):
+            rule_matches({"tick": tick}, _context(tick=3))
+
+    def test_an_integral_float_is_still_fine(self) -> None:
+        """JSON kennt kein int: `3.0` ist eine zulässige Schreibweise für 3."""
+
+        assert rule_matches({"tick": 3.0}, _context(tick=3))
 
     def test_shorthand_with_operator_raises(self) -> None:
         """Die alte Fassung ignorierte den Wert stillschweigend, sobald ein

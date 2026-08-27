@@ -64,6 +64,14 @@ Ein leeres `when` heißt „immer". Bei einem Kostentreiber ist das erlaubt und
 sinnvoll. Bei `factor_rules` und `shift_rules` wird es abgewiesen: Eine Regel,
 die in jeder Runde greift, ist fast immer ein vergessenes `when`.
 
+Zwei Schreibweisen weist die Prüfung ausdrücklich ab, weil sie früher still
+wirkungslos blieben: ein `factor` mit leerem oder fehlendem `state` (`null`
+zählt dazu — die Regel wurde dann gegen den Zustand „None" verglichen und traf
+nie zu), und ein `tick` mit Nachkommastelle. `{"tick": 3.7}` griff in Runde 3,
+weil die Nachkommastelle abgeschnitten wurde; ein Zahlendreher sah damit aus
+wie eine Regel, die eben woanders greift. `3.0` bleibt zulässig — JSON kennt
+keine ganzen Zahlen als eigenen Typ.
+
 Die technischen Feldnamen in der Referenz
 [Alle Einstellungen](/doku/ref-parameter) verweisen genau auf diese Abschnitte —
 so finden Sie zu jeder Einstellung der Oberfläche die zugehörige Stelle in der

@@ -198,21 +198,41 @@ def check_when(when: Mapping[str, Any] | None, *, rule_id: str = "") -> None:
             f"Erwartet wird einer von: {', '.join(sorted(OPERATORS))}.",
         )
 
-    if "factor" in when and not str(when.get("state", "")):
-        _fail(
-            rule_id,
-            f"'factor': {when['factor']!r} ohne 'state'. Ohne Zielzustand könnte die "
-            "Bedingung nie zutreffen.",
-        )
+    if "factor" in when:
+        # Bewusst nicht `str(when.get("state", ""))`: `str(None)` ist "None" und
+        # damit wahrheitswertig. Ein `"state": null` kam so durch die Prüfung und
+        # wurde danach gegen den Zustand "None" verglichen — der Regel fehlte
+        # nichts Sichtbares, sie traf nur nie zu. Genau die stille
+        # Wirkungslosigkeit, gegen die P0.4 angetreten ist; der Leerstring
+        # daneben wurde längst abgewiesen. Gefunden 2026-08-27.
+        state = when.get("state")
+        if not isinstance(state, str) or not state.strip():
+            _fail(
+                rule_id,
+                f"'factor': {when['factor']!r} braucht ein 'state' als nicht leeren "
+                f"Text, nicht {state!r}. Ohne Zielzustand könnte die Bedingung nie "
+                "zutreffen.",
+            )
 
     if "state" in when and "factor" not in when:
         _fail(rule_id, "'state' ohne 'factor'.")
 
     for key in operators + (["tick"] if subject == "tick" else []):
         try:
-            float(when[key])
+            value = float(when[key])
         except (TypeError, ValueError):
             _fail(rule_id, f"'{key}': {when[key]!r} ist keine Zahl.")
+            return
+        # Ein Tick ist ein Tick (Invariante 5). `rule_matches` vergleicht über
+        # `int(...)`, das eine Nachkommastelle stillschweigend abschneidet:
+        # `{"tick": 3.7}` griff in Tick 3. Ein Zahlendreher sah damit aus wie
+        # eine Regel, die einfach woanders greift. Gefunden 2026-08-27.
+        if key == "tick" and value != int(value):
+            _fail(
+                rule_id,
+                f"'tick': {when[key]!r} ist keine ganze Zahl. Ticks sind ganzzahlig — "
+                "für einen Bereich {'metric': 'tick', 'at_least': N} schreiben.",
+            )
 
 
 def rule_matches(
