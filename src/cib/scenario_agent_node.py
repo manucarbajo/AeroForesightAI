@@ -7,6 +7,7 @@ from typing import Any, Protocol
 
 from src.cib.scenario_consistency import ScenarioDeriver, scenarios_to_dict
 from src.models.cib_models import DESCRIPTOR_IDS, MAX_INFLUENCE, MIN_INFLUENCE, CIBMatrix
+from src.models.llm_models import LLMIncident
 from src.models.state_models import SimulationState
 
 logger = logging.getLogger(__name__)
@@ -268,7 +269,23 @@ class ScenarioAgentNode:
         try:
             raw = self.llm.call(prompt)
         except Exception as e:
-            logger.error(f"Scenario LLM call failed: {e}")
+            # Ohne Narrativ bleibt der deterministische Teil (`scenario_candidates`)
+            # stehen — der Lauf ist damit unvollständig, nicht falsch. Festhalten,
+            # damit das Artefakt es sagt statt nur das Log.
+            logger.warning(
+                "Szenario-Narrativ konnte nicht erzeugt werden: %s. "
+                "Die gerechneten Kandidaten bleiben erhalten, der Lauf wird als "
+                "beeinträchtigt markiert.",
+                e,
+            )
+            state.llm_incidents.append(
+                LLMIncident(
+                    tick=state.clock.current_tick,
+                    caller="scenario_node",
+                    kind="call_failed",
+                    error=f"{type(e).__name__}: {e}",
+                )
+            )
             return state
 
         payload = _extract_json_object(raw)

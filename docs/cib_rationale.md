@@ -35,8 +35,8 @@ Die CIB-Kante gibt den qualitativen Zusammenhang an, den die Schwellenwert-Logik
 | `f4_stable_growth` | F2.1→F4.1 (+3), F6.1→F4.1 (-3*) | `cost_pressure < 115` | F4 → F4.1 | Niedriger Druck = moderate Politik; F2.1 stützt Wirtschaftsstabilität |
 | `f6_flight_shaming_high_tax` | F2.2→F6.2 (0), F1.2→F6.2 (+1) | `carbon_tax_level > 80` | F6 → F6.2 | CO₂-Steuer > 80 EUR signalisiert gesellschaftlichen Wandel → Flight Shaming |
 | `f6_accepted_flying` | F3.1→F6.1 (+3), F4.1→F6.1 (+3) | `carbon_tax_level < 60` | F6 → F6.1 | Niedrige Steuer + keine Alternativen = Fliegen gesellschaftlich akzeptiert |
-| `f7_oil_stress` | F4.2→F7.2 (-1*), F2.2→F7.2 (-3) | `oil_price_index > 1.15` | F7 → F7.2 | Ölpreis-Schock → Marktfragmentierung; F2.2 wirkt negativ auf F7.2 (Regulierung vs. Markt) |
-| `f7_open_markets` | F4.1→F7.1 (-2*), F3.1→F7.1 (-3) | `oil_price_index ≤ 1.1` | F7 → F7.1 | Stabiler Ölpreis = offene, integrierte Märkte (F7.1) |
+| `f7_oil_stress` | F4.2→F7.2 (+2), F2.2→F7.2 (+1) | `oil_price_index > 1.15` | F7 → F7.2 | Der Ölpreis dient als **Indikator geopolitischer Spannung**, nicht als deren Ursache: Versorgungsschocks begleiten Konflikte und Sanktionen historisch eng (1973/79, 2022). Steigt er stark, wird F7.2 (Sperrungen, Konflikte) gesetzt. |
+| `f7_open_markets` | F4.1→F7.1 (+2), F2.1→F7.1 (+2) | `oil_price_index ≤ 1.1` | F7 → F7.1 | Ruhiger Ölpreis als Indikator einer entspannten Lage → F7.1 (offene Lufträume, multilaterale Kooperation). |
 
 *) Einfluss ist formal negativ, wirkt aber im Kontext des Nicht-Auftretens als Abwesenheitsargument.
 
@@ -131,11 +131,11 @@ Quantitativer Nachweis aus `tests/test_cib_ranking.py` (10 Tests, alle grün):
 
 | Szenario | Consistency Score | Stability Index | Konflikte |
 |---|:-:|:-:|:-:|
-| **Business as Usual** (F1.1, F2.1, F3.1, F4.1, F5.1, F6.1, F7.1) | **0.973** | **1.000** | 0 |
+| **Business as Usual** (F1.1, F2.1, F3.1, F4.1, F5.1, F6.1, F7.1) | **0.970** | **1.000** | 0 |
 | Transformationskonflikt (F1.2, F2.2, F3.1, F4.2, F5.2, F6.2, F7.2) | 0.867 | 0.952 | 2 |
-| Freiwillige Wende (F1.2, F2.2, F3.2, F4.1, F5.2, F6.2, F7.1) | 0.603 | 0.810 | 8 |
+| Freiwillige Wende (F1.2, F2.2, F3.2, F4.1, F5.2, F6.2, F7.1) | 0.629 | 0.833 | 7 |
 
-**Kernnachweis**: `consistency_score(BAU) = 0.973 > consistency_score(Konflikt) = 0.867` ✓
+**Kernnachweis**: `consistency_score(BAU) = 0.970 > consistency_score(Konflikt) = 0.867` ✓
 
 Interpretation: BAU ist das perfekt selbstverstärkende Szenario (0 Konflikte, Stability = 1.0).
 Der Transformationskonflikt hat 2 strukturelle Kern-Konflikte (F2.2+F3.1: strenge Regulierung

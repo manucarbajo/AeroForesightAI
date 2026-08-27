@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from src.llm import OllamaClient, OllamaConfig, get_llm
+from src.llm import MockLLM, OllamaClient, OllamaConfig
 from src.reporting.output_writer import OUTPUT_DIR, resolve_run_output_dir
 
 
@@ -25,6 +25,10 @@ class RunSummary:
     has_run_scenario: bool
     scenario_title: str | None
     scenario_summary: str | None
+    #: True, wenn waehrend des Laufs mindestens ein LLM-Aufruf ins Leere ging.
+    #: Aeltere Laeufe kennen das Feld nicht — dort bleibt es False.
+    degraded: bool = False
+    llm_incident_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -108,7 +112,9 @@ def regenerate_run_scenario(
 
     directory = Path(run_dir) if run_dir is not None else resolve_run_output_dir(run_id)
     if mock_llm:
-        llm = get_llm()
+        # Wie im Lauf selbst: der Schalter bedeutet «ohne Sprachmodell», nicht
+        # «was die Umgebung gerade hergibt» (P0.1).
+        llm = MockLLM()
     else:
         llm = OllamaClient(
             OllamaConfig(
@@ -161,6 +167,8 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
                 has_run_scenario=has_scenario,
                 scenario_title=scenario_title,
                 scenario_summary=scenario_summary,
+                degraded=bool(meta_dict.get("degraded", False)),
+                llm_incident_count=int(meta_dict.get("llm_incident_count") or 0),
             )
         )
 

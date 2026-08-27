@@ -17,6 +17,7 @@ from src.orchestration.scenario_sweeps import (
     load_all_sweep_configs,
     load_sweep_config,
 )
+from src.validation import collect_state_errors, validate_llm_settings
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -586,6 +587,45 @@ def prepare_simulation_state(draft: ConfigDraft):
         state.config.seed = int(draft.seed)
 
     return state
+
+
+def validate_draft(draft: ConfigDraft) -> list[str]:
+    """Was an dieser Konfiguration einen Lauf scheitern lassen würde.
+
+    Leere Liste heißt startklar. Absichtlich nicht werfend: Die Oberfläche will
+    alle Befunde auf einmal zeigen, statt sie einzeln aus Ausnahmen zu klauben.
+    Scheitert schon das Bauen des States (fehlende oder kaputte Config-Datei),
+    ist das ebenfalls ein Befund und keine Ausnahme, die nach oben durchschlägt.
+    """
+
+    try:
+        state = prepare_simulation_state(draft)
+    except Exception as exc:  # noqa: BLE001 - eine unlesbare Config ist ein Befund, kein Absturz
+        return [f"Konfiguration konnte nicht geladen werden: {exc}"]
+
+    errors = collect_state_errors(state)
+
+    # Die Sprachmodell-Felder des Drafts landen **nicht** im State — sie gehen
+    # über `RunLaunchConfig` direkt an den `OllamaClient` (das Durchschreiben
+    # nach `config.llm` ist P3.4). Ohne diese Zeilen prüfte die Oberfläche
+    # deshalb die Werte aus der Config-Datei statt die eingestellten: ein Draft
+    # mit temperature=5.0 und max_tokens=0 galt als fehlerfrei.
+    #
+    # Nur wenn sie auch benutzt werden: `mock_llm` bedeutet `MockLLM()`, und
+    # dann fasst niemand Modellname, Temperatur oder Antwortlänge an. Beide
+    # unteren Rechenmodi («Ohne Sprachmodell» und «Nur Zahlen») setzen das Feld,
+    # also darf ein leeres Modellfeld dort keinen Lauf verhindern.
+    if not draft.mock_llm:
+        errors.extend(
+            validate_llm_settings(
+                draft.model,
+                draft.temperature,
+                draft.max_tokens,
+                context="Technik",
+            )
+        )
+
+    return errors
 
 
 def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:

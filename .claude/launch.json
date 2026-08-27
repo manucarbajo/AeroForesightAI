@@ -3,20 +3,38 @@
   "configurations": [
     {
       "name": "dashboard",
-      "runtimeExecutable": "C:/Users/manue/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0/python.exe",
-      "runtimeArgs": ["-m", "dashboard.web.app", "--port=8511"],
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "dashboard.web.app",
+        "--port=8511"
+      ],
       "port": 8511
     },
     {
       "name": "dashboard-legacy-researcher",
-      "runtimeExecutable": "C:/Users/manue/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0/python.exe",
-      "runtimeArgs": ["-m", "streamlit", "run", "dashboard/legacy_streamlit/app_researcher.py", "--server.headless=true", "--server.port=8512"],
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "streamlit",
+        "run",
+        "dashboard/legacy_streamlit/app_researcher.py",
+        "--server.headless=true",
+        "--server.port=8512"
+      ],
       "port": 8512
     },
     {
       "name": "dashboard-legacy-ops",
-      "runtimeExecutable": "C:/Users/manue/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0/python.exe",
-      "runtimeArgs": ["-m", "streamlit", "run", "dashboard/legacy_streamlit/app.py", "--server.headless=true", "--server.port=8513"],
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "streamlit",
+        "run",
+        "dashboard/legacy_streamlit/app.py",
+        "--server.headless=true",
+        "--server.port=8513"
+      ],
       "port": 8513
     }
   ]

@@ -65,8 +65,8 @@
     "description": "Offene Luftraeume, Konflikte, Pandemien",
     "current_state": "F7.1",
     "possible_states": {
-      "F7.1": "Offene Maerkte, Kooperation",
-      "F7.2": "Fragmentierung, Konflikte"
+      "F7.1": "Offene Luftraeume, multilaterale Kooperation",
+      "F7.2": "Fragmentierung, Sperrungen, Konflikte"
     }
   }
 }

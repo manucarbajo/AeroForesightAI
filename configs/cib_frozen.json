@@ -63,14 +63,14 @@
     "F1.1|F7.1": {
       "source_descriptor": "F1.1",
       "target_descriptor": "F7.1",
-      "influence": 2,
-      "reasoning": ""
+      "influence": 1,
+      "reasoning": "Dichter internationaler Reiseverkehr schafft wirtschaftliche Verflechtung und persoenliche Bindungen; daempfend auf Konflikte, aber schwach"
     },
     "F1.1|F7.2": {
       "source_descriptor": "F1.1",
       "target_descriptor": "F7.2",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Hohe Reisenachfrage arbeitet gegen Abschottung, ohne sie verhindern zu koennen"
     },
     "F1.2|F2.1": {
       "source_descriptor": "F1.2",
@@ -136,13 +136,13 @@
       "source_descriptor": "F1.2",
       "target_descriptor": "F7.1",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Weniger Mobilitaet = weniger Verflechtung; schwaches Gegenteil von F1.1"
     },
     "F1.2|F7.2": {
       "source_descriptor": "F1.2",
       "target_descriptor": "F7.2",
       "influence": 1,
-      "reasoning": ""
+      "reasoning": "Rueckzug aufs Regionale begleitet Fragmentierung, verursacht sie aber nicht"
     },
     "F2.1|F1.1": {
       "source_descriptor": "F2.1",
@@ -207,14 +207,14 @@
     "F2.1|F7.1": {
       "source_descriptor": "F2.1",
       "target_descriptor": "F7.1",
-      "influence": 3,
-      "reasoning": ""
+      "influence": 2,
+      "reasoning": "Moderater Klimaschutz mit Kompensationsfokus ist multilateral organisiert (CORSIA/ICAO) und staerkt damit kooperative Strukturen. Frueher +3 unter der Marktlesart; als geopolitische Wirkung ist das zu stark"
     },
     "F2.1|F7.2": {
       "source_descriptor": "F2.1",
       "target_descriptor": "F7.2",
-      "influence": -2,
-      "reasoning": ""
+      "influence": -1,
+      "reasoning": "Ein gemeinsames Regelwerk arbeitet gegen Fragmentierung"
     },
     "F2.2|F1.1": {
       "source_descriptor": "F2.2",
@@ -280,13 +280,13 @@
       "source_descriptor": "F2.2",
       "target_descriptor": "F7.1",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Radikale nationale Alleingaenge erzeugen Handelsreibung — vgl. den Streit um die EU-ETS-Einbeziehung des Luftverkehrs 2012"
     },
     "F2.2|F7.2": {
       "source_descriptor": "F2.2",
       "target_descriptor": "F7.2",
       "influence": 1,
-      "reasoning": ""
+      "reasoning": "Unabgestimmte Verbote foerdern Blockbildung"
     },
     "F3.1|F1.1": {
       "source_descriptor": "F3.1",
@@ -352,13 +352,13 @@
       "source_descriptor": "F3.1",
       "target_descriptor": "F7.1",
       "influence": 0,
-      "reasoning": ""
+      "reasoning": "Inkrementelle Technik wirkt nicht auf die geopolitische Lage"
     },
     "F3.1|F7.2": {
       "source_descriptor": "F3.1",
       "target_descriptor": "F7.2",
-      "influence": 0,
-      "reasoning": ""
+      "influence": 1,
+      "reasoning": "Anhaltende Abhaengigkeit von fossilem Kerosin haelt den Luftverkehr fuer Versorgungsschocks offen"
     },
     "F3.2|F1.1": {
       "source_descriptor": "F3.2",
@@ -424,13 +424,13 @@
       "source_descriptor": "F3.2",
       "target_descriptor": "F7.1",
       "influence": 1,
-      "reasoning": ""
+      "reasoning": "Heimisch herstellbare E-Fuels senken die Importabhaengigkeit und damit einen Konflikttreiber"
     },
     "F3.2|F7.2": {
       "source_descriptor": "F3.2",
       "target_descriptor": "F7.2",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Gegenrichtung zu F3.2 -> F7.1"
     },
     "F4.1|F1.1": {
       "source_descriptor": "F4.1",
@@ -496,13 +496,13 @@
       "source_descriptor": "F4.1",
       "target_descriptor": "F7.1",
       "influence": 2,
-      "reasoning": ""
+      "reasoning": "Wohlstand und Handel daempfen zwischenstaatliche Konflikte — unveraendert, weil unter beiden Lesarten dieselbe Wirkung"
     },
     "F4.1|F7.2": {
       "source_descriptor": "F4.1",
       "target_descriptor": "F7.2",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Stabile Wirtschaft arbeitet gegen Abschottung"
     },
     "F4.2|F1.1": {
       "source_descriptor": "F4.2",
@@ -568,13 +568,13 @@
       "source_descriptor": "F4.2",
       "target_descriptor": "F7.1",
       "influence": -2,
-      "reasoning": ""
+      "reasoning": "Wirtschaftliche Not befoerdert Nationalismus und Protektionismus — unveraendert gueltig"
     },
     "F4.2|F7.2": {
       "source_descriptor": "F4.2",
       "target_descriptor": "F7.2",
       "influence": 2,
-      "reasoning": ""
+      "reasoning": "Rezession als Treiber von Blockbildung und Handelskonflikten"
     },
     "F5.1|F1.1": {
       "source_descriptor": "F5.1",
@@ -639,14 +639,14 @@
     "F5.1|F7.1": {
       "source_descriptor": "F5.1",
       "target_descriptor": "F7.1",
-      "influence": 2,
-      "reasoning": ""
+      "influence": 0,
+      "reasoning": "Kein Mechanismus: Ob die Schiene in Europa ausgebaut wird, beruehrt die weltpolitische Lage nicht. Frueher +2 aus der Marktlesart"
     },
     "F5.1|F7.2": {
       "source_descriptor": "F5.1",
       "target_descriptor": "F7.2",
-      "influence": -1,
-      "reasoning": ""
+      "influence": 0,
+      "reasoning": "Kein Mechanismus, siehe F5.1 -> F7.1"
     },
     "F5.2|F1.1": {
       "source_descriptor": "F5.2",
@@ -711,14 +711,14 @@
     "F5.2|F7.1": {
       "source_descriptor": "F5.2",
       "target_descriptor": "F7.1",
-      "influence": -1,
-      "reasoning": ""
+      "influence": 0,
+      "reasoning": "Kein Mechanismus: Schienenausbau ist Verkehrspolitik, nicht Geopolitik"
     },
     "F5.2|F7.2": {
       "source_descriptor": "F5.2",
       "target_descriptor": "F7.2",
-      "influence": 1,
-      "reasoning": ""
+      "influence": 0,
+      "reasoning": "Kein Mechanismus, siehe F5.2 -> F7.1"
     },
     "F6.1|F1.1": {
       "source_descriptor": "F6.1",
@@ -783,14 +783,14 @@
     "F6.1|F7.1": {
       "source_descriptor": "F6.1",
       "target_descriptor": "F7.1",
-      "influence": 3,
-      "reasoning": ""
+      "influence": 0,
+      "reasoning": "Kein Mechanismus: Gesellschaftliche Flugakzeptanz treibt keine Weltpolitik. Frueher +3 und damit der hoechste Wert der Spalte — reiner Rest der Marktlesart"
     },
     "F6.1|F7.2": {
       "source_descriptor": "F6.1",
       "target_descriptor": "F7.2",
-      "influence": -1,
-      "reasoning": ""
+      "influence": 0,
+      "reasoning": "Kein Mechanismus, siehe F6.1 -> F7.1"
     },
     "F6.2|F1.1": {
       "source_descriptor": "F6.2",
@@ -855,158 +855,158 @@
     "F6.2|F7.1": {
       "source_descriptor": "F6.2",
       "target_descriptor": "F7.1",
-      "influence": -1,
-      "reasoning": ""
+      "influence": 0,
+      "reasoning": "Kein Mechanismus: Flugscham ist ein innergesellschaftliches Phaenomen"
     },
     "F6.2|F7.2": {
       "source_descriptor": "F6.2",
       "target_descriptor": "F7.2",
-      "influence": 1,
-      "reasoning": ""
+      "influence": 0,
+      "reasoning": "Kein Mechanismus, siehe F6.2 -> F7.1"
     },
     "F7.1|F1.1": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F1.1",
       "influence": 2,
-      "reasoning": ""
+      "reasoning": "Offene Lufträume ermoeglichen Nachfrage, erzeugen sie aber nicht — deshalb schwaecher als die Sperrwirkung von F7.2"
     },
     "F7.1|F1.2": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F1.2",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Ohne Reisehindernisse kein erzwungener Verzicht"
     },
     "F7.1|F2.1": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F2.1",
       "influence": 2,
-      "reasoning": ""
+      "reasoning": "Eine kooperative Ordnung bringt multilaterale, moderate Instrumente hervor (ICAO/CORSIA)"
     },
     "F7.1|F2.2": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F2.2",
-      "influence": -2,
-      "reasoning": ""
+      "influence": -1,
+      "reasoning": "Kooperation macht nationale Alleingaenge unwahrscheinlicher, koordinierte harte Schritte aber eher — deshalb nur schwach negativ. Frueher -2 aus der Lobby-Logik der Marktlesart"
     },
     "F7.1|F3.1": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F3.1",
       "influence": 0,
-      "reasoning": ""
+      "reasoning": "Neutral"
     },
     "F7.1|F3.2": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F3.2",
       "influence": 1,
-      "reasoning": ""
+      "reasoning": "Kooperation ermoeglicht gemeinsame SAF-Standards und Technologietransfer"
     },
     "F7.1|F4.1": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F4.1",
       "influence": 2,
-      "reasoning": ""
+      "reasoning": "Stabile Ordnung = Handel, Investitionen, Wachstum"
     },
     "F7.1|F4.2": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F4.2",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Stabilitaet senkt das Rezessionsrisiko"
     },
     "F7.1|F5.1": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F5.1",
       "influence": 1,
-      "reasoning": ""
+      "reasoning": "Verlaessliche Flugverbindungen mindern den Druck, Alternativen aufzubauen"
     },
     "F7.1|F5.2": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F5.2",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Gegenrichtung zu F7.1 -> F5.1"
     },
     "F7.1|F6.1": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F6.1",
-      "influence": 2,
-      "reasoning": ""
+      "influence": 1,
+      "reasoning": "Ungestoertes Fliegen bleibt selbstverstaendlich — schwach, weil Akzeptanz vor allem am Klimadiskurs haengt (F6-Eigenlogik). Frueher +2"
     },
     "F7.1|F6.2": {
       "source_descriptor": "F7.1",
       "target_descriptor": "F6.2",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Gegenrichtung zu F7.1 -> F6.1"
     },
     "F7.2|F1.1": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F1.1",
-      "influence": -2,
-      "reasoning": ""
+      "influence": -3,
+      "reasoning": "Luftraumsperrungen und Pandemien sind der groesste beobachtete Nachfrageschock der Branche (2020: rund zwei Drittel Rueckgang; Sperrung des russischen Luftraums). Frueher -2 — unter der Marktlesart war der Mechanismus schwaecher"
     },
     "F7.2|F1.2": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F1.2",
-      "influence": 1,
-      "reasoning": ""
+      "influence": 2,
+      "reasoning": "Sperrungen erzwingen Verzicht und Substitution unmittelbar"
     },
     "F7.2|F2.1": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F2.1",
       "influence": 0,
-      "reasoning": ""
+      "reasoning": "Neutral: Fragmentierung hilft moderater Politik nicht"
     },
     "F7.2|F2.2": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F2.2",
       "influence": 1,
-      "reasoning": ""
+      "reasoning": "Ohne multilaterales Instrument gehen einzelne Bloecke unabgestimmt hart vor"
     },
     "F7.2|F3.1": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F3.1",
       "influence": 1,
-      "reasoning": ""
+      "reasoning": "Zerrissene Lieferketten und fehlende Skalen halten SAF teuer"
     },
     "F7.2|F3.2": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F3.2",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Gegenrichtung zu F7.2 -> F3.1"
     },
     "F7.2|F4.1": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F4.1",
       "influence": -2,
-      "reasoning": ""
+      "reasoning": "Konflikte und Sanktionen schaedigen Wachstum"
     },
     "F7.2|F4.2": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F4.2",
-      "influence": 1,
-      "reasoning": ""
+      "influence": 2,
+      "reasoning": "Geopolitische Schocks sind ein klassischer Rezessionsausloeser (Oelpreiskrisen 1973/79, Pandemie 2020). Frueher +1"
     },
     "F7.2|F5.1": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F5.1",
-      "influence": 0,
-      "reasoning": ""
+      "influence": -1,
+      "reasoning": "Wird Fliegen unzuverlaessig, ist es nicht mehr alternativlos. Frueher 0"
     },
     "F7.2|F5.2": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F5.2",
       "influence": 1,
-      "reasoning": ""
+      "reasoning": "Gestoerte Luftverbindungen erhoehen den Druck auf die Schiene"
     },
     "F7.2|F6.1": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F6.1",
       "influence": -1,
-      "reasoning": ""
+      "reasoning": "Eingeschraenktes Fliegen verliert an Selbstverstaendlichkeit"
     },
     "F7.2|F6.2": {
       "source_descriptor": "F7.2",
       "target_descriptor": "F6.2",
-      "influence": 1,
-      "reasoning": ""
+      "influence": 0,
+      "reasoning": "Kein Mechanismus: Konflikte erzeugen kein Klimabewusstsein. Frueher +1 aus einer Regional-Kultur-Annahme der Marktlesart"
     }
   },
   "entries": [],
@@ -1014,52 +1014,52 @@
   "factor_scores": [
     {
       "factor_id": "F1",
-      "active_score": 42,
-      "passive_score": 45
+      "active_score": 41,
+      "passive_score": 47
     },
     {
       "factor_id": "F2",
-      "active_score": 49,
-      "passive_score": 38
+      "active_score": 47,
+      "passive_score": 37
     },
     {
       "factor_id": "F3",
-      "active_score": 32,
+      "active_score": 33,
       "passive_score": 33
     },
     {
       "factor_id": "F4",
       "active_score": 38,
-      "passive_score": 39
+      "passive_score": 40
     },
     {
       "factor_id": "F5",
-      "active_score": 29,
-      "passive_score": 38
+      "active_score": 24,
+      "passive_score": 39
     },
     {
       "factor_id": "F6",
-      "active_score": 48,
-      "passive_score": 41
+      "active_score": 42,
+      "passive_score": 39
     },
     {
       "factor_id": "F7",
-      "active_score": 28,
-      "passive_score": 32
+      "active_score": 29,
+      "passive_score": 19
     }
   ],
   "metadata": {
     "frozen": true,
-    "source": "expert_defined_aviation_domain_v2",
-    "note": "Domain-correct reference matrix for the aviation socio-technical system (F1-F7). Values encode cross-impact relationships based on Strategic Foresight methodology (Weimer-Jehle 2023) and lecture slides (Folie 19-22). Corrected from placeholder seed-based matrix. Frozen by design: CIB methodology requires a static expert-defined reference matrix for reproducible consistency scoring.",
+    "source": "llm_proposed_pending_review_v3",
+    "note": "Reference matrix for the aviation socio-technical system (F1-F7). Values encode cross-impact relationships based on Strategic Foresight methodology (Weimer-Jehle 2023) and lecture slides (Folie 19-22). Frozen by design: CIB methodology requires a static reference matrix for reproducible consistency scoring. ACHTUNG PROVENIENZ: Die 48 F7-Zellen wurden am 2026-08-26 unter der Lesart 'Geopolitische Stabilitaet' neu bewertet (P0.2) — modellgeneriert und noch nicht fachlich abgenommen, siehe reasoning je Zelle. Die uebrigen 120 Zellen stammen aus der Erstbewertung durch das Team und haben noch keine Begruendung (P2.3).",
     "factors": [
-      "F1 Mobilitaetsnachfrage",
-      "F2 Regulierung",
-      "F3 Technologie (SAF)",
-      "F4 Wirtschaft",
-      "F5 Alternativen",
-      "F6 Gesellschaft/Akzeptanz",
-      "F7 Marktstruktur"
+      "F1 Mobilitaetsbeduerfnis / Nachfrage",
+      "F2 Regulatorische Strenge",
+      "F3 Technologische Reife",
+      "F4 Wirtschaftliche Entwicklung",
+      "F5 Verfuegbarkeit von Alternativen",
+      "F6 Gesellschaftlicher Wertewandel",
+      "F7 Geopolitische Stabilitaet"
     ]
   }
 }

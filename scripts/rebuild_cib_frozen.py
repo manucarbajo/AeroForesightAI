@@ -2,6 +2,12 @@
 
 Based on: Weimer-Jehle (2023), lecture slides (Folie 19-22)
 
+F7 wurde am 2026-08-26 von "Marktstruktur" auf "Geopolitische Stabilitaet"
+gezogen (P0.2). Die 48 F7-Zellen sind dabei einzeln unter der neuen Lesart
+geprueft worden: 19 geaendert, 29 unveraendert bestaetigt. Ihre Begruendungen
+stehen in F7_REASONING und landen als `reasoning` in der JSON — fuer die
+uebrigen 120 Zellen holt das [P2.3] nach.
+
 Factors:
   F1: Mobilitaetsnachfrage  F1.1=Reiseboom       F1.2=Stagnation/Verzicht
   F2: Regulierung           F2.1=Moderat         F2.2=Net-Zero/Radikal
@@ -9,13 +15,21 @@ Factors:
   F4: Wirtschaft            F4.1=Wachstum        F4.2=Rezession
   F5: Alternativen          F5.1=Keine           F5.2=Schienenausbau
   F6: Gesellschaft          F6.1=Akzeptiert      F6.2=Flight Shaming
-  F7: Marktstruktur         F7.1=Offen           F7.2=Fragmentiert
+  F7: Geopolit. Stabilitaet F7.1=Offene Luftraeume F7.2=Sperrungen/Konflikte
 """
 
 import json
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+
+# Der Selbsttest unten importiert `src`. Wird das Skript über seinen Pfad
+# gestartet (`python scripts/rebuild_cib_frozen.py`), liegt nur `scripts/` auf
+# dem Suchpfad — der Neubau lief dann durch und brach danach mit einem
+# ModuleNotFoundError ab, also genau nach dem Schreiben der Datei.
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
 
 # fmt: off
 INFLUENCES = {
@@ -30,8 +44,8 @@ INFLUENCES = {
     ("F1.1", "F5.2"): -2,  # flying preferred = less political will for rail
     ("F1.1", "F6.1"): +2,  # high demand = flying is normal = societal acceptance
     ("F1.1", "F6.2"): -2,  # high demand = flying is norm = less shaming
-    ("F1.1", "F7.1"): +2,  # global travel demand drives open markets
-    ("F1.1", "F7.2"): -1,  # high demand needs global connectivity
+    ("F1.1", "F7.1"): +1,  # Dichter internationaler Reiseverkehr schafft wirtschaftliche Verflechtung und persoenliche Bindungen; daempfend auf Konflikte, aber schwach
+    ("F1.1", "F7.2"): -1,  # Hohe Reisenachfrage arbeitet gegen Abschottung, ohne sie verhindern zu koennen
 
     # ── F1.2 (Stagnation & Verzicht) ───────────────────────────────────────
     ("F1.2", "F2.1"): -1,  # reduced industry lobbying
@@ -44,8 +58,8 @@ INFLUENCES = {
     ("F1.2", "F5.2"): +3,  # stagnation drives investment in alternatives
     ("F1.2", "F6.1"): -2,  # people not flying = flying not normalized
     ("F1.2", "F6.2"): +2,  # stagnation driven by social pressure
-    ("F1.2", "F7.1"): -1,  # less global travel = less integration
-    ("F1.2", "F7.2"): +1,  # regional focus when air demand drops
+    ("F1.2", "F7.1"): -1,  # Weniger Mobilitaet = weniger Verflechtung; schwaches Gegenteil von F1.1
+    ("F1.2", "F7.2"): +1,  # Rueckzug aufs Regionale begleitet Fragmentierung, verursacht sie aber nicht
 
     # ── F2.1 (Moderate climate protection / market focus) ──────────────────
     ("F2.1", "F1.1"): +1,  # affordable flying under moderate regulation
@@ -58,8 +72,8 @@ INFLUENCES = {
     ("F2.1", "F5.2"): -2,  # no environmental urgency = no rail push
     ("F2.1", "F6.1"): +2,  # moderate policy signals flying is OK
     ("F2.1", "F6.2"): -2,  # moderate policy = society OK with flying
-    ("F2.1", "F7.1"): +3,  # market-friendly = open global markets
-    ("F2.1", "F7.2"): -2,  # market-friendly = integration
+    ("F2.1", "F7.1"): +2,  # Moderater Klimaschutz mit Kompensationsfokus ist multilateral organisiert (CORSIA/ICAO) und staerkt damit kooperative Strukturen. Frueher +3 unter der Marktlesart; als geopolitische Wirkung ist das zu stark
+    ("F2.1", "F7.2"): -1,  # Ein gemeinsames Regelwerk arbeitet gegen Fragmentierung
 
     # ── F2.2 (Net-Zero priority / radical regulation) ──────────────────────
     ("F2.2", "F1.1"): -2,  # strict = expensive flying = less demand
@@ -72,8 +86,8 @@ INFLUENCES = {
     ("F2.2", "F5.2"): +3,  # strict climate policy = rail development
     ("F2.2", "F6.1"): -2,  # strict policy signals flying is harmful
     ("F2.2", "F6.2"): +2,  # regulation reinforces anti-flying sentiment
-    ("F2.2", "F7.1"): -1,  # some restriction on global operations
-    ("F2.2", "F7.2"): +1,  # different national policies = some market fragmentation
+    ("F2.2", "F7.1"): -1,  # Radikale nationale Alleingaenge erzeugen Handelsreibung — vgl. den Streit um die EU-ETS-Einbeziehung des Luftverkehrs 2012
+    ("F2.2", "F7.2"): +1,  # Unabgestimmte Verbote foerdern Blockbildung
 
     # ── F3.1 (Incremental tech / no SAF breakthrough) ──────────────────────
     ("F3.1", "F1.1"):  0,  # neutral
@@ -86,8 +100,8 @@ INFLUENCES = {
     ("F3.1", "F5.2"): -1,  # but no eco-solution = slight push for alternatives
     ("F3.1", "F6.1"): +2,  # no green alternative = flying accepted as-is
     ("F3.1", "F6.2"): -1,  # incremental tech = some environmental concern remains
-    ("F3.1", "F7.1"):  0,  # neutral
-    ("F3.1", "F7.2"):  0,  # neutral
+    ("F3.1", "F7.1"):  0,  # Inkrementelle Technik wirkt nicht auf die geopolitische Lage
+    ("F3.1", "F7.2"): +1,  # Anhaltende Abhaengigkeit von fossilem Kerosin haelt den Luftverkehr fuer Versorgungsschocks offen
 
     # ── F3.2 (SAF breakthrough / E-Fuels) ──────────────────────────────────
     ("F3.2", "F1.1"): +2,  # green flying = guilt-free = more travel
@@ -100,8 +114,8 @@ INFLUENCES = {
     ("F3.2", "F5.2"): -1,  # green aviation competes with rail
     ("F3.2", "F6.1"): +3,  # green flying = guilt-free = fully accepted
     ("F3.2", "F6.2"): -3,  # SAF removes environmental basis for flight shaming
-    ("F3.2", "F7.1"): +1,  # global SAF standard = market integration
-    ("F3.2", "F7.2"): -1,  # global SAF standards = less fragmentation
+    ("F3.2", "F7.1"): +1,  # Heimisch herstellbare E-Fuels senken die Importabhaengigkeit und damit einen Konflikttreiber
+    ("F3.2", "F7.2"): -1,  # Gegenrichtung zu F3.2 -> F7.1
 
     # ── F4.1 (Stable economic growth) ──────────────────────────────────────
     ("F4.1", "F1.1"): +2,  # prosperity = can afford to fly
@@ -114,8 +128,8 @@ INFLUENCES = {
     ("F4.1", "F5.2"): -1,  # flying preferred over rail investment
     ("F4.1", "F6.1"): +3,  # prosperity = flying is part of good life = accepted
     ("F4.1", "F6.2"): -1,  # prosperity = flying is normal = less shaming
-    ("F4.1", "F7.1"): +2,  # prosperity benefits from and drives open markets
-    ("F4.1", "F7.2"): -1,  # prosperity = global integration
+    ("F4.1", "F7.1"): +2,  # Wohlstand und Handel daempfen zwischenstaatliche Konflikte — unveraendert, weil unter beiden Lesarten dieselbe Wirkung
+    ("F4.1", "F7.2"): -1,  # Stabile Wirtschaft arbeitet gegen Abschottung
 
     # ── F4.2 (Recession / economic crisis) ─────────────────────────────────
     ("F4.2", "F1.1"): -2,  # recession = less money for travel
@@ -128,8 +142,8 @@ INFLUENCES = {
     ("F4.2", "F5.2"):  0,  # neutral
     ("F4.2", "F6.1"):  0,  # neutral
     ("F4.2", "F6.2"): +1,  # economic stress = environmental awareness
-    ("F4.2", "F7.1"): -2,  # recession = protectionism
-    ("F4.2", "F7.2"): +2,  # recession = protectionism = market fragmentation
+    ("F4.2", "F7.1"): -2,  # Wirtschaftliche Not befoerdert Nationalismus und Protektionismus — unveraendert gueltig
+    ("F4.2", "F7.2"): +2,  # Rezession als Treiber von Blockbildung und Handelskonflikten
 
     # ── F5.1 (No attractive alternatives) ──────────────────────────────────
     ("F5.1", "F1.1"): +2,  # captive market = sustained flying demand
@@ -142,8 +156,8 @@ INFLUENCES = {
     ("F5.1", "F4.2"): -1,  # monopoly provides some stability
     ("F5.1", "F6.1"): +2,  # no alternatives = flying is only option = normalized
     ("F5.1", "F6.2"): -1,  # hard to shame if no alternative exists
-    ("F5.1", "F7.1"): +2,  # aviation as global connector = open markets
-    ("F5.1", "F7.2"): -1,  # aviation connectivity = anti-fragmentation
+    ("F5.1", "F7.1"):  0,  # Kein Mechanismus: Ob die Schiene in Europa ausgebaut wird, beruehrt die weltpolitische Lage nicht. Frueher +2 aus der Marktlesart
+    ("F5.1", "F7.2"):  0,  # Kein Mechanismus, siehe F5.1 -> F7.1
 
     # ── F5.2 (Rail development / modal shift) ──────────────────────────────
     ("F5.2", "F1.1"): -3,  # rail substitutes air = strongly reduces flying demand
@@ -156,8 +170,8 @@ INFLUENCES = {
     ("F5.2", "F4.2"):  0,  # neutral
     ("F5.2", "F6.1"): -1,  # alternatives available = flying less central
     ("F5.2", "F6.2"): +2,  # rail = environmental values = flight shaming
-    ("F5.2", "F7.1"): -1,  # regional rail = somewhat less global
-    ("F5.2", "F7.2"): +1,  # regional focus = regional markets
+    ("F5.2", "F7.1"):  0,  # Kein Mechanismus: Schienenausbau ist Verkehrspolitik, nicht Geopolitik
+    ("F5.2", "F7.2"):  0,  # Kein Mechanismus, siehe F5.2 -> F7.1
 
     # ── F6.1 (Flying accepted / no flight shaming) ─────────────────────────
     ("F6.1", "F1.1"): +3,  # societal acceptance = high demand
@@ -170,8 +184,8 @@ INFLUENCES = {
     ("F6.1", "F4.2"): -2,  # flying accepted = economic activity = no recession
     ("F6.1", "F5.1"): +2,  # flying preferred = no investment in alternatives
     ("F6.1", "F5.2"): -3,  # flying preferred = political opposition to rail spending
-    ("F6.1", "F7.1"): +3,  # global flying = open markets
-    ("F6.1", "F7.2"): -1,  # global flying connects = anti-fragmentation
+    ("F6.1", "F7.1"):  0,  # Kein Mechanismus: Gesellschaftliche Flugakzeptanz treibt keine Weltpolitik. Frueher +3 und damit der hoechste Wert der Spalte — reiner Rest der Marktlesart
+    ("F6.1", "F7.2"):  0,  # Kein Mechanismus, siehe F6.1 -> F7.1
 
     # ── F6.2 (Flight shaming) ──────────────────────────────────────────────
     ("F6.2", "F1.1"): -3,  # shaming drastically reduces air travel demand
@@ -184,38 +198,150 @@ INFLUENCES = {
     ("F6.2", "F4.2"): +1,  # reduced economic activity from aviation
     ("F6.2", "F5.1"): -2,  # shaming demands alternatives
     ("F6.2", "F5.2"): +3,  # shaming = invest in alternatives = rail
-    ("F6.2", "F7.1"): -1,  # reduced international travel = less global integration
-    ("F6.2", "F7.2"): +1,  # some fragmentation from reduced global connectivity
+    ("F6.2", "F7.1"):  0,  # Kein Mechanismus: Flugscham ist ein innergesellschaftliches Phaenomen
+    ("F6.2", "F7.2"):  0,  # Kein Mechanismus, siehe F6.2 -> F7.1
 
     # ── F7.1 (Open global markets) ─────────────────────────────────────────
-    ("F7.1", "F1.1"): +2,  # global markets = travel opportunities = high demand
-    ("F7.1", "F1.2"): -1,  # open markets = travel easy = no stagnation
-    ("F7.1", "F2.1"): +2,  # open markets prefer market-friendly policies
-    ("F7.1", "F2.2"): -2,  # open markets resist strict national regulation
-    ("F7.1", "F3.1"):  0,  # neutral
-    ("F7.1", "F3.2"): +1,  # large global market = SAF R&D economies of scale
-    ("F7.1", "F4.1"): +2,  # open markets = economic prosperity
-    ("F7.1", "F4.2"): -1,  # open markets reduce recession risk
-    ("F7.1", "F5.1"): +1,  # aviation-centered global = flying standard
-    ("F7.1", "F5.2"): -1,  # aviation standard = less rail push
-    ("F7.1", "F6.1"): +2,  # global flying is normal = acceptance
-    ("F7.1", "F6.2"): -1,  # global norms = flying acceptable = less shaming
+    ("F7.1", "F1.1"): +2,  # Offene Lufträume ermoeglichen Nachfrage, erzeugen sie aber nicht — deshalb schwaecher als die Sperrwirkung von F7.2
+    ("F7.1", "F1.2"): -1,  # Ohne Reisehindernisse kein erzwungener Verzicht
+    ("F7.1", "F2.1"): +2,  # Eine kooperative Ordnung bringt multilaterale, moderate Instrumente hervor (ICAO/CORSIA)
+    ("F7.1", "F2.2"): -1,  # Kooperation macht nationale Alleingaenge unwahrscheinlicher, koordinierte harte Schritte aber eher — deshalb nur schwach negativ. Frueher -2 aus der Lobby-Logik der Marktlesart
+    ("F7.1", "F3.1"):  0,  # Neutral
+    ("F7.1", "F3.2"): +1,  # Kooperation ermoeglicht gemeinsame SAF-Standards und Technologietransfer
+    ("F7.1", "F4.1"): +2,  # Stabile Ordnung = Handel, Investitionen, Wachstum
+    ("F7.1", "F4.2"): -1,  # Stabilitaet senkt das Rezessionsrisiko
+    ("F7.1", "F5.1"): +1,  # Verlaessliche Flugverbindungen mindern den Druck, Alternativen aufzubauen
+    ("F7.1", "F5.2"): -1,  # Gegenrichtung zu F7.1 -> F5.1
+    ("F7.1", "F6.1"): +1,  # Ungestoertes Fliegen bleibt selbstverstaendlich — schwach, weil Akzeptanz vor allem am Klimadiskurs haengt (F6-Eigenlogik). Frueher +2
+    ("F7.1", "F6.2"): -1,  # Gegenrichtung zu F7.1 -> F6.1
 
     # ── F7.2 (Market fragmentation) ────────────────────────────────────────
-    ("F7.2", "F1.1"): -2,  # fragmentation = less global travel
-    ("F7.2", "F1.2"): +1,  # fragmentation = reduced travel = stagnation
-    ("F7.2", "F2.1"):  0,  # neutral
-    ("F7.2", "F2.2"): +1,  # fragmentation = each region can implement strict rules
-    ("F7.2", "F3.1"): +1,  # fragmented = less SAF R&D scale = stays incremental
-    ("F7.2", "F3.2"): -1,  # fragmented = less investment scale for breakthrough
-    ("F7.2", "F4.1"): -2,  # fragmentation = economic inefficiency
-    ("F7.2", "F4.2"): +1,  # fragmentation = economic drag
-    ("F7.2", "F5.1"):  0,  # neutral
-    ("F7.2", "F5.2"): +1,  # regional focus = regional rail
-    ("F7.2", "F6.1"): -1,  # reduced global flying = less normalization
-    ("F7.2", "F6.2"): +1,  # fragmentation = some regions with anti-flying culture
+    ("F7.2", "F1.1"): -3,  # Luftraumsperrungen und Pandemien sind der groesste beobachtete Nachfrageschock der Branche (2020: rund zwei Drittel Rueckgang; Sperrung des russischen Luftraums). Frueher -2 — unter der Marktlesart war der Mechanismus schwaecher
+    ("F7.2", "F1.2"): +2,  # Sperrungen erzwingen Verzicht und Substitution unmittelbar
+    ("F7.2", "F2.1"):  0,  # Neutral: Fragmentierung hilft moderater Politik nicht
+    ("F7.2", "F2.2"): +1,  # Ohne multilaterales Instrument gehen einzelne Bloecke unabgestimmt hart vor
+    ("F7.2", "F3.1"): +1,  # Zerrissene Lieferketten und fehlende Skalen halten SAF teuer
+    ("F7.2", "F3.2"): -1,  # Gegenrichtung zu F7.2 -> F3.1
+    ("F7.2", "F4.1"): -2,  # Konflikte und Sanktionen schaedigen Wachstum
+    ("F7.2", "F4.2"): +2,  # Geopolitische Schocks sind ein klassischer Rezessionsausloeser (Oelpreiskrisen 1973/79, Pandemie 2020). Frueher +1
+    ("F7.2", "F5.1"): -1,  # Wird Fliegen unzuverlaessig, ist es nicht mehr alternativlos. Frueher 0
+    ("F7.2", "F5.2"): +1,  # Gestoerte Luftverbindungen erhoehen den Druck auf die Schiene
+    ("F7.2", "F6.1"): -1,  # Eingeschraenktes Fliegen verliert an Selbstverstaendlichkeit
+    ("F7.2", "F6.2"):  0,  # Kein Mechanismus: Konflikte erzeugen kein Klimabewusstsein. Frueher +1 aus einer Regional-Kultur-Annahme der Marktlesart
 }
 # fmt: on
+
+
+#: Begruendung je F7-Zelle (P0.2, Lesart „Geopolitische Stabilitaet").
+#: Fuer die uebrigen 120 Zellen holt P2.3 das nach.
+F7_REASONING: dict[tuple[str, str], str] = {
+    (
+        "F1.1",
+        "F7.1",
+    ): "Dichter internationaler Reiseverkehr schafft wirtschaftliche Verflechtung und persoenliche Bindungen; daempfend auf Konflikte, aber schwach",
+    (
+        "F1.1",
+        "F7.2",
+    ): "Hohe Reisenachfrage arbeitet gegen Abschottung, ohne sie verhindern zu koennen",
+    ("F1.2", "F7.1"): "Weniger Mobilitaet = weniger Verflechtung; schwaches Gegenteil von F1.1",
+    ("F1.2", "F7.2"): "Rueckzug aufs Regionale begleitet Fragmentierung, verursacht sie aber nicht",
+    (
+        "F2.1",
+        "F7.1",
+    ): "Moderater Klimaschutz mit Kompensationsfokus ist multilateral organisiert (CORSIA/ICAO) und staerkt damit kooperative Strukturen. Frueher +3 unter der Marktlesart; als geopolitische Wirkung ist das zu stark",
+    ("F2.1", "F7.2"): "Ein gemeinsames Regelwerk arbeitet gegen Fragmentierung",
+    (
+        "F2.2",
+        "F7.1",
+    ): "Radikale nationale Alleingaenge erzeugen Handelsreibung — vgl. den Streit um die EU-ETS-Einbeziehung des Luftverkehrs 2012",
+    ("F2.2", "F7.2"): "Unabgestimmte Verbote foerdern Blockbildung",
+    ("F3.1", "F7.1"): "Inkrementelle Technik wirkt nicht auf die geopolitische Lage",
+    (
+        "F3.1",
+        "F7.2",
+    ): "Anhaltende Abhaengigkeit von fossilem Kerosin haelt den Luftverkehr fuer Versorgungsschocks offen",
+    (
+        "F3.2",
+        "F7.1",
+    ): "Heimisch herstellbare E-Fuels senken die Importabhaengigkeit und damit einen Konflikttreiber",
+    ("F3.2", "F7.2"): "Gegenrichtung zu F3.2 -> F7.1",
+    (
+        "F4.1",
+        "F7.1",
+    ): "Wohlstand und Handel daempfen zwischenstaatliche Konflikte — unveraendert, weil unter beiden Lesarten dieselbe Wirkung",
+    ("F4.1", "F7.2"): "Stabile Wirtschaft arbeitet gegen Abschottung",
+    (
+        "F4.2",
+        "F7.1",
+    ): "Wirtschaftliche Not befoerdert Nationalismus und Protektionismus — unveraendert gueltig",
+    ("F4.2", "F7.2"): "Rezession als Treiber von Blockbildung und Handelskonflikten",
+    (
+        "F5.1",
+        "F7.1",
+    ): "Kein Mechanismus: Ob die Schiene in Europa ausgebaut wird, beruehrt die weltpolitische Lage nicht. Frueher +2 aus der Marktlesart",
+    ("F5.1", "F7.2"): "Kein Mechanismus, siehe F5.1 -> F7.1",
+    ("F5.2", "F7.1"): "Kein Mechanismus: Schienenausbau ist Verkehrspolitik, nicht Geopolitik",
+    ("F5.2", "F7.2"): "Kein Mechanismus, siehe F5.2 -> F7.1",
+    (
+        "F6.1",
+        "F7.1",
+    ): "Kein Mechanismus: Gesellschaftliche Flugakzeptanz treibt keine Weltpolitik. Frueher +3 und damit der hoechste Wert der Spalte — reiner Rest der Marktlesart",
+    ("F6.1", "F7.2"): "Kein Mechanismus, siehe F6.1 -> F7.1",
+    ("F6.2", "F7.1"): "Kein Mechanismus: Flugscham ist ein innergesellschaftliches Phaenomen",
+    ("F6.2", "F7.2"): "Kein Mechanismus, siehe F6.2 -> F7.1",
+    (
+        "F7.1",
+        "F1.1",
+    ): "Offene Lufträume ermoeglichen Nachfrage, erzeugen sie aber nicht — deshalb schwaecher als die Sperrwirkung von F7.2",
+    ("F7.1", "F1.2"): "Ohne Reisehindernisse kein erzwungener Verzicht",
+    (
+        "F7.1",
+        "F2.1",
+    ): "Eine kooperative Ordnung bringt multilaterale, moderate Instrumente hervor (ICAO/CORSIA)",
+    (
+        "F7.1",
+        "F2.2",
+    ): "Kooperation macht nationale Alleingaenge unwahrscheinlicher, koordinierte harte Schritte aber eher — deshalb nur schwach negativ. Frueher -2 aus der Lobby-Logik der Marktlesart",
+    ("F7.1", "F3.1"): "Neutral",
+    ("F7.1", "F3.2"): "Kooperation ermoeglicht gemeinsame SAF-Standards und Technologietransfer",
+    ("F7.1", "F4.1"): "Stabile Ordnung = Handel, Investitionen, Wachstum",
+    ("F7.1", "F4.2"): "Stabilitaet senkt das Rezessionsrisiko",
+    ("F7.1", "F5.1"): "Verlaessliche Flugverbindungen mindern den Druck, Alternativen aufzubauen",
+    ("F7.1", "F5.2"): "Gegenrichtung zu F7.1 -> F5.1",
+    (
+        "F7.1",
+        "F6.1",
+    ): "Ungestoertes Fliegen bleibt selbstverstaendlich — schwach, weil Akzeptanz vor allem am Klimadiskurs haengt (F6-Eigenlogik). Frueher +2",
+    ("F7.1", "F6.2"): "Gegenrichtung zu F7.1 -> F6.1",
+    (
+        "F7.2",
+        "F1.1",
+    ): "Luftraumsperrungen und Pandemien sind der groesste beobachtete Nachfrageschock der Branche (2020: rund zwei Drittel Rueckgang; Sperrung des russischen Luftraums). Frueher -2 — unter der Marktlesart war der Mechanismus schwaecher",
+    ("F7.2", "F1.2"): "Sperrungen erzwingen Verzicht und Substitution unmittelbar",
+    ("F7.2", "F2.1"): "Neutral: Fragmentierung hilft moderater Politik nicht",
+    ("F7.2", "F2.2"): "Ohne multilaterales Instrument gehen einzelne Bloecke unabgestimmt hart vor",
+    ("F7.2", "F3.1"): "Zerrissene Lieferketten und fehlende Skalen halten SAF teuer",
+    ("F7.2", "F3.2"): "Gegenrichtung zu F7.2 -> F3.1",
+    ("F7.2", "F4.1"): "Konflikte und Sanktionen schaedigen Wachstum",
+    (
+        "F7.2",
+        "F4.2",
+    ): "Geopolitische Schocks sind ein klassischer Rezessionsausloeser (Oelpreiskrisen 1973/79, Pandemie 2020). Frueher +1",
+    ("F7.2", "F5.1"): "Wird Fliegen unzuverlaessig, ist es nicht mehr alternativlos. Frueher 0",
+    ("F7.2", "F5.2"): "Gestoerte Luftverbindungen erhoehen den Druck auf die Schiene",
+    ("F7.2", "F6.1"): "Eingeschraenktes Fliegen verliert an Selbstverstaendlichkeit",
+    (
+        "F7.2",
+        "F6.2",
+    ): "Kein Mechanismus: Konflikte erzeugen kein Klimabewusstsein. Frueher +1 aus einer Regional-Kultur-Annahme der Marktlesart",
+}
+
+
+def _factor_labels() -> list[str]:
+    """`["F1 <Name aus factors.json>", …]` — die eine Namensquelle."""
+
+    raw = json.loads((REPO / "configs" / "factors.json").read_text(encoding="utf-8"))
+    return [f"{fid} {raw[fid]['name']}" for fid in sorted(raw)]
 
 
 def main() -> None:
@@ -229,7 +355,7 @@ def main() -> None:
             "source_descriptor": src,
             "target_descriptor": tgt,
             "influence": inf,
-            "reasoning": "",
+            "reasoning": F7_REASONING.get((src, tgt), ""),
         }
 
     # Verify same-sign contradictions
@@ -273,23 +399,24 @@ def main() -> None:
         "factor_scores": factor_scores,
         "metadata": {
             "frozen": True,
-            "source": "expert_defined_aviation_domain_v2",
+            "source": "llm_proposed_pending_review_v3",
             "note": (
-                "Domain-correct reference matrix for the aviation socio-technical system (F1-F7). "
-                "Values encode cross-impact relationships based on Strategic Foresight methodology "
-                "(Weimer-Jehle 2023) and lecture slides (Folie 19-22). Corrected from placeholder "
-                "seed-based matrix. Frozen by design: CIB methodology requires a static "
-                "expert-defined reference matrix for reproducible consistency scoring."
+                "Reference matrix for the aviation socio-technical system (F1-F7). Values encode "
+                "cross-impact relationships based on Strategic Foresight methodology "
+                "(Weimer-Jehle 2023) and lecture slides (Folie 19-22). Frozen by design: CIB "
+                "methodology requires a static reference matrix for reproducible consistency "
+                "scoring. ACHTUNG PROVENIENZ: Die 48 F7-Zellen wurden am 2026-08-26 unter der "
+                "Lesart 'Geopolitische Stabilitaet' neu bewertet (P0.2) — modellgeneriert und "
+                "noch nicht fachlich abgenommen, siehe reasoning je Zelle. Die uebrigen 120 "
+                "Zellen stammen aus der Erstbewertung durch das Team und haben noch keine "
+                "Begruendung (P2.3)."
             ),
-            "factors": [
-                "F1 Mobilitaetsnachfrage",
-                "F2 Regulierung",
-                "F3 Technologie (SAF)",
-                "F4 Wirtschaft",
-                "F5 Alternativen",
-                "F6 Gesellschaft/Akzeptanz",
-                "F7 Marktstruktur",
-            ],
+            # Nicht abgeschrieben, sondern aus `factors.json` gelesen: Genau
+            # diese doppelte Pflege war die F7-Drift. Wer den Faktor dort
+            # umbenennt, benennt ihn hier mit — ein Auseinanderlaufen ist beim
+            # Neubau baulich nicht mehr möglich, und `tests/test_factor_naming.py`
+            # fängt eine Änderung von Hand ab.
+            "factors": _factor_labels(),
         },
     }
 

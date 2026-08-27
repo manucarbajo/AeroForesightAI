@@ -152,8 +152,10 @@ class SimulationRunner:
         if seed is not None:
             state.config.seed = seed
 
-        self._seed_runtime(seed if seed is not None else state.config.seed)
+        # Erst prüfen, dann handeln: `_seed_runtime` mit einem ungültigen Seed
+        # aufzurufen und den Fehler danach zu melden, hieße halb anfangen.
         validate_state(state)
+        self._seed_runtime(seed if seed is not None else state.config.seed)
 
         self._progress_started_at = time.perf_counter()
         self._progress_last_tick_at = self._progress_started_at

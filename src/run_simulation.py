@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import subprocess
 import sys
 import time
@@ -16,7 +17,9 @@ if __package__ in {None, ""}:
 
 from src.cib.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 from src.config_loader import build_initial_state
-from src.llm import STUDIO_DIR, OllamaClient, OllamaConfig, get_llm, load_env
+from src.llm import STUDIO_DIR, MockLLM, OllamaClient, OllamaConfig, load_env
+from src.logging_setup import configure_logging
+from src.models.llm_models import LLMIncident
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 from src.reporting.output_writer import (
@@ -27,6 +30,7 @@ from src.reporting.output_writer import (
     save_event_log,
     save_factors_timeseries,
     save_final_narrative,
+    save_llm_incidents,
     save_population_individuals,
     save_population_timeseries,
     save_price_history,
@@ -46,6 +50,7 @@ from src.reporting.protocol_generator import (
     render_protocol_markdown,
 )
 from src.reporting.run_scenario_generator import generate_and_save_run_scenario
+from src.validation import ValidationError, validate_llm_settings
 
 
 def _parse_args() -> argparse.Namespace:
@@ -135,7 +140,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--mock-llm",
         action="store_true",
-        help="Use the Studio mock LLM backend (or LocalOllama/transformers via env) instead of OllamaClient.",
+        help="Use the deterministic mock LLM backend instead of calling Ollama. "
+        "Independent of OLLAMA_MODEL and other environment variables.",
     )
     parser.add_argument(
         "--use-local-ollama",
@@ -195,12 +201,6 @@ def _save_run_outputs(
         run_dir=run_dir,
     )
     round_history_path = save_round_history(state.round_results, run_dir=run_dir)
-    metadata_path = save_run_metadata(
-        state,
-        args,
-        run_dir=run_dir,
-        run_id=run_id,
-    )
     segment_analysis_path = save_segment_analysis(state.round_results, run_dir=run_dir)
     final_narrative_path = save_final_narrative(state, run_dir=run_dir)
     tick_mechanics_path = save_tick_mechanics(state, run_dir=run_dir)
@@ -261,6 +261,29 @@ def _save_run_outputs(
         paths = scenario_result.get("paths") or {}
         run_scenario_md_path = paths.get("markdown")
         run_scenario_json_path = paths.get("json")
+        # Die Pipeline fällt bei einem Ausfall auf ihr deterministisches Template
+        # zurück, statt den fertig gerechneten Lauf mitzureißen. Damit das Ergebnis
+        # nicht als vollwertiges Narrativ durchgeht, wird der Ausfall hier zum
+        # Vorfall — und landet damit in `llm_incidents.json` und im Warnbanner.
+        scenario_llm_error = scenario_result.get("llm_error")
+        if scenario_llm_error:
+            state.llm_incidents.append(
+                LLMIncident(
+                    tick=state.clock.current_tick,
+                    caller="run_scenario_generator",
+                    kind="call_failed",
+                    error=str(scenario_llm_error),
+                )
+            )
+
+    # Zuletzt, damit auch ein Ausfall im Szenario-Narrativ noch mitgezaehlt wird.
+    llm_incidents_path = save_llm_incidents(state.llm_incidents, run_dir=run_dir)
+    metadata_path = save_run_metadata(
+        state,
+        args,
+        run_dir=run_dir,
+        run_id=run_id,
+    )
 
     return {
         "run_id": run_id,
@@ -269,6 +292,7 @@ def _save_run_outputs(
         "price_history": price_history_path,
         "round_history": round_history_path,
         "run_metadata": metadata_path,
+        "llm_incidents": llm_incidents_path,
         "segment_analysis": segment_analysis_path,
         "final_narrative": final_narrative_path,
         "tick_mechanics": tick_mechanics_path,
@@ -378,7 +402,28 @@ def _write_multi_run_summary(
 
 def main() -> int:
     args = _parse_args()
+    # Vor allem anderen: ohne diesen Aufruf hat das Projekt keinen Log-Handler,
+    # und jede Warnung unterhalb von WARNING verschwindet spurlos. `--quiet`
+    # daempft die Ausgabe, schaltet aber Warnungen nicht ab — ein LLM-Ausfall
+    # soll auch im stillen Modus zu sehen sein.
+    configure_logging(logging.WARNING if args.quiet else logging.INFO)
     load_env()
+
+    # Diese drei gehen direkt an den `OllamaClient` und nie durch `validate_state`
+    # — ohne die Prüfung hier käme ein `--temperature 99` erst beim Modell an.
+    # Mit `--mock-llm` wird gar kein Client gebaut, dann wäre die Prüfung eine
+    # Schranke vor einer Tür, durch die niemand geht.
+    if not args.mock_llm:
+        llm_errors = validate_llm_settings(
+            args.model,
+            args.temperature,
+            args.max_tokens,
+            context="CLI",
+        )
+        if llm_errors:
+            raise ValidationError(
+                "validierungsfehler:\n" + "\n".join(f"  - {e}" for e in llm_errors)
+            )
 
     if args.studio:
         if args.resume is not None:
@@ -391,7 +436,7 @@ def main() -> int:
         if not args.run_id:
             raise ValueError("--generate-run-scenario-only requires --run-id")
         if args.mock_llm:
-            llm = get_llm()
+            llm = MockLLM()
         else:
             llm = OllamaClient(
                 OllamaConfig(
@@ -414,7 +459,10 @@ def main() -> int:
         return 0
 
     if args.mock_llm:
-        llm = get_llm()
+        # Bewusst `MockLLM` statt `get_llm()`: letzteres liefert `LocalOllama`,
+        # sobald OLLAMA_MODEL gesetzt ist — der Schalter tat dann nicht, was sein
+        # Name sagt. Seit P0.1 ist `--mock-llm` unabhaengig von der Umgebung.
+        llm = MockLLM()
     elif args.use_local_ollama:
         try:
             proc = subprocess.run(["ollama", "ps"], capture_output=True, text=True, check=True)

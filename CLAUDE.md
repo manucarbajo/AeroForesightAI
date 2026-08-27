@@ -33,11 +33,11 @@ Zwei Regeln dazu: Was der Code nicht tut, darf die Doku nicht behaupten — lieb
 - `src/cib/` — CIB-Konsistenzbewertung (`scenario_consistency.py`) plus die darauf aufbauende LLM-Szenario-Narrative-Schicht
 - `src/orchestration/` — Tick-Loop, LangGraph-Wiring, Checkpointing, Szenario-Sweeps (`simulation_runner.py`, `langgraph_workflow.py`, `scenario_sweeps.py`, Environment-Node)
 - `src/reporting/` — alles, was nach/während eines Laufs geschrieben oder dargestellt wird: `output_writer/`, `run_scenario_generator/`, `figure_generator/` (jeweils eigene Unterpakete), plus `protocol_generator.py`, `state_explorer.py`, `cib_visualizer.py`
-- `src/llm/` — LLM-Backend-Auswahl und Ollama-Client
+- `src/llm/` — LLM-Backend-Auswahl und **der eine** Ollama-Client (`llm_client.OllamaClient`: Retry mit Backoff, dann `RuntimeError`). `studio_helpers.LocalOllama` ist nur noch die Env-Übersetzung davor; einen zweiten, still mockenden Client gibt es seit P0.1 nicht mehr
 - `src/models/` — Pydantic-Datenmodelle (State, Events, Agenten, Population, Properties, CIB) — bewusst eine gemeinsame Schicht, nicht weiter aufgeteilt (fragile Import-Reihenfolge, siehe unten)
 - `src/prompts/` — Prompt-Templates pro Agent (`consumer.md`, `provider.md`, `regulator.md`)
 - `src/legacy/` — abgelöste Komponenten (z. B. `CIBExtractorNode`), nicht Teil der aktiven Pipeline
-- `src/run_simulation.py`, `src/config_loader.py`, `src/validation.py` — bleiben bewusst Top-Level (CLI-Einstieg bzw. von mehreren Paketen genutzt)
+- `src/run_simulation.py`, `src/config_loader.py`, `src/validation.py`, `src/logging_setup.py` — bleiben bewusst Top-Level (CLI-Einstieg bzw. von mehreren Paketen genutzt). In `validation.py` gibt es zwei Wege in dieselbe Prüfung: `collect_state_errors` sammelt und wirft nicht (für Oberflächen, die alle Befunde auf einmal zeigen wollen), `validate_state` wirft (für den Runner). Neue Prüfungen gehören hierher, **nicht** in Eingabefelder des Dashboards — die CLI und handgeschriebene Configs kommen sonst daran vorbei
 
 Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 
@@ -55,7 +55,7 @@ Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 
 - **Tick** — kleinste Simulationseinheit, hat **keine** Kalenderbedeutung (kein Quartal/Jahr). Uhr: `current_tick` / `max_ticks`.
 - **CIB-Matrix** (Cross-Impact-Balance, Weimer-Jehle) — eingefrorene Referenzmatrix (`configs/cib_frozen.json`), bewertet die interne Konsistenz von Faktor-Konstellationen. **Stand heute** prüft `scenario_consistency.py` einzelne Zellen gegen einen Schwellwert und summiert Konflikte — das ist eine eigene Heuristik, nicht das Impact-Balance-Kriterium der Methode. Bis [P2.2](docs/projektplan.md) umgesetzt ist, nicht als "Algorithmus nach Weimer-Jehle" bezeichnen. Details: [`docs/cib_role.md`](docs/cib_role.md), [`docs/cib_rationale.md`](docs/cib_rationale.md).
-- **Faktoren F1–F7** — Zustandsvariablen des soziotechnischen Systems (Mobilitätsnachfrage, Regulierung, Technologie/SAF, Wirtschaft, Alternativen, Gesellschaft, Geopolitik), je zwei Zustände (z. B. F1.1/F1.2). **Achtung F7-Drift:** `configs/factors.json` führt F7 als "Geopolitische Stabilitaet", `configs/cib_frozen.json` wurde für "Marktstruktur" bewertet — offener Widerspruch, siehe [P0.2](docs/projektplan.md).
+- **Faktoren F1–F7** — Zustandsvariablen des soziotechnischen Systems (Mobilitätsnachfrage, Regulierung, Technologie/SAF, Wirtschaft, Alternativen, Gesellschaft, Geopolitik), je zwei Zustände (z. B. F1.1/F1.2). **F7 ist "Geopolitische Stabilität"** — entschieden am 2026-08-26, umgesetzt mit [P0.2](docs/projektplan.md#p02--f7-drift-auflösen). Die Drift ist damit weg: `configs/factors.json` und `configs/cib_frozen.json` tragen denselben Namen, und `tests/test_factor_naming.py` hält das fest. Die 48 F7-Zellen der Matrix wurden unter der neuen Lesart einzeln geprüft (19 geändert, 29 bestätigt) und tragen je eine Begründung. **Ein Vorbehalt bleibt:** Diese 48 Werte sind modellgeneriert und fachlich noch nicht abgenommen — `metadata.source` sagt das mit `llm_proposed_pending_review_v3`. Wer F7 nach außen verwendet, weiß das.
 - **Logit-Modell** — mikroökonomisches Nutzenmodell für Kaufentscheidungen der simulierten Population. **Stand heute** ist es keine Logit-Ziehung: `_booking_probability` rechnet die Sigmoid und vergleicht sie gegen 0.5, was einer deterministischen Schwelle auf dem Nutzen entspricht (`src/population/population_sampler.py:355`). Die Formulierung nach außen entsprechend vorsichtig halten, bis [P2.1](docs/projektplan.md) umgesetzt ist.
 - **Agent-Profile** (Consumer, Provider, Regulator) — informationsbeschränkte LLM-Agenten; erlaubte Beobachtungen/Outputs pro Rolle in `configs/agent_profiles.json`. Details: [`docs/agent_profiles.md`](docs/agent_profiles.md).
 - **State Explorer** — Q&A über abgeschlossene Run-Daten (`tick_mechanics.json`, `price_history.json`, `event_log.json`). Das Modell bekommt ausschließlich diese Daten als Kontext. **Stand heute** wird die Antwort danach *nicht* gegen den Kontext geprüft — die Zusage "keine erfundenen Zahlen" ist eine Prompt-Anweisung, keine Schranke. Bis [P2.5](docs/projektplan.md) umgesetzt ist, entsprechend vorsichtig formulieren.
@@ -65,6 +65,7 @@ Jedes Paket hat ein `__init__.py`, das die öffentliche API re-exportiert.
 Diese Prinzipien sind der eigentliche USP des Produkts (Schutz vor LLM-Halluzination) und dürfen nie aufgeweicht werden:
 
 1. **Zahlen kommen immer aus Python, nie vom LLM.** Preise, Booking-Raten, Faktorzustände etc. werden deterministisch berechnet (`src/market/simulation_functions.py`, `src/market/market_rules.py`, `src/market/factor_dynamics.py`). LLM-Agenten liefern ausschließlich Narrative/Events, nie Kennzahlen.
+   **Und ein Ausfall ist sichtbar.** Kein Codepfad darf eine erfundene Antwort an die Stelle einer echten setzen, ohne das festzuhalten. Fällt ein LLM-Aufruf **innerhalb eines Laufs** aus (Agenten, Szenario-Node, Lauf-Szenario), wird er über `logging` gemeldet, landet als `LLMIncident` in `state.llm_incidents`, wird nach `llm_incidents.json` geschrieben und markiert den Lauf in `run_metadata.json` als `degraded` — das Dashboard zeigt ihn dann mit Warnbanner. Ein bewusster Mock-Lauf (`--mock-llm`) ist **kein** Ausfall und wird nicht so markiert. Aufrufe **außerhalb** eines Laufs — heute nur der State Explorer — haben keinen `SimulationState` und schreiben kein Artefakt; sie scheitern laut, ihre eigene Zusage bekommt [P2.5](docs/projektplan.md). Wer einen neuen LLM-Aufrufer innerhalb eines Laufs baut, hängt ihn an diese Kette an.
 2. **Agenten dürfen nur vorschlagen, was ihr Profil erlaubt.** Regulator darf F2/F6 vorschlagen (Python-validiert über `AGENT_FACTOR_PERMISSIONS`), Provider/Consumer nur Events. Nicht ohne Rücksprache erweitern.
 3. **Die CIB-Matrix ist bewusst eingefroren** (`"frozen": true`). Sie darf sich nicht aus Simulationsläufen ableiten — sonst wird der Maßstab aus dem Messobjekt gewonnen (zirkulär).
 4. **Pydantic-Typisierung an allen Agenten-Grenzen** — jede Cross-Boundary-Datenstruktur ist ein typisiertes Modell in `src/models/`, keine rohen Dicts.
@@ -72,9 +73,17 @@ Diese Prinzipien sind der eigentliche USP des Produkts (Schutz vor LLM-Halluzina
 
 ## Dev-Workflow
 
-```powershell
-pip install -e ".[dev]"
+**Immer im venv arbeiten — und zwar in `.venv` im Repo-Wurzelverzeichnis.** Kein globales Python, kein anders benanntes Verzeichnis. Der Ordner ist in `.gitignore`, jede und jeder legt ihn lokal selbst an:
 
+```powershell
+py -3.12 -m venv .venv          # oder eine neuere 3.x; pyproject verlangt >= 3.11
+.\.venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
+```
+
+Alle folgenden Befehle setzen ein **aktiviertes** venv voraus:
+
+```powershell
 pytest                    # volle Test-Suite
 ruff check .               # Linting
 black --check .            # Formatierung prüfen (black . zum Formatieren)
@@ -83,6 +92,10 @@ python -m src.run_simulation --mock-llm --rounds 1 --quiet   # Smoke-Test ohne O
 python -m dashboard.web.app --port 8511                       # Landingpage auf /, Dashboard auf /app/
 python -m streamlit run dashboard/legacy_streamlit/app_researcher.py --server.port=8512   # Legacy-Vergleich
 ```
+
+Ohne Aktivierung liegen `pytest`, `ruff` und `black` nicht auf dem PATH — dann entweder aktivieren oder direkt aufrufen: `.\.venv\Scripts\ruff.exe check .`. Ein `python`, das nicht aus `.venv` kommt, findet das Paket `src` nicht, weil `pip install -e` nur ins venv geschrieben hat.
+
+**Warum das eine Konvention und keine Empfehlung ist:** [`.claude/launch.json`](.claude/launch.json) startet das Dashboard über `.venv/Scripts/python.exe`. Diese relative Angabe funktioniert auf jedem Rechner — aber nur, wenn das venv wirklich `.venv` heißt und dort liegt. Bis 2026-08-26 stand dort ein absoluter Pfad in ein fremdes Benutzerverzeichnis; das Dashboard ließ sich damit auf keinem anderen Rechner starten. Die Datei bleibt deshalb bewusst **versioniert** und gehört nicht in `.gitignore`: eine relative Angabe ist für alle richtig, eine ignorierte Datei müsste jede und jeder neu erfinden.
 
 `black` + `ruff` vor jedem Commit laufen lassen (CI in `.github/workflows/tests.yml` prüft beides plus Tests).
 
@@ -101,7 +114,8 @@ Hetzner Cloud Server mit lokal laufendem Ollama (Datenhoheit, keine externen LLM
 
 **[docs/projektplan.md](docs/projektplan.md) ist die verbindliche Reihenfolge** — dort steht, was wann drankommt, mit Fundstelle und Abnahmekriterium pro Paket. Nichts davon ungefragt vorziehen, aber auch nichts mehr als "bekannt und bewusst offen" abtun: seit 2026-08-25 ist **jedes** Finding aus `docs/audit_findings.md` einem Arbeitspaket zugeordnet (Zuordnungstabelle am Ende des Plans).
 
-- **Phase 0** — Vertrauens-Blocker vor dem nächsten Demo: sichtbarer LLM-Ausfall, F7-Drift, `validate_config`, die zwei auseinandergelaufenen Rule-Evaluatoren, Faktor-Berechtigungen aus einer Quelle, und ein Run-Artefakt, das Seed und Rechenmodus überhaupt festhält.
+- **Phase 0** — Vertrauens-Blocker vor dem nächsten Demo: sichtbarer LLM-Ausfall (P0.1 ✅), F7-Drift (P0.2 ✅), `validate_config` (P0.3 ✅), die zwei auseinandergelaufenen Rule-Evaluatoren, Faktor-Berechtigungen aus einer Quelle, und ein Run-Artefakt, das Seed und Rechenmodus überhaupt festhält.
+  **Offen aus P0.2:** Die 48 neu bewerteten Matrixzellen brauchen noch eine fachliche Abnahme. Bis dahin trägt `cib_frozen.json` die Quelle `llm_proposed_pending_review_v3`; wer sie durchgeht, ersetzt das Label.
 - **Phase 1** — aktueller Schwerpunkt: Start-Flow, Ergebnisdarstellung, Szenariogestaltung, Landingpage produktionsreif.
 - **Phase 2** — Modellsubstanz: echte Ziehung im Buchungsmodell, Impact-Balance, Matrix-Provenienz, Alterung der Population, Grounding des State Explorers.
 - **Phasen 3–5** — Engine-Härtung, Testfundament, Altlasten (inkl. Entfernen von `dashboard/legacy_streamlit/`).

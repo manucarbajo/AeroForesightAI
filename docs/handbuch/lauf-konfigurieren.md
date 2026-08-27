@@ -61,6 +61,30 @@ Wiederholungen ohne festen Zufallsstartwert, abgeschaltete Szenario-Erzeugung un
 abgeschaltete eigene Werte. Ganz unten lässt sich der Stand als eigenes Preset
 sichern.
 
+Steht dort ein **roter Kasten**, ist die Konfiguration nicht lauffähig. Er nennt
+jeden Fehler einzeln — und der Knopf «Start» weist den Lauf dann auch ab, statt
+ihn anzufangen und unterwegs scheitern zu lassen. Geprüft wird:
+
+| Einstellung | Zulässig | Wann geprüft |
+|---|---|---|
+| Zufallsstartwert | 0 oder größer | immer |
+| Länge des Laufs | mindestens 1 Tick | immer |
+| Ollama-Modell | nicht leer | nur bei «Mit Sprachmodell» |
+| Kreativität der Agenten | 0 bis 2 | nur bei «Mit Sprachmodell» |
+| Antwortlänge | mindestens 1 | nur bei «Mit Sprachmodell» |
+
+Die letzten drei betreffen ausschließlich Ollama. In den Modi «Ohne
+Sprachmodell» und «Nur Zahlen» wird gar kein Client aufgebaut — dort dürfen die
+Felder also stehen, wie sie wollen, und blockieren nichts.
+
+Der **Name des Laufs** darf leer bleiben — dann greift der Name aus
+`simulation_config.json`. Leer sein darf er nur dort nicht.
+
+Dazu kommt die Referenz-Integrität: Verweist ein Agentenprofil in
+`agent_profiles.json` auf einen Faktor, den es nicht gibt, oder auf eine
+unbekannte Abhängigkeit, wird das ebenfalls hier gemeldet. Beides würde sonst
+lautlos ins Leere laufen — der Agent sähe den Faktor einfach nicht.
+
 ## Feinabstimmung
 
 In jedem Block steht vorn die Einstellung, die die Wirkung bestimmt. Alles

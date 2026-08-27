@@ -1,10 +1,17 @@
 """P4.5 — CIB-Konsistenz-Ranking der drei Sweep-Archetypen.
 
-Empirische Scores aus der korrigierten cib_frozen.json (v2, domänenkorrekter Werte):
+Empirische Scores aus cib_frozen.json (v3, F7 als „Geopolitische Stabilität"):
 
-  - BAU      (F1.1,F2.1,F3.1,F4.1,F5.1,F6.1,F7.1): consistency=0.973, conflicts=0
+  - BAU      (F1.1,F2.1,F3.1,F4.1,F5.1,F6.1,F7.1): consistency=0.970, conflicts=0
   - Konflikt (F1.2,F2.2,F3.1,F4.2,F5.2,F6.2,F7.2): consistency=0.867, conflicts=2
-  - Wende    (F1.2,F2.2,F3.2,F4.1,F5.2,F6.2,F7.1): consistency=0.603, conflicts=8
+  - Wende    (F1.2,F2.2,F3.2,F4.1,F5.2,F6.2,F7.1): consistency=0.629, conflicts=7
+
+Die Zahlen haben sich am 2026-08-26 mit P0.2 verschoben, weil die 48 F7-Zellen
+unter der geopolitischen Lesart neu bewertet wurden. Bewegt hat sich vor allem
+die „Freiwillige Wende" (0.603 -> 0.629, ein Konflikt weniger): Ihr Widerspruch
+lag zum Teil daran, dass offene *Märkte* (F7.1) mit strenger Regulierung (F2.2)
+kollidierten — offene *Lufträume* tun das nicht im selben Maß. Der Kernnachweis
+BAU > Konflikt ist davon unberührt.
 
 P4.3-Kernnachweis: BAU > Konflikt (Consistency-Score). ✓
 
@@ -13,15 +20,20 @@ Interpretation:
   unterstützen sich gegenseitig (F6.1↔F1.1, F4.1↔F2.1 etc.). Entspricht der Folien-
   aussage: "hochstabiles Szenario".
 
+  **Zu F7 seit P0.2:** Die eingehende Spalte von F7 ist dünn geworden (Passive-Score
+  32 -> 19) — Luftverkehrsinterne Faktoren treiben keine Weltpolitik. Das ist kein
+  Bewertungsfehler, sondern die Eigenschaft eines weitgehend exogenen Deskriptors,
+  und der Grund für die Vorbedingung in P2.2: F7 wird dort pro Szenario fixiert.
+
   Transformationskonflikt hat trotz des Namens nur 2 Kern-Konflikte (F2.2+F3.1:
   strenge Regulierung ohne Technologiedurchbruch; F4.2+F2.2: Rezession untergräbt
   Regulierung). Die anderen 5 Faktorkombinationen verstärken sich gegenseitig
   (F1.2↔F2.2, F6.2↔F5.2 etc.).
 
   Freiwillige Wende hat den niedrigsten Score, weil das Szenario selbst-untergrabendes
-  Verhalten zeigt: F3.2 (SAF-Durchbruch) untergräbt F2.2 (−2) und F6.2 (−3); die
-  Kombination stabiler Wirtschaft (F4.1) + offener Märkte (F7.1) mit strenger
-  Regulierung (F2.2) erzeugt weitere Spannungen.
+  Verhalten zeigt: F3.2 (SAF-Durchbruch) untergräbt F2.2 (−2) und F6.2 (−3). Die
+  Spannung zwischen stabiler Wirtschaft (F4.1) und strenger Regulierung (F2.2)
+  bleibt; der Beitrag von F7.1 ist mit der geopolitischen Lesart kleiner geworden.
 
 Methodische Grundlagen:
   Weimer-Jehle, W. (2023). Einfuehrung in die Cross-Impact-Bilanzanalyse (CIB).
@@ -78,8 +90,8 @@ KONFLIKT_END_STATES = {
 
 # Empirische Referenzwerte nach Matrix-Korrektur (v2)
 EXPECTED = {
-    "BAU": {"consistency": 0.973, "stability": 1.000, "conflicts": 0},
-    "Wende": {"consistency": 0.603, "stability": 0.810, "conflicts": 8},
+    "BAU": {"consistency": 0.970, "stability": 1.000, "conflicts": 0},
+    "Wende": {"consistency": 0.629, "stability": 0.833, "conflicts": 7},
     "Konflikt": {"consistency": 0.867, "stability": 0.952, "conflicts": 2},
 }
 TOLERANCE = 0.02

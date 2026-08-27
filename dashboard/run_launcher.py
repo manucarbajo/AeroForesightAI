@@ -9,7 +9,8 @@ from typing import Callable
 
 from dashboard.config_catalog import ConfigDraft, PropertyEditState, prepare_simulation_state
 from dashboard.run_browser import generate_figures_for_run
-from src.llm import OllamaClient, OllamaConfig, get_llm
+from src.llm import MockLLM, OllamaClient, OllamaConfig
+from src.logging_setup import configure_logging, progress_logging
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.reporting.output_writer import create_run_id, resolve_run_output_dir
@@ -178,7 +179,10 @@ def launch_simulation(
 
     def _build_llm():
         if config.mock_llm:
-            return get_llm()
+            # `MockLLM` statt `get_llm()`: letzteres liefert `LocalOllama`, sobald
+            # OLLAMA_MODEL gesetzt ist. Seit P0.1 heisst «Ohne Sprachmodell
+            # rechnen» genau das, unabhaengig von der Umgebung.
+            return MockLLM()
         return OllamaClient(
             OllamaConfig(
                 base_url=config.base_url,
@@ -378,6 +382,12 @@ def launch_simulation(
             artifacts=artifacts,
         )
 
+    # Ohne Handler faellt jede Logzeile unterhalb von WARNING auf den Boden;
+    # der Aufruf hier bindet den Konsolen-Handler an das *echte* stdout, bevor
+    # der Tee unten `sys.stdout` umbiegt. Sonst liefe jede Zeile zweimal durch
+    # das Fortschrittsfenster.
+    configure_logging()
+
     if on_progress is None:
         return _run_body()
 
@@ -394,5 +404,7 @@ def launch_simulation(
         def flush(self) -> None:
             stdout.flush()
 
-    with contextlib.redirect_stdout(_StdoutTee()):
+    # Zwei Kanaele: `print` ueber den Tee, `logging` ueber den Handler. Beide
+    # landen im selben Fortschrittsfenster, keiner doppelt.
+    with contextlib.redirect_stdout(_StdoutTee()), progress_logging(on_progress):
         return _run_body()

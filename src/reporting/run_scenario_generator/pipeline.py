@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,8 @@ from src.reporting.run_scenario_generator.rendering import (
     render_run_scenario_markdown,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def generate_run_scenario(
     run_id: str,
@@ -35,9 +38,26 @@ def generate_run_scenario(
 
     narrative: dict[str, Any] | None = None
     grounding_warnings: list[str] = []
+    llm_error: str | None = None
 
     if prefer_llm and llm is not None:
-        raw = llm.call(build_scenario_prompt(context))
+        # Fällt der Aufruf aus, greift weiter unten `build_template_scenario` —
+        # ein deterministisches Narrativ ohne Sprachmodell. Ohne dieses `except`
+        # riss der Ausfall den ganzen Lauf mit, und zwar *nachdem* er gerechnet
+        # war: es gäbe dann kein `run_metadata.json`, keinen Warnbanner, keinen
+        # Lauf in der Liste — die Degradation wäre unsichtbar, weil gar nichts
+        # ankommt. Der Fehler geht als `llm_error` an den Aufrufer zurück, der
+        # ihn als Vorfall protokolliert.
+        try:
+            raw = llm.call(build_scenario_prompt(context))
+        except Exception as exc:  # noqa: BLE001 - jeder Backend-Fehler endet im Template
+            logger.warning(
+                "Lauf-Szenario konnte nicht vom Sprachmodell erzeugt werden: %s. "
+                "Es wird das deterministische Template verwendet.",
+                exc,
+            )
+            llm_error = f"{type(exc).__name__}: {exc}"
+            raw = ""
         parsed = _extract_json_object(raw)
         scenarios_raw = parsed.get("scenarios") if isinstance(parsed, dict) else None
         if (
@@ -90,6 +110,7 @@ def generate_run_scenario(
         "scenarios": scenarios,
         "source": narrative.get("source", "template"),
         "grounding_warnings": grounding_warnings,
+        "llm_error": llm_error,
         "agent_digest": context.agent_digest,
         "narrative": narrative,
         "ground_truth": ground_truth,

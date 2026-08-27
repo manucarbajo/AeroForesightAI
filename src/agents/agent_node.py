@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
@@ -13,7 +14,10 @@ from src.market.property_engine import scheduled_property_events
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
 from src.models.enums import AgentType, EventType
 from src.models.event_models import EventLogEntry, RoundResult
+from src.models.llm_models import LLMIncident
 from src.models.state_models import SimulationState
+
+logger = logging.getLogger(__name__)
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 
@@ -52,30 +56,13 @@ class AgentNode:
         try:
             raw_output = self.llm.call(prompt)
         except Exception as exc:
-            # Best-effort fallback to Studio mock LLM to avoid aborting the whole run
-            try:
-                from src.llm import get_llm
-
-                print(
-                    f"LLM call failed for agent {self.config.id}: {exc}. Falling back to mock LLM."
-                )
-                fallback = get_llm()
-                raw_output = fallback.call(prompt)
-            except Exception:
-                # Last-resort: produce a default NO-OP payload
-                print(
-                    f"Fallback LLM also failed for agent {self.config.id}: {exc}. Using default NO_OP."
-                )
-                raw_output = json.dumps(
-                    {
-                        "reasoning": "fallback",
-                        "actions": ["NO_OP"],
-                        "state_changes": [],
-                        "events": [],
-                        "segment_analysis": {},
-                    },
-                    ensure_ascii=False,
-                )
+            # Der Lauf stirbt nicht an einem einzelnen Aussetzer — er verschweigt
+            # ihn aber auch nicht mehr. Bis P0.1 lag hier ein zweiter Versuch über
+            # `get_llm()`: war OLLAMA_MODEL gesetzt, lieferte der eine erfundene
+            # Mock-Antwort, die im Output von einer echten nicht zu unterscheiden
+            # war. Genau dieser Zweig ist weg. Was bleibt, ist ein sichtbarer
+            # Leerzug plus Eintrag in `state.llm_incidents`.
+            raw_output = self._record_llm_failure(state, exc)
 
         response, raw_event_entries = self._parse_response(
             raw_output, state.clock.current_tick, state=state
@@ -93,6 +80,35 @@ class AgentNode:
         )
         state.event_log.extend(events)
         return state
+
+    def _record_llm_failure(self, state: SimulationState, exc: Exception) -> str:
+        """Ausfall protokollieren und den Leerzug liefern, den der Agent stattdessen tut."""
+
+        logger.warning(
+            "LLM-Aufruf für Agent %s in Tick %s fehlgeschlagen: %s. Der Agent setzt aus; "
+            "der Lauf wird als beeinträchtigt markiert.",
+            self.config.id,
+            state.clock.current_tick,
+            exc,
+        )
+        state.llm_incidents.append(
+            LLMIncident(
+                tick=state.clock.current_tick,
+                caller=f"agent:{self.config.id}",
+                kind="no_op_emitted",
+                error=f"{type(exc).__name__}: {exc}",
+            )
+        )
+        return json.dumps(
+            {
+                "reasoning": "llm_unavailable",
+                "actions": ["NO_OP"],
+                "state_changes": [],
+                "events": [],
+                "segment_analysis": {},
+            },
+            ensure_ascii=False,
+        )
 
     def _build_prompt(self, state: SimulationState) -> str:
         template = self._load_prompt_template()

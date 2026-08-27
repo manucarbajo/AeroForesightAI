@@ -20,9 +20,18 @@ Alle Dateien sind im Tab **Dateien** einsehbar und herunterladbar.
 | `price_history.json` | Preisverlauf mit Nachfrageniveau und Buchungsrate |
 | `event_log.json` | Alle Ereignisse, einschließlich der als `[delta:…]` markierten Python-Änderungen |
 | `round_history.json` | Der Zustand je Runde |
-| `run_metadata.json` | Ticks, Modell, Zeitstempel, ob das Marktmodell aktiv war |
+| `run_metadata.json` | Ticks, Modell, Zeitstempel, ob das Marktmodell aktiv war — und ob der Lauf beeinträchtigt war |
+| `llm_incidents.json` | Nur vorhanden, wenn Aufrufe an das Sprachmodell ins Leere gingen: welcher Tick, welcher Aufrufer, welcher Fehler |
 | `segment_analysis.json` | Auswertung nach Segmenten |
 | `cib_matrix.json` | Die im Lauf verwendete Einflussmatrix |
+
+Drei Felder in `run_metadata.json` betreffen die Verlässlichkeit eines Laufs:
+`degraded` sagt, ob mindestens ein Aufruf an das Sprachmodell unbeantwortet
+blieb, `llm_incident_count` zählt sie, und `llm_degraded_ticks` nennt die
+betroffenen Runden. Die drei stehen **immer** in der Datei, auch bei einem
+sauberen Lauf mit `false` und `0` — fehlen sie ganz, stammt der Lauf aus der
+Zeit vor dieser Aufzeichnung. `llm_incidents.json` entsteht dagegen nur, wenn es
+etwas zu berichten gibt.
 
 ## Zeitreihen
 

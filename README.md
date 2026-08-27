@@ -8,9 +8,15 @@ Drei Akteure (Consumer, Provider, Regulator) interagieren über einen tick-basie
 
 ## Setup
 
+Immer in einem venv arbeiten, und zwar in `.venv` im Repo-Wurzelverzeichnis — `.claude/launch.json` startet das Dashboard über genau diesen Pfad:
+
 ```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 ```
+
+Alle weiteren Befehle in dieser Datei setzen ein aktiviertes venv voraus.
 
 Für Formatierung/Linting vor jedem Commit:
 
@@ -104,11 +110,18 @@ OLLAMA_BASE_URL=http://127.0.0.1:11434
 | Ziel | Variablen in `.env` |
 | --- | --- |
 | **Ollama lokal** (Standard) | `OLLAMA_MODEL=llama3.2`, `OLLAMA_BASE_URL=http://127.0.0.1:11434` — Modell vorher starten: `ollama run llama3.2` |
-| **Mock ohne Ollama** | Keine Ollama-Variablen setzen; Batch mit `--mock-llm`, Studio/Dashboard nutzen dann Mock-LLM |
+| **Mock ohne Ollama** | Batch mit `--mock-llm`; Studio und Dashboard nutzen den Mock, wenn keine Ollama-Variablen gesetzt sind |
 | **HTTP-LLM** | `LLAMA_HTTP_URL=http://…` |
 | **Transformers lokal** | `LLAMA_TRANSFORMERS_MODEL=…` |
 
 Backend-Auswahl in Code: `src/llm/studio_helpers.get_llm()` (Priorität: Ollama → HTTP → Transformers → Mock).
+
+`--mock-llm` geht seit P0.1 **an dieser Auswahl vorbei** und liefert immer das
+Mock-Backend. Vorher hing der Schalter an der Umgebung: war `OLLAMA_MODEL`
+gesetzt, versuchte auch ein „Mock"-Lauf, Ollama zu erreichen. Fällt ein echtes
+Backend aus, wird das jetzt gemeldet und im Lauf festgehalten, statt still durch
+eine erfundene Antwort ersetzt zu werden — siehe
+[Fehlerbilder](docs/handbuch/fehlerbilder.md).
 
 ### Schritt 3: LangSmith (optional)
 
@@ -198,7 +211,7 @@ Nach jedem Lauf unter `outputs/<run_id>/`:
 | `--studio` | LangGraph Studio starten statt Batch-Lauf |
 | `--rounds N` | Max. Ticks überschreiben |
 | `--run-id ID` | Output-Verzeichnis `outputs/<run_id>/` |
-| `--mock-llm` | Mock-LLM ohne Ollama |
+| `--mock-llm` | Mock-LLM ohne Ollama, unabhängig von den Umgebungsvariablen |
 | `--deterministic-only` | Ohne Agenten-LLM (reine Python-Pipeline) |
 | `--resume ID/Pfad` | Von Checkpoint fortsetzen |
 | `--checkpoint-interval N` | Checkpoint alle N Ticks (Default: 5) |
