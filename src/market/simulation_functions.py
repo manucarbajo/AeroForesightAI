@@ -6,8 +6,12 @@ never parsed from LLM output.
 
 from __future__ import annotations
 
-from src.market.market_rules import initial_provider_markup, resolve_market_feedback_config
-from src.market.property_engine import MARKET_PROPERTY_IDS, resolve_exogenous_system_properties
+from src.market.market_feedback import initial_provider_markup, resolve_market_feedback_config
+from src.market.property_engine import (
+    MARKET_PROPERTY_IDS,
+    resolve_exogenous_system_properties,
+    resolve_trajectory,
+)
 from src.models.property_models import (
     MarketFeedbackConfig,
     PriceCoefficientsConfig,
@@ -15,6 +19,7 @@ from src.models.property_models import (
     PropertiesConfig,
 )
 from src.models.state_models import FactorState
+from src.rule_engine import KNOWN_METRICS, RuleContext, rule_matches
 
 METRIC_IDS = MARKET_PROPERTY_IDS
 
@@ -119,30 +124,23 @@ def compute_cost_pressure(
     factors_dict = factors or {}
     sys_props = system_properties or {}
 
-    for reg in properties.regulatory_influences:
-        active = True
-        when = reg.when
-        if when:
-            if "factor" in when:
-                factor_id = str(when["factor"])
-                expected_state = str(when.get("state", ""))
-                factor = factors_dict.get(factor_id)
-                if factor is None or factor.current_state != expected_state:
-                    active = False
-            if "system_property" in when and active:
-                prop_id = str(when["system_property"])
-                value = sys_props.get(prop_id)
-                if value is None:
-                    active = False
-                elif "above" in when and value <= float(when["above"]):
-                    active = False
-                elif "below" in when and value >= float(when["below"]):
-                    active = False
-        if active:
-            from src.market.property_engine import resolve_trajectory
+    # Bis P0.4 stand hier ein dritter, eigener Evaluator — mit per ``elif``
+    # verketteten Vergleichen, weshalb ``below`` neben ``above`` nie geprüft
+    # wurde. Die Kostentreiber laufen jetzt über dieselbe Auswertung wie
+    # Faktor- und Shift-Regeln. Anders als dort ist eine leere Klausel hier
+    # zulässig: ein Kostentreiber darf unbedingt gelten.
+    context = RuleContext(
+        tick=tick,
+        factors=factors_dict,
+        metrics={name: None for name in KNOWN_METRICS} | {"tick": float(tick)},
+        system_properties=sys_props,
+    )
 
-            traj_val = resolve_trajectory(reg.trajectory, tick)
-            regulatory_cost += reg.cost_contribution + traj_val
+    for reg in properties.regulatory_influences:
+        if not rule_matches(reg.when, context, rule_id=reg.id):
+            continue
+        traj_val = resolve_trajectory(reg.trajectory, tick)
+        regulatory_cost += reg.cost_contribution + traj_val
 
     maintenance_idx = sys_props.get("maintenance_cost_index", 1.0)
     staff_idx = sys_props.get("staff_cost_index", 1.0)

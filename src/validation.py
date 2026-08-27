@@ -10,6 +10,8 @@ from src.models.property_models import (
     FactorRule,
     PropertiesConfig,
     RampEffect,
+    RegulatoryInfluence,
+    ShiftRule,
     StepFunctionTrajectory,
     SystemProperty,
 )
@@ -19,6 +21,7 @@ from src.models.state_models import (
     SimulationConfig,
     SimulationState,
 )
+from src.rule_engine import KNOWN_METRICS, UnknownRuleConditionError, check_when
 
 #: Zulässiger Bereich für `llm.temperature`. Ollama nimmt Werte darüber
 #: entgegen, liefert aber nur noch Rauschen.
@@ -267,8 +270,40 @@ def validate_properties_config(properties: PropertiesConfig) -> list[str]:
         errors.extend(_validate_trajectory(prop, prefix))
 
     errors.extend(_validate_factor_rules(properties.factor_rules))
+    errors.extend(_validate_shift_rules(properties.shift_rules))
+    errors.extend(_validate_regulatory_influences(properties.regulatory_influences))
+    errors.extend(_validate_rule_property_names(properties))
 
     return errors
+
+
+def _validate_when(
+    when: dict[str, object],
+    prefix: str,
+    *,
+    allow_empty: bool,
+) -> list[str]:
+    """Prüft eine ``when``-Klausel beim Laden statt erst im Tick (P0.4).
+
+    Der Evaluator wirft zur Laufzeit — dann steckt der Fehler aber schon mitten
+    in einem Lauf. Dieselbe Prüfung hier vorgezogen meldet ihn vor dem Start.
+
+    *allow_empty* trennt die Regelarten: Ein Kostentreiber ohne Bedingung gilt
+    schlicht immer und ist zulässig. Eine ``factor_rule`` oder ``shift_rule``
+    ohne Bedingung würde dagegen in **jedem** Tick feuern — das ist fast sicher
+    ein vergessenes ``when`` und wird abgewiesen.
+    """
+
+    if not when:
+        if allow_empty:
+            return []
+        return [f"{prefix}: when darf nicht leer sein (die Regel würde in jedem Tick greifen)"]
+
+    try:
+        check_when(when)
+    except UnknownRuleConditionError as exc:
+        return [f"{prefix}: {exc}"]
+    return []
 
 
 def _validate_factor_rules(rules: list[FactorRule]) -> list[str]:
@@ -285,6 +320,68 @@ def _validate_factor_rules(rules: list[FactorRule]) -> list[str]:
             errors.append(f"{prefix}: factor_id darf nicht leer sein")
         if not rule.effect.set_state:
             errors.append(f"{prefix}: effect.set_state darf nicht leer sein")
+        errors.extend(_validate_when(rule.when, prefix, allow_empty=False))
+    return errors
+
+
+def _validate_shift_rules(rules: list[ShiftRule]) -> list[str]:
+    errors: list[str] = []
+    for index, rule in enumerate(rules):
+        prefix = f"shift_rules[{index}]" + (f" '{rule.id}'" if rule.id else "")
+        errors.extend(_validate_when(rule.when, prefix, allow_empty=False))
+    return errors
+
+
+def _validate_regulatory_influences(influences: list[RegulatoryInfluence]) -> list[str]:
+    errors: list[str] = []
+    for index, influence in enumerate(influences):
+        prefix = f"regulatory_influences[{index}]" + (f" '{influence.id}'" if influence.id else "")
+        errors.extend(_validate_when(influence.when, prefix, allow_empty=True))
+        if "metric" in (influence.when or {}):
+            # Die Kostenrechnung hat keine Metrik-Momentaufnahme — `cost_pressure`
+            # ist selbst eine davon. Eine solche Bedingung könnte dort nie
+            # zutreffen. Das laut zu sagen ist der Sinn von P0.4; still nie zu
+            # greifen war der Befund.
+            errors.append(
+                f"{prefix}: 'metric' ist bei regulatory_influences nicht auswertbar "
+                "(die Kostenrechnung kennt keine Laufzeit-Metriken). "
+                "Für eine Bedingung auf den Systemzustand 'system_property' benutzen."
+            )
+    return errors
+
+
+def _validate_rule_property_names(properties: PropertiesConfig) -> list[str]:
+    """Prüft die *Namen* in ``when``-Klauseln gegen die bekannten Vokabulare.
+
+    Der Evaluator tut das bewusst nicht: Zur Laufzeit ist "Wert nicht da" ein
+    normaler Zustand (`booking_rate` gibt es im ersten Tick noch nicht). Ein
+    Tippfehler im Namen sieht davon ununterscheidbar aus — und wäre damit
+    wieder genau die stille Wirkungslosigkeit, gegen die P0.4 antritt. Hier
+    sind beide Vokabulare bekannt, also fällt er hier auf.
+    """
+
+    known_properties = set(properties.system_property_ids())
+    errors: list[str] = []
+
+    groups: list[tuple[str, list[object]]] = [
+        ("factor_rules", list(properties.factor_rules)),
+        ("shift_rules", list(properties.shift_rules)),
+        ("regulatory_influences", list(properties.regulatory_influences)),
+    ]
+    for label, rules in groups:
+        for index, rule in enumerate(rules):
+            when = getattr(rule, "when", {}) or {}
+            rule_id = getattr(rule, "id", "")
+            prefix = f"{label}[{index}]" + (f" '{rule_id}'" if rule_id else "")
+            metric = when.get("metric")
+            if metric is not None and str(metric) not in KNOWN_METRICS:
+                errors.append(
+                    f"{prefix}: unbekannte Metrik '{metric}'. "
+                    f"Bekannt sind: {', '.join(sorted(KNOWN_METRICS))}"
+                )
+            prop = when.get("system_property")
+            if prop is not None and str(prop) not in known_properties:
+                errors.append(f"{prefix}: unbekannte Systemgröße '{prop}'")
     return errors
 
 

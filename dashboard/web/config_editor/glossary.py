@@ -5,7 +5,7 @@ bewusst eine Zeile — im Editor soll man arbeiten, nicht lesen. `detail` steht
 auf der Seite «Dokumentation» und erklärt die Wirkung im Zusammenhang.
 
 Die Wirkungsbeschreibungen sind aus `src/market/simulation_functions.py`,
-`src/market/market_rules.py` und `src/population/population_sampler.py`
+`src/market/market_feedback.py` und `src/population/population_sampler.py`
 abgeleitet. Ändert sich dort die Mechanik, gehört der Text hier nachgezogen.
 """
 

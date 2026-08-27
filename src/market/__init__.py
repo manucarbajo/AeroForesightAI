@@ -8,8 +8,8 @@ from src.market.factor_dynamics import (
     record_factor_timeseries,
     validate_factor_proposals,
 )
+from src.market.market_feedback import initial_provider_markup, resolve_market_feedback_config
 from src.market.market_node import MarketNode
-from src.market.market_rules import initial_provider_markup, resolve_market_feedback_config
 from src.market.property_engine import (
     MARKET_PROPERTY_IDS,
     resolve_exogenous_system_properties,

@@ -1,4 +1,11 @@
-"""Resolve market feedback config and runtime property baselines from properties.json (M4.13)."""
+"""Baselines für Markup und Ticketpreis plus die Auflösung der Marktrückkopplung.
+
+Hieß bis P0.4 ``market_rules.py``. Der Name versprach die generische
+Regelauswertung, die inzwischen in :mod:`src.rule_engine` liegt — dieses Modul
+behandelt genau **einen** Regeltyp (``booking_yield_feedback``) und löst im
+Übrigen Startwerte aus ``properties.json`` auf. Der Config-Schlüssel heißt
+weiterhin ``market_rules``; umbenannt wurde nur das Modul (M4.13).
+"""
 
 from __future__ import annotations
 

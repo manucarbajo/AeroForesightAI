@@ -8,30 +8,14 @@ from src.market.property_engine import resolve_system_properties
 from src.market.simulation_functions import active_parameters
 from src.models.agent_models import StateChange
 from src.models.property_models import FactorRule, PropertiesConfig
-from src.models.state_models import FactorState, SimulationState
+from src.models.state_models import SimulationState
+from src.rule_engine import RuleContext, RuntimeMetrics, rule_matches
 
 AGENT_FACTOR_PERMISSIONS: dict[str, set[str]] = {
     "regulator": {"F2", "F6"},
     "provider": set(),
     "consumer": set(),
 }
-
-
-@dataclass(frozen=True)
-class RuntimeMetrics:
-    """Snapshot of tick context for ``factor_rules`` evaluation."""
-
-    tick: int
-    booking_rate: float | None
-    prior_booking_rate: float | None
-    cost_pressure: float | None
-    cost_index: float | None
-    ticket_price: float | None
-    demand_level: float | None
-    carbon_tax_level: float | None
-    saf_mandate_share: float | None
-    fuel_price_change: float | None
-    oil_price_index: float | None
 
 
 @dataclass
@@ -80,73 +64,6 @@ def build_runtime_metrics(state: SimulationState) -> RuntimeMetrics:
     )
 
 
-def _metric_value(metrics: RuntimeMetrics, metric_id: str) -> float | None:
-    return getattr(metrics, metric_id, None)
-
-
-def rule_matches(
-    when: dict[str, object],
-    *,
-    factors: dict[str, FactorState],
-    metrics: RuntimeMetrics,
-    system_properties: dict[str, float],
-    applied_rule_ids: set[str],
-    rule_id: str,
-    once: bool,
-) -> bool:
-    if not when:
-        return False
-    if once and rule_id in applied_rule_ids:
-        return False
-
-    if "tick" in when:
-        tick_value = int(when["tick"])
-        if "gte" in when and metrics.tick < int(when["gte"]):
-            return False
-        if "lte" in when and metrics.tick > int(when["lte"]):
-            return False
-        if "eq" in when and metrics.tick != int(when["eq"]):
-            return False
-        if "gte" not in when and "lte" not in when and "eq" not in when:
-            if metrics.tick != tick_value:
-                return False
-
-    if "factor" in when:
-        factor_id = str(when["factor"])
-        expected_state = str(when.get("state", ""))
-        factor = factors.get(factor_id)
-        if factor is None or factor.current_state != expected_state:
-            return False
-
-    if "metric" in when:
-        metric_id = str(when["metric"])
-        value = _metric_value(metrics, metric_id)
-        if value is None:
-            return False
-        if "below" in when and value >= float(when["below"]):
-            return False
-        if "above" in when and value <= float(when["above"]):
-            return False
-        if "at_most" in when and value > float(when["at_most"]):
-            return False
-        if "at_least" in when and value < float(when["at_least"]):
-            return False
-
-    if "system_property" in when:
-        prop_id = str(when["system_property"])
-        value = system_properties.get(prop_id)
-        if value is None:
-            return False
-        if "above" in when and value <= float(when["above"]):
-            return False
-        if "below" in when and value >= float(when["below"]):
-            return False
-        if "at_least" in when and value < float(when["at_least"]):
-            return False
-
-    return True
-
-
 def _sorted_rules(rules: list[FactorRule]) -> list[FactorRule]:
     return sorted(rules, key=lambda rule: (-rule.priority, rule.id))
 
@@ -168,21 +85,19 @@ def allowed_factor_targets(
         factor_id: {factor.current_state} for factor_id, factor in factors.items()
     }
 
+    context = RuleContext.from_metrics(
+        metrics, factors=factors, system_properties=system_properties
+    )
+
     for rule in _sorted_rules(properties.factor_rules):
         factor = factors.get(rule.factor_id)
         if factor is None:
             continue
         if rule.effect.set_state not in factor.possible_states:
             continue
-        if not rule_matches(
-            rule.when,
-            factors=factors,
-            metrics=metrics,
-            system_properties=system_properties,
-            applied_rule_ids=applied_ids,
-            rule_id=rule.id,
-            once=rule.once,
-        ):
+        if rule.once and rule.id in applied_ids:
+            continue
+        if not rule_matches(rule.when, context, rule_id=rule.id):
             continue
         allowed.setdefault(rule.factor_id, set()).add(rule.effect.set_state)
 
@@ -202,6 +117,9 @@ def apply_factor_rules(state: SimulationState) -> list[FactorRuleApplication]:
     applied_ids = set(state.applied_factor_rule_ids)
     updated_factors: set[str] = set()
     applications: list[FactorRuleApplication] = []
+    context = RuleContext.from_metrics(
+        metrics, factors=factors, system_properties=system_properties
+    )
 
     for rule in _sorted_rules(properties.factor_rules):
         if rule.factor_id in updated_factors:
@@ -212,15 +130,11 @@ def apply_factor_rules(state: SimulationState) -> list[FactorRuleApplication]:
         target_state = rule.effect.set_state
         if target_state not in factor.possible_states:
             continue
-        if not rule_matches(
-            rule.when,
-            factors=factors,
-            metrics=metrics,
-            system_properties=system_properties,
-            applied_rule_ids=applied_ids,
-            rule_id=rule.id,
-            once=rule.once,
-        ):
+        # `once` ist keine Bedingung der Klausel und wird deshalb hier geführt,
+        # nicht im Evaluator (P0.4).
+        if rule.once and rule.id in applied_ids:
+            continue
+        if not rule_matches(rule.when, context, rule_id=rule.id):
             continue
 
         previous_state = factor.current_state

@@ -6,8 +6,8 @@ import json
 import logging
 from typing import Any, Protocol
 
-from src.market.factor_dynamics import validate_factor_proposals
-from src.market.market_rules import initial_provider_markup
+from src.market.factor_dynamics import build_runtime_metrics, validate_factor_proposals
+from src.market.market_feedback import initial_provider_markup
 from src.market.property_engine import resolve_system_properties
 from src.market.simulation_functions import (
     active_parameters,
@@ -146,6 +146,14 @@ class EnvironmentNode:
         system_properties = resolve_system_properties(round_number, properties)
         seed = state.config.seed if state.config.seed is not None else 42
 
+        # Kontext für die Shift-Regeln (P0.4): dieselbe Momentaufnahme, gegen die
+        # auch die Faktor-Regeln geprüft werden. `booking_rate` steht hier noch
+        # nicht — sie entsteht erst aus diesem Aufruf. `build_runtime_metrics`
+        # fällt deshalb auf die Rate des Vorticks zurück, und genau das ist die
+        # gewollte Lesart: Eine Regel, die auf die Buchungsrate reagiert, reagiert
+        # auf die zuletzt beobachtete.
+        metrics = build_runtime_metrics(state).as_mapping()
+
         individuals, pop_stats = run_population_tick(
             state.resolved_properties(),
             consumer_agent.population_config,
@@ -156,6 +164,7 @@ class EnvironmentNode:
             system_properties=system_properties,
             seed=seed,
             current_tick=round_number,
+            metrics=metrics,
         )
         state.population_individuals = individuals
 

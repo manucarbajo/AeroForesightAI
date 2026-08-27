@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from src.config_loader import build_initial_state, load_properties_config
+from src.market.market_feedback import initial_provider_markup, resolve_market_feedback_config
 from src.market.market_node import MarketNode
-from src.market.market_rules import initial_provider_markup, resolve_market_feedback_config
 from src.market.property_engine import resolve_exogenous_system_properties
 from src.market.simulation_functions import (
     apply_market_feedback,

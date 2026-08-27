@@ -48,6 +48,20 @@ Gebühr angelegt sind — eine CO₂-Abgabe erhöht ihn prozentual, eine
 Flughafengebühr um einen festen Betrag. Welche Größe wie wirkt, steht in der
 Referenz unter [Systemgrößen](/doku/ref-systemgroessen).
 
+## Regulatorische Kostentreiber
+
+Zusätzlich zu den Systemgrößen kann `properties.json` einzelne Kostentreiber
+führen — EU-ETS, RefuelEU, CORSIA, eine nationale Luftverkehrsabgabe, ein
+Lärmzuschlag. Jeder trägt einen Betrag und eine Bedingung, unter der er
+überhaupt anfällt: der EU-ETS-Aufschlag etwa nur, solange die Regulierung
+streng ist. Welche Bedingungen dort stehen dürfen, steht unter
+[Die Konfigurationsdateien](/doku/ref-config).
+
+Ein Hinweis zur Einordnung: Diese Kostentreiber gehen in den Preis ein, den die
+Kundschaft sieht. In den **Kostendruck**, auf den die Faktorregeln reagieren,
+gehen sie derzeit nicht ein — die beiden Zahlen laufen auseinander. Das ist
+bekannt und als eigenes Arbeitspaket eingeplant.
+
 ## Wenn der Regelkreis stört
 
 Für manche Fragen ist die Preisreaktion im Weg, etwa wenn Sie allein wissen
