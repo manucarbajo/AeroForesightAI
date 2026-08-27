@@ -99,7 +99,22 @@ class EnvironmentNode:
             cost_index = update_cost_index(previous_cost_index, fuel_change)
         else:
             cost_index = previous_cost_index
-        cost_pressure = compute_cost_pressure(round_number, properties, cost_index=cost_index)
+        # P0.7: Faktoren und Systemgrößen mitgeben. Bis dahin ging dieser Aufruf
+        # ohne beides — die bedingten regulatorischen Kostentreiber konnten hier
+        # also nie greifen, während derselbe Aufruf im Market-Node sie kannte.
+        # Der Wert von hier landet als `cost_pressure` in `state.market_metrics`
+        # und ist genau die Größe, gegen die `f4_high_cost_pressure` und
+        # `f4_stable_growth` schwellen: Die F4-Übergänge urteilten über einen
+        # Kostendruck ohne Regulierungskosten, während die Kundschaft den vollen
+        # Preis zahlte.
+        system_properties = resolve_system_properties(round_number, properties)
+        cost_pressure = compute_cost_pressure(
+            round_number,
+            properties,
+            cost_index=cost_index,
+            factors=state.environment.factors,
+            system_properties=system_properties,
+        )
         if state.price_history:
             provisional_price = last_price
         else:
@@ -143,7 +158,6 @@ class EnvironmentNode:
         }
 
         carbon_tax = params.get("carbon_tax_level", 0.0)
-        system_properties = resolve_system_properties(round_number, properties)
         # `SimulationRunner.run` löst den Seed auf, bevor ein Tick läuft;
         # hier steht er also normalerweise schon. Der Rückfall bleibt für
         # die Aufrufer, die den Node ohne Runner benutzen (Studio, Tests) —

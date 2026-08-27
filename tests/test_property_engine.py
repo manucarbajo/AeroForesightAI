@@ -92,12 +92,16 @@ class TestPropertiesConfig:
             properties,
             previous_price=100.0,
             previous_demand=1.0,
+            factors={},
+            system_properties={},
         )
         metrics_15 = compute_market_metrics(
             15,
             properties,
             previous_price=100.0,
             previous_demand=1.0,
+            factors={},
+            system_properties={},
         )
 
         assert metrics_14["carbon_tax_level"] == 50.0

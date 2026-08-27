@@ -40,13 +40,17 @@ class TestComputeCostPressure:
         costs: list[float] = []
         for tick in range(1, 11):
             index = update_cost_index(index, 0.02)
-            costs.append(compute_cost_pressure(tick, properties, cost_index=index))
+            costs.append(
+                compute_cost_pressure(
+                    tick, properties, cost_index=index, factors={}, system_properties={}
+                )
+            )
         assert costs[-1] > costs[0]
 
     def test_carbon_tax_increases_cost(self):
         properties = load_properties_config()
-        low = compute_cost_pressure(1, properties)
-        high = compute_cost_pressure(15, properties)
+        low = compute_cost_pressure(1, properties, factors={}, system_properties={})
+        high = compute_cost_pressure(15, properties, factors={}, system_properties={})
         assert high > low
 
 

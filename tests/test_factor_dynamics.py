@@ -9,6 +9,7 @@ from src.market.factor_dynamics import (
     validate_factor_proposals,
 )
 from src.market.market_node import MarketNode
+from src.market.property_engine import resolve_system_properties
 from src.market.simulation_functions import compute_cost_pressure
 from src.models.agent_models import StateChange
 from src.orchestration.environment_node import EnvironmentNode
@@ -22,13 +23,28 @@ def _run_deterministic_tick(state, tick: int):
     return record_factor_timeseries(state)
 
 
+def _cost_pressure(state, tick: int) -> float:
+    """Der Kostendruck, den der Lauf an dieser Stelle tatsächlich sieht.
+
+    Seit P0.7 gehören Faktoren und Systemgrößen dazu: Ohne sie greift kein
+    bedingter regulatorischer Kostentreiber, und genau diese Zahl ist es, gegen
+    die `f4_high_cost_pressure` und `f4_stable_growth` schwellen.
+    """
+
+    properties = state.resolved_properties()
+    return compute_cost_pressure(
+        tick,
+        properties,
+        factors=state.environment.factors,
+        system_properties=resolve_system_properties(tick, properties),
+    )
+
+
 class TestFactorRules:
     def test_high_carbon_tax_sets_f2_and_f6(self) -> None:
         state = build_initial_state()
         state.clock.current_tick = 15
-        state.market_metrics = {
-            "cost_pressure": compute_cost_pressure(15, state.resolved_properties())
-        }
+        state.market_metrics = {"cost_pressure": _cost_pressure(state, 15)}
 
         applications = apply_factor_rules(state)
 
@@ -62,9 +78,7 @@ class TestFactorRules:
     def test_validate_rejects_unauthorized_agent(self) -> None:
         state = build_initial_state()
         state.clock.current_tick = 15
-        state.market_metrics = {
-            "cost_pressure": compute_cost_pressure(15, state.resolved_properties())
-        }
+        state.market_metrics = {"cost_pressure": _cost_pressure(state, 15)}
         apply_factor_rules(state)
 
         proposal = StateChange(factor_id="F2", proposed_state="F2.2", reasoning="provider attempt")
@@ -74,9 +88,7 @@ class TestFactorRules:
     def test_validate_accepts_regulator_when_rule_allows(self) -> None:
         state = build_initial_state()
         state.clock.current_tick = 15
-        state.market_metrics = {
-            "cost_pressure": compute_cost_pressure(15, state.resolved_properties())
-        }
+        state.market_metrics = {"cost_pressure": _cost_pressure(state, 15)}
         apply_factor_rules(state)
         state.environment.factors["F2"].current_state = "F2.1"
 

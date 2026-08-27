@@ -57,10 +57,15 @@ Lärmzuschlag. Jeder trägt einen Betrag und eine Bedingung, unter der er
 streng ist. Welche Bedingungen dort stehen dürfen, steht unter
 [Die Konfigurationsdateien](/doku/ref-config).
 
-Ein Hinweis zur Einordnung: Diese Kostentreiber gehen in den Preis ein, den die
-Kundschaft sieht. In den **Kostendruck**, auf den die Faktorregeln reagieren,
-gehen sie derzeit nicht ein — die beiden Zahlen laufen auseinander. Das ist
-bekannt und als eigenes Arbeitspaket eingeplant.
+Ein Kostentreiber ohne Bedingung — im Auslieferungsstand die
+Flughafen-Infrastrukturabgabe — gilt immer. Die übrigen hängen an einem
+Faktorzustand und schalten sich zu, wenn er eintritt.
+
+Bis August 2026 rechnete eine der beiden Stellen, die den Kostendruck bilden,
+ohne die Faktoren — dort konnte kein bedingter Treiber greifen. Sichtbar war das
+vor allem am Preis der ersten Runde, der ohne die Regulierungskosten zu niedrig
+begann und über die Preisrückkopplung den ganzen Verlauf mitzog. Das ist
+behoben; beide Stellen rechnen mit demselben Zustand.
 
 ## Wenn der Regelkreis stört
 

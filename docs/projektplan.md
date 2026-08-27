@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-27 — P0.1 bis P0.6 erledigt und **dreifach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, und die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)). Offen in Phase 0: nur noch das aus P0.4 neu hinzugekommene **P0.7** (der Kostendruck wird an zwei Stellen berechnet, und nur eine kennt die regulatorischen Kostentreiber). Es liegt zusammen mit P0.4 bis P0.6 auf `feat/phase-0-p04-p05-p06`. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-27 — P0.1 bis P0.6 erledigt und **dreifach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, und die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)). **Phase 0 ist damit abgeschlossen** — P0.7 kam aus der Umsetzung von P0.4 dazu und ist am 2026-08-27 erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -250,7 +250,7 @@ Vier Dinge, die bei der Umsetzung über den Plan hinausgingen:
 
 **Was die Zahlen macht:** nichts. Die ausgelieferte `properties.json` läuft durch alle neuen Prüfungen fehlerfrei, und keine ihrer Regeln benutzte eine Bedingung, die vorher an einer Stelle anders gelesen wurde. 649 Tests grün, davon 80 neue in `tests/test_rule_engine.py`; der einzige Fehlschlag bleibt der bekannte `marginal_cost_fraction` aus P4.2.
 
-**Ein Fund, der hier bewusst liegen bleibt:** Der Kostendruck wird an zwei Stellen berechnet, und nur eine übergibt Faktoren und Systemgrößen — siehe [P0.7](#p07--kostendruck-aus-einer-quelle). Die Korrektur verschiebt Faktorverläufe und damit Laufergebnisse; das ist eine Modelländerung und gehört nicht in ein Paket, das Auswertungen vereinheitlicht.
+**Ein Fund, der hier bewusst liegen bleibt:** Der Kostendruck wird an zwei Stellen berechnet, und nur eine übergibt Faktoren und Systemgrößen — siehe [P0.7](#p07--kostendruck-aus-einer-quelle--erledigt-2026-08-27). Die Korrektur verschiebt Faktorverläufe und damit Laufergebnisse; das ist eine Modelländerung und gehört nicht in ein Paket, das Auswertungen vereinheitlicht.
 
 **Doku zieht mit:** `docs/handbuch/ref-config.md`, `docs/handbuch/preisbildung.md`, `CLAUDE.md` (Architektur-Map, Invariante 6, Glossar-Eintrag `when`-Klausel).
 
@@ -451,7 +451,7 @@ Manus vier Commits sind einzeln nachgestellt worden — jede Behauptung am laufe
 
 ---
 
-### P0.7 — Kostendruck aus einer Quelle
+### P0.7 — Kostendruck aus einer Quelle ✅ erledigt 2026-08-27
 
 **Befund (neu am 2026-08-27, gefunden bei der Umsetzung von P0.4):** `compute_cost_pressure` wird an zwei Stellen gerufen, aber nur eine übergibt `factors` und `system_properties`. [`environment_node.py:101`](../src/orchestration/environment_node.py) übergibt **keins von beiden** — dort kann deshalb kein einziger regulatorischer Kostentreiber aktiv werden, weil alle fünf ausgelieferten an einer `factor`-Bedingung hängen. [`simulation_functions.py:359`](../src/market/simulation_functions.py) übergibt sie korrekt.
 
@@ -463,7 +463,35 @@ Manus vier Commits sind einzeln nachgestellt worden — jede Behauptung am laufe
 
 **Fertig wenn:** Beide Aufrufstellen liefern für denselben Zustand denselben Kostendruck, ein Test hält das fest, und die verschobenen Kennzahlen sind in `docs/cib_role.md` und `test_cib_ranking.py` nachgezogen.
 
-**Doku zieht mit:** `docs/handbuch/preisbildung.md` (der Hinweis auf die auseinanderlaufenden Zahlen fällt dann weg), `docs/cib_role.md`.
+**Umgesetzt am 2026-08-27 — und dabei drei Aussagen dieses Pakets korrigiert.** `factors` und `system_properties` sind an `compute_cost_pressure` **und** `compute_market_metrics` jetzt Pflichtparameter; wer wirklich keine hat, sagt das mit `factors={}`. Das beantwortet die Frage aus «Was zu tun ist» mit Ja: Ein Default, der still ein anderes Ergebnis liefert, ist die Falle selbst, und ein vierter blinder Aufrufer kann so nicht mehr entstehen.
+
+**Was am Befund nicht stimmte:**
+
+1. **Es sind sechs Kostentreiber, nicht fünf** — und einer, `airport_infrastructure_levy` (3.00), hat ein **leeres `when`** und gilt immer. Der alte Pfad war also nicht blind für alle, sondern für alle **bedingten**. Wer die Zahlen nachrechnet, braucht diese Unterscheidung: Der Environment-Wert war 103.06, nicht 100.06.
+2. **Die Lücke ist größer als gemessen.** Der Plan nannte 5.00 (EU-ETS bei F2.2). Tatsächlich stapeln sich die Treiber je nach Lage: F2.1+F4.1 → **+8.00**, F2.2+F4.1 → +5.00, F2.2+F4.2 → +11.00, F2.1+F4.2 → **+14.00**. Der Environment-Pfad lieferte für **jede** Faktorlage denselben Wert.
+3. **Der Mechanismus war falsch beschrieben.** Der Satz «Die F4-Übergänge urteilen über einen Kostendruck ohne Regulierungskosten» trifft im Standardbetrieb **nicht** zu. Reihenfolge im Tick: Faktor-Regeln → Agenten → Environment → Consumer → Markt. Der Environment-Node schreibt seinen Kostendruck nach `state.market_metrics`, **der Market-Node überschreibt ihn im selben Tick**, und erst im nächsten Tick lesen die Faktor-Regeln. Sie sahen also immer den korrekt gerechneten Wert des Market-Knotens. Nur mit `--no-market` überlebt der Environment-Wert bis dorthin — dann, und nur dann, galt der Satz.
+
+**Ein zweiter blinder Aufrufer, der nicht im Plan stand:** [`agent_node.py:335`](../src/agents/agent_node.py) ruft `compute_market_metrics` für die Vorschau im Agenten-Prompt — ebenfalls ohne Faktoren. Dieser Zweig greift, wenn `state.market_metrics` leer ist, also im **ersten Tick jedes Laufs**, weil die Agenten vor dem Environment-Node laufen. Gemessen bei F2.2+F4.2: Dem Agenten wurde `cost_pressure: 103.56` gezeigt, während die Simulation mit 114.56 rechnete. Das greift Invariante 1 an einer unerwarteten Stelle an — die Zahlen kamen aus Python, aber es waren zwei verschiedene.
+
+**Wie der Fehler tatsächlich wirkte:** über den Preis, nicht über die Faktor-Regeln. Im ersten Tick ist `price_history` leer, und der Environment-Node bildet aus seinem Kostendruck den `provisional_price` — genau den Preis, den die Bevölkerung in Tick 1 sieht. Der zu niedrige Startpreis zog über die Preisrückkopplung den ganzen Verlauf mit.
+
+**Was sich verschoben hat — gemessen, vorher/nachher mit demselben Skript:**
+
+| | vorher | nachher |
+| --- | --- | --- |
+| Ticketpreis am Ende, BAU (40 Ticks) | 134.39 | **131.13** |
+| Ticketpreis am Ende, Freiwillige Wende | 73.25 | **73.08** |
+| Ticketpreis am Ende, Transformationskonflikt | 65.20 | **65.31** |
+| Ticketpreis am Ende, Standardlauf | 89.54 | **89.32** |
+| Faktorverlauf Standardlauf | F1 kippt später | **F1 kippt in Tick 4** |
+| Faktor-**Endlagen** aller drei Archetypen | — | **unverändert** |
+| Konsistenzwerte aller drei Archetypen | — | **unverändert** |
+
+**Und damit auch die vierte Korrektur:** «Die Kennzahlen aus P0.2 sind neu zu erheben, `test_cib_ranking.py` mitzuziehen» war nicht nötig. Der Test bewertet **fest verdrahtete** Faktorzustände gegen die eingefrorene Matrix — er rechnet keinen Lauf. Ein geänderter Kostendruck kann seine Zahlen gar nicht bewegen. Auch `docs/cib_role.md` blieb unberührt: Dort steht nichts zum Kostendruck.
+
+**Dabei aufgefallen, als eigenes Finding ins Audit:** Zwei der drei Zustandsmengen in `test_cib_ranking.py` heißen `*_END_STATES`, werden aber von den gleichnamigen Sweeps **nicht erreicht** — schon vor diesem Paket nicht. Ein Sweep `business_as_usual` endet bei F1.2/F4.2, die Konstante sagt F1.1/F4.1.
+
+**Doku zieht mit:** `docs/handbuch/preisbildung.md`, `CLAUDE.md` (Invariante 1 um die eine Quelle des Kostendrucks ergänzt).
 
 ---
 
@@ -752,7 +780,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Audit-Abschnitt | Pakete |
 | --- | --- |
 | Faktoren / Modellsubstanz | ~~P0.2 (F7-Drift)~~ ✅, P2.1, P2.2, P2.3 (die übrigen 120 Zellen), P2.4 |
-| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, P0.7 (Kostendruck an zwei Stellen), P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen) |
+| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, ~~P0.7 (Kostendruck an zwei Stellen)~~ ✅, P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen) |
 | Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), P3.5 (Klemmung, `print`), P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
 | Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, ~~P0.6 (Sweep-Pfad an P0.1 vorbei)~~ ✅, P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`, CLI-Traceback) |
 | LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`) |
