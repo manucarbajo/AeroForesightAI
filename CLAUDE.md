@@ -119,8 +119,8 @@ Hetzner Cloud Server mit lokal laufendem Ollama (Datenhoheit, keine externen LLM
 
 **[docs/projektplan.md](docs/projektplan.md) ist die verbindliche Reihenfolge** — dort steht, was wann drankommt, mit Fundstelle und Abnahmekriterium pro Paket. Nichts davon ungefragt vorziehen, aber auch nichts mehr als "bekannt und bewusst offen" abtun: seit 2026-08-25 ist **jedes** Finding aus `docs/audit_findings.md` einem Arbeitspaket zugeordnet (Zuordnungstabelle am Ende des Plans).
 
-- **Phase 0** — Vertrauens-Blocker vor dem nächsten Demo: sichtbarer LLM-Ausfall (P0.1 ✅), F7-Drift (P0.2 ✅), `validate_config` (P0.3 ✅), die zwei auseinandergelaufenen Rule-Evaluatoren, Faktor-Berechtigungen aus einer Quelle, und ein Run-Artefakt, das Seed und Rechenmodus überhaupt festhält.
-  **Offen aus P0.2:** Die 48 neu bewerteten Matrixzellen brauchen noch eine fachliche Abnahme. Bis dahin trägt `cib_frozen.json` die Quelle `llm_proposed_pending_review_v3`; wer sie durchgeht, ersetzt das Label.
+- **Phase 0 — abgeschlossen** (Vertrauens-Blocker vor dem nächsten Demo): sichtbarer LLM-Ausfall (P0.1 ✅), F7-Drift (P0.2 ✅), `validate_config` (P0.3 ✅), die **drei** auseinandergelaufenen Rule-Evaluatoren (P0.4 ✅ — der dritte, in `simulation_functions`, stand weder im Plan noch im Audit und kam erst bei der Gegenprobe dazu), Faktor-Berechtigungen aus einer Quelle (P0.5 ✅), ein Run-Artefakt, das Seed und Rechenmodus überhaupt festhält (P0.6 ✅), und der Kostendruck aus einer Quelle (P0.7 ✅ — kam aus der Umsetzung von P0.4 dazu).
+  **Offen aus P0.2:** Die 48 neu bewerteten Matrixzellen brauchen noch eine fachliche Abnahme. Bis dahin trägt `cib_frozen.json` die Quelle `llm_proposed_pending_review_v3`; wer sie durchgeht, ersetzt das Label. Es ist die einzige offene Position der Phase.
 - **Phase 1** — aktueller Schwerpunkt: Start-Flow, Ergebnisdarstellung, Szenariogestaltung, Landingpage produktionsreif.
 - **Phase 2** — Modellsubstanz: echte Ziehung im Buchungsmodell, Impact-Balance, Matrix-Provenienz, Alterung der Population, Grounding des State Explorers.
 - **Phasen 3–5** — Engine-Härtung, Testfundament, Altlasten (inkl. Entfernen von `dashboard/legacy_streamlit/`).

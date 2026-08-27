@@ -89,5 +89,9 @@ anzupassen. Im Modell der Regelkreis unter
 **Zahlungsbereitschaft** — Der Betrag, den eine Person höchstens für ein Ticket
 auszugeben bereit ist. Im Englischen WTP, willingness to pay.
 
-**Zufallsstartwert** — Legt fest, welche Bevölkerung gezogen wird. Fest gesetzt,
-ist ein Lauf reproduzierbar.
+**Zufallsstartwert** — Legt fest, welche Bevölkerung gezogen wird. Ein einzelner
+Lauf ist **auch ohne eigenen Startwert** wiederholbar: Dann gilt ein
+Standardwert, nicht der Zufall. Welcher es war, steht nach dem Lauf im Tab
+**Übersicht** und in `run_metadata.json`. Einen eigenen Startwert setzen Sie,
+wenn Sie denselben Aufbau bewusst mit einer anderen Ziehung sehen wollen. Siehe
+[Einen Lauf starten](/doku/lauf-starten).
