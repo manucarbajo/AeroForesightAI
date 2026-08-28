@@ -360,9 +360,20 @@ def evaluate_booking(
     *,
     ticket_price: float,
     carbon_tax: float,
-    properties: PropertiesConfig | None = None,
+    properties: PropertiesConfig | None,
 ) -> tuple[list[Individual], PopulationStats]:
-    """Evaluate booking decisions for persistent individuals."""
+    """Evaluate booking decisions for persistent individuals.
+
+    *properties* ist **Pflicht** (P0.7-Regel), auch wenn ``None`` zulässig
+    bleibt. Der Default war genau die Falle, die diese Regel abräumt: Ohne
+    Angabe treten ``0.6`` und ``1.0`` an die Stelle von
+    ``saturation.booking_increase`` und ``saturation.utility_penalty_factor``
+    — kein Fehler, keine Meldung, nur eine andere Zahl. Heute stimmen beide
+    Konstanten zufällig mit der ausgelieferten Config überein; beide Felder
+    haben aber eine eigene Bedienung im Config-Editor, und nach einer Änderung
+    dort läuft die Sättigung still auseinander (nachgestellt: Summe 195.25
+    gegen 468.60). Sie trägt in die Buchungsentscheidungen des nächsten Ticks.
+    """
 
     saturation = properties.saturation if properties is not None else None
     booking_increase = saturation.booking_increase if saturation is not None else 0.6
@@ -387,13 +398,18 @@ def evaluate_booking(
 
 def aggregate_population_stats(
     individuals: list[Individual],
-    properties: "PropertiesConfig | None" = None,
+    *,
+    properties: "PropertiesConfig | None",
 ) -> PopulationStats:
     """Aggregate booking stats overall and per segment label.
 
     When *properties* is provided, segments are derived dynamically from all
     boolean ``individual_properties`` (P2.2 SSOT).  Falls back to the legacy
     ``SEGMENT_LABEL_MAP`` when called without properties.
+
+    *properties* ist **Pflicht** (P0.7-Regel), ``None`` bleibt zulässig. Der
+    Default entschied still zwischen zwei Segmentierungen — dieselbe Klasse
+    wie bei ``evaluate_booking``, nur in der Auswertung statt im Modell.
     """
 
     total_pop = len(individuals)

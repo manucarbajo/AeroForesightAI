@@ -96,8 +96,12 @@ def test_higher_ticket_price_reduces_booking_rate():
     config = PopulationConfig(segments=[], total_population=500)
     individuals = initialize_population(properties, config, seed=3)
 
-    _, low_price_stats = evaluate_booking(individuals, ticket_price=90.0, carbon_tax=30.0)
-    _, high_price_stats = evaluate_booking(individuals, ticket_price=250.0, carbon_tax=30.0)
+    _, low_price_stats = evaluate_booking(
+        individuals, ticket_price=90.0, carbon_tax=30.0, properties=None
+    )
+    _, high_price_stats = evaluate_booking(
+        individuals, ticket_price=250.0, carbon_tax=30.0, properties=None
+    )
 
     assert high_price_stats.total_demand < low_price_stats.total_demand
 
@@ -156,8 +160,12 @@ def test_eco_penalty_only_applies_when_carbon_tax_exceeds_baseline():
     config = PopulationConfig(segments=[], total_population=500)
     individuals = initialize_population(properties, config, seed=42)
 
-    _, stats_no_tax = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=0.0)
-    _, stats_with_tax = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=150.0)
+    _, stats_no_tax = evaluate_booking(
+        individuals, ticket_price=100.0, carbon_tax=0.0, properties=None
+    )
+    _, stats_with_tax = evaluate_booking(
+        individuals, ticket_price=100.0, carbon_tax=150.0, properties=None
+    )
 
     # With high carbon tax, price-sensitive individuals should book less
     assert stats_with_tax.total_demand < stats_no_tax.total_demand
@@ -169,8 +177,12 @@ def test_eco_penalty_scales_with_carbon_tax():
     config = PopulationConfig(segments=[], total_population=500)
     individuals = initialize_population(properties, config, seed=42)
 
-    _, stats_low_tax = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=75.0)
-    _, stats_high_tax = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=200.0)
+    _, stats_low_tax = evaluate_booking(
+        individuals, ticket_price=100.0, carbon_tax=75.0, properties=None
+    )
+    _, stats_high_tax = evaluate_booking(
+        individuals, ticket_price=100.0, carbon_tax=200.0, properties=None
+    )
 
     assert stats_high_tax.total_demand < stats_low_tax.total_demand
 
@@ -181,8 +193,12 @@ def test_eco_penalty_zero_at_baseline():
     config = PopulationConfig(segments=[], total_population=500)
     individuals = initialize_population(properties, config, seed=42)
 
-    _, stats_at_baseline = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=50.0)
-    _, stats_below_baseline = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=0.0)
+    _, stats_at_baseline = evaluate_booking(
+        individuals, ticket_price=100.0, carbon_tax=50.0, properties=None
+    )
+    _, stats_below_baseline = evaluate_booking(
+        individuals, ticket_price=100.0, carbon_tax=0.0, properties=None
+    )
 
     assert stats_at_baseline.total_demand == stats_below_baseline.total_demand
 
@@ -290,7 +306,9 @@ def test_high_saturation_reduces_booking_probability():
     individuals = initialize_population(properties, config, seed=7)
 
     # Base case (saturation = 0)
-    _, stats_base = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=50.0)
+    _, stats_base = evaluate_booking(
+        individuals, ticket_price=100.0, carbon_tax=50.0, properties=None
+    )
 
     # Saturated case (saturation = 1.0)
     saturated_individuals = []
@@ -298,7 +316,7 @@ def test_high_saturation_reduces_booking_probability():
         saturated_individuals.append(person.model_copy(update={"saturation_level": 1.0}))
 
     _, stats_saturated = evaluate_booking(
-        saturated_individuals, ticket_price=100.0, carbon_tax=50.0
+        saturated_individuals, ticket_price=100.0, carbon_tax=50.0, properties=None
     )
 
     assert stats_saturated.total_demand < stats_base.total_demand
@@ -316,7 +334,9 @@ def test_segment_keys_match_boolean_individual_properties():
     properties = load_properties_config()
     config = PopulationConfig(segments=[], total_population=200)
     individuals = initialize_population(properties, config, seed=11)
-    booked, stats_dynamic = evaluate_booking(individuals, ticket_price=100.0, carbon_tax=50.0)
+    booked, stats_dynamic = evaluate_booking(
+        individuals, ticket_price=100.0, carbon_tax=50.0, properties=None
+    )
 
     # Re-aggregate with properties to get dynamic keys
     stats = aggregate_population_stats(booked, properties=properties)
@@ -335,7 +355,7 @@ def test_dynamic_segments_all_have_valid_booking_rates():
     properties = load_properties_config()
     config = PopulationConfig(segments=[], total_population=500)
     individuals = initialize_population(properties, config, seed=99)
-    booked, _ = evaluate_booking(individuals, ticket_price=110.0, carbon_tax=50.0)
+    booked, _ = evaluate_booking(individuals, ticket_price=110.0, carbon_tax=50.0, properties=None)
     stats = aggregate_population_stats(booked, properties=properties)
     for seg_id, seg in stats.segments.items():
         assert (

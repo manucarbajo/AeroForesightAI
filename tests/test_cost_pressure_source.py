@@ -209,6 +209,8 @@ class TestKeinKontextparameterHatEinenDefault:
         ("src.market.simulation_functions", "apply_market_feedback", ("properties", "tick")),
         ("src.market.market_feedback", "initial_provider_markup", ("tick",)),
         ("src.market.market_feedback", "initial_ticket_price", ("tick",)),
+        ("src.population.population_sampler", "evaluate_booking", ("properties",)),
+        ("src.population.population_sampler", "aggregate_population_stats", ("properties",)),
     ]
 
     @pytest.mark.parametrize(("modul", "funktion", "parameter"), KONTEXTPARAMETER)
