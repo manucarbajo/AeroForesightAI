@@ -32,7 +32,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
-from dash import ALL, Input, Output, State, ctx, html, no_update
+from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
 from dashboard.web import components as ui
 from dashboard.web.config_editor import experiment, llm_pipeline, macro, micro, start_flow
@@ -57,6 +57,10 @@ SAVE = "wizard-save"
 
 #: Sprungziel je Schritt der Schrittliste.
 JUMP = "wizard-jump"
+
+#: Ausgang des clientseitigen Callbacks, der nach oben scrollt. Er schreibt
+#: nichts — Dash verlangt aber einen Ausgang.
+SCROLL_SINK = "wizard-scroll-sink"
 
 
 @dataclass(frozen=True)
@@ -318,6 +322,9 @@ def layout(draft: dict, current: int = 0) -> html.Div:
                 "mit sinnvollen Werten vorbelegt und darf übersprungen werden.",
             ),
             html.Div(id="cfg-status", className="mb-4"),
+            # Senke für den Sprung nach oben. Ein clientseitiger Callback braucht
+            # einen Ausgang, hat hier aber nichts zu schreiben — er scrollt nur.
+            dcc.Store(id=SCROLL_SINK),
             html.Div(
                 [
                     html.Div(rail(current), id="wizard-rail-host"),
@@ -402,8 +409,30 @@ def register_callbacks(app) -> None:
         Nicht am Entwurf hängend: Der Schritt enthält Eingabefelder, und die
         dürfen nicht unter den Fingern ausgetauscht werden. Was sich laufend
         ändert, steht in den Slots, die `_live` füllt.
+
+        **Den Sprung nach oben macht der Callback darunter**, clientseitig: Der
+        Server hat dazu nichts beizutragen, und ein Rundlauf machte ihn träge.
+        Ohne ihn stand man nach «Weiter» mitten im neuen Schritt — die
+        Bildlaufhöhe des vorigen bleibt sonst erhalten, und gerade der lange
+        vierte Schritt setzte einen weit unterhalb seiner Überschrift ab.
         """
 
         jetzt = clamp(step)
         data = draft or {}
         return content(data, jetzt), rail(jetzt), navigation(jetzt)
+
+    app.clientside_callback(
+        """
+        function (schritt) {
+            var pane = document.querySelector(".af-shell__main");
+            if (pane) {
+                var sanft = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                pane.scrollTo({ top: 0, behavior: sanft ? "smooth" : "auto" });
+            }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output(SCROLL_SINK, "data"),
+        Input(STEP_STORE, "data"),
+        prevent_initial_call=True,
+    )

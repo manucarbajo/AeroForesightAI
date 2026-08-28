@@ -187,7 +187,45 @@ def test_the_start_button_shares_the_callback_with_the_rail():
 
             return decorator
 
+        def clientside_callback(self, *args, **kwargs):
+            """Läuft im Browser — hier nur entgegenzunehmen."""
+
     app = _App()
     launch_page.register_callbacks(app)
 
     assert len(app.eingaenge) == 1, "Es darf genau einen Start-Callback geben"
+
+
+def test_a_step_change_scrolls_back_to_the_top():
+    """Nach «Weiter» steht man am Anfang der neuen Frage, nicht mittendrin.
+
+    Die Bildlaufhöhe des vorigen Schritts bleibt sonst erhalten: Am laufenden
+    System gemessen setzte ein «Zurück» aus dem 2237 px hohen vierten Schritt
+    einen bei Bildlaufhöhe 1200 ab — weit unterhalb der Überschrift des
+    Schritts, auf dem man gelandet war.
+
+    Geprüft wird die **Verdrahtung**, nicht das Scrollen selbst: Das läuft im
+    Browser, und ohne Browser lässt sich nur festhalten, dass der Callback
+    angemeldet ist und am Schritt hängt.
+    """
+
+    class _App:
+        def __init__(self):
+            self.clientside: list[tuple] = []
+
+        def callback(self, *outputs, **kwargs):
+            def decorator(fn):
+                return fn
+
+            return decorator
+
+        def clientside_callback(self, code, *deps, **kwargs):
+            self.clientside.append((code, deps))
+
+    app = _App()
+    wizard.register_callbacks(app)
+
+    assert app.clientside, "Kein clientseitiger Callback angemeldet"
+    code, deps = app.clientside[0]
+    assert "scrollTo" in code
+    assert any(getattr(d, "component_id", None) == wizard.STEP_STORE for d in deps)

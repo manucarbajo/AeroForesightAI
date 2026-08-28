@@ -216,6 +216,14 @@ class _MitschreibendeApp:
 
         return decorator
 
+    def clientside_callback(self, *args, **kwargs):
+        """Clientseitige Callbacks laufen im Browser und haben hier nichts zu tun.
+
+        Die Attrappe muss sie trotzdem annehmen: `register_callbacks` meldet
+        seit P1.7 auch den Sprung nach oben an, und ohne diese Methode bräche
+        die Anmeldung ab, bevor der geprüfte Callback überhaupt entsteht.
+        """
+
 
 def _start_callback():
     from dashboard.web.pages import launch as launch_page

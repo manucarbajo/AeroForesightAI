@@ -1,7 +1,9 @@
 Einrichten geht seit August 2026 Schritt für Schritt. Sie beantworten eine
 Frage, klicken auf **Weiter**, und kommen zur nächsten; **Zurück** führt jederzeit
 zum vorigen Schritt, und links steht die ganze Liste — Sie können jeden Schritt
-direkt anspringen.
+direkt anspringen. Bei jedem Wechsel springt die Ansicht an den Anfang des neuen
+Schritts, damit Sie dessen Frage sehen und nicht dort landen, wo Sie im vorigen
+gerade gelesen haben.
 
 **Drei Schritte genügen.** Was gerechnet wird, wie weit, und womit: Danach ist
 alles Weitere mit sinnvollen Werten vorbelegt, und der Knopf **Direkt zum Start**
