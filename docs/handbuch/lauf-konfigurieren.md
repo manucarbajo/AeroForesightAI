@@ -47,9 +47,12 @@ und in der Run-Liste; ohne sie sind mehrere Läufe später schwer auseinanderzuh
 Sprachmodell, Reproduzierbarkeit und Ausgaben. Nichts davon verändert die
 berechneten Zahlen — mit einer Ausnahme, dem Zufallsstartwert.
 
-Wer zwei Läufe vergleichen will, setzt hier einen festen Startwert. Ohne ihn
-unterscheiden sich die Läufe schon dadurch, dass eine andere Bevölkerung gezogen
-wurde.
+Ein einzelner Lauf ist auch ohne eigenen Startwert wiederholbar — ohne Angabe
+gilt ein Standardwert. Der Startwert zählt an zwei Stellen: Setzen Sie ihn
+fest, wenn Sie **Wiederholungen** rechnen und alle dieselbe Bevölkerung sehen
+sollen (ohne ihn bekommt jede Wiederholung eine eigene Ziehung — genau dafür
+gibt es sie), oder wenn Sie denselben Aufbau bewusst mit einer **anderen**
+Ziehung sehen wollen.
 
 ## Kontrolle
 

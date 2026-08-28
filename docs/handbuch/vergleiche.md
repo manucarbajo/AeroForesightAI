@@ -37,12 +37,38 @@ gegen «CO₂ konstant 50».
 ## Streuung von Wirkung unterscheiden
 
 Bevor Sie einen Unterschied zwischen zwei Läufen für eine Wirkung halten, prüfen
-Sie, wie groß die natürliche Streuung ist. Rechnen Sie dazu denselben Aufbau
-mehrfach mit **freiem** Zufallsstartwert und sehen Sie, wie weit die Ergebnisse
-auseinanderliegen.
+Sie, wie groß die natürliche Streuung ist. Stellen Sie dazu unter **Überblick**
+die **Wiederholungen** auf fünf und lassen Sie den Zufallsstartwert frei. Sie
+bekommen fünf Läufe mit derselben Konfiguration, aber unterschiedlich gezogener
+Bevölkerung, und sehen, wie weit die Ergebnisse auseinanderliegen.
+
+Wichtig ist dabei das Feld **Wiederholungen**. Denselben Lauf einfach zweimal zu
+starten genügt **nicht**: Ein einzelner Lauf ist auch ohne eigenen Startwert
+wiederholbar und liefert beide Male dasselbe Ergebnis. Sie würden eine Streuung
+von null messen und danach jeden Unterschied für belastbar halten.
 
 Ist der Unterschied zwischen Ihren beiden Läufen kleiner als diese Streuung, ist
 er nicht belastbar.
+
+## Läufe aus verschiedenen Ständen der Software
+
+Vergleichen Sie nur Läufe, die mit demselben Stand gerechnet wurden. Am
+2026-08-27 wurde ein Fehler in der Kostenrechnung behoben: Regulatorische
+Abgaben gingen bis dahin nicht in den Startpreis ein. Läufe von davor beginnen
+deshalb billiger, und die Nachfrage weicht später aus — im Standardlauf kippt
+die Mobilitätsnachfrage seither in Runde 4 statt in Runde 15. Die Endzustände
+der Faktoren sind dieselben geblieben, der Weg dorthin nicht.
+
+Am selben Tag wurde ein zweiter Unterschied begradigt: **Wiederholungen ohne
+eigenen Startwert** begannen ihre Folge bei einem anderen Wert als ein
+Einzellauf. Beides beginnt jetzt gleich, wodurch die erste Wiederholung
+derselbe Lauf ist wie ein einzeln gestarteter. Wiederholungen aus der Zeit
+davor tragen andere Startwerte und damit andere Zahlen — die Aussagen, die man
+aus ihrer Streuung gezogen hat, bleiben gültig, die Einzelwerte nicht.
+
+Woran Sie es erkennen: `run_metadata.json` hält unter `code_version` fest, mit
+welchem Stand ein Lauf gerechnet wurde, und unter `seed`, mit welchem Startwert.
+Unterscheiden sich zwei Läufe dort, gehören ihre Verläufe nicht nebeneinander.
 
 ## Wo Sie vergleichen
 

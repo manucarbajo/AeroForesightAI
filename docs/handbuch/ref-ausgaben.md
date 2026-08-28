@@ -45,6 +45,7 @@ welchen Bedingungen er lief.
 | `mock_llm`, `deterministic_only` | Die beiden Schalter einzeln, für die maschinelle Auswertung. |
 | `config_fingerprint` | Je ein Kurzhash über Simulationskonfiguration, Systemgrößen, Faktoren, Akteursprofile und Einflussmatrix. |
 | `code_version` | Git-Commit, Branch und ob der Arbeitsbaum dabei ungesicherte Änderungen trug. `null`, wenn kein Repository verfügbar war. |
+| `model`, `base_url`, `temperature`, `max_tokens` | Das befragte Sprachmodell und seine Einstellungen. Bei einem Lauf **ohne** Modell (`mock_llm`, `deterministic_only`) stehen alle vier auf `null` — die Felder beschreiben dort nichts. Ein Sweep behält seinen Modellnamen, denn dort schreibt das Modell den Abschlusstext. |
 
 Der Fingerabdruck beschreibt, **was gelaufen ist** — nicht, was gerade in
 `configs/` liegt. Das ist der wichtige Unterschied: Ein Lauf aus dem Dashboard

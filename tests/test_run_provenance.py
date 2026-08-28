@@ -743,3 +743,66 @@ class TestDerCodestandFriertNichtEin:
 
         assert erste_runde > 0
         assert len(aufrufe) > erste_runde
+
+
+class TestDasArtefaktBehauptetKeinModell:
+    """Die vierte Runde (2026-08-27) fand den Rest eines Befunds der ersten.
+
+    Die erste Gegenprobe sah «Modell llama3.2» neben «Rechenmodus: Ohne
+    Sprachmodell» und meldete den Widerspruch als behoben. Behoben war er
+    aber nur in `views/overview.py::_model_label`, also in **einer**
+    Oberflächenkachel — `save_run_metadata` schrieb `args.model` weiterhin
+    unbedingt. Die Zusage von P0.6 lautet «aus `run_metadata.json` **allein**»;
+    wer die Datei ohne Dashboard las, bekam vier Angaben über ein Modell, das
+    nie gefragt wurde. Dasselbe Muster wie die Testlücken beider Gegenproben:
+    geprüft war die Anzeige, nicht der Weg dorthin.
+    """
+
+    def test_a_mock_run_names_no_model(self, tmp_path) -> None:
+        state = build_initial_state()
+        metadata = _write(tmp_path, state, _args(mock_llm=True))
+
+        assert metadata["compute_mode"] == "mock_llm"
+        for feld in ("model", "base_url", "temperature", "max_tokens"):
+            assert metadata[feld] is None, f"{feld} beschreibt ein Modell, das nie gefragt wurde"
+
+    def test_a_numbers_only_run_names_no_model(self, tmp_path) -> None:
+        state = build_initial_state()
+        metadata = _write(tmp_path, state, _args(deterministic_only=True))
+
+        assert metadata["compute_mode"] == "deterministic_only"
+        assert metadata["model"] is None
+
+    def test_the_keys_stay_in_the_file(self, tmp_path) -> None:
+        """`null` statt Weglassen: Das Schema bleibt gleich, und ein fehlender
+        Schlüssel kann weiterhin nur eines heissen — älter als P0.6."""
+
+        state = build_initial_state()
+        metadata = _write(tmp_path, state, _args(mock_llm=True))
+
+        for feld in ("model", "base_url", "temperature", "max_tokens"):
+            assert feld in metadata
+
+    def test_a_real_run_still_names_its_model(self, tmp_path) -> None:
+        """Die Gegenrichtung — sonst prüfte der Test nur, dass etwas fehlt."""
+
+        state = build_initial_state()
+        metadata = _write(tmp_path, state, _args())
+
+        assert metadata["compute_mode"] == "llm"
+        assert metadata["model"] == "llama3.2"
+        assert metadata["base_url"] == "http://localhost:11434"
+        assert metadata["temperature"] == 0.7
+        assert metadata["max_tokens"] == 2048
+
+    def test_the_sweep_keeps_its_model(self, tmp_path) -> None:
+        """Ein Sweep rechnet deterministisch, lässt den Abschlusstext aber vom
+        Modell schreiben. Dort *war* eines beteiligt — der Name bleibt."""
+
+        from src.orchestration.scenario_sweeps import sweep_metadata_args
+
+        state = build_initial_state()
+        metadata = _write(tmp_path, state, sweep_metadata_args("demo"))
+
+        assert metadata["compute_mode"] == "deterministic_with_llm_narrative"
+        assert metadata["model"] is not None

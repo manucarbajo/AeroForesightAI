@@ -20,7 +20,7 @@ from src.models.population_models import (
     SegmentStats,
 )
 from src.models.property_models import IndividualProperty, PropertiesConfig, ShiftRule
-from src.models.state_models import FactorState
+from src.models.state_models import DEFAULT_SEED, FactorState
 from src.rule_engine import KNOWN_METRICS, RuleContext, rule_matches
 
 DEFAULT_LOGIT_THRESHOLD = 0.5
@@ -249,8 +249,8 @@ def apply_factor_shifts(
     factors: dict[str, FactorState],
     system_properties: dict[str, float],
     *,
-    tick: int = 0,
-    metrics: Mapping[str, float | None] | None = None,
+    tick: int,
+    metrics: Mapping[str, float | None] | None,
 ) -> list[Individual]:
     """Apply config shift rules to numeric individual attributes.
 
@@ -258,6 +258,14 @@ def apply_factor_shifts(
     eigenen, ärmeren Evaluator, und eine ``shift_rule`` mit ``tick``- oder
     ``at_least``-Bedingung griff hier still nie. Jetzt wertet dieselbe Funktion
     aus wie für die Faktor-Regeln — dafür braucht sie denselben Kontext.
+
+    Beide sind **Pflicht**, seit P0.7 dieselbe Falle auf der Marktseite
+    abgeräumt hat. Sie hatten Defaults (``tick=0``, ``metrics=None``), und die
+    bedeuteten: Tick 0 gibt es nicht, und keine Metrik hat einen Wert — eine
+    ``shift_rule`` mit ``tick``- oder ``metric``-Bedingung griff bei einem
+    vergessenen Argument also wieder still nie. Genau der Zustand, den P0.4
+    beseitigen sollte, nur eine Ebene höher. Wer wirklich keinen Kontext hat,
+    schreibt ``metrics=None`` — eine Aussage statt eines Versehens.
     """
 
     if not shift_rules:
@@ -352,9 +360,20 @@ def evaluate_booking(
     *,
     ticket_price: float,
     carbon_tax: float,
-    properties: PropertiesConfig | None = None,
+    properties: PropertiesConfig | None,
 ) -> tuple[list[Individual], PopulationStats]:
-    """Evaluate booking decisions for persistent individuals."""
+    """Evaluate booking decisions for persistent individuals.
+
+    *properties* ist **Pflicht** (P0.7-Regel), auch wenn ``None`` zulässig
+    bleibt. Der Default war genau die Falle, die diese Regel abräumt: Ohne
+    Angabe treten ``0.6`` und ``1.0`` an die Stelle von
+    ``saturation.booking_increase`` und ``saturation.utility_penalty_factor``
+    — kein Fehler, keine Meldung, nur eine andere Zahl. Heute stimmen beide
+    Konstanten zufällig mit der ausgelieferten Config überein; beide Felder
+    haben aber eine eigene Bedienung im Config-Editor, und nach einer Änderung
+    dort läuft die Sättigung still auseinander (nachgestellt: Summe 195.25
+    gegen 468.60). Sie trägt in die Buchungsentscheidungen des nächsten Ticks.
+    """
 
     saturation = properties.saturation if properties is not None else None
     booking_increase = saturation.booking_increase if saturation is not None else 0.6
@@ -379,13 +398,18 @@ def evaluate_booking(
 
 def aggregate_population_stats(
     individuals: list[Individual],
-    properties: "PropertiesConfig | None" = None,
+    *,
+    properties: "PropertiesConfig | None",
 ) -> PopulationStats:
     """Aggregate booking stats overall and per segment label.
 
     When *properties* is provided, segments are derived dynamically from all
     boolean ``individual_properties`` (P2.2 SSOT).  Falls back to the legacy
     ``SEGMENT_LABEL_MAP`` when called without properties.
+
+    *properties* ist **Pflicht** (P0.7-Regel), ``None`` bleibt zulässig. Der
+    Default entschied still zwischen zwei Segmentierungen — dieselbe Klasse
+    wie bei ``evaluate_booking``, nur in der Auswertung statt im Modell.
     """
 
     total_pop = len(individuals)
@@ -495,9 +519,9 @@ def run_population_tick(
     carbon_tax: float,
     factors: dict[str, FactorState],
     system_properties: dict[str, float],
-    seed: int = 42,
-    current_tick: int = 0,
-    metrics: Mapping[str, float | None] | None = None,
+    seed: int = DEFAULT_SEED,
+    current_tick: int,
+    metrics: Mapping[str, float | None] | None,
 ) -> tuple[list[Individual], PopulationStats]:
     """Full population pipeline for one tick.
 
@@ -505,6 +529,10 @@ def run_population_tick(
     genau der Wert, den eine ``shift_rule`` mit ``tick``-Bedingung braucht, und
     wird jetzt an die Regelauswertung durchgereicht. *metrics* ist der
     dazugehörige Rest des Kontexts (`RuntimeMetrics.as_mapping()`).
+
+    Beide sind seit P0.7 **Pflicht** — sie werden nach `apply_factor_shifts`
+    durchgereicht, und ein vergessenes Argument hätte dort still die
+    Tick- und Metrik-Regeln abgeschaltet.
     """
 
     if not individuals:
@@ -577,6 +605,12 @@ def run_population_sampling(
         factors={},
         system_properties={},
         seed=seed,
+        # Eine einzelne Stichprobe ohne Lauf: Es gibt keinen Tick und keine
+        # Laufzeitmetriken. Das steht jetzt da, statt aus Defaults zu folgen —
+        # eine `shift_rule` mit `tick`- oder `metric`-Bedingung greift hier
+        # nicht, und das ist eine Aussage, kein Versehen.
+        current_tick=0,
+        metrics=None,
     )
     _ = individuals
     return stats

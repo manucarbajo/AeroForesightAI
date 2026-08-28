@@ -327,16 +327,26 @@ class AgentNode:
         header = "Deterministic market metrics (Python; not set by the agent):"
 
         if not metrics and state.resolved_properties().system_properties:
+            from src.market.property_engine import resolve_system_properties
             from src.market.simulation_functions import compute_market_metrics
 
             tick = max(1, state.clock.current_tick)
             last_price = state.price_history[-1].price if state.price_history else 100.0
             last_demand = state.price_history[-1].demand_level if state.price_history else 1.0
+            # P0.7: mit Faktoren und Systemgrößen. Ohne sie zeigte diese
+            # Vorschau einen Kostendruck ohne die bedingten regulatorischen
+            # Kostentreiber — und zwar im ersten Tick jedes Laufs, denn dann ist
+            # `state.market_metrics` noch leer und die Agenten laufen vor dem
+            # Environment-Node. Dem Agenten wurde damit eine andere Zahl gesagt,
+            # als die Simulation benutzt.
+            properties = state.resolved_properties()
             metrics = compute_market_metrics(
                 tick,
-                state.resolved_properties(),
+                properties,
                 previous_price=last_price,
                 previous_demand=last_demand,
+                factors=state.environment.factors,
+                system_properties=resolve_system_properties(tick, properties),
             )
             header = (
                 "Deterministic market metrics (Python; preview from properties.json; "

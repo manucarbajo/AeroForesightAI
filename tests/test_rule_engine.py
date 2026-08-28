@@ -434,6 +434,8 @@ class TestSelbeKlauselUeberallGleich:
             ],
             {},
             {"carbon_tax_level": 120.0},
+            tick=1,
+            metrics=None,
         )
         assert shifted[0].price_sensitivity > person.price_sensitivity
 
@@ -448,10 +450,24 @@ class TestSelbeKlauselUeberallGleich:
         )
         person = _person()
 
-        matching = apply_factor_shifts([person], [rule], {}, {}, tick=3)
+        matching = apply_factor_shifts(
+            [person],
+            [rule],
+            {},
+            {},
+            tick=3,
+            metrics=None,
+        )
         assert matching[0].price_sensitivity > person.price_sensitivity
 
-        other = apply_factor_shifts([person], [rule], {}, {}, tick=2)
+        other = apply_factor_shifts(
+            [person],
+            [rule],
+            {},
+            {},
+            tick=2,
+            metrics=None,
+        )
         assert other[0].price_sensitivity == person.price_sensitivity
 
 

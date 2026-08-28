@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-27 — P0.1 bis P0.6 erledigt und **dreifach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, und die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)). Offen in Phase 0: nur noch das aus P0.4 neu hinzugekommene **P0.7** (der Kostendruck wird an zwei Stellen berechnet, und nur eine kennt die regulatorischen Kostentreiber). Es liegt zusammen mit P0.4 bis P0.6 auf `feat/phase-0-p04-p05-p06`. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-27 — **Phase 0 ist abgeschlossen** und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -250,7 +250,7 @@ Vier Dinge, die bei der Umsetzung über den Plan hinausgingen:
 
 **Was die Zahlen macht:** nichts. Die ausgelieferte `properties.json` läuft durch alle neuen Prüfungen fehlerfrei, und keine ihrer Regeln benutzte eine Bedingung, die vorher an einer Stelle anders gelesen wurde. 649 Tests grün, davon 80 neue in `tests/test_rule_engine.py`; der einzige Fehlschlag bleibt der bekannte `marginal_cost_fraction` aus P4.2.
 
-**Ein Fund, der hier bewusst liegen bleibt:** Der Kostendruck wird an zwei Stellen berechnet, und nur eine übergibt Faktoren und Systemgrößen — siehe [P0.7](#p07--kostendruck-aus-einer-quelle). Die Korrektur verschiebt Faktorverläufe und damit Laufergebnisse; das ist eine Modelländerung und gehört nicht in ein Paket, das Auswertungen vereinheitlicht.
+**Ein Fund, der hier bewusst liegen bleibt:** Der Kostendruck wird an zwei Stellen berechnet, und nur eine übergibt Faktoren und Systemgrößen — siehe [P0.7](#p07--kostendruck-aus-einer-quelle--erledigt-2026-08-27). Die Korrektur verschiebt Faktorverläufe und damit Laufergebnisse; das ist eine Modelländerung und gehört nicht in ein Paket, das Auswertungen vereinheitlicht.
 
 **Doku zieht mit:** `docs/handbuch/ref-config.md`, `docs/handbuch/preisbildung.md`, `CLAUDE.md` (Architektur-Map, Invariante 6, Glossar-Eintrag `when`-Klausel).
 
@@ -451,19 +451,183 @@ Manus vier Commits sind einzeln nachgestellt worden — jede Behauptung am laufe
 
 ---
 
-### P0.7 — Kostendruck aus einer Quelle
+### P0.7 — Kostendruck aus einer Quelle ✅ erledigt 2026-08-27
 
-**Befund (neu am 2026-08-27, gefunden bei der Umsetzung von P0.4):** `compute_cost_pressure` wird an zwei Stellen gerufen, aber nur eine übergibt `factors` und `system_properties`. [`environment_node.py:101`](../src/orchestration/environment_node.py) übergibt **keins von beiden** — dort kann deshalb kein einziger regulatorischer Kostentreiber aktiv werden, weil alle fünf ausgelieferten an einer `factor`-Bedingung hängen. [`simulation_functions.py:359`](../src/market/simulation_functions.py) übergibt sie korrekt.
+**Befund (neu am 2026-08-27, gefunden bei der Umsetzung von P0.4):** `compute_cost_pressure` wird an zwei Stellen gerufen, aber nur eine übergibt `factors` und `system_properties`. [`environment_node.py:101`](../src/orchestration/environment_node.py) übergibt **keins von beiden** — dort kann deshalb kein einziger regulatorischer Kostentreiber aktiv werden, weil ~~alle fünf ausgelieferten an einer `factor`-Bedingung hängen~~ — **berichtigt bei der Umsetzung:** es sind sechs, und einer davon gilt unbedingt; blind war der Pfad für die fünf **bedingten** (siehe «Was am Befund nicht stimmte» unten). [`simulation_functions.py:359`](../src/market/simulation_functions.py) übergibt sie korrekt.
 
-**Gemessen:** Bei F2.2 (strenge Regulierung) liefert der Environment-Pfad 103.06, der Market-Pfad 108.06 — die 5.00 des EU-ETS. Der Environment-Wert landet als `cost_pressure` in `state.market_metrics` und ist genau die Größe, gegen die `f4_high_cost_pressure` (> 135) und `f4_stable_growth` (< 115) schwellen. **Die F4-Übergänge urteilen also über einen Kostendruck ohne Regulierungskosten, während die Kundschaft den vollen Preis zahlt.**
+**Gemessen:** Bei F2.2 (strenge Regulierung) liefert der Environment-Pfad 103.06, der Market-Pfad 108.06 — die 5.00 des EU-ETS. Der Environment-Wert landet als `cost_pressure` in `state.market_metrics` und ist genau die Größe, gegen die `f4_high_cost_pressure` (> 135) und `f4_stable_growth` (< 115) schwellen. ~~**Die F4-Übergänge urteilen also über einen Kostendruck ohne Regulierungskosten, während die Kundschaft den vollen Preis zahlt.**~~ — **widerlegt bei der Umsetzung:** Der Market-Node überschreibt den Wert im selben Tick, bevor die Faktor-Regeln ihn im nächsten lesen. Der Satz galt nur mit `--no-market`. Gewirkt hat der Fehler über den Startpreis, nicht über die F4-Schwellen (dritte Korrektur unten).
 
 **Was zu tun ist:** Den Environment-Pfad die Faktoren und Systemgrößen mitgeben lassen, die er ohnehin zur Hand hat (`state.environment.factors`, `resolve_system_properties(round_number, properties)` steht dort neun Zeilen später). Danach prüfen, ob der Parameter überhaupt optional bleiben darf — ein Default, der still ein anderes Ergebnis liefert, ist dieselbe Klasse Problem.
 
-**Was das kostet — vor der Umsetzung zu wissen:** Der Kostendruck steigt in Läufen mit strenger Regulierung, F4 kippt früher, und damit ändern sich Faktorverläufe, Konsistenzwerte und die drei erzeugten Szenarien. Das ist eine **Modelländerung**, kein Refactoring. Die Kennzahlen aus P0.2 (BAU 0.970, Konflikt 0.867, Wende 0.629) sind danach neu zu erheben, `test_cib_ranking.py` mitzuziehen. Deshalb wurde der Fund in P0.4 bewusst nicht mitbehoben.
+**Was das kostet — vor der Umsetzung geschätzt:** Der Kostendruck steigt in Läufen mit strenger Regulierung, und damit ändern sich Faktorverläufe. Das ist eine **Modelländerung**, kein Refactoring — deshalb wurde der Fund in P0.4 bewusst nicht mitbehoben. ~~F4 kippt früher, Konsistenzwerte und die drei erzeugten Szenarien ändern sich; die Kennzahlen aus P0.2 (BAU 0.970, Konflikt 0.867, Wende 0.629) sind neu zu erheben, `test_cib_ranking.py` mitzuziehen.~~ — **gemessen widerlegt:** F4 bewegt sich nicht, Konsistenzwerte und Endlagen bleiben gleich, und der Test rechnet keinen Lauf. Was sich wirklich verschiebt, steht in der Tabelle unten. Die Schätzung war zu grob **und in die falsche Richtung** — sie nannte die Größe, die sich nicht bewegt, und übersah die, die sich stark bewegt.
 
-**Fertig wenn:** Beide Aufrufstellen liefern für denselben Zustand denselben Kostendruck, ein Test hält das fest, und die verschobenen Kennzahlen sind in `docs/cib_role.md` und `test_cib_ranking.py` nachgezogen.
+**Fertig wenn:** Beide Aufrufstellen liefern für denselben Zustand denselben Kostendruck, und ein Test hält das fest. ~~Und die verschobenen Kennzahlen sind in `docs/cib_role.md` und `test_cib_ranking.py` nachgezogen.~~ — **hinfällig, siehe die vierte Korrektur unten:** Der Test bewertet fest verdrahtete Faktorzustände gegen die eingefrorene Matrix, er rechnet keinen Lauf; ein geänderter Kostendruck kann seine Zahlen nicht bewegen, und in `docs/cib_role.md` steht nichts zum Kostendruck. Das Kriterium stand hier, weil bei seiner Formulierung noch nicht geprüft war, woher der Test seine Eingaben nimmt. Durchgestrichen statt gelöscht, damit nachvollziehbar bleibt, dass es nicht übergangen, sondern widerlegt wurde.
 
-**Doku zieht mit:** `docs/handbuch/preisbildung.md` (der Hinweis auf die auseinanderlaufenden Zahlen fällt dann weg), `docs/cib_role.md`.
+**Umgesetzt am 2026-08-27 — und dabei drei Aussagen dieses Pakets korrigiert.** `factors` und `system_properties` sind an `compute_cost_pressure` **und** `compute_market_metrics` jetzt Pflichtparameter; wer wirklich keine hat, sagt das mit `factors={}`. Das beantwortet die Frage aus «Was zu tun ist» mit Ja: Ein Default, der still ein anderes Ergebnis liefert, ist die Falle selbst, und ein vierter blinder Aufrufer kann so nicht mehr entstehen.
+
+**Was am Befund nicht stimmte:**
+
+1. **Es sind sechs Kostentreiber, nicht fünf** — und einer, `airport_infrastructure_levy` (3.00), hat ein **leeres `when`** und gilt immer. Der alte Pfad war also nicht blind für alle, sondern für alle **bedingten**. Wer die Zahlen nachrechnet, braucht diese Unterscheidung: Der Environment-Wert war 103.06, nicht 100.06.
+2. **Die Lücke ist größer als gemessen.** Der Plan nannte 5.00 (EU-ETS bei F2.2). Tatsächlich stapeln sich die Treiber je nach Lage: F2.1+F4.1 → **+8.00**, F2.2+F4.1 → +5.00, F2.2+F4.2 → +11.00, F2.1+F4.2 → **+14.00**. Der Environment-Pfad lieferte für **jede** Faktorlage denselben Wert.
+3. **Der Mechanismus war falsch beschrieben.** Der Satz «Die F4-Übergänge urteilen über einen Kostendruck ohne Regulierungskosten» trifft im Standardbetrieb **nicht** zu. Reihenfolge im Tick: Faktor-Regeln → Agenten → Environment → Consumer → Markt. Der Environment-Node schreibt seinen Kostendruck nach `state.market_metrics`, **der Market-Node überschreibt ihn im selben Tick**, und erst im nächsten Tick lesen die Faktor-Regeln. Sie sahen also immer den korrekt gerechneten Wert des Market-Knotens. Nur mit `--no-market` überlebt der Environment-Wert bis dorthin — dann, und nur dann, galt der Satz.
+
+**Ein zweiter blinder Aufrufer, der nicht im Plan stand:** [`agent_node.py:335`](../src/agents/agent_node.py) ruft `compute_market_metrics` für die Vorschau im Agenten-Prompt — ebenfalls ohne Faktoren. Dieser Zweig greift, wenn `state.market_metrics` leer ist, also im **ersten Tick jedes Laufs**, weil die Agenten vor dem Environment-Node laufen. Gemessen bei F2.2+F4.2: Dem Agenten wurde `cost_pressure: 103.56` gezeigt, während die Simulation mit 114.56 rechnete. Das greift Invariante 1 an einer unerwarteten Stelle an — die Zahlen kamen aus Python, aber es waren zwei verschiedene.
+
+**Wie der Fehler tatsächlich wirkte:** über den Preis, nicht über die Faktor-Regeln. Im ersten Tick ist `price_history` leer, und der Environment-Node bildet aus seinem Kostendruck den `provisional_price` — genau den Preis, den die Bevölkerung in Tick 1 sieht. Der zu niedrige Startpreis zog über die Preisrückkopplung den ganzen Verlauf mit.
+
+**Was sich verschoben hat — gemessen, vorher/nachher mit demselben Skript:**
+
+| | vorher | nachher |
+| --- | --- | --- |
+| Ticketpreis am Ende, BAU (40 Ticks) | 134.39 | **131.13** |
+| Ticketpreis am Ende, Freiwillige Wende | 73.25 | **73.08** |
+| Ticketpreis am Ende, Transformationskonflikt | 65.20 | **65.31** |
+| Ticketpreis am Ende, Standardlauf | 89.54 | **89.32** |
+| Faktorverlauf Standardlauf | F1 kippt später | **F1 kippt in Tick 4** |
+| Faktor-**Endlagen** aller drei Archetypen | — | **unverändert** |
+| Konsistenzwerte aller drei Archetypen | — | **unverändert** |
+
+**Der Verlaufssprung ist der eigentliche Preis dieses Pakets, nicht die
+Preisdifferenz.** Unabhängig nachgemessen (15 Ticks, deterministisch, Seed 42):
+F1 kippt vorher in Tick 15, nachher in **Tick 4** — statt einem verbringt der
+Lauf **zwölf von fünfzehn** Ticks in F1.2. Die Zeile «Endlagen unverändert»
+darüber stimmt und kann trotzdem in die Irre führen: Ein Szenarienprodukt
+verkauft Verläufe, nicht Endzustände. Wer Läufe von vor und nach diesem Commit
+nebeneinanderlegt, vergleicht zwei Modelle.
+
+Erkennbar ist das an `code_version` in `run_metadata.json` — deshalb steht es
+dort seit P0.6. Gesagt werden muss es trotzdem: `docs/handbuch/vergleiche.md`
+nennt den Schnitt jetzt beim Namen.
+
+**Und damit auch die vierte Korrektur:** «Die Kennzahlen aus P0.2 sind neu zu erheben, `test_cib_ranking.py` mitzuziehen» war nicht nötig. Der Test bewertet **fest verdrahtete** Faktorzustände gegen die eingefrorene Matrix — er rechnet keinen Lauf. Ein geänderter Kostendruck kann seine Zahlen gar nicht bewegen. Auch `docs/cib_role.md` blieb unberührt: Dort steht nichts zum Kostendruck.
+
+**Dabei aufgefallen, als eigenes Finding ins Audit:** Zwei der drei Zustandsmengen in `test_cib_ranking.py` heißen `*_END_STATES`, werden aber von den gleichnamigen Sweeps **nicht erreicht** — schon vor diesem Paket nicht. Ein Sweep `business_as_usual` endet bei F1.2/F4.2, die Konstante sagt F1.1/F4.1.
+
+**Doku zieht mit:** `docs/handbuch/preisbildung.md`, `CLAUDE.md` (Invariante 1 um die eine Quelle des Kostendrucks ergänzt).
+
+---
+
+### Vierte Runde: Phase 0 als Ganzes geprüft (2026-08-27)
+
+Die drei Runden davor haben je ein Paket oder eine Handvoll geprüft. Diese Runde hat **Phase 0 im Ganzen** gegen den Codestand gehalten: alle sieben Pakete, jedes «Fertig wenn» einzeln, dazu die Doku, die laut den Paketen mitziehen sollte. **Im Code hält alles** — die sieben Pakete lösen ihre Zusagen mechanisch ein (`rule_engine` als einzige Auswertung mit fünf Importeuren und keinem Rest der drei alten Evaluatoren; `may_propose_factor` mit genau zwei Aufrufern; `factors`/`system_properties` keyword-only **ohne** Default, womit ein vierter blinder Aufrufer baulich unmöglich ist; ein echter Lauf schreibt `seed: 42`, `compute_mode`, Fingerabdruck und Codestand). Suite: 749 grün, rot nur der bekannte `marginal_cost_fraction` aus P4.2.
+
+**Fünf Lücken, alle auf der Doku-Seite** — und vier davon Varianten desselben Musters, das schon die erste Gegenprobe beschreibt: *geprüft war die Funktion, nicht der Weg dorthin.*
+
+1. **Drei behobene Findings standen noch in `audit_findings.md`** — der Kostendruck (P0.7), der Sweep-Pfad und die fehlenden Reproduzierbarkeits-Felder (beide P0.6) —, obwohl die [Abdeckungstabelle](#abdeckung-des-audits) alle drei bereits mit ✅ führte. Das Kostendruck-Finding trug dabei die drei Aussagen weiter, die P0.7 bei der Umsetzung ausdrücklich widerlegt hat (fünf statt sechs Kostentreiber, konstante 5.00 statt +5.00…+14.00, und der Satz über die F4-Übergänge, der im Standardbetrieb nicht zutrifft). Entfernt. Die Pflegeregel im Audit nennt jetzt die Abdeckungstabelle als Gegencheck.
+2. **Die Backlog-Zeile in `CLAUDE.md` war stehengeblieben.** Sie führte P0.4, P0.5 und P0.6 ohne ✅ als offen, kannte P0.7 gar nicht und sprach von „den **zwei** auseinandergelaufenen Rule-Evaluatoren" — obwohl P0.4 als eigene Ergänzung festgehalten hat, dass es drei sind. Wer nur `CLAUDE.md` las, hielt Phase 0 für halb offen. Nachgezogen.
+3. **`run_metadata.json` behauptete für einen Mock-Lauf weiterhin ein Modell.** Gemessen: `"model": "llama3.2"`, dazu `base_url`, `temperature`, `max_tokens` — neben `"compute_mode": "mock_llm"`. Die **erste** Gegenprobe hat genau diesen Widerspruch gefunden und als behoben gemeldet; behoben war er aber nur in `views/overview.py::_model_label`, also in einer einzigen Oberflächenkachel. Die Zusage von P0.6 lautet «aus `run_metadata.json` **allein**» — wer die Datei ohne Dashboard las, bekam vier Angaben über ein Modell, das nie gefragt wurde. Die vier Felder stehen bei `mock_llm` und `deterministic_only` jetzt auf `null`; die Schlüssel bleiben, damit das Schema gleich bleibt und ein *fehlender* Schlüssel weiterhin nur eines heißen kann: älter als P0.6. Ein Sweep behält seinen Modellnamen — dort schreibt das Modell den Abschlusstext. Vier neue Tests, mutationsgeprüft.
+4. **Die Seed-Korrektur der zweiten Gegenprobe hatte das Handbuch nicht erreicht.** Sie vermerkt „Die beiden Oberflächentexte … sind mitkorrigiert" — drei Handbuchtexte behaupteten weiter Nicht-Determinismus: `glossar.md` («Fest gesetzt, ist ein Lauf reproduzierbar»), `kaufentscheidung.md` und, am deutlichsten, `lauf-konfigurieren.md` («Ohne ihn unterscheiden sich die Läufe schon dadurch, dass eine andere Bevölkerung gezogen wurde»). Alle drei nachgezogen. **Dabei bestätigt, nicht angeglichen:** `fragestellungen.md` rät bei Wiederholungen zum freien Startwert und verspricht verschieden gezogene Bevölkerungen — das stimmt, weil `run_multi` seine Folge bei 0 beginnt. Es ist genau die Pfadabhängigkeit, die als Finding im Audit steht; der Text ist für seinen Fall richtig und bleibt.
+5. **Das «Fertig wenn» von P0.7 verlangte, was das Paket selbst widerlegt hat.** Durchgestrichen statt gelöscht, mit Begründung — siehe oben.
+
+**Was daraus als Prüfmuster bleibt.** Die erste Gegenprobe hat für tote Modulpfade und Anker einen Wächter gebaut (`tests/test_packaging.py`). Punkt 1 und 2 sind dieselbe Drift eine Ebene höher — zwischen Plan, Audit und `CLAUDE.md` —, und dort greift kein Wächter. Bis [P4.3](#p43--doku-zahlen-mechanisch-halten) das mechanisch macht, gilt die Handregel: **Wer ein Paket auf ✅ setzt, geht im selben Zug durch `audit_findings.md` und die Backlog-Liste in `CLAUDE.md`.** Und Punkt 3 wiederholt die Lehre der ersten Runde wörtlich — eine Zusage über ein *Artefakt* ist nicht geprüft, solange nur die *Anzeige* geprüft ist.
+
+### Fünfte Runde: P0.7 gegengeprüft (Manu, 2026-08-27)
+
+Der Fix selbst hält — unabhängig nachgemessen und mutationsgeprüft. Bestätigt: die
+Node-Reihenfolge (`market_node` überschreibt `state.market_metrics`, die Faktor-Regeln lesen erst
+im nächsten Tick), der dritte blinde Aufrufer in `agent_node`, und der `*_END_STATES`-Befund (BAU
+endet bei F1.2/F4.2, `freiwillige_wende` weicht bei F4/F6 ab, `transformation_conflict` passt).
+Der Fix in beiden Aufrufern neutralisiert macht **acht** parametrisierte Tests über vier
+Faktorlagen rot — die Zusagen sind gedeckt.
+
+**Ein Geschwister des Musters war übrig.** P0.7 hat die stillen Defaults auf der Marktseite
+abgeräumt; auf der Bevölkerungsseite standen sie noch: `apply_factor_shifts(tick=0, metrics=None)`
+und `run_population_tick(current_tick=0, metrics=None)`. `tick=0` heißt "es gibt keinen Tick" —
+ein vergessenes Argument hätte jede `tick`- und `metric`-Regel wieder still abgeschaltet, also
+genau den Zustand hergestellt, den P0.4 beseitigt hat. Beide sind jetzt Pflicht.
+
+**Und weil das nicht die letzte war, ist die Regel jetzt ein Test statt eines Vorsatzes.** Die
+Suche nach Geschwistern über das ganze Paket fand vier weitere: `compose_ticket_price(tick=0)`
+und `apply_market_feedback(tick=0)` (dazu je ein `properties=None`, das Steuern und Gebühren ganz
+wegfallen ließ) sowie `initial_provider_markup(tick=0)` und `initial_ticket_price(tick=0)`. Der
+Markup-Fall ist der lehrreichste: **alle sechs** Aufrufer nahmen den Default, und es ist heute
+folgenlos — weil `provider_markup` im ausgelieferten Config eine flache Baseline ist. Gibt ihr
+jemand im Editor eine Stufenfunktion, wird die Zahl still falsch. Ein Fehler, der auf einen
+Konfigurationswert wartet, ist keiner, den man findet; er ist einer, den man ausschließt.
+
+`TestKeinKontextparameterHatEinenDefault` prüft jetzt **acht** Funktionen auf «kein Default,
+keyword-only», und ein Sweep über `src/` findet keinen Kontextparameter mit Default mehr. Wer
+eine neunte Funktion mit Tick-Kontext baut, trägt sie dort ein. Das ist die eigentliche Lehre aus
+P0.7: Der Befund war nie «diese eine Funktion», sondern «ein Kontextparameter mit Default liefert
+still eine andere Zahl».
+
+**Alle diese Änderungen sind rein strukturell.** Nachgewiesen, nicht angenommen: Derselbe
+deterministische Lauf liefert vor und nach ihnen bitgleiche Preise, Kostendrücke, Faktorverläufe
+und Endlagen. Die Aufrufer übergaben die Werte bereits — neu ist nur, dass sie es müssen.
+
+**Drei Doku-Befunde, alle behoben:**
+
+1. **Der Verlaufssprung war zu leise benannt.** Die Tabelle betont «Endlagen unverändert» — was
+   stimmt. Gemessen kippt F1 aber in Tick 4 statt Tick 15, also zwölf statt einem von fünfzehn
+   Ticks in F1.2. Ein Szenarienprodukt verkauft Verläufe, nicht Endzustände; wer Läufe über
+   diesen Commit hinweg vergleicht, vergleicht zwei Modelle. Steht jetzt in der Tabelle und als
+   eigener Abschnitt in `docs/handbuch/vergleiche.md`, samt dem Hinweis, dass `code_version` den
+   Schnitt erkennbar macht.
+2. **Drei widerlegte Aussagen standen unmarkiert über ihren Korrekturen** — der Befundsatz über
+   die fünf Kostentreiber, der fett gesetzte F4-Satz und die Forderung, `test_cib_ranking.py`
+   nachzuziehen. Beim «Fertig wenn» war das Durchstreichen-mit-Begründung schon angewandt, bei
+   diesen dreien nicht; wer den Abschnitt von oben las, bekam erst die falschen Aussagen. Jetzt
+   nach demselben Muster markiert. **Dabei aufgefallen:** Die Vorab-Schätzung lag nicht nur zu
+   grob, sondern in der falschen Richtung — sie nannte F4, das sich nicht bewegt, und übersah F1,
+   das sich stark bewegt.
+3. **`vergleiche.md` empfahl eine Methode, die ins Leere laufen konnte.** «Rechnen Sie denselben
+   Aufbau mehrfach mit freiem Zufallsstartwert», ohne das Feld **Wiederholungen** zu nennen. Wer
+   stattdessen denselben Einzellauf zweimal startet, misst seit der Seed-Korrektur Streuung null
+   und hält danach jeden Unterschied für belastbar. In `lauf-konfigurieren.md` war die
+   Unterscheidung schon richtig getroffen, hier fehlte sie.
+
+**Und eine Entscheidung ist gefallen: `run_multi` ist angeglichen.** Die Pfadabhängigkeit —
+Wiederholungen begannen ihre Seed-Folge bei 0, ein Einzellauf rechnete mit `DEFAULT_SEED` —
+stand als Finding im Audit und trug zugleich eine **dokumentierte Arbeitsweise**: Die
+Streuungsmessung in `fragestellungen.md` und `vergleiche.md` beruht auf ihr. Ein Finding, auf dem
+eine Produktzusage ruht, gehört entschieden statt verwaltet; entschieden wurde für Angleichen.
+
+**Die Sorge dabei war unbegründet, und das ist der eigentliche Ertrag der Prüfung.** Die Frage
+lautete, ob `run_multi` ohne die Abweichung eine andere Quelle für Vielfalt braucht. Sie braucht
+keine: Die Wiederholungen unterscheiden sich durch `base_seed + index`, nicht durch den fehlenden
+Seed. Das Angleichen kostet also nichts und bringt eine Eigenschaft ein, die vorher fehlte — die
+**erste Wiederholung ist jetzt derselbe Lauf wie ein Einzellauf**, statt ein vierter, unerklärter
+Fall zu sein. `or 0` ist dabei zu `is None` geworden: Ein ausdrücklich gesetzter Seed 0 ist eine
+Angabe, kein fehlender Wert.
+
+**Was das sichtbar verschiebt:** Wiederholungen ohne eigenen Startwert rechnen jetzt mit
+42, 43, 44 … statt 0, 1, 2 … — andere Zahlen, dieselbe Methode. Die Aussagen, die jemand aus der
+Streuung älterer Wiederholungen gezogen hat, bleiben gültig; ihre Einzelwerte nicht.
+`docs/handbuch/vergleiche.md` nennt den Schnitt neben dem aus P0.7.
+
+**Dabei aufgefallen:** `run_multi` hatte **keinen einzigen Test** — eine Funktion, auf der zwei
+Handbuchkapitel eine Methode aufbauen. `tests/test_run_multi_seeds.py` deckt jetzt den Startwert
+der Folge, den Vorrang eines gesetzten Seeds, die ausdrückliche 0, übergebene Seed-Listen, die
+Verschiedenheit der Wiederholungen und den Seed jedes Teillaufs im Artefakt ab. Drei davon
+werden rot, wenn man `or 0` zurückschreibt.
+
+**Zwei eigene Fehlgriffe, protokolliert** — beide von den Wächtern aus der zweiten Runde gefangen,
+nicht von Aufmerksamkeit: Das Skript, das die Testaufrufe auf die neuen Pflichtparameter
+umgestellt hat, hielt einen **Docstring** für einen Aufruf und schrieb Argumente in Prosa; und der
+erste Anlauf für diesen Abschnitt hat ihn gar nicht geschrieben (zwei `write_text` nacheinander,
+das zweite verwarf das erste), sodass die Stand-Zeile auf eine Überschrift zeigte, die es nicht
+gab. Ersteres fällt beim Diff-Lesen auf, Letzteres hat `test_internal_doc_anchors_point_somewhere`
+gemeldet. Wer Dateien skriptgesteuert ändert, liest den Diff und lässt die Wächter laufen.
+
+---
+
+### Sechste Runde: die Verallgemeinerung gegengeprüft (Haiko, 2026-08-28)
+
+Manus drei Commits sind einzeln nachgestellt worden. **Die tragenden Behauptungen halten, und zwar die schwersten zuerst:** Der Bitgleichheits-Nachweis der Pflichtparameter stimmt — derselbe Lauf (15 Ticks, Seed 42) liefert über ein Worktree beidseitig identische `price_history.json`, `tick_mechanics.json` und alle drei Zeitreihen. Die Verlaufsmessung stimmt auf den Tick: F1 kippt vor P0.7 in Tick 15, danach in Tick 4, zwölf statt einem von fünfzehn Ticks in F1.2. `run_multi` rechnet gemessen mit 42/43/44, die erste Wiederholung ist bis auf sechs Nachkommastellen derselbe Lauf wie ein Einzellauf, und die Angabe „drei Tests werden rot" ist exakt — es sind genau drei.
+
+**Zwei Befunde, beide an derselben Stelle der Argumentation.**
+
+1. **Der Sweep hatte zwei Geschwisterfälle übersehen — in der Datei, die derselbe Commit anfasste.** [`evaluate_booking`](../src/population/population_sampler.py) und `aggregate_population_stats` trugen `properties=None`. Ohne Angabe traten `0.6` und `1.0` an die Stelle von `saturation.booking_increase` und `saturation.utility_penalty_factor` — **genau der Fall, den der Commit selbst „den lehrreichsten" nennt**: heute folgenlos, weil die ausgelieferte Config zufällig dieselben Zahlen trägt, aber beide Felder haben eine eigene Bedienung im Config-Editor. Nachgestellt mit 0.25/2.0: Die Sättigungssumme läuft auf 195.25 gegen 468.60 auseinander, ohne Fehler und ohne Meldung, und sie trägt in die Buchungsentscheidungen des nächsten Ticks. Beide sind jetzt Pflicht; `None` bleibt zulässig, ist aber eine Aussage. Die Umstellung ist wieder rein strukturell — bitgleich geprüft wie die Vorlage.
+
+2. **Der Wächter konnte diese Klasse gar nicht finden.** `TestKeinKontextparameterHatEinenDefault` ist eine handgepflegte Liste. Sie fängt einen **Rückfall** auf bekannten Stellen, nie einen **übersehenen** Fall — Befund 1 ist der Beleg. Der Commit stellte den Sweep sprachlich neben den Wächter („die Regel ist ein Test statt eines Vorsatzes … ein Sweep über `src/` findet danach keinen mehr"), aber der Sweep war einmalig und von Hand. Er ist jetzt selbst ein Test: `TestKeinKontextparameterEntgehtDemSweep` läuft über den AST jeder Datei in `src/`. Mutationsgeprüft mit einer frisch angelegten Funktion `(*, tick: int = 0)`, die in keiner Liste steht — der Sweep meldet sie von sich aus. Die Liste bleibt als ausdrücklicher Anker für die Stellen, an denen der Fehler tatsächlich auftrat, und steht bei zehn.
+
+   **Die drei verbliebenen Defaults sind Ausnahmen mit Namen und Grund**, nicht Übersehenes: `mark_spoken`, `allowed_factor_targets` und `run_population_sampling` leiten ihren Rückfall aus lebendem Zustand ab (eigenes Feld, `state.resolved_properties()`, die geladene Config) statt aus einer erfundenen Konstante — sie können gar nicht anders rechnen als ihr Aufrufer. Ein zweiter Test hält fest, dass keine Ausnahme verwaist: eine für eine Stelle, die es nicht mehr gibt, verdeckt beim nächsten Mal eine echte.
+
+   Nebenbei hat genau dieser Test einen Fehler in seiner eigenen ersten Fassung gefunden — `round_number` fehlte in der Namensmenge, wodurch die `mark_spoken`-Ausnahme ins Leere zeigte. In diesem Repo ist `round_number` ein Tick unter anderem Namen; der Environment-Node reicht ihn direkt als `tick` weiter.
+
+**Zwei veraltete Zahlen mitgezogen:** Der Docstring des Wächters sprach von „allen vier Stellen … ein fünftes Mal", `CLAUDE.md` Invariante 1 ebenso — beide entstanden, als die Liste vier Einträge hatte, und wuchsen im selben Commit auf acht. Dieselbe Klasse wie die toten Modulpfade der ersten Runde, nur mit Zahlen. Bis [P4.3](#p43--doku-zahlen-mechanisch-halten) greift, ist die Handregel: **Wer eine Aufzählung erweitert, sucht ihre Anzahl im Fließtext.**
+
+**Eine Zeile, die noch fehlt und nicht der Review gehört:** Die Angleichung von `run_multi` ist eine Modelländerung — das Audit hatte sie ausdrücklich als „kein Review-Fix" geführt. Die Begründung trägt und ist nachgerechnet, aber der Plan schreibt „entschieden wurde für Angleichen" im Passiv, während das Haus sonst zuschreibt (P0.2, P0.4). Wer sie getroffen hat, gehört dazu.
 
 ---
 
@@ -752,7 +916,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Audit-Abschnitt | Pakete |
 | --- | --- |
 | Faktoren / Modellsubstanz | ~~P0.2 (F7-Drift)~~ ✅, P2.1, P2.2, P2.3 (die übrigen 120 Zellen), P2.4 |
-| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, P0.7 (Kostendruck an zwei Stellen), P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen) |
+| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, ~~P0.7 (Kostendruck an zwei Stellen)~~ ✅, P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen) |
 | Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), P3.5 (Klemmung, `print`), P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
 | Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, ~~P0.6 (Sweep-Pfad an P0.1 vorbei)~~ ✅, P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`, CLI-Traceback) |
 | LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`) |

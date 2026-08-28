@@ -15,8 +15,16 @@ from src.models.property_models import MarketFeedbackConfig, MarketRule, Propert
 BOOKING_YIELD_FEEDBACK = "booking_yield_feedback"
 
 
-def initial_provider_markup(properties: PropertiesConfig, *, tick: int = 0) -> float:
-    """Baseline for runtime ``provider_markup`` from system_properties."""
+def initial_provider_markup(properties: PropertiesConfig, *, tick: int) -> float:
+    """Baseline for runtime ``provider_markup`` from system_properties.
+
+    *tick* ist **Pflicht** (P0.7-Regel). Der Default ``0`` löste die Trajektorie
+    vor ihrem ersten definierten Tick auf, und alle sechs Aufrufer hatten ihn
+    genommen. Heute folgenlos, weil `provider_markup` im ausgelieferten Config
+    eine flache Baseline ist — still falsch ab dem Tag, an dem jemand ihr im
+    Editor Regeln oder eine Stufenfunktion gibt. Genau die Klasse Fehler, die
+    P0.7 abgeräumt hat, nur noch nicht eingetreten.
+    """
 
     prop = properties.get_system_property("provider_markup")
     if prop is not None:
@@ -24,7 +32,7 @@ def initial_provider_markup(properties: PropertiesConfig, *, tick: int = 0) -> f
     return properties.price_model.initial_markup
 
 
-def initial_ticket_price(properties: PropertiesConfig, *, tick: int = 0) -> float:
+def initial_ticket_price(properties: PropertiesConfig, *, tick: int) -> float:
     """Baseline for computed ``ticket_price`` from system_properties."""
 
     prop = properties.get_system_property("ticket_price")

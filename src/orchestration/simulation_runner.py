@@ -204,7 +204,17 @@ class SimulationRunner:
         ).model_copy(deep=True)
         if not self.options.enable_cib:
             base_state.cib_matrix = None
-        base_seed = base_state.config.seed or 0
+        # Derselbe Standard wie im Einzellauf. Bis 2026-08-27 stand hier `or 0`:
+        # Ein Multi-Run ohne genannten Seed begann seine Folge bei 0, ein
+        # Einzellauf rechnete mit `DEFAULT_SEED` — derselbe Aufbau lieferte je
+        # nach Pfad andere Zahlen, ohne dass irgendwo stand, warum. Die Vielfalt
+        # der Wiederholungen kommt aus `base_seed + index`, nicht aus dem
+        # fehlenden Seed; sie bleibt davon unberührt. Gewonnen ist dabei, dass
+        # die **erste** Wiederholung jetzt derselbe Lauf ist wie ein Einzellauf.
+        #
+        # `is None` statt `or`: Ein ausdrücklich gesetzter Seed 0 ist eine
+        # Angabe, kein fehlender Wert.
+        base_seed = base_state.config.seed if base_state.config.seed is not None else DEFAULT_SEED
         resolved_seeds = self._resolve_seeds(runs=runs, seeds=seeds, base_seed=base_seed)
 
         run_results: list[SingleRunResult] = []

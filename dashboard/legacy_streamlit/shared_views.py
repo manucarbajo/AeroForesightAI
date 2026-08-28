@@ -57,7 +57,9 @@ def render_overview(run_dir: Path, run_id: str) -> None:
             "Ticks", f"{metadata.get('ticks_completed', '?')} / {metadata.get('ticks_max', '?')}"
         )
         cols[1].metric("Events", metadata.get("total_events", "?"))
-        cols[2].metric("Modell", metadata.get("model", "—"))
+        # `or` statt eines Default-Arguments: Seit ein Lauf ohne Sprachmodell
+        # `"model": null` schreibt, ist der Schluessel vorhanden und leer.
+        cols[2].metric("Modell", metadata.get("model") or "keins")
         cols[3].metric("Markt", "an" if metadata.get("market_enabled", True) else "aus")
         st.caption(f"Run-ID: `{run_id}` · erstellt {metadata.get('timestamp', '—')}")
 

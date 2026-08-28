@@ -7,10 +7,16 @@ from pathlib import Path
 from src.models.llm_models import LLMDegradation
 from src.reporting.output_writer.paths import ensure_output_dir, resolve_output_path
 from src.reporting.output_writer.provenance import (
+    MODES_WITHOUT_ANY_LLM,
     code_version,
     compute_mode,
     recorded_fingerprint,
 )
+
+#: Felder, die ausschliesslich ein beteiligtes Sprachmodell beschreiben. Sie
+#: stammen aus den Argumenten und stehen dort auch dann, wenn nie gefragt
+#: wurde — bei einem Lauf ohne Modell sind sie deshalb `null`.
+LLM_ONLY_FIELDS = ("model", "base_url", "temperature", "max_tokens")
 
 
 def save_run_metadata(
@@ -62,6 +68,20 @@ def save_run_metadata(
     metadata["deterministic_only"] = bool(getattr(args, "deterministic_only", False))
     metadata["config_fingerprint"] = recorded_fingerprint(state).model_dump()
     metadata["code_version"] = code_version()
+
+    # Ohne Sprachmodell beschreiben diese vier Felder nichts. `args.model` und
+    # die drei daneben stehen unabhaengig davon, ob je gefragt wurde — ein
+    # Mock-Lauf schrieb damit `"model": "llama3.2"` neben
+    # `"compute_mode": "mock_llm"`. Die erste Gegenprobe zu P0.6 hat genau
+    # diesen Widerspruch gefunden; behoben war er nur in der Dashboard-Kachel
+    # (`views/overview.py::_model_label`), also fuer eine einzige Oberflaeche.
+    # Die Zusage von P0.6 lautet aber «aus `run_metadata.json` **allein**» —
+    # wer die Datei ohne Dashboard liest, bekam vier Angaben ueber ein Modell,
+    # das nie beteiligt war. Die Schluessel bleiben stehen und werden `null`:
+    # Das Schema aendert sich nicht, und `null` ist eine Aussage, kein Fehlen.
+    if metadata["compute_mode"] in MODES_WITHOUT_ANY_LLM:
+        for field in LLM_ONLY_FIELDS:
+            metadata[field] = None
 
     # P0.1: Ein Lauf, dessen Sprachmodell ausgefallen ist, sagt das hier. Die
     # drei Felder stehen immer in der Datei — auch bei einem sauberen Lauf —,

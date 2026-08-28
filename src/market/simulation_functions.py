@@ -6,6 +6,8 @@ never parsed from LLM output.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 from src.market.market_feedback import initial_provider_markup, resolve_market_feedback_config
 from src.market.property_engine import (
     MARKET_PROPERTY_IDS,
@@ -33,14 +35,21 @@ def compose_ticket_price(
     cost_pressure: float,
     provider_markup: float,
     *,
-    properties: PropertiesConfig | None = None,
-    tick: int = 0,
+    properties: PropertiesConfig | None,
+    tick: int,
 ) -> float:
     """published ticket price from cost layer + runtime margin property.
 
     Custom taxes (percentage on base) and fees (absolute surcharges) defined
     via ``price_component_type`` on system properties are applied here:
         final = (base) * (1 + sum_of_tax_rates) + sum_of_absolute_fees
+
+    *properties* und *tick* sind **Pflicht** — dieselbe Regel wie bei
+    `compute_cost_pressure` (P0.7). Beide hatten Defaults, und beide verschoben
+    das Ergebnis still: ohne *properties* fielen Steuern und Gebühren ganz weg,
+    und ``tick=0`` löste die Trajektorien vor ihrem ersten definierten Tick auf.
+    Wer wirklich nur die Kostenschicht will, schreibt ``properties=None`` —
+    eine Aussage statt eines Versehens.
     """
     base = cost_pressure + max(0.0, provider_markup)
 
@@ -98,10 +107,19 @@ def compute_cost_pressure(
     *,
     price_model: PriceModelConfig | None = None,
     cost_index: float = 1.0,
-    factors: dict[str, FactorState] | None = None,
-    system_properties: dict[str, float] | None = None,
+    factors: Mapping[str, FactorState],
+    system_properties: Mapping[str, float],
 ) -> float:
-    """cost component from ``price_model.base_price``, not previous ticket price."""
+    """Kostenanteil aus ``price_model.base_price``, nicht aus dem Vortickpreis.
+
+    *factors* und *system_properties* sind seit P0.7 **Pflicht**. Sie waren
+    optional und fielen auf ``None`` zurück — was bedeutete: kein Faktor steht
+    in irgendeinem Zustand, also greift kein bedingter Kostentreiber. Wer sie
+    vergaß, bekam still eine andere Zahl. Genau das ist im `environment_node`
+    passiert, und der dortige Wert ist die Größe, gegen die die F4-Regeln
+    schwellen. Ein Aufrufer, der wirklich keine Faktoren hat, sagt das jetzt
+    mit ``factors={}`` — eine Aussage statt eines Versehens.
+    """
     model = price_model or properties.price_model
 
     params = active_parameters(tick, properties)
@@ -121,8 +139,8 @@ def compute_cost_pressure(
     )
 
     regulatory_cost = 0.0
-    factors_dict = factors or {}
-    sys_props = system_properties or {}
+    factors_dict = factors
+    sys_props = system_properties
 
     # Bis P0.4 stand hier ein dritter, eigener Evaluator — mit per ``elif``
     # verketteten Vergleichen, weshalb ``below`` neben ``above`` nie geprüft
@@ -175,8 +193,8 @@ def apply_market_feedback(
     config: MarketFeedbackConfig,
     *,
     coefficients: PriceCoefficientsConfig | None = None,
-    properties: PropertiesConfig | None = None,
-    tick: int = 0,
+    properties: PropertiesConfig | None,
+    tick: int,
 ) -> tuple[float, float]:
     """adjust provider_markup from observed booking rate vs target."""
     coeffs = coefficients or PriceCoefficientsConfig()
@@ -310,13 +328,15 @@ def compute_demand(
     return max(0.0, min(2.0, demand))
 
 
-def _runtime_markup(properties: PropertiesConfig, previous_markup: float | None) -> float:
+def _runtime_markup(
+    properties: PropertiesConfig, previous_markup: float | None, *, tick: int
+) -> float:
 
     if previous_markup is not None:
 
         return previous_markup
 
-    return initial_provider_markup(properties)
+    return initial_provider_markup(properties, tick=tick)
 
 
 def compute_market_metrics(
@@ -330,10 +350,17 @@ def compute_market_metrics(
     previous_cost_index: float = 1.0,
     booking_rate: float | None = None,
     price_elasticity: float = 0.5,
-    factors: dict[str, FactorState] | None = None,
-    system_properties: dict[str, float] | None = None,
+    factors: Mapping[str, FactorState],
+    system_properties: Mapping[str, float],
 ) -> dict[str, float]:
-    """Compute deterministic market metrics for one tick (M4-aware)."""
+    """Deterministische Marktkennzahlen für einen Tick (M4-aware).
+
+    *factors* und *system_properties* sind seit P0.7 Pflicht, aus demselben
+    Grund wie bei `compute_cost_pressure`: Sie werden dorthin durchgereicht,
+    und ein vergessenes Argument liefert still eine Zahl ohne die bedingten
+    Kostentreiber. Der Vorschau-Zweig in `agent_node` hat auf diesem Weg dem
+    Agenten im ersten Tick einen falschen Kostendruck gezeigt.
+    """
     params = active_parameters(tick, properties)
 
     price_model = properties.price_model
@@ -344,7 +371,7 @@ def compute_market_metrics(
 
     anchor_price = previous_price if previous_price > 0 else base_price
 
-    provider_markup = _runtime_markup(properties, previous_markup)
+    provider_markup = _runtime_markup(properties, previous_markup, tick=tick)
 
     fuel_change = params.get("fuel_price_change", 0.0)
 

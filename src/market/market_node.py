@@ -24,7 +24,7 @@ class MarketNode:
         last_demand = state.price_history[-1].demand_level if state.price_history else 1.0
         previous_markup = state.market_metrics.get(
             "provider_markup",
-            state.market_metrics.get("markup", initial_provider_markup(properties)),
+            state.market_metrics.get("markup", initial_provider_markup(properties, tick=tick)),
         )
         previous_cost_index = state.market_metrics.get("cost_index", 1.0)
 

@@ -146,12 +146,16 @@ def test_carbon_tax_delayed_until_tick_15():
         properties,
         previous_price=100.0,
         previous_demand=1.0,
+        factors={},
+        system_properties={},
     )
     metrics_15 = compute_market_metrics(
         15,
         properties,
         previous_price=100.0,
         previous_demand=1.0,
+        factors={},
+        system_properties={},
     )
 
     assert metrics_14["carbon_tax_level"] == 0.0
@@ -165,6 +169,8 @@ def test_compute_market_metrics_returns_all_metric_keys():
         properties,
         previous_price=100.0,
         previous_demand=1.0,
+        factors={},
+        system_properties={},
     )
 
     expected = {

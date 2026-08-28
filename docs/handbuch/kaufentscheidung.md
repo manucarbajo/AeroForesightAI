@@ -39,8 +39,9 @@ gleicher Ausgangslage und gleichem Preis fällt dieselbe Person immer gleich.
 
 Zufall steckt nur an einer Stelle im Modell, nämlich beim Ziehen der Bevölkerung
 zu Beginn: Wer welche Zahlungsbereitschaft, welches Alter und welche Merkmale
-bekommt, hängt vom Zufallsstartwert ab. Legen Sie ihn unter **Technik** fest,
-ist der ganze Lauf reproduzierbar.
+bekommt, hängt vom Zufallsstartwert ab. Der ganze Lauf ist damit reproduzierbar —
+auch dann, wenn Sie unter **Technik** keinen eigenen Startwert setzen: Dann
+rechnet der Lauf mit einem Standardwert.
 
 ## Was daraus folgt
 
