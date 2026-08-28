@@ -111,11 +111,26 @@ class TestModellUndExperimentSindZweiOrte:
     """
 
     def test_the_dense_areas_left_the_step_sequence(self, draft):
+        """Die **Formularwaende** sind weg — die eine Frage dazwischen nicht.
+
+        W3.3 hat die Ausgangslage zurückgeholt: sieben Auswahlen, ein
+        Bildschirm. Das ist kein Rückschritt gegenüber W3.1, sondern dessen
+        Ergänzung — dort ging es um 168 Bedienelemente, hier um sieben.
+        """
+
         schluessel = [s.key for s in wizard.STEPS]
 
         assert "rahmen" not in schluessel
         assert "nachfrage" not in schluessel
-        assert schluessel == ["szenario", "umfang", "modus", "ablage", "technik", "start"]
+        assert schluessel == [
+            "szenario",
+            "umfang",
+            "modus",
+            "faktorlage",
+            "ablage",
+            "technik",
+            "start",
+        ]
 
     def test_no_field_is_rendered_in_both_places(self, draft):
         """Beide Bereiche liegen gleichzeitig im DOM — ein Feld darf nur in einem stehen."""
@@ -134,17 +149,34 @@ class TestModellUndExperimentSindZweiOrte:
             "Laufzeitfehler im Browser."
         )
 
-    def test_the_model_area_actually_carries_them(self, draft):
-        """Und sie sind nicht verschwunden, sondern umgezogen."""
+    def test_the_model_area_carries_the_model(self, draft):
+        """Systemgrößen, Bevölkerung, Preisbildung — das Modell, und nur das."""
 
         from dashboard.web.pages import model_editor
 
         felder = _fields(model_editor.layout(draft))
 
-        assert any(f.startswith("factor_states.") for f in felder), "Die Faktorlage fehlt"
         assert any(f.startswith("property_edits.") for f in felder), "Die Systemgrößen fehlen"
         assert any(f.startswith("population_edits.") for f in felder), "Die Bevölkerung fehlt"
         assert any(f.startswith("market_feedback_edit.") for f in felder), "Die Preisbildung fehlt"
+        assert not any(f.startswith("factor_states.") for f in felder), (
+            "Die Faktorlage steht wieder im Modell — sie beschreibt die Ausgangslage "
+            "*eines Laufs* und gehört seit W3.3 in die Schrittfolge."
+        )
+
+    def test_the_starting_position_belongs_to_the_experiment(self, draft):
+        """Und sie steht dort, wo über den Lauf entschieden wird."""
+
+        in_schritten = set()
+        for index in range(len(wizard.STEPS)):
+            in_schritten |= _fields(wizard.content(draft, index))
+
+        faktoren = {f for f in in_schritten if f.startswith("factor_states.")}
+        assert len(faktoren) == 7, f"Erwartet sieben Faktoren im Assistenten, gefunden {faktoren}"
+        assert "apply_custom_overrides" in in_schritten, (
+            "Der Schalter, der über die Wirkung dieser Auswahl entscheidet, steht "
+            "nicht auf demselben Bildschirm."
+        )
 
     def test_the_model_area_survives_a_broken_config(self, draft):
         """Eine kaputte Config ist ein Befund, kein leerer Bereich."""

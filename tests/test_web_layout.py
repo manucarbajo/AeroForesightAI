@@ -393,11 +393,12 @@ def test_the_setup_area_builds_with_the_default_draft():
     assert "Lauf einrichten" in rendered
     assert "af-wizard" in rendered, "die Schrittfolge fehlt"
     assert "optional" in rendered, "die ueberspringbaren Schritte sind nicht als solche benannt"
-    # Sechs seit P1.9-W3.1: «Rahmenbedingungen» und «Nachfrage & Preisbildung»
-    # sind in den Bereich «Modell» umgezogen. Die Zahl steht hier bewusst als
-    # Zahl -- waechst die Schrittfolge wieder, ist das eine Entscheidung und
-    # keine Nebenwirkung.
-    assert len(wizard.STEPS) == 6
+    # Sieben: sechs seit P1.9-W3.1 (die beiden dichten Bereiche zogen ins
+    # «Modell»), plus die «Ausgangslage», die W3.3 als *eine* Frage
+    # zurueckgeholt hat -- sie gehoert zum Experiment, nicht zum Modell. Die
+    # Zahl steht hier bewusst als Zahl: Waechst die Schrittfolge, ist das eine
+    # Entscheidung und keine Nebenwirkung.
+    assert len(wizard.STEPS) == 7
 
 
 def test_launch_summary_describes_the_draft():

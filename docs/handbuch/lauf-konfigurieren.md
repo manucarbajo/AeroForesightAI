@@ -34,14 +34,23 @@ gerade gelesen haben.
 
 **Drei Schritte genügen.** Was gerechnet wird, wie weit, und womit: Danach ist
 alles Weitere mit sinnvollen Werten vorbelegt, und der Knopf **Direkt zum Start**
-bringt Sie ans Ende. Die Schritte vier und fünf sind als *optional*
-gekennzeichnet — Lauf & Ablage, Technik. Wer sie braucht, findet sie; wer nicht,
-geht daran vorbei.
+bringt Sie ans Ende. Die Schritte vier bis sechs sind als *optional*
+gekennzeichnet — Ausgangslage, Lauf & Ablage, Technik. Wer sie braucht, findet
+sie; wer nicht, geht daran vorbei.
+
+Der Schritt **Ausgangslage** ist die feinere Fassung der ersten Frage: Von
+welcher Weltlage geht der Lauf aus? Sieben Faktoren, je zwei Zustände, jeder mit
+seiner Leitfrage daneben. Haben Sie im ersten Schritt ein vorbereitetes Szenario
+gewählt, bringt das seine eigene Faktorlage mit und setzt sich durch — der
+Schritt sagt Ihnen das, statt eine Auswahl anzubieten, die im Lauf nichts
+bewirkt.
 
 ## Die Annahmen stehen woanders
 
-Faktorlage, Systemgrößen, Bevölkerung und Preisbildung finden Sie seit August
-2026 nicht mehr hier, sondern im eigenen Bereich **Modell** in der Kopfzeile.
+Systemgrößen, Bevölkerung und Preisbildung finden Sie seit August 2026 nicht
+mehr hier, sondern im eigenen Bereich **Modell** in der Kopfzeile. Die
+**Faktorlage** ist geblieben, als Schritt «Ausgangslage»: Sie beschreibt einen
+einzelnen Lauf und nicht das Modell.
 
 Der Grund ist eine Messung: Diese beiden Bereiche trugen zusammen **168
 Bedienelemente** und brauchten drei bzw. vier Bildschirme, während die drei

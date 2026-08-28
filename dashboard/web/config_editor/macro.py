@@ -1,10 +1,16 @@
-"""Tab «Rahmenbedingungen»: Ausgangslage des Systems und exogene Größen.
+"""Die Systemgrößen des Modells: CO₂-Abgabe, SAF-Quote, Ölpreis und ihre Regeln.
 
-Zwei Ebenen. Die **Faktoren F1–F7** beschreiben die Welt in groben Zügen —
-je Faktor zwei mögliche Zustände, aus `configs/factors.json` samt Namen und
-Leitfrage übernommen. Die **Systemgrößen** sind die Zahlen dahinter: CO₂-Abgabe,
-SAF-Quote, Ölpreis. Sie haben einen Startwert und können sich im Lauf über
-Regeln verändern.
+Jede Größe hat einen Startwert und kann sich im Lauf über Regeln verändern. Sie
+sind **das Modell** — die Zahlen, aus denen jeder Lauf rechnet — und werden seit
+P1.9-W3.1 im Bereich «Modell» gerendert, nicht mehr in der Schrittfolge.
+
+**Die Faktoren F1–F7 standen bis P1.9-W3.3 ebenfalls hier** und sind nach
+`factors.py` gezogen: Sie beschreiben die Ausgangslage *eines Laufs* und gehören
+damit zum Experiment, nicht zum Modell. Zwei Läufe desselben Modells dürfen sich
+genau darin unterscheiden.
+
+Der Dateiname bleibt `macro.py`, obwohl er jetzt zu weit greift — er steht in
+`config_editor.TABS`, in mehreren Tests und in der Architektur-Map.
 """
 
 from __future__ import annotations
@@ -13,7 +19,6 @@ from dash import dcc, html
 
 from dashboard.config_catalog import (
     PROPERTY_LABELS,
-    factor_options_from_file,
     get_editable_property_ids,
     load_config_file,
 )
@@ -54,63 +59,6 @@ _PROPERTY_EFFECTS = {
 
 def rule_id(prop: str, index: int, key: str) -> dict:
     return {"type": RULE, "prop": prop, "index": index, "key": key}
-
-
-# --- Faktoren --------------------------------------------------------------
-
-
-def _factor_meta(factors_file: str) -> dict[str, dict]:
-    """Namen und Leitfragen der Faktoren aus der Konfigurationsdatei holen."""
-
-    try:
-        payload = load_config_file(factors_file)
-    except Exception:  # noqa: BLE001 - fehlende Datei darf den Tab nicht sprengen
-        return {}
-    return {k: v for k, v in payload.items() if isinstance(v, dict) and v.get("name")}
-
-
-def _factor_block(draft: dict) -> html.Div:
-    factors_file = draft.get("factors_file", "factors.json")
-    options = factor_options_from_file(factors_file)
-    if not options:
-        return ui.alert("Keine Faktoren in der gewählten Datei gefunden.", "warning")
-
-    meta = _factor_meta(factors_file)
-    states = draft.get("factor_states") or {}
-
-    fields = []
-    for factor_id in sorted(options):
-        available = options[factor_id]
-        keys = list(available.keys())
-        current = states.get(factor_id) or (keys[0] if keys else None)
-        info = meta.get(factor_id, {})
-        name = info.get("name", factor_id)
-        question = info.get("description", "")
-        fields.append(
-            c.select(
-                f"factor_states.{factor_id}",
-                current,
-                [{"label": available[key], "value": key} for key in keys],
-                label=f"{factor_id} · {name}",
-                hint=question or None,
-            )
-        )
-
-    children: list = [ui.grid(*fields, cols="lg:grid-cols-2")]
-    if factors_file != "factors.json":
-        children.insert(
-            0,
-            html.Div(
-                ui.button(
-                    "Faktoren neu laden",
-                    id=c.action_id("reload-factors"),
-                    variant="secondary",
-                    icon_name="refresh",
-                ),
-                className="mb-4",
-            ),
-        )
-    return html.Div(children)
 
 
 # --- Regeln ----------------------------------------------------------------
@@ -362,36 +310,28 @@ def layout(draft: dict) -> html.Div:
     return html.Div(
         [
             ui.section(
-                "Ausgangslage des Systems",
-                ui.lede(
-                    "Sieben Faktoren beschreiben die Welt, in der der Lauf startet — je "
-                    "Faktor zwei mögliche Zustände. Aus ihrer Kombination bewertet die "
-                    "CIB-Matrix später, ob ein Szenario in sich stimmig ist."
-                ),
-                (
-                    None
-                    if overrides_on
-                    else ui.alert(
-                        "Eigene Werte sind abgeschaltet — die Auswahl unten wird nicht angewendet. "
-                        "Einschalten unter «Systemgrößen».",
-                        "warning",
-                        class_name="mb-4",
-                    )
-                ),
-                ui.card(_factor_block(draft)),
-                actions=ui.doc_link("faktoren-konzept"),
-            ),
-            ui.section(
                 "Systemgrößen",
                 ui.lede(
                     "Politik, Kosten und Konjunktur als Zahlen. Jede Größe hat einen "
                     "Startwert und kann sich über Regeln im Lauf verändern."
                 ),
+                (
+                    # Der Schalter dazu steht seit W3.3 im Schritt «Ausgangslage»
+                    # des Einrichtens: Ob eigene Werte gelten, ist eine
+                    # Entscheidung über den Lauf und nicht über das Modell. Hier
+                    # bleibt der Hinweis, damit niemand Zahlen pflegt, die im
+                    # nächsten Lauf nicht ankommen.
+                    None
+                    if overrides_on
+                    else ui.alert(
+                        "«Eigene Werte anwenden» ist ausgeschaltet — was Sie hier einstellen, "
+                        "wirkt im nächsten Lauf nicht. Einschalten im Einrichten, Schritt "
+                        "«Ausgangslage».",
+                        "warning",
+                        class_name="mb-4",
+                    )
+                ),
                 ui.card(
-                    c.check(
-                        "apply_custom_overrides",
-                        overrides_on,
-                    ),
                     html.Div(
                         ui.grid(
                             c.check(
@@ -413,7 +353,6 @@ def layout(draft: dict) -> html.Div:
                             ),
                             cols="sm:grid-cols-2",
                         ),
-                        className="mt-5",
                     ),
                     class_name="mb-6",
                 ),

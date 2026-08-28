@@ -36,7 +36,7 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
 from dashboard.config_catalog import list_sweep_presets
 from dashboard.web import components as ui
-from dashboard.web.config_editor import experiment, llm_pipeline, start_flow
+from dashboard.web.config_editor import experiment, factors, llm_pipeline, start_flow
 from dashboard.web.state import STORE_ID, initial_draft_dict
 
 #: Welcher Schritt gerade offen ist. Als Store und nicht als Adresse, weil ein
@@ -152,6 +152,18 @@ STEPS: list[Step] = [
         "Ob und wie die Agenten den Lauf in Worte fassen.",
         lambda draft: start_flow.mode_step(draft, number=None),
     ),
+    # **Die Ausgangslage ist mit P1.9-W3.3 zurückgekommen** — als *eine* Frage
+    # mit sieben Auswahlen, nicht als Formularwand. Sie gehört zum Experiment:
+    # Von welcher Weltlage geht *dieser* Lauf aus? Zwei Läufe desselben Modells
+    # dürfen sich genau darin unterscheiden. Optional, weil vorbelegt, und weil
+    # die Zusage aus P1.1 gilt: drei Entscheidungen genügen bis zum Start.
+    Step(
+        "faktorlage",
+        "Ausgangslage",
+        "Von welcher Weltlage der Lauf ausgeht — die sieben Faktoren.",
+        factors.layout,
+        required=False,
+    ),
     # **«Rahmenbedingungen» und «Nachfrage & Preisbildung» standen hier bis
     # P1.9-W3.1.** Sie sind in den Bereich «Modell» umgezogen: zusammen 168
     # Bedienelemente und 3,0 bzw. 4,0 Bildschirme, während die drei
@@ -210,10 +222,10 @@ FINAL = len(STEPS) - 1
 FELD_SCHRITT: dict[str, int] = {
     "rounds": 1,
     "seed": 2,
-    "simulation_name": 3,
-    "model": 4,
-    "temperature": 4,
-    "max_tokens": 4,
+    "simulation_name": 4,
+    "model": 5,
+    "temperature": 5,
+    "max_tokens": 5,
 }
 
 #: Wohin ein Befund gehört, dessen Feld die Schrittfolge nicht kennt. «Prüfen &
