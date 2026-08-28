@@ -77,6 +77,12 @@ SAVE = "wizard-save"
 #: Sprungziel je Schritt der Schrittliste.
 JUMP = "wizard-jump"
 
+#: Wo die Begründung steht, wenn «Weiter» oder «Lauf starten» gesperrt ist.
+#: **Ein gesperrter Knopf ohne Erklärung ist nur ärgerlich** — er sagt «nein»
+#: und verschweigt, wogegen. Die Meldung steht deshalb neben dem Knopf, nicht
+#: irgendwo oben auf der Seite.
+GATE = "wizard-gate"
+
 #: Die drei Wege des Einstiegs. Jeder ist ein eigener Knopf und **bleibt im
 #: DOM**, auch wenn die Schrittfolge läuft — nur ausgeblendet. Dash führt einen
 #: Callback gar nicht erst aus, wenn auch nur *ein* Eingang fehlt (Regel 6 der
@@ -173,6 +179,89 @@ STEPS: list[Step] = [
 #: aus P1.1 getroffen, und der Weg zum Start steht offen.
 LAST_REQUIRED = 2
 FINAL = len(STEPS) - 1
+
+
+#: In welchem Schritt ein beanstandetes Feld eingestellt wird (P1.9-W2.2).
+#:
+#: `src/validation.py` hängt seine Befunde an ein Feld — sechs Felder sind es
+#: heute. Damit «Weiter» sperren kann, muss die Schrittfolge wissen, **wo** ein
+#: Befund hingehört.
+#:
+#: **Eine Tabelle, ja — aber eine bewachte.** P1.1 hat eine Zuordnung
+#: «Schlüsselwort → Feld» im Dashboard ausdrücklich abgelehnt, weil sie still
+#: bricht, sobald jemand einen Meldungstext umformuliert. Hier ist es kein
+#: Schlüsselwort, sondern der Feldname, den die Prüfung selbst vergibt; und die
+#: Zuordnung wird nicht geglaubt, sondern geprüft: `tests/test_web_wizard.py`
+#: rendert jeden Schritt, liest heraus, welche Felder er wirklich zeigt, und
+#: meldet jede Zeile, die nicht mehr stimmt. Wer ein Feld in einen anderen
+#: Schritt verschiebt, sieht rot.
+#:
+#: Zur Laufzeit gerendert würde es das Problem lösen, ohne eine Tabelle zu
+#: brauchen — kostete aber acht Schrittbäume je Tastendruck, darunter die beiden
+#: mit zusammen 168 Bedienelementen.
+FELD_SCHRITT: dict[str, int] = {
+    "rounds": 1,
+    "seed": 2,
+    "simulation_name": 5,
+    "model": 6,
+    "temperature": 6,
+    "max_tokens": 6,
+}
+
+#: Wohin ein Befund gehört, dessen Feld die Schrittfolge nicht kennt. «Prüfen &
+#: Starten» ist der ehrliche Ort: Dort steht ohnehin der vollständige Preflight,
+#: und dort wird gestartet. Ein Befund ohne Feld — etwa eine unlesbare
+#: Konfigurationsdatei — hat keinen anderen Platz.
+SCHRITT_OHNE_FELD = FINAL
+
+
+def blocker_je_schritt(errors: list) -> dict[int, list[str]]:
+    """Die Befunde, nach dem Schritt sortiert, in dem man sie beheben kann."""
+
+    from src.validation import field_of
+
+    verteilt: dict[int, list[str]] = {}
+    for eintrag in errors or []:
+        schritt = FELD_SCHRITT.get(field_of(eintrag) or "", SCHRITT_OHNE_FELD)
+        verteilt.setdefault(schritt, []).append(str(eintrag))
+    return verteilt
+
+
+def gate(draft: dict, step) -> tuple[bool, bool, object]:
+    """Ob «Weiter» und «Lauf starten» offen sind — und warum nicht.
+
+    Zwei verschiedene Tore, aus zwei verschiedenen Gründen:
+
+    * **«Weiter»** sperrt nur, wenn der Befund **in diesem Schritt** behoben
+      werden kann. Sonst stünde man auf Schritt 1 fest wegen eines Modellnamens,
+      den man erst in Schritt 7 einstellt — eine Sackgasse, keine Führung.
+    * **«Lauf starten»** sperrt bei **jedem** Befund. Von dort geht es nicht
+      weiter, sondern los; ein Lauf mit kaputter Konfiguration scheitert
+      irgendwo im ersten Tick, mit einer Meldung, die niemandem hilft.
+
+    Bis hierher gab es kein Tor. `_navigate` prüfte nichts, «Weiter» war nie
+    gesperrt, und `_start` lehnte erst nach dem Klick ab. Man konnte durch acht
+    Schritte laufen und am Ende erfahren, dass Schritt 2 ungültig war.
+    """
+
+    jetzt = resolve(step)
+    if is_entry(jetzt):
+        return False, False, None
+
+    verteilt = blocker_je_schritt(start_flow.errors_for(draft))
+    if not verteilt:
+        return False, False, None
+
+    hier = verteilt.get(jetzt, [])
+    anderswo = sorted(s for s in verteilt if s != jetzt)
+
+    if hier:
+        text = "**Hier stimmt noch etwas nicht.** " + " · ".join(f"`{e}`" for e in hier)
+    else:
+        wohin = ", ".join(f"Schritt {s + 1} ({STEPS[s].title})" for s in anderswo)
+        text = f"**Der Lauf kann so nicht starten.** Zu beheben in: {wohin}."
+
+    return bool(hier), True, ui.alert(text, "error")
 
 
 def clamp(step) -> int:
@@ -554,6 +643,9 @@ def navigation(current: int | None) -> html.Div:
             # aus der man nur über einen Neuladen wieder herauskommt. Auf dem
             # Einstieg selbst ist die ganze Leiste unsichtbar.
             ui.button("Zurück", id=BACK, variant="ghost"),
+            # Die Begründung sitzt zwischen «Zurück» und dem nächsten Griff:
+            # dort, wo der Blick ohnehin hinfällt, wenn der Knopf nicht reagiert.
+            html.Div(id=GATE, className="af-wizard__gate"),
             html.Div(
                 [
                     ui.button(

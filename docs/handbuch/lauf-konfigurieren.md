@@ -49,6 +49,17 @@ Frage, die man am Ende hat: *Habe ich etwas übersehen?*
 > starten» direkt zum letzten Schritt sprang, sah dort sieben Haken für sieben
 > Schritte, die er nie gesehen hatte.
 
+**Was den Lauf verhindert, hält Sie auch auf.** Steht in einem Schritt ein Wert,
+mit dem der Lauf nicht starten kann, ist **Weiter** dort gesperrt, und daneben
+steht, woran es liegt. In allen anderen Schritten bleibt **Weiter** offen — was
+Sie an dieser Stelle gar nicht einstellen können, soll Sie dort auch nicht
+festhalten. **Lauf starten** ist gesperrt, solange irgendwo ein solcher Wert
+steht; die Meldung sagt dann, in welchem Schritt er zu beheben ist.
+
+> **Bis August 2026 hielt nichts auf.** Die Fehler wurden angezeigt, aber
+> **Weiter** war nie gesperrt: Man konnte durch alle acht Schritte gehen und erst
+> beim Klick auf **Lauf starten** erfahren, dass Schritt 2 ungültig war.
+
 Der letzte Schritt heißt **Prüfen & Starten**: Dort steht, was gleich passiert,
 und daneben die beiden Wege hinaus — den Lauf starten, oder die Einstellungen als
 Szenario speichern und später wieder aufrufen.

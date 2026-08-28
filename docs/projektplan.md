@@ -1049,7 +1049,7 @@ Reihenfolge ist Absicht: erst messen, dann die Unwahrheiten, dann der Schnitt, d
 | # | Was zu tun ist | Fertig wenn |
 | --- | --- | --- |
 | W2.1 ✅ | Zustände in der Schrittliste, die nicht mehr an der Position hängen. | **Erledigt 2026-08-28 — vier statt der geplanten drei.** «Nicht besucht» allein hätte den Befund abgestellt, beantwortet aber nicht die Frage, die man am Ende hat: *Habe ich etwas übergangen?* Ein Schritt, der noch kommt, und einer, an dem man vorbeigesprungen ist, sahen sonst gleich aus. Dazu die Zahl unter der Liste, und `aria-current="step"` als Vorgriff auf W5.3 — diese Funktion vergibt gerade die Zustände, sie später ein zweites Mal aufzuschlagen wäre Arbeit ohne Ertrag. |
-| W2.2 | Validierungstor: «Weiter» sperrt, solange der Schritt Blocker hat, mit Begründung am Feld; «Lauf starten» sperrt bei Befunden aus `validate_draft`, mit Sprungmarke zum betroffenen Schritt. | Ein ungültiger Wert kommt nicht am Schritt vorbei. |
+| W2.2 ✅ | Validierungstor an «Weiter» und «Lauf starten». | **Erledigt 2026-08-28.** Zwei Tore mit zwei verschiedenen Regeln: «Weiter» sperrt **nur** in dem Schritt, in dem der Befund behoben werden kann — sonst stünde man auf Schritt 1 fest wegen eines Modellnamens aus Schritt 7, eine Sackgasse statt einer Führung. «Lauf starten» sperrt bei **jedem** Befund und nennt den Schritt. Die Zuordnung Feld→Schritt (`FELD_SCHRITT`) ist eine Tabelle, aber eine **bewachte**: Ein Test rendert jeden Schritt, liest heraus, welche Felder er zeigt, und meldet jede Zeile, die nicht mehr stimmt. |
 | W2.3 | «Zurück» folgt einem Navigationsverlauf statt `current - 1`. | Aus Schritt 8, betreten über den Einstieg, führt «Zurück» auf den Einstieg — nicht auf «Technik». |
 
 **W3 — Der Schnitt.**

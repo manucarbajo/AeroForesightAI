@@ -2602,6 +2602,18 @@ html.dark .af-input[type="number"] {
     color: var(--text-muted);
 }
 
+/* Die Begruendung des Tores sitzt zwischen «Zurueck» und dem naechsten Griff.
+   `min-width: 0` und `flex: 1`, damit ein langer Befund die Knoepfe nicht aus
+   der Leiste schiebt -- dasselbe Muster wie bei den Rasterkindern aus P1.7-D. */
+.af-wizard__gate {
+    flex: 1 1 18rem;
+    min-width: 0;
+}
+
+.af-wizard__gate:empty {
+    display: none;
+}
+
 .af-step__hinweis {
     font-family: var(--font-body);
     font-size: 0.75rem;

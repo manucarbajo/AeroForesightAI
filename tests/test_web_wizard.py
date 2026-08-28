@@ -27,6 +27,8 @@ laufenden System, bevor sie hier festgehalten wurden:
 
 from __future__ import annotations
 
+import dataclasses
+
 import pytest
 
 from dashboard.web.config_editor import controls, wizard
@@ -445,6 +447,133 @@ class TestDieSchrittlisteBehauptetNichts:
 
         assert aria.count("step") == 1, f"Genau ein Schritt ist der offene: {aria}"
         assert aria[2] == "step", f"Markiert ist der falsche Schritt: {aria}"
+
+
+class TestDasTorHaeltWasEsZusagt:
+    """W2.2 — «Weiter» garantiert wieder etwas.
+
+    Bis hierher prüfte die Navigation nichts: «Weiter» war nie gesperrt, «Lauf
+    starten» nur während eines laufenden Laufs, und die Fehler wurden zwar
+    angezeigt, hielten aber nichts auf. Man konnte durch acht Schritte laufen und
+    erst beim Start erfahren, dass Schritt 2 ungültig war.
+
+    Ein Wizard unterscheidet sich von einer Reiterleiste dadurch, dass «Weiter»
+    etwas garantiert. Ohne Tor war diese Schrittfolge eine Reiterleiste mit
+    zusätzlichen Klicks — und die Reiterleiste hatte P1.7 gerade abgeschafft.
+    """
+
+    def _kaputt(self, draft):
+        entwurf = dict(draft)
+        entwurf["rounds"] = 0  # `max_ticks muss mindestens 1 sein`, Feld `rounds`
+        return entwurf
+
+    def test_a_clean_draft_blocks_nothing(self, draft):
+        weiter, start, meldung = wizard.gate(draft, 1)
+
+        assert (weiter, start) == (False, False)
+        assert meldung is None, "Ohne Befund gehört keine Meldung in die Leiste"
+
+    def test_it_blocks_next_where_the_finding_can_be_fixed(self, draft):
+        weiter, start, meldung = wizard.gate(self._kaputt(draft), wizard.FELD_SCHRITT["rounds"])
+
+        assert weiter is True
+        assert start is True
+        assert meldung is not None
+
+    def test_it_does_not_block_next_elsewhere(self, draft):
+        """Sonst wäre es eine Sackgasse, keine Führung.
+
+        Auf Schritt 1 kann man die Lauflänge nicht einstellen. «Weiter» dort zu
+        sperren hieße, jemanden für einen Fehler festzuhalten, den er an dieser
+        Stelle gar nicht beheben kann.
+        """
+
+        weiter, start, meldung = wizard.gate(self._kaputt(draft), 0)
+
+        assert weiter is False, "«Weiter» sperrt in einem Schritt ohne den Befund"
+        assert start is True, "«Lauf starten» muss trotzdem sperren"
+        assert "Schritt 2" in str(meldung), "Die Meldung sagt nicht, wohin"
+
+    def test_start_is_blocked_by_any_finding(self, draft):
+        """Von «Prüfen & Starten» geht es nicht weiter, sondern los."""
+
+        for schritt in range(len(wizard.STEPS)):
+            _, start, _ = wizard.gate(self._kaputt(draft), schritt)
+            assert start is True, f"Start ist auf Schritt {schritt + 1} offen"
+
+    def test_the_entry_is_not_a_step(self, draft):
+        """Am Einstieg gibt es weder «Weiter» noch «Starten» — also nichts zu sperren."""
+
+        assert wizard.gate(self._kaputt(draft), wizard.ENTRY) == (False, False, None)
+
+    def test_a_finding_without_a_field_lands_at_the_end(self):
+        """Etwa eine unlesbare Konfigurationsdatei — sie hat keinen anderen Ort."""
+
+        verteilt = wizard.blocker_je_schritt(["Konfiguration konnte nicht geladen werden: kaputt"])
+
+        assert list(verteilt) == [wizard.SCHRITT_OHNE_FELD]
+
+    def test_the_field_to_step_table_matches_what_the_steps_render(self, draft):
+        """**Die Tabelle wird nicht geglaubt, sondern geprüft.**
+
+        `FELD_SCHRITT` sagt, in welchem Schritt ein beanstandetes Feld
+        eingestellt wird. Eine handgepflegte Zuordnung ist genau die Sorte
+        Tabelle, die P1.1 im Dashboard abgelehnt hat — sie bricht still, sobald
+        jemand ein Feld in einen anderen Schritt verschiebt.
+
+        Hier wird sie gegen die Wirklichkeit gehalten: Jeder Schritt wird
+        gerendert, seine Felder ausgelesen, und die Zeile muss stimmen.
+        """
+
+        tatsaechlich = {
+            index: _fields(wizard.content(draft, index)) for index in range(len(wizard.STEPS))
+        }
+
+        falsch = []
+        for feld, schritt in sorted(wizard.FELD_SCHRITT.items()):
+            wo = [i for i, felder in tatsaechlich.items() if feld in felder]
+            if wo != [schritt]:
+                falsch.append(
+                    f"  `{feld}`: Tabelle sagt Schritt {schritt + 1}, gerendert in "
+                    f"{[i + 1 for i in wo] or 'keinem Schritt'}"
+                )
+
+        assert not falsch, (
+            "`FELD_SCHRITT` stimmt nicht mehr mit den Schritten überein:\n"
+            + "\n".join(falsch)
+            + "\n\nSolange sie falsch ist, sperrt «Weiter» im falschen Schritt — "
+            "oder gar nicht."
+        )
+
+    def test_every_field_validation_can_flag_is_in_the_table(self):
+        """Und umgekehrt: kein Befund, der keinen Schritt findet.
+
+        Ein Feld, das die Prüfung beanstanden kann und das die Tabelle nicht
+        kennt, landet stillschweigend auf «Prüfen & Starten». Das ist der
+        richtige Notnagel für Befunde **ohne** Feld — für eines **mit** Feld ist
+        es eine verpasste Führung.
+        """
+
+        import re
+        from pathlib import Path
+
+        quelle = Path("src/validation.py").read_text(encoding="utf-8")
+        vergeben = set(re.findall(r'issue\(\s*(?:f?"[^"]*"\s*)+,\s*"([a-z_.]+)"', quelle))
+        vergeben |= set(re.findall(r'^\s*"([a-z_.]+)",\s*$', quelle, re.M))
+
+        # `tick_unit` und Konsorten sind Konstanten im Modul, keine Feldnamen —
+        # gezählt wird nur, was auch ein Draft-Feld ist.
+        from dashboard.config_catalog import ConfigDraft
+
+        felder = {f.name for f in dataclasses.fields(ConfigDraft)}
+        beanstandbar = {name for name in vergeben if name in felder}
+
+        fehlend = sorted(beanstandbar - set(wizard.FELD_SCHRITT))
+        assert not fehlend, (
+            f"Diese Felder kann die Prüfung beanstanden, aber `FELD_SCHRITT` kennt "
+            f"sie nicht: {fehlend}. Ihr Befund landet dann auf «Prüfen & Starten», "
+            "statt in dem Schritt, in dem man ihn beheben kann."
+        )
 
 
 class TestJederWegSagtGenauEineSache:

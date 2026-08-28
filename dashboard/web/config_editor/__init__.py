@@ -196,24 +196,40 @@ def register_callbacks(app) -> None:
     @app.callback(
         Output({"type": start_flow.SLOT, "slot": ALL}, "children"),
         Output({"type": c.ERROR, "field": ALL}, "children"),
+        Output(wizard.NEXT, "disabled"),
+        Output(wizard.START, "disabled"),
+        Output(wizard.GATE, "children"),
         Input(STORE_ID, "data"),
+        Input(wizard.STEP_STORE, "data"),
     )
-    def _live(draft: dict | None):
-        """Was sich mit dem Entwurf ändert: Szenario-Beschreibung, Preflight, Feldfehler.
+    def _live(draft: dict | None, step):
+        """Was sich mit dem Entwurf ändert: Beschreibung, Preflight, Feldfehler — und das Tor.
 
         Bewusst **ein** Callback für alles: Die Prüfung baut den ganzen
         Simulationszustand auf und soll je Änderung einmal laufen, nicht je
         Ausgabefeld. Der Feldbezug kommt aus `src/validation.py` — die
         Oberfläche ordnet nichts über Schlüsselwörter zu, sie stellt nur dar.
+
+        **Das Tor hängt seit P1.9-W2.2 mit dran**, aus demselben Grund: Es
+        braucht dieselben Befunde. Ein eigener Callback dafür ließe
+        `validate_draft` zweimal je Tastendruck laufen — und der baut jedes Mal
+        den vollständigen `SimulationState` auf.
+
+        Der offene Schritt kommt als zweiter `Input` dazu: Ohne ihn bliebe ein
+        gesperrtes «Weiter» gesperrt, wenn man den Schritt verlässt, auf dem der
+        Befund liegt.
         """
 
-        slots, by_field = start_flow.live_state(draft or {})
+        data = draft or {}
+        slots, by_field = start_flow.live_state(data)
         slot_out = [slots.get((entry["id"] or {}).get("slot")) for entry in ctx.outputs_list[0]]
         error_out = [
             ui.field_errors(by_field.get((entry["id"] or {}).get("field"), []))
             for entry in ctx.outputs_list[1]
         ]
-        return slot_out, error_out
+
+        gesperrt_weiter, gesperrt_start, meldung = wizard.gate(data, step)
+        return slot_out, error_out, gesperrt_weiter, gesperrt_start, meldung
 
     @app.callback(
         Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),
