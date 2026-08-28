@@ -17,7 +17,7 @@ from src.orchestration.scenario_sweeps import (
     load_all_sweep_configs,
     load_sweep_config,
 )
-from src.validation import collect_state_errors, validate_llm_settings
+from src.validation import collect_state_errors, field_of, validate_llm_settings
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -577,7 +577,6 @@ def prepare_simulation_state(draft: ConfigDraft):
             sweep_path = Path(draft.sweep_id)
         sweep = load_sweep_config(sweep_path)
         state = apply_sweep_overrides(state, sweep)
-
     if draft.apply_custom_overrides or draft.scenario_mode == "custom":
         custom = build_custom_sweep_from_draft(draft)
         state = apply_sweep_overrides(state, custom)
@@ -626,6 +625,30 @@ def validate_draft(draft: ConfigDraft) -> list[str]:
         )
 
     return errors
+
+
+def issues_by_field(errors: list[str]) -> dict[str, list[str]]:
+    """Befunde nach dem Feld gruppieren, an dem sie hängen.
+
+    Was kein Feld trägt, taucht hier nicht auf — solche Befunde gehören in die
+    gesammelte Liste vor dem Start, nicht unter ein Eingabefeld. Die Zuordnung
+    kommt aus `src/validation.py` und nicht aus einer Tabelle hier: Eine
+    Schlüsselwort-Tabelle bräche still, sobald jemand einen Meldungstext
+    umformuliert.
+    """
+
+    grouped: dict[str, list[str]] = {}
+    for entry in errors:
+        name = field_of(entry)
+        if name:
+            grouped.setdefault(name, []).append(str(entry))
+    return grouped
+
+
+def unfielded_issues(errors: list[str]) -> list[str]:
+    """Die Befunde, für die es kein Eingabefeld gibt."""
+
+    return [str(entry) for entry in errors if not field_of(entry)]
 
 
 def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:
