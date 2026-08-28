@@ -671,14 +671,32 @@ class TestDerHybridModusDesSweeps:
     """
 
     def test_the_sweep_computes_its_ticks_deterministically(self) -> None:
-        """Der Beleg für die Prämisse — sonst stritte der Test über nichts."""
+        """Der Beleg für die Prämisse — sonst stritte der Test über nichts.
+
+        **Geprüft wird die Zusage, nicht ihre Schreibweise** (angepasst mit
+        P1.9-W1.1). Vorher stand hier die Textsuche `"deterministic_only=True"
+        in optionen` über dem Quelltext des Runner-Baus. Sie ist gebrochen, als
+        W1.1 den Wert aus dem Vertrag `FESTLEGUNGEN` zog statt ihn als Literal
+        hinzuschreiben — die zugesagte Eigenschaft galt unverändert, nur die
+        Buchstaben hatten sich verschoben.
+
+        Der Vertrag ist jetzt die load-bearing Stelle: `run_single_sweep` liest
+        ihn, und `tests/test_web_wirkung.py` hält fest, dass er das tut. Hier
+        wird deshalb der Vertrag befragt.
+        """
 
         from pathlib import Path
 
+        from src.orchestration.scenario_sweeps import festlegung_fuer
+
+        festlegung = festlegung_fuer("deterministic_only")
+        assert festlegung is not None, "Der Sweep-Vertrag sagt nichts mehr über den Rechenmodus"
+        assert festlegung.wert is True, (
+            "Der Sweep rechnet seine Ticks nicht mehr deterministisch — dann trägt "
+            "dieser ganze Abschnitt über den Hybrid-Modus nicht mehr."
+        )
+
         quelle = Path("src/orchestration/scenario_sweeps.py").read_text(encoding="utf-8")
-        runner_at = quelle.index("runner = SimulationRunner(")
-        optionen = quelle[runner_at : quelle.index("start_time = time.time()", runner_at)]
-        assert "deterministic_only=True" in optionen
         assert "prefer_llm=True" in quelle
 
     def test_the_mode_says_both_halves(self) -> None:
