@@ -13,6 +13,7 @@ import argparse
 import json
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -56,6 +57,137 @@ from src.reporting.run_scenario_generator import generate_and_save_run_scenario
 #: nicht variabel. Stand bis P0.6 zweimal als Literal im Modul: einmal im
 #: Lauf, einmal in den Metadaten, die ihn behaupteten.
 SWEEP_SEED = 42
+
+
+@dataclass(frozen=True)
+class Festlegung:
+    """Eine Einstellung, die der Szenario-Vergleich **vorgibt** statt entgegenzunehmen."""
+
+    #: Wie das Feld im Entwurf des Assistenten heißt.
+    feld: str
+    #: Der Wert, mit dem der Sweep tatsächlich rechnet.
+    wert: object
+    #: Was dem Nutzer dazu gesagt wird. Ein Satz, kein Fachbegriff.
+    grund: str
+
+
+#: **Der Vertrag des Szenario-Vergleichs (P1.9-W1.1).**
+#:
+#: Ein Sweep nimmt vom Entwurf des Assistenten fast nichts entgegen: Er rechnet
+#: alle hinterlegten Szenarien unter **gleichen** Bedingungen, weil sie sonst
+#: nicht vergleichbar wären. Das ist eine bewusste Entscheidung und bleibt so.
+#:
+#: Was daran falsch war, ist nicht die Festlegung, sondern ihr **Schweigen**:
+#: Der Assistent fragte Rechenmodus und Zufallsstartwert ab, der Preflight
+#: zeigte die Antworten an, und der Lauf verwarf sie. Ein Nutzer beantwortete
+#: Schritt 3 und bekam etwas anderes, ohne Hinweis.
+#:
+#: Diese Tabelle ist die Antwort darauf — und sie ist **die Quelle des
+#: Verhaltens**, nicht eine Beschreibung daneben. `run_single_sweep` liest
+#: seine Werte hier heraus; eine Fassung, die den Vertrag nur *beschreibt*,
+#: liefe früher oder später von ihm weg. Genau diese Drift hat dieses Projekt
+#: schon dreimal bezahlt (F7, die drei Rule-Evaluatoren, der Kostendruck).
+#:
+#: `dashboard/web/config_editor/` liest sie ebenfalls und stellt die
+#: betroffenen Felder als vorgegeben dar (W1.3).
+FESTLEGUNGEN: tuple[Festlegung, ...] = (
+    Festlegung(
+        "deterministic_only",
+        True,
+        "Der Szenario-Vergleich rechnet immer ohne Agenten-Dialog — acht Läufe mit "
+        "Sprachmodell wären nicht vergleichbar und dauerten Stunden.",
+    ),
+    Festlegung(
+        "seed",
+        SWEEP_SEED,
+        f"Alle Szenarien laufen mit demselben Zufallsstartwert ({SWEEP_SEED}). Nur so "
+        "zeigt ein Unterschied zwischen ihnen das Szenario und nicht die Ziehung.",
+    ),
+    Festlegung(
+        "checkpoint_interval",
+        0,
+        "Ein Vergleich schreibt keine Zwischenstände — er wird nicht fortgesetzt, "
+        "sondern wiederholt.",
+    ),
+)
+
+#: Felder, die der Szenario-Vergleich **gar nicht beachtet** — im Unterschied zu
+#: `FESTLEGUNGEN`, wo er einen bestimmten Wert einsetzt. Für den Nutzer ist der
+#: Unterschied gering («meine Antwort zählt hier nicht»), für den Code nicht:
+#: Diese hier tragen keinen Wert, den `run_single_sweep` einsetzen könnte.
+#:
+#: Der wichtigste ist `apply_custom_overrides`. Ein Vergleich rechnet jedes
+#: Szenario **unvermischt** aus seiner eigenen Datei — genau das, was P1.1 für
+#: den Einzellauf hergestellt hat. Wer im Assistenten Faktoren und Systemgrößen
+#: einstellt und dann einen Vergleich startet, sieht davon nichts wieder.
+UNBEACHTET: tuple[Festlegung, ...] = (
+    Festlegung(
+        "apply_custom_overrides",
+        None,
+        "Jedes Szenario gilt unvermischt aus seiner eigenen Datei. Eigene Faktoren "
+        "und Systemgrößen wirken im Vergleich nicht — sonst verglichen Sie nicht mehr "
+        "die Szenarien, sondern Ihre Änderung mit sich selbst.",
+    ),
+    Festlegung(
+        "use_seed",
+        None,
+        "Der Zufallsstartwert ist vorgegeben; ob Sie einen eigenen gesetzt haben, "
+        "spielt im Vergleich keine Rolle.",
+    ),
+    Festlegung(
+        "mock_llm",
+        None,
+        "Der Vergleich rechnet ohne Agenten-Dialog. Ob ein Sprachmodell bereitstünde, "
+        "ändert daran nichts.",
+    ),
+    Festlegung(
+        "no_market",
+        None,
+        "Der Marktmechanismus läuft in jedem Vergleich mit — ohne ihn gäbe es nichts "
+        "zu vergleichen.",
+    ),
+    Festlegung(
+        "redebedarf",
+        None,
+        "Redebedarf betrifft den Agenten-Dialog, den es hier nicht gibt.",
+    ),
+    Festlegung(
+        "simulation_name",
+        None,
+        "Jeder Lauf trägt den Namen seines Szenarios, nicht den, den Sie oben "
+        "eingetragen haben.",
+    ),
+    Festlegung(
+        "simulation_description",
+        None,
+        "Wie beim Namen: Es gilt die Beschreibung des jeweiligen Szenarios.",
+    ),
+)
+
+
+def vorgegebene_felder() -> dict[str, Festlegung]:
+    """Alle Felder, über die der Szenario-Vergleich nicht mit sich reden lässt.
+
+    Die eine Anlaufstelle für die Oberfläche: Was hier drinsteht, darf der
+    Assistent beim Vergleich nicht als freie Wahl darstellen (W1.3).
+    """
+
+    return {f.feld: f for f in (*FESTLEGUNGEN, *UNBEACHTET)}
+
+
+#: Was der Vertrag **nicht** abdeckt und trotzdem gilt: Der Szenariotext am Ende
+#: jedes Sweeps entsteht mit `prefer_llm=True`. Ein Sweep ist deshalb weder rein
+#: deterministisch noch ein Lauf «mit Sprachmodell» — er trägt in
+#: `run_metadata.json` den eigenen Modus `deterministic_with_llm_narrative`.
+#: Wer «ohne Sprachmodell» wählt und einen Vergleich startet, erreicht Ollama
+#: also trotzdem. Steht hier, weil es sonst nirgends stünde.
+SZENARIOTEXT_NUTZT_LLM = True
+
+
+def festlegung_fuer(feld: str) -> Festlegung | None:
+    """Die Festlegung zu einem Entwurfsfeld — oder `None`, wenn es frei ist."""
+
+    return vorgegebene_felder().get(feld)
 
 
 def sweep_metadata_args(sweep_id: str) -> SimpleNamespace:
@@ -246,13 +378,20 @@ def run_single_sweep(
     def dummy_llm(prompt):
         return "{}"
 
+    # Die drei festgelegten Werte kommen aus `FESTLEGUNGEN` und stehen hier
+    # nicht mehr als Literal (W1.1). Der Vertrag ist damit die Quelle des
+    # Verhaltens: Wer ihn ändert, ändert den Lauf — und wer den Lauf ändert,
+    # kommt an ihm nicht vorbei. Eine Tabelle, die nur beschriebe, was daneben
+    # hartkodiert ist, wäre in einem halben Jahr falsch.
+    festgelegt = {f.feld: f.wert for f in FESTLEGUNGEN}
+
     runner = SimulationRunner(
         llm=dummy_llm,
         options=RunnerOptions(
             enable_market=True,
             enable_cib=True,
-            deterministic_only=True,
-            checkpoint_interval=0,  # no checkpoints for sweeps
+            deterministic_only=bool(festgelegt["deterministic_only"]),
+            checkpoint_interval=int(festgelegt["checkpoint_interval"]),
             verbose_ticks=False,
         ),
     )
@@ -261,7 +400,7 @@ def run_single_sweep(
     run_id_str = f"sweeps/sweep_{sweep.id}"
     final_state = runner.run(
         state,
-        seed=SWEEP_SEED,
+        seed=int(festgelegt["seed"]),
         run_id=run_id_str,
     )
     elapsed = time.time() - start_time

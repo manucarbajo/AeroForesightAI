@@ -49,6 +49,7 @@ import pytest
 
 from dashboard import run_launcher
 from dashboard.config_catalog import ConfigDraft, default_config_draft
+from src.orchestration.scenario_sweeps import vorgegebene_felder
 
 # --- Die drei Startpfade ---------------------------------------------------
 
@@ -368,6 +369,92 @@ class TestKeinFeldWirdStillVerworfen:
                 f"`{feld}` wirkt jetzt auf dem Sweep-Pfad — schön, aber der Preflight "
                 "und `ERWARTET` müssen es mit erfahren (W1.1, W1.3)."
             )
+
+
+class TestWasDerVergleichVerwirftStehtInSeinemVertrag:
+    """Der Kern von W1.1: Verwerfen ist erlaubt, **stillschweigend** verwerfen nicht.
+
+    Der Szenario-Vergleich rechnet alle Szenarien unter gleichen Bedingungen —
+    sonst wären sie nicht vergleichbar. Diese Festlegung bleibt. Falsch daran
+    war ihr Schweigen: Der Assistent fragte, der Preflight zeigte an, der Lauf
+    verwarf.
+
+    Diese beiden Prüfungen schließen den Kreis in beide Richtungen. Zusammen
+    machen sie ein stilles Verwerfen unmöglich: Wer künftig ein Feld auf dem
+    Sweep-Pfad fallen lässt, muss es in den Vertrag schreiben — und wer eines in
+    den Vertrag schreibt, das gar nicht verworfen wird, wird ebenfalls rot.
+    """
+
+    def test_everything_the_contract_claims_is_really_fixed(self, abdruck_von):
+        """Kein Eintrag im Vertrag, der in Wahrheit doch durchkommt."""
+
+        grund = str(abdruck_von(_entwurf(SWEEP)))
+        falsch_behauptet = []
+        for feld in sorted(vorgegebene_felder()):
+            if feld not in ANDERER_WERT:
+                continue
+            draft = _entwurf(SWEEP)
+            setattr(draft, feld, ANDERER_WERT[feld])
+            if str(abdruck_von(draft)) != grund:
+                falsch_behauptet.append(feld)
+
+        assert not falsch_behauptet, (
+            f"Der Vertrag nennt {falsch_behauptet} als vorgegeben, aber sie wirken. "
+            "Ein Vertrag, der zu viel behauptet, ist so schlecht wie einer, der "
+            "schweigt — die Oberfläche würde eine wirksame Einstellung als "
+            "wirkungslos ausgeben."
+        )
+
+    def test_nothing_is_discarded_without_being_declared(self, abdruck_von):
+        """Und umgekehrt: kein verworfenes Feld ohne Eintrag.
+
+        Das ist die Prüfung, die W0.2 in eine Zusage verwandelt. Sie kennt vier
+        erlaubte Gründe, warum ein Feld auf dem Sweep-Pfad nichts bewegt — und
+        jeder davon ist irgendwo aufgeschrieben. Ein fünfter, unaufgeschriebener
+        Grund lässt sie fehlschlagen.
+        """
+
+        wirksam = _wirksame_felder(abdruck_von, SWEEP)
+        verworfen = set(_messbare_felder()) - wirksam
+
+        erlaubt = (
+            set(vorgegebene_felder())  # steht im Vertrag
+            | NACH_DEM_LAUF  # wirkt später, nicht hier
+            | NUR_MIT_SPRACHMODELL  # braucht ein echtes Modell
+            | {"base_price"}  # bekannter Verlust, eigenes Paket W1.5
+        )
+
+        stillschweigend = sorted(verworfen - erlaubt)
+        assert not stillschweigend, (
+            f"Der Szenario-Vergleich verwirft {stillschweigend}, ohne dass es "
+            "irgendwo steht.\n"
+            "Entweder in `scenario_sweeps.FESTLEGUNGEN` bzw. `UNBEACHTET` "
+            "aufnehmen — dann sagt der Assistent es dem Nutzer (W1.3) — oder "
+            "dafür sorgen, dass das Feld ankommt."
+        )
+
+    def test_the_contract_carries_the_behaviour_it_describes(self):
+        """Der Vertrag ist die Quelle, nicht die Beschreibung daneben.
+
+        Stünden die drei Werte weiterhin als Literal in `run_single_sweep` und
+        die Tabelle nur daneben, liefen beide auseinander — dreimal in diesem
+        Projekt schon geschehen. Deshalb wird hier geprüft, dass der Lauf die
+        Werte aus dem Vertrag **liest**: Ändert man den Vertrag, ändert sich der
+        Lauf mit.
+        """
+
+        quelle = Path("src/orchestration/scenario_sweeps.py").read_text(encoding="utf-8")
+        bau = quelle[quelle.index("runner = SimulationRunner(") :][:600]
+
+        assert "festgelegt[" in bau, (
+            "`run_single_sweep` baut seinen Runner nicht mehr aus `FESTLEGUNGEN`. "
+            "Damit ist der Vertrag zur Beschreibung geworden, und die nächste "
+            "Änderung läuft ihm davon."
+        )
+        for feld in ("deterministic_only", "checkpoint_interval", "seed"):
+            assert (
+                f'festgelegt["{feld}"]' in bau
+            ), f"`{feld}` steht wieder als Literal im Runner-Bau statt im Vertrag."
 
 
 class TestDasSprachmodellHaengtAmRechenmodus:
