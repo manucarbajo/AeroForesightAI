@@ -366,10 +366,21 @@ def test_reload_factors_reads_the_configured_file():
 
 
 def test_launch_page_builds_with_the_default_draft():
+    """Das Bedienfeld traegt den Start und den Stand — seit P1.6 nicht mehr den Editor."""
+
     rendered = _text(launch_page.layout(initial_draft_dict()))
 
-    assert "Simulation starten" in rendered
     assert "run-start" in rendered
+    assert "Rechenmodus" in rendered, "der Stand des Entwurfs fehlt"
+
+
+def test_the_setup_area_builds_with_the_default_draft():
+    from dashboard.web.pages import setup as setup_page
+
+    rendered = _text(setup_page.layout(initial_draft_dict()))
+
+    assert "Lauf einrichten" in rendered
+    assert "Alle Einstellungen" in rendered
 
 
 def test_launch_summary_describes_the_draft():

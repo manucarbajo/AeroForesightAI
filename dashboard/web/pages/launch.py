@@ -1,36 +1,37 @@
-"""Die linke Zone: der geführte Ablauf aus P1.1, jetzt als Parameterspalte.
+"""Die linke Zone: das Bedienfeld — was eingestellt ist, und der Start.
 
-Die Reihenfolge ist die Aussage der Spalte (P1.1): Erst die drei
-Entscheidungen, die bis zum Start genügen, dann der Start selbst, und erst
-danach — zugeklappt — die rund sechzig Felder für den Fall, dass eine bestimmte
-Annahme geprüft werden soll.
+**Sie ist kein Formular.** Bis P1.6 stand hier der vollständige geführte Ablauf
+samt Editor; am laufenden System gemessen waren das 10,7 Bildschirme, 752
+Wörter und 122 Eingabefelder in einer 336 px breiten Spalte, mit dem
+Start-Knopf 6,1 Bildschirme tief. Beide Abnahmekriterien der Vorgängerpakete
+waren dabei erfüllt — P1.1 zählt Entscheidungen (drei), P1.5 prüft Mechanik
+(fünf Zonen, kein Seiten-Scroll). Ein Kriterium, das die Anzahl misst, sagt
+nichts über die Erreichbarkeit.
 
-**Was der Leitstand daran ändert, ist der Ort, nicht der Ablauf.** Vorher stand
-dieser Block auf einer eigenen Seite; wer etwas änderte und die Wirkung sehen
-wollte, wechselte den Bereich. Jetzt steht er dauerhaft links neben Szene und
-Telemetrie. `start_flow.layout()` selbst ist unverändert — daran hängen die
-Zusicherungen aus `tests/test_web_start_flow.py`: höchstens drei Entscheidungen,
-kein Feld doppelt.
+Seit P1.6 trägt die Spalte drei Dinge, und nur diese:
 
-Zwei Dinge sind gewandert:
+1. **Was eingestellt ist**, in drei Zeilen — Szenario, Länge, Rechenmodus. Jede
+   Zeile führt in den Bereich «Einrichten». Es sind **Texte, keine
+   Eingabefelder**: Dieselbe Feld-ID zweimal im DOM ist für Dash ein
+   Laufzeitfehler, und der Bereich «Einrichten» liegt gleichzeitig darin.
+   `tests/test_web_rail.py` hält das fest.
+2. **Den Preflight** — er gehört neben den Knopf, den er absichert.
+3. **Den Start-Knopf**, in einem klebenden Fuß, damit er sichtbar bleibt, egal
+   wie lang die Warnungen darüber werden.
 
-* Die Tab-Leiste der vier Editor-Bereiche läuft in der schmalen Spalte
-  kompakt und zweizeilig (`af-tabs--rail`). Sie bleibt eine Tab-Leiste: Der
-  Wechsel hängt an `cfg-tabs` → `cfg-tab-content`, und den umzubauen hieße,
-  die Callback-Kette des Editors anzufassen, ohne dass jemand etwas davon
-  hätte.
-* Das Fortschritts-Log steht nicht mehr unter dem Startknopf, sondern in der
-  Konsole der Telemetrie — zusammen mit den Ereignissen und den Vorfällen, zu
-  denen es gehört. Es fließt über `run-progress-store` dorthin.
+Das Fortschritts-Log steht nicht hier, sondern in der Konsole der Telemetrie —
+zusammen mit den Ereignissen und den Vorfällen, zu denen es gehört. Es fließt
+über `run-progress-store` dorthin.
 """
 
 from __future__ import annotations
 
 from dash import Input, Output, State, dcc, html, no_update
 
-from dashboard.config_catalog import validate_draft
+from dashboard.config_catalog import list_sweep_presets, validate_draft
 from dashboard.web import components as ui
-from dashboard.web import config_editor, runner
+from dashboard.web import config_editor, routing, runner
+from dashboard.web.config_editor import compute_mode, start_flow
 from dashboard.web.state import STORE_ID, draft_from_dict, initial_draft_dict
 
 #: Abstand, in dem das Log nachgezogen wird. Kürzer wirkt hektisch und erzeugt
@@ -44,6 +45,10 @@ PROGRESS_STORE = "run-progress-store"
 #: Ob gerade ein Lauf rechnet — die Kopfzeile liest das für ihren Zustand.
 RUNNING_STORE = "run-running-store"
 
+#: Der Wirt für die drei Stand-Zeilen. Sie ändern sich mit dem Entwurf und
+#: werden deshalb nachgefüllt, statt die Spalte neu zu bauen.
+SUMMARY_HOST = "rail-summary"
+
 
 def _summary(draft: dict) -> str:
     runs = int(draft.get("run_count") or 1)
@@ -56,6 +61,62 @@ def _summary(draft: dict) -> str:
     )
 
 
+# --- Was eingestellt ist ---------------------------------------------------
+
+
+def _scenario_name(draft: dict) -> str:
+    """Der gewählte Ausgangspunkt, so benannt wie im Einrichten."""
+
+    choice = start_flow.of(draft)
+    if choice == start_flow.STANDARD:
+        return "Standard-Ausgangslage"
+    if choice == start_flow.CUSTOM:
+        return "Eigene Einstellungen"
+    preset = next((s for s in list_sweep_presets() if s.id == choice), None)
+    return preset.name if preset is not None else str(choice)
+
+
+def _length(draft: dict) -> str:
+    ticks = draft.get("rounds", "?")
+    if draft.get("run_all_sweeps"):
+        return f"{ticks} Ticks · alle Szenarien"
+    runs = int(draft.get("run_count") or 1)
+    return f"{ticks} Ticks" if runs == 1 else f"{ticks} Ticks · {runs}×"
+
+
+def _row(label: str, value: str) -> dcc.Link:
+    """Eine Stand-Zeile: Beschriftung, Wert, und der Weg dorthin.
+
+    Ein Verweis und kein Eingabefeld — geändert wird im Bereich «Einrichten».
+    """
+
+    return dcc.Link(
+        [
+            html.Span(label, className="af-rail-row__label"),
+            html.Span(value, className="af-rail-row__value", title=value),
+            ui.icon("chevron_right", "af-rail-row__chevron text-base"),
+        ],
+        href=routing.url("setup"),
+        className="af-rail-row",
+    )
+
+
+def summary_rows(draft: dict) -> html.Div:
+    """Szenario, Länge, Rechenmodus — der Entwurf auf drei Zeilen."""
+
+    return html.Div(
+        [
+            _row("Szenario", _scenario_name(draft)),
+            _row("Länge", _length(draft)),
+            _row("Rechenmodus", compute_mode.short_label(draft)),
+        ],
+        className="af-rail-rows",
+    )
+
+
+# --- Die Zone als Ganzes ---------------------------------------------------
+
+
 def rail(draft: dict | None = None) -> html.Div:
     """Der Inhalt der linken Zone."""
 
@@ -63,13 +124,18 @@ def rail(draft: dict | None = None) -> html.Div:
     return html.Div(
         [
             html.Div(
-                [
-                    html.H1("Simulation starten", className=ui.H2),
-                    html.P(
-                        "Drei Entscheidungen genügen: was gerechnet wird, wie weit, und womit.",
-                        className=f"{ui.CAPTION} mt-1",
-                    ),
-                ],
+                html.Div(
+                    [
+                        html.H1("Lauf", className=ui.H3),
+                        dcc.Link(
+                            [ui.icon("tune", "text-sm"), "Einrichten"],
+                            href=routing.url("setup"),
+                            className="af-btn af-btn--secondary inline-flex items-center "
+                            "gap-1.5 px-3 py-1.5 font-body text-xs font-medium",
+                        ),
+                    ],
+                    className="flex items-center justify-between gap-3",
+                ),
                 className="af-pane__sticky",
             ),
             dcc.Store(id="cfg-editor-refresh", data=0),
@@ -77,36 +143,29 @@ def rail(draft: dict | None = None) -> html.Div:
             dcc.Store(id=PROGRESS_STORE, data=[]),
             dcc.Store(id=RUNNING_STORE, data=False),
             dcc.Interval(id="run-poll", interval=POLL_INTERVAL_MS, disabled=True),
-            config_editor.start_layout(draft),
+            html.Div(summary_rows(draft), id=SUMMARY_HOST, className="mb-5"),
+            # Der Preflight wird von `_live` nachgefüllt — er haengt an der
+            # Konfigurationspruefung, die bei jeder Aenderung einmal laeuft.
+            html.Div(
+                start_flow.preflight(
+                    draft, start_flow.errors_for(draft), slot="rail", compact=True
+                ),
+                id=start_flow.slot_id("preflight"),
+            ),
+            html.Div(id="run-status", className="mt-4"),
             html.Div(
                 [
-                    ui.button(
-                        "Start",
-                        id="run-start",
-                        icon_name="play_arrow",
-                        className="w-full",
-                    ),
+                    ui.button("Start", id="run-start", icon_name="play_arrow", className="w-full"),
                     html.P(_summary(draft), id="run-summary", className=f"{ui.CAPTION} mt-2"),
                 ],
-                className="mb-4",
-            ),
-            html.Div(id="run-status", className="mb-4"),
-            ui.divider("my-6"),
-            html.Div(
-                [
-                    html.P(
-                        "Alle Einstellungen",
-                        className="font-body text-sm font-medium af-text mb-3",
-                    ),
-                    config_editor.layout(draft),
-                ]
+                className="af-rail-footer",
             ),
         ],
-        className="af-pane",
+        className="af-pane af-rail",
     )
 
 
-#: Alter Name, damit Aufrufer und Tests, die die Seite als Ganzes bauen,
+#: Alter Name, damit Aufrufer und Tests, die die Zone als Ganzes bauen,
 #: unverändert weiterlaufen.
 layout = rail
 
@@ -172,10 +231,12 @@ def register_callbacks(app) -> None:
 
     @app.callback(
         Output("run-summary", "children"),
+        Output(SUMMARY_HOST, "children"),
         Input(STORE_ID, "data"),
     )
     def _update_summary(draft: dict | None):
-        return _summary(draft or {})
+        data = draft or {}
+        return _summary(data), summary_rows(data)
 
     @app.callback(
         Output("run-job-store", "data"),

@@ -85,11 +85,16 @@
     --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
     /* Zonenmaße des Leitstands. Als Variablen, damit Kopfzeile, Zeitleiste und
-       die klebenden Sprungziele der Doku-Seite denselben Wert benutzen. */
+       die klebenden Sprungziele der Doku-Seite denselben Wert benutzen.
+
+       Die Seitenspalten atmen seit P1.6 mit der Fensterbreite: Bei 1280 px
+       nahmen sie zusammen 54 % und liessen dem Viewport 46 % — in einem
+       Leitstand soll die Mitte dominieren. Auf breiten Schirmen bleibt alles
+       wie zuvor, dort war das Verhaeltnis schon richtig. */
     --shell-header: 3.5rem;
     --shell-timeline: 5.5rem;
-    --shell-left: 21rem;
-    --shell-right: 22rem;
+    --shell-left: clamp(17rem, 18vw, 21rem);
+    --shell-right: clamp(18rem, 19vw, 22rem);
 }
 
 /* --- Semantische Tokens: dunkel ------------------------------------------ */
@@ -305,6 +310,93 @@ body {
     border-bottom: 1px solid var(--border-subtle);
     padding: 0.75rem 1.25rem;
     margin: -1.25rem -1.25rem 1rem;
+}
+
+/* --- Das Bedienfeld ------------------------------------------------------- */
+/* Die linke Zone ist seit P1.6 kein Formular mehr, sondern Anzeige und
+   Ausloeser: drei Zeilen Stand, der Preflight, der Start-Knopf. Sie soll auf
+   einen Bildschirm passen — vorher waren es zehn. */
+
+.af-rail {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+/* Der Start-Knopf bleibt sichtbar, egal wie lang die Warnungen darueber
+   werden. Ein Knopf, den man erst suchen muss, ist der haeufigste Weg, einen
+   Lauf gar nicht erst zu starten. */
+.af-rail-footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: 0.875rem 0 0.25rem;
+    background: linear-gradient(to bottom, transparent, var(--surface) 35%);
+}
+
+.af-rail-rows {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+/* Eine Stand-Zeile ist ein Verweis, kein Eingabefeld — geaendert wird im
+   Bereich «Einrichten». Zwei Felder mit derselben ID im DOM sind fuer Dash ein
+   Laufzeitfehler, und beide Zonen liegen gleichzeitig darin. */
+.af-rail-row {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    background: var(--surface);
+    transition: background-color 0.15s ease;
+}
+
+.af-rail-row + .af-rail-row {
+    border-top: 1px solid var(--border-subtle);
+}
+
+.af-rail-row:hover {
+    background: var(--surface-hover);
+}
+
+.af-rail-row__label {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.af-rail-row__value {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.af-rail-row__chevron {
+    color: var(--text-faint);
+}
+
+.af-rail-row:hover .af-rail-row__chevron {
+    color: var(--accent);
+}
+
+/* Der Hinweis auf den Start-Knopf gilt nur dort, wo die Spalte eine Schublade
+   ist. Auf breiten Fenstern steht der Knopf sichtbar daneben. */
+.af-drawer-hint {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+    .af-drawer-hint {
+        display: block;
+    }
 }
 
 /* --- Schubladen (schmale Fenster) ---------------------------------------- */
@@ -976,6 +1068,39 @@ html.dark .af-input[type="number"] {
     padding: 0.25rem 0;
 }
 
+/* Auswahl als Kartenraster statt als Liste. Zehn Szenarien mit je einem
+   erklaerenden Satz waren untereinander drei Bildschirme lang; nebeneinander
+   sind es drei Reihen, und die Beschreibungen bleiben lesbar. */
+.af-radio--cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 0.5rem;
+}
+
+.af-radio--cards label {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.af-radio--cards label:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-hover);
+}
+
+/* Die gewaehlte Karte traegt den Akzentrahmen. `:has()` statt einer Klasse aus
+   Python: Der Zustand steht im Eingabeelement, und die Oberflaeche soll ihn
+   nicht ein zweites Mal fuehren. */
+.af-radio--cards label:has(input:checked) {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.af-radio--cards label + label {
+    margin-top: 0;
+}
+
 /* --- Umschalter ----------------------------------------------------------- */
 /* Ein echter Schalter für Systemzustände, die an oder aus sind. Optisch
    deutlich von einer Checkbox getrennt: Die Checkbox wählt aus einer Menge,
@@ -1186,19 +1311,6 @@ html.dark .af-input[type="number"] {
 .af-tabs--sub .af-tabs__list .af-tab,
 .af-tabs--sub .af-tabs__list .af-tab--selected {
     font-size: 0.8125rem;
-    padding: 0.5rem 0;
-}
-
-/* In der Parameterspalte ist keine Breite fuer eine ausladende Tab-Leiste.
-   Kompakt und umbruchfreudig statt abgeschnitten. */
-.af-tabs--rail .af-tabs__list {
-    gap: 0.875rem;
-    margin-bottom: 1rem;
-}
-
-.af-tabs--rail .af-tabs__list .af-tab,
-.af-tabs--rail .af-tabs__list .af-tab--selected {
-    font-size: 0.75rem;
     padding: 0.5rem 0;
 }
 

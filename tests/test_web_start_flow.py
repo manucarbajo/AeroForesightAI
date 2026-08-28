@@ -235,11 +235,20 @@ class TestBefundeStehenAmFeld:
 
 
 def test_live_state_fills_every_slot_the_layout_declares(draft):
-    """Ein Slot ohne Inhalt bliebe nach der ersten Änderung leer stehen."""
+    """Ein Slot ohne Inhalt bliebe nach der ersten Änderung leer stehen.
+
+    Seit P1.6 liegen die Slots in **zwei** Bäumen: die Szenario-Beschreibung im
+    Bereich «Einrichten», der Preflight im Bedienfeld links. `_live` füllt beide
+    über dieselbe Pattern-ID — der Test muss deshalb beide abgehen. Nur einen zu
+    prüfen hieße, den anderen leer stehen zu lassen und es nicht zu merken.
+    """
+
+    from dashboard.web.pages import launch as launch_page
 
     erklaert = {
         (item.id or {}).get("slot")
-        for item in _walk(start_flow.layout(draft), skip_details=False)
+        for baum in (start_flow.layout(draft), launch_page.rail(draft))
+        for item in _walk(baum, skip_details=False)
         if isinstance(getattr(item, "id", None), dict) and item.id.get("type") == start_flow.SLOT
     }
     slots, _by_field = start_flow.live_state(draft)

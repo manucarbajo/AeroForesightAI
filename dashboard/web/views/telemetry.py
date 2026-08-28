@@ -23,9 +23,11 @@ from dashboard.web import components as ui
 from dashboard.web import theme
 from dashboard.web.run_data import RunData
 
-#: Wie viele Konsolenzeilen höchstens dargestellt werden. Ein 500-Tick-Lauf
-#: schreibt mehr, als der Browser flüssig zeichnet.
-MAX_CONSOLE_LINES = 300
+#: Wie viele Konsolenzeilen höchstens dargestellt werden. Bei 300 lagen bei
+#: einem 40-Tick-Lauf schon 254 Zeilen gleichzeitig im DOM einer Seitenspalte —
+#: gemessen, nicht geschätzt. Die Konsole ist ein Nachschlagewerk; wer weiter
+#: zurück muss, nimmt `event_log.json` unter «Dateien».
+MAX_CONSOLE_LINES = 80
 
 #: Welche Ereignisquelle welche Stufe trägt. Der Regulator setzt Politik, das
 #: ist die einzige Quelle, die im Normalbetrieb hervorstechen soll.
@@ -114,7 +116,9 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
             "—" if nachfrage is None else f"{nachfrage:.2f}",
             hint=None if row.get("population") is None else f"{row['population']} Personen",
         ),
-        cols="grid-cols-2",
+        # Einspaltig: In einer rund 20 rem breiten Zone blieben je Karte 146 px,
+        # und die Zahl — das Einzige, was hier zählt — wurde zur Nebensache.
+        cols="grid-cols-1",
         gap="gap-2",
     )
 
@@ -283,8 +287,19 @@ def console_lines(
 
 
 def console(
-    data: RunData, *, progress: list[str] | None = None, error: str | None = None, open: bool = True
+    data: RunData,
+    *,
+    progress: list[str] | None = None,
+    error: str | None = None,
+    open: bool = False,
 ) -> html.Details:
+    """Die Konsole — seit P1.6 zugeklappt.
+
+    Sie ist ein Nachschlagewerk, kein Dauerbild: Offen nahm sie den unteren
+    Drittel der Zone ein und schob die Verläufe aus dem Blick. Die Zahl im
+    Abzeichen sagt, ob es etwas zu sehen gibt.
+    """
+
     zeilen = console_lines(data, progress=progress, error=error)
     return ui.accordion(
         "Konsole",

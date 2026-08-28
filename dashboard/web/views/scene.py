@@ -265,7 +265,7 @@ def render(
                     dcc.Graph(
                         figure=figur,
                         config=theme.GRAPH_CONFIG,
-                        style={"height": "clamp(22rem, 52vh, 40rem)"},
+                        style={"height": "clamp(24rem, 62vh, 48rem)"},
                     ),
                     overlay(tick, data.max_tick, len(ausschnitt), zoom_index),
                 ],

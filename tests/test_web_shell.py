@@ -128,11 +128,24 @@ class TestFuenfZonen:
 
 
 class TestGenauEinBereichIstSichtbar:
-    """Alle drei liegen im DOM; sichtbar ist einer. Zwei wären doppelte IDs."""
+    """Alle vier liegen im DOM; sichtbar ist einer. Zwei wären doppelte IDs."""
 
+    def test_every_route_has_its_own_area(self):
+        """Die Sichtbarkeiten und die Bereichsliste dürfen nicht auseinanderlaufen."""
+
+        assert len(web_app.visibility("")) == len(shell.ROUTES)
+
+    #: Reihenfolge wie in `shell.ROUTES`: Leitstand, Einrichten, Ergebnisse, Handbuch.
     @pytest.mark.parametrize(
         ("pathname", "sichtbar"),
-        [("/app/", 0), ("/app/runs", 1), ("/app/doku", 2), ("/app/doku/cib", 2), ("/app", 0)],
+        [
+            ("/app/", 0),
+            ("/app/setup", 1),
+            ("/app/runs", 2),
+            ("/app/doku", 3),
+            ("/app/doku/cib", 3),
+            ("/app", 0),
+        ],
     )
     def test_the_address_decides(self, pathname, sichtbar):
         stile = web_app.visibility(web_app.active_route(pathname))

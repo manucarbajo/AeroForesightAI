@@ -115,7 +115,7 @@ def layout(draft: dict) -> html.Div:
             ui.tabs("cfg-tabs", TABS, value=DEFAULT_TAB),
             html.Div(tab_layout(DEFAULT_TAB, draft), id="cfg-tab-content"),
         ],
-        className="af-tabs--sub af-tabs--rail",
+        className="af-tabs--sub",
     )
 
 

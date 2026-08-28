@@ -45,6 +45,7 @@ from dashboard.web import (
 from dashboard.web.pages import docs as docs_page
 from dashboard.web.pages import launch as launch_page
 from dashboard.web.pages import runs as runs_page
+from dashboard.web.pages import setup as setup_page
 from dashboard.web.state import STORE_ID, draft_from_dict
 from dashboard.web.views import scene, telemetry
 
@@ -155,15 +156,17 @@ def active_route(pathname: str | None) -> str:
     return relative if relative in {route for route, _ in shell.ROUTES} else ""
 
 
-def visibility(active: str) -> tuple[dict, dict, dict]:
-    """Welcher der drei Viewport-Bereiche sichtbar ist — genau einer.
+def visibility(active: str) -> tuple[dict, dict, dict, dict]:
+    """Welcher der vier Viewport-Bereiche sichtbar ist — genau einer.
 
-    Alle drei bleiben im DOM (sonst zeigten Callbacks auf Komponenten, die es
-    nicht gibt); umgeschaltet wird nur die Sichtbarkeit.
+    Alle vier bleiben im DOM (sonst zeigten Callbacks auf Komponenten, die es
+    nicht gibt); umgeschaltet wird nur die Sichtbarkeit. Die Reihenfolge ist
+    die von `shell.ROUTES`: Leitstand, Einrichten, Ergebnisse, Handbuch.
     """
 
     return (
         _VISIBLE if active == "" else _HIDDEN,
+        _VISIBLE if active == "setup" else _HIDDEN,
         _VISIBLE if active == "runs" else _HIDDEN,
         _VISIBLE if active == "doku" else _HIDDEN,
     )
@@ -214,6 +217,7 @@ def serve_layout() -> html.Div:
                 main=html.Div(
                     [
                         html.Div(scene_block(data, 1), id=SCENE_HOST),
+                        html.Div(setup_page.layout(draft), id="page-setup", style=_HIDDEN),
                         html.Div(runs_page.layout(selection), id="page-runs", style=_HIDDEN),
                         html.Div(docs_page.layout(), id="page-docs", style=_HIDDEN),
                     ],
@@ -245,6 +249,7 @@ def create_app() -> Dash:
     @app.callback(
         Output(shell.NAV_HOST, "children"),
         Output(SCENE_HOST, "style"),
+        Output("page-setup", "style"),
         Output("page-runs", "style"),
         Output("page-docs", "style"),
         Input("url", "pathname"),

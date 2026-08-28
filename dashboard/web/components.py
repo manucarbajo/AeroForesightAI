@@ -268,20 +268,40 @@ def toggle(
     )
 
 
-def radio(options: list[dict], *, value: Any, **kwargs: Any) -> dcc.RadioItems:
+#: Als Kartenraster statt als Liste. Die Beschriftungen werden zu Gitterfeldern;
+#: das Innere bleibt dieselbe Zeile aus Knopf und Text. Fuer Auswahlen mit
+#: vielen Moeglichkeiten und je einem beschreibenden Satz — untereinander waeren
+#: zehn davon drei Bildschirme lang.
+CARD_LABEL_STYLE = {
+    "display": "flex",
+    "alignItems": "flex-start",
+    "gap": "0.625rem",
+    "padding": "0.75rem",
+    "lineHeight": "1.5",
+    "cursor": "pointer",
+    "margin": "0",
+}
+
+
+def radio(options: list[dict], *, value: Any, cards: bool = False, **kwargs: Any) -> dcc.RadioItems:
     """Auswahl unter sich ausschließenden Möglichkeiten.
 
     Wie bei `checkbox` muss das Layout inline gesetzt werden — `dcc.RadioItems`
     schreibt selbst inline und überstimmt damit jede Regel aus dem Stylesheet.
+
+    *cards* stellt die Möglichkeiten als Raster nebeneinander statt
+    untereinander. Der Unterschied ist nicht kosmetisch: Bei zehn Optionen mit
+    je einem erklärenden Satz ist die Liste drei Bildschirme lang, das Raster
+    drei Reihen.
     """
 
     return dcc.RadioItems(
         options=options,
         value=value,
-        className="af-radio",
+        className="af-radio af-radio--cards" if cards else "af-radio",
         inputClassName="af-radio__input",
         labelClassName="af-radio__label",
-        labelStyle=CHECK_LABEL_STYLE,
+        labelStyle=CARD_LABEL_STYLE if cards else CHECK_LABEL_STYLE,
         **kwargs,
     )
 

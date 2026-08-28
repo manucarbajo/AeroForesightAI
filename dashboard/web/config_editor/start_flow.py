@@ -149,6 +149,13 @@ def summary_sentence(draft: dict) -> str:
 
 
 def _choice_label(title: str, description: str) -> html.Div:
+    """Titel und ein Satz dazu — als Inhalt einer Karte im Raster.
+
+    Untereinander war jede dieser Beschriftungen in einer schmalen Spalte gut
+    100 px hoch; zehn davon ergaben drei Bildschirme. Nebeneinander sind es
+    drei Reihen, und die Beschreibungen bleiben lesbar statt zu verschwinden.
+    """
+
     return html.Div(
         [
             html.Span(title, className="font-body text-sm font-medium af-text"),
@@ -178,7 +185,7 @@ def choice_options() -> list[dict]:
         {
             "label": _choice_label(
                 "Eigene Einstellungen",
-                "Was unten unter «Alle Einstellungen» eingestellt ist.",
+                "Was weiter unten unter «Alle Einstellungen» eingestellt ist.",
             ),
             "value": CUSTOM,
         }
@@ -317,15 +324,37 @@ def _warnings(draft: dict, errors: list[str]) -> list:
     return warnings
 
 
-def preflight(draft: dict, errors: list[str]) -> html.Div:
-    """Der letzte Blick vor dem Start."""
+#: Was im Bedienfeld von den sechs Kacheln übrig bleibt. Die drei, die vor dem
+#: Start wirklich zählen; der Rest steht im Bereich «Einrichten», wo er
+#: eingestellt wird.
+_COMPACT_TILES = 3
 
+
+def preflight(
+    draft: dict, errors: list[str], *, slot: str = "setup", compact: bool = False
+) -> html.Div:
+    """Der letzte Blick vor dem Start.
+
+    *slot* benennt den Platzhalter für den Klartext-Satz. Er ist ein Parameter,
+    weil derselbe Satz an mehreren Stellen stehen darf — dieselbe ID zweimal
+    wäre dagegen ein Laufzeitfehler im Browser.
+
+    *compact* ist die Fassung für das Bedienfeld: drei Kacheln statt sechs,
+    einspaltig. Seit P1.6 steht der Preflight dort, direkt über dem Knopf, den
+    er absichert.
+    """
+
+    tiles = _tiles(draft)
     return html.Div(
         [
-            ui.card(html.Div(ui.markdown(summary_sentence(draft)), id=summary_id("preflight"))),
+            ui.card(html.Div(ui.markdown(summary_sentence(draft)), id=summary_id(slot))),
             html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),
             html.Div(
-                ui.grid(*_tiles(draft), cols="sm:grid-cols-2 lg:grid-cols-3"),
+                ui.grid(
+                    *(tiles[:_COMPACT_TILES] if compact else tiles),
+                    cols="grid-cols-1" if compact else "sm:grid-cols-2 lg:grid-cols-3",
+                    gap="gap-2" if compact else "gap-4",
+                ),
                 className="mt-4",
             ),
         ]
@@ -346,7 +375,7 @@ def _scenario_step(draft: dict) -> object:
         "Die Annahmenwelt, von der der Lauf ausgeht. Ein vorbereitetes Szenario ist der "
         "schnellste Einstieg — es legt Faktorlage, Politik und Kosten in einem Zug fest.",
         ui.card(
-            ui.radio(choice_options(), value=of(draft), id=FIELD_ID),
+            ui.radio(choice_options(), value=of(draft), id=FIELD_ID, cards=True),
             html.Div(scenario_details(draft), id=slot_id("scenario"), className="mt-5"),
         ),
         actions=ui.doc_link("presets"),
@@ -425,15 +454,22 @@ def _mode_step(draft: dict) -> object:
 
 
 def layout(draft: dict) -> html.Div:
+    """Die drei Entscheidungen — seit P1.6 im Bereich «Einrichten».
+
+    Schritt 1 steht über die volle Breite (die Presets brauchen sie als
+    Raster), Schritt 2 und 3 teilen sich darunter eine Reihe. Der Preflight
+    steht **nicht** mehr hier: Er gehört neben den Start-Knopf, und der sitzt
+    im Bedienfeld links.
+    """
+
     return html.Div(
         [
             _scenario_step(draft),
-            _scope_step(draft),
-            _mode_step(draft),
-            ui.section(
-                "Das passiert beim Start",
-                html.Div(preflight(draft, errors_for(draft)), id=slot_id("preflight")),
-            ),
+            # `2xl` und nicht `xl`: Tailwinds Haltepunkte messen das **Fenster**,
+            # der Inhalt steht aber in einer Zone, die schmaler ist als das
+            # Fenster. Bei 1280 px teilte `xl` die 720 px des Viewports in zwei
+            # 319-px-Spalten — genau die Enge, gegen die dieses Paket antritt.
+            ui.grid(_scope_step(draft), _mode_step(draft), cols="2xl:grid-cols-2", gap="gap-8"),
         ]
     )
 
@@ -456,6 +492,9 @@ def live_state(draft: dict) -> tuple[dict, dict]:
     errors = errors_for(draft)
     slots = {
         "scenario": scenario_details(draft),
-        "preflight": preflight(draft, errors),
+        # Der Preflight-Slot liegt seit P1.6 im Bedienfeld, nicht mehr in
+        # `layout()`. Die Zuordnung bleibt dieselbe — nur der Ort hat sich
+        # geändert, und `_live` findet ihn über die Pattern-ID trotzdem.
+        "preflight": preflight(draft, errors, slot="rail", compact=True),
     }
     return slots, issues_by_field(errors)

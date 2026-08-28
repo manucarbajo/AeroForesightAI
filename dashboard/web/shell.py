@@ -35,6 +35,7 @@ from dashboard.web import routing, status
 #: Bereiche des Dashboards, jeweils relativ zu `routing.BASE_PATH`.
 ROUTES = [
     ("", "Leitstand"),
+    ("setup", "Einrichten"),
     ("runs", "Ergebnisse"),
     ("doku", "Handbuch"),
 ]
