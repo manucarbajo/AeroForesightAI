@@ -49,6 +49,16 @@ from dashboard.web.state import STORE_ID, initial_draft_dict
 #: das er vor einer Stunde halb ausgefüllt hat.
 STEP_STORE = "wizard-step-store"
 
+#: Welche Schritte tatsächlich offen waren. Eigener Store und **nicht** eine
+#: Erweiterung von `STEP_STORE`: Dessen Form (`None` oder eine Zahl) wird an
+#: mehreren Stellen gelesen und in drei Testdateien festgehalten; sie in ein
+#: Wörterbuch zu verwandeln, hieße alle davon anzufassen, für einen Wert, der
+#: unabhängig davon lebt.
+#:
+#: Wie `STEP_STORE` **nicht** gespeichert: Wer «Einrichten» neu öffnet, fängt am
+#: Einstieg an, und dann ist noch nichts besucht.
+VISITED_STORE = "wizard-visited-store"
+
 #: Der Einstieg — der Zustand vor dem ersten Schritt.
 ENTRY = None
 
@@ -311,16 +321,66 @@ def entry(draft: dict | None = None) -> html.Div:
     )
 
 
+def _besucht_aus(gespeichert, current: int | None) -> set[int]:
+    """Die besuchten Schritte aus dem Store — plus dem, der gerade offen ist.
+
+    Den offenen mit aufzunehmen erspart eine Reihenfolge-Falle: Sonst müsste
+    jeder Schreiber daran denken, und ein vergessener Fall hieße, dass ein
+    Schritt nach dem Verlassen als übersprungen dasteht, obwohl man ihn gerade
+    gesehen hat.
+    """
+
+    besucht = {int(i) for i in (gespeichert or []) if isinstance(i, (int, float))}
+    if current is not None:
+        besucht.add(int(current))
+    return besucht
+
+
 # --- Die Schrittliste ------------------------------------------------------
 
 
-def _rail_entry(index: int, step: Step, current: int | None) -> html.Button:
-    if current is None or index > current:
-        zustand, symbol = "todo", "radio_button_unchecked"
-    elif index == current:
-        zustand, symbol = "current", "radio_button_checked"
-    else:
-        zustand, symbol = "done", "check"
+#: Die vier Zustände eines Schritts in der Liste: Symbol und Klartext für den
+#: Tooltip. **Vier und nicht drei**, obwohl P1.9-W2.1 drei vorsah — der vierte
+#: ist der, um den es dem Paket geht: *übersprungen*.
+#:
+#: Bis hierher gab es nur zwei Sorten, und sie hingen allein an der Position:
+#: Alles vor dem offenen Schritt galt als erledigt, mit Häkchen. Gemessen nach
+#: einem Klick auf «Szenario-Vergleich starten» standen so **sieben Häkchen für
+#: sieben Schritte, die nie auf dem Schirm waren**.
+#:
+#: «Nicht besucht» allein hätte gereicht, um das abzustellen. Es beantwortet
+#: aber nicht die Frage, die man an dieser Stelle wirklich hat: *Habe ich etwas
+#: übergangen?* Ein Schritt, der noch kommt, und einer, an dem man
+#: vorbeigesprungen ist, sehen sonst gleich aus.
+_ZUSTAENDE = {
+    "besucht": ("check", "besucht"),
+    "current": ("radio_button_checked", "offen"),
+    "uebersprungen": ("remove", "übersprungen"),
+    "offen": ("radio_button_unchecked", "noch nicht geöffnet"),
+}
+
+
+def _zustand(index: int, current: int | None, besucht: set[int]) -> str:
+    """Wie ein Schritt in der Liste dasteht.
+
+    **Besucht heißt gesehen, nicht bearbeitet.** Eine strengere Lesart —
+    «beantwortet» — ließe sich nicht messen: Jedes Feld ist vorbelegt, und wer
+    einen sinnvollen Vorschlag stehen lässt, hat trotzdem entschieden. Gesehen
+    zu haben ist die Aussage, die dieser Haken ehrlich tragen kann.
+    """
+
+    if index == current:
+        return "current"
+    if index in besucht:
+        return "besucht"
+    if current is not None and index < current:
+        return "uebersprungen"
+    return "offen"
+
+
+def _rail_entry(index: int, step: Step, current: int | None, besucht: set[int]) -> html.Button:
+    zustand = _zustand(index, current, besucht)
+    symbol, klartext = _ZUSTAENDE[zustand]
 
     return html.Button(
         [
@@ -340,24 +400,45 @@ def _rail_entry(index: int, step: Step, current: int | None) -> html.Button:
         id={"type": JUMP, "index": index},
         className=f"af-step af-step--{zustand}",
         n_clicks=0,
-        title=f"Zu Schritt {index + 1}: {step.title}",
+        title=f"Schritt {index + 1} ({klartext}): {step.title}",
+        **{"aria-current": "step" if zustand == "current" else None},
     )
 
 
-def rail(current: int | None) -> html.Div:
-    """Alle Schritte auf einen Blick — wo man ist und was noch kommt.
+def rail(current: int | None, besucht: set[int] | None = None) -> html.Div:
+    """Alle Schritte auf einen Blick — wo man ist, was war, und was übergangen wurde.
 
     Auf dem Einstieg ist noch kein Schritt offen; die Liste steht dann zwar im
     DOM (ihre Sprungknöpfe sind Eingänge), aber unsichtbar — eine Schrittliste
     ohne aktuellen Schritt beantwortet keine Frage.
     """
 
+    gesehen = besucht or set()
+    uebersprungen = sum(
+        1 for i in range(len(STEPS)) if _zustand(i, current, gesehen) == "uebersprungen"
+    )
+
     return html.Div(
         [
             html.P("Ihre Schritte", className="af-step__heading"),
             html.Div(
-                [_rail_entry(i, step, current) for i, step in enumerate(STEPS)],
+                [_rail_entry(i, step, current, gesehen) for i, step in enumerate(STEPS)],
                 className="af-steps",
+            ),
+            # Nur wenn es etwas zu sagen gibt. Eine Zeile, die immer dasteht und
+            # meistens «0 übersprungen» meldet, liest nach dem zweiten Mal
+            # niemand mehr.
+            (
+                html.P(
+                    (
+                        f"{uebersprungen} übersprungen"
+                        if uebersprungen > 1
+                        else "1 Schritt übersprungen"
+                    ),
+                    className="af-step__hinweis",
+                )
+                if uebersprungen
+                else None
             ),
         ],
         id=RAIL,
@@ -532,7 +613,7 @@ def layout(draft: dict, current: int | None = ENTRY) -> html.Div:
             dcc.Store(id=SCROLL_SINK),
             html.Div(
                 [
-                    html.Div(rail(current), id=RAIL_HOST),
+                    html.Div(rail(current, _besucht_aus(None, current)), id=RAIL_HOST),
                     html.Div(
                         [
                             html.Div(
@@ -574,6 +655,7 @@ def register_callbacks(app) -> None:
     @app.callback(
         Output(STEP_STORE, "data"),
         Output(STORE_ID, "data", allow_duplicate=True),
+        Output(VISITED_STORE, "data"),
         Input(BACK, "n_clicks"),
         Input(NEXT, "n_clicks"),
         Input(SKIP, "n_clicks"),
@@ -583,9 +665,10 @@ def register_callbacks(app) -> None:
         Input({"type": JUMP, "index": ALL}, "n_clicks"),
         State(STEP_STORE, "data"),
         State(STORE_ID, "data"),
+        State(VISITED_STORE, "data"),
         prevent_initial_call=True,
     )
-    def _navigate(_back, _next, _skip, _new, _sweep, _resume, _jump, current, draft):
+    def _navigate(_back, _next, _skip, _new, _sweep, _resume, _jump, current, draft, besucht):
         """Alle Wege durch die Schrittfolge in einem Callback.
 
         Getrennte Callbacks müssten sich denselben Ausgang teilen und würden
@@ -604,33 +687,50 @@ def register_callbacks(app) -> None:
 
         jetzt = resolve(current)
         ausgeloest = ctx.triggered_id
+        gesehen = _besucht_aus(besucht, jetzt)
+
+        def gehe(ziel, entwurf=no_update):
+            """Ans Ziel — und der Schritt, den man verlässt, gilt als besucht.
+
+            **Nur der verlassene, nicht das Ziel.** Wer über die Liste auf
+            Schritt 7 springt, hat 7 noch nicht gesehen; er sieht ihn im
+            nächsten Augenblick. `_besucht_aus` nimmt den offenen Schritt beim
+            Zeichnen ohnehin dazu — hier wäre es eine zweite, leicht
+            auseinanderlaufende Buchführung.
+            """
+
+            return ziel, entwurf, sorted(gesehen)
 
         if isinstance(ausgeloest, dict) and ausgeloest.get("type") == JUMP:
             # Nur ein wirklich gedrückter Knopf zählt: Beim Neuaufbau der Liste
             # feuert Dash alle Pattern-Eingänge mit `None`.
             if not any(eintrag["value"] for eintrag in ctx.triggered if eintrag["value"]):
-                return no_update, no_update
-            return clamp(ausgeloest.get("index")), no_update
+                return no_update, no_update, no_update
+            return gehe(clamp(ausgeloest.get("index")))
 
+        # **Die drei Wege setzen das Besuchte zurück.** Wer vom Einstieg aus neu
+        # anfängt, fängt auch mit der Liste neu an — sonst trüge sie Häkchen aus
+        # dem vorigen Anlauf, und «übersprungen» meinte etwas anderes als beim
+        # ersten Mal.
         if ausgeloest == WAY_NEW:
-            return 0, _with_sweeps(draft, False)
+            return 0, _with_sweeps(draft, False), []
         if ausgeloest == WAY_SWEEP:
-            return FINAL, _with_sweeps(draft, True)
+            return FINAL, _with_sweeps(draft, True), []
         if ausgeloest == WAY_RESUME:
             # Weiterverwenden heißt anfassen lassen: kein Schreiben, nur der
             # Sprung ans Ende.
-            return FINAL, no_update
+            return FINAL, no_update, []
 
         if ausgeloest == BACK:
             # Aus dem ersten Schritt führt «Zurück» dorthin, wo man hergekommen
             # ist — auf den Einstieg. Ohne das wäre er eine Sackgasse, die man
             # nur über einen Neuladen wieder erreicht.
-            return (ENTRY if jetzt in (ENTRY, 0) else jetzt - 1), no_update
+            return gehe(ENTRY if jetzt in (ENTRY, 0) else jetzt - 1)
         if ausgeloest == NEXT:
-            return min(FINAL, (0 if jetzt is ENTRY else jetzt) + 1), no_update
+            return gehe(min(FINAL, (0 if jetzt is ENTRY else jetzt) + 1))
         if ausgeloest == SKIP:
-            return FINAL, no_update
-        return no_update, no_update
+            return gehe(FINAL)
+        return no_update, no_update, no_update
 
     @app.callback(
         Output(CONTENT_HOST, "children"),
@@ -643,8 +743,9 @@ def register_callbacks(app) -> None:
         Input(STEP_STORE, "data"),
         Input("cfg-editor-refresh", "data"),
         State(STORE_ID, "data"),
+        State(VISITED_STORE, "data"),
     )
-    def _render(step, _refresh, draft: dict | None):
+    def _render(step, _refresh, draft: dict | None, besucht):
         """Den offenen Schritt zeichnen — Inhalt, Liste und Fußzeile in einem Zug.
 
         In **einem** Callback, weil alle drei denselben Stand zeigen: Getrennt
@@ -667,7 +768,7 @@ def register_callbacks(app) -> None:
         einstieg = is_entry(jetzt)
         return (
             content(data, 0 if einstieg else jetzt),
-            rail(jetzt),
+            rail(jetzt, _besucht_aus(besucht, jetzt)),
             navigation(jetzt),
             heading(jetzt),
             # Der Einstieg wird nur gebaut, wenn er zu sehen ist: `touched`

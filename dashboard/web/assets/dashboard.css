@@ -2581,6 +2581,31 @@ html.dark .af-input[type="number"] {
     color: var(--accent);
 }
 
-.af-step--todo .af-step__icon {
+.af-step--offen .af-step__icon {
     color: var(--text-faint);
+}
+
+/* **Uebersprungen ist nicht dasselbe wie «kommt noch»** (P1.9-W2.1). Bis dahin
+   trug jeder Schritt vor dem offenen ein Haekchen -- nach «Szenario-Vergleich
+   starten» waren das sieben Haekchen fuer sieben nie gesehene Schritte. Ein
+   Fortschrittsanzeiger, der Uebersprungenes als Erledigt ausweist, nimmt genau
+   die Information weg, fuer die er da ist.
+
+   Bewusst kein Warnton: Sechs der acht Schritte duerfen uebersprungen werden,
+   das ist die Zusage aus P1.1. Der Strich sagt «hier warst du nicht», nicht
+   «hier ist etwas falsch». */
+.af-step--uebersprungen .af-step__icon {
+    color: var(--text-faint);
+}
+
+.af-step--uebersprungen .af-step__title {
+    color: var(--text-muted);
+}
+
+.af-step__hinweis {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.625rem;
+    padding-left: 0.625rem;
 }

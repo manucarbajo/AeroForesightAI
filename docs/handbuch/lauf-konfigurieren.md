@@ -37,6 +37,18 @@ bringt Sie ans Ende. Die Schritte vier bis sieben sind als *optional*
 gekennzeichnet — Rahmenbedingungen, Nachfrage & Preisbildung, Lauf & Ablage,
 Technik. Wer sie braucht, findet sie; wer nicht, geht daran vorbei.
 
+**Die Liste links sagt Ihnen, wo Sie waren.** Ein Haken steht an den Schritten,
+die Sie wirklich geöffnet hatten; ein Strich an denen, an denen Sie
+vorbeigesprungen sind; ein leerer Kreis an denen, die noch kommen. Wenn Sie
+etwas übergangen haben, steht die Zahl unter der Liste. Das ist kein Tadel —
+sechs der acht Schritte dürfen übersprungen werden. Es beantwortet nur die
+Frage, die man am Ende hat: *Habe ich etwas übersehen?*
+
+> **Bis August 2026 log die Liste.** Sie richtete sich allein danach, wo Sie
+> gerade stehen: Alles davor bekam einen Haken. Wer über «Szenario-Vergleich
+> starten» direkt zum letzten Schritt sprang, sah dort sieben Haken für sieben
+> Schritte, die er nie gesehen hatte.
+
 Der letzte Schritt heißt **Prüfen & Starten**: Dort steht, was gleich passiert,
 und daneben die beiden Wege hinaus — den Lauf starten, oder die Einstellungen als
 Szenario speichern und später wieder aufrufen.

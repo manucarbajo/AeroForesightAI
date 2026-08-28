@@ -285,6 +285,7 @@ def serve_layout() -> html.Div:
             # bewusst **nicht** gespeichert -- er soll nach einem Neuladen genau
             # das zeigen.
             dcc.Store(id=wizard.STEP_STORE, data=wizard.ENTRY),
+            dcc.Store(id=wizard.VISITED_STORE, data=[]),
             shell.layout(
                 active="",
                 # Auch beim ersten Zeichnen gilt der Serverzustand: Ein Lauf,

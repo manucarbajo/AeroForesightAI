@@ -350,12 +350,109 @@ def _navigate_callback(monkeypatch, ausgeloest: str):
     return gefangen["_navigate"]
 
 
+class TestDieSchrittlisteBehauptetNichts:
+    """W2.1 — ein Haken nur für Schritte, die wirklich offen waren.
+
+    Der gemessene Ausgangspunkt: Ein Klick auf «Szenario-Vergleich starten»
+    führt auf Schritt 8, und die Liste zeigte danach
+
+        ["done","done","done","done","done","done","done","current"]
+
+    also sieben Häkchen für sieben Schritte, die nie auf dem Schirm standen.
+    Der Zustand hing allein an der Position. Ein Fortschrittsanzeiger, der
+    Übersprungenes als Erledigt ausweist, ist schlechter als keiner: Er nimmt
+    genau die Information weg, für die er da ist.
+    """
+
+    def _zustaende(self, current, besucht):
+        baum = wizard.rail(current, set(besucht))
+        return [
+            item.className.replace("af-step af-step--", "")
+            for item in _walk(baum)
+            if isinstance(getattr(item, "id", None), dict) and item.id.get("type") == wizard.JUMP
+        ]
+
+    def test_a_jump_to_the_end_marks_nothing_as_done(self):
+        """Der Befund selbst, als Zeile."""
+
+        zustaende = self._zustaende(wizard.FINAL, {wizard.FINAL})
+
+        assert (
+            "besucht" not in zustaende
+        ), f"Nach einem Sprung ans Ende gilt etwas als besucht: {zustaende}"
+        assert zustaende[wizard.FINAL] == "current"
+        assert set(zustaende[: wizard.FINAL]) == {"uebersprungen"}
+
+    def test_walking_through_leaves_real_marks(self):
+        """Wer die Schritte durchgeht, sieht seinen Weg."""
+
+        zustaende = self._zustaende(3, {0, 1, 2, 3})
+
+        assert zustaende[:3] == ["besucht"] * 3
+        assert zustaende[3] == "current"
+        assert set(zustaende[4:]) == {"offen"}
+
+    def test_skipped_and_upcoming_are_told_apart(self):
+        """«Noch nicht dran» und «übergangen» sehen verschieden aus.
+
+        Beides als «offen» zu zeigen wäre nicht falsch, aber es beantwortet die
+        Frage nicht, die man auf Schritt 8 hat: *Habe ich etwas übergangen?*
+        """
+
+        zustaende = self._zustaende(5, {0, 5})
+
+        assert zustaende[0] == "besucht"
+        assert zustaende[1:5] == ["uebersprungen"] * 4
+        assert zustaende[5] == "current"
+        assert set(zustaende[6:]) == {"offen"}
+
+    def test_the_open_step_counts_as_seen_without_being_recorded(self):
+        """Der offene Schritt braucht keinen Eintrag im Speicher.
+
+        Sonst müsste jeder Schreiber daran denken, und ein vergessener Fall
+        hieße, dass ein gerade betrachteter Schritt als übersprungen dasteht.
+        """
+
+        assert wizard._besucht_aus([], 4) == {4}
+        assert wizard._besucht_aus([1, 2], 4) == {1, 2, 4}
+        assert wizard._besucht_aus(None, None) == set()
+
+    def test_the_rail_says_how_many_were_skipped(self):
+        """Und die Zahl steht darunter, wenn es etwas zu sagen gibt."""
+
+        text = str(wizard.rail(wizard.FINAL, {wizard.FINAL}))
+        assert "7 übersprungen" in text
+
+        sauber = str(wizard.rail(0, {0}))
+        assert "übersprungen" not in sauber, (
+            "Ohne übersprungene Schritte gehört die Zeile weg — sonst liest sie "
+            "nach dem zweiten Mal niemand mehr."
+        )
+
+    def test_the_current_step_is_marked_for_screen_readers(self):
+        """`aria-current="step"` — bisher steckte der Zustand nur in der Farbe.
+
+        Ein Vorgriff auf W5.3, aber er gehört hierher: Diese Funktion vergibt
+        gerade die Zustände, und ihn später nachzurüsten hieße, dieselbe Stelle
+        ein zweites Mal aufzuschlagen.
+        """
+
+        aria = [
+            item.to_plotly_json()["props"].get("aria-current")
+            for item in _walk(wizard.rail(2, {0, 1, 2}))
+            if isinstance(getattr(item, "id", None), dict) and item.id.get("type") == wizard.JUMP
+        ]
+
+        assert aria.count("step") == 1, f"Genau ein Schritt ist der offene: {aria}"
+        assert aria[2] == "step", f"Markiert ist der falsche Schritt: {aria}"
+
+
 class TestJederWegSagtGenauEineSache:
     def test_a_new_run_is_one_run(self, monkeypatch, draft):
         navigate = _navigate_callback(monkeypatch, wizard.WAY_NEW)
 
-        schritt, entwurf = navigate(
-            *[None] * 6, None, wizard.ENTRY, {**draft, "run_all_sweeps": True}
+        schritt, entwurf, _besucht = navigate(
+            *[None] * 6, None, wizard.ENTRY, {**draft, "run_all_sweeps": True}, []
         )
 
         assert schritt == 0
@@ -364,7 +461,7 @@ class TestJederWegSagtGenauEineSache:
     def test_the_comparison_says_all_of_them(self, monkeypatch, draft):
         navigate = _navigate_callback(monkeypatch, wizard.WAY_SWEEP)
 
-        schritt, entwurf = navigate(*[None] * 6, None, wizard.ENTRY, draft)
+        schritt, entwurf, _besucht = navigate(*[None] * 6, None, wizard.ENTRY, draft, [])
 
         assert schritt == wizard.FINAL, "Der Vergleich führt direkt zu «Prüfen & Starten»"
         assert entwurf["run_all_sweeps"] is True
@@ -380,7 +477,7 @@ class TestJederWegSagtGenauEineSache:
 
         navigate = _navigate_callback(monkeypatch, wizard.WAY_RESUME)
 
-        schritt, entwurf = navigate(*[None] * 6, None, wizard.ENTRY, draft)
+        schritt, entwurf, _besucht = navigate(*[None] * 6, None, wizard.ENTRY, draft, [])
 
         assert schritt == wizard.FINAL
         assert entwurf is no_update
@@ -394,7 +491,7 @@ class TestJederWegSagtGenauEineSache:
 
         navigate = _navigate_callback(monkeypatch, wizard.BACK)
 
-        schritt, _ = navigate(*[None] * 6, None, 0, draft)
+        schritt, _entwurf, _besucht = navigate(*[None] * 6, None, 0, draft, [])
 
         assert schritt is wizard.ENTRY
         assert not getattr(_knopf(wizard.navigation(0), wizard.BACK), "disabled", False)
