@@ -186,9 +186,22 @@ class TestKeinKontextparameterHatEinenDefault:
     `tick`- oder `metric`-Bedingung wäre bei einem vergessenen Argument wieder
     still nie gegriffen — genau der Zustand, den P0.4 beseitigen sollte.
 
-    Dieser Test hält die Regel für alle vier Stellen fest, damit sie nicht ein
-    fünftes Mal einzeln gefunden werden muss. Wer eine neue Funktion mit
-    Tick-Kontext baut, trägt sie hier ein.
+    Bei der Prüfung dieses Commits (2026-08-28) kamen **zwei weitere** heraus,
+    beide in derselben Datei: `evaluate_booking(properties=None)` und
+    `aggregate_population_stats(properties=None)`. Ohne Angabe traten dort
+    ``0.6`` und ``1.0`` an die Stelle der konfigurierten Sättigungswerte —
+    heute zufällig dieselben Zahlen, nach einer Änderung im Config-Editor
+    still auseinanderlaufend (nachgestellt: Sättigungssumme 195.25 gegen
+    468.60).
+
+    **Deshalb ist die Liste unten nicht mehr der Wächter.** Eine
+    handgepflegte Aufzählung findet einen Rückfall auf den bereits bekannten
+    Stellen, aber nie einen **übersehenen Geschwisterfall** — genau daran ist
+    der erste Anlauf gescheitert. Den übernimmt
+    `TestKeinKontextparameterEntgehtDemSweep` weiter unten: ein AST-Durchlauf
+    über ``src/``, mit einer benannten Ausnahmeliste statt eines Vorsatzes.
+    Die Liste hier bleibt als ausdrücklicher Anker für die Stellen, an denen
+    der Fehler tatsächlich aufgetreten ist.
     """
 
     #: (Modul, Funktion, Parameter, die keinen Default haben dürfen)
@@ -243,3 +256,113 @@ class TestKeinKontextparameterHatEinenDefault:
             assert (
                 signatur.parameters[name].kind is inspect.Parameter.KEYWORD_ONLY
             ), f"{funktion}({name}) ist nicht keyword-only"
+
+
+class TestKeinKontextparameterEntgehtDemSweep:
+    """Der Wächter, den die Liste oben nicht sein kann.
+
+    Eine handgepflegte Aufzählung hält fest, was schon bekannt ist. Sie findet
+    keinen **übersehenen** Geschwisterfall — und genau daran ist der erste
+    Anlauf gescheitert: Er nannte acht Stellen und erklärte, ein Sweep über
+    ``src/`` finde danach keine weitere. Er fand zwei, beide in der Datei, die
+    derselbe Commit angefasst hatte.
+
+    Deshalb ist der Sweep hier ein Test statt einer einmaligen Handbewegung.
+    Er läuft über den AST jeder Datei in ``src/`` und schlägt an, sobald ein
+    Parameter mit Tick-Kontext einen Default trägt.
+
+    **Die Ausnahmen sind benannt, nicht stillschweigend.** Nicht jeder
+    Default dieser Namen ist die Falle: Sie liegt vor, wenn der Rückfall eine
+    *erfundene Konstante* ist (``tick=0``, ``0.6``, ``None`` für „kein
+    Faktor"). Leitet eine Funktion ihren Rückfall dagegen aus lebendem
+    Zustand ab, den sie ohnehin hat, kann sie gar nicht anders rechnen als
+    ihr Aufrufer — das ist kein Versehen, sondern Bequemlichkeit. Wer hier
+    einträgt, schreibt den Grund dazu.
+    """
+
+    #: Parameternamen, die den Kontext eines Ticks tragen.
+    KONTEXTNAMEN = frozenset(
+        {
+            "tick",
+            "current_tick",
+            # `round_number` ist in diesem Repo ein Tick unter anderem Namen —
+            # der Environment-Node reicht ihn direkt als `tick` weiter.
+            "round_number",
+            "metrics",
+            "properties",
+            "factors",
+            "system_properties",
+        }
+    )
+
+    #: (Funktion, Parameter) -> Grund, warum ein Default hier vertretbar ist.
+    AUSNAHMEN = {
+        ("mark_spoken", "round_number"): (
+            "Faellt auf `self._current_round` zurueck — den Wert, den das Objekt "
+            "ohnehin fuehrt. Keine erfundene Konstante."
+        ),
+        ("allowed_factor_targets", "properties"): (
+            "Faellt auf `state.resolved_properties()` zurueck, also auf denselben "
+            "State, den die Funktion als erstes Argument bekommt. Sie kann damit "
+            "nicht anders rechnen als ihr Aufrufer."
+        ),
+        ("run_population_sampling", "properties"): (
+            "Faellt auf `load_properties_config()` zurueck, also auf die "
+            "ausgelieferte Konfiguration statt auf eine Konstante. Ausserdem "
+            "toter Code — siehe docs/audit_findings.md."
+        ),
+    }
+
+    @staticmethod
+    def _fundstellen() -> list[tuple[str, int, str, str]]:
+        import ast
+        import pathlib
+
+        treffer: list[tuple[str, int, str, str]] = []
+        for pfad in sorted(pathlib.Path("src").rglob("*.py")):
+            baum = ast.parse(pfad.read_text(encoding="utf-8"))
+            for knoten in ast.walk(baum):
+                if not isinstance(knoten, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    continue
+                args = knoten.args
+                positional = args.posonlyargs + args.args
+                mit_default = positional[len(positional) - len(args.defaults) :]
+                kwonly = [a for a, d in zip(args.kwonlyargs, args.kw_defaults) if d is not None]
+                for arg in mit_default + kwonly:
+                    if arg.arg in TestKeinKontextparameterEntgehtDemSweep.KONTEXTNAMEN:
+                        treffer.append((str(pfad), knoten.lineno, knoten.name, arg.arg))
+        return treffer
+
+    def test_no_context_parameter_carries_a_default(self) -> None:
+        offen = [
+            f"{pfad}:{zeile}  {funktion}({parameter}=...)"
+            for pfad, zeile, funktion, parameter in self._fundstellen()
+            if (funktion, parameter) not in self.AUSNAHMEN
+        ]
+        assert not offen, (
+            "Kontextparameter mit Default gefunden:\n  "
+            + "\n  ".join(offen)
+            + "\n\nEntweder den Default entfernen (der Regelfall) oder die Stelle "
+            "in AUSNAHMEN eintragen — mit Grund, warum ihr Rueckfall aus lebendem "
+            "Zustand kommt und nicht aus einer erfundenen Konstante."
+        )
+
+    def test_every_exception_still_exists(self) -> None:
+        """Eine Ausnahme fuer eine Stelle, die es nicht mehr gibt, verdeckt
+        beim naechsten Mal eine echte."""
+
+        gefunden = {(funktion, parameter) for _, _, funktion, parameter in self._fundstellen()}
+        verwaist = sorted(set(self.AUSNAHMEN) - gefunden)
+        assert not verwaist, f"AUSNAHMEN nennt Stellen, die es nicht mehr gibt: {verwaist}"
+
+    def test_the_sweep_would_notice_a_relapse(self) -> None:
+        """Der Sweep prueft sich selbst: Die zehn Stellen aus der Liste oben
+        muessen ihm auffallen, wenn sie einen Default zurueckbekaemen."""
+
+        namen = {parameter for _, _, parameter in ()} or set()
+        for _, _, parameter in TestKeinKontextparameterHatEinenDefault.KONTEXTPARAMETER:
+            namen.update(parameter)
+        assert namen <= self.KONTEXTNAMEN, (
+            "Die Liste oben nennt Parameter, die der Sweep gar nicht kennt: "
+            f"{sorted(namen - self.KONTEXTNAMEN)}"
+        )
