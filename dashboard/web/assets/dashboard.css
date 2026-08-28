@@ -1099,23 +1099,37 @@ html.dark .af-input[type="number"] {
 
 /* --- Checkbox / Radio ---------------------------------------------------- */
 
-/* Layout (display, gap, Ausrichtung) steht als Inline-Style in
-   `components.CHECK_LABEL_STYLE` — dcc.Checklist schreibt selbst inline und
-   wuerde jede Regel von hier ueberstimmen. Hier bleibt nur die Typografie. */
+/* **Das Layout steht hier, nicht als Inline-Style.** Bis Dash 3 schrieb
+   `dcc.Checklist` `display: block` selbst auf das Label und haette jede Regel
+   von hier ueberstimmt; deshalb lagen Anordnung und Ausrichtung in
+   `components.CHECK_LABEL_STYLE`. **Dash 4 tut das nicht mehr** -- am laufenden
+   System nachgesehen: `label.getAttribute("style")` ist `null`, und die Option
+   traegt jetzt einen `span.dash-options-list-option-wrapper` um das
+   Eingabeelement. Die Stildicts wirken seither nicht mehr, und wer dort etwas
+   aenderte, aenderte nichts. Aufgefallen beim Versuch, den Haken auf einer
+   Karte mittig zu setzen. */
 .af-check label,
 .af-radio label {
     font-family: var(--font-body);
     font-size: 0.875rem;
     color: var(--text-body);
-}
-
-.af-radio label {
     display: flex;
+    /* An der ersten Textzeile, nicht mittig: In einer Liste entsteht so eine
+       gerade Spalte von Haken neben den Beschriftungen. Auf einer Auswahlkarte
+       gilt das Gegenteil, siehe `.af-radio--cards label`. */
     align-items: flex-start;
     gap: 0.625rem;
     line-height: 1.5;
     cursor: pointer;
     padding: 0.3125rem 0;
+}
+
+/* Der Umschalter richtet mittig aus: Seine Bahn ist hoeher als ein Kaestchen
+   und saehe an der ersten Textzeile angeheftet schief aus. */
+.af-switch label {
+    align-items: center;
+    padding: 0.25rem 0;
+    line-height: 1.4;
 }
 
 .af-check label + label,
@@ -1191,6 +1205,12 @@ html.dark .af-input[type="number"] {
     border-radius: var(--radius);
     background: var(--surface);
     transition: border-color 0.15s ease, background-color 0.15s ease;
+    padding: 0.75rem;
+    /* **Mittig**, anders als in der Liste. Eine Karte ist eine Flaeche, die man
+       als Ganzes auswaehlt; gemessen war die Karte «Achterbahn der Extreme»
+       137 px hoch und der Haken sass bei 12 % ihrer Hoehe -- er wirkte oben
+       angeheftet statt zur Karte gehoerig. */
+    align-items: center;
 }
 
 .af-radio--cards label:hover {
@@ -1207,6 +1227,16 @@ html.dark .af-input[type="number"] {
 }
 
 .af-radio--cards label + label {
+    margin-top: 0;
+}
+
+/* Auf einer Karte sitzt der Haken **mittig**, nicht an der ersten Textzeile.
+   Der Versatz von oben, der ihn in einer Liste auf die Grundlinie zieht, muss
+   dafuer weg -- sonst haengt er drei Pixel unter der Mitte. Gemessen war die
+   Karte «Achterbahn der Extreme» 137 px hoch und der Haken bei 12 % ihrer
+   Hoehe; auf einer Flaeche, die man als Ganzes auswaehlt, gehoert er in die
+   Mitte. */
+.af-radio--cards input[type="radio"] {
     margin-top: 0;
 }
 

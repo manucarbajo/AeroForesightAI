@@ -196,28 +196,20 @@ def field_errors(messages: list[str]) -> Any:
     )
 
 
-#: `dcc.Checklist` schreibt `display: block` als **Inline-Style** auf das Label.
-#: Inline schlägt Stylesheet — Abstand und Ausrichtung müssen deshalb hier
-#: gesetzt werden, nicht in `dashboard.css`.
-CHECK_LABEL_STYLE = {
-    "display": "flex",
-    "alignItems": "flex-start",
-    "gap": "0.625rem",
-    "padding": "0.3125rem 0",
-    "lineHeight": "1.5",
-    "cursor": "pointer",
-}
-
-#: Für den Umschalter: mittig statt an der ersten Textzeile ausgerichtet — die
-#: Bahn ist höher als ein Kästchen und sähe oben angeheftet schief aus.
-SWITCH_LABEL_STYLE = {
-    "display": "flex",
-    "alignItems": "center",
-    "gap": "0.625rem",
-    "padding": "0.25rem 0",
-    "lineHeight": "1.4",
-    "cursor": "pointer",
-}
+# Anordnung und Ausrichtung von Checkbox, Umschalter und Auswahl stehen in
+# `assets/dashboard.css` (`.af-check label`, `.af-switch label`,
+# `.af-radio label`, `.af-radio--cards label`) — **nicht** hier.
+#
+# Bis Dash 3 ging das nicht: `dcc.Checklist` schrieb `display: block` selbst als
+# Inline-Style auf das Label und haette jede Regel aus dem Stylesheet
+# ueberstimmt. Deshalb lagen die Werte frueher als `labelStyle`-Dicts in diesem
+# Modul. **Dash 4 schreibt nicht mehr inline** — am laufenden System nachgesehen:
+# `label.getAttribute("style")` ist `null`, und die Option traegt jetzt einen
+# `span.dash-options-list-option-wrapper` um das Eingabeelement.
+#
+# Die Dicts wirkten seither nicht mehr. Sie sind entfernt und nicht bloss
+# auskommentiert: Stehengeblieben waeren sie eine Falle, in die genau einmal
+# jemand tritt, der dort etwas aendert und sich wundert, dass nichts passiert.
 
 
 def checkbox(
@@ -233,7 +225,6 @@ def checkbox(
                 className="af-check",
                 inputClassName="af-check__input",
                 labelClassName="af-check__label",
-                labelStyle=CHECK_LABEL_STYLE,
                 **kwargs,
             ),
             hint_text(hint, class_name="af-check__hint"),
@@ -259,7 +250,6 @@ def toggle(
                 options=[{"label": label, "value": "on"}],
                 value=["on"] if value else [],
                 className="af-switch",
-                labelStyle=SWITCH_LABEL_STYLE,
                 **kwargs,
             ),
             hint_text(hint, class_name="af-check__hint"),
@@ -272,22 +262,14 @@ def toggle(
 #: das Innere bleibt dieselbe Zeile aus Knopf und Text. Fuer Auswahlen mit
 #: vielen Moeglichkeiten und je einem beschreibenden Satz — untereinander waeren
 #: zehn davon drei Bildschirme lang.
-CARD_LABEL_STYLE = {
-    "display": "flex",
-    "alignItems": "flex-start",
-    "gap": "0.625rem",
-    "padding": "0.75rem",
-    "lineHeight": "1.5",
-    "cursor": "pointer",
-    "margin": "0",
-}
-
-
 def radio(options: list[dict], *, value: Any, cards: bool = False, **kwargs: Any) -> dcc.RadioItems:
     """Auswahl unter sich ausschließenden Möglichkeiten.
 
-    Wie bei `checkbox` muss das Layout inline gesetzt werden — `dcc.RadioItems`
-    schreibt selbst inline und überstimmt damit jede Regel aus dem Stylesheet.
+    Anordnung und Ausrichtung stehen im Stylesheet: `.af-radio label` richtet an
+    der ersten Textzeile aus (eine gerade Spalte von Haken neben den
+    Beschriftungen), `.af-radio--cards label` dagegen **mittig** — eine Karte
+    ist eine Fläche, die man als Ganzes auswählt, und ein Haken bei 12 % ihrer
+    Höhe wirkt oben angeheftet.
 
     *cards* stellt die Möglichkeiten als Raster nebeneinander statt
     untereinander. Der Unterschied ist nicht kosmetisch: Bei zehn Optionen mit
@@ -301,7 +283,6 @@ def radio(options: list[dict], *, value: Any, cards: bool = False, **kwargs: Any
         className="af-radio af-radio--cards" if cards else "af-radio",
         inputClassName="af-radio__input",
         labelClassName="af-radio__label",
-        labelStyle=CARD_LABEL_STYLE if cards else CHECK_LABEL_STYLE,
         **kwargs,
     )
 
