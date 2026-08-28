@@ -404,8 +404,17 @@ def test_launch_summary_describes_the_draft():
     assert "Ticks: 12" in launch_page._summary(draft)
     assert "3 Läufe" in launch_page._summary(draft)
 
+    # Beim Vergleich beschreibt die Zeile **nicht** mehr den Entwurf, sondern
+    # den Vergleich (P1.9-W1.3): Er nimmt vom Entwurf nichts entgegen, also darf
+    # dort auch keine Länge und kein Szenario aus dem Entwurf stehen.
     draft["run_all_sweeps"] = True
-    assert "alle Szenario-Presets" in launch_page._summary(draft)
+    zeile = launch_page._summary(draft)
+    assert "Szenario-Vergleich" in zeile
+    assert "je eigene Länge" in zeile
+    assert "Ticks: 12" not in zeile, (
+        "Die Zeile nennt wieder die Länge aus dem Entwurf — die verwendet der "
+        "Vergleich seit W1.2 nicht."
+    )
 
 
 def test_app_layout_and_callbacks_are_wired():

@@ -171,9 +171,10 @@ UNBEACHTET: tuple[Festlegung, ...] = (
     Festlegung(
         "rounds",
         None,
-        "Jedes Szenario läuft so lang, wie es angelegt ist — ein Preset, das auf 40 "
-        "Ticks hin entworfen wurde, erreicht seine Meilensteine sonst gar nicht. "
-        "Die Länge stellen Sie für einen einzelnen Lauf ein, nicht für den Vergleich.",
+        "Jedes Szenario läuft so lang, wie es angelegt ist. Vier der hinterlegten "
+        "Szenarien sind auf 50 Ticks entworfen und prüfen ihren Schlusspunkt genau "
+        "dort — auf 40 Ticks gekürzt erreichen sie ihn nie. Die Länge stellen Sie "
+        "für einen einzelnen Lauf ein, nicht für den Vergleich.",
     ),
 )
 

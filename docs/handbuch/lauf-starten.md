@@ -88,6 +88,19 @@ einmal durchgerechnet. Die Ergebnisse
 liegen unter `outputs/sweeps/`, dazu entsteht eine Zusammenfassung. Auch hier
 erscheinen die einzelnen Läufe in der Auswahl der Kopfzeile.
 
+**Ein Vergleich übernimmt Ihre Einstellungen nicht.** Er rechnet jedes Szenario
+unter denselben Bedingungen — sonst verglichen Sie nicht die Szenarien, sondern
+Ihre Änderungen mit sich selbst. Länge, Rechenmodus, Zufallsstartwert und eigene
+Faktoren kommen deshalb nicht aus den Schritten, sondern aus den Szenarien selbst
+bzw. sind fest vorgegeben. Der Preflight sagt Ihnen vor dem Start, was das im
+Einzelnen heißt: Unter «Was der Vergleich vorgibt» steht jede Vorgabe mit ihrer
+Begründung.
+
+Eine Sache fällt dabei aus dem Rahmen und steht deshalb im Satz darüber: Für den
+abschließenden **Szenariotext** jedes Laufs wird das Sprachmodell befragt — auch
+dann, wenn Sie «ohne Sprachmodell» gewählt haben. Die Zahlen entstehen trotzdem
+rein rechnerisch; betroffen ist nur der Text am Ende.
+
 ## Was der Lauf über sich festhält
 
 Jeder Lauf schreibt mit, unter welchen Bedingungen er entstanden ist: Seed,

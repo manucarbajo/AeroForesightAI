@@ -732,6 +732,103 @@ class TestEinSchalterOhneWertIstEinBefund:
         assert validate_draft(draft) == []
 
 
+class TestDerPreflightBeschreibtDenWirklichenLauf:
+    """W1.3 — die Oberfläche zeigt nichts Wirkungsloses als wirksam.
+
+    Der gemessene Ausgangspunkt war ein Satz mit drei falschen Aussagen: «alle 8
+    hinterlegten Szenarien über 40 Ticks, ausgehend von der Standard-Ausgangslage
+    aus `configs/`, ohne Sprachmodell; die Zahlen stimmen, die Agenten-Texte sind
+    Platzhalter.» Die Ausgangslage ist je Szenario eine andere, Agenten-Texte
+    gibt es überhaupt keine, und für den Abschlusstext wird Ollama sehr wohl
+    gerufen.
+
+    Geprüft wird der Satz, nicht sein Wortlaut: Ein Test, der auf Formulierungen
+    besteht, macht jede Textpflege rot. Geprüft wird, dass **keine wirkungslose
+    Zahl** darin steht und **die wirksame Bedingung** genannt ist.
+    """
+
+    def _satz(self, vergleich: bool) -> str:
+        from dashboard.web.config_editor.start_flow import summary_sentence
+        from dashboard.web.state import draft_to_dict
+
+        draft = draft_to_dict(_entwurf(SWEEP if vergleich else EINZELLAUF))
+        draft["rounds"] = 37
+        return summary_sentence(draft)
+
+    def test_it_does_not_quote_a_length_the_comparison_ignores(self):
+        satz = self._satz(vergleich=True)
+
+        assert "37" not in satz, (
+            f"Der Preflight nennt beim Vergleich eine Länge aus dem Entwurf: {satz}\n"
+            "Seit W1.2 läuft jedes Szenario in seiner eigenen."
+        )
+
+    def test_it_says_that_ollama_is_reached_anyway(self):
+        """Die Aussage, die der Vertrag nicht abdeckt und die niemand erwartet."""
+
+        satz = self._satz(vergleich=True)
+
+        assert "Sprachmodell" in satz, (
+            f"Der Preflight verschweigt, dass der Abschlusstext das Sprachmodell "
+            f"braucht: {satz}"
+        )
+
+    def test_a_single_run_still_gets_its_own_sentence(self):
+        """Und der Einzellauf verliert nichts — dort gelten die Werte ja."""
+
+        satz = self._satz(vergleich=False)
+
+        assert "37" in satz, "Beim Einzellauf gehört die eingestellte Länge in den Satz"
+
+    def test_the_tiles_of_a_comparison_do_not_come_from_the_draft(self):
+        """Sechs Kacheln aus dem Entwurf waren beim Vergleich sechs Behauptungen.
+
+        Ziel-Auslastung, Segmente und aktive Systemgrößen stammen alle aus dem
+        Entwurf; beim Vergleich bringt jedes Szenario seine eigenen mit. Sie
+        anzuzeigen hieße, Zahlen zu nennen, mit denen nicht gerechnet wird.
+        """
+
+        from dashboard.web.config_editor.start_flow import _tiles
+        from dashboard.web.state import draft_to_dict
+
+        draft = draft_to_dict(_entwurf(SWEEP))
+        text = str(_tiles(draft))
+
+        for verraeter in ("Ziel-Auslastung", "Segmente", "Aktive Systemgrößen"):
+            assert verraeter not in text, (
+                f"Die Kachel «{verraeter}» steht beim Vergleich noch da, obwohl "
+                "ihr Wert aus dem Entwurf kommt und dort nicht gilt."
+            )
+
+    def test_every_fixed_field_is_explained_from_the_contract(self):
+        """Die Begründungen kommen aus dem Vertrag, nicht aus der Oberfläche.
+
+        Stünden sie in `start_flow.py`, gäbe es zwei Quellen für dieselbe
+        Aussage — und die Oberfläche behauptete irgendwann etwas, das der Lauf
+        nicht mehr tut. Genau die Drift, gegen die W1.1 angetreten ist.
+        """
+
+        from dashboard.web.config_editor.start_flow import vorgaben_hinweis
+        from dashboard.web.state import draft_to_dict
+
+        hinweis = str(vorgaben_hinweis(draft_to_dict(_entwurf(SWEEP))))
+
+        for feld in ("rounds", "apply_custom_overrides", "deterministic_only"):
+            grund = vorgegebene_felder()[feld].grund
+            assert grund[:40] in hinweis, (
+                f"Die Begründung zu `{feld}` steht nicht im Hinweis — entweder "
+                "fehlt sie, oder die Oberfläche formuliert eine eigene."
+            )
+
+    def test_a_single_run_gets_no_such_note(self):
+        """Beim Einzellauf gilt alles, also gibt es nichts zu erklären."""
+
+        from dashboard.web.config_editor.start_flow import vorgaben_hinweis
+        from dashboard.web.state import draft_to_dict
+
+        assert vorgaben_hinweis(draft_to_dict(_entwurf(EINZELLAUF))) is None
+
+
 class TestDieMessungIstVollstaendig:
     """Ein Wächter, der Felder übersieht, ist schlechter als keiner."""
 

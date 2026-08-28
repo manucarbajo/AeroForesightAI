@@ -39,6 +39,11 @@ from dashboard.web.config_editor import compute_mode
 from dashboard.web.config_editor import controls as c
 from dashboard.web.state import draft_from_dict
 from src.models.state_models import DEFAULT_SEED
+from src.orchestration.scenario_sweeps import (
+    SWEEP_SEED,
+    SZENARIOTEXT_NUTZT_LLM,
+    vorgegebene_felder,
+)
 
 #: Die Szenario-Auswahl ist kein Draft-Feld: aus ihr folgen `scenario_mode` und
 #: `sweep_id`. Dieselbe Übersetzung wie beim Rechenmodus, aus demselben Grund —
@@ -118,15 +123,50 @@ _MODE_PLAIN = {
 }
 
 
+def ist_vergleich(draft: dict) -> bool:
+    """Ob der Entwurf einen Szenario-Vergleich beschreibt statt eines Laufs.
+
+    Eigene Funktion, weil daran seit P1.9-W1.3 mehrere Darstellungen hängen:
+    Der Vergleich nimmt vom Entwurf **nichts** entgegen, und alles, was ihn
+    beschreibt, muss deshalb aus einer anderen Quelle kommen.
+    """
+
+    return bool(draft.get("run_all_sweeps"))
+
+
+def _vergleich_satz() -> str:
+    """Was bei einem Szenario-Vergleich wirklich passiert.
+
+    Bis P1.9 stand hier derselbe Satz wie für einen Einzellauf, mit den Werten
+    des Entwurfs darin — «ausgehend von der Standard-Ausgangslage aus `configs/`,
+    ohne Sprachmodell; die Zahlen stimmen, die Agenten-Texte sind Platzhalter».
+    Drei Aussagen, drei Mal falsch: Die Ausgangslage ist je Szenario eine andere,
+    Agenten-Texte gibt es überhaupt keine, und ein Sprachmodell wird für den
+    Abschlusstext sehr wohl gerufen.
+    """
+
+    count = len(list_sweep_presets())
+    satz = (
+        f"Sie starten **alle {count} hinterlegten Szenarien** nacheinander — jedes "
+        "aus seiner eigenen Datei und **in seiner eigenen Länge**, ohne Agenten-Dialog. "
+        "Am Ende liegen sie zum Vergleich nebeneinander."
+    )
+    if SZENARIOTEXT_NUTZT_LLM:
+        satz += (
+            " Für den abschließenden Szenariotext wird das Sprachmodell befragt — "
+            "auch dann, wenn Sie oben «ohne Sprachmodell» gewählt haben."
+        )
+    return satz
+
+
 def summary_sentence(draft: dict) -> str:
     """Was gleich passiert — in einem Satz, ohne Fachbegriffe."""
 
-    if draft.get("run_all_sweeps"):
-        count = len(list_sweep_presets())
-        scope = f"**alle {count} hinterlegten Szenarien** nacheinander"
-    else:
-        runs = int(draft.get("run_count") or 1)
-        scope = f"**{runs} Läufe**" if runs > 1 else "**einen Lauf**"
+    if ist_vergleich(draft):
+        return _vergleich_satz()
+
+    runs = int(draft.get("run_count") or 1)
+    scope = f"**{runs} Läufe**" if runs > 1 else "**einen Lauf**"
 
     basis = _MODE_PLAIN.get(draft.get("scenario_mode", "basis"), "der Standard-Ausgangslage")
     if draft.get("scenario_mode") == "sweep" and draft.get("sweep_id"):
@@ -242,7 +282,80 @@ def scenario_details(draft: dict) -> html.Div:
 # --- Preflight -------------------------------------------------------------
 
 
+def _vergleich_tiles() -> list:
+    """Kacheln, die den Vergleich beschreiben — nicht den Entwurf.
+
+    Die sechs Kacheln des Einzellaufs zeigen Ziel-Auslastung, Segmente und
+    aktive Systemgrößen aus dem Entwurf. Beim Vergleich gilt davon nichts:
+    Jedes Szenario bringt seine eigenen Werte mit. Sie dort anzuzeigen hieße,
+    Zahlen zu nennen, mit denen nicht gerechnet wird.
+    """
+
+    presets = list_sweep_presets()
+    laengen = sorted({p.max_ticks for p in presets})
+    laenge = f"{laengen[0]} Ticks" if len(laengen) == 1 else f"{min(laengen)}–{max(laengen)} Ticks"
+
+    return [
+        ui.metric_tile("Szenarien", len(presets)),
+        ui.metric_tile(
+            "Länge",
+            laenge,
+            hint="Je Szenario so, wie es angelegt ist — nicht die Länge aus Schritt 2.",
+            prose=True,
+        ),
+        ui.metric_tile(
+            "Rechenmodus",
+            "Nur Zahlen",
+            hint="Vom Vergleich vorgegeben, damit die Szenarien vergleichbar bleiben.",
+            prose=True,
+        ),
+        ui.metric_tile(
+            "Zufallsstartwert",
+            f"{SWEEP_SEED} (vorgegeben)",
+            hint="Für alle Szenarien derselbe — sonst zeigte ein Unterschied die "
+            "Ziehung statt des Szenarios.",
+            prose=True,
+        ),
+    ]
+
+
+def vorgaben_hinweis(draft: dict) -> object:
+    """Welche Antworten der Vergleich nicht verwendet — und warum.
+
+    **Der Text kommt aus dem Vertrag des Sweeps** (`FESTLEGUNGEN`/`UNBEACHTET`),
+    nicht aus dieser Datei. Damit kann die Oberfläche nicht behaupten, ein Feld
+    sei vorgegeben, das in Wahrheit wirkt, und ebenso wenig eines verschweigen:
+    `tests/test_web_wirkung.py` hält beide Richtungen fest.
+    """
+
+    if not ist_vergleich(draft):
+        return None
+
+    vorgaben = vorgegebene_felder()
+    # Nur, was der Assistent überhaupt fragt — ein Feld, das nirgends
+    # eingestellt werden kann, muss man auch nicht als vorgegeben ausweisen.
+    sichtbar = [
+        "rounds",
+        "apply_custom_overrides",
+        "deterministic_only",
+        "mock_llm",
+        "use_seed",
+        "seed",
+        "base_price",
+        "checkpoint_interval",
+    ]
+    zeilen = [f"- {vorgaben[feld].grund}" for feld in sichtbar if feld in vorgaben]
+
+    return ui.expert(
+        ui.markdown("\n".join(zeilen)),
+        title="Was der Vergleich vorgibt — und Ihre Einstellungen dafür nicht verwendet",
+    )
+
+
 def _tiles(draft: dict) -> list:
+    if ist_vergleich(draft):
+        return _vergleich_tiles()
+
     feedback = draft.get("market_feedback_edit") or {}
     segments = [s for s in (draft.get("population_edits") or []) if s.get("type") == "boolean"]
     active_properties = [
@@ -296,7 +409,12 @@ def _warnings(draft: dict, errors: list[str]) -> list:
             text += f" Dazu {steht} direkt am betroffenen Feld."
         warnings.append(ui.alert(text, "error"))
 
-    if not draft.get("use_seed") and int(draft.get("run_count") or 1) > 1:
+    # Zwei der Hinweise unten gelten nur für einen Lauf: Der Vergleich hat einen
+    # vorgegebenen Startwert und wendet eigene Werte ohnehin nicht an. Sie dort
+    # zu zeigen hieße, zu einer Einstellung zu raten, die nicht wirkt.
+    vergleich = ist_vergleich(draft)
+
+    if not vergleich and not draft.get("use_seed") and int(draft.get("run_count") or 1) > 1:
         warnings.append(
             ui.alert(
                 "Mehrere Wiederholungen ohne festen Zufallsstartwert: Die Läufe werden sich "
@@ -313,7 +431,11 @@ def _warnings(draft: dict, errors: list[str]) -> list:
                 "warning",
             )
         )
-    if draft.get("scenario_mode") != "sweep" and not draft.get("apply_custom_overrides"):
+    if (
+        not vergleich
+        and draft.get("scenario_mode") != "sweep"
+        and not draft.get("apply_custom_overrides")
+    ):
         warnings.append(
             ui.alert(
                 "«Eigene Werte anwenden» ist aus — Änderungen an Faktoren und Systemgrößen "
@@ -349,6 +471,7 @@ def preflight(
         [
             ui.card(html.Div(ui.markdown(summary_sentence(draft)), id=summary_id(slot))),
             html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),
+            html.Div(vorgaben_hinweis(draft), className="mt-4"),
             html.Div(
                 ui.grid(
                     *(tiles[:_COMPACT_TILES] if compact else tiles),

@@ -65,10 +65,10 @@ SUMMARY_HOST = "rail-summary"
 
 
 def _summary(draft: dict) -> str:
+    if start_flow.ist_vergleich(draft):
+        return f"Szenario-Vergleich · {len(list_sweep_presets())} Szenarien · je eigene Länge"
     runs = int(draft.get("run_count") or 1)
     run_label = f"{runs} Läufe" if runs > 1 else "1 Lauf"
-    if draft.get("run_all_sweeps"):
-        run_label = "alle Szenario-Presets"
     return (
         f"Szenario: {draft.get('scenario_mode', 'basis')} · "
         f"Ticks: {draft.get('rounds', '?')} · {run_label}"
@@ -91,9 +91,11 @@ def _scenario_name(draft: dict) -> str:
 
 
 def _length(draft: dict) -> str:
+    # Kein Sonderfall für den Vergleich mehr: Dort ruft `summary_rows` diese
+    # Funktion gar nicht erst auf. Sie stand hier mit «{ticks} Ticks · alle
+    # Szenarien» und nannte damit eine Länge, die der Vergleich seit W1.2 nicht
+    # verwendet.
     ticks = draft.get("rounds", "?")
-    if draft.get("run_all_sweeps"):
-        return f"{ticks} Ticks · alle Szenarien"
     runs = int(draft.get("run_count") or 1)
     return f"{ticks} Ticks" if runs == 1 else f"{ticks} Ticks · {runs}×"
 
@@ -117,7 +119,24 @@ def _row(label: str, value: str) -> dcc.Link:
 
 
 def summary_rows(draft: dict) -> html.Div:
-    """Szenario, Länge, Rechenmodus — der Entwurf auf drei Zeilen."""
+    """Szenario, Länge, Rechenmodus — der Entwurf auf drei Zeilen.
+
+    **Beim Szenario-Vergleich stehen hier andere drei** (P1.9-W1.3). Er nimmt
+    vom Entwurf nichts entgegen: Szenario, Länge und Rechenmodus kommen dann aus
+    den Presets bzw. aus dem Vertrag des Sweeps. Die Zeilen des Entwurfs
+    anzuzeigen hieße, drei Werte zu behaupten, mit denen nicht gerechnet wird —
+    derselbe Fehler wie im Preflight, nur in der Nachbarzone.
+    """
+
+    if start_flow.ist_vergleich(draft):
+        return html.Div(
+            [
+                _row("Lauf", f"Vergleich · {len(list_sweep_presets())} Szenarien"),
+                _row("Länge", "je Szenario"),
+                _row("Rechenmodus", "Nur Zahlen (vorgegeben)"),
+            ],
+            className="af-rail-rows",
+        )
 
     return html.Div(
         [
