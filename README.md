@@ -18,6 +18,15 @@ pip install -e ".[dev]"
 
 Alle weiteren Befehle in dieser Datei setzen ein aktiviertes venv voraus.
 
+Wer an der Oberfläche arbeitet, holt sich zusätzlich den Überlauf-Wächter — er
+öffnet jede Ansicht in einem Kopflos-Browser und meldet, was aus seinem Kasten
+tritt. Ohne ihn überspringt sich `tests/test_web_overflow.py` von selbst:
+
+```powershell
+pip install -e ".[ui]"
+python -m playwright install chromium
+```
+
 Für Formatierung/Linting vor jedem Commit:
 
 ```powershell
