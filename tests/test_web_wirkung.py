@@ -540,6 +540,61 @@ class TestDerStartpreisGehtUnterwegsVerloren:
         )
 
 
+class TestEinSchalterOhneWertIstEinBefund:
+    """W1.6 — der Absturz, den W0.2 nebenbei gefunden hat.
+
+    `draft_to_launch_config` rechnet `int(draft.seed)`, sobald `use_seed` an
+    ist. Bei `seed = None` ist das ein `TypeError` und kein Prüfbefund: Der
+    Nutzer sieht einen Stacktrace statt eines Satzes am Feld.
+
+    **Erreichbar war das bisher nicht, und zwar aus dem schlechtesten denkbaren
+    Grund:** Der Render-Rückfall aus Befund A7 schreibt beim Anzeigen von
+    Schritt 3 stillschweigend eine 42 in den Entwurf, bevor jemand den Schalter
+    findet. Ein Fehler, der von einem zweiten Fehler zugedeckt wird — und W5.1
+    nimmt die Decke weg.
+    """
+
+    def test_it_is_reported_at_the_field(self):
+        from dashboard.config_catalog import validate_draft
+        from src.validation import field_of
+
+        draft = default_config_draft()
+        draft.use_seed = True
+        draft.seed = None
+
+        befunde = validate_draft(draft)
+
+        assert befunde, "Ein eingeschalteter Zufallsstartwert ohne Wert muss auffallen"
+        assert "seed" in [field_of(b) for b in befunde], (
+            "Der Befund hängt an keinem Feld — dann steht er nur im Preflight "
+            "und nicht dort, wo man ihn beheben kann."
+        )
+
+    def test_the_crash_it_prevents_is_real(self):
+        """Ohne die Prüfung stünde hier ein Stacktrace — nachgestellt.
+
+        Ein Test, der nur zeigt, dass eine Meldung erscheint, belegt nicht,
+        dass sie nötig war. Diese Zeile belegt es: Sie umgeht die Prüfung und
+        ruft die Stelle direkt.
+        """
+
+        draft = default_config_draft()
+        draft.use_seed = True
+        draft.seed = None
+
+        with pytest.raises(TypeError):
+            run_launcher.draft_to_launch_config(draft)
+
+    def test_switching_it_off_is_fine(self):
+        """Und der Normalfall bleibt normal: kein Schalter, kein Befund."""
+
+        from dashboard.config_catalog import validate_draft
+
+        draft = default_config_draft()
+        assert draft.use_seed is False and draft.seed is None
+        assert validate_draft(draft) == []
+
+
 class TestDieMessungIstVollstaendig:
     """Ein Wächter, der Felder übersieht, ist schlechter als keiner."""
 

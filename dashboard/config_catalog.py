@@ -17,7 +17,7 @@ from src.orchestration.scenario_sweeps import (
     load_all_sweep_configs,
     load_sweep_config,
 )
-from src.validation import collect_state_errors, field_of, validate_llm_settings
+from src.validation import collect_state_errors, field_of, issue, validate_llm_settings
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -610,6 +610,26 @@ def validate_draft(draft: ConfigDraft) -> list[str]:
     Scheitert schon das Bauen des States (fehlende oder kaputte Config-Datei),
     ist das ebenfalls ein Befund und keine Ausnahme, die nach oben durchschlägt.
     """
+
+    # **Vor** dem Bauen des States, nicht danach (P1.9-W1.6): Ein eingeschalteter
+    # Zufallsstartwert ohne Wert lässt `draft_to_launch_config` mit
+    # `TypeError: int() argument ... not 'NoneType'` sterben — kein Befund,
+    # ein Absturz. Erreichbar ist das heute nicht, und zwar aus dem schlechtesten
+    # denkbaren Grund: Der Render-Rückfall in `mode_step` schreibt vorher
+    # stillschweigend eine 42 in den Entwurf. **W5.1 räumt genau das weg** und
+    # macht den Absturz damit erreichbar; diese Prüfung steht deshalb davor.
+    #
+    # Die CLI kommt an dieser Stelle nicht vorbei, weil sie den Schalter gar
+    # nicht kennt: Dort ist ein fehlender Seed schlicht keiner.
+    if draft.use_seed and draft.seed is None:
+        return [
+            issue(
+                "Zufallsstartwert ist eingeschaltet, aber keiner angegeben. "
+                "Entweder eine Zahl eintragen oder den Schalter ausschalten — "
+                "dann rechnet der Lauf mit dem Standardwert.",
+                field="seed",
+            )
+        ]
 
     try:
         state = prepare_simulation_state(draft)
