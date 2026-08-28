@@ -95,6 +95,9 @@
     --shell-timeline: 5.5rem;
     --shell-left: clamp(17rem, 18vw, 21rem);
     --shell-right: clamp(18rem, 19vw, 22rem);
+    /* Breite der Ziehgriffe zwischen den Zonen (P1.7). Als Variable, damit das
+       Skript dieselbe Zahl benutzt wie das Raster. */
+    --shell-gutter: 6px;
 }
 
 /* --- Semantische Tokens: dunkel ------------------------------------------ */
@@ -238,13 +241,81 @@ body {
     /* `dvh` statt `vh`: Auf Mobilbrowsern schneidet `100vh` die Zeitleiste
        unter die Adressleiste. */
     height: 100dvh;
-    grid-template-columns: var(--shell-left) minmax(0, 1fr) var(--shell-right);
+    grid-template-columns:
+        var(--shell-left) var(--shell-gutter)
+        minmax(0, 1fr)
+        var(--shell-gutter) var(--shell-right);
     grid-template-rows: var(--shell-header) minmax(0, 1fr) auto;
     grid-template-areas:
-        "header header header"
-        "left   main   right"
-        "left   timeline right";
+        "header header header header header"
+        "left   gutl   main     gutr   right"
+        "left   gutl   timeline gutr   right";
     background: var(--canvas);
+}
+
+/* --- Ziehbare Trenner (P1.7) --------------------------------------------- */
+/* Die Zonenbreiten waren fest. Wer die Szene groesser wollte oder die
+   Telemetrie breiter, konnte nichts tun.
+
+   Gezogen wird **clientseitig** (`assets/shell_resize.js`), aus demselben Grund
+   wie beim Theme-Umschalter in P1.5: Ein Serverrundlauf je Mausbewegung macht
+   das Ziehen zaeh. Der Griff schreibt `--shell-left`/`--shell-right` als
+   Inline-Stil auf `<html>` — von dort erbt `.af-shell` sie, und ein Inline-Stil
+   schlaegt die `:root`-Regel ohne Spezifitaetstricks. Gespeichert wird in
+   `localStorage`, zurueckgelesen vom Kopfskript in `app.py`, damit die Spalte
+   beim Laden nicht erst in der Standardbreite aufblitzt. */
+
+.af-shell__gutter {
+    position: relative;
+    cursor: col-resize;
+    background: transparent;
+    /* Der Griff ist schmal, die Trefferflaeche darf es nicht sein. */
+    touch-action: none;
+}
+
+.af-shell__gutter--left {
+    grid-area: gutl;
+}
+
+.af-shell__gutter--right {
+    grid-area: gutr;
+}
+
+.af-shell__gutter::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 2px;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background: var(--border-strong);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.af-shell__gutter:hover::before,
+.af-shell__gutter:focus-visible::before,
+.af-shell--dragging .af-shell__gutter::before {
+    opacity: 1;
+}
+
+.af-shell__gutter:focus-visible {
+    outline: none;
+    background: var(--focus-ring);
+}
+
+/* Waehrend des Ziehens darf nichts markiert werden und kein Rahmen den Zeiger
+   uebernehmen — sonst reisst der Zug ab, sobald er ueber ein iframe laeuft. */
+.af-shell--dragging {
+    cursor: col-resize;
+    user-select: none;
+}
+
+.af-shell--dragging .af-shell__main,
+.af-shell--dragging .af-shell__left,
+.af-shell--dragging .af-shell__right {
+    pointer-events: none;
 }
 
 .af-shell__header {
@@ -442,12 +513,20 @@ body {
 }
 
 @media (max-width: 1279px) {
+    /* Die Telemetrie ist hier eine Schublade und keine Spalte — ihr Griff hat
+       nichts mehr zu ziehen und verschwindet mit ihr. Bliebe er stehen, waere
+       er ein Rasterelement ohne benannten Bereich und wuerde selbsttaetig
+       irgendwo einsortiert. */
+    .af-shell__gutter--right {
+        display: none;
+    }
+
     .af-shell {
-        grid-template-columns: var(--shell-left) minmax(0, 1fr);
+        grid-template-columns: var(--shell-left) var(--shell-gutter) minmax(0, 1fr);
         grid-template-areas:
-            "header header"
-            "left   main"
-            "left   timeline";
+            "header header header"
+            "left   gutl   main"
+            "left   gutl   timeline";
     }
 
     .af-shell__right {
@@ -472,6 +551,15 @@ body {
 }
 
 @media (max-width: 1023px) {
+    /* Jetzt ist auch das Bedienfeld eine Schublade — sein Griff hat keine
+       Spalte mehr, an der er ziehen koennte. (Der rechte ist seit 1280 px weg.)
+       Bewusst der **eigene** Modifikator statt der Sammelklasse: So haengt jede
+       Seite an genau einem Haltepunkt, und `tests/test_web_drawers.py` kann ihn
+       gegen den ihres Schubladen-Knopfs halten. */
+    .af-shell__gutter--left {
+        display: none;
+    }
+
     .af-shell {
         grid-template-columns: minmax(0, 1fr);
         grid-template-areas:

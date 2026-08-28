@@ -165,9 +165,18 @@ class TestWasDasBedienfeldTraegt:
         assert presets[0].name in str(launch_page.summary_rows(draft))
 
     def test_the_rows_are_links_into_the_setup_area(self, draft):
-        """Geändert wird dort, wo die Felder stehen — nicht hier."""
+        """Geändert wird dort, wo die Felder stehen — nicht hier.
 
-        assert "/app/setup" in str(launch_page.summary_rows(draft))
+        Die Adresse wird aus `shell.ROUTES` abgeleitet statt hingeschrieben:
+        Sie ist mit P1.7 schon einmal umgezogen, und ein Test, der den alten
+        Pfad festnagelt, hätte den Umzug als Fehler gemeldet statt ihn zu
+        sichern.
+        """
+
+        from dashboard.web import routing, shell
+
+        einrichten = next(route for route, label in shell.ROUTES if label == "Einrichten")
+        assert f"href='{routing.url(einrichten)}'" in str(launch_page.summary_rows(draft))
 
     def test_the_mode_is_named_in_two_words(self, draft):
         """Der volle Optionstext ist ein Satz und passt hier nicht hin."""

@@ -14,6 +14,14 @@ rechts unter 1280 Pixel Fensterbreite, das Bedienfeld links unter 1024. Auf
 einem breiten Schirm sehen Sie deshalb keinen der beiden — dort steht ohnehin
 alles nebeneinander.
 
+**Die Breiten können Sie selbst einstellen.** Zwischen den Zonen liegt je eine
+schmale Griffleiste; ziehen Sie daran, wird die Seitenspalte breiter oder
+schmaler, und der Viewport in der Mitte gibt nach. Ein Doppelklick auf den Griff
+stellt die Ausgangsbreite wieder her. Mit der Tastatur geht es auch: Griff
+anspringen und mit den Pfeiltasten verschieben. Was Sie einstellen, merkt sich
+Ihr Browser bis zum nächsten Mal. Sobald eine Spalte zur Schublade wird, ist ihr
+Griff weg — dort gibt es nichts mehr zu ziehen.
+
 **Das Bedienfeld links ist kein Formular.** Es zeigt in drei Zeilen, was
 eingestellt ist, darunter den Preflight, und ganz unten den Start-Knopf — der
 bleibt immer sichtbar. Eingestellt wird im Bereich **Einrichten**, den Sie oben

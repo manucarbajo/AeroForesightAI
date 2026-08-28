@@ -33,12 +33,24 @@ from dashboard.web import components as ui
 from dashboard.web import routing, status
 
 #: Bereiche des Dashboards, jeweils relativ zu `routing.BASE_PATH`.
+#:
+#: **Die Reihenfolge ist der Arbeitsablauf** (seit P1.7): Man richtet ein, sieht
+#: dann zu, und wertet zuletzt aus. Vorher stand der Leitstand vorn und
+#: «Einrichten» an zweiter Stelle — wer das Dashboard zum ersten Mal öffnete,
+#: landete auf einer Ansicht, für die es noch nichts zu sehen gab.
+#:
+#: Der leere Pfad gehört deshalb dem Einrichten. Der Leitstand hat mit `lauf`
+#: eine eigene Adresse bekommen; `setup` bleibt als Alias bestehen (siehe
+#: `ALIASES`), damit gespeicherte Verweise nicht ins Leere zeigen.
 ROUTES = [
-    ("", "Leitstand"),
-    ("setup", "Einrichten"),
+    ("", "Einrichten"),
+    ("lauf", "Leitstand"),
     ("runs", "Ergebnisse"),
     ("doku", "Handbuch"),
 ]
+
+#: Alte Adressen, die weiterhin funktionieren sollen — Pfad → Bereich.
+ALIASES = {"setup": ""}
 
 LANDING_URL = routing.LANDING_PATH
 
@@ -194,6 +206,30 @@ def header(
     )
 
 
+def _gutter(seite: str, titel: str) -> html.Div:
+    """Ein Ziehgriff zwischen zwei Zonen (P1.7).
+
+    Ohne Dash-Callback: Das Ziehen läuft in `assets/shell_resize.js`, weil ein
+    Serverrundlauf je Mausbewegung das Ziehen zäh macht — dieselbe Begründung
+    wie beim Theme-Umschalter. Der Griff ist deshalb ein reines Ziel für das
+    Skript und hat bewusst **keine** Dash-ID.
+
+    `tabIndex` und `role`, weil er sonst nur mit der Maus bedienbar wäre; die
+    Pfeiltasten verschieben ihn in Sechzehner-Schritten.
+    """
+
+    return html.Div(
+        className=f"af-shell__gutter af-shell__gutter--{seite}",
+        title=f"{titel} — ziehen, Doppelklick setzt zurück",
+        tabIndex="0",
+        **{
+            "role": "separator",
+            "aria-orientation": "vertical",
+            "aria-label": titel,
+        },
+    )
+
+
 def layout(
     *,
     active: str,
@@ -211,7 +247,9 @@ def layout(
         [
             header(active, state=state, run_options=run_options, run_value=run_value),
             html.Aside(left, className="af-shell__left", id="shell-left"),
+            _gutter("left", "Breite des Bedienfelds ändern"),
             html.Main(main, className="af-shell__main", id="shell-main"),
+            _gutter("right", "Breite der Telemetrie ändern"),
             html.Div(timeline, className="af-shell__timeline", id="shell-timeline"),
             html.Aside(right, className="af-shell__right", id="shell-right"),
             # Der Verdunkler liegt über dem Inhalt, sobald eine Schublade offen

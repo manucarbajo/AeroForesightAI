@@ -77,6 +77,21 @@ _INDEX_TEMPLATE = """<!DOCTYPE html>
                     document.documentElement.classList.toggle("dark", dark);
                 } catch (e) {}
             })();
+            // Ebenso vor dem ersten Zeichnen: die gezogenen Zonenbreiten
+            // (P1.7). Als Dash-Callback kaeme das zu spaet, und die Spalten
+            // blitzten bei jedem Laden erst in der Standardbreite auf.
+            // Geschrieben werden sie von `assets/shell_resize.js`.
+            (function () {
+                try {
+                    [["af-shell-left", "--shell-left"],
+                     ["af-shell-right", "--shell-right"]].forEach(function (paar) {
+                        var wert = window.localStorage.getItem(paar[0]);
+                        if (wert) {
+                            document.documentElement.style.setProperty(paar[1], wert + "px");
+                        }
+                    });
+                } catch (e) {}
+            })();
         </script>
         <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -154,23 +169,24 @@ def active_route(pathname: str | None) -> str:
     # Das Handbuch hat Unterseiten (`doku/cib`) — hier zählt der Anfang.
     if relative.startswith("doku"):
         return "doku"
+    if relative in shell.ALIASES:
+        return shell.ALIASES[relative]
     return relative if relative in {route for route, _ in shell.ROUTES} else ""
 
 
-def visibility(active: str) -> tuple[dict, dict, dict, dict]:
+def visibility(active: str) -> tuple[dict, ...]:
     """Welcher der vier Viewport-Bereiche sichtbar ist — genau einer.
 
     Alle vier bleiben im DOM (sonst zeigten Callbacks auf Komponenten, die es
-    nicht gibt); umgeschaltet wird nur die Sichtbarkeit. Die Reihenfolge ist
-    die von `shell.ROUTES`: Leitstand, Einrichten, Ergebnisse, Handbuch.
+    nicht gibt); umgeschaltet wird nur die Sichtbarkeit.
+
+    Die Reihenfolge ist die von `shell.ROUTES` — und zwar **abgeleitet**, nicht
+    abgeschrieben: Seit P1.7 ist diese Reihenfolge der Arbeitsablauf und hat
+    sich einmal geändert. Eine zweite handgepflegte Liste hätte an dem Tag
+    stillschweigend den falschen Bereich eingeblendet.
     """
 
-    return (
-        _VISIBLE if active == "" else _HIDDEN,
-        _VISIBLE if active == "setup" else _HIDDEN,
-        _VISIBLE if active == "runs" else _HIDDEN,
-        _VISIBLE if active == "doku" else _HIDDEN,
-    )
+    return tuple(_VISIBLE if active == route else _HIDDEN for route, _ in shell.ROUTES)
 
 
 def _status_for(data: run_data.RunData, *, running: bool = False) -> status.Status:
@@ -195,6 +211,7 @@ def serve_layout() -> html.Div:
     data = run_data.load(selection)
     options, _ = runs_page.run_options()
     run_value = (selection or {}).get("run_id")
+    start = visibility("")
 
     return html.Div(
         [
@@ -217,12 +234,15 @@ def serve_layout() -> html.Div:
                 run_options=options,
                 run_value=run_value,
                 left=launch_page.rail(draft),
+                # Die Anfangssichtbarkeiten kommen aus derselben Funktion wie die
+                # späteren — sonst zeigte der erste Aufbau einen anderen Bereich
+                # als das Routing eine Sekunde danach.
                 main=html.Div(
                     [
-                        html.Div(scene_block(data, 1), id=SCENE_HOST),
-                        html.Div(setup_page.layout(draft), id="page-setup", style=_HIDDEN),
-                        html.Div(runs_page.layout(selection), id="page-runs", style=_HIDDEN),
-                        html.Div(docs_page.layout(), id="page-docs", style=_HIDDEN),
+                        html.Div(setup_page.layout(draft), id="page-setup", style=start[0]),
+                        html.Div(scene_block(data, 1), id=SCENE_HOST, style=start[1]),
+                        html.Div(runs_page.layout(selection), id="page-runs", style=start[2]),
+                        html.Div(docs_page.layout(), id="page-docs", style=start[3]),
                     ],
                     id="page-scene-wrap",
                 ),
@@ -249,10 +269,12 @@ def create_app() -> Dash:
     landing_route.register(app.server)
     app.layout = serve_layout
 
+    # Die vier Sichtbarkeiten stehen in der Reihenfolge von `shell.ROUTES`:
+    # Einrichten, Leitstand, Ergebnisse, Handbuch.
     @app.callback(
         Output(shell.NAV_HOST, "children"),
-        Output(SCENE_HOST, "style"),
         Output("page-setup", "style"),
+        Output(SCENE_HOST, "style"),
         Output("page-runs", "style"),
         Output("page-docs", "style"),
         Input("url", "pathname"),

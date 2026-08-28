@@ -30,10 +30,14 @@ python -m dashboard.web.app --port 8511
 | Adresse | Inhalt |
 | --- | --- |
 | `http://localhost:8511/` | Landingpage |
-| `http://localhost:8511/app/` | Leitstand (Szene + Zeitleiste) |
-| `http://localhost:8511/app/setup` | Einrichten (drei Entscheidungen + Editor) |
+| `http://localhost:8511/app/` | Einrichten (drei Entscheidungen + Editor) |
+| `http://localhost:8511/app/lauf` | Leitstand (Szene + Zeitleiste) |
 | `http://localhost:8511/app/runs` | Ergebnisse (die sieben Ansichten) |
 | `http://localhost:8511/app/doku` | Handbuch |
+
+Die Reihenfolge ist seit P1.7 der Arbeitsablauf: Man richtet ein, sieht dann zu,
+und wertet zuletzt aus. Deshalb liegt das Einrichten auf dem leeren Pfad — dort
+fängt man an. `/app/setup` funktioniert weiterhin und führt dorthin.
 
 Ein Server für beides. Die Landingpage (`aeroforesight-ai-landing-page/`) wird
 als statisches HTML ausgeliefert, das Dashboard läuft darunter auf `/app/`.

@@ -135,16 +135,20 @@ class TestGenauEinBereichIstSichtbar:
 
         assert len(web_app.visibility("")) == len(shell.ROUTES)
 
-    #: Reihenfolge wie in `shell.ROUTES`: Leitstand, Einrichten, Ergebnisse, Handbuch.
+    #: Reihenfolge wie in `shell.ROUTES` — seit P1.7 der Arbeitsablauf:
+    #: Einrichten, Leitstand, Ergebnisse, Handbuch.
     @pytest.mark.parametrize(
         ("pathname", "sichtbar"),
         [
             ("/app/", 0),
-            ("/app/setup", 1),
+            ("/app/lauf", 1),
             ("/app/runs", 2),
             ("/app/doku", 3),
             ("/app/doku/cib", 3),
             ("/app", 0),
+            # Der Aliaspfad aus P1.6: gespeicherte Verweise dürfen nicht ins
+            # Leere zeigen, nur weil das Einrichten umgezogen ist.
+            ("/app/setup", 0),
         ],
     )
     def test_the_address_decides(self, pathname, sichtbar):
@@ -153,9 +157,32 @@ class TestGenauEinBereichIstSichtbar:
         angezeigt = [index for index, stil in enumerate(stile) if stil != {"display": "none"}]
         assert angezeigt == [sichtbar], f"{pathname} zeigt {angezeigt}"
 
-    def test_an_unknown_address_falls_back_to_the_control_room(self):
+    def test_an_unknown_address_falls_back_to_the_first_area(self):
+        """Unbekannt heißt «von vorn» — und vorn ist seit P1.7 das Einrichten."""
+
         assert web_app.active_route("/app/gibt-es-nicht") == ""
         assert web_app.visibility("")[0] != {"display": "none"}
+
+    def test_the_order_of_the_areas_is_the_workflow(self):
+        """Die Reihenfolge ist eine Aussage, keine Zufälligkeit (P1.7).
+
+        Vor P1.7 stand der Leitstand vorn; wer das Dashboard zum ersten Mal
+        öffnete, landete auf einer Ansicht, für die es noch nichts zu sehen gab.
+        """
+
+        assert [label for _, label in shell.ROUTES] == [
+            "Einrichten",
+            "Leitstand",
+            "Ergebnisse",
+            "Handbuch",
+        ]
+
+    def test_every_alias_points_at_a_real_area(self):
+        """Ein Alias auf einen Bereich, den es nicht gibt, führt ins Leere."""
+
+        bereiche = {route for route, _ in shell.ROUTES}
+        for alias, ziel in shell.ALIASES.items():
+            assert ziel in bereiche, f"Alias «{alias}» zeigt auf «{ziel}»"
 
     def test_the_manual_keeps_its_subpages(self):
         """`doku/cib` gehoert zum Handbuch, nicht zum Leitstand."""

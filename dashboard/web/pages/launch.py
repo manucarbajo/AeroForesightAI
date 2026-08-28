@@ -109,7 +109,8 @@ def _row(label: str, value: str) -> dcc.Link:
             html.Span(value, className="af-rail-row__value", title=value),
             ui.icon("chevron_right", "af-rail-row__chevron text-base"),
         ],
-        href=routing.url("setup"),
+        # Seit P1.7 liegt das Einrichten auf dem leeren Pfad — dort fängt man an.
+        href=routing.url(""),
         className="af-rail-row",
     )
 
@@ -139,19 +140,11 @@ def rail(draft: dict | None = None) -> html.Div:
     laeuft = runner.is_running()
     return html.Div(
         [
+            # Nur die Überschrift. Bis P1.7 stand hier ein Knopf «Einrichten» —
+            # er führte dorthin, wo der Navigationspunkt zwei Zentimeter darüber
+            # auch hinführt, und die drei Stand-Zeilen darunter tun es ebenfalls.
             html.Div(
-                html.Div(
-                    [
-                        html.H1("Lauf", className=ui.H3),
-                        dcc.Link(
-                            [ui.icon("tune", "text-sm"), "Einrichten"],
-                            href=routing.url("setup"),
-                            className="af-btn af-btn--secondary inline-flex items-center "
-                            "gap-1.5 px-3 py-1.5 font-body text-xs font-medium",
-                        ),
-                    ],
-                    className="flex items-center justify-between gap-3",
-                ),
+                html.H1("Lauf", className=ui.H3),
                 className="af-pane__sticky",
             ),
             dcc.Store(id="cfg-editor-refresh", data=0),

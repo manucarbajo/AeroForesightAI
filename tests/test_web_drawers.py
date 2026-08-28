@@ -186,3 +186,64 @@ class TestJederKnopfPasstZuSeinerZone:
         )
         assert "af-drawer-toggle--left" in gerendert
         assert "af-drawer-toggle--right" in gerendert
+
+
+# --- Ziehgriffe (P1.7) -----------------------------------------------------
+
+
+class TestDieGriffeGehoerenZuIhrenSpalten:
+    """Ein Griff kann nur ziehen, solange seine Zone eine Rasterspalte ist.
+
+    Sobald sie zur Schublade wird, hat er nichts mehr zu greifen — und schlimmer:
+    Er waere dann ein Rasterelement ohne benannten Bereich und wuerde vom Raster
+    selbsttaetig irgendwohin einsortiert. Der Haltepunkt, ab dem ein Griff
+    verschwindet, muss deshalb derselbe sein, ab dem der zugehoerige
+    Schubladen-Knopf erscheint. Zwei Zahlen fuer dieselbe Grenze sind genau die
+    Drift, an der schon die Umschalter gescheitert sind.
+    """
+
+    #: Griff, zugehoeriger Umschalter — beide haengen an derselben Zone.
+    PAARE = [
+        pytest.param(".af-shell__gutter--left", ".af-drawer-toggle--left", id="bedienfeld"),
+        pytest.param(".af-shell__gutter--right", ".af-drawer-toggle--right", id="telemetrie"),
+    ]
+
+    @pytest.mark.parametrize(("griff", "knopf"), PAARE)
+    def test_the_gutter_disappears_where_the_toggle_appears(self, griff, knopf):
+        griff_weg_ab = _haltepunkt(griff, "display: none")
+        knopf_da_ab = _haltepunkt(knopf, "display: inline-flex")
+
+        assert griff_weg_ab is not None, f"{griff} wird nirgends ausgeblendet"
+        assert griff_weg_ab == knopf_da_ab, (
+            f"{griff} verschwindet ab {griff_weg_ab} px, {knopf} erscheint ab "
+            f"{knopf_da_ab} px. Dazwischen steht ein Griff ohne Spalte."
+        )
+
+    def test_the_shell_renders_both_gutters(self):
+        gerendert = str(
+            shell.layout(
+                active="",
+                state=shell.status.derive(running=False, demo=False, degraded=False),
+                run_options=[],
+                run_value=None,
+                left="l",
+                main="m",
+                timeline="t",
+                right="r",
+            )
+        )
+
+        assert "af-shell__gutter--left" in gerendert
+        assert "af-shell__gutter--right" in gerendert
+
+    def test_a_gutter_carries_no_dash_id(self):
+        """Das Ziehen laeuft im Browser — der Server hat dazu nichts zu sagen.
+
+        Eine Dash-ID hier waere die Einladung, spaeter doch einen Callback
+        daranzuhaengen; dann liefe je Mausbewegung eine Serverrunde, und genau
+        deshalb steht das Ziehen in `assets/shell_resize.js`.
+        """
+
+        griff = shell._gutter("left", "Test")
+
+        assert getattr(griff, "id", None) is None
