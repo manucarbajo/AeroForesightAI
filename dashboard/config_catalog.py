@@ -487,7 +487,12 @@ def apply_sweep_to_draft(draft: ConfigDraft, sweep: SweepConfig) -> ConfigDraft:
     for fo in sweep.factor_overrides:
         factor_states[fo.factor_id] = fo.initial_state
 
-    draft.scenario_mode = "sweep"
+    # «Werte dieses Szenarios übernehmen» heißt: ab hier sind es *meine* Werte.
+    # Der Modus muss deshalb auf `custom` wechseln — im Modus `sweep` gilt seit
+    # P1.1 ausschließlich die Preset-Datei, die eben übernommenen Werte im
+    # Entwurf wären dort wirkungslos. `docs/handbuch/presets.md` beschreibt
+    # diesen Wechsel schon länger; bis P1.1 blieb der Modus trotzdem auf `sweep`.
+    draft.scenario_mode = "custom"
     draft.sweep_id = sweep.id
     draft.rounds = sweep.max_ticks
     draft.property_edits = prop_edits
@@ -571,13 +576,22 @@ def prepare_simulation_state(draft: ConfigDraft):
     if draft.simulation_description:
         state.config.description = draft.simulation_description
 
+    # Ein gewähltes Preset gilt **unvermischt** (seit P1.1). Vorher wurde erst
+    # das Preset angewendet und danach der Entwurf darübergelegt — und weil
+    # `apply_custom_overrides` per Default an ist und der Entwurf die
+    # Datei-Defaults aus `properties.json` mitführt, hat die zweite Runde die
+    # erste stillschweigend zurückgedreht: `business_as_usual` verspricht eine
+    # konstante CO₂-Abgabe von 50 und rechnete im Dashboard trotzdem mit dem
+    # Sprung auf 120 in Tick 15. Über die CLI (`run_single_sweep`) stimmte es,
+    # nur dieser Pfad nicht. Wer von einem Preset ausgehen und dann eigene
+    # Werte setzen will, nimmt «Werte übernehmen» — das schaltet auf `custom`.
     if draft.scenario_mode == "sweep" and draft.sweep_id:
         sweep_path = SWEEPS_DIR / f"{draft.sweep_id}.json"
         if not sweep_path.is_file():
             sweep_path = Path(draft.sweep_id)
         sweep = load_sweep_config(sweep_path)
         state = apply_sweep_overrides(state, sweep)
-    if draft.apply_custom_overrides or draft.scenario_mode == "custom":
+    elif draft.apply_custom_overrides or draft.scenario_mode == "custom":
         custom = build_custom_sweep_from_draft(draft)
         state = apply_sweep_overrides(state, custom)
 

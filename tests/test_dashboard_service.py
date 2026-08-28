@@ -184,6 +184,23 @@ class TestConfigCatalog:
         carbon = draft.property_edits["carbon_tax_level"]
         assert any(rule.get("active_from_tick") == 25 for rule in carbon.rules)
 
+    def test_taking_over_a_preset_switches_to_own_settings(self):
+        """Sonst liefen die eben übernommenen Werte ins Leere.
+
+        Im Modus `sweep` gilt seit P1.1 ausschließlich die Preset-Datei. Bliebe
+        der Modus dort stehen, hätte «Werte übernehmen» sichtbar etwas in den
+        Editor geschrieben, das der Lauf nicht anfasst — genau die stille
+        Wirkungslosigkeit, gegen die dieses Paket antritt.
+        """
+
+        draft = default_config_draft()
+        sweep = next(s for s in list_sweep_presets() if s.id == "co2_delayed")
+
+        draft = apply_sweep_to_draft(draft, sweep)
+
+        assert draft.scenario_mode == "custom"
+        assert draft.apply_custom_overrides is True
+
     def test_prepare_state_with_custom_property_override(self):
         draft = default_config_draft()
         draft.scenario_mode = "custom"
