@@ -36,6 +36,7 @@ from dashboard.web import (
     landing_route,
     routing,
     run_data,
+    runner,
     shell,
     state,
     status,
@@ -210,7 +211,9 @@ def serve_layout() -> html.Div:
             dcc.Store(id=runs_page.TAB_STORE, data=runs_page.DEFAULT_TAB),
             shell.layout(
                 active="",
-                state=_status_for(data),
+                # Auch beim ersten Zeichnen gilt der Serverzustand: Ein Lauf,
+                # den eine andere Sitzung gestartet hat, ist einer.
+                state=_status_for(data, running=runner.is_running()),
                 run_options=options,
                 run_value=run_value,
                 left=launch_page.rail(draft),

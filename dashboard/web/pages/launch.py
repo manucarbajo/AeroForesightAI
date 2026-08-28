@@ -45,6 +45,19 @@ PROGRESS_STORE = "run-progress-store"
 #: Ob gerade ein Lauf rechnet — die Kopfzeile liest das für ihren Zustand.
 RUNNING_STORE = "run-running-store"
 
+#: Takt, in dem **jede** Sitzung den Serverzustand nachfragt — auch die, die
+#: den Lauf nicht gestartet hat.
+#:
+#: `run-poll` läuft nur in der Sitzung, die auf «Start» gedrückt hat. Wer die
+#: Seite währenddessen neu lädt oder in einem zweiten Tab öffnet, hatte damit
+#: keinen einzigen Eingang, der ihm von dem Lauf erzählt: Die Kopfzeile sagte
+#: «System bereit», und «Start» stand aktiv da, obwohl `runner.start` jeden
+#: zweiten Lauf ablehnt. Der Takt ist bewusst träge — die Abfrage ist ein
+#: Wörterbuch-Durchlauf unter einem Lock, und der Zustand ändert sich zweimal
+#: je Lauf.
+HEARTBEAT = "run-heartbeat"
+HEARTBEAT_INTERVAL_MS = 2000
+
 #: Der Wirt für die drei Stand-Zeilen. Sie ändern sich mit dem Entwurf und
 #: werden deshalb nachgefüllt, statt die Spalte neu zu bauen.
 SUMMARY_HOST = "rail-summary"
@@ -121,6 +134,9 @@ def rail(draft: dict | None = None) -> html.Div:
     """Der Inhalt der linken Zone."""
 
     draft = draft or initial_draft_dict()
+    # Der Serverzustand gilt schon beim ersten Zeichnen: Wer die Seite während
+    # eines fremden Laufs öffnet, soll den Knopf gar nicht erst aktiv sehen.
+    laeuft = runner.is_running()
     return html.Div(
         [
             html.Div(
@@ -141,8 +157,9 @@ def rail(draft: dict | None = None) -> html.Div:
             dcc.Store(id="cfg-editor-refresh", data=0),
             dcc.Store(id="run-job-store"),
             dcc.Store(id=PROGRESS_STORE, data=[]),
-            dcc.Store(id=RUNNING_STORE, data=False),
+            dcc.Store(id=RUNNING_STORE, data=laeuft),
             dcc.Interval(id="run-poll", interval=POLL_INTERVAL_MS, disabled=True),
+            dcc.Interval(id=HEARTBEAT, interval=HEARTBEAT_INTERVAL_MS),
             html.Div(summary_rows(draft), id=SUMMARY_HOST, className="mb-5"),
             # Der Preflight wird von `_live` nachgefüllt — er haengt an der
             # Konfigurationspruefung, die bei jeder Aenderung einmal laeuft.
@@ -155,7 +172,13 @@ def rail(draft: dict | None = None) -> html.Div:
             html.Div(id="run-status", className="mt-4"),
             html.Div(
                 [
-                    ui.button("Start", id="run-start", icon_name="play_arrow", className="w-full"),
+                    ui.button(
+                        "Start",
+                        id="run-start",
+                        icon_name="play_arrow",
+                        className="w-full",
+                        disabled=laeuft,
+                    ),
                     html.P(_summary(draft), id="run-summary", className=f"{ui.CAPTION} mt-2"),
                 ],
                 className="af-rail-footer",
@@ -313,15 +336,34 @@ def register_callbacks(app) -> None:
 
     @app.callback(
         Output(RUNNING_STORE, "data"),
+        Output("run-start", "disabled", allow_duplicate=True),
+        Input(HEARTBEAT, "n_intervals"),
         Input("run-poll", "disabled"),
-        Input("run-start", "disabled"),
+        State(RUNNING_STORE, "data"),
+        prevent_initial_call=True,
     )
-    def _running(poll_disabled: bool | None, start_disabled: bool | None):
-        """Ob gerade gerechnet wird — für die Zustandsanzeige der Kopfzeile.
+    def _running(_beat, poll_disabled: bool | None, bisher: bool | None):
+        """Ob gerade gerechnet wird — für Kopfzeile und Start-Knopf.
 
-        Abgeleitet aus den beiden Schaltern, die der Lauf ohnehin setzt, statt
-        aus `runner.is_running()`: Der Serverzustand gälte für alle Sitzungen,
-        die Anzeige gehört aber zu dieser einen.
+        **Der Serverzustand entscheidet, nicht der Zustand dieser Sitzung.**
+        Die frühere Fassung las nur die beiden Schalter, die der eigene Lauf
+        setzt, mit der Begründung, die Anzeige gehöre zu dieser einen Sitzung.
+        Das trifft für die Anzeige zu, aber nicht für die Sache dahinter:
+        `runner` lässt **einen** Lauf im ganzen Prozess zu (`launch_simulation`
+        leitet `stdout` um, zwei Läufe schnitten sich die Ausgabe ab). Wer die
+        Seite während eines Laufs neu lud, sah deshalb «System bereit» und
+        einen aktiven «Start», der beim Drücken mit «Es läuft bereits eine
+        Simulation» abwies — am laufenden System nachgestellt.
+
+        `run-poll` bleibt als zweite Quelle daneben, weil er sofort umschlägt:
+        Der Takt allein ließe den eigenen Start bis zu zwei Sekunden lang
+        unbestätigt.
+
+        Geschrieben wird nur bei echter Änderung — sonst stieße der Takt alle
+        zwei Sekunden die Kopfzeile samt Neuladen der Laufdaten an.
         """
 
-        return bool(start_disabled) and not bool(poll_disabled)
+        laeuft = (not bool(poll_disabled)) or runner.is_running()
+        if bool(bisher) == laeuft:
+            return no_update, no_update
+        return laeuft, laeuft

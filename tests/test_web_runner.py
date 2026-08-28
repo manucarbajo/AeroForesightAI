@@ -257,3 +257,96 @@ def test_the_start_button_starts_a_healthy_config(monkeypatch):
 
     assert ergebnis[0] == "job-4711"
     assert ergebnis[_KNOPF] is True, "während des Laufs ist der Knopf gesperrt"
+
+
+# --- Ein Lauf gehört dem Server, nicht der Sitzung --------------------------
+#
+# `runner` lässt genau **einen** Lauf im ganzen Prozess zu: `launch_simulation`
+# leitet `stdout` um, zwei Läufe schnitten sich gegenseitig die Ausgabe ab.
+# Die Anzeige las den Laufzustand trotzdem nur aus den Schaltern der eigenen
+# Sitzung — mit der Begründung, die Anzeige gehöre zu dieser einen. Das trifft
+# für die Anzeige zu, nicht für die Sache dahinter.
+#
+# Am laufenden System nachgestellt: Während ein Lauf bei Tick 14 von 20 stand,
+# meldete eine frisch geladene Seite «System bereit», der Start-Knopf stand
+# aktiv da, und sein Druck endete in «Es läuft bereits eine Simulation. Bitte
+# abwarten.» Genau der Widerspruch, gegen den `status.py` angetreten ist.
+
+
+def _running_callback():
+    from dashboard.web.pages import launch as launch_page
+
+    app = _MitschreibendeApp()
+    launch_page.register_callbacks(app)
+    for _ids, fn in app.callbacks:
+        if fn.__name__ == "_running":
+            return fn
+    raise AssertionError("Running-Callback nicht gefunden")
+
+
+def test_a_foreign_run_is_visible_in_a_session_that_did_not_start_it(monkeypatch):
+    """Fremder Lauf: Diese Sitzung pollt nicht, muss ihn aber melden."""
+
+    monkeypatch.setattr(runner, "is_running", lambda: True)
+
+    # poll_disabled=True heißt «diese Sitzung hat keinen eigenen Lauf».
+    laeuft, knopf_gesperrt = _running_callback()(1, True, False)
+
+    assert laeuft is True, "die Kopfzeile muss den fremden Lauf zeigen"
+    assert knopf_gesperrt is True, "«Start» darf nicht anbieten, was runner ablehnt"
+
+
+def test_an_idle_server_leaves_the_button_usable(monkeypatch):
+    monkeypatch.setattr(runner, "is_running", lambda: False)
+
+    laeuft, knopf_gesperrt = _running_callback()(1, True, True)
+
+    assert laeuft is False
+    assert knopf_gesperrt is False
+
+
+def test_the_own_run_is_reported_before_the_heartbeat_catches_up(monkeypatch):
+    """Der eigene Start zählt sofort, nicht erst beim nächsten Takt.
+
+    `runner.is_running()` steht hier auf `False` — der Takt weiß also noch
+    nichts. Ohne `run-poll` als zweite Quelle bliebe der eigene Lauf bis zu
+    zwei Sekunden lang unbestätigt.
+    """
+
+    monkeypatch.setattr(runner, "is_running", lambda: False)
+
+    laeuft, _knopf = _running_callback()(1, False, False)
+
+    assert laeuft is True
+
+
+def test_nothing_is_written_while_the_state_is_unchanged(monkeypatch):
+    """Der Takt darf die Kopfzeile nicht alle zwei Sekunden neu bauen.
+
+    Jede Änderung an `run-running-store` stößt `_status` an, und der lädt die
+    Laufdaten neu. Ein Takt, der unverändert schreibt, wäre eine Dauerlast
+    ohne Aussage.
+    """
+
+    from dash import no_update
+
+    monkeypatch.setattr(runner, "is_running", lambda: True)
+
+    ergebnis = _running_callback()(7, True, True)
+
+    assert ergebnis == (no_update, no_update)
+
+
+def test_the_rail_renders_a_locked_button_during_a_foreign_run(monkeypatch):
+    """Schon beim ersten Zeichnen — nicht erst beim ersten Takt."""
+
+    from dashboard.web.pages import launch as launch_page
+
+    monkeypatch.setattr(runner, "is_running", lambda: True)
+    gesperrt = str(launch_page.rail(initial_draft_dict()))
+
+    monkeypatch.setattr(runner, "is_running", lambda: False)
+    frei = str(launch_page.rail(initial_draft_dict()))
+
+    assert "disabled=True" in gesperrt
+    assert gesperrt != frei
