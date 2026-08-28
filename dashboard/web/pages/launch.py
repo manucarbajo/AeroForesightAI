@@ -33,6 +33,7 @@ from dashboard.web import components as ui
 from dashboard.web import config_editor, routing, runner
 from dashboard.web.config_editor import compute_mode, start_flow, wizard
 from dashboard.web.state import STORE_ID, draft_from_dict, initial_draft_dict
+from dashboard.web.views import running
 
 #: Abstand, in dem das Log nachgezogen wird. Kürzer wirkt hektisch und erzeugt
 #: nur Last; länger lässt den Lauf tot wirken.
@@ -289,6 +290,11 @@ def register_callbacks(app) -> None:
         Output("run-status", "children"),
         Output(PROGRESS_STORE, "data", allow_duplicate=True),
         Output("run-start", "disabled"),
+        # **Der sechste Ausgang steht bewusst am Ende.** Die Reihenfolge der
+        # ersten fünf ist in `tests/test_web_runner.py` festgenagelt (Status an
+        # Index 2, Knopf an Index 4); ein Einschub dazwischen ließe die Meldung
+        # in der falschen Komponente landen, ohne dass etwas rot wird.
+        Output("url", "pathname", allow_duplicate=True),
         Input("run-start", "n_clicks"),
         # Der Knopf am Ende der Schrittfolge (P1.7). Zwei Ausloeser, **ein**
         # Startpfad: dieselbe Pruefung, dasselbe `runner.start`. Der Einwand
@@ -298,14 +304,28 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def _start(n_clicks: int | None, wizard_clicks: int | None, draft: dict | None):
+        """Einen Lauf starten — und den Bildschirm dorthin führen, wo er zu sehen ist.
+
+        **Der Wechsel gehört zum Start.** P1.7 Stufe B hat zugesagt: «Ein Start
+        wechselt sichtbar den Bildschirm; während des Laufs ist von der
+        Einrichtung nichts mehr zu sehen.» Das stimmte, solange der einzige
+        Knopf im Bedienfeld stand — dort ist man bereits auf dem Leitstand.
+        Stufe C hat danach den Knopf am Ende der Schrittfolge ergänzt und damit
+        den Hauptweg dorthin verlegt; von dort aus blieb der Bildschirm auf dem
+        Formular stehen, und statt des versprochenen Wechsels erschien nur das
+        Fortschrittsfenster. Am laufenden System nachgestellt.
+        """
+
         if not (n_clicks or wizard_clicks):
-            return no_update, no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update, no_update
 
         # Vor dem Start prüfen, nicht danach: Ohne das läuft eine kaputte Config
         # an und scheitert irgendwo im ersten Tick — ein negativer Seed etwa mit
         # «expected non-negative integer» aus numpy, ohne Bezug zum Seed.
         config_errors = validate_draft(draft_from_dict(draft or {}))
         if config_errors:
+            # Kein Wechsel: Wer die Meldung lesen soll, bleibt bei den Feldern,
+            # an denen sie hängt.
             return (
                 no_update,
                 no_update,
@@ -316,16 +336,25 @@ def register_callbacks(app) -> None:
                 ),
                 no_update,
                 False,
+                no_update,
             )
 
         try:
             job_id = runner.start(draft or {})
         except Exception as exc:  # noqa: BLE001 - «läuft schon» ist ein normaler Fall
-            return no_update, no_update, ui.alert(str(exc), "warning"), no_update, False
+            return no_update, no_update, ui.alert(str(exc), "warning"), no_update, False, no_update
         # Der Fortschritt wird geleert, nicht stehen gelassen: Sonst zeigte der
         # Ladebildschirm eine Sekunde lang den Stand des vorigen Laufs, bis der
-        # Takt ihn ersetzt.
-        return job_id, False, ui.alert("Lauf aktiv …", "info"), None, True
+        # Takt ihn ersetzt. Die Zieladresse kommt aus der Bereichsliste und
+        # nicht als Zeichenkette — sie ist mit P1.7 schon einmal umgezogen.
+        return (
+            job_id,
+            False,
+            ui.alert("Lauf aktiv …", "info"),
+            None,
+            True,
+            routing.url(running.leitstand_route()),
+        )
 
     @app.callback(
         Output("run-status", "children", allow_duplicate=True),

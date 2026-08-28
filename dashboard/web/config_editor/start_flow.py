@@ -185,7 +185,7 @@ def choice_options() -> list[dict]:
         {
             "label": _choice_label(
                 "Eigene Einstellungen",
-                "Was weiter unten unter «Alle Einstellungen» eingestellt ist.",
+                "Was Sie in den Schritten 4 bis 7 selbst eingestellt haben.",
             ),
             "value": CUSTOM,
         }

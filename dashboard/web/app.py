@@ -169,6 +169,7 @@ def scene_block(
     zoom: int = 0,
     progress: runner.Progress | None = None,
     draft: dict | None = None,
+    running_now: bool = False,
 ):
     """Der Viewport im Bereich «Leitstand».
 
@@ -182,10 +183,21 @@ def scene_block(
     kommen.
     """
 
-    if progress is not None:
+    if progress is not None or running_now:
         from dashboard.web.views import running
 
-        return running.render(progress, draft or {})
+        # **Der Bildschirm folgt dem Laufzustand, nicht der ersten Tick-Zeile.**
+        # `_start` leert den Fortschritt, und gefüllt wird er erst, wenn die
+        # Simulation ihre erste Zeile schreibt — bis dahin vergingen gemessen
+        # 1,7 s, in denen die Kopfzeile «Simulation läuft» sagte und die Mitte
+        # die Szene des **vorigen** Laufs zeigte. Genau der Widerspruch,
+        # gegen den `status.py` angetreten ist.
+        #
+        # Ohne Zahlen heißt hier ehrlich «unbestimmt»: `Progress.fraction` gibt
+        # dann `None` zurück und die Ansicht zeigt einen unbestimmten Balken,
+        # keine erfundene Prozentzahl (Invariante 1).
+        lauf = progress or runner.Progress(job_id="", tick=None, total=None, line="")
+        return running.render(lauf, draft or {})
 
     children: list = []
     if data.is_demo:
@@ -393,9 +405,10 @@ def create_app() -> Dash:
         Input(scene.ZOOM_STORE, "data"),
         Input("selected-run-store", "data"),
         Input(launch_page.PROGRESS_STORE, "data"),
+        Input(launch_page.RUNNING_STORE, "data"),
         State(STORE_ID, "data"),
     )
-    def _scene(tick, mode: str | None, zoom, selected: dict | None, progress, draft):
+    def _scene(tick, mode: str | None, zoom, selected: dict | None, progress, laeuft, draft):
         data = run_data.load(selected)
         return scene_block(
             data,
@@ -404,6 +417,7 @@ def create_app() -> Dash:
             zoom=int(zoom or 0),
             progress=_progress_from(progress),
             draft=draft or {},
+            running_now=bool(laeuft),
         )
 
     @app.callback(

@@ -36,13 +36,13 @@ Dieser Wechsel ist nötig, nicht kosmetisch: Solange ein Preset gewählt ist,
 gelten ausschließlich seine Werte. Erst unter «Eigene Einstellungen» wirkt, was
 im Editor steht.
 
-Danach können Sie unter **Alle Einstellungen** in **Rahmenbedingungen** und
+Danach können Sie im Schritt **Rahmenbedingungen** und
 **Nachfrage & Preisbildung** einzelne Größen verändern, ohne den Rest neu
 aufsetzen zu müssen.
 
 ## Einen eigenen Stand sichern
 
-Unter **Alle Einstellungen** im Bereich **Lauf & Ablage** geben Sie einen
+Im Schritt **Lauf & Ablage** geben Sie einen
 Dateinamen ein und klicken auf «Szenario sichern». Der aktuelle Entwurf landet
 als Datei unter `configs/sweeps/` und erscheint danach oben in der Auswahl.
 

@@ -43,11 +43,11 @@ jedem steht, wofür es steht. Ein Szenario legt Faktorlage, Politik und Kosten i
 einem Zug fest und ist deutlich schneller, als jede Größe einzeln einzustellen.
 
 Ein gewähltes Szenario gilt **unverändert**: Die Werte kommen aus seiner Datei
-unter `configs/sweeps/`, und was Sie weiter unten unter «Alle Einstellungen»
-eingestellt haben, bleibt dafür außen vor. Wollen Sie von einem Szenario ausgehen und einzelne
-Annahmen ändern, klicken Sie auf «Werte übernehmen und selbst anpassen» — dann
-wandern seine Werte in den Editor, und die Auswahl springt auf «Eigene
-Einstellungen».
+unter `configs/sweeps/`, und was Sie in den Schritten vier bis sieben
+eingestellt haben, bleibt dafür außen vor. Wollen Sie von einem Szenario
+ausgehen und einzelne Annahmen ändern, klicken Sie auf «Werte übernehmen und
+selbst anpassen» — dann wandern seine Werte in die folgenden Schritte, und die
+Auswahl springt auf «Eigene Einstellungen».
 
 ## Schritt 2: Wie weit reicht der Lauf?
 
@@ -111,8 +111,8 @@ für die Detailauswertungen. Die empfohlene Lesereihenfolge steht unter
 ## Was Sie als Nächstes probieren sollten
 
 Wiederholen Sie den Lauf mit einem anderen Szenario und vergleichen Sie die
-Ergebnisse. Oder gehen Sie unter **Einrichten** weiter nach unten zu **Alle
-Einstellungen** und ändern unter
+Ergebnisse. Oder gehen Sie unter **Einrichten** einen Schritt weiter zu
+**Rahmenbedingungen** und ändern unter
 **Rahmenbedingungen** eine einzelne Größe, etwa die CO₂-Abgabe, und sehen nach,
 ob die Wirkung Ihrer Erwartung entspricht. Für einen sauberen Vergleich zweier
 Läufe setzen Sie vorher hinter «Feinabstimmung» einen festen Zufallsstartwert —

@@ -19,10 +19,10 @@ Solange Sie einrichten, gehört Ihnen der ganze Bildschirm: Bedienfeld, Telemetr
 und Zeitleiste treten zurück. Einrichten ist eine Sache für sich, und eine Szene
 daneben, die einen *anderen* Lauf zeigt, lenkt nur ab.
 
-**Gestartet wird links im Bedienfeld**, und das bleibt sichtbar, während Sie
-hier einstellen. Eine geänderte Annahme und ihre Zusammenfassung stehen damit
-nebeneinander: Was Sie oben wählen, steht sofort links in den drei Stand-Zeilen
-und im Preflight.
+Gestartet wird am Ende der Schrittfolge — oder jederzeit im Bedienfeld links,
+sobald Sie das Einrichten verlassen haben. Beide Knöpfe führen in denselben
+Lauf; der Bildschirm wechselt dabei auf den **Leitstand**, damit Sie sehen, was
+Sie angestoßen haben.
 
 Bis P1.6 stand dieser Bereich in der linken Spalte selbst. Das war eine
 Fehlkonstruktion — sechzig Eingabefelder in einer 336 px breiten Spalte ergaben
@@ -35,8 +35,8 @@ Wer nur die drei Entscheidungen anfasst, bekommt einen sinnvollen Lauf.
 ## Die drei Entscheidungen
 
 **1. Was soll gerechnet werden?** Die Annahmenwelt: die Standard-Ausgangslage
-aus `configs/`, eines der vorbereiteten Szenarien, oder das, was Sie sich weiter
-unten unter «Alle Einstellungen» selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
+aus `configs/`, eines der vorbereiteten Szenarien, oder das, was Sie sich in den
+Schritten vier bis sieben selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
 steht; aufklappbar dazu die Begründung, warum es so aufgebaut ist.
 
 **2. Wie weit reicht der Lauf?** Die Länge in Ticks. Hinter «Feinabstimmung»

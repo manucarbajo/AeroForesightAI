@@ -375,12 +375,25 @@ def test_launch_page_builds_with_the_default_draft():
 
 
 def test_the_setup_area_builds_with_the_default_draft():
+    """Der Bereich «Einrichten» traegt die Schrittfolge.
+
+    Bis P1.8 stand hier «Alle Einstellungen» — der Abschnitt, den P1.7 in die
+    Schritte 4 bis 7 aufgeloest hat. Der Test blieb trotzdem gruen, weil die
+    Zeichenkette zufaellig noch in der Beschriftung einer Preset-Karte stand.
+    **Ein Waechter, der aus dem falschen Grund gruen ist, ist schlechter als
+    keiner** — er wiegt in Sicherheit. Geprueft wird jetzt, was der Bereich
+    wirklich zusagt: die Schrittfolge mit den optionalen Schritten.
+    """
+
+    from dashboard.web.config_editor import wizard
     from dashboard.web.pages import setup as setup_page
 
     rendered = _text(setup_page.layout(initial_draft_dict()))
 
     assert "Lauf einrichten" in rendered
-    assert "Alle Einstellungen" in rendered
+    assert "af-wizard" in rendered, "die Schrittfolge fehlt"
+    assert "optional" in rendered, "die ueberspringbaren Schritte sind nicht als solche benannt"
+    assert len(wizard.STEPS) == 8
 
 
 def test_launch_summary_describes_the_draft():
