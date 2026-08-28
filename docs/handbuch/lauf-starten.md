@@ -21,6 +21,14 @@ die Buchungsrate — dieselben Zeilen, die auch im Terminal stehen —, und dar�
 was sonst noch zu melden ist: ausgefallene Modellaufrufe in Gelb, ein Lauffehler
 in Rot. Der Start-Knopf ist gesperrt, solange gerechnet wird.
 
+Es rechnet immer nur **ein** Lauf, und zwar für alle: Der Zustand hängt am
+Server, nicht an Ihrem Browserfenster. Laden Sie die Seite mitten im Lauf neu
+oder öffnen Sie das Dashboard in einem zweiten Tab, sehen Sie dort ebenfalls
+«Simulation läuft» und einen gesperrten Start-Knopf. Was Sie in diesem zweiten
+Fenster **nicht** sehen, ist der Fortschritt Zeile für Zeile — die Konsole füllt
+sich nur dort, wo Sie gestartet haben. Woran der Lauf gerade ist, sagt Ihnen
+dann das Terminal, in dem das Dashboard läuft.
+
 Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit auf **Einrichten**,
 **Ergebnisse** oder ins **Handbuch** wechseln, ohne ihn abzubrechen — die Kopfzeile bleibt
 dabei stehen, und der Zustand ist von überall sichtbar. Was Sie nicht können:

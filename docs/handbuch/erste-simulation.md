@@ -8,7 +8,11 @@ Links das Bedienfeld, in der Mitte die Simulation, rechts die Kennzahlen und die
 Konsole, unten die Zeitleiste, oben der Zustand der Anlage. Kopfzeile und
 Zeitleiste bleiben stehen; die drei Bereiche dazwischen rollen jeder für sich.
 Ist Ihr Fenster schmal, weichen die beiden Seitenspalten in Schubladen aus — die
-Knöpfe dafür sitzen links und rechts in der Kopfzeile.
+Knöpfe dafür sitzen links und rechts in der Kopfzeile. Sie erscheinen jeweils
+erst dann, wenn ihre Spalte wirklich zur Schublade geworden ist: die Telemetrie
+rechts unter 1280 Pixel Fensterbreite, das Bedienfeld links unter 1024. Auf
+einem breiten Schirm sehen Sie deshalb keinen der beiden — dort steht ohnehin
+alles nebeneinander.
 
 **Das Bedienfeld links ist kein Formular.** Es zeigt in drei Zeilen, was
 eingestellt ist, darunter den Preflight, und ganz unten den Start-Knopf — der
