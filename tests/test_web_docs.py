@@ -127,14 +127,19 @@ def test_internal_links_point_at_existing_chapters():
 
 
 def test_editor_links_point_at_existing_chapters():
-    """Auch die Verweise aus dem Config-Editor müssen ankommen."""
+    """Auch die Verweise aus der Oberfläche müssen ankommen.
+
+    Gesucht wird im ganzen `dashboard/web`-Baum, nicht nur im Config-Editor:
+    Seit P1.1 verweist auch der geführte Ablauf ins Handbuch, und ein Wächter,
+    der nur ein Verzeichnis kennt, deckt den nächsten neuen Ort wieder nicht ab.
+    """
 
     import re
     from pathlib import Path
 
-    editor = Path(__file__).resolve().parents[1] / "dashboard" / "web" / "config_editor"
+    editor = Path(__file__).resolve().parents[1] / "dashboard" / "web"
     broken: list[str] = []
-    for path in editor.glob("*.py"):
+    for path in editor.rglob("*.py"):
         for slug in re.findall(r'doc_link\(\s*"([a-z0-9-]+)"', path.read_text(encoding="utf-8")):
             if slug not in docs.BY_SLUG:
                 broken.append(f"{path.name} -> {slug}")

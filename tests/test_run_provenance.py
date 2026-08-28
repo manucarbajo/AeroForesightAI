@@ -621,7 +621,10 @@ class TestDerSeedStehtImArtefakt:
 
         from pathlib import Path
 
-        quelle = Path("dashboard/web/config_editor/save_start.py").read_text(encoding="utf-8")
+        # Der Text stand bis P1.1 im Tab «Kontrolle»; seither steht er im
+        # Preflight des geführten Ablaufs. Der Wächter zieht mit, sonst prüfte
+        # er eine Datei, die es nicht mehr gibt.
+        quelle = Path("dashboard/web/config_editor/start_flow.py").read_text(encoding="utf-8")
         assert '"frei"' not in quelle
         assert "DEFAULT_SEED" in quelle
 
