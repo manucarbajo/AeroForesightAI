@@ -37,8 +37,9 @@ gegen «CO₂ konstant 50».
 ## Streuung von Wirkung unterscheiden
 
 Bevor Sie einen Unterschied zwischen zwei Läufen für eine Wirkung halten, prüfen
-Sie, wie groß die natürliche Streuung ist. Stellen Sie dazu unter **Überblick**
-die **Wiederholungen** auf fünf und lassen Sie den Zufallsstartwert frei. Sie
+Sie, wie groß die natürliche Streuung ist. Stellen Sie dazu im zweiten Schritt
+hinter «Feinabstimmung» die **Wiederholungen** auf fünf und lassen Sie den
+Zufallsstartwert frei. Sie
 bekommen fünf Läufe mit derselben Konfiguration, aber unterschiedlich gezogener
 Bevölkerung, und sehen, wie weit die Ergebnisse auseinanderliegen.
 
@@ -65,6 +66,17 @@ Einzellauf. Beides beginnt jetzt gleich, wodurch die erste Wiederholung
 derselbe Lauf ist wie ein einzeln gestarteter. Wiederholungen aus der Zeit
 davor tragen andere Startwerte und damit andere Zahlen — die Aussagen, die man
 aus ihrer Streuung gezogen hat, bleiben gültig, die Einzelwerte nicht.
+
+Am 2026-08-28 kam ein dritter Schnitt dazu, und er trifft **nur Läufe aus einem
+Szenario-Preset**: Bis dahin legte das Dashboard nach dem Preset noch die Werte
+aus den Konfigurationsdateien darüber und drehte es damit still zurück.
+Betroffen waren alle acht ausgelieferten Presets — je nach Preset zwischen zwei
+und zehn Systemgrößen, bei «Totaler Wahnsinn» zusätzlich alle sieben Faktoren.
+Am deutlichsten bei «Business as Usual»: Das Szenario schließt eine steigende
+CO₂-Abgabe ausdrücklich aus, gerechnet wurde sie trotzdem, womit die Regulierung
+in Runde 15 auf «streng» kippte. Preset-Läufe von davor beschreiben also nicht
+die Annahmenwelt, deren Namen sie tragen. Über die Kommandozeile gestartete
+Sweeps waren nie betroffen.
 
 Woran Sie es erkennen: `run_metadata.json` hält unter `code_version` fest, mit
 welchem Stand ein Lauf gerechnet wurde, und unter `seed`, mit welchem Startwert.

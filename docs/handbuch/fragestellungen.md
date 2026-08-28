@@ -29,8 +29,8 @@ einbringt, zeigt der Vergleich der beiden Läufe.
 
 ## Trägt dieses Ergebnis überhaupt?
 
-Stellen Sie unter **Überblick** die Wiederholungen auf fünf und lassen Sie den
-Zufallsstartwert **frei**. Sie bekommen fünf Läufe mit derselben Konfiguration,
+Stellen Sie im zweiten Schritt hinter «Feinabstimmung» die Wiederholungen auf
+fünf und lassen Sie den Zufallsstartwert **frei**. Sie bekommen fünf Läufe mit derselben Konfiguration,
 aber unterschiedlich gezogener Bevölkerung.
 
 Liegen die Buchungsraten dicht beieinander, hängt das Ergebnis an den Annahmen

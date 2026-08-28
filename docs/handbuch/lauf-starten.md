@@ -1,5 +1,7 @@
-Unter dem Editor stehen der Start-Knopf und daneben eine Zeile, die den aktuellen
-Stand zusammenfasst. Ein Klick genügt.
+Unter den drei Entscheidungen steht der Preflight — in Klartext, was gleich
+passiert, dazu die wichtigsten Werte als Kacheln —, darunter der Start-Knopf.
+Ein Klick genügt. Der Editor mit allen weiteren Einstellungen liegt zugeklappt
+darunter und ist für einen ersten Lauf nicht nötig.
 
 ## Während der Lauf rechnet
 
@@ -20,9 +22,9 @@ Grob geschätzt, für eine Bevölkerung in Standardgröße:
 
 | Modus | Zehn Ticks |
 |---|---|
-| Ohne Agenten-Dialog | unter einer Sekunde |
-| Ohne Ollama (Mock) | wenige Sekunden |
-| Mit Ollama | Minuten, je nach Modell und Rechner |
+| Nur Zahlen (ohne Agenten-Dialog) | unter einer Sekunde |
+| Ohne Sprachmodell (Mock) | wenige Sekunden |
+| Mit Sprachmodell | Minuten, je nach Modell und Rechner |
 
 Der Unterschied liegt allein bei den Agenten-Narrativen. Die Kennzahlen sind in
 allen drei Fällen dieselben.
@@ -39,8 +41,8 @@ Bei **Wiederholungen** entsteht ein Bündel unter einer gemeinsamen Batch-ID. Di
 Meldung nennt, wie viele Läufe entstanden sind und wie viele Ereignisse
 insgesamt. Die einzelnen Läufe wählen Sie danach über die Run-Liste.
 
-Beim **Szenario-Vergleich** — also wenn «Alle Szenarien vergleichen»
-eingeschaltet war — wird jedes Preset einmal durchgerechnet. Die Ergebnisse
+Beim **Szenario-Vergleich** — also wenn «Alle Szenarien vergleichen» hinter der
+«Feinabstimmung» des zweiten Schritts eingeschaltet war — wird jedes Preset einmal durchgerechnet. Die Ergebnisse
 liegen unter `outputs/sweeps/`, dazu entsteht eine Zusammenfassung. Auch hier
 erscheinen die einzelnen Läufe in der Run-Liste.
 
@@ -48,7 +50,8 @@ erscheinen die einzelnen Läufe in der Run-Liste.
 
 Jeder Lauf schreibt mit, unter welchen Bedingungen er entstanden ist: Seed,
 Rechenmodus und Codestand. Sie finden das nach dem Lauf unter «Ergebnisse
-ansehen» im Tab **Übersicht**, direkt unter den Kennzahlen.
+ansehen» im Tab **Übersicht**, direkt unter den Kennzahlen. Vor dem Start stehen
+Startwert und Rechenmodus im Preflight.
 
 Das ist keine Buchhaltung um ihrer selbst willen. Wer ein Ergebnis
 weiterverwendet, muss sehen können, ob überhaupt ein Sprachmodell beteiligt war
@@ -59,7 +62,7 @@ rechnen will, braucht den Seed. Alle Felder stehen auch in
 [Was ein Lauf hinterlässt](/doku/ref-ausgaben).
 
 **Auch ohne eigenen Startwert ist ein Lauf wiederholbar.** Lassen Sie das Feld
-«Eigenen Zufallsstartwert festlegen» aus, rechnet der Lauf mit einem
+«Eigenen Zufallsstartwert festlegen» im dritten Schritt aus, rechnet der Lauf mit einem
 Standardwert — nicht zufällig. Zwei Wiederholungen desselben Aufbaus liefern
 dann dasselbe Ergebnis, und welcher Wert es war, steht nach dem Lauf im Tab
 **Übersicht**. Einen eigenen Startwert brauchen Sie erst, wenn Sie denselben

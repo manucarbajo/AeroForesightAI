@@ -46,7 +46,7 @@ sehr reaktiv und damit schwingungsanfällig macht.
 Vier Ursachen, in der Reihenfolge ihrer Häufigkeit.
 
 Erstens: **Eigene Werte anwenden** ist ausgeschaltet. Das ist mit Abstand der
-häufigste Fall; im Tab **Kontrolle** erscheint dafür eine Warnung.
+häufigste Fall; im Preflight über dem Start-Knopf erscheint dafür eine Warnung.
 
 Zweitens: Der Modus steht auf «Szenario-Preset». Dann rechnet der Lauf mit den
 Werten des Presets, nicht mit Ihren.
@@ -73,7 +73,7 @@ Die häufigsten Fälle: ein negativer Zufallsstartwert, ein Lauf über null Tick
 oder ein Agentenprofil, das auf einen Faktor verweist, den es nicht gibt. Im
 Modus «Mit Sprachmodell» kommen die Ollama-Einstellungen dazu — Kreativität
 außerhalb von 0 bis 2, Antwortlänge 0, leerer Modellname. Jeder Punkt der Liste
-nennt das betroffene Feld; im Tab **Kontrolle** steht dieselbe Liste schon vor
+nennt das betroffene Feld; im Preflight über dem Start-Knopf steht dieselbe Liste schon vor
 dem Klick auf «Start».
 
 Angezeigt werden immer **alle** Fehler auf einmal, nicht einer nach dem anderen —

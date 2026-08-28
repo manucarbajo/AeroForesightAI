@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-27 — **Phase 0 ist abgeschlossen** und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-28 — **Phase 0 ist abgeschlossen**, und **P1.1 ist erledigt**: «Simulation starten» führt jetzt in drei Entscheidungen zum Lauf ([Einzelheiten](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28)). Dabei kam ein Fund heraus, der nicht in der Oberfläche lag: Ein gewähltes Szenario-Preset wurde im Dashboard **still von den Datei-Defaults überschrieben** — bei allen acht ausgelieferten Presets, ein Lauf «Business as Usual» rechnete mit steigender CO₂-Abgabe. Behoben, mit einem Wächter über jede Datei unter `configs/sweeps/`. Phase 0 im Übrigen unverändert und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -26,8 +26,13 @@ Gepflegt wird bei jeder abgeschlossenen Aufgabe (siehe [Doku-Pflicht in CLAUDE.m
 - **Laufzeit und Skalierung** — bewusst offen, aber benannt: wie lange ein realistischer
   LLM-Lauf tatsächlich dauert, steht nirgends. `dashboard/web/runner.py` sagt im eigenen
   Docstring "Ein Lauf dauert Minuten", der 10.000-Tick-Benchmark lief mit `dummy_llm`
-  (siehe Phase 6). Für P1.1 ist das eine Annahme, kein gemessener Wert. Wird ein Paket,
-  sobald Phase 1 den Start-Flow festgezurrt hat.
+  (siehe Phase 6). Für P1.1 war das eine Annahme, kein gemessener Wert. **Der Auslöser ist
+  seit dem 2026-08-28 eingetreten** — der Start-Flow steht —, die Zeitangaben in
+  `docs/handbuch/lauf-starten.md` sind also weiterhin geschätzt. Dazugekommen ist eine
+  zweite Größe, die niemand gemessen hat: Der Preflight baut bei jeder Änderung des
+  Entwurfs den vollständigen `SimulationState` auf. Auf einer lokalen Workbench nicht
+  spürbar, für Phase 6 zu messen. Gehört als eigenes Paket in Phase 1 oder 3 eingeplant,
+  sobald jemand die Reihenfolge festlegt.
 
 ---
 
@@ -633,7 +638,7 @@ Manus drei Commits sind einzeln nachgestellt worden. **Die tragenden Behauptunge
 
 ## Phase 1 — Funktionalität und UI (aktueller Schwerpunkt)
 
-### P1.1 — "Simulation starten" neu bauen
+### P1.1 — "Simulation starten" neu bauen ✅ erledigt 2026-08-28
 
 **Befund (korrigiert am 2026-08-26):** Der Start-Flow ist UX-seitig der schwächste Teil des Dashboards. Wer zum ersten Mal einen Lauf startet, versteht nicht, was er einstellt. Der Config-Editor ist mit rund 1.700 Zeilen über sechs Tabs zu tief, die Presets aus `configs/sweeps/` stehen nicht vorn, und die Erklärtexte in `config_editor/glossary.py` (401 Zeilen) stehen nicht dort, wo entschieden wird.
 
@@ -644,6 +649,28 @@ Manus drei Commits sind einzeln nachgestellt worden. **Die tragenden Behauptunge
 **Was zu tun ist:** Den Weg von "Preset wählen" bis "Lauf läuft" auf einen geführten Ablauf reduzieren. Presets nach vorn (`configs/sweeps/`), Expertenparameter dahinter. Erklärtexte aus `config_editor/glossary.py` dort zeigen, wo entschieden wird, nicht in einem eigenen Tab. Fehlermeldungen aus P0.3 direkt am Feld. Seed und Rechenmodus aus P0.6 sichtbar machen, damit vor dem Start klar ist, ob ein echter oder ein Mock-Lauf entsteht.
 
 **Fertig wenn:** Jemand ohne Vorwissen startet einen sinnvollen Lauf ohne Rückfragen, und `test_web_layout.py` deckt den neuen Flow ab. **Messbar gemacht (2026-08-26):** Der geführte Ablauf braucht bis zum Start höchstens drei Entscheidungen, jede davon mit ihrem Erklärtext an Ort und Stelle. Dieses Kriterium ist zugleich das Tor für P5.2 und Phase 6 — siehe dort.
+
+**Umgesetzt am 2026-08-28.** Vorn steht `dashboard/web/config_editor/start_flow.py` mit drei Entscheidungen — was gerechnet wird (Preset-Karten mit Beschreibung und Begründung), wie weit, womit —, darunter Preflight und Start; der Editor rutscht zugeklappt dahinter. Aus sechs Tabs werden vier: «Überblick» und «Kontrolle» gehen im geführten Block auf, «Als Szenario sichern» und die Rohdaten wandern nach «Lauf & Ablage». Die Erklärtexte aus `glossary.py` stehen im geführten Ablauf aufklappbar am Feld statt nur auf der Dokumentationsseite; Seed und Rechenmodus stehen im Preflight, bevor jemand startet.
+
+**Das Abnahmekriterium ist eine Zusicherung, keine Absichtserklärung.** `tests/test_web_start_flow.py` läuft über den gerenderten Komponentenbaum, überspringt jeden `html.Details`-Teilbaum (also alles hinter «Feinabstimmung») und zählt die verbleibenden Felder — höchstens drei, und zwar diese drei. Ein Kontrolltest mit einem vierten Feld zeigt, dass der Zähler zählt, statt immer drei zu finden. Derselbe Durchlauf prüft die zweite tragende Zusage: **kein Feld steht doppelt.** Der geführte Block und der aktive Tab liegen gleichzeitig im DOM, und eine doppelt vergebene Dash-ID ist ein Laufzeitfehler im Browser — ohne Test fiele er erst dem auf, der die Seite öffnet.
+
+**Der eigentliche Fund liegt tiefer als die Oberfläche: ein gewähltes Preset griff gar nicht.** `prepare_simulation_state` wandte erst das Preset an und legte danach den Entwurf darüber; weil `apply_custom_overrides` per Default an ist und der Entwurf die Defaults aus `properties.json` mitführt, drehte die zweite Runde die erste still zurück. Über die CLI (`run_single_sweep`) stimmte es, nur der Dashboard-Pfad nicht. **Betroffen waren alle acht ausgelieferten Presets** — je nach Preset zwischen zwei und zehn Systemgrößen, bei `alles_drin_szenario` zusätzlich alle sieben Faktoren. Am deutlichsten bei `business_as_usual`: Das Szenario verspricht eine konstante CO₂-Abgabe von 50 und trägt dazu einen eigenen Meilenstein («Kein CO₂-Anstieg bei Tick 15»); über das Dashboard sprang die Abgabe in Tick 15 auf 120 und in Tick 30 auf 200, womit F2 auf strenge Regulierung kippte — das Gegenteil dessen, wofür das Szenario steht. Presets nach vorn zu holen, während sie stillschweigend überschrieben werden, wäre ein Versprechen ohne Deckung gewesen; der Fund ist deshalb in diesem Paket behoben und nicht in `audit_findings.md` gewandert.
+
+**Die erste Messung dazu war zu schmal.** Sie verglich drei Systemgrößen über drei Presets und meldete «zwei von drei betroffen, `freiwillige_wende` unverändert». Erst der vollständige Abgleich — alle Systemgrößen, alle Faktoren, alle acht Dateien — zeigte, dass keines unberührt blieb. Als Prüfmuster mitnehmen: Eine Stichprobe sagt, **dass** ein Fehler existiert, nie **wie weit** er reicht.
+
+Vier Dinge, die bei der Umsetzung über den Plan hinausgingen:
+
+- **«Werte übernehmen» musste mitgezogen werden.** `apply_sweep_to_draft` ließ den Modus auf `sweep` stehen. Nach dem Fix wären die eben sichtbar in den Editor geschriebenen Werte damit wirkungslos gewesen — der Schalter steht jetzt auf `custom`, genau wie `docs/handbuch/presets.md` es seit Längerem beschreibt.
+- **Die Lauflänge wird beim Preset-Wechsel bewusst *nicht* vorbelegt.** Der Plan sah das vor; am laufenden System zeigte sich, warum es nicht geht. Werte fließen in dieser Oberfläche in genau eine Richtung, vom Feld in den Store. Von der anderen Seite gesetzt, schrieb das Eingabefeld seinen alten Wert beim nächsten Abgleich zurück — im Fenster stand 40, im Preflight 50, gerechnet worden wäre 50. Der Versuch, das über einen Neuaufbau des Blocks zu retten, machte es schlimmer: Dann gewann der alte Wert, und die Vorbelegung verschwand ganz. Die Länge, auf die ein Szenario angelegt ist, steht jetzt als Hinweis daneben. **Diese Einbahnstraße steht als Regel in `CLAUDE.md`** — sie gilt für jedes künftige Feld, nicht nur für dieses.
+- **Der Feldbezug entsteht in der Prüfung, nicht in der Oberfläche.** `ValidationIssue` (eine `str`-Unterklasse, damit `"
+".join(...)` und `in` bei allen heutigen Konsumenten weiter stimmen) trägt das Feld; jedes Eingabefeld bekommt einen Platzhalter, den ein Callback füllt. Eine Tabelle «Schlüsselwort → Feld» im Dashboard bräche still, sobald jemand einen Meldungstext umformuliert.
+- **Zwei Wächter mussten ihrem Gegenstand folgen.** Der Seed-Wächter aus P0.6 las `save_start.py` über einen festen Pfad; der Doku-Link-Wächter durchsuchte nur `config_editor/*.py` und hätte die Verweise des neuen Moduls nicht abgedeckt. Beides nachgezogen — dieselbe Klasse wie die toten Modulpfade aus der ersten Gegenprobe.
+
+**Was sich an den Zahlen verschiebt:** Läufe aus einem Szenario-Preset rechnen ab jetzt anders — nämlich so, wie das Preset es sagt. Über die Kommandozeile gestartete Sweeps waren nie betroffen. `docs/handbuch/vergleiche.md` nennt den Schnitt neben denen aus P0.7 und der `run_multi`-Angleichung; erkennbar ist er an `code_version` in `run_metadata.json`.
+
+**Am laufenden System nachgestellt:** Ein `business_as_usual`-Lauf über 16 Ticks aus dem Dashboard-Pfad (`launch_from_draft`) hält `carbon_tax_level` über alle Ticks bei 50.0 und F2 bei F2.1. Die Seite selbst zeigt die drei Schritte, die Preset-Karten mit ihren Beschreibungen, die Ollama-Erreichbarkeit und den Preflight; ein Klick auf ein Preset zieht Beschreibung und Klartext-Satz live nach.
+
+**Offen und bewusst nicht hier erledigt:** Der Preflight ruft die Konfigurationsprüfung bei jeder Änderung des Entwurfs auf, und die baut jedes Mal den vollständigen `SimulationState` auf. Auf einer lokalen Workbench ist das nicht spürbar; für den Mehrbenutzerbetrieb aus Phase 6 gehört es gemessen.
 
 **Doku zieht mit:** `docs/handbuch/erste-simulation.md`, `docs/handbuch/lauf-starten.md`, `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`.
 
@@ -903,7 +930,7 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 
 Wird erst geplant, wenn Phase 1 steht: API-Layer, Mandantentrennung, Persistenz, Auth, Billing, produktionsscharfes Hetzner-Deployment. Der heutige `Dockerfile`/`docker-compose.yml` ist ein Ausgangspunkt, kein Deployment.
 
-**"Phase 1 steht" heißt (festgelegt am 2026-08-26):** P1.1 erfüllt sein Drei-Entscheidungen-Kriterium, P1.2 beantwortet drei bis fünf benannte Fragen ohne stillen Teilstand, P1.3 trennt gerechnete von erzählten Zahlen im Datenschema, und P1.4 lädt keine externen Hosts mehr. Dasselbe Tor gilt für P5.2. Ohne diese vier Haken bleibt Phase 6 ungeplant — und Streamlit im Repo.
+**"Phase 1 steht" heißt (festgelegt am 2026-08-26):** ~~P1.1 erfüllt sein Drei-Entscheidungen-Kriterium~~ ✅ (seit 2026-08-28, mechanisch geprüft), P1.2 beantwortet drei bis fünf benannte Fragen ohne stillen Teilstand, P1.3 trennt gerechnete von erzählten Zahlen im Datenschema, und P1.4 lädt keine externen Hosts mehr. Dasselbe Tor gilt für P5.2. Ohne diese vier Haken bleibt Phase 6 ungeplant — und Streamlit im Repo.
 
 Eine Randnotiz fürs Marketing, kein Arbeitspaket: Der 10.000-Tick-Benchmark lief mit `dummy_llm` ([`scenario_sweeps.py:200`](../src/orchestration/scenario_sweeps.py)). Die Zahl stimmt, misst aber die deterministische Hälfte — nicht als "unsere KI simuliert 10k Ticks" verwenden.
 
