@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-28 — **Phase 0 ist abgeschlossen**, **P1.1 ist erledigt**, und darauf ist **P1.5** gefolgt: Das Dashboard ist jetzt ein **Leitstand** — ein Bildschirm mit fünf Zonen statt eines Stapels Seiten, mit umschaltbarem hellen und dunklen Design und einer Tick-Zeitleiste, die Szene, Kennzahlen und Verläufe gemeinsam führt ([Einzelheiten](#p15--leitstand-oberfläche--erledigt-2026-08-28)). Auch dort lag der eigentliche Fund unter der Oberfläche: Die Stile für Dashs eigene Komponenten griffen seit dem Sprung auf Dash 4 an **keiner einzigen Stelle** mehr — im hellen Modus unsichtbar, im dunklen ein violetter Regler mit schwarzer Beschriftung auf schwarzem Grund. Direkt darauf folgte **P1.6**, weil die Vermessung des Ergebnisses einen Rückschritt zeigte: Die linke Spalte war mit der hineingepressten Konfiguration **10,7 Bildschirme** hoch, und der Start-Knopf lag 6,1 Bildschirme tief — bei erfüllten Abnahmekriterien beider Vorgängerpakete. Einrichten und Beobachten sind jetzt getrennt, die Spalte ist ein Bedienfeld, und die Kriterien von P1.1 und P1.5 sind um eine Größe ergänzt, die **Erreichbarkeit** misst statt Anzahl ([Einzelheiten](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28)). Zu P1.1: «Simulation starten» führt jetzt in drei Entscheidungen zum Lauf ([Einzelheiten](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28)). Dabei kam ein Fund heraus, der nicht in der Oberfläche lag: Ein gewähltes Szenario-Preset wurde im Dashboard **still von den Datei-Defaults überschrieben** — bei allen acht ausgelieferten Presets, ein Lauf «Business as Usual» rechnete mit steigender CO₂-Abgabe. Behoben, mit einem Wächter über jede Datei unter `configs/sweeps/`. Phase 0 im Übrigen unverändert und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase Die drei Phase-1-Pakete sind **gegengeprüft** (Manu, 2026-08-28): Die tragenden Zusagen halten, drei Befunde lagen in der Darstellung — ein Schubladen-Knopf, dessen Versteck-Regel die Kaskade verlor und deshalb nie wirkte, sein Haltepunkt, der der falschen Zone gehörte, und ein Laufzustand, der nur die eigene Sitzung kannte; alle drei behoben ([Einzelheiten](#gegenprobe-zu-p11p15p16-manu-2026-08-28)). Daraus ist **P1.7** entstanden, und es ist erledigt: Der Ablauf **ist** jetzt die Oberfläche — Einrichten zuerst, der Lauf als eigener Bildschirm, das Einrichten als Schrittfolge hinter einem Einstieg mit drei Wegen statt einer Bildlaufstrecke ([Einzelheiten](#p17--der-ablauf-wird-die-oberfläche--erledigt-2026-08-28)). **Alle vier Stufen sind fertig** — zuletzt am 2026-08-28 der Einstieg mit den drei Wegen (Stufe C) und der mechanische Überlauf-Wächter (Stufe D). Beim Wächter kam die Entscheidung dazu, die der Plan offengelassen hatte: Playwright als **optionales** Extra, damit die CI ohne Browser grün bleibt und wer die Oberfläche anfasst ihn lokal scharf hat. Und er hat sich beim ersten Durchlauf selbst korrigiert — zwei weitere Phantome kamen zu den drei aus P1.8 dazu, darunter `scrollWidth` selbst: Ein ausgeschwebtes Kind zählt in den `scrollWidth` seines Vorfahren, und Dashs eigenes Dropdown ließ die Zeitleiste 145 px Überlauf melden, obwohl nichts zu sehen war. P1.7 ist gegengeprüft (Haiko, 2026-08-28): drei Befunde behoben — der Start aus der Schrittfolge wechselte den Bildschirm nicht, ein Widerspruch von 1,7 s zwischen Kopfzeile und Mitte, und ein Text, der auf einen aufgelösten Abschnitt zeigte; ein vierter Befund hat sich unter genauerer Messung aufgelöst und ist samt zurückgenommener Korrektur protokolliert ([Einzelheiten](#p18--gegenprobe-zu-p17-haiko-2026-08-28--erledigt)). · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-28 — **Phase 0 ist abgeschlossen**, **P1.1 ist erledigt**, und darauf ist **P1.5** gefolgt: Das Dashboard ist jetzt ein **Leitstand** — ein Bildschirm mit fünf Zonen statt eines Stapels Seiten, mit umschaltbarem hellen und dunklen Design und einer Tick-Zeitleiste, die Szene, Kennzahlen und Verläufe gemeinsam führt ([Einzelheiten](#p15--leitstand-oberfläche--erledigt-2026-08-28)). Auch dort lag der eigentliche Fund unter der Oberfläche: Die Stile für Dashs eigene Komponenten griffen seit dem Sprung auf Dash 4 an **keiner einzigen Stelle** mehr — im hellen Modus unsichtbar, im dunklen ein violetter Regler mit schwarzer Beschriftung auf schwarzem Grund. Direkt darauf folgte **P1.6**, weil die Vermessung des Ergebnisses einen Rückschritt zeigte: Die linke Spalte war mit der hineingepressten Konfiguration **10,7 Bildschirme** hoch, und der Start-Knopf lag 6,1 Bildschirme tief — bei erfüllten Abnahmekriterien beider Vorgängerpakete. Einrichten und Beobachten sind jetzt getrennt, die Spalte ist ein Bedienfeld, und die Kriterien von P1.1 und P1.5 sind um eine Größe ergänzt, die **Erreichbarkeit** misst statt Anzahl ([Einzelheiten](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28)). Zu P1.1: «Simulation starten» führt jetzt in drei Entscheidungen zum Lauf ([Einzelheiten](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28)). Dabei kam ein Fund heraus, der nicht in der Oberfläche lag: Ein gewähltes Szenario-Preset wurde im Dashboard **still von den Datei-Defaults überschrieben** — bei allen acht ausgelieferten Presets, ein Lauf «Business as Usual» rechnete mit steigender CO₂-Abgabe. Behoben, mit einem Wächter über jede Datei unter `configs/sweeps/`. Phase 0 im Übrigen unverändert und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase Die drei Phase-1-Pakete sind **gegengeprüft** (Manu, 2026-08-28): Die tragenden Zusagen halten, drei Befunde lagen in der Darstellung — ein Schubladen-Knopf, dessen Versteck-Regel die Kaskade verlor und deshalb nie wirkte, sein Haltepunkt, der der falschen Zone gehörte, und ein Laufzustand, der nur die eigene Sitzung kannte; alle drei behoben ([Einzelheiten](#gegenprobe-zu-p11p15p16-manu-2026-08-28)). Daraus ist **P1.7** entstanden, und es ist erledigt: Der Ablauf **ist** jetzt die Oberfläche — Einrichten zuerst, der Lauf als eigener Bildschirm, das Einrichten als Schrittfolge hinter einem Einstieg mit drei Wegen statt einer Bildlaufstrecke ([Einzelheiten](#p17--der-ablauf-wird-die-oberfläche--erledigt-2026-08-28)). **Alle vier Stufen sind fertig** — zuletzt am 2026-08-28 der Einstieg mit den drei Wegen (Stufe C) und der mechanische Überlauf-Wächter (Stufe D). Beim Wächter kam die Entscheidung dazu, die der Plan offengelassen hatte: Playwright als **optionales** Extra, damit die CI ohne Browser grün bleibt und wer die Oberfläche anfasst ihn lokal scharf hat. Und er hat sich beim ersten Durchlauf selbst korrigiert — zwei weitere Phantome kamen zu den drei aus P1.8 dazu, darunter `scrollWidth` selbst: Ein ausgeschwebtes Kind zählt in den `scrollWidth` seines Vorfahren, und Dashs eigenes Dropdown ließ die Zeitleiste 145 px Überlauf melden, obwohl nichts zu sehen war. P1.7 ist gegengeprüft (Haiko, 2026-08-28): drei Befunde behoben — der Start aus der Schrittfolge wechselte den Bildschirm nicht, ein Widerspruch von 1,7 s zwischen Kopfzeile und Mitte, und ein Text, der auf einen aufgelösten Abschnitt zeigte; ein vierter Befund hat sich unter genauerer Messung aufgelöst und ist samt zurückgenommener Korrektur protokolliert ([Einzelheiten](#p18--gegenprobe-zu-p17-haiko-2026-08-28--erledigt)). Am **2026-08-28** ist der Einrichten-Assistent unabhängig auditiert worden — bewusst ohne die Abnahmekriterien dieses Plans als Maßstab, und genau dadurch hat das Audit gefunden, was die Kriterien durchgelassen haben: Auf dem Sweep-Pfad erreicht **genau ein** Feld des Entwurfs die Simulation, während der Preflight einen Lauf beschreibt, der so nicht stattfindet; fünf Bedienelemente in als *optional* gekennzeichneten Schritten schreiben ohne Rückfrage in `configs/properties.json`; und **kein einziger der acht Schritte passt auf einen Bildschirm** (1,13 bis 4,44), obwohl genau das die Zusage von P1.7 war. Daraus ist [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--offen-audit-2026-08-28) entstanden: **P1.1 und P1.7 sind wieder offen**, P1.5 bekommt ein Kriterium dazu, P1.8 schärft sein Verfahren nach, P1.3 und P3.6 werden vorgezogen ([Einzelheiten](#p19--der-assistent-richtet-ein-experiment-ein--offen-audit-2026-08-28), Vollfassung in [`wizard_audit_2026-08-28.md`](wizard_audit_2026-08-28.md)). Dieselbe Lehre wie bei P1.6, diesmal als Regel festgehalten: **Eine Zusage kommt mit ihrer Messung, nicht mit ihrer Zählung** — nachzulesen im [Commit-Regelwerk](#regelwerk-atomare-commits-ab-2026-08-28-verbindlich), das ab sofort für jede Änderung gilt. · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -680,6 +680,8 @@ Das Kriterium ist deshalb um eine zweite Größe ergänzt, und die misst Erreich
 
 **Als Prüfmuster mitnehmen:** Ein Kriterium, das eine Anzahl misst, sagt nichts über die Erreichbarkeit. Beides fällt nur so lange zusammen, wie der Platz reicht.
 
+**Wieder geöffnet am 2026-08-28 — das ergänzte Kriterium reichte nicht.** Das Audit hat die zweite Größe geprüft, die P1.6 nachgetragen hat, und eine dritte gefunden, die keine der beiden misst: **Wirksamkeit.** «Höchstens drei Entscheidungen bis zum Start» zählt Entscheidungen — nicht, ob sie etwas bewirken. Auf dem Sweep-Pfad sind zwei der drei wirkungslos: `run_single_sweep` schreibt Rechenmodus und Seed fest, und vom Entwurf erreicht nur `rounds` den Lauf. Ein Kriterium, das Entscheidungen zählt, ist damit auf dieselbe Weise blind wie das, das Bildschirme nicht kannte. Aufgenommen in [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--offen-audit-2026-08-28) (Befund 1, Pakete W0.2 und W1.1).
+
 **Doku zieht mit:** `docs/handbuch/erste-simulation.md`, `docs/handbuch/lauf-starten.md`, `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`.
 
 ### P1.2 — Ergebnisse und Plots refactoren
@@ -708,6 +710,8 @@ Das Kriterium ist deshalb um eine zweite Größe ergänzt, und die misst Erreich
 
 **Doku zieht mit:** `docs/handbuch/zahlen-und-sprache.md`, `docs/handbuch/fragestellungen.md`, `docs/cib_role.md`.
 
+> **Vorgezogen am 2026-08-28** (aus [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--offen-audit-2026-08-28)): Der Sweep-Pfad ist die Ursache der beiden kritischen Audit-Befunde — er verwirft alles außer `rounds` und überschreibt still die `max_ticks` jedes Presets. Diese Szenariogestaltung zu klären, **bevor** die Oberfläche darüber etwas behauptet, spart die doppelte Arbeit; W1.1 und W1.2 gehören fachlich hierher.
+
 ### P1.4 — Landingpage produktionsreif
 
 **Befund (neu am 2026-08-26):** Die Landingpage kam in diesem Plan bisher nicht vor, obwohl Phase 1 "Funktionalität und UI" heißt und sie die einzige öffentlich sichtbare Oberfläche ist. [`docs/landingpage.md`](landingpage.md) führt drei offene Punkte, keiner davon war eingeplant:
@@ -725,6 +729,8 @@ Das Kriterium ist deshalb um eine zweite Größe ergänzt, und die misst Erreich
 **Doku zieht mit:** `docs/landingpage.md` ("Offene Punkte" leeren), `aeroforesight-ai-landing-page/DEPLOY.md`, `CLAUDE.md` (Deployment-Ziel, Datenhoheit).
 
 ### P1.5 — Leitstand-Oberfläche ✅ erledigt 2026-08-28
+
+> **Abnahme ergänzt am 2026-08-28** (aus [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--offen-audit-2026-08-28)): Zonen, Theme und Zeitleiste tragen und werden **nicht** zurückgebaut. Den Kriterien fehlt aber eine Größe, die niemand geprüft hat — **Barrierefreiheit**. Gemessen: null `aria-live`-Regionen im gesamten Dokument, kein `aria-current`, keine Fokusführung beim Bereichswechsel. Nachzuziehen mit Paket W5.3.
 
 **Befund:** P1.1 hat den *Weg* zum Lauf in Ordnung gebracht, nicht den *Rahmen* darum. Das Dashboard war eine klassische Dokumentseite — `max-w-[1400px]`, drei Bereiche untereinander, Browser-Scroll für alles. Für Ingenieure, Analysten und Forscher, die einen laufenden Lauf beobachten und dabei Parameter, Kennzahlen und Log gleichzeitig im Blick brauchen, ist das die falsche Form: Man scrollt zwischen Einstellung und Wirkung hin und her, statt beides nebeneinander zu sehen. Dazu gab es **nur Light Mode** — für lange Sitzungen vor Zeitreihen ein ergonomisches Problem.
 
@@ -831,6 +837,8 @@ Die drei Pakete wurden am laufenden System nachgestellt. **Die tragenden Zusagen
 ---
 
 ### P1.7 — Der Ablauf wird die Oberfläche ✅ erledigt 2026-08-28
+
+> **Wieder geöffnet am 2026-08-28** (aus [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--offen-audit-2026-08-28)): Die tragende Zusage dieses Pakets — *eine Frage auf dem Schirm* — ist **nicht gehalten**. Gemessen bei 1280 × 720 braucht kein einziger der acht Schritte weniger als einen Bildschirm; Schritt 4 braucht 3,37 und trägt 104 Bedienelemente, Schritt 5 braucht 4,44. Abgenommen wurde «nur der offene Schritt steht im DOM» — das ist erfüllt und zählt Knoten statt Bildschirme. Dazu drei Wegführungsbefunde: übersprungene Schritte tragen ein Erledigt-Häkchen, «Weiter» garantiert nichts, und «Zurück» kehrt nicht dorthin zurück, wo man herkam. Der Fokus-Modus, die klebende Fußleiste und der Einstieg mit drei Wegen bleiben — sie haben sich bewährt.
 
 **Befund (Manu am Produkt, 2026-08-28).** P1.6 hat Einrichten und Beobachten in zwei Zonen getrennt. Getrennt sind sie damit räumlich, nicht zeitlich: Die Oberfläche zeigt weiterhin alles gleichzeitig und sagt nirgends, in welcher Reihenfolge man es tut. Fünf Beobachtungen, alle am fertigen Leitstand:
 
@@ -949,6 +957,8 @@ P1.7 wurde am laufenden System nachgemessen. **Die tragenden Zusagen halten:** d
 
 **Doku zieht mit:** `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/erste-simulation.md`, `docs/handbuch/presets.md`.
 
+**Verfahren nachgeschärft am 2026-08-28.** Das Ergebnis dieser Gegenprobe bleibt gültig — alle drei Befunde waren echt und sind behoben. Der **Prüfumfang** war zu eng: Geprüft wurden die drei gemeldeten Befunde und die Mechanik (keine doppelte ID, «Weiter» sichtbar, Scroll auf 0, Kontraste). **Gemessen wurde keine der Zusagen selbst.** «Eine Frage auf dem Schirm» steht als Zusage in `wizard.py` und in P1.7 — hätte die Gegenprobe die Höhe jedes Schritts in Bildschirmen genommen statt seinen waagerechten Überlauf, wäre Befund 3 aus [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--offen-audit-2026-08-28) hier aufgefallen und nicht erst zwei Tage später. Als Regel festgehalten: **Eine Gegenprobe prüft nicht die gemeldeten Befunde, sondern die zugesagten Größen** — die Befunde sind der Anlass, nicht der Umfang.
+
 **Abgrenzung.** Die 90 Eingabefelder unter «Systemgrößen» werden hier **umsortiert, nicht reduziert** — ihre Menge ist ein eigener Fall und bleibt bei [P1.2](#p12--ergebnisse-und-plots-refactoren). Ebenso bleibt offen, dass der Preflight bei jeder Änderung den vollen `SimulationState` aufbaut.
 
 **Umgesetzt am 2026-08-28, in drei Commits entlang der Stufen.** Vier Dinge, die dabei über den Plan hinausgingen — drei davon Fallen, die erst am laufenden System sichtbar wurden:
@@ -963,6 +973,129 @@ P1.7 wurde am laufenden System nachgemessen. **Die tragenden Zusagen halten:** d
 **Offen und benannt:** In den Regelzeilen (Schritte 4 und 5) tritt das Auswahlfeld «Art der Änderung» 68 px aus seiner Spalte — der Optionstext «springt auf den Wert (set)» ist breiter als die Zelle. Ein Versuch mit `min-width: 0` auf dem Dash-Wrapper half nachweislich **nicht** und ist wieder entfernt statt als wirkungslose Regel stehengelassen. Vorbestehend, gehört zum Umfang der Regelzeilen und damit zu [P1.2](#p12--ergebnisse-und-plots-refactoren).
 
 **Doku zieht mit:** `CLAUDE.md` (Architektur-Map: neue Module und Routen; die Dashboard-Regeln um den Umgang mit der Schrittfolge ergänzen), `docs/handbuch/erste-simulation.md`, `docs/handbuch/lauf-starten.md`, `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`, `docs/handbuch/glossar.md` (Ladebildschirm, Fortschrittsfenster, Schrittfolge), `README.md` und `dashboard/README.md` (Routentabelle).
+
+---
+
+### P1.9 — Der Assistent richtet ein Experiment ein 🔴 offen (Audit 2026-08-28)
+
+**Herkunft:** Unabhängiges Audit des Einrichten-Assistenten am 2026-08-28, gemessen an einer eigenen Instanz bei 1280 × 720 und gegengelesen im Code. Vollfassung mit allen Messwerten: [`wizard_audit_2026-08-28.md`](wizard_audit_2026-08-28.md). Das Audit hat die Abnahmekriterien dieses Plans **bewusst nicht** als Maßstab genommen, sondern eigene — und genau dadurch gefunden, was die Kriterien durchgelassen haben.
+
+**Befund in einem Satz:** Der Assistent ist ein Modell-Editor mit einem Experiment-Assistenten davor. Weil beides in derselben Schrittfolge steht, kann er weder das eine ruhig noch das andere schnell.
+
+**Die vier tragenden Befunde:**
+
+1. **Der Assistent beschreibt einen Lauf, der nicht stattfindet** (kritisch). [`run_single_sweep`](../src/orchestration/scenario_sweeps.py) baut seinen Runner selbst und schreibt `deterministic_only=True`, `seed=SWEEP_SEED` und `checkpoint_interval=0` fest — und ruft trotzdem `OllamaClient` für den Szenario-Text. Vom Entwurf erreicht **genau ein** Feld den Sweep-Lauf: `rounds`, als `ticks_override` ([`run_launcher.py:209`](../dashboard/run_launcher.py)). Gemessen sagt Schritt 8 nach «Szenario-Vergleich starten» wörtlich: «ausgehend von der Standard-Ausgangslage aus `configs/`, ohne Sprachmodell; die Zahlen stimmen, die Agenten-Texte sind Platzhalter» — drei Aussagen, drei Mal falsch. Dazu sechs Kacheln, die den Entwurf zeigen statt den Lauf. **Das ist Invariante 1 auf der Oberfläche verletzt:** Was der Code nicht tut, darf die Oberfläche nicht behaupten — und die Oberfläche ist die Doku, die tatsächlich gelesen wird.
+2. **Fünf Bedienelemente in «optionalen» Schritten schreiben ohne Rückfrage in `configs/properties.json`** (kritisch). «Entfernen» an einem Segment, «Größe dauerhaft löschen», «Als Standard speichern», «Bevölkerung als Standard speichern», «Größe anlegen» — alle in `_handle_action` ([`config_editor/__init__.py`](../dashboard/web/config_editor/__init__.py)), alle ohne Dialog, ohne Undo, ohne Sicherung. Die Wirkung reicht über den Lauf, die Sitzung und den Nutzer hinaus. Kein Bedienfehler, sondern ein Kategorienfehler.
+3. **Kein einziger der acht Schritte passt auf einen Bildschirm** (hoch). Gemessen bei 1280 × 720, sichtbare Höhe 664 px: 2,15 / 1,13 / 1,18 / **3,37** / **4,44** / 2,42 / 2,21 / 1,20 Bildschirme. Schritt 4 trägt 104 Bedienelemente unter der Überschrift «Rahmenbedingungen — bereits sinnvoll vorbelegt», Schritt 5 deren 64. Die vier mittleren Schritte sind erkennbar die alten Reiter unter neuem Namen; ihre Modulköpfe sagen es selbst («Tab «Rahmenbedingungen»»).
+4. **Die Schrittliste lügt, und «Weiter» garantiert nichts** (hoch). `_rail_entry` vergibt den Zustand rein nach Position — gemessen nach «Szenario-Vergleich starten»: `["done","done","done","done","done","done","done","current"]`, also sieben Häkchen für nie gesehene Schritte. `_navigate` prüft nichts, «Weiter» ist nie gesperrt, «Lauf starten» nur während eines Laufs. Ein Wizard unterscheidet sich von einer Reiterleiste dadurch, dass «Weiter» etwas garantiert.
+
+**Die Kriterien waren grün — schon wieder.** P1.7 hat zugesagt: eine Frage auf dem Schirm. Abgenommen wurde: nur der offene Schritt steht im DOM. Das ist erfüllt und misst Knoten statt Bildschirme. **Es ist derselbe Fehlertyp, den P1.6 an P1.1 und P1.5 gefunden und ausdrücklich als Prüfmuster notiert hat** — ein Paket später, mit demselben Ergebnis. Zweimal derselbe Fehler ist kein Zufall mehr, sondern eine Lücke im Verfahren; daraus folgt Regel 7 des Commit-Regelwerks unten.
+
+#### Was wieder aufgemacht wird
+
+| Paket | Entscheidung | Begründung |
+| --- | --- | --- |
+| [P1.1](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28) ✅ | **wieder öffnen** | «Drei Entscheidungen genügen» ist erfüllt und misst das Falsche: Auf dem Sweep-Pfad sind zwei der drei wirkungslos. Zählen ersetzt nicht Wirksamkeit. |
+| [P1.5](#p15--leitstand-oberfläche--erledigt-2026-08-28) ✅ | **Abnahme ergänzen** | Zonen, Theme und Zeitleiste tragen. Es fehlt eine Barrierefreiheits-Größe in den Kriterien. Kein inhaltlicher Rückbau. |
+| [P1.6](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28) ✅ | **bleibt** | Das Prinzip trägt und ist die Grundlage für den Schnitt unten. |
+| [P1.7](#p17--der-ablauf-wird-die-oberfläche--erledigt-2026-08-28) ✅ | **wieder öffnen** | «Eine Frage auf dem Schirm» ist nicht gehalten (Befund 3), dazu Befund 4 und die Handwerksbefunde. |
+| [P1.8](#p18--gegenprobe-zu-p17-haiko-2026-08-28--erledigt) ✅ | **Verfahren nachschärfen** | Das Ergebnis bleibt gültig, der Prüfumfang war zu eng: Die Gegenprobe hat drei gemeldete Befunde geprüft, aber keine der Zusagen **gemessen**. Genau die Messung hätte Befund 3 gefunden. |
+| [P1.3](#p13--szenariogestaltung-neu-denken) | **vorziehen** | Der Sweep-Pfad ist die Ursache der Befunde 1 und 2. Ihn kosmetisch zu reparieren, ohne die Szenariogestaltung zu klären, wäre doppelte Arbeit. |
+| [P3.6](#p36--stabiler-vertrag-für-den-run-launcher) | **vorziehen** | Befund 1 ist im Kern ein fehlender Vertrag zwischen Assistent, Run-Launcher und Sweeps. Ohne ihn lässt sich die Zusage aus W1.3 nicht mechanisch halten. |
+
+Unangetastet bleiben [P1.2](#p12--ergebnisse-und-plots-refactoren) und [P1.4](#p14--landingpage-produktionsreif) — sie liegen hinter diesem Schnitt.
+
+#### Die tragende Entscheidung: zwei Werkzeuge statt eines
+
+> **Der Assistent richtet ein Experiment ein. Der Modell-Editor pflegt das Modell. Es sind zwei Orte, und nur einer davon schreibt in `configs/`.**
+
+Daraus folgt: Der Assistent schrumpft auf das, was ein Experiment ausmacht — Ausgangspunkt, Umfang, Rechenmodus, Identität, Prüfung, Start; fünf bis sechs Schritte, jeder auf einem Bildschirm. Die 168 Bedienelemente der heutigen Schritte 4 und 5 ziehen in den Modell-Editor, mit Fläche, mit sichtbarem Delta und mit bestätigter Speicherung. Befund 2 fällt damit **strukturell** weg und nicht durch einen Bestätigungsdialog. Und «Schritt n von m» wird wieder wahr, weil alle Schritte vergleichbar groß sind.
+
+**Diese Entscheidung ist vor dem ersten Arbeitspaket zu treffen.** Ohne sie sind W3 und W4 nicht umsetzbar, und alles andere wäre Verschieben von Feldern.
+
+#### Arbeitspakete
+
+Reihenfolge ist Absicht: erst messen, dann die Unwahrheiten, dann der Schnitt, dann das Fehlende, zuletzt das Handwerk. **Jedes Paket ist genau ein Commit** (Regelwerk unten).
+
+**W0 — Messfundament, vor jedem Umbau.** Ohne diese beiden wiederholt sich der Fehler von P1.7: eine Zusage, die von einer Zählung bewacht wird statt von einer Messung.
+
+| # | Was zu tun ist | Fertig wenn |
+| --- | --- | --- |
+| W0.1 | Höhenwächter je Schritt in `tests/test_web_overflow.py`, bei 1280 × 720 und 1440 × 900, gemessen in Bildschirmen. | Der Wächter hält den Ist-Zustand als bekannte Abweichung fest und schlägt fehl, sobald ein Schritt **wächst**. Deckel wird in W3.5 auf 1,0 gesenkt. |
+| W0.2 | Wirkungstest: welche Draft-Felder erreichen auf welchem Startpfad (Einzellauf, Wiederholungen, Sweep) tatsächlich die Simulation — mechanisch erzeugt, nicht handgepflegt. | Ein Feld, das die Oberfläche erfragt und der Pfad verwirft, lässt den Test fehlschlagen. |
+
+**W1 — Der Assistent sagt die Wahrheit** (kritisch, zuerst).
+
+| # | Was zu tun ist | Fertig wenn |
+| --- | --- | --- |
+| W1.1 | Vertrag für den Sweep-Pfad: `run_single_sweep` nimmt Rechenmodus, Seed und Checkpoint-Intervall entgegen — **oder** der Pfad deklariert seine Fixierungen als Teil seines Vertrags. Genau eine der beiden Antworten, im Code und in `CLAUDE.md`. | W0.2 ist grün: kein erfragtes Feld wird still verworfen. |
+| W1.2 | `ticks_override` nur setzen, wenn die Länge bewusst gewählt wurde; sonst gilt die `max_ticks` des Presets. | Ein Sweep läuft mit der Länge, die Schritt 1 nennt. |
+| W1.3 | Der Preflight beschreibt den **tatsächlichen** Lauf: eigener Satz und eigene Kacheln je Startpfad; nichts Wirkungsloses wird als wirksam gezeigt. | Der Preflight enthält nur Aussagen, die W0.2 als wirksam ausweist. |
+| W1.4 | Der Weg «Szenario-Vergleich» führt nicht mehr an der Längenfrage vorbei — über den Schritt oder als bewusste Bestätigung im Preflight. | Kein Startpfad überspringt eine Frage, deren Antwort er verwendet. |
+
+**W2 — Der Assistent lügt nicht über den Fortschritt.**
+
+| # | Was zu tun ist | Fertig wenn |
+| --- | --- | --- |
+| W2.1 | Drei Zustände in der Schrittliste statt zwei: offen, besucht, übersprungen. Häkchen nur für tatsächlich Besuchtes. | Nach «Szenario-Vergleich» trägt kein übersprungener Schritt ein Häkchen. |
+| W2.2 | Validierungstor: «Weiter» sperrt, solange der Schritt Blocker hat, mit Begründung am Feld; «Lauf starten» sperrt bei Befunden aus `validate_draft`, mit Sprungmarke zum betroffenen Schritt. | Ein ungültiger Wert kommt nicht am Schritt vorbei. |
+| W2.3 | «Zurück» folgt einem Navigationsverlauf statt `current - 1`. | Aus Schritt 8, betreten über den Einstieg, führt «Zurück» auf den Einstieg — nicht auf «Technik». |
+
+**W3 — Der Schnitt.**
+
+| # | Was zu tun ist | Fertig wenn |
+| --- | --- | --- |
+| W3.1 | Modell-Editor als eigener Bereich; `macro` und `micro` ziehen dorthin um, im Verhalten unverändert. | Reiner Umzug, keine Verhaltensänderung — eigener Commit vor allem, was danach daran geändert wird (Regel 6). |
+| W3.2 | Schreiben in `configs/` nur noch im Modell-Editor, nur mit Bestätigung, mit Anzeige der Reichweite («gilt ab sofort für alle Läufe»). | Kein Schreibpfad in `configs/` ist aus dem Assistenten erreichbar. |
+| W3.3 | Die Faktorlage (sieben Auswahlen) bleibt als **eine** Frage im Assistenten — sie gehört zum Experiment, nicht zum Modell. | Ein Bildschirm, sieben Auswahlen. |
+| W3.4 | Schritt 1: Presets als Kachelraster mit Kennzahl statt zehn gestapelter Radiokarten. | Unter 1,0 Bildschirm bei 1280 × 720. |
+| W3.5 | Deckel in W0.1 auf 1,0 Bildschirm senken. | Der Wächter ist scharf, nicht dokumentierend. |
+
+**W4 — Was ein Experiment ausmacht.**
+
+| # | Was zu tun ist | Fertig wenn |
+| --- | --- | --- |
+| W4.1 | Lauf-Identität nach vorn: Name und Fragestellung mit Vorschlag, auf **jedem** Startpfad. | Kein Lauf trägt den Vorgabenamen, ohne dass jemand ihn gesehen hat. |
+| W4.2 | Delta-Ansicht im Prüfschritt: «Was weicht vom Standard ab», je Zeile mit Sprung und Einzelrücknahme. | Jede Abweichung ist gelistet und einzeln rücknehmbar — nicht nur «alles zurücksetzen». |
+| W4.3 | Laufzeitschätzung aus `run_metadata.json` vergangener Läufe, vor dem Start und als Restzeit während des Laufs. | Ein Spannenwert je Rechenmodus, kein Punktwert. **Damit fällt zugleich die offene Zeitfrage aus [«Was bewusst nicht in diesem Plan steht»](#was-bewusst-nicht-in-diesem-plan-steht)** — die geschätzten Angaben in `docs/handbuch/lauf-starten.md` bekommen eine gemessene Grundlage. |
+| W4.4 | Reproduzierbarkeit vor dem Start: Seed, Codestand, Config-Fingerabdruck — dieselben Größen, die P0.6 danach schreibt. | Was `run_metadata.json` hinterher festhält, steht vorher auf dem Schirm. |
+| W4.5 | `runner.cancel()` und ein Abbruch-Knopf im Ladebildschirm. `dashboard/web/runner.py` kennt heute `start`, `poll`, `progress`, `forget` — kein `cancel`. | Ein laufender Lauf lässt sich beenden, ohne den Prozess zu töten. |
+
+**W5 — Handwerk.** W5.1 und W5.2 hängen an nichts und dürfen vorgezogen werden — sie beheben einen aktiv falschen Zustand.
+
+| # | Was zu tun ist | Fertig wenn |
+| --- | --- | --- |
+| W5.1 | Render-Rückfälle schreiben nicht mehr in den Entwurf. Gemessen: Schritt 3 anzuzeigen schreibt `seed: null → 42`, weil `mode_step` das Feld mit `DEFAULT_SEED` rendert und `_sync` den gerenderten Wert zurückliest. Ein fehlender Wert wird als fehlend dargestellt, nicht als Literal erfunden. | AST-Wächter über `dashboard/web/`, analog `test_cost_pressure_source.py`: jeder Literal-Rückfall in einem Feld-Renderer wird gemeldet, Ausnahmen mit Begründung in einer `AUSNAHMEN`-Liste. **Der brisanteste Fall wartet schon:** `micro._FEEDBACK_FINE` hält `marginal_cost_fraction` mit Rückfall 0,33, während `configs/properties.json` 0,25 liefert — genau der Widerspruch, den `CLAUDE.md` unter [P4.2](#p42--suite-aufräumen-und-verlässlich-machen) als ungeklärt führt. |
+| W5.2 | `touched()` vergleicht gegen den normalisierten Entwurf statt gegen den rohen. | Ohne Eingabe bleibt «Letzte Einstellungen weiterverwenden» gesperrt — auch nach einem Neuladen. Heute schaltet allein das Anzeigen von Schritt 3 den Weg frei, und der Session-Store trägt das über den Reload. |
+| W5.3 | Barrierefreiheit: `aria-current="step"`, Live-Region für Schrittwechsel und Statusmeldungen, Fokus auf die Schrittüberschrift, `fieldset`/`legend` um jede Radiogruppe. Gemessen: **0** `aria-live`-Regionen im ganzen Dokument. | Ein Test über diese vier Größen; Ziel WCAG 2.1 AA für die Schrittfolge. Für Hochschul- und B2B-Beschaffung ist das kein Schönheitsfehler. |
+| W5.4 | Breite je Schritt statt einer Breite für alles. Gemessen `240px 760px` bei 1040 px Zone — zu breit für Schritt 2 mit drei Feldern, zu schmal für Schritt 4 mit 104. | Kein Schritt unter 60 % oder über 100 % Spaltenausnutzung. |
+| W5.5 | Mobil: Schrittliste als kompakter Fortschrittsbalken statt acht gestapelter Knöpfe, Fußleiste einzeilig (heute 133 px bei 375 px Breite). | Fußleiste unter 72 px bei 375 px Breite. |
+| W5.6 | Gewichtung der drei Wege des Einstiegs nach Häufigkeit. | Fachurteil, keine Messung — bewusst als solches gekennzeichnet. |
+
+#### Was ausdrücklich gut ist und bleibt
+
+Nicht alles ist zu ändern, und vier Dinge sind besser als der Branchenschnitt: die konsequente progressive Offenlegung mit ausgeschriebenen Namen im Deckel («Feinabstimmung (2 Parameter)»), der Rechenmodus als **eine** Auswahl statt zweier verneinter Kästchen, die Erklärtexte am Entscheidungsort aus **einer** Quelle (`glossary.py`), und die klebende Fußleiste, die «Weiter» auf jedem Schritt bei y = 662 von 664 px hält. Diese vier sind beim Umbau zu erhalten, nicht neu zu erfinden.
+
+**Fertig wenn:** Jeder Schritt des Assistenten passt bei 1280 × 720 auf einen Bildschirm (W0.1 scharf), kein erfragtes Feld wird von seinem Startpfad still verworfen (W0.2 grün), kein Schreibpfad in `configs/` ist aus dem Assistenten erreichbar, und der Preflight beschreibt den Lauf, der wirklich stattfindet.
+
+**Was die Zahlen macht:** W1.1 und W1.2 verschieben, was ein Sweep rechnet — die Länge kommt künftig aus dem Preset, und der Rechenmodus wird nicht mehr verworfen. **Der Schnitt gehört in `docs/handbuch/vergleiche.md`**, sobald das Paket steht; Läufe von davor und danach sind nicht vergleichbar. W2 bis W5 fassen nur Wegführung, Darstellung und Text an.
+
+**Doku zieht mit:** `CLAUDE.md` (Architektur-Map: der Schnitt zwischen Assistent und Modell-Editor, die Dashboard-Regeln; Dev-Workflow: das Commit-Regelwerk), `docs/handbuch/erste-simulation.md`, `docs/handbuch/lauf-starten.md`, `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`, `docs/handbuch/vergleiche.md`, `docs/handbuch/glossar.md` (Modell-Editor als neuer Begriff), `README.md` und `dashboard/README.md` (Routentabelle).
+
+---
+
+### Regelwerk: atomare Commits (ab 2026-08-28 verbindlich)
+
+Gilt für jede Änderung an diesem Projekt — für alle im Team und für jede Claude-Session, nicht nur für P1.9.
+
+1. **Ein Commit = ein Befund oder ein Feature.** Kein Sammelcommit. Wer zwei Dinge behoben hat, macht zwei Commits — auch wenn sie dieselbe Datei berühren.
+2. **Der Titel benennt Paket und sichtbares Ergebnis**, nicht die Datei: `fix(wizard): kein Haken für einen übersprungenen Schritt (W2.1)`, nicht `update wizard.py`.
+3. **Jeder Commit ist für sich lauffähig und grün.** `pytest`, `ruff check .` und `black --check .` laufen vor jedem **Commit**, nicht erst vor dem Push.
+4. **Jeder Verhaltens-Commit bringt seinen Test mit** — im selben Commit, nicht im nächsten. Ein nachgereichter Test prüft, was gebaut wurde, statt was zugesagt war.
+5. **Doku im selben Commit** ([Doku-Pflicht](../CLAUDE.md#doku-pflicht)). Bleibt sie bewusst unverändert, steht der Grund in der Commit-Message.
+6. **Refactoring und Verhaltensänderung nie im selben Commit.** W3.1 ist deshalb ein reiner Umzug; alles, was danach am Umgezogenen geändert wird, ist ein eigener Commit.
+7. **Eine Zusage kommt mit ihrer Messung, nicht mit ihrer Zählung.** Wer «passt auf einen Bildschirm» zusagt, misst Bildschirme. Wer «drei Entscheidungen genügen» zusagt, misst, ob die drei wirken. Das ist die Lehre aus P1.6 **und** aus P1.9 — derselbe Fehler, zweimal, mit grünen Kriterien.
+8. **Gepusht wird nicht automatisch.** Commits bleiben lokal, bis Haiko sie selbst pusht.
 
 ---
 
@@ -1099,6 +1232,8 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 **Was zu tun ist:** Öffentliche Schnittstelle in `src/run_simulation.py` definieren und den Launcher darauf ziehen.
 **Fertig wenn:** Kein Dashboard-Modul importiert mehr Unterstrich-Namen aus `src/`. **Doku:** `CLAUDE.md` (Architektur-Map, Service-Layer-Absatz).
 
+> **Vorgezogen am 2026-08-28** (aus [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--offen-audit-2026-08-28)): Der fehlende Vertrag ist nicht nur ein Refactor-Risiko — er ist die Ursache dafür, dass der Assistent Felder erfragt, die der Sweep-Pfad still verwirft. Ohne eine öffentliche Schnittstelle, die sagt, **was ein Startpfad entgegennimmt**, lässt sich W1.1 nicht mechanisch halten.
+
 ---
 
 ## Phase 4 — Testfundament
@@ -1203,6 +1338,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | **Reproduzierbarkeit / Run-Artefakte** (neu 2026-08-26) | ~~P0.6 (Seed, Rechenmodus, Config-Hash in `run_metadata.json`)~~ ✅ |
 | **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) |
 | **Doku-Konsistenz** (neu 2026-08-26) | P4.3 (Zahlen in `CLAUDE.md` und diesem Plan mechanisch halten) |
+| **Einrichten-Assistent** (neu 2026-08-28) | P1.9 (Sweep-Pfad verwirft den Entwurf, Schreibzugriff auf `configs/` aus optionalen Schritten, Schritthöhe, Fortschritts- und Validierungslücken, Barrierefreiheit) |
 
 Die vier neuen Zeilen stammen nicht aus `audit_findings.md`, sondern aus der Gegenprobe vom
 2026-08-26 — sie sind dort nachgetragen, damit die Detailliste vollständig bleibt.
