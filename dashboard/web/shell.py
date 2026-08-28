@@ -42,10 +42,15 @@ from dashboard.web import routing, status
 #: Der leere Pfad gehört deshalb dem Einrichten. Der Leitstand hat mit `lauf`
 #: eine eigene Adresse bekommen; `setup` bleibt als Alias bestehen (siehe
 #: `ALIASES`), damit gespeicherte Verweise nicht ins Leere zeigen.
+#: **«Modell» steht hinter den Ergebnissen und nicht mitten im Ablauf** (P1.9-W3.1).
+#: Einrichten → Leitstand → Ergebnisse ist der Arbeitsablauf eines Laufs; das
+#: Modell zu pflegen gehört nicht hinein, sondern daneben. Es steht deshalb bei
+#: dem anderen Bereich, den man aufsucht statt durchläuft: dem Handbuch.
 ROUTES = [
     ("", "Einrichten"),
     ("lauf", "Leitstand"),
     ("runs", "Ergebnisse"),
+    ("modell", "Modell"),
     ("doku", "Handbuch"),
 ]
 
@@ -88,7 +93,9 @@ ACTION_EXPORT = "shell-action-export"
 #: lassen, die einen *anderen* Lauf zeigt, lenkt nur ab — und die Stand-Zeilen
 #: links wiederholen genau das, was man gerade einstellt. Der Bildschirm gehört
 #: in diesem Moment einer Sache.
-FOCUS_ROUTES = {""}
+#: «Modell» kommt seit P1.9-W3.1 dazu: Facharbeit an vielen Zahlen, bei der eine
+#: Szene daneben genauso ablenkt wie beim Einrichten.
+FOCUS_ROUTES = {"", "modell"}
 
 
 def shell_class(active: str) -> str:

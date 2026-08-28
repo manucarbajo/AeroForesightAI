@@ -46,6 +46,7 @@ from dashboard.web import (
 from dashboard.web.config_editor import wizard
 from dashboard.web.pages import docs as docs_page
 from dashboard.web.pages import launch as launch_page
+from dashboard.web.pages import model_editor as model_page
 from dashboard.web.pages import runs as runs_page
 from dashboard.web.pages import setup as setup_page
 from dashboard.web.state import STORE_ID, draft_from_dict
@@ -312,7 +313,8 @@ def serve_layout() -> html.Div:
                             style=start[1],
                         ),
                         html.Div(runs_page.layout(selection), id="page-runs", style=start[2]),
-                        html.Div(docs_page.layout(), id="page-docs", style=start[3]),
+                        html.Div(model_page.layout(draft), id="page-modell", style=start[3]),
+                        html.Div(docs_page.layout(), id="page-docs", style=start[4]),
                     ],
                     id="page-scene-wrap",
                 ),
@@ -347,6 +349,7 @@ def create_app() -> Dash:
         Output("page-setup", "style"),
         Output(SCENE_HOST, "style"),
         Output("page-runs", "style"),
+        Output("page-modell", "style"),
         Output("page-docs", "style"),
         Input("url", "pathname"),
     )

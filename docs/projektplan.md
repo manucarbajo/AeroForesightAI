@@ -1058,7 +1058,7 @@ Reihenfolge ist Absicht: erst messen, dann die Unwahrheiten, dann der Schnitt, d
 
 | # | Was zu tun ist | Fertig wenn |
 | --- | --- | --- |
-| W3.1 | Modell-Editor als eigener Bereich; `macro` und `micro` ziehen dorthin um, im Verhalten unverändert. | Reiner Umzug, keine Verhaltensänderung — eigener Commit vor allem, was danach daran geändert wird (Regel 6). |
+| W3.1 ✅ | Modell-Editor als eigener Bereich; `macro` und `micro` ziehen dorthin um. | **Erledigt 2026-08-29.** Die Schrittfolge fällt von acht auf **sechs** Schritte, der neue Bereich trägt gemessene **168** Bedienelemente. Reiner Umzug: Die beiden Module sind unverändert, nur ihr Anzeigeort ist neu. Der Höhenwächter hat beim Umnummerieren des Deckels einen Fehler gefangen — für Schritt 4 war die Zahl aus dem Audit (720 px Fensterhöhe) statt die des Wächters (800 px) eingetragen. |
 | W3.2 | Schreiben in `configs/` nur noch im Modell-Editor, nur mit Bestätigung, mit Anzeige der Reichweite («gilt ab sofort für alle Läufe»). | Kein Schreibpfad in `configs/` ist aus dem Assistenten erreichbar. |
 | W3.3 | Die Faktorlage (sieben Auswahlen) bleibt als **eine** Frage im Assistenten — sie gehört zum Experiment, nicht zum Modell. | Ein Bildschirm, sieben Auswahlen. |
 | W3.4 | Schritt 1: Presets als Kachelraster mit Kennzahl statt zehn gestapelter Radiokarten. | Unter 1,0 Bildschirm bei 1280 × 720. |

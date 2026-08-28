@@ -30,9 +30,10 @@ python -m dashboard.web.app --port 8511
 | Adresse | Inhalt |
 | --- | --- |
 | `http://localhost:8511/` | Landingpage |
-| `http://localhost:8511/app/` | Einrichten (drei Entscheidungen + Editor) |
+| `http://localhost:8511/app/` | Einrichten (die Schrittfolge, sechs Schritte) |
 | `http://localhost:8511/app/lauf` | Leitstand (Szene + Zeitleiste) |
 | `http://localhost:8511/app/runs` | Ergebnisse (die sieben Ansichten) |
+| `http://localhost:8511/app/modell` | Modell (Faktorlage, Systemgrößen, Bevölkerung, Preisbildung) |
 | `http://localhost:8511/app/doku` | Handbuch |
 
 Die Reihenfolge ist seit P1.7 der Arbeitsablauf: Man richtet ein, sieht dann zu,
@@ -75,7 +76,7 @@ Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
 | `state.py` | `ConfigDraft` ⇄ `dcc.Store` |
 | `runner.py` | Lauf im Hintergrund-Thread, Fortschritt über eine Queue |
 | `files_route.py` | Flask-Route für PNGs und Downloads aus `outputs/` |
-| `pages/` | `launch.py` (Bedienfeld links: Stand, Preflight, Start), `setup.py` (Einrichten), `runs.py` (Ergebnis-Ansichten), `docs.py` (Handbuch) |
+| `pages/` | `launch.py` (Bedienfeld links: Stand, Preflight, Start), `setup.py` (Einrichten), `model_editor.py` (Modell), `runs.py` (Ergebnis-Ansichten), `docs.py` (Handbuch) |
 | `pages/docs_reference.py` | Referenzkapitel, aus Glossar und `configs/` erzeugt |
 | `views/` | die sieben Ergebnis-Ansichten plus `scene.py` (Viewport) und `telemetry.py` (rechte Zone) |
 | `config_editor/` | der geführte Ablauf (`start_flow.py`) plus die vier Editor-Tabs |
@@ -88,7 +89,8 @@ Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
 | --- | --- |
 | **Kopfzeile** | Zustand der Anlage (bereit / läuft / beeinträchtigt / Demo, mit pulsierendem Punkt), Lauf-Auswahl für den ganzen Leitstand, Speichern / Snapshot / Exportieren, Theme-Umschalter |
 | **Bedienfeld** | Was eingestellt ist (Szenario, Länge, Rechenmodus — je ein Verweis ins Einrichten), der Preflight, der Start-Knopf in einem klebenden Fuß. **Keine Eingabefelder** — `tests/test_web_rail.py` hält das fest |
-| **Einrichten** | Der geführte Ablauf aus P1.1 — drei Entscheidungen, Presets als Kartenraster —, darunter vier Editor-Bereiche: **Rahmenbedingungen** (Faktoren F1–F7, Systemgrößen samt Regeln), **Nachfrage & Preisbildung** (Yield Management, Sättigung, Segmente, Verteilungen), **Lauf & Ablage** (Benennung, Mehrfachläufe, Config-Dateien, Preset sichern), **Technik** (Sprachmodell, Ausgaben) |
+| **Einrichten** | Eine Schrittfolge aus **sechs** Schritten hinter einem Einstieg mit drei Wegen: die drei Entscheidungen aus P1.1 (Szenario als Kartenraster, Länge, Rechenmodus), dann **Lauf & Ablage** (Benennung, Config-Dateien, Preset sichern) und **Technik** (Sprachmodell, Ausgaben), zuletzt **Prüfen & Starten** |
+| **Modell** | Seit P1.9-W3.1 ein eigener Bereich: **Rahmenbedingungen** (Faktoren F1–F7, Systemgrößen samt Regeln) und **Nachfrage & Preisbildung** (Yield Management, Sättigung, Segmente, Verteilungen) — zusammen 168 Bedienelemente. Sie lagen bis dahin als Schritte 4 und 5 in der Schrittfolge und sprengten sie: ein Experiment einzurichten und ein Modell zu pflegen sind zwei Tätigkeiten |
 | **Viewport** | **Leitstand**: die Population zum gewählten Tick plus Faktorstreifen F1–F7 · **Einrichten** (siehe oben) · **Ergebnisse**: Szenario (Hauptansicht), Übersicht, Animation, Figures, Bericht, Abfrage, Dateien · **Handbuch** mit Kapitelnavigation und Volltextsuche |
 | **Zeitleiste** | Tick-Regler über den Lauf, Play/Pause/Stop/Schritt, Tempo, Ereignismarker |
 | **Telemetrie** | Kennzahlen des gewählten Ticks, dieselben Größen als Verlauf mit Positionsmarke, Konsole (Ereignisse, Modellausfälle, Lauffortschritt) |

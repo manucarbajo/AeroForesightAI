@@ -95,6 +95,71 @@ class TestDreiEntscheidungenGenuegenWeiterhin:
         assert gerendert.count("optional") == sum(1 for s in wizard.STEPS if not s.required)
 
 
+class TestModellUndExperimentSindZweiOrte:
+    """W3.1 — der Schnitt zwischen Assistent und Modell-Editor.
+
+    Bis hierher lagen beide in derselben Schrittfolge. Die Schritte 4 und 5
+    trugen zusammen **168 Bedienelemente** und brauchten 3,0 bzw. 4,0
+    Bildschirme, während die drei Entscheidungsschritte davor mit drei, fünf und
+    zehn Feldern auskamen. «Schritt 5 von 8» war damit keine Ortsangabe: Der
+    fünfte Schritt war das Vielfache aller anderen zusammen.
+
+    Der wichtigste Test hier ist der zweite. Beide Bereiche liegen **gleichzeitig
+    im DOM** — `app.py` blendet nur um. Stünde ein Feld in beiden, wäre das eine
+    doppelte Dash-ID und damit ein Laufzeitfehler im Browser, den keine
+    Testsuite ohne diesen Abgleich bemerkt.
+    """
+
+    def test_the_dense_areas_left_the_step_sequence(self, draft):
+        schluessel = [s.key for s in wizard.STEPS]
+
+        assert "rahmen" not in schluessel
+        assert "nachfrage" not in schluessel
+        assert schluessel == ["szenario", "umfang", "modus", "ablage", "technik", "start"]
+
+    def test_no_field_is_rendered_in_both_places(self, draft):
+        """Beide Bereiche liegen gleichzeitig im DOM — ein Feld darf nur in einem stehen."""
+
+        from dashboard.web.pages import model_editor
+
+        im_modell = _fields(model_editor.layout(draft))
+        in_schritten = set()
+        for index in range(len(wizard.STEPS)):
+            in_schritten |= _fields(wizard.content(draft, index))
+
+        doppelt = im_modell & in_schritten
+        assert not doppelt, (
+            f"Diese Felder stehen im Modell-Editor **und** in der Schrittfolge: "
+            f"{sorted(doppelt)}\nEine doppelt vergebene Dash-ID ist ein "
+            "Laufzeitfehler im Browser."
+        )
+
+    def test_the_model_area_actually_carries_them(self, draft):
+        """Und sie sind nicht verschwunden, sondern umgezogen."""
+
+        from dashboard.web.pages import model_editor
+
+        felder = _fields(model_editor.layout(draft))
+
+        assert any(f.startswith("factor_states.") for f in felder), "Die Faktorlage fehlt"
+        assert any(f.startswith("property_edits.") for f in felder), "Die Systemgrößen fehlen"
+        assert any(f.startswith("population_edits.") for f in felder), "Die Bevölkerung fehlt"
+        assert any(f.startswith("market_feedback_edit.") for f in felder), "Die Preisbildung fehlt"
+
+    def test_the_model_area_survives_a_broken_config(self, draft):
+        """Eine kaputte Config ist ein Befund, kein leerer Bereich."""
+
+        from dashboard.web.pages import model_editor
+
+        kaputt = dict(draft)
+        kaputt["properties_file"] = "gibt-es-nicht.json"
+
+        gerendert = str(model_editor.layout(kaputt))
+
+        assert gerendert
+        assert "Traceback" not in gerendert
+
+
 # --- Nur der offene Schritt steht im DOM -----------------------------------
 
 
@@ -401,12 +466,17 @@ class TestDieSchrittlisteBehauptetNichts:
         Frage nicht, die man auf Schritt 8 hat: *Habe ich etwas übergangen?*
         """
 
-        zustaende = self._zustaende(5, {0, 5})
+        # Bewusst nicht der letzte Schritt: Danach muss noch etwas kommen,
+        # sonst prueft der Fall nur die Haelfte. Die Zahl ist deshalb aus
+        # `STEPS` abgeleitet und nicht hingeschrieben -- W3.1 hat die
+        # Schrittfolge schon einmal von acht auf sechs gekuerzt.
+        offen = wizard.FINAL - 1
+        zustaende = self._zustaende(offen, {0, offen})
 
         assert zustaende[0] == "besucht"
-        assert zustaende[1:5] == ["uebersprungen"] * 4
-        assert zustaende[5] == "current"
-        assert set(zustaende[6:]) == {"offen"}
+        assert zustaende[1:offen] == ["uebersprungen"] * (offen - 1)
+        assert zustaende[offen] == "current"
+        assert set(zustaende[offen + 1 :]) == {"offen"}
 
     def test_the_open_step_counts_as_seen_without_being_recorded(self):
         """Der offene Schritt braucht keinen Eintrag im Speicher.
@@ -423,7 +493,7 @@ class TestDieSchrittlisteBehauptetNichts:
         """Und die Zahl steht darunter, wenn es etwas zu sagen gibt."""
 
         text = str(wizard.rail(wizard.FINAL, {wizard.FINAL}))
-        assert "7 übersprungen" in text
+        assert f"{wizard.FINAL} übersprungen" in text
 
         sauber = str(wizard.rail(0, {0}))
         assert "übersprungen" not in sauber, (

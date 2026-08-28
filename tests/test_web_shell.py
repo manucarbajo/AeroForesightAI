@@ -143,8 +143,9 @@ class TestGenauEinBereichIstSichtbar:
             ("/app/", 0),
             ("/app/lauf", 1),
             ("/app/runs", 2),
-            ("/app/doku", 3),
-            ("/app/doku/cib", 3),
+            ("/app/modell", 3),
+            ("/app/doku", 4),
+            ("/app/doku/cib", 4),
             ("/app", 0),
             # Der Aliaspfad aus P1.6: gespeicherte Verweise dürfen nicht ins
             # Leere zeigen, nur weil das Einrichten umgezogen ist.
@@ -174,6 +175,11 @@ class TestGenauEinBereichIstSichtbar:
             "Einrichten",
             "Leitstand",
             "Ergebnisse",
+            # «Modell» steht seit P1.9-W3.1 **hinter** dem Ablauf und nicht
+            # darin: Einrichten → Leitstand → Ergebnisse ist der Weg eines
+            # Laufs; das Modell zu pflegen gehört daneben, bei dem anderen
+            # Bereich, den man aufsucht statt durchläuft.
+            "Modell",
             "Handbuch",
         ]
 

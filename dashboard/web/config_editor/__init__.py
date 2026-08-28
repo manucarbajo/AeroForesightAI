@@ -50,6 +50,7 @@ from dashboard.web.config_editor import (
     wizard,
 )
 from dashboard.web.config_editor import controls as c
+from dashboard.web.pages import model_editor
 from dashboard.web.state import STORE_ID, draft_from_dict, draft_to_dict
 
 # Die vier Bereiche, die bis P1.7 Reiter waren und jetzt die Schritte vier bis
@@ -230,6 +231,29 @@ def register_callbacks(app) -> None:
 
         gesperrt_weiter, gesperrt_start, meldung = wizard.gate(data, step)
         return slot_out, error_out, gesperrt_weiter, gesperrt_start, meldung
+
+    @app.callback(
+        Output(model_editor.HOST, "children"),
+        Input("cfg-editor-refresh", "data"),
+        State(STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def _model_editor(_refresh, draft: dict | None):
+        """Den Modell-Bereich neu zeichnen, wenn sich der Entwurf **strukturell** ändert.
+
+        Nicht am Entwurf selbst: Der Bereich trägt 168 Eingabefelder, und sie
+        unter den Fingern auszutauschen wäre bei jedem Tastendruck ein
+        Fokusverlust. Werte fließen ohnehin über `_sync` in den Store und
+        stehen dort richtig — neu gebaut werden muss nur, wenn eine Größe
+        **dazukommt oder verschwindet**: Preset übernehmen, Property anlegen
+        oder löschen, Segment entfernen, Zurücksetzen. Genau dafür gibt es
+        `cfg-editor-refresh`, und genau daran hängt auch die Schrittfolge.
+
+        Ohne diese Zeilen zeigte der Bereich nach «Werte übernehmen» weiterhin
+        die Zahlen von vorher — richtig im Store, falsch auf dem Schirm.
+        """
+
+        return model_editor.body(draft or {})
 
     @app.callback(
         Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),

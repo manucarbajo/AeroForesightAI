@@ -142,7 +142,7 @@ CHAPTERS: list[Chapter] = [
         "lauf-konfigurieren",
         "Einen Lauf konfigurieren",
         "Bedienung",
-        "Die sechs Tabs des Editors und wofür jeder da ist.",
+        "Die Schrittfolge des Einrichtens — und was stattdessen im Modell steht.",
         markdown="lauf-konfigurieren.md",
     ),
     Chapter(

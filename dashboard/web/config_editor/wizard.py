@@ -36,7 +36,7 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
 from dashboard.config_catalog import list_sweep_presets
 from dashboard.web import components as ui
-from dashboard.web.config_editor import experiment, llm_pipeline, macro, micro, start_flow
+from dashboard.web.config_editor import experiment, llm_pipeline, start_flow
 from dashboard.web.state import STORE_ID, initial_draft_dict
 
 #: Welcher Schritt gerade offen ist. Als Store und nicht als Adresse, weil ein
@@ -152,20 +152,15 @@ STEPS: list[Step] = [
         "Ob und wie die Agenten den Lauf in Worte fassen.",
         lambda draft: start_flow.mode_step(draft, number=None),
     ),
-    Step(
-        "rahmen",
-        "Rahmenbedingungen",
-        "Faktorlage und Systemgrößen — bereits sinnvoll vorbelegt.",
-        macro.layout,
-        required=False,
-    ),
-    Step(
-        "nachfrage",
-        "Nachfrage & Preisbildung",
-        "Wie die Bevölkerung entscheidet und wie der Preis entsteht.",
-        micro.layout,
-        required=False,
-    ),
+    # **«Rahmenbedingungen» und «Nachfrage & Preisbildung» standen hier bis
+    # P1.9-W3.1.** Sie sind in den Bereich «Modell» umgezogen: zusammen 168
+    # Bedienelemente und 3,0 bzw. 4,0 Bildschirme, während die drei
+    # Entscheidungsschritte davor mit drei, fünf und zehn Feldern auskamen. In
+    # einer Liste mit gleichem Gewicht geführt, machte das die Zählung «Schritt
+    # 5 von 8» bedeutungslos — der fünfte Schritt war das Vielfache aller
+    # anderen zusammen. Ein Experiment einzurichten und ein Modell zu pflegen
+    # sind zwei Tätigkeiten; sie in dieselbe Schrittfolge zu legen geht nur
+    # zulasten einer von beiden.
     Step(
         "ablage",
         "Lauf & Ablage",
@@ -215,10 +210,10 @@ FINAL = len(STEPS) - 1
 FELD_SCHRITT: dict[str, int] = {
     "rounds": 1,
     "seed": 2,
-    "simulation_name": 5,
-    "model": 6,
-    "temperature": 6,
-    "max_tokens": 6,
+    "simulation_name": 3,
+    "model": 4,
+    "temperature": 4,
+    "max_tokens": 4,
 }
 
 #: Wohin ein Befund gehört, dessen Feld die Schrittfolge nicht kennt. «Prüfen &

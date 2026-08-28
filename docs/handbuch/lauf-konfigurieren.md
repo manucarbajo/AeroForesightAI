@@ -34,9 +34,33 @@ gerade gelesen haben.
 
 **Drei Schritte genügen.** Was gerechnet wird, wie weit, und womit: Danach ist
 alles Weitere mit sinnvollen Werten vorbelegt, und der Knopf **Direkt zum Start**
-bringt Sie ans Ende. Die Schritte vier bis sieben sind als *optional*
-gekennzeichnet — Rahmenbedingungen, Nachfrage & Preisbildung, Lauf & Ablage,
-Technik. Wer sie braucht, findet sie; wer nicht, geht daran vorbei.
+bringt Sie ans Ende. Die Schritte vier und fünf sind als *optional*
+gekennzeichnet — Lauf & Ablage, Technik. Wer sie braucht, findet sie; wer nicht,
+geht daran vorbei.
+
+## Die Annahmen stehen woanders
+
+Faktorlage, Systemgrößen, Bevölkerung und Preisbildung finden Sie seit August
+2026 nicht mehr hier, sondern im eigenen Bereich **Modell** in der Kopfzeile.
+
+Der Grund ist eine Messung: Diese beiden Bereiche trugen zusammen **168
+Bedienelemente** und brauchten drei bzw. vier Bildschirme, während die drei
+Entscheidungsschritte davor mit drei, fünf und zehn Feldern auskamen. In einer
+Liste mit gleichem Gewicht geführt, war «Schritt 5 von 8» keine Ortsangabe mehr
+— der fünfte Schritt war das Vielfache aller anderen zusammen.
+
+Dahinter steckt aber mehr als eine Platzfrage. **Einen Lauf einzurichten und
+ein Modell zu pflegen sind zwei verschiedene Arbeiten.** Die eine ist eine kurze
+Folge von Entscheidungen und braucht Führung; die andere ist Facharbeit an
+vielen Zahlen und braucht Fläche und Überblick. Beides in dieselbe Schrittfolge
+zu legen ging nur zulasten einer von beiden.
+
+Was Sie im Modell ändern, gilt für den nächsten Lauf — genau wie vorher. Einige
+Schaltflächen dort schreiben allerdings **dauerhaft** in die
+Konfigurationsdateien und wirken damit über Ihren Lauf hinaus: «Als Standard
+speichern», «Bevölkerung als Standard speichern», «Größe anlegen», «Größe
+dauerhaft löschen» und «Entfernen» an einem Segment. Solange dort keine
+Rückfrage steht, gehen Sie mit ihnen sparsam um.
 
 **Die Liste links sagt Ihnen, wo Sie waren.** Ein Haken steht an den Schritten,
 die Sie wirklich geöffnet hatten; ein Strich an denen, an denen Sie

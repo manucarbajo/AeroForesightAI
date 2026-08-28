@@ -255,6 +255,10 @@ BEREICHE = {
     "Einstieg": "",
     "Leitstand": "lauf",
     "Ergebnisse": "runs",
+    # Seit P1.9-W3.1: der Modell-Editor. Er traegt die 168 Bedienelemente, die
+    # bis dahin in den Schritten 4 und 5 lagen -- also genau die dichtesten
+    # Formulare der Anwendung. Wenn irgendwo etwas herausragt, dann hier.
+    "Modell": "modell",
     "Handbuch": "doku",
 }
 
@@ -294,8 +298,12 @@ class TestKeineAnsichtTrittAusIhrerBox:
         page.click("#wizard-way-new")
         page.wait_for_timeout(RUHE_MS)
 
+        from dashboard.web.config_editor import wizard
+
         schritte = page.locator(".af-step").count()
-        assert schritte == 8, f"Erwartet acht Schritte, gezählt {schritte}"
+        assert schritte == len(
+            wizard.STEPS
+        ), f"Gezählt {schritte} Schritte, die Schrittfolge nennt {len(wizard.STEPS)}"
 
         for index in range(schritte):
             page.locator(".af-step").nth(index).click()
@@ -341,22 +349,18 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 1": 1.92,
         "Schritt 2": 1.01,
         "Schritt 3": 1.05,
-        "Schritt 4": 3.01,
-        "Schritt 5": 3.96,
-        "Schritt 6": 2.16,
-        "Schritt 7": 1.97,
-        "Schritt 8": 1.07,
+        "Schritt 4": 2.16,
+        "Schritt 5": 1.97,
+        "Schritt 6": 1.07,
     },
     1024: {
         "Einstieg": 1.00,
         "Schritt 1": 2.05,
         "Schritt 2": 1.01,
         "Schritt 3": 1.14,
-        "Schritt 4": 3.04,
-        "Schritt 5": 4.03,
-        "Schritt 6": 2.16,
-        "Schritt 7": 2.04,
-        "Schritt 8": 1.09,
+        "Schritt 4": 2.16,
+        "Schritt 5": 2.04,
+        "Schritt 6": 1.09,
     },
 }
 
@@ -428,8 +432,12 @@ class TestJederSchrittPasstAufEinenSchirm:
 
         page.click("#wizard-way-new")
         page.wait_for_timeout(RUHE_MS)
+        from dashboard.web.config_editor import wizard
+
         anzahl = page.locator(".af-step").count()
-        assert anzahl == 8, f"Erwartet acht Schritte, gezählt {anzahl}"
+        assert anzahl == len(
+            wizard.STEPS
+        ), f"Gezählt {anzahl} Schritte, die Schrittfolge nennt {len(wizard.STEPS)}"
 
         for index in range(anzahl):
             page.locator(".af-step").nth(index).click()
