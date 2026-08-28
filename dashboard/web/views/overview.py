@@ -47,7 +47,14 @@ def _series(rows: list[dict], x_key: str, y_key: str) -> tuple[list, list]:
 
 
 def _line_chart(
-    xs: list, ys: list, *, title: str, y_title: str, color: str, y_range: list | None = None
+    xs: list,
+    ys: list,
+    *,
+    title: str,
+    y_title: str,
+    color: str,
+    y_range: list | None = None,
+    mode: str = theme.LIGHT,
 ) -> dcc.Graph:
     fig = go.Figure(
         go.Scatter(
@@ -62,6 +69,7 @@ def _line_chart(
     )
     theme.style_figure(
         fig,
+        mode=mode,
         title=title,
         showlegend=False,
         height=320,
@@ -153,7 +161,8 @@ def _provenance(metadata: dict) -> html.Div:
     return html.Div(children)
 
 
-def render(run_dir: Path, run_id: str) -> html.Div:
+def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
+    tone = theme.palette(mode)
     children: list = []
     metadata = _metadata(run_dir)
 
@@ -175,7 +184,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
             html.P(
                 [
                     "Run-ID: ",
-                    html.Code(run_id, className="text-slate-600"),
+                    html.Code(run_id, className="af-text-muted"),
                     f" · erstellt {metadata.get('timestamp', '—')}",
                 ],
                 className=f"{ui.CAPTION} mt-3",
@@ -198,8 +207,9 @@ def render(run_dir: Path, run_id: str) -> html.Div:
                     booking_y,
                     title="Buchungsrate",
                     y_title="Buchungsrate (0–1)",
-                    color=theme.BOOKING,
+                    color=tone["booking"],
                     y_range=[0, 1],
+                    mode=mode,
                 ),
                 pad=False,
                 class_name="p-2",
@@ -215,7 +225,8 @@ def render(run_dir: Path, run_id: str) -> html.Div:
                     price_y,
                     title="Ticketpreis",
                     y_title="Preis (EUR)",
-                    color=theme.PRICE,
+                    color=tone["price"],
+                    mode=mode,
                 ),
                 pad=False,
                 class_name="p-2",

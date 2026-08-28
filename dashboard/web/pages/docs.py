@@ -345,10 +345,10 @@ def render(chapter: Chapter) -> html.Div:
     return html.Div(
         [
             html.P(
-                chapter.part.upper(), className="font-body text-xs tracking-wider text-slate-500"
+                chapter.part.upper(), className="font-body text-xs tracking-wider af-text-muted"
             ),
             html.H1(chapter.title, className=f"{ui.H1} mt-1"),
-            html.P(chapter.summary, className="font-body text-slate-600 mt-2 mb-8 max-w-3xl"),
+            html.P(chapter.summary, className="font-body af-text-body mt-2 mb-8 max-w-3xl"),
             *blocks,
             _chapter_footer(chapter),
         ],
@@ -371,7 +371,7 @@ def _chapter_footer(chapter: Chapter) -> html.Div:
                 html.Span(label, className=f"{ui.CAPTION} block"),
                 html.Span(
                     target.title,
-                    className="font-body text-sm font-medium text-navy-800",
+                    className="font-body text-sm font-medium af-text-accent",
                 ),
             ],
             href=target.href,
@@ -380,7 +380,7 @@ def _chapter_footer(chapter: Chapter) -> html.Div:
 
     return html.Div(
         [link(previous, "Zurück", "text-left"), link(following, "Weiter", "text-right")],
-        className="flex items-start justify-between gap-6 border-t border-slate-200 pt-6 mt-12",
+        className="flex items-start justify-between gap-6 af-border-t pt-6 mt-12",
     )
 
 
@@ -416,7 +416,7 @@ def navigation(active_slug: str, query: str = "") -> html.Div:
         blocks.append(
             html.P(
                 part.upper(),
-                className="font-body text-xs tracking-wider text-slate-400 mt-6 mb-2 first:mt-0",
+                className="font-body text-xs tracking-wider af-text-faint mt-6 mb-2 first:mt-0",
             )
         )
         blocks.append(
@@ -429,16 +429,16 @@ def navigation(active_slug: str, query: str = "") -> html.Div:
                             className=(
                                 "block py-1.5 font-body text-sm border-l-2 pl-3 -ml-px "
                                 + (
-                                    "border-navy-800 text-navy-800 font-medium"
+                                    "af-docs__link af-docs__link--active"
                                     if chapter.slug == active_slug
-                                    else "border-transparent text-slate-600 hover:text-navy-800"
+                                    else "af-docs__link"
                                 )
                             ),
                         )
                     )
                     for chapter in chapters
                 ],
-                className="border-l border-slate-200",
+                className="af-docs__list",
             )
         )
 
@@ -446,7 +446,7 @@ def navigation(active_slug: str, query: str = "") -> html.Div:
         blocks.append(
             html.P(
                 f"Nichts gefunden zu «{query}».",
-                className="font-body text-sm text-slate-500 py-2",
+                className="font-body text-sm af-text-muted py-2",
             )
         )
     return html.Div(blocks)
@@ -470,7 +470,10 @@ def layout() -> html.Div:
             ),
             html.Div(render(BY_SLUG[DEFAULT_SLUG]), id="docs-content", className="min-w-0"),
         ],
-        className="af-docs",
+        # `af-pane` gibt dem Handbuch denselben Innenabstand wie den übrigen
+        # Viewport-Inhalten — es scrollt jetzt in der mittleren Zone, nicht
+        # mehr als Seite.
+        className="af-docs af-pane",
     )
 
 

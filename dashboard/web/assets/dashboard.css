@@ -1,46 +1,786 @@
-/* Ergänzt die Tailwind-Utilities um alles, was sich an Dash-Komponenten
-   (Dropdown, Tabs, Slider, Tabelle, Plotly) nicht per Klassenname stylen lässt.
-   Farben sind die Navy-/Slate-Tokens der Landingpage — bewusst als CSS-Variablen,
-   damit hier und in `theme.py` derselbe Wert steht. */
+/* Das Stylesheet des Leitstands.
+
+   Zwei Aufgaben: die **semantische Farbebene** (unten als CSS-Variablen, einmal
+   hell und einmal dunkel) und alles, was sich an Dash-Komponenten (Dropdown,
+   Tabs, Slider, Tabelle, Plotly) nicht per Klassenname stylen lässt.
+
+   Die Variablennamen sind dieselben wie in `theme.py` — dort für alles, was
+   Python einfärbt (Plotly, DataTable-Inline-Styles), hier für alles Übrige.
+   `tests/test_web_theme.py` hält beide Seiten deckungsgleich; eine Farbe, die
+   nur an einer der beiden Stellen existiert, ist ein roter Test.
+
+   **Farben stehen nur hier.** Kein Modul unter `dashboard/web/` schreibt eine
+   Tailwind-Farbklasse (`bg-white`, `text-slate-600`) oder einen Hex-Wert in
+   einen Klassennamen — Tailwind liefert Layout, Abstand und Typografie, die
+   Farbe kommt aus den Tokens. Ohne diese Trennung wäre jeder Dark-Mode-Bruch
+   nur eine Frage der nächsten Änderung. */
+
+/* --- Semantische Tokens: hell -------------------------------------------- */
 
 :root {
-    --navy-50: #f0f4f9;
-    --navy-100: #e0eaf3;
-    --navy-200: #c2d5e7;
-    --navy-300: #94b8d7;
-    --navy-500: #3e76a6;
-    --navy-700: #244b70;
-    --navy-800: #1e3a5f;
-    --navy-900: #1c3453;
+    --canvas: #f8fafc;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-sunken: #f8fafc;
+    --surface-inset: #f1f5f9;
+    --surface-hover: #f8fafc;
+    --overlay: rgba(255, 255, 255, 0.88);
+    --scrim: rgba(15, 23, 42, 0.35);
 
-    --slate-50: #f8fafc;
-    --slate-100: #f1f5f9;
-    --slate-200: #e2e8f0;
-    --slate-300: #cbd5e1;
-    --slate-400: #94a3b8;
-    --slate-500: #64748b;
-    --slate-600: #475569;
-    --slate-700: #334155;
-    --slate-900: #0f172a;
+    --border: #e2e8f0;
+    --border-subtle: #f1f5f9;
+    --border-strong: #cbd5e1;
+
+    --text: #0f172a;
+    --text-body: #334155;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+    --text-inverted: #ffffff;
+
+    --accent: #1E3A5F;
+    --accent-hover: #244b70;
+    --accent-soft: #f0f4f9;
+    --accent-border: #c2d5e7;
+    --accent-text: #1c3453;
+    --focus-ring: rgba(62, 118, 166, 0.25);
+
+    --positive: #0f766e;
+    --positive-soft: #f0fdfa;
+    --positive-border: #99f6e4;
+    --positive-text: #115e59;
+    --negative: #9f1239;
+    --negative-soft: #fff1f2;
+    --negative-border: #fecdd3;
+    --negative-text: #9f1239;
+    --warning: #b45309;
+    --warning-soft: #fffbeb;
+    --warning-border: #fde68a;
+    --warning-text: #92400e;
+
+    --demo: #7c3aed;
+    --demo-soft: #f5f3ff;
+    --demo-border: #ddd6fe;
+    --demo-text: #5b21b6;
+
+    --grid: #e2e8f0;
+    --axis: #cbd5e1;
+    --plot-bg: #ffffff;
+    --paper-bg: #ffffff;
+    --price: #0f766e;
+    --booking: #3e76a6;
+    --neutral: #64748b;
+
+    --console-bg: #122238;
+    --console-text: #e0eaf3;
+    /* Die Konsole ist in beiden Modi dunkel; ihre Stufen sind deshalb hier
+       dieselben wie unten. Der helle Warnton (#b45309) kaeme auf Navy-950 nur
+       auf 3,2 und waere muehsam zu lesen. */
+    --console-info: #94b8d7;
+    --console-warning: #fbbf24;
+    --console-error: #fb7185;
 
     --radius: 0.5rem;
     --font-body: "Inter", sans-serif;
     --font-headline: "Plus Jakarta Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+    /* Zonenmaße des Leitstands. Als Variablen, damit Kopfzeile, Zeitleiste und
+       die klebenden Sprungziele der Doku-Seite denselben Wert benutzen. */
+    --shell-header: 3.5rem;
+    --shell-timeline: 5.5rem;
+    --shell-left: 21rem;
+    --shell-right: 22rem;
 }
 
-html {
+/* --- Semantische Tokens: dunkel ------------------------------------------ */
+/* Nur die Werte werden ersetzt, keine Regel steht doppelt. Damit ist jede
+   Fläche, die einen Token benutzt, in beiden Modi automatisch versorgt. */
+
+html.dark {
+    --canvas: #080d16;
+    --surface: #0e1723;
+    --surface-raised: #13202f;
+    --surface-sunken: #080d16;
+    --surface-inset: #1a2b3d;
+    --surface-hover: #1a2b3d;
+    --overlay: rgba(14, 23, 35, 0.88);
+    --scrim: rgba(0, 0, 0, 0.55);
+
+    --border: #23384d;
+    --border-subtle: #1a2b3d;
+    --border-strong: #31485f;
+
+    --text: #f4f8fc;
+    --text-body: #e8eff6;
+    --text-muted: #8ba0b7;
+    --text-faint: #54708c;
+    --text-inverted: #080d16;
+
+    --accent: #94b8d7;
+    --accent-hover: #c2d5e7;
+    --accent-soft: #15293f;
+    --accent-border: #2d5e8a;
+    --accent-text: #e0eaf3;
+    --focus-ring: rgba(148, 184, 215, 0.28);
+
+    --positive: #2dd4bf;
+    --positive-soft: #0c2b2b;
+    --positive-border: #1d5450;
+    --positive-text: #7ff0e0;
+    --negative: #fb7185;
+    --negative-soft: #2e1520;
+    --negative-border: #66273a;
+    --negative-text: #fda4b0;
+    --warning: #fbbf24;
+    --warning-soft: #2c2110;
+    --warning-border: #5c4517;
+    --warning-text: #fcd34d;
+
+    --demo: #a78bfa;
+    --demo-soft: #231a3c;
+    --demo-border: #4c3a80;
+    --demo-text: #c9b8fd;
+
+    --grid: #1a2b3d;
+    --axis: #23384d;
+    --plot-bg: #0e1723;
+    --paper-bg: #0e1723;
+    --price: #2dd4bf;
+    --booking: #94b8d7;
+    --neutral: #8ba0b7;
+
+    --console-bg: #080d16;
+    --console-text: #d5dfea;
+    --console-info: #94b8d7;
+    --console-warning: #fbbf24;
+    --console-error: #fb7185;
+}
+
+/* --- Dashs eigene Design-Tokens --------------------------------------------- */
+/* Dash 3/4 faerbt seine mitgelieferten Komponenten (Slider, Eingaben, Menues)
+   ueber eine eigene Token-Ebene `--Dash-*` und spritzt deren Definitionen zur
+   Laufzeit hinter dieses Stylesheet. Einzelne Selektoren dagegenzuhalten heisst,
+   jedem neuen Dash-Release hinterherzulaufen; hier wird stattdessen **die
+   Token-Ebene** auf unsere abgebildet. Damit traegt jede Dash-Komponente in
+   beiden Modi die richtigen Farben, auch die, die noch niemand angefasst hat.
+
+   `html:root` statt `:root`, weil Dashs eigener Block ebenfalls auf `:root`
+   sitzt und spaeter eingefuegt wird — bei gleicher Spezifitaet gewaenne er.
+   Am laufenden System unter Dash 4.4.1 aufgefallen: Der Regler der Zeitleiste
+   trug Dashs Violett, und seine Beschriftungen standen im Dark Mode schwarz
+   auf schwarz. */
+
+html:root {
+    --Dash-Fill-Interactive-Strong: var(--accent);
+    --Dash-Fill-Interactive-Weak: var(--surface-inset);
+    --Dash-Fill-Disabled: var(--surface-inset);
+    --Dash-Fill-Inverse-Strong: var(--surface-raised);
+    --Dash-Fill-Primary-Hover: var(--surface-hover);
+    --Dash-Fill-Primary-Active: var(--surface-inset);
+    --Dash-Stroke-Strong: var(--border-strong);
+    --Dash-Stroke-Weak: var(--border);
+    --Dash-Text-Primary: var(--text-body);
+    --Dash-Text-Strong: var(--text);
+    --Dash-Text-Weak: var(--text-muted);
+    --Dash-Text-Disabled: var(--text-faint);
+    --Dash-Shading-Strong: var(--scrim);
+    --Dash-Shading-Weak: var(--scrim);
+}
+
+/* --- Grundlagen ----------------------------------------------------------- */
+
+html,
+body {
+    height: 100%;
+    /* Der Leitstand scrollt in seinen Panes, nicht als Seite. Was überläuft,
+       läuft innerhalb einer Zone über — sonst wandert die Kopfzeile aus dem
+       Bild, während man in der Seitenleiste blättert. */
+    overflow: hidden;
     scroll-behavior: smooth;
 }
 
 body {
     font-family: var(--font-body);
-    color: var(--slate-700);
-    background: var(--slate-50);
+    color: var(--text-body);
+    background: var(--canvas);
+    /* Tabellarische Ziffern in der gesamten Anwendung: Zahlen, die sich im
+       Sekundentakt aktualisieren, dürfen ihre Nachbarn nicht verschieben. */
+    font-variant-numeric: tabular-nums;
+    -webkit-font-feature-settings: "tnum" 1;
+    font-feature-settings: "tnum" 1;
+}
+
+/* Proportionalziffern dort, wo Fließtext läuft — im Satz wirken tabellarische
+   Ziffern zu weit auseinander. */
+.af-md p,
+.af-md li {
+    font-variant-numeric: normal;
+    font-feature-settings: normal;
 }
 
 .material-symbols-outlined {
     font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
     line-height: 1;
+}
+
+/* --- Der Leitstand-Rahmen ------------------------------------------------- */
+/* Fünf Zonen: Kopfzeile oben, Zeitleiste unten, dazwischen Parameter links,
+   Viewport in der Mitte, Telemetrie rechts. Kopfzeile und Zeitleiste stehen
+   fest, die drei mittleren Zonen scrollen jede für sich. */
+
+.af-shell {
+    display: grid;
+    /* `dvh` statt `vh`: Auf Mobilbrowsern schneidet `100vh` die Zeitleiste
+       unter die Adressleiste. */
+    height: 100dvh;
+    grid-template-columns: var(--shell-left) minmax(0, 1fr) var(--shell-right);
+    grid-template-rows: var(--shell-header) minmax(0, 1fr) auto;
+    grid-template-areas:
+        "header header header"
+        "left   main   right"
+        "left   timeline right";
+    background: var(--canvas);
+}
+
+.af-shell__header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 40;
+}
+
+.af-shell__left {
+    grid-area: left;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+}
+
+.af-shell__main {
+    grid-area: main;
+    position: relative;
+    background: var(--canvas);
+}
+
+.af-shell__timeline {
+    grid-area: timeline;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1.25rem;
+}
+
+.af-shell__right {
+    grid-area: right;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+}
+
+/* Jede scrollende Zone braucht beides: `min-height: 0`, sonst wächst das
+   Grid-Kind über seinen Track hinaus und der Scroll landet doch im Body, und
+   `overflow: auto` für den eigenen Rollbalken. */
+.af-shell__left,
+.af-shell__main,
+.af-shell__right {
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+}
+
+.af-pane {
+    padding: 1.25rem;
+}
+
+/* Ein Abschnittskopf, der beim Scrollen in der Seitenleiste stehen bleibt. */
+.af-pane__sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0.75rem 1.25rem;
+    margin: -1.25rem -1.25rem 1rem;
+}
+
+/* --- Schubladen (schmale Fenster) ---------------------------------------- */
+/* Unter 1280 px weicht die Telemetrie, unter 1024 px auch die Parameterspalte
+   in eine überlagernde Schublade. Unter 768 px fällt die 100-dvh-Bindung ganz
+   weg: ein festgenagelter Leitstand auf einem Telefon ist unbedienbar. */
+
+.af-shell__scrim {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    z-index: 45;
+}
+
+.af-drawer-toggle {
+    display: none;
+}
+
+@media (max-width: 1279px) {
+    .af-shell {
+        grid-template-columns: var(--shell-left) minmax(0, 1fr);
+        grid-template-areas:
+            "header header"
+            "left   main"
+            "left   timeline";
+    }
+
+    .af-shell__right {
+        position: fixed;
+        top: var(--shell-header);
+        right: 0;
+        bottom: 0;
+        width: min(var(--shell-right), 90vw);
+        transform: translateX(100%);
+        transition: transform 0.25s ease;
+        z-index: 50;
+        box-shadow: -12px 0 32px -18px rgba(0, 0, 0, 0.45);
+    }
+
+    .af-shell--right-open .af-shell__right {
+        transform: translateX(0);
+    }
+
+    .af-shell--right-open .af-shell__scrim {
+        display: block;
+    }
+
+    .af-drawer-toggle {
+        display: inline-flex;
+    }
+}
+
+@media (max-width: 1023px) {
+    .af-shell {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "header"
+            "main"
+            "timeline";
+    }
+
+    .af-shell__left {
+        position: fixed;
+        top: var(--shell-header);
+        left: 0;
+        bottom: 0;
+        width: min(var(--shell-left), 90vw);
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        z-index: 50;
+        box-shadow: 12px 0 32px -18px rgba(0, 0, 0, 0.45);
+    }
+
+    .af-shell--left-open .af-shell__left {
+        transform: translateX(0);
+    }
+
+    .af-shell--left-open .af-shell__scrim {
+        display: block;
+    }
+}
+
+@media (max-width: 767px) {
+    html,
+    body {
+        overflow: auto;
+    }
+
+    .af-shell {
+        height: auto;
+        min-height: 100dvh;
+    }
+
+    .af-shell__header {
+        position: sticky;
+        top: 0;
+    }
+
+    .af-shell__main {
+        overflow: visible;
+    }
+}
+
+/* --- Zustandsanzeige der Kopfzeile --------------------------------------- */
+
+.af-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background: var(--surface-inset);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-body);
+    white-space: nowrap;
+}
+
+.af-status__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--text-faint);
+    flex: none;
+}
+
+.af-status--ready .af-status__dot {
+    background: var(--positive);
+}
+
+/* Der Punkt kommt auch allein vor — in der Erreichbarkeitszeile des
+   Rechenmodus, ohne die Kapsel drumherum. */
+.af-status__dot--ok {
+    background: var(--positive);
+}
+
+.af-status__dot--off {
+    background: var(--text-faint);
+}
+
+.af-status--running {
+    border-color: var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.af-status--running .af-status__dot {
+    background: var(--accent);
+    animation: af-pulse 1.6s ease-in-out infinite;
+}
+
+.af-status--degraded {
+    border-color: var(--warning-border);
+    background: var(--warning-soft);
+    color: var(--warning-text);
+}
+
+.af-status--degraded .af-status__dot {
+    background: var(--warning);
+}
+
+.af-status--demo {
+    border-color: var(--demo-border);
+    background: var(--demo-soft);
+    color: var(--demo-text);
+}
+
+.af-status--demo .af-status__dot {
+    background: var(--demo);
+    animation: af-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes af-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 currentColor;
+    }
+    50% {
+        opacity: 0.55;
+        box-shadow: 0 0 0 4px transparent;
+    }
+}
+
+/* --- Flächen und Töne als Klassen ---------------------------------------- */
+/* Der Ersatz für `bg-white`, `text-slate-500`, `border-slate-200` und
+   Geschwister. Ein Name je Rolle, kein Farbwert im Python-Code. */
+
+.af-surface {
+    background: var(--surface);
+}
+
+.af-surface-raised {
+    background: var(--surface-raised);
+}
+
+.af-surface-sunken {
+    background: var(--surface-sunken);
+}
+
+.af-surface-inset {
+    background: var(--surface-inset);
+}
+
+.af-bordered {
+    border: 1px solid var(--border);
+}
+
+.af-border-t {
+    border-top: 1px solid var(--border);
+}
+
+.af-border-b {
+    border-bottom: 1px solid var(--border);
+}
+
+.af-border-subtle {
+    border-color: var(--border-subtle);
+}
+
+.af-text {
+    color: var(--text);
+}
+
+.af-text-body {
+    color: var(--text-body);
+}
+
+.af-text-muted {
+    color: var(--text-muted);
+}
+
+.af-text-faint {
+    color: var(--text-faint);
+}
+
+.af-text-accent {
+    color: var(--accent);
+}
+
+.af-text-positive {
+    color: var(--positive);
+}
+
+.af-text-negative {
+    color: var(--negative);
+}
+
+.af-text-warning {
+    color: var(--warning);
+}
+
+/* Leiser Verweis, der beim Zeigen die Akzentfarbe annimmt. Als eigene Klasse,
+   weil Tailwind keine Hover-Variante fuer eine fremde Klasse erzeugen kann. */
+.af-link {
+    color: var(--text-muted);
+    transition: color 0.15s ease;
+}
+
+.af-link:hover {
+    color: var(--accent);
+}
+
+.af-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+.af-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- Karten und Abschnitte ------------------------------------------------ */
+
+.af-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.af-card--flush {
+    background: var(--surface-raised);
+}
+
+.af-divider {
+    border: 0;
+    border-top: 1px solid var(--border);
+}
+
+/* --- Schaltflächen -------------------------------------------------------- */
+
+.af-btn {
+    font-family: var(--font-body);
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.af-btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--text-inverted);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.af-btn--primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+/* Im Dark Mode ist der Akzent hell — weißer Text darauf wäre unlesbar. */
+html.dark .af-btn--primary {
+    color: var(--text-inverted);
+}
+
+.af-btn--secondary {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--accent);
+}
+
+.af-btn--secondary:hover:not(:disabled) {
+    background: var(--surface-hover);
+    border-color: var(--border-strong);
+}
+
+.af-btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+}
+
+.af-btn--ghost:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+
+.af-btn--danger {
+    background: var(--surface);
+    border-color: var(--negative-border);
+    color: var(--negative);
+}
+
+.af-btn--danger:hover:not(:disabled) {
+    background: var(--negative-soft);
+}
+
+.af-btn:focus-visible,
+.af-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Quadratische Schaltfläche für Media-Controls und Kopfzeilen-Werkzeuge. */
+.af-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-body);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.af-icon-btn:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text);
+    border-color: var(--border-strong);
+}
+
+.af-icon-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.af-icon-btn--active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--text-inverted);
+}
+
+.af-icon-btn--active:hover:not(:disabled) {
+    background: var(--accent-hover);
+    color: var(--text-inverted);
+}
+
+/* Der Theme-Umschalter traegt beide Symbole; sichtbar ist immer nur das
+   passende. Das Umschalten laeuft im Browser — der Server weiss nicht, welches
+   gerade richtig waere. */
+.af-theme-toggle__to-light,
+html.dark .af-theme-toggle__to-dark {
+    display: none;
+}
+
+html.dark .af-theme-toggle__to-light {
+    display: inline;
+}
+
+/* --- Meldungen ------------------------------------------------------------ */
+
+.af-alert {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-inset);
+    color: var(--text-body);
+}
+
+.af-alert--info {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+    color: var(--accent-text);
+}
+
+.af-alert--success {
+    background: var(--positive-soft);
+    border-color: var(--positive-border);
+    color: var(--positive-text);
+}
+
+.af-alert--warning {
+    background: var(--warning-soft);
+    border-color: var(--warning-border);
+    color: var(--warning-text);
+}
+
+.af-alert--error {
+    background: var(--negative-soft);
+    border-color: var(--negative-border);
+    color: var(--negative-text);
+}
+
+.af-alert--demo {
+    background: var(--demo-soft);
+    border-color: var(--demo-border);
+    color: var(--demo-text);
+}
+
+/* Meldungstext erbt die Tonfarbe, statt sie ein zweites Mal zu setzen. */
+.af-alert .af-md,
+.af-alert .af-md strong,
+.af-alert .af-md p {
+    color: inherit;
+}
+
+.af-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.af-badge--demo {
+    border-color: var(--demo-border);
+    background: var(--demo-soft);
+    color: var(--demo-text);
+}
+
+.af-badge--warning {
+    border-color: var(--warning-border);
+    background: var(--warning-soft);
+    color: var(--warning-text);
 }
 
 /* --- Formularelemente ---------------------------------------------------- */
@@ -50,13 +790,15 @@ body {
 .af-input,
 input[type="text"].af-input,
 input[type="number"].af-input,
+input[type="search"].af-input,
 textarea.af-input {
     width: 100%;
     font-family: var(--font-body);
     font-size: 0.875rem;
-    color: var(--slate-800, #1e293b);
-    background: #fff;
-    border: 1px solid var(--slate-200);
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 0.5rem 0.75rem;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -65,13 +807,17 @@ textarea.af-input {
 .af-input:focus,
 textarea.af-input:focus {
     outline: none;
-    border-color: var(--navy-500);
-    box-shadow: 0 0 0 3px rgba(62, 118, 166, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .af-input:disabled {
-    background: var(--slate-50);
-    color: var(--slate-400);
+    background: var(--surface-inset);
+    color: var(--text-faint);
+}
+
+.af-input::placeholder {
+    color: var(--text-faint);
 }
 
 textarea.af-input {
@@ -79,20 +825,25 @@ textarea.af-input {
     resize: vertical;
 }
 
+/* Die Spinner eines Zahlenfelds sind im Dark Mode sonst weiße Kästchen. */
+html.dark .af-input[type="number"] {
+    color-scheme: dark;
+}
+
 /* --- Dropdown (dcc.Dropdown / react-select) ------------------------------ */
 
 .af-dropdown .Select-control,
 .af-dropdown .is-focused:not(.is-open) > .Select-control {
-    border: 1px solid var(--slate-200);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: #fff;
+    background: var(--surface-raised);
     box-shadow: none;
     min-height: 2.375rem;
 }
 
 .af-dropdown.is-focused:not(.is-open) > .Select-control {
-    border-color: var(--navy-500);
-    box-shadow: 0 0 0 3px rgba(62, 118, 166, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .af-dropdown .Select-placeholder,
@@ -100,14 +851,25 @@ textarea.af-input {
 .af-dropdown .Select-input > input {
     font-family: var(--font-body);
     font-size: 0.875rem;
-    color: var(--slate-700);
+    color: var(--text-body);
     line-height: 2.25rem;
 }
 
+/* react-select setzt die Textfarbe des gewählten Werts per eigener Regel —
+   ohne diese Zeile bleibt sie im Dark Mode dunkelgrau auf dunkelblau. */
+.af-dropdown .Select--single > .Select-control .Select-value .Select-value-label {
+    color: var(--text);
+}
+
+.af-dropdown .Select-arrow {
+    border-top-color: var(--text-muted);
+}
+
 .af-dropdown .Select-menu-outer {
-    border: 1px solid var(--slate-200);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: 0 12px 28px -14px rgba(30, 58, 95, 0.3);
+    background: var(--surface-raised);
+    box-shadow: 0 12px 28px -14px var(--scrim);
     margin-top: 0.25rem;
     overflow: hidden;
     z-index: 40;
@@ -117,19 +879,20 @@ textarea.af-input {
 .af-dropdown .Select-option {
     font-family: var(--font-body);
     font-size: 0.875rem;
-    color: var(--slate-700);
+    color: var(--text-body);
+    background: var(--surface-raised);
     padding: 0.5rem 0.75rem;
 }
 
 .af-dropdown .VirtualizedSelectFocusedOption,
 .af-dropdown .Select-option.is-focused {
-    background: var(--navy-50);
-    color: var(--navy-900);
+    background: var(--accent-soft);
+    color: var(--accent-text);
 }
 
 .af-dropdown .Select-option.is-selected {
-    background: var(--navy-100);
-    color: var(--navy-900);
+    background: var(--accent-soft);
+    color: var(--accent-text);
     font-weight: 500;
 }
 
@@ -142,7 +905,7 @@ textarea.af-input {
 .af-radio label {
     font-family: var(--font-body);
     font-size: 0.875rem;
-    color: var(--slate-700);
+    color: var(--text-body);
 }
 
 .af-radio label {
@@ -167,8 +930,8 @@ textarea.af-input {
     /* An der Grundlinie der ersten Textzeile ausrichten. */
     margin-top: 0.1875rem;
     flex: none;
-    border: 1px solid var(--slate-300);
-    background: #fff;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-raised);
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
@@ -183,8 +946,8 @@ textarea.af-input {
 
 .af-check input[type="checkbox"]:checked,
 .af-radio input[type="radio"]:checked {
-    background: var(--navy-800);
-    border-color: var(--navy-800);
+    background: var(--accent);
+    border-color: var(--accent);
 }
 
 .af-check input[type="checkbox"]:checked::after {
@@ -193,7 +956,7 @@ textarea.af-input {
     width: 0.25rem;
     height: 0.5rem;
     margin: 0.075rem 0 0 0.3rem;
-    border: solid #fff;
+    border: solid var(--text-inverted);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
@@ -205,7 +968,7 @@ textarea.af-input {
     height: 0.375rem;
     margin: 0.25rem;
     border-radius: 9999px;
-    background: #fff;
+    background: var(--text-inverted);
 }
 
 .af-radio--stack label {
@@ -213,32 +976,156 @@ textarea.af-input {
     padding: 0.25rem 0;
 }
 
+/* --- Umschalter ----------------------------------------------------------- */
+/* Ein echter Schalter für Systemzustände, die an oder aus sind. Optisch
+   deutlich von einer Checkbox getrennt: Die Checkbox wählt aus einer Menge,
+   der Schalter kippt einen Zustand. */
+
+.af-switch label {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--text-body);
+    cursor: pointer;
+    padding: 0.25rem 0;
+}
+
+.af-switch input[type="checkbox"] {
+    appearance: none;
+    position: relative;
+    width: 2.25rem;
+    height: 1.25rem;
+    flex: none;
+    border-radius: 9999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-inset);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.af-switch input[type="checkbox"]::after {
+    content: "";
+    position: absolute;
+    top: 0.125rem;
+    left: 0.1875rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 9999px;
+    background: var(--surface-raised);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease;
+}
+
+.af-switch input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.af-switch input[type="checkbox"]:checked::after {
+    transform: translateX(0.9375rem);
+}
+
+.af-switch input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
 /* --- Slider -------------------------------------------------------------- */
+/* Zwei Markup-Familien, weil `pyproject.toml` `dash>=2.18` erlaubt: Dash 2.x
+   liefert den rc-slider, Dash 3/4 einen eigenen (`dash-slider-*`) samt eigener
+   Farbgebung. Ohne den zweiten Block traegt der Regler im Leitstand Dashs
+   violettes Standarddesign, und die Beschriftungen stehen im Dark Mode
+   schwarz auf schwarz. Am laufenden System unter Dash 4.4.1 aufgefallen —
+   die rc-Regeln allein greifen dort an keiner einzigen Stelle. */
+
+.af-slider .dash-slider-thumb {
+    background: var(--surface-raised);
+    border: 2px solid var(--accent);
+    box-shadow: none;
+}
+
+.af-slider .dash-slider-thumb:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.af-slider .dash-slider-mark {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.af-slider .dash-slider-tooltip {
+    background: var(--accent);
+    color: var(--text-inverted);
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    border: none;
+    box-shadow: none;
+}
+
+/* Die Zahleneingaben der Bereichsgrenzen blendet Dash selbst aus; hier wird
+   nur sichergestellt, dass sie es bleiben — im Leitstand steht die Zahl
+   rechts neben der Leiste. */
+.af-slider .dash-range-slider-input {
+    display: none;
+}
+
 
 .af-slider .rc-slider-track {
-    background: var(--navy-800);
+    background: var(--accent);
 }
 
 .af-slider .rc-slider-rail {
-    background: var(--slate-200);
+    background: var(--surface-inset);
 }
 
 .af-slider .rc-slider-handle {
-    border-color: var(--navy-800);
-    background: #fff;
+    border-color: var(--accent);
+    background: var(--surface-raised);
     opacity: 1;
 }
 
 .af-slider .rc-slider-handle:active,
 .af-slider .rc-slider-handle-click-focused:focus {
-    border-color: var(--navy-800);
-    box-shadow: 0 0 0 4px rgba(30, 58, 95, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.af-slider .rc-slider-dot {
+    border-color: var(--border);
+    background: var(--surface-raised);
+}
+
+.af-slider .rc-slider-dot-active {
+    border-color: var(--accent);
 }
 
 .af-slider .rc-slider-mark-text {
     font-family: var(--font-body);
     font-size: 0.6875rem;
-    color: var(--slate-500);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.af-slider .rc-slider-mark-text-active {
+    color: var(--text-body);
+}
+
+.af-slider .rc-slider-tooltip-inner {
+    background: var(--accent);
+    color: var(--text-inverted);
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    box-shadow: none;
+}
+
+.af-slider .rc-slider-tooltip-arrow {
+    border-bottom-color: var(--accent);
+    border-top-color: var(--accent);
 }
 
 /* --- Tabs (dcc.Tabs) ----------------------------------------------------- */
@@ -249,7 +1136,7 @@ textarea.af-input {
     /* Abstand ueber gap statt ueber Innenabstand: die Trefferflaeche bleibt
        gross, die Leiste wirkt trotzdem leicht. */
     gap: 1.75rem;
-    border-bottom: 1px solid var(--slate-200);
+    border-bottom: 1px solid var(--border);
     margin-bottom: 1.75rem;
 }
 
@@ -264,7 +1151,7 @@ textarea.af-input {
     /* Gewicht bleibt in beiden Zustaenden gleich — ein Sprung von 500 auf 600
        verschiebt beim Wechsel die Nachbarn und wirkt unruhig. */
     font-weight: 500;
-    color: var(--slate-500);
+    color: var(--text-muted);
     background: transparent;
     border: none;
     border-bottom: 1.5px solid transparent;
@@ -276,14 +1163,14 @@ textarea.af-input {
 }
 
 .af-tabs .af-tabs__list .af-tab:hover {
-    color: var(--navy-800);
+    color: var(--accent);
 }
 
 .af-tabs .af-tabs__list .af-tab--selected {
-    color: var(--navy-800);
+    color: var(--accent);
     background: transparent;
     border: none;
-    border-bottom: 1.5px solid var(--navy-800);
+    border-bottom: 1.5px solid var(--accent);
     border-radius: 0;
     font-weight: 500;
     padding: 0.75rem 0;
@@ -302,6 +1189,310 @@ textarea.af-input {
     padding: 0.5rem 0;
 }
 
+/* In der Parameterspalte ist keine Breite fuer eine ausladende Tab-Leiste.
+   Kompakt und umbruchfreudig statt abgeschnitten. */
+.af-tabs--rail .af-tabs__list {
+    gap: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.af-tabs--rail .af-tabs__list .af-tab,
+.af-tabs--rail .af-tabs__list .af-tab--selected {
+    font-size: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+/* --- Viewport-Leiste ------------------------------------------------------ */
+/* Der Umschalter über dem Hauptbereich. Keine Tab-Leiste im Dokumentsinn,
+   sondern eine Werkzeugleiste: Sie steht fest, während der Viewport scrollt. */
+
+.af-viewbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    background: var(--overlay);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.af-viewbar::-webkit-scrollbar {
+    display: none;
+}
+
+.af-viewbar__item {
+    flex: 0 0 auto;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.af-viewbar__item:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+
+.af-viewbar__item--active {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+    color: var(--accent-text);
+}
+
+/* --- Szene und Overlay ---------------------------------------------------- */
+
+.af-scene {
+    position: relative;
+}
+
+/* Die Einblendung im Viewport: Tick, Populationsgröße, Zoom. Bewusst ohne
+   Mausfang — sie liegt über dem Diagramm und darf dessen Hover nicht
+   abschneiden. */
+.af-scene__overlay {
+    position: absolute;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 15;
+    display: flex;
+    gap: 1.25rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--overlay);
+    backdrop-filter: blur(6px);
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.af-scene__overlay dt {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.625rem;
+    color: var(--text-faint);
+}
+
+.af-scene__overlay dd {
+    margin: 0.125rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text);
+}
+
+/* Ein Faktorzustand als Chip im Streifen über der Szene. */
+.af-factor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.375rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    min-width: 0;
+}
+
+.af-factor--active {
+    border-color: var(--accent-border);
+    background: var(--accent-soft);
+}
+
+.af-factor__id {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.af-factor__state {
+    font-size: 0.6875rem;
+    /* Nicht `--text-muted`: auf `--accent-soft` kaeme das im hellen Modus nur
+       auf 4,3 — bei 11 px zu wenig. Nachgemessen, nicht geschaetzt. */
+    color: var(--text-body);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- Kennzahlenkarten ----------------------------------------------------- */
+
+.af-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.af-kpi__label {
+    font-size: 0.6875rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.af-kpi__value {
+    font-family: var(--font-headline);
+    font-size: 1.375rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.af-kpi__delta {
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.af-kpi__delta--up {
+    color: var(--positive);
+}
+
+.af-kpi__delta--down {
+    color: var(--negative);
+}
+
+.af-kpi__hint {
+    font-size: 0.6875rem;
+    color: var(--text-faint);
+}
+
+/* --- Zeitleiste ----------------------------------------------------------- */
+
+.af-timeline {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.af-timeline__controls {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex: none;
+}
+
+.af-timeline__track {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.af-timeline__readout {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text);
+    min-width: 7rem;
+    text-align: right;
+}
+
+/* Ereignis-Marker unter der Leiste: wo im Lauf etwas passiert ist. */
+.af-timeline__events {
+    position: relative;
+    height: 0.375rem;
+    margin-top: 0.25rem;
+    border-radius: 9999px;
+    background: var(--surface-inset);
+    overflow: hidden;
+}
+
+.af-timeline__event {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    opacity: 0.55;
+}
+
+.af-timeline__event--warning {
+    background: var(--warning);
+    opacity: 0.9;
+}
+
+.af-timeline__event--error {
+    background: var(--negative);
+    opacity: 0.9;
+}
+
+/* --- Log-Fenster --------------------------------------------------------- */
+
+.af-log {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--console-text);
+    background: var(--console-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    max-height: 22rem;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Die Konsole der Telemetrie: dieselbe Fläche, aber zeilenweise gefärbt. */
+.af-console {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.55;
+    background: var(--console-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem;
+    max-height: 18rem;
+    overflow: auto;
+}
+
+.af-console__line {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.125rem 0.25rem;
+    border-left: 2px solid transparent;
+    color: var(--console-text);
+    word-break: break-word;
+}
+
+.af-console__tick {
+    flex: none;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+.af-console__line--info {
+    border-left-color: var(--console-info);
+}
+
+.af-console__line--warning {
+    border-left-color: var(--console-warning);
+    color: var(--console-warning);
+}
+
+.af-console__line--error {
+    border-left-color: var(--console-error);
+    color: var(--console-error);
+}
+
+.af-console__line--muted {
+    color: var(--text-faint);
+}
+
 /* --- Accordion (html.Details) -------------------------------------------- */
 
 .af-acc__summary::-webkit-details-marker,
@@ -311,7 +1502,7 @@ textarea.af-input {
 }
 
 .af-acc__summary:hover {
-    background: var(--slate-50);
+    background: var(--surface-hover);
 }
 
 .af-acc__chevron {
@@ -329,7 +1520,7 @@ textarea.af-input {
 
 .af-expert > .af-acc__summary:hover .af-acc__chevron,
 .af-expert > .af-acc__summary:hover span {
-    color: var(--navy-800);
+    color: var(--accent);
 }
 
 /* Kompakter Markdown-Fluss für Hinweiskästen. */
@@ -354,16 +1545,16 @@ textarea.af-input {
 .af-hint {
     font-size: 0.75rem;
     line-height: 1.55;
-    color: var(--slate-500);
+    color: var(--text-muted);
     margin-top: 0.375rem;
     max-width: 46rem;
 }
 
 .af-hint code {
     font-size: 0.95em;
-    background: var(--slate-100);
-    border-color: var(--slate-200);
-    color: var(--slate-500);
+    background: var(--surface-inset);
+    border-color: var(--border);
+    color: var(--text-muted);
 }
 
 /* --- Markdown ------------------------------------------------------------ */
@@ -372,7 +1563,7 @@ textarea.af-input {
     font-family: var(--font-body);
     font-size: 0.9375rem;
     line-height: 1.7;
-    color: var(--slate-700);
+    color: var(--text-body);
 }
 
 .af-md > *:first-child {
@@ -389,7 +1580,7 @@ textarea.af-input {
 .af-md h4 {
     font-family: var(--font-headline);
     font-weight: 600;
-    color: var(--slate-900);
+    color: var(--text);
     line-height: 1.3;
     margin: 1.75rem 0 0.75rem;
 }
@@ -430,27 +1621,28 @@ textarea.af-input {
 }
 
 .af-md strong {
-    color: var(--slate-900);
+    color: var(--text);
     font-weight: 600;
 }
 
 .af-md a {
-    color: var(--navy-800);
+    color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
 
 .af-md code {
     font-size: 0.8125em;
-    background: var(--slate-100);
-    border: 1px solid var(--slate-200);
+    font-family: var(--font-mono);
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
     border-radius: 0.25rem;
     padding: 0.1em 0.35em;
 }
 
 .af-md pre {
-    background: var(--slate-50);
-    border: 1px solid var(--slate-200);
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1rem;
     overflow-x: auto;
@@ -464,9 +1656,9 @@ textarea.af-input {
 }
 
 .af-md blockquote {
-    border-left: 3px solid var(--navy-200);
+    border-left: 3px solid var(--accent-border);
     padding-left: 1rem;
-    color: var(--slate-600);
+    color: var(--text-muted);
     margin: 0 0 1rem;
 }
 
@@ -481,21 +1673,30 @@ textarea.af-input {
 
 .af-md th,
 .af-md td {
-    border: 1px solid var(--slate-200);
+    border: 1px solid var(--border);
     padding: 0.5rem 0.75rem;
     text-align: left;
 }
 
 .af-md th {
-    background: var(--slate-50);
+    background: var(--surface-inset);
     font-weight: 600;
-    color: var(--slate-900);
+    color: var(--text);
 }
 
-/* --- Kopfnavigation ------------------------------------------------------ */
-/* Auf schmalen Geräten passen die Bereichslinks nicht mehr nebeneinander.
-   Statt sie umbrechen oder die Seite überlaufen zu lassen, schiebt sich die
-   Leiste seitlich — ohne sichtbaren Rollbalken. */
+/* --- Codeblock ------------------------------------------------------------ */
+
+.af-code {
+    font-family: var(--font-mono);
+    color: var(--text-body);
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+/* --- Bereichsnavigation --------------------------------------------------- */
+/* In der Kopfzeile. Auf schmalen Geräten passen die Links nicht mehr
+   nebeneinander; statt umzubrechen schiebt sich die Leiste seitlich. */
 
 .af-nav__links {
     overflow-x: auto;
@@ -510,6 +1711,23 @@ textarea.af-input {
 .af-nav__links > a {
     flex: 0 0 auto;
     white-space: nowrap;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.af-nav__links > a:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+
+.af-nav__links > a.af-nav__link--active {
+    background: var(--accent-soft);
+    color: var(--accent-text);
 }
 
 /* --- Handbuch ------------------------------------------------------------ */
@@ -534,38 +1752,48 @@ textarea.af-input {
 
     .af-docs__nav {
         position: sticky;
-        /* Unter der klebenden Kopfzeile (3.5rem) plus etwas Luft. */
-        top: 4.5rem;
+        /* Bezugspunkt ist der Anfang der scrollenden Pane, nicht das Fenster —
+           im Leitstand scrollt der Viewport, nicht die Seite. */
+        top: 0;
         align-self: start;
-        max-height: calc(100vh - 6rem);
+        max-height: calc(100dvh - var(--shell-header) - var(--shell-timeline));
         overflow-y: auto;
         padding-right: 0.5rem;
     }
 }
 
-/* Sprungziel nicht unter die Kopfzeile schieben. */
+/* Sprungziel nicht unter die Werkzeugleiste des Viewports schieben. */
 .af-docs [id] {
-    scroll-margin-top: 5rem;
+    scroll-margin-top: 4rem;
 }
 
 .af-docs__nav input[type="search"] {
     font-size: 0.8125rem;
 }
 
-/* --- Log-Fenster --------------------------------------------------------- */
+.af-docs__list {
+    border-left: 1px solid var(--border);
+}
 
-.af-log {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 0.75rem;
-    line-height: 1.6;
-    color: var(--navy-100);
-    background: var(--navy-950, #122238);
-    border-radius: var(--radius);
-    padding: 1rem;
-    max-height: 22rem;
-    overflow: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
+.af-docs__link {
+    display: block;
+    padding: 0.375rem 0 0.375rem 0.75rem;
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.af-docs__link:hover {
+    color: var(--accent);
+}
+
+.af-docs__link--active {
+    border-left-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
 }
 
 /* --- Tabelle (dash_table.DataTable) -------------------------------------- */
@@ -574,6 +1802,7 @@ textarea.af-input {
 .af-table .dash-spreadsheet-container .dash-spreadsheet-inner th {
     font-family: var(--font-body);
     font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
 }
 
 .af-table .dash-spreadsheet-container .dash-spreadsheet-inner th {
@@ -593,17 +1822,29 @@ textarea.af-input {
 }
 
 .js-plotly-plot .plotly .modebar-btn path {
-    fill: var(--slate-400);
+    fill: var(--text-faint);
 }
 
 .js-plotly-plot .plotly .modebar-btn:hover path {
-    fill: var(--navy-800);
+    fill: var(--accent);
 }
 
 /* Play-/Pause-Leiste der Animationen. */
 .js-plotly-plot .updatemenu-button rect {
-    fill: #fff;
-    stroke: var(--slate-200);
+    fill: var(--surface-raised);
+    stroke: var(--border);
+}
+
+/* --- Bildtafeln ----------------------------------------------------------- */
+/* Die PNGs unter `figures/` werden von matplotlib hell gerendert. Im Dark Mode
+   stehen sie deshalb auf einer weißen Fläche wie ein aufgelegtes Blatt, statt
+   invertiert zu werden — ehrlich dargestellt schlägt falsch eingefärbt. */
+
+.af-paper {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem;
 }
 
 /* --- Ladeanzeige --------------------------------------------------------- */
@@ -620,7 +1861,7 @@ textarea.af-input {
 
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--slate-300) transparent;
+    scrollbar-color: var(--border-strong) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -629,28 +1870,28 @@ textarea.af-input {
 }
 
 *::-webkit-scrollbar-thumb {
-    background: var(--slate-300);
+    background: var(--border-strong);
     border-radius: 9999px;
     border: 3px solid transparent;
     background-clip: content-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-    background: var(--slate-400);
+    background: var(--text-faint);
     background-clip: content-box;
 }
 
 /* --- Chat ---------------------------------------------------------------- */
 
 .af-chat-user {
-    background: var(--navy-800);
-    color: #fff;
+    background: var(--accent);
+    color: var(--text-inverted);
 }
 
 .af-chat-user .af-md,
 .af-chat-user .af-md strong,
 .af-chat-user .af-md code {
-    color: #fff;
+    color: var(--text-inverted);
 }
 
 .af-chat-user .af-md code {
@@ -666,5 +1907,6 @@ textarea.af-input {
     * {
         transition-duration: 0.01ms !important;
         animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
     }
 }

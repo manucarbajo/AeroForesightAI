@@ -132,7 +132,7 @@ def _segment_card(index: int, segment: dict) -> html.Div:
                 html.Div(
                     [
                         html.P(label, className=ui.H3),
-                        html.Code(segment_id, className=f"{ui.CAPTION} text-slate-500"),
+                        html.Code(segment_id, className=ui.CAPTION),
                     ]
                 ),
                 ui.button(

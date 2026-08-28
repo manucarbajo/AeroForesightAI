@@ -1,9 +1,27 @@
-"""Seite «Simulation starten»: geführter Ablauf, Start mit Live-Log, Editor dahinter.
+"""Die linke Zone: der geführte Ablauf aus P1.1, jetzt als Parameterspalte.
 
-Die Reihenfolge ist die Aussage der Seite (P1.1): Erst die drei Entscheidungen,
-die bis zum Start genügen, dann der Start selbst, und erst danach — zugeklappt —
-die rund sechzig Felder für den Fall, dass eine bestimmte Annahme geprüft werden
-soll. Bis P1.1 stand der Editor vorn und der Start am Ende einer langen Seite.
+Die Reihenfolge ist die Aussage der Spalte (P1.1): Erst die drei
+Entscheidungen, die bis zum Start genügen, dann der Start selbst, und erst
+danach — zugeklappt — die rund sechzig Felder für den Fall, dass eine bestimmte
+Annahme geprüft werden soll.
+
+**Was der Leitstand daran ändert, ist der Ort, nicht der Ablauf.** Vorher stand
+dieser Block auf einer eigenen Seite; wer etwas änderte und die Wirkung sehen
+wollte, wechselte den Bereich. Jetzt steht er dauerhaft links neben Szene und
+Telemetrie. `start_flow.layout()` selbst ist unverändert — daran hängen die
+Zusicherungen aus `tests/test_web_start_flow.py`: höchstens drei Entscheidungen,
+kein Feld doppelt.
+
+Zwei Dinge sind gewandert:
+
+* Die Tab-Leiste der vier Editor-Bereiche läuft in der schmalen Spalte
+  kompakt und zweizeilig (`af-tabs--rail`). Sie bleibt eine Tab-Leiste: Der
+  Wechsel hängt an `cfg-tabs` → `cfg-tab-content`, und den umzubauen hieße,
+  die Callback-Kette des Editors anzufassen, ohne dass jemand etwas davon
+  hätte.
+* Das Fortschritts-Log steht nicht mehr unter dem Startknopf, sondern in der
+  Konsole der Telemetrie — zusammen mit den Ereignissen und den Vorfällen, zu
+  denen es gehört. Es fließt über `run-progress-store` dorthin.
 """
 
 from __future__ import annotations
@@ -19,6 +37,13 @@ from dashboard.web.state import STORE_ID, draft_from_dict, initial_draft_dict
 #: nur Last; länger lässt den Lauf tot wirken.
 POLL_INTERVAL_MS = 1000
 
+#: Die Fortschrittszeilen des laufenden Jobs. Als Store statt als gerenderte
+#: Liste, weil die Konsole in einer anderen Zone steht als der Startknopf.
+PROGRESS_STORE = "run-progress-store"
+
+#: Ob gerade ein Lauf rechnet — die Kopfzeile liest das für ihren Zustand.
+RUNNING_STORE = "run-running-store"
+
 
 def _summary(draft: dict) -> str:
     runs = int(draft.get("run_count") or 1)
@@ -31,44 +56,59 @@ def _summary(draft: dict) -> str:
     )
 
 
-def layout(draft: dict | None = None) -> html.Div:
+def rail(draft: dict | None = None) -> html.Div:
+    """Der Inhalt der linken Zone."""
+
     draft = draft or initial_draft_dict()
     return html.Div(
         [
-            ui.page_heading(
-                "Simulation starten",
-                "Drei Entscheidungen genügen: was gerechnet wird, wie weit, und womit.",
+            html.Div(
+                [
+                    html.H1("Simulation starten", className=ui.H2),
+                    html.P(
+                        "Drei Entscheidungen genügen: was gerechnet wird, wie weit, und womit.",
+                        className=f"{ui.CAPTION} mt-1",
+                    ),
+                ],
+                className="af-pane__sticky",
             ),
             dcc.Store(id="cfg-editor-refresh", data=0),
             dcc.Store(id="run-job-store"),
+            dcc.Store(id=PROGRESS_STORE, data=[]),
+            dcc.Store(id=RUNNING_STORE, data=False),
             dcc.Interval(id="run-poll", interval=POLL_INTERVAL_MS, disabled=True),
             config_editor.start_layout(draft),
             html.Div(
                 [
-                    ui.button("Start", id="run-start", icon_name="play_arrow"),
-                    html.P(_summary(draft), id="run-summary", className=ui.CAPTION),
+                    ui.button(
+                        "Start",
+                        id="run-start",
+                        icon_name="play_arrow",
+                        className="w-full",
+                    ),
+                    html.P(_summary(draft), id="run-summary", className=f"{ui.CAPTION} mt-2"),
                 ],
-                className="flex items-center gap-4 flex-wrap mb-4",
+                className="mb-4",
             ),
-            html.Div(id="run-status"),
-            html.Div(id="run-log-host", className="mt-4"),
-            ui.divider("my-8"),
-            ui.accordion(
-                "Alle Einstellungen",
-                config_editor.layout(draft),
-                badge=f"{len(config_editor.TABS)} Bereiche",
+            html.Div(id="run-status", className="mb-4"),
+            ui.divider("my-6"),
+            html.Div(
+                [
+                    html.P(
+                        "Alle Einstellungen",
+                        className="font-body text-sm font-medium af-text mb-3",
+                    ),
+                    config_editor.layout(draft),
+                ]
             ),
-        ]
+        ],
+        className="af-pane",
     )
 
 
-def _log_view(lines: list[str]) -> html.Div:
-    return html.Div(
-        [
-            html.P("Fortschritt", className=f"{ui.CAPTION} mb-2"),
-            html.Pre("\n".join(lines) or "Starte …", className="af-log"),
-        ]
-    )
+#: Alter Name, damit Aufrufer und Tests, die die Seite als Ganzes bauen,
+#: unverändert weiterlaufen.
+layout = rail
 
 
 def _result_message(result) -> html.Div:
@@ -86,7 +126,7 @@ def _result_message(result) -> html.Div:
         if result.child_run_ids:
             children.append(
                 ui.alert(
-                    "Einzelne Sweep-Runs unter **Ergebnisse ansehen** wählen: "
+                    "Einzelne Sweep-Runs oben in der Lauf-Auswahl wählen: "
                     + ", ".join(f"`{run_id}`" for run_id in result.child_run_ids),
                     "info",
                     class_name="mt-2",
@@ -105,7 +145,7 @@ def _result_message(result) -> html.Div:
                     "success",
                 ),
                 html.P(
-                    "Einzelne Läufe unter «Ergebnisse ansehen»: "
+                    "Einzelne Läufe oben in der Lauf-Auswahl: "
                     + ", ".join(str(run_id) for run_id in result.child_run_ids),
                     className=f"{ui.CAPTION} mt-2",
                 ),
@@ -120,7 +160,7 @@ def _result_message(result) -> html.Div:
                 "success",
             ),
             html.P(
-                "Tab «Szenario» unter «Ergebnisse ansehen» — erste Lesart nach dem Lauf.",
+                "Die Szene und die Telemetrie zeigen ihn ab jetzt.",
                 className=f"{ui.CAPTION} mt-2",
             ),
         ]
@@ -141,7 +181,7 @@ def register_callbacks(app) -> None:
         Output("run-job-store", "data"),
         Output("run-poll", "disabled"),
         Output("run-status", "children"),
-        Output("run-log-host", "children"),
+        Output(PROGRESS_STORE, "data"),
         Output("run-start", "disabled"),
         Input("run-start", "n_clicks"),
         State(STORE_ID, "data"),
@@ -172,11 +212,11 @@ def register_callbacks(app) -> None:
             job_id = runner.start(draft or {})
         except Exception as exc:  # noqa: BLE001 - «läuft schon» ist ein normaler Fall
             return no_update, no_update, ui.alert(str(exc), "warning"), no_update, False
-        return job_id, False, ui.alert("Lauf aktiv …", "info"), _log_view([]), True
+        return job_id, False, ui.alert("Lauf aktiv …", "info"), [], True
 
     @app.callback(
         Output("run-status", "children", allow_duplicate=True),
-        Output("run-log-host", "children", allow_duplicate=True),
+        Output(PROGRESS_STORE, "data", allow_duplicate=True),
         Output("run-poll", "disabled", allow_duplicate=True),
         Output("run-start", "disabled", allow_duplicate=True),
         Output("last-launched-run-store", "data"),
@@ -189,15 +229,14 @@ def register_callbacks(app) -> None:
         if job is None:
             return no_update, no_update, True, False, no_update
 
-        log = _log_view(job.lines)
         if not job.done:
-            return no_update, log, False, True, no_update
+            return no_update, list(job.lines), False, True, no_update
 
         runner.forget(job_id)
         if job.error:
             return (
                 ui.alert(f"Lauf fehlgeschlagen: {job.error}", "error"),
-                log,
+                list(job.lines),
                 True,
                 False,
                 no_update,
@@ -209,4 +248,19 @@ def register_callbacks(app) -> None:
             if result.sweep_batch and result.child_run_ids
             else result.run_id
         )
-        return _result_message(result), log, True, False, selected
+        return _result_message(result), list(job.lines), True, False, selected
+
+    @app.callback(
+        Output(RUNNING_STORE, "data"),
+        Input("run-poll", "disabled"),
+        Input("run-start", "disabled"),
+    )
+    def _running(poll_disabled: bool | None, start_disabled: bool | None):
+        """Ob gerade gerechnet wird — für die Zustandsanzeige der Kopfzeile.
+
+        Abgeleitet aus den beiden Schaltern, die der Lauf ohnehin setzt, statt
+        aus `runner.is_running()`: Der Serverzustand gälte für alle Sitzungen,
+        die Anzeige gehört aber zu dieser einen.
+        """
+
+        return bool(start_disabled) and not bool(poll_disabled)

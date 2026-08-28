@@ -12,6 +12,7 @@ from dash import Input, Output, State, dcc, html, no_update
 
 from dashboard.consistency_report import run_consistency_checks
 from dashboard.web import components as ui
+from dashboard.web import theme
 from src.reporting.state_explorer import (
     StateExplorer,
     build_grounded_context_block,
@@ -21,9 +22,9 @@ from src.reporting.state_explorer import (
 
 _STATUS_ICONS = {"ok": "check_circle", "warn": "warning", "fail": "cancel"}
 _STATUS_COLORS = {
-    "ok": "text-teal-700",
-    "warn": "text-amber-700",
-    "fail": "text-rose-800",
+    "ok": "af-text-positive",
+    "warn": "af-text-warning",
+    "fail": "af-text-negative",
 }
 
 
@@ -57,7 +58,7 @@ def _message_bubble(role: str, content: str) -> html.Div:
         )
     return html.Div(
         ui.markdown(content),
-        className="bg-white border border-slate-200 rounded-lg px-4 py-3 max-w-3xl mb-3",
+        className="af-surface af-bordered rounded-lg px-4 py-3 max-w-3xl mb-3",
     )
 
 
@@ -82,16 +83,12 @@ def _checks_panel(run_dir) -> html.Div:
             [
                 ui.icon(
                     _STATUS_ICONS.get(check.status, "circle"),
-                    f"text-base shrink-0 mt-0.5 {_STATUS_COLORS.get(check.status, 'text-slate-400')}",
+                    f"text-base shrink-0 mt-0.5 {_STATUS_COLORS.get(check.status, 'af-text-faint')}",
                 ),
                 html.Div(
                     [
-                        html.Span(
-                            check.title, className="font-body text-sm font-medium text-slate-800"
-                        ),
-                        html.Span(
-                            f" — {check.detail}", className="font-body text-sm text-slate-600"
-                        ),
+                        html.Span(check.title, className="font-body text-sm font-medium af-text"),
+                        html.Span(f" — {check.detail}", className="font-body text-sm af-text-body"),
                     ]
                 ),
             ],
@@ -102,14 +99,16 @@ def _checks_panel(run_dir) -> html.Div:
     return ui.accordion("Konsistenz-Checks (Ground Truth)", html.Div(rows), open=True)
 
 
-def render(run_dir, run_id: str, *, messages: list | None = None) -> html.Div:
+def render(
+    run_dir, run_id: str, *, messages: list | None = None, mode: str = theme.LIGHT
+) -> html.Div:
     return html.Div(
         [
             html.P(
                 "Fragen Sie den gesamten Lauf ab — z. B. Verlauf über alle Ticks, Vergleiche "
                 "oder einzelne Perioden. Optional: Tick-Nummer eingeben oder in der Frage "
                 "nennen (z. B. «Was passierte bei Tick 15?»).",
-                className="font-body text-sm text-slate-600 mb-5 max-w-3xl",
+                className="font-body text-sm af-text-body mb-5 max-w-3xl",
             ),
             ui.card(
                 ui.grid(
@@ -150,7 +149,7 @@ def render(run_dir, run_id: str, *, messages: list | None = None) -> html.Div:
             dcc.Loading(
                 html.Div(_history(messages or []), id="explorer-history"),
                 type="dot",
-                color="#1E3A5F",
+                color=theme.palette(mode)["accent"],
             ),
             html.Div(
                 [
@@ -164,7 +163,7 @@ def render(run_dir, run_id: str, *, messages: list | None = None) -> html.Div:
                     ),
                     ui.button("Fragen", id="explorer-send", icon_name="send"),
                 ],
-                className="flex items-center gap-3 sticky bottom-0 bg-slate-50 pt-3",
+                className="flex items-center gap-3 sticky bottom-0 af-surface pt-3",
             ),
         ]
     )

@@ -151,7 +151,7 @@ def summary_sentence(draft: dict) -> str:
 def _choice_label(title: str, description: str) -> html.Div:
     return html.Div(
         [
-            html.Span(title, className="font-body text-sm font-medium text-slate-800"),
+            html.Span(title, className="font-body text-sm font-medium af-text"),
             html.Span(description, className=f"{ui.CAPTION} block mt-0.5 leading-relaxed"),
         ],
         className="min-w-0",
@@ -405,7 +405,7 @@ def _mode_step(draft: dict) -> object:
             ui.radio(compute_mode.OPTIONS, value=compute_mode.of(draft), id=compute_mode.FIELD_ID),
             html.Div(
                 compute_mode.placeholder("start"),
-                className="mt-5 pt-4 border-t border-slate-100",
+                className="mt-5 pt-4 af-border-t af-border-subtle",
             ),
             ui.expert(
                 ui.grid(

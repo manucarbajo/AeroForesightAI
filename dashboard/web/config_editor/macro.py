@@ -157,7 +157,7 @@ def rule_rows(prop_id: str, rules: list, count: int, baseline: float) -> list:
         rows.append(
             html.Div(
                 ui.grid(*cells, cols="sm:grid-cols-2 lg:grid-cols-4", gap="gap-3"),
-                className="mb-3 pb-3 border-b border-slate-100 last:border-0",
+                className="mb-3 pb-3 af-border-b af-border-subtle last:border-0",
             )
         )
     return rows

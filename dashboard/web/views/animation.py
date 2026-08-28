@@ -39,9 +39,9 @@ _AGE_BINS = [0, 18, 26, 36, 51, 66, 120]
 _AGE_LABELS = ["<18", "18-25", "26-35", "36-50", "51-65", ">65"]
 
 
-def _graph(fig) -> dcc.Graph:
+def _graph(fig, *, mode: str = theme.LIGHT) -> dcc.Graph:
     theme.slow_animation(fig)
-    fig.update_layout(template=theme.TEMPLATE_NAME, height=520, margin=dict(t=64, b=64))
+    fig.update_layout(template=theme.template_for(mode), height=520, margin=dict(t=64, b=64))
     return dcc.Graph(figure=fig, config=theme.GRAPH_CONFIG)
 
 
@@ -56,7 +56,14 @@ def _block(title: str, caption: str, graph) -> html.Div:
     )
 
 
-def _load_history(run_dir: Path):
+def load_history(run_dir: Path):
+    """Die Individuen-History mit den abgeleiteten Spalten.
+
+    Öffentlich, weil die Szene im Viewport dieselbe Aufbereitung braucht —
+    zweimal `pd.read_csv` mit leicht verschiedenen Ableitungen wäre genau die
+    Sorte Doppelung, aus der Divergenz entsteht.
+    """
+
     import pandas as pd
 
     frame = pd.read_csv(run_dir / "individuals_history.csv")
@@ -81,7 +88,8 @@ def _load_history(run_dir: Path):
     return frame
 
 
-def _population_figure(frame):
+def _population_figure(frame, mode: str = theme.LIGHT):
+    tone = theme.palette(mode)
     import plotly.express as px
 
     fig = px.scatter(
@@ -100,7 +108,7 @@ def _population_figure(frame):
             "environmental_awareness": "Umweltbewusstsein (Awareness)",
             "tick": "Tick",
         },
-        color_discrete_map={"True": theme.POSITIVE, "False": theme.NEGATIVE},
+        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
         range_x=[
             frame["wtp_eur"].quantile(0.01) * 0.9,
             frame["wtp_eur"].quantile(0.99) * 1.1,
@@ -227,7 +235,7 @@ def _segment_figure(segments):
     )
 
 
-def _efficiency_figure(frame, segments):
+def _efficiency_figure(frame, segments, mode: str = theme.LIGHT):
     import plotly.express as px
 
     totals_agents = frame.groupby("tick")["id"].count().to_dict()
@@ -268,7 +276,7 @@ def _efficiency_figure(frame, segments):
     )
     fig.add_shape(
         type="line",
-        line=dict(dash="dash", color=theme.SLATE[400]),
+        line=dict(dash="dash", color=theme.palette(mode)["text-faint"]),
         x0=0,
         y0=0,
         x1=1,
@@ -277,7 +285,7 @@ def _efficiency_figure(frame, segments):
     return fig
 
 
-def render(run_dir: Path, run_id: str) -> html.Div:
+def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     history_file = run_dir / "individuals_history.csv"
     if not history_file.is_file():
         return ui.empty_state(
@@ -288,7 +296,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
         )
 
     try:
-        frame = _load_history(run_dir)
+        frame = load_history(run_dir)
     except Exception as exc:  # noqa: BLE001 - defekte History soll die Seite nicht sprengen
         return ui.alert(f"Fehler beim Lesen der History: {exc}", "error")
 
@@ -299,7 +307,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
         _block(
             "Animierter Population-Scatter-Plot",
             "Verfolgen Sie die Agenten über die Ticks hinweg.",
-            _graph(_population_figure(frame)),
+            _graph(_population_figure(frame, mode), mode=mode),
         )
     ]
 
@@ -309,7 +317,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
             _block(
                 "Aggregation nach Altersgruppen",
                 "Buchungsraten und -mengen pro Altersgruppe über die Ticks.",
-                _graph(age_figure),
+                _graph(age_figure, mode=mode),
             )
         )
 
@@ -326,7 +334,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
         _block(
             "Aggregation nach Segmenten",
             "Buchungsraten und -mengen pro Segment über die Ticks.",
-            _graph(_segment_figure(segments)),
+            _graph(_segment_figure(segments), mode=mode),
         )
     )
     blocks.append(
@@ -334,7 +342,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
             "Segment-Effizienz (Buchungsanteil vs. Populationsanteil)",
             "Liegt eine Bubble oberhalb der Diagonalen, bucht dieses Segment "
             "überdurchschnittlich oft in Relation zu seiner Größe.",
-            _graph(_efficiency_figure(frame, segments)),
+            _graph(_efficiency_figure(frame, segments, mode), mode=mode),
         )
     )
     return html.Div(blocks)

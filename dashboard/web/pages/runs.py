@@ -1,19 +1,25 @@
-"""Seite «Ergebnisse ansehen»: Run auswählen und durch die sieben Tabs gehen.
+"""Der Viewport im Bereich «Ergebnisse»: die sieben Ansichten eines Laufs.
 
-Die Seite hält nur die Auswahl und den Rahmen; jeder Tab liegt als eigenes
-Modul unter `dashboard/web/views/`. Der zuerst sichtbare Tab wird schon beim
-Aufbau der Seite gerendert — dadurch braucht kein Callback beim ersten Laden
-zu feuern, und keiner zeigt auf eine Komponente, die es noch nicht gibt.
+Die Seite hält nur den Rahmen; jede Ansicht liegt als eigenes Modul unter
+`dashboard/web/views/`. Der zuerst sichtbare Tab wird schon beim Aufbau
+gerendert — dadurch braucht kein Callback beim ersten Laden zu feuern, und
+keiner zeigt auf eine Komponente, die es noch nicht gibt.
+
+**Was der Leitstand geändert hat:** Die Lauf-Auswahl steht nicht mehr hier,
+sondern in der Kopfzeile (`shell.RUN_SELECT`) — sie gilt für alle drei Zonen,
+nicht nur für diesen Bereich. Aus der Tab-Leiste ist eine Werkzeugleiste
+geworden, die beim Scrollen des Viewports stehen bleibt.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from dash import Input, Output, State, dcc, html, no_update
+from dash import ALL, Input, Output, State, ctx, html, no_update
 
 from dashboard.run_browser import RunSummary, list_runs
 from dashboard.web import components as ui
+from dashboard.web import theme
 from dashboard.web.views import (
     animation,
     explorer,
@@ -36,10 +42,7 @@ TABS = [
 
 DEFAULT_TAB = "scenario"
 
-_HIDDEN = {"display": "none"}
-#: Leer statt "block": die Auswahlzeile bezieht ihr `display` aus der
-#: Tailwind-Klasse `flex` — ein Inline-Wert würde sie überschreiben.
-_VISIBLE: dict = {}
+TAB_STORE = "runs-tab-store"
 
 _RENDERERS = {
     "scenario": scenario.render,
@@ -50,9 +53,14 @@ _RENDERERS = {
     "files": files.render,
 }
 
+#: Welche Ansichten ihre Farben aus dem Theme beziehen und deshalb neu gebaut
+#: werden müssen, wenn jemand umschaltet. Der Rest ist reiner Text und Markup;
+#: dessen Farben kommen aus dem Stylesheet und folgen von selbst.
+_THEMED = {"overview", "figures", "animation", "files", "scenario"}
+
 
 def run_options() -> tuple[list[dict], dict[str, RunSummary]]:
-    """Dropdown-Einträge plus Nachschlagetabelle `run_id → RunSummary`."""
+    """Einträge der Lauf-Auswahl plus Nachschlagetabelle `run_id → RunSummary`."""
 
     runs = list_runs()
     options = [
@@ -74,8 +82,8 @@ def default_selection() -> dict | None:
     return {"run_id": runs[0].run_id, "run_dir": str(runs[0].run_dir)}
 
 
-def _degraded_banner(summary: RunSummary) -> html.Div | None:
-    """Warnung über allen Tabs, wenn das Sprachmodell während des Laufs ausfiel.
+def degraded_banner(summary: RunSummary) -> html.Div | None:
+    """Warnung über allen Ansichten, wenn das Sprachmodell während des Laufs ausfiel.
 
     Steht bewusst hier und nicht in einer der sieben Ansichten: Die Einschränkung
     betrifft jede von ihnen, und wer direkt in «Figures» einsteigt, soll sie
@@ -98,6 +106,10 @@ def _degraded_banner(summary: RunSummary) -> html.Div | None:
     )
 
 
+#: Alter Name, von `test_web_layout.py` benutzt.
+_degraded_banner = degraded_banner
+
+
 def _meta(summary: RunSummary) -> html.Div:
     preview = summary.scenario_summary or "Kein Szenario-Preview — Run ohne `run_scenario.json`."
     return html.Div(
@@ -108,14 +120,41 @@ def _meta(summary: RunSummary) -> html.Div:
                 f"Modell {summary.model or '—'}",
                 className=f"{ui.CAPTION} mb-2",
             ),
-            _degraded_banner(summary),
+            degraded_banner(summary),
             ui.alert(preview, "info"),
         ]
     )
 
 
-def render_tab(tab: str, selected: dict, messages: dict | None = None):
-    """Einen Tab rendern. Wird sowohl beim Seitenaufbau als auch im Callback genutzt."""
+def viewbar(active: str) -> html.Div:
+    """Die Werkzeugleiste über dem Viewport.
+
+    Keine `dcc.Tabs`: Die bringt einen eigenen Rahmen mit, den sie beim Scrollen
+    nicht behält. Hier sind es Schaltflächen plus ein Store — dieselbe Wirkung,
+    aber die Leiste bleibt oben stehen, während der Inhalt darunter läuft.
+    """
+
+    return html.Div(
+        [
+            html.Button(
+                label,
+                id={"type": "runs-viewbar", "tab": value},
+                className=(
+                    "af-viewbar__item af-viewbar__item--active"
+                    if value == active
+                    else "af-viewbar__item"
+                ),
+                n_clicks=0,
+            )
+            for label, value in TABS
+        ],
+        className="af-viewbar",
+        id="runs-viewbar",
+    )
+
+
+def render_tab(tab: str, selected: dict, messages: dict | None = None, mode: str = theme.LIGHT):
+    """Eine Ansicht rendern. Wird beim Seitenaufbau und im Callback genutzt."""
 
     run_dir = Path(selected["run_dir"])
     run_id = selected["run_id"]
@@ -124,19 +163,22 @@ def render_tab(tab: str, selected: dict, messages: dict | None = None):
     try:
         if tab == "explorer":
             history = (messages or {}).get(run_id) or []
-            return explorer.render(run_dir, run_id, messages=history)
-        return _RENDERERS.get(tab, scenario.render)(run_dir, run_id)
+            return explorer.render(run_dir, run_id, messages=history, mode=mode)
+        renderer = _RENDERERS.get(tab, scenario.render)
+        if tab in _THEMED:
+            return renderer(run_dir, run_id, mode=mode)
+        return renderer(run_dir, run_id)
     except Exception as exc:  # noqa: BLE001 - unvollständige Runs dürfen die Seite nicht killen
         return ui.alert(f"Ansicht konnte nicht gerendert werden: {exc}", "error")
 
 
 def layout(selection: dict | None = None) -> html.Div:
-    """Rahmen der Seite — auch dann vollständig, wenn es noch keinen Run gibt.
+    """Rahmen des Bereichs — auch dann vollständig, wenn es noch keinen Run gibt.
 
-    Der leere Zustand behält Auswahlfeld und Tab-Leiste bei (nur ohne
-    Einträge), damit der erste fertige Lauf die Liste per Callback nachziehen
-    kann. Würde die Seite im Leerfall abgekürzt, zeigte dieser Callback auf
-    Komponenten, die es nicht gibt.
+    Der leere Zustand behält die Werkzeugleiste bei (nur ohne Inhalt), damit der
+    erste fertige Lauf sie per Callback füllen kann. Würde der Bereich im
+    Leerfall abgekürzt, zeigten diese Callbacks auf Komponenten, die es nicht
+    gibt.
     """
 
     options, by_id = run_options()
@@ -146,54 +188,22 @@ def layout(selection: dict | None = None) -> html.Div:
 
     empty = ui.empty_state(
         "Noch keine Runs vorhanden.",
-        hint="Starten Sie unter «Simulation starten» einen Lauf — danach erscheint er hier.",
+        hint="Starten Sie links einen Lauf — danach erscheint er hier.",
         icon_name="science",
     )
 
     return html.Div(
         [
-            ui.page_heading("Ergebnisse ansehen"),
+            viewbar(DEFAULT_TAB),
             html.Div(
                 [
-                    ui.field(
-                        "Run",
-                        dcc.Dropdown(
-                            id="runs-select",
-                            options=options,
-                            value=run_id,
-                            clearable=False,
-                            className="af-dropdown",
-                        ),
-                        class_name="flex-1 min-w-[20rem]",
-                    ),
+                    html.Div(_meta(summary) if summary else None, id="runs-meta", className="mb-5"),
                     html.Div(
-                        ui.button(
-                            "Liste neu laden",
-                            id="runs-reload",
-                            variant="secondary",
-                            icon_name="refresh",
-                        ),
-                        className="pt-7",
+                        render_tab(DEFAULT_TAB, selection) if selection else empty,
+                        id="runs-tab-content",
                     ),
                 ],
-                className="flex items-start gap-4 flex-wrap mb-4",
-                id="runs-select-row",
-                style=_VISIBLE if options else _HIDDEN,
-            ),
-            html.Div(_meta(summary) if summary else None, id="runs-meta", className="mb-6"),
-            html.Div(
-                ui.tabs("runs-tabs", TABS, value=DEFAULT_TAB),
-                id="runs-tabs-host",
-                style=_VISIBLE if options else _HIDDEN,
-            ),
-            dcc.Loading(
-                html.Div(
-                    render_tab(DEFAULT_TAB, selection) if selection else empty,
-                    id="runs-tab-content",
-                ),
-                type="dot",
-                color="#1E3A5F",
-                className="af-spinner-host",
+                className="af-pane",
             ),
         ]
     )
@@ -206,52 +216,44 @@ def register_callbacks(app) -> None:
     explorer.register_callbacks(app)
 
     @app.callback(
-        Output("runs-select", "options"),
-        Output("runs-select", "value"),
-        Output("runs-select-row", "style"),
-        Output("runs-tabs-host", "style"),
-        Input("runs-reload", "n_clicks"),
-        Input("last-launched-run-store", "data"),
-        State("runs-select", "value"),
-        prevent_initial_call=True,
+        Output("runs-meta", "children"),
+        Input("selected-run-store", "data"),
     )
-    def _reload(n_clicks: int | None, last_launched: str | None, current: str | None):
-        """Liste aktualisieren — manuell oder nachdem ein Lauf fertig geworden ist."""
-
-        from dash import ctx
-
-        options, _ = run_options()
-        values = [option["value"] for option in options]
-        style = _VISIBLE if values else _HIDDEN
-
-        if ctx.triggered_id == "last-launched-run-store" and last_launched in values:
-            return options, last_launched, style, style
-        chosen = current if current in values else (values[0] if values else None)
-        return options, chosen, style, style
+    def _meta_for(selected: dict | None):
+        if not selected:
+            return None
+        _, by_id = run_options()
+        summary = by_id.get(selected.get("run_id"))
+        if summary is None:
+            return ui.alert("Run nicht mehr vorhanden.", "warning")
+        return _meta(summary)
 
     @app.callback(
-        Output("selected-run-store", "data"),
-        Output("runs-meta", "children"),
-        Input("runs-select", "value"),
+        Output(TAB_STORE, "data"),
+        Output("runs-viewbar", "children"),
+        Input({"type": "runs-viewbar", "tab": ALL}, "n_clicks"),
+        State(TAB_STORE, "data"),
         prevent_initial_call=True,
     )
-    def _select_run(run_id: str | None):
-        if not run_id:
+    def _switch(_clicks, current: str | None):
+        trigger = ctx.triggered_id
+        if not isinstance(trigger, dict):
             return no_update, no_update
-        _, by_id = run_options()
-        summary = by_id.get(run_id)
-        if summary is None:
-            return no_update, ui.alert("Run nicht mehr vorhanden.", "warning")
-        return {"run_id": run_id, "run_dir": str(summary.run_dir)}, _meta(summary)
+        tab = str(trigger.get("tab") or DEFAULT_TAB)
+        if tab == (current or DEFAULT_TAB):
+            return no_update, no_update
+        return tab, viewbar(tab).children
 
     @app.callback(
         Output("runs-tab-content", "children"),
         Input("selected-run-store", "data"),
-        Input("runs-tabs", "value"),
+        Input(TAB_STORE, "data"),
+        Input("theme-store", "data"),
         State("explorer-messages-store", "data"),
-        prevent_initial_call=True,
     )
-    def _render_tab(selected: dict | None, tab: str | None, messages: dict | None):
+    def _render_tab(
+        selected: dict | None, tab: str | None, mode: str | None, messages: dict | None
+    ):
         if not selected:
             return no_update
-        return render_tab(tab or DEFAULT_TAB, selected, messages)
+        return render_tab(tab or DEFAULT_TAB, selected, messages, theme.normalise(mode))

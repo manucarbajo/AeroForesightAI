@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from dashboard.web import app as web_app
-from dashboard.web import landing_route, routing
+from dashboard.web import app as web_app  # noqa: F401  - baut die App und damit alle Routen
+from dashboard.web import landing_route, routing, shell
 from dashboard.web.pages import docs
 
 # --- Pfade -----------------------------------------------------------------
@@ -40,8 +40,15 @@ def test_relative_strips_the_prefix(pathname, expected):
 
 
 def test_landing_stays_at_the_root():
+    """Der Verweis zurueck auf die Landingpage sitzt jetzt in der Kopfzeile.
+
+    Mit dem Leitstand-Rahmen (P1.5) baut `shell` die Kopfzeile; `LANDING_URL`
+    ist damit von `app` dorthin gewandert. Geprueft wird weiterhin dasselbe:
+    dass der Verweis relativ bleibt und auf die Wurzel zeigt.
+    """
+
     assert routing.LANDING_PATH == "/"
-    assert web_app.LANDING_URL == "/"
+    assert shell.LANDING_URL == "/"
 
 
 # --- Landingpage -----------------------------------------------------------
