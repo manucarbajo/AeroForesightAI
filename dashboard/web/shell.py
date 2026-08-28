@@ -87,7 +87,13 @@ def navbar(active: str) -> html.Div:
                 "menu",
                 "Parameter ein- oder ausblenden",
                 id=LEFT_TOGGLE,
-                className="af-drawer-toggle",
+                # Die beiden Umschalter tragen **verschiedene** Modifikatoren,
+                # weil ihre Zonen bei verschiedenen Breiten zur Schublade
+                # werden — links unter 1024 px, rechts unter 1280 px. Mit einer
+                # gemeinsamen Klasse stand der linke Knopf schon ab 1280 px da,
+                # während die Spalte noch Rasterspalte war: Der Klick bewegte
+                # nichts und hinterließ eine offene Schublade für später.
+                className="af-drawer-toggle af-drawer-toggle--left",
             ),
             html.A(
                 "AeroForesight AI",
@@ -178,7 +184,7 @@ def header(
                         "insights",
                         "Telemetrie ein- oder ausblenden",
                         id=RIGHT_TOGGLE,
-                        className="af-drawer-toggle",
+                        className="af-drawer-toggle af-drawer-toggle--right",
                     ),
                 ],
                 className="flex items-center gap-2 shrink-0",

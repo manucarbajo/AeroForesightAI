@@ -412,8 +412,33 @@ body {
     z-index: 45;
 }
 
-.af-drawer-toggle {
+/* Die Umschalter sind Symbolknöpfe und tragen deshalb **beide** Klassen. Das
+   Verstecken muss `.af-icon-btn { display: inline-flex }` schlagen — und das
+   steht weiter unten in dieser Datei. Bei gleicher Spezifität (je eine Klasse)
+   gewinnt das Spätere: `.af-drawer-toggle { display: none }` allein hat nie
+   gewirkt, beide Knöpfe standen auf **jeder** Breite da, auch dort, wo keine
+   der beiden Zonen eine Schublade ist. Deshalb hier zwei Klassen statt einer —
+   das ist ordnungsunabhängig, anders als ein Verschieben des Blocks. */
+.af-icon-btn.af-drawer-toggle {
     display: none;
+}
+
+/* Jeder Umschalter erscheint genau dort, wo **seine** Zone zur Schublade wird.
+   Die beiden Haltepunkte sind verschieden (Telemetrie 1280 px, Parameterspalte
+   1024 px); ein gemeinsamer Sichtbarkeitsschalter zeigte den linken Knopf
+   deshalb schon ab 1280 px an, während die Spalte dort noch als Rasterspalte
+   steht. Der Klick setzte dann zwar `af-shell--left-open`, bewegte aber nichts
+   — und beim nächsten Verkleinern sprang die Schublade ungefragt auf. */
+@media (max-width: 1279px) {
+    .af-icon-btn.af-drawer-toggle--right {
+        display: inline-flex;
+    }
+}
+
+@media (max-width: 1023px) {
+    .af-icon-btn.af-drawer-toggle--left {
+        display: inline-flex;
+    }
 }
 
 @media (max-width: 1279px) {
@@ -443,10 +468,6 @@ body {
 
     .af-shell--right-open .af-shell__scrim {
         display: block;
-    }
-
-    .af-drawer-toggle {
-        display: inline-flex;
     }
 }
 
