@@ -1,7 +1,7 @@
 Jeder Lauf legt ein eigenes Verzeichnis unter `outputs/` an, benannt nach seiner
 Run-ID. Läufe eines Szenario-Vergleichs liegen unter `outputs/sweeps/`.
 
-Alle Dateien sind im Tab **Dateien** einsehbar und herunterladbar.
+Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 
 ## Ergebnisse zum Lesen
 
@@ -63,7 +63,7 @@ beantwortete genau die Frage nicht mehr, für die er da ist. Ein Lauf, den Sie
 aus einem Checkpoint fortsetzen, behält den Fingerabdruck des ursprünglichen
 Laufs: Er setzt dieselbe Konfiguration fort.
 
-Im Dashboard zeigt der Tab **Übersicht** Rechenmodus, Seed und Codestand direkt
+Im Dashboard zeigt der Ansicht **Übersicht** Rechenmodus, Seed und Codestand direkt
 unter den Kennzahlen. Ein Lauf ohne Sprachmodell trägt dort einen Hinweis: Die
 Zahlen sind vollwertig, die Texte der Akteure stammen aus Platzhaltern.
 
@@ -98,7 +98,7 @@ Abfrage weiterhin, aber gröber.
 
 Unter `figures/` liegen sechs Diagramme im PNG-Format plus eine
 `manifest.json` mit ihren Titeln. Sie entstehen, wenn beim Start
-«Auswertungsgrafiken erzeugen» aktiv war, und lassen sich im Tab **Figures**
+«Auswertungsgrafiken erzeugen» aktiv war, und lassen sich in der Ansicht **Figures**
 unter «PNG-Export» jederzeit neu erzeugen.
 
 | Datei | Inhalt |

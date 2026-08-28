@@ -50,4 +50,4 @@ gegenseitig ausschließen. Wie diese Bewertung zustande kommt, steht unter
 
 Das Dashboard zeigt den Fortschritt als `current_tick / max_ticks`. Erreicht ein
 Lauf sein Maximum nicht, wurde er abgebrochen — dann fehlen typischerweise auch
-die Auswertungen am Ende, und der Tab «Szenario» bleibt leer.
+die Auswertungen am Ende, und die Ansicht «Szenario» bleibt leer.

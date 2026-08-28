@@ -1,20 +1,26 @@
-Unter den drei Entscheidungen steht der Preflight — in Klartext, was gleich
-passiert, dazu die wichtigsten Werte als Kacheln —, darunter der Start-Knopf.
-Ein Klick genügt. Der Editor mit allen weiteren Einstellungen liegt zugeklappt
-darunter und ist für einen ersten Lauf nicht nötig.
+Unter den drei Entscheidungen in der linken Spalte steht der Preflight — in
+Klartext, was gleich passiert, dazu die wichtigsten Werte als Kacheln —, darunter
+der Start-Knopf. Ein Klick genügt. Der Editor mit allen weiteren Einstellungen
+liegt darunter und ist für einen ersten Lauf nicht nötig.
 
 ## Während der Lauf rechnet
 
-Es erscheint ein Protokollfenster. Es zeigt je Runde die vergangene Zeit, die
-Geschwindigkeit, den Ticketpreis und die Buchungsrate — dieselben Zeilen, die
-auch auf der Konsole stehen. Der Start-Knopf ist gesperrt, solange gerechnet
-wird.
+Der Zustand oben in der Kopfzeile wechselt auf **Simulation läuft**, und der
+Punkt daneben pulsiert. Es ist die einzige Bewegung in der Oberfläche und
+deshalb eindeutig.
 
-Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit zu **Ergebnisse
-ansehen** oder ins Handbuch wechseln, ohne ihn abzubrechen. Was Sie nicht
-können: einen zweiten Lauf parallel starten. Das Modell leitet während eines
-Laufs die Programmausgabe um, und zwei gleichzeitige Läufe würden sich die
-Protokolle gegenseitig zerschneiden.
+Der Fortschritt läuft in die **Konsole** in der rechten Spalte. Sie zeigt je
+Runde die vergangene Zeit, die Geschwindigkeit, den Ticketpreis und die
+Buchungsrate — dieselben Zeilen, die auch im Terminal stehen —, und darüber, was
+sonst noch zu melden ist: ausgefallene Modellaufrufe in Gelb, ein Lauffehler in
+Rot. Der Start-Knopf ist gesperrt, solange gerechnet wird.
+
+Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit auf **Ergebnisse**
+oder ins **Handbuch** wechseln, ohne ihn abzubrechen — die Kopfzeile bleibt
+dabei stehen, und der Zustand ist von überall sichtbar. Was Sie nicht können:
+einen zweiten Lauf parallel starten. Das Modell leitet während eines Laufs die
+Programmausgabe um, und zwei gleichzeitige Läufe würden sich die Protokolle
+gegenseitig zerschneiden.
 
 ## Wie lange es dauert
 
@@ -33,24 +39,26 @@ allen drei Fällen dieselben.
 
 Was am Ende erscheint, hängt davon ab, was Sie konfiguriert haben.
 
-Bei einem **Einzellauf** meldet das Dashboard die Run-ID, die Zahl der
-gerechneten Ticks und die Zahl der Ereignisse. Der Lauf ist danach unter
-**Ergebnisse ansehen** bereits ausgewählt.
+Bei einem **Einzellauf** meldet die linke Spalte die Run-ID, die Zahl der
+gerechneten Ticks und die Zahl der Ereignisse. Der Lauf ist danach in der
+Auswahl oben in der Kopfzeile bereits gesetzt, und Szene, Kennzahlen und
+Zeitleiste zeigen ihn.
 
 Bei **Wiederholungen** entsteht ein Bündel unter einer gemeinsamen Batch-ID. Die
 Meldung nennt, wie viele Läufe entstanden sind und wie viele Ereignisse
-insgesamt. Die einzelnen Läufe wählen Sie danach über die Run-Liste.
+insgesamt. Die einzelnen Läufe wählen Sie danach über die Auswahl in der
+Kopfzeile.
 
 Beim **Szenario-Vergleich** — also wenn «Alle Szenarien vergleichen» hinter der
 «Feinabstimmung» des zweiten Schritts eingeschaltet war — wird jedes Preset einmal durchgerechnet. Die Ergebnisse
 liegen unter `outputs/sweeps/`, dazu entsteht eine Zusammenfassung. Auch hier
-erscheinen die einzelnen Läufe in der Run-Liste.
+erscheinen die einzelnen Läufe in der Auswahl der Kopfzeile.
 
 ## Was der Lauf über sich festhält
 
 Jeder Lauf schreibt mit, unter welchen Bedingungen er entstanden ist: Seed,
-Rechenmodus und Codestand. Sie finden das nach dem Lauf unter «Ergebnisse
-ansehen» im Tab **Übersicht**, direkt unter den Kennzahlen. Vor dem Start stehen
+Rechenmodus und Codestand. Sie finden das nach dem Lauf unter **Ergebnisse** in
+der Ansicht **Übersicht**, direkt unter den Kennzahlen. Vor dem Start stehen
 Startwert und Rechenmodus im Preflight.
 
 Das ist keine Buchhaltung um ihrer selbst willen. Wer ein Ergebnis
@@ -64,18 +72,21 @@ rechnen will, braucht den Seed. Alle Felder stehen auch in
 **Auch ohne eigenen Startwert ist ein Lauf wiederholbar.** Lassen Sie das Feld
 «Eigenen Zufallsstartwert festlegen» im dritten Schritt aus, rechnet der Lauf mit einem
 Standardwert — nicht zufällig. Zwei Wiederholungen desselben Aufbaus liefern
-dann dasselbe Ergebnis, und welcher Wert es war, steht nach dem Lauf im Tab
-**Übersicht**. Einen eigenen Startwert brauchen Sie erst, wenn Sie denselben
+dann dasselbe Ergebnis, und welcher Wert es war, steht nach dem Lauf in der
+Ansicht **Übersicht**. Einen eigenen Startwert brauchen Sie erst, wenn Sie denselben
 Aufbau bewusst mit einer anderen Ziehung sehen wollen.
 
 ## Wenn etwas schiefgeht
 
-Bricht der Lauf ab, erscheint die Fehlermeldung im Statusbereich, und das
-Protokoll bleibt stehen. Die häufigsten Ursachen: Ollama läuft nicht, obwohl
+Bricht der Lauf ab, erscheint die Fehlermeldung unter dem Start-Knopf in der
+linken Spalte, in der Konsole rechts steht sie rot obenan, und der Fortschritt
+bleibt stehen. Die häufigsten Ursachen: Ollama läuft nicht, obwohl
 «Ohne Ollama rechnen» ausgeschaltet ist, oder eine Kombination aus
 Wiederholungen und «Lauf fortsetzen», die sich gegenseitig ausschließt.
 
 Ein abgebrochener Lauf hinterlässt trotzdem ein Verzeichnis unter `outputs/`,
-allerdings ohne die Auswertungen am Ende. In der Run-Liste erkennen Sie ihn
-daran, dass die Zahl der Ticks unter dem Maximum liegt und der Tab «Szenario»
-leer bleibt.
+allerdings ohne die Auswertungen am Ende. In der Lauf-Auswahl erkennen Sie ihn
+daran, dass die Zahl der Ticks unter dem Maximum liegt und die Ansicht
+«Szenario» leer bleibt. Die Zeitleiste reicht dann nur bis zum letzten
+gerechneten Tick — sie richtet sich nach dem, was da ist, nicht nach dem, was
+geplant war.

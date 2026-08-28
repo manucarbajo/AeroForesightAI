@@ -29,7 +29,7 @@ kann der Preis nicht weiter fallen, obwohl die Nachfrage schwach ist. Oder der
 Preisdeckel je Runde ist so eng gesetzt, dass sich der Preis nur in winzigen
 Schritten bewegen darf.
 
-Im Tab **Figures** zeigt der Abschnitt «Yield & Markt» die Zusammensetzung aus
+In der Ansicht **Figures** zeigt der Abschnitt «Yield & Markt» die Zusammensetzung aus
 Kosten und Marge. Ist die Marge nahe null, liegt der Preis an der Untergrenze.
 
 ## Der Preis schwingt hin und her
@@ -57,7 +57,7 @@ oberhalb von 50 EUR je Tonne in die Kaufentscheidung ein.
 Viertens: Der Lauf war zu kurz. Rückkopplungen brauchen Runden; bei fünf Ticks
 ist oft noch nichts zu sehen.
 
-## Der Tab «Szenario» ist leer
+## Die Ansicht «Szenario» ist leer
 
 Entweder wurde der Lauf mit «Keine Szenarien erzeugen» gerechnet, oder er wurde
 abgebrochen, bevor die Auswertung lief. Im ersten Fall hilft der Knopf «Szenarien
@@ -105,6 +105,6 @@ nur die Deutung.
 
 ## Wenn nichts davon passt
 
-Der Tab **Abfrage** blendet über «Artefakt-Checks anzeigen» eine Prüfung ein, die
+Der Ansicht **Abfrage** blendet über «Artefakt-Checks anzeigen» eine Prüfung ein, die
 die erzeugten Dateien gegeneinander abgleicht. Sie sagt unabhängig vom
 Sprachmodell, ob ein Lauf in sich stimmig ist.

@@ -1,15 +1,20 @@
-Die Seite **Simulation starten** ist zweigeteilt. Vorn stehen die drei
+Die **linke Spalte** des Leitstands ist zweigeteilt. Oben stehen die drei
 Entscheidungen, die einen Lauf prägen, darunter Preflight und Start. Alles
-Weitere liegt zugeklappt darunter unter **Alle Einstellungen** — vier Bereiche,
-alle mit sinnvollen Werten vorbelegt.
+Weitere liegt darunter unter **Alle Einstellungen** — vier Bereiche, alle mit
+sinnvollen Werten vorbelegt.
+
+Die Spalte bleibt sichtbar, während in der Mitte gerechnet und rechts gemessen
+wird. Sie ist damit nicht mehr eine Seite, die man verlässt, sondern das
+Bedienfeld neben dem Ergebnis: Eine geänderte Annahme und ihre Wirkung stehen
+nebeneinander, statt zwei Bildschirmseiten auseinander.
 
 Wer nur die drei Entscheidungen anfasst, bekommt einen sinnvollen Lauf.
 
 ## Die drei Entscheidungen
 
 **1. Was soll gerechnet werden?** Die Annahmenwelt: die Standard-Ausgangslage
-aus `configs/`, eines der vorbereiteten Szenarien, oder das, was Sie sich unten
-im Editor selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
+aus `configs/`, eines der vorbereiteten Szenarien, oder das, was Sie sich weiter
+unten in der Spalte selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
 steht; aufklappbar dazu die Begründung, warum es so aufgebaut ist.
 
 **2. Wie weit reicht der Lauf?** Die Länge in Ticks. Hinter «Feinabstimmung»
@@ -90,7 +95,7 @@ für den nächsten Start.
 ### Lauf & Ablage
 
 Name und Fragestellung des Laufs — sie erscheinen im Bericht und in der
-Run-Liste; ohne sie sind mehrere Läufe später schwer auseinanderzuhalten.
+Lauf-Auswahl; ohne sie sind mehrere Läufe später schwer auseinanderzuhalten.
 Darunter «Als Szenario sichern», mit dem der aktuelle Stand als eigenes Preset
 unter `configs/sweeps/` landet, die Auswahl der Konfigurationsdateien, und ganz
 unten die Rohdaten: was tatsächlich an die Simulation übergeben wird.

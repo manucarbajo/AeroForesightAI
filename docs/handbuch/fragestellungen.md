@@ -43,7 +43,7 @@ Schalten Sie in **Lauf & Ablage** «Alle Szenarien vergleichen» ein. Jedes
 hinterlegte Preset wird einmal durchgerechnet, ohne Agenten-Dialog und damit
 schnell.
 
-Danach gehen Sie die Läufe in der Run-Liste durch und vergleichen in
+Danach gehen Sie die Läufe in der Lauf-Auswahl durch und vergleichen in
 **Übersicht** die Endwerte. Presets, die zu ähnlichen Verläufen führen,
 unterscheiden sich in ihren Annahmen weniger, als ihre Namen vermuten lassen —
 auch das ist ein Ergebnis.

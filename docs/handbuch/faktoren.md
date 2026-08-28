@@ -50,7 +50,7 @@ nämlich die regulatorische Strenge und den gesellschaftlichen Wertewandel. Die
 übrigen fünf bleiben über den Lauf konstant, sofern sie nicht durch ein Preset
 mit einem zeitlichen Verlauf versehen wurden.
 
-Im Tab **Figures** zeigt der Abschnitt «CIB-Faktoren» die Trajektorien als
+In der Ansicht **Figures** zeigt der Abschnitt «CIB-Faktoren» die Trajektorien als
 Treppenlinien — dort sieht man, wann welcher Zustand gewechselt hat.
 
 ## Wo Sie sie einstellen

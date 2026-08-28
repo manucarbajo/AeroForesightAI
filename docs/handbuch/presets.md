@@ -55,7 +55,7 @@ verglichen werden.
 Der Schalter «Alle Szenarien vergleichen» hinter der «Feinabstimmung» des
 zweiten Schritts rechnet jedes hinterlegte Preset einmal durch, ohne
 Agenten-Dialog und damit deutlich schneller. Die Ergebnisse liegen unter
-`outputs/sweeps/` und erscheinen einzeln in der Run-Liste.
+`outputs/sweeps/` und erscheinen einzeln in der Lauf-Auswahl.
 
 Das ist der schnellste Weg zu der Frage, wie weit die Annahmenwelten überhaupt
 auseinanderliegen.
