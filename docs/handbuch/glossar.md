@@ -51,6 +51,14 @@ beschreiben, jeweils mit zwei möglichen Zuständen. Siehe
 **Konsistenz** — Maß dafür, wie gut die gleichzeitig angenommenen Faktorzustände
 zusammenpassen. Ergebnis der CIB-Bewertung.
 
+**Ladebildschirm** — Was der Leitstand zeigt, solange ein Lauf rechnet: wie weit
+er ist, was er rechnet, und die aufgeklappte Konsole. Er tritt an die Stelle der
+Szene, weil die währenddessen einen anderen, älteren Lauf zeigen würde.
+
+**Fortschrittsfenster** — Die kleine Anzeige unten rechts, die den laufenden Lauf
+im Blick behält, während man in einem anderen Bereich arbeitet. Sie zeigt und
+führt zum Ladebildschirm; abbrechen kann man von dort nicht.
+
 **Lauf** — Eine Folge von Ticks aus einer festgelegten Ausgangslage. Erzeugt ein
 eigenes Verzeichnis unter `outputs/`.
 

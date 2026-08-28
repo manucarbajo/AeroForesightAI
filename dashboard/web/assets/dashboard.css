@@ -2131,3 +2131,165 @@ html.dark .af-input[type="number"] {
         animation-iteration-count: 1 !important;
     }
 }
+
+/* --- Der Lauf, waehrend er rechnet (P1.7) -------------------------------- */
+/* Bis P1.7 war der Start kein Ereignis: Die Seite sah danach aus wie vorher.
+   Waehrend gerechnet wird, gibt es genau eine Auskunft, auf die es ankommt --
+   wie weit. Sie steht deshalb gross im Viewport und, wenn man woanders
+   hinsieht, klein unten rechts. */
+
+.af-progress {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--surface-inset);
+    overflow: hidden;
+}
+
+.af-progress--compact {
+    height: 0.3125rem;
+}
+
+.af-progress__fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: var(--accent);
+    transition: width 0.4s ease;
+}
+
+/* Ohne Tick-Meldung gibt es keinen Anteil -- dann laeuft ein unbestimmter
+   Balken, statt eine Prozentzahl zu erfinden (Invariante 1). */
+.af-progress__fill--unknown {
+    width: 35%;
+    animation: af-progress-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes af-progress-slide {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(285%);
+    }
+}
+
+.af-run__readout {
+    font-family: var(--font-headline);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.af-run__percent {
+    font-family: var(--font-headline);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.af-run__spin {
+    animation: af-spin 1.6s linear infinite;
+    color: var(--accent);
+}
+
+@keyframes af-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* --- Das Fortschrittsfenster --------------------------------------------- */
+
+.af-dock {
+    position: fixed;
+    right: 1rem;
+    /* Ueber der Zeitleiste, nicht darunter: Sie ist die einzige Zone, die den
+       unteren Rand belegt. */
+    bottom: calc(var(--shell-timeline) + 1rem);
+    z-index: 60;
+    width: min(20rem, calc(100vw - 2rem));
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-raised);
+    box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.45);
+}
+
+.af-dock__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.af-dock__title {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.af-dock__percent {
+    margin-left: auto;
+    font-family: var(--font-headline);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.af-dock__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.af-dock__link {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.af-dock__link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+    .af-dock {
+        bottom: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .af-progress__fill--unknown,
+    .af-run__spin {
+        animation: none;
+    }
+}
+
+/* --- Kein Wert tritt aus seiner Kachel ----------------------------------- */
+/* Am Bild belegt: In der dreispaltigen Reihe des Ladebildschirms sprengten
+   "Standard-Ausgangslage" und "Ohne Sprachmodell" ihre Karten und liefen in die
+   Nachbarkachel. Ursache war der Zahlensatz (2xl, fett) auf einem Wert, der
+   Text ist -- und ein fehlender Umbruch innerhalb langer Woerter.
+
+   `overflow-wrap: anywhere` statt `break-word`: Letzteres bricht ein Wort erst,
+   wenn es allein in einer Zeile immer noch nicht passt; in einer schmalen
+   Spalte laesst es "Standard-Ausgangslage" trotzdem herausstehen. */
+.af-tile__value {
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: auto;
+    min-width: 0;
+}
+
+/* Rasterelemente schrumpfen per Voreinstellung nicht unter ihren Inhalt --
+   deshalb schiebt ein langes Wort die ganze Spalte auf, statt umzubrechen.
+   `min-width: 0` nimmt diese Sperre weg. Gilt fuer alle Raster der Oberflaeche,
+   weil der Fall ueberall derselbe ist. */
+.af-grid > * {
+    min-width: 0;
+}

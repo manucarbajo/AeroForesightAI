@@ -77,10 +77,15 @@
             shell().classList.add("af-shell--dragging");
         }
         /* Der Zeiger bleibt beim Griff, auch wenn er ihn verlaesst -- sonst
-           reisst der Zug ab, sobald er ueber ein Plotly-Diagramm laeuft. */
-        if (griff.setPointerCapture) {
-            griff.setPointerCapture(ereignis.pointerId);
-        }
+           reisst der Zug ab, sobald er ueber ein Plotly-Diagramm laeuft.
+           In `try`, weil es zu einem Ereignis ohne echten Zeiger dahinter (ein
+           synthetisches aus einem Test etwa) keinen Zeiger zum Festhalten gibt
+           und der Browser dann wirft. Das Ziehen selbst haengt nicht daran. */
+        try {
+            if (griff.setPointerCapture) {
+                griff.setPointerCapture(ereignis.pointerId);
+            }
+        } catch (e) {}
         ereignis.preventDefault();
     });
 

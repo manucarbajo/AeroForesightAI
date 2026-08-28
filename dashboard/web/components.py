@@ -349,17 +349,35 @@ def badge(text: str, *, variant: str = "default", icon_name: str | None = None) 
     return html.Span(children, className=f"af-badge{suffix}")
 
 
-def metric_tile(label: str, value: Any, hint: str | None = None) -> html.Div:
+def metric_tile(
+    label: str, value: Any, hint: str | None = None, *, prose: bool = False
+) -> html.Div:
+    """Beschriftung über einem Wert, in einer Karte.
+
+    *prose* ist die Fassung für Werte, die **Text** sind statt einer Zahl —
+    «Standard-Ausgangslage», «Ohne Sprachmodell». Der große Zahlensatz (2xl,
+    fett, Ziffern gleicher Breite) ist für sie zu groß: In einer dreispaltigen
+    Reihe trat er aus der Karte heraus und lief in die Nachbarkachel. Die
+    Textfassung setzt kleiner, erlaubt den Umbruch **innerhalb** eines Wortes
+    und schaltet die Ziffernbreite ab, die bei Buchstaben nur Lücken erzeugt.
+
+    `af-tile__value` deckelt in beiden Fällen den Überlauf — eine Karte, aus der
+    Text heraussteht, ist keine Karte.
+    """
+
+    wert = (
+        "font-headline text-base font-semibold af-text-accent mt-1 af-tile__value"
+        if prose
+        else "font-headline text-2xl font-bold af-text-accent mt-1 "
+        "tracking-tight af-num af-tile__value"
+    )
     return html.Div(
         [
             html.Div(label.upper(), className="font-body text-xs tracking-wider af-text-muted"),
-            html.Div(
-                str(value),
-                className="font-headline text-2xl font-bold af-text-accent mt-1 tracking-tight af-num",
-            ),
+            html.Div(str(value), className=wert),
             html.Div(hint, className=f"{CAPTION} mt-1") if hint else None,
         ],
-        className=f"{CARD} p-4",
+        className=f"{CARD} p-4 min-w-0",
     )
 
 
@@ -591,7 +609,15 @@ def tabs(tab_id: str, items: Iterable[tuple[str, str]], value: str) -> dcc.Tabs:
 
 
 def grid(*children: Any, cols: str = "md:grid-cols-2", gap: str = "gap-4") -> html.Div:
-    return html.Div(list(children), className=f"grid grid-cols-1 {cols} {gap}")
+    """Ein Raster mit `af-grid` als Trägerklasse.
+
+    `af-grid` setzt `min-width: 0` auf die Kinder. Ohne das schrumpft ein
+    Rasterelement nicht unter seinen Inhalt: Ein langes Wort schiebt dann die
+    Spalte auf, statt umzubrechen, und der Nachbar wird herausgedrückt. Genau so
+    trat «Standard-Ausgangslage» im Ladebildschirm aus seiner Kachel.
+    """
+
+    return html.Div(list(children), className=f"af-grid grid grid-cols-1 {cols} {gap}")
 
 
 def divider(class_name: str = "my-6") -> html.Hr:

@@ -24,10 +24,28 @@ in Rot. Der Start-Knopf ist gesperrt, solange gerechnet wird.
 Es rechnet immer nur **ein** Lauf, und zwar für alle: Der Zustand hängt am
 Server, nicht an Ihrem Browserfenster. Laden Sie die Seite mitten im Lauf neu
 oder öffnen Sie das Dashboard in einem zweiten Tab, sehen Sie dort ebenfalls
-«Simulation läuft» und einen gesperrten Start-Knopf. Was Sie in diesem zweiten
-Fenster **nicht** sehen, ist der Fortschritt Zeile für Zeile — die Konsole füllt
-sich nur dort, wo Sie gestartet haben. Woran der Lauf gerade ist, sagt Ihnen
-dann das Terminal, in dem das Dashboard läuft.
+«Simulation läuft», einen gesperrten Start-Knopf **und denselben Fortschritt**.
+
+## Während gerechnet wird
+
+Sobald der Lauf angefangen hat, wechselt der **Leitstand** das Bild: Statt der
+Szene steht dort der Ladebildschirm — wie weit der Lauf ist, was er rechnet
+(Szenario, Umfang, Rechenmodus), und darunter die Konsole, hier aufgeklappt.
+Solange gerechnet wird, ist sie das Einzige, was sich bewegt.
+
+Sie müssen nicht zusehen. Wechseln Sie nach **Ergebnisse**, um einen früheren
+Lauf anzuschauen, oder ins **Handbuch** — der Fortschritt wandert dann in ein
+kleines Fenster unten rechts und bleibt dort sichtbar. Ein Klick auf «Ansehen»
+bringt Sie zurück zum Ladebildschirm. Abbrechen können Sie den Lauf von dort
+aus nicht; er gehört dem Server und nicht diesem Fenster.
+
+**Steht der Balken still und zeigt keinen Prozentwert**, ist das kein Fehler:
+Bis zur ersten Tick-Meldung weiß niemand, wie weit der Lauf ist, und dann läuft
+ein unbestimmter Balken statt einer erfundenen Zahl. Die Prozentangabe erscheint,
+sobald der erste Tick gerechnet ist.
+
+Ist der Lauf fertig, meldet das Bedienfeld links die Run-ID mit der Zahl der
+Ticks und Events — und daneben steht der Weg weiter: **Ergebnisse ansehen**.
 
 Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit auf **Einrichten**,
 **Ergebnisse** oder ins **Handbuch** wechseln, ohne ihn abzubrechen — die Kopfzeile bleibt

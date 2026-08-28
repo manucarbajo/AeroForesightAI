@@ -1,0 +1,193 @@
+"""Der Lauf ist ein eigener Zustand (P1.7-B).
+
+Drei Zusagen hängen hier, und alle drei sind leicht zu verlieren:
+
+1. **Der Fortschritt gehört dem Server.** Bis P1.7 füllte ihn der Poll-Callback,
+   und der läuft nur in der Sitzung, die gestartet hat. Ein zweiter Tab und eine
+   neu geladene Seite sahen nichts.
+2. **Der Balken lügt nicht.** Ohne Tick-Meldung gibt es keinen Anteil — dann
+   gehört dort ein unbestimmter Balken hin und keine erfundene Prozentzahl
+   (Invariante 1: Zahlen kommen aus dem Lauf, nicht aus der Oberfläche).
+3. **Der Ladebildschirm verdrängt die Einrichtung.** Rechnet ein Lauf, gehört
+   ihm der Viewport — und nicht dem Formular, das gerade vorbei ist.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from dashboard.web import app as web_app
+from dashboard.web import run_data, runner
+from dashboard.web.state import initial_draft_dict
+from dashboard.web.views import running
+
+
+@pytest.fixture(autouse=True)
+def _leerer_zustand():
+    runner._JOBS.clear()
+    yield
+    runner._JOBS.clear()
+
+
+def _job_mit(*zeilen: str) -> runner.Job:
+    """Einen laufenden Job mit vorgegebenen Ausgabezeilen unterschieben."""
+
+    job = runner.Job(job_id="test-job")
+    job.lines.extend(zeilen)
+    runner._JOBS[job.job_id] = job
+    return job
+
+
+# --- Der Fortschritt gehoert dem Server ------------------------------------
+
+
+class TestFortschrittAmServer:
+    def test_it_is_readable_without_the_job_id(self):
+        """Genau das konnte die frühere Fassung nicht."""
+
+        _job_mit("[tick  14/40] 0.05s — price=90")
+
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None
+        assert (fortschritt.tick, fortschritt.total) == (14, 40)
+
+    def test_it_reads_the_latest_tick_line(self):
+        _job_mit(
+            "[tick   1/40] los",
+            "irgendeine Zwischenmeldung ohne Tick",
+            "[tick  12/40] weiter",
+        )
+
+        assert runner.progress().tick == 12
+
+    def test_it_is_none_when_nothing_runs(self):
+        assert runner.progress() is None
+
+    def test_a_finished_job_does_not_count(self):
+        job = _job_mit("[tick  40/40] fertig")
+        job.done = True
+
+        assert runner.progress() is None
+
+    def test_the_payload_survives_the_trip_through_the_browser(self):
+        """Store-Zuordnung und Objekt müssen dasselbe sagen.
+
+        Dazwischen liegt JSON; ginge auf dem Weg ein Feld verloren, zeigte der
+        Ladebildschirm stumm einen unbestimmten Balken.
+        """
+
+        from dashboard.web.pages import launch as launch_page
+
+        _job_mit("[tick   7/25] unterwegs")
+
+        zurueck = web_app._progress_from(launch_page.progress_payload())
+
+        assert zurueck is not None
+        assert (zurueck.tick, zurueck.total) == (7, 25)
+        assert zurueck.lines
+
+
+# --- Der Balken luegt nicht ------------------------------------------------
+
+
+class TestDerBalkenErfindetNichts:
+    def test_without_a_tick_line_there_is_no_fraction(self):
+        """Invariante 1 an der Oberfläche: keine Zahl ohne Deckung."""
+
+        _job_mit("Lauf wird vorbereitet", "Konfiguration geladen")
+
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None
+        assert fortschritt.tick is None
+        assert fortschritt.fraction is None
+
+    def test_an_unknown_fraction_renders_an_indeterminate_bar(self):
+        unbestimmt = runner.Progress(job_id="x", tick=None, total=None, line="")
+
+        gerendert = str(running.render(unbestimmt, initial_draft_dict()))
+
+        assert "af-progress__fill--unknown" in gerendert
+        # Keine Prozentzahl, sondern ein Gedankenstrich.
+        assert "0%" not in gerendert
+
+    def test_a_known_fraction_renders_a_width(self):
+        bekannt = runner.Progress(job_id="x", tick=10, total=40, line="")
+
+        assert bekannt.fraction == 0.25
+        assert "25.0%" in str(running.render(bekannt, initial_draft_dict()))
+
+    def test_the_fraction_never_exceeds_one(self):
+        """Ein Lauf kann seine Zielzahl melden, bevor er aufhört."""
+
+        assert runner.Progress(job_id="x", tick=41, total=40, line="").fraction == 1.0
+
+
+# --- Der Ladebildschirm verdraengt die Einrichtung -------------------------
+
+
+class TestDerLaufBekommtDenBildschirm:
+    def test_the_viewport_shows_the_run_while_it_computes(self):
+        daten = run_data.demo()
+        laufend = runner.Progress(job_id="x", tick=3, total=10, line="[tick 3/10]")
+
+        gerendert = str(web_app.scene_block(daten, 1, progress=laufend, draft=initial_draft_dict()))
+
+        assert "Der Lauf rechnet" in gerendert
+        assert "Population im Tick" not in gerendert, "Die Szene gehört hier nicht hin"
+
+    def test_without_a_run_the_scene_is_back(self):
+        daten = run_data.demo()
+
+        gerendert = str(web_app.scene_block(daten, 1, progress=None))
+
+        assert "Population im Tick" in gerendert
+        assert "Der Lauf rechnet" not in gerendert
+
+    def test_the_loading_screen_names_what_is_computed(self):
+        """Ohne das wäre es ein Balken ohne Gegenstand.
+
+        Ohne Rücksicht auf Groß- und Kleinschreibung: `ui.metric_tile` setzt
+        seine Beschriftung in Versalien, und das ist eine Gestaltungsfrage —
+        ein Test, der sie festnagelt, bräche beim nächsten Feinschliff.
+        """
+
+        draft = initial_draft_dict()
+        gerendert = str(
+            running.render(runner.Progress(job_id="x", tick=1, total=5, line=""), draft)
+        ).lower()
+
+        assert "szenario" in gerendert
+        assert "rechenmodus" in gerendert
+        assert "umfang" in gerendert
+
+
+# --- Das Fortschrittsfenster -----------------------------------------------
+
+
+class TestDasFortschrittsfenster:
+    def test_it_stays_away_from_the_control_room(self):
+        """Dort steht der Ladebildschirm — zwei Balken wären zwei Aussagen."""
+
+        from dashboard.web import routing
+
+        leitstand = running.leitstand_route()
+
+        assert web_app.active_route(routing.url(leitstand)) == leitstand
+
+    def test_it_links_back_to_the_control_room(self):
+        from dashboard.web import routing
+
+        gerendert = str(running.dock(runner.Progress(job_id="x", tick=2, total=8, line="")))
+
+        assert routing.url(running.leitstand_route()) in gerendert
+
+    def test_it_offers_no_way_to_kill_the_run(self):
+        """Der Lauf gehört nicht diesem Fenster — erst recht nicht in einer
+        Sitzung, die ihn nicht gestartet hat."""
+
+        gerendert = str(running.dock(runner.Progress(job_id="x", tick=2, total=8, line="")))
+
+        for wort in ("Abbrechen", "Stoppen", "Beenden"):
+            assert wort not in gerendert

@@ -67,6 +67,8 @@ SCRIM = "shell-scrim"
 DRAWER_STORE = "shell-drawer-store"
 
 STATUS_HOST = "shell-status"
+#: Wirt für das Fortschrittsfenster eines laufenden Laufs (P1.7).
+DOCK_HOST = "shell-dock"
 #: Die Bereichslinks. Eigener Wirt, damit das Routing nur sie austauscht und
 #: nicht die ganze Kopfzeile samt Auswahlfeld und Zustandsanzeige neu baut.
 NAV_HOST = "shell-nav"
@@ -256,6 +258,11 @@ def layout(
             # ist. Ein Klick schließt sie — auf schmalen Geräten die einzige
             # Geste, die ohne Zielen funktioniert.
             html.Div(id=SCRIM, className="af-shell__scrim", n_clicks=0),
+            # Das Fortschrittsfenster eines laufenden Laufs (P1.7). Es liegt
+            # ausserhalb der fünf Zonen, weil es über allen schwebt — und es
+            # bleibt leer, solange nichts rechnet oder man ohnehin auf dem
+            # Leitstand steht.
+            html.Div(id=DOCK_HOST),
         ],
         className="af-shell",
         id=SHELL_ID,

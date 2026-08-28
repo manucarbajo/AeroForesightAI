@@ -128,6 +128,29 @@ def summary_rows(draft: dict) -> html.Div:
     )
 
 
+def progress_payload() -> dict | None:
+    """Der Fortschritt des aktiven Laufs als einfache Zuordnung — oder `None`.
+
+    Eine Zuordnung und kein Objekt, weil der Wert durch den Browser läuft.
+    Sie steht schon beim **ersten** Zeichnen im Store: Sonst zeigte der
+    Leitstand nach jedem Laden erst die Szene und wechselte zwei Sekunden
+    später zum Ladebildschirm, wenn der Takt zum ersten Mal feuert. Dasselbe
+    Prinzip wie beim Laufzustand — der Server weiß es sofort, also sagt er es
+    sofort.
+    """
+
+    aktuell = runner.progress()
+    if aktuell is None:
+        return None
+    return {
+        "job_id": aktuell.job_id,
+        "tick": aktuell.tick,
+        "total": aktuell.total,
+        "line": aktuell.line,
+        "lines": list(aktuell.lines),
+    }
+
+
 # --- Die Zone als Ganzes ---------------------------------------------------
 
 
@@ -149,7 +172,7 @@ def rail(draft: dict | None = None) -> html.Div:
             ),
             dcc.Store(id="cfg-editor-refresh", data=0),
             dcc.Store(id="run-job-store"),
-            dcc.Store(id=PROGRESS_STORE, data=[]),
+            dcc.Store(id=PROGRESS_STORE, data=progress_payload()),
             dcc.Store(id=RUNNING_STORE, data=laeuft),
             dcc.Interval(id="run-poll", interval=POLL_INTERVAL_MS, disabled=True),
             dcc.Interval(id=HEARTBEAT, interval=HEARTBEAT_INTERVAL_MS),
@@ -227,6 +250,8 @@ def _result_message(result) -> html.Div:
             ]
         )
 
+    from dashboard.web.views import running
+
     return html.Div(
         [
             ui.alert(
@@ -238,6 +263,10 @@ def _result_message(result) -> html.Div:
                 "Die Szene und die Telemetrie zeigen ihn ab jetzt.",
                 className=f"{ui.CAPTION} mt-2",
             ),
+            # Der Weg weiter gehört an die Fertigmeldung: Hier endet der
+            # Ablauf «Einrichten → Rechnen → Auswerten», und der letzte
+            # Schritt soll nicht gesucht werden müssen.
+            running.finished_link(),
         ]
     )
 
@@ -258,7 +287,7 @@ def register_callbacks(app) -> None:
         Output("run-job-store", "data"),
         Output("run-poll", "disabled"),
         Output("run-status", "children"),
-        Output(PROGRESS_STORE, "data"),
+        Output(PROGRESS_STORE, "data", allow_duplicate=True),
         Output("run-start", "disabled"),
         Input("run-start", "n_clicks"),
         State(STORE_ID, "data"),
@@ -289,11 +318,13 @@ def register_callbacks(app) -> None:
             job_id = runner.start(draft or {})
         except Exception as exc:  # noqa: BLE001 - «läuft schon» ist ein normaler Fall
             return no_update, no_update, ui.alert(str(exc), "warning"), no_update, False
-        return job_id, False, ui.alert("Lauf aktiv …", "info"), [], True
+        # Der Fortschritt wird geleert, nicht stehen gelassen: Sonst zeigte der
+        # Ladebildschirm eine Sekunde lang den Stand des vorigen Laufs, bis der
+        # Takt ihn ersetzt.
+        return job_id, False, ui.alert("Lauf aktiv …", "info"), None, True
 
     @app.callback(
         Output("run-status", "children", allow_duplicate=True),
-        Output(PROGRESS_STORE, "data", allow_duplicate=True),
         Output("run-poll", "disabled", allow_duplicate=True),
         Output("run-start", "disabled", allow_duplicate=True),
         Output("last-launched-run-store", "data"),
@@ -302,22 +333,25 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def _poll(_n_intervals: int, job_id: str | None):
+        """Der Ausgang des **eigenen** Laufs — Ergebnis, Fehler, Freigabe.
+
+        Die Fortschrittszeilen holt seit P1.7 nicht mehr dieser Callback,
+        sondern der Takt: Sie gehören dem Server, nicht dem Job-Besitzer, und
+        eine fremde Sitzung sah sonst einen leeren Balken. Was hier bleibt, ist
+        das, was wirklich nur den Besitzer angeht — die Erfolgsmeldung mit der
+        Run-Kennung und das Aufräumen des Jobs.
+        """
+
         job = runner.poll(job_id)
         if job is None:
-            return no_update, no_update, True, False, no_update
+            return no_update, True, False, no_update
 
         if not job.done:
-            return no_update, list(job.lines), False, True, no_update
+            return no_update, False, True, no_update
 
         runner.forget(job_id)
         if job.error:
-            return (
-                ui.alert(f"Lauf fehlgeschlagen: {job.error}", "error"),
-                list(job.lines),
-                True,
-                False,
-                no_update,
-            )
+            return ui.alert(f"Lauf fehlgeschlagen: {job.error}", "error"), True, False, no_update
 
         result = job.result
         selected = (
@@ -325,7 +359,7 @@ def register_callbacks(app) -> None:
             if result.sweep_batch and result.child_run_ids
             else result.run_id
         )
-        return _result_message(result), list(job.lines), True, False, selected
+        return _result_message(result), True, False, selected
 
     @app.callback(
         Output(RUNNING_STORE, "data"),
@@ -360,3 +394,27 @@ def register_callbacks(app) -> None:
         if bool(bisher) == laeuft:
             return no_update, no_update
         return laeuft, laeuft
+
+    @app.callback(
+        Output(PROGRESS_STORE, "data"),
+        Input(HEARTBEAT, "n_intervals"),
+        State(PROGRESS_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def _progress(_beat, bisher: dict | None):
+        """Der Fortschritt des aktiven Laufs — für **jede** Sitzung.
+
+        Bis P1.7 füllte `_poll` diesen Store, und `run-poll` läuft nur in der
+        Sitzung, die gestartet hat. Ein zweiter Tab und eine neu geladene Seite
+        sahen deshalb nichts. Jetzt liest der Takt `runner.progress()`, und das
+        ist eine Auskunft über den Server, nicht über diese Sitzung.
+
+        Wie beim Laufzustand wird nur bei echter Änderung geschrieben: Der Store
+        speist Ladebildschirm, Fortschrittsfenster und Konsole, und die sollen
+        sich bewegen, wenn sich etwas bewegt hat — nicht im Takt.
+        """
+
+        neu = progress_payload()
+        if neu is None:
+            return None if bisher else no_update
+        return no_update if neu == bisher else neu

@@ -142,12 +142,49 @@ _INDEX = _INDEX_TEMPLATE.replace("__NAVY__", json.dumps(theme.NAVY))
 # --- Zonen-Inhalte ---------------------------------------------------------
 
 
-def scene_block(data: run_data.RunData, tick: int, *, mode: str = theme.LIGHT, zoom: int = 0):
-    """Der Viewport im Bereich «Leitstand» — Demo-Hinweis, dann die Szene.
+def _progress_from(payload: dict | None) -> runner.Progress | None:
+    """Den Fortschritt aus dem Store zurückbauen — oder `None`.
 
-    Der Hinweis steht **über** der Szene und nicht daneben: Wer Zahlen abliest,
-    soll vorher gelesen haben, woher sie kommen.
+    Der Store trägt eine einfache Zuordnung, weil er durch den Browser läuft;
+    die Ansichten wollen das Objekt mit seiner `fraction`-Regel.
     """
+
+    if not payload or not payload.get("job_id"):
+        return None
+    return runner.Progress(
+        job_id=str(payload["job_id"]),
+        tick=payload.get("tick"),
+        total=payload.get("total"),
+        line=str(payload.get("line") or ""),
+        lines=tuple(payload.get("lines") or ()),
+    )
+
+
+def scene_block(
+    data: run_data.RunData,
+    tick: int,
+    *,
+    mode: str = theme.LIGHT,
+    zoom: int = 0,
+    progress: runner.Progress | None = None,
+    draft: dict | None = None,
+):
+    """Der Viewport im Bereich «Leitstand».
+
+    **Rechnet gerade ein Lauf, gehört der Bildschirm ihm** (seit P1.7). Die
+    Szene zeigt dann ohnehin den zuletzt gewählten, *anderen* Lauf — sie
+    danebenzustellen hieße, zwei Läufe gleichzeitig zu zeigen und keinen davon
+    zu benennen.
+
+    Sonst: Demo-Hinweis, dann die Szene. Der Hinweis steht **über** der Szene
+    und nicht daneben — wer Zahlen abliest, soll vorher gelesen haben, woher sie
+    kommen.
+    """
+
+    if progress is not None:
+        from dashboard.web.views import running
+
+        return running.render(progress, draft or {})
 
     children: list = []
     if data.is_demo:
@@ -240,7 +277,16 @@ def serve_layout() -> html.Div:
                 main=html.Div(
                     [
                         html.Div(setup_page.layout(draft), id="page-setup", style=start[0]),
-                        html.Div(scene_block(data, 1), id=SCENE_HOST, style=start[1]),
+                        html.Div(
+                            scene_block(
+                                data,
+                                1,
+                                progress=_progress_from(launch_page.progress_payload()),
+                                draft=draft,
+                            ),
+                            id=SCENE_HOST,
+                            style=start[1],
+                        ),
                         html.Div(runs_page.layout(selection), id="page-runs", style=start[2]),
                         html.Div(docs_page.layout(), id="page-docs", style=start[3]),
                     ],
@@ -340,14 +386,18 @@ def create_app() -> Dash:
         Input(shell.THEME_STORE, "data"),
         Input(scene.ZOOM_STORE, "data"),
         Input("selected-run-store", "data"),
+        Input(launch_page.PROGRESS_STORE, "data"),
+        State(STORE_ID, "data"),
     )
-    def _scene(tick, mode: str | None, zoom, selected: dict | None):
+    def _scene(tick, mode: str | None, zoom, selected: dict | None, progress, draft):
         data = run_data.load(selected)
         return scene_block(
             data,
             max(1, int(tick or 1)),
             mode=theme.normalise(mode),
             zoom=int(zoom or 0),
+            progress=_progress_from(progress),
+            draft=draft or {},
         )
 
     @app.callback(
@@ -357,13 +407,14 @@ def create_app() -> Dash:
         Input("selected-run-store", "data"),
         Input(launch_page.PROGRESS_STORE, "data"),
     )
-    def _telemetry(tick, mode: str | None, selected: dict | None, progress: list | None):
+    def _telemetry(tick, mode: str | None, selected: dict | None, progress: dict | None):
         data = run_data.load(selected)
+        lauf = _progress_from(progress)
         return telemetry.render(
             data,
             max(1, int(tick or 1)),
             mode=theme.normalise(mode),
-            progress=list(progress or []),
+            progress=list(lauf.lines) if lauf else [],
         )
 
     @app.callback(
@@ -374,6 +425,27 @@ def create_app() -> Dash:
     def _status(running: bool | None, selected: dict | None):
         data = run_data.load(selected)
         return shell.status_view(_status_for(data, running=bool(running)))
+
+    @app.callback(
+        Output(shell.DOCK_HOST, "children"),
+        Input(launch_page.PROGRESS_STORE, "data"),
+        Input("url", "pathname"),
+    )
+    def _dock(progress: dict | None, pathname: str | None):
+        """Das Fortschrittsfenster — überall **außer** auf dem Leitstand.
+
+        Dort steht der Ladebildschirm, und zwei Fortschrittsbalken auf einem
+        Schirm wären zwei Aussagen über dieselbe Sache. Sonst gilt: Wer während
+        eines Laufs einen älteren ansehen will, soll das können, ohne den
+        laufenden aus den Augen zu verlieren.
+        """
+
+        from dashboard.web.views import running
+
+        lauf = _progress_from(progress)
+        if lauf is None or active_route(pathname) == running.leitstand_route():
+            return None
+        return running.dock(lauf)
 
     @app.callback(
         Output(scene.ZOOM_STORE, "data"),
