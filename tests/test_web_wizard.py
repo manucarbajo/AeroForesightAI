@@ -160,6 +160,218 @@ class TestModellUndExperimentSindZweiOrte:
         assert "Traceback" not in gerendert
 
 
+class _SchreibVersuch(Exception):
+    """Eine Aktion hat versucht, in `configs/` zu schreiben."""
+
+
+#: Was das **Modell** dauerhaft verändert. Diese Funktionen werden im Test
+#: ersetzt, damit ein Schreibversuch auffällt, statt Dateien anzufassen.
+MODELL_SCHREIBER = (
+    "add_custom_property",
+    "delete_custom_property",
+    "save_market_feedback_to_file",
+    "save_population_edits_to_file",
+    "save_saturation_to_file",
+)
+
+#: `save_custom_sweep_preset` steht **nicht** darin, und das ist eine
+#: Entscheidung: «Als Szenario speichern» legt unter `configs/sweeps/` ab, und
+#: das ist die Ablage des Experiments, nicht das Modell. Es darf deshalb in der
+#: Schrittfolge stehen — mit ausdrücklichem Namen und einer Schaltfläche, die
+#: nichts anderes tut.
+EXPERIMENT_SCHREIBER = ("save_custom_sweep_preset",)
+
+
+def _freie_werte():
+    """Plausible Eingaben für die Aktionen, die welche brauchen.
+
+    Ohne sie brechen «Größe anlegen» und «Segment anlegen» **vor** dem Schreiben
+    mit einer Meldung ab — und der Test schlösse daraus fälschlich, sie
+    schrieben nicht.
+    """
+
+    from dashboard.web.config_editor import controls as c
+
+    return [
+        {"id": {"type": c.FREE, "name": "new-prop-id"}, "value": "probe_groesse"},
+        {"id": {"type": c.FREE, "name": "new-prop-label"}, "value": "Probe"},
+        {"id": {"type": c.FREE, "name": "new-prop-category"}, "value": "none"},
+        {"id": {"type": c.FREE, "name": "new-segment-id"}, "value": "probe_segment"},
+        {"id": {"type": c.FREE, "name": "preset-name"}, "value": "probe_preset"},
+    ]
+
+
+def _aktionen(baum) -> list[dict]:
+    """Alle auslösbaren Aktions-IDs eines Komponentenbaums."""
+
+    from dashboard.web.config_editor import controls as c
+    from dashboard.web.config_editor import macro, micro
+
+    typen = {c.ACTION, c.WRITE, macro.PROP_DELETE, micro.SEGMENT_DELETE}
+    return [
+        item.id
+        for item in _walk(baum)
+        if isinstance(getattr(item, "id", None), dict) and item.id.get("type") in typen
+    ]
+
+
+def _schreibt(monkeypatch, trigger: dict, draft: dict) -> bool:
+    """Ob diese Aktion das Modell dauerhaft verändern würde.
+
+    **Geprüft wird die Wirkung, nicht der Name.** Eine Liste verbotener
+    Aktionsnamen wäre in dem Moment falsch, in dem jemand eine neue Aktion
+    hinzufügt und sie nicht einträgt — genau die Sorte Wächter, die aus dem
+    falschen Grund grün ist.
+    """
+
+    from dashboard.web import config_editor
+
+    for name in MODELL_SCHREIBER:
+
+        def _versuch(*_a, __name=name, **_k):
+            raise _SchreibVersuch(__name)
+
+        monkeypatch.setattr(config_editor, name, _versuch)
+
+    # **Auch die erlaubten Schreiber werden stillgelegt.** Sie sind hier nicht
+    # der Gegenstand, aber `save-preset` steht in Schritt 4 und würde beim
+    # Durchgehen aller Aktionen wirklich eine Datei unter `configs/sweeps/`
+    # anlegen. Beim ersten Lauf ist genau das passiert — ein Test, der das Repo
+    # verändert, ist ein Fehler im Test.
+    for name in EXPERIMENT_SCHREIBER:
+        monkeypatch.setattr(config_editor, name, lambda *_a, **_k: "pfad")
+
+    try:
+        config_editor._handle_action(trigger, dict(draft), _freie_werte())
+    except _SchreibVersuch:
+        return True
+    except Exception:  # noqa: BLE001 - jeder andere Fehler ist hier kein Befund
+        return False
+    return False
+
+
+class TestNurDasModellSchreibtInsModell:
+    """W3.2 — der kritische Audit-Befund A6.
+
+    Fünf Bedienelemente in als *optional* gekennzeichneten Schritten schrieben
+    sofort und ohne Rückfrage in `configs/properties.json`: «Entfernen» an einem
+    Segment löschte es aus der ausgelieferten Datei. Kein Dialog, kein Undo,
+    keine Sicherung. Die Wirkung reichte über den Lauf, die Sitzung und den
+    Nutzer hinaus — die nächste Person arbeitete mit einem veränderten Modell,
+    ohne es zu erfahren.
+
+    Das war kein Bedienfehler, sondern ein Kategorienfehler. W3.1 hat die
+    Trennung gebaut, dieses Paket macht sie mechanisch nachprüfbar.
+    """
+
+    def test_no_step_of_the_wizard_can_change_the_model(self, monkeypatch, draft):
+        """Der Kern der Zusage — und er prüft die Wirkung, nicht die Namen."""
+
+        schuldige = []
+        for index in range(len(wizard.STEPS)):
+            for trigger in _aktionen(wizard.content(draft, index)):
+                if _schreibt(monkeypatch, trigger, draft):
+                    schuldige.append(f"  Schritt {index + 1}: {trigger}")
+
+        assert not schuldige, (
+            "Diese Aktionen im Assistenten verändern das Modell dauerhaft:\n"
+            + "\n".join(schuldige)
+            + "\n\nEin Assistent, der einen Lauf einrichtet, darf das Modell nicht "
+            "ändern. Der Ort dafür ist der Bereich «Modell»."
+        )
+
+    def test_the_experiment_may_still_save_itself(self, monkeypatch, draft):
+        """«Als Szenario speichern» bleibt — es legt kein Modell an, sondern ein Experiment.
+
+        Die Zusage lautet «kein Schreibpfad **ins Modell**», nicht «kein
+        Schreibpfad». Ein Szenario unter `configs/sweeps/` abzulegen ist die
+        Ablage des Experiments und gehört genau dorthin, wo man über den Lauf
+        als Ganzes nachdenkt.
+        """
+
+        from dashboard.web import config_editor
+        from dashboard.web.config_editor import controls as c
+
+        gerufen = []
+        for name in EXPERIMENT_SCHREIBER:
+            monkeypatch.setattr(
+                config_editor, name, lambda *a, __n=name, **k: gerufen.append(__n) or "pfad"
+            )
+
+        config_editor._handle_action(c.action_id("save-preset"), dict(draft), _freie_werte())
+
+        assert gerufen == list(EXPERIMENT_SCHREIBER)
+
+    def test_every_writing_control_asks_first(self, monkeypatch, draft):
+        """Jede schreibende Schaltfläche im Modell steht hinter einer Rückfrage.
+
+        Auch das über die Wirkung: Erst wird ermittelt, welche Aktionen des
+        Bereichs schreiben, dann wird geprüft, dass genau diese in einer
+        `ConfirmDialogProvider` stecken. Eine neue schreibende Aktion ohne
+        Rückfrage fällt damit auf, ohne dass jemand eine Liste pflegt.
+        """
+
+        from dash import dcc
+
+        from dashboard.web.pages import model_editor
+
+        baum = model_editor.layout(draft)
+        mit_rueckfrage = {
+            str(item.id)
+            for item in _walk(baum)
+            if isinstance(item, dcc.ConfirmDialogProvider)
+            and isinstance(getattr(item, "id", None), dict)
+        }
+
+        ohne = [
+            trigger
+            for trigger in _aktionen(baum)
+            if _schreibt(monkeypatch, trigger, draft) and str(trigger) not in mit_rueckfrage
+        ]
+
+        assert not ohne, (
+            f"Diese Schaltflächen im Modell schreiben ohne Rückfrage: {ohne}\n"
+            "`controls.write_action` verpackt sie samt Reichweite."
+        )
+
+    def test_the_reach_is_named_at_every_one_of_them(self, draft):
+        """Und die Reichweite steht dran — im Hinweis wie in der Rückfrage.
+
+        Eine Rückfrage, die nur «Fortfahren?» sagt, klickt man weg. Sie muss
+        sagen, wie weit die Änderung reicht.
+        """
+
+        from dash import dcc
+
+        from dashboard.web.config_editor import controls as c
+        from dashboard.web.pages import model_editor
+
+        provider = [
+            item
+            for item in _walk(model_editor.layout(draft))
+            if isinstance(item, dcc.ConfirmDialogProvider)
+        ]
+
+        assert provider, "Keine einzige Rückfrage im Modell-Bereich"
+        for eintrag in provider:
+            assert c.REICHWEITE in (
+                eintrag.message or ""
+            ), f"Die Rückfrage zu {eintrag.id} nennt die Reichweite nicht: {eintrag.message!r}"
+
+    def test_the_reach_is_worded_once(self):
+        """Ein Satz, eine Quelle — sonst laufen Hinweis und Rückfrage auseinander."""
+
+        from pathlib import Path
+
+        for datei in ("macro.py", "micro.py"):
+            quelle = Path("dashboard/web/config_editor") / datei
+            text = quelle.read_text(encoding="utf-8")
+            assert "für alle künftigen Läufe" not in text, (
+                f"{datei} formuliert die Reichweite selbst — sie gehört in "
+                "`controls.REICHWEITE` und nur dorthin."
+            )
+
+
 # --- Nur der offene Schritt steht im DOM -----------------------------------
 
 

@@ -5,7 +5,10 @@ Menschen, die buchen? Je Block steht vorn die Stellschraube, die die Wirkung
 bestimmt; die Feinabstimmung liegt aufklappbar darunter.
 
 Die «Speichern»-Knöpfe schreiben direkt in `configs/properties.json` — sie
-wirken also über den einzelnen Lauf hinaus.
+wirken also über den einzelnen Lauf hinaus. Seit P1.9-W3.2 stehen sie deshalb
+hinter einer Rückfrage (`controls.write_action`), und ihre Reichweite steht als
+Hinweis darunter. Dieses Modul wird seit W3.1 im Bereich «Modell» gerendert,
+nicht mehr in der Schrittfolge.
 """
 
 from __future__ import annotations
@@ -74,14 +77,13 @@ def _market_feedback(draft: dict) -> html.Div:
             count=len(_FEEDBACK_FINE),
             names="Preisuntergrenze, Reaktionsstärke, Dämpfung, Preisdeckel, Kopplung",
         ),
-        html.Div(
-            ui.button(
-                "Als Standard speichern",
-                id=c.action_id("save-market-feedback"),
-                variant="secondary",
-                icon_name="save",
-            ),
-            className="mt-5",
+        c.write_action(
+            "save-market-feedback",
+            "Als Standard speichern",
+            frage="Das Preisverhalten wird als neuer Standard in die "
+            "Konfigurationsdatei geschrieben.",
+            icon_name="save",
+            class_name="mt-5",
         ),
     )
 
@@ -135,12 +137,13 @@ def _segment_card(index: int, segment: dict) -> html.Div:
                         html.Code(segment_id, className=ui.CAPTION),
                     ]
                 ),
-                ui.button(
+                c.write_action(
+                    "segment-delete",
                     "Entfernen",
-                    id={"type": SEGMENT_DELETE, "segment": segment_id},
+                    frage=f"Das Segment «{label}» wird aus der Konfigurationsdatei entfernt.",
                     variant="danger",
                     icon_name="delete",
-                    className="!px-3 !py-1.5 text-xs",
+                    identifier={"type": SEGMENT_DELETE, "segment": segment_id},
                 ),
             ],
             className="flex items-start justify-between gap-3 mb-4",
@@ -260,9 +263,13 @@ def _add_segment_block() -> html.Div:
                     hint="Kleinbuchstaben und Unterstriche, keine Leerzeichen.",
                     class_name="flex-1 min-w-[16rem]",
                 ),
-                html.Div(
-                    ui.button("Segment anlegen", id=c.action_id("add-segment"), icon_name="add"),
-                    className="pt-7",
+                c.write_action(
+                    "add-segment",
+                    "Segment anlegen",
+                    frage="Das neue Segment wird in die Konfigurationsdatei geschrieben.",
+                    icon_name="add",
+                    variant="primary",
+                    class_name="pt-7",
                 ),
             ],
             className="flex items-start gap-4 flex-wrap",
@@ -325,13 +332,14 @@ def layout(draft: dict) -> html.Div:
                     else ui.alert("Keine Verteilungen definiert.", "info")
                 ),
             ),
-            html.Div(
-                ui.button(
-                    "Bevölkerung als Standard speichern",
-                    id=c.action_id("save-population"),
-                    icon_name="save",
-                ),
-                className="mt-2",
+            c.write_action(
+                "save-population",
+                "Bevölkerung als Standard speichern",
+                frage="Bevölkerung und Sättigung werden als neuer Standard in die "
+                "Konfigurationsdatei geschrieben.",
+                icon_name="save",
+                variant="primary",
+                class_name="mt-2",
             ),
         ]
     )

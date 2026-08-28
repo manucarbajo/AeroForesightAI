@@ -39,8 +39,76 @@ ERROR = "cfg-error"
 # bei Pattern-Matching ist eine leere Treffermenge dagegen der Normalfall.
 
 
+#: Aktionen, die **dauerhaft in `configs/` schreiben** (P1.9-W3.2). Eigener Typ,
+#: weil sie hinter einer Rückfrage stehen und deshalb `submit_n_clicks` liefern
+#: statt `n_clicks` — ein Callback kann nicht beide Eigenschaften derselben
+#: ID-Menge abhören.
+WRITE = "cfg-write"
+
+
 def cfg_id(field: str, kind: str = CFG) -> dict:
     return {"type": kind, "field": field}
+
+
+def write_id(name: str) -> dict:
+    return {"type": WRITE, "action": name}
+
+
+#: Der Satz, der an **jeder** dieser Schaltflächen steht — im Hinweis darunter
+#: und in der Rückfrage darüber, aus einer Quelle.
+#:
+#: Das Audit vom 2026-08-28 hat fünf solcher Schaltflächen gefunden, die sofort
+#: und ohne Rückfrage `configs/properties.json` verändert haben — «Entfernen» an
+#: einem Segment löschte es aus der ausgelieferten Datei. Kein Dialog, kein
+#: Undo, keine Sicherung. Die Wirkung reichte über den Lauf hinaus, über die
+#: Sitzung hinaus und über den Nutzer hinaus: Die nächste Person arbeitete mit
+#: einem veränderten Modell, ohne es zu erfahren.
+REICHWEITE = (
+    "Das ändert das Modell dauerhaft — für alle künftigen Läufe und für alle, "
+    "die dieses Dashboard benutzen. Rückgängig machen lässt es sich nur über die "
+    "Versionsverwaltung."
+)
+
+
+def write_action(
+    name: str,
+    label: str,
+    *,
+    frage: str,
+    icon_name: str | None = None,
+    variant: str = "secondary",
+    identifier: dict | None = None,
+    class_name: str = "",
+):
+    """Eine Schaltfläche, die dauerhaft schreibt — mit Rückfrage und Reichweite.
+
+    *frage* benennt in einem Satz, **was** geschieht; die Reichweite kommt aus
+    `REICHWEITE` und steht in jeder dieser Rückfragen gleich da. Zwei Fassungen
+    desselben Satzes wären genau die Drift, die dieses Projekt an anderer Stelle
+    schon bezahlt hat.
+
+    *identifier* erlaubt eine eigene Pattern-ID (die beiden Löschknöpfe tragen
+    ihren Gegenstand darin). Ohne sie entsteht eine aus `name`.
+
+    **Zur Rückfrage selbst:** `dcc.ConfirmDialogProvider` zeigt den Dialog des
+    Browsers. Der ist nicht mit den Farbtokens gestaltet — dafür lässt er sich
+    nicht übersehen, braucht keinen zusätzlichen Zustand und kommt ohne eine
+    zweite Klickstufe aus, die man aus Versehen mitnimmt. Für eine Handlung, die
+    sich nur über die Versionsverwaltung zurückholen lässt, ist das der richtige
+    Tausch. Ein gestalteter Dialog wäre Politur und änderte nichts an der Zusage.
+    """
+
+    return html.Div(
+        [
+            dcc.ConfirmDialogProvider(
+                children=ui.button(label, variant=variant, icon_name=icon_name),
+                id=identifier or write_id(name),
+                message=f"{frage}\n\n{REICHWEITE}",
+            ),
+            ui.hint_text(REICHWEITE, class_name="mt-2 max-w-prose"),
+        ],
+        className=class_name,
+    )
 
 
 def action_id(name: str) -> dict:

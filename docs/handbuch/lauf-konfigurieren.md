@@ -59,8 +59,18 @@ Was Sie im Modell ändern, gilt für den nächsten Lauf — genau wie vorher. Ei
 Schaltflächen dort schreiben allerdings **dauerhaft** in die
 Konfigurationsdateien und wirken damit über Ihren Lauf hinaus: «Als Standard
 speichern», «Bevölkerung als Standard speichern», «Größe anlegen», «Größe
-dauerhaft löschen» und «Entfernen» an einem Segment. Solange dort keine
-Rückfrage steht, gehen Sie mit ihnen sparsam um.
+dauerhaft löschen» und «Entfernen» an einem Segment.
+
+**Jede von ihnen fragt vorher nach**, und die Rückfrage sagt beides: was
+geschieht, und wie weit es reicht — «für alle künftigen Läufe und für alle, die
+dieses Dashboard benutzen». Derselbe Satz steht als Hinweis unter der
+Schaltfläche, damit man ihn schon vor dem Klick liest. Rückgängig machen lässt
+sich so eine Änderung nur über die Versionsverwaltung; ein Undo gibt es nicht.
+
+> **Bis August 2026 fragte keine von ihnen nach.** Sie lagen in als *optional*
+> gekennzeichneten Schritten des Einrichtens, schrieben sofort, und ein Klick auf
+> «Entfernen» löschte ein Segment aus der ausgelieferten Datei — für alle
+> künftigen Läufe und für jeden, der das Dashboard danach öffnete.
 
 **Die Liste links sagt Ihnen, wo Sie waren.** Ein Haken steht an den Schritten,
 die Sie wirklich geöffnet hatten; ein Strich an denen, an denen Sie

@@ -259,14 +259,14 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
             )
         )
         body.append(
-            html.Div(
-                ui.button(
-                    "Größe dauerhaft löschen",
-                    id={"type": PROP_DELETE, "prop": prop_id},
-                    variant="danger",
-                    icon_name="delete",
-                ),
-                className="mt-4",
+            c.write_action(
+                "prop-delete",
+                "Größe dauerhaft löschen",
+                frage=f"«{label}» wird aus der Konfigurationsdatei entfernt.",
+                variant="danger",
+                icon_name="delete",
+                identifier={"type": PROP_DELETE, "prop": prop_id},
+                class_name="mt-4",
             )
         )
 
@@ -306,9 +306,13 @@ def _add_property_block() -> html.Details:
             ),
             cols="lg:grid-cols-3",
         ),
-        html.Div(
-            ui.button("Größe anlegen", id=c.action_id("add-property"), icon_name="add"),
-            className="mt-4",
+        c.write_action(
+            "add-property",
+            "Größe anlegen",
+            frage="Die neue Systemgröße wird in die Konfigurationsdatei geschrieben.",
+            icon_name="add",
+            variant="primary",
+            class_name="mt-4",
         ),
         title="Eigene Systemgröße anlegen",
     )

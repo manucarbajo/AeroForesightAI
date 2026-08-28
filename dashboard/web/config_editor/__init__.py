@@ -292,20 +292,32 @@ def register_callbacks(app) -> None:
         Output(STORE_ID, "data", allow_duplicate=True),
         Output("cfg-editor-refresh", "data"),
         Output("cfg-status", "children"),
+        # **Dieselbe Meldung an beiden Orten.** Eine Aktion kann aus der
+        # Schrittfolge oder aus dem Modell-Bereich kommen, und der jeweils
+        # andere ist dann ausgeblendet. Sie nur an einen zu schreiben hiesse,
+        # die Haelfte aller Rueckmeldungen ins Nichts zu schicken -- genau das
+        # war zwischen W3.1 und W3.2 der Fall.
+        Output(model_editor.STATUS, "children"),
         Input({"type": c.ACTION, "action": ALL}, "n_clicks"),
-        Input({"type": macro.PROP_DELETE, "prop": ALL}, "n_clicks"),
-        Input({"type": micro.SEGMENT_DELETE, "segment": ALL}, "n_clicks"),
+        # **Die schreibenden Aktionen liefern `submit_n_clicks`** (P1.9-W3.2):
+        # Sie stecken in einer `ConfirmDialogProvider`, und die meldet erst,
+        # wenn jemand die Rückfrage bejaht hat. Ein Callback kann nicht beide
+        # Eigenschaften derselben ID-Menge abhören — deshalb tragen sie einen
+        # eigenen Typ.
+        Input({"type": c.WRITE, "action": ALL}, "submit_n_clicks"),
+        Input({"type": macro.PROP_DELETE, "prop": ALL}, "submit_n_clicks"),
+        Input({"type": micro.SEGMENT_DELETE, "segment": ALL}, "submit_n_clicks"),
         State(STORE_ID, "data"),
         State({"type": c.FREE, "name": ALL}, "value"),
         State("cfg-editor-refresh", "data"),
         prevent_initial_call=True,
     )
-    def _actions(_a, _p, _s, draft: dict | None, _free, refresh):
+    def _actions(_a, _w, _p, _s, draft: dict | None, _free, refresh):
         trigger = ctx.triggered_id
         if not isinstance(trigger, dict) or not any(
             entry["value"] for entry in ctx.triggered if entry["value"]
         ):
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
 
         free = ctx.states_list[1]
         data = dict(draft or {})
@@ -314,11 +326,13 @@ def register_callbacks(app) -> None:
         try:
             data, message, kind = _handle_action(trigger, data, free)
         except Exception as exc:  # noqa: BLE001 - Datei- und Validierungsfehler gehören in die UI
-            return no_update, no_update, ui.alert(str(exc), "error")
+            fehler = ui.alert(str(exc), "error")
+            return no_update, no_update, fehler, fehler
 
         if message is None:
-            return no_update, no_update, no_update
-        return data, version, ui.alert(message, kind)
+            return no_update, no_update, no_update, no_update
+        meldung = ui.alert(message, kind)
+        return data, version, meldung, meldung
 
 
 def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | None, str]:
@@ -342,6 +356,8 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
         return data, f"Segment «{segment}» gelöscht.", "success"
 
+    # `WRITE` und `ACTION` tragen denselben Schlüssel `action`; welcher Typ eine
+    # Aktion trägt, sagt nur, ob eine Rückfrage davorsteht.
     action = trigger.get("action")
 
     if action == "reset":

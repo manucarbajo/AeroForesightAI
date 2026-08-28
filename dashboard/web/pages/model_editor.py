@@ -40,6 +40,17 @@ from dashboard.web.config_editor import macro, micro
 #: der Schrittfolge.
 HOST = "model-editor-host"
 
+#: Wo die Rückmeldung einer Aktion erscheint — «Segment gelöscht», «Population
+#: gespeichert».
+#:
+#: **Ohne diesen Ort landete sie im Nichts.** `_actions` schrieb sie nach
+#: `cfg-status`, und der liegt in der Schrittfolge — also im Bereich
+#: «Einrichten», der während der Arbeit am Modell ausgeblendet ist. Die Meldung
+#: entstand, war im DOM, und niemand sah sie. Am laufenden System bei der
+#: Umsetzung von W3.2 aufgefallen: Der Umzug aus W3.1 hat die Aktionen
+#: mitgenommen, ihre Rückmeldung aber nicht.
+STATUS = "model-editor-status"
+
 
 def body(draft: dict) -> html.Div:
     """Faktorlage, Systemgrößen, Bevölkerung und Preisbildung — unverändert.
@@ -68,6 +79,7 @@ def layout(draft: dict | None = None) -> html.Div:
                 "Bevölkerung und Preisbildung. Was Sie hier ändern, gilt für den nächsten "
                 "Lauf; was Sie ausdrücklich speichern, für alle künftigen.",
             ),
+            html.Div(id=STATUS, className="mb-4"),
             html.Div(body(entwurf), id=HOST),
         ],
         className="af-pane af-pane--focus",
