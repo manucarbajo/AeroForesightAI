@@ -51,6 +51,13 @@ class RunLaunchConfig:
     runs: int = 1
     generate_figures: bool = True
     quiet: bool = True
+    #: Startpreis, falls im Assistenten gesetzt (P1.9-W1.5). **Dieses Feld hat
+    #: gefehlt**, und weil `launch_from_draft` den Entwurf durch diese
+    #: Datenklasse schickt (`draft_to_launch_config` → `launch_config_to_draft`),
+    #: fiel der Wert dabei lautlos heraus: `build_custom_sweep_from_draft` wertet
+    #: ihn korrekt aus, er kam dort nur nie an. «Startpreis selbst festlegen» war
+    #: über das Dashboard wirkungslos, über die CLI nicht.
+    base_price: float | None = None
 
 
 @dataclass(frozen=True)
@@ -103,6 +110,7 @@ def launch_config_to_draft(config: RunLaunchConfig) -> ConfigDraft:
     draft.run_all_sweeps = config.run_all_sweeps
     draft.run_count = max(1, int(config.runs))
     draft.generate_figures = config.generate_figures
+    draft.base_price = config.base_price
     return draft
 
 
@@ -138,6 +146,7 @@ def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
         runs=max(1, int(draft.run_count)),
         generate_figures=draft.generate_figures,
         quiet=False,
+        base_price=draft.base_price,
     )
 
 

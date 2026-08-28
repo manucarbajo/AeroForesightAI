@@ -162,6 +162,12 @@ UNBEACHTET: tuple[Festlegung, ...] = (
         None,
         "Wie beim Namen: Es gilt die Beschreibung des jeweiligen Szenarios.",
     ),
+    Festlegung(
+        "base_price",
+        None,
+        "Jedes Szenario bringt sein eigenes Preisniveau mit. Ein gemeinsamer "
+        "Startpreis würde genau den Unterschied einebnen, den der Vergleich zeigen soll.",
+    ),
 )
 
 

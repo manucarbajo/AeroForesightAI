@@ -183,6 +183,7 @@ def _messbare_felder() -> list[str]:
 #:    — siehe `NUR_MIT_SPRACHMODELL`.
 ERWARTET: dict[str, set[str]] = {
     EINZELLAUF: {
+        "base_price",
         "rounds",
         "use_seed",
         "seed",
@@ -195,6 +196,7 @@ ERWARTET: dict[str, set[str]] = {
         "checkpoint_interval",
     },
     WIEDERHOLUNGEN: {
+        "base_price",
         "rounds",
         "use_seed",
         "seed",
@@ -421,7 +423,6 @@ class TestWasDerVergleichVerwirftStehtInSeinemVertrag:
             set(vorgegebene_felder())  # steht im Vertrag
             | NACH_DEM_LAUF  # wirkt später, nicht hier
             | NUR_MIT_SPRACHMODELL  # braucht ein echtes Modell
-            | {"base_price"}  # bekannter Verlust, eigenes Paket W1.5
         )
 
         stillschweigend = sorted(verworfen - erlaubt)
@@ -497,46 +498,128 @@ class TestDasSprachmodellHaengtAmRechenmodus:
         )
 
 
-class TestDerStartpreisGehtUnterwegsVerloren:
-    """Ein Befund, den erst diese Messung ans Licht gebracht hat.
+#: Felder, die die Rundreise durch `RunLaunchConfig` **nicht** überleben müssen —
+#: mit Grund, denn ohne Grund ist es ein Befund.
+DARF_DIE_RUNDREISE_VERLIEREN = {
+    "sweep_batch_deterministic": (
+        "Toter Schalter: Der Launcher liest ihn an keiner Stelle. Entfernen gehört "
+        "zu P5.1 (toter Code) und nicht hierher — bis dahin ist er benannt statt "
+        "unsichtbar."
+    ),
+}
 
-    `build_custom_sweep_from_draft` wertet `base_price` korrekt aus. Es kommt
-    dort nur nie an: `launch_from_draft` schickt den Entwurf durch
-    `RunLaunchConfig`, und diese Datenklasse hat kein solches Feld. Der Wert
-    fällt auf der Rundreise heraus, lautlos.
 
-    Der Test hält den Zustand fest, statt ihn zu beheben — beheben ist eine
-    Verhaltensänderung und gehört in einen eigenen Commit. **Er ist so
-    geschrieben, dass er beim Beheben rot wird** und den Weg weist.
+class TestDieRundreiseVerliertNichts:
+    """W1.5 — und die Fehlerklasse dahinter, nicht nur ihr erster Fall.
+
+    `launch_from_draft` schickt jeden Entwurf durch `RunLaunchConfig` und
+    wieder zurück. Fehlt dort ein Feld, fällt es lautlos heraus — kein
+    Fehler, keine Meldung, nur eine Einstellung, die nicht wirkt. Genau so
+    ist der Startpreis verschwunden.
+
+    Ein Test nur für `base_price` hätte den nächsten Fall dieser Art nicht
+    gefangen. Dieser hier geht über **alle** Felder des Entwurfs.
     """
 
-    def test_the_round_trip_drops_it(self):
+    def test_no_field_falls_out_on_the_way(self):
+        alle = {f.name for f in dataclasses.fields(ConfigDraft)}
+        proben = {feld: wert for feld, wert in ANDERER_WERT.items()}
+        proben.update(
+            {
+                "scenario_mode": "custom",
+                "sweep_id": "irgendein_szenario",
+                "resume_from": "run_20200101",
+                "run_all_sweeps": True,
+                "run_count": 3,
+                "sweep_batch_deterministic": False,
+                "simulation_config_file": "andere_simulation.json",
+                "properties_file": "andere_properties.json",
+                "agents_file": "andere_agents.json",
+                "factors_file": "andere_factors.json",
+                "cib_file": "andere_cib.json",
+            }
+        )
+
+        ungeprueft = sorted(alle - set(proben) - set(NICHT_GEMESSEN))
+        assert not ungeprueft, (
+            f"Diese Felder durchlaufen die Rundreise ungeprüft: {ungeprueft}. "
+            "Eine Probe in `proben` eintragen — sonst ist der nächste stille "
+            "Verlust wieder nur Zufallsfund."
+        )
+
+        verloren = []
+        for feld, wert in sorted(proben.items()):
+            draft = default_config_draft()
+            draft.seed = 42
+            draft.use_seed = True
+            setattr(draft, feld, wert)
+            zurueck = run_launcher.launch_config_to_draft(
+                run_launcher.draft_to_launch_config(draft)
+            )
+            if getattr(zurueck, feld) != wert:
+                verloren.append(f"  {feld}: {wert!r} → {getattr(zurueck, feld)!r}")
+
+        unerklaert = [
+            zeile
+            for zeile in verloren
+            if zeile.strip().split(":")[0] not in DARF_DIE_RUNDREISE_VERLIEREN
+        ]
+        assert not unerklaert, (
+            "Diese Felder überleben die Rundreise durch `RunLaunchConfig` nicht:\n"
+            + "\n".join(unerklaert)
+            + "\n\nEntweder das Feld dort ergänzen und in **beiden** Richtungen "
+            "verdrahten, oder es mit Grund in `DARF_DIE_RUNDREISE_VERLIEREN` "
+            "eintragen. Lautlos verlieren ist keine Option — genau so ist der "
+            "Startpreis verschwunden."
+        )
+
+    def test_the_known_exception_is_still_the_only_one(self):
+        """Die Ausnahmeliste darf nicht heimlich wachsen.
+
+        Ein Eintrag darin ist eine Schuld, kein Freibrief. Fiele sie leer aus,
+        wäre auch das ein Befund — dann ist der tote Schalter weg und die Liste
+        gehört mit ihm gelöscht.
+        """
+
+        assert set(DARF_DIE_RUNDREISE_VERLIEREN) == {"sweep_batch_deterministic"}, (
+            "Die Liste der geduldeten Verluste hat sich geändert. Jeder Eintrag "
+            "gehört begründet — und wieder heraus, sobald er behoben ist."
+        )
+
+
+class TestDerStartpreisKommtAn:
+    """W1.5 — der Befund, den erst die Wirkungsmessung ans Licht gebracht hat.
+
+    `build_custom_sweep_from_draft` wertete `base_price` immer schon korrekt
+    aus. Es kam dort nur nie an: `launch_from_draft` schickt den Entwurf durch
+    `RunLaunchConfig`, und diese Datenklasse hatte kein solches Feld. Der Wert
+    fiel auf der Rundreise heraus, lautlos. «Startpreis selbst festlegen» war
+    über das Dashboard wirkungslos — über die CLI wirkte derselbe Schalter.
+
+    Zwei Zeilen, weil zwei Dinge stimmen müssen: der Mechanismus (das Feld
+    übersteht die Rundreise) und die Wirkung (der Lauf rechnet damit). Wer nur
+    das erste repariert, hat die halbe Strecke.
+    """
+
+    def test_it_survives_the_round_trip(self):
         draft = default_config_draft()
         draft.base_price = 123.0
 
         zurueck = run_launcher.launch_config_to_draft(run_launcher.draft_to_launch_config(draft))
 
-        assert zurueck.base_price is None, (
-            "`base_price` überlebt die Rundreise durch `RunLaunchConfig` jetzt — "
-            "der Befund ist behoben. Diesen Test durch die Umkehrung ersetzen "
-            "(`== 123.0`) und das Finding aus `audit_findings.md` entfernen."
+        assert zurueck.base_price == 123.0, (
+            "`base_price` fällt wieder aus `RunLaunchConfig` heraus — der Befund "
+            "aus W1.5 ist zurück."
         )
 
-    def test_it_therefore_changes_nothing_about_the_run(self, abdruck_von):
-        """Und deshalb rechnet der Lauf mit dem Preis aus der Datei.
-
-        Die Rundreise oben ist der Mechanismus; das hier ist die Auswirkung.
-        Beide Zeilen zu haben lohnt sich: Wer den Mechanismus repariert, ohne
-        dass sich am Lauf etwas ändert, hat nur die halbe Strecke.
-        """
-
+    def test_and_therefore_reaches_the_run(self, abdruck_von):
         grund = str(abdruck_von(_entwurf(EINZELLAUF)))
         draft = _entwurf(EINZELLAUF)
         draft.base_price = ANDERER_WERT["base_price"]
 
-        assert str(abdruck_von(draft)) == grund, (
-            "Der Startpreis wirkt jetzt — schön. `ERWARTET` mitziehen und diesen "
-            "Test in seine Umkehrung drehen."
+        assert str(abdruck_von(draft)) != grund, (
+            "Der Startpreis übersteht zwar die Rundreise, ändert am Lauf aber "
+            "nichts — dann ist er weiter unten verlorengegangen."
         )
 
 
