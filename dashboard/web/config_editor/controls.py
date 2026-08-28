@@ -28,6 +28,10 @@ CFG_BOOL = "cfg-bool"
 ACTION = "cfg-action"
 #: Freie Eingaben, die *nicht* im Draft landen (neue Property-ID, Preset-Name).
 FREE = "cfg-free"
+#: Platzhalter unter einem Feld, in den die Konfigurationsprüfung ihre Befunde
+#: schreibt. Jedes Feld bekommt einen — welcher gefüllt wird, entscheidet der
+#: Feldbezug aus `src/validation.py`, nicht eine Liste hier.
+ERROR = "cfg-error"
 
 # Aktions- und Freitext-IDs sind bewusst Pattern-Matching-IDs: die zugehörigen
 # Elemente stehen jeweils nur in einem Tab. Ein Callback auf eine feste ID, die
@@ -45,6 +49,10 @@ def action_id(name: str) -> dict:
 
 def free_id(name: str) -> dict:
     return {"type": FREE, "name": name}
+
+
+def error_id(field: str) -> dict:
+    return {"type": ERROR, "field": field}
 
 
 def free_value(states: list, name: str, default: str = "") -> str:
@@ -146,6 +154,27 @@ def _described(
     return resolved_label, (param.short if param else None)
 
 
+def _below(field: str, key: str | None, detail: bool) -> Any:
+    """Was unter einem Feld steht: Fehlerplatzhalter und ggf. die Langerklärung.
+
+    Der Platzhalter liegt in **jedem** Feld — er ist leer, bis die Prüfung etwas
+    zu sagen hat, und er trägt denselben Pfad wie das Feld darüber. Damit landet
+    ein Befund automatisch an der richtigen Stelle, sobald `src/validation.py`
+    ihm ein Feld gibt; eine Zuordnungstabelle in der Oberfläche gibt es nicht.
+
+    *detail* zeigt zusätzlich die ausführliche Erklärung aus dem Glossar — dort,
+    wo entschieden wird, statt nur auf der Dokumentationsseite. Im Editor bleibt
+    es bei der einen Zeile aus `short`; im geführten Ablauf ist die Erklärung
+    genau das, was fehlte.
+    """
+
+    param = glossary.get(key or field) if detail else None
+    children: list[Any] = [html.Div(id=error_id(field))]
+    if param is not None and param.detail:
+        children.append(ui.explainer(param.detail))
+    return html.Div(children)
+
+
 def number(
     field: str,
     value: Any,
@@ -153,6 +182,7 @@ def number(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     min: float | None = None,
     max: float | None = None,
     step: float | None = None,
@@ -172,6 +202,7 @@ def number(
             debounce=True,
         ),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -183,6 +214,7 @@ def text(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     placeholder: str = "",
     class_name: str = "",
 ) -> html.Div:
@@ -198,6 +230,7 @@ def text(
             debounce=True,
         ),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -209,6 +242,7 @@ def textarea(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     class_name: str = "",
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
@@ -218,6 +252,7 @@ def textarea(
         # in den Store. Bei einem Beschreibungsfeld ist das verkraftbar.
         dcc.Textarea(id=cfg_id(field), value=value or "", className="af-input"),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -230,6 +265,7 @@ def select(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     clearable: bool = False,
     class_name: str = "",
 ) -> html.Div:
@@ -244,6 +280,7 @@ def select(
             className="af-dropdown",
         ),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -255,6 +292,7 @@ def slider(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     min: float = 0.0,
     max: float = 1.0,
     step: float = 0.05,
@@ -278,6 +316,7 @@ def slider(
             className="pt-1",
         ),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -289,6 +328,13 @@ def check(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
-    return ui.checkbox(text_label, value=bool(value), id=cfg_id(field, CFG_BOOL), hint=text_hint)
+    return ui.checkbox(
+        text_label,
+        value=bool(value),
+        id=cfg_id(field, CFG_BOOL),
+        hint=text_hint,
+        below=_below(field, key, detail),
+    )

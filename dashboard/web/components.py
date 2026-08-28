@@ -120,14 +120,50 @@ def hint_text(hint: str | None, *, class_name: str = "") -> Any:
     return dcc.Markdown(hint, className=f"af-hint af-md af-md--tight {class_name}".strip())
 
 
-def field(label: str, control: Any, *, hint: str | None = None, class_name: str = "") -> html.Div:
+def field(
+    label: str,
+    control: Any,
+    *,
+    hint: str | None = None,
+    below: Any = None,
+    class_name: str = "",
+) -> html.Div:
+    """Beschriftetes Eingabefeld.
+
+    *below* nimmt auf, was unter Feld und Kurzhinweis gehört — heute der
+    Platzhalter für Fehlermeldungen aus der Konfigurationsprüfung und die
+    aufklappbare Langerklärung aus dem Glossar.
+    """
+
     return html.Div(
         [
             html.Label(label, className=LABEL),
             control,
             hint_text(hint),
+            below,
         ],
         className=class_name,
+    )
+
+
+def field_errors(messages: list[str]) -> Any:
+    """Befunde direkt unter dem Feld, das sie betreffen.
+
+    Leere Liste heißt: nichts anzeigen. Der Platzhalter bleibt trotzdem im DOM,
+    damit der Callback ihn füllen kann, sobald sich etwas ändert.
+    """
+
+    if not messages:
+        return None
+    return html.Div(
+        [
+            html.Div(
+                [icon("error", "text-sm shrink-0 mt-0.5"), html.Span(text)],
+                className="flex items-start gap-1.5",
+            )
+            for text in messages
+        ],
+        className="font-body text-xs text-rose-700 mt-1.5 leading-relaxed space-y-1",
     )
 
 
@@ -144,7 +180,9 @@ CHECK_LABEL_STYLE = {
 }
 
 
-def checkbox(label: str, *, value: bool, hint: str | None = None, **kwargs: Any) -> html.Div:
+def checkbox(
+    label: str, *, value: bool, hint: str | None = None, below: Any = None, **kwargs: Any
+) -> html.Div:
     """Einzelne Checkbox mit Beschriftung — ersetzt ``st.checkbox``."""
 
     return html.Div(
@@ -159,6 +197,7 @@ def checkbox(label: str, *, value: bool, hint: str | None = None, **kwargs: Any)
                 **kwargs,
             ),
             hint_text(hint, class_name="af-check__hint"),
+            below,
         ]
     )
 
@@ -292,6 +331,30 @@ def expert(
             html.Div(list(children), className="pt-3 pb-1 pl-6"),
         ],
         className="af-acc af-expert border-t border-slate-100 mt-5",
+    )
+
+
+def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
+    """Die ausführliche Erklärung eines Parameters, aufklappbar am Feld selbst.
+
+    Bis P1.1 stand sie ausschließlich auf der Dokumentationsseite — also nicht
+    dort, wo entschieden wird. Zugeklappt, weil der Kurzhinweis darüber für die
+    meisten reicht; wer mehr will, klappt an Ort und Stelle auf, statt die Seite
+    zu verlassen.
+    """
+
+    return html.Details(
+        [
+            html.Summary(
+                [
+                    icon("chevron_right", "af-acc__chevron text-sm text-slate-400"),
+                    html.Span(label, className=f"{CAPTION} underline decoration-dotted"),
+                ],
+                className="af-acc__summary flex items-center gap-1 cursor-pointer select-none py-1",
+            ),
+            markdown(text, class_name="af-md--tight text-slate-600 pl-5 pb-1"),
+        ],
+        className="af-acc mt-1.5",
     )
 
 

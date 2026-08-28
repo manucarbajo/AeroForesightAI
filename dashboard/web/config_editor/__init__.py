@@ -1,13 +1,22 @@
-"""Config-Editor: fünf Tabs, ein Store, zwei Callbacks.
+"""Die Oberfläche zum Konfigurieren eines Laufs: geführter Ablauf plus vier Tabs.
+
+Vorn steht seit P1.1 `start_flow` mit den drei Entscheidungen, die bis zum Start
+genügen; die vier Tabs dahinter tragen alles Übrige. Beide schreiben in
+denselben Store.
 
 Aufbau in einem Satz: jedes Eingabefeld trägt den Pfad, an dem sein Wert im
 Draft steht, und ein einziger Callback (`_sync`) schreibt alle sichtbaren
 Felder dorthin. Alles, was den Entwurf *strukturell* ändert — Preset
 übernehmen, Property anlegen oder löschen, Speichern — läuft über einen
-zweiten Callback (`_actions`), der danach den aktiven Tab neu aufbaut.
+zweiten Callback (`_actions`), der danach den geführten Block und den aktiven
+Tab neu aufbaut.
 
 Diese Zweiteilung ist der Ersatz für Streamlits „Skript läuft bei jeder
 Interaktion neu": Werte fließen ohne Neuaufbau, Struktur ändert sich mit.
+
+**Ein Feld darf nur an einer Stelle stehen.** Der geführte Block und der aktive
+Tab liegen gleichzeitig im DOM; dieselbe Feld-ID zweimal ist für Dash ein
+Fehler. Was in `start_flow` steht, ist deshalb aus den Tabs entfernt.
 """
 
 from __future__ import annotations
@@ -38,32 +47,32 @@ from dashboard.web.config_editor import (
     llm_pipeline,
     macro,
     micro,
-    overview,
-    save_start,
+    start_flow,
 )
 from dashboard.web.config_editor import controls as c
 from dashboard.web.state import STORE_ID, draft_from_dict, draft_to_dict
 
-# Reihenfolge ist die Lesereihenfolge: erst das, was jeder einstellen muss,
-# dann die Annahmen von grob nach fein, zuletzt Technik und Kontrolle.
+# Reihenfolge ist die Lesereihenfolge: die Annahmen von grob nach fein, dann
+# Organisatorisches, zuletzt Technik. Was einen Lauf *prägt*, steht nicht mehr
+# hier, sondern im geführten Ablauf davor.
 TABS = [
-    ("Überblick", "overview"),
     ("Rahmenbedingungen", "macro"),
     ("Nachfrage & Preisbildung", "micro"),
     ("Lauf & Ablage", "experiment"),
     ("Technik", "llm"),
-    ("Kontrolle", "save"),
 ]
 
-DEFAULT_TAB = "overview"
+DEFAULT_TAB = "macro"
+
+#: Der geführte Block liegt in einem eigenen Wirt, damit ihn ein Callback nach
+#: einer strukturellen Änderung als Ganzes ersetzen kann.
+START_HOST = "start-flow-host"
 
 _LAYOUTS = {
-    "overview": overview.layout,
-    "experiment": experiment.layout,
     "macro": macro.layout,
     "micro": micro.layout,
+    "experiment": experiment.layout,
     "llm": llm_pipeline.layout,
-    "save": save_start.layout,
 }
 
 
@@ -74,14 +83,23 @@ def tab_layout(tab: str, draft: dict):
         return ui.alert(f"Editor konnte nicht aufgebaut werden: {exc}", "error")
 
 
+def start_layout(draft: dict) -> html.Div:
+    """Der geführte Ablauf — drei Entscheidungen und der Preflight."""
+
+    return html.Div(start_flow.layout(draft), id=START_HOST)
+
+
 def layout(draft: dict) -> html.Div:
+    """Die Tabs dahinter, zugeklappt: alles, was der geführte Ablauf nicht fragt."""
+
     return html.Div(
         [
             html.Div(
                 [
                     html.P(
-                        "Alle Änderungen wirken auf den nächsten Lauf. Die «Speichern»-Knöpfe "
-                        "in «Mikro-Parameter» schreiben zusätzlich in die Dateien unter `configs/`.",
+                        "Hier stehen die Annahmen hinter dem Lauf. Alle Änderungen wirken auf "
+                        "den nächsten Start; die «Speichern»-Knöpfe unter «Nachfrage & "
+                        "Preisbildung» schreiben zusätzlich in die Dateien unter `configs/`.",
                         className=f"{ui.CAPTION} max-w-2xl",
                     ),
                     ui.button(
@@ -145,6 +163,10 @@ def _normalise(draft: dict) -> dict:
     # Der Rechenmodus ist eine Auswahl über zwei Draft-Felder.
     if compute_mode.FIELD in draft:
         draft = compute_mode.apply(draft, draft.get(compute_mode.FIELD))
+
+    # Die Szenario-Auswahl des geführten Ablaufs ebenso: eine Entscheidung,
+    # aus der `scenario_mode` und `sweep_id` folgen.
+    draft = start_flow.normalise(draft)
     return draft
 
 
@@ -161,6 +183,22 @@ def register_callbacks(app) -> None:
     )
     def _render_tab(tab: str | None, _refresh, draft: dict | None):
         return tab_layout(tab or DEFAULT_TAB, draft or {})
+
+    @app.callback(
+        Output(START_HOST, "children"),
+        Input("cfg-editor-refresh", "data"),
+        State(STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def _render_start(_refresh, draft: dict | None):
+        """Den geführten Block nach einer strukturellen Änderung neu aufbauen.
+
+        Nur dann — nicht bei jedem Tastendruck: Er enthält Eingabefelder, und
+        die dürfen nicht unter den Fingern ausgetauscht werden. Was sich laufend
+        ändert, steht in den Slots, die `_live` füllt.
+        """
+
+        return start_flow.layout(draft or {})
 
     @app.callback(
         Output(STORE_ID, "data"),
@@ -186,27 +224,54 @@ def register_callbacks(app) -> None:
         return _normalise(updated)
 
     @app.callback(
-        Output({"type": overview.SUMMARY, "slot": ALL}, "children"),
+        Output({"type": start_flow.SUMMARY, "slot": ALL}, "children"),
         Input(STORE_ID, "data"),
         prevent_initial_call=True,
     )
     def _summaries(draft: dict | None):
         """Klartext-Zusammenfassungen mitziehen, sobald sich etwas ändert."""
 
-        sentence = ui.markdown(overview.summary_sentence(draft or {}))
+        sentence = ui.markdown(start_flow.summary_sentence(draft or {}))
         return [sentence] * len(ctx.outputs_list)
 
     @app.callback(
+        Output({"type": start_flow.SLOT, "slot": ALL}, "children"),
+        Output({"type": c.ERROR, "field": ALL}, "children"),
+        Input(STORE_ID, "data"),
+    )
+    def _live(draft: dict | None):
+        """Was sich mit dem Entwurf ändert: Szenario-Beschreibung, Preflight, Feldfehler.
+
+        Bewusst **ein** Callback für alles: Die Prüfung baut den ganzen
+        Simulationszustand auf und soll je Änderung einmal laufen, nicht je
+        Ausgabefeld. Der Feldbezug kommt aus `src/validation.py` — die
+        Oberfläche ordnet nichts über Schlüsselwörter zu, sie stellt nur dar.
+        """
+
+        slots, by_field = start_flow.live_state(draft or {})
+        slot_out = [slots.get((entry["id"] or {}).get("slot")) for entry in ctx.outputs_list[0]]
+        error_out = [
+            ui.field_errors(by_field.get((entry["id"] or {}).get("field"), []))
+            for entry in ctx.outputs_list[1]
+        ]
+        return slot_out, error_out
+
+    @app.callback(
         Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),
+        Input(compute_mode.FIELD_ID, "value"),
         Input("cfg-tab-content", "children"),
         State(STORE_ID, "data"),
     )
-    def _llm_status(_content, draft: dict | None):
+    def _llm_status(_mode, _content, draft: dict | None):
         """Erreichbarkeit von Ollama nachreichen, sobald ein Tab steht.
 
         Bewusst nach dem Rendern: Die Abfrage kann mehrere Sekunden dauern —
         unter Windows laeuft `localhost` erst in einen IPv6-Timeout — und so
         lange soll die Seite nicht warten.
+
+        Ausgelöst vom Rechenmodus (der immer im DOM steht) und vom Tab-Wechsel,
+        **nicht** vom Store: Bei jedem Tastendruck zu fragen würde die Oberfläche
+        an einen Netzwerk-Timeout hängen.
         """
 
         return [compute_mode.availability(draft or {})] * len(ctx.outputs_list)

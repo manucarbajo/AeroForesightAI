@@ -1,4 +1,10 @@
-"""Seite «Simulation starten»: Config-Editor plus Start mit Live-Log."""
+"""Seite «Simulation starten»: geführter Ablauf, Start mit Live-Log, Editor dahinter.
+
+Die Reihenfolge ist die Aussage der Seite (P1.1): Erst die drei Entscheidungen,
+die bis zum Start genügen, dann der Start selbst, und erst danach — zugeklappt —
+die rund sechzig Felder für den Fall, dass eine bestimmte Annahme geprüft werden
+soll. Bis P1.1 stand der Editor vorn und der Start am Ende einer langen Seite.
+"""
 
 from __future__ import annotations
 
@@ -31,13 +37,12 @@ def layout(draft: dict | None = None) -> html.Div:
         [
             ui.page_heading(
                 "Simulation starten",
-                "Szenario wählen, Parameter anpassen, Lauf starten.",
+                "Drei Entscheidungen genügen: was gerechnet wird, wie weit, und womit.",
             ),
             dcc.Store(id="cfg-editor-refresh", data=0),
             dcc.Store(id="run-job-store"),
             dcc.Interval(id="run-poll", interval=POLL_INTERVAL_MS, disabled=True),
-            config_editor.layout(draft),
-            ui.divider("my-8"),
+            config_editor.start_layout(draft),
             html.Div(
                 [
                     ui.button("Start", id="run-start", icon_name="play_arrow"),
@@ -47,6 +52,12 @@ def layout(draft: dict | None = None) -> html.Div:
             ),
             html.Div(id="run-status"),
             html.Div(id="run-log-host", className="mt-4"),
+            ui.divider("my-8"),
+            ui.accordion(
+                "Alle Einstellungen",
+                config_editor.layout(draft),
+                badge=f"{len(config_editor.TABS)} Bereiche",
+            ),
         ]
     )
 

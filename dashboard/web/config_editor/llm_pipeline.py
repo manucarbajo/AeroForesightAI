@@ -1,8 +1,10 @@
-"""Tab «Technik»: Sprachmodell, Reproduzierbarkeit, Ausgaben.
+"""Tab «Technik»: Sprachmodell-Feinheiten, Zwischenstände, Ausgaben.
 
-Nichts hier ändert die berechneten Zahlen — mit einer Ausnahme, dem
-Zufallsstartwert. Alles andere betrifft, wie viel erzählt, protokolliert und
-ausgegeben wird.
+Nichts hier ändert die berechneten Zahlen. Die Auswahl des Rechenmodus und der
+Zufallsstartwert — die beiden Dinge, die man vor einem Lauf wirklich wissen
+muss — stehen seit P1.1 im geführten Ablauf oben auf der Seite; hier bleiben
+die Werte dahinter: welches Modell unter welcher Adresse, wie oft ein
+Zwischenstand geschrieben wird, und was am Ende ausgegeben wird.
 """
 
 from __future__ import annotations
@@ -10,7 +12,6 @@ from __future__ import annotations
 from dash import html
 
 from dashboard.web import components as ui
-from dashboard.web.config_editor import compute_mode
 from dashboard.web.config_editor import controls as c
 
 _PIPELINE_SWITCHES = ["no_market", "redebedarf", "no_protocol", "no_scenarios"]
@@ -22,8 +23,8 @@ def layout(draft: dict) -> html.Div:
             ui.section(
                 "Sprachmodell",
                 ui.lede(
-                    "Die Agenten deuten den Lauf — sie rechnen nicht. Ob und mit welchem "
-                    "Modell sie das tun, steht hier."
+                    "Die Agenten deuten den Lauf — sie rechnen nicht. **Ob** ein Sprachmodell "
+                    "beteiligt ist, entscheidet der Rechenmodus oben; hier steht, mit welchem."
                 ),
                 ui.card(
                     ui.note(
@@ -33,18 +34,6 @@ def layout(draft: dict) -> html.Div:
                         icon_name="shield",
                     ),
                     html.Div(
-                        ui.radio(
-                            compute_mode.OPTIONS,
-                            value=compute_mode.of(draft),
-                            id=compute_mode.FIELD_ID,
-                        ),
-                        className="mt-5",
-                    ),
-                    html.Div(
-                        compute_mode.placeholder("technik"),
-                        className="mt-5 pt-4 border-t border-slate-100",
-                    ),
-                    ui.expert(
                         ui.grid(
                             c.text("model", draft.get("model", "llama3.2")),
                             c.text("base_url", draft.get("base_url", "http://localhost:11434")),
@@ -64,38 +53,25 @@ def layout(draft: dict) -> html.Div:
                             ),
                             cols="md:grid-cols-2",
                         ),
-                        count=4,
-                        names="Modell, Adresse, Kreativität, Antwortlänge",
+                        className="mt-5",
                     ),
                 ),
                 actions=ui.doc_link("zahlen-und-sprache"),
             ),
             ui.section(
-                "Reproduzierbarkeit",
+                "Zwischenstände",
                 ui.lede(
-                    "Damit zwei Läufe vergleichbar sind, muss der Zufall festgelegt sein — "
-                    "sonst lässt sich ein Unterschied nicht der geänderten Annahme zuordnen."
+                    "Zwischenstände sind die Voraussetzung dafür, einen Lauf fortzusetzen "
+                    "und ihn später auf einzelne Runden hin zu befragen."
                 ),
                 ui.card(
-                    ui.grid(
-                        c.check("use_seed", draft.get("use_seed", False)),
-                        c.number(
-                            "seed",
-                            int(draft.get("seed") if draft.get("seed") is not None else 42),
-                            min=0,
-                            step=1,
-                        ),
-                        cols="sm:grid-cols-2",
-                    ),
-                    html.Div(
-                        c.number(
-                            "checkpoint_interval",
-                            int(draft.get("checkpoint_interval", 5)),
-                            min=0,
-                            step=1,
-                            class_name="max-w-xs",
-                        ),
-                        className="mt-5",
+                    c.number(
+                        "checkpoint_interval",
+                        int(draft.get("checkpoint_interval", 5)),
+                        min=0,
+                        step=1,
+                        detail=True,
+                        class_name="max-w-xs",
                     ),
                 ),
                 actions=ui.doc_link("vergleiche"),
