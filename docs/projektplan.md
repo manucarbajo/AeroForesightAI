@@ -1024,7 +1024,12 @@ Reihenfolge ist Absicht: erst messen, dann die Unwahrheiten, dann der Schnitt, d
 | # | Was zu tun ist | Fertig wenn |
 | --- | --- | --- |
 | W0.1 ✅ | Höhenwächter je Schritt in `tests/test_web_overflow.py`, gemessen in Bildschirmen. | **Erledigt 2026-08-28.** Der Wächter hält den Ist-Stand je Breite und Schritt und schlägt an, sobald ein Schritt **wächst** — und ebenso, wenn einer um mehr als 0,25 Bildschirme **schrumpft**, ohne dass der Deckel mitgezogen wird. Deckel wird in W3.5 auf `ZIEL = 1.0` gesenkt. |
-| W0.2 | Wirkungstest: welche Draft-Felder erreichen auf welchem Startpfad (Einzellauf, Wiederholungen, Sweep) tatsächlich die Simulation — mechanisch erzeugt, nicht handgepflegt. | Ein Feld, das die Oberfläche erfragt und der Pfad verwirft, lässt den Test fehlschlagen. |
+| W0.2 ✅ | Wirkungstest: welche Draft-Felder erreichen auf welchem Startpfad (Einzellauf, Wiederholungen, Sweep) tatsächlich die Simulation. | **Erledigt 2026-08-28** in `tests/test_web_wirkung.py`. «Wirksam» heißt dort: *es ändert, was bei der Simulation ankommt* — gemessen als Unterschied zwischen zwei Läufen desselben Pfads, einmal mit und einmal ohne das Feld. Eine Definition ohne Annahmen über den Code. |
+
+**Zwei Befunde, die erst diese Messung ans Licht gebracht hat** — beide standen nicht im Audit, weil sie sich am Bildschirm nicht zeigen:
+
+* **Der Startpreis geht unterwegs verloren.** `build_custom_sweep_from_draft` wertet `base_price` korrekt aus — es kommt dort nur nie an. `launch_from_draft` schickt den Entwurf durch `RunLaunchConfig`, und diese Datenklasse hat **kein solches Feld**; der Wert fällt auf der Rundreise `draft_to_launch_config` → `launch_config_to_draft` lautlos heraus. «Startpreis selbst festlegen» im Assistenten ist über das Dashboard **wirkungslos**, über die CLI nicht. Neues Paket **W1.5**.
+* **`use_seed` ohne `seed` stürzt ab.** `draft_to_launch_config` rechnet `int(draft.seed)`, sobald der Schalter an ist — bei `seed = None` ein `TypeError` statt eines Prüfbefunds. Heute unerreichbar, und zwar aus dem schlechtesten denkbaren Grund: Befund A7 schreibt beim Anzeigen von Schritt 3 stillschweigend `seed = 42`, bevor jemand den Schalter finden kann. **W5.1 räumt A7 weg und macht diesen Absturz damit erreichbar** — wer W5.1 umsetzt, fasst diese Zeile mit an. Aufgenommen als **W1.6**.
 
 **W1 — Der Assistent sagt die Wahrheit** (kritisch, zuerst).
 
@@ -1034,6 +1039,8 @@ Reihenfolge ist Absicht: erst messen, dann die Unwahrheiten, dann der Schnitt, d
 | W1.2 | `ticks_override` nur setzen, wenn die Länge bewusst gewählt wurde; sonst gilt die `max_ticks` des Presets. | Ein Sweep läuft mit der Länge, die Schritt 1 nennt. |
 | W1.3 | Der Preflight beschreibt den **tatsächlichen** Lauf: eigener Satz und eigene Kacheln je Startpfad; nichts Wirkungsloses wird als wirksam gezeigt. | Der Preflight enthält nur Aussagen, die W0.2 als wirksam ausweist. |
 | W1.4 | Der Weg «Szenario-Vergleich» führt nicht mehr an der Längenfrage vorbei — über den Schritt oder als bewusste Bestätigung im Preflight. | Kein Startpfad überspringt eine Frage, deren Antwort er verwendet. |
+| W1.5 | `base_price` erreicht den Lauf auch über das Dashboard — entweder als Feld in `RunLaunchConfig` oder indem der Launcher den Entwurf gar nicht erst durch diese Rundreise schickt. | `TestDerStartpreisGehtUnterwegsVerloren` dreht sich um: Der Startpreis wirkt, und `ERWARTET` führt ihn. |
+| W1.6 | `use_seed` ohne `seed` ergibt einen Prüfbefund, keinen `TypeError`. | Ein Entwurf mit `use_seed=True, seed=None` wird von `validate_draft` abgelehnt. **Vor W5.1 zu erledigen**, sonst wird der Absturz erreichbar. |
 
 **W2 — Der Assistent lügt nicht über den Fortschritt.**
 
