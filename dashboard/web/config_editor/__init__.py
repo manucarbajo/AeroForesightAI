@@ -1,22 +1,21 @@
-"""Die Oberfläche zum Konfigurieren eines Laufs: geführter Ablauf plus vier Tabs.
+"""Die Oberfläche zum Konfigurieren eines Laufs — seit P1.7 eine Schrittfolge.
 
-Vorn steht seit P1.1 `start_flow` mit den drei Entscheidungen, die bis zum Start
-genügen; die vier Tabs dahinter tragen alles Übrige. Beide schreiben in
-denselben Store.
+Die acht Schritte stehen in `wizard.py`; die ersten drei sind die Entscheidungen
+aus P1.1 (`start_flow`), die vier danach sind die Bereiche, die bis P1.7 Reiter
+waren (`macro`, `micro`, `experiment`, `llm_pipeline`), und der letzte ist
+«Prüfen & Starten». Alle schreiben in denselben Store.
 
 Aufbau in einem Satz: jedes Eingabefeld trägt den Pfad, an dem sein Wert im
-Draft steht, und ein einziger Callback (`_sync`) schreibt alle sichtbaren
-Felder dorthin. Alles, was den Entwurf *strukturell* ändert — Preset
-übernehmen, Property anlegen oder löschen, Speichern — läuft über einen
-zweiten Callback (`_actions`), der danach den geführten Block und den aktiven
-Tab neu aufbaut.
+Draft steht, und ein einziger Callback (`_sync`) schreibt alle **sichtbaren**
+Felder dorthin. Alles, was den Entwurf *strukturell* ändert — Preset übernehmen,
+Property anlegen oder löschen, Speichern — läuft über einen zweiten Callback
+(`_actions`), der danach den offenen Schritt neu aufbaut.
 
 Diese Zweiteilung ist der Ersatz für Streamlits „Skript läuft bei jeder
 Interaktion neu": Werte fließen ohne Neuaufbau, Struktur ändert sich mit.
 
-**Ein Feld darf nur an einer Stelle stehen.** Der geführte Block und der aktive
-Tab liegen gleichzeitig im DOM; dieselbe Feld-ID zweimal ist für Dash ein
-Fehler. Was in `start_flow` steht, ist deshalb aus den Tabs entfernt.
+**Ein Feld darf nur an einer Stelle stehen.** Deshalb steht immer nur der offene
+Schritt im DOM — dieselbe Feld-ID zweimal ist für Dash ein Laufzeitfehler.
 """
 
 from __future__ import annotations
@@ -48,13 +47,15 @@ from dashboard.web.config_editor import (
     macro,
     micro,
     start_flow,
+    wizard,
 )
 from dashboard.web.config_editor import controls as c
 from dashboard.web.state import STORE_ID, draft_from_dict, draft_to_dict
 
-# Reihenfolge ist die Lesereihenfolge: die Annahmen von grob nach fein, dann
-# Organisatorisches, zuletzt Technik. Was einen Lauf *prägt*, steht nicht mehr
-# hier, sondern im geführten Ablauf davor.
+# Die vier Bereiche, die bis P1.7 Reiter waren und jetzt die Schritte vier bis
+# sieben sind. Reihenfolge ist die Lesereihenfolge: die Annahmen von grob nach
+# fein, dann Organisatorisches, zuletzt Technik. Der Name `TABS` bleibt, weil
+# mehrere Tests über ihn laufen; die Reiterleiste selbst gibt es nicht mehr.
 TABS = [
     ("Rahmenbedingungen", "macro"),
     ("Nachfrage & Preisbildung", "micro"),
@@ -63,10 +64,6 @@ TABS = [
 ]
 
 DEFAULT_TAB = "macro"
-
-#: Der geführte Block liegt in einem eigenen Wirt, damit ihn ein Callback nach
-#: einer strukturellen Änderung als Ganzes ersetzen kann.
-START_HOST = "start-flow-host"
 
 _LAYOUTS = {
     "macro": macro.layout,
@@ -83,39 +80,22 @@ def tab_layout(tab: str, draft: dict):
         return ui.alert(f"Editor konnte nicht aufgebaut werden: {exc}", "error")
 
 
-def start_layout(draft: dict) -> html.Div:
-    """Der geführte Ablauf — drei Entscheidungen und der Preflight."""
+def reset_button() -> html.Div:
+    """«Auf Standard zurücksetzen» — seit P1.7 im Schritt «Lauf & Ablage».
 
-    return html.Div(start_flow.layout(draft), id=START_HOST)
-
-
-def layout(draft: dict) -> html.Div:
-    """Die Tabs dahinter, zugeklappt: alles, was der geführte Ablauf nicht fragt."""
+    Vorher stand er über den Reitern und damit über *allen* Einstellungen. In
+    einer Schrittfolge gibt es diesen Ort nicht mehr; er gehört dorthin, wo man
+    ohnehin über den Lauf als Ganzes nachdenkt.
+    """
 
     return html.Div(
-        [
-            html.Div(
-                [
-                    html.P(
-                        "Hier stehen die Annahmen hinter dem Lauf. Alle Änderungen wirken auf "
-                        "den nächsten Start; die «Speichern»-Knöpfe unter «Nachfrage & "
-                        "Preisbildung» schreiben zusätzlich in die Dateien unter `configs/`.",
-                        className=f"{ui.CAPTION} max-w-2xl",
-                    ),
-                    ui.button(
-                        "Auf Standard-Config zurücksetzen",
-                        id=c.action_id("reset"),
-                        variant="secondary",
-                        icon_name="restart_alt",
-                    ),
-                ],
-                className="flex items-start justify-between gap-4 flex-wrap mb-4",
-            ),
-            html.Div(id="cfg-status", className="mb-4"),
-            ui.tabs("cfg-tabs", TABS, value=DEFAULT_TAB),
-            html.Div(tab_layout(DEFAULT_TAB, draft), id="cfg-tab-content"),
-        ],
-        className="af-tabs--sub",
+        ui.button(
+            "Auf Standard-Config zurücksetzen",
+            id=c.action_id("reset"),
+            variant="secondary",
+            icon_name="restart_alt",
+        ),
+        className="mt-6",
     )
 
 
@@ -174,31 +154,10 @@ def _normalise(draft: dict) -> dict:
 
 
 def register_callbacks(app) -> None:
-    @app.callback(
-        Output("cfg-tab-content", "children"),
-        Input("cfg-tabs", "value"),
-        Input("cfg-editor-refresh", "data"),
-        State(STORE_ID, "data"),
-        prevent_initial_call=True,
-    )
-    def _render_tab(tab: str | None, _refresh, draft: dict | None):
-        return tab_layout(tab or DEFAULT_TAB, draft or {})
-
-    @app.callback(
-        Output(START_HOST, "children"),
-        Input("cfg-editor-refresh", "data"),
-        State(STORE_ID, "data"),
-        prevent_initial_call=True,
-    )
-    def _render_start(_refresh, draft: dict | None):
-        """Den geführten Block nach einer strukturellen Änderung neu aufbauen.
-
-        Nur dann — nicht bei jedem Tastendruck: Er enthält Eingabefelder, und
-        die dürfen nicht unter den Fingern ausgetauscht werden. Was sich laufend
-        ändert, steht in den Slots, die `_live` füllt.
-        """
-
-        return start_flow.layout(draft or {})
+    # Seit P1.7 zeichnet `wizard._render` den offenen Schritt — auch die vier
+    # Editor-Bereiche, die vorher Reiter waren. Ein eigener Callback dafür gibt
+    # es nicht mehr; er hinge an `cfg-tabs`, und die Reiter sind weg.
+    wizard.register_callbacks(app)
 
     @app.callback(
         Output(STORE_ID, "data"),
@@ -259,7 +218,7 @@ def register_callbacks(app) -> None:
     @app.callback(
         Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),
         Input(compute_mode.FIELD_ID, "value"),
-        Input("cfg-tab-content", "children"),
+        Input("wizard-content-host", "children"),
         State(STORE_ID, "data"),
     )
     def _llm_status(_mode, _content, draft: dict | None):
@@ -269,7 +228,7 @@ def register_callbacks(app) -> None:
         unter Windows laeuft `localhost` erst in einen IPv6-Timeout — und so
         lange soll die Seite nicht warten.
 
-        Ausgelöst vom Rechenmodus (der immer im DOM steht) und vom Tab-Wechsel,
+        Ausgelöst vom Rechenmodus und vom Schrittwechsel,
         **nicht** vom Store: Bei jedem Tastendruck zu fragen würde die Oberfläche
         an einen Netzwerk-Timeout hängen.
         """

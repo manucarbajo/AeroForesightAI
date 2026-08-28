@@ -243,7 +243,9 @@ def test_the_start_button_refuses_a_config_that_cannot_run(monkeypatch):
     draft["use_seed"] = True
     draft["seed"] = -1
 
-    ergebnis = _start_callback()(1, draft)
+    # Zwei Ausloeser seit P1.7: Bedienfeld und letzter Schritt des
+    # Einrichtens. Ein Callback, eine Pruefung, ein `runner.start`.
+    ergebnis = _start_callback()(1, None, draft)
 
     assert gestartet == [], "es darf kein Lauf angefangen haben"
     assert "seed" in str(ergebnis[_STATUS])
@@ -253,7 +255,7 @@ def test_the_start_button_refuses_a_config_that_cannot_run(monkeypatch):
 def test_the_start_button_starts_a_healthy_config(monkeypatch):
     monkeypatch.setattr(runner, "start", lambda draft: "job-4711")
 
-    ergebnis = _start_callback()(1, initial_draft_dict())
+    ergebnis = _start_callback()(1, None, initial_draft_dict())
 
     assert ergebnis[0] == "job-4711"
     assert ergebnis[_KNOPF] is True, "während des Laufs ist der Knopf gesperrt"

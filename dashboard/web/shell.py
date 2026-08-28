@@ -81,6 +81,22 @@ ACTION_SNAPSHOT = "shell-action-snapshot"
 ACTION_EXPORT = "shell-action-export"
 
 
+#: Bereiche, die den Bildschirm **allein** bekommen. Seitenzonen und Zeitleiste
+#: verschwinden dort.
+#:
+#: Einrichten ist eine überlegte, lineare Arbeit; daneben eine Szene laufen zu
+#: lassen, die einen *anderen* Lauf zeigt, lenkt nur ab — und die Stand-Zeilen
+#: links wiederholen genau das, was man gerade einstellt. Der Bildschirm gehört
+#: in diesem Moment einer Sache.
+FOCUS_ROUTES = {""}
+
+
+def shell_class(active: str) -> str:
+    """Die Klasse des Rahmens — mit oder ohne Seitenzonen."""
+
+    return "af-shell af-shell--focus" if active in FOCUS_ROUTES else "af-shell"
+
+
 def _nav_link(href: str, label: str, active: bool):
     suffix = " af-nav__link--active" if active else ""
     return dcc.Link(label, href=href, className=f"af-nav__link{suffix}".strip())
@@ -264,7 +280,7 @@ def layout(
             # Leitstand steht.
             html.Div(id=DOCK_HOST),
         ],
-        className="af-shell",
+        className=shell_class(active),
         id=SHELL_ID,
     )
 

@@ -2323,3 +2323,164 @@ html.dark .af-input[type="number"] {
 .af-grid > * {
     min-width: 0;
 }
+
+/* --- Fokus-Modus: ein Bereich bekommt den Bildschirm allein (P1.7) -------- */
+/* Einrichten ist eine ueberlegte, lineare Arbeit. Daneben eine Szene laufen zu
+   lassen, die einen *anderen* Lauf zeigt, lenkt ab -- und die Stand-Zeilen
+   links wiederholen genau das, was man gerade einstellt. Also verschwinden
+   Bedienfeld, Telemetrie und Zeitleiste, solange dieser Bereich offen ist.
+
+   `display: none` statt einer Rasteraenderung allein: Die Zonen sollen auch
+   keine Tabulator-Stationen mehr sein. Sie bleiben im DOM, damit die Callbacks,
+   die auf sie zeigen, weiterhin ein Ziel haben. */
+
+.af-shell--focus {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+        "header"
+        "main";
+    grid-template-rows: var(--shell-header) minmax(0, 1fr);
+}
+
+.af-shell--focus .af-shell__left,
+.af-shell--focus .af-shell__right,
+.af-shell--focus .af-shell__timeline,
+.af-shell--focus .af-shell__gutter,
+.af-shell--focus .af-drawer-toggle {
+    display: none;
+}
+
+/* Der Inhalt bekommt eine Lesebreite statt der vollen Flaeche: Eine Frage, die
+   ueber 1900 px laeuft, ist schwerer zu lesen als eine, die es nicht tut. */
+.af-pane--focus {
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+/* --- Die Schrittfolge ---------------------------------------------------- */
+
+.af-wizard {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+}
+
+@media (max-width: 899px) {
+    .af-wizard {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+.af-wizard__rail {
+    position: sticky;
+    top: 0;
+}
+
+.af-wizard__counter {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+}
+
+/* **Klebend am unteren Rand.** Gemessen: Bei 1440x900 lag «Weiter» auf dem
+   ersten Schritt bei y=1381 -- man musste es suchen. Der naechste Griff darf
+   nie gesucht werden muessen; das war der ganze Punkt der Schrittfolge. */
+.af-wizard__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    background: var(--canvas);
+}
+
+.af-wizard__navhost {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+.af-step__heading {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.af-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.af-step {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.af-step:hover {
+    background: var(--surface-hover);
+    color: var(--text-body);
+}
+
+.af-step__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.af-step__title {
+    overflow-wrap: anywhere;
+}
+
+.af-step__tag {
+    font-size: 0.6875rem;
+    color: var(--text-faint);
+}
+
+.af-step--done {
+    color: var(--text-body);
+}
+
+.af-step--done .af-step__icon {
+    color: var(--positive);
+}
+
+.af-step--current {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font-weight: 600;
+}
+
+.af-step--current .af-step__icon {
+    color: var(--accent);
+}
+
+.af-step--todo .af-step__icon {
+    color: var(--text-faint);
+}

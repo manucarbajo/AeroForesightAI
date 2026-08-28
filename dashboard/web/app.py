@@ -43,6 +43,7 @@ from dashboard.web import (
     theme,
     timeline,
 )
+from dashboard.web.config_editor import wizard
 from dashboard.web.pages import docs as docs_page
 from dashboard.web.pages import launch as launch_page
 from dashboard.web.pages import runs as runs_page
@@ -263,6 +264,10 @@ def serve_layout() -> html.Div:
             dcc.Store(id=timeline.PLAY_STORE, data=False),
             dcc.Store(id=scene.ZOOM_STORE, data=scene.DEFAULT_ZOOM),
             dcc.Store(id=runs_page.TAB_STORE, data=runs_page.DEFAULT_TAB),
+            # Welcher Schritt des Einrichtens offen ist (P1.7). Als Store und
+            # nicht als Adresse: Ein halb ausgefuelltes Formular ist kein Ort,
+            # den man verlinken oder mit dem Zurueck-Knopf ansteuern will.
+            dcc.Store(id=wizard.STEP_STORE, data=0),
             shell.layout(
                 active="",
                 # Auch beim ersten Zeichnen gilt der Serverzustand: Ein Lauf,
@@ -319,6 +324,7 @@ def create_app() -> Dash:
     # Einrichten, Leitstand, Ergebnisse, Handbuch.
     @app.callback(
         Output(shell.NAV_HOST, "children"),
+        Output(shell.SHELL_ID, "className"),
         Output("page-setup", "style"),
         Output(SCENE_HOST, "style"),
         Output("page-runs", "style"),
@@ -327,7 +333,7 @@ def create_app() -> Dash:
     )
     def _route(pathname: str | None):
         active = active_route(pathname)
-        return (shell.nav_links(active), *visibility(active))
+        return (shell.nav_links(active), shell.shell_class(active), *visibility(active))
 
     # --- Die Lauf-Auswahl der Kopfzeile ------------------------------------
 
@@ -466,10 +472,13 @@ def create_app() -> Dash:
         Output("cfg-status", "children", allow_duplicate=True),
         Input(shell.ACTION_SAVE, "n_clicks"),
         Input(shell.ACTION_SNAPSHOT, "n_clicks"),
+        # Zweiter Ausloeser aus dem letzten Schritt des Einrichtens -- **kein**
+        # zweiter Speicherpfad: derselbe Callback, dieselbe Funktion dahinter.
+        Input(wizard.SAVE, "n_clicks"),
         State(STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def _save(save_clicks, snapshot_clicks, data: dict | None):
+    def _save(save_clicks, snapshot_clicks, wizard_clicks, data: dict | None):
         """Entwurf als Szenario sichern — benannt oder als Zwischenstand.
 
         Der Unterschied ist der Name: «Speichern» schreibt unter dem Namen der
@@ -478,7 +487,7 @@ def create_app() -> Dash:
         danach im ersten Schritt des geführten Ablaufs zur Auswahl.
         """
 
-        if not (save_clicks or snapshot_clicks):
+        if not (save_clicks or snapshot_clicks or wizard_clicks):
             return no_update
 
         draft = draft_from_dict(data or {})

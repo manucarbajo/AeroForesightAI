@@ -364,13 +364,21 @@ def preflight(
 # --- Aufbau ----------------------------------------------------------------
 
 
-def _step(number: int, title: str, lede: str, *children: object, actions: object = None):
-    return ui.section(f"{number}. {title}", ui.lede(lede), *children, actions=actions)
+def _step(number: int | None, title: str, lede: str, *children: object, actions: object = None):
+    """Ein Schritt mit Überschrift — oder ohne.
+
+    `number=None` lässt Titel und Nummer weg. Das braucht die Schrittfolge aus
+    P1.7: Sie schreibt «Schritt 1 von 8» und den Titel selbst über den Inhalt,
+    und darunter stand die Überschrift danach ein zweites Mal.
+    """
+
+    kopf = None if number is None else f"{number}. {title}"
+    return ui.section(kopf, ui.lede(lede), *children, actions=actions)
 
 
-def _scenario_step(draft: dict) -> object:
+def scenario_step(draft: dict, number: int | None = 1) -> object:
     return _step(
-        1,
+        number,
         "Was soll gerechnet werden?",
         "Die Annahmenwelt, von der der Lauf ausgeht. Ein vorbereitetes Szenario ist der "
         "schnellste Einstieg — es legt Faktorlage, Politik und Kosten in einem Zug fest.",
@@ -382,9 +390,9 @@ def _scenario_step(draft: dict) -> object:
     )
 
 
-def _scope_step(draft: dict) -> object:
+def scope_step(draft: dict, number: int | None = 2) -> object:
     return _step(
-        2,
+        number,
         "Wie weit reicht der Lauf?",
         "Ein Tick ist eine Modellrunde, kein Kalenderzeitraum. Mehr Ticks heißt mehr "
         "Gelegenheiten für Rückkopplung zwischen Preis und Nachfrage.",
@@ -422,10 +430,10 @@ def _scope_step(draft: dict) -> object:
     )
 
 
-def _mode_step(draft: dict) -> object:
+def mode_step(draft: dict, number: int | None = 3) -> object:
     seed = draft.get("seed")
     return _step(
-        3,
+        number,
         "Womit wird gerechnet?",
         "Die Zahlen sind in allen drei Fällen dieselben — Preise, Buchungsraten und "
         "Faktorzustände berechnet immer das Rechenmodell. Die Auswahl bestimmt nur, wie "
@@ -464,12 +472,12 @@ def layout(draft: dict) -> html.Div:
 
     return html.Div(
         [
-            _scenario_step(draft),
+            scenario_step(draft),
             # `2xl` und nicht `xl`: Tailwinds Haltepunkte messen das **Fenster**,
             # der Inhalt steht aber in einer Zone, die schmaler ist als das
             # Fenster. Bei 1280 px teilte `xl` die 720 px des Viewports in zwei
             # 319-px-Spalten — genau die Enge, gegen die dieses Paket antritt.
-            ui.grid(_scope_step(draft), _mode_step(draft), cols="2xl:grid-cols-2", gap="gap-8"),
+            ui.grid(scope_step(draft), mode_step(draft), cols="2xl:grid-cols-2", gap="gap-8"),
         ]
     )
 

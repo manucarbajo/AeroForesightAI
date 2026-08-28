@@ -147,5 +147,16 @@ def layout(draft: dict) -> html.Div:
                 ),
                 _raw_data(draft),
             ),
+            # Seit P1.7 steht der Rücksetz-Knopf hier statt über den Reitern:
+            # Diesen Ort «über allen Einstellungen» gibt es in einer
+            # Schrittfolge nicht mehr, und «Lauf & Ablage» ist der Schritt, in
+            # dem man ohnehin über den Lauf als Ganzes nachdenkt.
+            _reset(),
         ]
     )
+
+
+def _reset():
+    from dashboard.web.config_editor import reset_button
+
+    return reset_button()

@@ -118,11 +118,16 @@ class TestDasBedienfeldBleibtSchlank:
         assert bloecke <= MAX_TEXTBLOECKE, f"{bloecke} Textblöcke im Bedienfeld"
 
     def test_the_counting_would_notice_the_editor_coming_back(self, draft):
-        """Kontrolle: Der Zähler zählt wirklich, statt immer klein zu sein."""
+        """Kontrolle: Der Zähler zählt wirklich, statt immer klein zu sein.
 
-        from dashboard.web import config_editor
+        Der Rückfall wird mit den Editor-Bereichen nachgestellt, die seit P1.7
+        Schritte der Schrittfolge sind — vorher waren sie Reiter unter
+        `config_editor.layout`, die es so nicht mehr gibt.
+        """
 
-        rueckfall = html.Div([launch_page.rail(draft), config_editor.layout(draft)])
+        rueckfall = html.Div(
+            [launch_page.rail(draft)] + [tab_layout(tab, draft) for _, tab in TABS]
+        )
 
         assert _words(rueckfall) > MAX_WOERTER
         assert _fields(rueckfall)

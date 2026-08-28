@@ -850,7 +850,7 @@ Was dabei **nicht** verloren gehen darf, ist die Zusicherung aus P1.1: **drei En
 
 ---
 
-#### Stufe A — Rahmen: Reihenfolge, ziehbare Zonen, ein Knopf weniger
+#### Stufe A — Rahmen: Reihenfolge, ziehbare Zonen, ein Knopf weniger ✅ erledigt 2026-08-28
 
 1. **`shell.ROUTES` in die Reihenfolge des Ablaufs bringen:** Einrichten, Leitstand, Ergebnisse, Handbuch. Der leere Pfad (`/app/`) wird **Einrichten** — dort fängt man an. Der Leitstand zieht auf `/app/lauf`. `setup` bleibt als Aliaspfad bestehen, damit gespeicherte Verweise und die Stand-Zeilen des Bedienfelds nicht ins Leere zeigen.
 2. **Ziehbare Trenner** zwischen Bedienfeld und Viewport sowie zwischen Viewport und Telemetrie. Umgesetzt als schmale Greifflächen, die per `clientside_callback` `--shell-left` bzw. `--shell-right` auf dem Shell-Element setzen; der Wert wird in `localStorage` gehalten und beim Aufbau zurückgelesen. Grenzen aus dem heutigen `clamp()` übernehmen, Doppelklick setzt zurück. **Serverseitig passiert dabei nichts** — dieselbe Begründung wie beim Theme-Umschalter in P1.5: Ein Rundlauf je Mausbewegung macht das Ziehen zäh. Unterhalb von 1024 px greift die Schubladenlogik aus P1.5/P1.6 unverändert; dort sind die Trenner ausgeblendet.
@@ -860,7 +860,7 @@ Was dabei **nicht** verloren gehen darf, ist die Zusicherung aus P1.1: **drei En
 
 ---
 
-#### Stufe B — Der Lauf ist ein eigener Zustand
+#### Stufe B — Der Lauf ist ein eigener Zustand ✅ erledigt 2026-08-28
 
 1. **Der Fortschritt gehört dem Server, nicht dem Job-Besitzer.** `runner` bekommt eine Auskunft über den **aktiven** Lauf (Kennung, aktueller Tick, Zieltick, letzte Zeile) — abgeleitet aus den Zeilen, die er ohnehin sammelt. Ohne das kann nur die Sitzung, die gestartet hat, etwas anzeigen; genau diese Grenze ist beim Fix zum Laufzustand bewusst stehen geblieben und wird hier eingelöst. **Die Zahlen bleiben, was sie sind:** Der Fortschritt wird aus den Fortschrittszeilen *gelesen*, nicht geschätzt — steht dort nichts, zeigt die Oberfläche einen unbestimmten Balken statt einer erfundenen Prozentzahl (Invariante 1).
 2. **Der Leitstand wird während eines Laufs zum Ladebildschirm.** Kein Formular, keine Editorreste: der Name des Laufs, was er rechnet (Szenario, Länge, Rechenmodus), ein Fortschrittsbalken mit «Tick x von y», und die Konsole — hier **aufgeklappt**, weil sie in diesem Zustand das Einzige ist, was es zu sehen gibt. Ist der Lauf fertig, führt ein deutlicher Weg nach «Ergebnisse».
@@ -873,7 +873,7 @@ Was dabei **nicht** verloren gehen darf, ist die Zusicherung aus P1.1: **drei En
 
 ---
 
-#### Stufe C — Einrichten als geführter Ablauf
+#### Stufe C — Einrichten als geführter Ablauf ✅ erledigt 2026-08-28
 
 1. **Ein Einstieg mit drei Wegen** statt einer Bildlaufstrecke: «Neuen Lauf einrichten» (der Ablauf unten), «Szenario-Vergleich starten» (alle Presets nacheinander — heute eine Ankreuzoption hinter «Feinabstimmung», also faktisch unauffindbar) und «Letzte Einstellungen weiterverwenden».
 2. **Der Ablauf selbst als Schrittfolge** mit Schrittleiste, «Zurück» und «Weiter». Die Schritte eins bis drei sind die drei Entscheidungen aus P1.1 und bleiben inhaltlich unverändert. Die Schritte vier bis sieben sind die vier heutigen Editor-Reiter — **jeder überspringbar**, und aus Schritt drei führt ein Weg direkt zum letzten Schritt. Damit bleibt «drei Entscheidungen bis zum Start» wahr, und die Reiter hören auf, ein Anhängsel unterhalb des Falzes zu sein: Sie werden benannte Stationen mit sichtbarem Fortschritt.
@@ -889,6 +889,17 @@ Was dabei **nicht** verloren gehen darf, ist die Zusicherung aus P1.1: **drei En
 **Was die Zahlen macht: nichts.** Das ganze Paket fasst Darstellung und Wegführung an — kein Rechenpfad, keine Config, kein Artefakt. `vergleiche.md` bleibt unberührt.
 
 **Abgrenzung.** Die 90 Eingabefelder unter «Systemgrößen» werden hier **umsortiert, nicht reduziert** — ihre Menge ist ein eigener Fall und bleibt bei [P1.2](#p12--ergebnisse-und-plots-refactoren). Ebenso bleibt offen, dass der Preflight bei jeder Änderung den vollen `SimulationState` aufbaut.
+
+**Umgesetzt am 2026-08-28, in drei Commits entlang der Stufen.** Vier Dinge, die dabei über den Plan hinausgingen — drei davon Fallen, die erst am laufenden System sichtbar wurden:
+
+- **Ein fehlender `Input` legt den ganzen Callback lahm.** Dash führt ihn **gar nicht erst aus** und meldet nur in der Browserkonsole «A nonexistent object was used in an `Input`». «Direkt zum Start» wurde auf Schritt 1 nicht gerendert — und damit tat auch «Weiter» nichts, der Zähler blieb bei «Schritt 1 von 8». Bedingt sichtbare Bedienelemente werden seither **ausgeblendet, nicht weggelassen**; das ist jetzt die sechste Dashboard-Regel in `CLAUDE.md`. Aus demselben Grund stehen «Lauf starten» und «Als Szenario speichern» in der Navigationsleiste und nicht im letzten Schritt.
+- **Ein klebendes Element braucht Spielraum in seinem Elternkasten.** «Weiter» trug `position: sticky` und lag trotzdem bei y=1381 in einem 900-px-Fenster — sein Wirt war exakt so hoch wie es selbst. Das Kleben sitzt jetzt am Wirt, dessen Eltern die volle Höhe haben; gemessen y=842, ohne Scrollen sichtbar.
+- **`labelStyle` wirkt seit Dash 4 nicht mehr.** Der erste Versuch, den Haken auf einer Auswahlkarte mittig zu setzen, blieb folgenlos: Dash schreibt keinen Inline-Stil mehr aufs Label (`getAttribute("style")` ist `null`). Die Stildicts in `components.py` waren tot und sind entfernt — stehengeblieben wären sie eine Falle für den Nächsten. Dieselbe Klasse wie Dashs `--Dash-*`-Ebene in P1.5.
+- **Der Fokus-Modus kam aus der Benutzung, nicht aus dem Plan.** Der Plan sagte nur «Schrittfolge»; am Bildschirm zeigte sich, dass daneben eine Szene läuft, die einen *anderen* Lauf zeigt, und links Stand-Zeilen stehen, die wiederholen, was man gerade einstellt. `af-shell--focus` blendet beim Einrichten Bedienfeld, Telemetrie und Zeitleiste aus.
+
+**Am laufenden System durchgespielt:** alle acht Schritte vorwärts, Sprung über die Schrittliste, «Direkt zum Start» ab Schritt 3 nach Schritt 8, Start aus der Schrittfolge (Kopfzeile «Simulation läuft», Fortschrittsfenster «Tick 30 von 500»). Überlauf-Durchlauf je Schritt: Schritte 1–3 und 6 ohne Befund.
+
+**Offen und benannt:** In den Regelzeilen (Schritte 4 und 5) tritt das Auswahlfeld «Art der Änderung» 68 px aus seiner Spalte — der Optionstext «springt auf den Wert (set)» ist breiter als die Zelle. Ein Versuch mit `min-width: 0` auf dem Dash-Wrapper half nachweislich **nicht** und ist wieder entfernt statt als wirkungslose Regel stehengelassen. Vorbestehend, gehört zum Umfang der Regelzeilen und damit zu [P1.2](#p12--ergebnisse-und-plots-refactoren).
 
 **Doku zieht mit:** `CLAUDE.md` (Architektur-Map: neue Module und Routen; die Dashboard-Regeln um den Umgang mit der Schrittfolge ergänzen), `docs/handbuch/erste-simulation.md`, `docs/handbuch/lauf-starten.md`, `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`, `docs/handbuch/glossar.md` (Ladebildschirm, Fortschrittsfenster, Schrittfolge), `README.md` und `dashboard/README.md` (Routentabelle).
 

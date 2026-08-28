@@ -31,7 +31,7 @@ from dash import Input, Output, State, dcc, html, no_update
 from dashboard.config_catalog import list_sweep_presets, validate_draft
 from dashboard.web import components as ui
 from dashboard.web import config_editor, routing, runner
-from dashboard.web.config_editor import compute_mode, start_flow
+from dashboard.web.config_editor import compute_mode, start_flow, wizard
 from dashboard.web.state import STORE_ID, draft_from_dict, initial_draft_dict
 
 #: Abstand, in dem das Log nachgezogen wird. Kürzer wirkt hektisch und erzeugt
@@ -290,11 +290,15 @@ def register_callbacks(app) -> None:
         Output(PROGRESS_STORE, "data", allow_duplicate=True),
         Output("run-start", "disabled"),
         Input("run-start", "n_clicks"),
+        # Der Knopf am Ende der Schrittfolge (P1.7). Zwei Ausloeser, **ein**
+        # Startpfad: dieselbe Pruefung, dasselbe `runner.start`. Der Einwand
+        # aus P1.6 galt einer zweiten Startlogik, nicht einem zweiten Knopf.
+        Input(wizard.START, "n_clicks"),
         State(STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def _start(n_clicks: int | None, draft: dict | None):
-        if not n_clicks:
+    def _start(n_clicks: int | None, wizard_clicks: int | None, draft: dict | None):
+        if not (n_clicks or wizard_clicks):
             return no_update, no_update, no_update, no_update, no_update
 
         # Vor dem Start prüfen, nicht danach: Ohne das läuft eine kaputte Config

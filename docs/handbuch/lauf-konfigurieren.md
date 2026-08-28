@@ -1,6 +1,21 @@
-Der Bereich **Einrichten** ist zweigeteilt. Oben stehen die drei
-Entscheidungen, die einen Lauf prägen; alles Weitere liegt darunter unter **Alle
-Einstellungen** — vier Bereiche, alle mit sinnvollen Werten vorbelegt.
+Einrichten geht seit August 2026 Schritt für Schritt. Sie beantworten eine
+Frage, klicken auf **Weiter**, und kommen zur nächsten; **Zurück** führt jederzeit
+zum vorigen Schritt, und links steht die ganze Liste — Sie können jeden Schritt
+direkt anspringen.
+
+**Drei Schritte genügen.** Was gerechnet wird, wie weit, und womit: Danach ist
+alles Weitere mit sinnvollen Werten vorbelegt, und der Knopf **Direkt zum Start**
+bringt Sie ans Ende. Die Schritte vier bis sieben sind als *optional*
+gekennzeichnet — Rahmenbedingungen, Nachfrage & Preisbildung, Lauf & Ablage,
+Technik. Wer sie braucht, findet sie; wer nicht, geht daran vorbei.
+
+Der letzte Schritt heißt **Prüfen & Starten**: Dort steht, was gleich passiert,
+und daneben die beiden Wege hinaus — den Lauf starten, oder die Einstellungen als
+Szenario speichern und später wieder aufrufen.
+
+Solange Sie einrichten, gehört Ihnen der ganze Bildschirm: Bedienfeld, Telemetrie
+und Zeitleiste treten zurück. Einrichten ist eine Sache für sich, und eine Szene
+daneben, die einen *anderen* Lauf zeigt, lenkt nur ab.
 
 **Gestartet wird links im Bedienfeld**, und das bleibt sichtbar, während Sie
 hier einstellen. Eine geänderte Annahme und ihre Zusammenfassung stehen damit
