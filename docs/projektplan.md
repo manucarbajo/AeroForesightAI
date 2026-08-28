@@ -1019,9 +1019,11 @@ Reihenfolge ist Absicht: erst messen, dann die Unwahrheiten, dann der Schnitt, d
 
 **W0 — Messfundament, vor jedem Umbau.** Ohne diese beiden wiederholt sich der Fehler von P1.7: eine Zusage, die von einer Zählung bewacht wird statt von einer Messung.
 
+**Zur Geometrie, abweichend vom ersten Entwurf dieses Pakets:** Gemessen wird bei **1280 × 800 und 1024 × 800** und nicht bei 1280 × 720 und 1440 × 900. Grund ist der Preis: `test_web_overflow.py` besucht diese beiden Breiten bereits, und jede weitere Geometrie kostet einen vollständigen Browser-Durchlauf über acht Schritte und sieben Ansichten. Die Zahlen fallen dadurch niedriger aus als im Audit (1,01 bis 4,03 statt 1,13 bis 4,44) — derselbe Inhalt, mehr Fenster. **Die Aussage bleibt in beiden Messungen dieselbe: kein einziger Schritt kommt ohne Scrollen aus.**
+
 | # | Was zu tun ist | Fertig wenn |
 | --- | --- | --- |
-| W0.1 | Höhenwächter je Schritt in `tests/test_web_overflow.py`, bei 1280 × 720 und 1440 × 900, gemessen in Bildschirmen. | Der Wächter hält den Ist-Zustand als bekannte Abweichung fest und schlägt fehl, sobald ein Schritt **wächst**. Deckel wird in W3.5 auf 1,0 gesenkt. |
+| W0.1 ✅ | Höhenwächter je Schritt in `tests/test_web_overflow.py`, gemessen in Bildschirmen. | **Erledigt 2026-08-28.** Der Wächter hält den Ist-Stand je Breite und Schritt und schlägt an, sobald ein Schritt **wächst** — und ebenso, wenn einer um mehr als 0,25 Bildschirme **schrumpft**, ohne dass der Deckel mitgezogen wird. Deckel wird in W3.5 auf `ZIEL = 1.0` gesenkt. |
 | W0.2 | Wirkungstest: welche Draft-Felder erreichen auf welchem Startpfad (Einzellauf, Wiederholungen, Sweep) tatsächlich die Simulation — mechanisch erzeugt, nicht handgepflegt. | Ein Feld, das die Oberfläche erfragt und der Pfad verwirft, lässt den Test fehlschlagen. |
 
 **W1 — Der Assistent sagt die Wahrheit** (kritisch, zuerst).

@@ -1,4 +1,17 @@
-"""Nichts tritt aus seiner Box — mechanisch geprüft (P1.7-D).
+"""Was nur ein Browser messen kann: die Box und der Schirm (P1.7-D, P1.9-W0.1).
+
+Zwei Fragen, ein Browser. **Tritt etwas aus seinem Kasten?** — das war P1.7-D.
+**Passt ein Schritt auf einen Bildschirm?** — das ist W0.1 aus P1.9, und es ist
+die Frage, die P1.7 zugesagt und niemand gemessen hat.
+
+Beide brauchen denselben teuren Aufbau (echter Server, echter Browser, zwei
+Breiten) und stehen deshalb in einer Datei. Der Dateiname bleibt
+`test_web_overflow.py`, obwohl er jetzt zu eng ist: Er steht in `CLAUDE.md`, in
+`.github/workflows/tests.yml` und in mehreren Absätzen des Projektplans — ein
+Umbenennen wäre eine Textänderung an sechs Stellen für null Erkenntnisgewinn.
+
+--- Teil 1: Nichts tritt aus seiner Box (P1.7-D) ---------------------------
+
 
 Stufe D hat den Überlauf an der Ursache behoben: `min-width: 0` auf den Kindern
 jedes Rasters, `overflow-wrap: anywhere` auf den Wertklassen, eine Textfassung
@@ -50,10 +63,33 @@ genau so trat «Standard-Ausgangslage» aus seiner Kachel.
 
 Dazu die grobe Probe, die keine Ausnahme kennt: Die Seite selbst darf sich nicht
 waagerecht schieben lassen.
+
+--- Teil 2: Jeder Schritt passt auf einen Schirm (P1.9-W0.1) ---------------
+
+P1.7 hat zugesagt: **eine Frage auf dem Schirm.** Abgenommen wurde: *nur der
+offene Schritt steht im DOM*. Das ist erfüllt — und misst Knoten statt
+Bildschirme. Gemessen sind es bei 1280 px zwischen **1,01 und 3,96** Schirmen
+je Schritt; keiner von acht kommt ohne Scrollen aus.
+
+**Es ist derselbe Fehler wie in P1.6, ein Paket später.** Dort war das
+Kriterium «höchstens drei Entscheidungen» grün, während der Start-Knopf 6,1
+Bildschirme tief lag. Hier ist «nur ein Schritt im DOM» grün, während der
+Schritt vier Schirme braucht. Zweimal derselbe Fehlertyp ist kein Zufall,
+sondern eine Lücke im Verfahren — daraus ist Regel 7 des Commit-Regelwerks
+geworden: *Eine Zusage kommt mit ihrer Messung, nicht mit ihrer Zählung.*
+Dieser Teil ist diese Messung.
+
+**Der Deckel ist eine Sperrklinke, kein Ziel.** Er hält den Ist-Stand fest und
+schlägt an, sobald ein Schritt **wächst**. Er schlägt aber auch an, wenn ein
+Schritt deutlich **schrumpft** und der Deckel nicht mitgezogen wird — sonst
+stünde nach dem Umbau ein Deckel von 3,96 über einem Schritt, der 0,9 braucht,
+und der Wächter wäre wieder aus dem falschen Grund grün. Das Ziel steht als
+`ZIEL` daneben; W3.5 setzt den Deckel darauf.
 """
 
 from __future__ import annotations
 
+import re
 import socket
 import threading
 
@@ -279,6 +315,169 @@ class TestKeineAnsichtTrittAusIhrerBox:
             assert not befunde, _melde(f"Ergebnisse / {beschriftung}", page.breite, befunde)
 
 
+# --- Teil 2: die Höhe (W0.1) -----------------------------------------------
+
+#: Wohin der Deckel gehört, sobald der Umbau steht: **ein** Schirm. Eine Frage
+#: auf dem Bildschirm, ohne Scrollen — die Zusage von P1.7 im Klartext. W3.5
+#: setzt `DECKEL` auf diesen Wert; bis dahin ist er das Maß, an dem man abliest,
+#: wie weit es noch ist.
+ZIEL = 1.0
+
+#: Der Ist-Stand, gemessen am 2026-08-28 bei 800 px Fensterhöhe (744 px sichtbar).
+#:
+#: **Je Breite eigene Zahlen, bewusst nicht das Maximum über beide.** Ein
+#: gemeinsamer Deckel von 2,05 ließe Schritt 1 bei 1280 px von 1,92 auf 2,04
+#: wachsen, ohne dass etwas rot wird — genau die Blindheit, gegen die dieses
+#: Paket antritt.
+#:
+#: **Die Zahlen weichen vom Audit ab, und das ist kein Widerspruch.** Das Audit
+#: hat bei 720 px Fensterhöhe gemessen (664 px sichtbar) und kam auf 1,13 bis
+#: 4,44; hier sind es bei 800 px 1,01 bis 3,96. Derselbe Inhalt, mehr Fenster.
+#: Was in beiden Messungen gleich bleibt, ist die Aussage: **kein einziger
+#: Schritt kommt ohne Scrollen aus.**
+DECKEL: dict[int, dict[str, float]] = {
+    1280: {
+        "Einstieg": 1.00,
+        "Schritt 1": 1.92,
+        "Schritt 2": 1.01,
+        "Schritt 3": 1.05,
+        "Schritt 4": 3.01,
+        "Schritt 5": 3.96,
+        "Schritt 6": 2.16,
+        "Schritt 7": 1.97,
+        "Schritt 8": 1.07,
+    },
+    1024: {
+        "Einstieg": 1.00,
+        "Schritt 1": 2.05,
+        "Schritt 2": 1.01,
+        "Schritt 3": 1.14,
+        "Schritt 4": 3.04,
+        "Schritt 5": 4.03,
+        "Schritt 6": 2.16,
+        "Schritt 7": 2.04,
+        "Schritt 8": 1.09,
+    },
+}
+
+#: Spielraum nach oben. Schriftmetrik und Chromium-Version schwanken zwischen
+#: Rechnern um wenige Pixel; 0,05 Schirme sind rund 37 px — eine Textzeile.
+#: Größer gewählt verstecken sich ganze Feldzeilen darin.
+TOLERANZ = 0.05
+
+#: Ab wann der Deckel als veraltet gilt. 0,25 Schirme sind rund 186 px — so weit
+#: schrumpft nichts aus Versehen. Wer so viel gewonnen hat, schreibt den Gewinn
+#: auf, sonst verfällt er still.
+SCHLUPF = 0.25
+
+_HOEHE = """
+() => {
+  const m = document.querySelector('.af-shell__main');
+  if (!m) return null;
+  return { scroll: m.scrollHeight, sicht: m.clientHeight };
+}
+"""
+
+
+def _schirme(page) -> float:
+    """Wie viele Bildschirme der offene Bereich hoch ist."""
+
+    page.wait_for_timeout(RUHE_MS)
+    masse = page.evaluate(_HOEHE)
+    assert (
+        masse is not None
+    ), "`.af-shell__main` nicht gefunden — misst der Wächter noch das Richtige?"
+    assert masse["sicht"] > 0, "Sichtbare Höhe 0 — der Bereich ist nicht gezeichnet"
+    return masse["scroll"] / masse["sicht"]
+
+
+def _gezeigter_schritt(page) -> int | None:
+    """Welchen Schritt der Zähler nennt — als Zahl, nicht als Text.
+
+    Die Beschriftung wird per CSS in Großbuchstaben gesetzt, und `inner_text()`
+    liefert die **gerenderte** Fassung («SCHRITT 1 VON 8»). Ein Vergleich auf
+    den Wortlaut hinge also an `text-transform`; die Zahl hängt an nichts.
+    """
+
+    zaehler = page.locator(".af-wizard__counter")
+    if not zaehler.count():
+        return None
+    zahlen = re.findall(r"\d+", zaehler.first.inner_text())
+    return int(zahlen[0]) if zahlen else None
+
+
+class TestJederSchrittPasstAufEinenSchirm:
+    """Die Zusage von P1.7, zum ersten Mal gemessen statt gezählt."""
+
+    def test_no_step_grew_beyond_its_ratchet(self, page):
+        """Kein Schritt wächst über seinen Deckel — und keiner schrumpft unbemerkt.
+
+        Beide Richtungen in **einem** Durchlauf: Der Bildschirmwechsel kostet
+        eine knappe Sekunde Ruhezeit je Schritt, und zweimal durch acht Schritte
+        zu laufen wäre eine Minute für dieselbe Messung.
+
+        Gemeldet werden **alle** Abweichungen auf einmal, nicht die erste. Wer
+        den Assistenten umbaut, verschiebt selten genau eine Zahl.
+        """
+
+        deckel = DECKEL[page.breite]
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+
+        gemessen: dict[str, float] = {"Einstieg": _schirme(page)}
+
+        page.click("#wizard-way-new")
+        page.wait_for_timeout(RUHE_MS)
+        anzahl = page.locator(".af-step").count()
+        assert anzahl == 8, f"Erwartet acht Schritte, gezählt {anzahl}"
+
+        for index in range(anzahl):
+            page.locator(".af-step").nth(index).click()
+            wert = _schirme(page)
+            # Erst prüfen, ob wirklich der angeklickte Schritt offen ist. Ohne
+            # das trüge eine verschluckte Navigation die Höhe des vorigen
+            # Schritts unter fremdem Namen in den Deckel — und der Wächter wäre
+            # ab dann grün für den falschen Schritt.
+            gezeigt = _gezeigter_schritt(page)
+            assert gezeigt == index + 1, (
+                f"Klick auf Schritt {index + 1} zeigt Schritt {gezeigt}. "
+                "Gemessen würde die Höhe des falschen Schritts."
+            )
+            gemessen[f"Schritt {index + 1}"] = wert
+
+        fehlend = sorted(set(deckel) - set(gemessen))
+        assert not fehlend, (
+            f"Bei {page.breite} px nicht gemessen: {fehlend}. "
+            "Steht der Zähler noch in `.af-wizard__counter`?"
+        )
+
+        gewachsen = [
+            f"  {name}: {wert:.2f} Schirme, Deckel {deckel[name]:.2f}"
+            for name, wert in sorted(gemessen.items())
+            if name in deckel and wert > deckel[name] + TOLERANZ
+        ]
+        assert not gewachsen, (
+            f"Bei {page.breite} px sind Schritte gewachsen:\n"
+            + "\n".join(gewachsen)
+            + "\n\nEin Schritt darf nicht länger werden, solange keiner auf einen "
+            "Schirm passt. Wenn der Zuwachs gewollt ist, gehört die Begründung in "
+            "die Commit-Message und die neue Zahl in `DECKEL`."
+        )
+
+        geschrumpft = [
+            f"  {name}: {wert:.2f} Schirme, Deckel steht noch auf {deckel[name]:.2f}"
+            for name, wert in sorted(gemessen.items())
+            if name in deckel and wert < deckel[name] - SCHLUPF
+        ]
+        assert not geschrumpft, (
+            f"Bei {page.breite} px ist der Deckel veraltet:\n"
+            + "\n".join(geschrumpft)
+            + f"\n\nDas ist ein Erfolg, kein Fehler — aber ein Deckel, der über dem "
+            f"Ist-Stand schwebt, ist wieder aus dem falschen Grund grün. Neue Zahlen "
+            f"in `DECKEL` eintragen. Ziel ist {ZIEL:.2f}."
+        )
+
+
 class TestDieSeiteSchiebtSichNichtWaagerecht:
     """Die grobe Probe ohne Ausnahmen.
 
@@ -297,6 +496,48 @@ class TestDieSeiteSchiebtSichNichtWaagerecht:
             f"{name} bei {page.breite} px schiebt sich waagerecht: "
             f"{masse['scroll']} px Inhalt in {masse['sicht']} px Fenster"
         )
+
+
+def test_the_height_guard_would_notice_a_relapse(page):
+    """Der Höhenwächter hat genau eine Art, still blind zu werden.
+
+    Er teilt `scrollHeight` durch `clientHeight` **eines bestimmten Elements**.
+    Hört `.af-shell__main` auf, das scrollende Element zu sein — weil jemand den
+    Scroll eine Ebene höher oder tiefer legt —, dann sind beide Maße gleich, das
+    Verhältnis ist für immer 1,00, und jeder Schritt gilt als passend. Der
+    Wächter wäre grün, und zwar aus demselben falschen Grund wie
+    `test_the_setup_area_builds_with_the_default_draft` vor P1.8.
+
+    Deshalb wird hier ein Schritt künstlich verlängert und nachgesehen, ob die
+    Messung das überhaupt bemerkt. Tut sie es nicht, misst sie das falsche
+    Element — und das ist ein Befund über den Wächter, nicht über die
+    Oberfläche.
+    """
+
+    page.goto(page.basis, wait_until="networkidle")
+    page.wait_for_selector(".af-way")
+    page.click("#wizard-way-new")
+    page.wait_for_timeout(RUHE_MS)
+
+    vorher = _schirme(page)
+
+    page.evaluate("""
+        () => {
+          const klotz = document.createElement('div');
+          klotz.id = 'probe-hoch';
+          klotz.style.cssText = 'height:2000px';
+          document.getElementById('wizard-content').appendChild(klotz);
+        }
+        """)
+
+    nachher = _schirme(page)
+
+    assert nachher > vorher + 1.5, (
+        f"Der Höhenwächter bemerkt 2000 px zusätzliche Höhe nicht "
+        f"({vorher:.2f} → {nachher:.2f} Schirme). Er misst das falsche Element: "
+        "`.af-shell__main` scrollt nicht mehr. Solange das so ist, ist jede grüne "
+        "Zeile in `TestJederSchrittPasstAufEinenSchirm` wertlos."
+    )
 
 
 def test_the_detector_would_notice_a_relapse(page):
