@@ -4,30 +4,35 @@ Anleitung führt einmal durch, vom leeren Leitstand bis zum fertigen Szenario.
 ## Der Bildschirm in einem Absatz
 
 Das Dashboard ist ein Leitstand: **eine** Ansicht, fünf Bereiche, kein Blättern.
-Links stehen die Parameter, in der Mitte die Simulation, rechts die Kennzahlen
-und die Konsole, unten die Zeitleiste, oben der Zustand der Anlage. Kopfzeile
-und Zeitleiste bleiben stehen; die drei Bereiche dazwischen rollen jeder für
-sich. Ist Ihr Fenster schmal, weichen die beiden Seitenspalten in Schubladen aus
-— die Knöpfe dafür sitzen links und rechts in der Kopfzeile.
+Links das Bedienfeld, in der Mitte die Simulation, rechts die Kennzahlen und die
+Konsole, unten die Zeitleiste, oben der Zustand der Anlage. Kopfzeile und
+Zeitleiste bleiben stehen; die drei Bereiche dazwischen rollen jeder für sich.
+Ist Ihr Fenster schmal, weichen die beiden Seitenspalten in Schubladen aus — die
+Knöpfe dafür sitzen links und rechts in der Kopfzeile.
+
+**Das Bedienfeld links ist kein Formular.** Es zeigt in drei Zeilen, was
+eingestellt ist, darunter den Preflight, und ganz unten den Start-Knopf — der
+bleibt immer sichtbar. Eingestellt wird im Bereich **Einrichten**, den Sie oben
+in der Kopfzeile erreichen oder über jede der drei Zeilen.
 
 Rechts oben schalten Sie zwischen hellem und dunklem Design um. Die Wahl bleibt
 im Browser gespeichert und gilt beim nächsten Öffnen weiter.
 
-Drei Entscheidungen genügen bis zum Start. Sie stehen untereinander in der
-**linken Spalte**, jede mit ihrer Erklärung daneben.
+Drei Entscheidungen genügen bis zum Start. Sie stehen im Bereich
+**Einrichten** nebeneinander, jede mit ihrer Erklärung daneben.
 
 ## Schritt 1: Was soll gerechnet werden?
 
-Ganz oben in der linken Spalte wählen Sie die Annahmenwelt, von der der Lauf
-ausgeht.
+Öffnen Sie **Einrichten**. Ganz oben wählen Sie die Annahmenwelt, von der der
+Lauf ausgeht — die Möglichkeiten stehen als Karten nebeneinander.
 
 Nehmen Sie eines der vorbereiteten Szenarien, etwa *Business as Usual*. Unter
 jedem steht, wofür es steht. Ein Szenario legt Faktorlage, Politik und Kosten in
 einem Zug fest und ist deutlich schneller, als jede Größe einzeln einzustellen.
 
 Ein gewähltes Szenario gilt **unverändert**: Die Werte kommen aus seiner Datei
-unter `configs/sweeps/`, und was Sie weiter unten im Editor eingestellt haben,
-bleibt dafür außen vor. Wollen Sie von einem Szenario ausgehen und einzelne
+unter `configs/sweeps/`, und was Sie weiter unten unter «Alle Einstellungen»
+eingestellt haben, bleibt dafür außen vor. Wollen Sie von einem Szenario ausgehen und einzelne
 Annahmen ändern, klicken Sie auf «Werte übernehmen und selbst anpassen» — dann
 wandern seine Werte in den Editor, und die Auswahl springt auf «Eigene
 Einstellungen».
@@ -56,9 +61,10 @@ nur die beiden unteren Modi.
 
 ## Schritt 4: Gegenlesen und starten
 
-Unter den drei Schritten steht in einem Satz, was gleich passiert, dazu die
-wichtigsten Werte als Kacheln — Länge, Wiederholungen, Zufallsstartwert. Lesen
-Sie den Satz einmal gegen; er ändert sich mit jeder Einstellung mit.
+Der Blick geht jetzt nach links. Dort steht in einem Satz, was gleich passiert,
+dazu die wichtigsten Werte als Kacheln — Länge, Wiederholungen,
+Zufallsstartwert. Lesen Sie den Satz einmal gegen; er ändert sich mit jeder
+Einstellung mit, auch während Sie rechts noch einstellen.
 
 Steht dort ein roter Kasten, ist die Konfiguration nicht lauffähig; der
 betroffene Wert ist zusätzlich am Feld selbst markiert. Sonst klicken Sie auf
@@ -66,9 +72,9 @@ betroffene Wert ist zusätzlich am Feld selbst markiert. Sonst klicken Sie auf
 
 Der Zustand in der Kopfzeile wechselt auf «Simulation läuft» und der Punkt
 daneben pulsiert. Der Fortschritt läuft Runde für Runde in die **Konsole** rechts
-unten — mit Preis und Buchungsrate je Tick. Ist der Lauf fertig, meldet die linke
-Spalte die Run-ID, die Zahl der Ticks und die Zahl der Ereignisse, und der neue
-Lauf ist in der Auswahl oben bereits gesetzt.
+— klappen Sie sie auf, um Preis und Buchungsrate je Tick zu sehen. Ist der Lauf
+fertig, meldet das Bedienfeld die Run-ID, die Zahl der Ticks und die Zahl der
+Ereignisse, und der neue Lauf ist in der Auswahl oben bereits gesetzt.
 
 ## Schritt 5: Ergebnis lesen
 
@@ -93,7 +99,7 @@ für die Detailauswertungen. Die empfohlene Lesereihenfolge steht unter
 ## Was Sie als Nächstes probieren sollten
 
 Wiederholen Sie den Lauf mit einem anderen Szenario und vergleichen Sie die
-Ergebnisse. Oder gehen Sie in der linken Spalte weiter nach unten zu **Alle
+Ergebnisse. Oder gehen Sie unter **Einrichten** weiter nach unten zu **Alle
 Einstellungen** und ändern unter
 **Rahmenbedingungen** eine einzelne Größe, etwa die CO₂-Abgabe, und sehen nach,
 ob die Wirkung Ihrer Erwartung entspricht. Für einen sauberen Vergleich zweier

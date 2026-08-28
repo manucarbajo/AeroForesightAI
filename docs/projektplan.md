@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-28 — **Phase 0 ist abgeschlossen**, **P1.1 ist erledigt**, und darauf ist **P1.5** gefolgt: Das Dashboard ist jetzt ein **Leitstand** — ein Bildschirm mit fünf Zonen statt eines Stapels Seiten, mit umschaltbarem hellen und dunklen Design und einer Tick-Zeitleiste, die Szene, Kennzahlen und Verläufe gemeinsam führt ([Einzelheiten](#p15--leitstand-oberfläche--erledigt-2026-08-28)). Auch dort lag der eigentliche Fund unter der Oberfläche: Die Stile für Dashs eigene Komponenten griffen seit dem Sprung auf Dash 4 an **keiner einzigen Stelle** mehr — im hellen Modus unsichtbar, im dunklen ein violetter Regler mit schwarzer Beschriftung auf schwarzem Grund. Zu P1.1: «Simulation starten» führt jetzt in drei Entscheidungen zum Lauf ([Einzelheiten](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28)). Dabei kam ein Fund heraus, der nicht in der Oberfläche lag: Ein gewähltes Szenario-Preset wurde im Dashboard **still von den Datei-Defaults überschrieben** — bei allen acht ausgelieferten Presets, ein Lauf «Business as Usual» rechnete mit steigender CO₂-Abgabe. Behoben, mit einem Wächter über jede Datei unter `configs/sweeps/`. Phase 0 im Übrigen unverändert und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-08-28 — **Phase 0 ist abgeschlossen**, **P1.1 ist erledigt**, und darauf ist **P1.5** gefolgt: Das Dashboard ist jetzt ein **Leitstand** — ein Bildschirm mit fünf Zonen statt eines Stapels Seiten, mit umschaltbarem hellen und dunklen Design und einer Tick-Zeitleiste, die Szene, Kennzahlen und Verläufe gemeinsam führt ([Einzelheiten](#p15--leitstand-oberfläche--erledigt-2026-08-28)). Auch dort lag der eigentliche Fund unter der Oberfläche: Die Stile für Dashs eigene Komponenten griffen seit dem Sprung auf Dash 4 an **keiner einzigen Stelle** mehr — im hellen Modus unsichtbar, im dunklen ein violetter Regler mit schwarzer Beschriftung auf schwarzem Grund. Direkt darauf folgte **P1.6**, weil die Vermessung des Ergebnisses einen Rückschritt zeigte: Die linke Spalte war mit der hineingepressten Konfiguration **10,7 Bildschirme** hoch, und der Start-Knopf lag 6,1 Bildschirme tief — bei erfüllten Abnahmekriterien beider Vorgängerpakete. Einrichten und Beobachten sind jetzt getrennt, die Spalte ist ein Bedienfeld, und die Kriterien von P1.1 und P1.5 sind um eine Größe ergänzt, die **Erreichbarkeit** misst statt Anzahl ([Einzelheiten](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28)). Zu P1.1: «Simulation starten» führt jetzt in drei Entscheidungen zum Lauf ([Einzelheiten](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28)). Dabei kam ein Fund heraus, der nicht in der Oberfläche lag: Ein gewähltes Szenario-Preset wurde im Dashboard **still von den Datei-Defaults überschrieben** — bei allen acht ausgelieferten Presets, ein Lauf «Business as Usual» rechnete mit steigender CO₂-Abgabe. Behoben, mit einem Wächter über jede Datei unter `configs/sweeps/`. Phase 0 im Übrigen unverändert und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2: die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -674,6 +674,12 @@ Vier Dinge, die bei der Umsetzung über den Plan hinausgingen:
 
 **Offen und bewusst nicht hier erledigt:** Der Preflight ruft die Konfigurationsprüfung bei jeder Änderung des Entwurfs auf, und die baut jedes Mal den vollständigen `SimulationState` auf. Auf einer lokalen Workbench ist das nicht spürbar; für den Mehrbenutzerbetrieb aus Phase 6 gehört es gemessen.
 
+**Nachtrag vom 2026-08-28 — das Abnahmekriterium hat die falsche Größe gemessen.** «Höchstens drei Entscheidungen bis zum Start» zählt **Entscheidungen**, nicht **Wege**. Auf der 1400 px breiten Seite, für die der Ablauf entworfen wurde, fielen beide zusammen. In der 336-px-Spalte von [P1.5](#p15--leitstand-oberfläche--erledigt-2026-08-28) liefen sie auseinander: Die drei Entscheidungen blieben drei, der Start-Knopf lag danach **6,1 Bildschirme tief**, und Schritt 1 allein war 1.954 px hoch — zehn Preset-Optionen à 102 px untereinander. Der Test war grün.
+
+Das Kriterium ist deshalb um eine zweite Größe ergänzt, und die misst Erreichbarkeit: **Der Start ist ohne Scrollen erreichbar, und die Spalte, in der er steht, bleibt unter anderthalb Bildschirmen.** Mechanisch gehalten wird das von `tests/test_web_rail.py` (Umfang des Bedienfelds) — nachgestellt wird es im Browser, weil ein pytest-Lauf keine Pixel kennt. Umgesetzt in [P1.6](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28).
+
+**Als Prüfmuster mitnehmen:** Ein Kriterium, das eine Anzahl misst, sagt nichts über die Erreichbarkeit. Beides fällt nur so lange zusammen, wie der Platz reicht.
+
 **Doku zieht mit:** `docs/handbuch/erste-simulation.md`, `docs/handbuch/lauf-starten.md`, `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`.
 
 ### P1.2 — Ergebnisse und Plots refactoren
@@ -749,7 +755,56 @@ Vier Dinge, die bei der Umsetzung über den Plan hinausgingen:
 
 **Offen und bewusst nicht hier erledigt:** Die PNG-Tafeln unter `figures/` werden von matplotlib hell gerendert und stehen im Dark Mode auf einer weißen Fläche wie ein aufgelegtes Blatt. Sie dunkel zu erzeugen gehört zu [P1.2](#p12--ergebnisse-und-plots-refactoren). Ebenso bleibt der Vorbehalt aus P1.1 bestehen und wiegt jetzt schwerer: Der Preflight baut bei jeder Änderung des Entwurfs den vollständigen `SimulationState` auf, und die Parameterspalte ist ab jetzt dauerhaft sichtbar — er wird also häufiger angestoßen als vorher. Für Phase 6 zu messen.
 
+**Nachtrag vom 2026-08-28 — «Fertig wenn» prüfte Mechanik, nicht Brauchbarkeit.** Fünf Zonen, feste Kopfzeile, jede Zone scrollt für sich, beide Themes tragen jede Fläche: alles erfüllt. Die Oberfläche war trotzdem nicht bedienbar, weil das Kriterium nichts über die **Verteilung** sagte. Gemessen am Tag danach (1280 × 720):
+
+| | links | Mitte | rechts |
+| --- | --- | --- | --- |
+| Breite | 336 px | 592 px (**46 %**) | 352 px |
+| Inhaltshöhe | **7.112 px = 10,7 Bildschirme** | 595 px = 1,0 | 1.022 px = 1,5 |
+| Wörter | 752 | 87 | 3.307 |
+| Eingabefelder | **122** | – | – |
+
+P1.5 hat den geführten Ablauf aus P1.1 — entworfen für 1400 px Seitenbreite — samt Editor in eine 336-px-Spalte gepresst. Das Kriterium ist deshalb ergänzt: **Der Viewport trägt bei 1280 px mindestens 55 % der Breite, und keine Zone verlangt mehr als anderthalb Bildschirme Scrollen für das, was sie ständig zeigt.** Behoben in [P1.6](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28).
+
 **Doku zieht mit:** `CLAUDE.md` (Architektur-Map, dritte Regel zur Farbe), `docs/handbuch/erste-simulation.md`, `docs/handbuch/lauf-starten.md`, `docs/handbuch/ergebnisse.md`, `README.md`.
+
+### P1.6 — Einrichten und Beobachten trennen ✅ erledigt 2026-08-28
+
+**Befund:** Die linke Zone des Leitstands trug die vollständige Konfiguration — den geführten Ablauf aus P1.1 **und** die vier Editor-Tabs — in 336 px Breite. Die Zahlen stehen im Nachtrag zu P1.5 oben. Der Kern: **Einrichten und Beobachten sind zwei Betriebsarten mit gegenläufigen Anforderungen.** Einrichten braucht Fläche, Fließtext und sechzig Felder; Beobachten braucht Dichte, Ruhe und wenige, immer sichtbare Bedienelemente. Kein professionelles Werkzeug (Grafana, Datadog, Kibana, Simulink) legt die vollständige Konfiguration dauerhaft neben die Live-Ansicht; überall ist das Einrichten ein eigener Modus, der die volle Breite bekommt.
+
+**Fundstelle:** [`dashboard/web/pages/launch.py`](../dashboard/web/pages/launch.py), [`dashboard/web/config_editor/start_flow.py`](../dashboard/web/config_editor/start_flow.py), [`dashboard/web/assets/dashboard.css`](../dashboard/web/assets/dashboard.css).
+
+**Was zu tun war:** Die Konfiguration in einen eigenen Viewport-Bereich, die Spalte auf ein Bedienfeld zurückführen — was eingestellt ist, der Preflight, der Start.
+
+**Fertig wenn:** Die linke Zone bleibt unter anderthalb Bildschirmen, der Start-Knopf ist ohne Scrollen erreichbar, der Viewport trägt bei 1280 px mindestens 55 %, und `test_web_start_flow.py` bleibt unverändert grün.
+
+**Umgesetzt am 2026-08-28.** `dashboard/web/pages/setup.py` ist der vierte Bereich neben Leitstand, Ergebnisse und Handbuch; er enthält, was vorher in der Spalte stand — **verschoben, nicht neu geschrieben**. Die Spalte trägt jetzt drei Stand-Zeilen (Szenario, Länge, Rechenmodus, je ein Verweis ins Einrichten), den Preflight und den Start-Knopf in einem klebenden Fuß. Die Presets stehen als Kartenraster statt als Liste, Schritt 2 und 3 nebeneinander.
+
+Gemessen nach dem Umbau, mit denselben Werkzeugen wie vorher:
+
+| | vorher | jetzt |
+| --- | --- | --- |
+| Linke Zone | 10,7 Bildschirme | **1,4** |
+| Wörter links | 752 | **53** |
+| Eingabefelder links | 122 | **0** |
+| Start-Knopf | 6,1 Bildschirme tief | **ohne Scrollen sichtbar** |
+| Viewport bei 1280 px | 46 % | **55 %** |
+| Konsolenzeilen im DOM | 254 | **≤ 80**, zugeklappt |
+| Szene | 534 × 374 px | **652 × 446 px** |
+
+Drei Dinge, die bei der Umsetzung über den Plan hinausgingen:
+
+- **Tailwinds Haltepunkte messen das Fenster, nicht die Zone.** `xl:grid-cols-2` teilte bei 1280 px die 720 px des Viewports in zwei 319-px-Spalten — dieselbe Enge, gegen die dieses Paket antritt, nur eine Ebene tiefer. Die Schritte teilen sich die Reihe jetzt erst ab `2xl`. **Für jede künftige Spaltenaufteilung innerhalb einer Zone gilt das genauso.**
+- **Der Wächter kann keine Pixel zählen**, und eine Liste erlaubter Feldnamen wäre wertlos gewesen. `tests/test_web_rail.py` zählt stattdessen die Größen, aus denen die Pixel entstehen: Eingabefelder (null), Wörter (heute 53, erlaubt 160), Textblöcke. Ein Kontrolltest schiebt den Editor zurück in die Spalte und zeigt, dass der Zähler anschlägt.
+- **Der Preflight wandert, er wird nicht kopiert.** Zwei Fassungen hießen zwei Platzhalter mit derselben Dash-ID. `preflight()` nimmt den Slot-Namen jetzt als Parameter; `test_web_start_flow.py::test_live_state_fills_every_slot_the_layout_declares` geht seither **beide** Bäume ab — Einrichten und Bedienfeld —, weil ein Slot ohne Inhalt nach der ersten Änderung leer stehen bliebe.
+
+**Ein Hinweis für den, der als Nächstes im Browser misst:** Ist die Vorschau-Ansicht nicht sichtbar, zeichnet die Seite keine Bilder, und **laufende CSS-Übergänge bleiben eingefroren**. `getComputedStyle` liefert dann den alten Wert — auch gegen `!important`. Drei vermeintliche Fehler in diesem Paket (die Schublade öffnet nicht, die gewählte Karte bleibt ungerahmt, die Stand-Zeilen sind im Dark Mode weiß) waren genau das. Wer misst, schaltet vorher `transition: none` zu.
+
+**Was sich an den Zahlen verschiebt:** nichts. Nur Darstellung; kein Rechenpfad, keine Config, kein Artefakt. `vergleiche.md` bleibt unberührt.
+
+**Offen und bewusst nicht hier erledigt:** Der Bereich «Einrichten» ist bei 1280 px 7,3 Bildschirme lang. Das ist für eine Konfigurationsseite in Ordnung — sie wird gelesen, nicht überwacht —, aber die 90 Eingabefelder unter «Systemgrößen» sind ein eigener Fall für [P1.2](#p12--ergebnisse-und-plots-refactoren) oder ein späteres Paket. Ebenso unverändert: Der Preflight baut bei jeder Entwurfsänderung den vollen `SimulationState` auf.
+
+**Doku zieht mit:** `CLAUDE.md` (Architektur-Map, vierte Regel zur linken Spalte), `docs/handbuch/erste-simulation.md`, `docs/handbuch/lauf-starten.md`, `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/ergebnisse.md`, `docs/handbuch/glossar.md`, `README.md`, `dashboard/README.md`.
 
 ---
 

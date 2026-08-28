@@ -1,12 +1,17 @@
-Die **linke Spalte** des Leitstands ist zweigeteilt. Oben stehen die drei
-Entscheidungen, die einen Lauf prägen, darunter Preflight und Start. Alles
-Weitere liegt darunter unter **Alle Einstellungen** — vier Bereiche, alle mit
-sinnvollen Werten vorbelegt.
+Der Bereich **Einrichten** ist zweigeteilt. Oben stehen die drei
+Entscheidungen, die einen Lauf prägen; alles Weitere liegt darunter unter **Alle
+Einstellungen** — vier Bereiche, alle mit sinnvollen Werten vorbelegt.
 
-Die Spalte bleibt sichtbar, während in der Mitte gerechnet und rechts gemessen
-wird. Sie ist damit nicht mehr eine Seite, die man verlässt, sondern das
-Bedienfeld neben dem Ergebnis: Eine geänderte Annahme und ihre Wirkung stehen
-nebeneinander, statt zwei Bildschirmseiten auseinander.
+**Gestartet wird links im Bedienfeld**, und das bleibt sichtbar, während Sie
+hier einstellen. Eine geänderte Annahme und ihre Zusammenfassung stehen damit
+nebeneinander: Was Sie oben wählen, steht sofort links in den drei Stand-Zeilen
+und im Preflight.
+
+Bis P1.6 stand dieser Bereich in der linken Spalte selbst. Das war eine
+Fehlkonstruktion — sechzig Eingabefelder in einer 336 px breiten Spalte ergaben
+zehn Bildschirme Höhe, und der Start-Knopf lag sechs davon tief. Einrichten
+braucht Fläche, Beobachten braucht Ruhe; beides in dieselbe Zone zu legen geht
+nur zulasten einer von beiden.
 
 Wer nur die drei Entscheidungen anfasst, bekommt einen sinnvollen Lauf.
 
@@ -14,7 +19,7 @@ Wer nur die drei Entscheidungen anfasst, bekommt einen sinnvollen Lauf.
 
 **1. Was soll gerechnet werden?** Die Annahmenwelt: die Standard-Ausgangslage
 aus `configs/`, eines der vorbereiteten Szenarien, oder das, was Sie sich weiter
-unten in der Spalte selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
+unten unter «Alle Einstellungen» selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
 steht; aufklappbar dazu die Begründung, warum es so aufgebaut ist.
 
 **2. Wie weit reicht der Lauf?** Die Länge in Ticks. Hinter «Feinabstimmung»

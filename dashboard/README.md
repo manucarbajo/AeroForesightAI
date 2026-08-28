@@ -9,10 +9,10 @@ Seit P1.5 ist es ein **Leitstand**: ein Bildschirm, fünf Zonen, kein Blättern.
 +---------------------------------------------------------------+
 | Kopfzeile - Name, Zustand, Lauf-Auswahl, Aktionen, Theme       |
 +---------------+---------------------------+-------------------+
-| Parameter     | Viewport                  | Telemetrie        |
-| (gefuehrter   | (Szene, Ergebnisse        | (Kennzahlen,      |
-|  Ablauf, P1.1)|  oder Handbuch)           |  Verlaeufe,       |
-|               +---------------------------+  Konsole)         |
+| Bedienfeld    | Viewport                  | Telemetrie        |
+| (Stand,       | (Szene, Einrichten,       | (Kennzahlen,      |
+|  Preflight,   |  Ergebnisse, Handbuch)    |  Verlaeufe,       |
+|  Start)       +---------------------------+  Konsole)         |
 |               | Zeitleiste                |                   |
 +---------------+---------------------------+-------------------+
 ```
@@ -31,6 +31,7 @@ python -m dashboard.web.app --port 8511
 | --- | --- |
 | `http://localhost:8511/` | Landingpage |
 | `http://localhost:8511/app/` | Leitstand (Szene + Zeitleiste) |
+| `http://localhost:8511/app/setup` | Einrichten (drei Entscheidungen + Editor) |
 | `http://localhost:8511/app/runs` | Ergebnisse (die sieben Ansichten) |
 | `http://localhost:8511/app/doku` | Handbuch |
 
@@ -70,7 +71,7 @@ Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
 | `state.py` | `ConfigDraft` ⇄ `dcc.Store` |
 | `runner.py` | Lauf im Hintergrund-Thread, Fortschritt über eine Queue |
 | `files_route.py` | Flask-Route für PNGs und Downloads aus `outputs/` |
-| `pages/` | `launch.py` (Parameterspalte), `runs.py` (Ergebnis-Ansichten), `docs.py` (Handbuch) |
+| `pages/` | `launch.py` (Bedienfeld links: Stand, Preflight, Start), `setup.py` (Einrichten), `runs.py` (Ergebnis-Ansichten), `docs.py` (Handbuch) |
 | `pages/docs_reference.py` | Referenzkapitel, aus Glossar und `configs/` erzeugt |
 | `views/` | die sieben Ergebnis-Ansichten plus `scene.py` (Viewport) und `telemetry.py` (rechte Zone) |
 | `config_editor/` | der geführte Ablauf (`start_flow.py`) plus die vier Editor-Tabs |
@@ -82,8 +83,9 @@ Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
 | Zone / Bereich | Inhalt |
 | --- | --- |
 | **Kopfzeile** | Zustand der Anlage (bereit / läuft / beeinträchtigt / Demo, mit pulsierendem Punkt), Lauf-Auswahl für den ganzen Leitstand, Speichern / Snapshot / Exportieren, Theme-Umschalter |
-| **Parameterspalte** | Der geführte Ablauf aus P1.1 — drei Entscheidungen, Preflight, Start —, darunter vier Editor-Bereiche: **Rahmenbedingungen** (Faktoren F1–F7, Systemgrößen samt Regeln), **Nachfrage & Preisbildung** (Yield Management, Sättigung, Segmente, Verteilungen), **Lauf & Ablage** (Benennung, Mehrfachläufe, Config-Dateien, Preset sichern), **Technik** (Sprachmodell, Ausgaben) |
-| **Viewport** | **Leitstand**: die Population zum gewählten Tick plus Faktorstreifen F1–F7 · **Ergebnisse**: Szenario (Hauptansicht), Übersicht, Animation, Figures, Bericht, Abfrage, Dateien · **Handbuch** mit Kapitelnavigation und Volltextsuche |
+| **Bedienfeld** | Was eingestellt ist (Szenario, Länge, Rechenmodus — je ein Verweis ins Einrichten), der Preflight, der Start-Knopf in einem klebenden Fuß. **Keine Eingabefelder** — `tests/test_web_rail.py` hält das fest |
+| **Einrichten** | Der geführte Ablauf aus P1.1 — drei Entscheidungen, Presets als Kartenraster —, darunter vier Editor-Bereiche: **Rahmenbedingungen** (Faktoren F1–F7, Systemgrößen samt Regeln), **Nachfrage & Preisbildung** (Yield Management, Sättigung, Segmente, Verteilungen), **Lauf & Ablage** (Benennung, Mehrfachläufe, Config-Dateien, Preset sichern), **Technik** (Sprachmodell, Ausgaben) |
+| **Viewport** | **Leitstand**: die Population zum gewählten Tick plus Faktorstreifen F1–F7 · **Einrichten** (siehe oben) · **Ergebnisse**: Szenario (Hauptansicht), Übersicht, Animation, Figures, Bericht, Abfrage, Dateien · **Handbuch** mit Kapitelnavigation und Volltextsuche |
 | **Zeitleiste** | Tick-Regler über den Lauf, Play/Pause/Stop/Schritt, Tempo, Ereignismarker |
 | **Telemetrie** | Kennzahlen des gewählten Ticks, dieselben Größen als Verlauf mit Positionsmarke, Konsole (Ereignisse, Modellausfälle, Lauffortschritt) |
 

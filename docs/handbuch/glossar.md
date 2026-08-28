@@ -12,6 +12,11 @@ heißt sie Preset.
 **Auslastung** — Hier gleichbedeutend mit Buchungsrate. Nicht die Auslastung
 eines einzelnen Flugzeugs.
 
+**Bedienfeld** — Die linke Zone des Leitstands: was eingestellt ist, der
+Preflight, der Start-Knopf. Bewusst **kein** Formular — eingestellt wird im
+Bereich «Einrichten». So bleibt der Start-Knopf immer sichtbar, statt hinter
+sechzig Eingabefeldern zu verschwinden.
+
 **Beispieldatensatz** — Was der Leitstand zeigt, solange kein einziger Lauf
 gerechnet wurde: erfundene, aber plausible Zahlen, damit die Ansicht nicht leer
 bleibt. Er ist überall als solcher markiert — Abzeichen in der Kopfzeile, Banner
@@ -28,6 +33,11 @@ Kombination von Faktorzuständen in sich stimmig ist. Siehe
 
 **Dämpfung** — Bremst die Preisreaktion der Airline. Niedrige Werte ergeben
 ruhigere Preisverläufe.
+
+**Einrichten** — Der Bereich, in dem ein Lauf festgelegt wird: die drei
+Entscheidungen und darunter alle weiteren Einstellungen. Er nimmt die volle
+Breite ein, weil Konfiguration Fläche braucht; gestartet wird trotzdem links im
+Bedienfeld, das dabei sichtbar bleibt.
 
 **Faktor** — Eine von sieben Zustandsvariablen, die die Welt in groben Zügen
 beschreiben, jeweils mit zwei möglichen Zuständen. Siehe

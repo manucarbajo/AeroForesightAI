@@ -1,7 +1,12 @@
-Unter den drei Entscheidungen in der linken Spalte steht der Preflight — in
-Klartext, was gleich passiert, dazu die wichtigsten Werte als Kacheln —, darunter
-der Start-Knopf. Ein Klick genügt. Der Editor mit allen weiteren Einstellungen
-liegt darunter und ist für einen ersten Lauf nicht nötig.
+Gestartet wird im **Bedienfeld links**. Es zeigt oben in drei Zeilen, was
+eingestellt ist — Szenario, Länge, Rechenmodus —, darunter den Preflight (in
+Klartext, was gleich passiert, dazu die wichtigsten Werte als Kacheln), und ganz
+unten den Start-Knopf. Der bleibt sichtbar, egal wie lang die Warnungen darüber
+werden. Ein Klick genügt.
+
+Eingestellt wird nicht hier, sondern im Bereich **Einrichten** — über die
+Kopfzeile oder über jede der drei Zeilen. Für einen ersten Lauf ist das nicht
+nötig: Die Vorbelegung trägt einen sinnvollen Lauf.
 
 ## Während der Lauf rechnet
 
@@ -9,14 +14,15 @@ Der Zustand oben in der Kopfzeile wechselt auf **Simulation läuft**, und der
 Punkt daneben pulsiert. Es ist die einzige Bewegung in der Oberfläche und
 deshalb eindeutig.
 
-Der Fortschritt läuft in die **Konsole** in der rechten Spalte. Sie zeigt je
-Runde die vergangene Zeit, die Geschwindigkeit, den Ticketpreis und die
-Buchungsrate — dieselben Zeilen, die auch im Terminal stehen —, und darüber, was
-sonst noch zu melden ist: ausgefallene Modellaufrufe in Gelb, ein Lauffehler in
-Rot. Der Start-Knopf ist gesperrt, solange gerechnet wird.
+Der Fortschritt läuft in die **Konsole** in der rechten Spalte. Sie ist
+zugeklappt — die Zahl daneben sagt, wie viele Meldungen anliegen. Aufgeklappt
+zeigt sie je Runde die vergangene Zeit, die Geschwindigkeit, den Ticketpreis und
+die Buchungsrate — dieselben Zeilen, die auch im Terminal stehen —, und darüber,
+was sonst noch zu melden ist: ausgefallene Modellaufrufe in Gelb, ein Lauffehler
+in Rot. Der Start-Knopf ist gesperrt, solange gerechnet wird.
 
-Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit auf **Ergebnisse**
-oder ins **Handbuch** wechseln, ohne ihn abzubrechen — die Kopfzeile bleibt
+Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit auf **Einrichten**,
+**Ergebnisse** oder ins **Handbuch** wechseln, ohne ihn abzubrechen — die Kopfzeile bleibt
 dabei stehen, und der Zustand ist von überall sichtbar. Was Sie nicht können:
 einen zweiten Lauf parallel starten. Das Modell leitet während eines Laufs die
 Programmausgabe um, und zwei gleichzeitige Läufe würden sich die Protokolle
@@ -39,7 +45,7 @@ allen drei Fällen dieselben.
 
 Was am Ende erscheint, hängt davon ab, was Sie konfiguriert haben.
 
-Bei einem **Einzellauf** meldet die linke Spalte die Run-ID, die Zahl der
+Bei einem **Einzellauf** meldet das Bedienfeld die Run-ID, die Zahl der
 gerechneten Ticks und die Zahl der Ereignisse. Der Lauf ist danach in der
 Auswahl oben in der Kopfzeile bereits gesetzt, und Szene, Kennzahlen und
 Zeitleiste zeigen ihn.
@@ -78,8 +84,8 @@ Aufbau bewusst mit einer anderen Ziehung sehen wollen.
 
 ## Wenn etwas schiefgeht
 
-Bricht der Lauf ab, erscheint die Fehlermeldung unter dem Start-Knopf in der
-linken Spalte, in der Konsole rechts steht sie rot obenan, und der Fortschritt
+Bricht der Lauf ab, erscheint die Fehlermeldung im Bedienfeld über dem
+Start-Knopf, in der Konsole rechts steht sie rot obenan, und der Fortschritt
 bleibt stehen. Die häufigsten Ursachen: Ollama läuft nicht, obwohl
 «Ohne Ollama rechnen» ausgeschaltet ist, oder eine Kombination aus
 Wiederholungen und «Lauf fortsetzen», die sich gegenseitig ausschließt.

@@ -17,8 +17,9 @@ Faktorzuständen; ein hervorgehobener Chip heißt, dieser Deskriptor ist gekippt
 
 Rechts stehen die Kennzahlen desselben Ticks — Buchungsrate, Ticketpreis,
 Kostendruck, Nachfrageniveau, jeweils mit der Veränderung zum Vortick —, darunter
-dieselben Größen als Verlauf mit einer Marke an der aktuellen Stelle, darunter
-die Konsole.
+dieselben Größen als Verlauf mit einer Marke an der aktuellen Stelle. Ganz unten
+die Konsole; sie ist zugeklappt, die Zahl daneben sagt, wie viele Meldungen
+anliegen.
 
 Unten führt die **Zeitleiste** durch den Lauf: ziehen, schrittweise gehen oder
 abspielen. Sie ist die einzige Zeitachse der Oberfläche; alles andere folgt ihr.

@@ -48,10 +48,12 @@ Browser: `http://localhost:8511` — dort steht die **Landingpage**, der Login-B
 führt ins Dashboard unter `/app/`.
 
 Seit P1.5 ist das Dashboard ein **Leitstand**: ein Bildschirm mit fünf Bereichen
-statt eines Stapels Seiten — links die Parameter (der geführte Ablauf aus P1.1),
-in der Mitte die Population zum gewählten Tick, rechts Kennzahlen, Verläufe und
-Konsole, unten die Zeitleiste mit Abspielsteuerung, oben Zustand, Lauf-Auswahl
-und die globalen Aktionen. Kopfzeile und Zeitleiste bleiben stehen, die drei
+statt eines Stapels Seiten — links das Bedienfeld (was eingestellt ist, der
+Preflight, der Start), in der Mitte die Population zum gewählten Tick, rechts
+Kennzahlen, Verläufe und Konsole, unten die Zeitleiste mit Abspielsteuerung,
+oben Zustand, Lauf-Auswahl und die globalen Aktionen. Eingestellt wird seit P1.6
+im eigenen Bereich **Einrichten**, der die volle Breite bekommt — dort steht der
+geführte Ablauf aus P1.1 mit den Presets als Kartenraster. Kopfzeile und Zeitleiste bleiben stehen, die drei
 Bereiche dazwischen rollen jeder für sich; auf schmalen Fenstern weichen die
 Seitenspalten in Schubladen aus.
 
@@ -176,7 +178,8 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 │   ├── run_browser.py               # Lauf-Auswahl, Artefakte laden
 │   ├── consistency_report.py        # Konsistenz-Checks
 │   ├── web/                         # Plotly-Dash-Leitstand (aktiv): shell, theme,
-│   │                                #   timeline, status, run_data, views/, pages/
+│   │                                #   timeline, status, run_data, views/,
+│   │                                #   pages/ (launch=Bedienfeld, setup, runs, docs)
 │   ├── legacy_streamlit/            # abgelöste Streamlit-UI (nur Vergleich)
 │   └── README.md
 ├── docs/                            # Technische Doku (CIB-Methodik, Agent-Profile, Workflow)
