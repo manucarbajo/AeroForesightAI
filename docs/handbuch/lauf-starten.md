@@ -81,8 +81,10 @@ Meldung nennt, wie viele Läufe entstanden sind und wie viele Ereignisse
 insgesamt. Die einzelnen Läufe wählen Sie danach über die Auswahl in der
 Kopfzeile.
 
-Beim **Szenario-Vergleich** — also wenn «Alle Szenarien vergleichen» hinter der
-«Feinabstimmung» des zweiten Schritts eingeschaltet war — wird jedes Preset einmal durchgerechnet. Die Ergebnisse
+Beim **Szenario-Vergleich** — also wenn Sie ihn auf dem Einstieg von
+«Einrichten» gewählt oder «Alle Szenarien vergleichen» hinter der
+«Feinabstimmung» des zweiten Schritts eingeschaltet haben — wird jedes Preset
+einmal durchgerechnet. Die Ergebnisse
 liegen unter `outputs/sweeps/`, dazu entsteht eine Zusammenfassung. Auch hier
 erscheinen die einzelnen Läufe in der Auswahl der Kopfzeile.
 

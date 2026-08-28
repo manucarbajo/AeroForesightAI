@@ -1,3 +1,29 @@
+Wenn Sie **Einrichten** öffnen, steht zuerst eine Frage: Womit möchten Sie
+anfangen? Drei Wege stehen zur Wahl.
+
+**Neuen Lauf einrichten** führt in die Schrittfolge unten — die Fragen der Reihe
+nach. Das ist der Weg, wenn Sie den Lauf zusammenstellen wollen.
+
+**Szenario-Vergleich starten** rechnet alle hinterlegten Szenarien nacheinander
+und legt sie am Ende nebeneinander. Sie landen unmittelbar bei **Prüfen &
+Starten**; wie viele Ticks gerechnet werden, steht dort und lässt sich vorher
+noch ändern.
+
+**Letzte Einstellungen weiterverwenden** springt ebenfalls ans Ende, mit dem, was
+zuletzt eingestellt war — ohne die Fragen erneut durchzugehen. Dieser Weg ist
+ausgegraut, solange Sie in dieser Sitzung nichts geändert haben; es gäbe dann
+nichts weiterzuverwenden.
+
+Die beiden ersten Wege sagen jeder genau eine Sache, und sie stellen sie auch
+ein: «Neuen Lauf einrichten» heißt *ein* Lauf, «Szenario-Vergleich» heißt *alle*.
+Wer den Vergleich einmal gewählt hat und danach doch einen einzelnen Lauf will,
+bekommt ihn also, ohne ein Kästchen suchen zu müssen.
+
+Einen Weg zurück gibt es auch: **Zurück** auf dem ersten Schritt führt wieder auf
+diese Auswahl.
+
+## Die Schrittfolge
+
 Einrichten geht seit August 2026 Schritt für Schritt. Sie beantworten eine
 Frage, klicken auf **Weiter**, und kommen zur nächsten; **Zurück** führt jederzeit
 zum vorigen Schritt, und links steht die ganze Liste — Sie können jeden Schritt
@@ -40,7 +66,9 @@ Schritten vier bis sieben selbst zusammengestellt haben. Unter jedem Szenario st
 steht; aufklappbar dazu die Begründung, warum es so aufgebaut ist.
 
 **2. Wie weit reicht der Lauf?** Die Länge in Ticks. Hinter «Feinabstimmung»
-die Wiederholungen und der Schalter «Alle Szenarien vergleichen».
+die Wiederholungen und der Schalter «Alle Szenarien vergleichen» — denselben
+Schalter legt der Einstieg um, wenn Sie dort «Szenario-Vergleich starten»
+wählen.
 
 **3. Womit wird gerechnet?** Der Rechenmodus, dazu die Auskunft, ob Ollama
 gerade erreichbar ist. Hinter «Feinabstimmung» der Zufallsstartwert.

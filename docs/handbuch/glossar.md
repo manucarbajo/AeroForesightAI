@@ -35,10 +35,15 @@ Kombination von Faktorzuständen in sich stimmig ist. Siehe
 ruhigere Preisverläufe.
 
 **Einrichten** — Der Bereich, in dem ein Lauf festgelegt wird, und der erste in
-der Navigation: Man richtet ein, sieht dann zu, und wertet zuletzt aus. Er läuft
-seit August 2026 als Schrittfolge und bekommt dabei den ganzen Bildschirm —
-Bedienfeld, Telemetrie und Zeitleiste treten zurück. Gestartet wird am Ende der
-Schrittfolge; der Knopf im Bedienfeld tut dasselbe.
+der Navigation: Man richtet ein, sieht dann zu, und wertet zuletzt aus. Er
+beginnt mit dem **Einstieg** und läuft danach als Schrittfolge; dabei bekommt
+er den ganzen Bildschirm — Bedienfeld, Telemetrie und Zeitleiste treten zurück.
+Gestartet wird am Ende der Schrittfolge; der Knopf im Bedienfeld tut dasselbe.
+
+**Einstieg** — Die Auswahl, die beim Öffnen von «Einrichten» steht: neuen Lauf
+einrichten, Szenario-Vergleich starten, oder die letzten Einstellungen
+weiterverwenden. Die ersten beiden legen zugleich fest, ob *ein* Lauf gerechnet
+wird oder *alle* Szenarien; der dritte fasst nichts an.
 
 **Faktor** — Eine von sieben Zustandsvariablen, die die Welt in groben Zügen
 beschreiben, jeweils mit zwei möglichen Zuständen. Siehe
@@ -54,7 +59,8 @@ zusammenpassen. Ergebnis der CIB-Bewertung.
 
 **Schrittfolge** — Die Form des Einrichtens seit August 2026: eine Frage je
 Bildschirm, mit «Zurück» und «Weiter» und einer Liste aller Schritte daneben.
-Drei davon genügen bis zum Start, der Rest ist optional.
+Drei davon genügen bis zum Start, der Rest ist optional. «Zurück» auf dem ersten
+Schritt führt zurück auf den **Einstieg**.
 
 **Ladebildschirm** — Was der Leitstand zeigt, solange ein Lauf rechnet: wie weit
 er ist, was er rechnet, und die aufgeklappte Konsole. Er tritt an die Stelle der

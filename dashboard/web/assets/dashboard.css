@@ -2410,6 +2410,106 @@ html.dark .af-input[type="number"] {
     z-index: 10;
 }
 
+/* --- Der Einstieg: drei Wege ---------------------------------------------
+
+   Vor der Schrittfolge steht die Frage, die sie nicht stellt: *Welche Art von
+   Lauf?* Bis P1.7-C landete man unmittelbar auf Schritt 1, und der
+   Szenario-Vergleich lag als Ankreuzoption hinter der Feinabstimmung des
+   zweiten Schritts -- also faktisch unauffindbar.
+
+   Die Karten sind Schaltflaechen, keine Kaesten mit Knopf darin: Die ganze
+   Flaeche ist das Ziel, und das Ziel ist gross. Farbe kommt ausschliesslich aus
+   den Tokens -- die Karten leben in beiden Modi. */
+
+.af-ways {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.af-way {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 100%;
+    /* `min-width: 0` wie bei `af-grid`: Ohne das schiebt ein langes Wort in der
+       Beschreibung die Karte auf, statt umzubrechen. Genau das Muster aus
+       Stufe D. */
+    min-width: 0;
+    padding: 1.25rem 1.375rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.af-way:hover {
+    border-color: var(--accent-border);
+    background: var(--surface-hover);
+}
+
+.af-way:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.af-way__icon {
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.af-way__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.af-way__title {
+    font-family: var(--font-headline);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.af-way__text {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+}
+
+.af-way__chevron {
+    margin-left: auto;
+    align-self: center;
+    color: var(--text-faint);
+    flex-shrink: 0;
+}
+
+/* **Ausgegraut statt weggelassen.** Ein Weg, den es gerade nicht gibt, bleibt
+   trotzdem im DOM: Dash fuehrt einen Callback gar nicht erst aus, wenn auch nur
+   *ein* Eingang fehlt -- der Fallstrick aus Regel 6 der Architektur-Map. */
+.af-way:disabled {
+    cursor: default;
+    background: var(--surface-sunken);
+    border-color: var(--border-subtle);
+}
+
+.af-way:disabled .af-way__icon,
+.af-way:disabled .af-way__title {
+    color: var(--text-faint);
+}
+
+.af-way:disabled:hover {
+    border-color: var(--border-subtle);
+    background: var(--surface-sunken);
+}
+
 .af-step__heading {
     font-family: var(--font-body);
     font-size: 0.75rem;

@@ -52,8 +52,13 @@ verglichen werden.
 
 ## Alle Presets auf einmal rechnen
 
-Der Schalter «Alle Szenarien vergleichen» hinter der «Feinabstimmung» des
-zweiten Schritts rechnet jedes hinterlegte Preset einmal durch, ohne
+Der kürzeste Weg dorthin ist **Szenario-Vergleich starten** auf dem Einstieg
+von «Einrichten»: Er stellt den Vergleich ein und bringt Sie unmittelbar zu
+«Prüfen & Starten». Dasselbe bewirkt der Schalter «Alle Szenarien vergleichen»
+hinter der «Feinabstimmung» des zweiten Schritts — es ist derselbe Schalter,
+nur an der Stelle, an der man ihn auch fein einstellt.
+
+So oder so wird jedes hinterlegte Preset einmal durchgerechnet, ohne
 Agenten-Dialog und damit deutlich schneller. Die Ergebnisse liegen unter
 `outputs/sweeps/` und erscheinen einzeln in der Lauf-Auswahl.
 

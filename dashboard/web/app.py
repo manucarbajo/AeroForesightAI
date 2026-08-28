@@ -279,7 +279,12 @@ def serve_layout() -> html.Div:
             # Welcher Schritt des Einrichtens offen ist (P1.7). Als Store und
             # nicht als Adresse: Ein halb ausgefuelltes Formular ist kein Ort,
             # den man verlinken oder mit dem Zurueck-Knopf ansteuern will.
-            dcc.Store(id=wizard.STEP_STORE, data=0),
+            #
+            # `ENTRY` und nicht `0`: Jede Sitzung beginnt beim Einstieg mit den
+            # drei Wegen, nicht mitten in der Schrittfolge. Der Store wird
+            # bewusst **nicht** gespeichert -- er soll nach einem Neuladen genau
+            # das zeigen.
+            dcc.Store(id=wizard.STEP_STORE, data=wizard.ENTRY),
             shell.layout(
                 active="",
                 # Auch beim ersten Zeichnen gilt der Serverzustand: Ein Lauf,

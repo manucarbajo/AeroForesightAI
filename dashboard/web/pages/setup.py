@@ -28,6 +28,13 @@ from dashboard.web.state import initial_draft_dict
 
 
 def layout(draft: dict | None = None) -> html.Div:
-    """Die Schrittfolge, beim ersten Schritt beginnend."""
+    """Der Einstieg — und dahinter die Schrittfolge.
 
-    return html.Div(wizard.layout(draft or initial_draft_dict(), 0))
+    Begonnen wird seit P1.7-C **nicht** auf Schritt 1, sondern bei der Frage,
+    welche Art von Lauf es werden soll. Ohne sie war «alle Szenarien
+    nacheinander» eine Ankreuzoption hinter der Feinabstimmung des zweiten
+    Schritts — vorhanden, aber unauffindbar —, und wer nur den vorhandenen
+    Entwurf noch einmal starten wollte, blätterte dafür durch acht Fragen.
+    """
+
+    return html.Div(wizard.layout(draft or initial_draft_dict(), wizard.ENTRY))

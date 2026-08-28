@@ -34,14 +34,23 @@ from typing import Callable
 
 from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
+from dashboard.config_catalog import list_sweep_presets
 from dashboard.web import components as ui
 from dashboard.web.config_editor import experiment, llm_pipeline, macro, micro, start_flow
-from dashboard.web.state import STORE_ID
+from dashboard.web.state import STORE_ID, initial_draft_dict
 
 #: Welcher Schritt gerade offen ist. Als Store und nicht als Adresse, weil ein
 #: halb ausgefülltes Formular kein Ort ist, den man verlinken oder mit dem
 #: Zurück-Knopf des Browsers ansteuern will.
+#:
+#: `None` ist kein Schritt, sondern der **Einstieg** (siehe `entry`). Der Store
+#: wird nicht gespeichert: Wer «Einrichten» öffnet, steht damit immer vor der
+#: Frage, welche Art von Lauf es werden soll — nicht mitten in einem Formular,
+#: das er vor einer Stunde halb ausgefüllt hat.
 STEP_STORE = "wizard-step-store"
+
+#: Der Einstieg — der Zustand vor dem ersten Schritt.
+ENTRY = None
 
 CONTENT = "wizard-content"
 RAIL = "wizard-rail"
@@ -57,6 +66,26 @@ SAVE = "wizard-save"
 
 #: Sprungziel je Schritt der Schrittliste.
 JUMP = "wizard-jump"
+
+#: Die drei Wege des Einstiegs. Jeder ist ein eigener Knopf und **bleibt im
+#: DOM**, auch wenn die Schrittfolge läuft — nur ausgeblendet. Dash führt einen
+#: Callback gar nicht erst aus, wenn auch nur *ein* Eingang fehlt (Regel 6 der
+#: Architektur-Map); ein Weg, den es auf Schritt 3 nicht gibt, legte die ganze
+#: Navigation lahm.
+WAY_NEW = "wizard-way-new"
+WAY_SWEEP = "wizard-way-sweep"
+WAY_RESUME = "wizard-way-resume"
+
+#: Wirte, deren **Sichtbarkeit** zwischen Einstieg und Schrittfolge umgeschaltet
+#: wird. Ausblenden statt weglassen, aus demselben Grund wie oben.
+ENTRY_HOST = "wizard-entry-host"
+CONTENT_HOST = "wizard-content-host"
+RAIL_HOST = "wizard-rail-host"
+NAV_HOST = "wizard-nav-host"
+HEAD_HOST = "wizard-head-host"
+
+_VISIBLE: dict = {}
+_HIDDEN = {"display": "none"}
 
 #: Ausgang des clientseitigen Callbacks, der nach oben scrollt. Er schreibt
 #: nichts — Dash verlangt aber einen Ausgang.
@@ -144,16 +173,154 @@ def clamp(step) -> int:
     return max(0, min(value, FINAL))
 
 
+def is_entry(step) -> bool:
+    """Ob der Einstieg gemeint ist statt eines Schritts.
+
+    `clamp` bleibt davon unberührt: Es beantwortet die Frage «welcher Schritt?»
+    und macht aus allem Unbrauchbaren den ersten. Der Einstieg ist aber kein
+    unbrauchbarer Schritt, sondern ein eigener Ort — deshalb eine eigene Frage.
+    """
+
+    return step is None
+
+
+def resolve(step) -> int | None:
+    """Der Store-Wert als Ort: der Einstieg, oder ein gültiger Schritt."""
+
+    return ENTRY if is_entry(step) else clamp(step)
+
+
+# --- Der Einstieg: drei Wege -----------------------------------------------
+
+
+def _way(ident: str, symbol: str, title: str, text: str, *, disabled: bool = False) -> html.Button:
+    """Ein Weg als ganzflächige Schaltfläche.
+
+    Karte *und* Knopf wäre ein Ziel im Ziel; hier ist die ganze Fläche das Ziel.
+    """
+
+    return html.Button(
+        [
+            ui.icon(symbol, "af-way__icon text-2xl"),
+            html.Div(
+                [
+                    html.Span(title, className="af-way__title"),
+                    html.Span(text, className="af-way__text"),
+                ],
+                className="af-way__body",
+            ),
+            ui.icon("chevron_right", "af-way__chevron text-base"),
+        ],
+        id=ident,
+        className="af-way",
+        n_clicks=0,
+        disabled=disabled,
+    )
+
+
+def touched(draft: dict | None) -> bool:
+    """Ob am Entwurf schon etwas eingestellt wurde.
+
+    Verglichen wird gegen den Auslieferungszustand, nicht gegen ein einzelnes
+    Merkmal: Was «eigene Einstellungen» sind, entscheidet der Entwurf als
+    Ganzes. Der Draft-Store hält sie über einen Neuladen hinweg
+    (`storage_type="session"`) — genau das macht den dritten Weg möglich.
+    """
+
+    return bool(draft) and draft != initial_draft_dict()
+
+
+def _with_sweeps(draft: dict | None, alle: bool) -> dict:
+    """Den Entwurf mit genau einer geänderten Aussage zurückgeben.
+
+    Eine flache Kopie und kein `patch`-Aufruf, damit hier sichtbar bleibt, dass
+    **ein** Feld geschrieben wird und sonst nichts.
+    """
+
+    data = dict(draft or {})
+    data["run_all_sweeps"] = alle
+    return data
+
+
+def entry(draft: dict | None = None) -> html.Div:
+    """Die Frage vor der Schrittfolge: Welche Art von Lauf soll es werden?
+
+    Bis hierher landete man unmittelbar auf Schritt 1. Damit war «alle Szenarien
+    nacheinander rechnen» eine Ankreuzoption hinter der Feinabstimmung des
+    zweiten Schritts — man findet sie nur, wenn man schon weiß, dass es sie
+    gibt. Dasselbe galt für den häufigsten Fall überhaupt: Der Entwurf steht
+    noch im Store, man will ihn nur noch einmal starten, und dafür acht Fragen
+    durchzublättern ist Arbeit ohne Ertrag.
+
+    Die drei Wege sagen jeder genau eine Sache — und **schreiben** auch nur je
+    eine: «Neuen Lauf einrichten» stellt sicher, dass es ein Lauf ist,
+    «Szenario-Vergleich» stellt sicher, dass es alle sind, «Weiterverwenden»
+    fasst den Entwurf nicht an. Ohne das erste Schreiben bliebe ein einmal
+    gewählter Vergleich beim nächsten Weg still aktiv, und man startete acht
+    Läufe, wo man einen wollte.
+    """
+
+    weiter = touched(draft)
+    presets = len(list_sweep_presets())
+
+    return html.Div(
+        [
+            html.Div(
+                [
+                    _way(
+                        WAY_NEW,
+                        "tune",
+                        "Neuen Lauf einrichten",
+                        "Die Fragen der Reihe nach — Szenario, Länge, Rechenmodus. "
+                        "Drei genügen bis zum Start, alles Weitere ist vorbelegt.",
+                    ),
+                    _way(
+                        WAY_SWEEP,
+                        "compare_arrows",
+                        "Szenario-Vergleich starten",
+                        (
+                            f"Alle {presets} hinterlegten Szenarien nacheinander rechnen "
+                            "und am Ende nebeneinanderlegen."
+                            if presets
+                            else "Zurzeit liegt kein Szenario unter `configs/sweeps/`."
+                        ),
+                        disabled=not presets,
+                    ),
+                    _way(
+                        WAY_RESUME,
+                        "history",
+                        "Letzte Einstellungen weiterverwenden",
+                        (
+                            "Direkt zu «Prüfen & Starten», mit dem, was zuletzt eingestellt war."
+                            if weiter
+                            else "Noch nichts eingestellt — dieser Weg öffnet sich, sobald Sie "
+                            "einmal etwas geändert haben."
+                        ),
+                        disabled=not weiter,
+                    ),
+                ],
+                className="af-ways",
+            ),
+            html.P(
+                "Jeder Weg führt in dieselbe Schrittfolge; Sie können jederzeit "
+                "zwischen den Schritten springen.",
+                className=f"{ui.CAPTION} mt-6",
+            ),
+        ],
+        id=ENTRY_HOST + "-body",
+    )
+
+
 # --- Die Schrittliste ------------------------------------------------------
 
 
-def _rail_entry(index: int, step: Step, current: int) -> html.Button:
-    if index < current:
-        zustand, symbol = "done", "check"
+def _rail_entry(index: int, step: Step, current: int | None) -> html.Button:
+    if current is None or index > current:
+        zustand, symbol = "todo", "radio_button_unchecked"
     elif index == current:
         zustand, symbol = "current", "radio_button_checked"
     else:
-        zustand, symbol = "todo", "radio_button_unchecked"
+        zustand, symbol = "done", "check"
 
     return html.Button(
         [
@@ -177,8 +344,13 @@ def _rail_entry(index: int, step: Step, current: int) -> html.Button:
     )
 
 
-def rail(current: int) -> html.Div:
-    """Alle Schritte auf einen Blick — wo man ist und was noch kommt."""
+def rail(current: int | None) -> html.Div:
+    """Alle Schritte auf einen Blick — wo man ist und was noch kommt.
+
+    Auf dem Einstieg ist noch kein Schritt offen; die Liste steht dann zwar im
+    DOM (ihre Sprungknöpfe sind Eingänge), aber unsichtbar — eine Schrittliste
+    ohne aktuellen Schritt beantwortet keine Frage.
+    """
 
     return html.Div(
         [
@@ -190,6 +362,7 @@ def rail(current: int) -> html.Div:
         ],
         id=RAIL,
         className="af-wizard__rail",
+        style=_HIDDEN if is_entry(current) else _VISIBLE,
     )
 
 
@@ -215,6 +388,27 @@ def _final_step(draft: dict) -> html.Div:
                 className=f"{ui.CAPTION} mt-4",
             ),
         ]
+    )
+
+
+def heading(current: int | None) -> html.Div:
+    """Die Überschrift des Bereichs — sie sagt, in welcher Betriebsart man ist.
+
+    Auf dem Einstieg wird gewählt, in der Schrittfolge beantwortet. Eine
+    Überschrift, die «Beantworten Sie eine Frage nach der anderen» sagt,
+    während drei Karten zur Auswahl stehen, beschreibt den falschen Bildschirm.
+    """
+
+    if is_entry(current):
+        return ui.page_heading(
+            "Lauf einrichten",
+            "Womit möchten Sie anfangen? Jeder Weg führt zum selben Ziel — nur über "
+            "unterschiedlich viele Fragen.",
+        )
+    return ui.page_heading(
+        "Lauf einrichten",
+        "Beantworten Sie eine Frage nach der anderen. Drei genügen — der Rest ist "
+        "mit sinnvollen Werten vorbelegt und darf übersprungen werden.",
     )
 
 
@@ -248,15 +442,20 @@ def content(draft: dict, current: int) -> html.Div:
     )
 
 
-def navigation(current: int) -> html.Div:
+def navigation(current: int | None) -> html.Div:
     """«Zurück» und «Weiter» — und der Weg am Feinschliff vorbei.
 
     Der Abkürzungsknopf steht ab Schritt drei: Dort sind die drei Entscheidungen
     aus P1.1 getroffen, und alles Weitere ist mit sinnvollen Werten vorbelegt.
     Ohne ihn erzwänge die Schrittfolge acht Stationen für einen Lauf, der mit
     drei auskommt.
+
+    Auf dem Einstieg ist die ganze Leiste unsichtbar — dort gibt es kein
+    «Weiter», sondern drei Wege. Im DOM bleibt sie trotzdem, siehe unten.
     """
 
+    einstieg = is_entry(current)
+    current = 0 if einstieg else current
     letzter = current >= FINAL
     # **Alle drei Knöpfe bleiben im DOM**, auch wo sie nichts zu tun haben — sie
     # werden nur ausgeblendet. Dash führt einen Callback gar nicht erst aus,
@@ -269,13 +468,11 @@ def navigation(current: int) -> html.Div:
     # bleiben, Sichtbarkeit umschalten.
     return html.Div(
         [
-            ui.button(
-                "Zurück",
-                id=BACK,
-                variant="ghost",
-                disabled=current <= 0,
-                style=None if current > 0 else {"visibility": "hidden"},
-            ),
+            # **Auch auf dem ersten Schritt bedienbar.** Er führt dort auf den
+            # Einstieg zurück — ohne das wäre die Schrittfolge eine Sackgasse,
+            # aus der man nur über einen Neuladen wieder herauskommt. Auf dem
+            # Einstieg selbst ist die ganze Leiste unsichtbar.
+            ui.button("Zurück", id=BACK, variant="ghost"),
             html.Div(
                 [
                     ui.button(
@@ -309,28 +506,45 @@ def navigation(current: int) -> html.Div:
             ),
         ],
         className="af-wizard__nav",
+        style=_HIDDEN if einstieg else _VISIBLE,
     )
 
 
-def layout(draft: dict, current: int = 0) -> html.Div:
-    current = clamp(current)
+def layout(draft: dict, current: int | None = ENTRY) -> html.Div:
+    """Der Bereich «Einrichten» — Einstieg und Schrittfolge in einem Baum.
+
+    **Beide stehen immer im DOM**, umgeschaltet wird nur die Sichtbarkeit. Die
+    drei Wege des Einstiegs sind Eingänge desselben Callbacks wie «Weiter» und
+    «Zurück»; ein Weg, den es auf Schritt 3 nicht gäbe, nähme die ganze
+    Navigation mit — derselbe Fallstrick, der in P1.7 schon einmal «Weiter»
+    stillgelegt hat. Dasselbe Muster wie bei den vier Viewport-Bereichen in
+    `app.py`.
+    """
+
+    current = resolve(current)
+    einstieg = is_entry(current)
     return html.Div(
         [
-            ui.page_heading(
-                "Lauf einrichten",
-                "Beantworten Sie eine Frage nach der anderen. Drei genügen — der Rest ist "
-                "mit sinnvollen Werten vorbelegt und darf übersprungen werden.",
-            ),
+            html.Div(heading(current), id=HEAD_HOST),
             html.Div(id="cfg-status", className="mb-4"),
             # Senke für den Sprung nach oben. Ein clientseitiger Callback braucht
             # einen Ausgang, hat hier aber nichts zu schreiben — er scrollt nur.
             dcc.Store(id=SCROLL_SINK),
             html.Div(
                 [
-                    html.Div(rail(current), id="wizard-rail-host"),
+                    html.Div(rail(current), id=RAIL_HOST),
                     html.Div(
                         [
-                            html.Div(content(draft, current), id="wizard-content-host"),
+                            html.Div(
+                                entry(draft),
+                                id=ENTRY_HOST,
+                                style=_VISIBLE if einstieg else _HIDDEN,
+                            ),
+                            html.Div(
+                                content(draft, 0 if einstieg else current),
+                                id=CONTENT_HOST,
+                                style=_HIDDEN if einstieg else _VISIBLE,
+                            ),
                             # Das Kleben sitzt am **Wirt**, nicht an der
                             # Navigation darin: Ein klebendes Element bewegt
                             # sich nur innerhalb seines Elternkastens, und der
@@ -339,7 +553,7 @@ def layout(draft: dict, current: int = 0) -> html.Div:
                             # gemessen: «Weiter» lag trotz `sticky` bei y=1361.
                             html.Div(
                                 navigation(current),
-                                id="wizard-nav-host",
+                                id=NAV_HOST,
                                 className="af-wizard__navhost",
                             ),
                         ],
@@ -359,42 +573,73 @@ def layout(draft: dict, current: int = 0) -> html.Div:
 def register_callbacks(app) -> None:
     @app.callback(
         Output(STEP_STORE, "data"),
+        Output(STORE_ID, "data", allow_duplicate=True),
         Input(BACK, "n_clicks"),
         Input(NEXT, "n_clicks"),
         Input(SKIP, "n_clicks"),
+        Input(WAY_NEW, "n_clicks"),
+        Input(WAY_SWEEP, "n_clicks"),
+        Input(WAY_RESUME, "n_clicks"),
         Input({"type": JUMP, "index": ALL}, "n_clicks"),
         State(STEP_STORE, "data"),
+        State(STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def _navigate(_back, _next, _skip, _jump, current):
+    def _navigate(_back, _next, _skip, _new, _sweep, _resume, _jump, current, draft):
         """Alle Wege durch die Schrittfolge in einem Callback.
 
         Getrennte Callbacks müssten sich denselben Ausgang teilen und würden
         sich beim gleichzeitigen Feuern überschreiben — dieselbe Begründung wie
         bei den sechs Knöpfen der Zeitleiste.
+
+        **Der zweite Ausgang ist die Ausnahme, nicht die Regel.** Werte fließen
+        in dieser Oberfläche vom Feld in den Store und nicht zurück (Regel 2 der
+        Architektur-Map). Die beiden Wege des Einstiegs schreiben trotzdem — sie
+        *sind* die Entscheidung «ein Lauf» oder «alle Szenarien», und es gibt
+        kein Feld, das sie träfe: Das Kästchen dafür liegt hinter der
+        Feinabstimmung des zweiten Schritts. Geschrieben wird genau ein Feld,
+        und nur, während der Einstieg auf dem Schirm steht — nie unter einem
+        sichtbaren Eingabefeld hindurch.
         """
 
-        jetzt = clamp(current)
+        jetzt = resolve(current)
         ausgeloest = ctx.triggered_id
 
         if isinstance(ausgeloest, dict) and ausgeloest.get("type") == JUMP:
             # Nur ein wirklich gedrückter Knopf zählt: Beim Neuaufbau der Liste
             # feuert Dash alle Pattern-Eingänge mit `None`.
             if not any(eintrag["value"] for eintrag in ctx.triggered if eintrag["value"]):
-                return no_update
-            return clamp(ausgeloest.get("index"))
+                return no_update, no_update
+            return clamp(ausgeloest.get("index")), no_update
+
+        if ausgeloest == WAY_NEW:
+            return 0, _with_sweeps(draft, False)
+        if ausgeloest == WAY_SWEEP:
+            return FINAL, _with_sweeps(draft, True)
+        if ausgeloest == WAY_RESUME:
+            # Weiterverwenden heißt anfassen lassen: kein Schreiben, nur der
+            # Sprung ans Ende.
+            return FINAL, no_update
+
         if ausgeloest == BACK:
-            return max(0, jetzt - 1)
+            # Aus dem ersten Schritt führt «Zurück» dorthin, wo man hergekommen
+            # ist — auf den Einstieg. Ohne das wäre er eine Sackgasse, die man
+            # nur über einen Neuladen wieder erreicht.
+            return (ENTRY if jetzt in (ENTRY, 0) else jetzt - 1), no_update
         if ausgeloest == NEXT:
-            return min(FINAL, jetzt + 1)
+            return min(FINAL, (0 if jetzt is ENTRY else jetzt) + 1), no_update
         if ausgeloest == SKIP:
-            return FINAL
-        return no_update
+            return FINAL, no_update
+        return no_update, no_update
 
     @app.callback(
-        Output("wizard-content-host", "children"),
-        Output("wizard-rail-host", "children"),
-        Output("wizard-nav-host", "children"),
+        Output(CONTENT_HOST, "children"),
+        Output(RAIL_HOST, "children"),
+        Output(NAV_HOST, "children"),
+        Output(HEAD_HOST, "children"),
+        Output(ENTRY_HOST, "children"),
+        Output(ENTRY_HOST, "style"),
+        Output(CONTENT_HOST, "style"),
         Input(STEP_STORE, "data"),
         Input("cfg-editor-refresh", "data"),
         State(STORE_ID, "data"),
@@ -417,9 +662,22 @@ def register_callbacks(app) -> None:
         vierte Schritt setzte einen weit unterhalb seiner Überschrift ab.
         """
 
-        jetzt = clamp(step)
+        jetzt = resolve(step)
         data = draft or {}
-        return content(data, jetzt), rail(jetzt), navigation(jetzt)
+        einstieg = is_entry(jetzt)
+        return (
+            content(data, 0 if einstieg else jetzt),
+            rail(jetzt),
+            navigation(jetzt),
+            heading(jetzt),
+            # Der Einstieg wird nur gebaut, wenn er zu sehen ist: `touched`
+            # vergleicht gegen den Auslieferungszustand und liest dafür fünf
+            # Config-Dateien. Das je Schrittwechsel zu tun wäre Arbeit für einen
+            # Bildschirm, den niemand ansieht.
+            entry(data) if einstieg else no_update,
+            _VISIBLE if einstieg else _HIDDEN,
+            _HIDDEN if einstieg else _VISIBLE,
+        )
 
     app.clientside_callback(
         """

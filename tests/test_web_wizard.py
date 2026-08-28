@@ -1,6 +1,6 @@
-"""Die Schrittfolge des Einrichtens (P1.7-C).
+"""Der Einstieg und die Schrittfolge des Einrichtens (P1.7-C).
 
-Vier Zusagen, und jede ist schon einmal gebrochen worden — drei davon am
+Sechs Zusagen, und die meisten sind schon einmal gebrochen worden — mehrere am
 laufenden System, bevor sie hier festgehalten wurden:
 
 1. **Drei Entscheidungen genügen bis zum Start** (P1.1). Eine Schrittfolge, die
@@ -14,6 +14,15 @@ laufenden System, bevor sie hier festgehalten wurden:
    tat auch «Weiter» nichts, und der Zähler blieb bei «Schritt 1 von 8».
 4. **Zwei Auslöser, ein Startpfad.** Der Knopf im Bedienfeld und der am Ende der
    Schrittfolge hängen am selben Callback — eine Prüfung, ein `runner.start`.
+5. **Der Einstieg steht vor dem ersten Schritt.** Ohne ihn war «alle Szenarien
+   nacheinander» eine Ankreuzoption hinter der Feinabstimmung des zweiten
+   Schritts — vorhanden, aber unauffindbar. Seine drei Wege sind Knöpfe wie
+   «Weiter» und unterliegen derselben Regel: immer im DOM, nur ausgeblendet.
+6. **Jeder Weg sagt genau eine Sache — und schreibt auch nur je eine.** «Neuen
+   Lauf einrichten» heißt *ein* Lauf, «Szenario-Vergleich» heißt *alle*,
+   «Weiterverwenden» fasst den Entwurf nicht an. Ohne das erste Schreiben bliebe
+   ein einmal gewählter Vergleich still aktiv, und man startete acht Läufe, wo
+   man einen wollte.
 """
 
 from __future__ import annotations
@@ -229,3 +238,163 @@ def test_a_step_change_scrolls_back_to_the_top():
     code, deps = app.clientside[0]
     assert "scrollTo" in code
     assert any(getattr(d, "component_id", None) == wizard.STEP_STORE for d in deps)
+
+
+# --- Der Einstieg ----------------------------------------------------------
+
+
+class TestDerEinstiegStehtVorDemErstenSchritt:
+    """Drei Wege statt einer Bildlaufstrecke — und keiner davon versteckt.
+
+    Bis P1.7-C landete man unmittelbar auf Schritt 1. Damit lag der
+    Szenario-Vergleich als Kästchen hinter «Feinabstimmung» im zweiten Schritt;
+    er war da, aber niemand fand ihn.
+    """
+
+    def test_the_setup_area_opens_on_the_entry(self, draft):
+        from dashboard.web.pages import setup as setup_page
+
+        baum = setup_page.layout(draft)
+
+        assert _style(baum, wizard.ENTRY_HOST) == {}, "Der Einstieg ist nicht zu sehen"
+        assert _style(baum, wizard.CONTENT_HOST) == {"display": "none"}
+        assert _style(baum, wizard.RAIL) == {"display": "none"}
+
+    def test_a_step_hides_the_entry_instead_of_dropping_it(self, draft):
+        """Regel 6: Ein fehlender Eingang legt den ganzen Callback lahm.
+
+        Die drei Wege hängen am selben Callback wie «Weiter» und «Zurück». Einen
+        davon auf Schritt 3 wegzulassen nähme die ganze Navigation mit — genau
+        das ist in P1.7 schon einmal passiert.
+        """
+
+        for schritt in [wizard.ENTRY, *range(len(wizard.STEPS))]:
+            baum = wizard.layout(draft, schritt)
+            for weg in (wizard.WAY_NEW, wizard.WAY_SWEEP, wizard.WAY_RESUME):
+                _knopf(baum, weg)
+            sichtbar = _style(baum, wizard.ENTRY_HOST) == {}
+            assert sichtbar is (schritt is wizard.ENTRY), f"Einstieg falsch sichtbar bei {schritt}"
+
+    def test_the_entry_offers_exactly_three_ways(self, draft):
+        wege = [
+            node
+            for node in _walk(wizard.entry(draft))
+            if "af-way" == getattr(node, "className", None)
+        ]
+
+        assert len(wege) == 3
+
+    def test_the_entry_renders_no_input_field(self, draft):
+        """Der Einstieg ist eine Weiche, kein Formular.
+
+        Ein Feld hier stünde zusätzlich zu dem im Schritt — und dieselbe Dash-ID
+        zweimal ist ein Laufzeitfehler im Browser.
+        """
+
+        assert not _fields(wizard.entry(draft))
+
+    def test_no_duplicate_id_with_the_entry_in_the_tree(self, draft):
+        for schritt in [wizard.ENTRY, 0, wizard.FINAL]:
+            ids = [str(i) for i in _ids(wizard.layout(draft, schritt))]
+            doppelt = {i for i in ids if ids.count(i) > 1}
+            assert not doppelt, f"Doppelte ID bei Schritt {schritt}: {doppelt}"
+
+    def test_resume_stays_shut_until_something_was_changed(self, draft):
+        """«Letzte Einstellungen» darf nicht anbieten, was es nicht gibt.
+
+        Ausgegraut statt weggelassen — der Knopf bleibt Eingang seines
+        Callbacks.
+        """
+
+        assert not wizard.touched(draft)
+        assert _knopf(wizard.entry(draft), wizard.WAY_RESUME).disabled
+
+        geaendert = {**draft, "rounds": int(draft.get("rounds") or 40) + 1}
+
+        assert wizard.touched(geaendert)
+        assert not _knopf(wizard.entry(geaendert), wizard.WAY_RESUME).disabled
+
+
+def _style(baum, kennung) -> dict:
+    for item in _walk(baum):
+        if getattr(item, "id", None) == kennung:
+            return getattr(item, "style", None) or {}
+    raise AssertionError(f"«{kennung}» fehlt im DOM")
+
+
+# --- Jeder Weg sagt genau eine Sache ---------------------------------------
+
+
+def _navigate_callback(monkeypatch, ausgeloest: str):
+    """Den Navigations-Callback holen und einen Knopfdruck vortäuschen."""
+
+    class _Ctx:
+        triggered_id = ausgeloest
+        triggered = [{"prop_id": f"{ausgeloest}.n_clicks", "value": 1}]
+
+    gefangen: dict = {}
+
+    class _App:
+        def callback(self, *outputs, **kwargs):
+            def decorator(fn):
+                gefangen.setdefault(fn.__name__, fn)
+                return fn
+
+            return decorator
+
+        def clientside_callback(self, *args, **kwargs):
+            """Läuft im Browser."""
+
+    wizard.register_callbacks(_App())
+    monkeypatch.setattr(wizard, "ctx", _Ctx)
+    return gefangen["_navigate"]
+
+
+class TestJederWegSagtGenauEineSache:
+    def test_a_new_run_is_one_run(self, monkeypatch, draft):
+        navigate = _navigate_callback(monkeypatch, wizard.WAY_NEW)
+
+        schritt, entwurf = navigate(
+            *[None] * 6, None, wizard.ENTRY, {**draft, "run_all_sweeps": True}
+        )
+
+        assert schritt == 0
+        assert entwurf["run_all_sweeps"] is False
+
+    def test_the_comparison_says_all_of_them(self, monkeypatch, draft):
+        navigate = _navigate_callback(monkeypatch, wizard.WAY_SWEEP)
+
+        schritt, entwurf = navigate(*[None] * 6, None, wizard.ENTRY, draft)
+
+        assert schritt == wizard.FINAL, "Der Vergleich führt direkt zu «Prüfen & Starten»"
+        assert entwurf["run_all_sweeps"] is True
+
+    def test_carrying_on_touches_nothing(self, monkeypatch, draft):
+        """«Weiterverwenden» heißt: nicht anfassen.
+
+        Ein Schreiben hier wäre der Fehler, den P1.1 bei der Lauflänge gemacht
+        hat — dieselbe Zahl an zwei Stellen.
+        """
+
+        from dash import no_update
+
+        navigate = _navigate_callback(monkeypatch, wizard.WAY_RESUME)
+
+        schritt, entwurf = navigate(*[None] * 6, None, wizard.ENTRY, draft)
+
+        assert schritt == wizard.FINAL
+        assert entwurf is no_update
+
+    def test_back_from_the_first_step_reaches_the_entry_again(self, monkeypatch, draft):
+        """Sonst wäre die Schrittfolge eine Sackgasse.
+
+        Vor der Korrektur war «Zurück» auf Schritt 1 abgeschaltet und
+        unsichtbar; man kam nur über einen Neuladen zurück zum Einstieg.
+        """
+
+        navigate = _navigate_callback(monkeypatch, wizard.BACK)
+
+        schritt, _ = navigate(*[None] * 6, None, 0, draft)
+
+        assert schritt is wizard.ENTRY
+        assert not getattr(_knopf(wizard.navigation(0), wizard.BACK), "disabled", False)

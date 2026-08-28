@@ -35,8 +35,13 @@ Drei Entscheidungen genügen bis zum Start. Sie stehen im Bereich
 
 ## Schritt 1: Was soll gerechnet werden?
 
-Öffnen Sie **Einrichten**. Ganz oben wählen Sie die Annahmenwelt, von der der
-Lauf ausgeht — die Möglichkeiten stehen als Karten nebeneinander.
+Öffnen Sie **Einrichten**. Zuerst steht die Frage, womit Sie anfangen möchten:
+einen neuen Lauf einrichten, den Szenario-Vergleich starten, oder die letzten
+Einstellungen weiterverwenden. Für den ersten Durchgang wählen Sie **Neuen Lauf
+einrichten**.
+
+Danach wählen Sie die Annahmenwelt, von der der Lauf ausgeht — die
+Möglichkeiten stehen als Karten nebeneinander.
 
 Nehmen Sie eines der vorbereiteten Szenarien, etwa *Business as Usual*. Unter
 jedem steht, wofür es steht. Ein Szenario legt Faktorlage, Politik und Kosten in
