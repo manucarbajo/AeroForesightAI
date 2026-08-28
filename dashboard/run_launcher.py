@@ -216,7 +216,22 @@ def launch_simulation(
     def _run_body() -> RunLaunchResult:
         if config.run_all_sweeps:
             run_all_sweeps(
-                ticks_override=int(config.rounds) if config.rounds else None,
+                # **Kein `ticks_override` mehr vom Dashboard aus** (P1.9-W1.2).
+                #
+                # Hier stand `int(config.rounds) if config.rounds else None`, und
+                # `rounds` hat immer einen Wert — jedes Szenario lief also mit der
+                # Länge des Entwurfs statt mit seiner eigenen `max_ticks`. Schritt 1
+                # des Assistenten warnt wörtlich davor («Angelegt ist es auf N
+                # Ticks»), und der Weg «Szenario-Vergleich starten» springt an
+                # dieser Frage vorbei: Man sah sie nie und bekam trotzdem ihre
+                # Wirkung.
+                #
+                # Woran erkennt man «bewusst gewählt»? Der Entwurf hat kein solches
+                # Signal — 40 ist ein Vorgabewert, kein Wunsch. Die CLI hat es:
+                # `--ticks` steht auf `None`, bis jemand es angibt. Sie behält den
+                # Übersteuerungsweg deshalb; das Dashboard gibt ihn auf. Ein
+                # Vergleich rechnet jedes Szenario so lang, wie es angelegt ist.
+                ticks_override=None,
                 sweep_filter=None,
                 verbose=True,
             )

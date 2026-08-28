@@ -168,6 +168,13 @@ UNBEACHTET: tuple[Festlegung, ...] = (
         "Jedes Szenario bringt sein eigenes Preisniveau mit. Ein gemeinsamer "
         "Startpreis würde genau den Unterschied einebnen, den der Vergleich zeigen soll.",
     ),
+    Festlegung(
+        "rounds",
+        None,
+        "Jedes Szenario läuft so lang, wie es angelegt ist — ein Preset, das auf 40 "
+        "Ticks hin entworfen wurde, erreicht seine Meilensteine sonst gar nicht. "
+        "Die Länge stellen Sie für einen einzelnen Lauf ein, nicht für den Vergleich.",
+    ),
 )
 
 

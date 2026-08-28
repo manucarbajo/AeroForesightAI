@@ -18,6 +18,12 @@ bleibt Ihre Entscheidung: die **Länge** des Laufs. Auf wie viele Ticks ein
 Preset angelegt ist, steht neben seiner Beschreibung — seine Meilensteine sind
 auf diese Länge hin gedacht.
 
+**Im Szenario-Vergleich gilt das nicht.** Wer alle Szenarien nacheinander
+rechnen lässt, stellt keine Länge ein: Jedes läuft so lang, wie es angelegt ist.
+Alles andere hieße, Szenarien unterschiedlicher Bauart über einen Kamm zu
+scheren — ein auf 50 Ticks entworfenes Szenario erreicht seinen Schlusspunkt
+nach 40 Ticks schlicht nicht.
+
 > **Bis August 2026 war das anders**, ohne dass es jemand sehen konnte: Das
 > Dashboard legte nach dem Preset noch die Werte aus den Konfigurationsdateien
 > darüber und drehte es damit still zurück. Ein Lauf mit *Business as Usual*

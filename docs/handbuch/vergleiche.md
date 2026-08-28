@@ -78,6 +78,24 @@ in Runde 15 auf «streng» kippte. Preset-Läufe von davor beschreiben also nich
 die Annahmenwelt, deren Namen sie tragen. Über die Kommandozeile gestartete
 Sweeps waren nie betroffen.
 
+Ebenfalls am 2026-08-28 kam ein vierter Schnitt, und er trifft **nur den
+Szenario-Vergleich** — also den Weg, der alle hinterlegten Szenarien
+nacheinander rechnet. Bis dahin gab das Dashboard seine eingestellte Länge an
+jedes Szenario weiter, und weil dort immer eine Zahl steht (vorbelegt mit 40),
+lief **jedes** Preset auf dieser Länge statt auf seiner eigenen. Vier der acht
+ausgelieferten Szenarien sind auf 50 Ticks angelegt; sie wurden um ein Fünftel
+gekürzt. **Drei von ihnen verlieren dadurch ihren End-State-Meilenstein** —
+«Business as Usual», «Freiwillige Wende» und «Transformation Conflict» prüfen
+genau bei Tick 50, ob das Szenario sein Ziel erreicht hat, und diese Prüfung
+fand nie statt. Ein Vergleich aus der Zeit davor hat die verkürzten Verläufe
+nebeneinandergelegt und die eigentliche Aussage jedes Szenarios ausgelassen.
+
+Seither läuft im Vergleich jedes Szenario so lang, wie es angelegt ist. Die
+Längenangabe im Assistenten gilt weiterhin — aber für einen **einzelnen** Lauf,
+nicht für den Vergleich. Über die Kommandozeile lässt sich die Länge weiterhin
+übersteuern (`--ticks`); dort sagt man es ausdrücklich, statt einen Vorgabewert
+mitzuschleppen.
+
 Woran Sie es erkennen: `run_metadata.json` hält unter `code_version` fest, mit
 welchem Stand ein Lauf gerechnet wurde, und unter `seed`, mit welchem Startwert.
 Unterscheiden sich zwei Läufe dort, gehören ihre Verläufe nicht nebeneinander.

@@ -208,9 +208,16 @@ ERWARTET: dict[str, set[str]] = {
         "redebedarf",
         "checkpoint_interval",
     },
-    SWEEP: {
-        "rounds",
-    },
+    #: **Leer, und das ist das Ergebnis von W1.1 und W1.2.** Ein
+    #: Szenario-Vergleich nimmt vom Entwurf nichts entgegen: Er rechnet alle
+    #: hinterlegten Szenarien unter gleichen Bedingungen und in ihrer jeweils
+    #: eigenen Länge. Bis W1.2 stand hier `rounds` — nicht als Wunsch, sondern
+    #: als `ticks_override`, das die `max_ticks` jedes Presets überschrieb.
+    #:
+    #: Damit klärt sich auch, was der Assistent für diesen Weg fragen muss:
+    #: nichts. Alles, was er sonst fragt, steht im Vertrag des Sweeps und wird
+    #: dort als vorgegeben ausgewiesen (W1.3).
+    SWEEP: set(),
 }
 
 
@@ -338,21 +345,68 @@ class TestKeinFeldWirdStillVerworfen:
             "`ERWARTET` mitgezogen und der Preflight (W1.3) nachgeführt."
         )
 
-    def test_the_sweep_path_is_the_open_wound(self, abdruck_von):
-        """Der Befund des Audits, als Zahl festgehalten.
+    def test_the_sweep_takes_nothing_from_the_draft(self, abdruck_von):
+        """Nach W1.1 und W1.2: Der Vergleich ist vollständig von den Presets bestimmt.
 
-        Diese Prüfung ist bewusst grob und bewusst **umgekehrt** formuliert: Sie
-        schlägt an, sobald der Sweep-Pfad *mehr* kann als heute. Bis W1.1 steht,
-        ist das die Zeile, die den Zustand benennt; danach fällt sie mit dem
-        Paket.
+        Dieser Test hat einen Vorgänger, der das Gegenteil festhielt — «der
+        Sweep-Pfad benutzt genau ein Feld» — und der mit W1.2 gefallen ist. Er
+        stand für den offenen Befund; dieser hier steht für seine Behebung.
+
+        Die Aussage ist stärker, als sie aussieht: Sie sagt, dass der Assistent
+        für einen Szenario-Vergleich **gar nichts** erfragen muss. Alles, was er
+        sonst fragt, gilt dort nicht — und steht als solches im Vertrag.
         """
 
         gemessen = _wirksame_felder(abdruck_von, SWEEP)
 
-        assert gemessen == {"rounds"}, (
-            f"Der Sweep-Pfad benutzt jetzt {sorted(gemessen)} statt nur ['rounds'].\n"
-            "Wenn das W1.1 ist: `ERWARTET[SWEEP]` mitziehen, diese Prüfung entfernen "
-            "und den Preflight nachführen. Wenn nicht: nachsehen, was sich geändert hat."
+        assert gemessen == set(), (
+            f"Der Szenario-Vergleich nimmt jetzt {sorted(gemessen)} vom Entwurf "
+            "entgegen. Wenn das gewollt ist: `ERWARTET[SWEEP]` mitziehen, den "
+            "Eintrag aus `FESTLEGUNGEN`/`UNBEACHTET` entfernen und den Preflight "
+            "nachführen — sonst zeigt die Oberfläche eine wirksame Einstellung "
+            "als vorgegeben an."
+        )
+
+    def test_the_dashboard_does_not_shorten_the_presets(self, abdruck_von):
+        """W1.2 — jedes Szenario läuft so lang, wie es angelegt ist.
+
+        Bis hierher schickte das Dashboard `ticks_override=int(config.rounds)`
+        mit, und `rounds` hat immer einen Wert. Vier der acht ausgelieferten
+        Presets sind auf 50 Ticks angelegt und liefen damit auf 40 — **drei von
+        ihnen verlieren dabei ihren End-State-Meilenstein**, also genau die
+        Aussage, für die das Szenario gebaut wurde.
+
+        Geprüft wird das Argument und nicht der Lauf: `ticks_override` ist die
+        einzige Stelle, an der diese Verkürzung entstehen kann.
+        """
+
+        abdruck = abdruck_von(_entwurf(SWEEP))
+
+        assert abdruck.sweep is not None, "Der Sweep-Pfad wurde gar nicht betreten"
+        assert "'ticks_override', None" in abdruck.sweep, (
+            f"Das Dashboard übersteuert wieder die Länge der Presets: {abdruck.sweep}\n"
+            "Ein Vergleich rechnet jedes Szenario in seiner eigenen Länge. Die CLI "
+            "behält `--ticks` — sie hat mit dem Default `None` das Signal, das dem "
+            "Entwurf fehlt."
+        )
+
+    def test_the_cli_keeps_its_override(self):
+        """Und die CLI behält, was das Dashboard aufgibt.
+
+        `--ticks 10000` ist der Benchmark-Weg aus dem Modul-Docstring. Er darf
+        nicht mit abgeräumt werden: Dort **sagt** jemand ausdrücklich, dass er
+        eine andere Länge will — der Default steht auf `None`.
+        """
+
+        quelle = Path("src/orchestration/scenario_sweeps.py").read_text(encoding="utf-8")
+
+        assert "ticks_override=args.ticks" in quelle, (
+            "Die CLI reicht ihre `--ticks` nicht mehr durch — dann gibt es keinen "
+            "Weg mehr, einen Sweep bewusst auf eine andere Länge zu rechnen."
+        )
+        assert "effective_ticks = ticks_override or sweep.max_ticks" in quelle, (
+            "`run_single_sweep` fällt nicht mehr auf `sweep.max_ticks` zurück — "
+            "dann trägt W1.2 nicht mehr."
         )
 
     def test_the_compute_mode_does_not_survive_the_sweep(self, abdruck_von):
