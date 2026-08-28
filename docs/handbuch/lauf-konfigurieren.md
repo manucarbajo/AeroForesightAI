@@ -25,9 +25,10 @@ diese Auswahl.
 ## Die Schrittfolge
 
 Einrichten geht seit August 2026 Schritt für Schritt. Sie beantworten eine
-Frage, klicken auf **Weiter**, und kommen zur nächsten; **Zurück** führt jederzeit
-zum vorigen Schritt, und links steht die ganze Liste — Sie können jeden Schritt
-direkt anspringen. Bei jedem Wechsel springt die Ansicht an den Anfang des neuen
+Frage, klicken auf **Weiter**, und kommen zur nächsten; **Zurück** führt dorthin,
+wo Sie hergekommen sind, und links steht die ganze Liste — Sie können jeden
+Schritt direkt anspringen. Sind Sie gesprungen, führt **Zurück** an die Stelle
+zurück, von der aus Sie gesprungen sind, nicht an den Schritt davor. Bei jedem Wechsel springt die Ansicht an den Anfang des neuen
 Schritts, damit Sie dessen Frage sehen und nicht dort landen, wo Sie im vorigen
 gerade gelesen haben.
 

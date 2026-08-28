@@ -286,6 +286,7 @@ def serve_layout() -> html.Div:
             # das zeigen.
             dcc.Store(id=wizard.STEP_STORE, data=wizard.ENTRY),
             dcc.Store(id=wizard.VISITED_STORE, data=[]),
+            dcc.Store(id=wizard.HISTORY_STORE, data=[]),
             shell.layout(
                 active="",
                 # Auch beim ersten Zeichnen gilt der Serverzustand: Ein Lauf,

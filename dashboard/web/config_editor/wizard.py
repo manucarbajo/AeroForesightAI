@@ -59,6 +59,19 @@ STEP_STORE = "wizard-step-store"
 #: Einstieg an, und dann ist noch nichts besucht.
 VISITED_STORE = "wizard-visited-store"
 
+#: Wo man hergekommen ist — der Stapel für «Zurück» (P1.9-W2.3).
+#:
+#: Bis hierher rechnete «Zurück» schlicht `aktuell - 1`. Für den geraden Weg
+#: durch die Schritte stimmt das; für jeden anderen nicht. Wer über
+#: «Szenario-Vergleich starten» auf Schritt 8 kam, landete mit einem Klick in
+#: Schritt 7 «Technik» — in Feineinstellungen zum Sprachmodell, die er nie sehen
+#: wollte und die auf seinem Pfad ohnehin nicht gelten. Wer über die Liste von
+#: Schritt 1 auf 7 sprang, landete auf 6.
+#:
+#: Ein Zurück-Knopf, der irgendwo hinführt statt dorthin, wo man war, ist kein
+#: Zurück-Knopf. Er braucht einen Verlauf, keine Subtraktion.
+HISTORY_STORE = "wizard-history-store"
+
 #: Der Einstieg — der Zustand vor dem ersten Schritt.
 ENTRY = None
 
@@ -748,6 +761,7 @@ def register_callbacks(app) -> None:
         Output(STEP_STORE, "data"),
         Output(STORE_ID, "data", allow_duplicate=True),
         Output(VISITED_STORE, "data"),
+        Output(HISTORY_STORE, "data"),
         Input(BACK, "n_clicks"),
         Input(NEXT, "n_clicks"),
         Input(SKIP, "n_clicks"),
@@ -758,9 +772,12 @@ def register_callbacks(app) -> None:
         State(STEP_STORE, "data"),
         State(STORE_ID, "data"),
         State(VISITED_STORE, "data"),
+        State(HISTORY_STORE, "data"),
         prevent_initial_call=True,
     )
-    def _navigate(_back, _next, _skip, _new, _sweep, _resume, _jump, current, draft, besucht):
+    def _navigate(
+        _back, _next, _skip, _new, _sweep, _resume, _jump, current, draft, besucht, verlauf
+    ):
         """Alle Wege durch die Schrittfolge in einem Callback.
 
         Getrennte Callbacks müssten sich denselben Ausgang teilen und würden
@@ -780,49 +797,59 @@ def register_callbacks(app) -> None:
         jetzt = resolve(current)
         ausgeloest = ctx.triggered_id
         gesehen = _besucht_aus(besucht, jetzt)
+        stapel = list(verlauf or [])
 
         def gehe(ziel, entwurf=no_update):
-            """Ans Ziel — und der Schritt, den man verlässt, gilt als besucht.
+            """Ans Ziel — der verlassene Schritt gilt als besucht und kommt auf den Stapel.
 
-            **Nur der verlassene, nicht das Ziel.** Wer über die Liste auf
-            Schritt 7 springt, hat 7 noch nicht gesehen; er sieht ihn im
+            **Besucht wird der verlassene, nicht das Ziel.** Wer über die Liste
+            auf Schritt 7 springt, hat 7 noch nicht gesehen; er sieht ihn im
             nächsten Augenblick. `_besucht_aus` nimmt den offenen Schritt beim
             Zeichnen ohnehin dazu — hier wäre es eine zweite, leicht
             auseinanderlaufende Buchführung.
             """
 
-            return ziel, entwurf, sorted(gesehen)
+            return ziel, entwurf, sorted(gesehen), [*stapel, jetzt]
+
+        def zurueck():
+            """Dorthin, wo man hergekommen ist — und den Schritt vom Stapel nehmen.
+
+            Ist der Stapel leer, führt «Zurück» auf den Einstieg. Das ist keine
+            Notlösung, sondern die richtige Antwort: Wer keinen Weg hinter sich
+            hat, steht am Anfang.
+            """
+
+            if not stapel:
+                return ENTRY, no_update, sorted(gesehen), []
+            return resolve(stapel[-1]), no_update, sorted(gesehen), stapel[:-1]
 
         if isinstance(ausgeloest, dict) and ausgeloest.get("type") == JUMP:
             # Nur ein wirklich gedrückter Knopf zählt: Beim Neuaufbau der Liste
             # feuert Dash alle Pattern-Eingänge mit `None`.
             if not any(eintrag["value"] for eintrag in ctx.triggered if eintrag["value"]):
-                return no_update, no_update, no_update
+                return no_update, no_update, no_update, no_update
             return gehe(clamp(ausgeloest.get("index")))
 
-        # **Die drei Wege setzen das Besuchte zurück.** Wer vom Einstieg aus neu
-        # anfängt, fängt auch mit der Liste neu an — sonst trüge sie Häkchen aus
-        # dem vorigen Anlauf, und «übersprungen» meinte etwas anderes als beim
-        # ersten Mal.
+        # **Die drei Wege fangen neu an.** Besuchtes und Verlauf werden
+        # zurückgesetzt: Wer vom Einstieg aus startet, trüge sonst Häkchen aus
+        # dem vorigen Anlauf, und «Zurück» führte in einen Weg, den es nicht
+        # mehr gibt. Der Stapel beginnt beim Einstieg, weil man von dort kommt.
         if ausgeloest == WAY_NEW:
-            return 0, _with_sweeps(draft, False), []
+            return 0, _with_sweeps(draft, False), [], [ENTRY]
         if ausgeloest == WAY_SWEEP:
-            return FINAL, _with_sweeps(draft, True), []
+            return FINAL, _with_sweeps(draft, True), [], [ENTRY]
         if ausgeloest == WAY_RESUME:
             # Weiterverwenden heißt anfassen lassen: kein Schreiben, nur der
             # Sprung ans Ende.
-            return FINAL, no_update, []
+            return FINAL, no_update, [], [ENTRY]
 
         if ausgeloest == BACK:
-            # Aus dem ersten Schritt führt «Zurück» dorthin, wo man hergekommen
-            # ist — auf den Einstieg. Ohne das wäre er eine Sackgasse, die man
-            # nur über einen Neuladen wieder erreicht.
-            return gehe(ENTRY if jetzt in (ENTRY, 0) else jetzt - 1)
+            return zurueck()
         if ausgeloest == NEXT:
             return gehe(min(FINAL, (0 if jetzt is ENTRY else jetzt) + 1))
         if ausgeloest == SKIP:
             return gehe(FINAL)
-        return no_update, no_update, no_update
+        return no_update, no_update, no_update, no_update
 
     @app.callback(
         Output(CONTENT_HOST, "children"),

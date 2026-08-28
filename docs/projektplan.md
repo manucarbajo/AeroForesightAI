@@ -1050,7 +1050,9 @@ Reihenfolge ist Absicht: erst messen, dann die Unwahrheiten, dann der Schnitt, d
 | --- | --- | --- |
 | W2.1 ✅ | Zustände in der Schrittliste, die nicht mehr an der Position hängen. | **Erledigt 2026-08-28 — vier statt der geplanten drei.** «Nicht besucht» allein hätte den Befund abgestellt, beantwortet aber nicht die Frage, die man am Ende hat: *Habe ich etwas übergangen?* Ein Schritt, der noch kommt, und einer, an dem man vorbeigesprungen ist, sahen sonst gleich aus. Dazu die Zahl unter der Liste, und `aria-current="step"` als Vorgriff auf W5.3 — diese Funktion vergibt gerade die Zustände, sie später ein zweites Mal aufzuschlagen wäre Arbeit ohne Ertrag. |
 | W2.2 ✅ | Validierungstor an «Weiter» und «Lauf starten». | **Erledigt 2026-08-28.** Zwei Tore mit zwei verschiedenen Regeln: «Weiter» sperrt **nur** in dem Schritt, in dem der Befund behoben werden kann — sonst stünde man auf Schritt 1 fest wegen eines Modellnamens aus Schritt 7, eine Sackgasse statt einer Führung. «Lauf starten» sperrt bei **jedem** Befund und nennt den Schritt. Die Zuordnung Feld→Schritt (`FELD_SCHRITT`) ist eine Tabelle, aber eine **bewachte**: Ein Test rendert jeden Schritt, liest heraus, welche Felder er zeigt, und meldet jede Zeile, die nicht mehr stimmt. |
-| W2.3 | «Zurück» folgt einem Navigationsverlauf statt `current - 1`. | Aus Schritt 8, betreten über den Einstieg, führt «Zurück» auf den Einstieg — nicht auf «Technik». |
+| W2.3 ✅ | «Zurück» folgt einem Navigationsverlauf statt `current - 1`. | **Erledigt 2026-08-28.** Am laufenden System nachgestellt: Vergleich → Schritt 8 → «Zurück» → Einstieg (vorher «Technik»); Sprung von 1 auf 7 → «Zurück» → Schritt 1 (vorher 6). Der gerade Weg bleibt unverändert — 1 → 2 → 3 und zurück ergibt weiterhin 2, 1, Einstieg. Ein leerer Verlauf führt auf den Einstieg: keine Notlösung, sondern die einzige Antwort, die keine Sackgasse ist. |
+
+**W2 ist damit abgeschlossen.** Die Schrittfolge behauptet keinen Fortschritt mehr, den es nicht gab, «Weiter» garantiert wieder etwas, und «Zurück» führt dorthin, wo man war.
 
 **W3 — Der Schnitt.**
 
