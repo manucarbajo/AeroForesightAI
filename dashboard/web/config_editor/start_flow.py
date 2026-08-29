@@ -421,6 +421,72 @@ def _tiles(draft: dict) -> list:
     ]
 
 
+def herkunft(draft: dict) -> object:
+    """Woran ein Lauf später wiederzuerkennen ist — **vor** dem Start (P1.9-W4.2/W4.4).
+
+    P0.6 hat dafür gesorgt, dass ein Lauf festhält, wie er entstanden ist: Seed,
+    Rechenmodus, Codestand und ein Fingerabdruck jeder gelesenen
+    Konfigurationsdatei. Das stand bis hierher aber erst **danach** im Artefakt.
+
+    Wer zwei Läufe vergleichen will, braucht die Angaben vorher: Ein Lauf mit
+    anderem Codestand oder anderem Config-Fingerabdruck gehört nicht neben einen
+    anderen — und das merkt man besser vor der halben Stunde Rechenzeit als
+    danach.
+
+    **Dieselbe Quelle wie das Artefakt** (`output_writer.provenance`), nicht eine
+    zweite Berechnung daneben: Sonst stünde vorher etwas anderes als hinterher,
+    und genau die Drift hat P0.6 an anderer Stelle gekostet.
+    """
+
+    from src.reporting.output_writer.provenance import code_version, config_fingerprint
+
+    zeilen: list = []
+
+    stand = code_version()
+    if stand:
+        kurz = str(stand.get("commit", "?"))[:12]
+        zweig = stand.get("branch") or "?"
+        schmutzig = " · nicht eingecheckte Änderungen" if stand.get("dirty") else ""
+        zeilen.append(("Codestand", f"{kurz} ({zweig}){schmutzig}"))
+
+    try:
+        abdruck = config_fingerprint(_zustand(draft))
+    except Exception:  # noqa: BLE001 - eine kaputte Config meldet schon der Preflight
+        abdruck = None
+    if abdruck is not None:
+        zeilen.append(("Konfiguration", abdruck.simulation_config + " / " + abdruck.properties))
+
+    if not zeilen:
+        return None
+
+    return ui.expert(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Span(name, className="af-delta__was"),
+                        html.Span(wert, className="af-delta__wert"),
+                    ],
+                    className="af-delta__zeile",
+                )
+                for name, wert in zeilen
+            ],
+            className="af-delta",
+        ),
+        count=len(zeilen),
+        title="Woran dieser Lauf später wiederzuerkennen ist",
+        names="Codestand, Fingerabdruck der Konfiguration",
+    )
+
+
+def _zustand(draft: dict):
+    """Den Zustand bauen, den der Lauf bekäme — für den Fingerabdruck."""
+
+    from dashboard.config_catalog import prepare_simulation_state
+
+    return prepare_simulation_state(draft_from_dict(draft))
+
+
 def _warnings(draft: dict, errors: list[str]) -> list:
     """Was den Start verhindert, und was später enttäuscht — getrennt gehalten.
 
@@ -505,6 +571,7 @@ def preflight(
             ui.card(html.Div(ui.markdown(summary_sentence(draft)), id=summary_id(slot))),
             html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),
             html.Div(vorgaben_hinweis(draft), className="mt-4"),
+            html.Div(herkunft(draft) if not compact else None, className="mt-4"),
             html.Div(
                 ui.grid(
                     *(tiles[:_COMPACT_TILES] if compact else tiles),

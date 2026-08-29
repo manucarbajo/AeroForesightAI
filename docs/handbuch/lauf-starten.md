@@ -105,8 +105,14 @@ rein rechnerisch; betroffen ist nur der Text am Ende.
 
 Jeder Lauf schreibt mit, unter welchen Bedingungen er entstanden ist: Seed,
 Rechenmodus und Codestand. Sie finden das nach dem Lauf unter **Ergebnisse** in
-der Ansicht **Übersicht**, direkt unter den Kennzahlen. Vor dem Start stehen
-Startwert und Rechenmodus im Preflight.
+der Ansicht **Übersicht**, direkt unter den Kennzahlen.
+
+**Vor dem Start steht dasselbe im Prüfschritt.** Startwert und Rechenmodus als
+Kacheln, dazu aufklappbar «Woran dieser Lauf später wiederzuerkennen ist»:
+Codestand und der Fingerabdruck der gelesenen Konfigurationsdateien. Das ist
+nicht Buchhaltung, sondern die Vorbedingung fürs Vergleichen — ein Lauf mit
+anderem Codestand oder anderem Fingerabdruck gehört nicht neben einen anderen,
+und das merkt man besser vorher als nach einer halben Stunde Rechenzeit.
 
 Das ist keine Buchhaltung um ihrer selbst willen. Wer ein Ergebnis
 weiterverwendet, muss sehen können, ob überhaupt ein Sprachmodell beteiligt war

@@ -325,6 +325,57 @@ class TestWasAbweichtStehtVorDemStart:
         assert delta.REVERT in gerendert, "Die Abweichungsliste fehlt auf «Prüfen & Starten»"
 
 
+class TestDieHerkunftStehtVorDemStart:
+    """W4.4 — was das Artefakt hinterher festhält, steht vorher auf dem Schirm.
+
+    P0.6 hat dafür gesorgt, dass ein Lauf mitschreibt, wie er entstanden ist.
+    Das half beim Vergleichen aber erst **danach**: Wer zwei Läufe
+    nebeneinanderlegen will, muss vorher wissen, ob Codestand und
+    Konfigurationsdateien dieselben sind — besser vor der halben Stunde
+    Rechenzeit als danach.
+    """
+
+    def test_it_names_the_code_version_and_the_config(self, draft):
+        from dashboard.web.config_editor import start_flow
+
+        gerendert = str(start_flow.herkunft(draft))
+
+        assert "Codestand" in gerendert
+        assert "Konfiguration" in gerendert
+
+    def test_it_comes_from_the_same_source_as_the_artifact(self, draft):
+        """**Eine Quelle, nicht zwei.** Sonst stünde vorher etwas anderes als hinterher."""
+
+        from dashboard.web.config_editor import start_flow
+        from src.reporting.output_writer.provenance import config_fingerprint
+
+        erwartet = config_fingerprint(start_flow._zustand(draft))
+        gerendert = str(start_flow.herkunft(draft))
+
+        assert erwartet.simulation_config in gerendert
+        assert erwartet.properties in gerendert
+
+    def test_a_broken_config_does_not_break_the_preflight(self, draft):
+        """Eine unlesbare Datei meldet der Preflight — hier gibt es keinen zweiten Absturz."""
+
+        from dashboard.web.config_editor import start_flow
+
+        kaputt = {**draft, "properties_file": "gibt-es-nicht.json"}
+
+        gerendert = str(start_flow.herkunft(kaputt))
+        assert "Codestand" in gerendert
+        assert "Traceback" not in gerendert
+
+    def test_the_rail_stays_compact(self, draft):
+        """Im Bedienfeld nicht: Dort sind drei Kacheln der ganze Platz."""
+
+        from dashboard.web.config_editor import start_flow
+
+        schmal = str(start_flow.preflight(draft, [], slot="rail", compact=True))
+
+        assert "Codestand" not in schmal
+
+
 class _SchreibVersuch(Exception):
     """Eine Aktion hat versucht, in `configs/` zu schreiben."""
 

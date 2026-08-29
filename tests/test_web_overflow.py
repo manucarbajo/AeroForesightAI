@@ -349,12 +349,16 @@ ZIEL = 1.0
 #: ein Rahmen ohne den auf jedem Schritt wiederholten Einführungstext (−116 px,
 #: W3.5) und eine Gliederungsebene weniger innerhalb der Schritte.
 #:
-#: **Schritt 7 ist mit W4.1 und W4.2 von 1,00 auf 1,21 gewachsen**, und beides
+#: **Schritt 7 ist mit W4.1, W4.2 und W4.4 von 1,00 auf 1,29 gewachsen**, und beides
 #: war eine bewusste Abwägung. Der Name des Laufs steht seither dort, weil das
 #: der einzige Schritt ist, den jeder Startweg passiert; die Abweichungsliste
 #: ebenso, weil «was habe ich geändert» vor dem Start beantwortet gehört. Ein
-#: Lauf, den niemand benennen konnte, und eine Änderung, die niemand mehr
-#: findet, kosten später mehr als 0,21 Bildschirme.
+#: die Herkunftsangaben ebenso, weil ein Lauf mit anderem Codestand nicht neben
+#: einen anderen gehört und man das besser vor der Rechenzeit merkt. Ein Lauf,
+#: den niemand benennen konnte, eine Änderung, die niemand mehr findet, und
+#: zwei Läufe, die man fälschlich vergleicht, kosten später mehr als 0,29
+#: Bildschirme. **Alle drei Zuwächse liegen auf dem Schritt, auf dem man
+#: innehält** — nicht auf einem, den man durchläuft.
 #:
 #: `ZIEL` steht weiterhin auf 1,0, und der Deckel steht darüber: Der Wächter ist
 #: scharf gegen Wachstum, behauptet aber nicht, das Ziel sei erfüllt. Die
@@ -370,7 +374,7 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 4": 1.28,
         "Schritt 5": 1.31,
         "Schritt 6": 1.00,
-        "Schritt 7": 1.21,
+        "Schritt 7": 1.29,
     },
     1024: {
         "Einstieg": 1.00,
@@ -380,7 +384,7 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 4": 1.34,
         "Schritt 5": 1.31,
         "Schritt 6": 1.05,
-        "Schritt 7": 1.23,
+        "Schritt 7": 1.31,
     },
 }
 
@@ -404,8 +408,27 @@ _HOEHE = """
 
 
 def _schirme(page) -> float:
-    """Wie viele Bildschirme der offene Bereich hoch ist."""
+    """Wie viele Bildschirme der offene Bereich hoch ist.
 
+    **Erst warten, bis wirklich gezeichnet ist.** Eine feste Wartezeit allein
+    genügt nicht: Unter Last kam der Callback später, und gemessen wurde der
+    noch leere Wirt — einmal grün, weil der Schritt scheinbar auf einen
+    Bildschirm passte, einmal rot, weil er halb gezeichnet war. Ein Wächter,
+    der je nach Auslastung ein anderes Ergebnis liefert, ist keiner.
+
+    Am eigenen Messskript zuerst aufgefallen: Dort meldete derselbe Fehler
+    einen Gewinn von 275 px, den es nicht gab.
+    """
+
+    # **Der Einstieg zählt mit.** Dort ist der Inhalt bewusst ausgeblendet und
+    # bleibt es; auf ihn zu warten hieße, in einen Timeout zu laufen. Gewartet
+    # wird deshalb darauf, dass *einer* von beiden gezeichnet ist.
+    page.wait_for_function(
+        "() => { const hoehe = (id) => { const e = document.getElementById(id);"
+        " return e ? e.getBoundingClientRect().height : 0; };"
+        " return hoehe('wizard-content') > 50 || hoehe('wizard-entry-host') > 50; }",
+        timeout=10_000,
+    )
     page.wait_for_timeout(RUHE_MS)
     masse = page.evaluate(_HOEHE)
     assert (
