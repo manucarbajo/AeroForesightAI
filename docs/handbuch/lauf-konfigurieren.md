@@ -90,6 +90,12 @@ etwas übergangen haben, steht die Zahl unter der Liste. Das ist kein Tadel —
 sechs der acht Schritte dürfen übersprungen werden. Es beantwortet nur die
 Frage, die man am Ende hat: *Habe ich etwas übersehen?*
 
+> **Bis August 2026 hieß jeder Lauf gleich.** Der Name lag im optionalen Schritt
+> «Lauf & Ablage», und drei von vier Wegen führen daran vorbei — wer den
+> Szenario-Vergleich, «Weiterverwenden» oder «Direkt zum Start» nimmt, landet
+> unmittelbar auf «Prüfen & Starten». Die Run-Liste füllte sich mit
+> gleichnamigen Einträgen.
+
 > **Bis August 2026 log die Liste.** Sie richtete sich allein danach, wo Sie
 > gerade stehen: Alles davor bekam einen Haken. Wer über «Szenario-Vergleich
 > starten» direkt zum letzten Schritt sprang, sah dort sieben Haken für sieben
@@ -106,7 +112,10 @@ steht; die Meldung sagt dann, in welchem Schritt er zu beheben ist.
 > **Weiter** war nie gesperrt: Man konnte durch alle acht Schritte gehen und erst
 > beim Klick auf **Lauf starten** erfahren, dass Schritt 2 ungültig war.
 
-Der letzte Schritt heißt **Prüfen & Starten**: Dort steht, was gleich passiert,
+Der letzte Schritt heißt **Prüfen & Starten**: Dort steht zuoberst der **Name
+dieses Laufs** — so, wie er später in der Auswahl der Kopfzeile erscheint. Ein
+Klick auf «Vorschlag» setzt einen sprechenden Namen aus Ausgangspunkt, Länge und
+Zeitpunkt. Darunter steht, was gleich passiert,
 und daneben die beiden Wege hinaus — den Lauf starten, oder die Einstellungen als
 Szenario speichern und später wieder aufrufen.
 

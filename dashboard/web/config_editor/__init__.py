@@ -335,6 +335,36 @@ def register_callbacks(app) -> None:
         return data, version, meldung, meldung
 
 
+def _namensvorschlag(draft: dict) -> str:
+    """Ein Name, der einen Lauf in der Liste unterscheidbar macht.
+
+    Drei Angaben, in der Reihenfolge, in der man sie sucht: **woher** der Lauf
+    ausgeht, **wie lang** er ist, und **wann** er entstanden ist. Der Rechenmodus
+    steht bewusst nicht dabei — er steht im Artefakt und macht den Namen nur
+    länger.
+    """
+
+    from datetime import datetime
+
+    if draft.get("run_all_sweeps"):
+        woher = "Szenario-Vergleich"
+    elif draft.get("scenario_mode") == "sweep" and draft.get("sweep_id"):
+        preset = next(
+            (s for s in list_sweep_presets() if s.id == draft["sweep_id"]),
+            None,
+        )
+        woher = preset.name if preset is not None else str(draft["sweep_id"])
+    elif draft.get("scenario_mode") == "custom":
+        woher = "Eigene Einstellungen"
+    else:
+        woher = "Standard-Ausgangslage"
+
+    stempel = datetime.now().strftime("%Y-%m-%d %H:%M")
+    if draft.get("run_all_sweeps"):
+        return f"{woher} · {stempel}"
+    return f"{woher} · {draft.get('rounds', '?')} Ticks · {stempel}"
+
+
 def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | None, str]:
     """Eine Aktion ausführen und (neuer Draft, Meldung, Meldungsart) zurückgeben."""
 
@@ -359,6 +389,15 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
     # `WRITE` und `ACTION` tragen denselben Schlüssel `action`; welcher Typ eine
     # Aktion trägt, sagt nur, ob eine Rückfrage davorsteht.
     action = trigger.get("action")
+
+    if action == "suggest-name":
+        # **Ein Vorschlag ist eine Handlung, kein Rückfall** (P1.9-W4.1). Den
+        # Namen beim Rendern vorzubelegen wäre der Fehler aus Befund A7: Der
+        # Wert käme aus dem Quelltext statt aus einer Entscheidung, und
+        # `touched()` meldete danach Einstellungen, die niemand vorgenommen hat.
+        # Hier drückt jemand auf einen Knopf — das ist eine Entscheidung.
+        data["simulation_name"] = _namensvorschlag(data)
+        return data, f"Name gesetzt: «{data['simulation_name']}»", "success"
 
     if action == "reset":
         return (

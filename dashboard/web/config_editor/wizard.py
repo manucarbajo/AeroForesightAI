@@ -36,6 +36,7 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
 from dashboard.config_catalog import list_sweep_presets
 from dashboard.web import components as ui
+from dashboard.web.config_editor import controls as c
 from dashboard.web.config_editor import experiment, factors, llm_pipeline, start_flow
 from dashboard.web.state import STORE_ID, initial_draft_dict
 
@@ -225,7 +226,7 @@ FINAL = len(STEPS) - 1
 FELD_SCHRITT: dict[str, int] = {
     "rounds": 1,
     "seed": 2,
-    "simulation_name": 4,
+    "simulation_name": FINAL,
     "model": 5,
     "temperature": 5,
     "max_tokens": 5,
@@ -574,6 +575,43 @@ def _final_step(draft: dict) -> html.Div:
 
     return html.Div(
         [
+            # **Der Name des Laufs steht hier** (P1.9-W4.1), und zwar als
+            # Erstes. Er lag bis dahin im optionalen Schritt «Lauf & Ablage»,
+            # an dem drei von vier Wegen vorbeiführen: «Szenario-Vergleich»,
+            # «Weiterverwenden» und «Direkt zum Start» landen unmittelbar hier.
+            # Alle Läufe hießen deshalb «Flugverkehr Szenarioplanung MVP», und
+            # die Run-Liste war nach kurzer Zeit unbrauchbar.
+            #
+            # Dieser Schritt ist der einzige, den **jeder** Weg passiert — der
+            # Name gehört deshalb hierher und nirgendwo anders hin.
+            ui.card(
+                # Knopf **neben** dem Feld, nicht darunter: Eine eigene Zeile
+                # kostete 0,07 Bildschirme auf dem einen Schritt, den jeder Weg
+                # passiert. `pt-7` setzt ihn auf die Höhe des Eingabefelds —
+                # dasselbe Muster wie bei «Segment anlegen».
+                html.Div(
+                    [
+                        c.text(
+                            "simulation_name",
+                            draft.get("simulation_name", ""),
+                            label="Name dieses Laufs",
+                            hint="So erscheint er später in der Auswahl der Kopfzeile.",
+                            class_name="flex-1 min-w-[16rem]",
+                        ),
+                        html.Div(
+                            ui.button(
+                                "Vorschlag",
+                                id=c.action_id("suggest-name"),
+                                variant="secondary",
+                                icon_name="auto_awesome",
+                            ),
+                            className="pt-7",
+                        ),
+                    ],
+                    className="flex items-start gap-4 flex-wrap",
+                ),
+                class_name="mb-5",
+            ),
             start_flow.preflight(draft, start_flow.errors_for(draft), slot="wizard"),
             html.P(
                 "«Als Szenario speichern» legt die Einstellungen unter `configs/sweeps/` ab. "

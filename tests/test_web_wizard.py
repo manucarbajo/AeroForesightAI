@@ -192,6 +192,76 @@ class TestModellUndExperimentSindZweiOrte:
         assert "Traceback" not in gerendert
 
 
+class TestJederWegSiehtDenNamen:
+    """W4.1 — kein Lauf trägt den Vorgabenamen, ohne dass jemand ihn gesehen hat.
+
+    Der Name lag im optionalen Schritt «Lauf & Ablage». Drei von vier Wegen
+    führen daran vorbei: «Szenario-Vergleich», «Weiterverwenden» und «Direkt zum
+    Start» landen unmittelbar auf «Prüfen & Starten». Alle Läufe hießen deshalb
+    gleich — und genau das sagt der Text neben dem Feld voraus: «Ohne sie sind
+    mehrere Läufe später kaum auseinanderzuhalten.»
+    """
+
+    def test_the_name_lives_on_the_step_every_path_reaches(self, draft):
+        """Der letzte Schritt ist der einzige, den **jeder** Weg passiert."""
+
+        felder = _fields(wizard.content(draft, wizard.FINAL))
+
+        assert "simulation_name" in felder, (
+            "Der Name steht nicht auf «Prüfen & Starten» — dann sehen ihn die "
+            "Wege, die direkt dorthin springen, nie."
+        )
+
+    def test_it_is_not_rendered_twice(self, draft):
+        """Und nirgends sonst — dieselbe Feld-ID zweimal ist ein Laufzeitfehler."""
+
+        orte = [
+            index
+            for index in range(len(wizard.STEPS))
+            if "simulation_name" in _fields(wizard.content(draft, index))
+        ]
+
+        assert orte == [wizard.FINAL], f"«simulation_name» steht in den Schritten {orte}"
+
+    def test_the_finding_points_at_that_step(self, draft):
+        """Und ein Befund am Namen führt dorthin, wo er zu beheben ist."""
+
+        assert wizard.FELD_SCHRITT["simulation_name"] == wizard.FINAL
+
+    def test_the_suggestion_is_an_action_not_a_fallback(self, draft):
+        """**Ein Vorschlag ist eine Handlung.**
+
+        Den Namen beim Rendern vorzubelegen wäre der Fehler aus Befund A7: Der
+        Wert käme aus dem Quelltext statt aus einer Entscheidung, und
+        `touched()` meldete danach Einstellungen, die niemand vorgenommen hat.
+        """
+
+        from dashboard.web import config_editor
+        from dashboard.web.config_editor import controls as c
+
+        vorher = dict(draft)
+        gerendert = str(wizard.content(vorher, wizard.FINAL))
+        assert vorher == draft, "Das Zeichnen hat den Entwurf verändert"
+
+        neu, meldung, _ = config_editor._handle_action(c.action_id("suggest-name"), dict(draft), [])
+
+        assert neu["simulation_name"] != draft["simulation_name"]
+        assert "Ticks" in neu["simulation_name"], neu["simulation_name"]
+        assert meldung
+        assert "suggest-name" in gerendert, "Der Knopf fehlt auf dem Schritt"
+
+    def test_the_suggestion_names_the_comparison_as_one(self, draft):
+        """Ein Vergleich hat keine eine Länge — der Name behauptet auch keine."""
+
+        from dashboard.web import config_editor
+
+        vergleich = {**draft, "run_all_sweeps": True}
+        name = config_editor._namensvorschlag(vergleich)
+
+        assert "Szenario-Vergleich" in name
+        assert "Ticks" not in name, f"Der Vergleich nennt eine Länge: {name}"
+
+
 class _SchreibVersuch(Exception):
     """Eine Aktion hat versucht, in `configs/` zu schreiben."""
 

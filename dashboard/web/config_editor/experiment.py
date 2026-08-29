@@ -61,22 +61,26 @@ def layout(draft: dict) -> html.Div:
     return html.Div(
         [
             ui.section(
-                "Benennung",
+                "Fragestellung",
                 ui.lede(
-                    "Name und Fragestellung erscheinen im Bericht und in der Run-Liste. "
-                    "Ohne sie sind mehrere Läufe später kaum auseinanderzuhalten."
+                    "Wozu dieser Lauf gerechnet wird. Erscheint im Bericht und macht später "
+                    "nachvollziehbar, was Sie wissen wollten. Der **Name** steht im letzten "
+                    "Schritt, direkt vor dem Start."
                 ),
+                # **Der Name steht seit P1.9-W4.1 im letzten Schritt.** Dieser
+                # hier ist optional, und drei von vier Wegen kommen nie an ihm
+                # vorbei: «Szenario-Vergleich», «Weiterverwenden» und «Direkt
+                # zum Start» führen unmittelbar auf «Prüfen & Starten». Alle
+                # Läufe hießen deshalb gleich, und die Run-Liste war nach
+                # kurzer Zeit unbrauchbar — genau das, was der Text daneben
+                # vorhersagt. Die **Fragestellung** bleibt hier: Sie ist
+                # ausführlich, gehört zur Dokumentation des Laufs und nicht auf
+                # den Bildschirm, auf dem gestartet wird.
                 ui.card(
-                    c.text(
-                        "simulation_name", draft.get("simulation_name", ""), class_name="max-w-lg"
-                    ),
-                    html.Div(
-                        c.textarea(
-                            "simulation_description",
-                            draft.get("simulation_description", ""),
-                            class_name="max-w-2xl",
-                        ),
-                        className="mt-5",
+                    c.textarea(
+                        "simulation_description",
+                        draft.get("simulation_description", ""),
+                        class_name="max-w-2xl",
                     ),
                 ),
             ),

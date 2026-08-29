@@ -338,11 +338,27 @@ ZIEL = 1.0
 #: wachsen, ohne dass etwas rot wird — genau die Blindheit, gegen die dieses
 #: Paket antritt.
 #:
-#: **Die Zahlen weichen vom Audit ab, und das ist kein Widerspruch.** Das Audit
-#: hat bei 720 px Fensterhöhe gemessen (664 px sichtbar) und kam auf 1,13 bis
-#: 4,44; hier sind es bei 800 px 1,01 bis 3,96. Derselbe Inhalt, mehr Fenster.
-#: Was in beiden Messungen gleich bleibt, ist die Aussage: **kein einziger
-#: Schritt kommt ohne Scrollen aus.**
+#: **Stand nach P1.9-W3 und W4.1.** Die Schritte 2, 3 und 6 stehen auf 1,00 —
+#: sie passen. Die übrigen liegen zwischen 1,13 und 1,34.
+#:
+#: Der Ausgangspunkt zum Vergleich: Beim Audit am 2026-08-28 brauchte **kein
+#: einziger** der damals acht Schritte weniger als einen Bildschirm, der höchste
+#: 4,44 (gemessen bei 720 px Fensterhöhe; hier sind es 800). Den Unterschied
+#: machte nicht Sparsamkeit an einer Stelle, sondern dreierlei: die 168
+#: Bedienelemente der beiden dichten Schritte in einen eigenen Bereich (W3.1),
+#: ein Rahmen ohne den auf jedem Schritt wiederholten Einführungstext (−116 px,
+#: W3.5) und eine Gliederungsebene weniger innerhalb der Schritte.
+#:
+#: **Schritt 7 ist mit W4.1 von 1,00 auf 1,13 gewachsen**, und das war eine
+#: bewusste Abwägung: Der Name des Laufs steht seither dort, weil das der
+#: einzige Schritt ist, den jeder Startweg passiert. Ein Lauf, den niemand
+#: benennen konnte, kostet später mehr als 0,13 Bildschirme.
+#:
+#: `ZIEL` steht weiterhin auf 1,0, und der Deckel steht darüber: Der Wächter ist
+#: scharf gegen Wachstum, behauptet aber nicht, das Ziel sei erfüllt. Die
+#: verbliebenen Schritte tragen Inhalt, der sich nur durch **Weglassen** kürzen
+#: ließe — zehn Szenarien mit Kennzahl, sieben Faktoren mit ihrer Leitfrage, der
+#: Name des Laufs. Ob das den Tausch wert ist, ist eine Produktentscheidung.
 DECKEL: dict[int, dict[str, float]] = {
     1280: {
         "Einstieg": 1.00,
@@ -352,7 +368,7 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 4": 1.28,
         "Schritt 5": 1.31,
         "Schritt 6": 1.00,
-        "Schritt 7": 1.00,
+        "Schritt 7": 1.13,
     },
     1024: {
         "Einstieg": 1.00,
@@ -362,7 +378,7 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 4": 1.34,
         "Schritt 5": 1.31,
         "Schritt 6": 1.05,
-        "Schritt 7": 1.00,
+        "Schritt 7": 1.15,
     },
 }
 
