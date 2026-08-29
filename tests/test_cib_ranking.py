@@ -13,7 +13,20 @@ lag zum Teil daran, dass offene *Märkte* (F7.1) mit strenger Regulierung (F2.2)
 kollidierten — offene *Lufträume* tun das nicht im selben Maß. Der Kernnachweis
 BAU > Konflikt ist davon unberührt.
 
-P4.3-Kernnachweis: BAU > Konflikt (Consistency-Score). ✓
+P4.3: BAU > Konflikt (Consistency-Score). ✓
+
+**Was dieser Test belegt — richtiggestellt am 2026-08-29.** Er stand hier als
+„Kernnachweis", also als Beleg dafür, dass die Bewertung Plausibilität erkennt.
+Das trägt er nicht. Die drei Zahlen fallen exakt auf eine Polaritätsleiter: BAU
+ist der vollständig gleichpolige Zustand (7 von 7), Konflikt liegt bei 6 von 7,
+die Wende wird abgewertet, *weil* sie gemischt ist. Über alle 128 Zustände
+gemessen korreliert der Score mit +0,56 und monoton mit der Zahl gleichpolig
+gesetzter Faktoren (siehe `test_cib_einachsigkeit.py`).
+
+Der Test bleibt korrekt und bleibt stehen — er misst, was er misst. Falsch war
+die Deutung: Er zeigt, dass die Bewertung einheitlich gepolte Weltbilder
+bevorzugt, nicht dass sie plausible erkennt. Die Interpretation unten ist unter
+diesem Vorbehalt zu lesen.
 
 Interpretation:
   BAU ist das am stärksten selbstverstärkende Szenario (0 Konflikte) — alle Faktoren
