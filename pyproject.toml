@@ -26,6 +26,14 @@ dev = [
     "ruff",
     "black",
 ]
+# Der Ueberlauf-Waechter aus P1.7-D (`tests/test_web_overflow.py`). Bewusst ein
+# eigenes Extra und nicht Teil von `dev`: Er braucht einen echten Browser
+# (`playwright install chromium`, rund 150 MB), und ohne den ueberspringt sich
+# der Test von selbst. Pixel kann eine Testsuite ohne Browser nicht messen --
+# wer sie messen will, holt sich diese Zeile.
+ui = [
+    "playwright",
+]
 
 [tool.black]
 line-length = 100

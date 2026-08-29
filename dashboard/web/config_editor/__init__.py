@@ -1,13 +1,21 @@
-"""Config-Editor: fünf Tabs, ein Store, zwei Callbacks.
+"""Die Oberfläche zum Konfigurieren eines Laufs — seit P1.7 eine Schrittfolge.
+
+Die acht Schritte stehen in `wizard.py`; die ersten drei sind die Entscheidungen
+aus P1.1 (`start_flow`), die vier danach sind die Bereiche, die bis P1.7 Reiter
+waren (`macro`, `micro`, `experiment`, `llm_pipeline`), und der letzte ist
+«Prüfen & Starten». Alle schreiben in denselben Store.
 
 Aufbau in einem Satz: jedes Eingabefeld trägt den Pfad, an dem sein Wert im
-Draft steht, und ein einziger Callback (`_sync`) schreibt alle sichtbaren
-Felder dorthin. Alles, was den Entwurf *strukturell* ändert — Preset
-übernehmen, Property anlegen oder löschen, Speichern — läuft über einen
-zweiten Callback (`_actions`), der danach den aktiven Tab neu aufbaut.
+Draft steht, und ein einziger Callback (`_sync`) schreibt alle **sichtbaren**
+Felder dorthin. Alles, was den Entwurf *strukturell* ändert — Preset übernehmen,
+Property anlegen oder löschen, Speichern — läuft über einen zweiten Callback
+(`_actions`), der danach den offenen Schritt neu aufbaut.
 
 Diese Zweiteilung ist der Ersatz für Streamlits „Skript läuft bei jeder
 Interaktion neu": Werte fließen ohne Neuaufbau, Struktur ändert sich mit.
+
+**Ein Feld darf nur an einer Stelle stehen.** Deshalb steht immer nur der offene
+Schritt im DOM — dieselbe Feld-ID zweimal ist für Dash ein Laufzeitfehler.
 """
 
 from __future__ import annotations
@@ -34,36 +42,36 @@ from dashboard.config_catalog import (
 from dashboard.web import components as ui
 from dashboard.web.config_editor import (
     compute_mode,
+    delta,
     experiment,
     llm_pipeline,
     macro,
     micro,
-    overview,
-    save_start,
+    start_flow,
+    wizard,
 )
 from dashboard.web.config_editor import controls as c
+from dashboard.web.pages import model_editor
 from dashboard.web.state import STORE_ID, draft_from_dict, draft_to_dict
 
-# Reihenfolge ist die Lesereihenfolge: erst das, was jeder einstellen muss,
-# dann die Annahmen von grob nach fein, zuletzt Technik und Kontrolle.
+# Die vier Bereiche, die bis P1.7 Reiter waren und jetzt die Schritte vier bis
+# sieben sind. Reihenfolge ist die Lesereihenfolge: die Annahmen von grob nach
+# fein, dann Organisatorisches, zuletzt Technik. Der Name `TABS` bleibt, weil
+# mehrere Tests über ihn laufen; die Reiterleiste selbst gibt es nicht mehr.
 TABS = [
-    ("Überblick", "overview"),
     ("Rahmenbedingungen", "macro"),
     ("Nachfrage & Preisbildung", "micro"),
     ("Lauf & Ablage", "experiment"),
     ("Technik", "llm"),
-    ("Kontrolle", "save"),
 ]
 
-DEFAULT_TAB = "overview"
+DEFAULT_TAB = "macro"
 
 _LAYOUTS = {
-    "overview": overview.layout,
-    "experiment": experiment.layout,
     "macro": macro.layout,
     "micro": micro.layout,
+    "experiment": experiment.layout,
     "llm": llm_pipeline.layout,
-    "save": save_start.layout,
 }
 
 
@@ -74,30 +82,22 @@ def tab_layout(tab: str, draft: dict):
         return ui.alert(f"Editor konnte nicht aufgebaut werden: {exc}", "error")
 
 
-def layout(draft: dict) -> html.Div:
+def reset_button() -> html.Div:
+    """«Auf Standard zurücksetzen» — seit P1.7 im Schritt «Lauf & Ablage».
+
+    Vorher stand er über den Reitern und damit über *allen* Einstellungen. In
+    einer Schrittfolge gibt es diesen Ort nicht mehr; er gehört dorthin, wo man
+    ohnehin über den Lauf als Ganzes nachdenkt.
+    """
+
     return html.Div(
-        [
-            html.Div(
-                [
-                    html.P(
-                        "Alle Änderungen wirken auf den nächsten Lauf. Die «Speichern»-Knöpfe "
-                        "in «Mikro-Parameter» schreiben zusätzlich in die Dateien unter `configs/`.",
-                        className=f"{ui.CAPTION} max-w-2xl",
-                    ),
-                    ui.button(
-                        "Auf Standard-Config zurücksetzen",
-                        id=c.action_id("reset"),
-                        variant="secondary",
-                        icon_name="restart_alt",
-                    ),
-                ],
-                className="flex items-start justify-between gap-4 flex-wrap mb-4",
-            ),
-            html.Div(id="cfg-status", className="mb-4"),
-            ui.tabs("cfg-tabs", TABS, value=DEFAULT_TAB),
-            html.Div(tab_layout(DEFAULT_TAB, draft), id="cfg-tab-content"),
-        ],
-        className="af-tabs--sub",
+        ui.button(
+            "Auf Standard-Config zurücksetzen",
+            id=c.action_id("reset"),
+            variant="secondary",
+            icon_name="restart_alt",
+        ),
+        className="mt-6",
     )
 
 
@@ -145,6 +145,10 @@ def _normalise(draft: dict) -> dict:
     # Der Rechenmodus ist eine Auswahl über zwei Draft-Felder.
     if compute_mode.FIELD in draft:
         draft = compute_mode.apply(draft, draft.get(compute_mode.FIELD))
+
+    # Die Szenario-Auswahl des geführten Ablaufs ebenso: eine Entscheidung,
+    # aus der `scenario_mode` und `sweep_id` folgen.
+    draft = start_flow.normalise(draft)
     return draft
 
 
@@ -152,15 +156,10 @@ def _normalise(draft: dict) -> dict:
 
 
 def register_callbacks(app) -> None:
-    @app.callback(
-        Output("cfg-tab-content", "children"),
-        Input("cfg-tabs", "value"),
-        Input("cfg-editor-refresh", "data"),
-        State(STORE_ID, "data"),
-        prevent_initial_call=True,
-    )
-    def _render_tab(tab: str | None, _refresh, draft: dict | None):
-        return tab_layout(tab or DEFAULT_TAB, draft or {})
+    # Seit P1.7 zeichnet `wizard._render` den offenen Schritt — auch die vier
+    # Editor-Bereiche, die vorher Reiter waren. Ein eigener Callback dafür gibt
+    # es nicht mehr; er hinge an `cfg-tabs`, und die Reiter sind weg.
+    wizard.register_callbacks(app)
 
     @app.callback(
         Output(STORE_ID, "data"),
@@ -186,27 +185,93 @@ def register_callbacks(app) -> None:
         return _normalise(updated)
 
     @app.callback(
-        Output({"type": overview.SUMMARY, "slot": ALL}, "children"),
+        Output({"type": start_flow.SUMMARY, "slot": ALL}, "children"),
         Input(STORE_ID, "data"),
         prevent_initial_call=True,
     )
     def _summaries(draft: dict | None):
         """Klartext-Zusammenfassungen mitziehen, sobald sich etwas ändert."""
 
-        sentence = ui.markdown(overview.summary_sentence(draft or {}))
+        sentence = ui.markdown(start_flow.summary_sentence(draft or {}))
         return [sentence] * len(ctx.outputs_list)
 
     @app.callback(
+        Output({"type": start_flow.SLOT, "slot": ALL}, "children"),
+        Output({"type": c.ERROR, "field": ALL}, "children"),
+        Output(wizard.NEXT, "disabled"),
+        Output(wizard.START, "disabled"),
+        Output(wizard.GATE, "children"),
+        Input(STORE_ID, "data"),
+        Input(wizard.STEP_STORE, "data"),
+    )
+    def _live(draft: dict | None, step):
+        """Was sich mit dem Entwurf ändert: Beschreibung, Preflight, Feldfehler — und das Tor.
+
+        Bewusst **ein** Callback für alles: Die Prüfung baut den ganzen
+        Simulationszustand auf und soll je Änderung einmal laufen, nicht je
+        Ausgabefeld. Der Feldbezug kommt aus `src/validation.py` — die
+        Oberfläche ordnet nichts über Schlüsselwörter zu, sie stellt nur dar.
+
+        **Das Tor hängt seit P1.9-W2.2 mit dran**, aus demselben Grund: Es
+        braucht dieselben Befunde. Ein eigener Callback dafür ließe
+        `validate_draft` zweimal je Tastendruck laufen — und der baut jedes Mal
+        den vollständigen `SimulationState` auf.
+
+        Der offene Schritt kommt als zweiter `Input` dazu: Ohne ihn bliebe ein
+        gesperrtes «Weiter» gesperrt, wenn man den Schritt verlässt, auf dem der
+        Befund liegt.
+        """
+
+        data = draft or {}
+        slots, by_field = start_flow.live_state(data)
+        slot_out = [slots.get((entry["id"] or {}).get("slot")) for entry in ctx.outputs_list[0]]
+        error_out = [
+            ui.field_errors(by_field.get((entry["id"] or {}).get("field"), []))
+            for entry in ctx.outputs_list[1]
+        ]
+
+        gesperrt_weiter, gesperrt_start, meldung = wizard.gate(data, step)
+        return slot_out, error_out, gesperrt_weiter, gesperrt_start, meldung
+
+    @app.callback(
+        Output(model_editor.HOST, "children"),
+        Input("cfg-editor-refresh", "data"),
+        State(STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def _model_editor(_refresh, draft: dict | None):
+        """Den Modell-Bereich neu zeichnen, wenn sich der Entwurf **strukturell** ändert.
+
+        Nicht am Entwurf selbst: Der Bereich trägt 168 Eingabefelder, und sie
+        unter den Fingern auszutauschen wäre bei jedem Tastendruck ein
+        Fokusverlust. Werte fließen ohnehin über `_sync` in den Store und
+        stehen dort richtig — neu gebaut werden muss nur, wenn eine Größe
+        **dazukommt oder verschwindet**: Preset übernehmen, Property anlegen
+        oder löschen, Segment entfernen, Zurücksetzen. Genau dafür gibt es
+        `cfg-editor-refresh`, und genau daran hängt auch die Schrittfolge.
+
+        Ohne diese Zeilen zeigte der Bereich nach «Werte übernehmen» weiterhin
+        die Zahlen von vorher — richtig im Store, falsch auf dem Schirm.
+        """
+
+        return model_editor.body(draft or {})
+
+    @app.callback(
         Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),
-        Input("cfg-tab-content", "children"),
+        Input(compute_mode.FIELD_ID, "value"),
+        Input("wizard-content-host", "children"),
         State(STORE_ID, "data"),
     )
-    def _llm_status(_content, draft: dict | None):
+    def _llm_status(_mode, _content, draft: dict | None):
         """Erreichbarkeit von Ollama nachreichen, sobald ein Tab steht.
 
         Bewusst nach dem Rendern: Die Abfrage kann mehrere Sekunden dauern —
         unter Windows laeuft `localhost` erst in einen IPv6-Timeout — und so
         lange soll die Seite nicht warten.
+
+        Ausgelöst vom Rechenmodus und vom Schrittwechsel,
+        **nicht** vom Store: Bei jedem Tastendruck zu fragen würde die Oberfläche
+        an einen Netzwerk-Timeout hängen.
         """
 
         return [compute_mode.availability(draft or {})] * len(ctx.outputs_list)
@@ -228,20 +293,33 @@ def register_callbacks(app) -> None:
         Output(STORE_ID, "data", allow_duplicate=True),
         Output("cfg-editor-refresh", "data"),
         Output("cfg-status", "children"),
+        # **Dieselbe Meldung an beiden Orten.** Eine Aktion kann aus der
+        # Schrittfolge oder aus dem Modell-Bereich kommen, und der jeweils
+        # andere ist dann ausgeblendet. Sie nur an einen zu schreiben hiesse,
+        # die Haelfte aller Rueckmeldungen ins Nichts zu schicken -- genau das
+        # war zwischen W3.1 und W3.2 der Fall.
+        Output(model_editor.STATUS, "children"),
         Input({"type": c.ACTION, "action": ALL}, "n_clicks"),
-        Input({"type": macro.PROP_DELETE, "prop": ALL}, "n_clicks"),
-        Input({"type": micro.SEGMENT_DELETE, "segment": ALL}, "n_clicks"),
+        # **Die schreibenden Aktionen liefern `submit_n_clicks`** (P1.9-W3.2):
+        # Sie stecken in einer `ConfirmDialogProvider`, und die meldet erst,
+        # wenn jemand die Rückfrage bejaht hat. Ein Callback kann nicht beide
+        # Eigenschaften derselben ID-Menge abhören — deshalb tragen sie einen
+        # eigenen Typ.
+        Input({"type": c.WRITE, "action": ALL}, "submit_n_clicks"),
+        Input({"type": delta.REVERT, "feld": ALL}, "n_clicks"),
+        Input({"type": macro.PROP_DELETE, "prop": ALL}, "submit_n_clicks"),
+        Input({"type": micro.SEGMENT_DELETE, "segment": ALL}, "submit_n_clicks"),
         State(STORE_ID, "data"),
         State({"type": c.FREE, "name": ALL}, "value"),
         State("cfg-editor-refresh", "data"),
         prevent_initial_call=True,
     )
-    def _actions(_a, _p, _s, draft: dict | None, _free, refresh):
+    def _actions(_a, _w, _r, _p, _s, draft: dict | None, _free, refresh):
         trigger = ctx.triggered_id
         if not isinstance(trigger, dict) or not any(
             entry["value"] for entry in ctx.triggered if entry["value"]
         ):
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
 
         free = ctx.states_list[1]
         data = dict(draft or {})
@@ -250,17 +328,54 @@ def register_callbacks(app) -> None:
         try:
             data, message, kind = _handle_action(trigger, data, free)
         except Exception as exc:  # noqa: BLE001 - Datei- und Validierungsfehler gehören in die UI
-            return no_update, no_update, ui.alert(str(exc), "error")
+            fehler = ui.alert(str(exc), "error")
+            return no_update, no_update, fehler, fehler
 
         if message is None:
-            return no_update, no_update, no_update
-        return data, version, ui.alert(message, kind)
+            return no_update, no_update, no_update, no_update
+        meldung = ui.alert(message, kind)
+        return data, version, meldung, meldung
+
+
+def _namensvorschlag(draft: dict) -> str:
+    """Ein Name, der einen Lauf in der Liste unterscheidbar macht.
+
+    Drei Angaben, in der Reihenfolge, in der man sie sucht: **woher** der Lauf
+    ausgeht, **wie lang** er ist, und **wann** er entstanden ist. Der Rechenmodus
+    steht bewusst nicht dabei — er steht im Artefakt und macht den Namen nur
+    länger.
+    """
+
+    from datetime import datetime
+
+    if draft.get("run_all_sweeps"):
+        woher = "Szenario-Vergleich"
+    elif draft.get("scenario_mode") == "sweep" and draft.get("sweep_id"):
+        preset = next(
+            (s for s in list_sweep_presets() if s.id == draft["sweep_id"]),
+            None,
+        )
+        woher = preset.name if preset is not None else str(draft["sweep_id"])
+    elif draft.get("scenario_mode") == "custom":
+        woher = "Eigene Einstellungen"
+    else:
+        woher = "Standard-Ausgangslage"
+
+    stempel = datetime.now().strftime("%Y-%m-%d %H:%M")
+    if draft.get("run_all_sweeps"):
+        return f"{woher} · {stempel}"
+    return f"{woher} · {draft.get('rounds', '?')} Ticks · {stempel}"
 
 
 def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | None, str]:
     """Eine Aktion ausführen und (neuer Draft, Meldung, Meldungsart) zurückgeben."""
 
     kind = trigger.get("type")
+
+    if kind == delta.REVERT:
+        feld = trigger["feld"]
+        data = delta.zuruecknehmen(data, feld)
+        return data, f"«{delta._name(feld)}» auf den Auslieferungswert zurückgesetzt.", "success"
 
     if kind == macro.PROP_DELETE:
         prop = trigger["prop"]
@@ -278,7 +393,18 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
         return data, f"Segment «{segment}» gelöscht.", "success"
 
+    # `WRITE` und `ACTION` tragen denselben Schlüssel `action`; welcher Typ eine
+    # Aktion trägt, sagt nur, ob eine Rückfrage davorsteht.
     action = trigger.get("action")
+
+    if action == "suggest-name":
+        # **Ein Vorschlag ist eine Handlung, kein Rückfall** (P1.9-W4.1). Den
+        # Namen beim Rendern vorzubelegen wäre der Fehler aus Befund A7: Der
+        # Wert käme aus dem Quelltext statt aus einer Entscheidung, und
+        # `touched()` meldete danach Einstellungen, die niemand vorgenommen hat.
+        # Hier drückt jemand auf einen Knopf — das ist eine Entscheidung.
+        data["simulation_name"] = _namensvorschlag(data)
+        return data, f"Name gesetzt: «{data['simulation_name']}»", "success"
 
     if action == "reset":
         return (

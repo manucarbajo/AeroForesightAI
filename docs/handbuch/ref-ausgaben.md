@@ -1,7 +1,7 @@
 Jeder Lauf legt ein eigenes Verzeichnis unter `outputs/` an, benannt nach seiner
 Run-ID. Läufe eines Szenario-Vergleichs liegen unter `outputs/sweeps/`.
 
-Alle Dateien sind im Tab **Dateien** einsehbar und herunterladbar.
+Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 
 ## Ergebnisse zum Lesen
 
@@ -20,7 +20,7 @@ Alle Dateien sind im Tab **Dateien** einsehbar und herunterladbar.
 | `price_history.json` | Preisverlauf mit Nachfrageniveau und Buchungsrate |
 | `event_log.json` | Alle Ereignisse, einschließlich der als `[delta:…]` markierten Python-Änderungen |
 | `round_history.json` | Der Zustand je Runde |
-| `run_metadata.json` | Ticks, Modell, Zeitstempel, ob das Marktmodell aktiv war, ob der Lauf beeinträchtigt war — und woraus er entstanden ist (Seed, Rechenmodus, Konfigurations-Fingerabdruck, Codestand) |
+| `run_metadata.json` | Ticks, Modell, Zeitstempel, **Rechendauer**, ob das Marktmodell aktiv war, ob der Lauf beeinträchtigt war — und woraus er entstanden ist (Seed, Rechenmodus, Konfigurations-Fingerabdruck, Codestand) |
 | `llm_incidents.json` | Nur vorhanden, wenn Aufrufe an das Sprachmodell ins Leere gingen: welcher Tick, welcher Aufrufer, welcher Fehler |
 | `segment_analysis.json` | Auswertung nach Segmenten |
 | `cib_matrix.json` | Die im Lauf verwendete Einflussmatrix |
@@ -45,6 +45,7 @@ welchen Bedingungen er lief.
 | `mock_llm`, `deterministic_only` | Die beiden Schalter einzeln, für die maschinelle Auswertung. |
 | `config_fingerprint` | Je ein Kurzhash über Simulationskonfiguration, Systemgrößen, Faktoren, Akteursprofile und Einflussmatrix. |
 | `code_version` | Git-Commit, Branch und ob der Arbeitsbaum dabei ungesicherte Änderungen trug. `null`, wenn kein Repository verfügbar war. |
+| `elapsed_seconds` | Wie lange der Lauf **gerechnet** hat, in Sekunden — die reine Tick-Zeit ohne das Schreiben der Artefakte danach. Aus diesen Werten schätzt der Prüfschritt, wie lange der nächste Lauf dauert; ohne sie zeigt er dort nichts. Läufe von vor August 2026 haben das Feld nicht. |
 | `model`, `base_url`, `temperature`, `max_tokens` | Das befragte Sprachmodell und seine Einstellungen. Bei einem Lauf **ohne** Modell (`mock_llm`, `deterministic_only`) stehen alle vier auf `null` — die Felder beschreiben dort nichts. Ein Sweep behält seinen Modellnamen, denn dort schreibt das Modell den Abschlusstext. |
 
 Der Fingerabdruck beschreibt, **was gelaufen ist** — nicht, was gerade in
@@ -63,7 +64,7 @@ beantwortete genau die Frage nicht mehr, für die er da ist. Ein Lauf, den Sie
 aus einem Checkpoint fortsetzen, behält den Fingerabdruck des ursprünglichen
 Laufs: Er setzt dieselbe Konfiguration fort.
 
-Im Dashboard zeigt der Tab **Übersicht** Rechenmodus, Seed und Codestand direkt
+Im Dashboard zeigt der Ansicht **Übersicht** Rechenmodus, Seed und Codestand direkt
 unter den Kennzahlen. Ein Lauf ohne Sprachmodell trägt dort einen Hinweis: Die
 Zahlen sind vollwertig, die Texte der Akteure stammen aus Platzhaltern.
 
@@ -98,7 +99,7 @@ Abfrage weiterhin, aber gröber.
 
 Unter `figures/` liegen sechs Diagramme im PNG-Format plus eine
 `manifest.json` mit ihren Titeln. Sie entstehen, wenn beim Start
-«Auswertungsgrafiken erzeugen» aktiv war, und lassen sich im Tab **Figures**
+«Auswertungsgrafiken erzeugen» aktiv war, und lassen sich in der Ansicht **Figures**
 unter «PNG-Export» jederzeit neu erzeugen.
 
 | Datei | Inhalt |

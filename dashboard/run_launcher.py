@@ -51,6 +51,13 @@ class RunLaunchConfig:
     runs: int = 1
     generate_figures: bool = True
     quiet: bool = True
+    #: Startpreis, falls im Assistenten gesetzt (P1.9-W1.5). **Dieses Feld hat
+    #: gefehlt**, und weil `launch_from_draft` den Entwurf durch diese
+    #: Datenklasse schickt (`draft_to_launch_config` → `launch_config_to_draft`),
+    #: fiel der Wert dabei lautlos heraus: `build_custom_sweep_from_draft` wertet
+    #: ihn korrekt aus, er kam dort nur nie an. «Startpreis selbst festlegen» war
+    #: über das Dashboard wirkungslos, über die CLI nicht.
+    base_price: float | None = None
 
 
 @dataclass(frozen=True)
@@ -103,6 +110,7 @@ def launch_config_to_draft(config: RunLaunchConfig) -> ConfigDraft:
     draft.run_all_sweeps = config.run_all_sweeps
     draft.run_count = max(1, int(config.runs))
     draft.generate_figures = config.generate_figures
+    draft.base_price = config.base_price
     return draft
 
 
@@ -138,6 +146,7 @@ def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
         runs=max(1, int(draft.run_count)),
         generate_figures=draft.generate_figures,
         quiet=False,
+        base_price=draft.base_price,
     )
 
 
@@ -146,11 +155,13 @@ def launch_from_draft(
     *,
     repo_root: Path | None = None,
     on_progress: Callable[[str], None] | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> RunLaunchResult:
     return launch_simulation(
         draft_to_launch_config(draft),
         repo_root=repo_root,
         on_progress=on_progress,
+        should_stop=should_stop,
     )
 
 
@@ -159,6 +170,7 @@ def launch_simulation(
     *,
     repo_root: Path | None = None,
     on_progress: Callable[[str], None] | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> RunLaunchResult:
     """Run one simulation, multi-run batch, or sweep batch and persist outputs."""
 
@@ -201,13 +213,33 @@ def launch_simulation(
                 deterministic_only=config.deterministic_only,
                 checkpoint_interval=max(0, int(config.checkpoint_interval)),
                 verbose_ticks=True,
+                # **Der Abbruch reicht bis in die Tick-Schleife** (P1.9-W4.5).
+                # Der Sweep-Pfad bekommt ihn nicht: `run_all_sweeps` baut seinen
+                # Runner selbst, und ihn dafür zu öffnen wäre eine Änderung an
+                # seinem Vertrag (W1.1) — das gehört in ein eigenes Paket.
+                should_stop=should_stop,
             ),
         )
 
     def _run_body() -> RunLaunchResult:
         if config.run_all_sweeps:
             run_all_sweeps(
-                ticks_override=int(config.rounds) if config.rounds else None,
+                # **Kein `ticks_override` mehr vom Dashboard aus** (P1.9-W1.2).
+                #
+                # Hier stand `int(config.rounds) if config.rounds else None`, und
+                # `rounds` hat immer einen Wert — jedes Szenario lief also mit der
+                # Länge des Entwurfs statt mit seiner eigenen `max_ticks`. Schritt 1
+                # des Assistenten warnt wörtlich davor («Angelegt ist es auf N
+                # Ticks»), und der Weg «Szenario-Vergleich starten» springt an
+                # dieser Frage vorbei: Man sah sie nie und bekam trotzdem ihre
+                # Wirkung.
+                #
+                # Woran erkennt man «bewusst gewählt»? Der Entwurf hat kein solches
+                # Signal — 40 ist ein Vorgabewert, kein Wunsch. Die CLI hat es:
+                # `--ticks` steht auf `None`, bis jemand es angibt. Sie behält den
+                # Übersteuerungsweg deshalb; das Dashboard gibt ihn auf. Ein
+                # Vergleich rechnet jedes Szenario so lang, wie es angelegt ist.
+                ticks_override=None,
                 sweep_filter=None,
                 verbose=True,
             )

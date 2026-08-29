@@ -12,6 +12,17 @@ heißt sie Preset.
 **Auslastung** — Hier gleichbedeutend mit Buchungsrate. Nicht die Auslastung
 eines einzelnen Flugzeugs.
 
+**Bedienfeld** — Die linke Zone des Leitstands: was eingestellt ist, der
+Preflight, der Start-Knopf. Bewusst **kein** Formular — eingestellt wird im
+Bereich «Einrichten». So bleibt der Start-Knopf immer sichtbar, statt hinter
+sechzig Eingabefeldern zu verschwinden.
+
+**Beispieldatensatz** — Was der Leitstand zeigt, solange kein einziger Lauf
+gerechnet wurde: erfundene, aber plausible Zahlen, damit die Ansicht nicht leer
+bleibt. Er ist überall als solcher markiert — Abzeichen in der Kopfzeile, Banner
+über dem Viewport, eigene Farbe — und verschwindet mit dem ersten echten Lauf.
+Er wird nirgends gespeichert.
+
 **Buchungsrate** — Anteil der simulierten Bevölkerung, der sich in einer Runde
 für eine Reise entscheidet. Ergebnis vieler Einzelentscheidungen, kein
 Parameter.
@@ -22,6 +33,17 @@ Kombination von Faktorzuständen in sich stimmig ist. Siehe
 
 **Dämpfung** — Bremst die Preisreaktion der Airline. Niedrige Werte ergeben
 ruhigere Preisverläufe.
+
+**Einrichten** — Der Bereich, in dem ein Lauf festgelegt wird, und der erste in
+der Navigation: Man richtet ein, sieht dann zu, und wertet zuletzt aus. Er
+beginnt mit dem **Einstieg** und läuft danach als Schrittfolge; dabei bekommt
+er den ganzen Bildschirm — Bedienfeld, Telemetrie und Zeitleiste treten zurück.
+Gestartet wird am Ende der Schrittfolge; der Knopf im Bedienfeld tut dasselbe.
+
+**Einstieg** — Die Auswahl, die beim Öffnen von «Einrichten» steht: neuen Lauf
+einrichten, Szenario-Vergleich starten, oder die letzten Einstellungen
+weiterverwenden. Die ersten beiden legen zugleich fest, ob *ein* Lauf gerechnet
+wird oder *alle* Szenarien; der dritte fasst nichts an.
 
 **Faktor** — Eine von sieben Zustandsvariablen, die die Welt in groben Zügen
 beschreiben, jeweils mit zwei möglichen Zuständen. Siehe
@@ -35,8 +57,26 @@ beschreiben, jeweils mit zwei möglichen Zuständen. Siehe
 **Konsistenz** — Maß dafür, wie gut die gleichzeitig angenommenen Faktorzustände
 zusammenpassen. Ergebnis der CIB-Bewertung.
 
+**Schrittfolge** — Die Form des Einrichtens seit August 2026: eine Frage je
+Bildschirm, mit «Zurück» und «Weiter» und einer Liste aller Schritte daneben.
+Drei davon genügen bis zum Start, der Rest ist optional. «Zurück» auf dem ersten
+Schritt führt zurück auf den **Einstieg**.
+
+**Ladebildschirm** — Was der Leitstand zeigt, solange ein Lauf rechnet: wie weit
+er ist, was er rechnet, und die aufgeklappte Konsole. Er tritt an die Stelle der
+Szene, weil die währenddessen einen anderen, älteren Lauf zeigen würde.
+
+**Fortschrittsfenster** — Die kleine Anzeige unten rechts, die den laufenden Lauf
+im Blick behält, während man in einem anderen Bereich arbeitet. Sie zeigt und
+führt zum Ladebildschirm; abbrechen kann man von dort nicht.
+
 **Lauf** — Eine Folge von Ticks aus einer festgelegten Ausgangslage. Erzeugt ein
 eigenes Verzeichnis unter `outputs/`.
+
+**Leitstand** — Die Form der Oberfläche: ein Bildschirm mit fünf Bereichen —
+Kopfzeile, Parameter links, Viewport in der Mitte, Telemetrie rechts, Zeitleiste
+unten — statt mehrerer Seiten hintereinander. Gedacht für den Fall, dass
+Einstellung und Wirkung gleichzeitig im Blick bleiben sollen.
 
 **Logit-Modell** — Das Verfahren, mit dem aus den Merkmalen einer Person eine
 Buchungsentscheidung wird. Siehe
@@ -73,11 +113,20 @@ Segmenten angehören.
 Ölpreis, Einkommensindex und weitere. Siehe
 [Systemgrößen](/doku/ref-systemgroessen).
 
+**Szene** — Die Darstellung in der Mitte des Leitstands: die simulierte
+Bevölkerung zu **einem** Tick, jeder Punkt eine Person. Sie folgt der
+Zeitleiste; ihre Achsen stehen über den ganzen Lauf fest, damit eine Bewegung im
+Bild eine Bewegung der Bevölkerung ist und nicht eine nachgeführte Achse.
+
 **Szenario** — Eine mögliche Fortsetzung nach dem Lauf, nicht der Lauf selbst.
 Jeder Lauf erzeugt drei davon.
 
 **Tick** — Eine Modellrunde. Ohne Kalenderbedeutung. Siehe
 [Tick, Lauf und Szenario](/doku/tick-und-lauf).
+
+**Telemetrie** — Der rechte Bereich des Leitstands: Kennzahlen des gewählten
+Ticks, dieselben Größen als Verlauf, und die Konsole mit Ereignissen,
+Modellausfällen und dem Fortschritt eines laufenden Laufs.
 
 **Tripleset** — Die drei Szenarien am Ende eines Laufs: Trend-Fortsetzung,
 Alternative und Spannungs-Szenario.
@@ -88,6 +137,11 @@ anzupassen. Im Modell der Regelkreis unter
 
 **Zahlungsbereitschaft** — Der Betrag, den eine Person höchstens für ein Ticket
 auszugeben bereit ist. Im Englischen WTP, willingness to pay.
+
+**Zeitleiste** — Die Leiste am unteren Rand des Leitstands. Sie ist die
+**einzige** Zeitachse der Oberfläche: Szene, Kennzahlen und Verläufe folgen alle
+dem Tick, der hier eingestellt ist. Die Marker darunter zeigen, wo im Lauf etwas
+passiert ist.
 
 **Zufallsstartwert** — Legt fest, welche Bevölkerung gezogen wird. Ein einzelner
 Lauf ist **auch ohne eigenen Startwert** wiederholbar: Dann gilt ein

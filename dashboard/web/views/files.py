@@ -28,7 +28,8 @@ MAX_TABLE_ROWS = 2000
 LAZY_THRESHOLD_BYTES = 256 * 1024
 
 
-def _table(path: Path) -> html.Div:
+def _table(path: Path, mode: str = theme.LIGHT) -> html.Div:
+    tone = theme.palette(mode)
     import pandas as pd
 
     try:
@@ -56,9 +57,9 @@ def _table(path: Path) -> html.Div:
                 "fontFamily": theme.FONT_BODY,
                 "fontSize": "13px",
                 "padding": "8px 12px",
-                "color": theme.SLATE[700],
+                "color": tone["text-body"],
                 "border": "none",
-                "borderBottom": f"1px solid {theme.SLATE[100]}",
+                "borderBottom": f"1px solid {tone['border-subtle']}",
                 "textAlign": "left",
                 "maxWidth": "260px",
                 "overflow": "hidden",
@@ -68,11 +69,11 @@ def _table(path: Path) -> html.Div:
                 "fontFamily": theme.FONT_HEADLINE,
                 "fontWeight": "600",
                 "fontSize": "12px",
-                "color": theme.SLATE[900],
-                "backgroundColor": theme.SLATE[50],
-                "borderBottom": f"1px solid {theme.SLATE[200]}",
+                "color": tone["text"],
+                "backgroundColor": tone["surface-inset"],
+                "borderBottom": f"1px solid {tone['border']}",
             },
-            style_filter={"backgroundColor": theme.SLATE[50]},
+            style_filter={"backgroundColor": tone["surface-inset"]},
         )
     ]
     if total > MAX_TABLE_ROWS:
@@ -85,21 +86,21 @@ def _table(path: Path) -> html.Div:
     return html.Div(children, className="af-table")
 
 
-def _content(path: Path, kind: str) -> html.Div:
+def _content(path: Path, kind: str, mode: str = theme.LIGHT) -> html.Div:
     if kind == "json":
         try:
             return ui.json_view(json.loads(path.read_text(encoding="utf-8")), max_height="40rem")
         except (json.JSONDecodeError, OSError):
             return ui.code_block(read_run_file(path), max_height="40rem")
     if kind == "csv":
-        return _table(path)
+        return _table(path, mode)
     if kind == "md":
         return ui.markdown(read_run_file(path))
     if kind == "png":
         url = run_file_url(path)
         if not url:
             return ui.alert("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warning")
-        return html.Img(src=url, className="w-full rounded border border-slate-200")
+        return html.Div(html.Img(src=url, className="w-full rounded"), className="af-paper")
     return ui.code_block(read_run_file(path), max_height="40rem")
 
 
@@ -120,12 +121,12 @@ def _download_link(path: Path):
     return html.A(
         [ui.icon("download", "text-sm"), "Herunterladen"],
         href=url,
-        className="inline-flex items-center gap-2 px-4 py-2 font-body text-sm font-medium "
-        "text-navy-800 bg-white border border-slate-200 rounded hover:bg-slate-50",
+        className="af-btn af-btn--secondary inline-flex items-center gap-2 px-4 py-2 "
+        "font-body text-sm font-medium",
     )
 
 
-def _view(run_dir: Path, relative_path: str):
+def _view(run_dir: Path, relative_path: str, mode: str = theme.LIGHT):
     """Inhalt und Download-Link für eine Datei — im Layout wie im Callback."""
 
     entry = next(
@@ -157,12 +158,12 @@ def _view(run_dir: Path, relative_path: str):
             ]
         )
     else:
-        content = _content(entry.absolute_path, entry.kind)
+        content = _content(entry.absolute_path, entry.kind, mode)
 
     return html.Div([header, content]), _download_link(entry.absolute_path)
 
 
-def render(run_dir: Path, run_id: str) -> html.Div:
+def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     from dash import dcc
 
     options = _options(run_dir)
@@ -170,7 +171,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
         return ui.alert("Keine Dateien gefunden.", "warning")
 
     first = options[0]["value"]
-    content, download = _view(run_dir, first)
+    content, download = _view(run_dir, first, mode)
     return html.Div(
         [
             html.Div(

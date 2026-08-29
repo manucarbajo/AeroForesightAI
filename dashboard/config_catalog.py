@@ -17,7 +17,7 @@ from src.orchestration.scenario_sweeps import (
     load_all_sweep_configs,
     load_sweep_config,
 )
-from src.validation import collect_state_errors, validate_llm_settings
+from src.validation import collect_state_errors, field_of, issue, validate_llm_settings
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -487,7 +487,12 @@ def apply_sweep_to_draft(draft: ConfigDraft, sweep: SweepConfig) -> ConfigDraft:
     for fo in sweep.factor_overrides:
         factor_states[fo.factor_id] = fo.initial_state
 
-    draft.scenario_mode = "sweep"
+    # «Werte dieses Szenarios übernehmen» heißt: ab hier sind es *meine* Werte.
+    # Der Modus muss deshalb auf `custom` wechseln — im Modus `sweep` gilt seit
+    # P1.1 ausschließlich die Preset-Datei, die eben übernommenen Werte im
+    # Entwurf wären dort wirkungslos. `docs/handbuch/presets.md` beschreibt
+    # diesen Wechsel schon länger; bis P1.1 blieb der Modus trotzdem auf `sweep`.
+    draft.scenario_mode = "custom"
     draft.sweep_id = sweep.id
     draft.rounds = sweep.max_ticks
     draft.property_edits = prop_edits
@@ -571,14 +576,22 @@ def prepare_simulation_state(draft: ConfigDraft):
     if draft.simulation_description:
         state.config.description = draft.simulation_description
 
+    # Ein gewähltes Preset gilt **unvermischt** (seit P1.1). Vorher wurde erst
+    # das Preset angewendet und danach der Entwurf darübergelegt — und weil
+    # `apply_custom_overrides` per Default an ist und der Entwurf die
+    # Datei-Defaults aus `properties.json` mitführt, hat die zweite Runde die
+    # erste stillschweigend zurückgedreht: `business_as_usual` verspricht eine
+    # konstante CO₂-Abgabe von 50 und rechnete im Dashboard trotzdem mit dem
+    # Sprung auf 120 in Tick 15. Über die CLI (`run_single_sweep`) stimmte es,
+    # nur dieser Pfad nicht. Wer von einem Preset ausgehen und dann eigene
+    # Werte setzen will, nimmt «Werte übernehmen» — das schaltet auf `custom`.
     if draft.scenario_mode == "sweep" and draft.sweep_id:
         sweep_path = SWEEPS_DIR / f"{draft.sweep_id}.json"
         if not sweep_path.is_file():
             sweep_path = Path(draft.sweep_id)
         sweep = load_sweep_config(sweep_path)
         state = apply_sweep_overrides(state, sweep)
-
-    if draft.apply_custom_overrides or draft.scenario_mode == "custom":
+    elif draft.apply_custom_overrides or draft.scenario_mode == "custom":
         custom = build_custom_sweep_from_draft(draft)
         state = apply_sweep_overrides(state, custom)
 
@@ -597,6 +610,26 @@ def validate_draft(draft: ConfigDraft) -> list[str]:
     Scheitert schon das Bauen des States (fehlende oder kaputte Config-Datei),
     ist das ebenfalls ein Befund und keine Ausnahme, die nach oben durchschlägt.
     """
+
+    # **Vor** dem Bauen des States, nicht danach (P1.9-W1.6): Ein eingeschalteter
+    # Zufallsstartwert ohne Wert lässt `draft_to_launch_config` mit
+    # `TypeError: int() argument ... not 'NoneType'` sterben — kein Befund,
+    # ein Absturz. Erreichbar ist das heute nicht, und zwar aus dem schlechtesten
+    # denkbaren Grund: Der Render-Rückfall in `mode_step` schreibt vorher
+    # stillschweigend eine 42 in den Entwurf. **W5.1 räumt genau das weg** und
+    # macht den Absturz damit erreichbar; diese Prüfung steht deshalb davor.
+    #
+    # Die CLI kommt an dieser Stelle nicht vorbei, weil sie den Schalter gar
+    # nicht kennt: Dort ist ein fehlender Seed schlicht keiner.
+    if draft.use_seed and draft.seed is None:
+        return [
+            issue(
+                "Zufallsstartwert ist eingeschaltet, aber keiner angegeben. "
+                "Entweder eine Zahl eintragen oder den Schalter ausschalten — "
+                "dann rechnet der Lauf mit dem Standardwert.",
+                field="seed",
+            )
+        ]
 
     try:
         state = prepare_simulation_state(draft)
@@ -626,6 +659,30 @@ def validate_draft(draft: ConfigDraft) -> list[str]:
         )
 
     return errors
+
+
+def issues_by_field(errors: list[str]) -> dict[str, list[str]]:
+    """Befunde nach dem Feld gruppieren, an dem sie hängen.
+
+    Was kein Feld trägt, taucht hier nicht auf — solche Befunde gehören in die
+    gesammelte Liste vor dem Start, nicht unter ein Eingabefeld. Die Zuordnung
+    kommt aus `src/validation.py` und nicht aus einer Tabelle hier: Eine
+    Schlüsselwort-Tabelle bräche still, sobald jemand einen Meldungstext
+    umformuliert.
+    """
+
+    grouped: dict[str, list[str]] = {}
+    for entry in errors:
+        name = field_of(entry)
+        if name:
+            grouped.setdefault(name, []).append(str(entry))
+    return grouped
+
+
+def unfielded_issues(errors: list[str]) -> list[str]:
+    """Die Befunde, für die es kein Eingabefeld gibt."""
+
+    return [str(entry) for entry in errors if not field_of(entry)]
 
 
 def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:

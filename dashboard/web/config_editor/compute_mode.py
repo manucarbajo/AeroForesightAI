@@ -60,6 +60,22 @@ OPTIONS = [
 ]
 
 
+#: Dieselben drei Moeglichkeiten in zwei Worten. Das Bedienfeld hat fuer den
+#: ganzen Satz keinen Platz, und ein abgeschnittener Satz ist schlechter als
+#: eine kurze Bezeichnung.
+SHORT_LABELS = {
+    WITH_LLM: "Mit Sprachmodell",
+    MOCK: "Ohne Sprachmodell",
+    NUMBERS_ONLY: "Nur Zahlen",
+}
+
+
+def short_label(draft: dict) -> str:
+    """Der Rechenmodus in zwei Worten."""
+
+    return SHORT_LABELS.get(of(draft), "—")
+
+
 def of(draft: dict) -> str:
     """Aus den beiden Draft-Feldern den Modus ableiten."""
 

@@ -1,9 +1,14 @@
-"""Wiederverwendbare Bausteine im Landingpage-Stil.
+"""Wiederverwendbare Bausteine des Leitstands.
 
-Die Klassennamen sind Tailwind-Utilities — dieselbe Konfiguration, die
-`aeroforesight-ai-landing-page/index.html` lädt. Damit bleibt die Optik ohne
-zweites Design-System deckungsgleich; alles, was Utilities nicht abdecken
-(Dropdowns, Tabs, Plotly-Modebar), steht in `assets/dashboard.css`.
+Die Klassennamen sind Tailwind-Utilities für **Layout, Abstand und Typografie**
+— dieselbe Konfiguration, die `aeroforesight-ai-landing-page/index.html` lädt.
+
+**Farben stehen nicht darunter.** Sie kommen ausschließlich über `af-*`-Klassen
+aus `assets/dashboard.css`, die ihre Werte aus den semantischen Tokens von
+`theme.py` beziehen. Der Grund ist der Dark Mode: `bg-white` ist im dunklen
+Modus eine falsche Aussage, `af-surface` ist in beiden Modi dieselbe richtige.
+`tests/test_web_theme.py` prüft mechanisch, dass keine Farbklasse zurückkehrt —
+eine gepflegte Liste finge nur den Rückfall an bekannter Stelle.
 """
 
 from __future__ import annotations
@@ -17,32 +22,37 @@ from dashboard.web import routing
 
 # --- Klassenbausteine ------------------------------------------------------
 
-CARD = "bg-white border border-slate-200 rounded-lg"
+CARD = "af-card"
 CARD_PAD = f"{CARD} p-5 sm:p-6"
-LABEL = "block font-body text-sm font-medium text-slate-700 mb-1.5"
-HINT = "font-body text-xs text-slate-500 mt-1.5 leading-relaxed"
-CAPTION = "font-body text-xs text-slate-500"
-H1 = "font-headline text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight"
-H2 = "font-headline text-xl font-semibold text-slate-900 tracking-tight"
-H3 = "font-headline text-base font-semibold text-slate-900"
+LABEL = "block font-body text-sm font-medium af-text-body mb-1.5"
+HINT = "font-body text-xs af-text-muted mt-1.5 leading-relaxed"
+CAPTION = "font-body text-xs af-text-muted"
+H1 = "font-headline text-2xl sm:text-3xl font-bold af-text tracking-tight"
+H2 = "font-headline text-xl font-semibold af-text tracking-tight"
+H3 = "font-headline text-base font-semibold af-text"
 
 _BUTTON_BASE = (
-    "inline-flex items-center justify-center gap-2 px-5 py-2.5 font-body text-sm "
-    "font-medium rounded transition-colors duration-200 border cursor-pointer "
-    "disabled:opacity-50 disabled:cursor-not-allowed"
+    "af-btn inline-flex items-center justify-center gap-2 px-5 py-2.5 font-body text-sm "
+    "font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 )
 _BUTTON_VARIANTS = {
-    "primary": "bg-navy-800 text-white border-navy-800 hover:bg-navy-700 shadow-sm",
-    "secondary": "bg-white text-navy-800 border-slate-200 hover:bg-slate-50",
-    "danger": "bg-white text-rose-800 border-rose-200 hover:bg-rose-50",
+    "primary": "af-btn--primary",
+    "secondary": "af-btn--secondary",
+    "ghost": "af-btn--ghost",
+    "danger": "af-btn--danger",
 }
 
 _ALERT_VARIANTS = {
-    "info": ("bg-navy-50 border-navy-200 text-navy-900", "info"),
-    "success": ("bg-teal-50 border-teal-200 text-teal-900", "check_circle"),
-    "warning": ("bg-amber-50 border-amber-200 text-amber-900", "warning"),
-    "error": ("bg-rose-50 border-rose-200 text-rose-900", "error"),
+    "info": ("af-alert--info", "info"),
+    "success": ("af-alert--success", "check_circle"),
+    "warning": ("af-alert--warning", "warning"),
+    "error": ("af-alert--error", "error"),
+    "demo": ("af-alert--demo", "science"),
 }
+
+#: Die vier Stufen der Konsole. Reihenfolge ist Rangfolge — `status.py` und die
+#: Zeitleiste ordnen ihre Marker danach ein.
+LOG_LEVELS = ("muted", "info", "warning", "error")
 
 
 # --- Bausteine -------------------------------------------------------------
@@ -93,19 +103,48 @@ def page_heading(title: str, subtitle: str | None = None) -> html.Div:
     return html.Div(
         [
             html.H1(title, className=H1),
-            html.P(subtitle, className="font-body text-slate-600 mt-2") if subtitle else None,
+            html.P(subtitle, className="font-body af-text-body mt-2") if subtitle else None,
         ],
         className="mb-6",
     )
 
 
 def button(label: str, *, variant: str = "primary", icon_name: str | None = None, **kwargs: Any):
-    children: list[Any] = [label]
+    """Ein Knopf. **Die Beschriftung steht in einem eigenen Träger** (P1.9-W5.5).
+
+    Als blanker Text ließe sie sich nicht ansprechen — und genau das braucht die
+    schmale Breite: Dort werden die Beschriftungen zweitrangiger Knöpfe
+    beschnitten, damit die Fußleiste einzeilig bleibt. **Beschnitten, nicht
+    entfernt**: Der Name bleibt damit im Baum und wird vorgelesen; `display:
+    none` nähme ihn auch der Vorlesesoftware und machte aus dem Knopf ein
+    stummes Symbol.
+    """
+
+    children: list[Any] = [html.Span(label, className="af-btn__label")]
     if icon_name:
         children.append(icon(icon_name, "text-sm"))
     class_name = f"{_BUTTON_BASE} {_BUTTON_VARIANTS.get(variant, _BUTTON_VARIANTS['primary'])}"
     extra = kwargs.pop("className", "")
     return html.Button(children, className=f"{class_name} {extra}".strip(), n_clicks=0, **kwargs)
+
+
+def icon_button(icon_name: str, title: str, *, active: bool = False, **kwargs: Any) -> html.Button:
+    """Quadratische Schaltfläche ohne Beschriftung.
+
+    Für die Media-Controls der Zeitleiste und die Werkzeuge der Kopfzeile. Der
+    Klartext steht als `title` — ohne ihn wäre ein Symbol allein für
+    Screenreader und für Neulinge stumm.
+    """
+
+    extra = kwargs.pop("className", "")
+    state = " af-icon-btn--active" if active else ""
+    return html.Button(
+        icon(icon_name, "text-lg"),
+        className=f"af-icon-btn{state} {extra}".strip(),
+        title=title,
+        n_clicks=0,
+        **{"aria-label": title, **kwargs},
+    )
 
 
 def hint_text(hint: str | None, *, class_name: str = "") -> Any:
@@ -120,31 +159,72 @@ def hint_text(hint: str | None, *, class_name: str = "") -> Any:
     return dcc.Markdown(hint, className=f"af-hint af-md af-md--tight {class_name}".strip())
 
 
-def field(label: str, control: Any, *, hint: str | None = None, class_name: str = "") -> html.Div:
+def field(
+    label: str,
+    control: Any,
+    *,
+    hint: str | None = None,
+    below: Any = None,
+    class_name: str = "",
+) -> html.Div:
+    """Beschriftetes Eingabefeld.
+
+    *below* nimmt auf, was unter Feld und Kurzhinweis gehört — heute der
+    Platzhalter für Fehlermeldungen aus der Konfigurationsprüfung und die
+    aufklappbare Langerklärung aus dem Glossar.
+    """
+
     return html.Div(
         [
             html.Label(label, className=LABEL),
             control,
             hint_text(hint),
+            below,
         ],
         className=class_name,
     )
 
 
-#: `dcc.Checklist` schreibt `display: block` als **Inline-Style** auf das Label.
-#: Inline schlägt Stylesheet — Abstand und Ausrichtung müssen deshalb hier
-#: gesetzt werden, nicht in `dashboard.css`.
-CHECK_LABEL_STYLE = {
-    "display": "flex",
-    "alignItems": "flex-start",
-    "gap": "0.625rem",
-    "padding": "0.3125rem 0",
-    "lineHeight": "1.5",
-    "cursor": "pointer",
-}
+def field_errors(messages: list[str]) -> Any:
+    """Befunde direkt unter dem Feld, das sie betreffen.
+
+    Leere Liste heißt: nichts anzeigen. Der Platzhalter bleibt trotzdem im DOM,
+    damit der Callback ihn füllen kann, sobald sich etwas ändert.
+    """
+
+    if not messages:
+        return None
+    return html.Div(
+        [
+            html.Div(
+                [icon("error", "text-sm shrink-0 mt-0.5"), html.Span(text)],
+                className="flex items-start gap-1.5",
+            )
+            for text in messages
+        ],
+        className="font-body text-xs af-text-negative mt-1.5 leading-relaxed space-y-1",
+    )
 
 
-def checkbox(label: str, *, value: bool, hint: str | None = None, **kwargs: Any) -> html.Div:
+# Anordnung und Ausrichtung von Checkbox, Umschalter und Auswahl stehen in
+# `assets/dashboard.css` (`.af-check label`, `.af-switch label`,
+# `.af-radio label`, `.af-radio--cards label`) — **nicht** hier.
+#
+# Bis Dash 3 ging das nicht: `dcc.Checklist` schrieb `display: block` selbst als
+# Inline-Style auf das Label und haette jede Regel aus dem Stylesheet
+# ueberstimmt. Deshalb lagen die Werte frueher als `labelStyle`-Dicts in diesem
+# Modul. **Dash 4 schreibt nicht mehr inline** — am laufenden System nachgesehen:
+# `label.getAttribute("style")` ist `null`, und die Option traegt jetzt einen
+# `span.dash-options-list-option-wrapper` um das Eingabeelement.
+#
+# Die Dicts wirkten seither nicht mehr. Sie sind entfernt und nicht bloss
+# auskommentiert: Stehengeblieben waeren sie eine Falle, in die genau einmal
+# jemand tritt, der dort etwas aendert und sich wundert, dass nichts passiert.
+
+
+def checkbox(
+    label: str, *, value: bool, hint: str | None = None, below: Any = None, **kwargs: Any
+) -> html.Div:
     """Einzelne Checkbox mit Beschriftung — ersetzt ``st.checkbox``."""
 
     return html.Div(
@@ -155,42 +235,103 @@ def checkbox(label: str, *, value: bool, hint: str | None = None, **kwargs: Any)
                 className="af-check",
                 inputClassName="af-check__input",
                 labelClassName="af-check__label",
-                labelStyle=CHECK_LABEL_STYLE,
                 **kwargs,
             ),
             hint_text(hint, class_name="af-check__hint"),
+            below,
         ]
     )
 
 
-def radio(options: list[dict], *, value: Any, **kwargs: Any) -> dcc.RadioItems:
-    """Auswahl unter sich ausschließenden Möglichkeiten.
+def toggle(
+    label: str, *, value: bool, hint: str | None = None, below: Any = None, **kwargs: Any
+) -> html.Div:
+    """Schalter für einen Systemzustand, der an oder aus ist.
 
-    Wie bei `checkbox` muss das Layout inline gesetzt werden — `dcc.RadioItems`
-    schreibt selbst inline und überstimmt damit jede Regel aus dem Stylesheet.
+    Technisch dieselbe `dcc.Checklist` wie `checkbox` — optisch bewusst etwas
+    anderes: Eine Checkbox wählt aus einer Menge aus, ein Schalter kippt einen
+    Zustand. In einer Parameterspalte, in der beides nebeneinander steht, ist
+    dieser Unterschied ablesbar und nicht bloß dekorativ.
     """
 
-    return dcc.RadioItems(
+    return html.Div(
+        [
+            dcc.Checklist(
+                options=[{"label": label, "value": "on"}],
+                value=["on"] if value else [],
+                className="af-switch",
+                **kwargs,
+            ),
+            hint_text(hint, class_name="af-check__hint"),
+            below,
+        ]
+    )
+
+
+#: Als Kartenraster statt als Liste. Die Beschriftungen werden zu Gitterfeldern;
+#: das Innere bleibt dieselbe Zeile aus Knopf und Text. Fuer Auswahlen mit
+#: vielen Moeglichkeiten und je einem beschreibenden Satz — untereinander waeren
+#: zehn davon drei Bildschirme lang.
+def radio(
+    options: list[dict],
+    *,
+    value: Any,
+    cards: bool = False,
+    legend: str | None = None,
+    **kwargs: Any,
+):
+    """Auswahl unter sich ausschließenden Möglichkeiten.
+
+    Anordnung und Ausrichtung stehen im Stylesheet: `.af-radio label` richtet an
+    der ersten Textzeile aus (eine gerade Spalte von Haken neben den
+    Beschriftungen), `.af-radio--cards label` dagegen **mittig** — eine Karte
+    ist eine Fläche, die man als Ganzes auswählt, und ein Haken bei 12 % ihrer
+    Höhe wirkt oben angeheftet.
+
+    *cards* stellt die Möglichkeiten als Raster nebeneinander statt
+    untereinander. Der Unterschied ist nicht kosmetisch: Bei zehn Optionen mit
+    je einem erklärenden Satz ist die Liste drei Bildschirme lang, das Raster
+    drei Reihen.
+    """
+
+    gruppe = dcc.RadioItems(
         options=options,
         value=value,
-        className="af-radio",
+        className="af-radio af-radio--cards" if cards else "af-radio",
         inputClassName="af-radio__input",
         labelClassName="af-radio__label",
-        labelStyle=CHECK_LABEL_STYLE,
         **kwargs,
+    )
+    if legend is None:
+        return gruppe
+
+    # **`fieldset` und `legend`, nicht nur eine Überschrift daneben**
+    # (P1.9-W5.3). Für einen Screenreader ist eine Reihe von Radioknöpfen ohne
+    # Gruppe eine Reihe unbeschrifteter Optionen: Er liest «Standard-Ausgangslage,
+    # 1 von 10» vor, ohne zu sagen, **wovon** das eine von zehn ist. Die Legende
+    # beantwortet genau das und wird beim Betreten der Gruppe einmal
+    # mitgesprochen.
+    #
+    # Sichtbar ist sie nicht: Der Titel des Schritts steht bereits darüber, und
+    # eine zweite Überschrift wäre für Sehende eine Dopplung. `af-nur-vorlesen`
+    # nimmt sie aus dem Bild, **nicht** aus dem Baum — `display: none` oder
+    # `visibility: hidden` nähmen sie auch dem Screenreader.
+    return html.Fieldset(
+        [html.Legend(legend, className="af-nur-vorlesen"), gruppe],
+        className="af-fieldset",
     )
 
 
 def status_dot(ok: bool, text: str, *, hint: str | None = None) -> html.Div:
     """Zustandsanzeige für etwas, das erreichbar sein kann oder nicht."""
 
-    tone = "bg-teal-600" if ok else "bg-slate-300"
+    tone = "af-status__dot--ok" if ok else "af-status__dot--off"
     return html.Div(
         [
-            html.Span(className=f"inline-block w-2 h-2 rounded-full shrink-0 mt-1.5 {tone}"),
+            html.Span(className=f"af-status__dot mt-1.5 {tone}"),
             html.Div(
                 [
-                    html.Span(text, className="font-body text-sm text-slate-700"),
+                    html.Span(text, className="font-body text-sm af-text-body"),
                     html.P(hint, className=HINT) if hint else None,
                 ]
             ),
@@ -199,37 +340,132 @@ def status_dot(ok: bool, text: str, *, hint: str | None = None) -> html.Div:
     )
 
 
-def metric_tile(label: str, value: Any, hint: str | None = None) -> html.Div:
+def status_indicator(tone: str, text: str, *, hint: str | None = None) -> html.Div:
+    """Der Zustand der Anlage in der Kopfzeile.
+
+    *tone* ist einer der Werte aus `dashboard.web.status` — `ready`, `running`,
+    `degraded`, `demo`. Bei `running` und `demo` pulsiert der Punkt; das ist
+    die einzige Bewegung in der Oberfläche und deshalb eindeutig.
+    """
+
     return html.Div(
         [
-            html.Div(label.upper(), className="font-body text-xs tracking-wider text-slate-500"),
-            html.Div(
-                str(value),
-                className="font-headline text-2xl font-bold text-navy-800 mt-1 tracking-tight",
-            ),
-            html.Div(hint, className=f"{CAPTION} mt-1") if hint else None,
+            html.Span(className="af-status__dot"),
+            html.Span(text),
         ],
-        className=f"{CARD} p-4",
+        className=f"af-status af-status--{tone}",
+        title=hint or text,
     )
 
 
+def badge(text: str, *, variant: str = "default", icon_name: str | None = None) -> html.Span:
+    suffix = "" if variant == "default" else f" af-badge--{variant}"
+    children: list[Any] = [icon(icon_name, "text-xs")] if icon_name else []
+    children.append(text)
+    return html.Span(children, className=f"af-badge{suffix}")
+
+
+def metric_tile(
+    label: str, value: Any, hint: str | None = None, *, prose: bool = False
+) -> html.Div:
+    """Beschriftung über einem Wert, in einer Karte.
+
+    *prose* ist die Fassung für Werte, die **Text** sind statt einer Zahl —
+    «Standard-Ausgangslage», «Ohne Sprachmodell». Der große Zahlensatz (2xl,
+    fett, Ziffern gleicher Breite) ist für sie zu groß: In einer dreispaltigen
+    Reihe trat er aus der Karte heraus und lief in die Nachbarkachel. Die
+    Textfassung setzt kleiner, erlaubt den Umbruch **innerhalb** eines Wortes
+    und schaltet die Ziffernbreite ab, die bei Buchstaben nur Lücken erzeugt.
+
+    `af-tile__value` deckelt in beiden Fällen den Überlauf — eine Karte, aus der
+    Text heraussteht, ist keine Karte.
+    """
+
+    wert = (
+        "font-headline text-base font-semibold af-text-accent mt-1 af-tile__value"
+        if prose
+        else "font-headline text-2xl font-bold af-text-accent mt-1 "
+        "tracking-tight af-num af-tile__value"
+    )
+    return html.Div(
+        [
+            html.Div(label.upper(), className="font-body text-xs tracking-wider af-text-muted"),
+            html.Div(str(value), className=wert),
+            html.Div(hint, className=f"{CAPTION} mt-1") if hint else None,
+        ],
+        className=f"{CARD} p-4 min-w-0",
+    )
+
+
+def kpi_card(
+    label: str,
+    value: Any,
+    *,
+    delta: str | None = None,
+    direction: str | None = None,
+    hint: str | None = None,
+) -> html.Div:
+    """Kennzahl der Telemetrie — kompakter als `metric_tile`, mit Veränderung.
+
+    *direction* ist `up`, `down` oder `None`. Es färbt nur die Veränderung,
+    nicht den Wert: Ob ein steigender Preis gut oder schlecht ist, entscheidet
+    die Fragestellung, nicht die Oberfläche.
+    """
+
+    tone = f" af-kpi__delta--{direction}" if direction in {"up", "down"} else ""
+    return html.Div(
+        [
+            html.Div(label, className="af-kpi__label"),
+            html.Div(str(value), className="af-kpi__value"),
+            html.Div(delta, className=f"af-kpi__delta{tone}") if delta else None,
+            html.Div(hint, className="af-kpi__hint") if hint else None,
+        ],
+        className="af-kpi",
+    )
+
+
+def log_line(level: str, text: str, *, tick: int | str | None = None) -> html.Div:
+    """Eine Zeile der Konsole, nach Stufe gefärbt.
+
+    Info blau, Warnung gelb, Fehler rot — dieselben Rollen wie in `alert`, nur
+    zeilenweise. `muted` trägt, was nur Kontext ist (Fortschrittszeilen).
+    """
+
+    stufe = level if level in LOG_LEVELS else "info"
+    marker = html.Span(f"{tick:>4}" if tick is not None else "    ", className="af-console__tick")
+    return html.Div(
+        [marker, html.Span(text, className="min-w-0")],
+        className=f"af-console__line af-console__line--{stufe}",
+    )
+
+
+def console(lines: Iterable[Any], *, empty: str = "Noch keine Meldungen.") -> html.Div:
+    entries = list(lines)
+    if not entries:
+        return html.Div(
+            html.Div(empty, className="af-console__line af-console__line--muted"),
+            className="af-console",
+        )
+    return html.Div(entries, className="af-console")
+
+
 def alert(text: Any, kind: str = "info", *, class_name: str = "") -> html.Div:
-    classes, icon_name = _ALERT_VARIANTS.get(kind, _ALERT_VARIANTS["info"])
+    tone, icon_name = _ALERT_VARIANTS.get(kind, _ALERT_VARIANTS["info"])
     body = dcc.Markdown(text, className="af-md") if isinstance(text, str) else text
     return html.Div(
         [
             icon(icon_name, "text-lg shrink-0 mt-0.5"),
             html.Div(body, className="font-body text-sm leading-relaxed min-w-0"),
         ],
-        className=f"flex items-start gap-3 border rounded px-4 py-3 {classes} {class_name}".strip(),
+        className=f"af-alert {tone} flex items-start gap-3 px-4 py-3 {class_name}".strip(),
     )
 
 
 def empty_state(text: str, *, hint: str | None = None, icon_name: str = "inbox") -> html.Div:
     return html.Div(
         [
-            icon(icon_name, "text-3xl text-slate-300"),
-            html.P(text, className="font-body text-sm text-slate-600 mt-3"),
+            icon(icon_name, "text-3xl af-text-faint"),
+            html.P(text, className="font-body text-sm af-text-body mt-3"),
             html.P(hint, className=f"{CAPTION} mt-1 max-w-md") if hint else None,
         ],
         className=f"{CARD} flex flex-col items-center justify-center text-center px-6 py-12",
@@ -241,16 +477,9 @@ def accordion(title: Any, *children: Any, open: bool = False, badge: str | None 
 
     summary = html.Summary(
         [
-            icon("chevron_right", "af-acc__chevron text-lg text-slate-400"),
-            html.Span(title, className="font-body text-sm font-medium text-slate-800 flex-1"),
-            (
-                html.Span(
-                    badge,
-                    className="font-body text-xs text-navy-700 bg-navy-50 border border-navy-100 rounded-full px-2 py-0.5",
-                )
-                if badge
-                else None
-            ),
+            icon("chevron_right", "af-acc__chevron text-lg af-text-faint"),
+            html.Span(title, className="font-body text-sm font-medium af-text flex-1"),
+            (html.Span(badge, className="af-badge") if badge else None),
         ],
         className="af-acc__summary flex items-center gap-2 cursor-pointer select-none px-4 py-3",
     )
@@ -279,8 +508,8 @@ def expert(
         [
             html.Summary(
                 [
-                    icon("chevron_right", "af-acc__chevron text-base text-slate-400"),
-                    html.Span(heading, className="font-body text-sm text-slate-600"),
+                    icon("chevron_right", "af-acc__chevron text-base af-text-faint"),
+                    html.Span(heading, className="font-body text-sm af-text-muted"),
                     (
                         html.Span(names, className=f"{CAPTION} truncate hidden sm:inline")
                         if names
@@ -291,20 +520,49 @@ def expert(
             ),
             html.Div(list(children), className="pt-3 pb-1 pl-6"),
         ],
-        className="af-acc af-expert border-t border-slate-100 mt-5",
+        className="af-acc af-expert af-border-t af-border-subtle mt-5",
+    )
+
+
+def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
+    """Die ausführliche Erklärung eines Parameters, aufklappbar am Feld selbst.
+
+    Bis P1.1 stand sie ausschließlich auf der Dokumentationsseite — also nicht
+    dort, wo entschieden wird. Zugeklappt, weil der Kurzhinweis darüber für die
+    meisten reicht; wer mehr will, klappt an Ort und Stelle auf, statt die Seite
+    zu verlassen.
+    """
+
+    return html.Details(
+        [
+            html.Summary(
+                [
+                    icon("chevron_right", "af-acc__chevron text-sm af-text-faint"),
+                    html.Span(label, className=f"{CAPTION} underline decoration-dotted"),
+                ],
+                className="af-acc__summary flex items-center gap-1 cursor-pointer select-none py-1",
+            ),
+            markdown(text, class_name="af-md--tight af-text-body pl-5 pb-1"),
+        ],
+        className="af-acc mt-1.5",
     )
 
 
 def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
-    """Erklärender Fließtext ohne Alarmcharakter — Kontext, keine Meldung."""
+    """Erklärender Fließtext ohne Alarmcharakter — Kontext, keine Meldung.
+
+    **Mit Lesemaß** (P1.9-W5.4): Der Text bricht spätestens bei rund 68 Zeichen
+    um, auch wenn die Spalte breiter ist. `max-width` streckt nichts — in einer
+    engen Zelle bleibt der Hinweis so schmal, wie die Zelle ist.
+    """
 
     return html.Div(
         [
-            icon(icon_name, "text-base text-slate-400 shrink-0 mt-0.5"),
-            dcc.Markdown(text, className="af-md af-md--tight"),
+            icon(icon_name, "text-base af-text-faint shrink-0 mt-0.5"),
+            dcc.Markdown(text, className="af-md af-md--tight af-mass"),
         ],
-        className="flex items-start gap-2.5 font-body text-sm text-slate-600 "
-        "bg-slate-50 border border-slate-200 rounded px-4 py-3",
+        className="flex items-start gap-2.5 font-body text-sm af-text-body "
+        "af-surface-inset af-bordered rounded px-4 py-3",
     )
 
 
@@ -318,22 +576,25 @@ def doc_link(slug: str, label: str = "Im Handbuch nachlesen") -> Any:
     return dcc.Link(
         [label, icon("arrow_forward", "text-xs")],
         href=routing.url(f"doku/{slug}"),
-        className="inline-flex items-center gap-1 font-body text-xs text-slate-500 "
-        "hover:text-navy-800 transition-colors",
+        className="af-link inline-flex items-center gap-1 font-body text-xs",
     )
 
 
 def lede(text: str) -> html.P:
-    """Einleitungssatz über einem Block — sagt, wozu die Einstellungen dienen."""
+    """Einleitungssatz über einem Block — sagt, wozu die Einstellungen dienen.
 
-    return html.P(text, className="font-body text-sm text-slate-600 max-w-3xl mb-4 leading-relaxed")
+    **Mit Lesemaß statt `max-w-3xl`** (P1.9-W5.4): Jene 768 px ergaben gemessen
+    bis zu 108 Zeichen je Zeile. Der Deckel steht jetzt in `ch` — in der
+    Einheit, von der die Zusage handelt.
+    """
+
+    return html.P(text, className="font-body text-sm af-text-body af-mass mb-4 leading-relaxed")
 
 
 def code_block(text: str, *, max_height: str = "24rem") -> html.Pre:
     return html.Pre(
         text,
-        className="af-code font-mono text-xs text-slate-700 bg-slate-50 border border-slate-200 "
-        "rounded p-4 overflow-auto whitespace-pre",
+        className="af-code text-xs p-4 overflow-auto whitespace-pre",
         style={"maxHeight": max_height},
     )
 
@@ -353,7 +614,7 @@ def markdown(text: str, *, class_name: str = "") -> dcc.Markdown:
 
 
 def tabs(tab_id: str, items: Iterable[tuple[str, str]], value: str) -> dcc.Tabs:
-    """Tab-Leiste im Landingpage-Stil (Unterstrich, Navy aktiv)."""
+    """Tab-Leiste im Landingpage-Stil (Unterstrich, Akzent aktiv)."""
 
     return dcc.Tabs(
         id=tab_id,
@@ -374,8 +635,16 @@ def tabs(tab_id: str, items: Iterable[tuple[str, str]], value: str) -> dcc.Tabs:
 
 
 def grid(*children: Any, cols: str = "md:grid-cols-2", gap: str = "gap-4") -> html.Div:
-    return html.Div(list(children), className=f"grid grid-cols-1 {cols} {gap}")
+    """Ein Raster mit `af-grid` als Trägerklasse.
+
+    `af-grid` setzt `min-width: 0` auf die Kinder. Ohne das schrumpft ein
+    Rasterelement nicht unter seinen Inhalt: Ein langes Wort schiebt dann die
+    Spalte auf, statt umzubrechen, und der Nachbar wird herausgedrückt. Genau so
+    trat «Standard-Ausgangslage» im Ladebildschirm aus seiner Kachel.
+    """
+
+    return html.Div(list(children), className=f"af-grid grid grid-cols-1 {cols} {gap}")
 
 
 def divider(class_name: str = "my-6") -> html.Hr:
-    return html.Hr(className=f"border-slate-200 {class_name}")
+    return html.Hr(className=f"af-divider {class_name}")

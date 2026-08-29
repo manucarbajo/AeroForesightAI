@@ -1,46 +1,987 @@
-/* Ergänzt die Tailwind-Utilities um alles, was sich an Dash-Komponenten
-   (Dropdown, Tabs, Slider, Tabelle, Plotly) nicht per Klassenname stylen lässt.
-   Farben sind die Navy-/Slate-Tokens der Landingpage — bewusst als CSS-Variablen,
-   damit hier und in `theme.py` derselbe Wert steht. */
+/* Das Stylesheet des Leitstands.
+
+   Zwei Aufgaben: die **semantische Farbebene** (unten als CSS-Variablen, einmal
+   hell und einmal dunkel) und alles, was sich an Dash-Komponenten (Dropdown,
+   Tabs, Slider, Tabelle, Plotly) nicht per Klassenname stylen lässt.
+
+   Die Variablennamen sind dieselben wie in `theme.py` — dort für alles, was
+   Python einfärbt (Plotly, DataTable-Inline-Styles), hier für alles Übrige.
+   `tests/test_web_theme.py` hält beide Seiten deckungsgleich; eine Farbe, die
+   nur an einer der beiden Stellen existiert, ist ein roter Test.
+
+   **Farben stehen nur hier.** Kein Modul unter `dashboard/web/` schreibt eine
+   Tailwind-Farbklasse (`bg-white`, `text-slate-600`) oder einen Hex-Wert in
+   einen Klassennamen — Tailwind liefert Layout, Abstand und Typografie, die
+   Farbe kommt aus den Tokens. Ohne diese Trennung wäre jeder Dark-Mode-Bruch
+   nur eine Frage der nächsten Änderung. */
+
+/* --- Semantische Tokens: hell -------------------------------------------- */
 
 :root {
-    --navy-50: #f0f4f9;
-    --navy-100: #e0eaf3;
-    --navy-200: #c2d5e7;
-    --navy-300: #94b8d7;
-    --navy-500: #3e76a6;
-    --navy-700: #244b70;
-    --navy-800: #1e3a5f;
-    --navy-900: #1c3453;
+    --canvas: #f8fafc;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-sunken: #f8fafc;
+    --surface-inset: #f1f5f9;
+    --surface-hover: #f8fafc;
+    --overlay: rgba(255, 255, 255, 0.88);
+    --scrim: rgba(15, 23, 42, 0.35);
 
-    --slate-50: #f8fafc;
-    --slate-100: #f1f5f9;
-    --slate-200: #e2e8f0;
-    --slate-300: #cbd5e1;
-    --slate-400: #94a3b8;
-    --slate-500: #64748b;
-    --slate-600: #475569;
-    --slate-700: #334155;
-    --slate-900: #0f172a;
+    --border: #e2e8f0;
+    --border-subtle: #f1f5f9;
+    --border-strong: #cbd5e1;
+
+    --text: #0f172a;
+    --text-body: #334155;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+    --text-inverted: #ffffff;
+
+    --accent: #1E3A5F;
+    --accent-hover: #244b70;
+    --accent-soft: #f0f4f9;
+    --accent-border: #c2d5e7;
+    --accent-text: #1c3453;
+    --focus-ring: rgba(62, 118, 166, 0.25);
+
+    --positive: #0f766e;
+    --positive-soft: #f0fdfa;
+    --positive-border: #99f6e4;
+    --positive-text: #115e59;
+    --negative: #9f1239;
+    --negative-soft: #fff1f2;
+    --negative-border: #fecdd3;
+    --negative-text: #9f1239;
+    --warning: #b45309;
+    --warning-soft: #fffbeb;
+    --warning-border: #fde68a;
+    --warning-text: #92400e;
+
+    --demo: #7c3aed;
+    --demo-soft: #f5f3ff;
+    --demo-border: #ddd6fe;
+    --demo-text: #5b21b6;
+
+    --grid: #e2e8f0;
+    --axis: #cbd5e1;
+    --plot-bg: #ffffff;
+    --paper-bg: #ffffff;
+    --price: #0f766e;
+    --booking: #3e76a6;
+    --neutral: #64748b;
+
+    --console-bg: #122238;
+    --console-text: #e0eaf3;
+    /* Die Konsole ist in beiden Modi dunkel; ihre Stufen sind deshalb hier
+       dieselben wie unten. Der helle Warnton (#b45309) kaeme auf Navy-950 nur
+       auf 3,2 und waere muehsam zu lesen. */
+    --console-info: #94b8d7;
+    --console-warning: #fbbf24;
+    --console-error: #fb7185;
 
     --radius: 0.5rem;
     --font-body: "Inter", sans-serif;
     --font-headline: "Plus Jakarta Sans", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+    /* Zonenmaße des Leitstands. Als Variablen, damit Kopfzeile, Zeitleiste und
+       die klebenden Sprungziele der Doku-Seite denselben Wert benutzen.
+
+       Die Seitenspalten atmen seit P1.6 mit der Fensterbreite: Bei 1280 px
+       nahmen sie zusammen 54 % und liessen dem Viewport 46 % — in einem
+       Leitstand soll die Mitte dominieren. Auf breiten Schirmen bleibt alles
+       wie zuvor, dort war das Verhaeltnis schon richtig. */
+    --shell-header: 3.5rem;
+    --shell-timeline: 5.5rem;
+    --shell-left: clamp(17rem, 18vw, 21rem);
+    --shell-right: clamp(18rem, 19vw, 22rem);
+    /* Breite der Ziehgriffe zwischen den Zonen (P1.7). Als Variable, damit das
+       Skript dieselbe Zahl benutzt wie das Raster. */
+    --shell-gutter: 6px;
 }
 
-html {
+/* --- Semantische Tokens: dunkel ------------------------------------------ */
+/* Nur die Werte werden ersetzt, keine Regel steht doppelt. Damit ist jede
+   Fläche, die einen Token benutzt, in beiden Modi automatisch versorgt. */
+
+html.dark {
+    --canvas: #080d16;
+    --surface: #0e1723;
+    --surface-raised: #13202f;
+    --surface-sunken: #080d16;
+    --surface-inset: #1a2b3d;
+    --surface-hover: #1a2b3d;
+    --overlay: rgba(14, 23, 35, 0.88);
+    --scrim: rgba(0, 0, 0, 0.55);
+
+    --border: #23384d;
+    --border-subtle: #1a2b3d;
+    --border-strong: #31485f;
+
+    --text: #f4f8fc;
+    --text-body: #e8eff6;
+    --text-muted: #8ba0b7;
+    --text-faint: #54708c;
+    --text-inverted: #080d16;
+
+    --accent: #94b8d7;
+    --accent-hover: #c2d5e7;
+    --accent-soft: #15293f;
+    --accent-border: #2d5e8a;
+    --accent-text: #e0eaf3;
+    --focus-ring: rgba(148, 184, 215, 0.28);
+
+    --positive: #2dd4bf;
+    --positive-soft: #0c2b2b;
+    --positive-border: #1d5450;
+    --positive-text: #7ff0e0;
+    --negative: #fb7185;
+    --negative-soft: #2e1520;
+    --negative-border: #66273a;
+    --negative-text: #fda4b0;
+    --warning: #fbbf24;
+    --warning-soft: #2c2110;
+    --warning-border: #5c4517;
+    --warning-text: #fcd34d;
+
+    --demo: #a78bfa;
+    --demo-soft: #231a3c;
+    --demo-border: #4c3a80;
+    --demo-text: #c9b8fd;
+
+    --grid: #1a2b3d;
+    --axis: #23384d;
+    --plot-bg: #0e1723;
+    --paper-bg: #0e1723;
+    --price: #2dd4bf;
+    --booking: #94b8d7;
+    --neutral: #8ba0b7;
+
+    --console-bg: #080d16;
+    --console-text: #d5dfea;
+    --console-info: #94b8d7;
+    --console-warning: #fbbf24;
+    --console-error: #fb7185;
+}
+
+/* --- Dashs eigene Design-Tokens --------------------------------------------- */
+/* Dash 3/4 faerbt seine mitgelieferten Komponenten (Slider, Eingaben, Menues)
+   ueber eine eigene Token-Ebene `--Dash-*` und spritzt deren Definitionen zur
+   Laufzeit hinter dieses Stylesheet. Einzelne Selektoren dagegenzuhalten heisst,
+   jedem neuen Dash-Release hinterherzulaufen; hier wird stattdessen **die
+   Token-Ebene** auf unsere abgebildet. Damit traegt jede Dash-Komponente in
+   beiden Modi die richtigen Farben, auch die, die noch niemand angefasst hat.
+
+   `html:root` statt `:root`, weil Dashs eigener Block ebenfalls auf `:root`
+   sitzt und spaeter eingefuegt wird — bei gleicher Spezifitaet gewaenne er.
+   Am laufenden System unter Dash 4.4.1 aufgefallen: Der Regler der Zeitleiste
+   trug Dashs Violett, und seine Beschriftungen standen im Dark Mode schwarz
+   auf schwarz. */
+
+html:root {
+    --Dash-Fill-Interactive-Strong: var(--accent);
+    --Dash-Fill-Interactive-Weak: var(--surface-inset);
+    --Dash-Fill-Disabled: var(--surface-inset);
+    --Dash-Fill-Inverse-Strong: var(--surface-raised);
+    --Dash-Fill-Primary-Hover: var(--surface-hover);
+    --Dash-Fill-Primary-Active: var(--surface-inset);
+    --Dash-Stroke-Strong: var(--border-strong);
+    --Dash-Stroke-Weak: var(--border);
+    --Dash-Text-Primary: var(--text-body);
+    --Dash-Text-Strong: var(--text);
+    --Dash-Text-Weak: var(--text-muted);
+    --Dash-Text-Disabled: var(--text-faint);
+    --Dash-Shading-Strong: var(--scrim);
+    --Dash-Shading-Weak: var(--scrim);
+}
+
+/* --- Grundlagen ----------------------------------------------------------- */
+
+html,
+body {
+    height: 100%;
+    /* Der Leitstand scrollt in seinen Panes, nicht als Seite. Was überläuft,
+       läuft innerhalb einer Zone über — sonst wandert die Kopfzeile aus dem
+       Bild, während man in der Seitenleiste blättert. */
+    overflow: hidden;
     scroll-behavior: smooth;
 }
 
 body {
     font-family: var(--font-body);
-    color: var(--slate-700);
-    background: var(--slate-50);
+    color: var(--text-body);
+    background: var(--canvas);
+    /* Tabellarische Ziffern in der gesamten Anwendung: Zahlen, die sich im
+       Sekundentakt aktualisieren, dürfen ihre Nachbarn nicht verschieben. */
+    font-variant-numeric: tabular-nums;
+    -webkit-font-feature-settings: "tnum" 1;
+    font-feature-settings: "tnum" 1;
+}
+
+/* Proportionalziffern dort, wo Fließtext läuft — im Satz wirken tabellarische
+   Ziffern zu weit auseinander. */
+.af-md p,
+.af-md li {
+    font-variant-numeric: normal;
+    font-feature-settings: normal;
 }
 
 .material-symbols-outlined {
     font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
     line-height: 1;
+}
+
+/* --- Der Leitstand-Rahmen ------------------------------------------------- */
+/* Fünf Zonen: Kopfzeile oben, Zeitleiste unten, dazwischen Parameter links,
+   Viewport in der Mitte, Telemetrie rechts. Kopfzeile und Zeitleiste stehen
+   fest, die drei mittleren Zonen scrollen jede für sich. */
+
+.af-shell {
+    display: grid;
+    /* `dvh` statt `vh`: Auf Mobilbrowsern schneidet `100vh` die Zeitleiste
+       unter die Adressleiste. */
+    height: 100dvh;
+    grid-template-columns:
+        var(--shell-left) var(--shell-gutter)
+        minmax(0, 1fr)
+        var(--shell-gutter) var(--shell-right);
+    grid-template-rows: var(--shell-header) minmax(0, 1fr) auto;
+    grid-template-areas:
+        "header header header header header"
+        "left   gutl   main     gutr   right"
+        "left   gutl   timeline gutr   right";
+    background: var(--canvas);
+}
+
+/* --- Ziehbare Trenner (P1.7) --------------------------------------------- */
+/* Die Zonenbreiten waren fest. Wer die Szene groesser wollte oder die
+   Telemetrie breiter, konnte nichts tun.
+
+   Gezogen wird **clientseitig** (`assets/shell_resize.js`), aus demselben Grund
+   wie beim Theme-Umschalter in P1.5: Ein Serverrundlauf je Mausbewegung macht
+   das Ziehen zaeh. Der Griff schreibt `--shell-left`/`--shell-right` als
+   Inline-Stil auf `<html>` — von dort erbt `.af-shell` sie, und ein Inline-Stil
+   schlaegt die `:root`-Regel ohne Spezifitaetstricks. Gespeichert wird in
+   `localStorage`, zurueckgelesen vom Kopfskript in `app.py`, damit die Spalte
+   beim Laden nicht erst in der Standardbreite aufblitzt. */
+
+.af-shell__gutter {
+    position: relative;
+    cursor: col-resize;
+    background: transparent;
+    /* Der Griff ist schmal, die Trefferflaeche darf es nicht sein. */
+    touch-action: none;
+}
+
+.af-shell__gutter--left {
+    grid-area: gutl;
+}
+
+.af-shell__gutter--right {
+    grid-area: gutr;
+}
+
+.af-shell__gutter::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 2px;
+    height: 2.5rem;
+    border-radius: 9999px;
+    background: var(--border-strong);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.af-shell__gutter:hover::before,
+.af-shell__gutter:focus-visible::before,
+.af-shell--dragging .af-shell__gutter::before {
+    opacity: 1;
+}
+
+.af-shell__gutter:focus-visible {
+    outline: none;
+    background: var(--focus-ring);
+}
+
+/* Waehrend des Ziehens darf nichts markiert werden und kein Rahmen den Zeiger
+   uebernehmen — sonst reisst der Zug ab, sobald er ueber ein iframe laeuft. */
+.af-shell--dragging {
+    cursor: col-resize;
+    user-select: none;
+}
+
+.af-shell--dragging .af-shell__main,
+.af-shell--dragging .af-shell__left,
+.af-shell--dragging .af-shell__right {
+    pointer-events: none;
+}
+
+.af-shell__header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 40;
+}
+
+.af-shell__left {
+    grid-area: left;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+}
+
+.af-shell__main {
+    grid-area: main;
+    position: relative;
+    background: var(--canvas);
+}
+
+.af-shell__timeline {
+    grid-area: timeline;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1.25rem;
+}
+
+.af-shell__right {
+    grid-area: right;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+}
+
+/* Jede scrollende Zone braucht beides: `min-height: 0`, sonst wächst das
+   Grid-Kind über seinen Track hinaus und der Scroll landet doch im Body, und
+   `overflow: auto` für den eigenen Rollbalken. */
+.af-shell__left,
+.af-shell__main,
+.af-shell__right {
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+}
+
+.af-pane {
+    padding: 1.25rem;
+}
+
+/* Ein Abschnittskopf, der beim Scrollen in der Seitenleiste stehen bleibt. */
+.af-pane__sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0.75rem 1.25rem;
+    margin: -1.25rem -1.25rem 1rem;
+}
+
+/* --- Das Bedienfeld ------------------------------------------------------- */
+/* Die linke Zone ist seit P1.6 kein Formular mehr, sondern Anzeige und
+   Ausloeser: drei Zeilen Stand, der Preflight, der Start-Knopf. Sie soll auf
+   einen Bildschirm passen — vorher waren es zehn. */
+
+.af-rail {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+/* Der Start-Knopf bleibt sichtbar, egal wie lang die Warnungen darueber
+   werden. Ein Knopf, den man erst suchen muss, ist der haeufigste Weg, einen
+   Lauf gar nicht erst zu starten. */
+.af-rail-footer {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: 0.875rem 0 0.25rem;
+    background: linear-gradient(to bottom, transparent, var(--surface) 35%);
+}
+
+.af-rail-rows {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+/* Eine Stand-Zeile ist ein Verweis, kein Eingabefeld — geaendert wird im
+   Bereich «Einrichten». Zwei Felder mit derselben ID im DOM sind fuer Dash ein
+   Laufzeitfehler, und beide Zonen liegen gleichzeitig darin. */
+.af-rail-row {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    background: var(--surface);
+    transition: background-color 0.15s ease;
+}
+
+.af-rail-row + .af-rail-row {
+    border-top: 1px solid var(--border-subtle);
+}
+
+.af-rail-row:hover {
+    background: var(--surface-hover);
+}
+
+.af-rail-row__label {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.af-rail-row__value {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.af-rail-row__chevron {
+    color: var(--text-faint);
+}
+
+.af-rail-row:hover .af-rail-row__chevron {
+    color: var(--accent);
+}
+
+/* Der Hinweis auf den Start-Knopf gilt nur dort, wo die Spalte eine Schublade
+   ist. Auf breiten Fenstern steht der Knopf sichtbar daneben. */
+.af-drawer-hint {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+    .af-drawer-hint {
+        display: block;
+    }
+}
+
+/* --- Schubladen (schmale Fenster) ---------------------------------------- */
+/* Unter 1280 px weicht die Telemetrie, unter 1024 px auch die Parameterspalte
+   in eine überlagernde Schublade. Unter 768 px fällt die 100-dvh-Bindung ganz
+   weg: ein festgenagelter Leitstand auf einem Telefon ist unbedienbar. */
+
+.af-shell__scrim {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--scrim);
+    z-index: 45;
+}
+
+/* Die Umschalter sind Symbolknöpfe und tragen deshalb **beide** Klassen. Das
+   Verstecken muss `.af-icon-btn { display: inline-flex }` schlagen — und das
+   steht weiter unten in dieser Datei. Bei gleicher Spezifität (je eine Klasse)
+   gewinnt das Spätere: `.af-drawer-toggle { display: none }` allein hat nie
+   gewirkt, beide Knöpfe standen auf **jeder** Breite da, auch dort, wo keine
+   der beiden Zonen eine Schublade ist. Deshalb hier zwei Klassen statt einer —
+   das ist ordnungsunabhängig, anders als ein Verschieben des Blocks. */
+.af-icon-btn.af-drawer-toggle {
+    display: none;
+}
+
+/* Jeder Umschalter erscheint genau dort, wo **seine** Zone zur Schublade wird.
+   Die beiden Haltepunkte sind verschieden (Telemetrie 1280 px, Parameterspalte
+   1024 px); ein gemeinsamer Sichtbarkeitsschalter zeigte den linken Knopf
+   deshalb schon ab 1280 px an, während die Spalte dort noch als Rasterspalte
+   steht. Der Klick setzte dann zwar `af-shell--left-open`, bewegte aber nichts
+   — und beim nächsten Verkleinern sprang die Schublade ungefragt auf. */
+@media (max-width: 1279px) {
+    .af-icon-btn.af-drawer-toggle--right {
+        display: inline-flex;
+    }
+}
+
+@media (max-width: 1023px) {
+    .af-icon-btn.af-drawer-toggle--left {
+        display: inline-flex;
+    }
+}
+
+@media (max-width: 1279px) {
+    /* Die Telemetrie ist hier eine Schublade und keine Spalte — ihr Griff hat
+       nichts mehr zu ziehen und verschwindet mit ihr. Bliebe er stehen, waere
+       er ein Rasterelement ohne benannten Bereich und wuerde selbsttaetig
+       irgendwo einsortiert. */
+    .af-shell__gutter--right {
+        display: none;
+    }
+
+    .af-shell {
+        grid-template-columns: var(--shell-left) var(--shell-gutter) minmax(0, 1fr);
+        grid-template-areas:
+            "header header header"
+            "left   gutl   main"
+            "left   gutl   timeline";
+    }
+
+    .af-shell__right {
+        position: fixed;
+        top: var(--shell-header);
+        right: 0;
+        bottom: 0;
+        width: min(var(--shell-right), 90vw);
+        transform: translateX(100%);
+        transition: transform 0.25s ease;
+        z-index: 50;
+        box-shadow: -12px 0 32px -18px rgba(0, 0, 0, 0.45);
+    }
+
+    .af-shell--right-open .af-shell__right {
+        transform: translateX(0);
+    }
+
+    .af-shell--right-open .af-shell__scrim {
+        display: block;
+    }
+}
+
+@media (max-width: 1023px) {
+    /* Jetzt ist auch das Bedienfeld eine Schublade — sein Griff hat keine
+       Spalte mehr, an der er ziehen koennte. (Der rechte ist seit 1280 px weg.)
+       Bewusst der **eigene** Modifikator statt der Sammelklasse: So haengt jede
+       Seite an genau einem Haltepunkt, und `tests/test_web_drawers.py` kann ihn
+       gegen den ihres Schubladen-Knopfs halten. */
+    .af-shell__gutter--left {
+        display: none;
+    }
+
+    .af-shell {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "header"
+            "main"
+            "timeline";
+    }
+
+    .af-shell__left {
+        position: fixed;
+        top: var(--shell-header);
+        left: 0;
+        bottom: 0;
+        width: min(var(--shell-left), 90vw);
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        z-index: 50;
+        box-shadow: 12px 0 32px -18px rgba(0, 0, 0, 0.45);
+    }
+
+    .af-shell--left-open .af-shell__left {
+        transform: translateX(0);
+    }
+
+    .af-shell--left-open .af-shell__scrim {
+        display: block;
+    }
+}
+
+@media (max-width: 767px) {
+    html,
+    body {
+        overflow: auto;
+    }
+
+    .af-shell {
+        height: auto;
+        min-height: 100dvh;
+    }
+
+    .af-shell__header {
+        position: sticky;
+        top: 0;
+    }
+
+    .af-shell__main {
+        overflow: visible;
+    }
+}
+
+/* --- Zustandsanzeige der Kopfzeile --------------------------------------- */
+
+.af-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    background: var(--surface-inset);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-body);
+    white-space: nowrap;
+}
+
+.af-status__dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--text-faint);
+    flex: none;
+}
+
+.af-status--ready .af-status__dot {
+    background: var(--positive);
+}
+
+/* Der Punkt kommt auch allein vor — in der Erreichbarkeitszeile des
+   Rechenmodus, ohne die Kapsel drumherum. */
+.af-status__dot--ok {
+    background: var(--positive);
+}
+
+.af-status__dot--off {
+    background: var(--text-faint);
+}
+
+.af-status--running {
+    border-color: var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+
+.af-status--running .af-status__dot {
+    background: var(--accent);
+    animation: af-pulse 1.6s ease-in-out infinite;
+}
+
+.af-status--degraded {
+    border-color: var(--warning-border);
+    background: var(--warning-soft);
+    color: var(--warning-text);
+}
+
+.af-status--degraded .af-status__dot {
+    background: var(--warning);
+}
+
+.af-status--demo {
+    border-color: var(--demo-border);
+    background: var(--demo-soft);
+    color: var(--demo-text);
+}
+
+.af-status--demo .af-status__dot {
+    background: var(--demo);
+    animation: af-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes af-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 currentColor;
+    }
+    50% {
+        opacity: 0.55;
+        box-shadow: 0 0 0 4px transparent;
+    }
+}
+
+/* --- Flächen und Töne als Klassen ---------------------------------------- */
+/* Der Ersatz für `bg-white`, `text-slate-500`, `border-slate-200` und
+   Geschwister. Ein Name je Rolle, kein Farbwert im Python-Code. */
+
+.af-surface {
+    background: var(--surface);
+}
+
+.af-surface-raised {
+    background: var(--surface-raised);
+}
+
+.af-surface-sunken {
+    background: var(--surface-sunken);
+}
+
+.af-surface-inset {
+    background: var(--surface-inset);
+}
+
+.af-bordered {
+    border: 1px solid var(--border);
+}
+
+.af-border-t {
+    border-top: 1px solid var(--border);
+}
+
+.af-border-b {
+    border-bottom: 1px solid var(--border);
+}
+
+.af-border-subtle {
+    border-color: var(--border-subtle);
+}
+
+.af-text {
+    color: var(--text);
+}
+
+.af-text-body {
+    color: var(--text-body);
+}
+
+.af-text-muted {
+    color: var(--text-muted);
+}
+
+.af-text-faint {
+    color: var(--text-faint);
+}
+
+.af-text-accent {
+    color: var(--accent);
+}
+
+.af-text-positive {
+    color: var(--positive);
+}
+
+.af-text-negative {
+    color: var(--negative);
+}
+
+.af-text-warning {
+    color: var(--warning);
+}
+
+/* Leiser Verweis, der beim Zeigen die Akzentfarbe annimmt. Als eigene Klasse,
+   weil Tailwind keine Hover-Variante fuer eine fremde Klasse erzeugen kann. */
+.af-link {
+    color: var(--text-muted);
+    transition: color 0.15s ease;
+}
+
+.af-link:hover {
+    color: var(--accent);
+}
+
+.af-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+.af-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- Karten und Abschnitte ------------------------------------------------ */
+
+.af-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.af-card--flush {
+    background: var(--surface-raised);
+}
+
+.af-divider {
+    border: 0;
+    border-top: 1px solid var(--border);
+}
+
+/* --- Schaltflächen -------------------------------------------------------- */
+
+.af-btn {
+    font-family: var(--font-body);
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.af-btn--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--text-inverted);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.af-btn--primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+/* Im Dark Mode ist der Akzent hell — weißer Text darauf wäre unlesbar. */
+html.dark .af-btn--primary {
+    color: var(--text-inverted);
+}
+
+.af-btn--secondary {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--accent);
+}
+
+.af-btn--secondary:hover:not(:disabled) {
+    background: var(--surface-hover);
+    border-color: var(--border-strong);
+}
+
+.af-btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+}
+
+.af-btn--ghost:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+
+.af-btn--danger {
+    background: var(--surface);
+    border-color: var(--negative-border);
+    color: var(--negative);
+}
+
+.af-btn--danger:hover:not(:disabled) {
+    background: var(--negative-soft);
+}
+
+.af-btn:focus-visible,
+.af-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Quadratische Schaltfläche für Media-Controls und Kopfzeilen-Werkzeuge. */
+.af-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-body);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.af-icon-btn:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text);
+    border-color: var(--border-strong);
+}
+
+.af-icon-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.af-icon-btn--active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--text-inverted);
+}
+
+.af-icon-btn--active:hover:not(:disabled) {
+    background: var(--accent-hover);
+    color: var(--text-inverted);
+}
+
+/* Der Theme-Umschalter traegt beide Symbole; sichtbar ist immer nur das
+   passende. Das Umschalten laeuft im Browser — der Server weiss nicht, welches
+   gerade richtig waere. */
+.af-theme-toggle__to-light,
+html.dark .af-theme-toggle__to-dark {
+    display: none;
+}
+
+html.dark .af-theme-toggle__to-light {
+    display: inline;
+}
+
+/* --- Meldungen ------------------------------------------------------------ */
+
+.af-alert {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-inset);
+    color: var(--text-body);
+}
+
+.af-alert--info {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+    color: var(--accent-text);
+}
+
+.af-alert--success {
+    background: var(--positive-soft);
+    border-color: var(--positive-border);
+    color: var(--positive-text);
+}
+
+.af-alert--warning {
+    background: var(--warning-soft);
+    border-color: var(--warning-border);
+    color: var(--warning-text);
+}
+
+.af-alert--error {
+    background: var(--negative-soft);
+    border-color: var(--negative-border);
+    color: var(--negative-text);
+}
+
+.af-alert--demo {
+    background: var(--demo-soft);
+    border-color: var(--demo-border);
+    color: var(--demo-text);
+}
+
+/* Meldungstext erbt die Tonfarbe, statt sie ein zweites Mal zu setzen. */
+.af-alert .af-md,
+.af-alert .af-md strong,
+.af-alert .af-md p {
+    color: inherit;
+}
+
+.af-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.af-badge--demo {
+    border-color: var(--demo-border);
+    background: var(--demo-soft);
+    color: var(--demo-text);
+}
+
+.af-badge--warning {
+    border-color: var(--warning-border);
+    background: var(--warning-soft);
+    color: var(--warning-text);
 }
 
 /* --- Formularelemente ---------------------------------------------------- */
@@ -50,28 +991,43 @@ body {
 .af-input,
 input[type="text"].af-input,
 input[type="number"].af-input,
+input[type="search"].af-input,
 textarea.af-input {
     width: 100%;
     font-family: var(--font-body);
     font-size: 0.875rem;
-    color: var(--slate-800, #1e293b);
-    background: #fff;
-    border: 1px solid var(--slate-200);
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 0.5rem 0.75rem;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* **Drei Zeilen genuegen** (P1.9-W3.5). Die Fragestellung eines Laufs ist ein
+   Satz, kein Aufsatz; die Vorgabehoehe des Browsers (rund acht Zeilen) machte
+   die Benennung zum groessten Block des Schritts. Wer mehr schreibt, zieht das
+   Feld auf -- `resize` bleibt an. */
+textarea.af-input {
+    min-height: 4.5rem;
+    height: 4.5rem;
+}
+
 .af-input:focus,
 textarea.af-input:focus {
     outline: none;
-    border-color: var(--navy-500);
-    box-shadow: 0 0 0 3px rgba(62, 118, 166, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .af-input:disabled {
-    background: var(--slate-50);
-    color: var(--slate-400);
+    background: var(--surface-inset);
+    color: var(--text-faint);
+}
+
+.af-input::placeholder {
+    color: var(--text-faint);
 }
 
 textarea.af-input {
@@ -79,20 +1035,25 @@ textarea.af-input {
     resize: vertical;
 }
 
+/* Die Spinner eines Zahlenfelds sind im Dark Mode sonst weiße Kästchen. */
+html.dark .af-input[type="number"] {
+    color-scheme: dark;
+}
+
 /* --- Dropdown (dcc.Dropdown / react-select) ------------------------------ */
 
 .af-dropdown .Select-control,
 .af-dropdown .is-focused:not(.is-open) > .Select-control {
-    border: 1px solid var(--slate-200);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    background: #fff;
+    background: var(--surface-raised);
     box-shadow: none;
     min-height: 2.375rem;
 }
 
 .af-dropdown.is-focused:not(.is-open) > .Select-control {
-    border-color: var(--navy-500);
-    box-shadow: 0 0 0 3px rgba(62, 118, 166, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .af-dropdown .Select-placeholder,
@@ -100,14 +1061,25 @@ textarea.af-input {
 .af-dropdown .Select-input > input {
     font-family: var(--font-body);
     font-size: 0.875rem;
-    color: var(--slate-700);
+    color: var(--text-body);
     line-height: 2.25rem;
 }
 
+/* react-select setzt die Textfarbe des gewählten Werts per eigener Regel —
+   ohne diese Zeile bleibt sie im Dark Mode dunkelgrau auf dunkelblau. */
+.af-dropdown .Select--single > .Select-control .Select-value .Select-value-label {
+    color: var(--text);
+}
+
+.af-dropdown .Select-arrow {
+    border-top-color: var(--text-muted);
+}
+
 .af-dropdown .Select-menu-outer {
-    border: 1px solid var(--slate-200);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: 0 12px 28px -14px rgba(30, 58, 95, 0.3);
+    background: var(--surface-raised);
+    box-shadow: 0 12px 28px -14px var(--scrim);
     margin-top: 0.25rem;
     overflow: hidden;
     z-index: 40;
@@ -117,41 +1089,56 @@ textarea.af-input {
 .af-dropdown .Select-option {
     font-family: var(--font-body);
     font-size: 0.875rem;
-    color: var(--slate-700);
+    color: var(--text-body);
+    background: var(--surface-raised);
     padding: 0.5rem 0.75rem;
 }
 
 .af-dropdown .VirtualizedSelectFocusedOption,
 .af-dropdown .Select-option.is-focused {
-    background: var(--navy-50);
-    color: var(--navy-900);
+    background: var(--accent-soft);
+    color: var(--accent-text);
 }
 
 .af-dropdown .Select-option.is-selected {
-    background: var(--navy-100);
-    color: var(--navy-900);
+    background: var(--accent-soft);
+    color: var(--accent-text);
     font-weight: 500;
 }
 
 /* --- Checkbox / Radio ---------------------------------------------------- */
 
-/* Layout (display, gap, Ausrichtung) steht als Inline-Style in
-   `components.CHECK_LABEL_STYLE` — dcc.Checklist schreibt selbst inline und
-   wuerde jede Regel von hier ueberstimmen. Hier bleibt nur die Typografie. */
+/* **Das Layout steht hier, nicht als Inline-Style.** Bis Dash 3 schrieb
+   `dcc.Checklist` `display: block` selbst auf das Label und haette jede Regel
+   von hier ueberstimmt; deshalb lagen Anordnung und Ausrichtung in
+   `components.CHECK_LABEL_STYLE`. **Dash 4 tut das nicht mehr** -- am laufenden
+   System nachgesehen: `label.getAttribute("style")` ist `null`, und die Option
+   traegt jetzt einen `span.dash-options-list-option-wrapper` um das
+   Eingabeelement. Die Stildicts wirken seither nicht mehr, und wer dort etwas
+   aenderte, aenderte nichts. Aufgefallen beim Versuch, den Haken auf einer
+   Karte mittig zu setzen. */
 .af-check label,
 .af-radio label {
     font-family: var(--font-body);
     font-size: 0.875rem;
-    color: var(--slate-700);
-}
-
-.af-radio label {
+    color: var(--text-body);
     display: flex;
+    /* An der ersten Textzeile, nicht mittig: In einer Liste entsteht so eine
+       gerade Spalte von Haken neben den Beschriftungen. Auf einer Auswahlkarte
+       gilt das Gegenteil, siehe `.af-radio--cards label`. */
     align-items: flex-start;
     gap: 0.625rem;
     line-height: 1.5;
     cursor: pointer;
     padding: 0.3125rem 0;
+}
+
+/* Der Umschalter richtet mittig aus: Seine Bahn ist hoeher als ein Kaestchen
+   und saehe an der ersten Textzeile angeheftet schief aus. */
+.af-switch label {
+    align-items: center;
+    padding: 0.25rem 0;
+    line-height: 1.4;
 }
 
 .af-check label + label,
@@ -167,8 +1154,8 @@ textarea.af-input {
     /* An der Grundlinie der ersten Textzeile ausrichten. */
     margin-top: 0.1875rem;
     flex: none;
-    border: 1px solid var(--slate-300);
-    background: #fff;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-raised);
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
@@ -183,8 +1170,8 @@ textarea.af-input {
 
 .af-check input[type="checkbox"]:checked,
 .af-radio input[type="radio"]:checked {
-    background: var(--navy-800);
-    border-color: var(--navy-800);
+    background: var(--accent);
+    border-color: var(--accent);
 }
 
 .af-check input[type="checkbox"]:checked::after {
@@ -193,7 +1180,7 @@ textarea.af-input {
     width: 0.25rem;
     height: 0.5rem;
     margin: 0.075rem 0 0 0.3rem;
-    border: solid #fff;
+    border: solid var(--text-inverted);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
@@ -205,7 +1192,7 @@ textarea.af-input {
     height: 0.375rem;
     margin: 0.25rem;
     border-radius: 9999px;
-    background: #fff;
+    background: var(--text-inverted);
 }
 
 .af-radio--stack label {
@@ -213,32 +1200,237 @@ textarea.af-input {
     padding: 0.25rem 0;
 }
 
+/* Auswahl als Kartenraster statt als Liste. Zehn Szenarien mit je einem
+   erklaerenden Satz waren untereinander drei Bildschirme lang; nebeneinander
+   sind es drei Reihen, und die Beschreibungen bleiben lesbar. */
+/* **14rem statt 16rem** (P1.9-W3.4). In der 760 px breiten Inhaltsspalte des
+   Einrichtens ergaben 16 rem zwei Spalten und damit fuenf Reihen fuer zehn
+   Szenarien; 14 rem ergeben drei Spalten und vier Reihen. Schmaler duerfen die
+   Kacheln nicht werden -- der laengste Szenarioname braucht die Breite. */
+.af-radio--cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 0.5rem;
+}
+
+/* Die Kennzahl macht die Kacheln vergleichbar: gleiche Stelle, gleiche Form,
+   Ziffern gleicher Breite. */
+.af-choice__meta {
+    display: block;
+    margin-top: 0.125rem;
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+
+/* **Zwei Zeilen, dann Schluss.** Vorher war jede Kachel so hoch wie ihre
+   laengste Beschreibung -- gemessen zwischen 88 und 264 px. Ein Raster mit
+   ungleich hohen Zeilen laesst sich nicht ueberfliegen: Man liest zehn
+   Absaetze, statt zehn Moeglichkeiten zu vergleichen. Der volle Text steht
+   unter dem Raster, sobald ein Szenario gewaehlt ist. */
+.af-choice__text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 0.25rem;
+    line-height: 1.45;
+}
+
+.af-radio--cards label {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+    padding: 0.75rem;
+    /* **Mittig**, anders als in der Liste. Eine Karte ist eine Flaeche, die man
+       als Ganzes auswaehlt; gemessen war die Karte «Achterbahn der Extreme»
+       137 px hoch und der Haken sass bei 12 % ihrer Hoehe -- er wirkte oben
+       angeheftet statt zur Karte gehoerig. */
+    align-items: center;
+}
+
+.af-radio--cards label:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-hover);
+}
+
+/* Die gewaehlte Karte traegt den Akzentrahmen. `:has()` statt einer Klasse aus
+   Python: Der Zustand steht im Eingabeelement, und die Oberflaeche soll ihn
+   nicht ein zweites Mal fuehren. */
+.af-radio--cards label:has(input:checked) {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.af-radio--cards label + label {
+    margin-top: 0;
+}
+
+/* Auf einer Karte sitzt der Haken **mittig**, nicht an der ersten Textzeile.
+   Der Versatz von oben, der ihn in einer Liste auf die Grundlinie zieht, muss
+   dafuer weg -- sonst haengt er drei Pixel unter der Mitte. Gemessen war die
+   Karte «Achterbahn der Extreme» 137 px hoch und der Haken bei 12 % ihrer
+   Hoehe; auf einer Flaeche, die man als Ganzes auswaehlt, gehoert er in die
+   Mitte. */
+.af-radio--cards input[type="radio"] {
+    margin-top: 0;
+}
+
+/* --- Umschalter ----------------------------------------------------------- */
+/* Ein echter Schalter für Systemzustände, die an oder aus sind. Optisch
+   deutlich von einer Checkbox getrennt: Die Checkbox wählt aus einer Menge,
+   der Schalter kippt einen Zustand. */
+
+.af-switch label {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--text-body);
+    cursor: pointer;
+    padding: 0.25rem 0;
+}
+
+.af-switch input[type="checkbox"] {
+    appearance: none;
+    position: relative;
+    width: 2.25rem;
+    height: 1.25rem;
+    flex: none;
+    border-radius: 9999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-inset);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.af-switch input[type="checkbox"]::after {
+    content: "";
+    position: absolute;
+    top: 0.125rem;
+    left: 0.1875rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 9999px;
+    background: var(--surface-raised);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease;
+}
+
+.af-switch input[type="checkbox"]:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.af-switch input[type="checkbox"]:checked::after {
+    transform: translateX(0.9375rem);
+}
+
+.af-switch input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
 /* --- Slider -------------------------------------------------------------- */
+/* Zwei Markup-Familien, weil `pyproject.toml` `dash>=2.18` erlaubt: Dash 2.x
+   liefert den rc-slider, Dash 3/4 einen eigenen (`dash-slider-*`) samt eigener
+   Farbgebung. Ohne den zweiten Block traegt der Regler im Leitstand Dashs
+   violettes Standarddesign, und die Beschriftungen stehen im Dark Mode
+   schwarz auf schwarz. Am laufenden System unter Dash 4.4.1 aufgefallen —
+   die rc-Regeln allein greifen dort an keiner einzigen Stelle. */
+
+.af-slider .dash-slider-thumb {
+    background: var(--surface-raised);
+    border: 2px solid var(--accent);
+    box-shadow: none;
+}
+
+.af-slider .dash-slider-thumb:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.af-slider .dash-slider-mark {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.af-slider .dash-slider-tooltip {
+    background: var(--accent);
+    color: var(--text-inverted);
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    border: none;
+    box-shadow: none;
+}
+
+/* Die Zahleneingaben der Bereichsgrenzen blendet Dash selbst aus; hier wird
+   nur sichergestellt, dass sie es bleiben — im Leitstand steht die Zahl
+   rechts neben der Leiste. */
+.af-slider .dash-range-slider-input {
+    display: none;
+}
+
 
 .af-slider .rc-slider-track {
-    background: var(--navy-800);
+    background: var(--accent);
 }
 
 .af-slider .rc-slider-rail {
-    background: var(--slate-200);
+    background: var(--surface-inset);
 }
 
 .af-slider .rc-slider-handle {
-    border-color: var(--navy-800);
-    background: #fff;
+    border-color: var(--accent);
+    background: var(--surface-raised);
     opacity: 1;
 }
 
 .af-slider .rc-slider-handle:active,
 .af-slider .rc-slider-handle-click-focused:focus {
-    border-color: var(--navy-800);
-    box-shadow: 0 0 0 4px rgba(30, 58, 95, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.af-slider .rc-slider-dot {
+    border-color: var(--border);
+    background: var(--surface-raised);
+}
+
+.af-slider .rc-slider-dot-active {
+    border-color: var(--accent);
 }
 
 .af-slider .rc-slider-mark-text {
     font-family: var(--font-body);
     font-size: 0.6875rem;
-    color: var(--slate-500);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.af-slider .rc-slider-mark-text-active {
+    color: var(--text-body);
+}
+
+.af-slider .rc-slider-tooltip-inner {
+    background: var(--accent);
+    color: var(--text-inverted);
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    box-shadow: none;
+}
+
+.af-slider .rc-slider-tooltip-arrow {
+    border-bottom-color: var(--accent);
+    border-top-color: var(--accent);
 }
 
 /* --- Tabs (dcc.Tabs) ----------------------------------------------------- */
@@ -249,7 +1441,7 @@ textarea.af-input {
     /* Abstand ueber gap statt ueber Innenabstand: die Trefferflaeche bleibt
        gross, die Leiste wirkt trotzdem leicht. */
     gap: 1.75rem;
-    border-bottom: 1px solid var(--slate-200);
+    border-bottom: 1px solid var(--border);
     margin-bottom: 1.75rem;
 }
 
@@ -264,7 +1456,7 @@ textarea.af-input {
     /* Gewicht bleibt in beiden Zustaenden gleich — ein Sprung von 500 auf 600
        verschiebt beim Wechsel die Nachbarn und wirkt unruhig. */
     font-weight: 500;
-    color: var(--slate-500);
+    color: var(--text-muted);
     background: transparent;
     border: none;
     border-bottom: 1.5px solid transparent;
@@ -276,14 +1468,14 @@ textarea.af-input {
 }
 
 .af-tabs .af-tabs__list .af-tab:hover {
-    color: var(--navy-800);
+    color: var(--accent);
 }
 
 .af-tabs .af-tabs__list .af-tab--selected {
-    color: var(--navy-800);
+    color: var(--accent);
     background: transparent;
     border: none;
-    border-bottom: 1.5px solid var(--navy-800);
+    border-bottom: 1.5px solid var(--accent);
     border-radius: 0;
     font-weight: 500;
     padding: 0.75rem 0;
@@ -302,6 +1494,297 @@ textarea.af-input {
     padding: 0.5rem 0;
 }
 
+/* --- Viewport-Leiste ------------------------------------------------------ */
+/* Der Umschalter über dem Hauptbereich. Keine Tab-Leiste im Dokumentsinn,
+   sondern eine Werkzeugleiste: Sie steht fest, während der Viewport scrollt. */
+
+.af-viewbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    background: var(--overlay);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.af-viewbar::-webkit-scrollbar {
+    display: none;
+}
+
+.af-viewbar__item {
+    flex: 0 0 auto;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.af-viewbar__item:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+
+.af-viewbar__item--active {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+    color: var(--accent-text);
+}
+
+/* --- Szene und Overlay ---------------------------------------------------- */
+
+.af-scene {
+    position: relative;
+}
+
+/* Die Einblendung im Viewport: Tick, Populationsgröße, Zoom. Bewusst ohne
+   Mausfang — sie liegt über dem Diagramm und darf dessen Hover nicht
+   abschneiden. */
+.af-scene__overlay {
+    position: absolute;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 15;
+    display: flex;
+    gap: 1.25rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--overlay);
+    backdrop-filter: blur(6px);
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.af-scene__overlay dt {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.625rem;
+    color: var(--text-faint);
+}
+
+.af-scene__overlay dd {
+    margin: 0.125rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text);
+}
+
+/* Ein Faktorzustand als Chip im Streifen über der Szene. */
+.af-factor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.375rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    min-width: 0;
+}
+
+.af-factor--active {
+    border-color: var(--accent-border);
+    background: var(--accent-soft);
+}
+
+.af-factor__id {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.af-factor__state {
+    font-size: 0.6875rem;
+    /* Nicht `--text-muted`: auf `--accent-soft` kaeme das im hellen Modus nur
+       auf 4,3 — bei 11 px zu wenig. Nachgemessen, nicht geschaetzt. */
+    color: var(--text-body);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- Kennzahlenkarten ----------------------------------------------------- */
+
+.af-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.af-kpi__label {
+    font-size: 0.6875rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.af-kpi__value {
+    font-family: var(--font-headline);
+    font-size: 1.375rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.af-kpi__delta {
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+.af-kpi__delta--up {
+    color: var(--positive);
+}
+
+.af-kpi__delta--down {
+    color: var(--negative);
+}
+
+.af-kpi__hint {
+    font-size: 0.6875rem;
+    color: var(--text-faint);
+}
+
+/* --- Zeitleiste ----------------------------------------------------------- */
+
+.af-timeline {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.af-timeline__controls {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex: none;
+}
+
+.af-timeline__track {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.af-timeline__readout {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text);
+    min-width: 7rem;
+    text-align: right;
+}
+
+/* Ereignis-Marker unter der Leiste: wo im Lauf etwas passiert ist. */
+.af-timeline__events {
+    position: relative;
+    height: 0.375rem;
+    margin-top: 0.25rem;
+    border-radius: 9999px;
+    background: var(--surface-inset);
+    overflow: hidden;
+}
+
+.af-timeline__event {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    opacity: 0.55;
+}
+
+.af-timeline__event--warning {
+    background: var(--warning);
+    opacity: 0.9;
+}
+
+.af-timeline__event--error {
+    background: var(--negative);
+    opacity: 0.9;
+}
+
+/* --- Log-Fenster --------------------------------------------------------- */
+
+.af-log {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--console-text);
+    background: var(--console-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    max-height: 22rem;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Die Konsole der Telemetrie: dieselbe Fläche, aber zeilenweise gefärbt. */
+.af-console {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.55;
+    background: var(--console-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem;
+    max-height: 18rem;
+    overflow: auto;
+}
+
+.af-console__line {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.125rem 0.25rem;
+    border-left: 2px solid transparent;
+    color: var(--console-text);
+    word-break: break-word;
+}
+
+.af-console__tick {
+    flex: none;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+.af-console__line--info {
+    border-left-color: var(--console-info);
+}
+
+.af-console__line--warning {
+    border-left-color: var(--console-warning);
+    color: var(--console-warning);
+}
+
+.af-console__line--error {
+    border-left-color: var(--console-error);
+    color: var(--console-error);
+}
+
+.af-console__line--muted {
+    color: var(--text-faint);
+}
+
 /* --- Accordion (html.Details) -------------------------------------------- */
 
 .af-acc__summary::-webkit-details-marker,
@@ -311,7 +1794,7 @@ textarea.af-input {
 }
 
 .af-acc__summary:hover {
-    background: var(--slate-50);
+    background: var(--surface-hover);
 }
 
 .af-acc__chevron {
@@ -329,7 +1812,7 @@ textarea.af-input {
 
 .af-expert > .af-acc__summary:hover .af-acc__chevron,
 .af-expert > .af-acc__summary:hover span {
-    color: var(--navy-800);
+    color: var(--accent);
 }
 
 /* Kompakter Markdown-Fluss für Hinweiskästen. */
@@ -354,16 +1837,16 @@ textarea.af-input {
 .af-hint {
     font-size: 0.75rem;
     line-height: 1.55;
-    color: var(--slate-500);
+    color: var(--text-muted);
     margin-top: 0.375rem;
     max-width: 46rem;
 }
 
 .af-hint code {
     font-size: 0.95em;
-    background: var(--slate-100);
-    border-color: var(--slate-200);
-    color: var(--slate-500);
+    background: var(--surface-inset);
+    border-color: var(--border);
+    color: var(--text-muted);
 }
 
 /* --- Markdown ------------------------------------------------------------ */
@@ -372,7 +1855,7 @@ textarea.af-input {
     font-family: var(--font-body);
     font-size: 0.9375rem;
     line-height: 1.7;
-    color: var(--slate-700);
+    color: var(--text-body);
 }
 
 .af-md > *:first-child {
@@ -389,7 +1872,7 @@ textarea.af-input {
 .af-md h4 {
     font-family: var(--font-headline);
     font-weight: 600;
-    color: var(--slate-900);
+    color: var(--text);
     line-height: 1.3;
     margin: 1.75rem 0 0.75rem;
 }
@@ -430,27 +1913,28 @@ textarea.af-input {
 }
 
 .af-md strong {
-    color: var(--slate-900);
+    color: var(--text);
     font-weight: 600;
 }
 
 .af-md a {
-    color: var(--navy-800);
+    color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
 
 .af-md code {
     font-size: 0.8125em;
-    background: var(--slate-100);
-    border: 1px solid var(--slate-200);
+    font-family: var(--font-mono);
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
     border-radius: 0.25rem;
     padding: 0.1em 0.35em;
 }
 
 .af-md pre {
-    background: var(--slate-50);
-    border: 1px solid var(--slate-200);
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1rem;
     overflow-x: auto;
@@ -464,9 +1948,9 @@ textarea.af-input {
 }
 
 .af-md blockquote {
-    border-left: 3px solid var(--navy-200);
+    border-left: 3px solid var(--accent-border);
     padding-left: 1rem;
-    color: var(--slate-600);
+    color: var(--text-muted);
     margin: 0 0 1rem;
 }
 
@@ -481,21 +1965,30 @@ textarea.af-input {
 
 .af-md th,
 .af-md td {
-    border: 1px solid var(--slate-200);
+    border: 1px solid var(--border);
     padding: 0.5rem 0.75rem;
     text-align: left;
 }
 
 .af-md th {
-    background: var(--slate-50);
+    background: var(--surface-inset);
     font-weight: 600;
-    color: var(--slate-900);
+    color: var(--text);
 }
 
-/* --- Kopfnavigation ------------------------------------------------------ */
-/* Auf schmalen Geräten passen die Bereichslinks nicht mehr nebeneinander.
-   Statt sie umbrechen oder die Seite überlaufen zu lassen, schiebt sich die
-   Leiste seitlich — ohne sichtbaren Rollbalken. */
+/* --- Codeblock ------------------------------------------------------------ */
+
+.af-code {
+    font-family: var(--font-mono);
+    color: var(--text-body);
+    background: var(--surface-inset);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+/* --- Bereichsnavigation --------------------------------------------------- */
+/* In der Kopfzeile. Auf schmalen Geräten passen die Links nicht mehr
+   nebeneinander; statt umzubrechen schiebt sich die Leiste seitlich. */
 
 .af-nav__links {
     overflow-x: auto;
@@ -510,6 +2003,23 @@ textarea.af-input {
 .af-nav__links > a {
     flex: 0 0 auto;
     white-space: nowrap;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.af-nav__links > a:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+
+.af-nav__links > a.af-nav__link--active {
+    background: var(--accent-soft);
+    color: var(--accent-text);
 }
 
 /* --- Handbuch ------------------------------------------------------------ */
@@ -534,38 +2044,48 @@ textarea.af-input {
 
     .af-docs__nav {
         position: sticky;
-        /* Unter der klebenden Kopfzeile (3.5rem) plus etwas Luft. */
-        top: 4.5rem;
+        /* Bezugspunkt ist der Anfang der scrollenden Pane, nicht das Fenster —
+           im Leitstand scrollt der Viewport, nicht die Seite. */
+        top: 0;
         align-self: start;
-        max-height: calc(100vh - 6rem);
+        max-height: calc(100dvh - var(--shell-header) - var(--shell-timeline));
         overflow-y: auto;
         padding-right: 0.5rem;
     }
 }
 
-/* Sprungziel nicht unter die Kopfzeile schieben. */
+/* Sprungziel nicht unter die Werkzeugleiste des Viewports schieben. */
 .af-docs [id] {
-    scroll-margin-top: 5rem;
+    scroll-margin-top: 4rem;
 }
 
 .af-docs__nav input[type="search"] {
     font-size: 0.8125rem;
 }
 
-/* --- Log-Fenster --------------------------------------------------------- */
+.af-docs__list {
+    border-left: 1px solid var(--border);
+}
 
-.af-log {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 0.75rem;
-    line-height: 1.6;
-    color: var(--navy-100);
-    background: var(--navy-950, #122238);
-    border-radius: var(--radius);
-    padding: 1rem;
-    max-height: 22rem;
-    overflow: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
+.af-docs__link {
+    display: block;
+    padding: 0.375rem 0 0.375rem 0.75rem;
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.af-docs__link:hover {
+    color: var(--accent);
+}
+
+.af-docs__link--active {
+    border-left-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
 }
 
 /* --- Tabelle (dash_table.DataTable) -------------------------------------- */
@@ -574,6 +2094,7 @@ textarea.af-input {
 .af-table .dash-spreadsheet-container .dash-spreadsheet-inner th {
     font-family: var(--font-body);
     font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
 }
 
 .af-table .dash-spreadsheet-container .dash-spreadsheet-inner th {
@@ -593,17 +2114,29 @@ textarea.af-input {
 }
 
 .js-plotly-plot .plotly .modebar-btn path {
-    fill: var(--slate-400);
+    fill: var(--text-faint);
 }
 
 .js-plotly-plot .plotly .modebar-btn:hover path {
-    fill: var(--navy-800);
+    fill: var(--accent);
 }
 
 /* Play-/Pause-Leiste der Animationen. */
 .js-plotly-plot .updatemenu-button rect {
-    fill: #fff;
-    stroke: var(--slate-200);
+    fill: var(--surface-raised);
+    stroke: var(--border);
+}
+
+/* --- Bildtafeln ----------------------------------------------------------- */
+/* Die PNGs unter `figures/` werden von matplotlib hell gerendert. Im Dark Mode
+   stehen sie deshalb auf einer weißen Fläche wie ein aufgelegtes Blatt, statt
+   invertiert zu werden — ehrlich dargestellt schlägt falsch eingefärbt. */
+
+.af-paper {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem;
 }
 
 /* --- Ladeanzeige --------------------------------------------------------- */
@@ -620,7 +2153,7 @@ textarea.af-input {
 
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--slate-300) transparent;
+    scrollbar-color: var(--border-strong) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -629,28 +2162,28 @@ textarea.af-input {
 }
 
 *::-webkit-scrollbar-thumb {
-    background: var(--slate-300);
+    background: var(--border-strong);
     border-radius: 9999px;
     border: 3px solid transparent;
     background-clip: content-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-    background: var(--slate-400);
+    background: var(--text-faint);
     background-clip: content-box;
 }
 
 /* --- Chat ---------------------------------------------------------------- */
 
 .af-chat-user {
-    background: var(--navy-800);
-    color: #fff;
+    background: var(--accent);
+    color: var(--text-inverted);
 }
 
 .af-chat-user .af-md,
 .af-chat-user .af-md strong,
 .af-chat-user .af-md code {
-    color: #fff;
+    color: var(--text-inverted);
 }
 
 .af-chat-user .af-md code {
@@ -666,5 +2199,716 @@ textarea.af-input {
     * {
         transition-duration: 0.01ms !important;
         animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
     }
+}
+
+/* --- Der Lauf, waehrend er rechnet (P1.7) -------------------------------- */
+/* Bis P1.7 war der Start kein Ereignis: Die Seite sah danach aus wie vorher.
+   Waehrend gerechnet wird, gibt es genau eine Auskunft, auf die es ankommt --
+   wie weit. Sie steht deshalb gross im Viewport und, wenn man woanders
+   hinsieht, klein unten rechts. */
+
+.af-progress {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--surface-inset);
+    overflow: hidden;
+}
+
+.af-progress--compact {
+    height: 0.3125rem;
+}
+
+.af-progress__fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: var(--accent);
+    transition: width 0.4s ease;
+}
+
+/* Ohne Tick-Meldung gibt es keinen Anteil -- dann laeuft ein unbestimmter
+   Balken, statt eine Prozentzahl zu erfinden (Invariante 1). */
+.af-progress__fill--unknown {
+    width: 35%;
+    animation: af-progress-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes af-progress-slide {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(285%);
+    }
+}
+
+.af-run__readout {
+    font-family: var(--font-headline);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.af-run__percent {
+    font-family: var(--font-headline);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.af-run__spin {
+    animation: af-spin 1.6s linear infinite;
+    color: var(--accent);
+}
+
+@keyframes af-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* --- Das Fortschrittsfenster --------------------------------------------- */
+
+.af-dock {
+    position: fixed;
+    right: 1rem;
+    /* Ueber der Zeitleiste, nicht darunter: Sie ist die einzige Zone, die den
+       unteren Rand belegt. */
+    bottom: calc(var(--shell-timeline) + 1rem);
+    z-index: 60;
+    width: min(20rem, calc(100vw - 2rem));
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-raised);
+    box-shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.45);
+}
+
+.af-dock__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.af-dock__title {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.af-dock__percent {
+    margin-left: auto;
+    font-family: var(--font-headline);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.af-dock__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.af-dock__link {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.af-dock__link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+    .af-dock {
+        bottom: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .af-progress__fill--unknown,
+    .af-run__spin {
+        animation: none;
+    }
+}
+
+/* --- Kein Wert tritt aus seiner Kachel ----------------------------------- */
+/* Am Bild belegt: In der dreispaltigen Reihe des Ladebildschirms sprengten
+   "Standard-Ausgangslage" und "Ohne Sprachmodell" ihre Karten und liefen in die
+   Nachbarkachel. Ursache war der Zahlensatz (2xl, fett) auf einem Wert, der
+   Text ist -- und ein fehlender Umbruch innerhalb langer Woerter.
+
+   `overflow-wrap: anywhere` statt `break-word`: Letzteres bricht ein Wort erst,
+   wenn es allein in einer Zeile immer noch nicht passt; in einer schmalen
+   Spalte laesst es "Standard-Ausgangslage" trotzdem herausstehen. */
+.af-tile__value {
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: auto;
+    min-width: 0;
+}
+
+/* Rasterelemente schrumpfen per Voreinstellung nicht unter ihren Inhalt --
+   deshalb schiebt ein langes Wort die ganze Spalte auf, statt umzubrechen.
+   `min-width: 0` nimmt diese Sperre weg. Gilt fuer alle Raster der Oberflaeche,
+   weil der Fall ueberall derselbe ist. */
+.af-grid > * {
+    min-width: 0;
+}
+
+/* --- Fokus-Modus: ein Bereich bekommt den Bildschirm allein (P1.7) -------- */
+/* Einrichten ist eine ueberlegte, lineare Arbeit. Daneben eine Szene laufen zu
+   lassen, die einen *anderen* Lauf zeigt, lenkt ab -- und die Stand-Zeilen
+   links wiederholen genau das, was man gerade einstellt. Also verschwinden
+   Bedienfeld, Telemetrie und Zeitleiste, solange dieser Bereich offen ist.
+
+   `display: none` statt einer Rasteraenderung allein: Die Zonen sollen auch
+   keine Tabulator-Stationen mehr sein. Sie bleiben im DOM, damit die Callbacks,
+   die auf sie zeigen, weiterhin ein Ziel haben. */
+
+.af-shell--focus {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+        "header"
+        "main";
+    grid-template-rows: var(--shell-header) minmax(0, 1fr);
+}
+
+.af-shell--focus .af-shell__left,
+.af-shell--focus .af-shell__right,
+.af-shell--focus .af-shell__timeline,
+.af-shell--focus .af-shell__gutter,
+.af-shell--focus .af-drawer-toggle {
+    display: none;
+}
+
+/* Der Inhalt bekommt eine Lesebreite statt der vollen Flaeche: Eine Frage, die
+   ueber 1900 px laeuft, ist schwerer zu lesen als eine, die es nicht tut. */
+.af-pane--focus {
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+
+/* --- Die Schrittfolge ---------------------------------------------------- */
+
+.af-wizard {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+}
+
+@media (max-width: 899px) {
+    .af-wizard {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+/* **Der Einstieg hat keine Schrittliste -- und reserviert ihr keinen Platz**
+   (P1.9-W5.4). Gemessen bei 1280: `240px 760px`, waehrend die Liste dort
+   `display: none` war. 240 px Leere links neben der Frage, mit der alles
+   anfaengt. */
+.af-wizard--einstieg {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* **Das Lesemass** (P1.9-W5.4). Gemessen wurden bis zu **124** Zeichen je
+   Zeile; die typografische Spanne ist 45 bis 75. Ueber etwa 75 verliert das
+   Auge am Zeilenende die Spur zum naechsten Anfang.
+
+   **In `ch`, nicht in `rem`.** Die Zusage handelt von Zeichen, also steht sie
+   in der Einheit, die Zeichen misst -- ein `rem`-Deckel haengt an der
+   Schriftgroesse, und genau daran ist der erste Anlauf gescheitert: 34rem
+   ergaben im grossen Fliesstext 84, in der kleineren Bildunterschrift aber 90
+   Zeichen. `ch` ist die Breite der Null; Ziffern sind breiter als der
+   Durchschnittsbuchstabe, deshalb steht hier weniger als 75.
+
+   **Und deshalb mit Luft.** Ein `ch`-Deckel legt eine Breite fest, keine
+   Zeichenzahl: Wie viele Buchstaben hineinpassen, haengt davon ab, welche.
+   Bei 56ch standen im selben Absatzformat 71 bis 78 Zeichen -- dieselbe
+   Regel, zwei Ergebnisse. 53ch halten auch den breitesten gemessenen Satz
+   unter 75.
+
+   Der Deckel sitzt am Fliesstext, nicht am Schritt: Ein Raster aus
+   Auswahlfeldern ordnet sich in der Breite, ein Satz zerfaellt darin. */
+.af-mass {
+    max-width: 53ch;
+}
+
+/* **Breite je Schritt** (P1.9-W5.4). Die Form des Inhalts entscheidet, nicht
+   seine Menge: Karten und Raster nehmen die Spalte, ein kurzes Formular aus
+   drei Feldern bekommt sie geschenkt und wird davon nicht besser. Gemessen
+   stand ein 245 px breites Feld in einer 760 px breiten Spalte. */
+.af-body--lesen {
+    max-width: 34rem;
+}
+
+/* Code ist kein Fliesstext: Eine JSON-Vorschau bricht nicht bei 75 Zeichen um,
+   sie wird gescrollt. Das Lesemass gilt dort nicht. */
+.af-mass pre,
+.af-mass code {
+    max-width: none;
+}
+
+.af-wizard__rail {
+    position: sticky;
+    top: 0;
+}
+
+.af-wizard__counter {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+}
+
+/* **Klebend am unteren Rand.** Gemessen: Bei 1440x900 lag «Weiter» auf dem
+   ersten Schritt bei y=1381 -- man musste es suchen. Der naechste Griff darf
+   nie gesucht werden muessen; das war der ganze Punkt der Schrittfolge. */
+.af-wizard__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    background: var(--canvas);
+}
+
+.af-wizard__navhost {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+/* --- Der Einstieg: drei Wege ---------------------------------------------
+
+   Vor der Schrittfolge steht die Frage, die sie nicht stellt: *Welche Art von
+   Lauf?* Bis P1.7-C landete man unmittelbar auf Schritt 1, und der
+   Szenario-Vergleich lag als Ankreuzoption hinter der Feinabstimmung des
+   zweiten Schritts -- also faktisch unauffindbar.
+
+   Die Karten sind Schaltflaechen, keine Kaesten mit Knopf darin: Die ganze
+   Flaeche ist das Ziel, und das Ziel ist gross. Farbe kommt ausschliesslich aus
+   den Tokens -- die Karten leben in beiden Modi. */
+
+.af-ways {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.af-way {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 100%;
+    /* `min-width: 0` wie bei `af-grid`: Ohne das schiebt ein langes Wort in der
+       Beschreibung die Karte auf, statt umzubrechen. Genau das Muster aus
+       Stufe D. */
+    min-width: 0;
+    padding: 1.25rem 1.375rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.af-way:hover {
+    border-color: var(--accent-border);
+    background: var(--surface-hover);
+}
+
+.af-way:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.af-way__icon {
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.af-way__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.af-way__title {
+    font-family: var(--font-headline);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.af-way__text {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+}
+
+.af-way__chevron {
+    margin-left: auto;
+    align-self: center;
+    color: var(--text-faint);
+    flex-shrink: 0;
+}
+
+/* **Ausgegraut statt weggelassen.** Ein Weg, den es gerade nicht gibt, bleibt
+   trotzdem im DOM: Dash fuehrt einen Callback gar nicht erst aus, wenn auch nur
+   *ein* Eingang fehlt -- der Fallstrick aus Regel 6 der Architektur-Map. */
+.af-way:disabled {
+    cursor: default;
+    background: var(--surface-sunken);
+    border-color: var(--border-subtle);
+}
+
+.af-way:disabled .af-way__icon,
+.af-way:disabled .af-way__title {
+    color: var(--text-faint);
+}
+
+.af-way:disabled:hover {
+    border-color: var(--border-subtle);
+    background: var(--surface-sunken);
+}
+
+.af-step__heading {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.af-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.af-step {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.af-step:hover {
+    background: var(--surface-hover);
+    color: var(--text-body);
+}
+
+.af-step__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.af-step__title {
+    overflow-wrap: anywhere;
+}
+
+.af-step__tag {
+    font-size: 0.6875rem;
+    color: var(--text-faint);
+}
+
+.af-step--done {
+    color: var(--text-body);
+}
+
+.af-step--done .af-step__icon {
+    color: var(--positive);
+}
+
+.af-step--current {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    font-weight: 600;
+}
+
+.af-step--current .af-step__icon {
+    color: var(--accent);
+}
+
+.af-step--offen .af-step__icon {
+    color: var(--text-faint);
+}
+
+/* **Uebersprungen ist nicht dasselbe wie «kommt noch»** (P1.9-W2.1). Bis dahin
+   trug jeder Schritt vor dem offenen ein Haekchen -- nach «Szenario-Vergleich
+   starten» waren das sieben Haekchen fuer sieben nie gesehene Schritte. Ein
+   Fortschrittsanzeiger, der Uebersprungenes als Erledigt ausweist, nimmt genau
+   die Information weg, fuer die er da ist.
+
+   Bewusst kein Warnton: Sechs der acht Schritte duerfen uebersprungen werden,
+   das ist die Zusage aus P1.1. Der Strich sagt «hier warst du nicht», nicht
+   «hier ist etwas falsch». */
+.af-step--uebersprungen .af-step__icon {
+    color: var(--text-faint);
+}
+
+.af-step--uebersprungen .af-step__title {
+    color: var(--text-muted);
+}
+
+/* Die Begruendung des Tores sitzt zwischen «Zurueck» und dem naechsten Griff.
+   `min-width: 0` und `flex: 1`, damit ein langer Befund die Knoepfe nicht aus
+   der Leiste schiebt -- dasselbe Muster wie bei den Rasterkindern aus P1.7-D. */
+.af-wizard__gate {
+    flex: 1 1 18rem;
+    min-width: 0;
+}
+
+.af-wizard__gate:empty {
+    display: none;
+}
+
+/* Ein leerer Meldungsplatz kostete 16 px Abstand auf jedem Schritt -- sichtbar
+   war nichts. Dieselbe Regel wie beim Tor darueber (P1.9-W3.5). */
+#cfg-status:empty,
+#model-editor-status:empty {
+    display: none;
+}
+
+/* **Nur fuer den Screenreader** (P1.9-W5.3). Aus dem Bild genommen, aber im
+   Baum: `display: none` und `visibility: hidden` naehmen den Inhalt auch dem
+   Screenreader -- er waere dann fuer niemanden da. Das Muster ist der
+   verbreitete "visually hidden"-Ansatz; `clip-path` statt des alten `clip`,
+   weil letzteres seit Jahren als veraltet gilt. */
+.af-nur-vorlesen {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Ein `fieldset` bringt Browser-eigene Raender und Polster mit, die hier nichts
+   zu suchen haben -- es steht fuer die Gruppierung, nicht fuer einen Rahmen. */
+.af-fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
+/* Der Schritt-Titel bekommt den Fokus nach einem Wechsel (W5.3). Ohne
+   `tabindex` laesst er sich nicht fokussieren; ohne diese Regel zeichnete der
+   Browser dabei einen Rahmen um eine Ueberschrift, die niemand angeklickt hat.
+   Der Fokusring bleibt fuer die Tastatur erhalten -- nur der Zeiger-Fall ist
+   still. */
+.af-wizard__content h1:focus {
+    outline: none;
+}
+
+.af-wizard__content h1:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 2px;
+}
+
+/* Die Abweichungsliste: eine Zeile je Unterschied, der Knopf rechts. */
+.af-delta {
+    display: flex;
+    flex-direction: column;
+}
+
+.af-delta__zeile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.af-delta__zeile:last-child {
+    border-bottom: 0;
+}
+
+.af-delta__was {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.af-delta__wert {
+    display: block;
+    font-family: var(--font-mono, var(--font-body));
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.af-step__hinweis {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.625rem;
+    padding-left: 0.625rem;
+}
+
+/* --- Schmale Breite: Fortschrittsbalken und einzeilige Fußleiste (P1.9-W5.5)
+
+   Gemessen bei 375 px: Die Schrittliste stand als **358 px hoher** Stapel aus
+   sieben Knöpfen über der eigentlichen Frage -- man scrollte an der Navigation
+   vorbei, um zum Inhalt zu kommen. Und die Fußleiste brach auf **133 px** um
+   (auf «Prüfen & Starten» sogar 153), weil drei ausgeschriebene Beschriftungen
+   nebeneinander nicht in 327 px passen.
+
+   Beides wird hier zusammengezogen, ohne dass ein Element aus dem DOM
+   verschwindet: Die Sprungknöpfe der Liste sind Eingänge, und ein fehlender
+   Eingang legt in Dash den ganzen Callback lahm (Regel 6). Was hier
+   verschwindet, sind **Beschriftungen** -- und auch die nur aus dem Bild:
+   beschnitten wie in `.af-nur-vorlesen`, damit der Name im Baum bleibt und
+   vorgelesen wird. Ein Symbol ohne Namen ist für eine Vorlesesoftware stumm.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 899px) {
+    /* Die Liste wird eine Zeile: sieben Marken nebeneinander statt sieben
+       Knöpfe untereinander. Welcher Schritt offen ist, sagt weiterhin die
+       Farbe und `aria-current`; wie er heißt, sagt der `title` und -- eine
+       Zeile darunter -- die Überschrift des Schritts selbst. */
+    .af-wizard__rail {
+        position: static;
+    }
+
+    .af-steps {
+        flex-direction: row;
+        gap: 0.25rem;
+        overflow-x: auto;
+    }
+
+    .af-step {
+        width: auto;
+        flex: 1 1 0;
+        justify-content: center;
+        padding: 0.375rem 0.25rem;
+        min-width: 2rem;
+    }
+
+    /* Beschnitten statt entfernt -- der Name bleibt für die Vorlesesoftware. */
+    .af-step__text,
+    .af-step__heading,
+    .af-btn--symbol-schmal .af-btn__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* Die Fußleiste bleibt eine Zeile. `flex-wrap: wrap` war der Grund für die
+       133 px; ohne Umbruch und mit knapperem Innenabstand bleibt sie unter der
+       Höhe eines Knopfes plus Luft. */
+    .af-wizard__nav {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        margin-top: 1.5rem;
+    }
+
+    /* Eine Meldung des Tores legt sich **über** die Knöpfe statt zwischen sie:
+       So drängt sie die Leiste nicht auseinander, und wenn sie leer ist (der
+       Normalfall), kostet sie nichts -- `.af-wizard__gate:empty` blendet sie
+       ohnehin aus. */
+    .af-wizard__gate {
+        order: -1;
+        flex: 1 1 100%;
+    }
+}
+
+/* --- Gewicht der drei Wege (P1.9-W5.6) -------------------------------------
+
+   Drei gleich große, gleich betonte Karten stellen drei Fragen, wo eine zu
+   beantworten ist. Welcher Weg hervorgehoben wird, entscheidet `_hauptweg` --
+   dort steht auch, warum es ein **Fachurteil** ist und keine Messung.
+
+   **Gewicht ändert sich, Ort nicht.** Die Karten bleiben, wo sie sind; nur ihre
+   Betonung folgt dem Zustand. Wer die Wege umsortiert, nimmt dem
+   wiederkehrenden Nutzer das Einzige, was er hier schon kann.
+   -------------------------------------------------------------------------- */
+
+.af-way--haupt {
+    border-color: var(--accent);
+    padding: 1.5rem 1.375rem;
+}
+
+.af-way--haupt .af-way__title {
+    font-size: 1.0625rem;
+}
+
+.af-way--haupt .af-way__chevron {
+    color: var(--accent);
+}
+
+/* Die zweitrangigen Wege treten zurück -- ohne zu verschwinden: Sie sind
+   erreichbar, nur nicht das Naheliegende. */
+.af-way--neben {
+    padding: 1rem 1.375rem;
+}
+
+.af-way--neben .af-way__title {
+    font-size: 0.9375rem;
+}
+
+.af-way--neben .af-way__icon {
+    color: var(--text-muted);
+}
+
+/* Ein gesperrter Weg wird nie hervorgehoben (`_hauptweg` sorgt dafür), aber
+   falls doch je einer gesperrt hervorgehoben würde, soll die Betonung nicht
+   gegen die Sperre anschreien. */
+.af-way--haupt:disabled {
+    border-color: var(--border-subtle);
 }

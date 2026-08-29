@@ -69,8 +69,8 @@ def _read_ticks(run_dir: Path):
     return pd.DataFrame(rows) if rows else None
 
 
-def _graph(fig, height: int = 420) -> dcc.Graph:
-    theme.style_figure(fig, height=height)
+def _graph(fig, height: int = 420, *, mode: str = theme.LIGHT) -> dcc.Graph:
+    theme.style_figure(fig, height=height, mode=mode)
     return dcc.Graph(figure=fig, config=theme.GRAPH_CONFIG)
 
 
@@ -81,7 +81,7 @@ def _panel(*children) -> html.Div:
 # --- Einzelansichten -------------------------------------------------------
 
 
-def _view_yield(run_dir: Path):
+def _view_yield(run_dir: Path, mode: str = theme.LIGHT):
     ticks = _read_ticks(run_dir)
     if ticks is None:
         return ui.alert("Keine Marktdaten verfügbar.", "info")
@@ -115,7 +115,10 @@ def _view_yield(run_dir: Path):
     blocks = [
         html.H3("Angebot vs. Nachfrage", className=f"{ui.H3} mb-3"),
         ui.card(
-            _graph(theme.style_figure(fig, title="Markt-Rückkopplung (Yield Management)")),
+            _graph(
+                theme.style_figure(fig, mode=mode, title="Markt-Rückkopplung (Yield Management)"),
+                mode=mode,
+            ),
             pad=False,
             class_name="p-2 mb-6",
         ),
@@ -142,7 +145,12 @@ def _view_yield(run_dir: Path):
         margin.update_xaxes(title_text="Tick")
         blocks.append(
             ui.card(
-                _graph(theme.style_figure(margin, barmode="stack", title="Preis-Zusammensetzung")),
+                _graph(
+                    theme.style_figure(
+                        margin, mode=mode, barmode="stack", title="Preis-Zusammensetzung"
+                    ),
+                    mode=mode,
+                ),
                 pad=False,
                 class_name="p-2",
             )
@@ -150,7 +158,7 @@ def _view_yield(run_dir: Path):
     return _panel(*blocks)
 
 
-def _booking_rate_lines(frame, group_column: str, title: str):
+def _booking_rate_lines(frame, group_column: str, title: str, mode: str = theme.LIGHT):
     fig = go.Figure()
     for value in frame[group_column].unique():
         subset = frame[frame[group_column] == value]
@@ -164,6 +172,7 @@ def _booking_rate_lines(frame, group_column: str, title: str):
         )
     theme.style_figure(
         fig,
+        mode=mode,
         title=title,
         xaxis_title="Tick",
         yaxis_title="Buchungsrate",
@@ -172,14 +181,17 @@ def _booking_rate_lines(frame, group_column: str, title: str):
     return fig
 
 
-def _view_segments(run_dir: Path):
+def _view_segments(run_dir: Path, mode: str = theme.LIGHT):
     population = _read_csv(run_dir / "timeseries" / "population.csv")
     ages = _read_csv(run_dir / "timeseries" / "age_property.csv")
 
     left = (
         ui.card(
             _graph(
-                _booking_rate_lines(population, "segment_id", "Buchungsrate nach Profil-Segment")
+                _booking_rate_lines(
+                    population, "segment_id", "Buchungsrate nach Profil-Segment", mode
+                ),
+                mode=mode,
             ),
             pad=False,
             class_name="p-2",
@@ -189,7 +201,10 @@ def _view_segments(run_dir: Path):
     )
     right = (
         ui.card(
-            _graph(_booking_rate_lines(ages, "age_group", "Buchungsrate nach Altersgruppe")),
+            _graph(
+                _booking_rate_lines(ages, "age_group", "Buchungsrate nach Altersgruppe", mode),
+                mode=mode,
+            ),
             pad=False,
             class_name="p-2",
         )
@@ -202,7 +217,7 @@ def _view_segments(run_dir: Path):
     )
 
 
-def _view_policies(run_dir: Path):
+def _view_policies(run_dir: Path, mode: str = theme.LIGHT):
     properties = _read_csv(run_dir / "timeseries" / "properties.csv")
     if properties is None:
         return ui.alert("Keine Property-Zeitreihen vorhanden.", "info")
@@ -223,14 +238,14 @@ def _view_policies(run_dir: Path):
     return _panel(
         html.H3("Politik & Steuern (exogen)", className=f"{ui.H3} mb-3"),
         ui.card(
-            _graph(theme.style_figure(fig, title="Politische Instrumente")),
+            _graph(theme.style_figure(fig, mode=mode, title="Politische Instrumente"), mode=mode),
             pad=False,
             class_name="p-2",
         ),
     )
 
 
-def _view_macro(run_dir: Path):
+def _view_macro(run_dir: Path, mode: str = theme.LIGHT):
     properties = _read_csv(run_dir / "timeseries" / "properties.csv")
     if properties is None:
         return ui.alert("Keine Property-Zeitreihen vorhanden.", "info")
@@ -251,14 +266,14 @@ def _view_macro(run_dir: Path):
     return _panel(
         html.H3("Makroökonomische Indizes", className=f"{ui.H3} mb-3"),
         ui.card(
-            _graph(theme.style_figure(fig, title="Wirtschaft & Demographie")),
+            _graph(theme.style_figure(fig, mode=mode, title="Wirtschaft & Demographie"), mode=mode),
             pad=False,
             class_name="p-2",
         ),
     )
 
 
-def _view_costs(run_dir: Path):
+def _view_costs(run_dir: Path, mode: str = theme.LIGHT):
     properties = _read_csv(run_dir / "timeseries" / "properties.csv")
     if properties is None:
         return ui.alert("Keine Property-Zeitreihen vorhanden.", "info")
@@ -274,7 +289,7 @@ def _view_costs(run_dir: Path):
     return _panel(
         html.H3("Kostenstruktur der Anbieter", className=f"{ui.H3} mb-3"),
         ui.card(
-            _graph(theme.style_figure(fig, title="Airline-Kosten-Indizes")),
+            _graph(theme.style_figure(fig, mode=mode, title="Airline-Kosten-Indizes"), mode=mode),
             pad=False,
             class_name="p-2",
         ),
@@ -293,7 +308,7 @@ def _factor_to_number(value) -> float:
     return 0.0
 
 
-def _view_cib(run_dir: Path):
+def _view_cib(run_dir: Path, mode: str = theme.LIGHT):
     factors = _read_csv(run_dir / "timeseries" / "factors.csv")
     if factors is None or factors.empty:
         return ui.alert("Keine Faktoren-Daten verfügbar.", "info")
@@ -319,7 +334,10 @@ def _view_cib(run_dir: Path):
     return _panel(
         html.H3("CIB-Faktoren F1–F7", className=f"{ui.H3} mb-3"),
         ui.card(
-            _graph(theme.style_figure(fig, title="Faktoren (Zustands-Trajektorien)")),
+            _graph(
+                theme.style_figure(fig, mode=mode, title="Faktoren (Zustands-Trajektorien)"),
+                mode=mode,
+            ),
             pad=False,
             class_name="p-2",
         ),
@@ -343,7 +361,7 @@ def png_gallery(run_dir: Path) -> html.Div:
             ui.card(
                 html.H3(figure.title, className=f"{ui.H3} mb-3"),
                 (
-                    html.Img(src=url, className="w-full rounded border border-slate-200")
+                    html.Div(html.Img(src=url, className="w-full rounded"), className="af-paper")
                     if url
                     else ui.alert("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warning")
                 ),
@@ -353,7 +371,7 @@ def png_gallery(run_dir: Path) -> html.Div:
     return html.Div(cards)
 
 
-def _view_png(run_dir: Path):
+def _view_png(run_dir: Path, mode: str = theme.LIGHT):
     return _panel(
         html.Div(
             [
@@ -374,7 +392,7 @@ def _view_png(run_dir: Path):
         dcc.Loading(
             html.Div(png_gallery(run_dir), id="figures-png-gallery"),
             type="dot",
-            color="#1E3A5F",
+            color=theme.palette(mode)["accent"],
         ),
     )
 
@@ -393,19 +411,19 @@ _VIEWS = {
 DEFAULT_TAB = "yield"
 
 
-def _render_view(tab: str | None, run_dir: Path):
+def _render_view(tab: str | None, run_dir: Path, mode: str = theme.LIGHT):
     view = _VIEWS.get(tab or DEFAULT_TAB, _view_yield)
     try:
-        return view(run_dir)
+        return view(run_dir, mode)
     except Exception as exc:  # noqa: BLE001 - unvollständige Runs kommen vor
         return ui.alert(f"Auswertung fehlgeschlagen: {exc}", "error")
 
 
-def render(run_dir: Path, run_id: str) -> html.Div:
+def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     return html.Div(
         [
             ui.tabs("figures-tabs", TABS, value=DEFAULT_TAB),
-            html.Div(_render_view(DEFAULT_TAB, run_dir), id="figures-tab-content"),
+            html.Div(_render_view(DEFAULT_TAB, run_dir, mode), id="figures-tab-content"),
         ],
         className="af-tabs--sub",
     )
@@ -416,12 +434,13 @@ def register_callbacks(app) -> None:
         Output("figures-tab-content", "children"),
         Input("figures-tabs", "value"),
         State("selected-run-store", "data"),
+        State("theme-store", "data"),
         prevent_initial_call=True,
     )
-    def _render_tab(tab: str | None, selected: dict | None):
+    def _render_tab(tab: str | None, selected: dict | None, mode: str | None):
         if not selected:
             return no_update
-        return _render_view(tab, Path(selected["run_dir"]))
+        return _render_view(tab, Path(selected["run_dir"]), theme.normalise(mode))
 
     @app.callback(
         Output("figures-png-gallery", "children"),

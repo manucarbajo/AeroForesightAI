@@ -5,7 +5,10 @@ Menschen, die buchen? Je Block steht vorn die Stellschraube, die die Wirkung
 bestimmt; die Feinabstimmung liegt aufklappbar darunter.
 
 Die «Speichern»-Knöpfe schreiben direkt in `configs/properties.json` — sie
-wirken also über den einzelnen Lauf hinaus.
+wirken also über den einzelnen Lauf hinaus. Seit P1.9-W3.2 stehen sie deshalb
+hinter einer Rückfrage (`controls.write_action`), und ihre Reichweite steht als
+Hinweis darunter. Dieses Modul wird seit W3.1 im Bereich «Modell» gerendert,
+nicht mehr in der Schrittfolge.
 """
 
 from __future__ import annotations
@@ -45,11 +48,11 @@ def _market_feedback(draft: dict) -> html.Div:
     prefix = "market_feedback_edit"
 
     return ui.card(
-        c.check(f"{prefix}.enabled", feedback.get("enabled", True)),
+        c.check(f"{prefix}.enabled", feedback.get("enabled")),
         html.Div(
             c.number(
                 f"{prefix}.target_booking_rate",
-                float(feedback.get("target_booking_rate", 0.37)),
+                feedback.get("target_booking_rate"),
                 min=0.05,
                 max=1.0,
                 step=0.01,
@@ -62,7 +65,7 @@ def _market_feedback(draft: dict) -> html.Div:
                 *[
                     c.number(
                         f"{prefix}.{name}",
-                        float(feedback.get(name, default)),
+                        feedback.get(name),
                         min=low,
                         max=high,
                         step=step,
@@ -74,14 +77,13 @@ def _market_feedback(draft: dict) -> html.Div:
             count=len(_FEEDBACK_FINE),
             names="Preisuntergrenze, Reaktionsstärke, Dämpfung, Preisdeckel, Kopplung",
         ),
-        html.Div(
-            ui.button(
-                "Als Standard speichern",
-                id=c.action_id("save-market-feedback"),
-                variant="secondary",
-                icon_name="save",
-            ),
-            className="mt-5",
+        c.write_action(
+            "save-market-feedback",
+            "Als Standard speichern",
+            frage="Das Preisverhalten wird als neuer Standard in die "
+            "Konfigurationsdatei geschrieben.",
+            icon_name="save",
+            class_name="mt-5",
         ),
     )
 
@@ -91,7 +93,7 @@ def _saturation(draft: dict) -> html.Div:
     return ui.card(
         c.number(
             "saturation_edit.booking_increase",
-            float(saturation.get("booking_increase", 0.6)),
+            saturation.get("booking_increase"),
             min=0.0,
             max=1.0,
             step=0.05,
@@ -100,7 +102,7 @@ def _saturation(draft: dict) -> html.Div:
         ui.expert(
             c.number(
                 "saturation_edit.utility_penalty_factor",
-                float(saturation.get("utility_penalty_factor", 1.0)),
+                saturation.get("utility_penalty_factor"),
                 min=0.0,
                 max=3.0,
                 step=0.1,
@@ -132,15 +134,16 @@ def _segment_card(index: int, segment: dict) -> html.Div:
                 html.Div(
                     [
                         html.P(label, className=ui.H3),
-                        html.Code(segment_id, className=f"{ui.CAPTION} text-slate-500"),
+                        html.Code(segment_id, className=ui.CAPTION),
                     ]
                 ),
-                ui.button(
+                c.write_action(
+                    "segment-delete",
                     "Entfernen",
-                    id={"type": SEGMENT_DELETE, "segment": segment_id},
+                    frage=f"Das Segment «{label}» wird aus der Konfigurationsdatei entfernt.",
                     variant="danger",
                     icon_name="delete",
-                    className="!px-3 !py-1.5 text-xs",
+                    identifier={"type": SEGMENT_DELETE, "segment": segment_id},
                 ),
             ],
             className="flex items-start justify-between gap-3 mb-4",
@@ -154,7 +157,7 @@ def _segment_card(index: int, segment: dict) -> html.Div:
         ui.expert(
             c.slider(
                 f"{path}.saturation_decay",
-                float(decay if decay is not None else 0.2),
+                decay,
                 key="segment.saturation_decay",
             ),
             html.Div(
@@ -162,7 +165,7 @@ def _segment_card(index: int, segment: dict) -> html.Div:
                     *[
                         c.number(
                             f"{path}.modifiers.{name}",
-                            float(modifiers.get(name, fallback)),
+                            modifiers.get(name),
                             key=f"segment.{name}",
                             step=0.05,
                         )
@@ -187,8 +190,8 @@ def _distribution_card(index: int, segment: dict) -> html.Details:
 
     if kind == "beta":
         shape = [
-            c.number(f"{path}.alpha", float(segment.get("alpha") or 2.0), label="Alpha", step=0.01),
-            c.number(f"{path}.beta", float(segment.get("beta") or 5.0), label="Beta", step=0.01),
+            c.number(f"{path}.alpha", segment.get("alpha"), label="Alpha", step=0.01),
+            c.number(f"{path}.beta", segment.get("beta"), label="Beta", step=0.01),
         ]
     else:
         shape = [
@@ -201,7 +204,7 @@ def _distribution_card(index: int, segment: dict) -> html.Details:
             ),
             c.number(
                 f"{path}.std_dev",
-                float(segment.get("std_dev") or 1.0),
+                segment.get("std_dev"),
                 label="Streuung",
                 hint="Wie weit die Menschen um diesen Wert auseinanderliegen.",
                 step=0.01,
@@ -217,7 +220,7 @@ def _distribution_card(index: int, segment: dict) -> html.Details:
         ),
         c.number(
             f"{path}.max_value",
-            float(segment.get("max_value") or 1.0),
+            segment.get("max_value"),
             label="Maximum",
             hint="Werte darüber kommen nicht vor.",
             step=0.01,
@@ -260,9 +263,13 @@ def _add_segment_block() -> html.Div:
                     hint="Kleinbuchstaben und Unterstriche, keine Leerzeichen.",
                     class_name="flex-1 min-w-[16rem]",
                 ),
-                html.Div(
-                    ui.button("Segment anlegen", id=c.action_id("add-segment"), icon_name="add"),
-                    className="pt-7",
+                c.write_action(
+                    "add-segment",
+                    "Segment anlegen",
+                    frage="Das neue Segment wird in die Konfigurationsdatei geschrieben.",
+                    icon_name="add",
+                    variant="primary",
+                    class_name="pt-7",
                 ),
             ],
             className="flex items-start gap-4 flex-wrap",
@@ -325,13 +332,14 @@ def layout(draft: dict) -> html.Div:
                     else ui.alert("Keine Verteilungen definiert.", "info")
                 ),
             ),
-            html.Div(
-                ui.button(
-                    "Bevölkerung als Standard speichern",
-                    id=c.action_id("save-population"),
-                    icon_name="save",
-                ),
-                className="mt-2",
+            c.write_action(
+                "save-population",
+                "Bevölkerung als Standard speichern",
+                frage="Bevölkerung und Sättigung werden als neuer Standard in die "
+                "Konfigurationsdatei geschrieben.",
+                icon_name="save",
+                variant="primary",
+                class_name="mt-2",
             ),
         ]
     )

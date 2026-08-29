@@ -1,8 +1,25 @@
-# Simulations-Dashboard
+# Simulations-Leitstand
 
 Web-Oberfläche für Präsentation und Analyse: Simulation starten, Ergebnisse
-ansehen, Run per Chat abfragen. Gebaut mit **Plotly Dash**, im Design der
-Landingpage (`aeroforesight-ai-landing-page/`).
+ansehen, Lauf per Chat abfragen. Gebaut mit **Plotly Dash**.
+
+Seit P1.5 ist es ein **Leitstand**: ein Bildschirm, fünf Zonen, kein Blättern.
+
+```text
++---------------------------------------------------------------+
+| Kopfzeile - Name, Zustand, Lauf-Auswahl, Aktionen, Theme       |
++---------------+---------------------------+-------------------+
+| Bedienfeld    | Viewport                  | Telemetrie        |
+| (Stand,       | (Szene, Einrichten,       | (Kennzahlen,      |
+|  Preflight,   |  Ergebnisse, Handbuch)    |  Verlaeufe,       |
+|  Start)       +---------------------------+  Konsole)         |
+|               | Zeitleiste                |                   |
++---------------+---------------------------+-------------------+
+```
+
+Kopfzeile und Zeitleiste bleiben stehen, die drei Zonen dazwischen rollen jede
+für sich. Unter 1280 px weicht die Telemetrie in eine Schublade, unter 1024 px
+auch die Parameterspalte, unter 768 px scrollt die Seite wieder normal.
 
 ## Start
 
@@ -13,9 +30,15 @@ python -m dashboard.web.app --port 8511
 | Adresse | Inhalt |
 | --- | --- |
 | `http://localhost:8511/` | Landingpage |
-| `http://localhost:8511/app/` | Simulation starten |
-| `http://localhost:8511/app/runs` | Ergebnisse ansehen |
+| `http://localhost:8511/app/` | Einrichten (die Schrittfolge, sechs Schritte) |
+| `http://localhost:8511/app/lauf` | Leitstand (Szene + Zeitleiste) |
+| `http://localhost:8511/app/runs` | Ergebnisse (die sieben Ansichten) |
+| `http://localhost:8511/app/modell` | Modell (Faktorlage, Systemgrößen, Bevölkerung, Preisbildung) |
 | `http://localhost:8511/app/doku` | Handbuch |
+
+Die Reihenfolge ist seit P1.7 der Arbeitsablauf: Man richtet ein, sieht dann zu,
+und wertet zuletzt aus. Deshalb liegt das Einrichten auf dem leeren Pfad — dort
+fängt man an. `/app/setup` funktioniert weiterhin und führt dorthin.
 
 Ein Server für beides. Die Landingpage (`aeroforesight-ai-landing-page/`) wird
 als statisches HTML ausgeliefert, das Dashboard läuft darunter auf `/app/`.
@@ -42,26 +65,35 @@ Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
 
 | Datei / Ordner | Rolle |
 | --- | --- |
-| `app.py` | Dash-Instanz, Seitenrahmen, Routing, Stores |
-| `theme.py` | Design-Tokens der Landingpage + Plotly-Template |
-| `components.py` | Karten, Kacheln, Buttons, Tabs, Akkordeons |
+| `app.py` | Dash-Instanz, Stores, Routing, die Callbacks zwischen den Zonen |
+| `shell.py` | der Rahmen: fünf Zonen, Kopfzeile, Theme-Umschalter, Schubladen |
+| `theme.py` | Farbtokens (hell **und** dunkel) + die beiden Plotly-Templates |
+| `status.py` | **eine** Ableitung des Anlagenzustands für Kopfzeile, Banner, Konsole |
+| `run_data.py` | die Daten eines Laufs aus einer Hand — oder der Beispieldatensatz |
+| `demo_run.py` | der Beispieldatensatz, wenn `outputs/` noch leer ist |
+| `timeline.py` | die einzige Zeitachse: Tick-Regler, Abspielsteuerung, Ereignismarker |
+| `components.py` | Karten, Kacheln, Buttons, Tabs, Akkordeons, Konsolenzeilen |
 | `state.py` | `ConfigDraft` ⇄ `dcc.Store` |
 | `runner.py` | Lauf im Hintergrund-Thread, Fortschritt über eine Queue |
 | `files_route.py` | Flask-Route für PNGs und Downloads aus `outputs/` |
-| `pages/` | `launch.py` (Simulation starten), `runs.py` (Ergebnisse ansehen), `docs.py` (Handbuch) |
+| `pages/` | `launch.py` (Bedienfeld links: Stand, Preflight, Start), `setup.py` (Einrichten), `model_editor.py` (Modell), `runs.py` (Ergebnis-Ansichten), `docs.py` (Handbuch) |
 | `pages/docs_reference.py` | Referenzkapitel, aus Glossar und `configs/` erzeugt |
-| `views/` | die sieben Tabs des Run-Browsers |
-| `config_editor/` | die sechs Tabs des Config-Editors |
+| `views/` | die sieben Ergebnis-Ansichten plus `scene.py` (Viewport) und `telemetry.py` (rechte Zone) |
+| `config_editor/` | der geführte Ablauf (`start_flow.py`) plus die vier Editor-Tabs |
 | `config_editor/glossary.py` | **alle Erklärtexte an einer Stelle** — Beschriftung, Wirkung, technischer Feldname je Parameter |
 | `assets/dashboard.css` | Styling für alles, was Tailwind-Utilities nicht erreichen |
 
 ## Funktionen
 
-| Bereich | Inhalt |
+| Zone / Bereich | Inhalt |
 | --- | --- |
-| **Simulation starten** | Sechs Tabs: **Überblick** (die fünf Entscheidungen, die einen Lauf prägen), **Rahmenbedingungen** (Faktoren F1–F7, Systemgrößen samt Regeln), **Nachfrage & Preisbildung** (Yield Management, Sättigung, Segmente, Verteilungen), **Lauf & Ablage** (Benennung, Mehrfachläufe, Config-Dateien), **Technik** (Sprachmodell, Reproduzierbarkeit, Ausgaben), **Kontrolle** (Klartext-Zusammenfassung, Warnungen, Preset sichern). Start mit Live-Log. |
-| **Ergebnisse ansehen** | **Szenario** (Hauptansicht), Übersicht, Animation, Figures, Bericht, Abfrage, Dateien |
-| **Dokumentation** | Handbuch mit 28 Kapiteln in sechs Teilen, Kapitelnavigation und Volltextsuche |
+| **Kopfzeile** | Zustand der Anlage (bereit / läuft / beeinträchtigt / Demo, mit pulsierendem Punkt), Lauf-Auswahl für den ganzen Leitstand, Speichern / Snapshot / Exportieren, Theme-Umschalter |
+| **Bedienfeld** | Was eingestellt ist (Szenario, Länge, Rechenmodus — je ein Verweis ins Einrichten), der Preflight, der Start-Knopf in einem klebenden Fuß. **Keine Eingabefelder** — `tests/test_web_rail.py` hält das fest |
+| **Einrichten** | Eine Schrittfolge aus **sieben** Schritten hinter einem Einstieg mit drei Wegen: die drei Entscheidungen aus P1.1 (Szenario als Kartenraster, Länge, Rechenmodus), dann **Ausgangslage** (die Faktoren F1–F7 samt dem Schalter, ob eigene Werte gelten), **Lauf & Ablage** (Benennung, Config-Dateien, Preset sichern) und **Technik** (Sprachmodell, Ausgaben), zuletzt **Prüfen & Starten** |
+| **Modell** | Seit P1.9-W3.1 ein eigener Bereich: **Systemgrößen** samt Regeln (die Faktoren sind mit W3.3 in die Schrittfolge zurückgezogen — sie beschreiben einen Lauf, nicht das Modell) und **Nachfrage & Preisbildung** (Yield Management, Sättigung, Segmente, Verteilungen) — zusammen 168 Bedienelemente. Sie lagen bis dahin als Schritte 4 und 5 in der Schrittfolge und sprengten sie: ein Experiment einzurichten und ein Modell zu pflegen sind zwei Tätigkeiten |
+| **Viewport** | **Leitstand**: die Population zum gewählten Tick plus Faktorstreifen F1–F7 · **Einrichten** (siehe oben) · **Ergebnisse**: Szenario (Hauptansicht), Übersicht, Animation, Figures, Bericht, Abfrage, Dateien · **Handbuch** mit Kapitelnavigation und Volltextsuche |
+| **Zeitleiste** | Tick-Regler über den Lauf, Play/Pause/Stop/Schritt, Tempo, Ereignismarker |
+| **Telemetrie** | Kennzahlen des gewählten Ticks, dieselben Größen als Verlauf mit Positionsmarke, Konsole (Ereignisse, Modellausfälle, Lauffortschritt) |
 
 ### Aufbau des Config-Editors
 
@@ -101,18 +133,40 @@ fehlschlagen.
 (Chat). Details: [`../docs/scenario_runs.md`](../docs/scenario_runs.md)
 
 Run-Figures liegen unter `outputs/<run_id>/figures/` (6 PNGs + `manifest.json`),
-sofern «Figures nach Lauf erzeugen» aktiv ist (Standard). Sie erscheinen im Tab
-**Figures** unter **PNG-Export**; die sechs Live-Auswertungen daneben entstehen
+sofern «Figures nach Lauf erzeugen» aktiv ist (Standard). Sie erscheinen in der
+Ansicht **Figures** unter **PNG-Export**; im Dark Mode stehen sie auf einer
+weißen Fläche wie ein aufgelegtes Blatt — matplotlib rendert sie hell, und
+ehrlich dargestellt schlägt falsch eingefärbt (offen in P1.2). die sechs Live-Auswertungen daneben entstehen
 direkt aus `outputs/<run_id>/timeseries/`. Sweep-Runs: `outputs/sweeps/sweep_<preset>/`.
 
 ## Gestaltung
 
-Farben, Schriften und Radien stammen aus
+**Farbe läuft über eine Token-Ebene, nirgends sonst.** Tailwind liefert Layout,
+Abstand und Typografie; die Farbe kommt als semantische Rolle (`surface`,
+`border`, `text-muted`, `accent`, …) aus `web/theme.py` — für alles, was Python
+einfärbt — und unter denselben Namen als CSS-Variable aus
+`web/assets/dashboard.css` für alles Übrige. Jede Rolle existiert **zweimal**,
+hell und dunkel; `tests/test_web_theme.py` hält beide Seiten deckungsgleich und
+meldet jede Tailwind-Farbklasse und jeden rohen Farbwert, der sich in ein Modul
+unter `web/` verirrt. Eine einzige übersehene reicht, um im Dark Mode eine weiße
+Fläche aufblitzen zu lassen.
+
+Die **helle** Palette stammt aus
 [`../aeroforesight-ai-landing-page/design/color-tokens.json`](../aeroforesight-ai-landing-page/design/color-tokens.json)
-und stehen an genau einer Stelle im Code: `web/theme.py` (für Diagramme) bzw.
-die Tailwind-Konfiguration in `web/app.py` (für die Oberfläche). Beide sind
-mit der Landingpage abgeglichen — wird dort umgefärbt, ändert sich hier eine
-Konstante.
+und ist mit der Landingpage abgeglichen — wird dort umgefärbt, ändert sich hier
+eine Konstante. Die dunkle (`theme.INK`) hat dort keine Entsprechung, weil die
+Landingpage nicht umschaltbar ist.
+
+**Dashs eigene Komponenten** (Slider, Dropdown, Tabs) werden über ihre
+`--Dash-*`-Token-Ebene mitgefärbt, nicht über einzelne Selektoren: Deren
+Klassennamen haben sich zwischen Dash 2 (`rc-slider-*`, `Select-*`) und Dash 4
+(`dash-slider-*`, `dash-dropdown-*`) vollständig geändert, und der alte Satz
+Regeln griff dadurch an keiner einzigen Stelle mehr.
+
+Die Wahl zwischen hell und dunkel liegt im `localStorage` des Browsers und wird
+von einem kurzen Skript im `<head>` gesetzt, **bevor** die Seite zum ersten Mal
+zeichnet — ein Dash-Callback käme dafür zu spät, und das helle Design blitzte
+bei jedem Laden kurz auf.
 
 Tailwind und die Schriften kommen wie auf der Landingpage über CDN. Für das
 Deployment auf den eigenen Server müssen beide lokal ausgeliefert werden;

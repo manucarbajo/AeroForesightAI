@@ -1,6 +1,30 @@
-Unter **Ergebnisse ansehen** wählen Sie oben einen Lauf; darunter liegen sieben
-Ansichten auf dieselben Daten. Welche wann sinnvoll ist, steht unter
-[Ergebnisse lesen](/doku/ergebnisse-lesen).
+Den Lauf wählen Sie oben in der Kopfzeile — die Wahl gilt für den ganzen
+Leitstand, also auch für Szene, Kennzahlen und Zeitleiste. Unter **Ergebnisse**
+liegen sieben Ansichten auf dieselben Daten. Welche wann sinnvoll ist, steht
+unter [Ergebnisse lesen](/doku/ergebnisse-lesen).
+
+## Der Leitstand selbst
+
+Bevor Sie in die sieben Ansichten gehen: Der Bereich **Leitstand** beantwortet
+die erste Frage meist schon.
+
+In der Mitte steht die Population zu **einem** Tick — jeder Punkt eine Person,
+waagerecht ihre Zahlungsbereitschaft, senkrecht ihr Umweltbewusstsein, eingefärbt
+danach, ob sie gebucht hat. Die Achsen stehen über den ganzen Lauf fest, damit
+eine Bewegung im Bild wirklich eine Bewegung der Bevölkerung ist und nicht bloß
+eine nachgeführte Achse. Darüber liegt der Streifen mit den sieben
+Faktorzuständen; ein hervorgehobener Chip heißt, dieser Deskriptor ist gekippt.
+
+Rechts stehen die Kennzahlen desselben Ticks — Buchungsrate, Ticketpreis,
+Kostendruck, Nachfrageniveau, jeweils mit der Veränderung zum Vortick —, darunter
+dieselben Größen als Verlauf mit einer Marke an der aktuellen Stelle. Ganz unten
+die Konsole; sie ist zugeklappt, die Zahl daneben sagt, wie viele Meldungen
+anliegen.
+
+Unten führt die **Zeitleiste** durch den Lauf: ziehen, schrittweise gehen oder
+abspielen. Sie ist die einzige Zeitachse der Oberfläche; alles andere folgt ihr.
+Die Marker unter der Leiste zeigen, wo etwas passiert ist — die gelben sind
+politische Eingriffe.
 
 ## Szenario
 
@@ -19,7 +43,8 @@ Szenario-Erzeugung gerechnet wurde.
 
 ## Übersicht
 
-Vier Kacheln und zwei Diagramme. Die Kacheln nennen erreichte und geplante Ticks,
+Vier Kacheln und zwei Diagramme — dieselben Größen wie in der Telemetrie rechts,
+aber über den ganzen Lauf statt zu einem Tick. Die Kacheln nennen erreichte und geplante Ticks,
 die Zahl der Ereignisse, das verwendete Modell und ob das Marktmodell aktiv war.
 
 Die Diagramme zeigen den Verlauf von Buchungsrate und Ticketpreis. Das ist der
@@ -28,7 +53,11 @@ im Lauf überhaupt etwas passiert ist.
 
 ## Animation
 
-Vier Streudiagramme, die sich über die Ticks abspielen lassen. Das erste zeigt
+Vier Streudiagramme, die sich über die Ticks abspielen lassen. Sie bringen ihre
+eigenen Abspielknöpfe mit und folgen **nicht** der Zeitleiste unten — anders als
+die Szene im Bereich «Leitstand», die genau das tut. Wer beides nebeneinander
+braucht, nimmt die Szene; wer eine Aggregation über Alters- oder Segmentgruppen
+sucht, ist hier richtig. Das erste zeigt
 jede einzelne Person nach Zahlungsbereitschaft und Umweltbewusstsein, eingefärbt
 danach, ob sie gebucht hat. Die übrigen drei fassen nach Altersgruppen und
 Segmenten zusammen.

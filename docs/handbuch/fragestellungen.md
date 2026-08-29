@@ -29,8 +29,8 @@ einbringt, zeigt der Vergleich der beiden Läufe.
 
 ## Trägt dieses Ergebnis überhaupt?
 
-Stellen Sie unter **Überblick** die Wiederholungen auf fünf und lassen Sie den
-Zufallsstartwert **frei**. Sie bekommen fünf Läufe mit derselben Konfiguration,
+Stellen Sie im zweiten Schritt hinter «Feinabstimmung» die Wiederholungen auf
+fünf und lassen Sie den Zufallsstartwert **frei**. Sie bekommen fünf Läufe mit derselben Konfiguration,
 aber unterschiedlich gezogener Bevölkerung.
 
 Liegen die Buchungsraten dicht beieinander, hängt das Ergebnis an den Annahmen
@@ -43,7 +43,7 @@ Schalten Sie in **Lauf & Ablage** «Alle Szenarien vergleichen» ein. Jedes
 hinterlegte Preset wird einmal durchgerechnet, ohne Agenten-Dialog und damit
 schnell.
 
-Danach gehen Sie die Läufe in der Run-Liste durch und vergleichen in
+Danach gehen Sie die Läufe in der Lauf-Auswahl durch und vergleichen in
 **Übersicht** die Endwerte. Presets, die zu ähnlichen Verläufen führen,
 unterscheiden sich in ihren Annahmen weniger, als ihre Namen vermuten lassen —
 auch das ist ein Ergebnis.

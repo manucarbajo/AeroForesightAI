@@ -14,6 +14,7 @@ from dash import Input, Output, State, dcc, html, no_update
 
 from dashboard.run_browser import load_run_scenario, read_run_file, regenerate_run_scenario
 from dashboard.web import components as ui
+from dashboard.web import theme
 
 
 def _scenario_items(scenario: dict) -> list:
@@ -33,13 +34,13 @@ def _scenario_items(scenario: dict) -> list:
                 f"{rank}. {item.get('title', 'Szenario')}",
                 html.P(
                     "Anhaltspunkte aus dem Lauf (Ticks)",
-                    className="font-body text-xs font-semibold tracking-wide text-slate-500 uppercase mb-1",
+                    className="font-body text-xs font-semibold tracking-wide af-text-muted uppercase mb-1",
                 ),
                 ui.markdown(str(item.get("tick_grounding", ""))),
                 ui.divider("my-4"),
                 html.P(
                     "Szenario-Beschreibung",
-                    className="font-body text-xs font-semibold tracking-wide text-slate-500 uppercase mb-1",
+                    className="font-body text-xs font-semibold tracking-wide af-text-muted uppercase mb-1",
                 ),
                 ui.markdown(str(item.get("story") or item.get("what_could_happen", ""))),
                 open=expanded,
@@ -73,7 +74,7 @@ def body(run_dir: Path, run_id: str) -> html.Div:
                 ui.card(
                     html.P(
                         "Lauf-Narrativ — was im Lauf passiert ist",
-                        className="font-body text-xs font-semibold tracking-wide text-slate-500 uppercase mb-2",
+                        className="font-body text-xs font-semibold tracking-wide af-text-muted uppercase mb-2",
                     ),
                     ui.markdown(str(run_story)),
                     class_name="mb-6",
@@ -133,7 +134,7 @@ def body(run_dir: Path, run_id: str) -> html.Div:
     return html.Div(children)
 
 
-def render(run_dir: Path, run_id: str) -> html.Div:
+def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     return html.Div(
         [
             html.Div(
@@ -155,7 +156,7 @@ def render(run_dir: Path, run_id: str) -> html.Div:
             dcc.Loading(
                 html.Div(body(run_dir, run_id), id="scenario-body"),
                 type="dot",
-                color="#1E3A5F",
+                color=theme.palette(mode)["accent"],
             ),
         ]
     )

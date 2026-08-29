@@ -122,6 +122,19 @@ class SimulationState(BaseModel):
     #: ersten Tick. Bleibt danach unverändert — auch beim Fortsetzen aus einem
     #: Checkpoint, der Lauf setzt ja dieselbe Konfiguration fort.
     config_fingerprint: ConfigFingerprint | None = None
+    #: Wie lange der Lauf gerechnet hat, in Sekunden — gesetzt von
+    #: `SimulationRunner.run`, wenn der letzte Tick durch ist (P1.9-W4.3).
+    #:
+    #: **Bis dahin hielt kein Artefakt fest, wie lange ein Lauf dauert.** Der
+    #: Zeitstempel in `run_metadata.json` sagt, *wann* die Metadaten geschrieben
+    #: wurden, nicht *wie lange* gerechnet wurde. Damit ließ sich vor einem Lauf
+    #: auch nichts abschätzen: Die Angaben im Handbuch waren geschätzt und als
+    #: geschätzt gekennzeichnet.
+    #:
+    #: Nach demselben Muster wie `config_fingerprint`: am richtigen Moment
+    #: genommen, im Zustand abgelegt, von dort gelesen — nicht am Ende noch
+    #: einmal berechnet.
+    elapsed_seconds: float | None = None
     redebedarf_scores: dict[str, int] = Field(default_factory=dict)
     current_speech_candidates: list[SpeechCandidateState] = Field(default_factory=list)
     current_speech_order: list[str] = Field(default_factory=list)

@@ -1,4 +1,4 @@
-Der Tab **Abfrage** beantwortet Fragen zu genau einem Lauf. Er ist kein
+Der Ansicht **Abfrage** beantwortet Fragen zu genau einem Lauf. Er ist kein
 allgemeiner Chat: Er sieht nur die Artefakte dieses Laufs und kann darüber hinaus
 nichts wissen.
 

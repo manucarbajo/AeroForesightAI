@@ -28,6 +28,10 @@ CFG_BOOL = "cfg-bool"
 ACTION = "cfg-action"
 #: Freie Eingaben, die *nicht* im Draft landen (neue Property-ID, Preset-Name).
 FREE = "cfg-free"
+#: Platzhalter unter einem Feld, in den die Konfigurationsprüfung ihre Befunde
+#: schreibt. Jedes Feld bekommt einen — welcher gefüllt wird, entscheidet der
+#: Feldbezug aus `src/validation.py`, nicht eine Liste hier.
+ERROR = "cfg-error"
 
 # Aktions- und Freitext-IDs sind bewusst Pattern-Matching-IDs: die zugehörigen
 # Elemente stehen jeweils nur in einem Tab. Ein Callback auf eine feste ID, die
@@ -35,8 +39,76 @@ FREE = "cfg-free"
 # bei Pattern-Matching ist eine leere Treffermenge dagegen der Normalfall.
 
 
+#: Aktionen, die **dauerhaft in `configs/` schreiben** (P1.9-W3.2). Eigener Typ,
+#: weil sie hinter einer Rückfrage stehen und deshalb `submit_n_clicks` liefern
+#: statt `n_clicks` — ein Callback kann nicht beide Eigenschaften derselben
+#: ID-Menge abhören.
+WRITE = "cfg-write"
+
+
 def cfg_id(field: str, kind: str = CFG) -> dict:
     return {"type": kind, "field": field}
+
+
+def write_id(name: str) -> dict:
+    return {"type": WRITE, "action": name}
+
+
+#: Der Satz, der an **jeder** dieser Schaltflächen steht — im Hinweis darunter
+#: und in der Rückfrage darüber, aus einer Quelle.
+#:
+#: Das Audit vom 2026-08-28 hat fünf solcher Schaltflächen gefunden, die sofort
+#: und ohne Rückfrage `configs/properties.json` verändert haben — «Entfernen» an
+#: einem Segment löschte es aus der ausgelieferten Datei. Kein Dialog, kein
+#: Undo, keine Sicherung. Die Wirkung reichte über den Lauf hinaus, über die
+#: Sitzung hinaus und über den Nutzer hinaus: Die nächste Person arbeitete mit
+#: einem veränderten Modell, ohne es zu erfahren.
+REICHWEITE = (
+    "Das ändert das Modell dauerhaft — für alle künftigen Läufe und für alle, "
+    "die dieses Dashboard benutzen. Rückgängig machen lässt es sich nur über die "
+    "Versionsverwaltung."
+)
+
+
+def write_action(
+    name: str,
+    label: str,
+    *,
+    frage: str,
+    icon_name: str | None = None,
+    variant: str = "secondary",
+    identifier: dict | None = None,
+    class_name: str = "",
+):
+    """Eine Schaltfläche, die dauerhaft schreibt — mit Rückfrage und Reichweite.
+
+    *frage* benennt in einem Satz, **was** geschieht; die Reichweite kommt aus
+    `REICHWEITE` und steht in jeder dieser Rückfragen gleich da. Zwei Fassungen
+    desselben Satzes wären genau die Drift, die dieses Projekt an anderer Stelle
+    schon bezahlt hat.
+
+    *identifier* erlaubt eine eigene Pattern-ID (die beiden Löschknöpfe tragen
+    ihren Gegenstand darin). Ohne sie entsteht eine aus `name`.
+
+    **Zur Rückfrage selbst:** `dcc.ConfirmDialogProvider` zeigt den Dialog des
+    Browsers. Der ist nicht mit den Farbtokens gestaltet — dafür lässt er sich
+    nicht übersehen, braucht keinen zusätzlichen Zustand und kommt ohne eine
+    zweite Klickstufe aus, die man aus Versehen mitnimmt. Für eine Handlung, die
+    sich nur über die Versionsverwaltung zurückholen lässt, ist das der richtige
+    Tausch. Ein gestalteter Dialog wäre Politur und änderte nichts an der Zusage.
+    """
+
+    return html.Div(
+        [
+            dcc.ConfirmDialogProvider(
+                children=ui.button(label, variant=variant, icon_name=icon_name),
+                id=identifier or write_id(name),
+                message=f"{frage}\n\n{REICHWEITE}",
+            ),
+            ui.hint_text(REICHWEITE, class_name="mt-2 max-w-prose"),
+        ],
+        className=class_name,
+    )
 
 
 def action_id(name: str) -> dict:
@@ -45,6 +117,10 @@ def action_id(name: str) -> dict:
 
 def free_id(name: str) -> dict:
     return {"type": FREE, "name": name}
+
+
+def error_id(field: str) -> dict:
+    return {"type": ERROR, "field": field}
 
 
 def free_value(states: list, name: str, default: str = "") -> str:
@@ -146,6 +222,27 @@ def _described(
     return resolved_label, (param.short if param else None)
 
 
+def _below(field: str, key: str | None, detail: bool) -> Any:
+    """Was unter einem Feld steht: Fehlerplatzhalter und ggf. die Langerklärung.
+
+    Der Platzhalter liegt in **jedem** Feld — er ist leer, bis die Prüfung etwas
+    zu sagen hat, und er trägt denselben Pfad wie das Feld darüber. Damit landet
+    ein Befund automatisch an der richtigen Stelle, sobald `src/validation.py`
+    ihm ein Feld gibt; eine Zuordnungstabelle in der Oberfläche gibt es nicht.
+
+    *detail* zeigt zusätzlich die ausführliche Erklärung aus dem Glossar — dort,
+    wo entschieden wird, statt nur auf der Dokumentationsseite. Im Editor bleibt
+    es bei der einen Zeile aus `short`; im geführten Ablauf ist die Erklärung
+    genau das, was fehlte.
+    """
+
+    param = glossary.get(key or field) if detail else None
+    children: list[Any] = [html.Div(id=error_id(field))]
+    if param is not None and param.detail:
+        children.append(ui.explainer(param.detail))
+    return html.Div(children)
+
+
 def number(
     field: str,
     value: Any,
@@ -153,6 +250,7 @@ def number(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     min: float | None = None,
     max: float | None = None,
     step: float | None = None,
@@ -172,6 +270,7 @@ def number(
             debounce=True,
         ),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -183,6 +282,7 @@ def text(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     placeholder: str = "",
     class_name: str = "",
 ) -> html.Div:
@@ -198,6 +298,7 @@ def text(
             debounce=True,
         ),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -209,6 +310,7 @@ def textarea(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     class_name: str = "",
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
@@ -218,6 +320,7 @@ def textarea(
         # in den Store. Bei einem Beschreibungsfeld ist das verkraftbar.
         dcc.Textarea(id=cfg_id(field), value=value or "", className="af-input"),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -230,6 +333,7 @@ def select(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     clearable: bool = False,
     class_name: str = "",
 ) -> html.Div:
@@ -244,6 +348,7 @@ def select(
             className="af-dropdown",
         ),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -255,6 +360,7 @@ def slider(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
     min: float = 0.0,
     max: float = 1.0,
     step: float = 0.05,
@@ -278,6 +384,7 @@ def slider(
             className="pt-1",
         ),
         hint=text_hint,
+        below=_below(field, key, detail),
         class_name=class_name,
     )
 
@@ -289,6 +396,13 @@ def check(
     label: str | None = None,
     hint: str | None = None,
     key: str | None = None,
+    detail: bool = False,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
-    return ui.checkbox(text_label, value=bool(value), id=cfg_id(field, CFG_BOOL), hint=text_hint)
+    return ui.checkbox(
+        text_label,
+        value=bool(value),
+        id=cfg_id(field, CFG_BOOL),
+        hint=text_hint,
+        below=_below(field, key, detail),
+    )

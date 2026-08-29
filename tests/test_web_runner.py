@@ -43,7 +43,7 @@ def _warte_auf_ende(job_id: str, sekunden: float = 5.0) -> runner.Job:
 
 
 def test_a_run_reports_its_progress_and_result(monkeypatch):
-    def fake_launch(draft, *, repo_root=None, on_progress=None):
+    def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
         for tick in (1, 2, 3):
             on_progress(f"[tick {tick}/3] price=100")
         return "fertig"
@@ -64,7 +64,7 @@ def test_progress_arrives_while_the_run_is_still_going(monkeypatch):
 
     freigabe = threading.Event()
 
-    def fake_launch(draft, *, repo_root=None, on_progress=None):
+    def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
         on_progress("erste Zeile")
         freigabe.wait(timeout=5)
         return "fertig"
@@ -92,7 +92,7 @@ def test_progress_arrives_while_the_run_is_still_going(monkeypatch):
 def test_a_failure_lands_in_the_job_not_in_the_thread(monkeypatch):
     """Eine Ausnahme im Thread wäre sonst unsichtbar — der Lauf hinge ewig."""
 
-    def fake_launch(draft, *, repo_root=None, on_progress=None):
+    def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
         on_progress("bis hierher")
         raise RuntimeError("Ollama antwortet nicht")
 
@@ -181,7 +181,7 @@ def test_the_log_does_not_grow_without_bound(monkeypatch):
     monkeypatch.setattr(
         runner,
         "launch_from_draft",
-        lambda draft, *, repo_root=None, on_progress=None: [
+        lambda draft, *, repo_root=None, on_progress=None, should_stop=None: [
             on_progress(f"Zeile {i}") for i in range(ueberzaehlig)
         ],
     )
@@ -216,6 +216,14 @@ class _MitschreibendeApp:
 
         return decorator
 
+    def clientside_callback(self, *args, **kwargs):
+        """Clientseitige Callbacks laufen im Browser und haben hier nichts zu tun.
+
+        Die Attrappe muss sie trotzdem annehmen: `register_callbacks` meldet
+        seit P1.7 auch den Sprung nach oben an, und ohne diese Methode bräche
+        die Anmeldung ab, bevor der geprüfte Callback überhaupt entsteht.
+        """
+
 
 def _start_callback():
     from dashboard.web.pages import launch as launch_page
@@ -243,7 +251,9 @@ def test_the_start_button_refuses_a_config_that_cannot_run(monkeypatch):
     draft["use_seed"] = True
     draft["seed"] = -1
 
-    ergebnis = _start_callback()(1, draft)
+    # Zwei Ausloeser seit P1.7: Bedienfeld und letzter Schritt des
+    # Einrichtens. Ein Callback, eine Pruefung, ein `runner.start`.
+    ergebnis = _start_callback()(1, None, draft)
 
     assert gestartet == [], "es darf kein Lauf angefangen haben"
     assert "seed" in str(ergebnis[_STATUS])
@@ -253,7 +263,205 @@ def test_the_start_button_refuses_a_config_that_cannot_run(monkeypatch):
 def test_the_start_button_starts_a_healthy_config(monkeypatch):
     monkeypatch.setattr(runner, "start", lambda draft: "job-4711")
 
-    ergebnis = _start_callback()(1, initial_draft_dict())
+    ergebnis = _start_callback()(1, None, initial_draft_dict())
 
     assert ergebnis[0] == "job-4711"
     assert ergebnis[_KNOPF] is True, "während des Laufs ist der Knopf gesperrt"
+
+
+# --- Ein Lauf gehört dem Server, nicht der Sitzung --------------------------
+#
+# `runner` lässt genau **einen** Lauf im ganzen Prozess zu: `launch_simulation`
+# leitet `stdout` um, zwei Läufe schnitten sich gegenseitig die Ausgabe ab.
+# Die Anzeige las den Laufzustand trotzdem nur aus den Schaltern der eigenen
+# Sitzung — mit der Begründung, die Anzeige gehöre zu dieser einen. Das trifft
+# für die Anzeige zu, nicht für die Sache dahinter.
+#
+# Am laufenden System nachgestellt: Während ein Lauf bei Tick 14 von 20 stand,
+# meldete eine frisch geladene Seite «System bereit», der Start-Knopf stand
+# aktiv da, und sein Druck endete in «Es läuft bereits eine Simulation. Bitte
+# abwarten.» Genau der Widerspruch, gegen den `status.py` angetreten ist.
+
+
+def _running_callback():
+    from dashboard.web.pages import launch as launch_page
+
+    app = _MitschreibendeApp()
+    launch_page.register_callbacks(app)
+    for _ids, fn in app.callbacks:
+        if fn.__name__ == "_running":
+            return fn
+    raise AssertionError("Running-Callback nicht gefunden")
+
+
+def test_a_foreign_run_is_visible_in_a_session_that_did_not_start_it(monkeypatch):
+    """Fremder Lauf: Diese Sitzung pollt nicht, muss ihn aber melden."""
+
+    monkeypatch.setattr(runner, "is_running", lambda: True)
+
+    # poll_disabled=True heißt «diese Sitzung hat keinen eigenen Lauf».
+    laeuft, knopf_gesperrt = _running_callback()(1, True, False)
+
+    assert laeuft is True, "die Kopfzeile muss den fremden Lauf zeigen"
+    assert knopf_gesperrt is True, "«Start» darf nicht anbieten, was runner ablehnt"
+
+
+def test_an_idle_server_leaves_the_button_usable(monkeypatch):
+    monkeypatch.setattr(runner, "is_running", lambda: False)
+
+    laeuft, knopf_gesperrt = _running_callback()(1, True, True)
+
+    assert laeuft is False
+    assert knopf_gesperrt is False
+
+
+def test_the_own_run_is_reported_before_the_heartbeat_catches_up(monkeypatch):
+    """Der eigene Start zählt sofort, nicht erst beim nächsten Takt.
+
+    `runner.is_running()` steht hier auf `False` — der Takt weiß also noch
+    nichts. Ohne `run-poll` als zweite Quelle bliebe der eigene Lauf bis zu
+    zwei Sekunden lang unbestätigt.
+    """
+
+    monkeypatch.setattr(runner, "is_running", lambda: False)
+
+    laeuft, _knopf = _running_callback()(1, False, False)
+
+    assert laeuft is True
+
+
+def test_nothing_is_written_while_the_state_is_unchanged(monkeypatch):
+    """Der Takt darf die Kopfzeile nicht alle zwei Sekunden neu bauen.
+
+    Jede Änderung an `run-running-store` stößt `_status` an, und der lädt die
+    Laufdaten neu. Ein Takt, der unverändert schreibt, wäre eine Dauerlast
+    ohne Aussage.
+    """
+
+    from dash import no_update
+
+    monkeypatch.setattr(runner, "is_running", lambda: True)
+
+    ergebnis = _running_callback()(7, True, True)
+
+    assert ergebnis == (no_update, no_update)
+
+
+def test_the_rail_renders_a_locked_button_during_a_foreign_run(monkeypatch):
+    """Schon beim ersten Zeichnen — nicht erst beim ersten Takt."""
+
+    from dashboard.web.pages import launch as launch_page
+
+    monkeypatch.setattr(runner, "is_running", lambda: True)
+    gesperrt = str(launch_page.rail(initial_draft_dict()))
+
+    monkeypatch.setattr(runner, "is_running", lambda: False)
+    frei = str(launch_page.rail(initial_draft_dict()))
+
+    assert "disabled=True" in gesperrt
+    assert gesperrt != frei
+
+
+# --- Abbrechen (P1.9-W4.5) -------------------------------------------------
+
+
+class TestEinLaufLaesstSichAbbrechen:
+    """W4.5 — bis dahin lief ein Lauf bis zum Ende oder bis der Prozess starb.
+
+    Wer versehentlich 500 Ticks mit Sprachmodell startete, konnte nur warten
+    oder den Server neu starten.
+
+    **Kooperativ und nicht gewaltsam:** Ein Thread lässt sich von außen nicht
+    sauber beenden. Mitten in einem Tick abgebrochen bliebe ein halber Zustand
+    zurück, und die Artefakte beschrieben einen Lauf, den es so nie gab.
+    Gefragt wird deshalb zwischen zwei Ticks.
+    """
+
+    def test_nothing_running_is_not_an_error(self):
+        assert runner.cancel() is False
+
+    def test_the_flag_reaches_the_run(self, monkeypatch):
+        """Der Lauf bekommt eine Frage gestellt, die er beantworten kann."""
+
+        gesehen: dict = {}
+
+        def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
+            gesehen["vorher"] = should_stop()
+            runner.cancel()
+            gesehen["nachher"] = should_stop()
+            return "fertig"
+
+        monkeypatch.setattr(runner, "launch_from_draft", fake_launch)
+        job_id = runner.start({})
+        _warte(job_id)
+
+        assert gesehen == {"vorher": False, "nachher": True}, gesehen
+
+    def test_it_finds_the_active_run_without_a_job_id(self, monkeypatch):
+        """Wer die Seite neu geladen hat, kennt keine Kennung — darf aber abbrechen.
+
+        Dieselbe Überlegung wie beim Laufzustand: Was dem Server gehört, wird
+        beim Server erfragt, nicht aus dem Zustand einer Sitzung abgeleitet.
+        """
+
+        angehalten: dict = {}
+
+        def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
+            angehalten["konnte"] = runner.cancel()  # ohne Kennung
+            angehalten["wirkt"] = should_stop()
+            return "fertig"
+
+        monkeypatch.setattr(runner, "launch_from_draft", fake_launch)
+        _warte(runner.start({}))
+
+        assert angehalten == {"konnte": True, "wirkt": True}
+
+    def test_a_finished_run_cannot_be_cancelled(self, monkeypatch):
+        """Sonst meldete die Oberfläche einen Abbruch, den es nicht gab."""
+
+        monkeypatch.setattr(
+            runner,
+            "launch_from_draft",
+            lambda draft, *, repo_root=None, on_progress=None, should_stop=None: "fertig",
+        )
+        job_id = runner.start({})
+        _warte(job_id)
+
+        assert runner.cancel(job_id) is False
+
+
+def test_the_tick_loop_asks_before_the_next_round():
+    """Der Haken sitzt **nach** einem fertigen Tick, nicht mittendrin.
+
+    Dort ist der Zustand vollständig; der Lauf endet dann mit weniger Ticks,
+    als er vorhatte, und schreibt seine Artefakte wie jeder unvollständige
+    Lauf.
+    """
+
+    from pathlib import Path
+
+    quelle = Path("src/orchestration/simulation_runner.py").read_text(encoding="utf-8")
+    schleife = quelle[quelle.index("while state.clock.current_tick < max_ticks:") :][:900]
+
+    assert "self.options.should_stop" in schleife, (
+        "Die Tick-Schleife fragt nicht mehr nach einem Abbruch — dann ist der "
+        "Knopf im Ladebildschirm wirkungslos."
+    )
+    assert schleife.index("_run_single_round") < schleife.index("should_stop"), (
+        "Der Haken sitzt vor dem Tick statt danach — dann bricht der Lauf mit "
+        "einem halben Zustand ab."
+    )
+
+
+def _warte(job_id, sekunden: float = 3.0):
+    """Auf das Ende des Jobs warten, ohne fest zu schlafen."""
+
+    import time as _time
+
+    frist = _time.time() + sekunden
+    while _time.time() < frist:
+        job = runner.poll(job_id)
+        if job is not None and job.done:
+            return job
+        _time.sleep(0.01)
+    raise AssertionError("Der Job wurde nicht fertig")

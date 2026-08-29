@@ -1,8 +1,22 @@
-"""Design-Tokens der Landingpage plus das daraus abgeleitete Plotly-Template.
+"""Design-Tokens der Landingpage plus die daraus abgeleiteten Plotly-Templates.
 
-Einzige Quelle für Farben und Schriften der Dash-App. Die Werte stammen aus
-`aeroforesight-ai-landing-page/design/color-tokens.json` — wird die Landingpage
-neu eingefärbt, ändert sich hier eine Konstante und Charts wie UI ziehen mit.
+Einzige Quelle für Farben und Schriften der Dash-App. Die Rohpaletten stammen
+aus `aeroforesight-ai-landing-page/design/color-tokens.json` — wird die
+Landingpage neu eingefärbt, ändert sich hier eine Konstante und Charts wie UI
+ziehen mit.
+
+**Zwei Ebenen, und nur die obere wird benutzt.** Unten die Rohpaletten (`NAVY`,
+`SLATE`, `INK`) — eine Sammlung von Farbwerten ohne Bedeutung. Darüber die
+semantische Ebene (`PALETTE`): `surface`, `border`, `text_muted`, `accent` …,
+je einmal für `light` und für `dark`. Wer eine Farbe braucht, nimmt einen
+semantischen Namen; wer eine Rohfarbe direkt greift, baut den nächsten
+Dark-Mode-Bruch ein, weil `SLATE[200]` auf dunklem Grund nichts Sinnvolles
+bedeutet.
+
+Dieselben Namen stehen als CSS-Variablen in `assets/dashboard.css` — dort für
+alles, was sich nur per Stylesheet erreichen lässt (Dash-eigene Komponenten),
+hier für alles, was Python einfärbt (Plotly, `DataTable`-Inline-Styles).
+`tests/test_web_theme.py` hält beide Seiten deckungsgleich.
 """
 
 from __future__ import annotations
@@ -10,9 +24,10 @@ from __future__ import annotations
 import plotly.graph_objects as go
 import plotly.io as pio
 
-# --- Farbskalen ------------------------------------------------------------
-# Navy ist die Markenfarbe; Slate liefert die neutralen Grau-Töne, die die
-# Landingpage über Tailwind bezieht (text-slate-600, border-slate-200, …).
+# --- Rohpaletten -----------------------------------------------------------
+# Navy ist die Markenfarbe; Slate liefert die neutralen Grau-Töne der
+# Landingpage. Ink ist die dunkle Entsprechung: tiefe Blautöne statt neutraler
+# Grautöne, damit der Leitstand im Dark Mode dieselbe Markenfamilie trägt.
 
 NAVY = {
     50: "#f0f4f9",
@@ -41,76 +56,270 @@ SLATE = {
     900: "#0f172a",
 }
 
+#: Die dunkle Grundfläche. Bewusst kein invertiertes Slate: reine Grautöne
+#: wirken bei stundenlangem Blick auf Zeitreihen flau, ein leichter Blaustich
+#: hält den Zusammenhang zur Marke und senkt den Kontrastschock am Rand.
+INK = {
+    950: "#080d16",  # Grundfläche der Anwendung
+    900: "#0e1723",  # Karten, Panele
+    850: "#13202f",  # Eingabefelder, angehobene Flächen
+    800: "#1a2b3d",  # Hover, eingelassene Flächen
+    700: "#23384d",  # Rahmen
+    600: "#31485f",  # betonter Rahmen
+    500: "#54708c",
+    400: "#8ba0b7",  # gedämpfter Text
+    300: "#b8c7d7",
+    200: "#d5dfea",
+    100: "#e8eff6",  # Fließtext
+    50: "#f4f8fc",  # Überschriften
+}
+
 PRIMARY = NAVY[800]
 RADIUS = "0.5rem"
 
 FONT_HEADLINE = "Plus Jakarta Sans, sans-serif"
 FONT_BODY = "Inter, sans-serif"
+FONT_MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
 
-# --- Semantische Rollen ----------------------------------------------------
-# Ersetzt die Ad-hoc-Farben der Streamlit-Variante (#2563eb, #059669,
-# "green"/"red"). Gedeckte Töne statt Signalfarben — die Zahlen sollen
-# wissenschaftlich wirken, nicht alarmieren.
+LIGHT = "light"
+DARK = "dark"
+MODES = (LIGHT, DARK)
 
-POSITIVE = "#0f766e"  # teal-700  — gebucht, Erfolg
-NEGATIVE = "#9f1239"  # rose-800  — nicht gebucht, Fehler
-WARNING = "#b45309"  # amber-700 — Hinweis
-PRICE = "#0f766e"
-BOOKING = NAVY[500]
-NEUTRAL = SLATE[500]
+# --- Semantische Ebene -----------------------------------------------------
+# Gedeckte Töne statt Signalfarben — die Zahlen sollen wissenschaftlich wirken,
+# nicht alarmieren. Im Dark Mode sind dieselben Rollen heller angesetzt: die
+# hellen Töne (teal-700, rose-800) verschwinden auf dunklem Grund.
 
-#: Kategorien-Reihenfolge für Serien ohne eigene Bedeutung. Alle Töne sind
-#: gedeckt und tragen denselben Helligkeitseindruck, damit keine Serie
-#: unabsichtlich hervorsticht.
-COLORWAY = [
-    NAVY[800],
-    "#0f766e",
-    "#b45309",
-    NAVY[400],
-    "#9f1239",
-    "#4d7c0f",
-    NAVY[600],
-    SLATE[500],
-    "#7c3aed",
-    NAVY[300],
-]
+PALETTE: dict[str, dict[str, str]] = {
+    LIGHT: {
+        # Flächen
+        "canvas": SLATE[50],
+        "surface": "#ffffff",
+        "surface-raised": "#ffffff",
+        "surface-sunken": SLATE[50],
+        "surface-inset": SLATE[100],
+        "surface-hover": SLATE[50],
+        "overlay": "rgba(255, 255, 255, 0.88)",
+        "scrim": "rgba(15, 23, 42, 0.35)",
+        # Rahmen
+        "border": SLATE[200],
+        "border-subtle": SLATE[100],
+        "border-strong": SLATE[300],
+        # Schrift
+        "text": SLATE[900],
+        "text-body": SLATE[700],
+        "text-muted": SLATE[500],
+        "text-faint": SLATE[400],
+        "text-inverted": "#ffffff",
+        # Marke
+        "accent": NAVY[800],
+        "accent-hover": NAVY[700],
+        "accent-soft": NAVY[50],
+        "accent-border": NAVY[200],
+        "accent-text": NAVY[900],
+        "focus-ring": "rgba(62, 118, 166, 0.25)",
+        # Rollen
+        "positive": "#0f766e",
+        "positive-soft": "#f0fdfa",
+        "positive-border": "#99f6e4",
+        "positive-text": "#115e59",
+        "negative": "#9f1239",
+        "negative-soft": "#fff1f2",
+        "negative-border": "#fecdd3",
+        "negative-text": "#9f1239",
+        "warning": "#b45309",
+        "warning-soft": "#fffbeb",
+        "warning-border": "#fde68a",
+        "warning-text": "#92400e",
+        # Der Demo-Datensatz trägt eine eigene Farbe, die sonst nirgends
+        # vorkommt — Platzhalter dürfen mit nichts verwechselbar sein.
+        "demo": "#7c3aed",
+        "demo-soft": "#f5f3ff",
+        "demo-border": "#ddd6fe",
+        "demo-text": "#5b21b6",
+        # Diagramme
+        "grid": SLATE[200],
+        "axis": SLATE[300],
+        "plot-bg": "#ffffff",
+        "paper-bg": "#ffffff",
+        "price": "#0f766e",
+        "booking": NAVY[500],
+        "neutral": SLATE[500],
+        # Konsole. Sie ist in **beiden** Modi dunkel — eine Konsole auf weiss
+        # ist keine. Deshalb tragen ihre Stufen hier dieselben hellen Toene wie
+        # im Dark Mode: `warning` in der hellen Fassung (#b45309) kaeme auf
+        # Navy-950 nur auf ein Kontrastverhaeltnis von 3,2 und waere zu lesen
+        # muehsam. Am laufenden System nachgemessen.
+        "console-bg": NAVY[950],
+        "console-text": NAVY[100],
+        "console-info": NAVY[300],
+        "console-warning": "#fbbf24",
+        "console-error": "#fb7185",
+    },
+    DARK: {
+        "canvas": INK[950],
+        "surface": INK[900],
+        "surface-raised": INK[850],
+        "surface-sunken": INK[950],
+        "surface-inset": INK[800],
+        "surface-hover": INK[800],
+        "overlay": "rgba(14, 23, 35, 0.88)",
+        "scrim": "rgba(0, 0, 0, 0.55)",
+        "border": INK[700],
+        "border-subtle": INK[800],
+        "border-strong": INK[600],
+        "text": INK[50],
+        "text-body": INK[100],
+        "text-muted": INK[400],
+        "text-faint": INK[500],
+        "text-inverted": INK[950],
+        "accent": NAVY[300],
+        "accent-hover": NAVY[200],
+        "accent-soft": "#15293f",
+        "accent-border": NAVY[600],
+        "accent-text": NAVY[100],
+        "focus-ring": "rgba(148, 184, 215, 0.28)",
+        "positive": "#2dd4bf",
+        "positive-soft": "#0c2b2b",
+        "positive-border": "#1d5450",
+        "positive-text": "#7ff0e0",
+        "negative": "#fb7185",
+        "negative-soft": "#2e1520",
+        "negative-border": "#66273a",
+        "negative-text": "#fda4b0",
+        "warning": "#fbbf24",
+        "warning-soft": "#2c2110",
+        "warning-border": "#5c4517",
+        "warning-text": "#fcd34d",
+        "demo": "#a78bfa",
+        "demo-soft": "#231a3c",
+        "demo-border": "#4c3a80",
+        "demo-text": "#c9b8fd",
+        "grid": INK[800],
+        "axis": INK[700],
+        "plot-bg": INK[900],
+        "paper-bg": INK[900],
+        "price": "#2dd4bf",
+        "booking": NAVY[300],
+        "neutral": INK[400],
+        "console-bg": INK[950],
+        "console-text": INK[200],
+        "console-info": NAVY[300],
+        "console-warning": "#fbbf24",
+        "console-error": "#fb7185",
+    },
+}
 
-TEMPLATE_NAME = "aeroforesight"
+
+def normalise(mode: str | None) -> str:
+    """Ein beliebiger Eingabewert wird zu genau einem der beiden Modi.
+
+    Der Wert kommt aus einem `dcc.Store`, den ein Skript im Browser füllt —
+    also aus einer Quelle, die auch `None` oder Unsinn liefern kann. Statt an
+    jeder Aufrufstelle zu prüfen, prüft diese Funktion.
+    """
+
+    return DARK if str(mode or "").lower() == DARK else LIGHT
 
 
-def _build_template() -> go.layout.Template:
+def palette(mode: str | None = LIGHT) -> dict[str, str]:
+    """Die semantischen Farben eines Modus."""
+
+    return PALETTE[normalise(mode)]
+
+
+def color(name: str, mode: str | None = LIGHT) -> str:
+    """Eine einzelne semantische Farbe."""
+
+    return palette(mode)[name]
+
+
+# --- Rückwärtskompatible Kurznamen -----------------------------------------
+# Die Light-Werte der wichtigsten Rollen. Neuer Code nimmt `palette(mode)`;
+# diese Namen bleiben, damit bestehende Aufrufer nicht in einem Zug mitziehen
+# müssen — sie sind per Definition der helle Fall.
+
+POSITIVE = PALETTE[LIGHT]["positive"]
+NEGATIVE = PALETTE[LIGHT]["negative"]
+WARNING = PALETTE[LIGHT]["warning"]
+PRICE = PALETTE[LIGHT]["price"]
+BOOKING = PALETTE[LIGHT]["booking"]
+NEUTRAL = PALETTE[LIGHT]["neutral"]
+
+#: Kategorien-Reihenfolge für Serien ohne eigene Bedeutung. Alle Töne tragen
+#: denselben Helligkeitseindruck, damit keine Serie unabsichtlich hervorsticht.
+COLORWAYS = {
+    LIGHT: [
+        NAVY[800],
+        "#0f766e",
+        "#b45309",
+        NAVY[400],
+        "#9f1239",
+        "#4d7c0f",
+        NAVY[600],
+        SLATE[500],
+        "#7c3aed",
+        NAVY[300],
+    ],
+    DARK: [
+        NAVY[300],
+        "#2dd4bf",
+        "#fbbf24",
+        "#93c5fd",
+        "#fb7185",
+        "#a3e635",
+        NAVY[400],
+        INK[400],
+        "#a78bfa",
+        "#e0eaf3",
+    ],
+}
+COLORWAY = COLORWAYS[LIGHT]
+
+TEMPLATE_NAMES = {LIGHT: "aeroforesight", DARK: "aeroforesight_dark"}
+TEMPLATE_NAME = TEMPLATE_NAMES[LIGHT]
+
+
+def template_for(mode: str | None = LIGHT) -> str:
+    """Der Name des Plotly-Templates für einen Modus."""
+
+    return TEMPLATE_NAMES[normalise(mode)]
+
+
+def _build_template(mode: str) -> go.layout.Template:
+    tone = PALETTE[mode]
     axis = dict(
-        gridcolor=SLATE[200],
-        linecolor=SLATE[300],
-        zerolinecolor=SLATE[200],
-        tickfont=dict(family=FONT_BODY, size=12, color=SLATE[500]),
-        title=dict(font=dict(family=FONT_BODY, size=12, color=SLATE[600])),
+        gridcolor=tone["grid"],
+        linecolor=tone["axis"],
+        zerolinecolor=tone["grid"],
+        tickfont=dict(family=FONT_BODY, size=12, color=tone["text-muted"]),
+        title=dict(font=dict(family=FONT_BODY, size=12, color=tone["text-body"])),
         showline=False,
         ticks="outside",
-        tickcolor=SLATE[200],
+        tickcolor=tone["grid"],
         ticklen=4,
     )
     return go.layout.Template(
         layout=go.Layout(
-            colorway=COLORWAY,
-            paper_bgcolor="white",
-            plot_bgcolor="white",
-            font=dict(family=FONT_BODY, size=13, color=SLATE[700]),
+            colorway=COLORWAYS[mode],
+            paper_bgcolor=tone["paper-bg"],
+            plot_bgcolor=tone["plot-bg"],
+            font=dict(family=FONT_BODY, size=13, color=tone["text-body"]),
             title=dict(
-                font=dict(family=FONT_HEADLINE, size=16, color=SLATE[900]),
+                font=dict(family=FONT_HEADLINE, size=16, color=tone["text"]),
                 x=0,
                 xanchor="left",
                 pad=dict(b=12),
             ),
             margin=dict(l=56, r=24, t=56, b=48),
             hoverlabel=dict(
-                bgcolor="white",
-                bordercolor=SLATE[200],
-                font=dict(family=FONT_BODY, size=12, color=SLATE[800]),
+                bgcolor=tone["surface-raised"],
+                bordercolor=tone["border"],
+                font=dict(family=FONT_BODY, size=12, color=tone["text"]),
             ),
             legend=dict(
                 bgcolor="rgba(0,0,0,0)",
-                font=dict(family=FONT_BODY, size=12, color=SLATE[600]),
+                font=dict(family=FONT_BODY, size=12, color=tone["text-muted"]),
                 orientation="h",
                 yanchor="bottom",
                 y=1.02,
@@ -119,20 +328,32 @@ def _build_template() -> go.layout.Template:
             ),
             xaxis=axis,
             yaxis=axis,
-            colorscale=dict(sequential=[[0.0, NAVY[50]], [1.0, NAVY[800]]]),
+            colorscale=dict(
+                sequential=(
+                    [[0.0, NAVY[50]], [1.0, NAVY[800]]]
+                    if mode == LIGHT
+                    else [[0.0, INK[850]], [1.0, NAVY[300]]]
+                )
+            ),
         )
     )
 
 
 def register_template() -> None:
-    """Template registrieren und als Standard setzen (idempotent)."""
+    """Beide Templates registrieren und das helle als Standard setzen (idempotent).
 
-    if TEMPLATE_NAME not in pio.templates:
-        pio.templates[TEMPLATE_NAME] = _build_template()
-    pio.templates.default = TEMPLATE_NAME
+    Der Standard bleibt hell, weil serverseitig erzeugte Figuren ohne
+    ausdrückliche Angabe irgendwo landen müssen — welcher Modus im Browser
+    gilt, weiß erst der Callback, der `style_figure(..., mode=…)` ruft.
+    """
+
+    for mode, name in TEMPLATE_NAMES.items():
+        if name not in pio.templates:
+            pio.templates[name] = _build_template(mode)
+    pio.templates.default = TEMPLATE_NAMES[LIGHT]
 
 
-def style_figure(fig: go.Figure, **layout: object) -> go.Figure:
+def style_figure(fig: go.Figure, *, mode: str | None = LIGHT, **layout: object) -> go.Figure:
     """Template anwenden und die üblichen Layout-Vorgaben setzen.
 
     Charts, die über ``plotly.express`` entstehen, tragen das Default-Template
@@ -140,7 +361,8 @@ def style_figure(fig: go.Figure, **layout: object) -> go.Figure:
     nimmt beliebige Layout-Overrides entgegen.
     """
 
-    fig.update_layout(template=TEMPLATE_NAME, hovermode="x unified", **layout)
+    layout.setdefault("hovermode", "x unified")
+    fig.update_layout(template=template_for(mode), **layout)
     return fig
 
 
@@ -169,3 +391,14 @@ GRAPH_CONFIG = {
     "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"],
     "responsive": True,
 }
+
+
+def css_variables(mode: str) -> str:
+    """Die semantische Ebene als CSS-Variablenblock.
+
+    Wird von `tests/test_web_theme.py` gegen `assets/dashboard.css` gehalten:
+    Python und Stylesheet färben dieselben Flächen, und sie dürfen nicht
+    auseinanderlaufen. Der Test vergleicht die Namen, nicht die Formatierung.
+    """
+
+    return "\n".join(f"    --{name}: {value};" for name, value in PALETTE[mode].items())

@@ -34,6 +34,43 @@ class ValidationError(Exception):
     pass
 
 
+class ValidationIssue(str):
+    """Ein Befund, der weiß, an welchem Eingabefeld er hängt.
+
+    Bewusst eine `str`-**Unterklasse** und kein eigenes Modell: Die Befunde
+    werden heute an mehreren Stellen wie Zeichenketten behandelt —
+    `validate_state` baut daraus mit `"\\n".join(...)` seine Ausnahme, die
+    Oberflächen setzen sie in Listen, und mehrere Tests prüfen mit `in` gegen
+    den Text. Eine Dataclass hätte jeden dieser Aufrufer gleichzeitig brechen
+    müssen; so bleibt jeder von ihnen unverändert richtig, und nur wer die
+    Zuordnung braucht, greift auf `.field` zu.
+
+    *field* ist ein oberflächenneutraler Schlüssel (`seed`, `rounds`,
+    `temperature`, …), kein Pfad in ein bestimmtes Datenmodell — Dashboard und
+    CLI benennen dieselbe Einstellung verschieden. Wo es keine einzelne
+    Einstellung gibt, an der der Befund hängt (Regeln, Agentenprofile,
+    Systemgrößen), bleibt es `None`; solche Befunde gehören in eine gesammelte
+    Liste, nicht an ein Feld.
+    """
+
+    field: str | None
+
+    def __new__(cls, text: str, field: str | None = None) -> "ValidationIssue":
+        issue = super().__new__(cls, text)
+        issue.field = field
+        return issue
+
+
+def issue(text: str, field: str | None = None) -> ValidationIssue:
+    return ValidationIssue(text, field)
+
+
+def field_of(entry: object) -> str | None:
+    """Feld eines Befunds — auch wenn er von woanders als schlichter `str` kam."""
+
+    return getattr(entry, "field", None)
+
+
 def validate_factor(factor: FactorState) -> list[str]:
     errors = []
 
@@ -140,16 +177,21 @@ def validate_llm_settings(
     errors: list[str] = []
 
     if not str(model).strip():
-        errors.append(f"{context}: Modellname darf nicht leer sein")
+        errors.append(issue(f"{context}: Modellname darf nicht leer sein", "model"))
 
     if not (MIN_TEMPERATURE <= temperature <= MAX_TEMPERATURE):
         errors.append(
-            f"{context}: temperature ({temperature}) muss zwischen "
-            f"{MIN_TEMPERATURE} und {MAX_TEMPERATURE} liegen"
+            issue(
+                f"{context}: temperature ({temperature}) muss zwischen "
+                f"{MIN_TEMPERATURE} und {MAX_TEMPERATURE} liegen",
+                "temperature",
+            )
         )
 
     if max_tokens < 1:
-        errors.append(f"{context}: max_tokens ({max_tokens}) muss mindestens 1 sein")
+        errors.append(
+            issue(f"{context}: max_tokens ({max_tokens}) muss mindestens 1 sein", "max_tokens")
+        )
 
     return errors
 
@@ -166,7 +208,7 @@ def validate_config(config: SimulationConfig) -> list[str]:
     errors: list[str] = []
 
     if not config.name.strip():
-        errors.append("config: name darf nicht leer sein")
+        errors.append(issue("config: name darf nicht leer sein", "simulation_name"))
 
     errors.extend(
         validate_llm_settings(
@@ -182,8 +224,11 @@ def validate_config(config: SimulationConfig) -> list[str]:
     # non-negative integer` — mitten im ersten Tick, ohne Bezug zum Seed.
     if config.seed is not None and config.seed < 0:
         errors.append(
-            f"config: seed ({config.seed}) muss 0 oder größer sein — "
-            "negative Werte brechen die Bevölkerungsziehung ab"
+            issue(
+                f"config: seed ({config.seed}) muss 0 oder größer sein — "
+                "negative Werte brechen die Bevölkerungsziehung ab",
+                "seed",
+            )
         )
 
     return errors
@@ -193,7 +238,7 @@ def validate_clock(clock: SimulationClock) -> list[str]:
     errors = []
 
     if clock.max_ticks < 1:
-        errors.append("max_ticks muss mindestens 1 sein")
+        errors.append(issue("max_ticks muss mindestens 1 sein", "rounds"))
 
     if clock.tick_unit != "tick":
         errors.append("tick_unit muss 'tick' sein")

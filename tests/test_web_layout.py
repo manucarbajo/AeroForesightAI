@@ -194,15 +194,26 @@ def test_every_editor_tab_renders_in_every_scenario_mode(tab, mode):
 
 
 def test_sweep_mode_offers_the_preset_controls():
-    """Geprüft wird die Aktion, nicht ihre Beschriftung — Texte dürfen sich ändern."""
+    """Geprüft wird die Aktion, nicht ihre Beschriftung — Texte dürfen sich ändern.
+
+    Seit P1.1 steht die Szenario-Auswahl im geführten Ablauf, nicht in einem Tab.
+    """
+
+    from dashboard.config_catalog import list_sweep_presets
+    from dashboard.web.config_editor import start_flow
+
+    presets = list_sweep_presets()
+    if not presets:
+        pytest.skip("Keine Sweep-Presets unter configs/sweeps/ vorhanden.")
 
     draft = initial_draft_dict()
     draft["scenario_mode"] = "sweep"
+    draft["sweep_id"] = presets[0].id
 
-    rendered = _text(config_editor.tab_layout("experiment", draft))
+    rendered = _text(start_flow.layout(draft))
 
     assert "'action': 'apply-sweep'" in rendered
-    assert "'field': 'sweep_id'" in rendered
+    assert "'field': 'scenario_choice'" in rendered
 
 
 def test_macro_tab_offers_delete_for_an_inactive_property():
@@ -238,7 +249,7 @@ def test_every_parameter_field_has_an_explanation():
 
 
 def test_overview_summarises_the_draft_in_plain_language():
-    from dashboard.web.config_editor import overview
+    from dashboard.web.config_editor import start_flow as overview
 
     draft = initial_draft_dict()
     draft.update({"rounds": 12, "run_count": 3, "mock_llm": True, "deterministic_only": False})
@@ -250,23 +261,24 @@ def test_overview_summarises_the_draft_in_plain_language():
     assert "ohne Sprachmodell" in sentence
 
 
+def _preflight(draft: dict) -> str:
+    from dashboard.web.config_editor import start_flow
+
+    return _text(start_flow.preflight(draft, start_flow.errors_for(draft)))
+
+
 def test_control_panel_refuses_a_config_that_cannot_run():
-    """P0.3: Fehler stehen im Tab «Kontrolle», bevor jemand auf Start drückt."""
+    """P0.3: Fehler stehen im Preflight, bevor jemand auf Start drückt."""
 
     draft = initial_draft_dict()
     draft["use_seed"] = True
     draft["seed"] = -1
 
-    rendered = _text(config_editor.tab_layout("save", draft))
-
-    assert "kann so nicht starten" in rendered
-    assert "seed" in rendered
+    assert "kann so nicht starten" in _preflight(draft)
 
 
 def test_control_panel_stays_quiet_for_a_healthy_config():
-    rendered = _text(config_editor.tab_layout("save", initial_draft_dict()))
-
-    assert "kann so nicht starten" not in rendered
+    assert "kann so nicht starten" not in _preflight(initial_draft_dict())
 
 
 def test_control_panel_warns_about_settings_that_surprise_later():
@@ -275,10 +287,20 @@ def test_control_panel_warns_about_settings_that_surprise_later():
     draft["apply_custom_overrides"] = False
     draft["scenario_mode"] = "basis"
 
-    rendered = _text(config_editor.tab_layout("save", draft))
+    rendered = _preflight(draft)
 
     assert "Tab «Szenario» bleibt" in rendered
     assert "wirken in diesem Lauf nicht" in rendered
+
+
+def test_a_preset_run_is_not_warned_about_ignored_own_values():
+    """Im Preset-Modus gelten eigene Werte bewusst nicht — das ist keine Panne."""
+
+    draft = initial_draft_dict()
+    draft["scenario_mode"] = "sweep"
+    draft["apply_custom_overrides"] = False
+
+    assert "wirken in diesem Lauf nicht" not in _preflight(draft)
 
 
 def test_reset_action_returns_the_default_draft():
@@ -344,10 +366,39 @@ def test_reload_factors_reads_the_configured_file():
 
 
 def test_launch_page_builds_with_the_default_draft():
+    """Das Bedienfeld traegt den Start und den Stand — seit P1.6 nicht mehr den Editor."""
+
     rendered = _text(launch_page.layout(initial_draft_dict()))
 
-    assert "Simulation starten" in rendered
     assert "run-start" in rendered
+    assert "Rechenmodus" in rendered, "der Stand des Entwurfs fehlt"
+
+
+def test_the_setup_area_builds_with_the_default_draft():
+    """Der Bereich «Einrichten» traegt die Schrittfolge.
+
+    Bis P1.8 stand hier «Alle Einstellungen» — der Abschnitt, den P1.7 in die
+    Schritte 4 bis 7 aufgeloest hat. Der Test blieb trotzdem gruen, weil die
+    Zeichenkette zufaellig noch in der Beschriftung einer Preset-Karte stand.
+    **Ein Waechter, der aus dem falschen Grund gruen ist, ist schlechter als
+    keiner** — er wiegt in Sicherheit. Geprueft wird jetzt, was der Bereich
+    wirklich zusagt: die Schrittfolge mit den optionalen Schritten.
+    """
+
+    from dashboard.web.config_editor import wizard
+    from dashboard.web.pages import setup as setup_page
+
+    rendered = _text(setup_page.layout(initial_draft_dict()))
+
+    assert "Lauf einrichten" in rendered
+    assert "af-wizard" in rendered, "die Schrittfolge fehlt"
+    assert "optional" in rendered, "die ueberspringbaren Schritte sind nicht als solche benannt"
+    # Sieben: sechs seit P1.9-W3.1 (die beiden dichten Bereiche zogen ins
+    # «Modell»), plus die «Ausgangslage», die W3.3 als *eine* Frage
+    # zurueckgeholt hat -- sie gehoert zum Experiment, nicht zum Modell. Die
+    # Zahl steht hier bewusst als Zahl: Waechst die Schrittfolge, ist das eine
+    # Entscheidung und keine Nebenwirkung.
+    assert len(wizard.STEPS) == 7
 
 
 def test_launch_summary_describes_the_draft():
@@ -358,8 +409,17 @@ def test_launch_summary_describes_the_draft():
     assert "Ticks: 12" in launch_page._summary(draft)
     assert "3 Läufe" in launch_page._summary(draft)
 
+    # Beim Vergleich beschreibt die Zeile **nicht** mehr den Entwurf, sondern
+    # den Vergleich (P1.9-W1.3): Er nimmt vom Entwurf nichts entgegen, also darf
+    # dort auch keine Länge und kein Szenario aus dem Entwurf stehen.
     draft["run_all_sweeps"] = True
-    assert "alle Szenario-Presets" in launch_page._summary(draft)
+    zeile = launch_page._summary(draft)
+    assert "Szenario-Vergleich" in zeile
+    assert "je eigene Länge" in zeile
+    assert "Ticks: 12" not in zeile, (
+        "Die Zeile nennt wieder die Länge aus dem Entwurf — die verwendet der "
+        "Vergleich seit W1.2 nicht."
+    )
 
 
 def test_app_layout_and_callbacks_are_wired():

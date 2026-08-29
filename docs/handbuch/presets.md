@@ -1,35 +1,56 @@
-Ein Preset ist eine gespeicherte Annahmenwelt. Statt bei jedem Lauf Faktoren,
-Politik und Kosten einzeln einzustellen, wählen Sie eines aus und passen davon
-ausgehend an.
+Ein Szenario-Preset ist eine gespeicherte Annahmenwelt. Statt bei jedem Lauf
+Faktoren, Politik und Kosten einzeln einzustellen, wählen Sie eines aus und
+passen davon ausgehend an.
 
 Die mitgelieferten Presets stehen mit Beschreibung und Begründung unter
 [Szenario-Presets](/doku/ref-presets).
 
 ## Ein Preset verwenden
 
-Unter **Simulation starten** im Tab **Überblick** stellen Sie «Womit starten?»
-auf «Szenario-Preset» und wählen eines aus. Unter der Auswahl erscheint, wofür es
-steht.
+Unter **Simulation starten** ist die Auswahl die erste der drei Entscheidungen.
+Jedes Preset steht dort mit seiner Beschreibung; aufklappbar daneben die
+Begründung, warum es so aufgebaut ist.
 
-Damit rechnet der Lauf mit den Werten des Presets. Die anderen Tabs zeigen
-weiterhin Ihre eigenen Einstellungen — diese greifen aber nicht, solange der
-Modus auf «Szenario-Preset» steht.
+**Das gewählte Preset gilt unverändert.** Faktorlage, Politik und Kosten kommen
+aus seiner Datei unter `configs/sweeps/`; was Sie unten unter «Alle
+Einstellungen» eingestellt haben, bleibt dafür außen vor. Genau eine Größe
+bleibt Ihre Entscheidung: die **Länge** des Laufs. Auf wie viele Ticks ein
+Preset angelegt ist, steht neben seiner Beschreibung — seine Meilensteine sind
+auf diese Länge hin gedacht.
+
+**Im Szenario-Vergleich gilt das nicht.** Wer alle Szenarien nacheinander
+rechnen lässt, stellt keine Länge ein: Jedes läuft so lang, wie es angelegt ist.
+Alles andere hieße, Szenarien unterschiedlicher Bauart über einen Kamm zu
+scheren — ein auf 50 Ticks entworfenes Szenario erreicht seinen Schlusspunkt
+nach 40 Ticks schlicht nicht.
+
+> **Bis August 2026 war das anders**, ohne dass es jemand sehen konnte: Das
+> Dashboard legte nach dem Preset noch die Werte aus den Konfigurationsdateien
+> darüber und drehte es damit still zurück. Ein Lauf mit *Business as Usual*
+> rechnete deshalb mit steigender CO₂-Abgabe, obwohl das Szenario genau das
+> ausschließt. Läufe von vor und nach dieser Korrektur sind nicht vergleichbar —
+> siehe [Läufe vergleichen](/doku/vergleiche).
 
 ## Ein Preset als Ausgangspunkt nehmen
 
-Wenn Sie von einem Preset ausgehen, aber einzelne Annahmen ändern wollen, gehen
-Sie in den Tab **Lauf & Ablage** und klicken dort auf «Werte dieses Szenarios
-übernehmen». Die Werte wandern damit in Ihren Entwurf, und der Modus wechselt auf
-eigene Parameter.
+Wenn Sie von einem Preset ausgehen, aber einzelne Annahmen ändern wollen,
+klicken Sie unter der Auswahl auf «Werte übernehmen und selbst anpassen». Die
+Werte wandern damit in den Editor, und die Auswahl springt auf «Eigene
+Einstellungen».
 
-Danach können Sie in **Rahmenbedingungen** und **Nachfrage & Preisbildung**
-einzelne Größen verändern, ohne den Rest neu aufsetzen zu müssen.
+Dieser Wechsel ist nötig, nicht kosmetisch: Solange ein Preset gewählt ist,
+gelten ausschließlich seine Werte. Erst unter «Eigene Einstellungen» wirkt, was
+im Editor steht.
+
+Danach können Sie im Schritt **Rahmenbedingungen** und
+**Nachfrage & Preisbildung** einzelne Größen verändern, ohne den Rest neu
+aufsetzen zu müssen.
 
 ## Einen eigenen Stand sichern
 
-Im Tab **Kontrolle** ganz unten geben Sie einen Dateinamen ein und klicken auf
-«Szenario sichern». Der aktuelle Entwurf landet als Datei unter
-`configs/sweeps/` und erscheint danach in der Preset-Auswahl.
+Im Schritt **Lauf & Ablage** geben Sie einen
+Dateinamen ein und klicken auf «Szenario sichern». Der aktuelle Entwurf landet
+als Datei unter `configs/sweeps/` und erscheint danach oben in der Auswahl.
 
 Nützlich, sobald Sie eine Konstellation gefunden haben, auf die Sie mehrfach
 zurückkommen wollen — etwa eine Referenzwelt, gegen die alle weiteren Läufe
@@ -37,10 +58,15 @@ verglichen werden.
 
 ## Alle Presets auf einmal rechnen
 
-Der Schalter «Alle Szenarien vergleichen» im Tab **Lauf & Ablage** rechnet jedes
-hinterlegte Preset einmal durch, ohne Agenten-Dialog und damit deutlich
-schneller. Die Ergebnisse liegen unter `outputs/sweeps/` und erscheinen einzeln
-in der Run-Liste.
+Der kürzeste Weg dorthin ist **Szenario-Vergleich starten** auf dem Einstieg
+von «Einrichten»: Er stellt den Vergleich ein und bringt Sie unmittelbar zu
+«Prüfen & Starten». Dasselbe bewirkt der Schalter «Alle Szenarien vergleichen»
+hinter der «Feinabstimmung» des zweiten Schritts — es ist derselbe Schalter,
+nur an der Stelle, an der man ihn auch fein einstellt.
+
+So oder so wird jedes hinterlegte Preset einmal durchgerechnet, ohne
+Agenten-Dialog und damit deutlich schneller. Die Ergebnisse liegen unter
+`outputs/sweeps/` und erscheinen einzeln in der Lauf-Auswahl.
 
 Das ist der schnellste Weg zu der Frage, wie weit die Annahmenwelten überhaupt
 auseinanderliegen.

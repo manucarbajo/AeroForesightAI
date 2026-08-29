@@ -47,7 +47,7 @@ Unterschied macht.
 
 ## Wie man es überprüft
 
-Vertrauen ist gut, Nachsehen ist eingebaut. Im Tab **Abfrage** blenden Sie über
+Vertrauen ist gut, Nachsehen ist eingebaut. In der Ansicht **Abfrage** blenden Sie über
 «Artefakt-Checks anzeigen» eine Prüfung ein, die die erzeugten Dateien
 gegeneinander abgleicht — etwa ob die Preise in `tick_mechanics.json` und
 `price_history.json` übereinstimmen und ob die Änderungen im Ereignisprotokoll

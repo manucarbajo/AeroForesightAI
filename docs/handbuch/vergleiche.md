@@ -28,7 +28,7 @@ sich die Wirkungen addieren oder gegenseitig aufheben.
 ## Namen vergeben
 
 Tragen Sie unter **Lauf & Ablage** einen Namen und die Fragestellung ein. In der
-Run-Liste erscheint der Name neben der Run-ID; ohne ihn stehen dort nur
+Lauf-Auswahl erscheint der Name neben der Run-ID; ohne ihn stehen dort nur
 Zeitstempel, die sich nach dem dritten Lauf nicht mehr unterscheiden lassen.
 
 Ein brauchbares Schema ist der Bezug auf den Vergleich, etwa «CO₂ 200 ab Runde 5»
@@ -37,8 +37,9 @@ gegen «CO₂ konstant 50».
 ## Streuung von Wirkung unterscheiden
 
 Bevor Sie einen Unterschied zwischen zwei Läufen für eine Wirkung halten, prüfen
-Sie, wie groß die natürliche Streuung ist. Stellen Sie dazu unter **Überblick**
-die **Wiederholungen** auf fünf und lassen Sie den Zufallsstartwert frei. Sie
+Sie, wie groß die natürliche Streuung ist. Stellen Sie dazu im zweiten Schritt
+hinter «Feinabstimmung» die **Wiederholungen** auf fünf und lassen Sie den
+Zufallsstartwert frei. Sie
 bekommen fünf Läufe mit derselben Konfiguration, aber unterschiedlich gezogener
 Bevölkerung, und sehen, wie weit die Ergebnisse auseinanderliegen.
 
@@ -66,6 +67,35 @@ derselbe Lauf ist wie ein einzeln gestarteter. Wiederholungen aus der Zeit
 davor tragen andere Startwerte und damit andere Zahlen — die Aussagen, die man
 aus ihrer Streuung gezogen hat, bleiben gültig, die Einzelwerte nicht.
 
+Am 2026-08-28 kam ein dritter Schnitt dazu, und er trifft **nur Läufe aus einem
+Szenario-Preset**: Bis dahin legte das Dashboard nach dem Preset noch die Werte
+aus den Konfigurationsdateien darüber und drehte es damit still zurück.
+Betroffen waren alle acht ausgelieferten Presets — je nach Preset zwischen zwei
+und zehn Systemgrößen, bei «Totaler Wahnsinn» zusätzlich alle sieben Faktoren.
+Am deutlichsten bei «Business as Usual»: Das Szenario schließt eine steigende
+CO₂-Abgabe ausdrücklich aus, gerechnet wurde sie trotzdem, womit die Regulierung
+in Runde 15 auf «streng» kippte. Preset-Läufe von davor beschreiben also nicht
+die Annahmenwelt, deren Namen sie tragen. Über die Kommandozeile gestartete
+Sweeps waren nie betroffen.
+
+Ebenfalls am 2026-08-28 kam ein vierter Schnitt, und er trifft **nur den
+Szenario-Vergleich** — also den Weg, der alle hinterlegten Szenarien
+nacheinander rechnet. Bis dahin gab das Dashboard seine eingestellte Länge an
+jedes Szenario weiter, und weil dort immer eine Zahl steht (vorbelegt mit 40),
+lief **jedes** Preset auf dieser Länge statt auf seiner eigenen. Vier der acht
+ausgelieferten Szenarien sind auf 50 Ticks angelegt; sie wurden um ein Fünftel
+gekürzt. **Drei von ihnen verlieren dadurch ihren End-State-Meilenstein** —
+«Business as Usual», «Freiwillige Wende» und «Transformation Conflict» prüfen
+genau bei Tick 50, ob das Szenario sein Ziel erreicht hat, und diese Prüfung
+fand nie statt. Ein Vergleich aus der Zeit davor hat die verkürzten Verläufe
+nebeneinandergelegt und die eigentliche Aussage jedes Szenarios ausgelassen.
+
+Seither läuft im Vergleich jedes Szenario so lang, wie es angelegt ist. Die
+Längenangabe im Assistenten gilt weiterhin — aber für einen **einzelnen** Lauf,
+nicht für den Vergleich. Über die Kommandozeile lässt sich die Länge weiterhin
+übersteuern (`--ticks`); dort sagt man es ausdrücklich, statt einen Vorgabewert
+mitzuschleppen.
+
 Woran Sie es erkennen: `run_metadata.json` hält unter `code_version` fest, mit
 welchem Stand ein Lauf gerechnet wurde, und unter `seed`, mit welchem Startwert.
 Unterscheiden sich zwei Läufe dort, gehören ihre Verläufe nicht nebeneinander.
@@ -76,6 +106,6 @@ Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet si
 **Figures** unter «Yield & Markt», weil dort Preis und Buchungsrate gemeinsam
 dargestellt sind.
 
-Wollen Sie die Zahlen nebeneinanderlegen, laden Sie aus dem Tab **Dateien** die
+Wollen Sie die Zahlen nebeneinanderlegen, laden Sie aus dem Ansicht **Dateien** die
 Datei `timeseries/properties.csv` beider Läufe herunter — sie enthält alle
 Systemgrößen je Runde in tabellarischer Form.

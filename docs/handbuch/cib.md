@@ -46,7 +46,7 @@ sich Läufe messen lassen müssen.
 ## Was das im Ergebnis bewirkt
 
 Am Ende eines Laufs wählt das System drei Konstellationen aus und ordnet sie nach
-ihrer Konsistenz. Daraus entsteht das Tripleset im Tab **Szenario**: die
+ihrer Konsistenz. Daraus entsteht das Tripleset in der Ansicht **Szenario**: die
 Fortsetzung des Trends, eine strukturell abweichende Entwicklung und eine
 Konstellation mit Spannungen.
 

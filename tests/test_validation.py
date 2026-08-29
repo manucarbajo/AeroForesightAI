@@ -14,12 +14,16 @@ from pathlib import Path
 import pytest
 
 from src.config_loader import build_initial_state
-from src.models.state_models import LLMConfig, SimulationConfig
+from src.models.state_models import LLMConfig, SimulationClock, SimulationConfig
 from src.validation import (
     ValidationError,
+    ValidationIssue,
     collect_state_errors,
+    field_of,
     validate_agent,
+    validate_clock,
     validate_config,
+    validate_llm_settings,
     validate_state,
 )
 
@@ -325,3 +329,49 @@ def test_an_unreadable_config_file_becomes_a_finding_not_a_crash():
 
     assert errors
     assert "geladen werden" in _messages(errors)
+
+
+class TestBefundeTragenIhrFeld:
+    """P1.1: Ein Befund weiß, an welchem Eingabefeld er hängt.
+
+    Der Feldbezug entsteht in der Prüfung, nicht in der Oberfläche. Eine
+    Zuordnung über Schlüsselwörter im Meldungstext bräche still, sobald jemand
+    eine Formulierung ändert — und still brechende Prüfungen sind genau das,
+    was Phase 0 abgeräumt hat.
+    """
+
+    def test_a_negative_seed_points_at_the_seed_field(self) -> None:
+        befunde = validate_config(_config(seed=-1))
+
+        assert [field_of(entry) for entry in befunde] == ["seed"]
+
+    def test_an_empty_name_points_at_the_name_field(self) -> None:
+        befunde = validate_config(_config(name="   "))
+
+        assert "simulation_name" in [field_of(entry) for entry in befunde]
+
+    def test_the_llm_rules_name_their_own_fields(self) -> None:
+        befunde = validate_llm_settings("", 9.0, 0, context="Technik")
+
+        assert sorted(field_of(entry) for entry in befunde) == [
+            "max_tokens",
+            "model",
+            "temperature",
+        ]
+
+    def test_a_finding_still_behaves_like_a_string(self) -> None:
+        """Der Grund für die `str`-Unterklasse — jeder heutige Konsument bleibt richtig."""
+
+        befund = ValidationIssue("max_ticks muss mindestens 1 sein", "rounds")
+
+        assert "mindestens" in befund
+        assert chr(10).join([befund, befund]).count(chr(10)) == 1
+        assert befund == "max_ticks muss mindestens 1 sein"
+
+    def test_findings_without_a_field_stay_unassigned(self) -> None:
+        """Regeln und Profile hängen an keinem einzelnen Eingabefeld."""
+
+        clock = SimulationClock(max_ticks=0)
+
+        assert field_of(validate_clock(clock)[0]) == "rounds"
+        assert field_of("ein Befund von woanders") is None

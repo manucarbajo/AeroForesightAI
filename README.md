@@ -18,6 +18,15 @@ pip install -e ".[dev]"
 
 Alle weiteren Befehle in dieser Datei setzen ein aktiviertes venv voraus.
 
+Wer an der Oberfläche arbeitet, holt sich zusätzlich den Überlauf-Wächter — er
+öffnet jede Ansicht in einem Kopflos-Browser und meldet, was aus seinem Kasten
+tritt. Ohne ihn überspringt sich `tests/test_web_overflow.py` von selbst:
+
+```powershell
+pip install -e ".[ui]"
+python -m playwright install chromium
+```
+
 Für Formatierung/Linting vor jedem Commit:
 
 ```powershell
@@ -36,7 +45,7 @@ python src/run_simulation.py --rounds 30 --model llama3.2 --temperature 0.7
 
 Outputs landen unter `outputs/<run_id>/` (z. B. `outputs/run_20260614T112808Z/`). Checkpoints: `outputs/<run_id>/checkpoints/<run_id>/tick_0005.json`, …
 
-### Dashboard
+### Dashboard (Leitstand)
 
 Web-Oberfläche zum Konfigurieren von Läufen, Ansehen von Ergebnissen und **Abfrage per Chat** — liegt bewusst getrennt unter `dashboard/`:
 
@@ -46,6 +55,27 @@ python -m dashboard.web.app --port 8511
 
 Browser: `http://localhost:8511` — dort steht die **Landingpage**, der Login-Button
 führt ins Dashboard unter `/app/`.
+
+Seit P1.5 ist das Dashboard ein **Leitstand**: ein Bildschirm mit fünf Bereichen
+statt eines Stapels Seiten — links das Bedienfeld (was eingestellt ist, der
+Preflight, der Start), in der Mitte die Population zum gewählten Tick, rechts
+Kennzahlen, Verläufe und Konsole, unten die Zeitleiste mit Abspielsteuerung,
+oben Zustand, Lauf-Auswahl und die globalen Aktionen. Eingestellt wird seit P1.6
+im eigenen Bereich **Einrichten**, der die volle Breite bekommt — dort steht der
+geführte Ablauf aus P1.1 mit den Presets als Kartenraster. Kopfzeile und Zeitleiste bleiben stehen, die drei
+Bereiche dazwischen rollen jeder für sich; auf schmalen Fenstern weichen die
+Seitenspalten in Schubladen aus.
+
+**Hell und dunkel**, umschaltbar über den Knopf rechts in der Kopfzeile. Die Wahl
+liegt im `localStorage` des Browsers und gilt beim nächsten Öffnen weiter; ohne
+gespeicherte Wahl entscheidet die Systemeinstellung. Beide Modi beziehen ihre
+Farben aus **einer** Token-Ebene (`dashboard/web/theme.py` und
+`assets/dashboard.css`), damit keine Fläche in einem der beiden Modi vergessen
+wird — `tests/test_web_theme.py` hält das mechanisch fest.
+
+Liegt unter `outputs/` noch kein Lauf, zeigt der Leitstand einen deutlich als
+solchen markierten **Beispieldatensatz**, damit die Ansicht nicht leer bleibt. Er
+wird nirgends gespeichert und verschwindet mit dem ersten echten Lauf.
 
 Gebaut mit Plotly Dash. Landingpage und Dashboard teilen sich Server und
 Design-Tokens. Die abgelöste Streamlit-Oberfläche liegt zum Vergleich unter
@@ -63,7 +93,7 @@ python -m src.reporting.state_explorer --run-id run_20260614T112808Z   # interak
 python -m src.reporting.state_explorer --run-id run_20260614T112808Z --mock-llm --question "Test"
 ```
 
-Kontext: `tick_mechanics.json`, `price_history.json`, `event_log.json`, optional Checkpoints. Gleiche Logik im Dashboard-Tab **Abfrage**.
+Kontext: `tick_mechanics.json`, `price_history.json`, `event_log.json`, optional Checkpoints. Gleiche Logik im Dashboard-Ansicht **Abfrage**.
 
 ### Szenario-Sweeps
 
@@ -154,9 +184,11 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 ├── dashboard/                       # Präsentations-UI
 │   ├── config_catalog.py            # ConfigDraft, Presets, Config-Persistenz
 │   ├── run_launcher.py              # Lauf starten/orchestrieren
-│   ├── run_browser.py               # Run-Liste, Artefakte laden
+│   ├── run_browser.py               # Lauf-Auswahl, Artefakte laden
 │   ├── consistency_report.py        # Konsistenz-Checks
-│   ├── web/                         # Plotly-Dash-Oberfläche (aktiv)
+│   ├── web/                         # Plotly-Dash-Leitstand (aktiv): shell, theme,
+│   │                                #   timeline, status, run_data, views/,
+│   │                                #   pages/ (launch=Bedienfeld, setup, runs, docs)
 │   ├── legacy_streamlit/            # abgelöste Streamlit-UI (nur Vergleich)
 │   └── README.md
 ├── docs/                            # Technische Doku (CIB-Methodik, Agent-Profile, Workflow)
@@ -236,7 +268,7 @@ auf `null` — die Datei behauptet kein Modell, das nie gefragt wurde.
 
 - Automatisch im Dashboard (Checkbox «Figures nach Lauf erzeugen», Standard: an)
 - Oder manuell: `python -m src.reporting.figure_generator.cli --run-only <run_id>`
-- Im Dashboard: Tab **Figures** unter «Ergebnisse ansehen»
+- Im Dashboard: Ansicht **Figures** unter «Ergebnisse»
 
 Workflow und Sweep-Läufe: [`docs/scenario_runs.md`](docs/scenario_runs.md)
 

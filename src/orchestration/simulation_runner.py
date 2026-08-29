@@ -34,6 +34,19 @@ class RunnerOptions:
     checkpoint_interval: int = 5
     verbose_ticks: bool = True
     tick_progress_callback: Callable[[str], None] | None = None
+    #: Wird **zwischen** zwei Ticks gefragt: Soll der Lauf abbrechen?
+    #: (P1.9-W4.5)
+    #:
+    #: Ein Lauf lief bis dahin bis zum Ende oder bis der Prozess starb. Wer
+    #: versehentlich 500 Ticks mit Sprachmodell startete, konnte nur warten oder
+    #: den Server neu starten.
+    #:
+    #: **Kooperativ und nicht gewaltsam:** Ein Thread lässt sich von außen nicht
+    #: sauber beenden — mitten in einem Tick abgebrochen bliebe ein halber
+    #: Zustand zurück, und die Artefakte beschrieben einen Lauf, den es so nie
+    #: gab. Gefragt wird deshalb an der einen Stelle, an der der Zustand
+    #: vollständig ist: nach einem fertigen Tick.
+    should_stop: Callable[[], bool] | None = None
 
 
 @dataclass(frozen=True)
@@ -183,6 +196,11 @@ class SimulationRunner:
             checkpoint_store=checkpoint_store,
             run_id=run_id,
         )
+        # Die reine Rechenzeit, ohne das Schreiben der Artefakte danach — das
+        # ist die Zahl, aus der sich ein nächster Lauf abschätzen lässt
+        # (P1.9-W4.3). `perf_counter` und nicht die Uhrzeit: Sie misst Dauer,
+        # nicht Tageszeit, und kippt nicht bei einer Zeitumstellung.
+        state.elapsed_seconds = round(time.perf_counter() - self._progress_started_at, 3)
         validate_state(state)
         return state
 
@@ -367,6 +385,16 @@ class SimulationRunner:
         while state.clock.current_tick < max_ticks:
             state = self._run_single_round(state, components)
             tick = state.clock.current_tick
+
+            # **Nach dem Tick gefragt, nicht mittendrin.** Hier ist der Zustand
+            # vollständig: Der Lauf bricht mit weniger Ticks ab, als er
+            # vorhatte, und schreibt seine Artefakte wie jeder unvollständige
+            # Lauf. `ticks_completed < ticks_max` sagt hinterher, dass er nicht
+            # durchgelaufen ist — dieselbe Kennung wie bei einem Absturz.
+            if self.options.should_stop is not None and self.options.should_stop():
+                if self.options.verbose_ticks:
+                    print(f"Abgebrochen nach Tick {tick} von {max_ticks}.")
+                break
 
             # Save individual history for animation — always write to run_dir,
             # independent of whether a checkpoint_store is configured.

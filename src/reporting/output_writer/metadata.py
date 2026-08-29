@@ -48,6 +48,11 @@ def save_run_metadata(
         "max_tokens": args.max_tokens,
         "ticks_completed": state.clock.current_tick,
         "ticks_max": state.clock.max_ticks,
+        # **Wie lange gerechnet wurde** (P1.9-W4.3). Kommt aus dem Zustand und
+        # wird hier nicht neu berechnet: `save_run_metadata` läuft nach dem
+        # Schreiben mehrerer Artefakte und misst sonst die falsche Spanne —
+        # derselbe Fehler, den P0.6 beim Config-Fingerabdruck gefunden hat.
+        "elapsed_seconds": getattr(state, "elapsed_seconds", None),
         "tick_unit": state.clock.tick_unit,
         "market_enabled": not args.no_market,
         "total_events": len(state.event_log),

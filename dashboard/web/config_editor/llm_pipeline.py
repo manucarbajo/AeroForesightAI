@@ -1,8 +1,10 @@
-"""Tab «Technik»: Sprachmodell, Reproduzierbarkeit, Ausgaben.
+"""Tab «Technik»: Sprachmodell-Feinheiten, Zwischenstände, Ausgaben.
 
-Nichts hier ändert die berechneten Zahlen — mit einer Ausnahme, dem
-Zufallsstartwert. Alles andere betrifft, wie viel erzählt, protokolliert und
-ausgegeben wird.
+Nichts hier ändert die berechneten Zahlen. Die Auswahl des Rechenmodus und der
+Zufallsstartwert — die beiden Dinge, die man vor einem Lauf wirklich wissen
+muss — stehen seit P1.1 im geführten Ablauf oben auf der Seite; hier bleiben
+die Werte dahinter: welches Modell unter welcher Adresse, wie oft ein
+Zwischenstand geschrieben wird, und was am Ende ausgegeben wird.
 """
 
 from __future__ import annotations
@@ -10,7 +12,6 @@ from __future__ import annotations
 from dash import html
 
 from dashboard.web import components as ui
-from dashboard.web.config_editor import compute_mode
 from dashboard.web.config_editor import controls as c
 
 _PIPELINE_SWITCHES = ["no_market", "redebedarf", "no_protocol", "no_scenarios"]
@@ -22,106 +23,67 @@ def layout(draft: dict) -> html.Div:
             ui.section(
                 "Sprachmodell",
                 ui.lede(
-                    "Die Agenten deuten den Lauf — sie rechnen nicht. Ob und mit welchem "
-                    "Modell sie das tun, steht hier."
+                    "Die Agenten deuten den Lauf — sie rechnen nicht. **Ob** ein Sprachmodell "
+                    "beteiligt ist, entscheidet der Rechenmodus oben; hier steht, mit welchem."
                 ),
                 ui.card(
-                    ui.note(
-                        "**Kennzahlen bleiben unberührt.** Preise, Buchungsraten und "
-                        "Faktorzustände entstehen deterministisch im Rechenmodell. Das "
-                        "Sprachmodell liefert ausschließlich Text.",
-                        icon_name="shield",
-                    ),
                     html.Div(
-                        ui.radio(
-                            compute_mode.OPTIONS,
-                            value=compute_mode.of(draft),
-                            id=compute_mode.FIELD_ID,
-                        ),
-                        className="mt-5",
-                    ),
-                    html.Div(
-                        compute_mode.placeholder("technik"),
-                        className="mt-5 pt-4 border-t border-slate-100",
-                    ),
-                    ui.expert(
                         ui.grid(
-                            c.text("model", draft.get("model", "llama3.2")),
-                            c.text("base_url", draft.get("base_url", "http://localhost:11434")),
+                            c.text("model", draft.get("model")),
+                            c.text("base_url", draft.get("base_url")),
                             c.slider(
                                 "temperature",
-                                float(draft.get("temperature", 0.7)),
+                                draft.get("temperature"),
                                 min=0.0,
                                 max=1.5,
                                 step=0.05,
                             ),
                             c.number(
                                 "max_tokens",
-                                int(draft.get("max_tokens", 2048)),
+                                draft.get("max_tokens"),
                                 min=256,
                                 max=8192,
                                 step=1,
                             ),
                             cols="md:grid-cols-2",
                         ),
-                        count=4,
-                        names="Modell, Adresse, Kreativität, Antwortlänge",
                     ),
                 ),
                 actions=ui.doc_link("zahlen-und-sprache"),
             ),
-            ui.section(
-                "Reproduzierbarkeit",
-                ui.lede(
-                    "Damit zwei Läufe vergleichbar sind, muss der Zufall festgelegt sein — "
-                    "sonst lässt sich ein Unterschied nicht der geänderten Annahme zuordnen."
+            # **Ein Abschnitt statt dreier** (P1.9-W3.5). «Zwischenstände» kostete
+            # 307 px für **ein** Zahlenfeld — Überschrift, Einleitung, Karte und
+            # Doku-Verweis drumherum. «Ausgaben» weitere 218 px. Zusammen mehr
+            # als der eigentliche Inhalt des Schritts.
+            #
+            # Eine Gliederungsebene innerhalb eines Schritts wiederholt, was der
+            # Schritt schon ist: eine Frage mit einer Überschrift. Was selten
+            # gebraucht wird, gehört nicht unter eine eigene Überschrift, sondern
+            # hinter eine Klappe — dasselbe Muster wie «Feinabstimmung».
+            ui.expert(
+                c.number(
+                    "checkpoint_interval",
+                    draft.get("checkpoint_interval"),
+                    min=0,
+                    step=1,
+                    detail=True,
+                    class_name="max-w-xs",
                 ),
-                ui.card(
-                    ui.grid(
-                        c.check("use_seed", draft.get("use_seed", False)),
-                        c.number(
-                            "seed",
-                            int(draft.get("seed") if draft.get("seed") is not None else 42),
-                            min=0,
-                            step=1,
-                        ),
-                        cols="sm:grid-cols-2",
-                    ),
-                    html.Div(
-                        c.number(
-                            "checkpoint_interval",
-                            int(draft.get("checkpoint_interval", 5)),
-                            min=0,
-                            step=1,
-                            class_name="max-w-xs",
-                        ),
-                        className="mt-5",
-                    ),
+                html.Div(
+                    c.check("generate_figures", draft.get("generate_figures")),
+                    className="mt-5",
                 ),
-                actions=ui.doc_link("vergleiche"),
-            ),
-            ui.section(
-                "Ausgaben",
-                ui.card(
-                    c.check("generate_figures", draft.get("generate_figures", True)),
-                    ui.expert(
-                        html.Div(
-                            [c.check(name, draft.get(name, False)) for name in _PIPELINE_SWITCHES],
-                            className="space-y-3",
-                        ),
-                        html.Div(
-                            c.text(
-                                "resume_from",
-                                draft.get("resume_from", ""),
-                                class_name="max-w-lg",
-                            ),
-                            className="mt-5",
-                        ),
-                        count=len(_PIPELINE_SWITCHES) + 1,
-                        title="Teile der Pipeline abschalten",
-                        names="Markt, Redebedarf, Protokoll, Szenarien, Fortsetzen",
-                    ),
+                html.Div(
+                    [c.check(name, draft.get(name)) for name in _PIPELINE_SWITCHES],
+                    className="space-y-3 mt-3",
                 ),
+                html.Div(
+                    c.text("resume_from", draft.get("resume_from"), class_name="max-w-lg"),
+                    className="mt-5",
+                ),
+                count=len(_PIPELINE_SWITCHES) + 3,
+                title="Zwischenstände und Ausgaben",
+                names="Checkpoints, Bilder, Markt, Redebedarf, Protokoll, Szenarien, Fortsetzen",
             ),
         ]
     )

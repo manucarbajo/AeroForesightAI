@@ -39,6 +39,13 @@ jobs:
         #     marginal-cost fraction is right, then test or config follows.
         # All three deselects go away with P4.2. Do not add a fourth: a deselect here
         # hides the problem from CI, which is exactly how these three survived so long.
+        #
+        # tests/test_web_overflow.py (the P1.7-D overflow guard) is NOT deselected --
+        # it skips itself, because playwright lives in the optional `ui` extra and no
+        # browser is installed here. That was a deliberate call: the guard needs a real
+        # browser (~150 MB per run) and is meant to be run locally by whoever touches
+        # the presentation layer. To arm it in CI, add `pip install playwright &&
+        # playwright install chromium` above -- and expect roughly four more minutes.
         run: |
           pytest -q \
             --deselect tests/test_scenario_sweeps.py::test_run_single_sweep_short \

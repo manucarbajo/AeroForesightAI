@@ -1,56 +1,124 @@
 Ein vollständiger Lauf dauert im schnellsten Modus wenige Sekunden. Diese
-Anleitung führt einmal durch, vom leeren Dashboard bis zum fertigen Szenario.
+Anleitung führt einmal durch, vom leeren Leitstand bis zum fertigen Szenario.
 
-## Schritt 1: Annahmenwelt wählen
+## Der Bildschirm in einem Absatz
 
-Öffnen Sie **Simulation starten**. Der erste Tab **Überblick** trägt die
-wenigen Entscheidungen, die einen Lauf tatsächlich prägen.
+Das Dashboard ist ein Leitstand: **eine** Ansicht, fünf Bereiche, kein Blättern.
+Links das Bedienfeld, in der Mitte die Simulation, rechts die Kennzahlen und die
+Konsole, unten die Zeitleiste, oben der Zustand der Anlage. Kopfzeile und
+Zeitleiste bleiben stehen; die drei Bereiche dazwischen rollen jeder für sich.
+Ist Ihr Fenster schmal, weichen die beiden Seitenspalten in Schubladen aus — die
+Knöpfe dafür sitzen links und rechts in der Kopfzeile. Sie erscheinen jeweils
+erst dann, wenn ihre Spalte wirklich zur Schublade geworden ist: die Telemetrie
+rechts unter 1280 Pixel Fensterbreite, das Bedienfeld links unter 1024. Auf
+einem breiten Schirm sehen Sie deshalb keinen der beiden — dort steht ohnehin
+alles nebeneinander.
 
-Stellen Sie «Womit starten?» auf **Szenario-Preset** und wählen Sie eines der
-hinterlegten Szenarien, etwa *Business as Usual*. Ein Preset legt Faktorlage,
-Politik und Kosten in einem Zug fest und ist deutlich schneller als jede Größe
-einzeln einzustellen. Unter der Auswahl steht, wofür das Szenario steht.
+**Die Breiten können Sie selbst einstellen.** Zwischen den Zonen liegt je eine
+schmale Griffleiste; ziehen Sie daran, wird die Seitenspalte breiter oder
+schmaler, und der Viewport in der Mitte gibt nach. Ein Doppelklick auf den Griff
+stellt die Ausgangsbreite wieder her. Mit der Tastatur geht es auch: Griff
+anspringen und mit den Pfeiltasten verschieben. Was Sie einstellen, merkt sich
+Ihr Browser bis zum nächsten Mal. Sobald eine Spalte zur Schublade wird, ist ihr
+Griff weg — dort gibt es nichts mehr zu ziehen.
 
-## Schritt 2: Umfang festlegen
+**Das Bedienfeld links ist kein Formular.** Es zeigt in drei Zeilen, was
+eingestellt ist, darunter den Preflight, und ganz unten den Start-Knopf — der
+bleibt immer sichtbar. Eingestellt wird im Bereich **Einrichten**, den Sie oben
+in der Kopfzeile erreichen oder über jede der drei Zeilen.
+
+Rechts oben schalten Sie zwischen hellem und dunklem Design um. Die Wahl bleibt
+im Browser gespeichert und gilt beim nächsten Öffnen weiter.
+
+Drei Entscheidungen genügen bis zum Start. Sie stehen im Bereich
+**Einrichten** nebeneinander, jede mit ihrer Erklärung daneben.
+
+## Schritt 1: Was soll gerechnet werden?
+
+Öffnen Sie **Einrichten**. Zuerst steht die Frage, womit Sie anfangen möchten:
+einen neuen Lauf einrichten, den Szenario-Vergleich starten, oder die letzten
+Einstellungen weiterverwenden. Für den ersten Durchgang wählen Sie **Neuen Lauf
+einrichten**.
+
+Danach wählen Sie die Annahmenwelt, von der der Lauf ausgeht — die
+Möglichkeiten stehen als Karten nebeneinander.
+
+Nehmen Sie eines der vorbereiteten Szenarien, etwa *Business as Usual*. Unter
+jedem steht, wofür es steht. Ein Szenario legt Faktorlage, Politik und Kosten in
+einem Zug fest und ist deutlich schneller, als jede Größe einzeln einzustellen.
+
+Ein gewähltes Szenario gilt **unverändert**: Die Werte kommen aus seiner Datei
+unter `configs/sweeps/`, und was Sie in den Schritten vier bis sieben
+eingestellt haben, bleibt dafür außen vor. Wollen Sie von einem Szenario
+ausgehen und einzelne Annahmen ändern, klicken Sie auf «Werte übernehmen und
+selbst anpassen» — dann wandern seine Werte in die folgenden Schritte, und die
+Auswahl springt auf «Eigene Einstellungen».
+
+## Schritt 2: Wie weit reicht der Lauf?
 
 Setzen Sie die Länge auf **10 Ticks**. Das reicht, um Rückkopplungen zu sehen,
-und ist in Sekunden gerechnet. Die Wiederholungen lassen Sie bei 1.
+und ist in Sekunden gerechnet.
 
 Ein Tick ist eine Modellrunde, kein Quartal und kein Jahr. Mehr dazu unter
 [Tick, Lauf und Szenario](/doku/tick-und-lauf).
 
-## Schritt 3: Rechenmodus prüfen
+Jedes Szenario nennt daneben, auf wie viele Ticks es angelegt ist — seine
+Meilensteine sind auf diese Länge hin gedacht. Die Länge bleibt trotzdem Ihre
+Entscheidung; das Szenario setzt sie nicht selbst. Hinter «Feinabstimmung»
+stehen die Wiederholungen, die Sie zunächst bei 1 lassen.
 
-Lassen Sie **Ohne Ollama rechnen** eingeschaltet. Der Lauf braucht dann kein
-lokales Sprachmodell. Die Kennzahlen sind identisch — sie kommen ohnehin aus dem
+## Schritt 3: Womit wird gerechnet?
+
+Lassen Sie **Ohne Sprachmodell** stehen. Der Lauf braucht dann kein lokales
+Ollama. Die Kennzahlen sind identisch — sie kommen ohnehin aus dem
 Rechenmodell; nur die erzählenden Texte der Agenten sind Platzhalter.
 
-Ganz unten auf dem Tab steht in einem Satz, was gleich passiert. Lesen Sie ihn
-einmal gegen; er ändert sich mit jeder Einstellung mit.
+Darunter steht, ob Ollama gerade erreichbar ist. Läuft es nicht, funktionieren
+nur die beiden unteren Modi.
 
-## Schritt 4: Starten
+## Schritt 4: Gegenlesen und starten
 
-Klicken Sie unter dem Editor auf **Start**. Es erscheint ein Protokollfenster,
-das den Fortschritt Runde für Runde zeigt, mit Preis und Buchungsrate je Tick.
-Wenn der Lauf fertig ist, meldet das Dashboard die Run-ID, die Zahl der Ticks
-und die Zahl der Ereignisse.
+Der Blick geht jetzt nach links. Dort steht in einem Satz, was gleich passiert,
+dazu die wichtigsten Werte als Kacheln — Länge, Wiederholungen,
+Zufallsstartwert. Lesen Sie den Satz einmal gegen; er ändert sich mit jeder
+Einstellung mit, auch während Sie rechts noch einstellen.
+
+Steht dort ein roter Kasten, ist die Konfiguration nicht lauffähig; der
+betroffene Wert ist zusätzlich am Feld selbst markiert. Sonst klicken Sie auf
+**Start**.
+
+Der Zustand in der Kopfzeile wechselt auf «Simulation läuft» und der Punkt
+daneben pulsiert. Der Fortschritt läuft Runde für Runde in die **Konsole** rechts
+— klappen Sie sie auf, um Preis und Buchungsrate je Tick zu sehen. Ist der Lauf
+fertig, meldet das Bedienfeld die Run-ID, die Zahl der Ticks und die Zahl der
+Ereignisse, und der neue Lauf ist in der Auswahl oben bereits gesetzt.
 
 ## Schritt 5: Ergebnis lesen
 
-Wechseln Sie zu **Ergebnisse ansehen**. Der eben erzeugte Lauf ist bereits
-ausgewählt. Der erste Tab **Szenario** ist die Hauptansicht: Er zeigt das
-Lauf-Narrativ und darunter die drei Szenarien, jeweils mit den Tick-Werten, auf
-die sie sich stützen.
+Der Leitstand zeigt den neuen Lauf sofort. In der Mitte steht die Population zu
+**einem** Tick: jeder Punkt ein Individuum, waagerecht seine Zahlungsbereitschaft,
+senkrecht sein Umweltbewusstsein, eingefärbt danach, ob es gebucht hat. Darüber
+liegt der Streifen mit den sieben Faktorzuständen; ein hervorgehobener Chip heißt,
+dass dieser Deskriptor gekippt ist.
 
-Danach lohnt sich **Übersicht** für den Verlauf von Buchungsrate und Preis, und
-**Figures** für die ausführlichen Auswertungen. Die empfohlene Lesereihenfolge
-steht unter [Ergebnisse lesen](/doku/ergebnisse-lesen).
+Ziehen Sie unten den **Regler** durch den Lauf oder drücken Sie **Abspielen**.
+Szene, Kennzahlen und Verläufe rechts folgen alle demselben Tick — die Zeitleiste
+ist die einzige Zeitachse der Oberfläche. Die Marker unter der Leiste zeigen, wo
+im Lauf etwas passiert ist; die gelben sind politische Eingriffe.
+
+Für die ausführlichen Auswertungen wechseln Sie oben auf **Ergebnisse**. Die
+erste Ansicht **Szenario** zeigt das Lauf-Narrativ und darunter die drei
+Szenarien, jeweils mit den Tick-Werten, auf die sie sich stützen. Danach lohnt
+sich **Übersicht** für den Verlauf von Buchungsrate und Preis, und **Figures**
+für die Detailauswertungen. Die empfohlene Lesereihenfolge steht unter
+[Ergebnisse lesen](/doku/ergebnisse-lesen).
 
 ## Was Sie als Nächstes probieren sollten
 
-Wiederholen Sie den Lauf mit einem anderen Preset und vergleichen Sie die
-Szenarien. Oder ändern Sie im Tab **Rahmenbedingungen** eine einzelne Größe,
-etwa die CO₂-Abgabe, und sehen Sie nach, ob die Wirkung Ihrer Erwartung
-entspricht. Für einen sauberen Vergleich zweier Läufe setzen Sie vorher unter
-**Technik** einen festen Zufallsstartwert — warum, steht unter
-[Läufe vergleichen](/doku/vergleiche).
+Wiederholen Sie den Lauf mit einem anderen Szenario und vergleichen Sie die
+Ergebnisse. Oder gehen Sie unter **Einrichten** einen Schritt weiter zu
+**Rahmenbedingungen** und ändern unter
+**Rahmenbedingungen** eine einzelne Größe, etwa die CO₂-Abgabe, und sehen nach,
+ob die Wirkung Ihrer Erwartung entspricht. Für einen sauberen Vergleich zweier
+Läufe setzen Sie vorher hinter «Feinabstimmung» einen festen Zufallsstartwert —
+warum, steht unter [Läufe vergleichen](/doku/vergleiche).
