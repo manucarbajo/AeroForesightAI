@@ -37,6 +37,9 @@ class Job:
     result: Any = None
     error: str | None = None
     done: bool = False
+    #: Wird gesetzt, wenn jemand abbricht. Der Tick-Loop fragt ihn zwischen zwei
+    #: Ticks (P1.9-W4.5) — ein Thread lässt sich von außen nicht sauber beenden.
+    stop: threading.Event = field(default_factory=threading.Event)
 
 
 #: Die Fortschrittszeile des Tick-Loops: `[tick  14/40] 0.14s (…) — price=…`.
@@ -158,7 +161,12 @@ def start(draft_data: dict) -> str:
 
     def _work() -> None:
         try:
-            job.result = launch_from_draft(draft, repo_root=REPO_ROOT, on_progress=job.queue.put)
+            job.result = launch_from_draft(
+                draft,
+                repo_root=REPO_ROOT,
+                on_progress=job.queue.put,
+                should_stop=job.stop.is_set,
+            )
         except Exception as exc:  # noqa: BLE001 - jeder Fehler gehört ins Log, nicht in den Thread
             job.error = str(exc)
         finally:
@@ -166,6 +174,34 @@ def start(draft_data: dict) -> str:
 
     threading.Thread(target=_work, name=f"sim-{job.job_id[:8]}", daemon=True).start()
     return job.job_id
+
+
+def cancel(job_id: str | None = None) -> bool:
+    """Den laufenden Lauf abbrechen — kooperativ (P1.9-W4.5).
+
+    Gibt zurück, ob überhaupt etwas zum Abbrechen da war.
+
+    **Der Lauf endet nicht sofort, sondern nach dem laufenden Tick.** Ein Thread
+    lässt sich von außen nicht sauber beenden; mitten im Tick abgeschnitten
+    bliebe ein halber Zustand zurück, und die Artefakte beschrieben einen Lauf,
+    den es so nie gab. Bei «Nur Zahlen» ist das eine Sache von Millisekunden,
+    mit Sprachmodell kann der letzte Tick noch laufen.
+
+    Ohne `job_id` trifft es den aktiven Lauf — das ist der Fall, den die
+    Oberfläche braucht: Wer die Seite neu geladen hat, kennt keine Kennung mehr,
+    darf aber trotzdem abbrechen. Es läuft ohnehin höchstens einer.
+    """
+
+    with _LOCK:
+        if job_id:
+            job = _JOBS.get(job_id)
+        else:
+            job = next((eintrag for eintrag in _JOBS.values() if not eintrag.done), None)
+    if job is None or job.done:
+        return False
+    job.stop.set()
+    job.queue.put("Abbruch angefordert — der Lauf endet nach dem laufenden Tick.")
+    return True
 
 
 def poll(job_id: str | None) -> Job | None:

@@ -295,6 +295,27 @@ def register_callbacks(app) -> None:
     config_editor.register_callbacks(app)
 
     @app.callback(
+        Output(running.CANCEL_STATUS, "children"),
+        Input(running.CANCEL, "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def _cancel(n_clicks: int | None):
+        """Den laufenden Lauf abbrechen (P1.9-W4.5).
+
+        **Ohne Job-Kennung**, und das ist Absicht: Wer die Seite neu geladen hat
+        oder in einem zweiten Tab sitzt, kennt keine — darf aber trotzdem
+        abbrechen. Es läuft ohnehin höchstens einer, und `runner` weiß, welcher.
+        Dieselbe Überlegung wie beim Laufzustand in Regel 5 der Architektur-Map:
+        Was dem Server gehört, wird beim Server erfragt.
+        """
+
+        if not n_clicks:
+            return no_update
+        if runner.cancel():
+            return ui.alert("Abbruch angefordert — der Lauf endet nach dem laufenden Tick.", "info")
+        return ui.alert("Es läuft gerade nichts, was sich abbrechen ließe.", "warning")
+
+    @app.callback(
         Output("run-summary", "children"),
         Output(SUMMARY_HOST, "children"),
         Input(STORE_ID, "data"),

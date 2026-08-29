@@ -36,8 +36,18 @@ Solange gerechnet wird, ist sie das Einzige, was sich bewegt.
 Sie müssen nicht zusehen. Wechseln Sie nach **Ergebnisse**, um einen früheren
 Lauf anzuschauen, oder ins **Handbuch** — der Fortschritt wandert dann in ein
 kleines Fenster unten rechts und bleibt dort sichtbar. Ein Klick auf «Ansehen»
-bringt Sie zurück zum Ladebildschirm. Abbrechen können Sie den Lauf von dort
-aus nicht; er gehört dem Server und nicht diesem Fenster.
+bringt Sie zurück zum Ladebildschirm.
+
+**Abbrechen können Sie den Lauf**, seit August 2026, mit dem Knopf **Lauf
+abbrechen** unter dem Fortschritt. Er endet dann **nach dem laufenden Tick**,
+nicht sofort: Ein Tick lässt sich nicht in der Mitte anhalten, ohne einen halben
+Zustand zu hinterlassen. Bei «Nur Zahlen» ist das eine Sache von Millisekunden,
+mit Sprachmodell kann der letzte Tick noch laufen.
+
+Was bis dahin gerechnet wurde, bleibt erhalten. Der Lauf steht danach in der
+Auswahl wie jeder andere — erkennbar daran, dass die Zahl der Ticks unter dem
+Maximum liegt. Der Knopf wirkt auch dann, wenn Sie die Seite zwischendurch neu
+geladen haben: Es läuft ohnehin höchstens ein Lauf, und der Server weiß, welcher.
 
 **Steht der Balken still und zeigt keinen Prozentwert**, ist das kein Fehler:
 Bis zur ersten Tick-Meldung weiß niemand, wie weit der Lauf ist, und dann läuft

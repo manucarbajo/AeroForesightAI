@@ -39,6 +39,14 @@ DOCK_HOST = "run-dock"
 DOCK_TOGGLE = "run-dock-toggle"
 
 
+#: Der Abbruch-Knopf und sein Meldungsplatz. Beide stehen **immer** im Layout
+#: des Ladebildschirms; dass es sie nur während eines Laufs zu sehen gibt, ist
+#: eine Frage der Sichtbarkeit — ein fehlender `Input` legt in Dash den ganzen
+#: Callback lahm (Regel 6 der Architektur-Map).
+CANCEL = "run-cancel"
+CANCEL_STATUS = "run-cancel-status"
+
+
 def _bar(progress: Progress, *, compact: bool = False) -> html.Div:
     """Der Fortschrittsbalken — bestimmt oder unbestimmt."""
 
@@ -118,6 +126,29 @@ def render(progress: Progress, draft: dict) -> html.Div:
                 html.P(progress.line or "…", className=f"{ui.CAPTION} mt-3 font-mono truncate"),
             ),
             html.Div(_what(draft), className="mt-5"),
+            # **Abbrechen** (P1.9-W4.5). Bis dahin lief ein Lauf bis zum Ende
+            # oder bis der Prozess starb: Wer versehentlich 500 Ticks mit
+            # Sprachmodell startete, konnte nur warten oder den Server neu
+            # starten. Der Satz daneben sagt, was «abbrechen» hier heißt — der
+            # Lauf endet nach dem laufenden Tick, nicht sofort.
+            html.Div(
+                [
+                    ui.button(
+                        "Lauf abbrechen",
+                        id=CANCEL,
+                        variant="danger",
+                        icon_name="stop_circle",
+                    ),
+                    html.P(
+                        "Der Lauf endet nach dem laufenden Tick. Was bis dahin gerechnet "
+                        "wurde, bleibt erhalten — der Lauf steht danach in der Auswahl, "
+                        "mit weniger Ticks als geplant.",
+                        className=f"{ui.CAPTION} mt-2 max-w-2xl",
+                    ),
+                    html.Div(id=CANCEL_STATUS, className="mt-2"),
+                ],
+                className="mt-6",
+            ),
             html.Div(
                 [
                     html.H2("Konsole", className=f"{ui.H3} mb-2"),

@@ -155,11 +155,13 @@ def launch_from_draft(
     *,
     repo_root: Path | None = None,
     on_progress: Callable[[str], None] | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> RunLaunchResult:
     return launch_simulation(
         draft_to_launch_config(draft),
         repo_root=repo_root,
         on_progress=on_progress,
+        should_stop=should_stop,
     )
 
 
@@ -168,6 +170,7 @@ def launch_simulation(
     *,
     repo_root: Path | None = None,
     on_progress: Callable[[str], None] | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> RunLaunchResult:
     """Run one simulation, multi-run batch, or sweep batch and persist outputs."""
 
@@ -210,6 +213,11 @@ def launch_simulation(
                 deterministic_only=config.deterministic_only,
                 checkpoint_interval=max(0, int(config.checkpoint_interval)),
                 verbose_ticks=True,
+                # **Der Abbruch reicht bis in die Tick-Schleife** (P1.9-W4.5).
+                # Der Sweep-Pfad bekommt ihn nicht: `run_all_sweeps` baut seinen
+                # Runner selbst, und ihn dafür zu öffnen wäre eine Änderung an
+                # seinem Vertrag (W1.1) — das gehört in ein eigenes Paket.
+                should_stop=should_stop,
             ),
         )
 

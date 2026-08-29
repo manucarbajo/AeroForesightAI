@@ -43,7 +43,7 @@ def _warte_auf_ende(job_id: str, sekunden: float = 5.0) -> runner.Job:
 
 
 def test_a_run_reports_its_progress_and_result(monkeypatch):
-    def fake_launch(draft, *, repo_root=None, on_progress=None):
+    def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
         for tick in (1, 2, 3):
             on_progress(f"[tick {tick}/3] price=100")
         return "fertig"
@@ -64,7 +64,7 @@ def test_progress_arrives_while_the_run_is_still_going(monkeypatch):
 
     freigabe = threading.Event()
 
-    def fake_launch(draft, *, repo_root=None, on_progress=None):
+    def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
         on_progress("erste Zeile")
         freigabe.wait(timeout=5)
         return "fertig"
@@ -92,7 +92,7 @@ def test_progress_arrives_while_the_run_is_still_going(monkeypatch):
 def test_a_failure_lands_in_the_job_not_in_the_thread(monkeypatch):
     """Eine Ausnahme im Thread wäre sonst unsichtbar — der Lauf hinge ewig."""
 
-    def fake_launch(draft, *, repo_root=None, on_progress=None):
+    def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
         on_progress("bis hierher")
         raise RuntimeError("Ollama antwortet nicht")
 
@@ -181,7 +181,7 @@ def test_the_log_does_not_grow_without_bound(monkeypatch):
     monkeypatch.setattr(
         runner,
         "launch_from_draft",
-        lambda draft, *, repo_root=None, on_progress=None: [
+        lambda draft, *, repo_root=None, on_progress=None, should_stop=None: [
             on_progress(f"Zeile {i}") for i in range(ueberzaehlig)
         ],
     )
@@ -360,3 +360,108 @@ def test_the_rail_renders_a_locked_button_during_a_foreign_run(monkeypatch):
 
     assert "disabled=True" in gesperrt
     assert gesperrt != frei
+
+
+# --- Abbrechen (P1.9-W4.5) -------------------------------------------------
+
+
+class TestEinLaufLaesstSichAbbrechen:
+    """W4.5 — bis dahin lief ein Lauf bis zum Ende oder bis der Prozess starb.
+
+    Wer versehentlich 500 Ticks mit Sprachmodell startete, konnte nur warten
+    oder den Server neu starten.
+
+    **Kooperativ und nicht gewaltsam:** Ein Thread lässt sich von außen nicht
+    sauber beenden. Mitten in einem Tick abgebrochen bliebe ein halber Zustand
+    zurück, und die Artefakte beschrieben einen Lauf, den es so nie gab.
+    Gefragt wird deshalb zwischen zwei Ticks.
+    """
+
+    def test_nothing_running_is_not_an_error(self):
+        assert runner.cancel() is False
+
+    def test_the_flag_reaches_the_run(self, monkeypatch):
+        """Der Lauf bekommt eine Frage gestellt, die er beantworten kann."""
+
+        gesehen: dict = {}
+
+        def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
+            gesehen["vorher"] = should_stop()
+            runner.cancel()
+            gesehen["nachher"] = should_stop()
+            return "fertig"
+
+        monkeypatch.setattr(runner, "launch_from_draft", fake_launch)
+        job_id = runner.start({})
+        _warte(job_id)
+
+        assert gesehen == {"vorher": False, "nachher": True}, gesehen
+
+    def test_it_finds_the_active_run_without_a_job_id(self, monkeypatch):
+        """Wer die Seite neu geladen hat, kennt keine Kennung — darf aber abbrechen.
+
+        Dieselbe Überlegung wie beim Laufzustand: Was dem Server gehört, wird
+        beim Server erfragt, nicht aus dem Zustand einer Sitzung abgeleitet.
+        """
+
+        angehalten: dict = {}
+
+        def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
+            angehalten["konnte"] = runner.cancel()  # ohne Kennung
+            angehalten["wirkt"] = should_stop()
+            return "fertig"
+
+        monkeypatch.setattr(runner, "launch_from_draft", fake_launch)
+        _warte(runner.start({}))
+
+        assert angehalten == {"konnte": True, "wirkt": True}
+
+    def test_a_finished_run_cannot_be_cancelled(self, monkeypatch):
+        """Sonst meldete die Oberfläche einen Abbruch, den es nicht gab."""
+
+        monkeypatch.setattr(
+            runner,
+            "launch_from_draft",
+            lambda draft, *, repo_root=None, on_progress=None, should_stop=None: "fertig",
+        )
+        job_id = runner.start({})
+        _warte(job_id)
+
+        assert runner.cancel(job_id) is False
+
+
+def test_the_tick_loop_asks_before_the_next_round():
+    """Der Haken sitzt **nach** einem fertigen Tick, nicht mittendrin.
+
+    Dort ist der Zustand vollständig; der Lauf endet dann mit weniger Ticks,
+    als er vorhatte, und schreibt seine Artefakte wie jeder unvollständige
+    Lauf.
+    """
+
+    from pathlib import Path
+
+    quelle = Path("src/orchestration/simulation_runner.py").read_text(encoding="utf-8")
+    schleife = quelle[quelle.index("while state.clock.current_tick < max_ticks:") :][:900]
+
+    assert "self.options.should_stop" in schleife, (
+        "Die Tick-Schleife fragt nicht mehr nach einem Abbruch — dann ist der "
+        "Knopf im Ladebildschirm wirkungslos."
+    )
+    assert schleife.index("_run_single_round") < schleife.index("should_stop"), (
+        "Der Haken sitzt vor dem Tick statt danach — dann bricht der Lauf mit "
+        "einem halben Zustand ab."
+    )
+
+
+def _warte(job_id, sekunden: float = 3.0):
+    """Auf das Ende des Jobs warten, ohne fest zu schlafen."""
+
+    import time as _time
+
+    frist = _time.time() + sekunden
+    while _time.time() < frist:
+        job = runner.poll(job_id)
+        if job is not None and job.done:
+            return job
+        _time.sleep(0.01)
+    raise AssertionError("Der Job wurde nicht fertig")
