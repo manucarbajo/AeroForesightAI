@@ -2415,6 +2415,52 @@ html.dark .af-input[type="number"] {
     }
 }
 
+/* **Der Einstieg hat keine Schrittliste -- und reserviert ihr keinen Platz**
+   (P1.9-W5.4). Gemessen bei 1280: `240px 760px`, waehrend die Liste dort
+   `display: none` war. 240 px Leere links neben der Frage, mit der alles
+   anfaengt. */
+.af-wizard--einstieg {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* **Das Lesemass** (P1.9-W5.4). Gemessen wurden bis zu **124** Zeichen je
+   Zeile; die typografische Spanne ist 45 bis 75. Ueber etwa 75 verliert das
+   Auge am Zeilenende die Spur zum naechsten Anfang.
+
+   **In `ch`, nicht in `rem`.** Die Zusage handelt von Zeichen, also steht sie
+   in der Einheit, die Zeichen misst -- ein `rem`-Deckel haengt an der
+   Schriftgroesse, und genau daran ist der erste Anlauf gescheitert: 34rem
+   ergaben im grossen Fliesstext 84, in der kleineren Bildunterschrift aber 90
+   Zeichen. `ch` ist die Breite der Null; Ziffern sind breiter als der
+   Durchschnittsbuchstabe, deshalb steht hier weniger als 75.
+
+   **Und deshalb mit Luft.** Ein `ch`-Deckel legt eine Breite fest, keine
+   Zeichenzahl: Wie viele Buchstaben hineinpassen, haengt davon ab, welche.
+   Bei 56ch standen im selben Absatzformat 71 bis 78 Zeichen -- dieselbe
+   Regel, zwei Ergebnisse. 53ch halten auch den breitesten gemessenen Satz
+   unter 75.
+
+   Der Deckel sitzt am Fliesstext, nicht am Schritt: Ein Raster aus
+   Auswahlfeldern ordnet sich in der Breite, ein Satz zerfaellt darin. */
+.af-mass {
+    max-width: 53ch;
+}
+
+/* **Breite je Schritt** (P1.9-W5.4). Die Form des Inhalts entscheidet, nicht
+   seine Menge: Karten und Raster nehmen die Spalte, ein kurzes Formular aus
+   drei Feldern bekommt sie geschenkt und wird davon nicht besser. Gemessen
+   stand ein 245 px breites Feld in einer 760 px breiten Spalte. */
+.af-body--lesen {
+    max-width: 34rem;
+}
+
+/* Code ist kein Fliesstext: Eine JSON-Vorschau bricht nicht bei 75 Zeichen um,
+   sie wird gescrollt. Das Lesemass gilt dort nicht. */
+.af-mass pre,
+.af-mass code {
+    max-width: none;
+}
+
 .af-wizard__rail {
     position: sticky;
     top: 0;

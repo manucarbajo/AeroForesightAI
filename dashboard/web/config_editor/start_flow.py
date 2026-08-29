@@ -568,7 +568,15 @@ def preflight(
     tiles = _tiles(draft)
     return html.Div(
         [
-            ui.card(html.Div(ui.markdown(summary_sentence(draft)), id=summary_id(slot))),
+            # Der Satz ist Fliesstext und bekommt das Lesemass (W5.4):
+            # bei 1024 px lief er sonst auf 76 Zeichen je Zeile.
+            ui.card(
+                html.Div(
+                    ui.markdown(summary_sentence(draft)),
+                    id=summary_id(slot),
+                    className="af-mass",
+                )
+            ),
             html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),
             html.Div(vorgaben_hinweis(draft), className="mt-4"),
             html.Div(dauer.hinweis(draft), className="mt-4"),

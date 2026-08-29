@@ -539,12 +539,17 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
 
 
 def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
-    """Erklärender Fließtext ohne Alarmcharakter — Kontext, keine Meldung."""
+    """Erklärender Fließtext ohne Alarmcharakter — Kontext, keine Meldung.
+
+    **Mit Lesemaß** (P1.9-W5.4): Der Text bricht spätestens bei rund 68 Zeichen
+    um, auch wenn die Spalte breiter ist. `max-width` streckt nichts — in einer
+    engen Zelle bleibt der Hinweis so schmal, wie die Zelle ist.
+    """
 
     return html.Div(
         [
             icon(icon_name, "text-base af-text-faint shrink-0 mt-0.5"),
-            dcc.Markdown(text, className="af-md af-md--tight"),
+            dcc.Markdown(text, className="af-md af-md--tight af-mass"),
         ],
         className="flex items-start gap-2.5 font-body text-sm af-text-body "
         "af-surface-inset af-bordered rounded px-4 py-3",
@@ -566,9 +571,14 @@ def doc_link(slug: str, label: str = "Im Handbuch nachlesen") -> Any:
 
 
 def lede(text: str) -> html.P:
-    """Einleitungssatz über einem Block — sagt, wozu die Einstellungen dienen."""
+    """Einleitungssatz über einem Block — sagt, wozu die Einstellungen dienen.
 
-    return html.P(text, className="font-body text-sm af-text-body max-w-3xl mb-4 leading-relaxed")
+    **Mit Lesemaß statt `max-w-3xl`** (P1.9-W5.4): Jene 768 px ergaben gemessen
+    bis zu 108 Zeichen je Zeile. Der Deckel steht jetzt in `ch` — in der
+    Einheit, von der die Zusage handelt.
+    """
+
+    return html.P(text, className="font-body text-sm af-text-body af-mass mb-4 leading-relaxed")
 
 
 def code_block(text: str, *, max_height: str = "24rem") -> html.Pre:

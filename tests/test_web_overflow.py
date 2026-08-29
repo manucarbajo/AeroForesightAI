@@ -374,7 +374,15 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 4": 1.28,
         "Schritt 5": 1.31,
         "Schritt 6": 1.00,
-        "Schritt 7": 1.29,
+        # **1,29 → 1,45 mit W5.4, und das ist bezahlt, nicht verrutscht.** Das
+        # Lesemaß bricht den Preflight-Text bei 75 statt bei 124 Zeichen um;
+        # dieselben Sätze brauchen dadurch mehr Zeilen. Der Handel: 0,16
+        # Bildschirme Höhe gegen eine Zeilenlänge, der das Auge folgen kann.
+        # Auf «Prüfen & Starten» hält man ohnehin inne — von den drei
+        # Zuwächsen aus W4 lagen alle drei auf diesem Schritt, aus demselben
+        # Grund. **Die Zahl steht hier, damit der nächste Zuwachs wieder
+        # auffällt**; sie ist keine Freigabe für den übernächsten.
+        "Schritt 7": 1.45,
     },
     1024: {
         "Einstieg": 1.00,
@@ -383,8 +391,12 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 3": 1.00,
         "Schritt 4": 1.34,
         "Schritt 5": 1.31,
-        "Schritt 6": 1.05,
-        "Schritt 7": 1.31,
+        # 1,05 → 1,08: Der Schritt trägt hier keine eigene Breite (das kostete
+        # 0,08 für ein Schmälern der Felder, das keine Zeile kürzer machte),
+        # wohl aber das Lesemaß auf seinem Fließtext — und das schlägt bei der
+        # engeren Breite mit 0,03 zu Buche. Bei 1280 bleibt er auf 1,00.
+        "Schritt 6": 1.08,
+        "Schritt 7": 1.45,  # siehe die Begründung bei 1280
     },
 }
 
@@ -663,3 +675,256 @@ def test_the_detector_would_notice_a_relapse(page):
         "probe-wrapper",
         "probe-fokusziel",
     }, f"Der Detektor meldet Phantome: {sorted(gefunden)}"
+
+
+# --- Teil 3: Breite je Schritt (P1.9-W5.4) ----------------------------------
+#
+# Bis W5.4 trug **eine** Breite alles: `grid-template-columns: 15rem
+# minmax(0, 1fr)`, gemessen `240px 760px` bei 1040 px Zone. Dieselben 760 px
+# trugen einen Schritt mit drei Feldern und ein Raster aus sieben Auswahlen.
+#
+# Zwei Dinge werden hier gemessen, und ein drittes am Einstieg:
+#
+# 1. **Wie viel seiner Spalte ein Schritt füllt.** Nicht das breiteste
+#    Einzelfeld: Ein Raster aus sieben schmalen Auswahlen füllt seine Spalte
+#    vollständig und meldet trotzdem 32 %. Gemessen wird die Ausdehnung aller
+#    Tinte im Rumpf, bezogen auf die Breite des Rumpfes.
+# 2. **Wie lang die Zeilen werden** — in Zeichen, gezählt, nicht aus der
+#    Pixelbreite geschätzt. Der Schätzer lag um rund 10 % daneben, genug, um
+#    einen Deckel für wirkungslos zu halten, der wirkt. Gemessen wurden vorher
+#    bis zu **124** Zeichen; die typografische Spanne ist 45 bis 75.
+# 3. **Ob der Einstieg eine Spalte für eine Liste vorhält, die er nicht hat.**
+
+#: Was eine Zeile höchstens tragen darf. Über 75 Zeichen verliert das Auge am
+#: Zeilenende die Spur zum nächsten Anfang.
+ZEILE_MAX = 75
+
+#: Wie viel seiner Spalte ein Schritt mindestens füllen muss. Darunter steht
+#: der Inhalt in einer Spalte, die für ihn zu breit ist.
+FUELLUNG_MIN = 60.0
+
+_BREITE = """
+() => {
+    const spalte = document.getElementById("wizard-content");
+    const rumpf = document.getElementById("wizard-body");
+    if (!spalte || !rumpf) return null;
+    const AUSSEN = ".af-wizard__nav, .af-wizard__navhost, .af-wizard__counter";
+    const sichtbar = (el) => {
+        if (!el || (el.closest && el.closest(AUSSEN))) return false;
+        for (let n = el; n && n !== document.body; n = n.parentElement) {
+            const st = getComputedStyle(n);
+            if (st.display === "none" || st.visibility === "hidden") return false;
+            if (n.classList && n.classList.contains("af-nur-vorlesen")) return false;
+        }
+        return true;
+    };
+
+    // (1) Fuellung: die Ausdehnung aller Tinte im Rumpf, an dessen Breite.
+    const rb = rumpf.getBoundingClientRect();
+    let links = Infinity, rechts = -Infinity;
+    const nimm = (r) => {
+        if (r.width < 1 || r.height < 1) return;
+        // An den Rumpf klemmen: Was darueber hinausragt, ist entweder
+        // Ueberlauf (dafuer gibt es Teil 1) oder beschnitten und unsichtbar.
+        const l = Math.max(r.left, rb.left), re = Math.min(r.right, rb.right);
+        if (re <= l) return;
+        if (l < links) links = l;
+        if (re > rechts) rechts = re;
+    };
+    rumpf.querySelectorAll("input, select, textarea, button, img, svg").forEach(
+        (el) => { if (sichtbar(el)) nimm(el.getBoundingClientRect()); });
+
+    // (2) Zeichen je Zeile: jedes Zeichen bekommt sein eigenes Rechteck,
+    //     Zeichen mit derselben Oberkante stehen auf derselben Zeile.
+    let zeile = 0, probe = null, wo = null;
+    const lauf = document.createTreeWalker(spalte, NodeFilter.SHOW_TEXT);
+    let k;
+    while ((k = lauf.nextNode())) {
+        const text = k.textContent || "";
+        if (!text.trim()) continue;
+        if (!sichtbar(k.parentElement)) continue;
+        if (rumpf.contains(k)) {
+            const rr = document.createRange();
+            rr.selectNodeContents(k);
+            Array.from(rr.getClientRects()).forEach(nimm);
+        }
+        if (text.trim().length < 40) continue;      // Beschriftungen sind kein Fliesstext
+        // Code bricht nicht bei 75 Zeichen um, er wird gescrollt.
+        if (k.parentElement.closest("pre, code")) continue;
+        const zeilen = new Map();
+        for (let i = 0; i < text.length; i++) {
+            const r = document.createRange();
+            r.setStart(k, i);
+            r.setEnd(k, i + 1);
+            const rect = r.getBoundingClientRect();
+            if (rect.width < 0.01 && rect.height < 0.01) continue;
+            const oben = Math.round(rect.top);
+            zeilen.set(oben, (zeilen.get(oben) || 0) + 1);
+        }
+        zeilen.forEach((anzahl) => {
+            if (anzahl > zeile) {
+                zeile = anzahl;
+                probe = text.trim().slice(0, 40);
+                wo = k.parentElement.tagName + "." + String(k.parentElement.className).slice(0, 40);
+            }
+        });
+    }
+
+    return {
+        rumpf: Math.round(rb.width),
+        fuellung: rechts > 0 ? +(((rechts - links) / rb.width) * 100).toFixed(1) : null,
+        zeichen: zeile, probe: probe, wo: wo,
+    };
+}
+"""
+
+_EINSTIEG_RASTER = """
+() => {
+    const w = document.querySelector(".af-wizard");
+    const rail = document.querySelector(".af-wizard__rail");
+    if (!w) return null;
+    return {
+        spalten: getComputedStyle(w).gridTemplateColumns,
+        railBreite: rail ? Math.round(rail.getBoundingClientRect().width) : null,
+    };
+}
+"""
+
+
+def _durch_die_schritte(page):
+    """Jeden Schritt öffnen und vermessen — als `(titel, maße)` je Schritt."""
+
+    from dashboard.web.config_editor import wizard
+
+    page.goto(page.basis, wait_until="networkidle")
+    page.wait_for_selector(".af-way")
+    page.click("#wizard-way-new")
+    page.wait_for_timeout(RUHE_MS)
+
+    for index in range(len(wizard.STEPS)):
+        if index:
+            page.click("#wizard-next")
+            page.wait_for_timeout(RUHE_MS)
+        page.wait_for_function(
+            "() => { const e = document.getElementById('wizard-content');"
+            " return e && e.getBoundingClientRect().height > 50; }",
+            timeout=10_000,
+        )
+        yield wizard.STEPS[index].title, page.evaluate(_BREITE)
+
+
+class TestJederSchrittHatSeineBreite:
+    """Eine Breite für alles war für jeden Schritt die falsche."""
+
+    def test_no_step_sits_in_a_column_too_wide_for_it(self, page):
+        """Kein Schritt lässt seine Spalte zur Hälfte leer.
+
+        **Gemessen an der Tinte, nicht am breitesten Feld.** Die erste Fassung
+        dieses Maßes nahm das breiteste Bedienelement und meldete für die
+        Ausgangslage 32 % — dabei füllt deren Raster aus sieben Auswahlen die
+        Spalte vollständig. Ein Maß, das ein gefülltes Raster als leer meldet,
+        misst nicht, was es zu messen vorgibt.
+        """
+
+        schmal = [
+            f"{titel}: {mass['fuellung']} % von {mass['rumpf']} px"
+            for titel, mass in _durch_die_schritte(page)
+            if mass and mass["fuellung"] is not None and mass["fuellung"] < FUELLUNG_MIN
+        ]
+
+        assert not schmal, (
+            f"Diese Schritte füllen bei {page.breite} px weniger als "
+            f"{FUELLUNG_MIN:.0f} % ihrer Spalte:\n  " + "\n  ".join(schmal)
+        )
+
+    def test_no_line_runs_longer_than_the_eye_can_follow(self, page):
+        """Keine Zeile über 75 Zeichen — gezählt, nicht geschätzt.
+
+        Aus der Pixelbreite mit einer angenommenen halben Geviertbreite
+        zurückzurechnen lag um rund 10 % daneben. Das genügte, um einen Deckel
+        für wirkungslos zu halten, der wirkte.
+        """
+
+        lang = [
+            f"{titel}: {mass['zeichen']} Zeichen in {mass['wo']} — {mass['probe']!r}"
+            for titel, mass in _durch_die_schritte(page)
+            if mass and mass["zeichen"] > ZEILE_MAX
+        ]
+
+        assert not lang, (
+            f"Diese Zeilen laufen bei {page.breite} px über {ZEILE_MAX} Zeichen:\n  "
+            + "\n  ".join(lang)
+            + "\n\nDas Lesemaß (`af-mass`) fehlt dort — oder es ist zu weit."
+        )
+
+    def test_the_entry_reserves_no_column_for_a_list_it_does_not_have(self, page):
+        """Am Einstieg gibt es keine Schrittliste — und keine Spalte dafür.
+
+        Gemessen wurden 240 px Leere links neben der Frage, mit der alles
+        anfängt: Das Raster hielt die Spalte der Liste vor, während die Liste
+        selbst `display: none` war.
+        """
+
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+        raster = page.evaluate(_EINSTIEG_RASTER)
+
+        assert raster, ".af-wizard nicht gefunden — misst der Wächter noch das Richtige?"
+        assert not raster["railBreite"], "Die Schrittliste ist am Einstieg doch sichtbar"
+        assert len(raster["spalten"].split()) == 1, (
+            f"Der Einstieg hält bei {page.breite} px eine zweite Spalte vor "
+            f"({raster['spalten']}) — für eine Liste, die dort nicht steht."
+        )
+
+
+def test_the_width_guard_would_notice_a_relapse(page):
+    """Beide Maße müssen anschlagen, sonst sind sie Zierde.
+
+    Erzeugt wird je ein echter Rückfall: ein Rumpf, der nur ein Viertel seiner
+    Spalte füllt, und ein Satz ohne Lesemaß.
+    """
+
+    page.goto(page.basis, wait_until="networkidle")
+    page.wait_for_selector(".af-way")
+    page.click("#wizard-way-new")
+    # **Erst warten, bis gezeichnet ist** — derselbe Fehler, an dem der
+    # Höhenwächter schon einmal hing: Ohne die Bedingung misst man den leeren
+    # Wirt, und `fuellung` kommt als `None` zurück.
+    page.wait_for_function(
+        "() => { const e = document.getElementById('wizard-body');"
+        " return e && e.getBoundingClientRect().height > 50; }",
+        timeout=10_000,
+    )
+    page.wait_for_timeout(RUHE_MS)
+
+    vorher = page.evaluate(_BREITE)
+    assert vorher["fuellung"] >= FUELLUNG_MIN and vorher["zeichen"] <= ZEILE_MAX
+
+    page.evaluate("""
+        () => {
+          const rumpf = document.getElementById('wizard-body');
+          rumpf.innerHTML = '';
+          const eng = document.createElement('div');
+          eng.style.width = '25%';
+          eng.appendChild(document.createTextNode('kurz'));
+          rumpf.appendChild(eng);
+        }
+        """)
+    schmal = page.evaluate(_BREITE)
+    assert (
+        schmal["fuellung"] < FUELLUNG_MIN
+    ), f"Der Wächter übersieht eine viertelvolle Spalte ({schmal['fuellung']} %)"
+
+    page.evaluate("""
+        () => {
+          const p = document.createElement('p');
+          p.style.maxWidth = 'none';
+          p.style.fontSize = '10px';
+          p.textContent = 'A'.repeat(400);
+          document.getElementById('wizard-body').appendChild(p);
+        }
+        """)
+    lang = page.evaluate(_BREITE)
+    assert (
+        lang["zeichen"] > ZEILE_MAX
+    ), f"Der Wächter übersieht eine Zeile ohne Lesemaß ({lang['zeichen']} Zeichen)"

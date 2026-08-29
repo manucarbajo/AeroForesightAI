@@ -125,6 +125,10 @@ CONTENT_HOST = "wizard-content-host"
 RAIL_HOST = "wizard-rail-host"
 NAV_HOST = "wizard-nav-host"
 HEAD_HOST = "wizard-head-host"
+#: Das Raster aus Schrittliste und Inhalt. Trägt eine Kennung, weil seine
+#: Spaltenaufteilung sich mit dem Schritt ändert (W5.4) — am Einstieg gibt es
+#: keine Schrittliste, und dann darf ihr auch kein Platz reserviert werden.
+GRID = "wizard-grid"
 
 _VISIBLE: dict = {}
 _HIDDEN = {"display": "none"}
@@ -144,6 +148,15 @@ class Step:
     body: Callable[[dict], object] | None = None
     #: `False` heißt: darf übersprungen werden, ohne dass etwas fehlt.
     required: bool = True
+    #: Wie breit der Rumpf werden darf (P1.9-W5.4). `"lesen"` deckelt ihn auf
+    #: das Lesemaß, `"voll"` lässt ihn die Spalte nehmen. **Der Unterschied ist
+    #: die Form des Inhalts, nicht seine Menge:** Ein Raster aus Auswahlfeldern
+    #: (Ausgangslage) und eine Reihe Karten (Szenario, Rechenmodus) brauchen
+    #: Breite und ordnen sich darin; ein kurzes Formular aus drei Feldern
+    #: bekommt sie geschenkt und wird davon nicht besser. Gemessen bei 1280:
+    #: «Wie weit reicht der Lauf?» stellte ein 245 px breites Feld in eine
+    #: 760 px breite Spalte — 32 %, der Rest war Leere neben einer Zahl.
+    breite: str = "voll"
 
 
 STEPS: list[Step] = [
@@ -160,6 +173,7 @@ STEPS: list[Step] = [
         "Ein Tick ist eine Modellrunde, kein Kalenderzeitraum. Mehr Ticks heißt mehr "
         "Gelegenheiten für Rückkopplung zwischen Preis und Nachfrage.",
         lambda draft: start_flow.scope_step(draft, number=None),
+        breite="lesen",
     ),
     Step(
         "modus",
@@ -195,6 +209,7 @@ STEPS: list[Step] = [
         "Name, Beschreibung und was am Ende geschrieben wird.",
         experiment.layout,
         required=False,
+        breite="lesen",
     ),
     Step(
         "technik",
@@ -202,6 +217,12 @@ STEPS: list[Step] = [
         "Sprachmodell, Adresse, Zeitgrenzen.",
         llm_pipeline.layout,
         required=False,
+        # **Bewusst «voll», obwohl es ein kurzes Formular ist.** Mit dem
+        # Lesemaß wuchs der Schritt von 1,00 auf 1,08 Bildschirme — bezahlt
+        # für ein Schmälern der Eingabefelder, das niemandem hilft: Sein
+        # Fließtext ist über `af-mass` ohnehin gedeckelt, und seine Spalte
+        # füllt er auch so. Wo Lesbarkeit und Höhe sich widersprechen und die
+        # Lesbarkeit schon anderweitig gesichert ist, gewinnt die Höhe.
     ),
     Step(
         "start",
@@ -635,7 +656,7 @@ def _final_step(draft: dict) -> html.Div:
             html.P(
                 "«Als Szenario speichern» legt die Einstellungen unter `configs/sweeps/` ab. "
                 "Sie stehen danach im ersten Schritt zur Auswahl.",
-                className=f"{ui.CAPTION} mt-4",
+                className=f"{ui.CAPTION} mt-4 af-mass",
             ),
         ]
     )
@@ -667,6 +688,23 @@ def heading(current: int | None) -> html.Div:
             "unterschiedlich viele Fragen.",
         )
     return html.Div()
+
+
+def grid_class(current: int | None) -> str:
+    """Ob das Raster eine Spalte für die Schrittliste vorhält (W5.4).
+
+    **Am Einstieg gibt es keine Liste** — und bis W5.4 trotzdem ihre Spalte:
+    gemessen `grid-template-columns: 240px 760px` bei 1040 px Zone, während die
+    Liste dort `display: none` war. 240 px Leere links neben der Frage, mit der
+    alles anfängt.
+
+    Die Klasse gehört an den Callback, der den Schritt wechselt, nicht ans
+    erste Zeichnen: `layout` läuft einmal: Beim ersten Anlauf blieb der Einstieg
+    danach auf **jedem** Schritt gesetzt, und die Spalte war überall 1040 px
+    breit. Gemessen, nicht vermutet.
+    """
+
+    return "af-wizard af-wizard--einstieg" if is_entry(resolve(current)) else "af-wizard"
 
 
 def content(draft: dict, current: int) -> html.Div:
@@ -701,11 +739,16 @@ def content(draft: dict, current: int) -> html.Div:
                         # — sie soll nicht in die Tabreihenfolge geraten.
                         tabIndex=-1,
                     ),
-                    html.P(step.lede, className=f"{ui.CAPTION} mt-1"),
+                    # **Fliesstext bekommt ein Lesemass** (W5.4). Bei 1280
+                    # lief der Vorspann ueber bis zu 123 Zeichen je Zeile; die
+                    # Typografie nennt 45 bis 75. Der Deckel sitzt am Text und
+                    # nicht am Schritt: Ein Raster darf die Spalte nehmen, ein
+                    # Satz soll es nicht.
+                    html.P(step.lede, className=f"{ui.CAPTION} mt-1 af-mass"),
                 ],
                 className="mb-6",
             ),
-            html.Div(koerper, id="wizard-body"),
+            html.Div(koerper, id="wizard-body", className=f"af-body--{step.breite}"),
         ],
         id=CONTENT,
         className="af-wizard__content",
@@ -850,7 +893,8 @@ def layout(draft: dict, current: int | None = ENTRY) -> html.Div:
                         className="af-wizard__main",
                     ),
                 ],
-                className="af-wizard",
+                id=GRID,
+                className=grid_class(current),
             ),
         ],
         className="af-pane af-pane--focus",
@@ -964,6 +1008,7 @@ def register_callbacks(app) -> None:
         Output(ENTRY_HOST, "style"),
         Output(CONTENT_HOST, "style"),
         Output(ANSAGE, "children"),
+        Output(GRID, "className"),
         Input(STEP_STORE, "data"),
         Input("cfg-editor-refresh", "data"),
         State(STORE_ID, "data"),
@@ -1007,6 +1052,7 @@ def register_callbacks(app) -> None:
                 if einstieg
                 else f"Schritt {jetzt + 1} von {len(STEPS)}: {STEPS[jetzt].title}"
             ),
+            grid_class(jetzt),
         )
 
     app.clientside_callback(
