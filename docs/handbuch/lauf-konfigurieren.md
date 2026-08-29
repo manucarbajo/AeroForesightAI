@@ -24,7 +24,9 @@ diese Auswahl.
 
 ## Die Schrittfolge
 
-Einrichten geht seit August 2026 Schritt für Schritt. Sie beantworten eine
+Einrichten geht seit August 2026 Schritt für Schritt. Über der Frage steht, der
+wievielte Schritt es ist; die Bereichsüberschrift erscheint nur auf dem Einstieg,
+wo sie noch etwas zu sagen hat. Sie beantworten eine
 Frage, klicken auf **Weiter**, und kommen zur nächsten; **Zurück** führt dorthin,
 wo Sie hergekommen sind, und links steht die ganze Liste — Sie können jeden
 Schritt direkt anspringen. Sind Sie gesprungen, führt **Zurück** an die Stelle

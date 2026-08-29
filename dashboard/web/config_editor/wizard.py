@@ -582,11 +582,22 @@ def _final_step(draft: dict) -> html.Div:
 
 
 def heading(current: int | None) -> html.Div:
-    """Die Überschrift des Bereichs — sie sagt, in welcher Betriebsart man ist.
+    """Die Überschrift des Bereichs — **nur auf dem Einstieg** (P1.9-W3.5).
 
-    Auf dem Einstieg wird gewählt, in der Schrittfolge beantwortet. Eine
-    Überschrift, die «Beantworten Sie eine Frage nach der anderen» sagt,
-    während drei Karten zur Auswahl stehen, beschreibt den falschen Bildschirm.
+    Dort beantwortet sie eine echte Frage: Womit fange ich an? In der
+    Schrittfolge tat sie das nicht mehr. Sie sagte auf **jedem** der sieben
+    Schritte dasselbe («Beantworten Sie eine Frage nach der anderen. Drei
+    genügen …») — eine Einführung, die man einmal liest und danach sechsmal
+    überspringt, während direkt darunter «Schritt 4 von 7» und der Titel der
+    Frage stehen.
+
+    Gemessen kostete sie mit ihrem Abstand **116 px auf jedem Schritt**. Bei
+    einem Rahmen von 327 px und einem sichtbaren Bereich von 744 px ist das
+    keine Kleinigkeit: Es war das größte einzelne Stück des Rahmens, und der
+    Rahmen kostete auf fünf von sieben Schritten mehr als der Inhalt.
+
+    Der Titel der Frage trägt seither die `h1` (siehe `content`) — der Bereich
+    verliert damit keine Überschrift, sie steht nur dort, wo sie etwas sagt.
     """
 
     if is_entry(current):
@@ -595,11 +606,7 @@ def heading(current: int | None) -> html.Div:
             "Womit möchten Sie anfangen? Jeder Weg führt zum selben Ziel — nur über "
             "unterschiedlich viele Fragen.",
         )
-    return ui.page_heading(
-        "Lauf einrichten",
-        "Beantworten Sie eine Frage nach der anderen. Drei genügen — der Rest ist "
-        "mit sinnvollen Werten vorbelegt und darf übersprungen werden.",
-    )
+    return html.Div()
 
 
 def content(draft: dict, current: int) -> html.Div:
@@ -620,7 +627,12 @@ def content(draft: dict, current: int) -> html.Div:
                         f"Schritt {current + 1} von {len(STEPS)}",
                         className="af-wizard__counter",
                     ),
-                    html.H2(step.title, className=ui.H2),
+                    # **`h1`, seit die Bereichsüberschrift in der Schrittfolge
+                    # entfällt** (W3.5). Der Titel der Frage *ist* die
+                    # Überschrift dieses Bildschirms — die Klasse bleibt `H2`,
+                    # weil sich an der Optik nichts ändern soll. Größe und
+                    # Rangordnung sind zwei verschiedene Dinge.
+                    html.H1(step.title, className=ui.H2),
                     html.P(step.lede, className=f"{ui.CAPTION} mt-1"),
                 ],
                 className="mb-6",

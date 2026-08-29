@@ -2646,6 +2646,13 @@ html.dark .af-input[type="number"] {
     display: none;
 }
 
+/* Ein leerer Meldungsplatz kostete 16 px Abstand auf jedem Schritt -- sichtbar
+   war nichts. Dieselbe Regel wie beim Tor darueber (P1.9-W3.5). */
+#cfg-status:empty,
+#model-editor-status:empty {
+    display: none;
+}
+
 .af-step__hinweis {
     font-family: var(--font-body);
     font-size: 0.75rem;
