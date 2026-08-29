@@ -12,6 +12,29 @@ Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 | `scenarios.md` / `.json` | Die CIB-Kandidaten mit ihren Konsistenzwerten |
 | `protocol.md` / `.json` | Das Gesprächsprotokoll der Akteure |
 
+### Der Konsistenzwert in `run_scenario.json`
+
+Jedes der drei Szenarien trägt dort drei zusammengehörige Felder:
+
+| Feld | Inhalt |
+|---|---|
+| `consistency_score` | Der CIB-Wert der Faktorkonstellation, 0 bis 1 |
+| `konsistenz_band` | Derselbe Wert als Wort: `widerspruchsfrei` (ab 0,7), `gemischt` (ab 0,4), `spannungsreich` darunter. Fehlt die Matrix, steht hier `null` — kein Ersatzwert |
+| `konsistenz_bedeutung` | Ein Satz, der sagt, was der Wert misst. Er steht bewusst **in jeder Datei**, weil sie auch einzeln gelesen wird |
+
+**Der Wert misst Widerspruchsfreiheit, nicht Wahrscheinlichkeit.** Er ist hoch,
+wenn alle Faktoren einheitlich in dieselbe Richtung zeigen, und niedrig bei
+gemischten Lagen. Ein niedriger Wert heißt also «hier arbeiten Kräfte
+gegeneinander», nicht «das passiert eher nicht».
+
+> **Geändert am 2026-08-29.** Bis dahin hieß das Feld `plausibility` und trug
+> `hoch` / `mittel` / `niedrig`. Das war eine Wertung, die der Wert nicht trägt:
+> Nachgemessen steigt er mit der Polarität der Faktorlage, nicht mit der
+> Eintrittschance. Das Etikett «hoch» lag damit auf der Zukunft, in der sich
+> nichts widerspricht, weil sich nichts bewegt. **Ältere Läufe tragen das alte
+> Feld weiter** — wer Artefakte von vor diesem Datum liest, findet dort
+> `plausibility` und sollte es als das lesen, was `konsistenz_band` heute sagt.
+
 ## Zahlen zum Nachrechnen
 
 | Datei | Inhalt |

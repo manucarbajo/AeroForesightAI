@@ -7,7 +7,10 @@ import re
 from pathlib import Path
 from typing import Any
 
-from src.reporting.run_scenario_generator.candidates import build_candidate_constellations
+from src.reporting.run_scenario_generator.candidates import (
+    KONSISTENZ_BEDEUTUNG,
+    build_candidate_constellations,
+)
 from src.reporting.run_scenario_generator.context import (
     RunScenarioContext,
     _booking_trend,
@@ -34,7 +37,7 @@ def build_scenario_prompt(context: RunScenarioContext) -> str:
                 "candidate_id": sc.get("candidate_id"),
                 "scenario_kind": sc.get("scenario_kind"),
                 "consistency_score": sc.get("consistency_score"),
-                "plausibility": sc.get("plausibility"),
+                "konsistenz_band": sc.get("konsistenz_band"),
                 "factor_constellation": sc.get("factor_constellation"),
                 "delta_from_end": sc.get("delta_from_end"),
                 "tick_grounding": sc.get("tick_grounding"),
@@ -50,6 +53,10 @@ def build_scenario_prompt(context: RunScenarioContext) -> str:
         "events_sample": context.event_log[-12:],
         "segment_booking_end": context.summary_metrics.get("segment_booking_end"),
         "cib_consistency_score": _cib_score(context),
+        # Die Zahl reist nicht ohne ihre Lesart. Ohne diesen Satz hat das Modell
+        # den Score als Wahrscheinlichkeit ausgedeutet — genau die Aussage, die
+        # er nicht trägt (P2.0).
+        "cib_consistency_bedeutung": KONSISTENZ_BEDEUTUNG,
         "booking_trend": _booking_trend(context.summary_metrics),
         "price_trend": _price_trend(context.summary_metrics),
         "candidate_scenarios": clean_candidates,

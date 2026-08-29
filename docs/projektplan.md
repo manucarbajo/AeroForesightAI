@@ -1166,6 +1166,27 @@ Vollfassung mit Herleitung, den drei Wegen und den Quellen: [`entscheidung_szena
 
 **Fertig wenn:** Ein Lauf nimmt ein benanntes Rahmenszenario entgegen und erzeugt Faktorlabels, statt sie zu bekommen; die Sweeps sind der reguläre Startpfad; kein Codepfad bewertet mehr den Endzustand gegen die Matrix, um zu entscheiden, was gezeigt wird. Ein Test zeigt, dass zwei Läufe unter demselben Rahmen unterschiedliche Faktorlabels erzeugen können — das ist der Beleg, dass der Lauf etwas erzeugt statt zu bestätigen.
 
+#### Stufe A — der Score verlässt den Lauf nicht mehr als Urteil ✅ erledigt 2026-08-29
+
+**Der Befund kam beim Aufschlagen und war schlimmer als erwartet.** Die Leitentscheidung sagte, der Score messe Polarität. Was sie nicht wusste: Er wurde **als «Plausibilität» ausgeliefert**. `_plausibility_from_score` übersetzte ihn in `hoch` / `mittel` / `niedrig` und schrieb das als Feld `plausibility` in jedes `run_scenario.json` — **und in den Prompt des Sprachmodells**, das daraufhin Narrative über die «plausibelste» Zukunft schrieb. Die Prompt-Vorlage verlangte das sogar ausdrücklich: «Schließe mit einer Bewertung von **Wahrscheinlichkeit** und Stabilität ab, die den exakten `consistency_score` nennt.»
+
+Im Artefakt `outputs/run_20260827T181422Z/run_scenario.json` liest sich das Ergebnis so: Rang 1, alle sieben Faktoren auf `.1` — der vollständig gleichpolige Zustand —, `plausibility: hoch`. Rang 3 kippt F2 auf strenge Regulierung bei weiterhin boomender Nachfrage, also die reale europäische Lage, und bekommt weniger. **Das Produkt sagte einem Kunden wörtlich, die Welt, in der sich nichts bewegt, sei die plausibelste.**
+
+Ein zweiter Fund daneben: Lag **gar kein** Score vor, fiel die Funktion auf den **Präsentationsrang** zurück — Rang 1 hieß dann «hoch plausibel», Rang 3 «niedrig». Aus einer Reihenfolge wurde eine Aussage über die Welt.
+
+**Was umgesetzt ist:**
+
+- `plausibility` ist weg. An seiner Stelle steht `konsistenz_band` mit `widerspruchsfrei` / `gemischt` / `spannungsreich` — Wörter, die die **gemessene** Größe benennen statt sie zu bewerten. Ohne Score gibt es **kein** Band (`null`), der Rangfallback ist gelöscht.
+- Jede Konstellation trägt `konsistenz_bedeutung`, einen Satz zur Lesart. Er steht **in jeder Datei**, weil das Artefakt einzeln gelesen wird — vom State Explorer und vom Sprachmodell, beide ohne die Doku daneben.
+- Der Prompt-Kontext trägt denselben Satz als `cib_consistency_bedeutung`, und die Vorlage verbietet die Wahrscheinlichkeitsaussage jetzt ausdrücklich, statt sie zu verlangen.
+- Der Plot-Titel heißt «Szenario-Widerspruchsfreiheit» statt «Szenario-Plausibilität».
+
+**Der Wächter:** `tests/test_konsistenz_kein_urteil.py`. Er läuft als **AST** über `src/` und kennt vier Rückfallformen — Dict-Schlüssel, Funktionsdefinition, Aufruf, Import —, während Docstrings und Kommentare das alte Wort weiter nennen dürfen; genau sie erklären ja, warum es weg ist. Ein Grep könnte das nicht trennen. `test_der_waechter_wuerde_einen_rueckfall_bemerken` stellt alle vier Formen nach und prüft den Docstring als Fehlalarm gegen.
+
+**Was Stufe A nicht ist:** die Umdrehung selbst. Der Endzustand wird weiterhin gegen die Matrix bewertet — nur sagt das Ergebnis jetzt, was es misst. Die Stufen B (Rahmenszenario als Eingabe, Sweeps als Hauptweg) und C (Faktoren abgeleitet statt gesetzt) stehen aus.
+
+**Doku mitgezogen:** `docs/handbuch/ref-ausgaben.md` (neuer Abschnitt zu den drei Feldern, samt Hinweis, dass ältere Läufe `plausibility` weitertragen), `docs/handbuch/glossar.md`, `docs/handbuch/grenzen.md`.
+
 **Doku zieht mit:** `docs/cib_role.md`, `docs/handbuch/cib.md`, `docs/handbuch/faktoren.md`, `docs/handbuch/presets.md`, `docs/scenario_runs.md`, `CLAUDE.md` (Glossar «CIB-Matrix», «Faktoren F1–F7», Architektur-Map zu `src/cib/`).
 
 ### P2.1 — Buchungsmodell: echte Ziehung statt Schwellwert

@@ -48,8 +48,19 @@ als Preis B, wenn Annahme X gilt.
 ## Die Konsistenzbewertung ist ein Urteil
 
 Die CIB-Matrix bildet fachliches Urteil darüber ab, welche Faktorzustände
-zusammenpassen. Sie ist begründet, aber nicht gemessen. Eine als inkonsistent
-bewertete Konstellation ist nicht unmöglich — sie ist schwerer zu erklären.
+zusammenpassen. Sie ist gesetzt, nicht gemessen — und von ihren 168 Einflusswerten
+trägt bislang rund ein Viertel eine niedergeschriebene Begründung. Eine als
+inkonsistent bewertete Konstellation ist nicht unmöglich — sie ist schwerer zu
+erklären.
+
+Dazu kommt eine Einschränkung, die im August 2026 nachgemessen wurde: **Der
+Konsistenzwert steigt vor allem mit der Einheitlichkeit einer Faktorlage.** Eine
+Zukunft, in der alles in dieselbe Richtung zeigt, bekommt einen hohen Wert; eine
+gemischte einen niedrigen. Das ist kein Fehler in der Rechnung, sondern eine
+Eigenschaft der hinterlegten Matrix — sie enthält kaum gegenläufige
+Wechselwirkungen. **Praktische Folge:** Strenge Regulierung *bei* gleichzeitig
+starker Nachfrage — die reale europäische Lage — bekommt hier einen niedrigen
+Wert. Lesen Sie ihn als Spannungsanzeige, nicht als Bewertung.
 
 ## Was daraus folgt
 

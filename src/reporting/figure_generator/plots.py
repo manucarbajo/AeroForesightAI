@@ -72,7 +72,9 @@ def plot_cib_scores(scores: list[dict[str, Any]], output_path: Path) -> Path:
     fig, ax = plt.subplots(figsize=(9, 4.5))
     bars = ax.barh(names, values, color="#2563eb")
     ax.set_xlabel("CIB Consistency Score")
-    ax.set_title("Szenario-Plausibilität (CIB Consistency)")
+    # Nicht «Plausibilität»: Der Score misst Widerspruchsfreiheit und steigt mit
+    # der Polarität der Faktorlage, nicht mit der Eintrittschance (P2.0).
+    ax.set_title("Szenario-Widerspruchsfreiheit (CIB Consistency)")
     ax.set_xlim(0, max(values) * 1.15 if values else 1)
     for bar, value in zip(bars, values):
         ax.text(

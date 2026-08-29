@@ -25,14 +25,16 @@ Schreibe eine kurze, sachliche Analyse dieses Laufs und begründe deine Auswahl 
 **Aufbau Deiner Antwort:**
 1. **summary** — 1–2 Sätze: Zusammenfassung des Laufs, kurze Nennung der Akteur-Linien und der drei gewählten Pfade.
 2. **run_narrative** — kompakt: Ticks, Nachfrage-/Preistrend, wichtigste Faktorwechsel; wo sinnvoll kurz widerspiegeln, was die Agenten im Lauf interpretiert haben (ohne neue Zahlen).
-3. **selection_reasoning** — 1–3 Sätze: Warum genau diese 3 `candidate_id`s? (Foresight-Abdeckung, Plausibilitäts-Spreizung über die CIB-Scores.)
+3. **selection_reasoning** — 1–3 Sätze: Warum genau diese 3 `candidate_id`s? (Foresight-Abdeckung, Spreizung über die CIB-Scores.)
 4. **Drei Szenarien** — Schreibe für jeden gewählten Pfad:
    - **candidate_id**: die ID des gewählten Pfads aus `candidate_scenarios` (z.B. "C2").
    - **title**: Erfinde einen kreativen, hochgradig passenden Titel, der die Essenz der Faktoren auf den Punkt bringt (z.B. "Nachhaltigkeitskrise bei hohem Wachstum").
    - **story**: Ausführliche, tiefgehende Analyse in 2-3 Absätzen (mindestens 8-12 Sätze). WICHTIG: Schreibe alle Absätze zusammenhängend in **einen einzigen String** unter dem Key `story` und nutze `\n\n` für Zeilenumbrüche. Erstelle KEINE mehrfachen `story`-Keys!
      - **Absatz 1 (Qualitative Welt):** Beschreibe detailliert die qualitative Ausgestaltung dieser Szenariowelt. Wie sieht der Alltag aus? Welche Konsequenzen für Gesellschaft, Wirtschaft und Umwelt? **WICHTIG: Setze nach JEDEM relevanten Satz die zugehörige Faktor-ID in Klammern (z.B. "(F1.2)").**
      - **Absatz 2 (Akteure):** Beleuchte die Auswirkungen auf Passagiere, Airlines und Politik. **Beziehe dich auf `agent_digest`** (Segment-Themen, Rollenüberblick), wo es zum Pfad passt. **WICHTIG: Setze auch hier die Faktor-IDs (z.B. "(F2.1)") ans Ende der Sätze.**
-     - **Absatz 3 (Logik & Stabilität):** Beschreibe detaillierte Wenn-Dann-Wechselwirkungen für die in diesem Szenario vorkommenden Faktoren. Schließe mit einer Bewertung von Wahrscheinlichkeit und Stabilität ab, die den exakten `consistency_score` des gewählten Pfads nennt und erklärt, *warum* dieser Score durch die Faktoren zustande kommt.
+     - **Absatz 3 (Logik & Spannungen):** Beschreibe detaillierte Wenn-Dann-Wechselwirkungen für die in diesem Szenario vorkommenden Faktoren. Schließe mit einer Einordnung der inneren Spannungen ab, die den exakten `consistency_score` des gewählten Pfads nennt und erklärt, *warum* dieser Score durch die Faktoren zustande kommt.
+
+       **Der Score ist keine Wahrscheinlichkeit.** Er misst Widerspruchsfreiheit: hoch, wenn alle Faktoren einheitlich gepolt sind, niedrig bei gemischten Lagen (siehe `cib_consistency_bedeutung` im Kontext). Schreibe daher **nicht**, ein Pfad sei „plausibler", „wahrscheinlicher" oder „realistischer" als ein anderer, und leite aus dem Score keine Eintrittschance ab. Sage stattdessen, **wo im Szenario Kräfte gegeneinander arbeiten** — ein niedriger Score heißt „viele Spannungen", nicht „unwahrscheinlich". Eine gemischte Welt kann die realistischere sein.
 
 Antworte mit **einem JSON-Objekt** (kein Markdown, kein Codeblock).
 GIB KEINE ERKLÄRUNGEN ODER TEXT VOR ODER NACH DEM JSON AUS. STARTE DIREKT MIT `{`:
