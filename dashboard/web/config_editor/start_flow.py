@@ -35,7 +35,7 @@ from dashboard.config_catalog import (
     validate_draft,
 )
 from dashboard.web import components as ui
-from dashboard.web.config_editor import compute_mode
+from dashboard.web.config_editor import compute_mode, dauer
 from dashboard.web.config_editor import controls as c
 from dashboard.web.state import draft_from_dict
 from src.models.state_models import DEFAULT_SEED
@@ -571,6 +571,7 @@ def preflight(
             ui.card(html.Div(ui.markdown(summary_sentence(draft)), id=summary_id(slot))),
             html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),
             html.Div(vorgaben_hinweis(draft), className="mt-4"),
+            html.Div(dauer.hinweis(draft), className="mt-4"),
             html.Div(herkunft(draft) if not compact else None, className="mt-4"),
             html.Div(
                 ui.grid(

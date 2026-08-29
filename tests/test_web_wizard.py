@@ -376,6 +376,102 @@ class TestDieHerkunftStehtVorDemStart:
         assert "Codestand" not in schmal
 
 
+class TestDieDauerWirdGemessenNichtGeraten:
+    """W4.3 — und der Befund, der das Paket auf eine andere Grundlage stellt.
+
+    Das Paket sah eine Schätzung «aus `run_metadata.json` vergangener Läufe»
+    vor. **Die Daten gab es nicht:** Das Artefakt hielt einen Zeitstempel fest
+    (*wann* die Metadaten geschrieben wurden), aber keine Dauer. Es war also
+    nichts zu schätzen, sondern zuerst etwas zu messen.
+    """
+
+    def test_nothing_is_shown_without_measurements(self, draft, tmp_path):
+        """**Keine Zahl ist besser als eine erfundene.**
+
+        Eine Schätzung vor einem Lauf, die auf nichts beruht, ist genau das, was
+        Invariante 1 verbietet — und das Handbuch nennt seine groben Angaben
+        ausdrücklich «geschätzt».
+        """
+
+        from dashboard.web.config_editor import dauer
+
+        assert dauer.schaetzung(draft, wurzel=tmp_path) is None
+        assert dauer.hinweis(draft, wurzel=tmp_path) is None
+
+    def test_a_single_run_is_not_an_estimate(self, draft, tmp_path):
+        """Aus einer Einzelmessung eine Erwartung zu machen wäre eine Behauptung."""
+
+        from dashboard.web.config_editor import dauer
+
+        self._lauf(tmp_path, "a", sekunden=12.0, ticks=40)
+
+        assert dauer.schaetzung(draft, wurzel=tmp_path) is None
+
+    def test_it_reports_a_range_and_its_source(self, draft, tmp_path):
+        from dashboard.web.config_editor import dauer
+
+        self._lauf(tmp_path, "a", sekunden=12.0, ticks=40)
+        self._lauf(tmp_path, "b", sekunden=20.0, ticks=40)
+
+        satz = dauer.schaetzung(draft, wurzel=tmp_path)
+
+        assert satz and "bis" in satz, satz
+        assert "2 vergleichbaren Läufen" in satz, satz
+
+    def test_only_comparable_runs_count(self, draft, tmp_path):
+        """Ein Lauf «Mit Sprachmodell» sagt nichts über einen «Ohne».
+
+        Sie zu mitteln ergäbe eine Zahl, die für keinen von beiden stimmt — die
+        beiden Modi unterscheiden sich um Größenordnungen.
+        """
+
+        from dashboard.web.config_editor import dauer
+
+        self._lauf(tmp_path, "a", sekunden=12.0, ticks=40)
+        self._lauf(tmp_path, "b", sekunden=900.0, ticks=40, mock=False)
+
+        assert (
+            dauer.schaetzung(draft, wurzel=tmp_path) is None
+        ), "Der Lauf mit Sprachmodell wurde mitgezählt"
+
+    def test_the_runner_records_the_duration(self):
+        """Ohne diese Zeile gäbe es nie Messwerte."""
+
+        from src.models.state_models import SimulationState
+
+        assert "elapsed_seconds" in SimulationState.model_fields
+
+    def test_the_artifact_keeps_it(self):
+        """Und das Artefakt hält sie fest, statt sie neu zu berechnen."""
+
+        from pathlib import Path
+
+        quelle = Path("src/reporting/output_writer/metadata.py").read_text(encoding="utf-8")
+
+        assert '"elapsed_seconds": getattr(state, "elapsed_seconds", None)' in quelle, (
+            "Die Dauer wird nicht aus dem Zustand gelesen — dann misst sie die "
+            "falsche Spanne, wie der Config-Fingerabdruck vor P0.6."
+        )
+
+    @staticmethod
+    def _lauf(wurzel, name, *, sekunden, ticks, mock=True):
+        import json
+
+        ordner = wurzel / f"run_{name}"
+        ordner.mkdir()
+        (ordner / "run_metadata.json").write_text(
+            json.dumps(
+                {
+                    "elapsed_seconds": sekunden,
+                    "ticks_completed": ticks,
+                    "mock_llm": mock,
+                    "deterministic_only": False,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+
 class _SchreibVersuch(Exception):
     """Eine Aktion hat versucht, in `configs/` zu schreiben."""
 

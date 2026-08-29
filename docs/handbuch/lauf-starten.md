@@ -56,7 +56,15 @@ gegenseitig zerschneiden.
 
 ## Wie lange es dauert
 
-Grob geschätzt, für eine Bevölkerung in Standardgröße:
+**Im Prüfschritt steht eine gemessene Schätzung** — sobald es etwas zu messen
+gibt. Sie kommt aus vergangenen Läufen **desselben Rechenmodus** und wird je
+Tick gerechnet, damit ein Lauf über 50 Ticks auch etwas über einen über 10 sagt.
+Angezeigt wird eine Spanne, nicht ein Punktwert: Ein Mittelwert sähe genauer
+aus, als die Messung ist. Liegen weniger als zwei vergleichbare Läufe vor, steht
+dort **nichts** — eine Zahl, die auf nichts beruht, wäre schlechter als keine.
+
+Die folgende Tabelle bleibt eine grobe Schätzung ohne Messung, für eine
+Bevölkerung in Standardgröße:
 
 | Modus | Zehn Ticks |
 |---|---|

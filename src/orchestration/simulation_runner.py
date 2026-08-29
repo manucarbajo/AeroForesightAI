@@ -183,6 +183,11 @@ class SimulationRunner:
             checkpoint_store=checkpoint_store,
             run_id=run_id,
         )
+        # Die reine Rechenzeit, ohne das Schreiben der Artefakte danach — das
+        # ist die Zahl, aus der sich ein nächster Lauf abschätzen lässt
+        # (P1.9-W4.3). `perf_counter` und nicht die Uhrzeit: Sie misst Dauer,
+        # nicht Tageszeit, und kippt nicht bei einer Zeitumstellung.
+        state.elapsed_seconds = round(time.perf_counter() - self._progress_started_at, 3)
         validate_state(state)
         return state
 
