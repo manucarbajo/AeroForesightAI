@@ -112,6 +112,14 @@ steht; die Meldung sagt dann, in welchem Schritt er zu beheben ist.
 > **Weiter** war nie gesperrt: Man konnte durch alle acht Schritte gehen und erst
 > beim Klick auf **Lauf starten** erfahren, dass Schritt 2 ungültig war.
 
+**Was Sie geändert haben, steht im letzten Schritt.** Unter dem Preflight
+listet «Was von der Auslieferung abweicht» jede Einstellung auf, die vom
+ausgelieferten Zustand abweicht — mit dem alten und dem neuen Wert, und je Zeile
+einem Knopf, der **nur diese eine** Änderung zurücknimmt. Verschachteltes wird
+gezählt statt aufgezählt: «Systemgrößen — 3 geändert». Wenn nichts abweicht,
+steht das da, und Sie wissen, dass ein Vergleich mit einem anderen Lauf ohne
+Vorbehalt möglich ist.
+
 Der letzte Schritt heißt **Prüfen & Starten**: Dort steht zuoberst der **Name
 dieses Laufs** — so, wie er später in der Auswahl der Kopfzeile erscheint. Ein
 Klick auf «Vorschlag» setzt einen sprechenden Namen aus Ausgangspunkt, Länge und

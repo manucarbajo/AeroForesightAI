@@ -349,10 +349,12 @@ ZIEL = 1.0
 #: ein Rahmen ohne den auf jedem Schritt wiederholten Einführungstext (−116 px,
 #: W3.5) und eine Gliederungsebene weniger innerhalb der Schritte.
 #:
-#: **Schritt 7 ist mit W4.1 von 1,00 auf 1,13 gewachsen**, und das war eine
-#: bewusste Abwägung: Der Name des Laufs steht seither dort, weil das der
-#: einzige Schritt ist, den jeder Startweg passiert. Ein Lauf, den niemand
-#: benennen konnte, kostet später mehr als 0,13 Bildschirme.
+#: **Schritt 7 ist mit W4.1 und W4.2 von 1,00 auf 1,21 gewachsen**, und beides
+#: war eine bewusste Abwägung. Der Name des Laufs steht seither dort, weil das
+#: der einzige Schritt ist, den jeder Startweg passiert; die Abweichungsliste
+#: ebenso, weil «was habe ich geändert» vor dem Start beantwortet gehört. Ein
+#: Lauf, den niemand benennen konnte, und eine Änderung, die niemand mehr
+#: findet, kosten später mehr als 0,21 Bildschirme.
 #:
 #: `ZIEL` steht weiterhin auf 1,0, und der Deckel steht darüber: Der Wächter ist
 #: scharf gegen Wachstum, behauptet aber nicht, das Ziel sei erfüllt. Die
@@ -368,7 +370,7 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 4": 1.28,
         "Schritt 5": 1.31,
         "Schritt 6": 1.00,
-        "Schritt 7": 1.13,
+        "Schritt 7": 1.21,
     },
     1024: {
         "Einstieg": 1.00,
@@ -378,7 +380,7 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 4": 1.34,
         "Schritt 5": 1.31,
         "Schritt 6": 1.05,
-        "Schritt 7": 1.15,
+        "Schritt 7": 1.23,
     },
 }
 

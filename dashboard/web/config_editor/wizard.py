@@ -37,7 +37,7 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 from dashboard.config_catalog import list_sweep_presets
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
-from dashboard.web.config_editor import experiment, factors, llm_pipeline, start_flow
+from dashboard.web.config_editor import delta, experiment, factors, llm_pipeline, start_flow
 from dashboard.web.state import STORE_ID, initial_draft_dict
 
 #: Welcher Schritt gerade offen ist. Als Store und nicht als Adresse, weil ein
@@ -613,6 +613,13 @@ def _final_step(draft: dict) -> html.Div:
                 class_name="mb-5",
             ),
             start_flow.preflight(draft, start_flow.errors_for(draft), slot="wizard"),
+            # **Was weicht vom Standard ab** (P1.9-W4.2). Der Preflight sagt,
+            # was gleich passiert; das hier sagt, was **Sie** daran geändert
+            # haben. Bei über hundert Feldern über sieben Schritte und einen
+            # Modell-Bereich war das die einzige Frage ohne Antwort — und der
+            # einzige Umkehrmechanismus war «Auf Standard zurücksetzen», das
+            # alles verwirft.
+            html.Div(delta.layout(draft), className="mt-4"),
             html.P(
                 "«Als Szenario speichern» legt die Einstellungen unter `configs/sweeps/` ab. "
                 "Sie stehen danach im ersten Schritt zur Auswahl.",

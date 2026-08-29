@@ -42,6 +42,7 @@ from dashboard.config_catalog import (
 from dashboard.web import components as ui
 from dashboard.web.config_editor import (
     compute_mode,
+    delta,
     experiment,
     llm_pipeline,
     macro,
@@ -305,6 +306,7 @@ def register_callbacks(app) -> None:
         # Eigenschaften derselben ID-Menge abhören — deshalb tragen sie einen
         # eigenen Typ.
         Input({"type": c.WRITE, "action": ALL}, "submit_n_clicks"),
+        Input({"type": delta.REVERT, "feld": ALL}, "n_clicks"),
         Input({"type": macro.PROP_DELETE, "prop": ALL}, "submit_n_clicks"),
         Input({"type": micro.SEGMENT_DELETE, "segment": ALL}, "submit_n_clicks"),
         State(STORE_ID, "data"),
@@ -312,7 +314,7 @@ def register_callbacks(app) -> None:
         State("cfg-editor-refresh", "data"),
         prevent_initial_call=True,
     )
-    def _actions(_a, _w, _p, _s, draft: dict | None, _free, refresh):
+    def _actions(_a, _w, _r, _p, _s, draft: dict | None, _free, refresh):
         trigger = ctx.triggered_id
         if not isinstance(trigger, dict) or not any(
             entry["value"] for entry in ctx.triggered if entry["value"]
@@ -369,6 +371,11 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
     """Eine Aktion ausführen und (neuer Draft, Meldung, Meldungsart) zurückgeben."""
 
     kind = trigger.get("type")
+
+    if kind == delta.REVERT:
+        feld = trigger["feld"]
+        data = delta.zuruecknehmen(data, feld)
+        return data, f"«{delta._name(feld)}» auf den Auslieferungswert zurückgesetzt.", "success"
 
     if kind == macro.PROP_DELETE:
         prop = trigger["prop"]

@@ -2662,6 +2662,43 @@ html.dark .af-input[type="number"] {
     display: none;
 }
 
+/* Die Abweichungsliste: eine Zeile je Unterschied, der Knopf rechts. */
+.af-delta {
+    display: flex;
+    flex-direction: column;
+}
+
+.af-delta__zeile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.af-delta__zeile:last-child {
+    border-bottom: 0;
+}
+
+.af-delta__was {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.af-delta__wert {
+    display: block;
+    font-family: var(--font-mono, var(--font-body));
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
 .af-step__hinweis {
     font-family: var(--font-body);
     font-size: 0.75rem;

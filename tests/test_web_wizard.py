@@ -262,6 +262,69 @@ class TestJederWegSiehtDenNamen:
         assert "Ticks" not in name, f"Der Vergleich nennt eine Länge: {name}"
 
 
+class TestWasAbweichtStehtVorDemStart:
+    """W4.2 — «Was habe ich geändert?» wird beantwortet, bevor gerechnet wird.
+
+    Der Prüfschritt zeigte einen Satz und sechs Kacheln. Bei über hundert
+    Feldern über sieben Schritte und einen Modell-Bereich war «was weicht ab»
+    die einzige Frage ohne Antwort — und der einzige Umkehrmechanismus war «Auf
+    Standard zurücksetzen», das alles verwirft.
+    """
+
+    def test_an_untouched_draft_reports_nothing(self, draft):
+        from dashboard.web.config_editor import delta
+
+        assert delta.unterschiede(draft) == []
+
+    def test_a_change_shows_up_with_both_values(self, draft):
+        from dashboard.web.config_editor import delta
+
+        geaendert = {**draft, "rounds": 99}
+        (abweichung,) = delta.unterschiede(geaendert)
+
+        assert abweichung.feld == "rounds"
+        assert abweichung.vorher == "40"
+        assert abweichung.jetzt == "99"
+
+    def test_nested_structures_are_counted_not_listed(self, draft):
+        """Dreizehn Systemgrößen ergäben Dutzende Zeilen und keinen Überblick."""
+
+        from dashboard.web.config_editor import delta
+
+        faktoren = dict(draft["factor_states"])
+        faktoren["F3"] = "F3.2"
+        faktoren["F5"] = "F5.2"
+        (abweichung,) = delta.unterschiede({**draft, "factor_states": faktoren})
+
+        assert abweichung.feld == "factor_states"
+        assert "2" in abweichung.jetzt, abweichung.jetzt
+
+    def test_the_path_choice_is_not_a_deviation(self, draft):
+        """«Sie haben den Vergleich gewählt» ist der Satz darüber, keine Abweichung."""
+
+        from dashboard.web.config_editor import delta
+
+        assert delta.unterschiede({**draft, "run_all_sweeps": True}) == []
+
+    def test_a_single_change_can_be_taken_back(self, draft):
+        """Der Gegenentwurf zu «alles zurücksetzen»."""
+
+        from dashboard.web.config_editor import delta
+
+        geaendert = {**draft, "rounds": 99, "mock_llm": False}
+        zurueck = delta.zuruecknehmen(dict(geaendert), "rounds")
+
+        assert zurueck["rounds"] == draft["rounds"]
+        assert zurueck["mock_llm"] is False, "Die zweite Änderung darf nicht mit verschwinden"
+
+    def test_it_stands_on_the_step_every_path_reaches(self, draft):
+        from dashboard.web.config_editor import delta
+
+        gerendert = str(wizard.content({**draft, "rounds": 99}, wizard.FINAL))
+
+        assert delta.REVERT in gerendert, "Die Abweichungsliste fehlt auf «Prüfen & Starten»"
+
+
 class _SchreibVersuch(Exception):
     """Eine Aktion hat versucht, in `configs/` zu schreiben."""
 
