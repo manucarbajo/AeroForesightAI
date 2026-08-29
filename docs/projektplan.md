@@ -1187,6 +1187,24 @@ Ein zweiter Fund daneben: Lag **gar kein** Score vor, fiel die Funktion auf den 
 
 **Doku mitgezogen:** `docs/handbuch/ref-ausgaben.md` (neuer Abschnitt zu den drei Feldern, samt Hinweis, dass ältere Läufe `plausibility` weitertragen), `docs/handbuch/glossar.md`, `docs/handbuch/grenzen.md`.
 
+#### Vorarbeit zu Stufe C — die Umdrehung ist zur Hälfte schon gebaut (gemessen 2026-08-29)
+
+Vor dem Umbau gehörte gemessen, wie viel «Faktoren ableiten statt setzen» heute bereits zutrifft. Verfahren wie bei `test_web_wirkung.py`: **zwei Läufe, alles gleich außer der Startlage** — einmal alle sieben Faktoren auf `.1`, einmal auf `.2` —, dann nachsehen, was von der Vorgabe übrig bleibt. Zahl der Faktoren, die ihre Startlage vergessen haben:
+
+| Ticks | 1 | 2 | 3 | 4 | 5 | 6 | 8 | 10 | 15 | 20 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| gleich | 4 | 6 | 5 | 6 | 6 | 6 | 6 | 6 | 6 | 7 |
+
+Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
+
+- **F2, F3, F6, F7 — der Rahmen.** Sie vergessen ihre Startlage **im ersten Tick**, weil ihre Regeln an *exogenen* Systemgrößen hängen: CO₂-Abgabe (F2, F6), SAF-Quote (F3), Ölpreis (F7). **Für diese vier ist «Rahmen statt Richter» bereits gebaut.** Die `factor_rules` in `configs/properties.json` sind schon die Ableitung, die P2.0 verlangt — jede der sieben Faktorgruppen hat Regeln für **beide** Zustände. Stufe C ist damit kein Neubau der Mechanik, sondern das Abschalten der konkurrierenden *Eingabe*.
+- **F1, F5 — der Lauf.** Sie folgen Buchungsrate und Gesellschaftsfaktor und brauchen ein paar Ticks. Der Einbruch bei Tick 3 ist kein Messfehler: Solange F4 zwischen beiden Läufen auseinanderliegt, laufen auch die Buchungsraten auseinander, und F1 kippt zu verschiedenen Zeitpunkten.
+- **F4 — die Vorgabe.** Hält seine Startlage bis etwa Tick 20. **Kein Fehler, sondern ein Totband:** Die Regeln greifen unter 115 (`F4.1`) und über 135 (`F4.2`), ein Hysteresefenster gegen Flattern. Der `cost_pressure` startet bei rund 118 und wächst je Tick um etwa eins — er liegt also lange dazwischen, und dort feuert keine der beiden Regeln.
+
+**Festgehalten in `tests/test_faktoren_abgeleitet.py`** — geprüft wird die stabile Aussage (die vier Rahmenfaktoren, nach einem Tick, plus der Nachweis, dass jede ihrer Regeln an einer exogenen Größe hängt) und das Totband als Config-Eigenschaft. Die Tabelle oben ist Beschreibung, keine Zusage: Eine Sperrklinke auf «genau sechs nach sechs Ticks» wäre über den Tick-3-Einbruch hinweg spröde.
+
+**Der Befund für P1.9, der dabei herausfiel:** Der Schritt «Faktorlage» (W3.3) fragt **sieben** Auswahlen ab, und im Standardlauf ist die Antwort auf vier davon nach *einem* Tick überschrieben, auf sechs nach wenigen. Das ist nicht Invariante 7 im engeren Sinn — der Startpfad *verwirft* nichts, er reicht die Wahl korrekt durch —, aber es ist dieselbe Enttäuschung für den Nutzer: eine Frage, deren Antwort das Ergebnis nicht prägt. Als Finding aufgenommen; die Auflösung ist Stufe C, nicht ein Hinweistext im Assistenten.
+
 **Doku zieht mit:** `docs/cib_role.md`, `docs/handbuch/cib.md`, `docs/handbuch/faktoren.md`, `docs/handbuch/presets.md`, `docs/scenario_runs.md`, `CLAUDE.md` (Glossar «CIB-Matrix», «Faktoren F1–F7», Architektur-Map zu `src/cib/`).
 
 ### P2.1 — Buchungsmodell: echte Ziehung statt Schwellwert
