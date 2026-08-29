@@ -172,6 +172,10 @@ def progress_payload() -> dict | None:
         # er den Abbruch-Knopf zeigt. Fehlte das Feld, griffe der Vorgabewert
         # `True` — und der Knopf staende beim Szenario-Vergleich wieder da.
         "cancellable": aktuell.cancellable,
+        # Ebenso: Aus ihnen rechnet der Ladebildschirm die Restzeit. Bleiben sie
+        # hier, zeigte er sie nie — die Ansicht bekommt den Fortschritt immer
+        # über diesen Umweg, nie direkt aus `runner.progress()`.
+        "tick_seconds": list(aktuell.tick_seconds),
     }
 
 

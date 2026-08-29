@@ -54,7 +54,26 @@ class Job:
 #: Die Fortschrittszeile des Tick-Loops: `[tick  14/40] 0.14s (…) — price=…`.
 #: Gelesen, nicht geschätzt — steht dort nichts, gibt es keine Prozentzahl
 #: (Invariante 1: Zahlen werden nicht erfunden).
-_TICK_LINE = re.compile(r"\[tick\s+(\d+)\s*/\s*(\d+)\]")
+#:
+#: **Die Sekundenzahl gehört dazu** (P1.9-W4.3): Sie ist die Dauer *dieses* Ticks
+#: und wurde bis dahin weggeworfen. Aus ihr entsteht die Restzeit — gemessen am
+#: laufenden Lauf, nicht aus fremden Läufen hochgerechnet.
+#:
+#: **Sie ist bewusst optional.** Verlangte das Muster sie, ginge bei einer Zeile
+#: ohne Dauer auch `tick`/`total` verloren — der Balken verlöre seine Zahl, weil
+#: eine Nebenauskunft fehlt. Die Restzeit darf ausfallen, der Fortschritt nicht.
+_TICK_LINE = re.compile(r"\[tick\s+(\d+)\s*/\s*(\d+)\](?:\s+([\d.]+)s)?")
+
+#: Wie viele der zuletzt gemessenen Tickdauern in die Restzeit eingehen. Genug,
+#: um einen Ausreißer zu dämpfen, wenig genug, um dem aktuellen Tempo zu folgen:
+#: Ein Lauf wird langsamer, wenn die Bevölkerung wächst oder das Sprachmodell
+#: mehr Kontext bekommt, und dann soll die Anzeige das zeigen.
+TEMPO_FENSTER = 10
+
+#: Unter so vielen Tickdauern wird keine Restzeit gezeigt. Aus **einer**
+#: Messung eine Erwartung abzuleiten wäre dieselbe Erfindung, die
+#: `config_editor.dauer.MINDESTENS` an der anderen Stelle verhindert.
+TEMPO_MINDESTENS = 2
 
 #: Wie viele Zeilen die Oberfläche höchstens bekommt. Die Konsole zeigt
 #: ohnehin nur die letzten; alles davor waere Ballast im Browser.
@@ -78,6 +97,9 @@ class Progress:
     lines: tuple[str, ...] = ()
     #: Ob dieser Lauf abgebrochen werden kann — siehe `Job.cancellable`.
     cancellable: bool = True
+    #: Die Dauer der zuletzt gerechneten Ticks, in Sekunden, älteste zuerst.
+    #: Höchstens `TEMPO_FENSTER` Einträge.
+    tick_seconds: tuple[float, ...] = ()
 
     @property
     def fraction(self) -> float | None:
@@ -90,6 +112,33 @@ class Progress:
         if not self.tick or not self.total:
             return None
         return min(1.0, self.tick / self.total)
+
+    @property
+    def remaining_seconds(self) -> tuple[float, float] | None:
+        """Restzeit als **Spanne** (kürzestens, längstens) — oder `None`.
+
+        Gerechnet aus den zuletzt gemessenen Tickdauern dieses Laufs mal der
+        Zahl der verbleibenden Ticks. **Aus dem laufenden Lauf und nicht aus
+        fremden**: Das Tempo hängt an Rechenmodus, Bevölkerungsgröße und
+        Maschine — der Lauf selbst ist der beste Zeuge für sein eigenes Tempo.
+
+        `None` heißt «dazu ist nichts zu sagen» und gehört **weggelassen**, nicht
+        als «unbekannt» hingeschrieben. Drei Fälle führen dorthin: keine
+        Tick-Zeile gelesen, weniger als `TEMPO_MINDESTENS` Messwerte, oder der
+        Lauf ist durch.
+
+        **Spanne statt Punktwert**, dieselbe Entscheidung wie in
+        `config_editor.dauer`: Ein Mittelwert sähe genauer aus als die Messung.
+        """
+
+        if not self.tick or not self.total:
+            return None
+        if len(self.tick_seconds) < TEMPO_MINDESTENS:
+            return None
+        offen = self.total - self.tick
+        if offen <= 0:
+            return None
+        return offen * min(self.tick_seconds), offen * max(self.tick_seconds)
 
 
 _JOBS: dict[str, Job] = {}
@@ -142,11 +191,17 @@ def progress() -> Progress | None:
     tick: int | None = None
     total: int | None = None
     zeile = zeilen[-1] if zeilen else ""
+    dauern: list[float] = []
     for eintrag in reversed(zeilen):
         treffer = _TICK_LINE.search(eintrag)
-        if treffer:
+        if not treffer:
+            continue
+        if tick is None:
             tick, total = int(treffer.group(1)), int(treffer.group(2))
             zeile = eintrag
+        if treffer.group(3) is not None and len(dauern) < TEMPO_FENSTER:
+            dauern.append(float(treffer.group(3)))
+        elif len(dauern) >= TEMPO_FENSTER:
             break
 
     return Progress(
@@ -156,6 +211,8 @@ def progress() -> Progress | None:
         line=zeile,
         lines=tuple(zeilen[-VISIBLE_LINES:]),
         cancellable=job.cancellable,
+        # Älteste zuerst — gelesen wurde von hinten.
+        tick_seconds=tuple(reversed(dauern)),
     )
 
 

@@ -300,3 +300,202 @@ class TestKeinKnopfVersprichtWasErNichtHaltenKann:
 
         assert zurueck is not None
         assert zurueck.cancellable is False
+
+
+# --- Die Restzeit (P1.9-W4.3) ----------------------------------------------
+
+
+class TestDieRestzeitWirdGemessenNichtGeraten:
+    """Der Lauf ist der beste Zeuge fuer sein eigenes Tempo.
+
+    Die Schaetzung im Pruefschritt (`config_editor.dauer`) muss aus vergangenen
+    Laeufen raten, weil es den laufenden noch nicht gibt. Waehrend des Laufs ist
+    das nicht noetig: Jede Tick-Zeile traegt ihre eigene Dauer.
+    """
+
+    def test_sie_kommt_aus_den_tickdauern_des_laufenden_laufs(self):
+        _job_mit(
+            "[tick   1/10] 2.00s (0.50 ticks/s) - price=90",
+            "[tick   2/10] 2.00s (0.50 ticks/s) - price=91",
+        )
+
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None
+        assert fortschritt.tick_seconds == (2.0, 2.0)
+        # Acht Ticks stehen aus, jeder dauerte zwei Sekunden.
+        assert fortschritt.remaining_seconds == (16.0, 16.0)
+
+    def test_sie_ist_eine_spanne_und_kein_punktwert(self):
+        _job_mit(
+            "[tick   1/11] 1.00s - price=90",
+            "[tick   2/11] 3.00s - price=91",
+        )
+
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None
+        assert fortschritt.remaining_seconds == (9.0, 27.0)
+
+    def test_aus_einer_einzigen_messung_wird_nichts_abgeleitet(self):
+        """Dieselbe Zurueckhaltung wie `config_editor.dauer.MINDESTENS`."""
+
+        _job_mit("[tick   1/40] 2.00s - price=90")
+
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None
+        assert fortschritt.tick_seconds == (2.0,)
+        assert fortschritt.remaining_seconds is None
+
+    def test_ohne_tick_zeile_gibt_es_nichts_zu_sagen(self):
+        """Der Szenario-Vergleich schreibt keine `[tick n/m]`-Zeilen."""
+
+        _job_mit("Sweep: Business as Usual", "Completed 50 ticks")
+
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None
+        assert fortschritt.remaining_seconds is None
+
+    def test_im_letzten_tick_steht_dort_nichts_mehr(self):
+        _job_mit(
+            "[tick   9/10] 2.00s - price=90",
+            "[tick  10/10] 2.00s - price=91",
+        )
+
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None
+        assert fortschritt.remaining_seconds is None
+
+    def test_nur_die_juengsten_tickdauern_zaehlen(self):
+        """Ein Lauf wird langsamer; die Anzeige soll dem folgen."""
+
+        zeilen = [f"[tick {n:>3}/100] 1.00s" for n in range(1, 21)]
+        zeilen += [f"[tick {n:>3}/100] 5.00s" for n in range(21, 41)]
+        _job_mit(*zeilen)
+
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None
+        assert len(fortschritt.tick_seconds) == runner.TEMPO_FENSTER
+        # Die alten, schnellen Ticks sind aus dem Fenster gefallen.
+        assert set(fortschritt.tick_seconds) == {5.0}
+
+    def test_eine_fehlende_dauer_nimmt_dem_balken_nicht_seine_zahl(self):
+        """Die Restzeit darf ausfallen, der Fortschritt nicht."""
+
+        _job_mit("[tick  12/40] weiter ohne Dauer")
+
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None
+        assert (fortschritt.tick, fortschritt.total) == (12, 40)
+        assert fortschritt.tick_seconds == ()
+        assert fortschritt.remaining_seconds is None
+
+    def test_sie_ueberlebt_die_reise_durch_den_browser(self):
+        """Faellt sie unterwegs weg, zeigte der Ladebildschirm sie nie."""
+
+        from dashboard.web.pages import launch as launch_page
+
+        _job_mit(
+            "[tick   1/10] 2.00s - price=90",
+            "[tick   2/10] 2.00s - price=91",
+        )
+
+        zurueck = web_app._progress_from(launch_page.progress_payload())
+
+        assert zurueck is not None
+        assert zurueck.remaining_seconds == (16.0, 16.0)
+
+    def test_der_ladebildschirm_zeigt_sie_an(self):
+        _job_mit(
+            "[tick   1/10] 2.00s - price=90",
+            "[tick   2/10] 2.00s - price=91",
+        )
+        fortschritt = runner.progress()
+
+        gezeigt = str(running.render(fortschritt, initial_draft_dict()))
+
+        assert "noch etwa 16 Sekunden" in gezeigt
+
+    def test_null_sekunden_werden_nicht_gezaehlt(self):
+        """Am laufenden System stand bei Tick 39 von 40 «noch etwa 0 Sekunden».
+
+        Eine Zahl, die schlechter ist als keine. Der Satz sagt dasselbe, ohne
+        etwas Falsches zu behaupten.
+        """
+
+        _job_mit(
+            "[tick  38/40] 0.02s - price=90",
+            "[tick  39/40] 0.02s - price=91",
+        )
+        fortschritt = runner.progress()
+
+        gezeigt = str(running.render(fortschritt, initial_draft_dict()))
+
+        assert "0 Sekunden" not in gezeigt
+        assert "gleich fertig" in gezeigt
+
+    def test_und_schweigt_wenn_es_nichts_zu_sagen_gibt(self):
+        """Kein «unbekannt» — der Platz bleibt leer."""
+
+        _job_mit("[tick   1/40] 2.00s - price=90")
+        fortschritt = runner.progress()
+
+        gezeigt = str(running.render(fortschritt, initial_draft_dict()))
+
+        assert "noch etwa" not in gezeigt
+
+    def test_das_fortschrittsfenster_zeigt_sie_auch(self):
+        """Wer waehrenddessen einen aelteren Lauf ansieht, will sie auch sehen."""
+
+        _job_mit(
+            "[tick   1/10] 2.00s - price=90",
+            "[tick   2/10] 2.00s - price=91",
+        )
+        fortschritt = runner.progress()
+
+        assert "noch etwa 16 Sekunden" in str(running.dock(fortschritt))
+
+    def test_beide_orte_sprechen_dieselbe_sprache(self):
+        """«3 Minuten» im Pruefschritt und «180 s» im Lauf waeren zwei Groessen."""
+
+        from dashboard.web.config_editor import dauer
+
+        assert dauer.spanne(16.0) == "16 Sekunden"
+        assert dauer.spanne(180.0) == "3 Minuten"
+
+    def test_die_einzahl_wird_mitgefuehrt(self):
+        """Am laufenden System stand dort «noch etwa 1 Sekunden bis 2 Sekunden».
+
+        Vor W4.3 fiel das nicht auf: Die Schaetzung im Pruefschritt beschreibt
+        einen ganzen Lauf und landet praktisch nie bei eins. Die Restzeit tut es
+        in jedem letzten Tick.
+        """
+
+        from dashboard.web.config_editor import dauer
+
+        assert dauer.spanne(1.0) == "1 Sekunde"
+        assert dauer.spanne(2.0) == "2 Sekunden"
+        # 60 Sekunden bleiben Sekunden -- die Schwelle liegt bei 90.
+        assert dauer.spanne(60.0) == "60 Sekunden"
+        assert dauer.spanne(120.0) == "2 Minuten"
+
+    def test_keine_zahl_bekommt_die_falsche_endung(self):
+        """Breiter als die eine Stelle, an der es aufgefallen ist.
+
+        Die Einzahl bei den Minuten ist mit der 90-Sekunden-Schwelle heute nicht
+        erreichbar -- die Formatierung fuehrt sie trotzdem mit, damit eine
+        verschobene Schwelle nicht «1 Minuten» zurueckbringt.
+        """
+
+        from dashboard.web.config_editor import dauer
+
+        for sekunden in [0.4, 1.0, 1.4, 2.0, 89.0, 90.0, 150.0, 5399.0, 5400.0]:
+            text = dauer.spanne(sekunden)
+            zahl = float(text.split()[0])
+            einzahl = text.split()[1].endswith("e")
+            assert einzahl == (zahl == 1), f"{sekunden}s -> {text!r}"

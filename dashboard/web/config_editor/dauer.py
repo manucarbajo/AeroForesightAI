@@ -74,11 +74,24 @@ def messwerte(modus: str, *, wurzel: Path | None = None) -> list[float]:
     return werte
 
 
-def _spanne(sekunden: float) -> str:
+def spanne(sekunden: float) -> str:
+    """Sekunden als Wort — **die** Formulierung, an zwei Orten dieselbe.
+
+    Öffentlich, weil der Ladebildschirm dieselbe Sprache sprechen muss: Wer im
+    Prüfschritt «etwa 3 Minuten» liest und während des Laufs «noch 180 s», hält
+    das für zwei verschiedene Größen.
+    """
+
+    # Einzahl mitgeführt. Vor W4.3 fiel das nicht auf: Die Schätzung im
+    # Prüfschritt beschreibt einen ganzen Lauf und landet praktisch nie bei
+    # eins. Die Restzeit während des Laufs tut es in jedem letzten Tick — am
+    # laufenden System stand dort «noch etwa 1 Sekunden bis 2 Sekunden».
     if sekunden < 90:
-        return f"{round(sekunden)} Sekunden"
+        zahl = round(sekunden)
+        return f"{zahl} {'Sekunde' if zahl == 1 else 'Sekunden'}"
     if sekunden < 5400:
-        return f"{round(sekunden / 60)} Minuten"
+        zahl = round(sekunden / 60)
+        return f"{zahl} {'Minute' if zahl == 1 else 'Minuten'}"
     return f"{sekunden / 3600:.1f} Stunden"
 
 
@@ -98,8 +111,8 @@ def schaetzung(draft: dict, *, wurzel: Path | None = None) -> str | None:
     kurz, lang = min(werte) * ticks, max(werte) * ticks
     quelle = f"aus {len(werte)} vergleichbaren Läufen"
     if round(kurz) == round(lang):
-        return f"Etwa **{_spanne(kurz)}** ({quelle})."
-    return f"Etwa **{_spanne(kurz)} bis {_spanne(lang)}** ({quelle})."
+        return f"Etwa **{spanne(kurz)}** ({quelle})."
+    return f"Etwa **{spanne(kurz)} bis {spanne(lang)}** ({quelle})."
 
 
 def hinweis(draft: dict, *, wurzel: Path | None = None) -> object:

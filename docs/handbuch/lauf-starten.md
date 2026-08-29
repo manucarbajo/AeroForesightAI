@@ -82,6 +82,18 @@ Angezeigt wird eine Spanne, nicht ein Punktwert: Ein Mittelwert sähe genauer
 aus, als die Messung ist. Liegen weniger als zwei vergleichbare Läufe vor, steht
 dort **nichts** — eine Zahl, die auf nichts beruht, wäre schlechter als keine.
 
+**Während der Lauf rechnet, steht die Restzeit unter dem Fortschrittsbalken** —
+und dafür braucht es keine vergangenen Läufe: Jede Tick-Meldung trägt die Dauer
+ihres Ticks, und der laufende Lauf ist der beste Zeuge für sein eigenes Tempo.
+Gerechnet wird aus den zuletzt gemessenen Ticks, damit die Anzeige mitgeht, wenn
+ein Lauf langsamer wird. Auch hier eine Spanne statt einer Zahl.
+
+Drei Fälle, in denen dort nichts steht, und in allen dreien ist das die richtige
+Antwort: in den ersten Ticks (eine einzelne Messung ist keine Erwartung), beim
+**Szenario-Vergleich** (er meldet keine Tick-Zahlen, deshalb läuft dort auch der
+Balken unbestimmt) und im letzten Tick. Ist es nur noch eine Frage von
+Sekundenbruchteilen, steht dort «gleich fertig».
+
 Die folgende Tabelle bleibt eine grobe Schätzung ohne Messung, für eine
 Bevölkerung in Standardgröße:
 

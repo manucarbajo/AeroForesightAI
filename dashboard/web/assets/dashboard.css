@@ -2315,6 +2315,19 @@ html.dark .af-input[type="number"] {
     margin-top: 0.5rem;
 }
 
+/* Restzeit (P1.9-W4.3). `:empty` bekommt keinen Abstand: Die Angabe fehlt in
+   den ersten Ticks und beim Szenario-Vergleich ganz — ohne diese Regel bliebe
+   dort eine Lücke stehen, und das Fenster spränge, sobald sie erscheint. */
+.af-dock__eta,
+.af-run__eta {
+    margin-top: 0.25rem;
+}
+
+.af-dock__eta:empty,
+.af-run__eta:empty {
+    display: none;
+}
+
 .af-dock__link {
     font-family: var(--font-body);
     font-size: 0.75rem;

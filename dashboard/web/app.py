@@ -160,6 +160,9 @@ def _progress_from(payload: dict | None) -> runner.Progress | None:
         line=str(payload.get("line") or ""),
         lines=tuple(payload.get("lines") or ()),
         cancellable=bool(payload.get("cancellable", True)),
+        # Muss mit durch den Browser, sonst fiele die Restzeit genau dort aus,
+        # wo sie gezeigt wird — dieselbe Falle wie bei `cancellable`.
+        tick_seconds=tuple(float(w) for w in (payload.get("tick_seconds") or ())),
     )
 
 
