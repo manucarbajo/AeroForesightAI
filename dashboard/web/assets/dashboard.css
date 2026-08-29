@@ -2867,3 +2867,48 @@ html.dark .af-input[type="number"] {
         flex: 1 1 100%;
     }
 }
+
+/* --- Gewicht der drei Wege (P1.9-W5.6) -------------------------------------
+
+   Drei gleich große, gleich betonte Karten stellen drei Fragen, wo eine zu
+   beantworten ist. Welcher Weg hervorgehoben wird, entscheidet `_hauptweg` --
+   dort steht auch, warum es ein **Fachurteil** ist und keine Messung.
+
+   **Gewicht ändert sich, Ort nicht.** Die Karten bleiben, wo sie sind; nur ihre
+   Betonung folgt dem Zustand. Wer die Wege umsortiert, nimmt dem
+   wiederkehrenden Nutzer das Einzige, was er hier schon kann.
+   -------------------------------------------------------------------------- */
+
+.af-way--haupt {
+    border-color: var(--accent);
+    padding: 1.5rem 1.375rem;
+}
+
+.af-way--haupt .af-way__title {
+    font-size: 1.0625rem;
+}
+
+.af-way--haupt .af-way__chevron {
+    color: var(--accent);
+}
+
+/* Die zweitrangigen Wege treten zurück -- ohne zu verschwinden: Sie sind
+   erreichbar, nur nicht das Naheliegende. */
+.af-way--neben {
+    padding: 1rem 1.375rem;
+}
+
+.af-way--neben .af-way__title {
+    font-size: 0.9375rem;
+}
+
+.af-way--neben .af-way__icon {
+    color: var(--text-muted);
+}
+
+/* Ein gesperrter Weg wird nie hervorgehoben (`_hauptweg` sorgt dafür), aber
+   falls doch je einer gesperrt hervorgehoben würde, soll die Betonung nicht
+   gegen die Sperre anschreien. */
+.af-way--haupt:disabled {
+    border-color: var(--border-subtle);
+}

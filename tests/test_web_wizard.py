@@ -880,13 +880,40 @@ class TestDerEinstiegStehtVorDemErstenSchritt:
             assert sichtbar is (schritt is wizard.ENTRY), f"Einstieg falsch sichtbar bei {schritt}"
 
     def test_the_entry_offers_exactly_three_ways(self, draft):
-        wege = [
-            node
-            for node in _walk(wizard.entry(draft))
-            if "af-way" == getattr(node, "className", None)
-        ]
+        assert len(_wege(wizard.entry(draft))) == 3
 
-        assert len(wege) == 3
+    def test_exactly_one_way_carries_the_weight(self, draft):
+        """Drei gleich betonte Karten stellen drei Fragen (P1.9-W5.6).
+
+        Zu beantworten ist eine. Welche hervorgehoben wird, ist ein Fachurteil
+        und steht als solches in `_hauptweg` — geprüft wird hier nur, dass es
+        **genau eine** ist.
+        """
+
+        for entwurf in (draft, {}):
+            betont = [w for w in _wege(wizard.entry(entwurf)) if "af-way--haupt" in w.className]
+            assert len(betont) == 1, f"{len(betont)} hervorgehobene Wege statt einem"
+
+    def test_the_weight_follows_the_only_signal_there_is(self, draft):
+        """Gibt es etwas fortzusetzen, ist Fortsetzen der naheliegende Weg.
+
+        Häufigkeit lässt sich ohne Nutzungsdaten nicht messen — **ob es einen
+        Entwurf gibt**, sehr wohl. Danach richtet sich die Hervorhebung; alles
+        andere wäre geraten.
+        """
+
+        assert wizard._hauptweg(weiter=True) == wizard.WAY_RESUME
+        assert wizard._hauptweg(weiter=False) == wizard.WAY_NEW
+
+    def test_no_locked_way_is_ever_the_highlighted_one(self, draft):
+        """Eine betonte Karte, die nicht reagiert, ist schlimmer als eine matte."""
+
+        for entwurf in (draft, {}):
+            for weg in _wege(wizard.entry(entwurf)):
+                if "af-way--haupt" in weg.className:
+                    assert not getattr(
+                        weg, "disabled", False
+                    ), "Der hervorgehobene Weg ist gesperrt"
 
     def test_the_entry_renders_no_input_field(self, draft):
         """Der Einstieg ist eine Weiche, kein Formular.
@@ -1315,3 +1342,16 @@ class TestJederWegSagtGenauEineSache:
 
         assert schritt is wizard.ENTRY
         assert not getattr(_knopf(wizard.navigation(0), wizard.BACK), "disabled", False)
+
+
+def _wege(baum) -> list:
+    """Die drei Karten des Einstiegs — an der Klasse, nicht am exakten Wortlaut.
+
+    Die erste Fassung verglich `className` auf Gleichheit mit `"af-way"`. Mit
+    dem Gewicht aus W5.6 heißt sie `"af-way af-way--haupt"`, und der Test fand
+    **null** Wege statt dreier.
+    """
+
+    return [
+        node for node in _walk(baum) if "af-way" in (getattr(node, "className", None) or "").split()
+    ]

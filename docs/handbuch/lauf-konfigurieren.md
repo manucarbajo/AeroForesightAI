@@ -19,6 +19,12 @@ ein: «Neuen Lauf einrichten» heißt *ein* Lauf, «Szenario-Vergleich» heißt 
 Wer den Vergleich einmal gewählt hat und danach doch einen einzelnen Lauf will,
 bekommt ihn also, ohne ein Kästchen suchen zu müssen.
 
+Einer der drei Wege ist hervorgehoben — der, der in Ihrer Lage der naheliegende
+ist: beim ersten Mal «Neuen Lauf einrichten», und sobald etwas eingestellt war,
+«Letzte Einstellungen weiterverwenden». Die Karten wechseln dabei nicht ihren
+Platz, nur ihr Gewicht; wo ein Weg beim letzten Mal lag, liegt er auch beim
+nächsten.
+
 Einen Weg zurück gibt es auch: **Zurück** auf dem ersten Schritt führt wieder auf
 diese Auswahl.
 

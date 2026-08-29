@@ -349,10 +349,52 @@ def resolve(step) -> int | None:
 # --- Der Einstieg: drei Wege -----------------------------------------------
 
 
-def _way(ident: str, symbol: str, title: str, text: str, *, disabled: bool = False) -> html.Button:
+def _hauptweg(weiter: bool) -> str:
+    """Welcher der drei Wege der hervorgehobene ist (P1.9-W5.6).
+
+    **Das hier ist ein Fachurteil, keine Messung** — und es steht so im Plan.
+    Wir haben keine Nutzungsdaten; was wir haben, ist die Struktur der Wege:
+
+    * «Neuen Lauf einrichten» ist der **Erstnutzungsfall**. Wer zum ersten Mal
+      hier steht, hat nichts, was er weiterverwenden könnte.
+    * «Letzte Einstellungen weiterverwenden» ist der **Wiederholfall**, und der
+      ist über die Lebensdauer eines Projekts der mit Abstand häufigste: Man
+      rechnet denselben Aufbau mehrfach, mit kleinen Änderungen dazwischen.
+    * «Szenario-Vergleich» ist ein **Spezialfall** — mächtig, aber selten, und
+      er ist nie das, womit jemand anfängt.
+
+    Der einzige belastbare Anhaltspunkt, den die Oberfläche wirklich hat, ist
+    also nicht «wie oft», sondern **«gibt es überhaupt etwas fortzusetzen»** —
+    und genau danach richtet sich die Hervorhebung. Etwas anderes wäre geraten.
+
+    **Die Reihenfolge bleibt dabei fest**, und auch das ist eine Entscheidung:
+    Wer die Wege je nach Zustand umsortiert, nimmt dem wiederkehrenden Nutzer
+    das Einzige, was er hier schon kann — hinsehen, wo der Weg letztes Mal lag.
+    Gewicht darf sich ändern, Ort nicht.
+
+    Ein gesperrter Weg wird nie hervorgehoben: Eine betonte Karte, die auf
+    einen Klick nicht reagiert, ist schlimmer als eine unbetonte.
+    """
+
+    return WAY_RESUME if weiter else WAY_NEW
+
+
+def _way(
+    ident: str,
+    symbol: str,
+    title: str,
+    text: str,
+    *,
+    disabled: bool = False,
+    gewicht: str = "neben",
+) -> html.Button:
     """Ein Weg als ganzflächige Schaltfläche.
 
     Karte *und* Knopf wäre ein Ziel im Ziel; hier ist die ganze Fläche das Ziel.
+
+    *gewicht* ist `"haupt"` für **genau einen** der drei Wege — siehe
+    `_hauptweg`. Drei gleich große, gleich betonte Karten stellen drei Fragen,
+    wo eine zu beantworten ist.
     """
 
     return html.Button(
@@ -368,7 +410,7 @@ def _way(ident: str, symbol: str, title: str, text: str, *, disabled: bool = Fal
             ui.icon("chevron_right", "af-way__chevron text-base"),
         ],
         id=ident,
-        className="af-way",
+        className=f"af-way af-way--{gewicht}",
         n_clicks=0,
         disabled=disabled,
     )
@@ -418,6 +460,10 @@ def entry(draft: dict | None = None) -> html.Div:
 
     weiter = touched(draft)
     presets = len(list_sweep_presets())
+    haupt = _hauptweg(weiter)
+
+    def _gewicht(ident: str) -> str:
+        return "haupt" if ident == haupt else "neben"
 
     return html.Div(
         [
@@ -429,6 +475,7 @@ def entry(draft: dict | None = None) -> html.Div:
                         "Neuen Lauf einrichten",
                         "Die Fragen der Reihe nach — Szenario, Länge, Rechenmodus. "
                         "Drei genügen bis zum Start, alles Weitere ist vorbelegt.",
+                        gewicht=_gewicht(WAY_NEW),
                     ),
                     _way(
                         WAY_SWEEP,
@@ -441,6 +488,7 @@ def entry(draft: dict | None = None) -> html.Div:
                             else "Zurzeit liegt kein Szenario unter `configs/sweeps/`."
                         ),
                         disabled=not presets,
+                        gewicht=_gewicht(WAY_SWEEP),
                     ),
                     _way(
                         WAY_RESUME,
@@ -453,6 +501,7 @@ def entry(draft: dict | None = None) -> html.Div:
                             "einmal etwas geändert haben."
                         ),
                         disabled=not weiter,
+                        gewicht=_gewicht(WAY_RESUME),
                     ),
                 ],
                 className="af-ways",
