@@ -343,7 +343,7 @@ def layout(draft: dict) -> html.Div:
                             (
                                 c.number(
                                     "base_price",
-                                    float(base_price) if base_price is not None else 100.0,
+                                    base_price,
                                     min=1.0,
                                     max=1000.0,
                                     step=5.0,

@@ -29,18 +29,18 @@ def layout(draft: dict) -> html.Div:
                 ui.card(
                     html.Div(
                         ui.grid(
-                            c.text("model", draft.get("model", "llama3.2")),
-                            c.text("base_url", draft.get("base_url", "http://localhost:11434")),
+                            c.text("model", draft.get("model")),
+                            c.text("base_url", draft.get("base_url")),
                             c.slider(
                                 "temperature",
-                                float(draft.get("temperature", 0.7)),
+                                draft.get("temperature"),
                                 min=0.0,
                                 max=1.5,
                                 step=0.05,
                             ),
                             c.number(
                                 "max_tokens",
-                                int(draft.get("max_tokens", 2048)),
+                                draft.get("max_tokens"),
                                 min=256,
                                 max=8192,
                                 step=1,
@@ -63,22 +63,22 @@ def layout(draft: dict) -> html.Div:
             ui.expert(
                 c.number(
                     "checkpoint_interval",
-                    int(draft.get("checkpoint_interval", 5)),
+                    draft.get("checkpoint_interval"),
                     min=0,
                     step=1,
                     detail=True,
                     class_name="max-w-xs",
                 ),
                 html.Div(
-                    c.check("generate_figures", draft.get("generate_figures", True)),
+                    c.check("generate_figures", draft.get("generate_figures")),
                     className="mt-5",
                 ),
                 html.Div(
-                    [c.check(name, draft.get(name, False)) for name in _PIPELINE_SWITCHES],
+                    [c.check(name, draft.get(name)) for name in _PIPELINE_SWITCHES],
                     className="space-y-3 mt-3",
                 ),
                 html.Div(
-                    c.text("resume_from", draft.get("resume_from", ""), class_name="max-w-lg"),
+                    c.text("resume_from", draft.get("resume_from"), class_name="max-w-lg"),
                     className="mt-5",
                 ),
                 count=len(_PIPELINE_SWITCHES) + 3,

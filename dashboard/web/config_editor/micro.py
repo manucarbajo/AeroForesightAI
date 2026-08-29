@@ -48,11 +48,11 @@ def _market_feedback(draft: dict) -> html.Div:
     prefix = "market_feedback_edit"
 
     return ui.card(
-        c.check(f"{prefix}.enabled", feedback.get("enabled", True)),
+        c.check(f"{prefix}.enabled", feedback.get("enabled")),
         html.Div(
             c.number(
                 f"{prefix}.target_booking_rate",
-                float(feedback.get("target_booking_rate", 0.37)),
+                feedback.get("target_booking_rate"),
                 min=0.05,
                 max=1.0,
                 step=0.01,
@@ -65,7 +65,7 @@ def _market_feedback(draft: dict) -> html.Div:
                 *[
                     c.number(
                         f"{prefix}.{name}",
-                        float(feedback.get(name, default)),
+                        feedback.get(name),
                         min=low,
                         max=high,
                         step=step,
@@ -93,7 +93,7 @@ def _saturation(draft: dict) -> html.Div:
     return ui.card(
         c.number(
             "saturation_edit.booking_increase",
-            float(saturation.get("booking_increase", 0.6)),
+            saturation.get("booking_increase"),
             min=0.0,
             max=1.0,
             step=0.05,
@@ -102,7 +102,7 @@ def _saturation(draft: dict) -> html.Div:
         ui.expert(
             c.number(
                 "saturation_edit.utility_penalty_factor",
-                float(saturation.get("utility_penalty_factor", 1.0)),
+                saturation.get("utility_penalty_factor"),
                 min=0.0,
                 max=3.0,
                 step=0.1,
@@ -157,7 +157,7 @@ def _segment_card(index: int, segment: dict) -> html.Div:
         ui.expert(
             c.slider(
                 f"{path}.saturation_decay",
-                float(decay if decay is not None else 0.2),
+                decay,
                 key="segment.saturation_decay",
             ),
             html.Div(
@@ -165,7 +165,7 @@ def _segment_card(index: int, segment: dict) -> html.Div:
                     *[
                         c.number(
                             f"{path}.modifiers.{name}",
-                            float(modifiers.get(name, fallback)),
+                            modifiers.get(name),
                             key=f"segment.{name}",
                             step=0.05,
                         )
@@ -190,8 +190,8 @@ def _distribution_card(index: int, segment: dict) -> html.Details:
 
     if kind == "beta":
         shape = [
-            c.number(f"{path}.alpha", float(segment.get("alpha") or 2.0), label="Alpha", step=0.01),
-            c.number(f"{path}.beta", float(segment.get("beta") or 5.0), label="Beta", step=0.01),
+            c.number(f"{path}.alpha", segment.get("alpha"), label="Alpha", step=0.01),
+            c.number(f"{path}.beta", segment.get("beta"), label="Beta", step=0.01),
         ]
     else:
         shape = [
@@ -204,7 +204,7 @@ def _distribution_card(index: int, segment: dict) -> html.Details:
             ),
             c.number(
                 f"{path}.std_dev",
-                float(segment.get("std_dev") or 1.0),
+                segment.get("std_dev"),
                 label="Streuung",
                 hint="Wie weit die Menschen um diesen Wert auseinanderliegen.",
                 step=0.01,
@@ -220,7 +220,7 @@ def _distribution_card(index: int, segment: dict) -> html.Details:
         ),
         c.number(
             f"{path}.max_value",
-            float(segment.get("max_value") or 1.0),
+            segment.get("max_value"),
             label="Maximum",
             hint="Werte darüber kommen nicht vor.",
             step=0.01,

@@ -634,7 +634,7 @@ def scope_step(draft: dict, number: int | None = 2) -> object:
         ui.card(
             c.number(
                 "rounds",
-                int(draft.get("rounds") or 40),
+                draft.get("rounds"),
                 min=1,
                 max=500,
                 step=1,
@@ -645,7 +645,7 @@ def scope_step(draft: dict, number: int | None = 2) -> object:
                 ui.grid(
                     c.number(
                         "run_count",
-                        int(draft.get("run_count") or 1),
+                        draft.get("run_count"),
                         min=1,
                         max=20,
                         step=1,
@@ -666,7 +666,6 @@ def scope_step(draft: dict, number: int | None = 2) -> object:
 
 
 def mode_step(draft: dict, number: int | None = 3) -> object:
-    seed = draft.get("seed")
     return _step(
         number,
         "Womit wird gerechnet?",
@@ -682,9 +681,7 @@ def mode_step(draft: dict, number: int | None = 3) -> object:
             ui.expert(
                 ui.grid(
                     c.check("use_seed", bool(draft.get("use_seed")), detail=True),
-                    c.number(
-                        "seed", int(seed if seed is not None else DEFAULT_SEED), min=0, step=1
-                    ),
+                    c.number("seed", draft.get("seed"), min=0, step=1),
                     cols="sm:grid-cols-2",
                 ),
                 count=2,
