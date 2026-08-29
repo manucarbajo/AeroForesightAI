@@ -80,11 +80,15 @@ def layout(draft: dict) -> html.Div:
                     ),
                 ),
             ),
-            ui.section(
-                "Als Szenario sichern",
+            # **Drei Abschnitte werden zu Klappen** (P1.9-W3.5). «Als Szenario
+            # sichern» (226 px), «Datengrundlage» (128 px) und «Rohdaten»
+            # (250 px) trugen je Überschrift, Einleitung und Doku-Verweis —
+            # zusammen 604 px für Dinge, die man selten braucht, neben 411 px
+            # für die Benennung, um die es in diesem Schritt geht.
+            ui.expert(
                 ui.lede(
                     "Legt den aktuellen Stand unter `configs/sweeps/` ab. Danach lässt er "
-                    "sich oben im geführten Ablauf als Szenario wieder auswählen."
+                    "sich im ersten Schritt als Szenario wieder auswählen."
                 ),
                 ui.card(
                     html.Div(
@@ -112,15 +116,16 @@ def layout(draft: dict) -> html.Div:
                         className="flex items-start gap-4 flex-wrap",
                     )
                 ),
-                actions=ui.doc_link("presets"),
+                count=1,
+                title="Als Szenario sichern",
+                names="Dateiname",
             ),
-            ui.section(
-                "Datengrundlage",
+            ui.expert(
                 ui.lede(
                     "Welche Dateien unter `configs/` gelesen werden. Für den Normalfall "
                     "bleibt hier alles auf Standard."
                 ),
-                ui.expert(
+                html.Div(
                     ui.grid(
                         *[
                             c.select(
@@ -134,18 +139,19 @@ def layout(draft: dict) -> html.Div:
                         ],
                         cols="lg:grid-cols-2",
                     ),
-                    count=len(_FILE_FIELDS),
-                    title="Konfigurationsdateien wechseln",
                 ),
-                actions=ui.doc_link("ref-config"),
+                count=len(_FILE_FIELDS),
+                title="Konfigurationsdateien wechseln",
             ),
-            ui.section(
-                "Rohdaten",
+            ui.expert(
                 ui.lede(
                     "Für den Fall, dass Sie genau nachsehen wollen, was an die Simulation "
                     "übergeben wird."
                 ),
                 _raw_data(draft),
+                count=3,
+                title="Rohdaten ansehen",
+                names="Effektive Konfiguration, simulation_config.json, properties.json",
             ),
             # Seit P1.7 steht der Rücksetz-Knopf hier statt über den Reitern:
             # Diesen Ort «über allen Einstellungen» gibt es in einer

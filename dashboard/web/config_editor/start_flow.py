@@ -524,12 +524,23 @@ def _step(number: int | None, title: str, lede: str, *children: object, actions:
     """Ein Schritt mit Überschrift — oder ohne.
 
     `number=None` lässt Titel und Nummer weg. Das braucht die Schrittfolge aus
-    P1.7: Sie schreibt «Schritt 1 von 8» und den Titel selbst über den Inhalt,
+    P1.7: Sie schreibt «Schritt 1 von 7» und den Titel selbst über den Inhalt,
     und darunter stand die Überschrift danach ein zweites Mal.
+
+    **Seit P1.9-W3.5 fällt auch die Einleitung weg**, aus demselben Grund: Die
+    Schrittfolge schreibt bereits `Step.lede` unter den Titel, und darunter stand
+    hier ein zweiter, längerer Satz mit derselben Aussage — der Schritt-Lede war
+    wörtlich sein erster Satz. Zwei Einleitungen übereinander kosteten auf jedem
+    der drei Entscheidungsschritte rund 60 px und sagten einmal zu viel.
+
+    Der ausführlichere Text ist nicht verloren: Er steht jetzt als `Step.lede` in
+    `wizard.STEPS` und damit an der Stelle, an der die Schrittfolge ihn ohnehin
+    zeigt.
     """
 
-    kopf = None if number is None else f"{number}. {title}"
-    return ui.section(kopf, ui.lede(lede), *children, actions=actions)
+    if number is None:
+        return ui.section(None, *children, actions=actions)
+    return ui.section(f"{number}. {title}", ui.lede(lede), *children, actions=actions)
 
 
 def scenario_step(draft: dict, number: int | None = 1) -> object:

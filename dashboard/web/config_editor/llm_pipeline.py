@@ -27,12 +27,6 @@ def layout(draft: dict) -> html.Div:
                     "beteiligt ist, entscheidet der Rechenmodus oben; hier steht, mit welchem."
                 ),
                 ui.card(
-                    ui.note(
-                        "**Kennzahlen bleiben unberührt.** Preise, Buchungsraten und "
-                        "Faktorzustände entstehen deterministisch im Rechenmodell. Das "
-                        "Sprachmodell liefert ausschließlich Text.",
-                        icon_name="shield",
-                    ),
                     html.Div(
                         ui.grid(
                             c.text("model", draft.get("model", "llama3.2")),
@@ -53,51 +47,43 @@ def layout(draft: dict) -> html.Div:
                             ),
                             cols="md:grid-cols-2",
                         ),
-                        className="mt-5",
                     ),
                 ),
                 actions=ui.doc_link("zahlen-und-sprache"),
             ),
-            ui.section(
-                "Zwischenstände",
-                ui.lede(
-                    "Zwischenstände sind die Voraussetzung dafür, einen Lauf fortzusetzen "
-                    "und ihn später auf einzelne Runden hin zu befragen."
+            # **Ein Abschnitt statt dreier** (P1.9-W3.5). «Zwischenstände» kostete
+            # 307 px für **ein** Zahlenfeld — Überschrift, Einleitung, Karte und
+            # Doku-Verweis drumherum. «Ausgaben» weitere 218 px. Zusammen mehr
+            # als der eigentliche Inhalt des Schritts.
+            #
+            # Eine Gliederungsebene innerhalb eines Schritts wiederholt, was der
+            # Schritt schon ist: eine Frage mit einer Überschrift. Was selten
+            # gebraucht wird, gehört nicht unter eine eigene Überschrift, sondern
+            # hinter eine Klappe — dasselbe Muster wie «Feinabstimmung».
+            ui.expert(
+                c.number(
+                    "checkpoint_interval",
+                    int(draft.get("checkpoint_interval", 5)),
+                    min=0,
+                    step=1,
+                    detail=True,
+                    class_name="max-w-xs",
                 ),
-                ui.card(
-                    c.number(
-                        "checkpoint_interval",
-                        int(draft.get("checkpoint_interval", 5)),
-                        min=0,
-                        step=1,
-                        detail=True,
-                        class_name="max-w-xs",
-                    ),
-                ),
-                actions=ui.doc_link("vergleiche"),
-            ),
-            ui.section(
-                "Ausgaben",
-                ui.card(
+                html.Div(
                     c.check("generate_figures", draft.get("generate_figures", True)),
-                    ui.expert(
-                        html.Div(
-                            [c.check(name, draft.get(name, False)) for name in _PIPELINE_SWITCHES],
-                            className="space-y-3",
-                        ),
-                        html.Div(
-                            c.text(
-                                "resume_from",
-                                draft.get("resume_from", ""),
-                                class_name="max-w-lg",
-                            ),
-                            className="mt-5",
-                        ),
-                        count=len(_PIPELINE_SWITCHES) + 1,
-                        title="Teile der Pipeline abschalten",
-                        names="Markt, Redebedarf, Protokoll, Szenarien, Fortsetzen",
-                    ),
+                    className="mt-5",
                 ),
+                html.Div(
+                    [c.check(name, draft.get(name, False)) for name in _PIPELINE_SWITCHES],
+                    className="space-y-3 mt-3",
+                ),
+                html.Div(
+                    c.text("resume_from", draft.get("resume_from", ""), class_name="max-w-lg"),
+                    className="mt-5",
+                ),
+                count=len(_PIPELINE_SWITCHES) + 3,
+                title="Zwischenstände und Ausgaben",
+                names="Checkpoints, Bilder, Markt, Redebedarf, Protokoll, Szenarien, Fortsetzen",
             ),
         ]
     )

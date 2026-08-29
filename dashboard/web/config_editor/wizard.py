@@ -137,19 +137,22 @@ STEPS: list[Step] = [
     Step(
         "szenario",
         "Was soll gerechnet werden?",
-        "Die Annahmenwelt, von der der Lauf ausgeht.",
+        "Die Annahmenwelt, von der der Lauf ausgeht. Ein vorbereitetes Szenario ist der "
+        "schnellste Einstieg — es legt Faktorlage, Politik und Kosten in einem Zug fest.",
         lambda draft: start_flow.scenario_step(draft, number=None),
     ),
     Step(
         "umfang",
         "Wie weit reicht der Lauf?",
-        "Wie viele Modellrunden gerechnet werden.",
+        "Ein Tick ist eine Modellrunde, kein Kalenderzeitraum. Mehr Ticks heißt mehr "
+        "Gelegenheiten für Rückkopplung zwischen Preis und Nachfrage.",
         lambda draft: start_flow.scope_step(draft, number=None),
     ),
     Step(
         "modus",
         "Womit wird gerechnet?",
-        "Ob und wie die Agenten den Lauf in Worte fassen.",
+        "Die Zahlen sind in allen drei Fällen dieselben — die Auswahl bestimmt nur, wie "
+        "viel dazu erzählt wird.",
         lambda draft: start_flow.mode_step(draft, number=None),
     ),
     # **Die Ausgangslage ist mit P1.9-W3.3 zurückgekommen** — als *eine* Frage

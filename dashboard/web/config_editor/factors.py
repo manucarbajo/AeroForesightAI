@@ -71,7 +71,12 @@ def selects(draft: dict) -> html.Div:
             )
         )
 
-    children: list = [ui.grid(*fields, cols="lg:grid-cols-2")]
+    # **Drei Spalten ab `xl`** (P1.9-W3.5): Sieben Auswahlen in zwei Spalten
+    # sind vier Reihen, in drei Spalten drei. Tailwinds Haltepunkte messen das
+    # Fenster und nicht die Spalte -- bei 1280 px greift `xl`, bei 1024 px
+    # bleibt es bei zwei, und das ist richtig so: Dort ist die Inhaltsspalte
+    # 696 px breit, und drei Auswahlfelder mit Leitfrage passen nicht hinein.
+    children: list = [ui.grid(*fields, cols="lg:grid-cols-2 xl:grid-cols-3")]
     if factors_file != "factors.json":
         children.insert(
             0,

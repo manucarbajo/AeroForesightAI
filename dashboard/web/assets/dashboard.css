@@ -1005,6 +1005,15 @@ textarea.af-input {
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* **Drei Zeilen genuegen** (P1.9-W3.5). Die Fragestellung eines Laufs ist ein
+   Satz, kein Aufsatz; die Vorgabehoehe des Browsers (rund acht Zeilen) machte
+   die Benennung zum groessten Block des Schritts. Wer mehr schreibt, zieht das
+   Feld auf -- `resize` bleibt an. */
+textarea.af-input {
+    min-height: 4.5rem;
+    height: 4.5rem;
+}
+
 .af-input:focus,
 textarea.af-input:focus {
     outline: none;
