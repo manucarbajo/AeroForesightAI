@@ -346,7 +346,7 @@ ZIEL = 1.0
 DECKEL: dict[int, dict[str, float]] = {
     1280: {
         "Einstieg": 1.00,
-        "Schritt 1": 1.92,
+        "Schritt 1": 1.41,
         "Schritt 2": 1.01,
         "Schritt 3": 1.05,
         "Schritt 4": 1.46,
@@ -356,7 +356,7 @@ DECKEL: dict[int, dict[str, float]] = {
     },
     1024: {
         "Einstieg": 1.00,
-        "Schritt 1": 2.05,
+        "Schritt 1": 1.53,
         "Schritt 2": 1.01,
         "Schritt 3": 1.14,
         "Schritt 4": 1.49,

@@ -188,18 +188,43 @@ def summary_sentence(draft: dict) -> str:
 # --- Schritt 1: Was soll gerechnet werden? ---------------------------------
 
 
-def _choice_label(title: str, description: str) -> html.Div:
-    """Titel und ein Satz dazu — als Inhalt einer Karte im Raster.
+def _kennzahl(preset) -> str:
+    """Was man über ein Szenario wissen muss, um es zu **wählen**.
 
-    Untereinander war jede dieser Beschriftungen in einer schmalen Spalte gut
-    100 px hoch; zehn davon ergaben drei Bildschirme. Nebeneinander sind es
-    drei Reihen, und die Beschreibungen bleiben lesbar statt zu verschwinden.
+    Zwei Angaben, beide immer da: **wie lang** es angelegt ist, und **wie stark**
+    es eingreift (Systemgrößen plus Faktoren). Meilensteine stehen bewusst nicht
+    dabei — vier der acht Szenarien haben keine, und «0 Meilensteine» ist keine
+    Auskunft, sondern Rauschen.
+    """
+
+    eingriffe = len(preset.property_overrides) + len(preset.factor_overrides)
+    wort = "Änderung" if eingriffe == 1 else "Änderungen"
+    return f"{preset.max_ticks} Ticks · {eingriffe} {wort}"
+
+
+def _choice_label(title: str, description: str, kennzahl: str | None = None) -> html.Div:
+    """Eine Kachel im Raster: Name, Kennzahl, zwei Zeilen Beschreibung (P1.9-W3.4).
+
+    Vorher trug jede Kachel ihre **vollständige** Beschreibung — zwischen einer
+    und sechs Zeilen, je nach Szenario. Gemessen waren die zehn Kacheln damit
+    zwischen 88 und 264 px hoch, das Raster 5 Reihen, und Schritt 1 brauchte
+    1,92 Bildschirme: der zweithöchste Wert der ganzen Schrittfolge.
+
+    Ein Raster, dessen Zeilen unterschiedlich hoch sind, lässt sich außerdem
+    nicht überfliegen — man liest zehn Absätze, statt zehn Möglichkeiten zu
+    vergleichen. Die Beschreibung ist deshalb auf zwei Zeilen geklemmt, und die
+    **Kennzahl** darüber macht die Kacheln erst vergleichbar.
+
+    Der vollständige Text geht dabei nicht verloren: Er steht unter dem Raster,
+    sobald ein Szenario gewählt ist (`scenario_details`) — dort, wo man ihn
+    braucht, und nur für das eine, das zur Debatte steht.
     """
 
     return html.Div(
         [
-            html.Span(title, className="font-body text-sm font-medium af-text"),
-            html.Span(description, className=f"{ui.CAPTION} block mt-0.5 leading-relaxed"),
+            html.Span(title, className="font-body text-sm font-medium af-text block"),
+            (html.Span(kennzahl, className="af-choice__meta") if kennzahl else None),
+            html.Span(description, className=f"{ui.CAPTION} af-choice__text"),
         ],
         className="min-w-0",
     )
@@ -219,7 +244,10 @@ def choice_options() -> list[dict]:
     ]
     for preset in list_sweep_presets():
         options.append(
-            {"label": _choice_label(preset.name, preset.description), "value": preset.id}
+            {
+                "label": _choice_label(preset.name, preset.description, _kennzahl(preset)),
+                "value": preset.id,
+            }
         )
     options.append(
         {
@@ -247,12 +275,17 @@ def scenario_details(draft: dict) -> html.Div:
         )
 
     children: list = [
+        # **Der volle Beschreibungstext steht hier**, seit die Kachel ihn auf
+        # zwei Zeilen klemmt (W3.4). Er ist nicht verschwunden, er steht nur
+        # dort, wo er gebraucht wird: bei dem einen Szenario, das zur Debatte
+        # steht, statt zehnmal im Raster.
+        html.P(preset.description, className=f"{ui.CAPTION} mb-4 max-w-prose"),
         ui.note(
             "Das Szenario gilt **unverändert**: Faktorlage, Politik und Kosten kommen aus "
             f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
             f"Angelegt ist es auf **{preset.max_ticks} Ticks** — die Länge stellen Sie im "
             "nächsten Schritt selbst ein."
-        )
+        ),
     ]
     if preset.rationale:
         children.append(

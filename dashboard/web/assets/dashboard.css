@@ -1194,10 +1194,42 @@ html.dark .af-input[type="number"] {
 /* Auswahl als Kartenraster statt als Liste. Zehn Szenarien mit je einem
    erklaerenden Satz waren untereinander drei Bildschirme lang; nebeneinander
    sind es drei Reihen, und die Beschreibungen bleiben lesbar. */
+/* **14rem statt 16rem** (P1.9-W3.4). In der 760 px breiten Inhaltsspalte des
+   Einrichtens ergaben 16 rem zwei Spalten und damit fuenf Reihen fuer zehn
+   Szenarien; 14 rem ergeben drei Spalten und vier Reihen. Schmaler duerfen die
+   Kacheln nicht werden -- der laengste Szenarioname braucht die Breite. */
 .af-radio--cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
     gap: 0.5rem;
+}
+
+/* Die Kennzahl macht die Kacheln vergleichbar: gleiche Stelle, gleiche Form,
+   Ziffern gleicher Breite. */
+.af-choice__meta {
+    display: block;
+    margin-top: 0.125rem;
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+
+/* **Zwei Zeilen, dann Schluss.** Vorher war jede Kachel so hoch wie ihre
+   laengste Beschreibung -- gemessen zwischen 88 und 264 px. Ein Raster mit
+   ungleich hohen Zeilen laesst sich nicht ueberfliegen: Man liest zehn
+   Absaetze, statt zehn Moeglichkeiten zu vergleichen. Der volle Text steht
+   unter dem Raster, sobald ein Szenario gewaehlt ist. */
+.af-choice__text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 0.25rem;
+    line-height: 1.45;
 }
 
 .af-radio--cards label {
