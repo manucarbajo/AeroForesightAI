@@ -34,6 +34,20 @@ zurück, von der aus Sie gesprungen sind, nicht an den Schritt davor. Bei jedem 
 Schritts, damit Sie dessen Frage sehen und nicht dort landen, wo Sie im vorigen
 gerade gelesen haben.
 
+## Auf schmalem Bildschirm
+
+Unter rund 900 px Breite ändert die Schrittfolge ihre Gestalt: Die Liste der
+Schritte wird ein schmaler Balken aus sieben Marken über der Frage, statt sieben
+Knöpfe untereinander zu stapeln — sonst hätte man an der Navigation vorbeirollen
+müssen, um zum Inhalt zu kommen. Welcher Schritt offen ist, sagt die Marke;
+welcher es ist, sagt die Überschrift darunter, und der Name jedes Schritts
+erscheint, wenn Sie auf seiner Marke verweilen.
+
+Die Leiste am unteren Rand bleibt dabei eine Zeile. Zweitrangige Knöpfe zeigen
+dort nur ihr Symbol — «Direkt zum Start» und «Als Szenario speichern». Ihre
+Namen sind nicht verschwunden: Vorlesesoftware liest sie weiterhin, und ein
+Verweilen auf dem Knopf zeigt sie an.
+
 ## Ohne Maus, ohne Bildschirm
 
 Die Schrittfolge lässt sich mit der Tastatur bedienen, und sie sagt einer

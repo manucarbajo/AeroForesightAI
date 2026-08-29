@@ -110,7 +110,17 @@ def page_heading(title: str, subtitle: str | None = None) -> html.Div:
 
 
 def button(label: str, *, variant: str = "primary", icon_name: str | None = None, **kwargs: Any):
-    children: list[Any] = [label]
+    """Ein Knopf. **Die Beschriftung steht in einem eigenen Träger** (P1.9-W5.5).
+
+    Als blanker Text ließe sie sich nicht ansprechen — und genau das braucht die
+    schmale Breite: Dort werden die Beschriftungen zweitrangiger Knöpfe
+    beschnitten, damit die Fußleiste einzeilig bleibt. **Beschnitten, nicht
+    entfernt**: Der Name bleibt damit im Baum und wird vorgelesen; `display:
+    none` nähme ihn auch der Vorlesesoftware und machte aus dem Knopf ein
+    stummes Symbol.
+    """
+
+    children: list[Any] = [html.Span(label, className="af-btn__label")]
     if icon_name:
         children.append(icon(icon_name, "text-sm"))
     class_name = f"{_BUTTON_BASE} {_BUTTON_VARIANTS.get(variant, _BUTTON_VARIANTS['primary'])}"

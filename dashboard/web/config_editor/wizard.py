@@ -803,6 +803,11 @@ def navigation(current: int | None) -> html.Div:
                         id=SKIP,
                         variant="secondary",
                         icon_name="fast_forward",
+                        # Auf schmaler Breite nur das Symbol: Drei ausgeschriebene
+                        # Beschriftungen passen bei 375 px nicht nebeneinander, und
+                        # die Leiste brach auf 133 px um (W5.5).
+                        className="af-btn--symbol-schmal",
+                        title="Direkt zum Start",
                         style=None if LAST_REQUIRED <= current < FINAL else {"display": "none"},
                     ),
                     ui.button(
@@ -816,6 +821,8 @@ def navigation(current: int | None) -> html.Div:
                         id=SAVE,
                         variant="secondary",
                         icon_name="save",
+                        className="af-btn--symbol-schmal",
+                        title="Als Szenario speichern",
                         style=None if letzter else {"display": "none"},
                     ),
                     ui.button(

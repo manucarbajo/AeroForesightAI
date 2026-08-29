@@ -928,3 +928,187 @@ def test_the_width_guard_would_notice_a_relapse(page):
     assert (
         lang["zeichen"] > ZEILE_MAX
     ), f"Der Wächter übersieht eine Zeile ohne Lesemaß ({lang['zeichen']} Zeichen)"
+
+
+# --- Teil 4: Die schmale Breite (P1.9-W5.5) ---------------------------------
+#
+# Gemessen bei 375 px: Die Schrittliste stand als **358 px hoher** Stapel aus
+# sieben Knöpfen über der Frage — man scrollte an der Navigation vorbei, um zum
+# Inhalt zu kommen. Die Fußleiste brach auf **133 px** um, auf «Prüfen &
+# Starten» auf 153.
+#
+# Beides wird hier gemessen, und zwar **an jedem Schritt**: Die Höhe der
+# Fußleiste hing genau daran, wie viele Knöpfe der Schritt zeigt.
+
+#: Die Breite, bei der gemessen wird — dieselbe wie im Audit vom 2026-08-28.
+SCHMAL = 375
+
+#: Was die Fußleiste bei dieser Breite höchstens hoch sein darf. Ein Knopf plus
+#: Luft; darüber ist sie umgebrochen.
+FUSS_MAX = 72
+
+#: Dasselbe für die Schrittliste. Als Balken ist sie eine Zeile hoch; als
+#: Stapel war sie 358 px und schob den Inhalt aus dem Bild.
+LISTE_MAX = 72
+
+_MOBIL = """
+() => {
+    const hoehe = (sel) => {
+        const e = document.querySelector(sel);
+        if (!e) return null;
+        const st = getComputedStyle(e);
+        if (st.display === "none") return 0;
+        return Math.round(e.getBoundingClientRect().height);
+    };
+    return {
+        fussleiste: hoehe(".af-wizard__nav"),
+        liste: hoehe(".af-wizard__rail"),
+        seitlich: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    };
+}
+"""
+
+
+@pytest.fixture
+def schmale_seite(browser, basis_url):
+    """Eine eigene Seite bei 375 px — die anderen Tests laufen bei 1280/1024."""
+
+    kontext = browser.new_context(viewport={"width": SCHMAL, "height": HOEHE})
+    seite = kontext.new_page()
+    seite.goto(basis_url, wait_until="networkidle")
+    seite.breite = SCHMAL
+    seite.basis = basis_url
+    try:
+        yield seite
+    finally:
+        kontext.close()
+
+
+class TestAufDemTelefonBleibtPlatzFuerDieFrage:
+    """Navigation ist der Weg zum Inhalt, nicht der Inhalt."""
+
+    def test_the_footer_stays_one_row_on_every_step(self, schmale_seite):
+        """Kein Schritt bricht die Fußleiste um.
+
+        **Je Schritt gemessen**, nicht einmal: Die Höhe hing daran, wie viele
+        Knöpfe der Schritt zeigt — «Prüfen & Starten» trug mit «Als Szenario
+        speichern» und «Lauf starten» zwei zusätzliche und war mit 153 px der
+        höchste.
+        """
+
+        zu_hoch = [
+            f"{titel}: {mass['fussleiste']} px"
+            for titel, mass in _schmal_durch_die_schritte(schmale_seite)
+            if mass["fussleiste"] > FUSS_MAX
+        ]
+
+        assert (
+            not zu_hoch
+        ), f"Die Fußleiste bricht bei {SCHMAL} px um (mehr als {FUSS_MAX} px):\n  " + "\n  ".join(
+            zu_hoch
+        )
+
+    def test_the_step_list_is_a_bar_not_a_stack(self, schmale_seite):
+        """Sieben Marken nebeneinander statt sieben Knöpfe untereinander."""
+
+        hoch = [
+            f"{titel}: {mass['liste']} px"
+            for titel, mass in _schmal_durch_die_schritte(schmale_seite)
+            if mass["liste"] > LISTE_MAX
+        ]
+
+        assert not hoch, (
+            f"Die Schrittliste steht bei {SCHMAL} px als Stapel (mehr als "
+            f"{LISTE_MAX} px):\n  " + "\n  ".join(hoch)
+        )
+
+    def test_nothing_forces_the_page_sideways(self, schmale_seite):
+        """Ein Balken, der breiter ist als das Telefon, ist kein Gewinn."""
+
+        seitlich = [
+            titel for titel, mass in _schmal_durch_die_schritte(schmale_seite) if mass["seitlich"]
+        ]
+
+        assert (
+            not seitlich
+        ), f"Diese Schritte schieben die Seite bei {SCHMAL} px zur Seite: {seitlich}"
+
+
+def _schmal_durch_die_schritte(page):
+    """Jeden Schritt öffnen und die beiden Höhen nehmen."""
+
+    from dashboard.web.config_editor import wizard
+
+    page.goto(page.basis, wait_until="networkidle")
+    page.wait_for_selector(".af-way")
+    page.click("#wizard-way-new")
+    page.wait_for_timeout(RUHE_MS)
+
+    for index in range(len(wizard.STEPS)):
+        if index:
+            page.click("#wizard-next")
+            page.wait_for_timeout(RUHE_MS)
+        page.wait_for_function(
+            "() => { const e = document.getElementById('wizard-content');"
+            " return e && e.getBoundingClientRect().height > 50; }",
+            timeout=10_000,
+        )
+        yield wizard.STEPS[index].title, page.evaluate(_MOBIL)
+
+
+def test_the_narrow_guard_would_notice_a_relapse(schmale_seite):
+    """Der Umbruch muss auffallen, sonst misst der Wächter nichts.
+
+    Nachgestellt wird genau der Zustand von vorher: eine Fußleiste, die
+    umbricht, und eine Schrittliste, die stapelt.
+    """
+
+    page = schmale_seite
+    page.click("#wizard-way-new")
+    # **Erst warten, bis der Schritt wirklich steht.** Ohne das hängt der Test
+    # an der Auslastung: Im vollen Durchlauf kam die Antwort des Servers später,
+    # Dash tauschte die Fußleiste **nach** der Einspritzung aus und wischte sie
+    # damit weg — der Test meldete einen blinden Wächter, wo nur zu früh
+    # gemessen wurde. Allein gelaufen war er grün. Genau dieser Fehler steckte
+    # schon einmal im Höhenwächter.
+    page.wait_for_function(
+        "() => { const e = document.getElementById('wizard-content');"
+        " return e && e.getBoundingClientRect().height > 50; }",
+        timeout=10_000,
+    )
+    page.wait_for_timeout(RUHE_MS)
+
+    vorher = page.evaluate(_MOBIL)
+    assert vorher["fussleiste"] <= FUSS_MAX and vorher["liste"] <= LISTE_MAX
+
+    # **Ein echter Umbruch, kein zurueckgedrehtes Stylesheet.** Der erste
+    # Anlauf nahm den Beschriftungen ihre Beschneidung zurueck und hoffte, dass
+    # die Leiste davon umbricht -- sie tat es nicht, und der Test meldete einen
+    # blinden Waechter, wo nur die Nachstellung zu zaghaft war. Jetzt wird ein
+    # Block eingehaengt, der nicht danebenpasst, und die Liste wirklich
+    # gestapelt.
+    page.evaluate("""
+        () => {
+          const nav = document.querySelector('.af-wizard__nav');
+          nav.style.flexWrap = 'wrap';
+          const klotz = document.createElement('div');
+          klotz.style.cssText = 'width: 320px; height: 40px; flex: 0 0 320px;';
+          klotz.setAttribute('data-probe', '1');
+          nav.appendChild(klotz);
+          document.querySelector('.af-steps').style.flexDirection = 'column';
+        }
+        """)
+    # Ob die Einspritzung überhaupt noch dasteht — sonst misst der Test etwas
+    # anderes, als er zu messen glaubt, und meldet den Wächter zu Unrecht blind.
+    assert page.evaluate(
+        "() => !!document.querySelector('.af-wizard__nav [data-probe]')"
+    ), "Der eingehängte Klotz ist verschwunden — Dash hat die Fußleiste neu gezeichnet."
+
+    nachher = page.evaluate(_MOBIL)
+
+    assert (
+        nachher["fussleiste"] > FUSS_MAX
+    ), f"Der Wächter übersieht eine umgebrochene Fußleiste ({nachher['fussleiste']} px)"
+    assert (
+        nachher["liste"] > LISTE_MAX
+    ), f"Der Wächter übersieht eine gestapelte Schrittliste ({nachher['liste']} px)"

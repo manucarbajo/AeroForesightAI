@@ -2793,3 +2793,77 @@ html.dark .af-input[type="number"] {
     margin-top: 0.625rem;
     padding-left: 0.625rem;
 }
+
+/* --- Schmale Breite: Fortschrittsbalken und einzeilige Fußleiste (P1.9-W5.5)
+
+   Gemessen bei 375 px: Die Schrittliste stand als **358 px hoher** Stapel aus
+   sieben Knöpfen über der eigentlichen Frage -- man scrollte an der Navigation
+   vorbei, um zum Inhalt zu kommen. Und die Fußleiste brach auf **133 px** um
+   (auf «Prüfen & Starten» sogar 153), weil drei ausgeschriebene Beschriftungen
+   nebeneinander nicht in 327 px passen.
+
+   Beides wird hier zusammengezogen, ohne dass ein Element aus dem DOM
+   verschwindet: Die Sprungknöpfe der Liste sind Eingänge, und ein fehlender
+   Eingang legt in Dash den ganzen Callback lahm (Regel 6). Was hier
+   verschwindet, sind **Beschriftungen** -- und auch die nur aus dem Bild:
+   beschnitten wie in `.af-nur-vorlesen`, damit der Name im Baum bleibt und
+   vorgelesen wird. Ein Symbol ohne Namen ist für eine Vorlesesoftware stumm.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 899px) {
+    /* Die Liste wird eine Zeile: sieben Marken nebeneinander statt sieben
+       Knöpfe untereinander. Welcher Schritt offen ist, sagt weiterhin die
+       Farbe und `aria-current`; wie er heißt, sagt der `title` und -- eine
+       Zeile darunter -- die Überschrift des Schritts selbst. */
+    .af-wizard__rail {
+        position: static;
+    }
+
+    .af-steps {
+        flex-direction: row;
+        gap: 0.25rem;
+        overflow-x: auto;
+    }
+
+    .af-step {
+        width: auto;
+        flex: 1 1 0;
+        justify-content: center;
+        padding: 0.375rem 0.25rem;
+        min-width: 2rem;
+    }
+
+    /* Beschnitten statt entfernt -- der Name bleibt für die Vorlesesoftware. */
+    .af-step__text,
+    .af-step__heading,
+    .af-btn--symbol-schmal .af-btn__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* Die Fußleiste bleibt eine Zeile. `flex-wrap: wrap` war der Grund für die
+       133 px; ohne Umbruch und mit knapperem Innenabstand bleibt sie unter der
+       Höhe eines Knopfes plus Luft. */
+    .af-wizard__nav {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        margin-top: 1.5rem;
+    }
+
+    /* Eine Meldung des Tores legt sich **über** die Knöpfe statt zwischen sie:
+       So drängt sie die Leiste nicht auseinander, und wenn sie leer ist (der
+       Normalfall), kostet sie nichts -- `.af-wizard__gate:empty` blendet sie
+       ohnehin aus. */
+    .af-wizard__gate {
+        order: -1;
+        flex: 1 1 100%;
+    }
+}
