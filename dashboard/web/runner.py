@@ -40,6 +40,15 @@ class Job:
     #: Wird gesetzt, wenn jemand abbricht. Der Tick-Loop fragt ihn zwischen zwei
     #: Ticks (P1.9-W4.5) — ein Thread lässt sich von außen nicht sauber beenden.
     stop: threading.Event = field(default_factory=threading.Event)
+    #: Ob der Abbruch diesen Lauf überhaupt erreicht.
+    #:
+    #: Ein **Szenario-Vergleich** erreicht er nicht: `run_all_sweeps` baut seinen
+    #: Runner selbst und bekommt `should_stop` bewusst nicht (siehe
+    #: `run_launcher.launch_simulation`). Die Oberfläche muss das wissen — sonst
+    #: bietet sie einen Knopf an, der meldet «der Lauf endet nach dem laufenden
+    #: Tick», und dann passiert nichts. Ein Versprechen ohne Deckung ist
+    #: schlimmer als ein fehlender Knopf.
+    cancellable: bool = True
 
 
 #: Die Fortschrittszeile des Tick-Loops: `[tick  14/40] 0.14s (…) — price=…`.
@@ -67,6 +76,8 @@ class Progress:
     total: int | None
     line: str
     lines: tuple[str, ...] = ()
+    #: Ob dieser Lauf abgebrochen werden kann — siehe `Job.cancellable`.
+    cancellable: bool = True
 
     @property
     def fraction(self) -> float | None:
@@ -144,6 +155,7 @@ def progress() -> Progress | None:
         total=total,
         line=zeile,
         lines=tuple(zeilen[-VISIBLE_LINES:]),
+        cancellable=job.cancellable,
     )
 
 
@@ -153,11 +165,13 @@ def start(draft_data: dict) -> str:
     if is_running():
         raise RuntimeError("Es läuft bereits eine Simulation. Bitte abwarten.")
 
-    job = Job(job_id=uuid.uuid4().hex)
+    draft = draft_from_dict(draft_data)
+    # Ein Szenario-Vergleich ist nicht abbrechbar — der Sweep-Pfad bekommt
+    # `should_stop` nicht. Das steht hier fest, damit die Oberflaeche es
+    # anzeigen kann, statt einen wirkungslosen Knopf zu zeigen.
+    job = Job(job_id=uuid.uuid4().hex, cancellable=not bool(draft.run_all_sweeps))
     with _LOCK:
         _JOBS[job.job_id] = job
-
-    draft = draft_from_dict(draft_data)
 
     def _work() -> None:
         try:
@@ -198,6 +212,10 @@ def cancel(job_id: str | None = None) -> bool:
         else:
             job = next((eintrag for eintrag in _JOBS.values() if not eintrag.done), None)
     if job is None or job.done:
+        return False
+    if not job.cancellable:
+        # Lieber laut nichts tun als still etwas versprechen.
+        job.queue.put("Abbruch nicht moeglich: Ein Szenario-Vergleich laeuft bis zum Ende durch.")
         return False
     job.stop.set()
     job.queue.put("Abbruch angefordert — der Lauf endet nach dem laufenden Tick.")

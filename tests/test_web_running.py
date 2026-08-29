@@ -191,3 +191,112 @@ class TestDasFortschrittsfenster:
 
         for wort in ("Abbrechen", "Stoppen", "Beenden"):
             assert wort not in gerendert
+
+
+# --- Zwei Befunde aus der Gegenprobe vom 2026-08-29 ------------------------
+
+
+class TestDieBeschriftungBehauptetNichtsFalsches:
+    """«Lauf wird vorbereitet …» galt fuer alles ohne Tick-Zeile.
+
+    Ein Szenario-Vergleich schreibt nie `[tick n/m]` — er meldet je Szenario
+    «Completed 50 ticks». Am laufenden System stand deshalb **38 Sekunden lang**
+    «wird vorbereitet», waehrend acht Szenarien rechneten. Der Balken war dabei
+    richtig (unbestimmt, weil es keine Zahl gibt); die Beschriftung war es nicht.
+    """
+
+    def test_without_any_output_it_says_preparing(self):
+        leer = runner.Progress(job_id="x", tick=None, total=None, line="", lines=())
+
+        assert "vorbereitet" in str(running.render(leer, initial_draft_dict()))
+
+    def test_with_output_but_no_tick_count_it_says_running(self):
+        laufend = runner.Progress(
+            job_id="x",
+            tick=None,
+            total=None,
+            line="Completed 50 ticks in 2.02s",
+            lines=("Sweep: Business as Usual", "Completed 50 ticks in 2.02s"),
+        )
+
+        gerendert = str(running.render(laufend, initial_draft_dict()))
+
+        assert (
+            "vorbereitet" not in gerendert
+        ), "Es laeuft laengst — «wird vorbereitet» ist an dieser Stelle falsch."
+        assert "Fortschritt nicht bezifferbar" in gerendert
+
+    def test_the_bar_stays_indeterminate_either_way(self):
+        """Die Beschriftung wird ehrlicher, die Zahl bleibt aus (Invariante 1)."""
+
+        laufend = runner.Progress(job_id="x", tick=None, total=None, line="x", lines=("x",))
+
+        assert laufend.fraction is None
+        assert "af-progress__fill--unknown" in str(running.render(laufend, initial_draft_dict()))
+
+
+class TestKeinKnopfVersprichtWasErNichtHaltenKann:
+    """Der Abbruch erreicht einen Szenario-Vergleich nicht.
+
+    Das ist bewusst so — `run_all_sweeps` baut seinen Runner selbst und bekommt
+    `should_stop` nicht (Kommentar in `run_launcher.launch_simulation`). Der
+    Knopf stand trotzdem da und meldete beim Druck «der Lauf endet nach dem
+    laufenden Tick». Am laufenden System nachgestellt: Er endete nicht, und
+    nach zwoelf Sekunden Warten stand die Kopfzeile unveraendert auf
+    «Simulation laeuft».
+
+    Ein Versprechen ohne Deckung ist schlimmer als ein fehlender Knopf.
+    """
+
+    def test_a_sweep_job_is_marked_as_not_cancellable(self):
+        draft = initial_draft_dict()
+        draft["run_all_sweeps"] = True
+
+        job = runner.Job(job_id="x", cancellable=not bool(draft["run_all_sweeps"]))
+
+        assert job.cancellable is False
+
+    def test_cancelling_an_uncancellable_run_says_so_instead_of_pretending(self):
+        job = runner.Job(job_id="sweep", cancellable=False)
+        runner._JOBS[job.job_id] = job
+
+        assert runner.cancel() is False, "Es darf nicht behaupten, abgebrochen zu haben"
+        assert not job.stop.is_set()
+
+        runner._drain(job)
+        assert any(
+            "nicht moeglich" in zeile for zeile in job.lines
+        ), "Der Nutzer muss erfahren, warum nichts passiert"
+
+    def test_a_normal_run_stays_cancellable(self):
+        job = runner.Job(job_id="einzel")
+        runner._JOBS[job.job_id] = job
+
+        assert runner.cancel() is True
+        assert job.stop.is_set()
+
+    def test_the_button_is_hidden_where_it_cannot_work(self):
+        sweep = runner.Progress(job_id="x", tick=None, total=None, line="", cancellable=False)
+        einzel = runner.Progress(job_id="x", tick=1, total=9, line="", cancellable=True)
+
+        versteckt = str(running.render(sweep, initial_draft_dict()))
+        sichtbar = str(running.render(einzel, initial_draft_dict()))
+
+        assert "'display': 'none'" in versteckt
+        assert "Szenario-Vergleich lässt sich nicht abbrechen" in versteckt.replace("ä", "ä")
+        assert "endet nach dem laufenden Tick" in sichtbar
+
+    def test_the_flag_survives_the_trip_through_the_browser(self):
+        """Faellt es unterwegs weg, greift der Vorgabewert `True` — und der
+        Knopf staende beim Szenario-Vergleich wieder da."""
+
+        from dashboard.web.pages import launch as launch_page
+
+        job = runner.Job(job_id="sweep", cancellable=False)
+        job.lines.append("Sweep: Business as Usual")
+        runner._JOBS[job.job_id] = job
+
+        zurueck = web_app._progress_from(launch_page.progress_payload())
+
+        assert zurueck is not None
+        assert zurueck.cancellable is False

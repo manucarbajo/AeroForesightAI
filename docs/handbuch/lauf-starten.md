@@ -49,10 +49,19 @@ Auswahl wie jeder andere — erkennbar daran, dass die Zahl der Ticks unter dem
 Maximum liegt. Der Knopf wirkt auch dann, wenn Sie die Seite zwischendurch neu
 geladen haben: Es läuft ohnehin höchstens ein Lauf, und der Server weiß, welcher.
 
+**Beim Szenario-Vergleich gibt es den Knopf nicht.** Ein Vergleich baut seinen
+Rechenlauf selbst und fragt zwischen den Ticks nicht nach, ob jemand abbrechen
+will — er läuft bis zum Ende durch. Statt eines Knopfes, der nichts bewirkt,
+steht dort dieser Satz.
+
 **Steht der Balken still und zeigt keinen Prozentwert**, ist das kein Fehler:
-Bis zur ersten Tick-Meldung weiß niemand, wie weit der Lauf ist, und dann läuft
-ein unbestimmter Balken statt einer erfundenen Zahl. Die Prozentangabe erscheint,
-sobald der erste Tick gerechnet ist.
+Wie weit der Lauf ist, weiß nur, wer eine Tick-Meldung gesehen hat, und die
+Oberfläche erfindet keine. Sie unterscheidet dabei zwei Fälle. **«Lauf wird
+vorbereitet …»** heißt: Es ist noch keine Zeile angekommen. **«Läuft —
+Fortschritt nicht bezifferbar»** heißt: Es rechnet, aber die Ausgabe enthält
+keine Tick-Zählung — so ist es beim Szenario-Vergleich, der je Szenario nur
+dessen Abschluss meldet. Die Prozentangabe erscheint, sobald eine Tick-Zählung
+vorliegt.
 
 Ist der Lauf fertig, meldet das Bedienfeld links die Run-ID mit der Zahl der
 Ticks und Events — und daneben steht der Weg weiter: **Ergebnisse ansehen**.

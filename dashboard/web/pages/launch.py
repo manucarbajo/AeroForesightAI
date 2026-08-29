@@ -168,6 +168,10 @@ def progress_payload() -> dict | None:
         "total": aktuell.total,
         "line": aktuell.line,
         "lines": list(aktuell.lines),
+        # Muss mit durch den Browser: Der Ladebildschirm entscheidet daran, ob
+        # er den Abbruch-Knopf zeigt. Fehlte das Feld, griffe der Vorgabewert
+        # `True` — und der Knopf staende beim Szenario-Vergleich wieder da.
+        "cancellable": aktuell.cancellable,
     }
 
 

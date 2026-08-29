@@ -68,8 +68,24 @@ def _bar(progress: Progress, *, compact: bool = False) -> html.Div:
 
 
 def _readout(progress: Progress) -> str:
+    """Was der Lauf gerade tut — in einer Zeile.
+
+    **Drei Zustände, nicht zwei.** Die frühere Fassung kannte nur «Tick x von y»
+    und sonst «Lauf wird vorbereitet …». Bei einem Szenario-Vergleich stimmte
+    das nie: Der Sweep schreibt keine `[tick n/m]`-Zeilen, sondern meldet je
+    Szenario «Completed 50 ticks». Am laufenden System gemessen stand deshalb
+    **achtunddreißig Sekunden lang** «wird vorbereitet», während acht Szenarien
+    rechneten.
+
+    Der Balken war dabei richtig (unbestimmt, weil es keine Zahl gibt) — die
+    Beschriftung behauptete etwas Falsches. Sobald überhaupt Ausgabe kommt,
+    läuft der Lauf; nur *wie weit* er ist, weiß niemand.
+    """
+
     if progress.tick and progress.total:
         return f"Tick {progress.tick} von {progress.total}"
+    if progress.lines:
+        return "Läuft — Fortschritt nicht bezifferbar"
     return "Lauf wird vorbereitet …"
 
 
@@ -133,16 +149,27 @@ def render(progress: Progress, draft: dict) -> html.Div:
             # Lauf endet nach dem laufenden Tick, nicht sofort.
             html.Div(
                 [
+                    # **Der Knopf bleibt im DOM, auch wo er nicht greift** — ein
+                    # fehlender `Input` legt sonst den ganzen Callback lahm
+                    # (Dashboard-Regel 6). Sichtbar ist er nur, wo der Abbruch
+                    # den Lauf wirklich erreicht.
                     ui.button(
                         "Lauf abbrechen",
                         id=CANCEL,
                         variant="danger",
                         icon_name="stop_circle",
+                        style=None if progress.cancellable else {"display": "none"},
                     ),
                     html.P(
-                        "Der Lauf endet nach dem laufenden Tick. Was bis dahin gerechnet "
-                        "wurde, bleibt erhalten — der Lauf steht danach in der Auswahl, "
-                        "mit weniger Ticks als geplant.",
+                        (
+                            "Der Lauf endet nach dem laufenden Tick. Was bis dahin gerechnet "
+                            "wurde, bleibt erhalten — der Lauf steht danach in der Auswahl, "
+                            "mit weniger Ticks als geplant."
+                            if progress.cancellable
+                            else "Ein Szenario-Vergleich lässt sich nicht abbrechen: Er baut "
+                            "seinen Rechenlauf selbst und fragt zwischen den Ticks nicht "
+                            "nach. Er läuft bis zum Ende durch."
+                        ),
                         className=f"{ui.CAPTION} mt-2 max-w-2xl",
                     ),
                     html.Div(

@@ -159,6 +159,7 @@ def _progress_from(payload: dict | None) -> runner.Progress | None:
         total=payload.get("total"),
         line=str(payload.get("line") or ""),
         lines=tuple(payload.get("lines") or ()),
+        cancellable=bool(payload.get("cancellable", True)),
     )
 
 
