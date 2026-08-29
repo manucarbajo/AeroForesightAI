@@ -205,7 +205,13 @@ def rail(draft: dict | None = None) -> html.Div:
                 ),
                 id=start_flow.slot_id("preflight"),
             ),
-            html.Div(id="run-status", className="mt-4"),
+            html.Div(
+                id="run-status",
+                className="mt-4",
+                # «Lauf aktiv», «Lauf nicht gestartet — die Konfiguration hat
+                # Fehler»: Antworten auf einen Klick, die angesagt gehören (W5.3).
+                **{"aria-live": "polite"},
+            ),
             html.Div(
                 [
                     ui.button(

@@ -145,7 +145,11 @@ def render(progress: Progress, draft: dict) -> html.Div:
                         "mit weniger Ticks als geplant.",
                         className=f"{ui.CAPTION} mt-2 max-w-2xl",
                     ),
-                    html.Div(id=CANCEL_STATUS, className="mt-2"),
+                    html.Div(
+                        id=CANCEL_STATUS,
+                        className="mt-2",
+                        **{"aria-live": "polite"},
+                    ),
                 ],
                 className="mt-6",
             ),

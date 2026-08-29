@@ -34,6 +34,31 @@ zurück, von der aus Sie gesprungen sind, nicht an den Schritt davor. Bei jedem 
 Schritts, damit Sie dessen Frage sehen und nicht dort landen, wo Sie im vorigen
 gerade gelesen haben.
 
+## Ohne Maus, ohne Bildschirm
+
+Die Schrittfolge lässt sich mit der Tastatur bedienen, und sie sagt einer
+Vorlesesoftware, was geschieht.
+
+Bei jedem Wechsel wandert der **Fokus auf die Überschrift des neuen Schritts** —
+also auf dessen Frage. Wer mit der Tabulatortaste arbeitet, steht damit unmittelbar
+vor den Feldern dieses Schritts und muss sich nicht erst durch Kopfzeile und
+Schrittliste tasten. Wer schon selbst irgendwohin geklickt oder getabbt ist,
+behält seinen Platz; die Seite reißt niemandem den Fokus weg.
+
+Angesagt wird der Wechsel ebenfalls: «Schritt 4 von 7: Ausgangslage». Dasselbe
+gilt für Statusmeldungen — eine gesperrte Weiter-Taste sagt sofort, was noch
+fehlt, statt stumm nicht zu reagieren. In der Schrittliste ist der offene Schritt
+nicht nur farblich markiert, sondern auch als solcher ausgezeichnet.
+
+Jede Gruppe von Auswahlknöpfen trägt eine Beschriftung, die die ganze Gruppe
+benennt. Ohne sie liest eine Vorlesesoftware «Standard-Ausgangslage, 1 von 10»
+vor, ohne zu sagen, wovon.
+
+Zwei Einschränkungen der Ehrlichkeit halber: Diese vier Zusagen sind geprüft und
+gemessen, eine vollständige WCAG-Prüfung sind sie nicht — sie braucht Hilfsmittel
+und Menschen. Und sie gelten für die Schrittfolge; die übrigen Bereiche des
+Leitstands sind noch nicht in gleicher Weise durchgegangen.
+
 **Drei Schritte genügen.** Was gerechnet wird, wie weit, und womit: Danach ist
 alles Weitere mit sinnvollen Werten vorbelegt, und der Knopf **Direkt zum Start**
 bringt Sie ans Ende. Die Schritte vier bis sechs sind als *optional*

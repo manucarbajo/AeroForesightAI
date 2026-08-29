@@ -806,7 +806,15 @@ def test_a_step_change_scrolls_back_to_the_top():
 
     Geprüft wird die **Verdrahtung**, nicht das Scrollen selbst: Das läuft im
     Browser, und ohne Browser lässt sich nur festhalten, dass der Callback
-    angemeldet ist und am Schritt hängt.
+    angemeldet ist und am richtigen Eingang hängt.
+
+    **Und der richtige Eingang ist der Inhalt, nicht der Schritt-Store**
+    (P1.9-W5.3). Bis dahin hing der Callback am Store — der ändert sich in dem
+    Moment, in dem jemand klickt, während der neue Inhalt erst mit der Antwort
+    des Servers kommt. Fürs Scrollen fiel das nicht auf; für den Fokus, der
+    seit W5.3 danebensteht, schon: Am laufenden System griff er ins Leere und
+    der Fokus blieb auf `BODY`. Der Wirt des Inhalts ändert sich genau dann,
+    wenn es etwas zu fokussieren gibt.
     """
 
     class _App:
@@ -828,7 +836,12 @@ def test_a_step_change_scrolls_back_to_the_top():
     assert app.clientside, "Kein clientseitiger Callback angemeldet"
     code, deps = app.clientside[0]
     assert "scrollTo" in code
-    assert any(getattr(d, "component_id", None) == wizard.STEP_STORE for d in deps)
+    assert any(
+        getattr(d, "component_id", None) == wizard.CONTENT_HOST for d in deps
+    ), "Der Callback hängt nicht am Inhalt — dann läuft er, bevor es ihn gibt."
+    assert not any(
+        getattr(d, "component_id", None) == wizard.STEP_STORE for d in deps
+    ), "Am Schritt-Store hängend feuert er zu früh (siehe Docstring)."
 
 
 # --- Der Einstieg ----------------------------------------------------------

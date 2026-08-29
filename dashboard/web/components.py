@@ -262,7 +262,14 @@ def toggle(
 #: das Innere bleibt dieselbe Zeile aus Knopf und Text. Fuer Auswahlen mit
 #: vielen Moeglichkeiten und je einem beschreibenden Satz — untereinander waeren
 #: zehn davon drei Bildschirme lang.
-def radio(options: list[dict], *, value: Any, cards: bool = False, **kwargs: Any) -> dcc.RadioItems:
+def radio(
+    options: list[dict],
+    *,
+    value: Any,
+    cards: bool = False,
+    legend: str | None = None,
+    **kwargs: Any,
+):
     """Auswahl unter sich ausschließenden Möglichkeiten.
 
     Anordnung und Ausrichtung stehen im Stylesheet: `.af-radio label` richtet an
@@ -277,13 +284,31 @@ def radio(options: list[dict], *, value: Any, cards: bool = False, **kwargs: Any
     drei Reihen.
     """
 
-    return dcc.RadioItems(
+    gruppe = dcc.RadioItems(
         options=options,
         value=value,
         className="af-radio af-radio--cards" if cards else "af-radio",
         inputClassName="af-radio__input",
         labelClassName="af-radio__label",
         **kwargs,
+    )
+    if legend is None:
+        return gruppe
+
+    # **`fieldset` und `legend`, nicht nur eine Überschrift daneben**
+    # (P1.9-W5.3). Für einen Screenreader ist eine Reihe von Radioknöpfen ohne
+    # Gruppe eine Reihe unbeschrifteter Optionen: Er liest «Standard-Ausgangslage,
+    # 1 von 10» vor, ohne zu sagen, **wovon** das eine von zehn ist. Die Legende
+    # beantwortet genau das und wird beim Betreten der Gruppe einmal
+    # mitgesprochen.
+    #
+    # Sichtbar ist sie nicht: Der Titel des Schritts steht bereits darüber, und
+    # eine zweite Überschrift wäre für Sehende eine Dopplung. `af-nur-vorlesen`
+    # nimmt sie aus dem Bild, **nicht** aus dem Baum — `display: none` oder
+    # `visibility: hidden` nähmen sie auch dem Screenreader.
+    return html.Fieldset(
+        [html.Legend(legend, className="af-nur-vorlesen"), gruppe],
+        className="af-fieldset",
     )
 
 

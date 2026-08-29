@@ -79,7 +79,13 @@ def layout(draft: dict | None = None) -> html.Div:
                 "Bevölkerung und Preisbildung. Was Sie hier ändern, gilt für den nächsten "
                 "Lauf; was Sie ausdrücklich speichern, für alle künftigen.",
             ),
-            html.Div(id=STATUS, className="mb-4"),
+            html.Div(
+                id=STATUS,
+                className="mb-4",
+                # «Segment gelöscht» ist eine Rückmeldung auf eine Handlung,
+                # die man gerade ausgelöst hat — sie gehört angesagt (W5.3).
+                **{"aria-live": "polite"},
+            ),
             html.Div(body(entwurf), id=HOST),
         ],
         className="af-pane af-pane--focus",

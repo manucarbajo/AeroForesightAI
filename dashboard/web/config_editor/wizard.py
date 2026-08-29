@@ -97,6 +97,18 @@ JUMP = "wizard-jump"
 #: irgendwo oben auf der Seite.
 GATE = "wizard-gate"
 
+#: Was der Screenreader beim Schrittwechsel hört (P1.9-W5.3).
+#:
+#: **Eine eigene Region, nicht der Zähler im Inhalt.** Beim Wechsel tauscht
+#: `_render` den ganzen Inhaltsbaum aus; eine Live-Region **innerhalb** eines
+#: ausgetauschten Teilbaums wird nicht zuverlässig vorgelesen, weil sie im
+#: Moment der Änderung selbst neu entsteht. Diese hier bleibt stehen und
+#: bekommt nur neuen Text — das ist der Fall, für den `aria-live` gebaut ist.
+#:
+#: Gemessen hatte das Dokument **null** Live-Regionen: Schrittwechsel,
+#: Statusmeldungen und Feldfehler waren für einen Screenreader stumm.
+ANSAGE = "wizard-ansage"
+
 #: Die drei Wege des Einstiegs. Jeder ist ein eigener Knopf und **bleibt im
 #: DOM**, auch wenn die Schrittfolge läuft — nur ausgeblendet. Dash führt einen
 #: Callback gar nicht erst aus, wenn auch nur *ein* Eingang fehlt (Regel 6 der
@@ -680,7 +692,15 @@ def content(draft: dict, current: int) -> html.Div:
                     # Überschrift dieses Bildschirms — die Klasse bleibt `H2`,
                     # weil sich an der Optik nichts ändern soll. Größe und
                     # Rangordnung sind zwei verschiedene Dinge.
-                    html.H1(step.title, className=ui.H2),
+                    html.H1(
+                        step.title,
+                        className=ui.H2,
+                        # Fokusziel nach einem Schrittwechsel (W5.3). Ohne
+                        # `tabIndex` lässt sich eine Überschrift nicht
+                        # fokussieren; `-1` heißt «per Skript, nicht per Tab»
+                        # — sie soll nicht in die Tabreihenfolge geraten.
+                        tabIndex=-1,
+                    ),
                     html.P(step.lede, className=f"{ui.CAPTION} mt-1"),
                 ],
                 className="mb-6",
@@ -725,7 +745,14 @@ def navigation(current: int | None) -> html.Div:
             ui.button("Zurück", id=BACK, variant="ghost"),
             # Die Begründung sitzt zwischen «Zurück» und dem nächsten Griff:
             # dort, wo der Blick ohnehin hinfällt, wenn der Knopf nicht reagiert.
-            html.Div(id=GATE, className="af-wizard__gate"),
+            html.Div(
+                id=GATE,
+                className="af-wizard__gate",
+                # Der Grund, warum «Weiter» nicht reagiert, gehört zu den
+                # Dingen, die man **sofort** wissen muss — sonst drückt man
+                # weiter auf einen Knopf, der nichts tut.
+                **{"aria-live": "assertive"},
+            ),
             html.Div(
                 [
                     ui.button(
@@ -779,7 +806,17 @@ def layout(draft: dict, current: int | None = ENTRY) -> html.Div:
     return html.Div(
         [
             html.Div(heading(current), id=HEAD_HOST),
-            html.Div(id="cfg-status", className="mb-4"),
+            # Die Ansage steht **außerhalb** des Inhalts, der beim Wechsel
+            # ausgetauscht wird — siehe `ANSAGE`.
+            html.Div(
+                id=ANSAGE,
+                className="af-nur-vorlesen",
+                **{"aria-live": "polite", "aria-atomic": "true"},
+            ),
+            # Statusmeldungen werden ebenfalls angesagt. `polite` und nicht
+            # `assertive`: Sie melden, was gerade geschehen **ist** — sie
+            # unterbrechen nicht, was jemand gerade tut.
+            html.Div(id="cfg-status", className="mb-4", **{"aria-live": "polite"}),
             # Senke für den Sprung nach oben. Ein clientseitiger Callback braucht
             # einen Ausgang, hat hier aber nichts zu schreiben — er scrollt nur.
             dcc.Store(id=SCROLL_SINK),
@@ -926,6 +963,7 @@ def register_callbacks(app) -> None:
         Output(ENTRY_HOST, "children"),
         Output(ENTRY_HOST, "style"),
         Output(CONTENT_HOST, "style"),
+        Output(ANSAGE, "children"),
         Input(STEP_STORE, "data"),
         Input("cfg-editor-refresh", "data"),
         State(STORE_ID, "data"),
@@ -964,20 +1002,80 @@ def register_callbacks(app) -> None:
             entry(data) if einstieg else no_update,
             _VISIBLE if einstieg else _HIDDEN,
             _HIDDEN if einstieg else _VISIBLE,
+            (
+                "Einstieg: Womit möchten Sie anfangen?"
+                if einstieg
+                else f"Schritt {jetzt + 1} von {len(STEPS)}: {STEPS[jetzt].title}"
+            ),
         )
 
     app.clientside_callback(
         """
-        function (schritt) {
+        function (inhalt) {
             var pane = document.querySelector(".af-shell__main");
             if (pane) {
                 var sanft = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
                 pane.scrollTo({ top: 0, behavior: sanft ? "smooth" : "auto" });
             }
+            // **Der Fokus wandert mit** (P1.9-W5.3). Ohne das blieb er nach
+            // «Weiter» auf dem Knopf, der gerade verschwunden war -- der
+            // Browser setzt ihn dann auf den Seitenanfang zurueck, und wer mit
+            // der Tastatur arbeitet, taste sich durch die halbe Seite bis zur
+            // naechsten Frage. Der Titel des Schritts ist die Antwort auf die
+            // Frage "wo bin ich jetzt".
+            //
+            // **An der Aenderung, nicht am Bildtakt** (P1.9-W5.3). Zwei
+            // Anlaeufe davor haben nicht gegriffen, und beide aus demselben
+            // Grund: Sie rieten, wann der neue Baum steht.
+            //
+            // Zuerst hing der Callback am Schritt-Store -- der aendert sich beim
+            // Klick, der Inhalt kommt erst mit der Antwort des Servers. Dann am
+            // Inhalt, aber der Fokus lief ueber requestAnimationFrame, und der
+            // feuert in einem Tab, den niemand sieht, **gar nicht**: Am
+            // laufenden System stand `visibilityState: "hidden"`, der Scroll
+            // daneben lief (er ist synchron), und in drei Sekunden kam kein
+            // einziges Bild. Ein Nutzer sieht seinen Tab meistens -- aber eine
+            // Zusage, die von der Sichtbarkeit abhaengt, ist keine.
+            //
+            // Ein MutationObserver haengt an dem Ereignis, um das es geht: dass
+            // der Inhalt ausgetauscht wurde. Er feuert auch ohne Zeichnen, und
+            // er feuert genau dann, wenn es die neue Ueberschrift gibt.
+            //
+            // **Das Fenster ist bewusst weit, die Wache davor bewusst eng.** Mit
+            // 600 ms sassen sechs der sieben Schritte -- "Pruefen & Starten"
+            // nicht: Vorschau und Zeitschaetzung zeichnen dort nach, und der
+            // letzte Austausch kam, als das Fenster schon zu war. Laenger zu
+            // lauschen ist nur dann harmlos, wenn dabei niemandem etwas
+            // weggenommen wird: Genommen wird der Fokus deshalb ausschliesslich,
+            // wenn ihn **niemand haelt** -- BODY, gar nichts, oder ein Knoten,
+            // den der Austausch gerade aus dem Dokument entfernt hat. Wer selbst
+            // irgendwohin geklickt oder getabbt ist, behaelt seinen Platz, und
+            // wer schon auf der Ueberschrift steht, wird nicht erneut angefasst.
+            var wirt = document.getElementById("wizard-content-host");
+            if (wirt) {
+                var setzen = function () {
+                    var aktiv = document.activeElement;
+                    var frei = !aktiv || aktiv === document.body || !document.contains(aktiv);
+                    if (!frei) { return; }
+                    var titel = wirt.querySelector("h1");
+                    if (titel) { titel.focus({ preventScroll: true }); }
+                };
+                var beob = new MutationObserver(setzen);
+                beob.observe(wirt, { childList: true, subtree: true });
+                window.setTimeout(function () { beob.disconnect(); }, 2500);
+                // Falls der Baum schon steht, bevor dieser Callback laeuft.
+                setzen();
+            }
             return window.dash_clientside.no_update;
         }
         """,
         Output(SCROLL_SINK, "data"),
-        Input(STEP_STORE, "data"),
+        # **Am Inhalt, nicht am Schritt-Store** (P1.9-W5.3). Der Store ändert
+        # sich, sobald jemand klickt — der neue Inhalt kommt erst mit der
+        # Antwort des Servers. Am Store hängend fokussierte der Callback die
+        # Überschrift des **alten** Schritts, die im selben Moment verschwand;
+        # am laufenden System stand der Fokus danach auf `BODY`. Der Wirt des
+        # Inhalts ändert sich genau dann, wenn es etwas zu fokussieren gibt.
+        Input(CONTENT_HOST, "children"),
         prevent_initial_call=True,
     )

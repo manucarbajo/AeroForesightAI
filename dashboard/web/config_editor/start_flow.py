@@ -618,7 +618,13 @@ def scenario_step(draft: dict, number: int | None = 1) -> object:
         "Die Annahmenwelt, von der der Lauf ausgeht. Ein vorbereitetes Szenario ist der "
         "schnellste Einstieg — es legt Faktorlage, Politik und Kosten in einem Zug fest.",
         ui.card(
-            ui.radio(choice_options(), value=of(draft), id=FIELD_ID, cards=True),
+            ui.radio(
+                choice_options(),
+                value=of(draft),
+                id=FIELD_ID,
+                cards=True,
+                legend="Was soll gerechnet werden? Die Annahmenwelt des Laufs.",
+            ),
             html.Div(scenario_details(draft), id=slot_id("scenario"), className="mt-5"),
         ),
         actions=ui.doc_link("presets"),
@@ -673,7 +679,12 @@ def mode_step(draft: dict, number: int | None = 3) -> object:
         "Faktorzustände berechnet immer das Rechenmodell. Die Auswahl bestimmt nur, wie "
         "viel dazu erzählt wird.",
         ui.card(
-            ui.radio(compute_mode.OPTIONS, value=compute_mode.of(draft), id=compute_mode.FIELD_ID),
+            ui.radio(
+                compute_mode.OPTIONS,
+                value=compute_mode.of(draft),
+                id=compute_mode.FIELD_ID,
+                legend="Womit wird gerechnet? Ob und wie die Agenten den Lauf deuten.",
+            ),
             html.Div(
                 compute_mode.placeholder("start"),
                 className="mt-5 pt-4 af-border-t af-border-subtle",
