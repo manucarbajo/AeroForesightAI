@@ -25,7 +25,6 @@ Plotly-Figuren serverseitig entstehen und ihr Template kennen müssen.
 from __future__ import annotations
 
 import argparse
-import json
 
 from dash import Dash, Input, Output, State, ctx, dcc, html, no_update
 
@@ -119,33 +118,16 @@ _INDEX_TEMPLATE = """<!DOCTYPE html>
                 } catch (e) {}
             })();
         </script>
-        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <!-- **Tailwind kommt aus `assets/00-tailwind.css`** (P1.4), erzeugt von
+             `npm run build:css`. Bis zum 2026-08-30 stand hier ein CDN-Skript,
+             das die Klassen zur Laufzeit erzeugte -- und dabei die IP jedes
+             Betrachters an einen fremden Host meldete. Die Zahlen im Dateinamen
+             sind keine Zierde: Dash laedt seine Assets alphabetisch, und
+             `dashboard.css` muss **nach** Tailwind kommen, sonst gewinnen dessen
+             Utilities gegen die af-Tokens. -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
-        <script>
-            // Identisch zur Landingpage, damit beide Seiten dieselben Tokens
-            // teilen. Farben stehen hier nur fuer die Landingpage-Utilities —
-            // das Dashboard faerbt ueber die Tokens in `dashboard.css`.
-            tailwind.config = {
-                darkMode: "class",
-                theme: {
-                    extend: {
-                        colors: { navy: __NAVY__ },
-                        borderRadius: {
-                            "DEFAULT": "0.5rem", "lg": "0.75rem",
-                            "xl": "1rem", "full": "9999px"
-                        },
-                        fontFamily: {
-                            "headline": ["Plus Jakarta Sans", "sans-serif"],
-                            "display": ["Plus Jakarta Sans", "sans-serif"],
-                            "body": ["Inter", "sans-serif"],
-                            "label": ["Inter", "sans-serif"]
-                        }
-                    }
-                }
-            }
-        </script>
         {%css%}
     </head>
     <body class="font-body antialiased">
@@ -158,11 +140,10 @@ _INDEX_TEMPLATE = """<!DOCTYPE html>
     </body>
 </html>"""
 
-#: Die Navy-Skala steht in `theme.NAVY`; hier wird sie in die Tailwind-Config
-#: der Seite eingesetzt, statt sie ein zweites Mal auszuschreiben. Zwei
-#: Fassungen derselben Palette waeren genau die Drift, die P0.2 an anderer
-#: Stelle gekostet hat.
-_INDEX = _INDEX_TEMPLATE.replace("__NAVY__", json.dumps(theme.NAVY))
+#: Die Palette steht seit P1.4 in `tailwind.config.js` und wird beim Build
+#: eingesetzt — nicht mehr zur Laufzeit in die Seite geschrieben. Das Template
+#: braucht deshalb keinen Platzhalter mehr.
+_INDEX = _INDEX_TEMPLATE
 
 
 # --- Zonen-Inhalte ---------------------------------------------------------

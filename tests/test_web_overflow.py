@@ -235,7 +235,33 @@ _SEITE_SCHIEBT = """
 
 
 def _befunde(page) -> list[dict]:
+    """Erst warten, bis die **Schriften** da sind, dann messen.
+
+    **Sonst misst man Ersatzzeichen.** Bis zum 2026-08-30 kam Tailwind als
+    CDN-Skript, das die Regeln zur Laufzeit erzeugte — das dauerte lange genug,
+    dass die Symbolschrift nebenher ankam. Mit dem lokalen Stylesheet ist die
+    Seite schneller da als die Schrift, und `chevron_right` wird für einen
+    Moment in der Ersatzschrift gesetzt: zwei Pixel breiter als sein Kasten.
+    Der Wächter meldete daraufhin einen Überlauf, den niemand je sieht.
+
+    Ein Wächter, der vom Ladezeitpunkt einer Schrift abhängt, ist keiner.
+    """
+
+    # **Auf das Versprechen warten, nicht auf den Status.** `document.fonts.status`
+    # steht schon auf `loaded`, wenn die Schriften der *vorigen* Ansicht da sind
+    # — fordert die neue eine weitere Schnittvariante an, misst man trotzdem zu
+    # früh. `document.fonts.ready` wartet auf alles, was gerade lauft.
+    try:
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+    except PlaywrightError:
+        # Ohne Netz laedt keine Webschrift; dann misst man eben die Ersatzschrift
+        # — besser als gar nicht zu messen, und der Fall faellt woanders auf.
+        pass
     page.wait_for_timeout(RUHE_MS)
+    try:
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+    except PlaywrightError:
+        pass
     return page.evaluate(_DETEKTOR)
 
 
@@ -1121,3 +1147,132 @@ def test_the_narrow_guard_would_notice_a_relapse(schmale_seite):
     assert (
         nachher["liste"] > LISTE_MAX
     ), f"Der Wächter übersieht eine gestapelte Schrittliste ({nachher['liste']} px)"
+
+
+# --- Teil 5: Jede benutzte Klasse hat eine Regel (P1.4) ----------------------
+#
+# Tailwind kommt seit dem 2026-08-30 aus einem Build statt vom CDN. Das
+# CDN-Skript erzeugte die Regeln zur Laufzeit aus dem, was im DOM stand — es
+# konnte gar nichts übersehen. Der Build kann: Er schreibt nur Regeln für
+# Klassen, die sein Scanner im Quelltext **findet**. Eine Klasse, die zur
+# Laufzeit aus Bruchstücken entsteht, fehlt dann **stumm** — kein Fehler, nur
+# ein Kasten, der anders aussieht.
+#
+# Dieser Wächter geht jede Ansicht durch, sammelt alle benutzten Klassennamen
+# aus dem gezeichneten DOM und hält sie gegen die Regeln in `document.styleSheets`.
+
+#: Klassen ohne eigene Gestaltung. Sie **markieren** etwas, statt es zu
+#: formen — für sie gibt es berechtigterweise keine Regel.
+#:
+#: `light` und `dark` sind die eigenen: Sie stehen am `<html>` und schalten
+#: das Design um (`darkMode: "class"`); jede Regel, die davon abhängt, nennt
+#: sie als Vorfahren, nicht als eigenes Ziel. Der Rest kommt von Dash und
+#: Plotly und markiert Elemente für deren eigenes JavaScript.
+FREMDE_KLASSEN = {
+    "light",
+    "dark",
+    "active",
+    "selected",
+    "_dash-loading-callback",
+}
+
+#: Präfixe derselben Art. Plotly bringt allein für seine Zeichenfläche ein
+#: Dutzend Marker mit (`gl-canvas`, `modebar-container`, …).
+FREMDE_PRAEFIXE = ("dash-", "plot-", "svg-", "gl-", "modebar", "js-plotly")
+
+_KLASSEN_OHNE_REGEL = """
+() => {
+    // **CSS-Escapes zurueckuebersetzen.** Eine Klasse, die mit einer Ziffer
+    // beginnt, steht als Hex-Escape im Stylesheet: `2xl:grid-cols-3` wird zu
+    // `.\\32 xl\\:grid-cols-3` -- mit einem Leerzeichen, das die Escape-Sequenz
+    // beendet. Ein naiver Ausdruck bricht dort ab und meldet die Klasse als
+    // regellos. Genau das ist beim ersten Durchlauf passiert.
+    const entschluesseln = (s) => s.replace(
+        /\\\\([0-9a-fA-F]{1,6})[ ]?|\\\\(.)/g,
+        (_, hex, roh) => hex ? String.fromCodePoint(parseInt(hex, 16)) : roh
+    );
+
+    const regeln = new Set();
+    const sammeln = (liste) => {
+        for (const r of liste) {
+            // In `@media` und `@supports` steigen: Dort liegen alle
+            // responsiven Varianten. Ohne das meldet der Waechter jede
+            // `sm:`- und `lg:`-Klasse als fehlend.
+            if (r.cssRules) { sammeln(r.cssRules); }
+            const sel = r.selectorText;
+            if (!sel) { continue; }
+            const treffer = sel.match(/\\.(?:\\\\[0-9a-fA-F]{1,6}[ ]?|\\\\.|[-_a-zA-Z0-9])+/g) || [];
+            treffer.forEach((m) => regeln.add(entschluesseln(m.slice(1))));
+        }
+    };
+    for (const sheet of document.styleSheets) {
+        try { sammeln(sheet.cssRules); } catch (e) { /* fremdes Blatt */ }
+    }
+
+    const benutzt = new Set();
+    document.querySelectorAll("*").forEach((el) => {
+        if (typeof el.className === "string") {
+            el.className.split(/\\s+/).filter(Boolean).forEach((c) => benutzt.add(c));
+        }
+    });
+
+    return [...benutzt].filter((c) => !c.startsWith("af-") && !regeln.has(c));
+}
+"""
+
+
+def _klassen_ohne_regel(page) -> list[str]:
+    roh = page.evaluate(_KLASSEN_OHNE_REGEL)
+    return sorted(c for c in roh if c not in FREMDE_KLASSEN and not c.startswith(FREMDE_PRAEFIXE))
+
+
+class TestJedeBenutzteKlasseHatEineRegel:
+    """Der Build darf nichts übersehen, was das CDN noch gefunden hätte."""
+
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_no_class_lost_its_rule(self, page, name):
+        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS)
+
+        ohne = _klassen_ohne_regel(page)
+
+        assert not ohne, (
+            f"Diese Klassen werden in «{name}» benutzt, haben aber keine Regel:\n  "
+            + "\n  ".join(ohne)
+            + "\n\nTailwind schreibt nur Regeln für Klassen, die sein Scanner im "
+            "Quelltext findet (`content` in `tailwind.config.js`). Eine zur "
+            "Laufzeit zusammengesetzte Klasse findet er nicht."
+        )
+
+    def test_the_landing_page_too(self, page):
+        """Sie teilt sich das Stylesheet mit dem Dashboard."""
+
+        page.goto(page.basis.replace("/app/", "/"), wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS)
+
+        assert not _klassen_ohne_regel(page)
+
+
+def test_the_class_guard_would_notice_a_relapse(page):
+    """Eine Klasse, die der Build nicht kennt, muss auffallen.
+
+    `mt-[999px]` ist gültiges Tailwind und steht in keinem Quelltext — genau
+    der Fall, den eine zur Laufzeit zusammengesetzte Klasse erzeugt.
+    """
+
+    page.goto(page.basis, wait_until="networkidle")
+    page.wait_for_timeout(RUHE_MS)
+    assert not _klassen_ohne_regel(page)
+
+    page.evaluate("""
+        () => {
+          const d = document.createElement('div');
+          d.className = 'mt-[999px] af-echt-egal';
+          document.body.appendChild(d);
+        }
+        """)
+
+    assert "mt-[999px]" in _klassen_ohne_regel(page), (
+        "Der Wächter übersieht eine Klasse ohne Regel — dann bricht der nächste "
+        "Build die Darstellung still."
+    )

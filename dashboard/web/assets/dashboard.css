@@ -1797,7 +1797,24 @@ html.dark .af-input[type="number"] {
     background: var(--surface-hover);
 }
 
+/* **Ein Symbol darf seine Zeile nicht schieben** (P1.4).
+
+   Der Chevron hatte keine eigene Groesse -- er war so breit, wie die
+   Symbolschrift ihn setzte. Solange Tailwind vom CDN kam und seine
+   Grundregeln **nach** diesem Stylesheet einspielte, ging das gut; mit dem
+   lokalen Build kommen sie davor, und der Ueberlauf-Waechter meldete in der
+   Szenario-Ansicht prompt zwei Pixel.
+
+   Zwei Pixel sind kein Drama -- aber ein Icon, dessen Kasten von einer
+   Schriftmetrik abhaengt, ist eine Feder, die irgendwann kippt. Es bekommt
+   deshalb eine feste Groesse, schrumpft nicht und waechst nicht. */
 .af-acc__chevron {
+    flex: 0 0 auto;
+    width: 1.125rem;
+    height: 1.125rem;
+    line-height: 1;
+    text-align: center;
+    overflow: hidden;
     transition: transform 0.2s ease;
 }
 

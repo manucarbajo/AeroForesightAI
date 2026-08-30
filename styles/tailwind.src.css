@@ -1,0 +1,12 @@
+/* Die Quelle des Tailwind-Builds (P1.4).
+
+   Mehr als diese drei Zeilen steht hier nicht: Das Aussehen des Dashboards
+   kommt aus `dashboard/web/assets/dashboard.css` und den Tokens darin —
+   Tailwind liefert Layout, Abstand und Typografie, die Farbe kommt als
+   `af-*`-Klasse (Regel 4 der Dashboard-Regeln in CLAUDE.md).
+
+   Erzeugt wird daraus `dashboard/web/assets/tailwind.css`; welche Regeln darin
+   landen, entscheidet `content` in `tailwind.config.js`. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

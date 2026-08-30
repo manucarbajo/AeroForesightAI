@@ -118,6 +118,30 @@ python -m dashboard.web.app --port 8511                       # Landingpage auf 
 python -m streamlit run dashboard/legacy_streamlit/app_researcher.py --server.port=8512   # Legacy-Vergleich
 ```
 
+**Das Stylesheet wird gebaut, nicht geladen** (seit P1.4). Tailwind kam bis dahin
+als Laufzeit-Skript von `cdn.tailwindcss.com` — jeder Seitenaufruf meldete damit
+die IP des Betrachters an einen fremden Host, was dem Deployment-Ziel Datenhoheit
+direkt widerspricht. Erzeugt wird `dashboard/web/assets/00-tailwind.css`:
+
+```powershell
+npm install
+npm run build:css
+```
+
+Drei Dinge dazu, die man wissen muss:
+
+- **Die erzeugte Datei ist versioniert.** Ein frischer Checkout soll ohne
+  Node-Werkzeugkette richtig aussehen — auf dem Hetzner-Server läuft keine, und
+  wer nur an der Engine arbeitet, braucht keine. Wer Klassen ändert, baut neu.
+- **Die Ziffern im Dateinamen sind keine Zierde.** Dash lädt seine Assets
+  alphabetisch, und `dashboard.css` muss **nach** Tailwind kommen — sonst
+  gewinnen dessen Utilities gegen die `af-*`-Tokens.
+- **Eine vergessene Neuerzeugung fällt auf.** Tailwind schreibt nur Regeln für
+  Klassen, die sein Scanner im Quelltext findet; eine zur Laufzeit
+  zusammengesetzte findet er nicht, und ihre Regel fehlt dann **stumm**. Dagegen
+  steht Teil 5 des Browser-Wächters: Er sammelt jede im gezeichneten DOM
+  benutzte Klasse und hält sie gegen die vorhandenen Regeln.
+
 Ohne Aktivierung liegen `pytest`, `ruff` und `black` nicht auf dem PATH — dann entweder aktivieren oder direkt aufrufen: `.\.venv\Scripts\ruff.exe check .`. Ein `python`, das nicht aus `.venv` kommt, findet das Paket `src` nicht, weil `pip install -e` nur ins venv geschrieben hat.
 
 **Warum das eine Konvention und keine Empfehlung ist:** [`.claude/launch.json`](.claude/launch.json) startet das Dashboard über `.venv/Scripts/python.exe`. Diese relative Angabe funktioniert auf jedem Rechner — aber nur, wenn das venv wirklich `.venv` heißt und dort liegt. Bis 2026-08-26 stand dort ein absoluter Pfad in ein fremdes Benutzerverzeichnis; das Dashboard ließ sich damit auf keinem anderen Rechner starten. Die Datei bleibt deshalb bewusst **versioniert** und gehört nicht in `.gitignore`: eine relative Angabe ist für alle richtig, eine ignorierte Datei müsste jede und jeder neu erfinden.
