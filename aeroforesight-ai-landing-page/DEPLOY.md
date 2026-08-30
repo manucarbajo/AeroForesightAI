@@ -44,6 +44,12 @@
    Auf dem Server ist dafür **keine** Node-Installation nötig — die erzeugte
    Datei liegt im Checkout.
 
+   Dasselbe gilt für die Schriften: Sie liegen unter
+   `dashboard/web/assets/fonts/` und werden von `assets/01-schriften.css`
+   eingebunden. Kein Seitenaufruf fragt bei Google nach. Neu geholt werden sie
+   mit `python scripts/schriften_holen.py` — nur nötig, wenn ein Symbol
+   dazukommt.
+
 5. **Kontaktdaten prüfen.** Aktuell hinterlegt: `info@aeroforesight.ai`, „Hochschule der Medien“.
 6. **Analytics ergänzen**, falls gewünscht (Plausible, PostHog, Matomo).
 7. **Mobil.** Alle fünf Seiten sind responsiv und bei 375px Breite geprüft (kein horizontaler

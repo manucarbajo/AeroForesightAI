@@ -128,6 +128,21 @@ npm install
 npm run build:css
 ```
 
+**Und die Schriften liegen im Repo**, geholt von `scripts/schriften_holen.py`
+(einmalig, nicht zur Laufzeit) nach `dashboard/web/assets/fonts/` samt
+`01-schriften.css`. Material Symbols ist dabei ein **Teilsatz** über Google
+Fonts' `icon_names=`: **5 KiB** statt Megabyte. Der Preis dafür ist eine stille
+Fehlerart — ein Symbolname, der nicht im Ausschnitt steckt, erscheint als sein
+eigener Text («chevron_right» in Buchstaben statt als Pfeil). Wer ein Symbol
+hinzufügt, trägt es in `SYMBOLE` ein und lässt das Skript laufen;
+`tests/test_symbolschrift.py` liest per AST **jeden** benutzten Namen aus und
+sagt es ihm sonst. Beim ersten Durchlauf hat er drei gefunden, an die niemand
+gedacht hatte.
+
+**Die Zusage «kein Aufruf verlässt den Server» ist gemessen, nicht behauptet:**
+Teil 6 des Browser-Wächters hört die Netzwerkanfragen jeder Ansicht und jeder
+Landingpage-Seite mit.
+
 Drei Dinge dazu, die man wissen muss:
 
 - **Die erzeugte Datei ist versioniert.** Ein frischer Checkout soll ohne

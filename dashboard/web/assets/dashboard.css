@@ -2878,6 +2878,17 @@ html.dark .af-input[type="number"] {
         border: 0;
     }
 
+    /* **Und die Beschriftungen brechen nicht um** (P1.4). Solange die
+       Schriften von Google kamen, mass der Waechter teils die Ersatzschrift --
+       die setzt schmaler. Mit den lokalen Schriften und dem Warten auf
+       `document.fonts.ready` misst er die echten Metriken, und «Lauf starten»
+       brach in zwei Zeilen: 79 px statt der zugesagten 72. Ein Knopf in einer
+       einzeiligen Leiste darf nicht umbrechen; passt er nicht, ist die Leiste
+       falsch, nicht die Zeile. */
+    .af-wizard__nav button {
+        white-space: nowrap;
+    }
+
     /* Die Fußleiste bleibt eine Zeile. `flex-wrap: wrap` war der Grund für die
        133 px; ohne Umbruch und mit knapperem Innenabstand bleibt sie unter der
        Höhe eines Knopfes plus Luft. */

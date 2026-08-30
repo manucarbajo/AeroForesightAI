@@ -25,7 +25,7 @@ funktionieren damit unter jeder Domain, ohne Anpassung.
 ## Aufbau
 
 Statische HTML-Seiten ohne Build-Schritt und ohne lokale Dateien: Tailwind
-kommt seit dem 2026-08-30 aus einem lokalen Build, Schriften noch über Google Fonts, alle Illustrationen sind
+kommt seit dem 2026-08-30 aus einem lokalen Build, die Schriften liegen im Repo, alle Illustrationen sind
 Inline-SVG. Deshalb genügt es, sie zu servieren —
 `dashboard/web/landing_route.py` meldet dafür zwei Flask-Routen an und prüft
 jede Anfrage gegen die tatsächlich vorhandenen Dateien.
@@ -41,12 +41,15 @@ in der Tailwind-Konfiguration in `dashboard/web/app.py`.
 2. **Rechtstexte sind Platzhalter.** Alle mit `[…]` markierten Stellen müssen
    ersetzt und rechtlich geprüft werden. Der gelbe Hinweisblock auf den drei
    Seiten muss vor Veröffentlichung raus.
-3. **Schriften über Google Fonts.** Betrifft Landingpage und Dashboard
-   gleichermaßen; für ein Deployment mit Datenhoheit müssen sie lokal
-   ausgeliefert werden. — **Tailwind ist am 2026-08-30 erledigt worden**: Es
-   kommt aus einem lokalen Build (`npm run build:css` →
-   `dashboard/web/assets/00-tailwind.css`), und ein Wächter hält fest, dass
-   keine benutzte Klasse ohne Regel bleibt.
+3. ~~**Tailwind und Schriften über CDN.**~~ **Erledigt am 2026-08-30.**
+   Tailwind kommt aus einem lokalen Build (`npm run build:css` →
+   `assets/00-tailwind.css`), die Schriften aus dem Repo
+   (`scripts/schriften_holen.py` → `assets/fonts/` und `01-schriften.css`).
+   Material Symbols ist ein Teilsatz von 5 KiB statt der vollständigen
+   variablen Schrift. Drei Wächter halten das: keine benutzte Klasse ohne
+   Regel, kein benutztes Symbol außerhalb des Teilsatzes, und — die Zusage
+   selbst — **keine Netzwerkanfrage an einen fremden Host**, gemessen über
+   alle Bereiche und alle fünf Seiten.
 
 Deployment-Schritte: `aeroforesight-ai-landing-page/DEPLOY.md`.
 

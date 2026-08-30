@@ -125,9 +125,10 @@ _INDEX_TEMPLATE = """<!DOCTYPE html>
              sind keine Zierde: Dash laedt seine Assets alphabetisch, und
              `dashboard.css` muss **nach** Tailwind kommen, sonst gewinnen dessen
              Utilities gegen die af-Tokens. -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
+        <!-- Die Schriften kommen aus `assets/01-schriften.css` und
+             `assets/fonts/` (P1.4), geholt von `scripts/schriften_holen.py`.
+             Bis zum 2026-08-30 stand hier ein Verweis auf `fonts.googleapis.com`
+             — jeder Seitenaufruf meldete damit die IP des Betrachters dorthin. -->
         {%css%}
     </head>
     <body class="font-body antialiased">

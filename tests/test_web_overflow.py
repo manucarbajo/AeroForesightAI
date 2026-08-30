@@ -421,7 +421,13 @@ DECKEL: dict[int, dict[str, float]] = {
     },
     1024: {
         "Einstieg": 1.00,
-        "Schritt 1": 1.31,
+        # **1,31 → 1,37, und das ist keine Aenderung am Schritt** (P1.4).
+        # Bis dahin kamen die Schriften von Google, und der Waechter mass,
+        # bevor sie da waren -- teils also die Ersatzschrift, die schmaler
+        # setzt. Mit den lokalen Schriften und dem Warten auf
+        # `document.fonts.ready` misst er zum ersten Mal durchgehend die
+        # echten Metriken. Die alte Zahl war zu guenstig, nicht diese zu hoch.
+        "Schritt 1": 1.37,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         "Schritt 4": 1.34,
@@ -1275,4 +1281,197 @@ def test_the_class_guard_would_notice_a_relapse(page):
     assert "mt-[999px]" in _klassen_ohne_regel(page), (
         "Der Wächter übersieht eine Klasse ohne Regel — dann bricht der nächste "
         "Build die Darstellung still."
+    )
+
+
+# --- Teil 6: Kein Aufruf verlässt den eigenen Server (P1.4) ------------------
+#
+# **Die Zusage von P1.4 im Wortlaut**, als Messung statt als Behauptung: «Ein
+# Seitenaufruf erzeugt keine Anfrage an einen externen Host.»
+#
+# Bis zum 2026-08-30 meldete jeder Aufruf die IP des Betrachters an
+# `cdn.tailwindcss.com` und `fonts.googleapis.com` — auf allen fünf
+# Landingpage-Seiten und im Dashboard. Das widerspricht dem Deployment-Ziel
+# Datenhoheit direkt; bei Google Fonts kommt die deutsche Rechtslage dazu.
+#
+# Ein Test, der die Quelltexte nach Hostnamen durchsucht, fände nur, was jemand
+# hingeschrieben hat. Dieser hört zu, **was der Browser wirklich tut**.
+
+
+def _fremde_anfragen(page, url: str) -> list[str]:
+    """Jede Anfrage, die nicht an den eigenen Server geht."""
+
+    from urllib.parse import urlparse
+
+    eigener = urlparse(page.basis).netloc
+    fremd: list[str] = []
+
+    def mithoeren(anfrage) -> None:
+        ziel = urlparse(anfrage.url)
+        if ziel.scheme in ("http", "https") and ziel.netloc != eigener:
+            fremd.append(anfrage.url)
+
+    page.on("request", mithoeren)
+    try:
+        page.goto(url, wait_until="networkidle")
+        # Schriften werden erst angefordert, wenn ein Zeichen sie braucht.
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+        page.wait_for_timeout(RUHE_MS)
+    finally:
+        page.remove_listener("request", mithoeren)
+    return fremd
+
+
+class TestKeinAufrufVerlaesstDenServer:
+    """Datenhoheit ist kein Vorsatz, sondern eine messbare Eigenschaft."""
+
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_no_area_of_the_dashboard_phones_home(self, page, name):
+        fremd = _fremde_anfragen(page, page.basis + BEREICHE[name])
+
+        assert not fremd, f"«{name}» lädt von fremden Hosts:\n  " + "\n  ".join(sorted(set(fremd)))
+
+    def test_no_page_of_the_landing_site_phones_home(self, page):
+        """Sie ist die einzige öffentlich sichtbare Oberfläche."""
+
+        basis = page.basis.replace("/app/", "/")
+        befunde: dict[str, list[str]] = {}
+        for seite in ("", "demo-anfragen.html", "impressum.html", "datenschutz.html", "agb.html"):
+            fremd = _fremde_anfragen(page, basis + seite)
+            if fremd:
+                befunde[seite or "index.html"] = sorted(set(fremd))
+
+        assert not befunde, f"Diese Seiten laden von fremden Hosts: {befunde}"
+
+
+def test_the_network_guard_would_notice_a_relapse(page):
+    """Ein Wächter, der nie etwas sieht, könnte auch blind sein.
+
+    Nachgestellt wird genau der alte Zustand: ein Stylesheet von einem fremden
+    Host. Der Browser darf es ruhig nicht laden — **die Anfrage** ist der
+    Befund, nicht die Antwort.
+    """
+
+    page.goto(page.basis, wait_until="networkidle")
+
+    from urllib.parse import urlparse
+
+    eigener = urlparse(page.basis).netloc
+    gesehen: list[str] = []
+    page.on(
+        "request",
+        lambda a: gesehen.append(a.url) if urlparse(a.url).netloc != eigener else None,
+    )
+    page.evaluate("""
+        () => {
+          const l = document.createElement('link');
+          l.rel = 'stylesheet';
+          l.href = 'https://fonts.googleapis.com/css2?family=Inter';
+          document.head.appendChild(l);
+        }
+        """)
+    page.wait_for_timeout(RUHE_MS)
+
+    assert any("fonts.googleapis.com" in u for u in gesehen), (
+        "Der Wächter übersieht eine Anfrage an einen fremden Host — dann ist " "seine Zusage keine."
+    )
+
+
+# --- Teil 7: Kein Symbol steht als Wort da (P1.4) ---------------------------
+#
+# **Dieser Wächter ist aus einem Fehlschlag entstanden.** Die Symbolschrift ist
+# ein Teilsatz — 5 KiB statt Megabyte —, und ein Name, der nicht darin steckt,
+# wird als Text gesetzt: «radio_button_unchecked» in Buchstaben statt als
+# Kreis. Dagegen stand ein AST-Durchlauf über `dashboard/web/`
+# (`tests/test_symbolschrift.py`), der jeden Symbolnamen an einer Aufrufstelle
+# einsammelt.
+#
+# Er hat vier übersehen. Die Zustände der Schrittliste stehen in einem
+# Modul-Dict (`_ZUSTAENDE` in `wizard.py`) und werden von dort in den Aufruf
+# gereicht — im Aufruf selbst steht eine Variable. Der Überlauf-Wächter meldete
+# daraufhin sieben Kästen, die um bis zu **308 px** aus der Schrittliste traten.
+#
+# **Ein Parser findet, was jemand hingeschrieben hat. Eine Messung findet, was
+# wirklich dasteht.** Dieser Wächter liest den gezeichneten Text jedes
+# Symbol-Elements und hält ihn gegen den Teilsatz — gleich, aus welcher Quelle
+# der Name kommt.
+
+_SYMBOLE_IM_DOM = """
+() => {
+    const namen = new Set();
+    document.querySelectorAll(".material-symbols-outlined").forEach((el) => {
+        const text = (el.textContent || "").trim();
+        if (text) { namen.add(text); }
+    });
+    return [...namen];
+}
+"""
+
+
+def _symbole_der_ansicht(page) -> set[str]:
+    page.evaluate("() => document.fonts.ready.then(() => true)")
+    page.wait_for_timeout(RUHE_MS)
+    return set(page.evaluate(_SYMBOLE_IM_DOM))
+
+
+class TestKeinSymbolStehtAlsWortDa:
+    """Der Teilsatz deckt, was gezeichnet wird — nicht, was jemand aufgeschrieben hat."""
+
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_every_rendered_icon_is_in_the_subset(self, page, name):
+        from scripts.schriften_holen import SYMBOLE
+
+        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
+        fehlend = sorted(_symbole_der_ansicht(page) - set(SYMBOLE))
+
+        assert not fehlend, (
+            f"«{name}» zeichnet Symbole, die nicht im Teilsatz stecken:\n  "
+            + "\n  ".join(fehlend)
+            + "\n\nSie erscheinen als Wort. Eintragen in `SYMBOLE` "
+            "(scripts/schriften_holen.py), dann das Skript laufen lassen."
+        )
+
+    def test_the_steps_of_the_wizard_too(self, page):
+        """Genau hier ist es passiert: vier Namen aus einem Modul-Dict."""
+
+        from scripts.schriften_holen import SYMBOLE
+
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+        page.click("#wizard-way-new")
+        page.wait_for_timeout(RUHE_MS)
+
+        gezeichnet = _symbole_der_ansicht(page)
+
+        assert "radio_button_checked" in gezeichnet, "Die Schrittliste wird nicht gezeichnet"
+        assert not gezeichnet - set(SYMBOLE)
+
+    def test_the_landing_page_too(self, page):
+        from scripts.schriften_holen import SYMBOLE
+
+        page.goto(page.basis.replace("/app/", "/"), wait_until="networkidle")
+
+        assert not _symbole_der_ansicht(page) - set(SYMBOLE)
+
+
+def test_the_symbol_guard_would_notice_a_relapse(page):
+    """Ein Name, den der Teilsatz nicht kennt, muss auffallen."""
+
+    from scripts.schriften_holen import SYMBOLE
+
+    page.goto(page.basis, wait_until="networkidle")
+    assert not _symbole_der_ansicht(page) - set(SYMBOLE)
+
+    page.evaluate("""
+        () => {
+          const s = document.createElement('span');
+          s.className = 'material-symbols-outlined';
+          s.textContent = 'rocket_launch';
+          document.body.appendChild(s);
+        }
+        """)
+
+    assert "rocket_launch" in _symbole_der_ansicht(page) - set(SYMBOLE), (
+        "Der Wächter übersieht ein Symbol außerhalb des Teilsatzes — dann steht "
+        "beim nächsten Mal wieder ein Wort im Bild."
     )
