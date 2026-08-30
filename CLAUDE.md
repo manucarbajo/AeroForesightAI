@@ -151,11 +151,16 @@ Drei Dinge dazu, die man wissen muss:
 - **Die Ziffern im Dateinamen sind keine Zierde.** Dash lädt seine Assets
   alphabetisch, und `dashboard.css` muss **nach** Tailwind kommen — sonst
   gewinnen dessen Utilities gegen die `af-*`-Tokens.
-- **Eine vergessene Neuerzeugung fällt auf.** Tailwind schreibt nur Regeln für
-  Klassen, die sein Scanner im Quelltext findet; eine zur Laufzeit
-  zusammengesetzte findet er nicht, und ihre Regel fehlt dann **stumm**. Dagegen
-  steht Teil 5 des Browser-Wächters: Er sammelt jede im gezeichneten DOM
-  benutzte Klasse und hält sie gegen die vorhandenen Regeln.
+- **Eine vergessene Neuerzeugung fällt auf, und zwar zweimal.** Tailwind
+  schreibt nur Regeln für Klassen, die sein Scanner im Quelltext findet; wer
+  eine hinzufügt und nicht neu baut, hinterlässt ein Stylesheet, dem eine Regel
+  fehlt — kein Fehler, nur ein Kasten, der anders aussieht.
+  `tests/test_stylesheet_aktuell.py` baut daneben neu und vergleicht (Sekunden,
+  überspringt sich ohne Node); Teil 5 des Browser-Wächters sammelt zusätzlich
+  jede im gezeichneten DOM benutzte Klasse und hält sie gegen die vorhandenen
+  Regeln — der findet auch die zur Laufzeit zusammengesetzte, die kein Scanner
+  sieht. **Beides gibt es, weil genau das am 2026-08-30 passiert ist:** Zwei
+  Commits gingen mit einem veralteten Stylesheet hinaus.
 
 Ohne Aktivierung liegen `pytest`, `ruff` und `black` nicht auf dem PATH — dann entweder aktivieren oder direkt aufrufen: `.\.venv\Scripts\ruff.exe check .`. Ein `python`, das nicht aus `.venv` kommt, findet das Paket `src` nicht, weil `pip install -e` nur ins venv geschrieben hat.
 
