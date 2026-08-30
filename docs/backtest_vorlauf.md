@@ -1,0 +1,46 @@
+# Backtest-Vorlauf 2015–2024
+
+> Erzeugt von `python -m src.backtest.vorlauf`. **Diese Datei wird überschrieben** — wer ein Ergebnis festhalten will, kopiert es heraus.
+
+## Ergebnis
+
+| Jahr | Modell | Zielreihe | Abstand | |
+| --- | ---: | ---: | ---: | --- |
+| 2015 | 100.00 | 100.00 | +0.00 |  |
+| 2016 | 93.86 | 97.42 | -3.56 |  |
+| 2017 | 107.78 | 102.64 | +5.14 |  |
+| 2018 | 104.84 | 104.95 | -0.11 |  |
+| 2019 | 106.62 | 107.00 | -0.38 |  |
+| 2020 | 101.35 | 102.48 | -1.13 | ungewertet |
+| 2021 | 104.80 | 105.98 | -1.18 | ungewertet |
+| 2022 | 105.97 | 131.93 | -25.96 |  |
+| 2023 | 101.17 | 144.57 | -43.40 |  |
+| 2024 | 102.46 | 148.25 | -45.79 |  |
+
+| Kennzahl | Wert |
+| --- | ---: |
+| Mittlerer Abstand, bewertete Jahre | 15.54 |
+| Größter Abstand | 45.79 (2024) |
+| davon 2015–2019 | 1.84 |
+| davon 2022–2024 | 38.38 |
+| Richtung der Jahresveränderung getroffen | 4/7 |
+| Saisonschwankung Modell / Ziel | 11.7 / 39.8 |
+
+## Was das heißt
+
+- Verglichen wird der Index (Basis 2015 = 100) auf **Jahresmitteln**, nicht das Preisniveau und nicht monatlich.
+- Die absoluten Euro-Beträge des Modells hängen an ungeeichten Koeffizienten (P2.1); ein Niveauvergleich prüfte eine Genauigkeit, die nie behauptet wurde.
+- 2020, 2021 sind mitgerechnet, aber nicht bewertet: Der Einbruch war keine Preiswirkung, und das Modell kennt keine Reisebeschränkung.
+- Die Zielreihe schwankt saisonal um 40 Indexpunkte im Jahr, das Modell um 12. **Ein Monatsvergleich misst deshalb vor allem die fehlende Saison** — deswegen die Jahresmittel.
+
+## Datenquellen
+
+| Reihe | Monate | Abgerufen | Herkunft |
+| --- | ---: | --- | --- |
+| `eua_auktionspreis.csv` | 119 | 2026-08-30 | EEX, Emission Spot Primary Market Auction Report. |
+| `brent_rohoel.csv` | 120 | 2026-08-30 | Europe Brent Spot Price FOB, Monatsmittel. |
+| `hicp_flugreisen.csv` | 120 | 2026-08-30 | Eurostat `prc_hicp_midx`, COICOP `CP0733` (Passenger transport by air), EU-27, Index 2015 = 100. |
+
+Fenster: 2015-01 bis 2024-12. Nicht bewertet: 2020, 2021.
+
+> Der Einbruch 2020 war keine Preiswirkung, sondern Folge von Reisebeschränkungen. Das Modell hat dafür keinen Mechanismus. Die Jahre werden mitgerechnet und gezeigt, aber nicht bewertet — sonst bestätigte der Backtest eine Eingabe statt einer Rechnung.
