@@ -45,6 +45,24 @@ Für einen schnellen Test der Zahlen brauchen Sie also kein Sprachmodell. Für d
 Präsentation eines Szenarios brauchen Sie eines, weil die Deutung dort den
 Unterschied macht.
 
+## Die eine Ausnahme — und wie man sie erkennt
+
+Ein Szenario-Narrativ nennt Wirkbeziehungen zwischen Faktoren: «F2.2 wirkt auf
+F5.2 mit +3». Diese Zahlen sind **vom Sprachmodell behauptet**, nicht aus der
+CIB-Matrix gerechnet. Sie werden nirgends weiterverwendet — sie gehören zur
+Erzählung —, aber sie sehen aus wie Matrixwerte.
+
+Damit man sie nicht verwechselt, tragen sie ihre Herkunft **im Namen**: Im
+Artefakt heißt das Feld `behaupteter_einfluss`, nicht `influence`; die
+gerechneten Kandidaten stehen unter `gerechnete_szenarien`, die Erzählung unter
+`erzaehlte_szenarien`, und beide Sammlungen führen ein Feld `herkunft`. Im
+Bericht `scenarios.md` steht über den Werten «Vom Sprachmodell behauptete
+Wirkbeziehungen».
+
+Bis August 2026 lagen beide unter Namen, die sich um ein Wort unterschieden
+(`scenarios` und `scenario_candidates`), und das behauptete Feld hieß genau wie
+der echte Matrixwert.
+
 ## Wie man es überprüft
 
 Vertrauen ist gut, Nachsehen ist eingebaut. In der Ansicht **Abfrage** blenden Sie über

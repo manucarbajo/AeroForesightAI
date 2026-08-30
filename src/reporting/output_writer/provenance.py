@@ -46,10 +46,13 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 RUN_PRODUCED_MATRIX_METADATA: frozenset[str] = frozenset(
     {
         "consistency_score",
-        "scenarios",
-        "scenario_candidates",
-        "scenario_consistency",
-        "scenario_llm_payload",
+        # **Zwei Schlüssel seit P1.3**, die sich nicht um ein Wort
+        # unterscheiden. Vorher waren es vier: `scenarios` (das LLM-Narrativ),
+        # `scenario_candidates` (die gerechneten Kandidaten),
+        # `scenario_consistency` und `scenario_llm_payload` — zwei davon
+        # Doppelungen des jeweils anderen.
+        "gerechnete_szenarien",
+        "erzaehlte_szenarien",
     }
 )
 

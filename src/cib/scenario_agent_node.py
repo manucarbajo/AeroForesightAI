@@ -8,6 +8,12 @@ from typing import Any, Protocol
 from src.cib.scenario_consistency import ScenarioDeriver, scenarios_to_dict
 from src.models.cib_models import DESCRIPTOR_IDS, MAX_INFLUENCE, MIN_INFLUENCE, CIBMatrix
 from src.models.llm_models import LLMIncident
+from src.models.scenario_models import (
+    ErzaehltesSzenario,
+    ErzaehlteSzenarien,
+    GerechnetesSzenario,
+    GerechneteSzenarien,
+)
 from src.models.state_models import SimulationState
 
 logger = logging.getLogger(__name__)
@@ -59,16 +65,30 @@ def _top_influences(matrix: CIBMatrix, limit: int = 40) -> list[dict[str, Any]]:
     return items[:limit]
 
 
-def _build_consistent_scenarios(state: SimulationState) -> dict[str, Any]:
+def _build_consistent_scenarios(state: SimulationState) -> GerechneteSzenarien:
+    """Die deterministisch abgeleiteten Kandidaten — **typisiert** (P1.3).
+
+    Diese Funktion gab ihren Teil bis zum 2026-08-30 als rohes Dict unter dem
+    Schlüssel `"scenarios"` zurück — demselben Namen, unter dem der Aufrufer
+    danach das **LLM-Narrativ** ablegte. Derselbe Name für beide Seiten der
+    Grenze, einmal innen, einmal außen.
+    """
+
     if state.cib_matrix is None:
-        return {"scenarios": [], "metadata": {}}
+        return GerechneteSzenarien()
 
     deriver = ScenarioDeriver(state.cib_matrix)
     derived = deriver.derive_scenarios(top_n=3, allow_inconsistent=False)
-    return scenarios_to_dict(derived)
+    roh = scenarios_to_dict(derived)
+    return GerechneteSzenarien(
+        matrix_round=roh.get("matrix_round"),
+        total_evaluated=int(roh.get("total_evaluated") or 0),
+        consistent_count=int(roh.get("consistent_count") or 0),
+        szenarien=[GerechnetesSzenario(**s) for s in roh.get("scenarios", [])],
+    )
 
 
-def _build_scenario_prompt(state: SimulationState, consistent_payload: dict[str, Any]) -> str:
+def _build_scenario_prompt(state: SimulationState, gerechnet: GerechneteSzenarien) -> str:
     if state.cib_matrix is None:
         raise ValueError("ScenarioAgentNode requires state.cib_matrix")
 
@@ -78,7 +98,7 @@ def _build_scenario_prompt(state: SimulationState, consistent_payload: dict[str,
     top_json = json.dumps(top, ensure_ascii=False, indent=2)
     scores = matrix.factor_scores or []
     scores_json = json.dumps([s.model_dump() for s in scores], ensure_ascii=False, indent=2)
-    consistent_json = json.dumps(consistent_payload, ensure_ascii=False, indent=2)
+    consistent_json = json.dumps(gerechnet.model_dump(), ensure_ascii=False, indent=2)
 
     return f"""{SCENARIO_SYSTEM_PROMPT}
 
@@ -198,7 +218,10 @@ def _normalize_key_relationships(items: Any) -> list[dict[str, Any]]:
             {
                 "source": src,
                 "target": tgt,
-                "influence": _clamp_influence(item.get("influence")),
+                # **`behaupteter_einfluss`, nicht `influence`** (P1.3): Der Wert
+                # kommt aus dem Sprachmodell, nicht aus der Matrix. Unter dem
+                # alten Namen stand er im selben Vokabular wie `CIBCell.influence`.
+                "behaupteter_einfluss": _clamp_influence(item.get("influence")),
                 "why": str(item.get("why", "")).strip(),
             }
         )
@@ -259,17 +282,18 @@ class ScenarioAgentNode:
         if state.cib_matrix is None:
             return state
 
-        consistent_payload = _build_consistent_scenarios(state)
+        gerechnet = _build_consistent_scenarios(state)
         if state.cib_matrix.metadata is None:
             state.cib_matrix.metadata = {}
-        state.cib_matrix.metadata["scenario_candidates"] = consistent_payload.get("scenarios", [])
-        state.cib_matrix.metadata["scenario_consistency"] = consistent_payload.get("metadata", {})
+        # **Zwei Schlüssel, die sich nicht um ein Wort unterscheiden** (P1.3).
+        # Vorher: `scenario_candidates` und `scenarios`.
+        state.cib_matrix.metadata["gerechnete_szenarien"] = gerechnet.model_dump()
 
-        prompt = _build_scenario_prompt(state, consistent_payload)
+        prompt = _build_scenario_prompt(state, gerechnet)
         try:
             raw = self.llm.call(prompt)
         except Exception as e:
-            # Ohne Narrativ bleibt der deterministische Teil (`scenario_candidates`)
+            # Ohne Narrativ bleibt der deterministische Teil (`gerechnete_szenarien`)
             # stehen — der Lauf ist damit unvollständig, nicht falsch. Festhalten,
             # damit das Artefakt es sagt statt nur das Log.
             logger.warning(
@@ -293,11 +317,11 @@ class ScenarioAgentNode:
             logger.warning("ScenarioAgentNode: failed to parse JSON output")
             return state
 
-        payload = _normalize_scenarios(payload)
-
-        # Store on state (non-breaking): attach as metadata to cib_matrix
-        state.cib_matrix.metadata["scenarios"] = payload.get("scenarios", [])
-        state.cib_matrix.metadata["scenario_llm_payload"] = payload
+        erzaehlt = ErzaehlteSzenarien(
+            szenarien=[ErzaehltesSzenario(**s) for s in _normalize_scenarios(payload)["scenarios"]]
+        )
+        payload = erzaehlt.model_dump()
+        state.cib_matrix.metadata["erzaehlte_szenarien"] = payload
 
         # Optional file output
         if self.output_dir is not None:
@@ -317,14 +341,20 @@ def render_scenarios_markdown(payload: dict[str, Any], state: SimulationState) -
     if state.cib_matrix is not None:
         lines.append(f"- **CIB round_generated:** {state.cib_matrix.round_generated}")
         if state.cib_matrix.metadata:
-            consistency = state.cib_matrix.metadata.get("scenario_consistency")
-            if isinstance(consistency, dict) and consistency:
+            # Die gerechneten Kennzahlen stehen seit P1.3 typisiert in
+            # `gerechnete_szenarien` statt in einem eigenen Metadaten-Schlüssel.
+            gerechnet = state.cib_matrix.metadata.get("gerechnete_szenarien")
+            if isinstance(gerechnet, dict) and gerechnet:
                 lines.append(
-                    f"- **scenario_consistency:** {json.dumps(consistency, ensure_ascii=False)}"
+                    f"- **Gerechnet:** {gerechnet.get('consistent_count', 0)} von "
+                    f"{gerechnet.get('total_evaluated', 0)} Konstellationen konsistent"
                 )
     lines.append("")
 
-    scenarios = payload.get("scenarios", [])
+    # **`szenarien`, nicht `scenarios`** (P1.3). Der Bericht las den alten
+    # Schlüssel weiter und wäre leer geblieben — gefunden vom Test, nicht beim
+    # Lesen des Codes.
+    scenarios = payload.get("szenarien", [])
     if not isinstance(scenarios, list) or not scenarios:
         lines.append("_Keine Szenarien generiert._")
         return "\n".join(lines) + "\n"
@@ -347,11 +377,19 @@ def render_scenarios_markdown(payload: dict[str, Any], state: SimulationState) -
 
         rel = s.get("key_relationships", [])
         if isinstance(rel, list) and rel:
-            lines.append("- **key_relationships:**")
+            # **Die Überschrift sagt, woher die Zahlen kommen** (P1.3). Vorher
+            # stand hier «key_relationships» und darunter Werte, die neben den
+            # Matrixwerten desselben Berichts nicht zu unterscheiden waren.
+            lines.append(
+                "- **Vom Sprachmodell behauptete Wirkbeziehungen** "
+                "(erzählt, nicht aus der Matrix gerechnet):"
+            )
             for item in rel:
                 if isinstance(item, dict):
                     lines.append(
-                        f"  - {item.get('source')} → {item.get('target')}: {item.get('influence')} :: {item.get('why','')}"
+                        f"  - {item.get('source')} → {item.get('target')}: "
+                        f"{item.get('behaupteter_einfluss')} (behauptet) "
+                        f":: {item.get('why', '')}"
                     )
 
         implications = s.get("implications", [])
