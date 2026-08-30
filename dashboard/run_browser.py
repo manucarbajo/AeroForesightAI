@@ -248,6 +248,13 @@ def generate_figures_for_run(run_dir: Path | str) -> list[RunFigureEntry]:
     return list_run_figures(result.run_dir)
 
 
+#: Verzeichnisse, die kein Ergebnis sind, sondern ein Rest davon. Sie entstehen,
+#: wenn die Figurenerzeugung mittendrin abbricht (siehe `run_figures`), und
+#: gehören nicht in die Dateiliste eines Laufs: Wer dort ein `manifest.json`
+#: findet, hält es für **das** Manifest.
+WERKSTATT_VERZEICHNISSE = {"figures.neu", "figures.alt"}
+
+
 def list_run_files(run_dir: Path | str) -> list[RunFileEntry]:
     base = Path(run_dir)
     if not base.is_dir():
@@ -256,6 +263,8 @@ def list_run_files(run_dir: Path | str) -> list[RunFileEntry]:
     entries: list[RunFileEntry] = []
     for path in sorted(base.rglob("*")):
         if not path.is_file():
+            continue
+        if WERKSTATT_VERZEICHNISSE & set(path.relative_to(base).parts):
             continue
         suffix = path.suffix.lower()
         if suffix in {".json", ".md", ".csv", ".txt"}:

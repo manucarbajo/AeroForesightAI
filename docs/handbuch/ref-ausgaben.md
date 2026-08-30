@@ -125,6 +125,15 @@ Unter `figures/` liegen sechs Diagramme im PNG-Format plus eine
 «Auswertungsgrafiken erzeugen» aktiv war, und lassen sich in der Ansicht **Figures**
 unter «PNG-Export» jederzeit neu erzeugen.
 
+**Der Ordner enthält immer einen vollständigen Satz oder gar keinen.** Die Bilder
+entstehen zuerst in einem Nebenverzeichnis und ziehen erst um, wenn das letzte
+fertig ist. Bricht die Erzeugung ab, bleibt der vorherige Satz unangetastet.
+
+Finden Sie neben `figures/` ein `figures.neu/` oder `figures.alt/`, dann ist eine
+Erzeugung abgebrochen. Das ist kein Ergebnis, sondern ein Rest: In der Ansicht
+**Dateien** taucht er nicht auf, und der nächste Durchlauf räumt ihn weg. Was
+darin liegt, ist unvollständig — verwenden Sie es nicht.
+
 | Datei | Inhalt |
 |---|---|
 | `price_vs_booking.png` | Ticketpreis gegen Buchungsrate |

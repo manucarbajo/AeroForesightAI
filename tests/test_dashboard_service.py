@@ -354,3 +354,25 @@ class TestConfigCatalog:
         assert config.sweep_id == "business_as_usual"
         assert config.rounds == 50
         assert config.run_id is None
+
+
+class TestEinRestIstKeinInhalt:
+    """Was ein abgebrochener Figuren-Lauf hinterlässt, ist keine Laufdatei (P1.2)."""
+
+    def test_workshop_leftovers_do_not_show_up_as_run_files(self, tmp_path):
+        """Sonst hält man das Manifest einer Werkstatt für **das** Manifest."""
+
+        from dashboard.run_browser import WERKSTATT_VERZEICHNISSE, list_run_files
+
+        run_dir = tmp_path / "run_x"
+        (run_dir / "figures").mkdir(parents=True)
+        (run_dir / "figures" / "manifest.json").write_text("{}", encoding="utf-8")
+        for rest in WERKSTATT_VERZEICHNISSE:
+            (run_dir / rest).mkdir()
+            (run_dir / rest / "manifest.json").write_text("{}", encoding="utf-8")
+
+        pfade = {e.relative_path for e in list_run_files(run_dir)}
+
+        assert pfade == {"figures/manifest.json"}, (
+            "Reste eines abgebrochenen Laufs stehen in der Dateiliste: " f"{sorted(pfade)}"
+        )

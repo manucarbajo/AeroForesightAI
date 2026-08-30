@@ -97,6 +97,22 @@ beeinträchtigt und bekommt diesen Hinweis nicht. Der Unterschied ist Absicht:
 Der Hinweis meldet, dass etwas nicht funktioniert hat, nicht dass etwas
 abgeschaltet war.
 
+## Neben `figures/` liegt ein `figures.neu/`
+
+**Was Sie sehen:** Im Verzeichnis des Laufs steht ein zweiter Ordner mit einem
+Namen wie `figures.neu` oder `figures.alt`.
+
+**Was das heißt:** Die Erzeugung der Auswertungsgrafiken ist abgebrochen. Der
+Ordner ist ihr Rest, kein Ergebnis — was darin liegt, ist unvollständig.
+
+**Was gilt:** Der Satz unter `figures/` ist davon **unberührt**. Er stammt noch
+vom letzten geglückten Durchlauf und ist vollständig; die Bilder entstehen
+bewusst erst nebenan und ziehen nur als ganzer Satz um.
+
+**Was zu tun ist:** In der Ansicht **Figures** unter «PNG-Export» neu erzeugen.
+Gelingt es, verschwindet der Rest von selbst. Gelingt es wieder nicht, steht der
+Grund im Protokoll des Laufs.
+
 ## Sehr wenige Ereignisse
 
 Die Übersicht zählt Ereignisse. Sind es auffällig wenige, wurde vermutlich ohne
