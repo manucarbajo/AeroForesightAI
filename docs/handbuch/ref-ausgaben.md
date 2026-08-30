@@ -101,6 +101,26 @@ Zahlen sind vollwertig, die Texte der Akteure stammen aus Platzhaltern.
 Ältere Läufe kennen diese Felder nicht. Dann steht in der Oberfläche «nicht
 festgehalten» — statt einer Angabe, die niemand belegen kann.
 
+## Läufe mit Wiederholungen
+
+Ein Lauf mit mehreren Wiederholungen legt sie unter `outputs/batch_…/` ab, je
+Wiederholung ein eigenes Verzeichnis plus eine `multi_run_summary.json`.
+
+Deren `aggregate` enthält neben der Buchhaltung (Zahl der Läufe, Startwerte,
+erreichte Runden) das Feld **`baender`**:
+
+| Feld | Inhalt |
+|---|---|
+| `laeufe` | Wie viele Wiederholungen in das Band eingegangen sind |
+| `ticks` | Wie weit es trägt — so lang wie der **kürzeste** Lauf |
+| `perzentile` | Welche Perzentile berechnet wurden (`10`, `50`, `90`) |
+| `reihen` | Je Reihe (`booking_rate`, `ticket_price`) und Perzentil eine Liste mit einem Wert je Runde |
+
+Das Band ist die Antwort auf «wie sicher ist diese Zahl». Ein einzelner Lauf
+liefert einen Punktwert; erst mehrere zeigen, wie weit er wandern kann. Bei
+**einer** Wiederholung fallen alle drei Perzentile zusammen — ein Band aus einem
+Lauf ist eine Linie, und das steht dann auch so da.
+
 ## Zeitreihen
 
 Unter `timeseries/` liegen vier Tabellen im CSV-Format, geeignet zur

@@ -51,6 +51,24 @@ von null messen und danach jeden Unterschied für belastbar halten.
 Ist der Unterschied zwischen Ihren beiden Läufen kleiner als diese Streuung, ist
 er nicht belastbar.
 
+**Seit August 2026 müssen Sie das nicht mehr von Hand vergleichen.** Ein Lauf mit
+Wiederholungen legt in `multi_run_summary.json` ein **Band** ab: für jede Runde
+den Median und ein 80-Prozent-Intervall über alle Wiederholungen, für
+Buchungsrate und Ticketpreis. Die Streuung steht damit als Zahl da, statt aus
+mehreren Läufen abgelesen werden zu müssen.
+
+Perzentile und nicht Minimum und Maximum, und das ist kein Detail: Die Ränder
+einer Stichprobe wandern mit jeder weiteren Wiederholung nach außen. Ein Band aus
+Minimum und Maximum sähe mit fünfzig Läufen breiter aus als mit zehn, ohne dass
+sich am Modell etwas geändert hätte.
+
+Zwei Hinweise dazu. Das Band ist **so lang wie der kürzeste** Lauf — sonst stünde
+am Ende ein Wert aus zwei statt fünfzig Läufen und sähe wie ein zusammenlaufendes
+Band aus. Und Wiederholungen lohnen sich vor allem **ohne Sprachmodell**:
+gemessen brauchen fünfzig Wiederholungen über acht Szenarien rund vier Minuten im
+Modus «Nur Zahlen» und knapp zwölf ohne Sprachmodell — mit Modell wären es
+Stunden, und für die Streuung der Zahlen trägt es nichts bei.
+
 ## Läufe aus verschiedenen Ständen der Software
 
 Vergleichen Sie nur Läufe, die mit demselben Stand gerechnet wurden. Am

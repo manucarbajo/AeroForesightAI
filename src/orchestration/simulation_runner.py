@@ -77,6 +77,88 @@ class CheckpointStore(Protocol):
         """Restore a previously persisted simulation state."""
 
 
+#: Welche Perzentile ein Band trägt. **Median plus ein 80-Prozent-Intervall** —
+#: nicht Minimum und Maximum: Die Ränder einer Stichprobe wandern mit jeder
+#: weiteren Wiederholung nach außen, ein Perzentil tut das nicht. Ein Band aus
+#: min/max sähe mit fünfzig Läufen breiter aus als mit zehn, ohne dass sich am
+#: Modell etwas geändert hätte.
+PERZENTILE: tuple[int, ...] = (10, 50, 90)
+
+#: Welche Reihen ein Band bekommen. Die zwei Größen, um die sich der Regelkreis
+#: dreht — mehr wäre Ballast im Artefakt, und wer eine dritte braucht, trägt sie
+#: hier ein statt eine eigene Auswertung danebenzustellen.
+ENSEMBLE_REIHEN: tuple[str, ...] = ("booking_rate", "ticket_price")
+
+
+def ensemble_baender(run_results: Sequence[SingleRunResult]) -> dict[str, Any]:
+    """Perzentile je Tick über mehrere Läufe desselben Rahmens (P2.6).
+
+    **Ohne die echte Ziehung aus P2.1 wäre das sinnlos gewesen**, und der
+    Projektplan sagt das seit dem 2026-08-26: Solange die Buchung eine Schwelle
+    war, ergaben fünfzig Seeds fünfzig identische Buchungsverläufe. Das Band
+    hätte die Streuung des Bevölkerungs-Samplings gezeigt und wäre für die
+    Unsicherheit des Modells gehalten worden.
+
+    **Nur volle Ticks kommen ins Band.** Läufe verschiedener Länge — etwa nach
+    einem Abbruch — hätten am Ende ein Perzentil aus zwei statt fünfzig Werten;
+    das sähe wie ein zusammenlaufendes Band aus und wäre nur eine dünner
+    besetzte Stichprobe. `ticks` sagt deshalb, wie weit das Band trägt.
+    """
+
+    if not run_results:
+        return {}
+
+    reihen: dict[str, list[list[float]]] = {name: [] for name in ENSEMBLE_REIHEN}
+    for ergebnis in run_results:
+        werte = {name: [] for name in ENSEMBLE_REIHEN}
+        for eintrag in ergebnis.final_state.price_history:
+            werte["booking_rate"].append(eintrag.booking_rate)
+            werte["ticket_price"].append(eintrag.price)
+        for name, spalte in werte.items():
+            reihen[name].append(spalte)
+
+    ticks = min((len(spalte) for spalte in reihen[ENSEMBLE_REIHEN[0]]), default=0)
+    if ticks == 0:
+        return {}
+
+    baender: dict[str, Any] = {
+        "laeufe": len(run_results),
+        "ticks": ticks,
+        "perzentile": list(PERZENTILE),
+        "reihen": {},
+    }
+    for name, spalten in reihen.items():
+        # Ein Lauf ohne Wert an dieser Stelle (`booking_rate` ist optional)
+        # fällt heraus, statt als 0 in das Perzentil einzugehen — eine fehlende
+        # Messung ist keine Messung von null.
+        je_tick = [
+            sorted(v for v in (spalte[i] for spalte in spalten) if v is not None)
+            for i in range(ticks)
+        ]
+        baender["reihen"][name] = {
+            f"p{p}": [_perzentil(werte, p) for werte in je_tick] for p in PERZENTILE
+        }
+    return baender
+
+
+def _perzentil(sortiert: Sequence[float], p: int) -> float | None:
+    """Lineare Interpolation zwischen den Rängen — ohne numpy-Import hier.
+
+    Bei einer einzigen Messung liefern alle Perzentile denselben Wert. Das ist
+    richtig und sichtbar: Ein Band aus einem Lauf ist eine Linie.
+    """
+
+    if not sortiert:
+        return None
+    if len(sortiert) == 1:
+        return float(sortiert[0])
+    stelle = (len(sortiert) - 1) * (p / 100.0)
+    unten = int(stelle)
+    oben = min(unten + 1, len(sortiert) - 1)
+    anteil = stelle - unten
+    return float(sortiert[unten] * (1.0 - anteil) + sortiert[oben] * anteil)
+
+
 class SimulationRunner:
     def __init__(self, llm: LLMCallable, options: RunnerOptions | None = None) -> None:
         self.llm = llm
@@ -275,7 +357,17 @@ class SimulationRunner:
         return MultiRunResult(runs=run_results, aggregate=self.aggregate_runs(run_results))
 
     def aggregate_runs(self, run_results: Sequence[SingleRunResult]) -> dict[str, Any]:
-        """Build a deterministic summary across multiple runs."""
+        """Build a deterministic summary across multiple runs.
+
+        **Bis P2.6 zählte diese Funktion nur Buchhaltung** — wie viele Läufe,
+        welche Seeds, wie viele Ereignisse. Über das, wofür man mehrere Läufe
+        rechnet, sagte sie nichts: Ein Ensemble ohne Verteilung ist eine teure
+        Art, denselben Punktwert mehrfach zu bekommen.
+
+        Seit P2.6 kommt `baender` dazu — Perzentile je Tick über alle Läufe.
+        Das ist der Unterschied zwischen «Yields fallen um 11 %» und «Yields
+        fallen um 8 bis 14 %»: eine Behauptung gegen eine Aussage.
+        """
 
         if not run_results:
             return {
@@ -284,6 +376,7 @@ class SimulationRunner:
                 "ticks_completed": [],
                 "total_events": 0,
                 "total_round_results": 0,
+                "baender": {},
             }
 
         return {
@@ -294,6 +387,7 @@ class SimulationRunner:
             "total_round_results": sum(
                 len(result.final_state.round_results) for result in run_results
             ),
+            "baender": ensemble_baender(run_results),
         }
 
     def _build_agent_nodes(self, agents: list[AgentConfig]) -> dict[str, AgentNode]:
