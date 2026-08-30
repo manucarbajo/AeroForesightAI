@@ -302,6 +302,18 @@ def launch_simulation(
                 no_protocol=config.no_protocol,
                 no_scenarios=config.no_scenarios,
                 deterministic_only=config.deterministic_only,
+                # **`mock_llm` gehört hierher** — es fehlte, und
+                # `save_run_metadata` fällt bei einem fehlenden Feld auf `False`
+                # zurück. Jeder Dashboard-Lauf «Ohne Sprachmodell» wurde damit
+                # als vollwertiger LLM-Lauf protokolliert.
+                mock_llm=config.mock_llm,
+                # **Ausgeschrieben statt ausgelassen.** Dieser Pfad erzeugt nie
+                # den Hybridmodus: `generate_and_save_run_scenario` bekommt
+                # `prefer_llm=not deterministic_only`, ein reiner Zahlenlauf also
+                # gar kein Modell. `False` ist damit richtig — aber es steht hier,
+                # weil ein weggelassenes Feld von einem abgeschalteten nicht zu
+                # unterscheiden ist.
+                llm_narrative=False,
                 quiet=False,
                 run_id=batch_id,
                 checkpoint_dir=str(ck_path),
@@ -369,6 +381,11 @@ def launch_simulation(
             no_protocol=config.no_protocol,
             no_scenarios=config.no_scenarios,
             deterministic_only=config.deterministic_only,
+            # Siehe oben: ohne dieses Feld behauptet das Artefakt einen Lauf mit
+            # Sprachmodell, während der Mock gerechnet hat.
+            mock_llm=config.mock_llm,
+            # Siehe oben: eine Aussage statt einer Auslassung.
+            llm_narrative=False,
             quiet=False,
             run_id=run_id,
             checkpoint_dir=str(ck_path),
