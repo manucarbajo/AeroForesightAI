@@ -325,10 +325,19 @@ class TestKeineAnsichtTrittAusIhrerBox:
 
 # --- Teil 2: die Höhe (W0.1) -----------------------------------------------
 
-#: Wohin der Deckel gehört, sobald der Umbau steht: **ein** Schirm. Eine Frage
-#: auf dem Bildschirm, ohne Scrollen — die Zusage von P1.7 im Klartext. W3.5
-#: setzt `DECKEL` auf diesen Wert; bis dahin ist er das Maß, an dem man abliest,
-#: wie weit es noch ist.
+#: Wohin der Deckel gehörte, wenn der Inhalt es zuließe: **ein** Schirm. Eine
+#: Frage auf dem Bildschirm, ohne Scrollen — die Zusage von P1.7 im Klartext.
+#:
+#: **Der Deckel steht bewusst darüber, und das ist entschieden, kein Rückstand**
+#: (W3.5, 2026-08-30). Vier der sieben Schritte stehen auf 1,00; die übrigen drei
+#: tragen Inhalt, der sich nur durch Weglassen kürzen ließe — zehn Szenarien mit
+#: ihrer Kennzahl, sieben Faktoren mit ihrer Leitfrage, die Benennung eines
+#: Laufs. Ohne Kennzahl sind es zehn Namen, ohne Leitfrage sieben Fachbegriffe,
+#: und ein Lauf ohne Namen ist später nicht wiederzufinden.
+#:
+#: `ZIEL` bleibt deshalb stehen: **als Maßstab, nicht als offene Aufgabe.** Wer
+#: einen Schritt kürzer bekommt, sieht hier, woran er ihn misst — und die
+#: Sperrklinke unten meldet den Gewinn ein, statt ihn verfallen zu lassen.
 ZIEL = 1.0
 
 #: Der Ist-Stand, gemessen am 2026-08-28 bei 800 px Fensterhöhe (744 px sichtbar).
