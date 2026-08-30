@@ -1257,7 +1257,15 @@ Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
 
 **Doku mitgezogen:** `docs/handbuch/ref-ausgaben.md` (das Feld und der Grund neben dem Fingerabdruck), `docs/handbuch/ergebnisse.md` (die Kachel).
 
-**Was noch aussteht:** Der zweite Teil von Stufe B — **kein Codepfad bewertet mehr den Endzustand gegen die Matrix, um zu entscheiden, was gezeigt wird.** Dazu ist ein Befund gemessen und unten als Finding aufgenommen.
+**Der zweite Teil: `scenarios.json` behauptete etwas über den Lauf, das nicht aus ihm stammt.** Drei Befunde, alle gemessen:
+
+1. **Das Artefakt war leer — in jedem Lauf.** P1.3 hat den Metadaten-Schlüssel des Narrativs von `scenarios` auf `erzaehlte_szenarien` umbenannt und `render_scenarios_markdown` mitgezogen (der Kommentar dort hält es fest), **`run_simulation.py` aber nicht**. Der Schreiber las den alten Schlüssel weiter und übergab dem Bericht obendrein die falsche Form (`{"scenarios": …}` statt `{"szenarien": …}`). Dieselbe Drift, eine Ebene weiter außen — und niemand hat sie bemerkt, weil niemand die Datei liest.
+2. **Der Nenner machte aus einem Befund eine Erfolgsmeldung.** `total_evaluated` zählte die **behaltenen** Konstellationen statt der bewerteten. Bei `allow_inconsistent=False` stand im Bericht «1 von 1 Konstellationen konsistent», wo **1 von 128** richtig ist.
+3. **Die Konstellationen kommen nicht aus dem Lauf.** `derive_scenarios` zählt alle 2⁷ Kombinationen durch und rankt sie nach Konsistenzwert; der Endzustand geht an keiner Stelle ein. Auf der ausgelieferten Matrix bleibt **genau eine** übrig — der vollständig gleichpolige Zustand. Das Artefakt liegt trotzdem im Lauf-Verzeichnis und sieht dort aus wie ein Ergebnis.
+
+**Umgesetzt:** Alle drei behoben. Der Bericht trägt jetzt einen Satz, der sagt, woher seine Konstellationen stammen und wo das Tripleset *dieses* Laufs steht (`run_scenario.md`). Der Wächter in `tests/test_szenario_herkunft.py` prüft den **Weg** statt der Namen: Was der Node ablegt, muss der Schreiber finden, und was der Schreiber übergibt, muss der Bericht lesen können.
+
+**Nicht angefasst — und das ist Absicht:** Ob die CIB-Schicht diese Rolle behält, entscheidet [P2.2](#p22--die-szenarienschicht-endgültig-festlegen) **nach** dem Backtest. Sie jetzt zu entfernen hieße, diese Entscheidung vorwegzunehmen. Was Stufe B leistet, ist die Ehrlichkeit davor: Das Artefakt sagt, was es ist.
 
 #### Stufe C — die Faktorlage hört auf, Eingabe zu sein ✅ erledigt 2026-08-30
 

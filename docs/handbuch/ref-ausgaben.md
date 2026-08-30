@@ -9,7 +9,7 @@ Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 |---|---|
 | `run_scenario.md` / `.json` | Das Szenario-Tripleset — Hauptergebnis eines Laufs, Grundlage des Tabs «Szenario» |
 | `final_narrative.md` | Der Tick-für-Tick-Bericht mit Kennzahlen und Akteursbeiträgen |
-| `scenarios.md` / `.json` | Die CIB-Kandidaten mit ihren Konsistenzwerten |
+| `scenarios.md` / `.json` | Die CIB-Kandidaten mit ihren Konsistenzwerten. **Sie stammen aus der Einflussmatrix, nicht aus dem Lauf** — es sind die bestbewerteten aller Kombinationen von F1–F7 und fallen deshalb für jeden Lauf gleich aus. Das Szenario-Tripleset *dieses* Laufs steht in `run_scenario.md`. |
 | `protocol.md` / `.json` | Das Gesprächsprotokoll der Akteure |
 
 ### Der Konsistenzwert in `run_scenario.json`

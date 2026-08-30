@@ -237,7 +237,13 @@ class ScenarioDeriver:
                     }
                 )
 
-        result.total_evaluated = len(all_scenarios)
+        # **Bewertet wurden immer alle Kombinationen, nicht die behaltenen.**
+        # Bis P2.0-B stand hier `len(all_scenarios)` — bei
+        # `allow_inconsistent=False` also die Zahl der *durchgelassenen*. Der
+        # Bericht meldete daraufhin «1 von 1 Konstellationen konsistent», wo
+        # «1 von 128» richtig gewesen wäre: aus einem vernichtenden Befund wurde
+        # eine Erfolgsmeldung.
+        result.total_evaluated = STATES_PER_FACTOR**NUM_FACTORS
         result.consistent_count = sum(1 for s in all_scenarios if s["is_consistent"])
 
         # Sortiere nach kombiniertem Score (absteigend)
