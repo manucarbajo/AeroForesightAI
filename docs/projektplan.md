@@ -1302,9 +1302,9 @@ Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
 
 **Doku zieht mit:** `docs/cib_role.md`, `docs/handbuch/cib.md`, `docs/handbuch/faktoren.md`, `docs/handbuch/presets.md`, `docs/scenario_runs.md`, `CLAUDE.md` (Glossar «CIB-Matrix», «Faktoren F1–F7», Architektur-Map zu `src/cib/`).
 
-### P2.1 — Buchungsmodell: echte Ziehung statt Schwellwert ⚠️ Ziehung erledigt 2026-08-30, Koeffizienten offen
+### P2.1 — Buchungsmodell: echte Ziehung statt Schwellwert ✅ erledigt 2026-08-30
 
-> **Die Ziehung steht.** `booking_probability` liefert eine Zahl in [0, 1], `evaluate_booking` zieht dagegen. **Offen bleibt die zweite Hälfte:** die Koeffizienten aus dem Code in die Konfiguration und ihre Herkunft belegen.
+> **Beide Hälften stehen:** `booking_probability` liefert eine Zahl in [0, 1] und `evaluate_booking` zieht dagegen; die acht Koeffizienten stehen als Daten mit Herkunftsangabe in `configs/properties.json`.
 
 **Was umgesetzt ist (2026-08-30):**
 
@@ -1329,9 +1329,21 @@ Die Schwelle **überzeichnete** die Nachfrage bei niedrigen Preisen und **unterz
 
 **Der Wächter:** `tests/test_buchung_zieht.py` — elf Zusagen in vier Gruppen: die Wahrscheinlichkeit ist eine Zahl, es wird wirklich gezogen, der Strom gehört einem Tick, und der Lauf bleibt bei gleichem Seed reproduzierbar.
 
-**Doku mitgezogen:** `docs/handbuch/kaufentscheidung.md` (der Abschnitt hieß «Warum das deterministisch ist»), `docs/handbuch/vergleiche.md` (fünfter Schnitt), `CLAUDE.md` (Glossar «Logit-Modell» und der Vorbehalt in der Einleitung).
+**Doku mitgezogen:** `docs/handbuch/kaufentscheidung.md` (der Abschnitt hieß «Warum das deterministisch ist»), `docs/handbuch/vergleiche.md` (fünfter Schnitt), `docs/handbuch/ref-config.md` (die acht Felder), `docs/research/references.md` (der Vorbehalt, dass die Einträge die Form belegen und nicht die Zahlen), `CLAUDE.md` (Glossar «Logit-Modell» und der Vorbehalt in der Einleitung).
 
-**Was offen bleibt:** Die Koeffizienten `base_utility = 2.0`, die Normierung `/100.0` und der Faktor `*1.5` für die Substitution stehen weiterhin als Literale in `booking_probability`. Sie gehören nach `configs/properties.json`, und jeder braucht eine benannte Quelle — die Literatur liegt in `docs/research/literature/` (Preiselastizitäten im Luftverkehr). **Erst damit ist P2.1 fertig.**
+**Die zweite Hälfte: die Koeffizienten (2026-08-30).** Acht Zahlen standen als Literale in `booking_probability` — `base_utility = 2.0`, die Normierungen `/100.0`, das Substitutionsgewicht `1.5`, die Öko-Basislinie, der Grün-Aufschlag und die beiden Werte für preisempfindliche Personen. Sie bestimmen jede Buchungsrate, die das Produkt ausgibt, und nirgends stand, woher sie kommen.
+
+Sie stehen jetzt in `PropertiesConfig.booking_model` und in `configs/properties.json`, jede mit einem Pflichtfeld `quelle`.
+
+**Und hier war eine Versuchung, der das Paket nicht nachgegeben hat.** Der Plan verwies auf die Literatur in `docs/research/literature/`. Beim Nachlesen zeigt sich: `docs/research/references.md` belegt die **Funktionsform** (Ben-Akiva/Lerman 1985, McFadden 1974 — der Preis geht negativ in den Nutzen ein) und sagt für die Substitution ausdrücklich, es gebe «keine Standard-Einheitsformel, sondern modellabhängig». **Für keinen der acht Zahlenwerte gibt die vorhandene Literatur eine Zahl her.** Eine Quellenangabe daranzuheften hätte ausgesehen wie eine Kalibrierung, die es nicht gibt — dieselbe Klasse erfundener Provenienz, gegen die P2.3 und die Matrix-Befunde stehen.
+
+Jede `quelle` nennt deshalb **beides getrennt**: die belegte Form und den gesetzten Wert. Ein Test hält fest, dass keine von ihnen eine Schätzung behauptet; ein Validator im Modell weist Floskeln wie `quelle="handgesetzt"` ab.
+
+**Der Wächter:** `tests/test_buchungskoeffizienten.py` — 38 Zusagen in vier Gruppen: jeder Koeffizient trägt einen Satz zur Herkunft und sagt, ob der Wert gesetzt ist; keine Zahl steht mehr in `booking_probability` (AST-Durchlauf, `0.0` und `1.0` bleiben als Bereichsgrenzen erlaubt); Datei und Modell laufen nicht auseinander; und ein Schreibzugriff des Modell-Editors verliert den Block nicht — er kennt ihn nicht, liest aber die ganze Datei und schreibt sie zurück. Diese Eigenschaft ist jetzt gemessen statt angenommen.
+
+**Was bewusst nicht dazugehört:** Der Bereich «Modell» im Dashboard zeigt die acht Felder **nicht**. Sie sind über die Datei änderbar, und `docs/handbuch/ref-config.md` sagt das. Acht Bedienelemente dorthin zu legen wäre eine Oberflächenentscheidung, die dieses Paket nicht trifft — und die Zusage von P2.1 hängt nicht daran.
+
+**Eichung bleibt offen, und das ist jetzt sichtbar statt verborgen:** Keiner der acht Werte ist an Daten geprüft. Das ist genau die Lücke, die [P2.7](#p27--backtest-gegen-20152024) schließen soll — der Backtest ist der erste Anlass, bei dem sie sich beziffern lässt.
 
 
 **Befund:** Das "Logit-Modell" ist keines. Es wird `p = 1/(1+e^-u)` gerechnet und dann `p >= 0.5` geprüft — weil die Sigmoid monoton ist, ist das mathematisch identisch mit `u >= 0`. Der Logit-Teil tut nichts; es wird nie gegen die Wahrscheinlichkeit gezogen. Die Koeffizienten (`base_utility = 2.0`, `/100.0`, `*1.5`) sind handgesetzt, nicht geschätzt.
@@ -1428,7 +1440,7 @@ Fällt die Wahl auf 2 oder 3, ist die Impact Balance dann auch zu implementieren
 
 **Was zu tun ist:** Je Rahmenszenario eine Serie von Läufen mit `base_seed + index` rechnen und die Ergebnisse als **Perzentile** auswerten statt als Einzelverlauf. In den Ansichten aus P1.3 als Band darstellen, nicht als Linie. Die Zahl der Wiederholungen gehört in die Konfiguration, nicht in den Code.
 
-**Vorbedingung:** [P2.1](#p21--buchungsmodell-echte-ziehung-statt-schwellwert--ziehung-erledigt-2026-08-30-koeffizienten-offen). **Ohne echte Ziehung ist ein Ensemble sinnlos** — heute ist die Buchungsentscheidung deterministisch, fünfzig Seeds erzeugen dann fünfzig identische Verläufe der Buchungsrate. Wer P2.6 vor P2.1 baut, misst die Streuung des Bevölkerungs-Samplings und hält sie für die Unsicherheit des Modells.
+**Vorbedingung:** [P2.1](#p21--buchungsmodell-echte-ziehung-statt-schwellwert--erledigt-2026-08-30). **Ohne echte Ziehung ist ein Ensemble sinnlos** — heute ist die Buchungsentscheidung deterministisch, fünfzig Seeds erzeugen dann fünfzig identische Verläufe der Buchungsrate. Wer P2.6 vor P2.1 baut, misst die Streuung des Bevölkerungs-Samplings und hält sie für die Unsicherheit des Modells.
 
 **Fallstrick — Laufzeit:** Fünfzig Läufe je Szenario bei acht Szenarien sind 400 Läufe. Wie lange ein realistischer LLM-Lauf dauert, steht bis heute nirgends (siehe [«Was bewusst nicht in diesem Plan steht»](#was-bewusst-nicht-in-diesem-plan-steht)). Vor der Umsetzung einmal messen — sonst wird die Ensemble-Auswertung zu dem Feature, das im Demo nicht durchläuft. Ein Ensemble braucht die Narrative nicht; der Rechenmodus ohne Sprachmodell ist hier vermutlich der richtige, und dann sagt `compute_mode` das auch im Artefakt.
 

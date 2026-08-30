@@ -19,7 +19,12 @@ from src.models.population_models import (
     PopulationStats,
     SegmentStats,
 )
-from src.models.property_models import IndividualProperty, PropertiesConfig, ShiftRule
+from src.models.property_models import (
+    BookingModelConfig,
+    IndividualProperty,
+    PropertiesConfig,
+    ShiftRule,
+)
 from src.models.state_models import DEFAULT_SEED, FactorState
 from src.rule_engine import KNOWN_METRICS, RuleContext, rule_matches
 
@@ -27,10 +32,12 @@ from src.rule_engine import KNOWN_METRICS, RuleContext, rule_matches
 # hieß, die Sigmoid zu berechnen und dann wegzuwerfen: Weil sie monoton ist,
 # war `p >= 0.5` identisch mit `utility >= 0`. Gezogen wird jetzt gegen die
 # Wahrscheinlichkeit (`evaluate_booking`).
-DEFAULT_GREEN_PREMIUM = 0.1
-HIGH_PRICE_SENSITIVITY_THRESHOLD = 0.8
-HIGH_PRICE_SENSITIVITY_PENALTY = 0.3
-DEFAULT_CARBON_ECO_BASELINE = 50.0
+# Die Koeffizienten des Buchungsmodells stehen seit P2.1 in
+# `PropertiesConfig.booking_model` — als Daten mit Herkunftsangabe statt als
+# Literale hier. `DEFAULT_GREEN_PREMIUM`, `HIGH_PRICE_SENSITIVITY_THRESHOLD`,
+# `HIGH_PRICE_SENSITIVITY_PENALTY` und `DEFAULT_CARBON_ECO_BASELINE` sind damit
+# entfallen; ihre Werte und ihre Begründung stehen in
+# `src/models/property_models.BookingModelConfig`.
 
 
 def _rng(seed: int) -> np.random.Generator:
@@ -346,7 +353,7 @@ def booking_probability(
     *,
     ticket_price: float,
     carbon_tax: float,
-    green_premium: float = DEFAULT_GREEN_PREMIUM,
+    koeffizienten: BookingModelConfig,
     saturation_penalty_factor: float = 1.0,
 ) -> float:
     """Die Buchungswahrscheinlichkeit dieser Person — eine Zahl in [0, 1].
@@ -366,24 +373,27 @@ def booking_probability(
     Wahrscheinlichkeit, die bei genug Ziehungen doch einmal zuschlägt.
     """
 
+    k = koeffizienten
     affordability_limit = (
         person.wtp_eur
         * person.income_factor
-        * (1.0 + green_premium * person.environmental_awareness)
+        * (1.0 + k.green_premium.wert * person.environmental_awareness)
     )
     if ticket_price > affordability_limit:
         return 0.0
 
-    base_utility = 2.0
-    normalized_price = ticket_price / 100.0
+    base_utility = k.base_utility.wert
+    normalized_price = ticket_price / k.price_reference_eur.wert
     price_penalty = person.price_sensitivity * normalized_price
-    excess_carbon = max(0.0, carbon_tax - DEFAULT_CARBON_ECO_BASELINE)
-    normalized_tax = excess_carbon / 100.0
+    excess_carbon = max(0.0, carbon_tax - k.carbon_eco_baseline_eur.wert)
+    normalized_tax = excess_carbon / k.carbon_reference_eur.wert
     eco_penalty = person.environmental_awareness * normalized_tax
-    if person.price_sensitivity > HIGH_PRICE_SENSITIVITY_THRESHOLD and normalized_tax > 0:
-        eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY * min(1.0, normalized_tax)
+    if person.price_sensitivity > k.high_price_sensitivity_threshold.wert and normalized_tax > 0:
+        eco_penalty += k.high_price_sensitivity_penalty.wert * min(1.0, normalized_tax)
 
-    substitution_penalty = person.substitution_readiness * normalized_price * 1.5
+    substitution_penalty = (
+        person.substitution_readiness * normalized_price * k.substitution_weight.wert
+    )
     saturation_penalty = person.saturation_level * saturation_penalty_factor
 
     utility = base_utility - price_penalty - eco_penalty - substitution_penalty - saturation_penalty
@@ -421,6 +431,12 @@ def evaluate_booking(
     saturation = properties.saturation if properties is not None else None
     booking_increase = saturation.booking_increase if saturation is not None else 0.6
     penalty_factor = saturation.utility_penalty_factor if saturation is not None else 1.0
+    # Ohne Config gelten die Vorgabewerte **des Modells** — nicht Literale an
+    # dieser Stelle. Der Unterschied ist der aus P1.9-W5.1: Ein Rückfall auf
+    # eine zweite, hier hingeschriebene Zahl wäre eine eigene Quelle; der
+    # Rückfall auf `BookingModelConfig()` ist derselbe Wert wie überall sonst,
+    # und er trägt seine Herkunftsangabe mit.
+    koeffizienten = properties.booking_model if properties is not None else BookingModelConfig()
 
     booked_individuals: list[Individual] = []
     for person in individuals:
@@ -428,6 +444,7 @@ def evaluate_booking(
             person,
             ticket_price=ticket_price,
             carbon_tax=carbon_tax,
+            koeffizienten=koeffizienten,
             saturation_penalty_factor=penalty_factor,
         )
         # **Die Ziehung** (P2.1). Vorher stand hier ein Vergleich gegen 0,5.

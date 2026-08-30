@@ -711,6 +711,40 @@
     "booking_increase": 0.6,
     "utility_penalty_factor": 1.0
   },
+  "booking_model": {
+    "base_utility": {
+      "wert": 2.0,
+      "quelle": "Konstante des Nutzenterms (Ben-Akiva/Lerman 1985, McFadden 1974: Alternativenspezifische Konstante). Der Wert 2,0 ist in diesem Modell gesetzt und nicht geschätzt — er legt fest, bei welchem Preisniveau die Buchungswahrscheinlichkeit durch 0,5 geht."
+    },
+    "price_reference_eur": {
+      "wert": 100.0,
+      "quelle": "Normierungsgröße, kein Verhaltensparameter: Der Ticketpreis wird darauf bezogen, damit `price_sensitivity` in einer Größenordnung um 1 liegt. Gesetzt, nicht geschätzt; verschiebt man sie, verschiebt sich die Bedeutung jeder Preisempfindlichkeit mit."
+    },
+    "substitution_weight": {
+      "wert": 1.5,
+      "quelle": "Gewicht der Bahnalternative gegenüber dem reinen Preisterm. Die Form folgt der diskreten Wahltheorie (Ben-Akiva/Lerman 1985), der Wert ist in diesem Modell gesetzt: `docs/research/references.md` hält fest, dass es für Substitutionseffekte keine Standard-Einheitsformel gibt."
+    },
+    "carbon_reference_eur": {
+      "wert": 100.0,
+      "quelle": "Normierungsgröße für den Teil der CO₂-Abgabe oberhalb des Referenzwerts. Gesetzt wie `price_reference_eur` und aus demselben Grund."
+    },
+    "carbon_eco_baseline_eur": {
+      "wert": 50.0,
+      "quelle": "Ab welcher Abgabe ein Umwelt-Malus überhaupt entsteht — der Ausgangswert von `carbon_tax_level` in der ausgelieferten Konfiguration. Damit ist der Malus im Startzustand null und misst die Veränderung, nicht das Niveau."
+    },
+    "green_premium": {
+      "wert": 0.1,
+      "quelle": "Aufschlag auf die Zahlungsbereitschaft umweltbewusster Personen (Bamberg/Ajzen/Schmidt 2003: Einstellung wirkt auf die Verkehrsmittelwahl). Zehn Prozent sind gesetzt, nicht aus einer Erhebung übernommen."
+    },
+    "high_price_sensitivity_threshold": {
+      "wert": 0.8,
+      "quelle": "Ab welcher Preisempfindlichkeit der zusätzliche Abgaben-Malus greift. Gesetzt; die Begründung ist inhaltlich (wer aufs Geld schaut, spürt eine Abgabe doppelt) und nicht empirisch belegt."
+    },
+    "high_price_sensitivity_penalty": {
+      "wert": 0.3,
+      "quelle": "Höhe dieses zusätzlichen Malus. Gesetzt wie die Schwelle darüber und aus demselben Grund ohne empirischen Beleg."
+    }
+  },
   "regulatory_influences": [
     {
       "id": "eu_ets",

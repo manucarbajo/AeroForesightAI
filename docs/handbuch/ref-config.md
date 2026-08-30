@@ -9,6 +9,38 @@ einstellen. Wer mit alternativen Konfigurationen arbeiten will, wählt sie im Ta
 | `properties.json` | Systemgrößen, Personen-Merkmale, Marktregeln, Preismodell, Marktrückkopplung, Sättigung |
 | `factors.json` | Die sieben Faktoren mit Namen, Leitfrage und je zwei Zuständen |
 | `cib_frozen.json` | Die eingefrorene Einflussmatrix für die Konsistenzprüfung |
+
+## Die Koeffizienten der Buchungsentscheidung
+
+Unter `booking_model` in `properties.json` stehen die acht Zahlen, die
+bestimmen, wie stark Preis, CO₂-Abgabe und Bahnalternative gegen die
+Buchungsbereitschaft arbeiten. Sie standen bis August 2026 als Literale im
+Programmcode.
+
+Jede trägt zwei Felder: `wert` und `quelle`. **Die Quelle nennt beides
+getrennt** — die Funktionsform und den Zahlenwert. Dass der Preis negativ in den
+Nutzen eingeht, ist Standard der diskreten Wahltheorie und belegt. Dass das
+Gewicht der Bahnalternative *1,5* beträgt, ist es nicht: Dieser Wert ist in
+diesem Modell gesetzt.
+
+**Keiner der acht Werte ist aus Daten geschätzt.** Das steht so in jeder
+Quellenangabe, und ein Test hält es fest — eine Literaturangabe an eine
+handgesetzte Zahl zu heften sähe aus wie eine Kalibrierung, die es nicht gibt.
+Wer sie eicht, ersetzt beides: den Wert und seine Herkunft.
+
+| Feld | Was es bestimmt |
+|---|---|
+| `base_utility` | Bei welchem Preisniveau die Buchungswahrscheinlichkeit durch 50 Prozent geht |
+| `price_reference_eur` | Bezugsgröße, auf die der Ticketpreis normiert wird |
+| `substitution_weight` | Gewicht der Bahnalternative gegenüber dem reinen Preisterm |
+| `carbon_reference_eur` | Bezugsgröße für den Teil der CO₂-Abgabe oberhalb des Referenzwerts |
+| `carbon_eco_baseline_eur` | Ab welcher Abgabe ein Umwelt-Malus überhaupt entsteht |
+| `green_premium` | Aufschlag auf die Zahlungsbereitschaft umweltbewusster Personen |
+| `high_price_sensitivity_threshold` | Ab welcher Preisempfindlichkeit der zusätzliche Abgaben-Malus greift |
+| `high_price_sensitivity_penalty` | Wie hoch dieser zusätzliche Malus ausfällt |
+
+Der Bereich **Modell** im Dashboard zeigt diese Felder noch nicht — sie sind
+über die Datei zu ändern.
 | `agents.json` | Die drei Akteure mit ihren Rollen |
 | `agent_profiles.json` | Was jeder Akteur sehen und vorschlagen darf |
 

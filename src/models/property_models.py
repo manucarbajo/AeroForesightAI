@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal, Union
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from src.models.enums import DistributionType
 
@@ -196,6 +196,127 @@ class MarketRule(BaseModel):
     effect: dict[str, Any] = Field(default_factory=dict)
 
 
+class BookingCoefficient(BaseModel):
+    """Ein Koeffizient des Buchungsmodells — **mit seiner Herkunft** (P2.1).
+
+    Bis P2.1 standen diese Zahlen als Literale in `booking_probability`. Sie
+    bestimmen, wie stark Preis, Abgabe und Bahnalternative gegen den Nutzen
+    arbeiten, und damit jede Buchungsrate, die das Produkt ausgibt — ohne dass
+    irgendwo stand, woher sie kommen.
+
+    **`quelle` ist Pflicht und trägt zwei Angaben**, weil beide auseinanderfallen:
+    die *Funktionsform* (belegt) und der *Zahlenwert* (in diesem Modell
+    gesetzt). `docs/research/references.md` sagt es für die Substitution
+    ausdrücklich — «keine Standard-Einheitsformel, sondern modellabhängig».
+    Eine Literaturangabe an eine handgesetzte Zahl zu heften wäre eine erfundene
+    Provenienz, und die ist schlimmer als eine fehlende: Sie sieht aus wie eine
+    Kalibrierung.
+    """
+
+    wert: float
+    quelle: str
+
+    @field_validator("quelle")
+    @classmethod
+    def _quelle_ist_keine_floskel(cls, v: str) -> str:
+        if len(v.strip()) < 20:
+            raise ValueError(
+                "Die Herkunft eines Koeffizienten braucht einen Satz, kein Stichwort — "
+                "sie soll einem Fachprüfer sagen, was belegt ist und was gesetzt."
+            )
+        return v
+
+
+class BookingModelConfig(BaseModel):
+    """Die Koeffizienten der Buchungsentscheidung (P2.1).
+
+    Sie standen als Literale in `src/population/population_sampler.py`. Hier
+    sind sie sichtbar, änderbar und tragen je eine Herkunftsangabe.
+    """
+
+    base_utility: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=2.0,
+            quelle=(
+                "Konstante des Nutzenterms (Ben-Akiva/Lerman 1985, McFadden 1974: "
+                "Alternativenspezifische Konstante). Der Wert 2,0 ist in diesem Modell "
+                "gesetzt und nicht geschätzt — er legt fest, bei welchem Preisniveau die "
+                "Buchungswahrscheinlichkeit durch 0,5 geht."
+            ),
+        )
+    )
+    price_reference_eur: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=100.0,
+            quelle=(
+                "Normierungsgröße, kein Verhaltensparameter: Der Ticketpreis wird darauf "
+                "bezogen, damit `price_sensitivity` in einer Größenordnung um 1 liegt. "
+                "Gesetzt, nicht geschätzt; verschiebt man sie, verschiebt sich die "
+                "Bedeutung jeder Preisempfindlichkeit mit."
+            ),
+        )
+    )
+    substitution_weight: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=1.5,
+            quelle=(
+                "Gewicht der Bahnalternative gegenüber dem reinen Preisterm. Die Form "
+                "folgt der diskreten Wahltheorie (Ben-Akiva/Lerman 1985), der Wert ist "
+                "in diesem Modell gesetzt: `docs/research/references.md` hält fest, dass "
+                "es für Substitutionseffekte keine Standard-Einheitsformel gibt."
+            ),
+        )
+    )
+    carbon_reference_eur: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=100.0,
+            quelle=(
+                "Normierungsgröße für den Teil der CO₂-Abgabe oberhalb des Referenzwerts. "
+                "Gesetzt wie `price_reference_eur` und aus demselben Grund."
+            ),
+        )
+    )
+    carbon_eco_baseline_eur: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=50.0,
+            quelle=(
+                "Ab welcher Abgabe ein Umwelt-Malus überhaupt entsteht — der Ausgangswert "
+                "von `carbon_tax_level` in der ausgelieferten Konfiguration. Damit ist der "
+                "Malus im Startzustand null und misst die Veränderung, nicht das Niveau."
+            ),
+        )
+    )
+    green_premium: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=0.1,
+            quelle=(
+                "Aufschlag auf die Zahlungsbereitschaft umweltbewusster Personen "
+                "(Bamberg/Ajzen/Schmidt 2003: Einstellung wirkt auf die Verkehrsmittelwahl). "
+                "Zehn Prozent sind gesetzt, nicht aus einer Erhebung übernommen."
+            ),
+        )
+    )
+    high_price_sensitivity_threshold: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=0.8,
+            quelle=(
+                "Ab welcher Preisempfindlichkeit der zusätzliche Abgaben-Malus greift. "
+                "Gesetzt; die Begründung ist inhaltlich (wer aufs Geld schaut, spürt eine "
+                "Abgabe doppelt) und nicht empirisch belegt."
+            ),
+        )
+    )
+    high_price_sensitivity_penalty: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=0.3,
+            quelle=(
+                "Höhe dieses zusätzlichen Malus. Gesetzt wie die Schwelle darüber und aus "
+                "demselben Grund ohne empirischen Beleg."
+            ),
+        )
+    )
+
+
 class PropertiesConfig(BaseModel):
     system_properties: list[SystemProperty] = Field(default_factory=list)
     individual_properties: list[IndividualProperty] = Field(default_factory=list)
@@ -206,6 +327,7 @@ class PropertiesConfig(BaseModel):
     price_model: PriceModelConfig = Field(default_factory=PriceModelConfig)
     market_feedback: MarketFeedbackConfig = Field(default_factory=MarketFeedbackConfig)
     saturation: SaturationConfig = Field(default_factory=SaturationConfig)
+    booking_model: BookingModelConfig = Field(default_factory=BookingModelConfig)
 
     def system_property_ids(self) -> list[str]:
         return [prop.id for prop in self.system_properties]

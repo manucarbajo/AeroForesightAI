@@ -50,6 +50,17 @@ def properties():
 
 
 @pytest.fixture(scope="module")
+def koeffizienten(properties):
+    """Die ausgelieferten Koeffizienten — nicht die Vorgaben des Modells.
+
+    Sie sollen identisch sein (`test_buchungskoeffizienten.py` misst das); der
+    Test nimmt trotzdem die Datei, weil er das prüft, was ein Lauf benutzt.
+    """
+
+    return properties.booking_model
+
+
+@pytest.fixture(scope="module")
 def leute(properties):
     return initialize_population(
         properties, PopulationConfig(segments=[], total_population=800), seed=42
@@ -70,19 +81,27 @@ def _rate(leute, properties, *, preis: float, tick: int) -> float:
 class TestDieWahrscheinlichkeitIstEineZahl:
     """Zusage 1 — sie wird nicht mehr auf 0 oder 1 gerundet."""
 
-    def test_sie_liegt_zwischen_null_und_eins(self, leute):
-        werte = [booking_probability(x, ticket_price=140.0, carbon_tax=50.0) for x in leute]
+    def test_sie_liegt_zwischen_null_und_eins(self, leute, koeffizienten):
+        werte = [
+            booking_probability(x, ticket_price=140.0, carbon_tax=50.0, koeffizienten=koeffizienten)
+            for x in leute
+        ]
         assert all(0.0 <= w <= 1.0 for w in werte)
         assert not all(
             w in (0.0, 1.0) for w in werte
         ), "Alle Wahrscheinlichkeiten sind 0 oder 1 — dann ist die Schwelle zurück."
 
-    def test_zwischenwerte_kommen_wirklich_vor(self, leute):
+    def test_zwischenwerte_kommen_wirklich_vor(self, leute, koeffizienten):
         """Der Kern: Personen, die die Schwelle gleich behandelt hätte."""
 
         mittel = [
             w
-            for w in (booking_probability(x, ticket_price=140.0, carbon_tax=50.0) for x in leute)
+            for w in (
+                booking_probability(
+                    x, ticket_price=140.0, carbon_tax=50.0, koeffizienten=koeffizienten
+                )
+                for x in leute
+            )
             if 0.5 < w < 0.9
         ]
         assert len(mittel) > 20, (
@@ -90,10 +109,15 @@ class TestDieWahrscheinlichkeitIstEineZahl:
             "genau diese hat die alte Schwelle alle als sichere Bucher behandelt."
         )
 
-    def test_wer_es_sich_nicht_leisten_kann_bucht_nicht(self, leute):
+    def test_wer_es_sich_nicht_leisten_kann_bucht_nicht(self, leute, koeffizienten):
         """Null heißt «kann nicht», nicht «unwahrscheinlich»."""
 
-        werte = [booking_probability(x, ticket_price=100_000.0, carbon_tax=50.0) for x in leute]
+        werte = [
+            booking_probability(
+                x, ticket_price=100_000.0, carbon_tax=50.0, koeffizienten=koeffizienten
+            )
+            for x in leute
+        ]
         assert set(werte) == {0.0}
 
         _, stats = evaluate_booking(
@@ -128,7 +152,7 @@ class TestEsWirdWirklichGezogen:
             "Ziehung. Mehr als 0,1 bei 800 Personen hieße: hier stimmt etwas nicht."
         )
 
-    def test_die_schwelle_ueberzeichnete_die_nachfrage(self, leute, properties):
+    def test_die_schwelle_ueberzeichnete_die_nachfrage(self, leute, properties, koeffizienten):
         """Der gemessene Unterschied, an einer Stelle festgehalten.
 
         Bei 80 Euro buchten unter der Schwelle 96,8 % — mit Ziehung sind es
@@ -137,7 +161,10 @@ class TestEsWirdWirklichGezogen:
         Charakter des Unterschieds aber nicht.
         """
 
-        ps = [booking_probability(x, ticket_price=80.0, carbon_tax=50.0) for x in leute]
+        ps = [
+            booking_probability(x, ticket_price=80.0, carbon_tax=50.0, koeffizienten=koeffizienten)
+            for x in leute
+        ]
         wie_schwelle = sum(1 for p in ps if p >= 0.5) / len(ps)
         mit_ziehung = _rate(leute, properties, preis=80.0, tick=1)
 
