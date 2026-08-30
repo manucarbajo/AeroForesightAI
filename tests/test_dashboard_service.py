@@ -333,11 +333,14 @@ class TestConfigCatalog:
             _write_minimal_run(run_dir)
             assert not list_run_figures(run_dir)
             entries = generate_figures_for_run(run_dir)
-            assert len(entries) == 6
-            assert any("price_vs_booking.png" in e.relative_path for e in entries)
+            assert any("preis_und_nachfrage.png" in e.relative_path for e in entries)
             listed = list_run_figures(run_dir)
-            assert len(listed) == 6
-            assert any(entry.title == "Preis vs. Booking" for entry in listed)
+            assert len(listed) == len(entries)
+            # **Jeder Titel nennt die Aussage, zu der das Bild gehört** (P1.2).
+            assert all(
+                entry.title[0].isdigit() and " · " in entry.title for entry in listed
+            ), f"Ein Bild ohne Zuordnung zu einer Aussage: {[e.title for e in listed]}"
+            assert {t.split(" · ")[0] for t in (e.title for e in listed)} == {"1", "2", "3", "4"}
             assert listed.vollstaendig, "Ein frisch erzeugter Satz gilt als unvollständig"
         finally:
             shutil.rmtree(tmpdir)

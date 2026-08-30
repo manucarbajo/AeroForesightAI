@@ -27,7 +27,6 @@ from src.reporting.figure_generator.plots import (
     plot_policy_shock,
     plot_population_distribution,
     plot_price_vs_booking,
-    plot_system_dynamics,
 )
 from src.reporting.figure_generator.series import RunSeries, extract_series_from_run_dir
 
@@ -78,17 +77,31 @@ def generate_run_figures(run_dir: Path | str) -> RunFigureGenerationResult:
     shutil.rmtree(ausweiche, ignore_errors=True)
     figures_dir = _ensure_dir(werkstatt)
 
+    # **Die Titel nennen die Aussage, zu der ein Bild gehört** (P1.2). Der Satz
+    # folgt derselben Wirkungskette wie die Ansichten im Dashboard; wer ein PNG
+    # in einen Bericht zieht, soll nicht raten müssen, welche Frage es
+    # beantwortet.
+    #
+    # **Fünf Dateien für vier Aussagen, und das ist Absicht:** «Wer noch fliegt»
+    # braucht zwei Bilder — wie sich die Buchungsrate je Altersgruppe entwickelt,
+    # und wie die Bevölkerung überhaupt zusammengesetzt ist. Eine Zahl zu
+    # erzwingen wäre eine schönere Aufzählung und eine schlechtere Auskunft.
+    #
+    # **«Systemdynamik» ist aus dem Lauf-Satz herausgefallen** — sie zeigt das
+    # Zusammenspiel der Systemgrößen, also Eingänge, nicht das Ergebnis. Als
+    # laufübergreifende Auswertung bleibt sie in `global_figures`.
     figure_paths: dict[str, Path] = {
-        "Preis vs. Booking": plot_price_vs_booking(series, figures_dir / "price_vs_booking.png"),
-        "CO₂-Policy-Shock": plot_policy_shock(
-            series, figures_dir / "policy_shock_co2_booking.png", shock_ticks=shock_ticks
+        "1 · Preis und Nachfrage": plot_price_vs_booking(
+            series, figures_dir / "preis_und_nachfrage.png"
         ),
-        "Systemdynamik": plot_system_dynamics(series, figures_dir / "system_dynamics.png"),
-        "Faktor-Zustände": plot_factor_states(series, figures_dir / "factor_states.png"),
-        "Alterssegmente": plot_age_segments(series, figures_dir / "age_segment_booking.png"),
-        "Populationsverteilung": plot_population_distribution(
-            run_path, figures_dir / "population_distribution.png"
+        "2 · Was die Politik bewirkt": plot_policy_shock(
+            series, figures_dir / "politik_und_wirkung.png", shock_ticks=shock_ticks
         ),
+        "3 · Wer noch fliegt": plot_age_segments(series, figures_dir / "wer_noch_fliegt.png"),
+        "3 · Wer noch fliegt — die Bevölkerung": plot_population_distribution(
+            run_path, figures_dir / "bevoelkerung.png"
+        ),
+        "4 · Die Faktorlage des Laufs": plot_factor_states(series, figures_dir / "faktorlage.png"),
     }
 
     manifest = {

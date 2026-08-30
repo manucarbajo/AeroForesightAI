@@ -102,9 +102,16 @@ class TestFigureGenerator:
             run_dir = Path(tmpdir) / "run_test"
             _write_sample_run(run_dir)
             result = generate_run_figures(run_dir)
-            assert len(result.figure_paths) == 6
             assert (run_dir / "figures" / "manifest.json").is_file()
-            assert (run_dir / "figures" / "price_vs_booking.png").is_file()
+            assert (run_dir / "figures" / "preis_und_nachfrage.png").is_file()
+            # Die Zahl ist nicht die Zusage — die Zuordnung ist es (P1.2).
+            aussagen = {titel.split(" · ")[0] for titel in result.figure_paths}
+            assert aussagen == {
+                "1",
+                "2",
+                "3",
+                "4",
+            }, f"Nicht jede Aussage hat ein Bild: {sorted(result.figure_paths)}"
         finally:
             shutil.rmtree(tmpdir)
 
@@ -173,8 +180,8 @@ class TestEinFigurensatzEntstehtGanzOderGarNicht:
             def _scheitert(*args, **kwargs):
                 raise RuntimeError("Plot abgebrochen")
 
-            # Der dritte von sechs: Zwei Bilder sind fertig, wenn es knallt.
-            monkeypatch.setattr(modul, "plot_system_dynamics", _scheitert)
+            # Der dritte von fünf: Zwei Bilder sind fertig, wenn es knallt.
+            monkeypatch.setattr(modul, "plot_age_segments", _scheitert)
 
             with pytest.raises(RuntimeError):
                 generate_run_figures(run_dir)
@@ -208,7 +215,7 @@ class TestEinFigurensatzEntstehtGanzOderGarNicht:
 
             monkeypatch.setattr(
                 modul,
-                "plot_system_dynamics",
+                "plot_age_segments",
                 lambda *a, **k: (_ for _ in ()).throw(RuntimeError("Plot abgebrochen")),
             )
             with pytest.raises(RuntimeError):
@@ -236,7 +243,7 @@ class TestEinFigurensatzEntstehtGanzOderGarNicht:
 
             monkeypatch.setattr(
                 modul,
-                "plot_system_dynamics",
+                "plot_age_segments",
                 lambda *a, **k: (_ for _ in ()).throw(RuntimeError("Plot abgebrochen")),
             )
             with pytest.raises(RuntimeError):

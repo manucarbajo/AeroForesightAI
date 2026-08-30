@@ -134,11 +134,26 @@ Erzeugung abgebrochen. Das ist kein Ergebnis, sondern ein Rest: In der Ansicht
 **Dateien** taucht er nicht auf, und der nächste Durchlauf räumt ihn weg. Was
 darin liegt, ist unvollständig — verwenden Sie es nicht.
 
-| Datei | Inhalt |
-|---|---|
-| `price_vs_booking.png` | Ticketpreis gegen Buchungsrate |
-| `policy_shock_co2_booking.png` | Wirkung eines CO₂-Schocks |
-| `system_dynamics.png` | Zusammenspiel der Systemgrößen |
-| `factor_states.png` | Faktor-Trajektorien |
-| `age_segment_booking.png` | Buchungen nach Alter und Segment |
-| `population_distribution.png` | Verteilung der Bevölkerungsmerkmale |
+Seit August 2026 sind es **fünf Dateien zu vier Aussagen** — dieselben vier, die
+auch die Ansicht **Figures** gliedert. Der Titel im Manifest nennt die Aussage,
+damit man beim Einbau in einen Bericht nicht raten muss, welche Frage ein Bild
+beantwortet.
+
+| Datei | Aussage | Inhalt |
+|---|---|---|
+| `preis_und_nachfrage.png` | 1 | Ticketpreis gegen Buchungsrate |
+| `politik_und_wirkung.png` | 2 | Wirkung eines CO₂-Schocks |
+| `wer_noch_fliegt.png` | 3 | Buchungen nach Alter und Segment |
+| `bevoelkerung.png` | 3 | Verteilung der Bevölkerungsmerkmale |
+| `faktorlage.png` | 4 | Faktor-Trajektorien über die Ticks |
+
+Aussage 3 hat zwei Bilder, und das ist Absicht: Wie sich die Buchungsrate je
+Gruppe entwickelt und wie die Bevölkerung überhaupt zusammengesetzt ist, sind
+zwei Auskünfte. Eine Zahl zu erzwingen wäre eine schönere Aufzählung und eine
+schlechtere Antwort.
+
+**Zwei Dateien gibt es nicht mehr.** `system_dynamics.png` zeigte das
+Zusammenspiel der Systemgrößen — also Eingänge, nicht Ergebnisse; als
+laufübergreifende Auswertung entsteht sie weiterhin über die CLI. Ältere Läufe
+behalten ihre Dateien und ihre Namen: Das Manifest führt sie, und die Ansicht
+zeigt sie unverändert.
