@@ -49,13 +49,25 @@ class RunFigureGenerationResult:
 
 
 def _detect_policy_shock_ticks(series: RunSeries) -> tuple[int, ...]:
+    """Wo die CO₂-Abgabe gesprungen ist — **oder nirgends** (P1.2).
+
+    Bis zum 2026-08-30 gab diese Funktion `(15, 30)` zurück, wenn sie nichts
+    fand. Die Figur zeichnete daraufhin senkrechte Markierungen bei Tick 15 und
+    30 in einen Lauf, in dem **kein** Politik-Schock stattgefunden hatte — bei
+    einem Lauf über fünf Ticks sogar weit hinter dessen Ende. Ein Bild, das
+    Ereignisse markiert, die es nicht gab, ist schlimmer als eines ohne
+    Markierungen.
+
+    Ein leeres Ergebnis heißt jetzt, was es heißt: kein Sprung.
+    """
+
     shocks: list[int] = []
     previous: float | None = None
     for tick, value in zip(series.ticks, series.carbon_tax, strict=False):
         if previous is not None and value == value and value != previous:
             shocks.append(int(tick))
         previous = value
-    return tuple(shocks) if shocks else (15, 30)
+    return tuple(shocks)
 
 
 def generate_run_figures(run_dir: Path | str) -> RunFigureGenerationResult:

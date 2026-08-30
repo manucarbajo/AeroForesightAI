@@ -278,3 +278,23 @@ class TestEinFigurensatzEntstehtGanzOderGarNicht:
             assert not fehlend, f"Das Manifest nennt Dateien, die es nicht gibt: {fehlend}"
         finally:
             shutil.rmtree(tmpdir)
+
+
+class TestEinBildMarkiertNurWasStattfand:
+    """Keine Schockmarkierung ohne Schock (P1.2)."""
+
+    def test_a_run_without_a_policy_jump_gets_no_markers(self):
+        """**Der Rückfall war `(15, 30)`.**
+
+        Ein Lauf über fünf Ticks bekam senkrechte Linien bei Tick 15 und 30 —
+        Ereignisse, die es nicht gab, an Stellen, die es im Lauf nicht gibt.
+        """
+
+        from src.reporting.figure_generator.run_figures import _detect_policy_shock_ticks
+        from src.reporting.figure_generator.series import RunSeries
+
+        ohne = RunSeries(label="ruhig", ticks=[1, 2, 3], carbon_tax=[50.0, 50.0, 50.0])
+        mit = RunSeries(label="sprung", ticks=[1, 2, 3], carbon_tax=[50.0, 120.0, 120.0])
+
+        assert _detect_policy_shock_ticks(ohne) == ()
+        assert _detect_policy_shock_ticks(mit) == (2,)

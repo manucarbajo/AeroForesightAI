@@ -10,7 +10,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from src.reporting.figure_generator import stil
 from src.reporting.figure_generator.series import RunSeries
+from src.reporting.figure_generator.stil import FARBEN
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -19,6 +21,10 @@ def _ensure_dir(path: Path) -> Path:
 
 
 def _save_figure(fig: plt.Figure, path: Path) -> Path:
+    # **Hier, nicht in den Plot-Funktionen** (P1.2): Jede Figur geht durch diese
+    # Zeile, also kann keine das gemeinsame Achsenbild vergessen. Vorher setzte
+    # jede ihr Raster selbst -- mal `alpha=0.3`, mal `0.7`, mal gestrichelt.
+    stil.achsen_vereinheitlichen(fig)
     _ensure_dir(path.parent)
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -42,7 +48,6 @@ def plot_scenario_comparison(
     ax.set_xlabel("Tick")
     ax.set_ylabel(ylabel)
     ax.set_title(title)
-    ax.grid(True, alpha=0.3)
     ax.legend(fontsize=8, loc="best")
     return _save_figure(fig, output_path)
 
@@ -61,7 +66,6 @@ def plot_segment_booking(series: RunSeries, output_path: Path) -> Path:
     ax.set_xlabel("Tick")
     ax.set_ylabel("Buchungsrate")
     ax.set_ylim(-0.05, 1.05)
-    ax.grid(True, linestyle="--", alpha=0.7)
     ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
     return _save_figure(fig, output_path)
 
@@ -70,7 +74,7 @@ def plot_cib_scores(scores: list[dict[str, Any]], output_path: Path) -> Path:
     names = [row["sweep_name"] for row in scores]
     values = [float(row["consistency_score"]) for row in scores]
     fig, ax = plt.subplots(figsize=(9, 4.5))
-    bars = ax.barh(names, values, color="#2563eb")
+    bars = ax.barh(names, values, color=FARBEN["buchung"])
     ax.set_xlabel("CIB Consistency Score")
     # Nicht «Plausibilität»: Der Score misst Widerspruchsfreiheit und steigt mit
     # der Polarität der Faktorlage, nicht mit der Eintrittschance (P2.0).
@@ -84,50 +88,61 @@ def plot_cib_scores(scores: list[dict[str, Any]], output_path: Path) -> Path:
             va="center",
             fontsize=8,
         )
-    ax.grid(True, axis="x", alpha=0.3)
     return _save_figure(fig, output_path)
 
 
 def plot_price_vs_booking(series: RunSeries, output_path: Path) -> Path:
     fig, ax1 = plt.subplots(figsize=(9, 4.5))
-    ax1.plot(series.ticks, series.ticket_price, color="#059669", marker="o", label="Ticketpreis")
+    ax1.plot(
+        series.ticks, series.ticket_price, color=FARBEN["preis"], marker="o", label="Ticketpreis"
+    )
     ax1.set_xlabel("Tick")
-    ax1.set_ylabel("Ticketpreis (EUR)", color="#059669")
-    ax1.tick_params(axis="y", labelcolor="#059669")
+    ax1.set_ylabel("Ticketpreis (EUR)", color=FARBEN["preis"])
+    ax1.tick_params(axis="y", labelcolor=FARBEN["preis"])
     ax2 = ax1.twinx()
-    ax2.plot(series.ticks, series.booking_rate, color="#2563eb", marker="s", label="Booking Rate")
-    ax2.set_ylabel("Booking Rate", color="#2563eb")
-    ax2.tick_params(axis="y", labelcolor="#2563eb")
+    ax2.plot(
+        series.ticks, series.booking_rate, color=FARBEN["buchung"], marker="s", label="Booking Rate"
+    )
+    ax2.set_ylabel("Booking Rate", color=FARBEN["buchung"])
+    ax2.tick_params(axis="y", labelcolor=FARBEN["buchung"])
     ax2.set_ylim(0, 1)
     ax1.set_title(f"Markt-Rückkopplung: Preis und Booking ({series.label})")
-    ax1.grid(True, alpha=0.3)
     return _save_figure(fig, output_path)
 
 
 def plot_policy_shock(
-    series: RunSeries, output_path: Path, shock_ticks: tuple[int, ...] = (15, 30)
+    series: RunSeries, output_path: Path, shock_ticks: tuple[int, ...] = ()
 ) -> Path:
     fig, ax1 = plt.subplots(figsize=(9, 4.5))
-    ax1.plot(series.ticks, series.carbon_tax, color="#dc2626", marker="o", label="CO₂-Steuer")
+    ax1.plot(
+        series.ticks, series.carbon_tax, color=FARBEN["politik"], marker="o", label="CO₂-Steuer"
+    )
     ax1.set_xlabel("Tick")
-    ax1.set_ylabel("CO₂-Steuer (EUR/t)", color="#dc2626")
-    ax1.tick_params(axis="y", labelcolor="#dc2626")
+    ax1.set_ylabel("CO₂-Steuer (EUR/t)", color=FARBEN["politik"])
+    ax1.tick_params(axis="y", labelcolor=FARBEN["politik"])
     for tick in shock_ticks:
-        ax1.axvline(tick, color="#dc2626", linestyle="--", alpha=0.45, linewidth=1)
+        ax1.axvline(
+            tick,
+            color=FARBEN["politik"],
+            linestyle="--",
+            alpha=stil.HILFSLINIE_ALPHA,
+            linewidth=1,
+        )
     ax2 = ax1.twinx()
-    ax2.plot(series.ticks, series.booking_rate, color="#2563eb", marker="s", label="Booking Rate")
-    ax2.set_ylabel("Booking Rate", color="#2563eb")
-    ax2.tick_params(axis="y", labelcolor="#2563eb")
+    ax2.plot(
+        series.ticks, series.booking_rate, color=FARBEN["buchung"], marker="s", label="Booking Rate"
+    )
+    ax2.set_ylabel("Booking Rate", color=FARBEN["buchung"])
+    ax2.tick_params(axis="y", labelcolor=FARBEN["buchung"])
     ax2.set_ylim(0, 1)
     ax1.set_title(f"Policy-Shock: CO₂-Steuer und Booking ({series.label})")
-    ax1.grid(True, alpha=0.3)
     return _save_figure(fig, output_path)
 
 
 def plot_system_dynamics(series: RunSeries, output_path: Path) -> Path:
     fig, axes = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
     axes[0].plot(
-        series.ticks, series.booking_rate, color="#2563eb", marker="o", label="Booking Rate"
+        series.ticks, series.booking_rate, color=FARBEN["buchung"], marker="o", label="Booking Rate"
     )
     axes[0].set_ylabel("Booking Rate")
     axes[0].set_ylim(0, 1)
@@ -161,7 +176,6 @@ def plot_age_segments(series: RunSeries, output_path: Path) -> Path:
     ax.set_ylim(0, 1)
     ax.set_title(f"Booking nach Altersgruppe ({series.label})")
     ax.legend(fontsize=8)
-    ax.grid(True, alpha=0.3)
     return _save_figure(fig, output_path)
 
 
@@ -179,7 +193,6 @@ def plot_factor_states(series: RunSeries, output_path: Path) -> Path:
     ax.set_ylabel("Faktor-Zustand (numerisch)")
     ax.set_title(f"Faktor-Zustände über Zeit ({series.label})")
     ax.legend(fontsize=8, ncol=2)
-    ax.grid(True, alpha=0.3)
     return _save_figure(fig, output_path)
 
 
@@ -200,13 +213,15 @@ def plot_population_distribution(run_path: Path, output_path: Path) -> Path:
         if "business" in df.columns:
             # Pandas might read booleans as strings depending on format
             is_business = df["business"].astype(str).str.lower().isin(["true", "1"])
-            colors = is_business.map({True: "#1f77b4", False: "#ff7f0e"})  # Blue/Orange
+            colors = is_business.map(
+                {True: FARBEN["geschaeftlich"], False: FARBEN["privat"]}
+            )  # Blue/Orange
             # Create dummy lines for legend
-            ax.scatter([], [], c="#1f77b4", label="Business")
-            ax.scatter([], [], c="#ff7f0e", label="Leisure")
+            ax.scatter([], [], c=FARBEN["geschaeftlich"], label="Business")
+            ax.scatter([], [], c=FARBEN["privat"], label="Leisure")
             ax.legend()
         else:
-            colors = "#1f77b4"
+            colors = FARBEN["geschaeftlich"]
 
         # Optional: scale marker size by income
         sizes = 20
@@ -224,7 +239,7 @@ def plot_population_distribution(run_path: Path, output_path: Path) -> Path:
         ax.set_xlabel("Zahlungsbereitschaft (WTP in €)")
         ax.set_ylabel("Umweltbewusstsein (0-1)")
         ax.set_title("Agenten-Verteilung: Umweltbewusstsein vs. WTP")
-        ax.grid(True, alpha=0.3)
+
     except Exception as e:
         ax.text(0.5, 0.5, f"Fehler:\n{str(e)}", ha="center", va="center")
         ax.set_axis_off()

@@ -242,3 +242,42 @@ class TestKeineFarbklasseEntgehtDemSweep:
         tree = ast.parse('"""`bg-white` ist im Dark Mode falsch."""\nx = "af-surface"\n')
 
         assert all("bg-white" not in text for _lineno, text in _string_literals(tree))
+
+
+class TestPngUndBildschirmSprechenDieselbeSprache:
+    """Eine Größe, eine Farbe — im Bericht wie auf dem Schirm (P1.2)."""
+
+    def test_the_chart_roles_come_from_one_source(self):
+        """Nicht «zufällig gleich», sondern **dieselbe** Konstante.
+
+        Vorher wählte jede Matplotlib-Figur ihre Farben selbst: `#2563eb` für
+        die Buchungsrate, `#059669` für den Preis — das Dashboard färbte beides
+        anders. Wer ein PNG neben den Bildschirm hielt, las die Legende zweimal.
+        """
+
+        from dashboard.web import theme
+        from src.reporting.figure_generator.stil import FARBEN
+
+        assert theme.PALETTE[theme.LIGHT]["price"] == FARBEN["preis"]
+        assert theme.PALETTE[theme.LIGHT]["booking"] == FARBEN["buchung"]
+        assert theme.PRICE == FARBEN["preis"]
+        assert theme.BOOKING == FARBEN["buchung"]
+
+    def test_no_plot_picks_its_own_colour(self):
+        """**Der Wächter zeigt auf die Tat, nicht auf die Absicht.**
+
+        Ein roher Farbwert in einer Plot-Funktion ist die nächste Abweichung:
+        Er sieht für sich genommen richtig aus und passt zu nichts.
+        """
+
+        import re
+        from pathlib import Path
+
+        quelle = Path("src/reporting/figure_generator/plots.py").read_text(encoding="utf-8")
+        roh = re.findall(r"#[0-9a-fA-F]{6}\b", quelle)
+
+        assert not roh, (
+            f"Rohe Farbwerte in den Plot-Funktionen: {sorted(set(roh))}\n"
+            "Die Rollen stehen in `figure_generator/stil.py` — wer dort keine "
+            "passende findet, legt eine an, statt eine Farbe zu erfinden."
+        )
