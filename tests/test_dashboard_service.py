@@ -331,13 +331,14 @@ class TestConfigCatalog:
         try:
             run_dir = tmpdir / "run_20260101T120000Z"
             _write_minimal_run(run_dir)
-            assert list_run_figures(run_dir) == []
+            assert not list_run_figures(run_dir)
             entries = generate_figures_for_run(run_dir)
             assert len(entries) == 6
             assert any("price_vs_booking.png" in e.relative_path for e in entries)
             listed = list_run_figures(run_dir)
             assert len(listed) == 6
             assert any(entry.title == "Preis vs. Booking" for entry in listed)
+            assert listed.vollstaendig, "Ein frisch erzeugter Satz gilt als unvollständig"
         finally:
             shutil.rmtree(tmpdir)
 
@@ -376,3 +377,84 @@ class TestEinRestIstKeinInhalt:
         assert pfade == {"figures/manifest.json"}, (
             "Reste eines abgebrochenen Laufs stehen in der Dateiliste: " f"{sorted(pfade)}"
         )
+
+
+class TestEinGeratenerSatzSagtDassErGeratenIst:
+    """Zwei Zustände sahen aus wie ein vollständiger Bildersatz (P1.2)."""
+
+    def _run_mit_bildern(self, tmp_path):
+        figures = tmp_path / "run_x" / "figures"
+        figures.mkdir(parents=True)
+        for name in ("price_vs_booking.png", "system_dynamics.png"):
+            # Die PNG-Signatur als Hex, damit kein Escape unterwegs verlorengeht.
+            (figures / name).write_bytes(bytes.fromhex("89504e470d0a1a0a"))
+        return tmp_path / "run_x", figures
+
+    def test_a_set_without_a_manifest_is_marked_as_guessed(self, tmp_path):
+        """**Der Rückfall bleibt — er sagt nur, dass er einer ist.**
+
+        Läufe von vor dem 2026-08-30 haben Figures ohne Manifest. Sie wegzulassen
+        hieße, ältere Ergebnisse zu verlieren; sie als benannten Satz
+        auszuliefern hieß, geratene Titel als Auskunft auszugeben.
+        """
+
+        from dashboard.run_browser import GERATEN
+
+        run_dir, _ = self._run_mit_bildern(tmp_path)
+        satz = list_run_figures(run_dir)
+
+        assert len(satz) == 2
+        assert satz.herkunft == GERATEN
+        assert not satz.vollstaendig
+        assert all(e.herkunft == GERATEN for e in satz)
+
+    def test_a_manifest_naming_a_missing_file_is_reported(self, tmp_path):
+        """Bisher kam der Satz still um ein Bild kürzer zurück."""
+
+        import json as _json
+
+        run_dir, figures = self._run_mit_bildern(tmp_path)
+        (figures / "manifest.json").write_text(
+            _json.dumps(
+                {
+                    "run_id": "run_x",
+                    "figures": {
+                        "Preis vs. Booking": "price_vs_booking.png",
+                        "Systemdynamik": "system_dynamics.png",
+                        "Alterssegmente": "age_segment_booking.png",
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        satz = list_run_figures(run_dir)
+
+        assert len(satz) == 2
+        assert satz.fehlend == ("Alterssegmente",), (
+            "Ein im Manifest genanntes, aber fehlendes Bild wird verschluckt: " f"{satz.fehlend}"
+        )
+        assert not satz.vollstaendig
+
+    def test_the_view_says_so_in_both_cases(self, tmp_path):
+        """Ein Befund, den nur der Datentyp kennt, hilft niemandem."""
+
+        import json as _json
+
+        from dashboard.web.views.figures import _satz_hinweis
+
+        run_dir, figures = self._run_mit_bildern(tmp_path)
+        assert _satz_hinweis(list_run_figures(run_dir)) is not None, "Kein Hinweis ohne Manifest"
+
+        (figures / "manifest.json").write_text(
+            _json.dumps({"figures": {"A": "price_vs_booking.png", "B": "fehlt.png"}}),
+            encoding="utf-8",
+        )
+        assert _satz_hinweis(list_run_figures(run_dir)) is not None, "Kein Hinweis bei Lücke"
+
+        (figures / "manifest.json").write_text(
+            _json.dumps({"figures": {"A": "price_vs_booking.png"}}), encoding="utf-8"
+        )
+        assert (
+            _satz_hinweis(list_run_figures(run_dir)) is None
+        ), "Ein vollständiger Satz wird mit einer Warnung versehen"

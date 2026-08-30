@@ -83,6 +83,19 @@ Sechs thematische Auswertungen plus die exportierten Bilddateien.
 | CIB-Faktoren | Die Zustands-Trajektorien von F1 bis F7 als Treppenlinien |
 | PNG-Export | Die sechs Bilddateien für Berichte, mit Knopf zum Neuerzeugen |
 
+Unter **PNG-Export** kann eine Warnung über den Bildern stehen; sie sagt, dass
+dem Satz nicht zu trauen ist. Zwei Fälle gibt es:
+
+**«Kein Manifest»** — die Bilder liegen da, aber die Liste ihrer Titel fehlt.
+Das betrifft ältere Läufe: Ihre Titel sind aus den Dateinamen abgeleitet, und ob
+der Satz vollständig ist, lässt sich nicht sagen. «Figures neu erzeugen» stellt
+einen benannten Satz her.
+
+**«Das Manifest nennt Bilder, die nicht vorliegen»** — der Satz ist
+unvollständig. Vorher fehlten sie einfach, ohne dass es jemand sagte.
+
+Steht keine Warnung da, ist der Satz vollständig und benannt.
+
 ## Bericht
 
 Der Tick-für-Tick-Bericht des Laufs, mit Kennzahlen und dem, was die Akteure

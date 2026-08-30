@@ -15,6 +15,7 @@ import plotly.graph_objects as go
 from dash import Input, Output, State, dcc, html, no_update
 from plotly.subplots import make_subplots
 
+from dashboard import run_browser
 from dashboard.run_browser import generate_figures_for_run, list_run_figures
 from dashboard.web import components as ui
 from dashboard.web import theme
@@ -344,6 +345,32 @@ def _view_cib(run_dir: Path, mode: str = theme.LIGHT):
     )
 
 
+def _satz_hinweis(figures) -> object:
+    """Was an diesem Bildersatz nicht stimmt — oder nichts (P1.2).
+
+    Zwei Zustände sahen bis zum 2026-08-30 aus wie ein vollständiger Satz: einer
+    **ohne Manifest**, dessen Titel aus Dateinamen geraten sind, und einer, in
+    dem das Manifest Dateien nennt, die es nicht gibt — die wurden still
+    übersprungen. Beide bekommen jetzt einen Satz darüber.
+    """
+
+    if figures.herkunft == run_browser.GERATEN:
+        return ui.alert(
+            "Zu diesen Bildern gibt es kein Manifest. Die Titel sind aus den "
+            "Dateinamen abgeleitet, und ob der Satz vollständig ist, lässt sich "
+            "nicht sagen. «Figures neu erzeugen» stellt einen benannten Satz her.",
+            "warning",
+        )
+    if figures.fehlend:
+        fehlt = ", ".join(figures.fehlend)
+        return ui.alert(
+            f"Das Manifest nennt {len(figures.fehlend)} Bild(er), die nicht "
+            f"vorliegen: {fehlt}. Der Satz ist unvollständig.",
+            "warning",
+        )
+    return None
+
+
 def png_gallery(run_dir: Path) -> html.Div:
     figures = list_run_figures(run_dir)
     if not figures:
@@ -355,6 +382,9 @@ def png_gallery(run_dir: Path) -> html.Div:
         )
 
     cards = []
+    hinweis = _satz_hinweis(figures)
+    if hinweis is not None:
+        cards.append(html.Div(hinweis, className="mb-4"))
     for figure in figures:
         url = run_file_url(figure.absolute_path)
         cards.append(
