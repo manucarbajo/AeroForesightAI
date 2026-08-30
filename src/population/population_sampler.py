@@ -23,7 +23,10 @@ from src.models.property_models import IndividualProperty, PropertiesConfig, Shi
 from src.models.state_models import DEFAULT_SEED, FactorState
 from src.rule_engine import KNOWN_METRICS, RuleContext, rule_matches
 
-DEFAULT_LOGIT_THRESHOLD = 0.5
+# `DEFAULT_LOGIT_THRESHOLD` ist mit P2.1 entfallen. Gegen 0,5 zu vergleichen
+# hieß, die Sigmoid zu berechnen und dann wegzuwerfen: Weil sie monoton ist,
+# war `p >= 0.5` identisch mit `utility >= 0`. Gezogen wird jetzt gegen die
+# Wahrscheinlichkeit (`evaluate_booking`).
 DEFAULT_GREEN_PREMIUM = 0.1
 HIGH_PRICE_SENSITIVITY_THRESHOLD = 0.8
 HIGH_PRICE_SENSITIVITY_PENALTY = 0.3
@@ -32,6 +35,24 @@ DEFAULT_CARBON_ECO_BASELINE = 50.0
 
 def _rng(seed: int) -> np.random.Generator:
     return np.random.default_rng(seed)
+
+
+def buchungsstrom(seed: int, tick: int) -> np.random.Generator:
+    """Der Zufallsstrom **eines Ticks** eines **bestimmten Laufs** (P2.1).
+
+    Der Fallstrick, den der Projektplan seit dem 2026-08-26 benannt hat, und er
+    ist keiner der Theorie: `run_population_tick` bekommt in **jedem** Tick
+    denselben `state.config.seed`. Ein naiv daraus gebauter Generator zöge in
+    jedem Tick dieselbe Zahlenfolge — es buchten immer dieselben Individuen,
+    und die Buchungsrate würde zur Stufenfunktion. Reproduzierbar, aber falsch,
+    und schwer zu bemerken, weil die Zahlen plausibel aussehen.
+
+    `SeedSequence([seed, tick])` mischt beide zu einem eigenen Strom: gleicher
+    Lauf und gleicher Tick ergeben dieselbe Folge, verschiedene Ticks
+    verschiedene. Das ist die Eigenschaft, auf der P2.6 (Ensemble) aufsetzt.
+    """
+
+    return np.random.default_rng(np.random.SeedSequence([int(seed), int(tick)]))
 
 
 def _get_individual_property(
@@ -320,15 +341,30 @@ def apply_factor_shifts(
     return updated
 
 
-def _booking_probability(
+def booking_probability(
     person: Individual,
     *,
     ticket_price: float,
     carbon_tax: float,
     green_premium: float = DEFAULT_GREEN_PREMIUM,
-    logit_threshold: float = DEFAULT_LOGIT_THRESHOLD,
     saturation_penalty_factor: float = 1.0,
-) -> bool:
+) -> float:
+    """Die Buchungswahrscheinlichkeit dieser Person — eine Zahl in [0, 1].
+
+    **Bis P2.1 gab diese Funktion ein `bool` zurück.** Sie rechnete die Sigmoid
+    und verglich sie gegen 0,5 — weil die Sigmoid monoton ist, war das
+    mathematisch identisch mit `utility >= 0`. Der Logit-Teil tat nichts: Es
+    wurde nie gegen die Wahrscheinlichkeit gezogen, und zwei Personen mit
+    p = 0,51 und p = 0,99 buchten gleichermaßen sicher.
+
+    Ohne Ziehung gibt es keine Verteilung, und ohne Verteilung keine
+    Bandbreite — der Grund, warum P2.6 (Ensemble) ohne dieses Paket sinnlos
+    wäre: Fünfzig Seeds ergäben fünfzig identische Buchungsverläufe.
+
+    **Null heißt hier «kann nicht», nicht «will nicht».** Wer sich das Ticket
+    nicht leisten kann, bucht nicht — das ist eine harte Schranke und keine
+    Wahrscheinlichkeit, die bei genug Ziehungen doch einmal zuschlägt.
+    """
 
     affordability_limit = (
         person.wtp_eur
@@ -336,7 +372,7 @@ def _booking_probability(
         * (1.0 + green_premium * person.environmental_awareness)
     )
     if ticket_price > affordability_limit:
-        return False
+        return 0.0
 
     base_utility = 2.0
     normalized_price = ticket_price / 100.0
@@ -351,8 +387,7 @@ def _booking_probability(
     saturation_penalty = person.saturation_level * saturation_penalty_factor
 
     utility = base_utility - price_penalty - eco_penalty - substitution_penalty - saturation_penalty
-    probability = float(1.0 / (1.0 + np.exp(-utility)))
-    return bool(probability >= logit_threshold)
+    return float(1.0 / (1.0 + np.exp(-utility)))
 
 
 def evaluate_booking(
@@ -361,6 +396,7 @@ def evaluate_booking(
     ticket_price: float,
     carbon_tax: float,
     properties: PropertiesConfig | None,
+    rng: np.random.Generator,
 ) -> tuple[list[Individual], PopulationStats]:
     """Evaluate booking decisions for persistent individuals.
 
@@ -373,6 +409,13 @@ def evaluate_booking(
     haben aber eine eigene Bedienung im Config-Editor, und nach einer Änderung
     dort läuft die Sättigung still auseinander (nachgestellt: Summe 195.25
     gegen 468.60). Sie trägt in die Buchungsentscheidungen des nächsten Ticks.
+
+    *rng* ist seit P2.1 **Pflicht und ohne Default** — aus demselben Grund. Ein
+    Generator, den die Funktion sich selbst besorgt, wäre bei jedem Aufruf
+    derselbe: Es buchten in jedem Tick dieselben Individuen, die Buchungsrate
+    würde zur Stufenfunktion, und das Ergebnis sähe dabei plausibel aus. Wer den
+    Strom aufbaut, weiß als Einziger, wofür er stehen soll — deshalb kommt er
+    von außen (`run_population_tick`).
     """
 
     saturation = properties.saturation if properties is not None else None
@@ -381,13 +424,18 @@ def evaluate_booking(
 
     booked_individuals: list[Individual] = []
     for person in individuals:
-        booked = _booking_probability(
+        wahrscheinlichkeit = booking_probability(
             person,
             ticket_price=ticket_price,
             carbon_tax=carbon_tax,
             saturation_penalty_factor=penalty_factor,
         )
-        update: dict[str, object] = {"booked": bool(booked)}
+        # **Die Ziehung** (P2.1). Vorher stand hier ein Vergleich gegen 0,5.
+        # `< p` und nicht `<= p`: Bei p = 0 darf niemand buchen — das ist die
+        # Unbezahlbarkeits-Schranke, und `rng.random()` liefert die 0,0 mit
+        # positiver Wahrscheinlichkeit.
+        booked = bool(rng.random() < wahrscheinlichkeit)
+        update: dict[str, object] = {"booked": booked}
         if booked:
             new_saturation = min(1.0, person.saturation_level + booking_increase)
             update["saturation_level"] = round(new_saturation, 4)
@@ -580,6 +628,7 @@ def run_population_tick(
         ticket_price=ticket_price,
         carbon_tax=carbon_tax,
         properties=properties,
+        rng=buchungsstrom(seed, current_tick),
     )
 
 

@@ -441,33 +441,48 @@ class TestDerFingerabdruckBeschreibtDieEingabe:
         assert erster["config_fingerprint"] == zweiter["config_fingerprint"]
         assert erster["seed"] != zweiter["seed"]
 
-    def test_the_two_runs_really_diverged(self) -> None:
+    def test_der_lauf_verschiebt_die_faktoren_ueberhaupt(self) -> None:
         """Der Kontrolltest zum vorigen — und er ist nicht redundant.
 
-        Beim ersten Versuch stand hier "ein Faktor hat sich vom Startzustand
-        bewegt"; bei vier Ticks trifft das für Seed 1 nicht zu, und der Test
-        oben wäre grün gewesen, ohne etwas zu zeigen. Worauf es ankommt, ist
-        die Divergenz der **beiden Läufe**: Nur wenn ihre Endzustände
-        auseinandergehen, belegt ein gemeinsamer Fingerabdruck, dass er das
-        Ergebnis nicht mehr mithasht.
+        **Die Achse hat sich mit P2.1 geändert, und das ist selbst ein Befund.**
+        Vorher stand hier: Zwei Läufe *mit verschiedenen Seeds* enden in
+        verschiedenen Faktorzuständen. Das galt, solange die Buchung eine
+        Schwelle war — dann hing das Ergebnis an der Zusammensetzung der
+        gezogenen Bevölkerung, und ein anderer Seed hieß eine andere Rate.
+
+        Mit der echten Ziehung mitteln sich die Einzelentscheidungen über tausend
+        Personen aus: Nachgemessen landen die Seeds 1, 2 und 3 nach 10, 15 und 20
+        Ticks auf **denselben** Faktorzuständen. Der alte Kontrolltest wäre damit
+        rot geworden, ohne dass am Fingerabdruck etwas falsch ist.
+
+        Worauf es ankommt, ist ohnehin etwas anderes: dass der Lauf die Faktoren
+        **überhaupt bewegt**. Nur dann hasht ein am Ende genommener Abdruck das
+        Ergebnis mit — und genau das belegt der Test darunter. Vier Ticks
+        genügten dafür nie; bei fünfzehn bewegen sich vier der sieben.
         """
 
-        erster = {k: v.current_state for k, v in _lauf(seed=1).environment.factors.items()}
-        zweiter = {k: v.current_state for k, v in _lauf(seed=2).environment.factors.items()}
+        start = {k: v.current_state for k, v in build_initial_state().environment.factors.items()}
+        ende = {k: v.current_state for k, v in _lauf(seed=1, ticks=15).environment.factors.items()}
 
-        assert erster != zweiter, (
-            "beide Läufe enden im selben Faktorzustand — dann wäre der Test oben "
-            "auch mit dem alten, am Ende genommenen Fingerabdruck grün"
+        bewegt = sorted(k for k in start if start[k] != ende[k])
+        assert bewegt, (
+            "Kein Faktor hat sich im Lauf bewegt — dann hasht auch ein am Ende "
+            "genommener Fingerabdruck nichts vom Ergebnis, und der Test darunter "
+            "wäre aus dem falschen Grund grün."
         )
 
     def test_the_old_way_would_have_differed(self) -> None:
         """Und dass der alte Weg wirklich der Fehler war: derselbe Abdruck,
-        am Ende genommen, geht auseinander."""
+        am Ende genommen, weicht vom Abdruck am Anfang ab."""
 
-        am_ende_erster = config_fingerprint(_lauf(seed=1))
-        am_ende_zweiter = config_fingerprint(_lauf(seed=2))
+        am_anfang = config_fingerprint(build_initial_state())
+        am_ende = config_fingerprint(_lauf(seed=1, ticks=15))
 
-        assert am_ende_erster.factors != am_ende_zweiter.factors
+        assert am_ende.factors != am_anfang.factors, (
+            "Der am Ende genommene Abdruck stimmt mit dem am Anfang überein — "
+            "dann trüge `factors` den Laufzustand nicht mehr, und der Fix von "
+            "2026-08-27 wäre gegenstandslos geworden."
+        )
 
     def test_it_is_taken_before_the_first_tick(self) -> None:
         final = _lauf(seed=1)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import random
 import sys
 import time
 from dataclasses import dataclass
@@ -176,10 +175,7 @@ class SimulationRunner:
         elif state.config.seed is None:
             state.config.seed = DEFAULT_SEED
 
-        # Erst prüfen, dann handeln: `_seed_runtime` mit einem ungültigen Seed
-        # aufzurufen und den Fehler danach zu melden, hieße halb anfangen.
         validate_state(state)
-        self._seed_runtime(state.config.seed)
 
         # Der Fingerabdruck der Eingaben, genommen **bevor** ein Tick etwas
         # daran verschiebt. Beim Fortsetzen aus einem Checkpoint steht er schon
@@ -314,19 +310,17 @@ class SimulationRunner:
             "regulator": regulator,
         }
 
-    def _seed_runtime(self, seed: int | None) -> None:
-        """Seed local runtime randomness for reproducible multi-run execution."""
-
-        if seed is None:
-            return
-
-        random.seed(seed)
-        try:
-            import numpy as np  # type: ignore
-
-            np.random.seed(seed)
-        except Exception:
-            pass
+    # `_seed_runtime` ist mit P2.1 entfallen. Sie seedete das stdlib-`random`
+    # und den **globalen Legacy**-Zustand von `np.random` — beides benutzt in
+    # diesem Projekt niemand. Gezogen wird über `np.random.default_rng`, und
+    # eine unabhängige Generator-Instanz lässt sich von `np.random.seed()`
+    # nicht beeinflussen. Die Funktion war damit wirkungslos und gefährlich
+    # zugleich: Wer neuen Zufallscode schrieb, konnte sich auf sie verlassen.
+    #
+    # Die Reproduzierbarkeit hängt nicht an ihr. `state.config.seed` wird
+    # explizit durchgereicht (`environment_node` → `run_population_tick` →
+    # `buchungsstrom`), und `tests/test_buchung_zieht.py` misst nach, dass zwei
+    # Läufe mit demselben Seed dieselben Buchungsraten liefern.
 
     def _resolve_seeds(
         self,

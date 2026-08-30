@@ -222,7 +222,9 @@ class TestKeinKontextparameterHatEinenDefault:
         ("src.market.simulation_functions", "apply_market_feedback", ("properties", "tick")),
         ("src.market.market_feedback", "initial_provider_markup", ("tick",)),
         ("src.market.market_feedback", "initial_ticket_price", ("tick",)),
-        ("src.population.population_sampler", "evaluate_booking", ("properties",)),
+        # `rng` seit P2.1: Ein selbst besorgter Generator waere in jedem Tick
+        # derselbe -- es buchten immer dieselben Individuen.
+        ("src.population.population_sampler", "evaluate_booking", ("properties", "rng")),
         ("src.population.population_sampler", "aggregate_population_stats", ("properties",)),
     ]
 
@@ -292,6 +294,11 @@ class TestKeinKontextparameterEntgehtDemSweep:
             "properties",
             "factors",
             "system_properties",
+            # `rng` seit P2.1: Ein Zufallsstrom traegt den Kontext eines Ticks
+            # genauso wie `tick` selbst. Ein Default hiesse hier "irgendein
+            # Generator" -- und weil `run_population_tick` in jedem Tick
+            # denselben Seed bekommt, waere das in jedem Tick derselbe.
+            "rng",
         }
     )
 

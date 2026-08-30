@@ -1302,7 +1302,37 @@ Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
 
 **Doku zieht mit:** `docs/cib_role.md`, `docs/handbuch/cib.md`, `docs/handbuch/faktoren.md`, `docs/handbuch/presets.md`, `docs/scenario_runs.md`, `CLAUDE.md` (Glossar «CIB-Matrix», «Faktoren F1–F7», Architektur-Map zu `src/cib/`).
 
-### P2.1 — Buchungsmodell: echte Ziehung statt Schwellwert
+### P2.1 — Buchungsmodell: echte Ziehung statt Schwellwert ⚠️ Ziehung erledigt 2026-08-30, Koeffizienten offen
+
+> **Die Ziehung steht.** `booking_probability` liefert eine Zahl in [0, 1], `evaluate_booking` zieht dagegen. **Offen bleibt die zweite Hälfte:** die Koeffizienten aus dem Code in die Konfiguration und ihre Herkunft belegen.
+
+**Was umgesetzt ist (2026-08-30):**
+
+- `_booking_probability` gab ein `bool` zurück und verglich die Sigmoid gegen 0,5. Weil die Sigmoid monoton ist, war das identisch mit `utility >= 0` — der Logit-Teil tat nichts. Sie heißt jetzt `booking_probability`, liefert die Wahrscheinlichkeit, und `evaluate_booking` zieht mit `rng.random() < p`. `DEFAULT_LOGIT_THRESHOLD` ist entfallen.
+- **Der Fallstrick ist gelöst, wie der Plan ihn beschrieb:** `buchungsstrom(seed, tick)` baut über `SeedSequence([seed, tick])` einen Strom je (Lauf, Tick). `rng` ist in `evaluate_booking` **Pflicht ohne Default** und steht im Kontextparameter-Wächter (`tests/test_cost_pressure_source.py`) — ein selbst besorgter Generator wäre in jedem Tick derselbe.
+- `_seed_runtime` ist **entfernt**. Sie seedete das stdlib-`random` und den globalen Legacy-Zustand von `np.random`; beides benutzt niemand, gezogen wird über `default_rng`. Sie war wirkungslos und zugleich gefährlich: Wer neuen Zufallscode schrieb, konnte sich auf sie verlassen.
+- **Null heißt «kann nicht», nicht «unwahrscheinlich»**: Wer sich das Ticket nicht leisten kann, bucht nicht — `< p` und nicht `<= p`, weil `rng.random()` die 0,0 mit positiver Wahrscheinlichkeit liefert.
+
+**Was das an den Zahlen verschiebt** (2000 Personen, `carbon_tax = 50`):
+
+| Ticketpreis | Schwelle | Ziehung | Streuung über 20 Ströme |
+| --- | ---: | ---: | --- |
+| 80 € | 0,968 | 0,742 | 0,715 – 0,755 |
+| 110 € | 0,847 | 0,602 | 0,577 – 0,615 |
+| 140 € | 0,621 | 0,439 | 0,419 – 0,449 |
+| 180 € | 0,299 | 0,243 | 0,229 – 0,255 |
+| 250 € | 0,059 | 0,072 | 0,065 – 0,082 |
+
+Die Schwelle **überzeichnete** die Nachfrage bei niedrigen Preisen und **unterzeichnete** sie bei hohen — sie drückte jede Wahrscheinlichkeit auf 0 oder 1 und stauchte die Nachfragekurve zu den Rändern. Der Schnitt steht in `docs/handbuch/vergleiche.md`; Läufe von davor sind mit späteren **nicht** vergleichbar, auch nicht der Richtung nach.
+
+**Ein Nebenbefund, der zwei Tests umgebaut hat:** Der Seed verschiebt die **Faktor-Endzustände** jetzt kaum noch — die Startwerte 1, 2 und 3 landen nach 10, 15 und 20 Ticks auf denselben sieben Zuständen. Die Einzelentscheidungen mitteln sich über tausend Personen aus; was streut, sind die Raten, nicht die Lage. Zwei Kontrolltests in `test_run_provenance.py` standen auf «zwei Seeds divergieren» und wären dadurch rot geworden, ohne dass am Fingerabdruck etwas falsch ist. Sie messen jetzt, was sie eigentlich brauchen: **dass der Lauf die Faktoren überhaupt bewegt** (bei 15 Ticks vier von sieben).
+
+**Der Wächter:** `tests/test_buchung_zieht.py` — elf Zusagen in vier Gruppen: die Wahrscheinlichkeit ist eine Zahl, es wird wirklich gezogen, der Strom gehört einem Tick, und der Lauf bleibt bei gleichem Seed reproduzierbar.
+
+**Doku mitgezogen:** `docs/handbuch/kaufentscheidung.md` (der Abschnitt hieß «Warum das deterministisch ist»), `docs/handbuch/vergleiche.md` (fünfter Schnitt), `CLAUDE.md` (Glossar «Logit-Modell» und der Vorbehalt in der Einleitung).
+
+**Was offen bleibt:** Die Koeffizienten `base_utility = 2.0`, die Normierung `/100.0` und der Faktor `*1.5` für die Substitution stehen weiterhin als Literale in `booking_probability`. Sie gehören nach `configs/properties.json`, und jeder braucht eine benannte Quelle — die Literatur liegt in `docs/research/literature/` (Preiselastizitäten im Luftverkehr). **Erst damit ist P2.1 fertig.**
+
 
 **Befund:** Das "Logit-Modell" ist keines. Es wird `p = 1/(1+e^-u)` gerechnet und dann `p >= 0.5` geprüft — weil die Sigmoid monoton ist, ist das mathematisch identisch mit `u >= 0`. Der Logit-Teil tut nichts; es wird nie gegen die Wahrscheinlichkeit gezogen. Die Koeffizienten (`base_utility = 2.0`, `/100.0`, `*1.5`) sind handgesetzt, nicht geschätzt.
 
@@ -1398,7 +1428,7 @@ Fällt die Wahl auf 2 oder 3, ist die Impact Balance dann auch zu implementieren
 
 **Was zu tun ist:** Je Rahmenszenario eine Serie von Läufen mit `base_seed + index` rechnen und die Ergebnisse als **Perzentile** auswerten statt als Einzelverlauf. In den Ansichten aus P1.3 als Band darstellen, nicht als Linie. Die Zahl der Wiederholungen gehört in die Konfiguration, nicht in den Code.
 
-**Vorbedingung:** [P2.1](#p21--buchungsmodell-echte-ziehung-statt-schwellwert). **Ohne echte Ziehung ist ein Ensemble sinnlos** — heute ist die Buchungsentscheidung deterministisch, fünfzig Seeds erzeugen dann fünfzig identische Verläufe der Buchungsrate. Wer P2.6 vor P2.1 baut, misst die Streuung des Bevölkerungs-Samplings und hält sie für die Unsicherheit des Modells.
+**Vorbedingung:** [P2.1](#p21--buchungsmodell-echte-ziehung-statt-schwellwert--ziehung-erledigt-2026-08-30-koeffizienten-offen). **Ohne echte Ziehung ist ein Ensemble sinnlos** — heute ist die Buchungsentscheidung deterministisch, fünfzig Seeds erzeugen dann fünfzig identische Verläufe der Buchungsrate. Wer P2.6 vor P2.1 baut, misst die Streuung des Bevölkerungs-Samplings und hält sie für die Unsicherheit des Modells.
 
 **Fallstrick — Laufzeit:** Fünfzig Läufe je Szenario bei acht Szenarien sind 400 Läufe. Wie lange ein realistischer LLM-Lauf dauert, steht bis heute nirgends (siehe [«Was bewusst nicht in diesem Plan steht»](#was-bewusst-nicht-in-diesem-plan-steht)). Vor der Umsetzung einmal messen — sonst wird die Ensemble-Auswertung zu dem Feature, das im Demo nicht durchläuft. Ein Ensemble braucht die Narrative nicht; der Rechenmodus ohne Sprachmodell ist hier vermutlich der richtige, und dann sagt `compute_mode` das auch im Artefakt.
 

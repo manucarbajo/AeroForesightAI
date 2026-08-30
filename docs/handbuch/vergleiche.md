@@ -92,6 +92,40 @@ Preise am Ende: bei «Totaler Wahnsinn» 588,47 statt 574,47 Euro (2,4 %), bei
 messbar. Läufe dieser vier Szenarien von vor diesem Datum sind mit späteren also
 nur eingeschränkt vergleichbar.
 
+Am 2026-08-30 kam ein **fünfter Schnitt** dazu, und er ist der größte: **Die
+Buchungsentscheidung wird gezogen, nicht mehr geschwellt.** Bis dahin buchte
+jeder, dessen rechnerische Buchungswahrscheinlichkeit über 50 Prozent lag — und
+zwar mit Sicherheit. Zwei Personen mit 51 und 99 Prozent waren nicht zu
+unterscheiden.
+
+Das verschiebt **jede** Zahl, und zwar systematisch. Gemessen an 2000 Personen
+der Standardkonfiguration:
+
+| Ticketpreis | vorher | heute | Streuung über 20 Ziehungen |
+|---|---:|---:|---|
+| 80 € | 0,968 | 0,742 | 0,715 – 0,755 |
+| 110 € | 0,847 | 0,602 | 0,577 – 0,615 |
+| 140 € | 0,621 | 0,439 | 0,419 – 0,449 |
+| 180 € | 0,299 | 0,243 | 0,229 – 0,255 |
+| 250 € | 0,059 | 0,072 | 0,065 – 0,082 |
+
+Die alte Schwelle **überzeichnete** die Nachfrage bei niedrigen Preisen und
+**unterzeichnete** sie bei hohen: Sie drückte jede Wahrscheinlichkeit auf null
+oder eins und stauchte die Nachfragekurve damit zu den Rändern hin. Läufe von
+vor diesem Datum sind mit späteren **nicht** vergleichbar — auch nicht in der
+Richtung, denn die Verzerrung hat je nach Preisniveau ein anderes Vorzeichen.
+
+Dafür gibt es jetzt eine **Streuung**, wo vorher keine war: Derselbe Lauf mit
+demselben Ausgangspunkt liefert je nach Zufallsstartwert leicht verschiedene
+Raten. Das ist kein Mangel an Genauigkeit, sondern die Bandbreite, die eine
+Einzelzahl nur vorgetäuscht hat.
+
+Zwei Dinge bleiben: Ein Lauf mit demselben Zufallsstartwert liefert weiterhin
+**exakt** dasselbe Ergebnis. Und ein Seed ändert die **Faktor-Endzustände**
+heute kaum noch — nachgemessen landen die Startwerte 1, 2 und 3 nach 10, 15 und
+20 Runden auf denselben sieben Zuständen. Die Einzelentscheidungen mitteln sich
+über tausend Personen aus; was streut, sind die Raten, nicht die Lage.
+
 Ebenfalls am 2026-08-28 kam ein vierter Schnitt, und er trifft **nur den
 Szenario-Vergleich** — also den Weg, der alle hinterlegten Szenarien
 nacheinander rechnet. Bis dahin gab das Dashboard seine eingestellte Länge an
