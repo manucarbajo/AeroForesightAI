@@ -33,10 +33,23 @@
 3. **Formular-Backend anbinden.** Das Formular in `demo-anfragen.html` hat `action="#"` und
    `method="POST"`. Ein Endpunkt muss ergänzt werden (eigener Handler, Formspree, o. ä.), sonst
    geht die Anfrage ins Leere.
-4. **Tailwind für Produktion bauen.** Alle Seiten laden aktuell die Tailwind-CDN
-   (`cdn.tailwindcss.com`). Das ist für einen Prototyp in Ordnung, für Produktion sollte ein
-   gebautes CSS-Bundle erzeugt werden, da die CDN-Variante deutlich langsamer und offiziell
-   nicht für den Produktivbetrieb vorgesehen ist.
+4. **Tailwind ist gebaut, nicht geladen.** Seit dem 2026-08-30 laden die Seiten
+   `/app/assets/00-tailwind.css` statt `cdn.tailwindcss.com`. Die Datei ist
+   versioniert; wer Klassen ändert, erzeugt sie im Repo-Wurzelverzeichnis neu:
+
+   ```bash
+   npm install && npm run build:css
+   ```
+
+   Auf dem Server ist dafür **keine** Node-Installation nötig — die erzeugte
+   Datei liegt im Checkout.
+
+   Dasselbe gilt für die Schriften: Sie liegen unter
+   `dashboard/web/assets/fonts/` und werden von `assets/01-schriften.css`
+   eingebunden. Kein Seitenaufruf fragt bei Google nach. Neu geholt werden sie
+   mit `python scripts/schriften_holen.py` — nur nötig, wenn ein Symbol
+   dazukommt.
+
 5. **Kontaktdaten prüfen.** Aktuell hinterlegt: `info@aeroforesight.ai`, „Hochschule der Medien“.
 6. **Analytics ergänzen**, falls gewünscht (Plausible, PostHog, Matomo).
 7. **Mobil.** Alle fünf Seiten sind responsiv und bei 375px Breite geprüft (kein horizontaler

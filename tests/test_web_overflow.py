@@ -235,7 +235,33 @@ _SEITE_SCHIEBT = """
 
 
 def _befunde(page) -> list[dict]:
+    """Erst warten, bis die **Schriften** da sind, dann messen.
+
+    **Sonst misst man Ersatzzeichen.** Bis zum 2026-08-30 kam Tailwind als
+    CDN-Skript, das die Regeln zur Laufzeit erzeugte — das dauerte lange genug,
+    dass die Symbolschrift nebenher ankam. Mit dem lokalen Stylesheet ist die
+    Seite schneller da als die Schrift, und `chevron_right` wird für einen
+    Moment in der Ersatzschrift gesetzt: zwei Pixel breiter als sein Kasten.
+    Der Wächter meldete daraufhin einen Überlauf, den niemand je sieht.
+
+    Ein Wächter, der vom Ladezeitpunkt einer Schrift abhängt, ist keiner.
+    """
+
+    # **Auf das Versprechen warten, nicht auf den Status.** `document.fonts.status`
+    # steht schon auf `loaded`, wenn die Schriften der *vorigen* Ansicht da sind
+    # — fordert die neue eine weitere Schnittvariante an, misst man trotzdem zu
+    # früh. `document.fonts.ready` wartet auf alles, was gerade lauft.
+    try:
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+    except PlaywrightError:
+        # Ohne Netz laedt keine Webschrift; dann misst man eben die Ersatzschrift
+        # — besser als gar nicht zu messen, und der Fall faellt woanders auf.
+        pass
     page.wait_for_timeout(RUHE_MS)
+    try:
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+    except PlaywrightError:
+        pass
     return page.evaluate(_DETEKTOR)
 
 
@@ -325,10 +351,19 @@ class TestKeineAnsichtTrittAusIhrerBox:
 
 # --- Teil 2: die Höhe (W0.1) -----------------------------------------------
 
-#: Wohin der Deckel gehört, sobald der Umbau steht: **ein** Schirm. Eine Frage
-#: auf dem Bildschirm, ohne Scrollen — die Zusage von P1.7 im Klartext. W3.5
-#: setzt `DECKEL` auf diesen Wert; bis dahin ist er das Maß, an dem man abliest,
-#: wie weit es noch ist.
+#: Wohin der Deckel gehörte, wenn der Inhalt es zuließe: **ein** Schirm. Eine
+#: Frage auf dem Bildschirm, ohne Scrollen — die Zusage von P1.7 im Klartext.
+#:
+#: **Der Deckel steht bewusst darüber, und das ist entschieden, kein Rückstand**
+#: (W3.5, 2026-08-30). Vier der sieben Schritte stehen auf 1,00; die übrigen drei
+#: tragen Inhalt, der sich nur durch Weglassen kürzen ließe — zehn Szenarien mit
+#: ihrer Kennzahl, sieben Faktoren mit ihrer Leitfrage, die Benennung eines
+#: Laufs. Ohne Kennzahl sind es zehn Namen, ohne Leitfrage sieben Fachbegriffe,
+#: und ein Lauf ohne Namen ist später nicht wiederzufinden.
+#:
+#: `ZIEL` bleibt deshalb stehen: **als Maßstab, nicht als offene Aufgabe.** Wer
+#: einen Schritt kürzer bekommt, sieht hier, woran er ihn misst — und die
+#: Sperrklinke unten meldet den Gewinn ein, statt ihn verfallen zu lassen.
 ZIEL = 1.0
 
 #: Der Ist-Stand, gemessen am 2026-08-28 bei 800 px Fensterhöhe (744 px sichtbar).
@@ -386,7 +421,13 @@ DECKEL: dict[int, dict[str, float]] = {
     },
     1024: {
         "Einstieg": 1.00,
-        "Schritt 1": 1.31,
+        # **1,31 → 1,37, und das ist keine Aenderung am Schritt** (P1.4).
+        # Bis dahin kamen die Schriften von Google, und der Waechter mass,
+        # bevor sie da waren -- teils also die Ersatzschrift, die schmaler
+        # setzt. Mit den lokalen Schriften und dem Warten auf
+        # `document.fonts.ready` misst er zum ersten Mal durchgehend die
+        # echten Metriken. Die alte Zahl war zu guenstig, nicht diese zu hoch.
+        "Schritt 1": 1.37,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         "Schritt 4": 1.34,
@@ -1112,3 +1153,325 @@ def test_the_narrow_guard_would_notice_a_relapse(schmale_seite):
     assert (
         nachher["liste"] > LISTE_MAX
     ), f"Der Wächter übersieht eine gestapelte Schrittliste ({nachher['liste']} px)"
+
+
+# --- Teil 5: Jede benutzte Klasse hat eine Regel (P1.4) ----------------------
+#
+# Tailwind kommt seit dem 2026-08-30 aus einem Build statt vom CDN. Das
+# CDN-Skript erzeugte die Regeln zur Laufzeit aus dem, was im DOM stand — es
+# konnte gar nichts übersehen. Der Build kann: Er schreibt nur Regeln für
+# Klassen, die sein Scanner im Quelltext **findet**. Eine Klasse, die zur
+# Laufzeit aus Bruchstücken entsteht, fehlt dann **stumm** — kein Fehler, nur
+# ein Kasten, der anders aussieht.
+#
+# Dieser Wächter geht jede Ansicht durch, sammelt alle benutzten Klassennamen
+# aus dem gezeichneten DOM und hält sie gegen die Regeln in `document.styleSheets`.
+
+#: Klassen ohne eigene Gestaltung. Sie **markieren** etwas, statt es zu
+#: formen — für sie gibt es berechtigterweise keine Regel.
+#:
+#: `light` und `dark` sind die eigenen: Sie stehen am `<html>` und schalten
+#: das Design um (`darkMode: "class"`); jede Regel, die davon abhängt, nennt
+#: sie als Vorfahren, nicht als eigenes Ziel. Der Rest kommt von Dash und
+#: Plotly und markiert Elemente für deren eigenes JavaScript.
+FREMDE_KLASSEN = {
+    "light",
+    "dark",
+    "active",
+    "selected",
+    "_dash-loading-callback",
+}
+
+#: Präfixe derselben Art. Plotly bringt allein für seine Zeichenfläche ein
+#: Dutzend Marker mit (`gl-canvas`, `modebar-container`, …).
+FREMDE_PRAEFIXE = ("dash-", "plot-", "svg-", "gl-", "modebar", "js-plotly")
+
+_KLASSEN_OHNE_REGEL = """
+() => {
+    // **CSS-Escapes zurueckuebersetzen.** Eine Klasse, die mit einer Ziffer
+    // beginnt, steht als Hex-Escape im Stylesheet: `2xl:grid-cols-3` wird zu
+    // `.\\32 xl\\:grid-cols-3` -- mit einem Leerzeichen, das die Escape-Sequenz
+    // beendet. Ein naiver Ausdruck bricht dort ab und meldet die Klasse als
+    // regellos. Genau das ist beim ersten Durchlauf passiert.
+    const entschluesseln = (s) => s.replace(
+        /\\\\([0-9a-fA-F]{1,6})[ ]?|\\\\(.)/g,
+        (_, hex, roh) => hex ? String.fromCodePoint(parseInt(hex, 16)) : roh
+    );
+
+    const regeln = new Set();
+    const sammeln = (liste) => {
+        for (const r of liste) {
+            // In `@media` und `@supports` steigen: Dort liegen alle
+            // responsiven Varianten. Ohne das meldet der Waechter jede
+            // `sm:`- und `lg:`-Klasse als fehlend.
+            if (r.cssRules) { sammeln(r.cssRules); }
+            const sel = r.selectorText;
+            if (!sel) { continue; }
+            const treffer = sel.match(/\\.(?:\\\\[0-9a-fA-F]{1,6}[ ]?|\\\\.|[-_a-zA-Z0-9])+/g) || [];
+            treffer.forEach((m) => regeln.add(entschluesseln(m.slice(1))));
+        }
+    };
+    for (const sheet of document.styleSheets) {
+        try { sammeln(sheet.cssRules); } catch (e) { /* fremdes Blatt */ }
+    }
+
+    const benutzt = new Set();
+    document.querySelectorAll("*").forEach((el) => {
+        if (typeof el.className === "string") {
+            el.className.split(/\\s+/).filter(Boolean).forEach((c) => benutzt.add(c));
+        }
+    });
+
+    return [...benutzt].filter((c) => !c.startsWith("af-") && !regeln.has(c));
+}
+"""
+
+
+def _klassen_ohne_regel(page) -> list[str]:
+    roh = page.evaluate(_KLASSEN_OHNE_REGEL)
+    return sorted(c for c in roh if c not in FREMDE_KLASSEN and not c.startswith(FREMDE_PRAEFIXE))
+
+
+class TestJedeBenutzteKlasseHatEineRegel:
+    """Der Build darf nichts übersehen, was das CDN noch gefunden hätte."""
+
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_no_class_lost_its_rule(self, page, name):
+        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS)
+
+        ohne = _klassen_ohne_regel(page)
+
+        assert not ohne, (
+            f"Diese Klassen werden in «{name}» benutzt, haben aber keine Regel:\n  "
+            + "\n  ".join(ohne)
+            + "\n\nTailwind schreibt nur Regeln für Klassen, die sein Scanner im "
+            "Quelltext findet (`content` in `tailwind.config.js`). Eine zur "
+            "Laufzeit zusammengesetzte Klasse findet er nicht."
+        )
+
+    def test_the_landing_page_too(self, page):
+        """Sie teilt sich das Stylesheet mit dem Dashboard."""
+
+        page.goto(page.basis.replace("/app/", "/"), wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS)
+
+        assert not _klassen_ohne_regel(page)
+
+
+def test_the_class_guard_would_notice_a_relapse(page):
+    """Eine Klasse, die der Build nicht kennt, muss auffallen.
+
+    `mt-[999px]` ist gültiges Tailwind und steht in keinem Quelltext — genau
+    der Fall, den eine zur Laufzeit zusammengesetzte Klasse erzeugt.
+    """
+
+    page.goto(page.basis, wait_until="networkidle")
+    page.wait_for_timeout(RUHE_MS)
+    assert not _klassen_ohne_regel(page)
+
+    page.evaluate("""
+        () => {
+          const d = document.createElement('div');
+          d.className = 'mt-[999px] af-echt-egal';
+          document.body.appendChild(d);
+        }
+        """)
+
+    assert "mt-[999px]" in _klassen_ohne_regel(page), (
+        "Der Wächter übersieht eine Klasse ohne Regel — dann bricht der nächste "
+        "Build die Darstellung still."
+    )
+
+
+# --- Teil 6: Kein Aufruf verlässt den eigenen Server (P1.4) ------------------
+#
+# **Die Zusage von P1.4 im Wortlaut**, als Messung statt als Behauptung: «Ein
+# Seitenaufruf erzeugt keine Anfrage an einen externen Host.»
+#
+# Bis zum 2026-08-30 meldete jeder Aufruf die IP des Betrachters an
+# `cdn.tailwindcss.com` und `fonts.googleapis.com` — auf allen fünf
+# Landingpage-Seiten und im Dashboard. Das widerspricht dem Deployment-Ziel
+# Datenhoheit direkt; bei Google Fonts kommt die deutsche Rechtslage dazu.
+#
+# Ein Test, der die Quelltexte nach Hostnamen durchsucht, fände nur, was jemand
+# hingeschrieben hat. Dieser hört zu, **was der Browser wirklich tut**.
+
+
+def _fremde_anfragen(page, url: str) -> list[str]:
+    """Jede Anfrage, die nicht an den eigenen Server geht."""
+
+    from urllib.parse import urlparse
+
+    eigener = urlparse(page.basis).netloc
+    fremd: list[str] = []
+
+    def mithoeren(anfrage) -> None:
+        ziel = urlparse(anfrage.url)
+        if ziel.scheme in ("http", "https") and ziel.netloc != eigener:
+            fremd.append(anfrage.url)
+
+    page.on("request", mithoeren)
+    try:
+        page.goto(url, wait_until="networkidle")
+        # Schriften werden erst angefordert, wenn ein Zeichen sie braucht.
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+        page.wait_for_timeout(RUHE_MS)
+    finally:
+        page.remove_listener("request", mithoeren)
+    return fremd
+
+
+class TestKeinAufrufVerlaesstDenServer:
+    """Datenhoheit ist kein Vorsatz, sondern eine messbare Eigenschaft."""
+
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_no_area_of_the_dashboard_phones_home(self, page, name):
+        fremd = _fremde_anfragen(page, page.basis + BEREICHE[name])
+
+        assert not fremd, f"«{name}» lädt von fremden Hosts:\n  " + "\n  ".join(sorted(set(fremd)))
+
+    def test_no_page_of_the_landing_site_phones_home(self, page):
+        """Sie ist die einzige öffentlich sichtbare Oberfläche."""
+
+        basis = page.basis.replace("/app/", "/")
+        befunde: dict[str, list[str]] = {}
+        for seite in ("", "demo-anfragen.html", "impressum.html", "datenschutz.html", "agb.html"):
+            fremd = _fremde_anfragen(page, basis + seite)
+            if fremd:
+                befunde[seite or "index.html"] = sorted(set(fremd))
+
+        assert not befunde, f"Diese Seiten laden von fremden Hosts: {befunde}"
+
+
+def test_the_network_guard_would_notice_a_relapse(page):
+    """Ein Wächter, der nie etwas sieht, könnte auch blind sein.
+
+    Nachgestellt wird genau der alte Zustand: ein Stylesheet von einem fremden
+    Host. Der Browser darf es ruhig nicht laden — **die Anfrage** ist der
+    Befund, nicht die Antwort.
+    """
+
+    page.goto(page.basis, wait_until="networkidle")
+
+    from urllib.parse import urlparse
+
+    eigener = urlparse(page.basis).netloc
+    gesehen: list[str] = []
+    page.on(
+        "request",
+        lambda a: gesehen.append(a.url) if urlparse(a.url).netloc != eigener else None,
+    )
+    page.evaluate("""
+        () => {
+          const l = document.createElement('link');
+          l.rel = 'stylesheet';
+          l.href = 'https://fonts.googleapis.com/css2?family=Inter';
+          document.head.appendChild(l);
+        }
+        """)
+    page.wait_for_timeout(RUHE_MS)
+
+    assert any("fonts.googleapis.com" in u for u in gesehen), (
+        "Der Wächter übersieht eine Anfrage an einen fremden Host — dann ist " "seine Zusage keine."
+    )
+
+
+# --- Teil 7: Kein Symbol steht als Wort da (P1.4) ---------------------------
+#
+# **Dieser Wächter ist aus einem Fehlschlag entstanden.** Die Symbolschrift ist
+# ein Teilsatz — 5 KiB statt Megabyte —, und ein Name, der nicht darin steckt,
+# wird als Text gesetzt: «radio_button_unchecked» in Buchstaben statt als
+# Kreis. Dagegen stand ein AST-Durchlauf über `dashboard/web/`
+# (`tests/test_symbolschrift.py`), der jeden Symbolnamen an einer Aufrufstelle
+# einsammelt.
+#
+# Er hat vier übersehen. Die Zustände der Schrittliste stehen in einem
+# Modul-Dict (`_ZUSTAENDE` in `wizard.py`) und werden von dort in den Aufruf
+# gereicht — im Aufruf selbst steht eine Variable. Der Überlauf-Wächter meldete
+# daraufhin sieben Kästen, die um bis zu **308 px** aus der Schrittliste traten.
+#
+# **Ein Parser findet, was jemand hingeschrieben hat. Eine Messung findet, was
+# wirklich dasteht.** Dieser Wächter liest den gezeichneten Text jedes
+# Symbol-Elements und hält ihn gegen den Teilsatz — gleich, aus welcher Quelle
+# der Name kommt.
+
+_SYMBOLE_IM_DOM = """
+() => {
+    const namen = new Set();
+    document.querySelectorAll(".material-symbols-outlined").forEach((el) => {
+        const text = (el.textContent || "").trim();
+        if (text) { namen.add(text); }
+    });
+    return [...namen];
+}
+"""
+
+
+def _symbole_der_ansicht(page) -> set[str]:
+    page.evaluate("() => document.fonts.ready.then(() => true)")
+    page.wait_for_timeout(RUHE_MS)
+    return set(page.evaluate(_SYMBOLE_IM_DOM))
+
+
+class TestKeinSymbolStehtAlsWortDa:
+    """Der Teilsatz deckt, was gezeichnet wird — nicht, was jemand aufgeschrieben hat."""
+
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_every_rendered_icon_is_in_the_subset(self, page, name):
+        from scripts.schriften_holen import SYMBOLE
+
+        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
+        fehlend = sorted(_symbole_der_ansicht(page) - set(SYMBOLE))
+
+        assert not fehlend, (
+            f"«{name}» zeichnet Symbole, die nicht im Teilsatz stecken:\n  "
+            + "\n  ".join(fehlend)
+            + "\n\nSie erscheinen als Wort. Eintragen in `SYMBOLE` "
+            "(scripts/schriften_holen.py), dann das Skript laufen lassen."
+        )
+
+    def test_the_steps_of_the_wizard_too(self, page):
+        """Genau hier ist es passiert: vier Namen aus einem Modul-Dict."""
+
+        from scripts.schriften_holen import SYMBOLE
+
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+        page.click("#wizard-way-new")
+        page.wait_for_timeout(RUHE_MS)
+
+        gezeichnet = _symbole_der_ansicht(page)
+
+        assert "radio_button_checked" in gezeichnet, "Die Schrittliste wird nicht gezeichnet"
+        assert not gezeichnet - set(SYMBOLE)
+
+    def test_the_landing_page_too(self, page):
+        from scripts.schriften_holen import SYMBOLE
+
+        page.goto(page.basis.replace("/app/", "/"), wait_until="networkidle")
+
+        assert not _symbole_der_ansicht(page) - set(SYMBOLE)
+
+
+def test_the_symbol_guard_would_notice_a_relapse(page):
+    """Ein Name, den der Teilsatz nicht kennt, muss auffallen."""
+
+    from scripts.schriften_holen import SYMBOLE
+
+    page.goto(page.basis, wait_until="networkidle")
+    assert not _symbole_der_ansicht(page) - set(SYMBOLE)
+
+    page.evaluate("""
+        () => {
+          const s = document.createElement('span');
+          s.className = 'material-symbols-outlined';
+          s.textContent = 'rocket_launch';
+          document.body.appendChild(s);
+        }
+        """)
+
+    assert "rocket_launch" in _symbole_der_ansicht(page) - set(SYMBOLE), (
+        "Der Wächter übersieht ein Symbol außerhalb des Teilsatzes — dann steht "
+        "beim nächsten Mal wieder ein Wort im Bild."
+    )

@@ -17,12 +17,19 @@ Dieselben Namen stehen als CSS-Variablen in `assets/dashboard.css` — dort für
 alles, was sich nur per Stylesheet erreichen lässt (Dash-eigene Komponenten),
 hier für alles, was Python einfärbt (Plotly, `DataTable`-Inline-Styles).
 `tests/test_web_theme.py` hält beide Seiten deckungsgleich.
+
+**Die Rollen der Diagramme kommen aus `src/reporting/figure_generator/stil.py`**
+(P1.2), damit ein PNG aus dem Bericht und derselbe Verlauf auf dem Bildschirm
+dieselbe Farbe tragen. Die Richtung ist so herum, weil `src/` die Engine ist und
+nichts aus `dashboard/` importieren darf — umgekehrt ist es erlaubt.
 """
 
 from __future__ import annotations
 
 import plotly.graph_objects as go
 import plotly.io as pio
+
+from src.reporting.figure_generator.stil import FARBEN as CHART_FARBEN
 
 # --- Rohpaletten -----------------------------------------------------------
 # Navy ist die Markenfarbe; Slate liefert die neutralen Grau-Töne der
@@ -142,8 +149,11 @@ PALETTE: dict[str, dict[str, str]] = {
         "axis": SLATE[300],
         "plot-bg": "#ffffff",
         "paper-bg": "#ffffff",
-        "price": "#0f766e",
-        "booking": NAVY[500],
+        # **Dieselbe Quelle wie die PNG-Figuren** (P1.2). Vorher färbte jede
+        # Matplotlib-Figur dieselbe Größe anders ein als der Bildschirm; wer
+        # ein Bild aus dem Bericht danebenhielt, las die Legende zweimal.
+        "price": CHART_FARBEN["preis"],
+        "booking": CHART_FARBEN["buchung"],
         "neutral": SLATE[500],
         # Konsole. Sie ist in **beiden** Modi dunkel — eine Konsole auf weiss
         # ist keine. Deshalb tragen ihre Stufen hier dieselben hellen Toene wie

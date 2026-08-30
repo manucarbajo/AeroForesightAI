@@ -34,14 +34,19 @@ Jeder Lauf erzeugt einen **eigenen Ordner** unter `outputs/`:
 
 Erzeugt via `generate_run_figures(run_dir)`:
 
-| Datei | Inhalt |
-| --- | --- |
-| `price_vs_booking.png` | Ticketpreis vs. Booking-Rate |
-| `policy_shock_co2_booking.png` | CO₂-Policy-Shock |
-| `system_dynamics.png` | Systemdynamik |
-| `factor_states.png` | Faktor-Zustände F1–F7 |
-| `age_segment_booking.png` | Alterssegmente |
-| `population_distribution.png` | Populationsverteilung |
+Der Satz folgt seit August 2026 den **vier Aussagen** der Ergebnisdarstellung;
+der Titel im Manifest nennt die Aussage.
+
+| Datei | Aussage | Inhalt |
+| --- | --- | --- |
+| `preis_und_nachfrage.png` | 1 | Ticketpreis vs. Booking-Rate |
+| `politik_und_wirkung.png` | 2 | CO₂-Policy-Shock |
+| `wer_noch_fliegt.png` | 3 | Alterssegmente |
+| `bevoelkerung.png` | 3 | Populationsverteilung |
+| `faktorlage.png` | 4 | Faktor-Zustände F1–F7 |
+
+`system_dynamics.png` gehört nicht mehr dazu — sie zeigt Eingänge, nicht
+Ergebnisse, und entsteht weiterhin als laufübergreifende Auswertung über die CLI.
 
 Figures liegen **nur** im Run-Ordner, es gibt keinen globalen Sammelordner.
 

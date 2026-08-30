@@ -63,18 +63,39 @@ def test_the_buttons_ask_for_a_radius():
     assert not ohne, f"Schaltflächen ohne Radius: {len(ohne)}"
 
 
-@pytest.mark.parametrize("path", SEITEN, ids=lambda p: p.name)
-def test_the_radius_matches_the_design_tokens(path):
-    """Der Radius der Seite und der des Dashboards kommen aus derselben Quelle."""
+def test_the_radius_matches_the_design_tokens():
+    """Der Radius der Seite und der des Dashboards kommen aus derselben Quelle.
+
+    **Diese Quelle ist seit P1.4 `tailwind.config.js`.** Vorher stand dieselbe
+    Konfiguration inline in jeder der fünf Seiten *und* in `app.py` — sechs
+    Kopien, die früher oder später auseinanderlaufen. Der Test prüfte sie
+    einzeln; jetzt prüft er die eine.
+    """
 
     tokens = json.loads(TOKENS.read_text(encoding="utf-8"))
     erwartet = tokens["roundness"]["css"]
 
-    text = _lies(path)
-    treffer = re.search(r'"DEFAULT":\s*"([^"]+)"', text)
+    konfig = Path("tailwind.config.js").read_text(encoding="utf-8")
+    treffer = re.search(r"DEFAULT:\s*\"([^\"]+)\"", konfig)
 
-    assert treffer, "keine borderRadius-Konfiguration gefunden"
+    assert treffer, "keine borderRadius-Konfiguration in tailwind.config.js"
     assert treffer.group(1) == erwartet, f"{treffer.group(1)} statt {erwartet}"
+
+
+@pytest.mark.parametrize("path", SEITEN, ids=lambda p: p.name)
+def test_no_page_carries_its_own_tailwind_config(path):
+    """Keine Seite bringt eine zweite Fassung der Konfiguration mit (P1.4).
+
+    Das war der Zustand bis zum 2026-08-30: fünf Seiten mit je einer eigenen
+    Navy-Skala, dazu eine sechste in `app.py`. Und alle sechs wurden von einem
+    CDN-Skript zur Laufzeit ausgewertet — jeder Seitenaufruf meldete damit die
+    IP des Betrachters an einen fremden Host.
+    """
+
+    text = _lies(path)
+
+    assert "tailwind.config" not in text, "Die Seite trägt eine eigene Tailwind-Konfiguration"
+    assert "cdn.tailwindcss.com" not in text, "Die Seite lädt Tailwind von einem fremden Host"
 
 
 # --- Verweise --------------------------------------------------------------

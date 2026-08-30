@@ -490,3 +490,72 @@ def test_alert_renders_markdown_and_plain_children():
 
 def test_draft_to_dict_is_json_serialisable():
     json.dumps(draft_to_dict(config_editor.default_config_draft()))
+
+
+class TestDieErgebnisseBeantwortenVierFragen:
+    """Der Schnitt der Ergebnisdarstellung folgt Fragen, nicht Datenquellen (P1.2).
+
+    Bis zum 2026-08-30 waren es sechs Reiter nach Herkunft der Zeitreihen —
+    «Yield & Markt», «Makro-Wirtschaft», «Airline-Kosten», «CIB-Faktoren» und so
+    fort. Wer sie durchsah, bekam sechs Sammlungen von Kurven und keine Auskunft.
+    """
+
+    def test_exactly_four_statements_plus_the_export(self):
+        from dashboard.web.views import figures
+
+        aussagen = [(t, k) for t, k in figures.TABS if k != "png"]
+
+        assert len(aussagen) == 4, (
+            "Die Ergebnisdarstellung soll vier Fragen beantworten, gefunden: "
+            f"{[t for t, _ in figures.TABS]}"
+        )
+        assert figures.TABS[-1][1] == "png", "Der Export steht am Ende, er ist keine Aussage"
+
+    def test_every_statement_has_a_view(self):
+        from dashboard.web.views import figures
+
+        fehlend = [k for _, k in figures.TABS if k not in figures._VIEWS]
+
+        assert not fehlend, f"Reiter ohne Ansicht: {fehlend}"
+
+    def test_the_removed_views_stay_removed(self):
+        """«Makro» und «CIB-Faktoren» zeigten Eingänge, keine Ergebnisse.
+
+        Das Einkommen ist das, was man dem Lauf vorgibt; die sieben
+        Faktor-Treppenlinien beantworten für sich genommen keine Frage. Sie sind
+        Kontext an Aussage 4 geworden — dort unterscheiden sie die Szenarien.
+        """
+
+        from dashboard.web.views import figures
+
+        assert not {"macro", "costs", "cib", "yield", "segments", "policies"} & set(
+            figures._VIEWS
+        ), "Ein Reiter der alten, nach Datenquelle geschnittenen Gliederung ist zurück"
+
+    def test_a_lone_run_says_why_there_is_nothing_to_compare(self, tmp_path):
+        """Aussage 4 braucht mehr als einen Lauf — und sagt das, statt leer zu sein."""
+
+        from dashboard.web.views import figures
+
+        run_dir = tmp_path / "run_allein"
+        run_dir.mkdir()
+
+        assert figures.sweep_geschwister(run_dir) == []
+        gezeichnet = figures._view_szenarien(run_dir)
+        text = str(gezeichnet)
+
+        assert (
+            "Szenario-Vergleich" in text
+        ), "Ein einzelner Lauf bekommt keinen Hinweis, wie ein Vergleich entsteht"
+
+    def test_sibling_scenario_runs_are_found(self, tmp_path):
+        from dashboard.web.views import figures
+
+        sweeps = tmp_path / "sweeps"
+        for name in ("sweep_a", "sweep_b"):
+            (sweeps / name).mkdir(parents=True)
+        (sweeps / "nicht_ein_sweep").mkdir()
+
+        geschwister = figures.sweep_geschwister(sweeps / "sweep_a")
+
+        assert [p.name for p in geschwister] == ["sweep_a", "sweep_b"]

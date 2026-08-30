@@ -39,11 +39,61 @@ class RunFileEntry:
     kind: str
 
 
+#: Der Titel stand im Manifest — der Satz ist der, den die Erzeugung gemeint hat.
+MANIFEST = "manifest"
+
+#: Kein Manifest: Der Titel ist aus dem Dateinamen geraten, und ob der Satz
+#: vollständig ist, weiß niemand.
+GERATEN = "geraten"
+
+
 @dataclass(frozen=True)
 class RunFigureEntry:
+    """Eine Bilddatei eines Laufs — **und woher wir wissen, wie sie heißt** (P1.2).
+
+    `herkunft` unterscheidet zwei Fälle, die vorher gleich aussahen: Steht der
+    Titel im Manifest, ist der Satz der, den die Erzeugung gemeint hat. Ist kein
+    Manifest da, wird der Titel aus dem Dateinamen geraten — und dann weiß
+    niemand, ob der Satz vollständig ist. Beides als dieselbe Liste
+    auszuliefern hieß, eine Vermutung als Auskunft auszugeben.
+    """
+
     title: str
     relative_path: str
     absolute_path: Path
+    #: `"manifest"` oder `"geraten"`.
+    herkunft: str = MANIFEST
+
+
+@dataclass(frozen=True)
+class RunFigureSet:
+    """Was `list_run_figures` wirklich weiß: die Bilder **und** ihr Zustand.
+
+    Die Funktion gab bisher nur eine Liste zurück. Zwei Befunde passten da nicht
+    hinein: dass der Satz geraten ist, und dass das Manifest Dateien nennt, die
+    es nicht gibt — die wurden stillschweigend übersprungen, und der Satz kam um
+    zwei Bilder kürzer zurück, ohne dass jemand davon erfuhr.
+    """
+
+    entries: list[RunFigureEntry]
+    herkunft: str = MANIFEST
+    #: Im Manifest genannt, aber nicht auf der Platte.
+    fehlend: tuple[str, ...] = ()
+
+    def __bool__(self) -> bool:  # damit `if figures:` weiterhin trägt
+        return bool(self.entries)
+
+    def __iter__(self):
+        return iter(self.entries)
+
+    def __len__(self) -> int:
+        return len(self.entries)
+
+    @property
+    def vollstaendig(self) -> bool:
+        """Ob man diesem Satz ansehen kann, dass er einer ist."""
+
+        return self.herkunft == MANIFEST and not self.fehlend
 
 
 def outputs_root(path: Path | str | None = None) -> Path:
@@ -206,16 +256,29 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
     return summaries
 
 
-def list_run_figures(run_dir: Path | str) -> list[RunFigureEntry]:
+def list_run_figures(run_dir: Path | str) -> RunFigureSet:
+    """Die Bilder eines Laufs — und ob man ihnen trauen kann (P1.2).
+
+    **Der Rückfall auf `glob` bleibt, aber er sagt jetzt, dass er einer ist.**
+    Läufe von vor dem 2026-08-30 haben Figures ohne Manifest; sie wegzulassen
+    hieße, ältere Ergebnisse zu verlieren. Sie aber wie einen benannten Satz
+    auszuliefern hieß, eine Vermutung als Auskunft auszugeben — die Titel sind
+    aus Dateinamen geraten, und ob der Satz vollständig ist, weiß niemand.
+    """
+
     base = Path(run_dir) / "figures"
     if not base.is_dir():
-        return []
+        return RunFigureSet(entries=[])
 
     manifest_path = base / "manifest.json"
     if manifest_path.is_file():
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            manifest = {}
         title_map = manifest.get("figures") or {}
         entries: list[RunFigureEntry] = []
+        fehlend: list[str] = []
         for title, filename in title_map.items():
             path = base / filename
             if path.is_file():
@@ -224,28 +287,40 @@ def list_run_figures(run_dir: Path | str) -> list[RunFigureEntry]:
                         title=str(title),
                         relative_path=f"figures/{filename}",
                         absolute_path=path,
+                        herkunft=MANIFEST,
                     )
                 )
+            else:
+                # **Nicht verschlucken.** Bisher kam der Satz hier still um zwei
+                # Bilder kürzer zurück, und niemand erfuhr davon.
+                fehlend.append(str(title))
         if entries:
-            return entries
+            return RunFigureSet(entries=entries, herkunft=MANIFEST, fehlend=tuple(fehlend))
 
-    entries = []
-    for path in sorted(base.glob("*.png")):
-        entries.append(
-            RunFigureEntry(
-                title=path.stem.replace("_", " ").title(),
-                relative_path=f"figures/{path.name}",
-                absolute_path=path,
-            )
+    entries = [
+        RunFigureEntry(
+            title=path.stem.replace("_", " ").title(),
+            relative_path=f"figures/{path.name}",
+            absolute_path=path,
+            herkunft=GERATEN,
         )
-    return entries
+        for path in sorted(base.glob("*.png"))
+    ]
+    return RunFigureSet(entries=entries, herkunft=GERATEN if entries else MANIFEST)
 
 
-def generate_figures_for_run(run_dir: Path | str) -> list[RunFigureEntry]:
+def generate_figures_for_run(run_dir: Path | str) -> RunFigureSet:
     from src.reporting.figure_generator import generate_run_figures
 
     result = generate_run_figures(run_dir)
     return list_run_figures(result.run_dir)
+
+
+#: Verzeichnisse, die kein Ergebnis sind, sondern ein Rest davon. Sie entstehen,
+#: wenn die Figurenerzeugung mittendrin abbricht (siehe `run_figures`), und
+#: gehören nicht in die Dateiliste eines Laufs: Wer dort ein `manifest.json`
+#: findet, hält es für **das** Manifest.
+WERKSTATT_VERZEICHNISSE = {"figures.neu", "figures.alt"}
 
 
 def list_run_files(run_dir: Path | str) -> list[RunFileEntry]:
@@ -256,6 +331,8 @@ def list_run_files(run_dir: Path | str) -> list[RunFileEntry]:
     entries: list[RunFileEntry] = []
     for path in sorted(base.rglob("*")):
         if not path.is_file():
+            continue
+        if WERKSTATT_VERZEICHNISSE & set(path.relative_to(base).parts):
             continue
         suffix = path.suffix.lower()
         if suffix in {".json", ".md", ".csv", ".txt"}:

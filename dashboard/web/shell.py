@@ -77,6 +77,15 @@ DOCK_HOST = "shell-dock"
 #: Die Bereichslinks. Eigener Wirt, damit das Routing nur sie austauscht und
 #: nicht die ganze Kopfzeile samt Auswahlfeld und Zustandsanzeige neu baut.
 NAV_HOST = "shell-nav"
+
+#: Wo der Bereichswechsel angesagt wird. **Außerhalb der umgeschalteten
+#: Bereiche**, sonst entsteht die Region im Moment der Änderung selbst neu — und
+#: Vorlesesoftware liest sie dann nicht vor. Dieselbe Lehre wie bei der
+#: Schrittfolge (P1.9-W5.3).
+BEREICH_ANSAGE = "shell-bereich-ansage"
+
+#: Das Sprungziel des «Zum Inhalt springen»-Links (WCAG 2.4.1).
+MAIN_ID = "shell-main"
 RUN_SELECT = "shell-run-select"
 
 #: Globale Aktionen der Kopfzeile. Alle drei gibt es bereits als Funktion — sie
@@ -105,6 +114,20 @@ def shell_class(active: str) -> str:
 
 
 def _nav_link(href: str, label: str, active: bool):
+    """Ein Bereichslink — **und die Auskunft, ob er der offene ist** (P1.5).
+
+    Bis zum 2026-08-30 steckte das allein in einer Farbklasse. Für eine
+    Vorlesesoftware sind fünf gleich klingende Links dann fünf gleich klingende
+    Links; welcher gerade offen ist, war nur zu sehen, nicht zu hören.
+
+    **`aria-current` wird clientseitig gesetzt, nicht hier** — und das ist keine
+    Bequemlichkeit: `dcc.Link` nimmt keine fremden Attribute an («received an
+    unexpected keyword argument: `aria-current`»), und `html.A` an seiner Stelle
+    lüde bei jedem Bereichswechsel die ganze Seite neu. Die Klasse
+    `af-nav__link--active` ist deshalb die Quelle; der Callback in `app.py`
+    stempelt daraus das Attribut.
+    """
+
     suffix = " af-nav__link--active" if active else ""
     return dcc.Link(label, href=href, className=f"af-nav__link{suffix}".strip())
 
@@ -113,6 +136,20 @@ def nav_links(active: str) -> list:
     """Die Bereichslinks, mit dem aktiven hervorgehoben."""
 
     return [_nav_link(routing.url(route), label, route == active) for route, label in ROUTES]
+
+
+def bereich_ansage(active: str) -> str:
+    """Was beim Bereichswechsel vorgelesen wird (P1.5).
+
+    Der Name des Bereichs genügt nicht: «Ergebnisse» allein könnte auch eine
+    Überschrift sein, die zufällig vorgelesen wird. Der Satz sagt, dass etwas
+    **gewechselt** hat.
+    """
+
+    for route, label in ROUTES:
+        if route == active:
+            return f"Bereich gewechselt: {label}"
+    return ""
 
 
 def navbar(active: str) -> html.Div:
@@ -270,10 +307,27 @@ def layout(
 
     return html.Div(
         [
+            # **Der erste Griff für die Tastatur** (P1.5, WCAG 2.4.1). Ohne ihn
+            # tastet man sich vor jedem Bereich durch Kopfzeile, Schubladen-
+            # umschalter und fünf Bereichslinks, bevor der Inhalt kommt.
+            # Sichtbar nur, wenn er den Fokus hat.
+            html.A(
+                "Zum Inhalt springen",
+                href=f"#{MAIN_ID}",
+                className="af-sprunglink",
+            ),
+            # Die Live-Region des Bereichswechsels. Sie steht **hier**, außerhalb
+            # der fünf Zonen: Was beim Wechsel ausgetauscht wird, kann keine
+            # Ansage tragen.
+            html.Div(
+                id=BEREICH_ANSAGE,
+                className="af-nur-vorlesen",
+                **{"aria-live": "polite", "aria-atomic": "true"},
+            ),
             header(active, state=state, run_options=run_options, run_value=run_value),
             html.Aside(left, className="af-shell__left", id="shell-left"),
             _gutter("left", "Breite des Bedienfelds ändern"),
-            html.Main(main, className="af-shell__main", id="shell-main"),
+            html.Main(main, className="af-shell__main", id=MAIN_ID),
             _gutter("right", "Breite der Telemetrie ändern"),
             html.Div(timeline, className="af-shell__timeline", id="shell-timeline"),
             html.Aside(right, className="af-shell__right", id="shell-right"),

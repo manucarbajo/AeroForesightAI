@@ -100,10 +100,19 @@ Woran Sie es erkennen: `run_metadata.json` hält unter `code_version` fest, mit
 welchem Stand ein Lauf gerechnet wurde, und unter `seed`, mit welchem Startwert.
 Unterscheiden sich zwei Läufe dort, gehören ihre Verläufe nicht nebeneinander.
 
+Am **2026-08-30** kam ein vierter Schnitt dazu, und er betrifft nicht die
+Zahlen, sondern **wo sie stehen**: Die Szenario-Artefakte eines Laufs heißen
+anders. Die gerechneten Kandidaten liegen unter `gerechnete_szenarien` statt
+unter `scenario_candidates`, die Erzählung unter `erzaehlte_szenarien` statt
+unter `scenarios`, und der vom Sprachmodell behauptete Einflusswert heißt
+`behaupteter_einfluss` statt `influence`. **Gerechnet wird dasselbe** — wer
+Läufe von davor und danach vergleicht, vergleicht dieselben Zahlen; wer sie
+maschinell ausliest, muss den Schlüssel nachziehen.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich
-**Figures** unter «Yield & Markt», weil dort Preis und Buchungsrate gemeinsam
+**Figures** unter «1 · Preis und Nachfrage», weil dort Preis und Buchungsrate gemeinsam
 dargestellt sind.
 
 Wollen Sie die Zahlen nebeneinanderlegen, laden Sie aus dem Ansicht **Dateien** die

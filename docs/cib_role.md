@@ -1,5 +1,13 @@
 # Rolle der Cross-Impact-Balance-Analyse im System
 
+> **Diese Rolle ist am 2026-08-29 abgewählt worden.** Die Szenarienschicht wird ein
+> **Rahmen** statt eines Richters: Ein Szenario ist künftig ein benanntes Bündel exogener
+> Verläufe, F1–F7 werden aus dem Lauf *abgeleitet* statt ihn zu bewerten. Bis
+> [P2.0](projektplan.md#p20--die-rolle-umdrehen-rahmen-statt-urteil) umgesetzt ist,
+> beschreibt dieses Dokument, was der Code **heute** tut — mit den Einschränkungen, die
+> beim Nachmessen sichtbar wurden. Herleitung und Zahlen:
+> [`entscheidung_szenarienschicht_2026-08-29.md`](entscheidung_szenarienschicht_2026-08-29.md).
+
 > Anwendernahe Fassung im Dashboard unter «Dokumentation → CIB-Konsistenzprüfung».
 
 > Referenz: Weimer-Jehle, W. (2023). *Einführung in die Cross-Impact-Bilanzanalyse (CIB):
@@ -22,8 +30,14 @@ Für jedes Faktorpaar (Quelle → Ziel) wird ein Einfluss-Wert auf der Skala −
 | −1   | Leichte Hemmung |
 | −3   | Starke Hemmung (Quellzustand wirkt aktiv gegen Zielzustand) |
 
-Eine Faktor-Konstellation gilt als **konsistent**, wenn die Summe der Einflüsse aller aktiven
-Deskriptoren aufeinander positiv ist.
+Eine Faktor-Konstellation gilt nach der Methode als **konsistent**, wenn jeder Deskriptor in
+dem Zustand steht, den seine eingehende Einflussbilanz empfiehlt (Impact Balance).
+
+> **Was der Code stattdessen tut:** `ConsistencyChecker.check_scenario` prüft **einzelne
+> Zellen** gegen einen Schwellwert (`≤ −1.5` gilt als Konflikt) und summiert die Konflikte;
+> `compute_consistency_score` bildet das Verhältnis positiver zu allen Einflüssen. Beides
+> ist eine eigene Heuristik, nicht die Impact Balance. Solange [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen)
+> offen ist, gehört sie nicht als „Algorithmus nach Weimer-Jehle" bezeichnet.
 
 ## Warum CIB in diesem Projekt?
 
@@ -34,10 +48,17 @@ Technologiedurchbruch F3.1, während gleichzeitig die Wirtschaft schrumpft F4.2)
 
 CIB leistet hier drei Dinge:
 
-1. **Plausibilitätsbewertung** (F-CIB1 — Consistency Score):
+1. **Widerspruchsfreiheits-Bewertung** (F-CIB1 — Consistency Score):
    Jeder Simulationslauf wird am Ende mit `scenario_consistency.py` bewertet. Der Score
    (0–1) gibt an, wie gut die erreichten Faktorzustände zur Referenz-CIB-Matrix passen.
-   Ein Score nahe 1 bedeutet eine in sich stimmige Zukunftskonstellation.
+
+   > **Am 2026-08-29 nachgemessen — der Score misst Polarität, nicht Plausibilität.**
+   > Über alle 128 Systemzustände hängt er fast nur davon ab, wie einheitlich die Faktoren
+   > gepolt sind: Korrelation **+0,56** mit der Zahl gleichpoliger Faktoren, über die vier
+   > Gruppen monoton (Mittel 0,499 → 0,562 → 0,682 → 0,853). Der Grund liegt in der Matrix:
+   > Nur 12 der 84 gleichpoligen Zellen tragen Spannung, sie ist im Kern eine einzige Achse.
+   > **Ein Score nahe 1 bedeutet also ein einheitlich gepoltes Weltbild, nicht ein
+   > plausibles** — die realistischen Mischlagen werden systematisch abgewertet.
 
 2. **Kandidaten-Generierung** (Szenarioentwicklung):
    `run_scenario_generator.py` erzeugt aus dem Simulationsendzustand eine Menge
@@ -107,10 +128,24 @@ Berechnet mit `scenario_consistency.ConsistencyChecker` auf `cib_frozen.json`
 | Transformationskonflikt (B2 vs A1) | 0.867 | 0.952 | 2 |
 | Freiwillige Wende (A2+B2) | 0.629 | 0.833 | 7 |
 
-**Kernnachweis**: BAU (0.970) > Transformationskonflikt (0.867) ✓ — die Neubewertung der F7-Zellen in P0.2 hat daran nichts geändert.
+Das Ranking BAU (0.970) > Transformationskonflikt (0.867) > Freiwillige Wende (0.629) ist
+stabil und wird von `tests/test_cib_ranking.py` gehalten; die Neubewertung der F7-Zellen in
+P0.2 hat daran nichts geändert.
+
+> **Was es belegt — und was nicht (2026-08-29).** Der Rang war bis dahin als *Kernnachweis*
+> geführt, also als Beleg dafür, dass die Bewertung Plausibilität erkennt. Das trägt er
+> nicht. Die drei Zahlen fallen exakt auf die Polaritätsleiter: **BAU (0.970)** ist der
+> **vollständig gleichpolige** Zustand (7 von 7), **Konflikt (0.867)** liegt bei 6 von 7,
+> und die **Wende (0.629)** wird abgewertet, **weil** sie gemischt ist. Der Test ist
+> korrekt — er misst, was er misst. Falsch war nur die Deutung: Er zeigt, dass die
+> Bewertung einheitlich gepolte Weltbilder bevorzugt, nicht dass sie plausible erkennt.
 
 BAU ist das perfekt selbstverstärkende Szenario (0 Konflikte, Stability = 1.0). Alle
-Faktorkombinationen in BAU unterstützen sich gegenseitig.
+Faktorkombinationen in BAU unterstützen sich gegenseitig — es ist zugleich einer der beiden
+Zustände, die das echte Impact-Balance-Kriterium erfüllt. Der andere ist sein Gegenpol.
+**Ein drittes konsistentes Szenario gibt es unter diesem Kriterium nicht**, das
+Produktversprechen «Tripleset» ist daraus nicht bedienbar; deshalb kommt es künftig aus der
+Wahl der Rahmenszenarien (P2.0) statt aus einem Ranking.
 
 Wissenschaftliche Randnotiz — warum Wende < Konflikt beim Consistency Score:
 Die Freiwillige Wende hat 8 CIB-Konflikte, weil das Szenario selbst-untergrabende Dynamiken
@@ -127,9 +162,20 @@ Cross-Impact-Matrix **vorab durch Domänenexperten** als Referenz-Brille. Sie da
 nicht aus Simulationsläufen ergeben — sonst würde man den Maßstab aus dem Messobjekt
 ableiten (zirkulär).
 
-Die Einfluss-Werte in `cib_frozen.json` sind domänenspezifisch und inhaltlich durchdacht
-(z.B. `F2.2→F3.2: +3`: Strenge Regulierung treibt Technologiedurchbruch; `F6.2→F2.1: -3`:
-Flight Shaming untergräbt moderate Politik). Sie wurden nicht zufällig generiert.
+Die Einfluss-Werte in `cib_frozen.json` sind domänenspezifisch gesetzt und nicht zufällig
+generiert (z.B. `F2.2→F3.2: +3`: Strenge Regulierung treibt Technologiedurchbruch;
+`F6.2→F2.1: -3`: Flight Shaming untergräbt moderate Politik).
+
+> **Eingefroren heißt nicht belegt (2026-08-29).** Von den 168 Zellen tragen **48** eine
+> Begründung — ausgerechnet die, die als *prüfbedürftig* markiert sind (die F7-Zellen aus
+> P0.2). Die übrigen **120 tragen keine**, aber dasselbe `"frozen": true` und damit denselben
+> Anspruch auf fachliche Geltung. Vier davon zeigen nachweislich in die falsche Richtung:
+> `F1.1→F2.2`, `F1.1→F6.2`, `F1.1→F5.2` und `F4.1→F2.2` stehen auf −2 und behaupten, Nachfrage-
+> und Wirtschaftswachstum **hemmten** strenge Regulierung, Flugscham und Schienenausbau. Real
+> ist es umgekehrt — EU-ETS-Ausweitung, ReFuelEU, Ticketsteuern, das französische
+> Kurzstreckenverbot und der Deutschlandtakt sind Reaktionen *auf* das Verkehrswachstum. Genau
+> diese verneinte Rückkopplung ist der Grund für die Einachsigkeit weiter oben. Eingeplant als
+> P2.3, gemessen in `tests/test_cib_einachsigkeit.py`.
 
 Eine frühere Version (`CIBExtractorNode`, LLM + Heuristik) hatte versucht, die CIB-Matrix
 dynamisch aus dem Event-Log zu extrahieren. Dieser Ansatz war eine Exploration, ist aber
@@ -138,6 +184,8 @@ Der Extractor liegt daher jetzt unter **`src/legacy/`** und ist nicht Teil der P
 
 ## Weiterführende Dokumente
 
+- `docs/entscheidung_szenarienschicht_2026-08-29.md` — warum diese Rolle abgewählt wurde
+- `tests/test_cib_einachsigkeit.py` — die vier Messwerte, auf denen die Entscheidung steht
 - `docs/cib_rationale.md` — CIB-Kanten-zu-Regel-Mapping
 - `configs/cib_frozen.json` — Vollständige Referenz-Matrix
 - `src/cib/scenario_consistency.py` — Score-Implementierung (F-CIB1/2/3)

@@ -21,13 +21,30 @@ begünstigt oder hemmt. Die Skala reicht von −3 bis +3.
 
 Für eine Konstellation aus sieben Zuständen werden alle wechselseitigen
 Einflüsse aufsummiert. Fällt die Bilanz positiv aus, stützen sich die Annahmen
-gegenseitig und die Konstellation gilt als konsistent. Fällt sie negativ aus,
-enthält das Weltbild Spannungen.
+gegenseitig. Fällt sie negativ aus, enthält das Weltbild Spannungen.
 
 Ein Beispiel: «Massiver Schienenausbau» und «Fliegen alternativlos» stützen sich
 nicht — sie beschreiben gegenläufige Entwicklungen. Wer beides gleichzeitig
 annimmt, bekommt eine negative Bilanz und damit den Hinweis, dass hier zwei
 Erwartungen kollidieren.
+
+## Was der Wert sagt — und was nicht
+
+Der Konsistenzwert misst **Widerspruchsfreiheit, nicht Wahrscheinlichkeit**. Er
+sagt, wie einheitlich ein Weltbild gepolt ist: Eine Zukunft, in der alles in
+dieselbe Richtung zeigt, bekommt einen hohen Wert; eine gemischte Lage einen
+niedrigen.
+
+Das ist eine echte Einschränkung, und sie ist am 29. August 2026 nachgemessen
+worden: Über alle 128 möglichen Konstellationen hängt der Wert fast nur an der
+Einheitlichkeit der Polung. **Ein niedriger Wert heißt deshalb nicht
+«unwahrscheinlich».** Strenge Regulierung *bei* gleichzeitig starker Nachfrage
+ist die reale europäische Lage — und bekommt hier einen niedrigen Wert, weil sie
+gemischt ist.
+
+Lesen Sie den Wert also als *Spannungsanzeige*, nicht als Bewertung. Er zeigt,
+wo in einem Weltbild Kräfte gegeneinander arbeiten. Das ist nützlich; es ersetzt
+aber keine Einschätzung, wie wahrscheinlich diese Zukunft ist.
 
 ## Warum die Matrix eingefroren ist
 
@@ -40,8 +57,13 @@ den eigenen Läufen gelernt, käme der Maßstab aus dem Messobjekt: Die Simulati
 würde jede Konstellation für konsistent erklären, die sie selbst häufig erzeugt.
 Die Bewertung wäre zirkulär und damit wertlos.
 
-Stattdessen ist die Matrix ein unabhängiger, fachlich begründeter Maßstab, an dem
-sich Läufe messen lassen müssen.
+Stattdessen ist die Matrix ein unabhängiger Maßstab, an dem sich Läufe messen
+lassen müssen.
+
+Wie gut dieser Maßstab geeicht ist, steht auf einem anderen Blatt: Von den 168
+Einflusswerten trägt heute rund ein Viertel eine niedergeschriebene Begründung.
+Die Herkunft der übrigen ist in den Projektdateien vermerkt, und die Schärfung
+dieses Maßstabs ist eingeplant.
 
 ## Was das im Ergebnis bewirkt
 

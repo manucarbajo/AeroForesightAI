@@ -50,8 +50,13 @@ nämlich die regulatorische Strenge und den gesellschaftlichen Wertewandel. Die
 übrigen fünf bleiben über den Lauf konstant, sofern sie nicht durch ein Preset
 mit einem zeitlichen Verlauf versehen wurden.
 
-In der Ansicht **Figures** zeigt der Abschnitt «CIB-Faktoren» die Trajektorien als
-Treppenlinien — dort sieht man, wann welcher Zustand gewechselt hat.
+In der Ansicht **Figures** zeigt die Aussage «4 · Die Szenarien nebeneinander»
+die Faktorlage **am Ende** jedes Szenario-Laufs — daran unterscheiden sich die
+Szenarien sichtbar. Den *Verlauf* über die Ticks, also wann welcher Zustand
+gewechselt hat, finden Sie im Bild `factor_states.png` unter «PNG-Export» und in
+`timeseries/factors.csv`. Als eigene Bildschirmansicht gab es ihn bis August
+2026; sieben Treppenlinien nebeneinander beantworteten für sich genommen keine
+Frage.
 
 ## Wo Sie sie einstellen
 

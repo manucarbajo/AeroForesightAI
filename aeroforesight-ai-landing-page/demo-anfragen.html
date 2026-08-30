@@ -3,45 +3,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Demo anfragen | AeroForesight AI</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        navy: {
-                            50: '#f0f4f9',
-                            100: '#e0eaf3',
-                            200: '#c2d5e7',
-                            300: '#94b8d7',
-                            400: '#6094c1',
-                            500: '#3e76a6',
-                            600: '#2d5e8a',
-                            700: '#244b70',
-                            800: '#1E3A5F', // Primary Navy
-                            900: '#1c3453',
-                            950: '#122238',
-                        }
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.5rem",
-                        "lg": "0.75rem",
-                        "xl": "1rem",
-                        "full": "9999px"
-                    },
-                    fontFamily: {
-                        "headline": ["Plus Jakarta Sans", "sans-serif"],
-                        "display": ["Plus Jakarta Sans", "sans-serif"],
-                        "body": ["Inter", "sans-serif"],
-                        "label": ["Inter", "sans-serif"]
-                    },
-                },
-            },
-        }
-    </script>
+<link href="/app/assets/00-tailwind.css" rel="stylesheet"/>
+<link href="/app/assets/01-schriften.css" rel="stylesheet"/>
 <style>
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -148,7 +111,15 @@
 <!-- Left Column: Form (2/3 width on large screens) -->
 <div class="lg:col-span-8">
 <div class="reveal bg-white rounded-xl border border-slate-200 p-6 sm:p-8 md:p-10 shadow-sm">
-<form action="#" class="space-y-8" method="POST">
+<div class="mb-8 rounded border border-amber-300 bg-amber-50 px-4 py-3" role="note">
+<p class="font-body text-sm text-amber-900">
+<strong>Vor der Veröffentlichung:</strong> Die verlinkte Datenschutzerklärung ist
+noch ein Entwurf. Bitte schicken Sie uns bis dahin keine personenbezogenen Daten
+über dieses Formular — es nimmt sie entgegen und legt sie ab, aber die
+Rechtstexte sind noch nicht geprüft.
+</p>
+</div>
+<form action="/demo-anfrage" class="space-y-8" method="POST">
 <!-- Name Fields -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 <div>

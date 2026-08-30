@@ -1,9 +1,26 @@
-"""Tab «Figures»: wissenschaftliche Auswertungen des Laufs.
+"""Tab «Figures»: **vier Aussagen**, die ein Lauf beantwortet (P1.2).
 
-Sechs thematische Ansichten auf die Zeitreihen unter `timeseries/` plus die
-exportierten PNGs aus `figures/`. Die sechs Live-Ansichten stammen aus der
-Forschungs-Variante, der PNG-Export aus der Ops-Variante der alten App — hier
-liegen sie erstmals nebeneinander.
+Bis zum 2026-08-30 waren es sechs thematische Ansichten plus PNG-Export, nach
+Datenherkunft geschnitten: «Yield & Markt», «Segmente & Alter», «Policies &
+Steuern», «Makro-Wirtschaft», «Airline-Kosten», «CIB-Faktoren». Das ist eine
+Gliederung der *Zeitreihen*, keine Gliederung der *Fragen* — wer sie durchsah,
+bekam sechs Sammlungen von Kurven und keine Auskunft.
+
+Der Schnitt verläuft jetzt entlang der **Wirkungskette**:
+
+1. **Preis und Nachfrage** — wie stark reagiert die Nachfrage auf den Preis?
+2. **Was die Politik bewirkt** — was machen die Instrumente mit den Kosten?
+3. **Wer noch fliegt** — wer bleibt zuerst weg?
+4. **Die Szenarien nebeneinander** — worin unterscheiden sie sich?
+
+**Zwei Ansichten sind dabei weggefallen, und beide aus demselben Grund:** Sie
+zeigten Eingänge statt Ergebnisse. «Makro-Wirtschaft» (Einkommensindex,
+Ölpreis, Bevölkerung) ist das, was man dem Lauf vorgibt; «CIB-Faktoren» waren
+sieben Treppenlinien, die für sich genommen keine Frage beantworten — sie sind
+jetzt Kontext an Aussage 4, wo sie etwas erklären: In welcher Weltlage endet
+dieses Szenario, und in welcher jenes.
+
+Der PNG-Export bleibt daneben — er ist eine **Ausgabeform**, keine Aussage.
 """
 
 from __future__ import annotations
@@ -15,29 +32,22 @@ import plotly.graph_objects as go
 from dash import Input, Output, State, dcc, html, no_update
 from plotly.subplots import make_subplots
 
+from dashboard import run_browser
 from dashboard.run_browser import generate_figures_for_run, list_run_figures
 from dashboard.web import components as ui
 from dashboard.web import theme
 from dashboard.web.files_route import run_file_url
 
 TABS = [
-    ("1 · Yield & Markt", "yield"),
-    ("2 · Segmente & Alter", "segments"),
-    ("3 · Policies & Steuern", "policies"),
-    ("4 · Makro-Wirtschaft", "macro"),
-    ("5 · Airline-Kosten", "costs"),
-    ("6 · CIB-Faktoren", "cib"),
+    ("1 · Preis und Nachfrage", "nachfrage"),
+    ("2 · Was die Politik bewirkt", "politik"),
+    ("3 · Wer noch fliegt", "wer"),
+    ("4 · Die Szenarien nebeneinander", "szenarien"),
     ("PNG-Export", "png"),
 ]
 
 POLICY_COLUMNS = ["carbon_tax_level", "saf_mandate_share", "efuel_subsidy", "airport_fee"]
 ABSOLUTE_POLICY_COLUMNS = {"carbon_tax_level", "airport_fee"}
-MACRO_COLUMNS = [
-    "income_index",
-    "bevoelkerungsentwicklung",
-    "demand_growth_rate",
-    "oil_price_index",
-]
 COST_COLUMNS = ["maintenance_cost_index", "staff_cost_index", "fuel_price_change"]
 
 
@@ -81,7 +91,14 @@ def _panel(*children) -> html.Div:
 # --- Einzelansichten -------------------------------------------------------
 
 
-def _view_yield(run_dir: Path, mode: str = theme.LIGHT):
+def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
+    """**Aussage 1: Preis und Nachfrage.**
+
+    Die Kopplung *ist* das Thema dieser Ansicht, nicht ein Nebenprodukt der
+    Marktmechanik: Wie stark antwortet die Buchungsrate auf den Ticketpreis, und
+    woraus setzt der Preis sich zusammen.
+    """
+
     ticks = _read_ticks(run_dir)
     if ticks is None:
         return ui.alert("Keine Marktdaten verfügbar.", "info")
@@ -113,10 +130,12 @@ def _view_yield(run_dir: Path, mode: str = theme.LIGHT):
     fig.update_yaxes(title_text="Buchungsrate (0–1)", range=[0, 1.05], secondary_y=True)
     fig.update_xaxes(title_text="Tick")
     blocks = [
-        html.H3("Angebot vs. Nachfrage", className=f"{ui.H3} mb-3"),
+        html.H3("Preis und Nachfrage", className=f"{ui.H3} mb-3"),
         ui.card(
             _graph(
-                theme.style_figure(fig, mode=mode, title="Markt-Rückkopplung (Yield Management)"),
+                theme.style_figure(
+                    fig, mode=mode, title="Wie die Nachfrage auf den Preis antwortet"
+                ),
                 mode=mode,
             ),
             pad=False,
@@ -147,7 +166,10 @@ def _view_yield(run_dir: Path, mode: str = theme.LIGHT):
             ui.card(
                 _graph(
                     theme.style_figure(
-                        margin, mode=mode, barmode="stack", title="Preis-Zusammensetzung"
+                        margin,
+                        mode=mode,
+                        barmode="stack",
+                        title="Woraus der Preis sich zusammensetzt",
                     ),
                     mode=mode,
                 ),
@@ -181,7 +203,72 @@ def _booking_rate_lines(frame, group_column: str, title: str, mode: str = theme.
     return fig
 
 
-def _view_segments(run_dir: Path, mode: str = theme.LIGHT):
+def _view_politik(run_dir: Path, mode: str = theme.LIGHT):
+    """**Aussage 2: Was die Politik bewirkt.**
+
+    Die politischen Instrumente und der Kostendruck, den sie erzeugen, standen
+    bis zum 2026-08-30 in zwei getrennten Reitern («Policies & Steuern»,
+    «Airline-Kosten»). Sie beantworten aber **eine** Frage, und zwar nur
+    zusammen: Ein Verlauf der CO₂-Abgabe ohne die Kosten daneben sagt, dass
+    etwas eingeführt wurde — nicht, ob es etwas bewirkt hat.
+    """
+
+    properties = _read_csv(run_dir / "timeseries" / "properties.csv")
+    if properties is None:
+        return ui.alert("Keine Property-Zeitreihen vorhanden.", "info")
+
+    blocks: list = [html.H3("Was die Politik bewirkt", className=f"{ui.H3} mb-3")]
+
+    instrumente = [c for c in properties.columns if c in POLICY_COLUMNS]
+    if instrumente:
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        for column in instrumente:
+            fig.add_trace(
+                go.Scatter(x=properties["tick"], y=properties[column], name=column),
+                secondary_y=column not in ABSOLUTE_POLICY_COLUMNS,
+            )
+        fig.update_yaxes(title_text="Betrag (EUR/t o. ä.)", secondary_y=False)
+        fig.update_yaxes(title_text="Anteil (0–1)", secondary_y=True)
+        fig.update_xaxes(title_text="Tick")
+        blocks.append(
+            ui.card(
+                _graph(
+                    theme.style_figure(fig, mode=mode, title="Die Instrumente"),
+                    mode=mode,
+                ),
+                pad=False,
+                class_name="p-2 mb-6",
+            )
+        )
+    else:
+        blocks.append(ui.alert("Keine Policy-Properties gefunden.", "info"))
+
+    kosten = [c for c in properties.columns if c in COST_COLUMNS]
+    if kosten:
+        fig = go.Figure()
+        for column in kosten:
+            fig.add_trace(go.Scatter(x=properties["tick"], y=properties[column], name=column))
+        fig.update_xaxes(title_text="Tick")
+        blocks.append(
+            ui.card(
+                _graph(
+                    theme.style_figure(fig, mode=mode, title="Was sie bei den Anbietern auslösen"),
+                    mode=mode,
+                ),
+                pad=False,
+                class_name="p-2",
+            )
+        )
+    return _panel(*blocks)
+
+
+def _view_wer(run_dir: Path, mode: str = theme.LIGHT):
+    """**Aussage 3: Wer noch fliegt.**
+
+    Nicht «wie viel weniger», sondern **wer** zuerst wegbleibt. Das ist die
+    Frage, an der eine Strategieabteilung ihre Antwort aufhängt.
+    """
+
     population = _read_csv(run_dir / "timeseries" / "population.csv")
     ages = _read_csv(run_dir / "timeseries" / "age_property.csv")
 
@@ -212,87 +299,8 @@ def _view_segments(run_dir: Path, mode: str = theme.LIGHT):
         else ui.alert("Keine Altersgruppen-Daten.", "info")
     )
     return _panel(
-        html.H3("Mikro-Verhalten", className=f"{ui.H3} mb-3"),
+        html.H3("Wer noch fliegt", className=f"{ui.H3} mb-3"),
         ui.grid(left, right, cols="xl:grid-cols-2"),
-    )
-
-
-def _view_policies(run_dir: Path, mode: str = theme.LIGHT):
-    properties = _read_csv(run_dir / "timeseries" / "properties.csv")
-    if properties is None:
-        return ui.alert("Keine Property-Zeitreihen vorhanden.", "info")
-
-    columns = [c for c in properties.columns if c in POLICY_COLUMNS]
-    if not columns:
-        return ui.alert("Keine Policy-Properties gefunden.", "info")
-
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    for column in columns:
-        fig.add_trace(
-            go.Scatter(x=properties["tick"], y=properties[column], name=column),
-            secondary_y=column not in ABSOLUTE_POLICY_COLUMNS,
-        )
-    fig.update_yaxes(title_text="Betrag (EUR/t o. ä.)", secondary_y=False)
-    fig.update_yaxes(title_text="Anteil (0–1)", secondary_y=True)
-    fig.update_xaxes(title_text="Tick")
-    return _panel(
-        html.H3("Politik & Steuern (exogen)", className=f"{ui.H3} mb-3"),
-        ui.card(
-            _graph(theme.style_figure(fig, mode=mode, title="Politische Instrumente"), mode=mode),
-            pad=False,
-            class_name="p-2",
-        ),
-    )
-
-
-def _view_macro(run_dir: Path, mode: str = theme.LIGHT):
-    properties = _read_csv(run_dir / "timeseries" / "properties.csv")
-    if properties is None:
-        return ui.alert("Keine Property-Zeitreihen vorhanden.", "info")
-
-    columns = [c for c in properties.columns if c in MACRO_COLUMNS]
-    if not columns:
-        return ui.alert("Keine makroökonomischen Properties gefunden.", "info")
-
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    for column in columns:
-        fig.add_trace(
-            go.Scatter(x=properties["tick"], y=properties[column], name=column),
-            secondary_y=column == "bevoelkerungsentwicklung",
-        )
-    fig.update_yaxes(title_text="Index (1.0 = Basis)", secondary_y=False)
-    fig.update_yaxes(title_text="Population", secondary_y=True)
-    fig.update_xaxes(title_text="Tick")
-    return _panel(
-        html.H3("Makroökonomische Indizes", className=f"{ui.H3} mb-3"),
-        ui.card(
-            _graph(theme.style_figure(fig, mode=mode, title="Wirtschaft & Demographie"), mode=mode),
-            pad=False,
-            class_name="p-2",
-        ),
-    )
-
-
-def _view_costs(run_dir: Path, mode: str = theme.LIGHT):
-    properties = _read_csv(run_dir / "timeseries" / "properties.csv")
-    if properties is None:
-        return ui.alert("Keine Property-Zeitreihen vorhanden.", "info")
-
-    columns = [c for c in properties.columns if c in COST_COLUMNS]
-    if not columns:
-        return ui.alert("Keine Kosten-Properties gefunden.", "info")
-
-    fig = go.Figure()
-    for column in columns:
-        fig.add_trace(go.Scatter(x=properties["tick"], y=properties[column], name=column))
-    fig.update_xaxes(title_text="Tick")
-    return _panel(
-        html.H3("Kostenstruktur der Anbieter", className=f"{ui.H3} mb-3"),
-        ui.card(
-            _graph(theme.style_figure(fig, mode=mode, title="Airline-Kosten-Indizes"), mode=mode),
-            pad=False,
-            class_name="p-2",
-        ),
     )
 
 
@@ -308,40 +316,175 @@ def _factor_to_number(value) -> float:
     return 0.0
 
 
-def _view_cib(run_dir: Path, mode: str = theme.LIGHT):
+def sweep_geschwister(run_dir: Path) -> list[Path]:
+    """Die anderen Szenario-Läufe neben diesem — oder keine.
+
+    Ein Szenario-Vergleich schreibt nach `outputs/sweeps/sweep_<id>/`.
+    Geschwister sind deshalb die übrigen `sweep_*`-Verzeichnisse im selben
+    Ordner. Ein einzelner Lauf hat keine, **und das ist eine Auskunft, kein
+    Fehler**: Ein Vergleich braucht mehr als einen Lauf.
+    """
+
+    if run_dir.parent.name != "sweeps" or not run_dir.parent.is_dir():
+        return []
+    return sorted(p for p in run_dir.parent.iterdir() if p.is_dir() and p.name.startswith("sweep_"))
+
+
+def _szenario_name(run_dir: Path) -> str:
+    return run_dir.name.removeprefix("sweep_").replace("_", " ").title()
+
+
+def _endlage(run_dir: Path) -> str:
+    """Die Faktorlage am Ende eines Laufs, als Text.
+
+    **Die Faktoren sind hier Kontext, kein eigener Reiter mehr.** Als
+    «CIB-Faktoren F1–F7» standen sie bis zum 2026-08-30 gleichberechtigt neben
+    Preis und Nachfrage — sieben Treppenlinien, die für sich genommen keine
+    Frage beantworten. Woran sie etwas erklären, ist der Vergleich: In welcher
+    Weltlage endet dieses Szenario, und in welcher jenes.
+    """
+
     factors = _read_csv(run_dir / "timeseries" / "factors.csv")
     if factors is None or factors.empty:
-        return ui.alert("Keine Faktoren-Daten verfügbar.", "info")
+        return "—"
+    letzte = factors.iloc[-1]
+    return ", ".join(
+        str(letzte[c]) for c in factors.columns if c != "tick" and isinstance(letzte[c], str)
+    )
 
-    numeric = factors.copy()
-    for column in numeric.columns:
-        if column != "tick":
-            numeric[column] = numeric[column].apply(_factor_to_number)
 
+def _vergleichskurven(geschwister: list[Path], spalte: str, titel: str, achse: str, mode: str):
     fig = go.Figure()
-    for column in [c for c in numeric.columns if c != "tick"]:
+    gezeichnet = 0
+    for pfad in geschwister:
+        ticks = _read_ticks(pfad)
+        if ticks is None or spalte not in ticks.columns:
+            continue
         fig.add_trace(
             go.Scatter(
-                x=numeric["tick"],
-                y=numeric[column],
+                x=ticks["tick"],
+                y=ticks[spalte],
                 mode="lines",
-                name=column,
-                line_shape="hv",
+                name=_szenario_name(pfad),
             )
         )
-    fig.update_xaxes(title_text="Tick")
-    fig.update_yaxes(title_text="Faktor-Zustand")
-    return _panel(
-        html.H3("CIB-Faktoren F1–F7", className=f"{ui.H3} mb-3"),
-        ui.card(
-            _graph(
-                theme.style_figure(fig, mode=mode, title="Faktoren (Zustands-Trajektorien)"),
-                mode=mode,
+        gezeichnet += 1
+    if not gezeichnet:
+        return None
+    theme.style_figure(fig, mode=mode, title=titel, xaxis_title="Tick", yaxis_title=achse)
+    return fig
+
+
+def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
+    """**Aussage 4: Die Szenarien nebeneinander.**
+
+    Bis zum 2026-08-30 lagen die Szenarien in getrennten Ansichten — man konnte
+    sie nacheinander ansehen, nicht vergleichen. Ein Vergleich, bei dem man sich
+    die andere Kurve merken muss, ist keiner.
+    """
+
+    geschwister = sweep_geschwister(run_dir)
+    if len(geschwister) < 2:
+        return _panel(
+            html.H3("Die Szenarien nebeneinander", className=f"{ui.H3} mb-3"),
+            ui.alert(
+                "Dieser Lauf steht allein — ein Vergleich braucht mehr als einen. "
+                "Über «Einrichten → Szenario-Vergleich starten» werden alle "
+                "hinterlegten Szenarien nacheinander gerechnet und landen hier "
+                "nebeneinander.",
+                "info",
             ),
-            pad=False,
-            class_name="p-2",
-        ),
+            ui.card(
+                html.Div(
+                    [
+                        html.P(
+                            "Faktorlage am Ende dieses Laufs",
+                            className=f"{ui.CAPTION} mb-1",
+                        ),
+                        html.P(_endlage(run_dir), className="font-body text-sm af-text-body"),
+                    ]
+                ),
+                class_name="mt-4",
+            ),
+        )
+
+    blocks: list = [html.H3("Die Szenarien nebeneinander", className=f"{ui.H3} mb-3")]
+    for spalte, titel, achse in (
+        ("booking_rate", "Buchungsrate je Szenario", "Buchungsrate (0–1)"),
+        ("market_price_after_feedback_eur", "Ticketpreis je Szenario", "Ticketpreis (EUR)"),
+    ):
+        fig = _vergleichskurven(geschwister, spalte, titel, achse, mode)
+        if fig is not None:
+            blocks.append(
+                ui.card(_graph(fig, mode=mode), pad=False, class_name="p-2 mb-6"),
+            )
+
+    blocks.append(
+        ui.card(
+            html.Div(
+                [
+                    html.P("Faktorlage am Ende", className=f"{ui.CAPTION} mb-2"),
+                    html.Table(
+                        [
+                            html.Tbody(
+                                [
+                                    html.Tr(
+                                        [
+                                            html.Td(
+                                                _szenario_name(p),
+                                                className="pr-4 py-1 font-body text-sm "
+                                                "af-text font-semibold align-top",
+                                            ),
+                                            html.Td(
+                                                _endlage(p),
+                                                className="py-1 font-body text-sm af-text-body",
+                                            ),
+                                        ]
+                                    )
+                                    for p in geschwister
+                                ]
+                            )
+                        ],
+                        className="w-full",
+                    ),
+                ]
+            )
+        )
     )
+    blocks.append(
+        html.P(
+            f"Verglichen werden alle {len(geschwister)} Szenario-Läufe unter "
+            "«outputs/sweeps/» — auch solche aus früheren Durchläufen.",
+            className=f"{ui.CAPTION} mt-3",
+        )
+    )
+    return _panel(*blocks)
+
+
+def _satz_hinweis(figures) -> object:
+    """Was an diesem Bildersatz nicht stimmt — oder nichts (P1.2).
+
+    Zwei Zustände sahen bis zum 2026-08-30 aus wie ein vollständiger Satz: einer
+    **ohne Manifest**, dessen Titel aus Dateinamen geraten sind, und einer, in
+    dem das Manifest Dateien nennt, die es nicht gibt — die wurden still
+    übersprungen. Beide bekommen jetzt einen Satz darüber.
+    """
+
+    if figures.herkunft == run_browser.GERATEN:
+        return ui.alert(
+            "Zu diesen Bildern gibt es kein Manifest. Die Titel sind aus den "
+            "Dateinamen abgeleitet, und ob der Satz vollständig ist, lässt sich "
+            "nicht sagen. «Figures neu erzeugen» stellt einen benannten Satz her.",
+            "warning",
+        )
+    if figures.fehlend:
+        fehlt = ", ".join(figures.fehlend)
+        return ui.alert(
+            f"Das Manifest nennt {len(figures.fehlend)} Bild(er), die nicht "
+            f"vorliegen: {fehlt}. Der Satz ist unvollständig.",
+            "warning",
+        )
+    return None
 
 
 def png_gallery(run_dir: Path) -> html.Div:
@@ -355,6 +498,9 @@ def png_gallery(run_dir: Path) -> html.Div:
         )
 
     cards = []
+    hinweis = _satz_hinweis(figures)
+    if hinweis is not None:
+        cards.append(html.Div(hinweis, className="mb-4"))
     for figure in figures:
         url = run_file_url(figure.absolute_path)
         cards.append(
@@ -398,21 +544,19 @@ def _view_png(run_dir: Path, mode: str = theme.LIGHT):
 
 
 _VIEWS = {
-    "yield": _view_yield,
-    "segments": _view_segments,
-    "policies": _view_policies,
-    "macro": _view_macro,
-    "costs": _view_costs,
-    "cib": _view_cib,
+    "nachfrage": _view_nachfrage,
+    "politik": _view_politik,
+    "wer": _view_wer,
+    "szenarien": _view_szenarien,
     "png": _view_png,
 }
 
 
-DEFAULT_TAB = "yield"
+DEFAULT_TAB = "nachfrage"
 
 
 def _render_view(tab: str | None, run_dir: Path, mode: str = theme.LIGHT):
-    view = _VIEWS.get(tab or DEFAULT_TAB, _view_yield)
+    view = _VIEWS.get(tab or DEFAULT_TAB, _view_nachfrage)
     try:
         return view(run_dir, mode)
     except Exception as exc:  # noqa: BLE001 - unvollständige Runs kommen vor

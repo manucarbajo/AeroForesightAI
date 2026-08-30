@@ -28,7 +28,7 @@ from dash import dcc, html
 
 from dashboard.web import components as ui
 from dashboard.web import routing
-from dashboard.web.config_editor import compute_mode
+from dashboard.web.config_editor import compute_mode, dauer
 from dashboard.web.runner import Progress
 
 #: Wie viele Konsolenzeilen der Ladebildschirm zeigt. Mehr als hier passt nicht
@@ -94,6 +94,36 @@ def _percent(progress: Progress) -> str:
     return "—" if anteil is None else f"{anteil:.0%}"
 
 
+def _restzeit(progress: Progress) -> str | None:
+    """Wie lange es noch dauert — oder `None`, und dann steht dort nichts.
+
+    **Gemessen am laufenden Lauf**, nicht aus fremden hochgerechnet: Die
+    Tick-Zeile trägt die Dauer jedes Ticks, und das Tempo dieses Laufs ist der
+    beste Zeuge für seine eigene Restzeit. Die Schätzung im Prüfschritt
+    (`config_editor.dauer`) muss dafür aus vergangenen Läufen raten — hier ist
+    das nicht nötig.
+
+    **Nichts zu sagen heißt nichts sagen.** In den ersten Ticks, bei einem
+    Szenario-Vergleich ohne `[tick n/m]`-Zeilen und im letzten Tick gibt es
+    keine Zahl. Ein «unbekannt» an dieser Stelle wäre Platz für eine Auskunft,
+    die es nicht gibt — dieselbe Entscheidung wie beim unbestimmten Balken.
+    """
+
+    spanne_sekunden = progress.remaining_seconds
+    if spanne_sekunden is None:
+        return None
+
+    kurz, lang = spanne_sekunden
+    # **Unter einer Sekunde wird nicht gezählt.** Am laufenden System stand bei
+    # Tick 39 von 40 «noch etwa 0 Sekunden» — eine Zahl, die schlechter ist als
+    # keine. Der Satz sagt dasselbe und behauptet dabei nichts Falsches.
+    if round(lang) == 0:
+        return "gleich fertig"
+    if round(kurz) == round(lang):
+        return f"noch etwa {dauer.spanne(kurz)}"
+    return f"noch etwa {dauer.spanne(kurz)} bis {dauer.spanne(lang)}"
+
+
 def _what(draft: dict) -> html.Div:
     """Was gerade gerechnet wird — dieselben drei Angaben wie im Bedienfeld."""
 
@@ -139,6 +169,14 @@ def render(progress: Progress, draft: dict) -> html.Div:
                     className="flex items-baseline justify-between gap-4 mb-3",
                 ),
                 _bar(progress),
+                # Die Restzeit steht **unter** dem Balken und nicht neben der
+                # Prozentzahl: Sie ist die unsicherere der beiden Angaben, und
+                # sie fehlt in den ersten Ticks — ein Platz, der mal leer und
+                # mal gefüllt ist, darf die Kopfzeile nicht springen lassen.
+                html.P(
+                    _restzeit(progress) or "",
+                    className=f"{ui.CAPTION} mt-2 af-run__eta",
+                ),
                 html.P(progress.line or "…", className=f"{ui.CAPTION} mt-3 font-mono truncate"),
             ),
             html.Div(_what(draft), className="mt-5"),
@@ -213,7 +251,9 @@ def dock(progress: Progress) -> html.Div:
             _bar(progress, compact=True),
             html.Div(
                 [
-                    html.Span(_readout(progress), className=ui.CAPTION),
+                    # `truncate` und nicht Umbruch: Das Fenster hat eine feste
+                    # Breite, und eine zweite Zeile schöbe den Link aus dem Bild.
+                    html.Span(_readout(progress), className=f"{ui.CAPTION} truncate"),
                     dcc.Link(
                         "Ansehen",
                         href=routing.url(leitstand_route()),
@@ -221,6 +261,12 @@ def dock(progress: Progress) -> html.Div:
                     ),
                 ],
                 className="af-dock__foot",
+            ),
+            # Auch hier — wer während des Laufs einen älteren Lauf ansieht, will
+            # die Restzeit nicht nur auf dem Ladebildschirm finden.
+            html.P(
+                _restzeit(progress) or "",
+                className=f"{ui.CAPTION} af-dock__eta truncate",
             ),
         ],
         className="af-dock",

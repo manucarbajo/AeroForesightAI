@@ -8,7 +8,6 @@ from src.reporting.run_scenario_generator.agent_digest import _agent_perspective
 from src.reporting.run_scenario_generator.context import (
     RunScenarioContext,
     _booking_trend,
-    _plausibility_for_rank,
 )
 from src.reporting.run_scenario_generator.factors import (
     FACTOR_IDS,
@@ -98,7 +97,6 @@ def _build_constellation_scenario(
         "id": f"S{rank}",
         "title": title,
         "scenario_kind": scenario_kind,
-        "plausibility": _plausibility_for_rank(rank),
         "factor_constellation": dict(states),
         "tick_grounding": tick_grounding,
         "story": story,
@@ -175,26 +173,49 @@ def build_explorative_scenarios(
     return scenarios
 
 
-def _plausibility_from_score(score: float | None, *, rank: int | None = None) -> str:
-    """Map a CIB consistency score to a qualitative plausibility band.
+#: Was der CIB-Score über eine Konstellation aussagen darf — ein Satz, der mit
+#: dem Artefakt mitreist. Der State Explorer und das Sprachmodell lesen die
+#: Datei ohne diese Doku daneben; ohne den Satz stünde die Zahl nackt da und
+#: würde wieder als Wahrscheinlichkeit gelesen.
+KONSISTENZ_BEDEUTUNG = (
+    "Der CIB-Score misst Widerspruchsfreiheit, nicht Wahrscheinlichkeit: Er ist hoch, "
+    "wenn alle Faktoren einheitlich gepolt sind, und niedrig bei gemischten Lagen. "
+    "Eine gemischte Konstellation ist deshalb nicht unwahrscheinlicher — strenge "
+    "Regulierung bei starker Nachfrage ist die reale europäische Lage und bekommt "
+    "hier trotzdem einen niedrigen Wert."
+)
 
-    Plausibility is thereby grounded in the CIB matrix instead of the mere
-    presentation rank. Falls back to rank-based bands when no score exists.
+
+def _konsistenz_band(score: float | None) -> str | None:
+    """Den CIB-Score in ein Band übersetzen, das sagt, was er misst.
+
+    **Hieß bis P2.0 `_plausibility_from_score` und lieferte hoch/mittel/niedrig.**
+    Das war eine Wertung, die der Score nicht trägt: Am 2026-08-29 nachgemessen
+    misst er **Polarität, nicht Plausibilität** — über alle 128 Systemzustände
+    korreliert er mit +0,56 und monoton mit der Zahl gleichpolig gesetzter
+    Faktoren (`tests/test_cib_einachsigkeit.py`). Das Etikett «hoch» lag damit
+    ausgerechnet auf der Welt, in der sich nichts widerspricht, weil sich nichts
+    bewegt, und «niedrig» auf der realen europäischen Mischlage.
+
+    Die Bänder benennen jetzt die gemessene Größe. Ohne Score gibt es **kein**
+    Band — die frühere Fassung fiel auf den Präsentationsrang zurück und machte
+    damit aus einer Reihenfolge eine Aussage über die Welt.
     """
+
     if score is None:
-        return _plausibility_for_rank(rank) if rank is not None else "mittel"
+        return None
     if score >= 0.7:
-        return "hoch"
+        return "widerspruchsfrei"
     if score >= 0.4:
-        return "mittel"
-    return "niedrig"
+        return "gemischt"
+    return "spannungsreich"
 
 
 def _score_constellations(
     context: RunScenarioContext,
     scenarios: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Attach the CIB consistency_score and score-based plausibility in place."""
+    """Attach the CIB consistency_score and its band in place."""
     if isinstance(context.cib_matrix, dict):
         try:
             from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
@@ -213,9 +234,8 @@ def _score_constellations(
             sc["consistency_score"] = None
 
     for sc in scenarios:
-        sc["plausibility"] = _plausibility_from_score(
-            sc.get("consistency_score"), rank=sc.get("rank")
-        )
+        sc["konsistenz_band"] = _konsistenz_band(sc.get("consistency_score"))
+        sc["konsistenz_bedeutung"] = KONSISTENZ_BEDEUTUNG
     return scenarios
 
 
@@ -386,5 +406,6 @@ def _normalize_scenarios(
     for index, item in enumerate(selected, start=1):
         item["rank"] = index
         item["id"] = f"S{index}"
-        item["plausibility"] = _plausibility_from_score(item.get("consistency_score"), rank=index)
+        item["konsistenz_band"] = _konsistenz_band(item.get("consistency_score"))
+        item["konsistenz_bedeutung"] = KONSISTENZ_BEDEUTUNG
     return selected

@@ -228,5 +228,7 @@ def _price_trend(metrics: dict[str, Any]) -> str:
     return "stabil"
 
 
-def _plausibility_for_rank(rank: int) -> str:
-    return {1: "hoch", 2: "mittel", 3: "niedrig"}[rank]
+# `_plausibility_for_rank` ist mit P2.0 entfallen. Sie machte aus dem
+# Präsentationsrang eine Aussage über die Welt — Rang 1 hieß «hoch plausibel»,
+# Rang 3 «niedrig» —, und zwar auch dann, wenn gar kein CIB-Score vorlag. Ohne
+# Score gibt es heute **kein** Band (`candidates._konsistenz_band`).

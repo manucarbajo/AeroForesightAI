@@ -54,8 +54,13 @@ beschreiben, jeweils mit zwei möglichen Zuständen. Siehe
 **Grenzkosten** — Der Teil der Stückkosten, unter den der Ticketpreis nie fällt.
 Über die Preisuntergrenze einstellbar.
 
-**Konsistenz** — Maß dafür, wie gut die gleichzeitig angenommenen Faktorzustände
-zusammenpassen. Ergebnis der CIB-Bewertung.
+**Konsistenz** — Maß dafür, wie **widerspruchsfrei** die gleichzeitig
+angenommenen Faktorzustände zusammenpassen. Ergebnis der CIB-Bewertung. Der Wert
+ist hoch, wenn alle Faktoren in dieselbe Richtung zeigen, und niedrig bei
+gemischten Lagen — er sagt damit **nichts über die Wahrscheinlichkeit** einer
+Zukunft. In den Laufdateien steht er als `consistency_score` mit dem Band
+`widerspruchsfrei` / `gemischt` / `spannungsreich`. Ausführlich:
+[CIB-Konsistenzprüfung](/doku/cib).
 
 **Schrittfolge** — Die Form des Einrichtens seit August 2026: eine Frage je
 Bildschirm, mit «Zurück» und «Weiter» und einer Liste aller Schritte daneben.

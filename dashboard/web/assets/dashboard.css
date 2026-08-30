@@ -1797,7 +1797,24 @@ html.dark .af-input[type="number"] {
     background: var(--surface-hover);
 }
 
+/* **Ein Symbol darf seine Zeile nicht schieben** (P1.4).
+
+   Der Chevron hatte keine eigene Groesse -- er war so breit, wie die
+   Symbolschrift ihn setzte. Solange Tailwind vom CDN kam und seine
+   Grundregeln **nach** diesem Stylesheet einspielte, ging das gut; mit dem
+   lokalen Build kommen sie davor, und der Ueberlauf-Waechter meldete in der
+   Szenario-Ansicht prompt zwei Pixel.
+
+   Zwei Pixel sind kein Drama -- aber ein Icon, dessen Kasten von einer
+   Schriftmetrik abhaengt, ist eine Feder, die irgendwann kippt. Es bekommt
+   deshalb eine feste Groesse, schrumpft nicht und waechst nicht. */
 .af-acc__chevron {
+    flex: 0 0 auto;
+    width: 1.125rem;
+    height: 1.125rem;
+    line-height: 1;
+    text-align: center;
+    overflow: hidden;
     transition: transform 0.2s ease;
 }
 
@@ -2313,6 +2330,19 @@ html.dark .af-input[type="number"] {
     justify-content: space-between;
     gap: 0.75rem;
     margin-top: 0.5rem;
+}
+
+/* Restzeit (P1.9-W4.3). `:empty` bekommt keinen Abstand: Die Angabe fehlt in
+   den ersten Ticks und beim Szenario-Vergleich ganz — ohne diese Regel bliebe
+   dort eine Lücke stehen, und das Fenster spränge, sobald sie erscheint. */
+.af-dock__eta,
+.af-run__eta {
+    margin-top: 0.25rem;
+}
+
+.af-dock__eta:empty,
+.af-run__eta:empty {
+    display: none;
 }
 
 .af-dock__link {
@@ -2848,6 +2878,17 @@ html.dark .af-input[type="number"] {
         border: 0;
     }
 
+    /* **Und die Beschriftungen brechen nicht um** (P1.4). Solange die
+       Schriften von Google kamen, mass der Waechter teils die Ersatzschrift --
+       die setzt schmaler. Mit den lokalen Schriften und dem Warten auf
+       `document.fonts.ready` misst er die echten Metriken, und «Lauf starten»
+       brach in zwei Zeilen: 79 px statt der zugesagten 72. Ein Knopf in einer
+       einzeiligen Leiste darf nicht umbrechen; passt er nicht, ist die Leiste
+       falsch, nicht die Zeile. */
+    .af-wizard__nav button {
+        white-space: nowrap;
+    }
+
     /* Die Fußleiste bleibt eine Zeile. `flex-wrap: wrap` war der Grund für die
        133 px; ohne Umbruch und mit knapperem Innenabstand bleibt sie unter der
        Höhe eines Knopfes plus Luft. */
@@ -2911,4 +2952,45 @@ html.dark .af-input[type="number"] {
    gegen die Sperre anschreien. */
 .af-way--haupt:disabled {
     border-color: var(--border-subtle);
+}
+
+/* --- Zum Inhalt springen (P1.5, WCAG 2.4.1) --------------------------------
+
+   Der erste Griff fuer die Tastatur. Ohne ihn tastet man sich vor **jedem**
+   Bereich durch Kopfzeile, Schubladenumschalter und fuenf Bereichslinks, bevor
+   der Inhalt kommt -- bei fuenf Bereichen fuenfmal dasselbe.
+
+   Sichtbar nur mit Fokus: Er soll niemandem im Weg stehen, der ihn nicht
+   braucht. **Nicht `display: none`** im Ruhezustand, denn was nicht im Baum
+   steht, laesst sich auch nicht antabben; er wird aus dem Bild geschoben und
+   kommt beim Fokus zurueck. */
+.af-sprunglink {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transform: translateY(-120%);
+    padding: 0.625rem 1rem;
+    background: var(--accent);
+    color: var(--text-inverted);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-bottom-right-radius: var(--radius);
+    text-decoration: none;
+    transition: transform 0.15s ease;
+}
+
+.af-sprunglink:focus,
+.af-sprunglink:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid var(--accent-border);
+    outline-offset: 2px;
+}
+
+/* Die Ueberschrift des Bereichs ist Fokusziel nach dem Wechsel -- ohne den
+   Rahmen eines Eingabefeldes: Sie ist nichts, was man ausfuellt. */
+.af-shell__main h1:focus,
+.af-shell__main h2:focus {
+    outline: none;
 }

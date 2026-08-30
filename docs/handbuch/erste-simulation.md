@@ -113,6 +113,28 @@ sich **Übersicht** für den Verlauf von Buchungsrate und Preis, und **Figures**
 für die Detailauswertungen. Die empfohlene Lesereihenfolge steht unter
 [Ergebnisse lesen](/doku/ergebnisse-lesen).
 
+## Ohne Maus durch die Bereiche
+
+Die Kopfzeile führt durch fünf Bereiche — Einrichten, Leitstand, Ergebnisse,
+Modell, Handbuch. Mit der Tastatur geht das seit August 2026 ohne Umwege:
+
+Der **erste** Griff auf jeder Seite ist «Zum Inhalt springen». Er erscheint,
+sobald er den Fokus hat, und überspringt Kopfzeile und Bereichsliste — sonst
+tastet man sich vor jedem Bereich durch dieselben acht Elemente.
+
+Wechseln Sie den Bereich, wandert der **Fokus auf dessen Überschrift**, und der
+Wechsel wird angesagt: «Bereich gewechselt: Ergebnisse». In der Bereichsliste
+ist der offene Bereich nicht nur farblich hervorgehoben, sondern auch als
+solcher ausgezeichnet.
+
+Für die Schrittfolge im Bereich **Einrichten** gilt dasselbe; es steht in
+[Lauf konfigurieren](lauf-konfigurieren.md) unter «Ohne Maus, ohne Bildschirm».
+
+Zwei Einschränkungen der Ehrlichkeit halber: Diese Zusagen sind geprüft und am
+laufenden System gemessen, eine vollständige WCAG-Prüfung sind sie nicht. Und
+sie gelten für Bereichswechsel und Schrittfolge — die einzelnen Ergebnis-
+Ansichten sind noch nicht in gleicher Weise durchgegangen.
+
 ## Was Sie als Nächstes probieren sollten
 
 Wiederholen Sie den Lauf mit einem anderen Szenario und vergleichen Sie die

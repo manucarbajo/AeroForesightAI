@@ -266,3 +266,140 @@ def _ansage(draft: dict, schritt) -> str:
     if wizard.is_entry(jetzt):
         return "Einstieg: Womit möchten Sie anfangen?"
     return f"Schritt {jetzt + 1} von {len(wizard.STEPS)}: {wizard.STEPS[jetzt].title}"
+
+
+class TestDerBereichswechselIstAnsagbar:
+    """Dieselben vier Größen wie in der Schrittfolge — für die fünf Zonen (P1.5).
+
+    W5.3 hat die Schrittfolge durchgearbeitet und dabei ein Kriterium von P1.5
+    zur Hälfte eingelöst; die übrigen Zonen blieben offen. Gemessen: Die
+    Bereichslinks trugen **kein** `aria-current`, der Wechsel sagte nichts an,
+    und der Fokus blieb, wo er war.
+    """
+
+    def _shell(self):
+        from dashboard.web import shell, status
+
+        return shell.layout(
+            active="runs",
+            state=status.Status(tone="idle", label="bereit", detail=""),
+            run_options=[],
+            run_value=None,
+            left="links",
+            main="mitte",
+            timeline="zeit",
+            right="rechts",
+        )
+
+    def test_the_skip_link_comes_first(self):
+        """**Der erste Griff für die Tastatur** (WCAG 2.4.1).
+
+        Ohne ihn tastet man sich vor jedem der fünf Bereiche durch Kopfzeile,
+        Schubladenumschalter und fünf Bereichslinks.
+        """
+
+        from dashboard.web import shell
+
+        kinder = list(self._shell().children)
+        erstes = kinder[0]
+
+        assert "af-sprunglink" in (_props(erstes).get("className") or ""), (
+            "Das erste Element des Rahmens ist nicht der Sprunglink, sondern: "
+            f"{_props(erstes).get('className')}"
+        )
+        assert _props(erstes).get("href") == f"#{shell.MAIN_ID}"
+
+    def test_the_area_change_has_a_live_region_outside_the_areas(self):
+        """Eine Region **in** einem umgeschalteten Bereich wird nicht vorgelesen."""
+
+        from dashboard.web import shell
+
+        baum = self._shell()
+        regionen = {
+            _props(k).get("id"): _props(k)["aria-live"] for k in _mit_attribut(baum, "aria-live")
+        }
+
+        assert shell.BEREICH_ANSAGE in regionen
+        assert regionen[shell.BEREICH_ANSAGE] == "polite"
+
+    def test_the_announcement_says_that_something_changed(self):
+        """«Ergebnisse» allein könnte auch eine Überschrift sein."""
+
+        from dashboard.web import shell
+
+        satz = shell.bereich_ansage("runs")
+
+        assert "gewechselt" in satz.lower()
+        assert "Ergebnisse" in satz
+        assert shell.bereich_ansage("gibtesnicht") == ""
+
+    def test_every_area_carries_a_heading_that_names_it(self):
+        """**Nicht jeder Bereich hatte eine.**
+
+        «Leitstand» und «Ergebnisse» begannen mit dem Inhalt; gemessen landete
+        der Fokus danach auf `BODY` oder auf einer beliebigen
+        Zwischenüberschrift («Population im Tick»).
+        """
+
+        from dash import html
+
+        from dashboard.web.app import _bereichstitel
+
+        titel = _bereichstitel("Leitstand")
+
+        assert isinstance(titel, html.H1)
+        assert _props(titel).get("tabIndex") == -1
+        assert "af-nur-vorlesen" in (_props(titel).get("className") or ""), (
+            "Der Bereichstitel ist sichtbar — der Name steht schon in der "
+            "Kopfzeile, ein zweites Mal danebengeschrieben wäre Doppelung."
+        )
+
+    def test_the_focus_hangs_on_the_change_not_on_a_frame_tick(self):
+        """Die Lehre aus W5.3, hier noch einmal — und um eine erweitert.
+
+        Ein Bereichswechsel tauscht nichts aus, er schaltet `style` um. Ein
+        Beobachter, der nur `childList` kennt, feuert dabei **nie**.
+        """
+
+        from pathlib import Path
+
+        quelle = Path("dashboard/web/app.py").read_text(encoding="utf-8")
+        skript = quelle[quelle.index("app.clientside_callback") :]
+
+        assert "new MutationObserver(" in skript
+        # **Auf die Tat, nicht auf das Wort.** Die erste Fassung fragte nach
+        # `"attributeFilter"` und blieb grün, als der Filter `style` verlor und
+        # `attributes` auf `false` stand — sie prüfte, dass jemand daran gedacht
+        # hatte, nicht, dass es wirkt.
+        assert "attributes: true" in skript, (
+            "Der Beobachter hört nicht auf Attribute — ein Bereichswechsel "
+            "schaltet aber nur `style` um und tauscht nichts aus."
+        )
+        filter_zeile = skript[skript.index("attributeFilter") :][:80]
+        assert '"style"' in filter_zeile, (
+            f"`style` steht nicht im Attributfilter: {filter_zeile!r} — dann "
+            "feuert der Beobachter beim Bereichswechsel nie."
+        )
+        assert "offsetParent" in skript, (
+            "Die Überschrift wird nicht auf Sichtbarkeit geprüft. Alle fünf "
+            "Bereiche liegen gleichzeitig im DOM; ein ausgeblendetes Element "
+            "nimmt keinen Fokus an."
+        )
+
+    def test_the_active_link_is_marked_for_a_screenreader(self):
+        """`aria-current` steht nicht im Baum — und das hat einen Grund.
+
+        `dcc.Link` nimmt fremde Attribute nicht entgegen, und `html.A` an seiner
+        Stelle lüde bei jedem Wechsel die ganze Seite neu. Der Callback leitet
+        das Attribut deshalb aus der Klasse ab; geprüft wird, dass er es tut.
+        """
+
+        from pathlib import Path
+
+        quelle = Path("dashboard/web/app.py").read_text(encoding="utf-8")
+
+        assert 'setAttribute("aria-current", "page")' in quelle
+        assert 'removeAttribute("aria-current")' in quelle, (
+            "Die Kennung wird gesetzt, aber nie entfernt — nach zwei Wechseln "
+            "trügen zwei Links sie."
+        )

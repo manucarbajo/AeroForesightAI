@@ -25,7 +25,6 @@ Plotly-Figuren serverseitig entstehen und ihr Template kennen müssen.
 from __future__ import annotations
 
 import argparse
-import json
 
 from dash import Dash, Input, Output, State, ctx, dcc, html, no_update
 
@@ -55,9 +54,33 @@ from dashboard.web.views import scene, telemetry
 TITLE = "Technology Lab · Leitstand"
 
 _HIDDEN = {"display": "none"}
+
+
+def _bereichstitel(name: str):
+    """Eine Überschrift, die den Bereich benennt — für die Tastatur (P1.5).
+
+    **Nicht jeder Bereich hatte eine.** «Leitstand» und «Ergebnisse» begannen
+    mit dem Inhalt; gemessen landete der Fokus nach dem Wechsel deshalb auf
+    `BODY` oder auf einer beliebigen Zwischenüberschrift («Population im Tick»).
+    Wer mit der Tastatur ankommt, soll zuerst hören, **wo** er ist.
+
+    Nur vorgelesen, nicht gezeichnet: Die Bereiche tragen ihren Namen schon in
+    der Kopfzeile, und ein zweites Mal danebengeschrieben wäre Doppelung.
+    """
+
+    return html.H1(name, className="af-nur-vorlesen", tabIndex=-1)
+
+
 _VISIBLE: dict = {}
 
 SCENE_HOST = "scene-host"
+
+#: Wo der Inhalt des Leitstands hängt. **Getrennt von `SCENE_HOST`**, weil der
+#: Szenen-Callback seine Kinder bei jedem Tick austauscht — die Überschrift des
+#: Bereichs lag dort und wurde damit weggeräumt; gemessen landete der Fokus
+#: danach auf einer Zwischenüberschrift («Population im Tick») statt auf dem
+#: Namen des Bereichs (P1.5).
+SCENE_CONTENT = "scene-content"
 TELEMETRY_HOST = "telemetry-host"
 
 _INDEX_TEMPLATE = """<!DOCTYPE html>
@@ -95,33 +118,17 @@ _INDEX_TEMPLATE = """<!DOCTYPE html>
                 } catch (e) {}
             })();
         </script>
-        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap">
-        <script>
-            // Identisch zur Landingpage, damit beide Seiten dieselben Tokens
-            // teilen. Farben stehen hier nur fuer die Landingpage-Utilities —
-            // das Dashboard faerbt ueber die Tokens in `dashboard.css`.
-            tailwind.config = {
-                darkMode: "class",
-                theme: {
-                    extend: {
-                        colors: { navy: __NAVY__ },
-                        borderRadius: {
-                            "DEFAULT": "0.5rem", "lg": "0.75rem",
-                            "xl": "1rem", "full": "9999px"
-                        },
-                        fontFamily: {
-                            "headline": ["Plus Jakarta Sans", "sans-serif"],
-                            "display": ["Plus Jakarta Sans", "sans-serif"],
-                            "body": ["Inter", "sans-serif"],
-                            "label": ["Inter", "sans-serif"]
-                        }
-                    }
-                }
-            }
-        </script>
+        <!-- **Tailwind kommt aus `assets/00-tailwind.css`** (P1.4), erzeugt von
+             `npm run build:css`. Bis zum 2026-08-30 stand hier ein CDN-Skript,
+             das die Klassen zur Laufzeit erzeugte -- und dabei die IP jedes
+             Betrachters an einen fremden Host meldete. Die Zahlen im Dateinamen
+             sind keine Zierde: Dash laedt seine Assets alphabetisch, und
+             `dashboard.css` muss **nach** Tailwind kommen, sonst gewinnen dessen
+             Utilities gegen die af-Tokens. -->
+        <!-- Die Schriften kommen aus `assets/01-schriften.css` und
+             `assets/fonts/` (P1.4), geholt von `scripts/schriften_holen.py`.
+             Bis zum 2026-08-30 stand hier ein Verweis auf `fonts.googleapis.com`
+             — jeder Seitenaufruf meldete damit die IP des Betrachters dorthin. -->
         {%css%}
     </head>
     <body class="font-body antialiased">
@@ -134,11 +141,10 @@ _INDEX_TEMPLATE = """<!DOCTYPE html>
     </body>
 </html>"""
 
-#: Die Navy-Skala steht in `theme.NAVY`; hier wird sie in die Tailwind-Config
-#: der Seite eingesetzt, statt sie ein zweites Mal auszuschreiben. Zwei
-#: Fassungen derselben Palette waeren genau die Drift, die P0.2 an anderer
-#: Stelle gekostet hat.
-_INDEX = _INDEX_TEMPLATE.replace("__NAVY__", json.dumps(theme.NAVY))
+#: Die Palette steht seit P1.4 in `tailwind.config.js` und wird beim Build
+#: eingesetzt — nicht mehr zur Laufzeit in die Seite geschrieben. Das Template
+#: braucht deshalb keinen Platzhalter mehr.
+_INDEX = _INDEX_TEMPLATE
 
 
 # --- Zonen-Inhalte ---------------------------------------------------------
@@ -160,6 +166,9 @@ def _progress_from(payload: dict | None) -> runner.Progress | None:
         line=str(payload.get("line") or ""),
         lines=tuple(payload.get("lines") or ()),
         cancellable=bool(payload.get("cancellable", True)),
+        # Muss mit durch den Browser, sonst fiele die Restzeit genau dort aus,
+        # wo sie gezeigt wird — dieselbe Falle wie bei `cancellable`.
+        tick_seconds=tuple(float(w) for w in (payload.get("tick_seconds") or ())),
     )
 
 
@@ -304,16 +313,26 @@ def serve_layout() -> html.Div:
                     [
                         html.Div(setup_page.layout(draft), id="page-setup", style=start[0]),
                         html.Div(
-                            scene_block(
-                                data,
-                                1,
-                                progress=_progress_from(launch_page.progress_payload()),
-                                draft=draft,
-                            ),
+                            [
+                                _bereichstitel("Leitstand"),
+                                html.Div(
+                                    scene_block(
+                                        data,
+                                        1,
+                                        progress=_progress_from(launch_page.progress_payload()),
+                                        draft=draft,
+                                    ),
+                                    id=SCENE_CONTENT,
+                                ),
+                            ],
                             id=SCENE_HOST,
                             style=start[1],
                         ),
-                        html.Div(runs_page.layout(selection), id="page-runs", style=start[2]),
+                        html.Div(
+                            [_bereichstitel("Ergebnisse"), runs_page.layout(selection)],
+                            id="page-runs",
+                            style=start[2],
+                        ),
                         html.Div(model_page.layout(draft), id="page-modell", style=start[3]),
                         html.Div(docs_page.layout(), id="page-docs", style=start[4]),
                     ],
@@ -352,11 +371,95 @@ def create_app() -> Dash:
         Output("page-runs", "style"),
         Output("page-modell", "style"),
         Output("page-docs", "style"),
+        Output(shell.BEREICH_ANSAGE, "children"),
         Input("url", "pathname"),
     )
     def _route(pathname: str | None):
         active = active_route(pathname)
-        return (shell.nav_links(active), shell.shell_class(active), *visibility(active))
+        return (
+            shell.nav_links(active),
+            shell.shell_class(active),
+            *visibility(active),
+            # **Der Wechsel wird angesagt** (P1.5). Ohne das geschieht er
+            # lautlos: Der Bildschirm zeigt etwas anderes, und wer nicht
+            # hinsieht, erfährt es nicht.
+            shell.bereich_ansage(active),
+        )
+
+    # **Der Fokus wandert auf die Überschrift des neuen Bereichs** (P1.5).
+    #
+    # Am `af-shell__main` hängend, nicht am Pfad: Der Pfad ändert sich beim
+    # Klick, den neuen Inhalt gibt es erst mit der Antwort des Servers. Und
+    # über einen `MutationObserver`, nicht über `requestAnimationFrame` — das
+    # feuert in einem Tab, den niemand sieht, gar nicht. Beide Fehler standen
+    # schon in der Schrittfolge (P1.9-W5.3) und sind dort nachzulesen.
+    app.clientside_callback(
+        """
+        function (pfad) {
+            var wirt = document.getElementById("%s");
+            if (!wirt) { return window.dash_clientside.no_update; }
+            var setzen = function () {
+                var aktiv = document.activeElement;
+                // **Auch frei, wenn das Fokussierte unsichtbar geworden ist.**
+                // Ein Bereichswechsel schaltet die Sichtbarkeiten nacheinander:
+                // Fuer einen Augenblick ist die alte Ueberschrift noch da, und
+                // wer sie in diesem Moment fokussiert, bleibt fuer immer dort --
+                // gemessen: nach «Handbuch» stand der Fokus auf «Modell».
+                var frei = !aktiv || aktiv === document.body || !document.contains(aktiv)
+                           || aktiv.offsetParent === null;
+                if (!frei) { return; }
+                // **Die Ueberschrift des *sichtbaren* Bereichs.** Alle fuenf
+                // liegen gleichzeitig im DOM -- `querySelector` liefert sonst
+                // die erste in Dokumentreihenfolge, und die gehoert womoeglich
+                // zu einem ausgeblendeten Bereich. Ein ausgeblendetes Element
+                // nimmt keinen Fokus an: Am laufenden System stand er danach
+                // auf `BODY`, bei vier von fuenf Wechseln.
+                var titel = null;
+                var kandidaten = wirt.querySelectorAll("h1, h2");
+                for (var k = 0; k < kandidaten.length; k++) {
+                    if (kandidaten[k].offsetParent !== null) { titel = kandidaten[k]; break; }
+                }
+                if (titel) {
+                    if (!titel.hasAttribute("tabindex")) { titel.setAttribute("tabindex", "-1"); }
+                    titel.focus({ preventScroll: true });
+                }
+            };
+            // **`aria-current` aus der Klasse ableiten.** `dcc.Link` nimmt das
+            // Attribut nicht entgegen, und `html.A` laedt die Seite neu.
+            var kennzeichnen = function () {
+                var links = document.querySelectorAll(".af-nav__link");
+                for (var i = 0; i < links.length; i++) {
+                    if (links[i].classList.contains("af-nav__link--active")) {
+                        links[i].setAttribute("aria-current", "page");
+                    } else {
+                        links[i].removeAttribute("aria-current");
+                    }
+                }
+            };
+            // **Beide Wirte beobachten.** Inhalt und Bereichsliste werden von
+            // getrennten Ausgängen desselben Callbacks gezeichnet; wer nur den
+            // Inhalt beobachtet, stempelt `aria-current` auf eine Liste, die es
+            // im selben Moment noch gar nicht gibt.
+            // **Auch auf Attribute hoeren, nicht nur auf Kinder.** Ein
+            // Bereichswechsel tauscht hier nichts aus -- er schaltet `style`
+            // von `display: none` auf sichtbar. Ein Beobachter, der nur
+            // `childList` kennt, feuert dabei nie.
+            var achten = { childList: true, subtree: true, attributes: true,
+                           attributeFilter: ["style", "class"] };
+            var beob = new MutationObserver(function () { setzen(); kennzeichnen(); });
+            beob.observe(wirt, achten);
+            var nav = document.getElementById("%s");
+            if (nav) { beob.observe(nav, achten); }
+            window.setTimeout(function () { beob.disconnect(); }, 2500);
+            setzen();
+            kennzeichnen();
+            return window.dash_clientside.no_update;
+        }
+        """ % (shell.MAIN_ID, shell.NAV_HOST),
+        Output(shell.BEREICH_ANSAGE, "title"),
+        Input("url", "pathname"),
+        prevent_initial_call=True,
+    )
 
     # --- Die Lauf-Auswahl der Kopfzeile ------------------------------------
 
@@ -410,7 +513,7 @@ def create_app() -> Dash:
         return timeline.layout(data, 1), 1, False
 
     @app.callback(
-        Output(SCENE_HOST, "children"),
+        Output(SCENE_CONTENT, "children"),
         Input(timeline.TICK_STORE, "data"),
         Input(shell.THEME_STORE, "data"),
         Input(scene.ZOOM_STORE, "data"),
