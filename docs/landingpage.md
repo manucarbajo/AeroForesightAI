@@ -49,9 +49,57 @@ in der Tailwind-Konfiguration in `dashboard/web/app.py`.
    die verlinkte Datenschutzerklärung ein Entwurf ist. Die Ablage enthält
    personenbezogene Daten; sie gehört in die Sicherung und nicht in ein
    öffentlich erreichbares Verzeichnis.
-2. **Rechtstexte sind Platzhalter.** Alle mit `[…]` markierten Stellen müssen
-   ersetzt und rechtlich geprüft werden. Der gelbe Hinweisblock auf den drei
-   Seiten muss vor Veröffentlichung raus.
+2. **Rechtstexte sind ein Gerüst.** Die Gliederung steht — § 5 DDG, Art. 13
+   DSGVO, die üblichen Vertragsteile —, und **jede Pflichtangabe ist als
+   benannte Lücke markiert**: `[Straße und Hausnummer]`, nicht `[…]`. Man sieht,
+   *was* fehlt, nicht nur *dass* etwas fehlt. Die Inhalte brauchen die
+   Firmendaten und eine juristische Prüfung; erfundene Rechtstexte wären
+   schlimmer als erkennbar unfertige.
+
+   Der gelbe Hinweisblock bleibt, **solange eine Lücke offen ist** — er ist das
+   Einzige, was einen Besucher davor bewahrt, den Entwurf für verbindlich zu
+   halten. `tests/test_rechtstexte.py` hält ihn fest, prüft die Vollständigkeit
+   der Abschnitte und dass **jede** Lücke in der Liste unten steht.
+
+### Was zu liefern ist
+
+**Impressum** — Quelle: Handelsregisterauszug und Gesellschaftsvertrag.
+
+| Lücke | Anmerkung |
+| --- | --- |
+| Rechtsform und vollständiger Name des Anbieters | wie im Register eingetragen |
+| Straße und Hausnummer · PLZ und Ort · Land | ladungsfähige Anschrift, kein Postfach |
+| Name der vertretungsberechtigten Person | Geschäftsführung |
+| Telefonnummer | § 5 DDG verlangt einen zweiten Kanal neben der E-Mail |
+| Registergericht und Registernummer, sofern vorhanden | entfällt bei Einzelunternehmen |
+| USt-IdNr. | nur wenn vorhanden; sonst Abschnitt streichen |
+| Name · Anschrift (§ 18 Abs. 2 MStV) | inhaltlich Verantwortlicher, oft identisch mit der Geschäftsführung |
+
+**Datenschutzerklärung** — Quelle: Verarbeitungsverzeichnis, Auftragsverarbeiter-Verträge.
+
+| Lücke | Anmerkung |
+| --- | --- |
+| Name und Anschrift des Verantwortlichen | Art. 13 Abs. 1 lit. a DSGVO |
+| Auflistung eingesetzter Dienstleister … | Hosting-Provider und jeder weitere Auftragsverarbeiter |
+| Angabe, ob und welche Cookies eingesetzt werden … | **Stand heute setzt die Seite keine** — auch das gehört hin |
+| Aufbewahrungsdauer | je Verarbeitungszweck; die Demo-Anfragen liegen in `outputs/demo_anfragen.jsonl` |
+| Behörde und Anschrift | zuständige Aufsichtsbehörde nach Sitz |
+| Datum | Stand der Erklärung |
+
+**AGB** — Quelle: Vertragsmuster, kaufmännische Festlegung.
+
+| Lücke | Anmerkung |
+| --- | --- |
+| Anbieter | wie im Impressum |
+| Beschreibung des Vertragsschlusses … | Angebotsannahme in Textform o. Ä. |
+| Zahlungsziel · netto/brutto | kaufmännisch festzulegen |
+| Laufzeit · Verlängerungsregelung · Kündigungsfrist | ebenso |
+| Service-Level-Vereinbarung | falls zugesagt; sonst Abschnitt streichen |
+| Gerichtsstand | Sitz des Anbieters, bei Verbrauchern eingeschränkt |
+| Datum | Stand der AGB |
+
+Sind alle Lücken gefüllt, entfällt der Hinweisblock — und der Test darüber
+überspringt sich von selbst.
 3. ~~**Tailwind und Schriften über CDN.**~~ **Erledigt am 2026-08-30.**
    Tailwind kommt aus einem lokalen Build (`npm run build:css` →
    `assets/00-tailwind.css`), die Schriften aus dem Repo
