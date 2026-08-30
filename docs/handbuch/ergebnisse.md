@@ -47,6 +47,14 @@ Vier Kacheln und zwei Diagramme — dieselben Größen wie in der Telemetrie rec
 aber über den ganzen Lauf statt zu einem Tick. Die Kacheln nennen erreichte und geplante Ticks,
 die Zahl der Ereignisse, das verwendete Modell und ob das Marktmodell aktiv war.
 
+Darunter steht, **woraus der Lauf entstanden ist**: das Rahmenszenario, der
+Rechenmodus, der Zufallsstartwert und der Codestand.
+
+Das **Rahmenszenario** ist dabei die wichtigste der vier Angaben — es ist die
+Außenwelt, aus der alle Zahlen des Laufs entstanden sind. Es steht seit August
+2026 dort; davor ließ sich einem fertigen Lauf nicht ansehen, unter welchen
+Annahmen er gerechnet hatte. Läufe von davor zeigen «nicht festgehalten».
+
 Die Diagramme zeigen den Verlauf von Buchungsrate und Ticketpreis. Das ist der
 Regelkreis, um den sich alles dreht, und meist der schnellste Weg zur Frage, ob
 im Lauf überhaupt etwas passiert ist.

@@ -10,6 +10,7 @@ from typing import Any
 from src.config_loader import CONFIGS_DIR, build_initial_state, load_properties_config
 from src.market.market_feedback import resolve_market_feedback_config
 from src.models.property_models import BaselineTrajectory, StepFunctionTrajectory
+from src.models.state_models import Rahmenszenario
 from src.models.sweep_models import PropertyOverride, SweepConfig
 from src.orchestration.scenario_sweeps import (
     SWEEPS_DIR,
@@ -569,13 +570,39 @@ def prepare_simulation_state(draft: ConfigDraft):
     # Sprung auf 120 in Tick 15. Über die CLI (`run_single_sweep`) stimmte es,
     # nur dieser Pfad nicht. Wer von einem Preset ausgehen und dann eigene
     # Werte setzen will, nimmt «Werte übernehmen» — das schaltet auf `custom`.
+    # **Der Rahmen wird hier gesetzt** (P2.0-B). Nur an dieser Stelle ist
+    # bekannt, welches Szenario gilt — nach `apply_sweep_overrides` stehen nur
+    # noch Zahlen im Zustand, aus denen sich kein Name zurückgewinnen lässt.
+    #
+    # **Er folgt der Wahl des Nutzers, nicht dem internen Pfad.** Der erste
+    # Anlauf hängte ihn an den Zweig, der die Overrides anwendet — und weil
+    # `apply_custom_overrides` per Vorgabe an ist, hätte ein Lauf mit der
+    # Standard-Ausgangslage das Etikett «eigene Werte» getragen, ohne dass
+    # jemand etwas geändert hat. Der Wirkungstest hat das gemeldet: Das Feld
+    # erreichte plötzlich die Simulation, die es vorher nachweislich nicht
+    # erreichte.
     if draft.scenario_mode == "sweep" and draft.sweep_id:
         sweep_path = SWEEPS_DIR / f"{draft.sweep_id}.json"
         if not sweep_path.is_file():
             sweep_path = Path(draft.sweep_id)
         sweep = load_sweep_config(sweep_path)
+        state.rahmen = Rahmenszenario(id=sweep.id, name=sweep.name, quelle="preset")
         state = apply_sweep_overrides(state, sweep)
-    elif draft.apply_custom_overrides or draft.scenario_mode == "custom":
+    elif draft.scenario_mode == "custom":
+        state.rahmen = Rahmenszenario(id="eigen", name="Eigene Werte", quelle="eigen")
+    else:
+        # Auch das ist ein Rahmen — die ausgelieferten Dateien tragen eigene
+        # exogene Verläufe. Er hieß bisher nur nicht so, und deshalb sah es aus,
+        # als liefe der Lauf «ohne Szenario».
+        state.rahmen = Rahmenszenario(
+            id="standard",
+            name="Standard-Ausgangslage",
+            quelle="standard",
+        )
+
+    if draft.scenario_mode != "sweep" and (
+        draft.apply_custom_overrides or draft.scenario_mode == "custom"
+    ):
         custom = build_custom_sweep_from_draft(draft)
         state = apply_sweep_overrides(state, custom)
 

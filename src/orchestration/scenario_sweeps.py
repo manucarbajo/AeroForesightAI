@@ -29,6 +29,7 @@ from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
 from src.models.llm_models import LLMIncident
+from src.models.state_models import Rahmenszenario
 from src.models.sweep_models import (
     MilestoneCheck,
     SweepConfig,
@@ -405,6 +406,8 @@ def run_single_sweep(
 
     # Apply sweep overrides
     state = apply_sweep_overrides(state, sweep)
+    # Welcher Rahmen gilt (P2.0-B) — hier bekannt, später nicht mehr.
+    state.rahmen = Rahmenszenario(id=sweep.id, name=sweep.name, quelle="preset")
     if ticks_override:
         state.clock.max_ticks = ticks_override
 

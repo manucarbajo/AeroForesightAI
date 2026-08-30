@@ -112,6 +112,27 @@ class ConfigFingerprint(BaseModel):
     cib_matrix: str | None = None
 
 
+class Rahmenszenario(BaseModel):
+    """Unter welcher Außenwelt ein Lauf gerechnet hat (P2.0-B).
+
+    **Bis dahin sagte kein Artefakt, welches Szenario einem Lauf zugrunde lag.**
+    `config_fingerprint` unterschied die neun Rahmen zwar — jeder trägt einen
+    eigenen `properties`-Hash —, aber nur als undurchsichtige Zeichenkette: Man
+    sah *dass* ein anderer Rahmen lief, nicht *welcher*. Für ein Produkt, dessen
+    zentrale Eingabe das Rahmenszenario ist, war das die Lücke an der wichtigsten
+    Stelle.
+
+    `quelle` unterscheidet die drei Wege, auf denen ein Rahmen zustande kommt:
+    `"preset"` (eine Datei unter `configs/sweeps/`), `"eigen"` (im Assistenten
+    zusammengestellt) und `"standard"` (die ausgelieferten Konfigurationsdateien
+    — auch das ist ein Rahmen, nur ein unbenannter).
+    """
+
+    id: str
+    name: str
+    quelle: str = "preset"
+
+
 class SimulationState(BaseModel):
     config: SimulationConfig
     properties: PropertiesConfig
@@ -122,6 +143,13 @@ class SimulationState(BaseModel):
     #: ersten Tick. Bleibt danach unverändert — auch beim Fortsetzen aus einem
     #: Checkpoint, der Lauf setzt ja dieselbe Konfiguration fort.
     config_fingerprint: ConfigFingerprint | None = None
+    #: Unter welchem Rahmenszenario dieser Lauf steht (P2.0-B). Gesetzt beim
+    #: Aufbau des Zustands — dort ist bekannt, welche Datei gilt —, von
+    #: `save_run_metadata` gelesen. Dasselbe Muster wie beim Fingerabdruck: am
+    #: richtigen Moment genommen, nicht am Ende noch einmal erraten. Am Ende
+    #: erraten ginge auch gar nicht: Ein Sweep legt seine Werte in den Zustand,
+    #: und aus den Zahlen allein lässt sich der Name nicht zurückgewinnen.
+    rahmen: Rahmenszenario | None = None
     #: Wie lange der Lauf gerechnet hat, in Sekunden — gesetzt von
     #: `SimulationRunner.run`, wenn der letzte Tick durch ist (P1.9-W4.3).
     #:

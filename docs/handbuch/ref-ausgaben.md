@@ -63,6 +63,7 @@ welchen Bedingungen er lief.
 
 | Feld | Bedeutung |
 |---|---|
+| `rahmen` | **Unter welchem Rahmenszenario der Lauf stand** — `id`, `name` und `quelle`. `quelle` ist `preset` (eine Datei unter `configs/sweeps/`), `eigen` (im Assistenten zusammengestellt) oder `standard` (die ausgelieferten Konfigurationsdateien — auch das ist ein Rahmen, nur ein unbenannter). Läufe von vor dem 2026-08-30 haben das Feld nicht; dann steht in der Oberfläche «nicht festgehalten». |
 | `seed` | Der tatsächlich benutzte Startwert der Zufallsziehung — auch dann, wenn Sie keinen angegeben haben: Dann steht hier der Standardwert, mit dem gerechnet wurde. Gleicher Seed und gleiche Konfiguration ergeben denselben Lauf. |
 | `compute_mode` | `llm` (mit Sprachmodell), `mock_llm` (ohne, mit Platzhaltertexten), `deterministic_only` (nur Zahlen) oder `deterministic_with_llm_narrative` (Zahlen deterministisch, Abschlusstext vom Modell — so laufen die Sweeps). |
 | `mock_llm`, `deterministic_only` | Die beiden Schalter einzeln, für die maschinelle Auswertung. |
@@ -70,6 +71,12 @@ welchen Bedingungen er lief.
 | `code_version` | Git-Commit, Branch und ob der Arbeitsbaum dabei ungesicherte Änderungen trug. `null`, wenn kein Repository verfügbar war. |
 | `elapsed_seconds` | Wie lange der Lauf **gerechnet** hat, in Sekunden — die reine Tick-Zeit ohne das Schreiben der Artefakte danach. Aus diesen Werten schätzt der Prüfschritt, wie lange der nächste Lauf dauert; ohne sie zeigt er dort nichts. Läufe von vor August 2026 haben das Feld nicht. |
 | `model`, `base_url`, `temperature`, `max_tokens` | Das befragte Sprachmodell und seine Einstellungen. Bei einem Lauf **ohne** Modell (`mock_llm`, `deterministic_only`) stehen alle vier auf `null` — die Felder beschreiben dort nichts. Ein Sweep behält seinen Modellnamen, denn dort schreibt das Modell den Abschlusstext. |
+
+> **Warum `rahmen` neben dem Fingerabdruck steht.** Der Fingerabdruck
+> *unterscheidet* die Rahmen — jedes der acht Szenarien erzeugt einen eigenen
+> `properties`-Hash —, aber er *benennt* sie nicht. Man sah damit, **dass** ein
+> anderer Rahmen lief, nicht **welcher**. Für die Frage, unter welcher Außenwelt
+> eine Zahl entstanden ist, war das keine Antwort.
 
 Der Fingerabdruck beschreibt, **was gelaufen ist** — nicht, was gerade in
 `configs/` liegt. Das ist der wichtige Unterschied: Ein Lauf aus dem Dashboard

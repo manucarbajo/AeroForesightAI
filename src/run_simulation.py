@@ -20,6 +20,7 @@ from src.config_loader import build_initial_state
 from src.llm import STUDIO_DIR, MockLLM, OllamaClient, OllamaConfig, load_env
 from src.logging_setup import configure_logging
 from src.models.llm_models import LLMIncident
+from src.models.state_models import Rahmenszenario
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 from src.reporting.output_writer import (
@@ -575,6 +576,12 @@ def main() -> int:
         return 0
 
     base_state = build_initial_state()
+    # Die ausgelieferten Dateien **sind** ein Rahmenszenario — sie tragen eigene
+    # exogene Verläufe (P2.0-B). Sie hießen bisher nur nicht so, und deshalb sah
+    # ein CLI-Lauf aus, als liefe er «ohne Szenario».
+    base_state.rahmen = Rahmenszenario(
+        id="standard", name="Standard-Ausgangslage", quelle="standard"
+    )
     if args.rounds is not None:
         base_state.clock.max_ticks = int(args.rounds)
     if args.seed is not None:

@@ -1212,7 +1212,7 @@ Ein zweiter Fund daneben: Lag **gar kein** Score vor, fiel die Funktion auf den 
 
 **Der Wächter:** `tests/test_konsistenz_kein_urteil.py`. Er läuft als **AST** über `src/` und kennt vier Rückfallformen — Dict-Schlüssel, Funktionsdefinition, Aufruf, Import —, während Docstrings und Kommentare das alte Wort weiter nennen dürfen; genau sie erklären ja, warum es weg ist. Ein Grep könnte das nicht trennen. `test_der_waechter_wuerde_einen_rueckfall_bemerken` stellt alle vier Formen nach und prüft den Docstring als Fehlalarm gegen.
 
-**Was Stufe A nicht ist:** die Umdrehung selbst. Der Endzustand wird weiterhin gegen die Matrix bewertet — nur sagt das Ergebnis jetzt, was es misst. Stufe C (Faktoren abgeleitet statt gesetzt) ist am 2026-08-30 gefolgt; **Stufe B** (Sweeps als regulärer Startpfad) steht aus.
+**Was Stufe A nicht ist:** die Umdrehung selbst. Der Endzustand wird weiterhin gegen die Matrix bewertet — nur sagt das Ergebnis jetzt, was es misst. Stufe C (Faktoren abgeleitet statt gesetzt) und der erste Teil von Stufe B (ein Lauf sagt, unter welchem Rahmen er stand) sind am 2026-08-30 gefolgt.
 
 **Doku mitgezogen:** `docs/handbuch/ref-ausgaben.md` (neuer Abschnitt zu den drei Feldern, samt Hinweis, dass ältere Läufe `plausibility` weitertragen), `docs/handbuch/glossar.md`, `docs/handbuch/grenzen.md`.
 
@@ -1237,6 +1237,27 @@ Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
 **Reihenfolge entschieden am 2026-08-29: Stufe B und C warten auf P1.9.** Beide fassen den Assistenten an — Stufe C nimmt dem Schritt «Faktorlage» seine Eingabe —, und P1.9 ist offen. Zwei Umbauten gleichzeitig an derselben Schrittfolge kosten mehr, als die Wartezeit wert ist. **Was damit bewusst offen stehen bleibt:** Der Assistent stellt bis dahin weiter sieben Fragen, deren Antwort das Ergebnis nicht prägt. Der Befund steht in `audit_findings.md` und ist gemessen; er wird **nicht** durch einen Hinweistext beruhigt, weil ein Hinweis die Frage nicht wirksam macht. Wer P1.9 abschließt, nimmt Stufe C als Nächstes.
 
 **Die naheliegende Form für Stufe C, damit sie nicht neu erfunden wird:** Der Schritt «Faktorlage» verschwindet nicht, er wechselt die Ebene — statt sieben Faktorzuständen fragt er die **exogenen Größen**, an denen die Faktoren gemessen ohnehin hängen: CO₂-Abgabe (F2, F6), SAF-Quote (F3), Ölpreis (F7). Aus sieben folgenlosen Auswahlen werden drei wirksame, und das *ist* die Umdrehung.
+
+#### Stufe B — ein Lauf sagt, unter welchem Rahmen er stand ✅ erledigt 2026-08-30
+
+**Der Befund:** Mit der Umdrehung ist das Rahmenszenario die **zentrale Eingabe** — es setzt die exogenen Verläufe, aus denen der Lauf alles Weitere erzeugt. Bis dahin hielt **kein Artefakt fest, welches es war.** `run_metadata.json` kennt Seed, Rechenmodus, Fingerabdruck und Codestand; das Szenario fehlte.
+
+**Ganz unsichtbar war es nicht — und der Unterschied ist wichtig.** Gemessen unterscheidet `config_fingerprint` die neun Rahmen sauber: Jeder erzeugt einen eigenen `properties`-Hash. Man sah damit, **dass** ein anderer Rahmen lief, nicht **welcher**. Für die Frage «unter welcher Außenwelt ist diese Zahl entstanden» — die Frage, um die es beim Verkaufen geht — war das keine Antwort.
+
+**Was umgesetzt ist:**
+
+- `SimulationState.rahmen` trägt `id`, `name` und `quelle`. **Gesetzt beim Aufbau des Zustands, gelesen beim Schreiben der Metadaten** — dasselbe Muster wie `config_fingerprint` und `elapsed_seconds`. Am Ende erraten ginge auch nicht: Ein Sweep legt seine Werte in den Zustand, und aus den Zahlen allein lässt sich kein Name zurückgewinnen.
+- Drei Quellen, weil es drei Wege gibt: `preset` (Datei unter `configs/sweeps/`), `eigen` (im Assistenten zusammengestellt), `standard` (die ausgelieferten Dateien). **Auch der Standard ist ein Rahmen** — er trägt eigene exogene Verläufe und hieß nur bisher nicht so; deshalb sah ein Lauf ohne Preset aus, als liefe er «ohne Szenario».
+- Alle drei Startpfade setzen ihn: Dashboard, Sweep-Lauf und CLI.
+- Die Ansicht «Übersicht» zeigt ihn als **erste** der vier Herkunftskacheln. Ein Lauf ohne Angabe bekommt «nicht festgehalten» statt einer Vermutung.
+
+**Der Wirkungstest hat einen Entwurfsfehler gefunden, bevor er ins Artefakt kam.** Der erste Anlauf hängte den Rahmen an den Zweig, der die Overrides anwendet. Weil `apply_custom_overrides` per Vorgabe an ist, hätte damit ein Lauf mit der **Standard-Ausgangslage** das Etikett «eigene Werte» getragen, ohne dass jemand etwas geändert hat. `test_web_wirkung.py` meldete das sofort: Ein Feld erreichte plötzlich die Simulation, das sie vorher nachweislich nicht erreichte. Der Rahmen folgt jetzt der **Wahl** des Nutzers (`scenario_mode`), nicht dem internen Pfad.
+
+**Der Wächter:** `tests/test_rahmen_im_artefakt.py`. Er prüft alle acht Presets statt eines, gleicht Kennung und Name gegen die Datei ab — und misst nach, **warum** das Feld nötig war: dass der Fingerabdruck die Rahmen zwar unterscheidet, sie aber nicht benennt. Wäre er umkehrbar, wäre das Feld überflüssig.
+
+**Doku mitgezogen:** `docs/handbuch/ref-ausgaben.md` (das Feld und der Grund neben dem Fingerabdruck), `docs/handbuch/ergebnisse.md` (die Kachel).
+
+**Was noch aussteht:** Der zweite Teil von Stufe B — **kein Codepfad bewertet mehr den Endzustand gegen die Matrix, um zu entscheiden, was gezeigt wird.** Dazu ist ein Befund gemessen und unten als Finding aufgenommen.
 
 #### Stufe C — die Faktorlage hört auf, Eingabe zu sein ✅ erledigt 2026-08-30
 
