@@ -1487,6 +1487,14 @@ Fällt die Wahl auf 2 oder 3, ist die Impact Balance dann auch zu implementieren
 
 **Zweiter Fallstrick — die Daten:** Kerosin- und ETS-Preise sind frei verfügbar, die europäische Nachfrage- und Yield-Seite nicht durchgängig. Welche Reihe die Zielgröße ist und woher sie kommt, gehört **vor** die Umsetzung; sonst wird das Kriterium nachträglich an die Daten angepasst, die sich beschaffen ließen.
 
+**Ein Vorschlag dazu liegt seit dem 2026-08-30 vor** ([`vorschlag_backtest_daten_2026-08-30.md`](vorschlag_backtest_daten_2026-08-30.md)), geprüft statt aus dem Gedächtnis zitiert. Drei Punkte daraus gehören entschieden, bevor jemand anfängt:
+
+- **Zielgrößen:** Eurostat `avia_paoc` (Fluggäste) und `prc_hicp_midx`/`CP0733` (Verbraucherpreisindex Flugreisen). Letzterer hat die Basis **2015 = 100** — genau der Fensteranfang.
+- **Verglichen wird indexiert, nicht auf Euro-Niveau.** Der absolute Preis des Modells hängt an `base_price` und acht Koeffizienten, von denen seit P2.1 aktenkundig keiner geschätzt ist. Ein Niveauvergleich prüfte eine Genauigkeit, die das Modell nie behauptet hat. Prüfbar sind Richtung, Größenordnung und Wendepunkte.
+- **2020 ist die eigentliche Entscheidung.** Der Einbruch war kein Preiseffekt, und das Modell hat für Reisebeschränkungen **keinen Mechanismus**. Ihn über `demand_growth_rate` einzuspeisen wäre wertlos — der Backtest bestätigte dann eine Eingabe. Empfohlen: 2020/21 mitrechnen, **unbewertet daneben stellen** und die Lücke benennen.
+
+Drei Kostenindizes (`airport_fee`, `maintenance_cost_index`, `staff_cost_index`) bekommen bewusst **keine** Reihe — es gibt keine frei zugängliche in passender Auflösung, und ein gebastelter Hilfsindex sähe aus wie eine Datenquelle.
+
 **Fertig wenn:** Ein reproduzierbarer Lauf gegen die historische Reihe existiert, die Abweichung ist je Zielgröße beziffert, und das Ergebnis steht mit Methode und Datenquelle in `docs/` — samt der Aussage, was es *nicht* belegt.
 
 **Doku zieht mit:** neues Kapitel unter `docs/`, `docs/handbuch/grenzen.md`, `README.md`, `CLAUDE.md` (falls eine neue Datenquelle in die Architektur-Map kommt).
