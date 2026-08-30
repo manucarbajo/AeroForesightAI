@@ -71,11 +71,20 @@ def test_apply_property_overrides():
         pytest.fail("carbon_tax_level not found in system_properties")
 
 
-def test_apply_factor_overrides():
-    """Factor overrides should change initial factor states."""
-    state = build_initial_state(load_cib=False)
+def test_factor_overrides_werden_nicht_mehr_angewendet():
+    """P2.0-C: Ein Rahmenszenario setzt Verläufe, nicht die Antwort.
 
-    # F2 default is F2.1
+    Der Test hieß bis dahin `test_apply_factor_overrides` und prüfte das
+    Gegenteil. Gemessen war die Vorgabe folgenlos: In allen vier Presets, die
+    eine trugen, landeten nach 20 Ticks alle sieben Faktoren auf denselben
+    Zuständen wie ohne sie — sie störte nur die ersten Ticks, bevor die Regeln
+    sie überschrieben.
+
+    Das Feld bleibt im Modell lesbar; wirksam ist es nicht mehr, und der
+    Sweep-Vertrag sagt das (`UNBEACHTET`, Invariante 7).
+    """
+
+    state = build_initial_state(load_cib=False)
     assert state.environment.factors["F2"].current_state == "F2.1"
 
     sweep = SweepConfig(
@@ -89,7 +98,21 @@ def test_apply_factor_overrides():
     )
 
     state = apply_sweep_overrides(state, sweep)
-    assert state.environment.factors["F2"].current_state == "F2.2"
+    assert state.environment.factors["F2"].current_state == "F2.1", (
+        "Eine Faktor-Vorgabe hat den Startzustand wieder verschoben — dann ist "
+        "die Umdrehung aus P2.0-C zurückgenommen."
+    )
+
+
+def test_der_vertrag_nennt_die_verworfene_faktorlage():
+    """Invariante 7: Ein Pfad, der etwas verwirft, sagt es."""
+
+    from src.orchestration.scenario_sweeps import UNBEACHTET
+
+    felder = {f.feld for f in UNBEACHTET}
+    assert (
+        "factor_states" in felder
+    ), "Die Faktorlage wird verworfen, ohne dass der Vertrag es nennt."
 
 
 def test_deterministic_only_skips_llm():

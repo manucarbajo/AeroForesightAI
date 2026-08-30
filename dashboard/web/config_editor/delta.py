@@ -52,7 +52,6 @@ PFADWAHL = {"run_all_sweeps", "scenario_mode", "sweep_id", "resume_from"}
 #: Anzahl zu benennen ist.
 VERSCHACHTELT = {
     "property_edits": ("Systemgrößen", "geändert"),
-    "factor_states": ("Faktoren", "umgestellt"),
     "population_edits": ("Bevölkerungssegmente", "geändert"),
     "market_feedback_edit": ("Preisbildung", "geändert"),
     "saturation_edit": ("Sättigung", "geändert"),

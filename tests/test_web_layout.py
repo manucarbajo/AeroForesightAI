@@ -353,15 +353,6 @@ def test_add_segment_rejects_a_duplicate():
     assert "existiert bereits" in message
 
 
-def test_reload_factors_reads_the_configured_file():
-    data, _, kind = _handle_action(
-        {"type": "cfg-action", "action": "reload-factors"}, initial_draft_dict(), []
-    )
-
-    assert kind == "success"
-    assert data["factor_states"]
-
-
 # --- Seiten und App --------------------------------------------------------
 
 
@@ -393,12 +384,12 @@ def test_the_setup_area_builds_with_the_default_draft():
     assert "Lauf einrichten" in rendered
     assert "af-wizard" in rendered, "die Schrittfolge fehlt"
     assert "optional" in rendered, "die ueberspringbaren Schritte sind nicht als solche benannt"
-    # Sieben: sechs seit P1.9-W3.1 (die beiden dichten Bereiche zogen ins
-    # «Modell»), plus die «Ausgangslage», die W3.3 als *eine* Frage
-    # zurueckgeholt hat -- sie gehoert zum Experiment, nicht zum Modell. Die
-    # Zahl steht hier bewusst als Zahl: Waechst die Schrittfolge, ist das eine
+    # Sechs: acht bis P1.9-W3.1 (die beiden dichten Bereiche zogen ins
+    # «Modell»), sieben mit der «Ausgangslage» aus W3.3, und sechs seit P2.0-C
+    # -- die Faktorlage ist keine Eingabe mehr, sie entsteht im Lauf. Die Zahl
+    # steht hier bewusst als Zahl: Waechst die Schrittfolge, ist das eine
     # Entscheidung und keine Nebenwirkung.
-    assert len(wizard.STEPS) == 7
+    assert len(wizard.STEPS) == 6
 
 
 def test_launch_summary_describes_the_draft():

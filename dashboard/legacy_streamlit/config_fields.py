@@ -27,7 +27,14 @@ def init_config_draft() -> None:
 
 
 def clear_factor_widget_keys(draft: ConfigDraft) -> None:
-    """Remove stale Streamlit keys so factor selectboxes follow ``draft.factor_states``."""
+    """Räumt Streamlit-Schlüssel der früheren Faktor-Auswahlfelder weg.
+
+    **Seit P2.0-C ohne Wirkung**: Die Auswahlfelder gibt es nicht mehr, die
+    Faktorlage ist keine Eingabe. Die Funktion bleibt vorerst stehen, weil sie an
+    sechs Stellen in dieser abgelösten Oberfläche gerufen wird und mit ihr
+    zusammen entfällt (P5.2).
+    """
+
     for factor_id in factor_options_from_file(draft.factors_file):
         st.session_state.pop(f"factor_{factor_id}", None)
 

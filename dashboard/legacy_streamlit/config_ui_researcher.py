@@ -19,10 +19,8 @@ from dashboard.config_catalog import (
     apply_sweep_to_draft,
     default_config_draft,
     effective_config_summary,
-    extract_factor_states_from_file,
     extract_population_edits_from_file,
     extract_property_edits_from_file,
-    factor_options_from_file,
     get_editable_property_ids,
     list_sweep_presets,
     load_config_file,
@@ -191,32 +189,9 @@ def _render_tab_macro(draft: ConfigDraft) -> ConfigDraft:
     st.subheader("Makro-Parameter")
 
     st.markdown("### Faktoren-Startzustaende")
-    st.caption("Startzustaende F1-F7 vor dem Lauf.")
-    if not (draft.apply_custom_overrides or draft.scenario_mode == "custom"):
-        st.warning("Overrides sind deaktiviert.")
-    options = factor_options_from_file(draft.factors_file)
-    if options:
-        if draft.factors_file != "factors.json":
-            if st.button("Faktoren neu laden"):
-                draft.factor_states = extract_factor_states_from_file(draft.factors_file)
-                clear_factor_widget_keys(draft)
-                st.rerun()
-
-        cols = st.columns(2)
-        factor_ids = sorted(options.keys())
-        for idx, factor_id in enumerate(factor_ids):
-            states = options[factor_id]
-            state_keys = list(states.keys())
-            current = draft.factor_states.get(factor_id, state_keys[0] if state_keys else "")
-            default_idx = state_keys.index(current) if current in state_keys else 0
-            with cols[idx % 2]:
-                selected = st.selectbox(
-                    factor_id,
-                    state_keys,
-                    index=default_idx,
-                    format_func=lambda k, st_map=states: f"{k}: {st_map[k][:50]}",
-                )
-                draft.factor_states[factor_id] = selected
+    st.info(
+        "Die Faktorlage wird seit P2.0-C **nicht mehr vorgegeben**. Ein Rahmenszenario setzt die exogenen Systemgrößen; F1–F7 entstehen daraus im Lauf. Gemessen war die frühere Vorgabe ohnehin folgenlos: In allen vier Presets, die eine trugen, landeten alle sieben Faktoren mit und ohne sie auf denselben Zuständen."
+    )
 
     st.divider()
     st.markdown("### System-Properties (Steuern & Gebuehren)")

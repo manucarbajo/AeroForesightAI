@@ -30,7 +30,6 @@ from dashboard.config_catalog import (
     apply_sweep_to_draft,
     default_config_draft,
     delete_custom_property,
-    extract_factor_states_from_file,
     extract_population_edits_from_file,
     extract_property_edits_from_file,
     list_sweep_presets,
@@ -420,12 +419,6 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
             return data, "Kein Szenario-Preset ausgewählt.", "warning"
         applied = apply_sweep_to_draft(draft_from_dict(data), sweep)
         return draft_to_dict(applied), f"Parameter von «{sweep.name}» übernommen.", "success"
-
-    if action == "reload-factors":
-        data["factor_states"] = extract_factor_states_from_file(
-            data.get("factors_file", "factors.json")
-        )
-        return data, "Faktoren neu geladen.", "success"
 
     if action == "reload-properties":
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))

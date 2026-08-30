@@ -58,12 +58,33 @@ gewechselt hat, finden Sie im Bild `factor_states.png` unter «PNG-Export» und 
 2026; sieben Treppenlinien nebeneinander beantworteten für sich genommen keine
 Frage.
 
-## Wo Sie sie einstellen
+## Sie stellen sie nicht ein — der Lauf erzeugt sie
 
-Unter **Simulation starten** im Tab **Rahmenbedingungen**. Jeder Faktor trägt
-dort seinen Namen und seine Leitfrage, etwa «F1 · Mobilitätsbedürfnis / Nachfrage
-— Wie stark wollen Menschen fliegen?».
+**Seit August 2026 sind die Faktoren ein Ergebnis, keine Eingabe.** Sie stellen
+die Annahmen über die Außenwelt ein — CO₂-Abgabe, SAF-Quote, Ölpreis, Konjunktur,
+und zwar über die Wahl des Szenarios im ersten Schritt. Aus deren Verlauf
+entsteht die Faktorlage während des Laufs.
 
-Achten Sie darauf, dass **Eigene Werte anwenden** eingeschaltet ist. Sonst
-rechnet der Lauf mit der Ausgangslage aus den Konfigurationsdateien, und Ihre
-Auswahl bleibt wirkungslos.
+Der Grund ist gemessen, nicht gefühlt. Vorher gab es einen Schritt, der die
+sieben Zustände abfragte, und die Antwort trug nicht weit:
+
+- **Vier der sieben** (Regulierung, Technologie, Gesellschaft, Geopolitik)
+  werden schon in der **ersten Runde** überschrieben. Ihre Regeln binden sie an
+  CO₂-Abgabe, SAF-Quote und Ölpreis — was Sie vorher eingestellt hatten, war
+  danach weg.
+- In allen vier mitgelieferten Szenarien, die eine Faktorvorgabe trugen, endete
+  der Lauf auf **denselben** Zuständen wie ohne sie.
+
+Das ist keine Einschränkung, sondern der Sinn der Sache: Ein Szenario beschreibt
+eine **Außenwelt**, und was daraus für Nachfrage, Regulierungsdruck und
+Technologie folgt, soll die Simulation herausfinden — nicht die Eingabemaske
+vorwegnehmen.
+
+## Wo Sie das Ergebnis sehen
+
+Am Ende eines Laufs in der Ansicht **Szenario** und, über die Ticks aufgelöst, in
+`timeseries/factors.csv` sowie im Bild `factor_states.png`.
+
+Ein Beispiel aus einem Lauf über 40 Runden: In Runde 1 stehen alle sieben
+Faktoren auf ihrem ersten Zustand, in Runde 40 auf `F1.2, F2.2, F3.2, F4.2,
+F5.2, F6.1, F7.1` — eine **gemischte** Lage, die so niemand eingestellt hat.

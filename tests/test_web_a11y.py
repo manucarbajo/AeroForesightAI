@@ -88,11 +88,15 @@ class TestJedeAenderungWirdAngesagt:
         assert regionen[wizard.ANSAGE] == "polite"
 
     def test_the_announcement_names_step_and_title(self, draft):
-        """«Schritt 4 von 7: Ausgangslage» — Ort und Frage in einem Satz."""
+        """«Schritt 4 von 6: Lauf & Ablage» — Ort und Frage in einem Satz.
+
+        Die Zahl kommt aus `wizard.STEPS` statt hingeschrieben zu sein: Sie hat
+        sich mit W3.1, W3.3 und P2.0-C dreimal bewegt.
+        """
 
         gerufen = _ansage(draft, 3)
 
-        assert "Schritt 4 von 7" in gerufen
+        assert f"Schritt 4 von {len(wizard.STEPS)}" in gerufen
         assert wizard.STEPS[3].title in gerufen
 
     def test_the_entry_says_where_you_are_too(self, draft):

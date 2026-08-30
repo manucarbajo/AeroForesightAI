@@ -124,9 +124,17 @@ UNBEACHTET: tuple[Festlegung, ...] = (
     Festlegung(
         "apply_custom_overrides",
         None,
-        "Jedes Szenario gilt unvermischt aus seiner eigenen Datei. Eigene Faktoren "
-        "und Systemgrößen wirken im Vergleich nicht — sonst verglichen Sie nicht mehr "
+        "Jedes Szenario gilt unvermischt aus seiner eigenen Datei. Eigene "
+        "Systemgrößen wirken im Vergleich nicht — sonst verglichen Sie nicht mehr "
         "die Szenarien, sondern Ihre Änderung mit sich selbst.",
+    ),
+    Festlegung(
+        "factor_states",
+        None,
+        "Die Faktorlage entsteht im Lauf aus den Systemgrößen des Szenarios — sie "
+        "wird nicht mehr vorgegeben. Das gilt für jeden Startweg, nicht nur für den "
+        "Vergleich: Ein vorher gesetzter Faktorzustand hieße, die Antwort vor die "
+        "Rechnung zu stellen.",
     ),
     Festlegung(
         "use_seed",
@@ -295,10 +303,22 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
                     new_rules.append(TrajectoryRule.model_validate(rule_data))
                 traj.rules = new_rules
 
-    for factor_override in sweep.factor_overrides:
-        factor = state.environment.factors.get(factor_override.factor_id)
-        if factor is not None and factor_override.initial_state in factor.possible_states:
-            factor.current_state = factor_override.initial_state
+    # **`factor_overrides` werden seit P2.0-C nicht mehr angewendet.** Ein
+    # Rahmenszenario setzt die exogenen Verläufe; die Faktorlage entsteht daraus
+    # im Lauf. Sie vorher zu setzen hieße, die Antwort vor die Rechnung zu
+    # stellen (Leitentscheidung vom 2026-08-29).
+    #
+    # Gemessen, bevor das entfernt wurde — vier Presets trugen eine Vorgabe, je
+    # 20 Ticks mit und ohne: **In allen vieren landen alle sieben Faktoren auf
+    # denselben Zuständen.** Die Vorgabe bestimmte das Ergebnis also nicht, sie
+    # störte nur die ersten Ticks, solange die Regeln sie noch nicht
+    # überschrieben hatten (Ticketpreis 0,6 % bei `p5.7`, 2,4 % bei
+    # `alles_drin_szenario`).
+    #
+    # Das Feld bleibt im Modell und in den Dateien lesbar — es beschreibt, von
+    # welcher Lage ein Szenario erzählt. Wirksam ist es nicht mehr, und weil
+    # Invariante 7 verlangt, dass ein Pfad sagt, was er verwirft, steht es in
+    # `UNBEACHTET`.
 
     if sweep.base_price is not None:
         state.properties.price_model.base_price = sweep.base_price

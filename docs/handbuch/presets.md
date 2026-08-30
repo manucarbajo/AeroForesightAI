@@ -11,7 +11,7 @@ Unter **Simulation starten** ist die Auswahl die erste der drei Entscheidungen.
 Jedes Preset steht dort mit seiner Beschreibung; aufklappbar daneben die
 Begründung, warum es so aufgebaut ist.
 
-**Das gewählte Preset gilt unverändert.** Faktorlage, Politik und Kosten kommen
+**Das gewählte Preset gilt unverändert.** Politik, Kosten und Nachfrageumfeld kommen
 aus seiner Datei unter `configs/sweeps/`; was Sie unten unter «Alle
 Einstellungen» eingestellt haben, bleibt dafür außen vor. Genau eine Größe
 bleibt Ihre Entscheidung: die **Länge** des Laufs. Auf wie viele Ticks ein

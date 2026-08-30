@@ -16,11 +16,9 @@ from dashboard.config_catalog import (
     default_config_draft,
     delete_custom_property,
     effective_config_summary,
-    extract_factor_states_from_file,
     extract_population_edits_from_file,
     extract_property_edits_from_file,
     extract_saturation_from_file,
-    factor_options_from_file,
     get_editable_property_ids,
     list_sweep_presets,
     load_config_file,
@@ -430,41 +428,9 @@ def _render_properties_tab(draft: ConfigDraft) -> ConfigDraft:
 
 def _render_factors_tab(draft: ConfigDraft) -> ConfigDraft:
     st.subheader("Faktor-Startzustände")
-    st.caption(
-        "Startzustände F1–F7 vor dem Lauf. Während der Simulation wechseln Faktoren "
-        "automatisch über `factor_rules` in `properties.json` (z. B. bei CO₂-Schock oder Booking)."
+    st.info(
+        "Die Faktorlage wird seit P2.0-C **nicht mehr vorgegeben**. Ein Rahmenszenario setzt die exogenen Systemgrößen; F1–F7 entstehen daraus im Lauf. Gemessen war die frühere Vorgabe ohnehin folgenlos: In allen vier Presets, die eine trugen, landeten alle sieben Faktoren mit und ohne sie auf denselben Zuständen."
     )
-    if not (draft.apply_custom_overrides or draft.scenario_mode == "custom"):
-        st.warning(
-            "Overrides sind deaktiviert — Änderungen hier wirken erst nach Aktivierung "
-            "von «Property- und Faktor-Overrides beim Lauf anwenden» (Tab Properties)."
-        )
-    options = factor_options_from_file(draft.factors_file)
-    if not options:
-        st.warning("Keine Faktoren in der gewählten Datei.")
-        return draft
-
-    if draft.factors_file != "factors.json":
-        if st.button("Faktoren aus gewählter Datei neu laden"):
-            draft.factor_states = extract_factor_states_from_file(draft.factors_file)
-            clear_factor_widget_keys(draft)
-            st.rerun()
-
-    cols = st.columns(2)
-    factor_ids = sorted(options.keys())
-    for idx, factor_id in enumerate(factor_ids):
-        states = options[factor_id]
-        state_keys = list(states.keys())
-        current = draft.factor_states.get(factor_id, state_keys[0] if state_keys else "")
-        default_idx = state_keys.index(current) if current in state_keys else 0
-        with cols[idx % 2]:
-            selected = st.selectbox(
-                factor_id,
-                state_keys,
-                index=default_idx,
-                format_func=lambda k, st_map=states: f"{k}: {st_map[k][:50]}",
-            )
-            draft.factor_states[factor_id] = selected
     return draft
 
 

@@ -1212,7 +1212,7 @@ Ein zweiter Fund daneben: Lag **gar kein** Score vor, fiel die Funktion auf den 
 
 **Der Wächter:** `tests/test_konsistenz_kein_urteil.py`. Er läuft als **AST** über `src/` und kennt vier Rückfallformen — Dict-Schlüssel, Funktionsdefinition, Aufruf, Import —, während Docstrings und Kommentare das alte Wort weiter nennen dürfen; genau sie erklären ja, warum es weg ist. Ein Grep könnte das nicht trennen. `test_der_waechter_wuerde_einen_rueckfall_bemerken` stellt alle vier Formen nach und prüft den Docstring als Fehlalarm gegen.
 
-**Was Stufe A nicht ist:** die Umdrehung selbst. Der Endzustand wird weiterhin gegen die Matrix bewertet — nur sagt das Ergebnis jetzt, was es misst. Die Stufen B (Rahmenszenario als Eingabe, Sweeps als Hauptweg) und C (Faktoren abgeleitet statt gesetzt) stehen aus.
+**Was Stufe A nicht ist:** die Umdrehung selbst. Der Endzustand wird weiterhin gegen die Matrix bewertet — nur sagt das Ergebnis jetzt, was es misst. Stufe C (Faktoren abgeleitet statt gesetzt) ist am 2026-08-30 gefolgt; **Stufe B** (Sweeps als regulärer Startpfad) steht aus.
 
 **Doku mitgezogen:** `docs/handbuch/ref-ausgaben.md` (neuer Abschnitt zu den drei Feldern, samt Hinweis, dass ältere Läufe `plausibility` weitertragen), `docs/handbuch/glossar.md`, `docs/handbuch/grenzen.md`.
 
@@ -1237,6 +1237,39 @@ Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
 **Reihenfolge entschieden am 2026-08-29: Stufe B und C warten auf P1.9.** Beide fassen den Assistenten an — Stufe C nimmt dem Schritt «Faktorlage» seine Eingabe —, und P1.9 ist offen. Zwei Umbauten gleichzeitig an derselben Schrittfolge kosten mehr, als die Wartezeit wert ist. **Was damit bewusst offen stehen bleibt:** Der Assistent stellt bis dahin weiter sieben Fragen, deren Antwort das Ergebnis nicht prägt. Der Befund steht in `audit_findings.md` und ist gemessen; er wird **nicht** durch einen Hinweistext beruhigt, weil ein Hinweis die Frage nicht wirksam macht. Wer P1.9 abschließt, nimmt Stufe C als Nächstes.
 
 **Die naheliegende Form für Stufe C, damit sie nicht neu erfunden wird:** Der Schritt «Faktorlage» verschwindet nicht, er wechselt die Ebene — statt sieben Faktorzuständen fragt er die **exogenen Größen**, an denen die Faktoren gemessen ohnehin hängen: CO₂-Abgabe (F2, F6), SAF-Quote (F3), Ölpreis (F7). Aus sieben folgenlosen Auswahlen werden drei wirksame, und das *ist* die Umdrehung.
+
+#### Stufe C — die Faktorlage hört auf, Eingabe zu sein ✅ erledigt 2026-08-30
+
+**Ausgeführt, sobald P1.9 stand.** Die Reihenfolge-Entscheidung vom 2026-08-29 hat Stufe C auf den Abschluss von P1.9 gelegt; der kam am 2026-08-30.
+
+**Die Form war anders als geplant — und der Plan lag falsch.** Vorgesehen war, den Schritt «Ausgangslage» auf die Ebene der exogenen Größen zu heben: statt sieben Faktorzuständen die CO₂-Abgabe, die SAF-Quote und den Ölpreis. Beim Aufschlagen zeigte sich, dass das **dieselbe Falle in neuer Verkleidung** gewesen wäre: `carbon_tax_level` trägt eine Regel, die ab **Tick 1** setzt — ein dort eingestellter Startwert wäre folgenlos, genau wie die Faktorlage vorher. Der Rahmen ist der **Verlauf**, nicht der Startwert.
+
+**Und Verläufe gibt es schon: die acht Presets.** Jedes trägt `property_overrides` auf exogenen Größen — sie *sind* die Rahmenszenarien, und Schritt 1 wählt bereits zwischen ihnen. Zu tun blieb damit nichts Additives, sondern ein Schnitt.
+
+**Gemessen, bevor geschnitten wurde.** Vier der acht Presets gaben zusätzlich Faktorzustände vor. Je 20 Ticks mit und ohne diese Vorgabe:
+
+| Preset | Vorgaben | Faktoren am Ende | Ticketpreis |
+| --- | ---: | --- | --- |
+| `achterbahn_szenario` | 3 | identisch | gleich |
+| `alles_drin_szenario` | 7 | identisch | 588,47 vs 574,47 (2,4 %) |
+| `business_as_usual` | 3 | identisch | gleich |
+| `p5.7` | 7 | identisch | 121,27 vs 120,59 (0,6 %) |
+
+**In allen vieren landen alle sieben Faktoren auf denselben Zuständen.** Die Vorgabe bestimmte das Ergebnis nicht — sie störte nur die ersten Ticks, bevor die Regeln sie überschrieben. Das ist die Umdrehung in einer Zeile: Die Antwort stand vor der Rechnung, und die Rechnung kam ohnehin dort an.
+
+**Was umgesetzt ist:**
+
+- `factor_overrides` steht in allen acht Presets auf `[]`, und `apply_sweep_overrides` wendet sie nicht mehr an. Das Feld bleibt im Modell lesbar; **der Sweep-Vertrag nennt es in `UNBEACHTET`** (Invariante 7 — ein Pfad, der etwas verwirft, sagt es).
+- `ConfigDraft.factor_states` ist weg, ebenso `RunLaunchConfig.factor_states`, `factor_overrides_from_states` und `extract_factor_states_from_file`. Es gibt **keinen Schreibweg mehr** zur Faktorlage.
+- Der Schritt «Ausgangslage» ist entfallen; die Schrittfolge geht von **sieben auf sechs**.
+- Der Schalter `apply_custom_overrides` ist nach Schritt 1 umgezogen, **hinter «Feinabstimmung»**. Der erste Anlauf legte ihn auf die Entscheidungsfläche — der Wächter aus P1.1 meldete sofort vier Felder statt drei und hatte recht: «gelten meine Werte» ist kein vierter Schritt zum Lauf.
+- Die abgelöste Streamlit-Oberfläche zeigt an der Stelle ihrer Faktor-Auswahl jetzt einen Hinweis statt Auswahlfeldern. **Sie wird von keinem Test berührt** — ohne diese Anpassung wäre sie still kaputtgegangen, und «nur noch zum Vergleich lauffähig» hätte nicht mehr gestimmt.
+
+**Am laufenden System nachgewiesen:** Ein Lauf über 40 Ticks startet mit allen sieben Faktoren auf `.1` und **erzeugt** bis Tick 40 `F1.2, F2.2, F3.2, F4.2, F5.2, F6.1, F7.1` — eine **gemischte** Lage, die niemand eingestellt hat und die die alte Bewertung als «weniger plausibel» abgewertet hätte.
+
+**Doku mitgezogen:** `docs/handbuch/faktoren.md` (das Kapitel heißt jetzt «Sie stellen sie nicht ein — der Lauf erzeugt sie»), `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`, `docs/handbuch/erste-simulation.md`, **`docs/handbuch/vergleiche.md`** (vierter Schnitt: Endzustände gleich, erste Ticks und damit die Preise nicht), `CLAUDE.md` (Glossar und Architektur-Map).
+
+**Was Stufe C nicht ist:** Stufe B. Die Sweeps sind noch nicht der reguläre Startpfad — ein Einzellauf ohne Preset rechnet weiterhin gegen die Datei-Defaults, und `derive_scenarios` bewertet den Endzustand weiterhin gegen die Matrix. Der Unterschied ist, dass diese Bewertung jetzt nichts mehr **vorgibt**.
 
 **Doku zieht mit:** `docs/cib_role.md`, `docs/handbuch/cib.md`, `docs/handbuch/faktoren.md`, `docs/handbuch/presets.md`, `docs/scenario_runs.md`, `CLAUDE.md` (Glossar «CIB-Matrix», «Faktoren F1–F7», Architektur-Map zu `src/cib/`).
 

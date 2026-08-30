@@ -44,7 +44,7 @@ Danach wählen Sie die Annahmenwelt, von der der Lauf ausgeht — die
 Möglichkeiten stehen als Karten nebeneinander.
 
 Nehmen Sie eines der vorbereiteten Szenarien, etwa *Business as Usual*. Unter
-jedem steht, wofür es steht. Ein Szenario legt Faktorlage, Politik und Kosten in
+jedem steht, wofür es steht. Ein Szenario legt Politik, Kosten und Nachfrage in
 einem Zug fest und ist deutlich schneller, als jede Größe einzeln einzustellen.
 
 Ein gewähltes Szenario gilt **unverändert**: Die Werte kommen aus seiner Datei

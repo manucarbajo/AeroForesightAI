@@ -40,7 +40,6 @@ def _rich_draft() -> ConfigDraft:
     draft.simulation_description = "Beschreibung mit Umlauten: Grün, Größe, Fuß"
     draft.base_price = 123.5
     draft.run_count = 3
-    draft.factor_states = {"F1": "F1.2", "F2": "F2.1"}
     draft.property_edits = {
         "carbon_tax_level": PropertyEditState(
             property_id="carbon_tax_level",
@@ -149,12 +148,10 @@ def test_set_path_writes_into_dicts_and_lists():
 
     controls.set_path(data, "market_feedback_edit.damping", 0.9)
     controls.set_path(data, "population_edits.0.prevalence", 0.8)
-    controls.set_path(data, "factor_states.F3", "F3.2")
 
     restored = draft_from_dict(data)
     assert restored.market_feedback_edit.damping == pytest.approx(0.9)
     assert restored.population_edits[0].prevalence == pytest.approx(0.8)
-    assert restored.factor_states["F3"] == "F3.2"
 
 
 def test_apply_inputs_converts_checkbox_lists_to_booleans():

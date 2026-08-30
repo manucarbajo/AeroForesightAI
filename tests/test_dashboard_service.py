@@ -111,11 +111,20 @@ class TestDashboardService:
 
 
 class TestConfigCatalog:
-    def test_default_draft_loads_properties_and_factors(self):
+    def test_default_draft_loads_properties(self):
+        """`factor_states` ist mit P2.0-C aus dem Entwurf entfallen.
+
+        Die Faktorlage war eine Eingabe und wurde als `factor_overrides` in den
+        Lauf gereicht; heute entsteht sie im Lauf aus den exogenen Systemgrößen.
+        """
+
         draft = default_config_draft()
         assert draft.rounds >= 1
         assert "carbon_tax_level" in draft.property_edits
-        assert "F1" in draft.factor_states
+        assert not hasattr(draft, "factor_states"), (
+            "Der Entwurf trägt wieder eine Faktorlage — dann ist die Umdrehung "
+            "aus P2.0-C zurückgenommen."
+        )
         assert draft.saturation_edit.booking_increase == 0.6
         assert draft.market_feedback_edit.target_booking_rate == 0.37
 

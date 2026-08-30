@@ -137,7 +137,6 @@ NUR_MIT_SPRACHMODELL = {"model", "base_url", "temperature", "max_tokens"}
 #: unsichtbar zu sein.
 NICHT_GEMESSEN = {
     "property_edits": "verschachtelt; wirkt über `apply_custom_overrides` mit",
-    "factor_states": "verschachtelt; wirkt über `apply_custom_overrides` mit",
     "population_edits": "verschachtelt; wirkt über `apply_custom_overrides` mit",
     "saturation_edit": "verschachtelt; wirkt über `apply_custom_overrides` mit",
     "market_feedback_edit": "verschachtelt; wirkt über `apply_custom_overrides` mit",

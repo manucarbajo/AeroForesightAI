@@ -102,14 +102,6 @@
       ]
     }
   ],
-  "factor_overrides": [
-    { "factor_id": "F1", "initial_state": "F1.2" },
-    { "factor_id": "F2", "initial_state": "F2.2" },
-    { "factor_id": "F3", "initial_state": "F3.2" },
-    { "factor_id": "F4", "initial_state": "F4.2" },
-    { "factor_id": "F5", "initial_state": "F5.2" },
-    { "factor_id": "F6", "initial_state": "F6.2" },
-    { "factor_id": "F7", "initial_state": "F7.2" }
-  ],
+  "factor_overrides": [],
   "milestones": []
 }

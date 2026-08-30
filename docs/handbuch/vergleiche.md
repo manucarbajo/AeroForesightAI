@@ -78,6 +78,20 @@ in Runde 15 auf «streng» kippte. Preset-Läufe von davor beschreiben also nich
 die Annahmenwelt, deren Namen sie tragen. Über die Kommandozeile gestartete
 Sweeps waren nie betroffen.
 
+Am 2026-08-30 kam ein vierter Schnitt dazu: **Die Faktorlage wird nicht mehr
+vorgegeben.** Vier der acht Szenarien setzten bis dahin Faktorzustände fest,
+und der Assistent bot dafür einen eigenen Schritt an. Beides ist entfallen — die
+Faktoren entstehen jetzt im Lauf aus den Systemgrößen.
+
+Für die **Endzustände** ändert das nichts: Nachgemessen über 20 Runden landen in
+allen vier betroffenen Szenarien alle sieben Faktoren auf denselben Zuständen wie
+zuvor. Was sich ändert, sind die **ersten Runden**, in denen die Vorgabe noch
+stand, bevor die Regeln sie überschrieben — und über die Rückkopplung auch die
+Preise am Ende: bei «Totaler Wahnsinn» 588,47 statt 574,47 Euro (2,4 %), bei
+«P5.7» 121,27 statt 120,59 (0,6 %). Für die anderen beiden ist kein Unterschied
+messbar. Läufe dieser vier Szenarien von vor diesem Datum sind mit späteren also
+nur eingeschränkt vergleichbar.
+
 Ebenfalls am 2026-08-28 kam ein vierter Schnitt, und er trifft **nur den
 Szenario-Vergleich** — also den Weg, der alle hinterlegten Szenarien
 nacheinander rechnet. Bis dahin gab das Dashboard seine eingestellte Länge an

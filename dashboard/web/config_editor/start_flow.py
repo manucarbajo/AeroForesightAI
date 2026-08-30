@@ -261,6 +261,15 @@ def choice_options() -> list[dict]:
     return options
 
 
+def _eigene_werte_wirken(draft: dict) -> bool:
+    """Ob die eigenen Werte des Entwurfs in den Lauf eingehen.
+
+    Lag bis P2.0-C in `config_editor/factors.py`, zusammen mit dem Schalter.
+    """
+
+    return bool(draft.get("apply_custom_overrides")) or of(draft) == CUSTOM
+
+
 def scenario_details(draft: dict) -> html.Div:
     """Was zur aktuellen Auswahl gehört — Begründung und der Weg in den Editor."""
 
@@ -281,7 +290,7 @@ def scenario_details(draft: dict) -> html.Div:
         # steht, statt zehnmal im Raster.
         html.P(preset.description, className=f"{ui.CAPTION} mb-4 max-w-prose"),
         ui.note(
-            "Das Szenario gilt **unverändert**: Faktorlage, Politik und Kosten kommen aus "
+            "Das Szenario gilt **unverändert**: Politik, Kosten und Nachfrageumfeld kommen aus "
             f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
             f"Angelegt ist es auf **{preset.max_ticks} Ticks** — die Länge stellen Sie im "
             "nächsten Schritt selbst ein."
@@ -537,7 +546,7 @@ def _warnings(draft: dict, errors: list[str]) -> list:
     ):
         warnings.append(
             ui.alert(
-                "«Eigene Werte anwenden» ist aus — Änderungen an Faktoren und Systemgrößen "
+                "«Eigene Werte anwenden» ist aus — Änderungen an den Systemgrößen "
                 "wirken in diesem Lauf nicht.",
                 "warning",
             )
@@ -624,7 +633,7 @@ def scenario_step(draft: dict, number: int | None = 1) -> object:
         number,
         "Was soll gerechnet werden?",
         "Die Annahmenwelt, von der der Lauf ausgeht. Ein vorbereitetes Szenario ist der "
-        "schnellste Einstieg — es legt Faktorlage, Politik und Kosten in einem Zug fest.",
+        "schnellste Einstieg — es legt Politik, Kosten und Nachfrageumfeld in einem Zug fest.",
         ui.card(
             ui.radio(
                 choice_options(),
@@ -634,6 +643,22 @@ def scenario_step(draft: dict, number: int | None = 1) -> object:
                 legend="Was soll gerechnet werden? Die Annahmenwelt des Laufs.",
             ),
             html.Div(scenario_details(draft), id=slot_id("scenario"), className="mt-5"),
+            # **Der Schalter stand bis P2.0-C im Schritt «Ausgangslage».** Mit
+            # dem Wegfall der Faktorlage hat er dort nichts mehr zu steuern; was
+            # bleibt, sind die Systemgrößen aus dem Modell-Editor. Er gehört
+            # damit hierher: Die Frage, ob *meine* Werte gelten, ist Teil der
+            # Wahl des Ausgangspunkts.
+            #
+            # **Hinter «Feinabstimmung» und mit `detail=True`**, nicht auf der
+            # Entscheidungsfläche. Der erste Anlauf legte ihn daneben, und der
+            # Wächter aus P1.1 hat das sofort gemeldet: vier Felder statt drei.
+            # Er hatte recht — «gelten meine Werte» ist kein vierter Schritt zum
+            # Lauf, sondern eine Einstellung für den, der schon etwas geändert
+            # hat.
+            ui.expert(
+                c.check("apply_custom_overrides", _eigene_werte_wirken(draft), detail=True),
+                title="Feinabstimmung",
+            ),
         ),
         actions=ui.doc_link("presets"),
     )

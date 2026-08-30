@@ -37,7 +37,7 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 from dashboard.config_catalog import list_sweep_presets
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
-from dashboard.web.config_editor import delta, experiment, factors, llm_pipeline, start_flow
+from dashboard.web.config_editor import delta, experiment, llm_pipeline, start_flow
 from dashboard.web.state import STORE_ID, initial_draft_dict
 
 #: Welcher Schritt gerade offen ist. Als Store und nicht als Adresse, weil ein
@@ -182,18 +182,17 @@ STEPS: list[Step] = [
         "viel dazu erzählt wird.",
         lambda draft: start_flow.mode_step(draft, number=None),
     ),
-    # **Die Ausgangslage ist mit P1.9-W3.3 zurückgekommen** — als *eine* Frage
-    # mit sieben Auswahlen, nicht als Formularwand. Sie gehört zum Experiment:
-    # Von welcher Weltlage geht *dieser* Lauf aus? Zwei Läufe desselben Modells
-    # dürfen sich genau darin unterscheiden. Optional, weil vorbelegt, und weil
-    # die Zusage aus P1.1 gilt: drei Entscheidungen genügen bis zum Start.
-    Step(
-        "faktorlage",
-        "Ausgangslage",
-        "Von welcher Weltlage der Lauf ausgeht — die sieben Faktoren.",
-        factors.layout,
-        required=False,
-    ),
+    # **Der Schritt «Ausgangslage» ist mit P2.0-C entfallen.** Er fragte sieben
+    # Faktorzustände ab, und gemessen war die Antwort folgenlos: Vier der sieben
+    # Faktoren sind nach *einem* Tick überschrieben, weil ihre Regeln an
+    # exogenen Systemgrößen hängen; in allen vier Presets, die eine Vorgabe
+    # trugen, landeten alle sieben auf denselben Zuständen wie ohne sie
+    # (`tests/test_faktoren_abgeleitet.py`). Ein Rahmenszenario setzt die
+    # exogenen Verläufe — die Faktorlage entsteht daraus im Lauf. Sie vorher zu
+    # setzen hieße, die Antwort vor die Rechnung zu stellen.
+    #
+    # Der Schalter «Eigene Werte anwenden» ist mit nach Schritt 1 umgezogen: Ob
+    # die eigenen Werte gelten, gehört zur Wahl des Ausgangspunkts.
     # **«Rahmenbedingungen» und «Nachfrage & Preisbildung» standen hier bis
     # P1.9-W3.1.** Sie sind in den Bereich «Modell» umgezogen: zusammen 168
     # Bedienelemente und 3,0 bzw. 4,0 Bildschirme, während die drei
@@ -260,9 +259,13 @@ FELD_SCHRITT: dict[str, int] = {
     "rounds": 1,
     "seed": 2,
     "simulation_name": FINAL,
-    "model": 5,
-    "temperature": 5,
-    "max_tokens": 5,
+    # Um eins nach vorn gerückt, seit «Ausgangslage» mit P2.0-C entfallen ist.
+    # `test_web_wizard` gleicht die Tabelle gegen die wirklich gerenderten
+    # Felder ab — eine von Hand gepflegte Zahl läuft sonst still weg, und dann
+    # sperrt «Weiter» im falschen Schritt.
+    "model": 4,
+    "temperature": 4,
+    "max_tokens": 4,
 }
 
 #: Wohin ein Befund gehört, dessen Feld die Schrittfolge nicht kennt. «Prüfen &
