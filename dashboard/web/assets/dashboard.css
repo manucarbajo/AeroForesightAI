@@ -2925,3 +2925,44 @@ html.dark .af-input[type="number"] {
 .af-way--haupt:disabled {
     border-color: var(--border-subtle);
 }
+
+/* --- Zum Inhalt springen (P1.5, WCAG 2.4.1) --------------------------------
+
+   Der erste Griff fuer die Tastatur. Ohne ihn tastet man sich vor **jedem**
+   Bereich durch Kopfzeile, Schubladenumschalter und fuenf Bereichslinks, bevor
+   der Inhalt kommt -- bei fuenf Bereichen fuenfmal dasselbe.
+
+   Sichtbar nur mit Fokus: Er soll niemandem im Weg stehen, der ihn nicht
+   braucht. **Nicht `display: none`** im Ruhezustand, denn was nicht im Baum
+   steht, laesst sich auch nicht antabben; er wird aus dem Bild geschoben und
+   kommt beim Fokus zurueck. */
+.af-sprunglink {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transform: translateY(-120%);
+    padding: 0.625rem 1rem;
+    background: var(--accent);
+    color: var(--text-inverted);
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-bottom-right-radius: var(--radius);
+    text-decoration: none;
+    transition: transform 0.15s ease;
+}
+
+.af-sprunglink:focus,
+.af-sprunglink:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid var(--accent-border);
+    outline-offset: 2px;
+}
+
+/* Die Ueberschrift des Bereichs ist Fokusziel nach dem Wechsel -- ohne den
+   Rahmen eines Eingabefeldes: Sie ist nichts, was man ausfuellt. */
+.af-shell__main h1:focus,
+.af-shell__main h2:focus {
+    outline: none;
+}
