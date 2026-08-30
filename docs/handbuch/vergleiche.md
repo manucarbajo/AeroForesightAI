@@ -103,7 +103,7 @@ Unterscheiden sich zwei Läufe dort, gehören ihre Verläufe nicht nebeneinander
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich
-**Figures** unter «Yield & Markt», weil dort Preis und Buchungsrate gemeinsam
+**Figures** unter «1 · Preis und Nachfrage», weil dort Preis und Buchungsrate gemeinsam
 dargestellt sind.
 
 Wollen Sie die Zahlen nebeneinanderlegen, laden Sie aus dem Ansicht **Dateien** die

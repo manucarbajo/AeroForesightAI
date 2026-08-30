@@ -40,7 +40,7 @@ viele Runden an einem Wert, ist meist diese Grenze erreicht.
 
 Der Preis besteht aus einem Kostenanteil und einer Marge. Der Kostenanteil folgt
 den Systemgrößen für Treibstoff, Wartung und Personal, die Marge ist das, woran
-die Airline dreht. In der Ansicht **Figures** zeigt der Abschnitt «Yield & Markt» beides
+die Airline dreht. In der Ansicht **Figures** zeigt die Aussage «1 · Preis und Nachfrage» beides
 übereinandergestapelt.
 
 Auf den Kostenanteil wirken zusätzlich die Systemgrößen, die als Steuer oder

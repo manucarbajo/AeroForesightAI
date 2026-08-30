@@ -29,7 +29,7 @@ kann der Preis nicht weiter fallen, obwohl die Nachfrage schwach ist. Oder der
 Preisdeckel je Runde ist so eng gesetzt, dass sich der Preis nur in winzigen
 Schritten bewegen darf.
 
-In der Ansicht **Figures** zeigt der Abschnitt «Yield & Markt» die Zusammensetzung aus
+In der Ansicht **Figures** zeigt die Aussage «1 · Preis und Nachfrage» die Zusammensetzung aus
 Kosten und Marge. Ist die Marge nahe null, liegt der Preis an der Untergrenze.
 
 ## Der Preis schwingt hin und her

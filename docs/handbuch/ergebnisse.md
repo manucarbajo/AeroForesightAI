@@ -71,17 +71,32 @@ Die Ansicht setzt voraus, dass der Lauf die Personen-Historie mitgeschrieben hat
 
 ## Figures
 
-Sechs thematische Auswertungen plus die exportierten Bilddateien.
+**Vier Fragen, die ein Lauf beantwortet** — und daneben der Bildexport.
 
-| Bereich | Zeigt |
+| Aussage | Beantwortet |
 |---|---|
-| Yield & Markt | Preis gegen Buchungsrate, dazu die Zusammensetzung aus Kosten und Marge |
-| Segmente & Alter | Buchungsraten je Profil-Segment und je Altersgruppe |
-| Policies & Steuern | Verlauf der politischen Instrumente |
-| Makro-Wirtschaft | Einkommen, Bevölkerung, Nachfragewachstum, Ölpreis |
-| Airline-Kosten | Wartung, Personal, Treibstoff |
-| CIB-Faktoren | Die Zustands-Trajektorien von F1 bis F7 als Treppenlinien |
-| PNG-Export | Die sechs Bilddateien für Berichte, mit Knopf zum Neuerzeugen |
+| 1 · Preis und Nachfrage | Wie stark antwortet die Buchungsrate auf den Ticketpreis, und woraus setzt der Preis sich zusammen |
+| 2 · Was die Politik bewirkt | Welche Instrumente laufen — und was sie bei den Kosten der Anbieter auslösen |
+| 3 · Wer noch fliegt | Wer zuerst wegbleibt: nach Profil-Segment und nach Altersgruppe |
+| 4 · Die Szenarien nebeneinander | Worin sich die Szenario-Läufe unterscheiden — in Kurven und in ihrer Faktorlage am Ende |
+| PNG-Export | Die Bilddateien für Berichte, mit Knopf zum Neuerzeugen |
+
+Der Schnitt folgt seit August 2026 den **Fragen**, nicht den Datenquellen. Vorher
+waren es sechs Bereiche nach Herkunft der Zeitreihen — «Yield & Markt»,
+«Makro-Wirtschaft», «Airline-Kosten», «CIB-Faktoren» und so fort. Wer sie
+durchsah, bekam sechs Sammlungen von Kurven und keine Auskunft.
+
+**Zwei Bereiche sind dabei weggefallen, und beide aus demselben Grund:** Sie
+zeigten, was man dem Lauf *vorgibt*, nicht was er *ergibt*. Die
+makroökonomischen Indizes (Einkommen, Ölpreis, Bevölkerung) finden Sie unter
+**Modell**; sie sind Eingang, nicht Ergebnis. Die sieben Faktor-Verläufe stehen
+jetzt bei Aussage 4 — dort erklären sie etwas, nämlich in welcher Weltlage ein
+Szenario endet.
+
+**Aussage 4 braucht mehr als einen Lauf.** Steht Ihr Lauf allein, sagt die
+Ansicht das und zeigt seine Faktorlage am Ende; ein Vergleich entsteht über
+**Einrichten → Szenario-Vergleich starten**. Verglichen werden dann alle
+Szenario-Läufe unter `outputs/sweeps/` — auch solche aus früheren Durchläufen.
 
 Unter **PNG-Export** kann eine Warnung über den Bildern stehen; sie sagt, dass
 dem Satz nicht zu trauen ist. Zwei Fälle gibt es:
