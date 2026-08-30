@@ -50,9 +50,19 @@ _COLOR_CLASS = re.compile(
 _HEX = re.compile(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b")
 
 #: `theme.py` hält die Paletten, `demo_run.py` und `status.py` halten keine
-#: Farben. Der Sweep nimmt alles unter `dashboard/web/` und lässt nur die eine
-#: Datei aus, die Farbe definieren *darf*.
-_ERLAUBT = {"theme.py"}
+#: Farben. Der Sweep nimmt alles unter `dashboard/web/` und lässt nur die
+#: Dateien aus, die Farbe führen *dürfen* — jede mit Grund.
+#:
+#: **`theme.py`** ist die Quelle der Tokens; ohne Farbwerte darin gäbe es keine.
+#:
+#: **`landing_route.py`** ist die Ausnahme mit der ungewohnten Begründung: Es
+#: liegt zwar unter `dashboard/web/`, rendert aber eine **Landingpage** — die
+#: Bestätigungsseite der Demo-Anfrage (P1.4). Die Landingpage ist eine andere
+#: Oberfläche mit einer anderen Regel: Sie kennt keinen Dark Mode, ihre fünf
+#: statischen Seiten färben seit jeher über Tailwind-Klassen, und die
+#: Bestätigung soll aussehen wie sie und nicht wie das Dashboard. Wer hier eine
+#: Dashboard-Ansicht baut, hat die falsche Datei gewählt.
+_ERLAUBT = {"theme.py", "landing_route.py"}
 
 
 def _python_files() -> list[Path]:

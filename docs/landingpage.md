@@ -36,8 +36,19 @@ in der Tailwind-Konfiguration in `dashboard/web/app.py`.
 
 ## Offene Punkte
 
-1. **Formular ohne Backend.** `demo-anfragen.html` hat `action="#"`. Anfragen
-   gehen ins Leere; ein Endpunkt fehlt.
+1. ~~**Formular ohne Backend.**~~ **Erledigt am 2026-08-30.** Das Formular zeigt
+   auf `POST /demo-anfrage` (`dashboard/web/landing_route.py`); jede Anfrage
+   wird als Zeile JSON angehängt — Vorgabe `outputs/demo_anfragen.jsonl`, über
+   `AF_DEMO_ANFRAGEN` verlegbar. **Kein Mailversand, kein externer Dienst**:
+   Eine Anfrage über einen fremden Server zu leiten wäre genau der Widerspruch,
+   den Punkt 3 abräumt. Die Pflichtfelder prüft der **Server** — ein
+   `required`-Attribut ist eine Bitte an den Browser, keine Schranke —, und der
+   Absender sieht in beiden Fällen, was passiert ist.
+
+   **Solange Punkt 2 offen ist, trägt die Seite einen sichtbaren Hinweis**, dass
+   die verlinkte Datenschutzerklärung ein Entwurf ist. Die Ablage enthält
+   personenbezogene Daten; sie gehört in die Sicherung und nicht in ein
+   öffentlich erreichbares Verzeichnis.
 2. **Rechtstexte sind Platzhalter.** Alle mit `[…]` markierten Stellen müssen
    ersetzt und rechtlich geprüft werden. Der gelbe Hinweisblock auf den drei
    Seiten muss vor Veröffentlichung raus.
