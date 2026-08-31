@@ -21,9 +21,20 @@ from src.models.sweep_models import PropertyOverride, SweepConfig
 #: Brent steht in USD je Barrel. Die Reihe wird deshalb auf ihr Mittel des
 #: **ersten Jahres** normiert — dieselbe Basis wie die Zielreihe (2015 = 100).
 #: Ein roher Dollarpreis an dieser Stelle hieße Ölpreisindex 52 statt 1,0.
+#:
+#: **`income_index` kam mit P2.8 dazu**, und zwar aus einem Befund: Der erste
+#: Backtest ließ die Nachfrage fallen, wo real die Fluggastzahlen stiegen —
+#: nicht ungenau, sondern verkehrt herum. Nachgemessen war die Ursache, dass das
+#: Modell praktisch **einen einzigen** Nachfragekanal hat, den Preis, und der
+#: lief unopponiert. `income_index` existierte als Systemgröße, stand auf 1,0
+#: und wurde von niemandem gespeist.
+#:
+#: Er ist ebenfalls ein Index mit Ausgangswert 1,0 — also dieselbe Normierung
+#: wie beim Ölpreis.
 ZUORDNUNG = {
     "eua_auktionspreis": ("carbon_tax_level", "direkt"),
     "brent_rohoel": ("oil_price_index", "index_auf_erstes_jahr"),
+    "bip_real": ("income_index", "index_auf_erstes_jahr"),
 }
 
 
@@ -84,9 +95,9 @@ def historischer_rahmen(
         id="backtest_2015_2024",
         name=name,
         description=(
-            "Historische Außenwelt 2015–2024: EUA-Auktionspreis (EEX) und "
-            "Brent-Rohölpreis, monatlich. Alle übrigen Größen bleiben auf ihrem "
-            "ausgelieferten Verlauf."
+            "Historische Außenwelt 2015–2024: EUA-Auktionspreis (EEX), "
+            "Brent-Rohölpreis und reales BIP der EU-27, monatlich. Alle übrigen "
+            "Größen bleiben auf ihrem ausgelieferten Verlauf."
         ),
         max_ticks=len(ticks),
         property_overrides=overrides,

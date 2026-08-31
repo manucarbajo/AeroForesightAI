@@ -108,6 +108,10 @@ class TestDerRahmenSpeistDieAussenwelt:
         assert {o.property_id for o in sweep.property_overrides} == {
             "carbon_tax_level",
             "oil_price_index",
+            # **Mit P2.8 dazugekommen.** Vorher stand `income_index` in einem
+            # historischen Lauf konstant auf 1,0, während alles andere sich
+            # bewegte — für sich schon nicht zu rechtfertigen.
+            "income_index",
         }
 
     def test_der_oelpreis_wird_indexiert_der_co2_preis_nicht(self):

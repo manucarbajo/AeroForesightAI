@@ -43,6 +43,17 @@
       "spalte": "index_2015_100"
     },
     {
+      "datei": "bip_real.csv",
+      "zeilen": 120,
+      "von": "2015-01",
+      "bis": "2024-12",
+      "sha256": "941272945cc2a97f",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/namq_10_gdp?format=JSON&lang=EN&geo=EU27_2020&na_item=B1GQ&unit=CLV15_MEUR&s_adj=SCA&freq=Q&sinceTimePeriod=2015-Q1&untilTimePeriod=2024-Q4",
+      "abgerufen": "2026-08-31",
+      "hinweis": "Eurostat `namq_10_gdp`, reales BIP der EU-27 (`B1GQ`, verkettete Volumen zu Preisen von 2015, saison- und kalenderbereinigt), **vierteljährlich** und linear auf Monate interpoliert. Speist `income_index`. Real und nicht nominal, weil Brons et al. (2002) GDP preisbereinigt verwenden — nominal wüchse die Reihe fast doppelt so stark und schmeichelte dem Ergebnis.",
+      "spalte": "mio_eur_kettenindex"
+    },
+    {
       "datei": "fluggaeste.csv",
       "zeilen": 120,
       "von": "2015-01",

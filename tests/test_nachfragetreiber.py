@@ -204,16 +204,21 @@ class TestDiePreiselastizitaetIstDieEineStellschraube:
     def test_der_preiskanal_erklaert_den_einbruch_fast_allein(self, leute, properties):
         """Die Rechnung, die P2.8 trägt.
 
-        Modellpreis 2015→2019: 132,40 → 141,16 (+6,6 %). Bei der gemessenen
-        Elastizität erwartet man daraus rund −12 % Nachfrage; gemessen wurden
-        −14,3 %. Der Rest verteilt sich auf CO₂-Abgabe, Sättigung und
-        Faktor-Shifts.
+        Stand nach P2.8, also **mit** gespeistem Einkommen: Modellpreis
+        2015→2019 133,16 → 142,48 (+7,0 %), Buchungsrate 0,3500 → 0,3060
+        (−12,6 %). Bei der gemessenen Elastizität erwartet man aus dem Preis
+        allein rund −12,8 %.
+
+        Dass beides so nah beieinanderliegt, **obwohl** der Einkommenskanal
+        inzwischen +3,0 Punkte beisteuert, ist der Befund von P2.8: Der Beitrag
+        wird von den Ausgleichsmechanismen des Modells (Preisrückkopplung,
+        Sättigung) fast vollständig aufgezehrt.
         """
 
         e = self._elastizitaet(leute, properties, 130.0, 145.0)
-        preisanstieg = (141.16 - 132.40) / 132.40
+        preisanstieg = (142.48 - 133.16) / 133.16
         erwartet = e * preisanstieg
-        gemessen = (0.2971 - 0.3465) / 0.3465
+        gemessen = (0.3060 - 0.3500) / 0.3500
 
         anteil = erwartet / gemessen
         assert 0.7 < anteil < 1.1, (

@@ -69,6 +69,21 @@ Das Modell hat praktisch **nur einen** Kanal, über den Nachfrage sich bewegt,
 und der ist der Preis. Real wuchs der Luftverkehr, *obwohl* die Preise anzogen —
 getragen von Einkommen, Netzausbau und Kapazität. Davon kennt das Modell nichts.
 
+Nachgemessen wurde auch, **woran es liegt** — der naheliegende Verdacht war
+falsch. Ein fehlender Einkommenseffekt ist es nicht: Seit dem 31. August 2026
+speist der Backtest das reale europäische Bruttoinlandsprodukt ein, und die
+Nachfrage bewegt sich dadurch um **1,6 von 40 fehlenden Prozentpunkten**. Die
+Ursache liegt eine Ebene tiefer, und sie steht schon weiter oben in diesem
+Kapitel: **Das Modell kennt einen Anbieter ohne Kapazitätsgrenze.** Jeder
+Nachfrageimpuls treibt darin sofort den Preis, und der Preis nimmt die Nachfrage
+wieder weg.
+
+Real wuchs der europäische Luftverkehr 2015–2019 um gut ein Viertel, **während
+die Realpreise ungefähr flach blieben** — weil das Angebot wuchs: mehr
+Sitzplätze, mehr Strecken, mehr Wettbewerb. Wachstum bei gleichbleibendem Preis
+setzt Kapazitätsausweitung voraus. Dafür hat dieses Modell keine Größe, und
+deshalb kann es einen wachsenden Markt nicht abbilden.
+
 **Praktische Folge:** Nutzen Sie Nachfragezahlen dieses Modells nicht als
 Mengenprognose. Belastbar bleibt die Frage, in welche Richtung und wie stark
 eine Annahme wirkt — nicht, wie viele Menschen am Ende fliegen. Die vollständige

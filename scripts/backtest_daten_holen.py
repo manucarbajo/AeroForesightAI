@@ -69,6 +69,26 @@ FLUGGAESTE_URL = (
     f"&sinceTimePeriod={VON}&untilTimePeriod={BIS}"
 )
 
+#: Reales Bruttoinlandsprodukt, EU-27, **vierteljährlich**. Verkettete Volumen
+#: zu Preisen von 2015 (`CLV15_MEUR`), saison- und kalenderbereinigt (`SCA`).
+#:
+#: **Warum real und nicht nominal**, obwohl nominal das Ergebnis schmeichelhafter
+#: machte: Brons et al. (2002) — die Metaanalyse, an der die Elastizitäten dieses
+#: Modells gemessen werden — verwenden GDP ausdrücklich preisbereinigt
+#: («corrected for price level»). Nominal wüchse die Reihe bis 2019 um 14,8 %
+#: statt 9,0 % und drehte die Nachfragerichtung des Backtests ins Positive. Genau
+#: das wäre «auf den Backtest hin gebaut»: Die Wahl fiele dann nach dem Ergebnis
+#: statt nach der Fachlage.
+#:
+#: **Vierteljährlich ist die feinste verfügbare Auflösung.** Volkswirtschaftliche
+#: Gesamtrechnungen gibt es nicht monatlich. Die Umrechnung interpoliert linear
+#: zwischen den Quartalsmitten und sagt das (siehe `bip_real`).
+BIP_URL = (
+    "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/namq_10_gdp"
+    "?format=JSON&lang=EN&geo=EU27_2020&na_item=B1GQ&unit=CLV15_MEUR&s_adj=SCA"
+    "&freq=Q&sinceTimePeriod=2015-Q1&untilTimePeriod=2024-Q4"
+)
+
 
 def _laden(url: str) -> bytes:
     return urlopen(
@@ -234,6 +254,52 @@ def fluggaeste() -> dict[str, float]:
     return _eurostat_reihe(FLUGGAESTE_URL)
 
 
+def bip_real() -> dict[str, float]:
+    """Quartalswerte auf Monate bringen — linear zwischen den Quartalsmitten.
+
+    **Die Interpolation erfindet keine Konjunktur**, sie verteilt eine bekannte
+    Bewegung auf die Monate dazwischen. Das ist bei einer Größe, die ohnehin
+    saisonbereinigt vorliegt, die ehrlichere Variante als ein Treppenverlauf:
+    Eine Stufe zum Quartalsanfang schriebe dem Modell einen Sprung vor, den es in
+    den Faktorregeln als Ereignis läse.
+
+    Die Quartalsmitte ist der **zweite** Monat (Februar, Mai, August, November).
+    Vor der ersten und nach der letzten Mitte wird der Randwert gehalten — dort
+    gibt es nichts zu interpolieren, und Extrapolation wäre eine Behauptung.
+    """
+
+    quartale = _eurostat_reihe(BIP_URL)
+    if not quartale:
+        raise SystemExit("Eurostat lieferte keine BIP-Quartale")
+
+    # Quartalsmitte als laufender Monatsindex: 2015-Q1 -> 2015-02 -> 1
+    stuetzen: list[tuple[int, float]] = []
+    for quartal, wert in sorted(quartale.items()):
+        jahr, nummer = quartal.split("-Q")
+        monat_im_jahr = (int(nummer) - 1) * 3 + 2
+        stuetzen.append(((int(jahr) - 2015) * 12 + monat_im_jahr, wert))
+
+    reihe: dict[str, float] = {}
+    for laufend in range(1, 121):
+        jahr, monat = divmod(laufend - 1, 12)
+        name = f"{2015 + jahr}-{monat + 1:02d}"
+
+        if laufend <= stuetzen[0][0]:
+            reihe[name] = stuetzen[0][1]
+        elif laufend >= stuetzen[-1][0]:
+            reihe[name] = stuetzen[-1][1]
+        else:
+            links = max(s for s in stuetzen if s[0] <= laufend)
+            rechts = min(s for s in stuetzen if s[0] >= laufend)
+            if links[0] == rechts[0]:
+                reihe[name] = links[1]
+            else:
+                anteil = (laufend - links[0]) / (rechts[0] - links[0])
+                reihe[name] = links[1] + anteil * (rechts[1] - links[1])
+
+    return {m: round(w, 1) for m, w in reihe.items()}
+
+
 def _schreiben(name: str, spalte: str, reihe: dict[str, float]) -> dict[str, object]:
     ZIEL.mkdir(parents=True, exist_ok=True)
     pfad = ZIEL / f"{name}.csv"
@@ -281,6 +347,17 @@ def main() -> int:
             "Eurostat `prc_hicp_midx`, COICOP `CP0733` (Passenger transport by air), "
             "EU-27, Index 2015 = 100. **Zielreihe der Preisseite.**",
             hicp_flugreisen,
+        ),
+        (
+            "bip_real",
+            "mio_eur_kettenindex",
+            BIP_URL,
+            "Eurostat `namq_10_gdp`, reales BIP der EU-27 (`B1GQ`, verkettete Volumen "
+            "zu Preisen von 2015, saison- und kalenderbereinigt), **vierteljährlich** "
+            "und linear auf Monate interpoliert. Speist `income_index`. Real und nicht "
+            "nominal, weil Brons et al. (2002) GDP preisbereinigt verwenden — nominal "
+            "wüchse die Reihe fast doppelt so stark und schmeichelte dem Ergebnis.",
+            bip_real,
         ),
         (
             "fluggaeste",

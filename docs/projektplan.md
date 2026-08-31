@@ -1416,7 +1416,7 @@ Fällt die Wahl auf 2 oder 3, ist die Impact Balance dann auch zu implementieren
 
 **Doku zieht mit:** `docs/cib_role.md`, `docs/cib_rationale.md`, `docs/handbuch/cib.md`, `CLAUDE.md` (Glossar), `docs/entscheidung_szenarienschicht_2026-08-29.md` (die getroffene Wahl gehört dort nachgetragen).
 
-### P2.8 — Die Nachfrage kann nicht wachsen ⚠️ neu 2026-08-31, nicht angefangen
+### P2.8 — Die Nachfrage kann nicht wachsen ⚠️ Einkommen gemessen 2026-08-31, Ursache liegt tiefer
 
 > **Der erste Befund, den der Backtest ohne Zutun geliefert hat.** Er entstand nicht aus einem Audit und nicht aus einer Code-Lektüre, sondern daraus, dass zum ersten Mal etwas außerhalb des Modells als Maßstab danebenlag.
 
@@ -1449,10 +1449,49 @@ Zwei Befunde daraus, und der zweite wiegt schwerer:
 **Was zu tun ist**, in dieser Reihenfolge, weil der zweite Punkt ohne den ersten nichts bringt:
 
 1. **Den Horizont einer Trajektorie sichtbar machen.** Nicht die Kurve verlängern — das ist Symptomkosmetik —, sondern melden, wenn ein Lauf über den letzten Stützpunkt hinausgeht. Der Ort dafür ist `validation.py` (Invariante: neue Prüfungen gehören dorthin, nicht in Eingabefelder), und die Prüfung ist billig: `max_ticks` gegen den letzten Stützpunkt jeder Trajektorie.
-2. **Den Gegenkanal bauen — und `income_index` ist der naheliegende.** Er **existiert bereits** als Systemgröße, aber niemand speist ihn: Er steht auf 1,0 und bleibt dort. Das ist der billigste und am besten belegbare Weg, weil Einkommenselastizität für Luftverkehr in derselben Literatur behandelt wird (Brons et al. nennen sie als Determinante; Luftverkehr gilt dort als Luxusgut mit Einkommenselastizität über 1). Die Alternativen — Bevölkerungsverlauf verlängern, eigene exogene Größe — sind beide schwächer belegt: Die Bevölkerung erklärt real nur einen Bruchteil des Wachstums, und eine eigene Größe wäre ein Sammelbecken ohne Entsprechung in den Daten.
+2. ~~**Den Gegenkanal bauen — und `income_index` ist der naheliegende.**~~ **Erledigt und gemessen am 2026-08-31, siehe oben: Er trägt 1,6 von 40 Punkten.** Er **existiert bereits** als Systemgröße, aber niemand speist ihn: Er steht auf 1,0 und bleibt dort. Das ist der billigste und am besten belegbare Weg, weil Einkommenselastizität für Luftverkehr in derselben Literatur behandelt wird (Brons et al. nennen sie als Determinante; Luftverkehr gilt dort als Luxusgut mit Einkommenselastizität über 1). Die Alternativen — Bevölkerungsverlauf verlängern, eigene exogene Größe — sind beide schwächer belegt: Die Bevölkerung erklärt real nur einen Bruchteil des Wachstums, und eine eigene Größe wäre ein Sammelbecken ohne Entsprechung in den Daten.
    **Der Backtest darf die Wahl nicht treffen.** Er sagt, *dass* ein Gegenkanal fehlt; welcher es ist, entscheidet die Fachlage. Wer die Variante wählt, die den Abstand am stärksten drückt, hat auf ihn hin gebaut.
 3. **Die Elastizität ist dabei mit auf dem Tisch**, und zwar als eigene Frage: Ein Gegenkanal, der gegen einen zu steilen Preiskanal ankämpft, verdeckt nur die Ursache. Ob −1,83 am Betriebspunkt richtig ist, ist an Brons et al. prüfbar; dass sie über die Preisspanne von −0,58 auf −3,54 läuft, ist es schwerer zu rechtfertigen. **Beides nicht gleichzeitig ändern** — sonst ist hinterher nicht zu sagen, welche der beiden Änderungen gewirkt hat (Regel: Refactoring und Verhaltensänderung nie im selben Commit, hier auf zwei Verhaltensänderungen angewandt).
 4. **Die Wahl im Nutzenmodell verankern**, nicht als Aufschlag daneben. Ein additiver Wachstumsterm auf die Buchungsrate wäre genau die Art Korrektur, die den Backtest grün macht und das Modell schlechter — die Koeffizienten tragen seit P2.1 ihre Herkunft, und ein Term ohne Herkunft fiele dort auf.
+
+#### Der Einkommenskanal ist gebaut — und er reicht nicht (2026-08-31)
+
+> **Das Ergebnis ist kein Fix, und es ist wertvoller als einer.** Der naheliegende Verdacht ist ausgeräumt, und dahinter kommt ein Befund über die **Architektur** zum Vorschein, nicht über einen fehlenden Parameter.
+
+**Was gebaut wurde:** `income_index` wird im Backtest jetzt aus echten Daten gespeist — Eurostat `namq_10_gdp`, reales BIP der EU-27 (verkettete Volumen zu Preisen von 2015, saison- und kalenderbereinigt), vierteljährlich und linear auf Monate interpoliert. Die Reihe liegt eingecheckt in `configs/backtest/bip_real.csv` wie die vier anderen.
+
+**Real und nicht nominal — und die Entscheidung gehört offengelegt, weil sie gegen das eigene Ergebnis ging:** Nominal wüchse die Reihe bis 2019 um **14,8 %** statt 9,0 % und hätte die Nachfragerichtung des Backtests ins Positive gedreht. Gewählt ist trotzdem real, weil [Brons et al. (2002)](../docs/research/literature/price_elasticities_of_demand_for_passenger_air_travel.pdf) — dieselbe Metaanalyse, an der die Elastizitäten dieses Modells gemessen werden — GDP ausdrücklich preisbereinigt verwenden. **Die Wahl nach dem Ergebnis zu treffen wäre genau der Fehler, den dieses Paket vermeiden soll.**
+
+**Vorher geprüft, ob der Kanal überhaupt trägt** — die Empfehlung stand sonst auf einer Vermutung. Die Einkommenselastizität des Buchungsmodells beträgt **+1,10**, gemessen bei festem Preis. Das passt zur Fachlage: Luftverkehr gilt als Luxusgut mit Einkommenselastizität über 1. **Die Form stimmt also**, und das ist eine gute Nachricht über das Modell.
+
+**Das Ergebnis, isoliert gemessen** (zwei Läufe, ein Unterschied — der Einkommens-Override):
+
+| | ohne Einkommen | mit Einkommen | real |
+| --- | ---: | ---: | ---: |
+| Nachfrage 2015→2019 | −14,2 % | **−12,6 %** | **+26,3 %** |
+| Abstand Nachfrageseite | 21,76 | 21,81 | — |
+| Abstand **Preisseite** | 1,84 | **1,29** | — |
+
+Drei Dinge stehen darin:
+
+1. **Die Nachfrageseite bewegt sich um 1,6 Punkte von 40.** Der Kanal trägt bei — bis 2022 sind es +6,9 % —, aber er schließt nichts.
+2. **Die Preisseite wird deutlich besser** (1,84 → **1,29** vor der Pandemie). Das war nicht das Ziel und ist trotzdem der beste Einzelgrund, die Änderung zu behalten: Ein historischer Lauf, in dem `income_index` als einzige Größe auf 1,0 eingefroren steht, während CO₂-Preis und Öl sich bewegen, war ohnehin nicht zu rechtfertigen.
+3. **Der Beitrag wird zu zwei Dritteln aufgezehrt.** Die statische Elastizität hätte +9,8 % erwarten lassen, angekommen sind +3,0 %. Die Differenz absorbieren die Ausgleichsmechanismen des Modells: die Preisrückkopplung (mehr Nachfrage → höherer Preis → weniger Nachfrage; im Lauf gemessen) und die Sättigung.
+
+#### Was dahinter zum Vorschein kommt: dem Modell fehlt die Angebotsseite
+
+**Punkt 3 ist der eigentliche Befund**, und er ist größer als P2.8. Jeder Nachfrageimpuls wird im Modell sofort über den Preis wegbesteuert, weil es **einen einzigen Anbieter ohne Kapazitätsgrenze** gibt: Der Preis ist Kosten plus Aufschlag plus Nachfragerückkopplung, und mehr Nachfrage heißt zwangsläufig höherer Preis.
+
+**Real war es umgekehrt.** Der europäische Luftverkehr wuchs 2015–2019 um 26 %, **während die Realpreise ungefähr flach blieben** — weil das *Angebot* wuchs: Billigfluggesellschaften stellten Sitzplätze bereit, Strecken kamen dazu, Auslastung und Flottengröße stiegen. Wachstum bei konstantem Preis setzt Kapazitätsausweitung voraus, und dafür hat das Modell keine Größe.
+
+**Damit ist die Frage neu gestellt:** Es ist nicht «welcher Nachfragetreiber fehlt», sondern «kann eine Architektur mit einem Anbieter und ohne Kapazität einen wachsenden Markt überhaupt abbilden». Die Antwort ist ehrlicherweise nein — und das steht auch schon in [`grenzen.md`](handbuch/grenzen.md) unter «Ein Anbieter statt eines Marktes», nur bisher ohne die Messung daneben.
+
+**Was daraus folgt — und was ausdrücklich nicht:**
+
+- **Behalten**, was gebaut ist. Der Einkommenskanal ist fachlich richtig, belegt, verbessert die Preisseite und beseitigt einen Widerspruch im Backtest. Er wird **nicht** deshalb zurückgenommen, weil er die Nachfrageseite nicht rettet.
+- **Nicht nachjustieren.** Die Versuchung, die Elastizität zu drücken oder nominal statt real zu nehmen, bis die Zahl passt, ist genau der Fehler, gegen den dieses Paket geschrieben ist. Ein Modell, das den Backtest besteht, weil es auf ihn hin eingestellt wurde, ist an nichts geeicht.
+- **Die Angebotsseite ist ein eigenes, großes Paket** — Kapazität als Systemgröße, mehrere Anbieter, oder wenigstens ein exogener Kapazitätspfad. Das ist Architektur, nicht ein Parameter, und es gehört entschieden statt nebenbei gebaut.
+- **Bis dahin gilt die Aussage in `grenzen.md`:** Nachfragezahlen dieses Modells sind keine Mengenprognose. Belastbar bleibt die Richtung einer Annahme, nicht die Höhe.
 
 **Fallstrick — die Reihenfolge der Messung:** Der Backtest wird **vor** dem Eingriff einmal festgehalten (die Zahlen stehen in P2.7 und in `tests/test_nachfragetreiber.py`) und danach neu gerechnet. Wer erst baut und dann misst, hat keinen Vorher-Wert mehr.
 
