@@ -1428,11 +1428,31 @@ Fällt die Wahl auf 2 oder 3, ist die Impact Balance dann auch zu implementieren
 
 **Warum es nicht in P2.7 mitbehoben wurde — und das ist die tragende Entscheidung dieses Pakets:** Eine Nachfragemechanik, die *auf* den Backtest hin gebaut wird, kann er danach nicht mehr prüfen. Er bestätigte dann seine eigene Eingabe, und das Modell wäre wieder an nichts geeicht — nur mit einer Zahl daneben, die das Gegenteil behauptet. Der Backtest muss der Maßstab **vor und nach** dem Eingriff sein, mit unverändertem Verfahren.
 
+**Nachgemessen am 2026-08-31 — und die Diagnose ist schärfer als «es fehlt ein Treiber»:** Die Preiselastizität des Buchungsmodells beträgt am Betriebspunkt (130–145 EUR) **−1,83**. Zum Vergleich die Metaanalyse, die im Repo liegt — [Brons, Pels, Nijkamp & Rietveld (2002)](../docs/research/literature/price_elasticities_of_demand_for_passenger_air_travel.pdf), *Journal of Air Transport Management* 8, 165–175, 204 Schätzungen aus 37 Studien: **Mittelwert −1,146, Standardabweichung 0,619**, niedrigster Einzelwert −3,20.
+
+Zwei Befunde daraus, und der zweite wiegt schwerer:
+
+| Preisspanne | Elastizität des Modells |
+| --- | ---: |
+| 80 → 100 EUR | −0,58 |
+| 120 → 140 EUR | −1,44 |
+| 140 → 160 EUR | −2,40 |
+| 200 → 250 EUR | **−3,54** |
+
+- **Der Betriebspunkt liegt 1,1 Standardabweichungen unter dem Mittel** — innerhalb der beobachteten Verteilung, aber deutlich auf der elastischen Seite.
+- **Die Elastizität ist nicht konstant**, sondern versechsfacht sich über eine plausible Preisspanne. Bei 250 EUR ist sie steiler als der **niedrigste** der 204 Schätzwerte der Metaanalyse. Das ist eine Eigenschaft der Sigmoid mit harter Erschwinglichkeitsschwelle, keine Modellierungsentscheidung, die jemand getroffen hätte.
+
+**Und damit ist der Einbruch erklärt, nicht nur beschrieben.** Der Modellpreis stieg 2015–2019 von 132,40 auf 141,16 (+6,6 %). Bei −1,83 erwartet man daraus **−12,1 %** Nachfrage; gemessen wurden **−14,3 %**. **Rund 85 % des Nachfrageeinbruchs sind allein der Preiskanal**, der auf den selbst erzeugten Preisanstieg wirkt — der Rest verteilt sich auf CO₂-Abgabe, Sättigung und Faktor-Shifts.
+
+**Das Modell hat also nicht «zu wenige» Nachfragekanäle, sondern praktisch genau einen** — und der ist steiler als die Literatur und läuft unopponiert. Real stiegen die Fluggastzahlen 2015–2019 um 26 %, *obwohl* die Nominalpreise leicht anzogen: Einkommenswachstum, Netzausbau und Kapazität der Billigflieger haben den Preiseffekt überkompensiert. Von diesen drei kennt das Modell keinen.
+
 **Was zu tun ist**, in dieser Reihenfolge, weil der zweite Punkt ohne den ersten nichts bringt:
 
 1. **Den Horizont einer Trajektorie sichtbar machen.** Nicht die Kurve verlängern — das ist Symptomkosmetik —, sondern melden, wenn ein Lauf über den letzten Stützpunkt hinausgeht. Der Ort dafür ist `validation.py` (Invariante: neue Prüfungen gehören dorthin, nicht in Eingabefelder), und die Prüfung ist billig: `max_ticks` gegen den letzten Stützpunkt jeder Trajektorie.
-2. **Entscheiden, woher Nachfragewachstum kommt.** Drei Wege, und die Wahl gehört *vor* die Umsetzung: über die Bevölkerung (dann braucht sie einen Verlauf, der zur Lauflänge passt), über das Einkommen (`income_index` bewegt sich heute nicht — der Kanal existiert, aber niemand speist ihn), oder über eine eigene exogene Systemgröße. Der **Backtest sagt nur, dass etwas fehlt, nicht was** — er kann die Wahl nicht treffen, und wer ihn dafür heranzieht, hat schon auf ihn hin gebaut.
-3. **Die Wahl im Nutzenmodell verankern**, nicht als Aufschlag daneben. Ein additiver Wachstumsterm auf die Buchungsrate wäre genau die Art Korrektur, die den Backtest grün macht und das Modell schlechter — die Koeffizienten tragen seit P2.1 ihre Herkunft, und ein Term ohne Herkunft fiele dort auf.
+2. **Den Gegenkanal bauen — und `income_index` ist der naheliegende.** Er **existiert bereits** als Systemgröße, aber niemand speist ihn: Er steht auf 1,0 und bleibt dort. Das ist der billigste und am besten belegbare Weg, weil Einkommenselastizität für Luftverkehr in derselben Literatur behandelt wird (Brons et al. nennen sie als Determinante; Luftverkehr gilt dort als Luxusgut mit Einkommenselastizität über 1). Die Alternativen — Bevölkerungsverlauf verlängern, eigene exogene Größe — sind beide schwächer belegt: Die Bevölkerung erklärt real nur einen Bruchteil des Wachstums, und eine eigene Größe wäre ein Sammelbecken ohne Entsprechung in den Daten.
+   **Der Backtest darf die Wahl nicht treffen.** Er sagt, *dass* ein Gegenkanal fehlt; welcher es ist, entscheidet die Fachlage. Wer die Variante wählt, die den Abstand am stärksten drückt, hat auf ihn hin gebaut.
+3. **Die Elastizität ist dabei mit auf dem Tisch**, und zwar als eigene Frage: Ein Gegenkanal, der gegen einen zu steilen Preiskanal ankämpft, verdeckt nur die Ursache. Ob −1,83 am Betriebspunkt richtig ist, ist an Brons et al. prüfbar; dass sie über die Preisspanne von −0,58 auf −3,54 läuft, ist es schwerer zu rechtfertigen. **Beides nicht gleichzeitig ändern** — sonst ist hinterher nicht zu sagen, welche der beiden Änderungen gewirkt hat (Regel: Refactoring und Verhaltensänderung nie im selben Commit, hier auf zwei Verhaltensänderungen angewandt).
+4. **Die Wahl im Nutzenmodell verankern**, nicht als Aufschlag daneben. Ein additiver Wachstumsterm auf die Buchungsrate wäre genau die Art Korrektur, die den Backtest grün macht und das Modell schlechter — die Koeffizienten tragen seit P2.1 ihre Herkunft, und ein Term ohne Herkunft fiele dort auf.
 
 **Fallstrick — die Reihenfolge der Messung:** Der Backtest wird **vor** dem Eingriff einmal festgehalten (die Zahlen stehen in P2.7 und in `tests/test_nachfragetreiber.py`) und danach neu gerechnet. Wer erst baut und dann misst, hat keinen Vorher-Wert mehr.
 

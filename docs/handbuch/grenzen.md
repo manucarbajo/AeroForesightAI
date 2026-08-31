@@ -37,13 +37,42 @@ schwanken die Ergebnisse zwischen Läufen spürbar. Bevor Sie einen Unterschied 
 eine Wirkung halten, prüfen Sie mit Wiederholungen, wie groß die natürliche
 Streuung ist — siehe [Läufe vergleichen](/doku/vergleiche).
 
-## Das Modell ist nicht kalibriert
+## Die Parameter sind gesetzt, nicht geschätzt
 
 Die Parameter sind fachlich plausibel gewählt, aber nicht gegen historische
 Marktdaten geschätzt. Absolute Werte — ein Ticketpreis von 141 Euro, eine
 Buchungsrate von 43 Prozent — sind deshalb keine Aussage über den realen Markt.
 Belastbar sind Vergleiche innerhalb desselben Modells: dass Preis A höher liegt
 als Preis B, wenn Annahme X gilt.
+
+## Was der Vergleich mit der Wirklichkeit ergeben hat
+
+Seit dem 30. August 2026 gibt es dazu eine Messung statt einer Vermutung. Das
+Modell wurde gegen die Jahre 2015–2024 gerechnet: Die tatsächlichen CO₂- und
+Ölpreise gingen als Außenwelt hinein, und was herauskam, wurde gegen die realen
+Flugpreise und Fluggastzahlen gehalten. Das Ergebnis ist zweigeteilt, und beide
+Hälften sollten Sie kennen, bevor Sie eine Zahl aus diesem Modell zitieren.
+
+**Die Preisseite trifft — bis 2019.** Die mittlere Abweichung liegt bei 1,8
+Indexpunkten. Für ein Modell, dessen Parameter sämtlich von Hand gesetzt und nie
+angepasst wurden, ist das bemerkenswert. Ein Beweis ist es nicht: Es sind vier
+frei vergleichbare Jahre, und das Basisjahr liegt per Konstruktion auf null.
+
+**Ab 2022 verfehlt sie den Markt deutlich** — 38 Indexpunkte. Die realen
+Flugpreise liegen seither rund die Hälfte über dem Niveau von 2015, das Modell
+bei plus zwei Prozent. Es kennt den Strukturbruch nach der Pandemie nicht.
+
+**Die Nachfrageseite läuft in die falsche Richtung**, und das ist die wichtigere
+Einschränkung. Das Modell lässt die Buchungsrate bis 2019 auf 86 sinken; real
+stiegen die europäischen Fluggastzahlen auf 126. Die Ursache ist nachgemessen:
+Das Modell hat praktisch **nur einen** Kanal, über den Nachfrage sich bewegt,
+und der ist der Preis. Real wuchs der Luftverkehr, *obwohl* die Preise anzogen —
+getragen von Einkommen, Netzausbau und Kapazität. Davon kennt das Modell nichts.
+
+**Praktische Folge:** Nutzen Sie Nachfragezahlen dieses Modells nicht als
+Mengenprognose. Belastbar bleibt die Frage, in welche Richtung und wie stark
+eine Annahme wirkt — nicht, wie viele Menschen am Ende fliegen. Die vollständige
+Auswertung samt Datenquellen steht in `docs/backtest_vorlauf.md`.
 
 ## Die Konsistenzbewertung ist ein Urteil
 

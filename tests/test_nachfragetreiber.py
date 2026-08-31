@@ -30,6 +30,25 @@ def properties():
     return load_properties_config()
 
 
+@pytest.fixture(scope="module")
+def leute(properties):
+    """Die Stichprobe, gegen die die Elastizität gemessen wird.
+
+    Auf Modulebene und nicht in der Klasse: Eine klassenweite Fixture als
+    Instanzmethode ist seit pytest 8 verwarnt, und eine Verwarnung, die stehen
+    bleibt, verdeckt die nächste.
+    """
+
+    from src.config_loader import build_initial_state
+    from src.population.population_sampler import initialize_population
+
+    zustand = build_initial_state()
+    config = next(
+        agent for agent in zustand.agents if getattr(agent, "population_config", None)
+    ).population_config
+    return initialize_population(properties, config, seed=42)
+
+
 class TestDieBevoelkerungskurveEndetVorDemLauf:
     """Befund 1 — der Horizont der Trajektorie hängt an nichts."""
 
@@ -101,4 +120,104 @@ class TestDerZuwachsReichteAuchUngekuerztNicht:
         assert zuwachs_modell < zuwachs_real / 3, (
             f"Modell +{zuwachs_modell:.1%} gegen real +{zuwachs_real:.1%}. Nähert "
             "sich das an, ist die Nachfrageseite in Bewegung — Backtest neu rechnen."
+        )
+
+
+class TestDiePreiselastizitaetIstDieEineStellschraube:
+    """**Die Diagnose, die den Befund von «es fehlt etwas» zu «es ist eines» macht.**
+
+    Gemessen am 2026-08-31: Rund **85 %** des Nachfrageeinbruchs im Backtest
+    sind allein der Preiskanal, der auf den selbst erzeugten Preisanstieg wirkt.
+    Das Modell hat nicht zu wenige Nachfragekanäle — es hat praktisch **genau
+    einen**, und der läuft unopponiert.
+
+    Maßstab ist die Metaanalyse, die im Repo liegt: **Brons, Pels, Nijkamp &
+    Rietveld (2002)**, *Journal of Air Transport Management* 8, 165–175 —
+    204 Schätzungen aus 37 Studien, Mittelwert **−1,146**, Standardabweichung
+    **0,619**, niedrigster Einzelwert **−3,20**.
+    """
+
+    #: Brons et al. (2002), Tabelle im Abschnitt «Descriptive statistical results».
+    METAANALYSE_MITTEL = -1.146
+    METAANALYSE_SD = 0.619
+    METAANALYSE_NIEDRIGSTER = -3.20
+
+    @staticmethod
+    def _rate(leute, properties, preis: float) -> float:
+        from statistics import mean
+
+        from src.population.population_sampler import booking_probability
+
+        return mean(
+            booking_probability(
+                person,
+                ticket_price=preis,
+                carbon_tax=50.0,
+                koeffizienten=properties.booking_model,
+            )
+            for person in leute
+        )
+
+    @classmethod
+    def _elastizitaet(cls, leute, properties, a: float, b: float) -> float:
+        """Bogenelastizität nach der Mittelpunktsformel."""
+
+        qa, qb = cls._rate(leute, properties, a), cls._rate(leute, properties, b)
+        return ((qb - qa) / ((qa + qb) / 2)) / ((b - a) / ((a + b) / 2))
+
+    def test_am_betriebspunkt_liegt_sie_auf_der_elastischen_seite(self, leute, properties):
+        """−1,83 gegen ein Metaanalyse-Mittel von −1,146: rund 1,1
+        Standardabweichungen steiler, aber innerhalb der Verteilung."""
+
+        e = self._elastizitaet(leute, properties, 130.0, 145.0)
+
+        assert e == pytest.approx(-1.83, abs=0.15), f"Elastizität am Betriebspunkt: {e:.2f}"
+
+        abstand = (abs(e) - abs(self.METAANALYSE_MITTEL)) / self.METAANALYSE_SD
+        assert 0.7 < abstand < 1.5, (
+            f"{abstand:.1f} Standardabweichungen vom Metaanalyse-Mittel. Bewegt sich "
+            "das, gehört der Befund in P2.8 neu geschrieben."
+        )
+
+    def test_sie_ist_nicht_konstant_sondern_versechsfacht_sich(self, leute, properties):
+        """**Der schwerere der beiden Befunde.**
+
+        Eine Elastizität, die über eine plausible Preisspanne von −0,58 auf
+        −3,54 läuft, ist eine Eigenschaft der Sigmoid mit harter
+        Erschwinglichkeitsschwelle — keine Modellierungsentscheidung, die
+        jemand getroffen hätte. Am oberen Ende ist sie steiler als der
+        **niedrigste** aller 204 Schätzwerte der Metaanalyse.
+        """
+
+        flach = self._elastizitaet(leute, properties, 80.0, 100.0)
+        steil = self._elastizitaet(leute, properties, 200.0, 250.0)
+
+        assert abs(steil) > 5 * abs(flach), (
+            f"Spanne {flach:.2f} bis {steil:.2f} — die Elastizität ist "
+            "gleichmäßiger geworden. Gute Nachricht, aber P2.8 stimmt dann nicht mehr."
+        )
+        assert steil < self.METAANALYSE_NIEDRIGSTER, (
+            f"{steil:.2f} liegt nicht mehr jenseits des niedrigsten Schätzwerts "
+            f"({self.METAANALYSE_NIEDRIGSTER}) der Metaanalyse."
+        )
+
+    def test_der_preiskanal_erklaert_den_einbruch_fast_allein(self, leute, properties):
+        """Die Rechnung, die P2.8 trägt.
+
+        Modellpreis 2015→2019: 132,40 → 141,16 (+6,6 %). Bei der gemessenen
+        Elastizität erwartet man daraus rund −12 % Nachfrage; gemessen wurden
+        −14,3 %. Der Rest verteilt sich auf CO₂-Abgabe, Sättigung und
+        Faktor-Shifts.
+        """
+
+        e = self._elastizitaet(leute, properties, 130.0, 145.0)
+        preisanstieg = (141.16 - 132.40) / 132.40
+        erwartet = e * preisanstieg
+        gemessen = (0.2971 - 0.3465) / 0.3465
+
+        anteil = erwartet / gemessen
+        assert 0.7 < anteil < 1.1, (
+            f"Der Preiskanal erklärt {anteil:.0%} des Einbruchs (erwartet "
+            f"{erwartet:.1%}, gemessen {gemessen:.1%}). Weicht das ab, hat sich "
+            "entweder die Elastizität bewegt oder ein zweiter Kanal ist dazugekommen."
         )
