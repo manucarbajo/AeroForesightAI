@@ -210,3 +210,89 @@ class TestDieBevoelkerungBleibtEinQuerschnitt:
             "price_sensitivity",
             "income_factor",
         }
+
+
+class TestDieGesellschaftDarfAlternDieKohorteNicht:
+    """P2.4-D (2026-08-31) — **die Altersstruktur ist ein exogener Verlauf**.
+
+    Der Einwand, der dazu geführt hat: «Es kommt doch darauf an, wie viele Ticks
+    man macht — evtl. möchte man Jahre.» Richtig, und die Antwort ist nicht,
+    Personen altern zu lassen.
+
+    **Gemessen am 2026-08-31**: Ließe man die Kohorte über 40 Ticks mitaltern,
+    fiele die Buchungsrate um **47,6 %** und die Bevölkerung wäre am Ende im
+    Schnitt **83** Jahre alt. Das ist ein Jahrgang, keine Gesellschaft — real
+    kommen junge nach und alte scheiden aus.
+
+    Eine Gesellschaft altert, weil sich ihre **Zusammensetzung** verschiebt.
+    `altersmittel_jahre` ist deshalb eine Systemgröße wie `income_index`: Ein
+    Rahmenszenario gibt ihren Verlauf vor, und wer neu in die Bevölkerung kommt,
+    wird aus der Verteilung gezogen, die *dann* gilt. Ohne Verlauf bleibt die
+    Gesellschaft stationär — eine gültige Aussage, kein Versehen.
+    """
+
+    @staticmethod
+    def _ziehen(properties, altersmittel: float | None):
+        from src.population.population_sampler import run_population_tick
+
+        zustand = build_initial_state()
+        config = next(
+            agent for agent in zustand.agents if getattr(agent, "population_config", None)
+        ).population_config
+        system = {"bevoelkerungsentwicklung": 1000}
+        if altersmittel is not None:
+            system["altersmittel_jahre"] = altersmittel
+
+        return run_population_tick(
+            properties,
+            config,
+            None,
+            ticket_price=140.0,
+            carbon_tax=50.0,
+            factors={},
+            system_properties=system,
+            seed=42,
+            current_tick=1,
+            metrics={},
+        )
+
+    def test_die_systemgroesse_gibt_es_und_sie_steht_auf_dem_datenwert(self, properties):
+        prop = properties.get_system_property("altersmittel_jahre")
+
+        assert prop.trajectory.baseline == pytest.approx(50.8), "Der Eurostat-Wert"
+        assert "Eurostat" in (prop.description or "")
+
+    @pytest.mark.parametrize("mittel", [55.0, 60.0])
+    def test_ein_hoeheres_altersmittel_kommt_in_der_ziehung_an(self, properties, mittel):
+        leute, _ = self._ziehen(properties, mittel)
+
+        assert mean(p.age for p in leute) == pytest.approx(mittel, abs=1.5)
+
+    def test_eine_aeltere_gesellschaft_bucht_weniger(self, properties):
+        """**Die Zusage, für die das gebaut wurde** — und die Größenordnung.
+
+        Rund fünf Prozent weniger bei neun Jahren höherem Altersmittel. Deutlich
+        weniger als die 47,6 % einer alternden Kohorte, und das ist der Punkt:
+        Eine Gesellschaft altert langsam, weil sie sich erneuert.
+        """
+
+        _, jung = self._ziehen(properties, 50.8)
+        _, alt = self._ziehen(properties, 60.0)
+
+        rate_jung = jung.total_booked / jung.total_population
+        rate_alt = alt.total_booked / alt.total_population
+
+        assert rate_alt < rate_jung, f"jung {rate_jung:.4f}, alt {rate_alt:.4f}"
+        assert rate_alt > rate_jung * 0.85, (
+            f"Der Rückgang ist auf {1 - rate_alt / rate_jung:.1%} gewachsen. Über "
+            "15 % wäre es kein Kompositionseffekt mehr — dann altert hier doch "
+            "eine Kohorte."
+        )
+
+    def test_ohne_die_systemgroesse_bleibt_alles_stationaer(self, properties):
+        """Eine Config, die sie nicht kennt, beschreibt eine stehende Gesellschaft."""
+
+        ohne, _ = self._ziehen(properties, None)
+        mit, _ = self._ziehen(properties, 50.8)
+
+        assert mean(p.age for p in ohne) == pytest.approx(mean(p.age for p in mit), abs=0.01)

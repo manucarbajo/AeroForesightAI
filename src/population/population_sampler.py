@@ -416,6 +416,34 @@ SHIFT_ZIELE: dict[str, tuple[str, float, float]] = {
 }
 
 
+def _mit_altersmittel(
+    properties: PropertiesConfig,
+    system_properties: dict[str, float],
+) -> PropertiesConfig:
+    """Die Altersverteilung auf das aktuell geltende Mittel setzen.
+
+    **Kein neuer Kontextparameter** (Invariante 1): Der Wert kommt aus
+    ``system_properties``, die ``run_population_tick`` ohnehin bekommt. Ein
+    eigenes Argument mit Default hieße «irgendein Altersmittel» und wäre in
+    jedem Tick dasselbe — genau die Falle, die die Regel abräumt.
+
+    Fehlt die Systemgröße, bleibt alles wie es ist: Eine Config ohne
+    ``altersmittel_jahre`` beschreibt eine **stationäre** Gesellschaft, und das
+    ist eine gültige Aussage, kein Versehen.
+    """
+
+    mittel = system_properties.get("altersmittel_jahre")
+    if mittel is None:
+        return properties
+
+    merkmale = []
+    for prop in properties.individual_properties:
+        if prop.id == "age" and prop.mean is not None:
+            prop = prop.model_copy(update={"mean": float(mittel)})
+        merkmale.append(prop)
+    return properties.model_copy(update={"individual_properties": merkmale})
+
+
 def apply_factor_shifts(
     individuals: list[Individual],
     shift_rules: list[ShiftRule],
@@ -745,6 +773,17 @@ def run_population_tick(
     durchgereicht, und ein vergessenes Argument hätte dort still die
     Tick- und Metrik-Regeln abgeschaltet.
     """
+
+    # **Die alternde Gesellschaft ist ein exogener Verlauf** (P2.4-D,
+    # 2026-08-31), kein Alterungspfad je Person. Wer neu in die Bevölkerung
+    # kommt, wird aus der Verteilung gezogen, die *jetzt* gilt.
+    #
+    # Der Unterschied ist nicht kosmetisch: Eine mitalternde Kohorte ohne
+    # Nachwuchs verliert über 40 Ticks **47,6 %** ihrer Buchungsrate und ist am
+    # Ende im Schnitt 83 Jahre alt — das ist ein Jahrgang, keine Gesellschaft.
+    # Eine Gesellschaft altert, weil sich die *Zusammensetzung* verschiebt, und
+    # das tut sie langsam.
+    properties = _mit_altersmittel(properties, system_properties)
 
     if not individuals:
         individuals = initialize_population(properties, config, seed=seed)

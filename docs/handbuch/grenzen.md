@@ -72,6 +72,14 @@ Wächst die Bevölkerung im Lauf, kommen neu gezogene Personen dazu; die
 Altersstruktur bleibt stabil, weil sie aus derselben Verteilung stammen. Es ist
 eine stehende Gesellschaft, kein alternder Jahrgang.
 
+**Die Zusammensetzung darf sich aber verschieben.** Ein Rahmenszenario kann das mittlere Alter der Bevölkerung über den Lauf steigen lassen — eine alternde
+*Gesellschaft*. Neu hinzukommende Personen werden dann aus der verschobenen
+Verteilung gezogen. Die Wirkung ist moderat und das ist richtig so: Neun Jahre
+höheres Durchschnittsalter senken die Buchungsneigung um rund fünf Prozent.
+Zum Vergleich: Ließe man stattdessen dieselben Menschen vierzig Runden lang
+altern, ohne dass junge nachkommen, wären es fast fünfzig Prozent — und die
+Bevölkerung wäre am Ende im Schnitt 83 Jahre alt.
+
 **Die Altersverteilung selbst kommt aus echten Daten** (Eurostat, EU-27, Stand
 2023): Mittelwert 50,8 Jahre bei einer Standardabweichung von 18,8, begrenzt auf
 18 bis 90. Bewusst die **Gesamtbevölkerung** und nicht die der Flugreisenden —

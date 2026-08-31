@@ -1571,7 +1571,29 @@ Der Glockenverlauf des Erwerbslebens — Menschen in der Lebensmitte fliegen am 
 
 **Daraus folgt eine Eigenschaft, die überrascht und richtig ist:** Eine *bestehende* Person nachträglich zu altern ändert ihr Verhalten nicht — ihr Einkommen wurde beim Ziehen festgelegt. `tests/test_alter_formt_die_person.py` hält genau das fest, damit es niemand für einen Fehler hält.
 
-**Der Wächter:** [`tests/test_alter_formt_die_person.py`](../tests/test_alter_formt_die_person.py), zehn Zusagen. Er ersetzt `test_bevoelkerung_altert_nicht.py`, dessen Prämisse mit dieser Korrektur entfallen ist.
+#### Nachtrag am selben Tag: die Gesellschaft altert, die Kohorte nicht (P2.4-D)
+
+**Der zweite Einwand traf den wunden Punkt:** «Es kommt doch darauf an, wie viele Ticks man macht — evtl. möchte man Jahre, und dann verändert es sich doch.» Zwei Dinge sind daraus geworden.
+
+**Erstens ein eigener Befund über die Tick-Dauer** ([P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31)): Sie ist bereits dreimal entschieden, um den Faktor 12 verschieden. Meine Begründung gegen Alterung stand also auf einer Invariante, die als Verhaltensaussage nicht hält.
+
+**Zweitens die Messung, die zeigt, warum «einfach altern lassen» trotzdem falsch wäre:**
+
+| | Altersmittel | Buchungsrate |
+| --- | ---: | ---: |
+| Tick 0 | 50,5 | 0,4818 |
+| Tick 20 | 69,0 | 0,3985 (−17,3 %) |
+| Tick 40 | 82,9 | **0,2526 (−47,6 %)** |
+
+Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Menschen zwar, aber es kommen junge nach und alte scheiden aus — die Altersstruktur verschiebt sich dadurch **langsam**.
+
+**Umgesetzt ist deshalb die Verschiebung, nicht die Alterung:** `altersmittel_jahre` ist seit dem 2026-08-31 eine Systemgröße mit Verlauf, genau wie `income_index` seit P2.8. Wer neu in die Bevölkerung kommt, wird aus der Verteilung gezogen, die *dann* gilt. Standard ist der Eurostat-Wert 50,8; **ohne Verlauf bleibt die Gesellschaft stationär**, und das ist eine gültige Aussage statt eines Versehens.
+
+**Die Größenordnung stimmt damit:** Neun Jahre höheres Altersmittel senken die Buchungsrate um **4,5 %** — ein Kompositionseffekt, kein Zusammenbruch. Ein Szenario «alternde Gesellschaft» ist damit rechenbar, ohne dass eine Person je einen Geburtstag hat.
+
+**Ohne neuen Kontextparameter** (Invariante 1): Der Wert kommt aus `system_properties`, die `run_population_tick` ohnehin bekommt. Ein eigenes Argument mit Default hieße «irgendein Altersmittel» und wäre in jedem Tick dasselbe.
+
+**Der Wächter:** [`tests/test_alter_formt_die_person.py`](../tests/test_alter_formt_die_person.py), sechzehn Zusagen. Er ersetzt `test_bevoelkerung_altert_nicht.py`, dessen Prämisse mit dieser Korrektur entfallen ist.
 
 <details>
 <summary>Die erste Fassung vom selben Tag — als Beleg, wie die Frage falsch stand</summary>
@@ -1853,6 +1875,38 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 **Fertig wenn:** Kein Diagramm des Dashboards überlappt Titel und Legende — gemessen im Browser über **alle** vier Aussagen und beide Modi, nicht an einem Beispiel. Der Wächter gehört zu `tests/test_web_overflow.py`, der ohnehin als einziger einen echten Browser hat.
 
 **Doku zieht mit:** `CLAUDE.md` (Farb- und Layoutfundament), falls sich die Regel ändert.
+
+### P3.8 — Was ein Tick bedeutet, ist dreimal verschieden entschieden ⚠️ neu 2026-08-31
+
+> **Der Anlass war eine Nutzerfrage**, und sie hat eine Invariante getroffen: «Es kommt doch darauf an, wie viele Ticks man macht — evtl. möchte man Jahre.» Beim Nachmessen kam heraus, dass die Frage schon beantwortet ist. Dreimal. Verschieden.
+
+**Befund:** [Invariante 5](../CLAUDE.md) sagt «ein Tick ist ein Tick» — keine Kalendersemantik in Configs, Checkpoints oder Ausgaben. Als **Regel für Datenformate** ist das eingehalten: Nirgends steht ein Datum. Als Aussage über das **Modellverhalten** hält sie nicht. Eine Zeitskala verschwindet nicht dadurch, dass man sie nicht aufschreibt — jeder Mechanismus, der pro Tick etwas verändert, unterstellt eine.
+
+| Mechanismus | plausibel, wenn ein Tick … | gemessen |
+| --- | --- | --- |
+| `bevoelkerungsentwicklung` | ein **Jahr** ist | +8 % über 29 Ticks = **+0,27 % p.a.** (EU-Realität); als Monate gelesen +3,24 % p.a. — das gibt es nirgends |
+| Sättigung | ein **Monat** ist | Eine Reise ist nach ~3 Ticks «vergessen»; als Jahre gelesen wären das 3 Jahre zwischen zwei Familienflügen |
+| Backtest (`reihen.tick_je_monat`) | ein **Monat** ist | Ausdrücklich, und er trifft damit den Preispfad auf 1,27 Indexpunkte |
+
+**Faktor 12 auseinander.** Zwei Mechanismen sagen Monat, einer sagt Jahr.
+
+**Warum das keine Formalie ist — gemessen:** Läse man einen Tick als Jahr und ließe die Kohorte mitaltern, fiele die Buchungsrate über einen 40-Tick-Lauf um **47,6 %**, und die Bevölkerung wäre am Ende im Schnitt **83** Jahre alt. Das wäre der größte Einzeleffekt im ganzen Modell — größer als Preis, CO₂-Abgabe und Einkommen zusammen.
+
+**Fundstellen:** [`configs/properties.json`](../configs/properties.json) (`bevoelkerungsentwicklung`, `saturation_decay` je Segment), [`src/backtest/reihen.py`](../src/backtest/reihen.py) (`tick_je_monat`).
+
+**Entschieden am 2026-08-31: erst messen, nicht festlegen.** Der Widerspruch ist dokumentiert und von [`tests/test_tickdauer_ist_uneinheitlich.py`](../tests/test_tickdauer_ist_uneinheitlich.py) festgehalten — sechs Zusagen, die je Mechanismus die implizite Zeitskala prüfen. **Ein rotes Ergebnis ist dort eine gute Nachricht**: Es heißt, jemand hat sie angeglichen, und dann gehört dieses Paket geschlossen.
+
+**Was zu tun ist, wenn die Festlegung ansteht** — drei Wege, jeder mit Folgekosten:
+
+1. **Ein Tick ist ein Monat.** Folgt zwei von drei Mechanismen. Dann ist die Bevölkerungskurve zu korrigieren, und ein Standardlauf über 40 Ticks deckt gut drei Jahre ab — Alterung wäre irrelevant.
+2. **Ein Tick ist ein Jahr.** Passt zur Bevölkerungskurve und zum Produktversprechen «strategische Zukunftsplanung»; 40 Ticks sind dann 40 Jahre. Dafür ist die Sättigung neu zu parametrisieren, und der Backtest bräuchte eine andere Abbildung.
+3. **Konfigurierbar** («Jahre je Tick» als Systemgröße). Ehrlichste Variante, bricht Invariante 5 ausdrücklich — und **jede** zeitabhängige Größe muss dann daran hängen, sonst ist der Widerspruch nur verschoben.
+
+**Fallstrick:** Wer nur eine der drei Stellen anfasst, verschiebt den Widerspruch, statt ihn aufzulösen. Der Wächter misst deshalb alle drei zusammen.
+
+**Fertig wenn:** Eine Tick-Dauer ist festgelegt und **jeder** zeitabhängige Mechanismus rechnet mit ihr — nachgewiesen an denselben drei Messungen, nicht an einer Absichtserklärung.
+
+**Doku zieht mit:** `CLAUDE.md` (Invariante 5 — sie ist zu schärfen oder zu ersetzen), `docs/handbuch/tick-und-lauf.md`, `docs/handbuch/grenzen.md`.
 
 ### P3.1 — System-Properties täuschen keine Laufzeitwerte mehr vor
 

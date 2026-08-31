@@ -196,6 +196,18 @@
       }
     },
     {
+      "id": "altersmittel_jahre",
+      "type": "numeric",
+      "unit": "years",
+      "source": "trajectory",
+      "min_value": 35.0,
+      "max_value": 65.0,
+      "trajectory": {
+        "baseline": 50.8
+      },
+      "description": "Mittleres Alter der Bevoelkerung in Jahren. Neue Personen werden aus der Verteilung um diesen Wert gezogen — eine alternde GESELLSCHAFT (verschobene Zusammensetzung), keine alternde Kohorte. Standard 50,8: EU-27 ab 18 Jahren, Eurostat demo_pjangroup, Stand 1.1.2023. Ohne Verlauf bleibt die Gesellschaft stationaer; ein Rahmenszenario kann sie altern lassen."
+    },
+    {
       "id": "maintenance_cost_index",
       "type": "numeric",
       "unit": "index",
