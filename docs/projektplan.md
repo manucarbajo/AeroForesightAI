@@ -1416,6 +1416,34 @@ Fällt die Wahl auf 2 oder 3, ist die Impact Balance dann auch zu implementieren
 
 **Doku zieht mit:** `docs/cib_role.md`, `docs/cib_rationale.md`, `docs/handbuch/cib.md`, `CLAUDE.md` (Glossar), `docs/entscheidung_szenarienschicht_2026-08-29.md` (die getroffene Wahl gehört dort nachgetragen).
 
+### P2.8 — Die Nachfrage kann nicht wachsen ⚠️ neu 2026-08-31, nicht angefangen
+
+> **Der erste Befund, den der Backtest ohne Zutun geliefert hat.** Er entstand nicht aus einem Audit und nicht aus einer Code-Lektüre, sondern daraus, dass zum ersten Mal etwas außerhalb des Modells als Maßstab danebenlag.
+
+**Befund:** Dem Modell fehlt **jeder** Mechanismus, der Nachfrage wachsen lässt. Die Buchungsrate reagiert auf Preis, Kostendruck, Sättigung und Faktor-Shifts — sämtlich Kanäle nach unten. Die einzige Größe, über die die Nachfragemenge steigen könnte, ist `bevoelkerungsentwicklung` mit **+8 %** über die ganze Kurve; real stieg der europäische Luftverkehr 2015–2019 um **+26 %**. `income_index` existiert, bewegt sich aber nicht mit. Herleitung und Messwerte: [P2.7](#befund-dem-modell-fehlt-jeder-nachfragetreiber-nach-oben-2026-08-31).
+
+**Zweiter Befund, technisch unabhängig:** Die Bevölkerungskurve ist eine `step_function` mit vier Stützpunkten, der letzte bei **Tick 30**; `_resolve_step_function` hält danach still den letzten Wert. Sie ist die **einzige** Trajektorie im Modell, und ihr Horizont hängt an nichts. Der Backtest läuft 120 Ticks — 90 davon mit eingefrorener Bevölkerung; schon ein Standardlauf über 40 Ticks verbringt ein Viertel seiner Länge jenseits des letzten Stützpunkts. Für eine Stufenfunktion korrektes Verhalten und **genau deshalb unsichtbar**.
+
+**Fundstelle:** [`configs/properties.json`](../configs/properties.json) (`bevoelkerungsentwicklung`), [`src/market/property_engine.py:37`](../src/market/property_engine.py) (`_resolve_step_function`), [`src/population/population_sampler.py:606`](../src/population/population_sampler.py).
+
+**Warum es nicht in P2.7 mitbehoben wurde — und das ist die tragende Entscheidung dieses Pakets:** Eine Nachfragemechanik, die *auf* den Backtest hin gebaut wird, kann er danach nicht mehr prüfen. Er bestätigte dann seine eigene Eingabe, und das Modell wäre wieder an nichts geeicht — nur mit einer Zahl daneben, die das Gegenteil behauptet. Der Backtest muss der Maßstab **vor und nach** dem Eingriff sein, mit unverändertem Verfahren.
+
+**Was zu tun ist**, in dieser Reihenfolge, weil der zweite Punkt ohne den ersten nichts bringt:
+
+1. **Den Horizont einer Trajektorie sichtbar machen.** Nicht die Kurve verlängern — das ist Symptomkosmetik —, sondern melden, wenn ein Lauf über den letzten Stützpunkt hinausgeht. Der Ort dafür ist `validation.py` (Invariante: neue Prüfungen gehören dorthin, nicht in Eingabefelder), und die Prüfung ist billig: `max_ticks` gegen den letzten Stützpunkt jeder Trajektorie.
+2. **Entscheiden, woher Nachfragewachstum kommt.** Drei Wege, und die Wahl gehört *vor* die Umsetzung: über die Bevölkerung (dann braucht sie einen Verlauf, der zur Lauflänge passt), über das Einkommen (`income_index` bewegt sich heute nicht — der Kanal existiert, aber niemand speist ihn), oder über eine eigene exogene Systemgröße. Der **Backtest sagt nur, dass etwas fehlt, nicht was** — er kann die Wahl nicht treffen, und wer ihn dafür heranzieht, hat schon auf ihn hin gebaut.
+3. **Die Wahl im Nutzenmodell verankern**, nicht als Aufschlag daneben. Ein additiver Wachstumsterm auf die Buchungsrate wäre genau die Art Korrektur, die den Backtest grün macht und das Modell schlechter — die Koeffizienten tragen seit P2.1 ihre Herkunft, und ein Term ohne Herkunft fiele dort auf.
+
+**Fallstrick — die Reihenfolge der Messung:** Der Backtest wird **vor** dem Eingriff einmal festgehalten (die Zahlen stehen in P2.7 und in `tests/test_nachfragetreiber.py`) und danach neu gerechnet. Wer erst baut und dann misst, hat keinen Vorher-Wert mehr.
+
+**Zweiter Fallstrick — Invariante 1:** Ein Nachfragetreiber ist eine **Zahl aus Python**. Er darf nicht aus einem Agenten-Narrativ stammen und nicht aus einem Vorgabewert, den niemand benannt hat. Wer einen Rückfall braucht, trägt ihn mit Begründung ein — die AST-Prüfung in `test_cost_pressure_source.py` findet ihn sonst.
+
+**Gehalten von:** [`tests/test_nachfragetreiber.py`](../tests/test_nachfragetreiber.py) — er misst den **Ist-Stand** (Horizontlücke in Ticks, Zuwachs der Kurve) und schlägt an, sobald sich einer der beiden bewegt. **Ein rotes Ergebnis ist dort keine Panne**, sondern die Nachricht, dass jemand die Nachfrageseite angefasst hat; dann gehört dieser Abschnitt neu geschrieben und der Backtest neu gerechnet, in dieser Reihenfolge.
+
+**Fertig wenn:** Ein Lauf, der über den Horizont einer Trajektorie hinausgeht, sagt es; die Herkunft des Nachfragewachstums ist entschieden und begründet; und der Backtest ist mit **unverändertem Verfahren** neu gerechnet, mit beiden Zahlen nebeneinander — vorher und nachher.
+
+**Doku zieht mit:** `CLAUDE.md` (Glossar, Invarianten), `docs/handbuch/grenzen.md`, `docs/handbuch/vergleiche.md` (ein Schnitt — Läufe von davor und danach sind nicht vergleichbar), `docs/backtest_vorlauf.md`.
+
 ### P2.3 — Matrix-Provenienz herstellen ⚠️ entfällt seit 2026-08-31, ein Rest bleibt
 
 **Befund:** Alle 168 Zellen in `cib_frozen.json` haben ein leeres `reasoning`-Feld; `metadata.source` sagt `expert_defined_aviation_domain_v2` (Basis: Vorlesungsfolien, Experte = das Team selbst). Für einen Prototyp legitim — aber die Kalibrierung ist genau das Asset, das später verkauft wird.
@@ -1786,6 +1814,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) |
 | **Doku-Konsistenz** (neu 2026-08-26) | P4.3 (Zahlen in `CLAUDE.md` und diesem Plan mechanisch halten) |
 | **Einrichten-Assistent** (neu 2026-08-28) | P1.9 (Sweep-Pfad verwirft den Entwurf, Schreibzugriff auf `configs/` aus optionalen Schritten, Schritthöhe, Fortschritts- und Validierungslücken, Barrierefreiheit) |
+| **Nachfrageseite** (neu 2026-08-31) | P2.8 (kein Nachfragetreiber nach oben; Trajektorien-Horizont endet vor dem Lauf) |
 | **Szenarienschicht** (neu 2026-08-29) | P2.0 (Rolle umdrehen), P2.2 (Einachsigkeit, Tripleset aus zwei Polen), P2.3 (die vier Zellen mit falschem Vorzeichen), P2.6 (keine Bandbreite), P2.7 (an nichts geeicht) |
 
 Die vier Zeilen von 2026-08-26 stammen nicht aus `audit_findings.md`, sondern aus der
