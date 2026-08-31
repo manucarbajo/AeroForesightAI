@@ -23,8 +23,12 @@ Band da ist, sondern dass es **Breite hat**.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
+from dashboard.web.views import figures as figuren
 from src.config_loader import build_initial_state
 from src.llm.studio_helpers import MockLLM
 from src.orchestration.simulation_runner import (
@@ -219,3 +223,208 @@ class TestDieRechnungSelbst:
 
     def test_ohne_laeufe_gibt_es_kein_band(self):
         assert ensemble_baender([]) == {}
+
+
+# ---------------------------------------------------------------------------
+# Die Darstellung — die zweite Hälfte von P2.6 (2026-08-31)
+# ---------------------------------------------------------------------------
+
+
+class TestDasBandWirdAuchGezeichnet:
+    """**Ohne diese Klasse war P2.6 eine Datei, die niemand sieht.**
+
+    Die Perzentile lagen seit dem 2026-08-30 in `multi_run_summary.json`, und
+    die Ansicht «Preis und Nachfrage» zeigte weiterhin eine Linie. Ein Band, das
+    nur im Artefakt steht, beantwortet die Frage nicht, für die es gebaut wurde:
+    *Wie sicher ist diese Zahl?*
+
+    Gezeichnet wird es in `dashboard/web/views/figures._view_nachfrage` — bei
+    **Aussage 1**, weil `ENSEMBLE_REIHEN` genau deren beide Größen abdeckt.
+    """
+
+    TICKS = 4
+
+    @pytest.fixture(autouse=True)
+    def _plotly_templates(self):
+        """Ohne die Registrierung wirft `style_figure` auf einen Namen.
+
+        **Nicht auf die Testreihenfolge verlassen:** `app.py` registriert sie
+        beim Start, `test_web_theme.py` nebenbei — wer sich darauf verlässt,
+        hat einen Test, der allein läuft und im Verbund grün ist (oder
+        umgekehrt).
+        """
+
+        from dashboard.web import theme
+
+        theme.register_template()
+
+    @staticmethod
+    def _lauf(verzeichnis: Path) -> Path:
+        """Ein Laufverzeichnis mit dem Nötigsten für Aussage 1."""
+
+        verzeichnis.mkdir(parents=True, exist_ok=True)
+        (verzeichnis / "tick_mechanics.json").write_text(
+            json.dumps(
+                {
+                    "ticks": [
+                        {"tick": t, "booking_rate": 0.4, "ticket_price": 100.0 + t}
+                        for t in range(1, TestDasBandWirdAuchGezeichnet.TICKS + 1)
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+        return verzeichnis
+
+    @classmethod
+    def _batch(cls, wurzel: Path, *, laeufe: int) -> Path:
+        """Ein Batch-Verzeichnis samt Zusammenfassung; gibt einen Lauf zurück."""
+
+        wurzel.mkdir(parents=True, exist_ok=True)
+        lauf = cls._lauf(wurzel / "run_001")
+        spanne = list(range(cls.TICKS))
+        (wurzel / "multi_run_summary.json").write_text(
+            json.dumps(
+                {
+                    "aggregate": {
+                        "baender": {
+                            "laeufe": laeufe,
+                            "ticks": cls.TICKS,
+                            "perzentile": [10, 50, 90],
+                            "reihen": {
+                                "booking_rate": {
+                                    "p10": [0.30 for _ in spanne],
+                                    "p50": [0.40 for _ in spanne],
+                                    "p90": [0.50 for _ in spanne],
+                                },
+                                "ticket_price": {
+                                    "p10": [98.0 + t for t in spanne],
+                                    "p50": [101.0 + t for t in spanne],
+                                    "p90": [104.0 + t for t in spanne],
+                                },
+                            },
+                        }
+                    },
+                    "runs": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return lauf
+
+    @staticmethod
+    def _spuren(knoten) -> list:
+        """Alle Plotly-Spuren aus einem Dash-Baum einsammeln."""
+
+        gefunden: list = []
+
+        def geh(n):
+            if n is None or isinstance(n, str):
+                return
+            if hasattr(n, "figure"):
+                gefunden.extend(n.figure.data)
+            kinder = getattr(n, "children", None)
+            if isinstance(kinder, list):
+                for kind in kinder:
+                    geh(kind)
+            else:
+                geh(kinder)
+
+        geh(knoten)
+        return gefunden
+
+    def test_ein_ensemble_bekommt_sein_band(self, tmp_path):
+        lauf = self._batch(tmp_path / "batch", laeufe=8)
+
+        flaechen = [s for s in self._spuren(figuren._view_nachfrage(lauf)) if s.fill == "toself"]
+
+        assert len(flaechen) == 2, "Erwartet je eine Fläche für Preis und Buchungsrate"
+        assert all("80 %" in s.name for s in flaechen), [s.name for s in flaechen]
+
+    def test_ein_einzellauf_bekommt_keines(self, tmp_path):
+        """**Kein Fehlerfall, sondern der Normalfall.** Ein Lauf ohne
+        Batch-Nachbarn zeigt seine Linie, und das ist richtig so."""
+
+        lauf = self._lauf(tmp_path / "run_allein")
+
+        assert figuren._baender(lauf) is None
+        assert not [s for s in self._spuren(figuren._view_nachfrage(lauf)) if s.fill == "toself"]
+
+    def test_ein_ensemble_aus_einem_lauf_bekommt_auch_keines(self, tmp_path):
+        """Bei einem Lauf fallen alle Perzentile zusammen (siehe `_perzentil`).
+
+        Das als Band zu zeichnen ergäbe eine Fläche der Breite null — unsichtbar,
+        aber mit einer Legende, die Streuung **behauptet**. Lieber keine Aussage
+        als eine leere.
+        """
+
+        lauf = self._batch(tmp_path / "batch_eins", laeufe=1)
+
+        assert figuren._baender(lauf) is None
+
+    def test_das_band_liegt_hinter_den_linien(self, tmp_path):
+        """Plotly zeichnet in der Reihenfolge des Hinzufügens.
+
+        Läge die Fläche darüber, verschleierte sie genau das, was die Aussage
+        trägt — den Median.
+        """
+
+        lauf = self._batch(tmp_path / "batch", laeufe=8)
+        spuren = self._spuren(figuren._view_nachfrage(lauf))
+
+        letzte_flaeche = max(i for i, s in enumerate(spuren) if s.fill == "toself")
+        erste_linie = min(i for i, s in enumerate(spuren) if s.fill != "toself")
+
+        assert letzte_flaeche < erste_linie
+
+    @pytest.mark.parametrize("modus", ["light", "dark"])
+    def test_die_bandfarbe_kommt_aus_den_tokens(self, tmp_path, modus):
+        """Regel 4 des Dashboards — Farbe kommt aus `theme`, nirgends sonst her.
+
+        Plotly braucht für eine Fläche Alpha, die Tokens sind Hex ohne. Die
+        Umrechnung steht deshalb in `theme.band_fill` und **leitet ab**, statt
+        einen zweiten Farbwert danebenzustellen.
+        """
+
+        from dashboard.web import theme
+
+        lauf = self._batch(tmp_path / "batch", laeufe=8)
+        spuren = self._spuren(figuren._view_nachfrage(lauf, modus))
+        fuellungen = {s.fillcolor for s in spuren if s.fill == "toself"}
+
+        assert fuellungen == {theme.band_fill("price", modus), theme.band_fill("booking", modus)}
+
+    def test_hell_und_dunkel_faerben_verschieden(self, tmp_path):
+        lauf = self._batch(tmp_path / "batch", laeufe=8)
+
+        hell = {s.fillcolor for s in self._spuren(figuren._view_nachfrage(lauf, "light")) if s.fill}
+        dunkel = {
+            s.fillcolor for s in self._spuren(figuren._view_nachfrage(lauf, "dark")) if s.fill
+        }
+
+        assert hell and dunkel and hell != dunkel
+
+    def test_das_band_reicht_nur_so_weit_wie_es_traegt(self, tmp_path):
+        """Es ist so lang wie der **kürzeste** Lauf; die Linie darf länger sein.
+
+        Würde es auf die volle Tick-Achse gestreckt, liefe es am Ende auf
+        Perzentile aus zwei statt fünfzig Werten hinaus — sichtbar als
+        zusammenlaufendes Band, tatsächlich nur eine dünnere Stichprobe.
+        """
+
+        lauf = self._batch(tmp_path / "batch", laeufe=8)
+        # Der Lauf selbst geht zwei Ticks weiter als das Band.
+        inhalt = json.loads((lauf / "tick_mechanics.json").read_text(encoding="utf-8"))
+        inhalt["ticks"] += [
+            {"tick": t, "booking_rate": 0.4, "ticket_price": 120.0}
+            for t in (self.TICKS + 1, self.TICKS + 2)
+        ]
+        (lauf / "tick_mechanics.json").write_text(json.dumps(inhalt), encoding="utf-8")
+
+        spuren = self._spuren(figuren._view_nachfrage(lauf))
+        flaeche = next(s for s in spuren if s.fill == "toself")
+        linie = next(s for s in spuren if s.fill != "toself")
+
+        # Eine geschlossene Fläche trägt jeden Tick zweimal (hin und zurück).
+        assert len(flaeche.x) == 2 * self.TICKS
+        assert len(linie.x) == self.TICKS + 2

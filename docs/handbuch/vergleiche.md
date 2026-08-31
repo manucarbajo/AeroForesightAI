@@ -57,6 +57,18 @@ den Median und ein 80-Prozent-Intervall über alle Wiederholungen, für
 Buchungsrate und Ticketpreis. Die Streuung steht damit als Zahl da, statt aus
 mehreren Läufen abgelesen werden zu müssen.
 
+**Und Sie sehen es.** Wählen Sie einen der Läufe aus einem Durchgang mit
+Wiederholungen aus — in der Lauf-Auswahl steht er als
+`batch_…/run_003` — und öffnen Sie unter **Ergebnisse** die Ansicht **Figures**,
+Aussage 1 «Preis und Nachfrage». Die Linien zeigen weiterhin **diesen einen**
+Lauf; hinter ihnen liegen getönte Flächen, und die zeigen, wo 80 Prozent aller
+Wiederholungen lagen.
+
+So liest man das: Läuft Ihre Linie mitten im Band, ist sie ein typischer
+Vertreter. Läuft sie am Rand, haben Sie einen Ausreißer erwischt — und sollten
+für eine Aussage lieber den Median nehmen. Ist das Band an einer Stelle breit,
+ist die Zahl dort schlecht bestimmt, egal wie genau sie angezeigt wird.
+
 Perzentile und nicht Minimum und Maximum, und das ist kein Detail: Die Ränder
 einer Stichprobe wandern mit jeder weiteren Wiederholung nach außen. Ein Band aus
 Minimum und Maximum sähe mit fünfzig Läufen breiter aus als mit zehn, ohne dass

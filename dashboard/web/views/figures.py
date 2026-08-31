@@ -91,6 +91,88 @@ def _panel(*children) -> html.Div:
 # --- Einzelansichten -------------------------------------------------------
 
 
+#: Welche Modellgröße in welcher Spur ihr Band bekommt. Dieselben zwei Reihen,
+#: die `simulation_runner.ENSEMBLE_REIHEN` auswertet — mehr gibt es nicht, und
+#: eine dritte hier einzutragen zeichnete ein Band ohne Daten dahinter.
+BANDREIHEN = {
+    "ticket_price": ("price", False),
+    "booking_rate": ("booking", True),
+}
+
+
+def _baender(run_dir: Path) -> dict | None:
+    """Die Perzentilbänder eines Ensembles — oder `None` für einen Einzellauf.
+
+    **Der Fundort ist eine Ebene über dem Lauf.** Ein Ensemble schreibt seine
+    Läufe als Unterverzeichnisse eines Batch-Ordners und die Zusammenfassung
+    daneben (`multi_run_summary.json`). Ein Einzellauf hat keinen solchen
+    Nachbarn, und dann bleibt es bei der Linie — das ist kein Fehlerfall,
+    sondern der Normalfall.
+    """
+
+    if run_dir is None or run_dir.parent == run_dir:
+        return None
+
+    pfad = run_dir.parent / "multi_run_summary.json"
+    if not pfad.is_file():
+        return None
+    try:
+        inhalt = json.loads(pfad.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+    baender = (inhalt.get("aggregate") or {}).get("baender") or {}
+    reihen = baender.get("reihen") or {}
+    if not reihen or int(baender.get("laeufe") or 0) < 2:
+        # Ein einzelner Lauf lässt alle Perzentile zusammenfallen. Das als Band
+        # zu zeichnen wäre eine Fläche der Breite null — sichtbar als nichts,
+        # aber mit einer Legende, die Streuung behauptet.
+        return None
+    return baender
+
+
+def _band_spuren(fig, baender: dict, ticks, mode: str) -> bool:
+    """Für jede Reihe p10–p90 als Fläche hinter die Linie legen.
+
+    **Erst die Fläche, dann die Linie** — Plotly zeichnet in Reihenfolge, und
+    eine Fläche über der Linie verschleierte gerade den Median.
+
+    Gezeichnet wird nur, so weit das Band trägt (`ticks`): Es ist so lang wie
+    der **kürzeste** Lauf des Ensembles. Die Linie darüber darf länger sein.
+    """
+
+    gezeichnet = False
+    breite = int(baender.get("ticks") or 0)
+    achse = list(ticks[:breite])
+
+    for name, (rolle, zweite_achse) in BANDREIHEN.items():
+        reihe = (baender.get("reihen") or {}).get(name) or {}
+        unten, oben = reihe.get("p10"), reihe.get("p90")
+        if not unten or not oben:
+            continue
+
+        fig.add_trace(
+            go.Scatter(
+                x=achse + achse[::-1],
+                y=list(oben[:breite]) + list(unten[:breite])[::-1],
+                fill="toself",
+                fillcolor=theme.band_fill(rolle, mode),
+                line=dict(width=0),
+                hoverinfo="skip",
+                # **Kurz, und das ist gemessen:** Die Legende steht waagerecht
+                # über der Zeichenfläche (`theme`, `y=1.02`). Mit den langen
+                # Namen «Ticketpreis: 80 % der Läufe» brach sie auf zwei Zeilen
+                # um und überlappte den Titel — im Browser nachgemessen, 58 px
+                # Legende gegen 21 px Titel auf derselben Höhe.
+                name=f"{'Buchung' if zweite_achse else 'Preis'}: 80 %",
+                legendgroup=name,
+            ),
+            secondary_y=zweite_achse,
+        )
+        gezeichnet = True
+    return gezeichnet
+
+
 def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
     """**Aussage 1: Preis und Nachfrage.**
 
@@ -108,6 +190,12 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
         price = ticks.get("ticket_price")
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # **Das Band zuerst** (P2.6): Es gehört hinter die Linien, und Plotly
+    # zeichnet in der Reihenfolge des Hinzufügens.
+    baender = _baender(run_dir)
+    hat_band = bool(baender) and _band_spuren(fig, baender, list(ticks["tick"]), mode)
+
     fig.add_trace(
         go.Scatter(
             x=ticks["tick"],
@@ -129,19 +217,37 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
     fig.update_yaxes(title_text="Ticketpreis (EUR)", secondary_y=False)
     fig.update_yaxes(title_text="Buchungsrate (0–1)", range=[0, 1.05], secondary_y=True)
     fig.update_xaxes(title_text="Tick")
+    # Der Titel bleibt kurz, **auch mit Band**: Die Zahl der Läufe steht in der
+    # Notiz darüber, und ein Titel, der sie wiederholt, wächst nur in die
+    # Legende hinein.
+    titel = "Wie die Nachfrage auf den Preis antwortet"
+
     blocks = [
         html.H3("Preis und Nachfrage", className=f"{ui.H3} mb-3"),
         ui.card(
             _graph(
-                theme.style_figure(
-                    fig, mode=mode, title="Wie die Nachfrage auf den Preis antwortet"
-                ),
+                theme.style_figure(fig, mode=mode, title=titel),
                 mode=mode,
             ),
             pad=False,
             class_name="p-2 mb-6",
         ),
     ]
+
+    if hat_band:
+        blocks.insert(
+            1,
+            ui.note(
+                f"Die Linien zeigen **diesen einen** Lauf. Die getönten Flächen zeigen, "
+                f"wo **80 Prozent der {int(baender['laeufe'])} Wiederholungen** dieses "
+                "Szenarios lagen — zwischen dem 10. und dem 90. Perzentil je Tick. "
+                "**Nicht Minimum und Maximum:** Deren Ränder wandern mit jeder weiteren "
+                "Wiederholung nach außen, ein solches Band sähe bei fünfzig Läufen "
+                "breiter aus als bei zehn, ohne dass sich am Modell etwas geändert "
+                f"hätte. Das Band reicht so weit wie der kürzeste Lauf (Tick "
+                f"{int(baender.get('ticks') or 0)})."
+            ),
+        )
 
     if "cost_pressure" in ticks.columns and "provider_markup" in ticks.columns:
         margin = go.Figure()
