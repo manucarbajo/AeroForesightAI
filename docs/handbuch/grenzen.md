@@ -37,6 +37,35 @@ schwanken die Ergebnisse zwischen Läufen spürbar. Bevor Sie einen Unterschied 
 eine Wirkung halten, prüfen Sie mit Wiederholungen, wie groß die natürliche
 Streuung ist — siehe [Läufe vergleichen](/doku/vergleiche).
 
+## Niemand wird älter
+
+Die simulierten Personen behalten ihr Alter über den ganzen Lauf. Das ist eine
+Entscheidung, keine Lücke — und sie hat zwei Gründe.
+
+Erstens: **Das Alter beeinflusst im Modell nichts.** Ob jemand 30 oder 70 ist,
+ändert an seiner Buchungsentscheidung exakt nichts; die hängt an
+Zahlungsbereitschaft, Einkommen, Umweltbewusstsein, Preisempfindlichkeit,
+Substitutionsbereitschaft und Sättigung. Eine Alterung würde also nur die
+Altersgrafik bewegen, sonst nichts.
+
+Zweitens: **Eine Runde ist kein Zeitraum.** Sie hat bewusst keine
+Kalenderbedeutung. Jemanden je Runde altern zu lassen hieße festzulegen, wie
+viele Jahre eine Runde ist — und damit genau die Bedeutung einzuführen, auf die
+das Modell verzichtet.
+
+**Wie Sie die Altersgrafik deshalb lesen:** Sie beschreibt die
+**Zusammensetzung** der Bevölkerung, nicht denselben Menschen über die Zeit.
+Wächst die Bevölkerung im Lauf, kommen neu gezogene Personen dazu; die
+Altersstruktur bleibt dabei stabil, weil sie aus derselben Verteilung stammen.
+Es ist eine stehende Gesellschaft, kein alternder Jahrgang.
+
+**Und eine Einschränkung dazu, die Sie kennen sollten:** Die Altersverteilung
+selbst ist derzeit unplausibel — rund 40 Prozent der gezogenen Personen liegen
+auf der Obergrenze von 90 Jahren. Das ist ein bekannter Fehler in der
+Parametrisierung und ändert nichts an den berechneten Zahlen, weil das Alter
+nirgends eingeht. Nutzen Sie die Altersgrafik bis auf Weiteres nicht als
+Aussage über die Reisenden.
+
 ## Die Parameter sind gesetzt, nicht geschätzt
 
 Die Parameter sind fachlich plausibel gewählt, aber nicht gegen historische

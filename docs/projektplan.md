@@ -1527,17 +1527,58 @@ Drei Dinge stehen darin:
 
 **Doku zieht mit:** `docs/cib_rationale.md`, `docs/handbuch/cib.md`, `docs/entscheidung_szenarienschicht_2026-08-29.md`.
 
-### P2.4 — Population altert nicht
+### P2.4 — Population altert nicht ✅ entschieden 2026-08-31
 
 **Befund:** `age` wird beim Sampling einmal gezogen und danach nie fortgeschrieben. Über einen langen Lauf bleibt die Bevölkerung eingefroren, während Preise, Regulierung und Werte sich bewegen — die Altersgruppen-Statistik beschreibt dauerhaft den Startzustand.
 
 **Fundstelle:** [`src/population/population_sampler.py:173-229`](../src/population/population_sampler.py) (Sampling), Auswertung Zeile 436-444, Modell [`src/models/population_models.py:42`](../src/models/population_models.py).
 
-**Was zu tun ist:** Klären, was ein Tick demografisch bedeuten soll — **ohne** Kalendersemantik einzuführen (Invariante 5). Optionen: Alterung als Property mit konfigurierbarer Rate, Kohortenwechsel bei definierten Tick-Abständen, oder bewusst dokumentieren, dass die Population statisch ist. Die dritte Option ist die billigste und für kurze Läufe vertretbar — dann muss sie aber im Handbuch stehen.
+#### Entschieden am 2026-08-31: kein Alterungspfad
 
-**Fertig wenn:** Entscheidung getroffen, im Code umgesetzt oder im Handbuch als Grenze benannt.
+> **Die Bevölkerung ist eine wiederholte Querschnittserhebung, keine Kohorte.** Jeder Tick zeigt «die Bevölkerung, wie sie ist» — nicht dieselben Personen, die älter werden. Das wird als **Grenze benannt**, nicht als Mechanik gebaut.
+
+**Drei Messungen tragen die Entscheidung**, alle am 2026-08-31 nachgerechnet:
+
+1. **`age` ist für das Verhalten inert — exakt.** Alle tausend Personen um zwanzig Jahre zu altern (Altersmittel 62,8 → 76,1) verändert die mittlere Buchungswahrscheinlichkeit um **0,00e+00**. Nicht «wenig»: `booking_probability` liest WTP, Einkommen, Umweltbewusstsein, Preissensitivität, Substitutionsbereitschaft und Sättigung — kein Alter. Und die Shift-Regeln erreichen es nicht; sie kennen genau drei Ziele.
+2. **Die Verteilung ist stationär, nicht eingefroren.** Wächst die Bevölkerung von 1000 auf 1080, kommen 80 **frisch gezogene** Personen dazu — aus derselben Verteilung. Die Altersstruktur verschiebt sich dadurch um höchstens **0,39 Prozentpunkte** je Gruppe. «Die Statistik beschreibt dauerhaft den Startzustand» ist also die falsche Beschreibung des Befunds: Sie beschreibt eine *stabile Gesellschaft*, und das ist eine andere Aussage.
+3. **Alterung hieße Kalenderzeit.** Eine Rate «Jahre je Tick» *ist* die Semantik, die [Invariante 5](../CLAUDE.md) ausschließt — egal ob als Property, als Kohortenwechsel oder als Anteilverschiebung. Man müsste eine harte Architektur-Invariante aufweichen, um eine Statistik zu bewegen, die in keine Rechnung eingeht.
+
+**Punkt 1 ist der tragende, und er kehrt die Frage um:** Solange das Alter nichts beeinflusst, wäre ein Alterungspfad reine Dekoration — Aufwand und ein gebrochener Invariant für eine Zahl im Diagramm. Wer Alterung *will*, will in Wahrheit, dass **Alter das Verhalten beeinflusst**; das ist eine Modellierungsentscheidung mit eigenem Belegbedarf und nicht dieses Paket.
+
+**Und ein Fund kam beim Entscheiden dazu, der es zusätzlich erledigt:** Die Altersverteilung ist nicht nur folgenlos, sie ist **falsch gezogen** — 41 % der Bevölkerung sind exakt 90 Jahre alt, geklemmt an der Obergrenze ([P2.9](#p29--die-altersverteilung-ist-an-die-wand-geklemmt--neu-2026-08-31)). Man würde also eine kaputte Verteilung sorgfältig altern lassen.
+
+**Was stattdessen passiert ist:**
+
+- Die Grenze steht im Handbuch (`grenzen.md`, `akteure.md`) — in der Sprache der Nutzer, nicht als Fußnote: Die Altersstatistik beschreibt die *Zusammensetzung*, nicht denselben Menschen über die Zeit.
+- Ein Wächter hält die **Voraussetzung** der Entscheidung fest, nicht ihr Ergebnis: [`tests/test_bevoelkerung_altert_nicht.py`](../tests/test_bevoelkerung_altert_nicht.py). Sobald `age` anfängt, Verhalten zu beeinflussen, fällt der tragende Grund weg — und dann gehört die Entscheidung neu auf den Tisch, statt stillschweigend weiterzugelten. **Ein rotes Ergebnis ist dort keine Panne, sondern genau diese Nachricht.**
+- Ein Nebenbefund ist separat behoben: Ein unbekanntes Ziel einer `shift_rule` verschwand still — eine Regel auf `age` tat nichts, ein Tippfehler wie `price_sensitivty` ebenso. Beides scheitert jetzt laut, beim Laden und zur Laufzeit.
+
+**Fertig wenn** ✅ **(2026-08-31):** Die Entscheidung ist getroffen, im Handbuch als Grenze benannt, und ein Wächter meldet, wenn ihre Voraussetzung entfällt.
 
 **Doku zieht mit:** `docs/handbuch/akteure.md`, `docs/handbuch/grenzen.md`, `docs/handbuch/tick-und-lauf.md`.
+
+### P2.9 — Die Altersverteilung ist an die Wand geklemmt ⚠️ neu 2026-08-31
+
+**Befund:** **41 % der simulierten Bevölkerung sind exakt 90 Jahre alt.** Nicht ungefähr — exakt, weil 90 die Obergrenze ist und dort geklemmt wird. Das Altersmittel liegt bei **62,8**, der Median bei 71,5, und **53 % sind über 65**. Als Bild einer Bevölkerung, die Flugreisen nachfragt, ist das offensichtlich falsch.
+
+**Ursache, gemessen:** `configs/properties.json` beschreibt `age` als `lognormal` mit `mean: 73.0, std_dev: 1.0`. `_sample_lognormal` bildet daraus `mu = log(73)` und `sigma = 1.0` — **`mean` wird also als Median der Lognormalen gelesen, nicht als ihr Mittelwert**, und `std_dev` als Sigma der *zugrundeliegenden Normalverteilung*. Eine Lognormal mit diesen Parametern hat den Median 73, den Mittelwert **120** und legt **41,8 %** ihrer Masse über 90. Genau dieser Anteil landet auf der Klemme.
+
+**Fundstelle:** [`src/population/population_sampler.py:91`](../src/population/population_sampler.py) (`_sample_lognormal`), [`configs/properties.json`](../configs/properties.json) (`individual_properties`, `age`).
+
+**Zwei Fehler, und sie sind zu trennen:**
+
+1. **Die Klemmung ist still.** `np.clip` am Ende macht aus jeder zu breiten Verteilung eine mit einem Stapel am Rand — ohne Meldung. Das ist der mechanische Teil, und er betrifft **jede** Verteilung, nicht nur `age`: Wer `wtp_eur` ähnlich parametrisiert, bekommt dasselbe, ohne es zu merken.
+2. **Die Parameter bedeuten nicht, was ihre Namen versprechen.** Ein Feld `mean` sollte den Mittelwert setzen. Das zu ändern verschiebt allerdings **jede** Lognormal-Verteilung der Config auf einen Schlag.
+
+**Was zu tun ist:** Erst 1, dann 2 — und **nicht in einem Commit**. Die Klemmung laut zu machen ist eine reine Schranke ohne Modellentscheidung: Übersteigt der geklemmte Anteil eine Schwelle, ist die Verteilung falsch parametrisiert und der Lauf soll es sagen. Erst danach die Frage, was `mean` heißen soll — und die zieht eine dritte nach sich, die **einen Beleg braucht**: Welche Altersverteilung ist für europäische Flugreisende eigentlich richtig? Die heutige Angabe hat keine Quelle, und eine neue frei zu wählen wäre dieselbe handgesetzte Zahl wie vorher, nur eine hübschere.
+
+**Warum es nicht dringend ist — und trotzdem eingeplant:** `age` beeinflusst **nichts** im Modell ([P2.4](#p24--population-altert-nicht--entschieden-2026-08-31)). Kein Preis, keine Buchung, keine Faktorlage hängt daran. Der Schaden ist deshalb kein Rechenfehler, sondern ein **Vertrauensschaden**: Die Altersgruppen-Ansicht des Dashboards zeigt einem Fachprüfer eine Bevölkerung, die es nicht geben kann, und stellt damit alles daneben in Frage.
+
+**Fallstrick:** Wer nur die Config repariert, ohne die Klemmung laut zu machen, behebt einen Fall und lässt den Mechanismus stehen. Die nächste Verteilung, die über ihre Grenze läuft, fällt wieder niemandem auf.
+
+**Fertig wenn:** Eine Verteilung, die einen nennenswerten Teil ihrer Masse an eine Grenze klemmt, sagt es; `mean` bedeutet, was es heißt; und die Altersverteilung trägt eine Quelle wie die Buchungskoeffizienten seit P2.1.
+
+**Doku zieht mit:** `docs/handbuch/akteure.md`, `docs/handbuch/ref-config.md`, `CLAUDE.md` (Glossar, falls sich die Bedeutung von `mean` verschiebt).
 
 ### P2.5 — State Explorer: Grounding durchsetzen statt darum bitten
 
