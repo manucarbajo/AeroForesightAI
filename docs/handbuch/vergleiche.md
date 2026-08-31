@@ -200,6 +200,19 @@ mehr — und die vier zusätzlichen sagen nichts über die Welt. Die Stresstests
 sind nicht verschwunden: Sie lassen sich weiterhin einzeln starten, und die
 Auswahl schreibt jetzt «Stresstest» an die Kachel.
 
+Am **2026-08-31** kam ein sechster Schnitt dazu, und er ist der tiefste seit
+Langem: **Das Alter prägt jetzt, wer eine simulierte Person ist.** Vorher wurde
+jedes Merkmal unabhängig gezogen und das Alter beeinflusste die
+Buchungsentscheidung überhaupt nicht; seither bestimmt es Einkommen,
+Zahlungsbereitschaft, Preisempfindlichkeit, Umweltbewusstsein und
+Bahnbereitschaft mit. Zugleich wurde die Altersverteilung selbst korrigiert —
+sie stammt jetzt aus Eurostat-Daten statt aus einer Parametrisierung, die 41
+Prozent der Bevölkerung auf exakt 90 Jahre setzte.
+
+**Jede Zahl bewegt sich dadurch.** Läufe von vor und nach diesem Datum gehören
+nicht nebeneinander. Woran Sie es erkennen: `run_metadata.json` hält unter
+`code_version` fest, mit welchem Stand gerechnet wurde.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

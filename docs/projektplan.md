@@ -1527,11 +1527,54 @@ Drei Dinge stehen darin:
 
 **Doku zieht mit:** `docs/cib_rationale.md`, `docs/handbuch/cib.md`, `docs/entscheidung_szenarienschicht_2026-08-29.md`.
 
-### P2.4 — Population altert nicht ✅ entschieden 2026-08-31
+### P2.4 — Das Alter prägt die Person ✅ erledigt 2026-08-31 (erste Fassung korrigiert)
 
 **Befund:** `age` wird beim Sampling einmal gezogen und danach nie fortgeschrieben. Über einen langen Lauf bleibt die Bevölkerung eingefroren, während Preise, Regulierung und Werte sich bewegen — die Altersgruppen-Statistik beschreibt dauerhaft den Startzustand.
 
 **Fundstelle:** [`src/population/population_sampler.py:173-229`](../src/population/population_sampler.py) (Sampling), Auswertung Zeile 436-444, Modell [`src/models/population_models.py:42`](../src/models/population_models.py).
+
+#### Korrektur am 2026-08-31, noch am selben Tag
+
+> **Die erste Fassung dieses Pakets hat die Frage falsch herum gestellt.** Sie stellte fest, dass `age` für das Verhalten **exakt** folgenlos ist, und behandelte das als *Begründung* dafür, nichts zu bauen. Das war der **Befund**, nicht die Rechtfertigung. Ein Achtzehnjähriger ist ein anderer Reisender als ein Siebzigjähriger — dass das Modell den Unterschied nicht kannte, war die Lücke, und die ist jetzt geschlossen.
+
+**Was beim Nachmessen herauskam, war schlimmer als «age steht nicht im Nutzenterm»:** **Alle** Merkmale wurden unabhängig gezogen. Die Korrelation des Alters mit Einkommen, Zahlungsbereitschaft, Preisempfindlichkeit, Umweltbewusstsein und Substitutionsbereitschaft lag durchgängig unter **0,08** — reines Stichprobenrauschen. Ein 90-Jähriger hatte genauso wahrscheinlich ein hohes Einkommen und niedrige Preisempfindlichkeit wie ein 25-Jähriger. Die Bevölkerung war ein Beutel unkorrelierter Zahlen, kein Bild von Menschen.
+
+**Die Gestaltungsentscheidung — und sie ist leicht falsch zu treffen:** Das Alter formt die Merkmale **beim Ziehen** (`AltersProfil` in `PropertiesConfig`) und steht **nicht** als Term in `booking_probability`. Alter verursacht keine Buchung; es wirkt über Einkommen, Lebensphase und Reiseanlass — und die stehen dort bereits. Ein zusätzlicher Alters-Term zählte doppelt, und die Nutzenfunktion ist ein Discrete-Choice-Modell über *entscheidungsrelevante Merkmale* (Ben-Akiva/Lerman 1985), nicht über Soziodemografie.
+
+**Fünf Kanäle, Richtung belegt und Höhe gesetzt** — dieselbe Trennung wie bei den Buchungskoeffizienten (P2.1), und `docs/research/references.md` verlangt sie für das Alter ausdrücklich: «empirisch als erklärende Variable genutzt, **meist ohne universelle Formel**».
+
+| Kanal | Form | Wirkung |
+| --- | --- | --- |
+| Einkommen | Glocke, Gipfel bei 50 | ±25 % um den Basiswert |
+| Zahlungsbereitschaft | folgt dem Einkommen | dito |
+| Preisempfindlichkeit | Kehrseite des Einkommens | +0,20 an den Rändern |
+| Umweltbewusstsein | linear fallend | −0,020 je Jahrzehnt |
+| Bahnbereitschaft | linear fallend | −0,015 je Jahrzehnt |
+
+**Das Ergebnis, bei 140 EUR gemessen:**
+
+| Gruppe | Einkommen | Preisempf. | **Buchungsneigung** |
+| --- | ---: | ---: | ---: |
+| 18–25 | 0,871 | 0,705 | **25,2 %** |
+| 26–35 | 1,026 | 0,659 | **47,8 %** |
+| 36–50 | 1,175 | 0,604 | **57,8 %** |
+| 51–65 | 1,150 | 0,632 | **54,7 %** |
+| 66+ | 0,909 | 0,712 | **36,2 %** |
+
+Der Glockenverlauf des Erwerbslebens — Menschen in der Lebensmitte fliegen am meisten. Das ist keine Kalibrierung, sondern die Folge der eingebauten Form; dass sie der Realität entspricht, ist das Argument für die Form.
+
+**Ein Nebenergebnis, auf das nicht hingebaut wurde und das deshalb zählt:** Die **Preiselastizität** des Modells verbesserte sich von **−1,83 auf −1,27**. Das Metaanalyse-Mittel bei Brons et al. (2002) liegt bei −1,146 mit Standardabweichung 0,619 — statt 1,1 Standardabweichungen sind es jetzt **0,2**. Auch die Spanne über plausible Preise schrumpfte von −0,58…−3,54 auf −0,46…−2,76 und liegt damit nicht mehr jenseits des niedrigsten aller 204 Schätzwerte. **Der Grund ist mechanisch:** Eine wirklich heterogene Bevölkerung kippt nicht mehr geschlossen über die Erschwinglichkeitsschwelle.
+
+**Und ein Ergebnis, das schlechter wurde — hier, damit es nicht untergeht:** Der Backtest verliert auf der Nachfrageseite leicht (21,81 → **23,43** vor der Pandemie), die Preisseite bleibt (1,29 → **1,27**). **Nicht zurückgebaut:** Die Änderung ist durch den Mechanismus begründet, nicht durch die Punktzahl, und [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--einkommen-gemessen-2026-08-31-ursache-liegt-tiefer) sagt bereits, dass die Nachfragelücke strukturell ist. Ein Modell zurückzudrehen, weil es nach einer Korrektur auf *einer* Kennzahl schlechter abschneidet, ist genau die Anpassung an den Backtest, gegen die dieses Projekt anschreibt.
+
+**Was von der ersten Fassung gilt — mit neuer Begründung:** **Es gibt weiterhin keinen Alterungspfad.** Nicht mehr, weil das Alter folgenlos wäre, sondern weil echte Alterung hieße, alle abgeleiteten Merkmale je Tick neu zu bestimmen — aus einer Person würde eine andere — *und* festzulegen, wie viele Jahre ein Tick ist. Letzteres ist die Kalendersemantik, die [Invariante 5](../CLAUDE.md) ausschließt. Die Bevölkerung bleibt eine **wiederholte Querschnittserhebung**: Wächst sie, kommen frisch gezogene Personen dazu, und die Altersstruktur bleibt stabil.
+
+**Daraus folgt eine Eigenschaft, die überrascht und richtig ist:** Eine *bestehende* Person nachträglich zu altern ändert ihr Verhalten nicht — ihr Einkommen wurde beim Ziehen festgelegt. `tests/test_alter_formt_die_person.py` hält genau das fest, damit es niemand für einen Fehler hält.
+
+**Der Wächter:** [`tests/test_alter_formt_die_person.py`](../tests/test_alter_formt_die_person.py), zehn Zusagen. Er ersetzt `test_bevoelkerung_altert_nicht.py`, dessen Prämisse mit dieser Korrektur entfallen ist.
+
+<details>
+<summary>Die erste Fassung vom selben Tag — als Beleg, wie die Frage falsch stand</summary>
 
 #### Entschieden am 2026-08-31: kein Alterungspfad
 
@@ -1545,7 +1588,7 @@ Drei Dinge stehen darin:
 
 **Punkt 1 ist der tragende, und er kehrt die Frage um:** Solange das Alter nichts beeinflusst, wäre ein Alterungspfad reine Dekoration — Aufwand und ein gebrochener Invariant für eine Zahl im Diagramm. Wer Alterung *will*, will in Wahrheit, dass **Alter das Verhalten beeinflusst**; das ist eine Modellierungsentscheidung mit eigenem Belegbedarf und nicht dieses Paket.
 
-**Und ein Fund kam beim Entscheiden dazu, der es zusätzlich erledigt:** Die Altersverteilung ist nicht nur folgenlos, sie ist **falsch gezogen** — 41 % der Bevölkerung sind exakt 90 Jahre alt, geklemmt an der Obergrenze ([P2.9](#p29--die-altersverteilung-ist-an-die-wand-geklemmt--neu-2026-08-31)). Man würde also eine kaputte Verteilung sorgfältig altern lassen.
+**Und ein Fund kam beim Entscheiden dazu, der es zusätzlich erledigt:** Die Altersverteilung ist nicht nur folgenlos, sie ist **falsch gezogen** — 41 % der Bevölkerung sind exakt 90 Jahre alt, geklemmt an der Obergrenze ([P2.9](#p29--die-altersverteilung-ist-an-die-wand-geklemmt--erledigt-2026-08-31)). Man würde also eine kaputte Verteilung sorgfältig altern lassen.
 
 **Was stattdessen passiert ist:**
 
@@ -1555,9 +1598,13 @@ Drei Dinge stehen darin:
 
 **Fertig wenn** ✅ **(2026-08-31):** Die Entscheidung ist getroffen, im Handbuch als Grenze benannt, und ein Wächter meldet, wenn ihre Voraussetzung entfällt.
 
+</details>
+
+**Fertig wenn** ✅ **(2026-08-31, korrigierte Fassung):** Das Alter beeinflusst nachweislich das Verhalten — gemessen an der Buchungsneigung je Altersgruppe, nicht an der Anwesenheit einer Formel; jeder Koeffizient trägt seine Herkunft mit der Trennung belegt/gesetzt; die Altersverteilung stammt aus Daten; und das Handbuch sagt, was das Modell mit dem Alter tut und was nicht.
+
 **Doku zieht mit:** `docs/handbuch/akteure.md`, `docs/handbuch/grenzen.md`, `docs/handbuch/tick-und-lauf.md`.
 
-### P2.9 — Die Altersverteilung ist an die Wand geklemmt ⚠️ neu 2026-08-31
+### P2.9 — Die Altersverteilung ist an die Wand geklemmt ✅ erledigt 2026-08-31
 
 **Befund:** **41 % der simulierten Bevölkerung sind exakt 90 Jahre alt.** Nicht ungefähr — exakt, weil 90 die Obergrenze ist und dort geklemmt wird. Das Altersmittel liegt bei **62,8**, der Median bei 71,5, und **53 % sind über 65**. Als Bild einer Bevölkerung, die Flugreisen nachfragt, ist das offensichtlich falsch.
 
@@ -1572,11 +1619,24 @@ Drei Dinge stehen darin:
 
 **Was zu tun ist:** Erst 1, dann 2 — und **nicht in einem Commit**. Die Klemmung laut zu machen ist eine reine Schranke ohne Modellentscheidung: Übersteigt der geklemmte Anteil eine Schwelle, ist die Verteilung falsch parametrisiert und der Lauf soll es sagen. Erst danach die Frage, was `mean` heißen soll — und die zieht eine dritte nach sich, die **einen Beleg braucht**: Welche Altersverteilung ist für europäische Flugreisende eigentlich richtig? Die heutige Angabe hat keine Quelle, und eine neue frei zu wählen wäre dieselbe handgesetzte Zahl wie vorher, nur eine hübschere.
 
-**Warum es nicht dringend ist — und trotzdem eingeplant:** `age` beeinflusst **nichts** im Modell ([P2.4](#p24--population-altert-nicht--entschieden-2026-08-31)). Kein Preis, keine Buchung, keine Faktorlage hängt daran. Der Schaden ist deshalb kein Rechenfehler, sondern ein **Vertrauensschaden**: Die Altersgruppen-Ansicht des Dashboards zeigt einem Fachprüfer eine Bevölkerung, die es nicht geben kann, und stellt damit alles daneben in Frage.
+**Warum es nicht dringend ist — und trotzdem eingeplant:** `age` beeinflusst **nichts** im Modell ([P2.4](#p24--das-alter-prägt-die-person--erledigt-2026-08-31-erste-fassung-korrigiert)). Kein Preis, keine Buchung, keine Faktorlage hängt daran. Der Schaden ist deshalb kein Rechenfehler, sondern ein **Vertrauensschaden**: Die Altersgruppen-Ansicht des Dashboards zeigt einem Fachprüfer eine Bevölkerung, die es nicht geben kann, und stellt damit alles daneben in Frage.
 
 **Fallstrick:** Wer nur die Config repariert, ohne die Klemmung laut zu machen, behebt einen Fall und lässt den Mechanismus stehen. Die nächste Verteilung, die über ihre Grenze läuft, fällt wieder niemandem auf.
 
-**Fertig wenn:** Eine Verteilung, die einen nennenswerten Teil ihrer Masse an eine Grenze klemmt, sagt es; `mean` bedeutet, was es heißt; und die Altersverteilung trägt eine Quelle wie die Buchungskoeffizienten seit P2.1.
+#### Erledigt am 2026-08-31, in der vorgesehenen Reihenfolge
+
+**Zuerst die Schranke, dann die Zahl** — wie oben verlangt:
+
+- `pruefe_verteilung` zieht vor dem Aufbau der Bevölkerung eine Stichprobe je Merkmal und weist eine Verteilung ab, die mehr als **10 %** ihrer Masse an eine Grenze klemmt (`KLEMM_DECKEL`). Sie läuft mit **eigenem Generator**, damit die Prüfziehung den Zufallsstrom des Laufs nicht verschiebt — sonst hinge die Bevölkerung daran, ob geprüft wurde. Der Wächter deckt **jedes** Merkmal ab, nicht nur `age`.
+- Die Altersverteilung kommt aus **echten Daten**: Eurostat `demo_pjangroup`, EU-27, Stand 1.1.2023 — Mittelwert **50,8**, Standardabweichung **18,8**, begrenzt auf **18–90**. Untergrenze 18, weil ein Individuum hier eine Buchungsentscheidung trifft; Kinder buchen nicht. Geklemmt werden damit 6,0 % statt 41,8 %, gemessen liegen jetzt 1,6 % auf der Obergrenze statt 41 %.
+- **Bewusst die Gesamtbevölkerung und nicht die der Flugreisenden.** Wer davon fliegt, soll das Modell über Einkommen und Zahlungsbereitschaft ergeben ([P2.4](#p24--das-alter-prägt-die-person--erledigt-2026-08-31-erste-fassung-korrigiert)), statt es in die Ziehung vorwegzunehmen. Eine Verteilung der *Reisenden* hineinzuschreiben hieße, die Antwort vor die Rechnung zu stellen — derselbe Fehler, den P2.0 an der CIB-Schicht abgeräumt hat.
+- `IndividualProperty.quelle` trägt die Herkunft, wie `BookingCoefficient` seit P2.1.
+
+**Beim Beschaffen ist der bekannte Fallstrick wieder eingetreten**, und diesmal hat das Nachrechnen ihn gefangen: Für **2024** liefert Eurostat die Gruppen `Y30-34` und `Y45-49` **nicht** — die zurückgegebenen Gruppen summieren sich auf 370 von 449 Millionen. Wer einfach summiert, bekommt eine Verteilung ohne zwei Erwerbsalters-Gruppen und damit eine zu alte. Genommen ist deshalb **2023**, wo die Gruppen sich **exakt** auf `TOTAL` addieren. Dieselbe Lehre wie beim verschwundenen EEX-Jahrgang in P2.7: *Eine Summe gegen die Gesamtsumme zu halten kostet eine Zeile und fängt den stillen Fehler.*
+
+**Was offen bleibt, kleiner als gedacht:** `mean` heißt bei `lognormal` weiterhin *Median* — die Falle steckt im Feldnamen. Sie ist jetzt im Docstring von `_sample_lognormal` benannt und durch den Klemm-Wächter entschärft: Eine Lognormal, die deswegen aus dem Ruder läuft, scheitert laut. Die Umbenennung selbst verschöbe **jede** Lognormal-Verteilung der Config auf einen Schlag und gehört deshalb nicht hier hinein.
+
+**Fertig wenn** ✅ **(2026-08-31):** Eine Verteilung, die einen nennenswerten Teil ihrer Masse an eine Grenze klemmt, sagt es; die Altersverteilung trägt eine Quelle wie die Buchungskoeffizienten seit P2.1.
 
 **Doku zieht mit:** `docs/handbuch/akteure.md`, `docs/handbuch/ref-config.md`, `CLAUDE.md` (Glossar, falls sich die Bedeutung von `mean` verschiebt).
 

@@ -96,6 +96,10 @@ class IndividualProperty(BaseModel):
     alpha: float | None = None
     beta: float | None = None
     modifiers: dict[str, float] = Field(default_factory=dict)
+    #: Woher die Verteilungsparameter stammen. Freiwillig — aber wo sie steht,
+    #: ist sie prüfbar, und das ist der Unterschied zwischen einer belegten und
+    #: einer gesetzten Zahl (dieselbe Trennung wie bei `BookingCoefficient`).
+    quelle: str = ""
 
 
 class ShiftRule(BaseModel):
@@ -227,6 +231,124 @@ class BookingCoefficient(BaseModel):
         return v
 
 
+class AltersProfil(BaseModel):
+    """Wie das Alter die Merkmale einer Person zieht (P2.4, 2026-08-31).
+
+    **Warum das Alter hier steht und nicht in `booking_probability`:** Alter
+    verursacht keine Buchung. Es wirkt über Einkommen, Lebensphase und
+    Reiseanlass — und all das steht bereits als eigenes Merkmal im Nutzenterm.
+    Ein zusätzlicher Alters-Term dort würde **doppelt zählen**, und die
+    Nutzenfunktion ist ein Discrete-Choice-Modell über *entscheidungsrelevante
+    Merkmale* (Ben-Akiva/Lerman 1985), nicht über Soziodemografie.
+
+    Das Alter gehört deshalb **vor** die Entscheidung: Es formt beim Ziehen die
+    Merkmale, mit denen die Person dann entscheidet.
+
+    **Der Befund, der das ausgelöst hat** (gemessen am 2026-08-31): Alle
+    Merkmale wurden **unabhängig** gezogen. Die Korrelation des Alters mit
+    Einkommen, Zahlungsbereitschaft, Preisempfindlichkeit, Umweltbewusstsein
+    und Substitutionsbereitschaft lag durchgängig unter 0,08 — reines
+    Stichprobenrauschen. Ein 90-Jähriger hatte genauso wahrscheinlich ein hohes
+    Einkommen und niedrige Preisempfindlichkeit wie ein 25-Jähriger. Und `age`
+    war für das Verhalten **exakt** folgenlos: Alle um zwanzig Jahre zu altern
+    änderte die Buchungsrate um 0,00e+00.
+
+    **Richtung belegt, Höhe gesetzt** — dieselbe Trennung wie bei den
+    Buchungskoeffizienten (P2.1), und `docs/research/references.md` sagt sie für
+    das Alter ausdrücklich: «Alter wird empirisch als erklärende Variable in
+    Mobilitäts- und Nachfragemodellen genutzt, **meist ohne universelle
+    Formel**.» Jeder Wert unten trägt deshalb, was belegt ist und was nicht.
+    """
+
+    gipfel_alter: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=50.0,
+            quelle=(
+                "Alter des Einkommensmaximums über den Lebenszyklus. Die Form — ein "
+                "Anstieg bis zur Lebensmitte und ein Rückgang danach — ist in der "
+                "Einkommensforschung Standard (Lebenszyklus-Verdienstprofile). Der "
+                "Wert 50 ist in diesem Modell **gesetzt** und nicht aus Daten "
+                "geschätzt; die EU-Erwerbseinkommen erreichen ihr Maximum je nach "
+                "Land und Erhebung zwischen etwa 45 und 55."
+            ),
+        )
+    )
+    gipfel_breite: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=18.0,
+            quelle=(
+                "Wie breit der Gipfel ist, in Jahren (Streuung der Glockenform). "
+                "Belegt ist nur, dass der Abfall zu beiden Rändern allmählich und "
+                "nicht sprunghaft verläuft. Der Wert ist **gesetzt**: Er ergibt bei "
+                "18 und 90 Jahren rund ein Fünftel des Gipfelwerts."
+            ),
+        )
+    )
+    einkommen_spanne: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=0.5,
+            quelle=(
+                "Wie weit der Einkommensfaktor zwischen Rand und Gipfel des "
+                "Lebenszyklus schwankt: ±25 % um den gezogenen Basiswert, also rund "
+                "Faktor 1,5 zwischen Anfang zwanzig und Lebensmitte. Die Richtung "
+                "ist belegt, die **Höhe gesetzt** — reale Lebenszyklus-Profile "
+                "streuen stärker, aber dieser Faktor multipliziert einen bereits "
+                "gezogenen Basiswert und würde sich sonst mit ihm aufschaukeln."
+            ),
+        )
+    )
+    preissensitivitaet_kopplung: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=0.20,
+            quelle=(
+                "Wie stark eine Lage fern des Einkommensgipfels die "
+                "Preisempfindlichkeit hebt. **Kein zweiter Alterseffekt**, sondern "
+                "die Kehrseite desselben: Wer wenig verfügbares Einkommen hat, "
+                "reagiert stärker auf den Preis — das ist in der "
+                "Preiselastizitätsliteratur der Regelfall (Brons et al. 2002 führen "
+                "das Einkommen ausdrücklich als Determinante). Der Wert ist gesetzt."
+            ),
+        )
+    )
+    awareness_je_jahrzehnt: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=-0.020,
+            quelle=(
+                "Umweltbewusstsein je Jahrzehnt Altersunterschied, bezogen auf 50 "
+                "Jahre. Negativ, weil jüngere Kohorten in europäischen Erhebungen "
+                "durchgängig höhere Klimabesorgnis angeben. Die **Richtung** ist "
+                "belegt, die Höhe gesetzt: über die Spanne 18–90 ergibt sie rund "
+                "0,14 Punkte auf einer Skala von 0 bis 1 — bewusst klein gegenüber "
+                "der individuellen Streuung, weil Alter dort ein schwacher "
+                "Prädiktor ist."
+            ),
+        )
+    )
+    substitution_je_jahrzehnt: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=-0.015,
+            quelle=(
+                "Bereitschaft, die Bahn statt des Flugzeugs zu nehmen, je Jahrzehnt "
+                "Altersunterschied. Negativ aus zwei belegten Richtungen: Jüngere "
+                "nutzen den Schienenverkehr stärker, und lange Bahnfahrten setzen "
+                "körperliche Belastbarkeit und Zeitbudget voraus. Höhe gesetzt."
+            ),
+        )
+    )
+
+    def lebenszyklus(self, alter: float) -> float:
+        """Wo im Erwerbslebenszyklus diese Person steht — 1,0 am Gipfel, gegen 0 an den Rändern.
+
+        Eine Glockenform und keine Treppe: Ein Sprung an einer Altersgrenze
+        erzeugte zwei künstlich verschiedene Gruppen, wo es einen Übergang gibt.
+        """
+
+        import math
+
+        breite = max(1.0, self.gipfel_breite.wert)
+        return math.exp(-((alter - self.gipfel_alter.wert) ** 2) / (2.0 * breite**2))
+
+
 class BookingModelConfig(BaseModel):
     """Die Koeffizienten der Buchungsentscheidung (P2.1).
 
@@ -328,6 +450,8 @@ class PropertiesConfig(BaseModel):
     market_feedback: MarketFeedbackConfig = Field(default_factory=MarketFeedbackConfig)
     saturation: SaturationConfig = Field(default_factory=SaturationConfig)
     booking_model: BookingModelConfig = Field(default_factory=BookingModelConfig)
+    #: Wie das Alter die Merkmale zieht (P2.4). Siehe `AltersProfil`.
+    alters_profil: AltersProfil = Field(default_factory=AltersProfil)
 
     def system_property_ids(self) -> list[str]:
         return [prop.id for prop in self.system_properties]

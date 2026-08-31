@@ -7,58 +7,58 @@
 | Jahr | Modell | Zielreihe | Abstand | |
 | --- | ---: | ---: | ---: | --- |
 | 2015 | 100.00 | 100.00 | +0.00 |  |
-| 2016 | 95.83 | 97.42 | -1.59 |  |
-| 2017 | 107.18 | 102.64 | +4.54 |  |
-| 2018 | 104.62 | 104.95 | -0.33 |  |
-| 2019 | 107.00 | 107.00 | +0.00 |  |
-| 2020 | 100.93 | 102.48 | -1.55 | ungewertet |
-| 2021 | 105.64 | 105.98 | -0.34 | ungewertet |
-| 2022 | 105.95 | 131.93 | -25.98 |  |
-| 2023 | 104.15 | 144.57 | -40.42 |  |
-| 2024 | 104.29 | 148.25 | -43.96 |  |
+| 2016 | 97.78 | 97.42 | +0.36 |  |
+| 2017 | 105.83 | 102.64 | +3.19 |  |
+| 2018 | 107.60 | 104.95 | +2.65 |  |
+| 2019 | 107.16 | 107.00 | +0.16 |  |
+| 2020 | 104.35 | 102.48 | +1.87 | ungewertet |
+| 2021 | 108.19 | 105.98 | +2.21 | ungewertet |
+| 2022 | 105.93 | 131.93 | -26.00 |  |
+| 2023 | 102.43 | 144.57 | -42.14 |  |
+| 2024 | 104.47 | 148.25 | -43.78 |  |
 
 | Kennzahl | Wert |
 | --- | ---: |
-| Mittlerer Abstand, bewertete Jahre | 14.60 |
-| Größter Abstand | 43.96 (2024) |
-| davon 2015–2019 | 1.29 |
-| davon 2022–2024 | 36.79 |
+| Mittlerer Abstand, bewertete Jahre | 14.78 |
+| Größter Abstand | 43.78 (2024) |
+| davon 2015–2019 | 1.27 |
+| davon 2022–2024 | 37.31 |
 | Richtung der Jahresveränderung getroffen | 4/7 |
-| Saisonschwankung Modell / Ziel | 10.1 / 39.8 |
+| Saisonschwankung Modell / Ziel | 11.5 / 39.8 |
 
 - Verglichen wird der Index (Basis 2015 = 100) auf **Jahresmitteln**, nicht das Preisniveau und nicht monatlich.
 - Die absoluten Euro-Beträge des Modells hängen an ungeeichten Koeffizienten (P2.1); ein Niveauvergleich prüfte eine Genauigkeit, die nie behauptet wurde.
 - 2020, 2021 sind mitgerechnet, aber nicht bewertet: Der Einbruch war keine Preiswirkung, und das Modell kennt keine Reisebeschränkung.
-- Die Zielreihe schwankt saisonal um 40 Indexpunkte im Jahr, das Modell um 10. **Ein Monatsvergleich misst deshalb vor allem die fehlende Saison** — deswegen die Jahresmittel.
+- Die Zielreihe schwankt saisonal um 40 Indexpunkte im Jahr, das Modell um 11. **Ein Monatsvergleich misst deshalb vor allem die fehlende Saison** — deswegen die Jahresmittel.
 
 ## Nachfrage: `booking_rate` gegen `fluggaeste`
 
 | Jahr | Modell | Zielreihe | Abstand | |
 | --- | ---: | ---: | ---: | --- |
 | 2015 | 100.00 | 100.00 | +0.00 |  |
-| 2016 | 99.60 | 106.34 | -6.74 |  |
-| 2017 | 83.40 | 114.54 | -31.14 |  |
-| 2018 | 89.25 | 121.54 | -32.29 |  |
-| 2019 | 87.42 | 126.28 | -38.86 |  |
-| 2020 | 89.69 | 33.76 | +55.93 | ungewertet |
-| 2021 | 85.33 | 45.60 | +39.73 | ungewertet |
-| 2022 | 81.36 | 99.63 | -18.27 |  |
-| 2023 | 81.32 | 118.70 | -37.38 |  |
-| 2024 | 88.30 | 128.38 | -40.08 |  |
+| 2016 | 94.44 | 106.34 | -11.90 |  |
+| 2017 | 85.66 | 114.54 | -28.88 |  |
+| 2018 | 84.76 | 121.54 | -36.78 |  |
+| 2019 | 86.68 | 126.28 | -39.60 |  |
+| 2020 | 84.48 | 33.76 | +50.72 | ungewertet |
+| 2021 | 80.02 | 45.60 | +34.42 | ungewertet |
+| 2022 | 78.18 | 99.63 | -21.45 |  |
+| 2023 | 80.57 | 118.70 | -38.13 |  |
+| 2024 | 84.82 | 128.38 | -43.56 |  |
 
 | Kennzahl | Wert |
 | --- | ---: |
-| Mittlerer Abstand, bewertete Jahre | 25.60 |
-| Größter Abstand | 40.08 (2024) |
-| davon 2015–2019 | 21.81 |
-| davon 2022–2024 | 31.91 |
-| Richtung der Jahresveränderung getroffen | 3/7 |
-| Saisonschwankung Modell / Ziel | 25.3 / 75.9 |
+| Mittlerer Abstand, bewertete Jahre | 27.54 |
+| Größter Abstand | 43.57 (2024) |
+| davon 2015–2019 | 23.43 |
+| davon 2022–2024 | 34.38 |
+| Richtung der Jahresveränderung getroffen | 4/7 |
+| Saisonschwankung Modell / Ziel | 28.2 / 75.9 |
 
 - Verglichen wird der Index (Basis 2015 = 100) auf **Jahresmitteln**, nicht das Preisniveau und nicht monatlich.
 - Die absoluten Euro-Beträge des Modells hängen an ungeeichten Koeffizienten (P2.1); ein Niveauvergleich prüfte eine Genauigkeit, die nie behauptet wurde.
 - 2020, 2021 sind mitgerechnet, aber nicht bewertet: Der Einbruch war keine Preiswirkung, und das Modell kennt keine Reisebeschränkung.
-- Die Zielreihe schwankt saisonal um 76 Indexpunkte im Jahr, das Modell um 25. **Ein Monatsvergleich misst deshalb vor allem die fehlende Saison** — deswegen die Jahresmittel.
+- Die Zielreihe schwankt saisonal um 76 Indexpunkte im Jahr, das Modell um 28. **Ein Monatsvergleich misst deshalb vor allem die fehlende Saison** — deswegen die Jahresmittel.
 
 ## Datenquellen
 

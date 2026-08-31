@@ -37,34 +37,46 @@ schwanken die Ergebnisse zwischen Läufen spürbar. Bevor Sie einen Unterschied 
 eine Wirkung halten, prüfen Sie mit Wiederholungen, wie groß die natürliche
 Streuung ist — siehe [Läufe vergleichen](/doku/vergleiche).
 
-## Niemand wird älter
+## Niemand wird älter — aber das Alter zählt
 
-Die simulierten Personen behalten ihr Alter über den ganzen Lauf. Das ist eine
-Entscheidung, keine Lücke — und sie hat zwei Gründe.
+Seit dem 31. August 2026 prägt das Alter, wer eine simulierte Person ist. Beim
+Ziehen bestimmt es mit über ihr Einkommen, ihre Zahlungsbereitschaft, ihre
+Preisempfindlichkeit, ihr Umweltbewusstsein und ihre Bereitschaft, die Bahn zu
+nehmen. Das Einkommen folgt dabei einer **Glocke über den Lebenszyklus** — es
+steigt bis zur Lebensmitte und fällt danach —, Umweltbewusstsein und
+Bahnbereitschaft nehmen mit dem Alter ab.
 
-Erstens: **Das Alter beeinflusst im Modell nichts.** Ob jemand 30 oder 70 ist,
-ändert an seiner Buchungsentscheidung exakt nichts; die hängt an
-Zahlungsbereitschaft, Einkommen, Umweltbewusstsein, Preisempfindlichkeit,
-Substitutionsbereitschaft und Sättigung. Eine Alterung würde also nur die
-Altersgrafik bewegen, sonst nichts.
+Im Ergebnis buchen Menschen in der Lebensmitte am meisten: Bei einem
+Ticketpreis von 140 Euro liegt die Buchungsneigung der 18- bis 25-Jährigen bei
+rund 25 Prozent, der 36- bis 50-Jährigen bei 58 Prozent und der über
+65-Jährigen bei 36 Prozent.
 
-Zweitens: **Eine Runde ist kein Zeitraum.** Sie hat bewusst keine
-Kalenderbedeutung. Jemanden je Runde altern zu lassen hieße festzulegen, wie
-viele Jahre eine Runde ist — und damit genau die Bedeutung einzuführen, auf die
-das Modell verzichtet.
+**Davor war das anders, und es lohnt sich zu wissen:** Bis dahin wurde jedes
+Merkmal unabhängig gezogen. Ein 90-Jähriger hatte genauso wahrscheinlich ein
+hohes Einkommen und eine niedrige Preisempfindlichkeit wie ein 25-Jähriger, und
+das Alter beeinflusste die Buchungsentscheidung überhaupt nicht. Läufe von vor
+diesem Datum sind mit späteren nicht vergleichbar.
+
+**Was weiterhin gilt: Niemand wird im Lauf älter.** Das Alter wirkt beim Ziehen
+einer Person, nicht über die Zeit. Wer dieselbe Person zehn Runden später
+ansieht, findet sie unverändert alt — und mit unverändertem Einkommen.
+
+Das ist eine Entscheidung, keine Lücke. Eine Runde hat bewusst keine
+Kalenderbedeutung; jemanden je Runde altern zu lassen hieße festzulegen, wie
+viele Jahre eine Runde ist. Und es hieße, alle abgeleiteten Merkmale in jeder
+Runde neu zu bestimmen — aus einer Person würde damit eine andere.
 
 **Wie Sie die Altersgrafik deshalb lesen:** Sie beschreibt die
 **Zusammensetzung** der Bevölkerung, nicht denselben Menschen über die Zeit.
 Wächst die Bevölkerung im Lauf, kommen neu gezogene Personen dazu; die
-Altersstruktur bleibt dabei stabil, weil sie aus derselben Verteilung stammen.
-Es ist eine stehende Gesellschaft, kein alternder Jahrgang.
+Altersstruktur bleibt stabil, weil sie aus derselben Verteilung stammen. Es ist
+eine stehende Gesellschaft, kein alternder Jahrgang.
 
-**Und eine Einschränkung dazu, die Sie kennen sollten:** Die Altersverteilung
-selbst ist derzeit unplausibel — rund 40 Prozent der gezogenen Personen liegen
-auf der Obergrenze von 90 Jahren. Das ist ein bekannter Fehler in der
-Parametrisierung und ändert nichts an den berechneten Zahlen, weil das Alter
-nirgends eingeht. Nutzen Sie die Altersgrafik bis auf Weiteres nicht als
-Aussage über die Reisenden.
+**Die Altersverteilung selbst kommt aus echten Daten** (Eurostat, EU-27, Stand
+2023): Mittelwert 50,8 Jahre bei einer Standardabweichung von 18,8, begrenzt auf
+18 bis 90. Bewusst die **Gesamtbevölkerung** und nicht die der Flugreisenden —
+wer davon fliegt, soll das Modell über Einkommen und Zahlungsbereitschaft
+ergeben, statt es in die Ziehung vorwegzunehmen.
 
 ## Die Parameter sind gesetzt, nicht geschätzt
 

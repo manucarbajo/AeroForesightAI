@@ -72,6 +72,62 @@ def _get_individual_property(
     return None
 
 
+#: Wie viel Wahrscheinlichkeitsmasse eine Verteilung höchstens an ihre Grenzen
+#: verlieren darf, bevor sie als falsch parametrisiert gilt.
+#:
+#: **Zehn Prozent, und die Zahl ist ein Deckel, kein Ideal.** Etwas Klemmung ist
+#: bei einer beschränkten Größe normal — eine Normalverteilung um 45 mit
+#: Streuung 15 verliert an einer Untergrenze von 2 fast nichts. Wer ein Zehntel
+#: verliert, hat dagegen keine geklemmte Verteilung mehr, sondern einen Stapel
+#: an der Wand.
+#:
+#: **Der Anlass ist gemessen** (P2.9, 2026-08-31): `age` stand als `lognormal`
+#: mit `mean: 73.0, std_dev: 1.0` in der Config. `_sample_lognormal` liest
+#: `mean` als **Median**, die Verteilung hat damit den Mittelwert 120 und legt
+#: **41,8 %** ihrer Masse über die Obergrenze 90. Genau dieser Anteil landete
+#: dort — 41 % der Bevölkerung waren exakt 90 Jahre alt, und niemand hat es
+#: bemerkt, weil `np.clip` still ist.
+KLEMM_DECKEL = 0.10
+
+
+class VerteilungGeklemmt(ValueError):
+    """Eine Verteilung verliert zu viel Masse an ihre Grenzen.
+
+    Kein Rechenfehler, sondern eine **Fehlparametrisierung**: Die Ziehung tut,
+    was dasteht — was dasteht, ergibt aber keine Verteilung mehr.
+    """
+
+
+def _klemmen(
+    werte: np.ndarray | float,
+    *,
+    min_value: float,
+    max_value: float,
+    name: str,
+) -> np.ndarray | float:
+    """Auf die Grenzen bringen — und melden, wenn dabei zu viel hängen bleibt.
+
+    **Die Prüfung braucht viele Ziehungen, nicht eine.** Eine einzelne Ziehung
+    ist entweder geklemmt oder nicht; ob die *Verteilung* falsch steht, zeigt
+    sich erst am Anteil. Deshalb prüft diese Funktion nur, wenn sie ein ganzes
+    Feld bekommt — bei Einzelwerten klemmt sie schweigend, wie zuvor.
+    """
+
+    geklemmt = np.clip(werte, min_value, max_value)
+    if not isinstance(werte, np.ndarray) or werte.size < 50:
+        return geklemmt
+
+    anteil = float(np.mean((werte < min_value) | (werte > max_value)))
+    if anteil > KLEMM_DECKEL:
+        raise VerteilungGeklemmt(
+            f"'{name}': {anteil:.1%} der Ziehungen liegen außerhalb von "
+            f"[{min_value:g}, {max_value:g}] und würden dorthin geklemmt. "
+            f"Erlaubt sind {KLEMM_DECKEL:.0%}. Die Verteilung ist falsch "
+            "parametrisiert — geklemmte Masse ist kein Rand, sondern ein Stapel."
+        )
+    return geklemmt
+
+
 def _sample_beta(rng: np.random.Generator, alpha: float, beta: float) -> float:
     return float(rng.beta(max(0.1, alpha), max(0.1, beta)))
 
@@ -96,10 +152,47 @@ def _sample_lognormal(
     min_value: float,
     max_value: float,
 ) -> float:
+    """**`mean` ist der Median der Lognormalen, nicht ihr Mittelwert.**
+
+    `mu = log(mean)` heißt: Die Hälfte der Ziehungen liegt unter *mean*. Der
+    Mittelwert der Verteilung ist `mean * exp(sigma²/2)` und damit größer —
+    bei `sigma = 1` um den Faktor 1,65. Das ist eine Falle im Feldnamen und in
+    P2.9 als offene Frage vermerkt; hier steht es wenigstens da.
+    """
+
     mu = np.log(max(0.01, mean))
     sigma = max(0.01, std_dev)
     value = float(rng.lognormal(mean=mu, sigma=sigma))
     return float(np.clip(value, min_value, max_value))
+
+
+def pruefe_verteilung(
+    rng: np.random.Generator,
+    prop: IndividualProperty,
+    *,
+    stichprobe: int = 4000,
+) -> None:
+    """Einmal vorab ziehen und prüfen, ob die Parameter eine Verteilung ergeben.
+
+    Läuft **vor** dem Aufbau der Bevölkerung, mit einem eigenen Generator: Die
+    Prüfziehung darf den Zufallsstrom des Laufs nicht verschieben, sonst hinge
+    die Bevölkerung daran, ob geprüft wurde.
+    """
+
+    if prop.distribution is None or prop.min_value is None or prop.max_value is None:
+        return
+
+    if prop.distribution == DistributionType.NORMAL:
+        roh = rng.normal(prop.mean or 0.0, max(0.001, prop.std_dev or 1.0), stichprobe)
+    elif prop.distribution == DistributionType.LOGNORMAL:
+        roh = rng.lognormal(
+            np.log(max(0.01, prop.mean or 1.0)), max(0.01, prop.std_dev or 1.0), stichprobe
+        )
+    else:
+        # Beta und Uniform ziehen per Konstruktion innerhalb ihrer Grenzen.
+        return
+
+    _klemmen(roh, min_value=prop.min_value, max_value=prop.max_value, name=prop.id)
 
 
 def _assign_boolean_labels(
@@ -151,6 +244,13 @@ def initialize_population(
     seed: int = 42,
 ) -> list[Individual]:
     """Create N persistent individuals once per simulation run."""
+
+    # **Erst prüfen, ob die Verteilungen welche sind** (P2.9). Mit eigenem
+    # Generator, damit die Prüfziehung den Zufallsstrom des Laufs nicht
+    # verschiebt: Sonst hinge die Bevölkerung daran, ob geprüft wurde.
+    for prop in properties.individual_properties:
+        if prop.type == "distribution" and prop.enabled:
+            pruefe_verteilung(np.random.default_rng(0), prop)
 
     rng = _rng(seed)
     total_pop = config.total_population
@@ -252,7 +352,31 @@ def initialize_population(
                     price_sensitivity += mods["price_sensitivity_delta"]
 
         base_income = float(np.clip(base_income + rng.normal(0.0, 0.05), 0.5, 1.5))
+
+        # **Das Alter zieht die Merkmale** (P2.4, 2026-08-31) — nach den
+        # Segment-Modifikatoren und **vor** dem Klemmen, damit beides zusammen
+        # in denselben Grenzen landet.
+        #
+        # Bis dahin wurde jedes Merkmal unabhängig gezogen: Ein 90-Jähriger
+        # hatte genauso wahrscheinlich ein hohes Einkommen und niedrige
+        # Preisempfindlichkeit wie ein 25-Jähriger, und `age` war für das
+        # Verhalten exakt folgenlos. Alter wirkt hier über die Merkmale und
+        # **nicht** als eigener Term im Nutzen — sonst zählte es doppelt.
+        profil = properties.alters_profil
+        zyklus = profil.lebenszyklus(age)
+        jahrzehnte = (age - profil.gipfel_alter.wert) / 10.0
+
+        base_income *= 1.0 + profil.einkommen_spanne.wert * (zyklus - 0.5)
+        wtp *= 1.0 + profil.einkommen_spanne.wert * (zyklus - 0.5)
+        price_sensitivity += profil.preissensitivitaet_kopplung.wert * (1.0 - zyklus)
+        awareness += profil.awareness_je_jahrzehnt.wert * jahrzehnte
+        substitution_readiness += profil.substitution_je_jahrzehnt.wert * jahrzehnte
+
+        base_income = float(np.clip(base_income, 0.5, 1.5))
         price_sensitivity = float(np.clip(price_sensitivity, 0.0, 1.0))
+        awareness = float(np.clip(awareness, 0.0, 1.0))
+        substitution_readiness = float(np.clip(substitution_readiness, 0.0, 1.0))
+        wtp = float(max(0.0, wtp))
 
         individuals.append(
             Individual(

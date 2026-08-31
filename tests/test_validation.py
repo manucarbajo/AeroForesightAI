@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from src.config_loader import build_initial_state
-from src.models.property_models import ShiftRule
+from src.models.property_models import IndividualProperty, ShiftRule
 from src.models.state_models import LLMConfig, SimulationClock, SimulationConfig
 from src.validation import (
     ValidationError,
@@ -474,3 +474,87 @@ class TestEineShiftRegelWirdAuchAufIhreWirkungGeprueft:
             apply_factor_shifts(
                 leute, [self._regel("age")], lage, tick=1, metrics={}, system_properties={}
             )
+
+
+class TestEineVerteilungDieAnDieWandKlemmtSagtEs:
+    """P2.9 (2026-08-31) — **still geklemmte Masse ist keine Verteilung mehr**.
+
+    Der Anlass ist gemessen: `age` stand als `lognormal` mit
+    ``mean: 73.0, std_dev: 1.0`` in der Config. `_sample_lognormal` liest `mean`
+    als **Median**, die Verteilung hat damit den Mittelwert 120 und legt
+    **41,8 %** ihrer Masse über die Obergrenze 90. Genau dieser Anteil landete
+    dort: **41 % der Bevölkerung waren exakt 90 Jahre alt** — und niemand hat es
+    bemerkt, weil `np.clip` schweigt.
+
+    Der Wächter prüft **jede** Verteilung, nicht nur `age`: Wer `wtp_eur`
+    ähnlich parametrisiert, bekäme sonst dasselbe, ohne es zu merken.
+    """
+
+    @staticmethod
+    def _merkmal(**felder) -> IndividualProperty:
+        basis = {
+            "id": "test",
+            "type": "distribution",
+            "distribution": "normal",
+            "mean": 50.0,
+            "std_dev": 10.0,
+            "min_value": 0.0,
+            "max_value": 100.0,
+        }
+        return IndividualProperty(**{**basis, **felder})
+
+    def test_eine_passende_verteilung_geht_durch(self):
+        import numpy as np
+
+        from src.population.population_sampler import pruefe_verteilung
+
+        pruefe_verteilung(np.random.default_rng(0), self._merkmal())
+
+    def test_eine_verteilung_neben_ihren_grenzen_wird_gemeldet(self):
+        import numpy as np
+
+        from src.population.population_sampler import VerteilungGeklemmt, pruefe_verteilung
+
+        with pytest.raises(VerteilungGeklemmt, match="falsch parametrisiert"):
+            pruefe_verteilung(np.random.default_rng(0), self._merkmal(mean=95.0, std_dev=30.0))
+
+    def test_der_alte_zustand_wuerde_heute_auffallen(self):
+        """Die Nachstellung des Befunds — sonst prüft der Wächter nur sich selbst."""
+
+        import numpy as np
+
+        from src.population.population_sampler import VerteilungGeklemmt, pruefe_verteilung
+
+        alt = self._merkmal(
+            id="age",
+            distribution="lognormal",
+            mean=73.0,
+            std_dev=1.0,
+            min_value=2.0,
+            max_value=90.0,
+        )
+
+        with pytest.raises(VerteilungGeklemmt, match=r"4[0-9]\.[0-9]%"):
+            pruefe_verteilung(np.random.default_rng(0), alt)
+
+    def test_die_ausgelieferte_config_haelt_es_ein(self):
+        """Die Regel wäre wertlos, wenn die eigene Config sie bräche."""
+
+        import numpy as np
+
+        from src.config_loader import load_properties_config
+        from src.population.population_sampler import pruefe_verteilung
+
+        for prop in load_properties_config().individual_properties:
+            if prop.type == "distribution" and prop.enabled:
+                pruefe_verteilung(np.random.default_rng(0), prop)
+
+    def test_die_altersverteilung_traegt_jetzt_eine_quelle(self):
+        """P2.9 hat sie aus echten Daten gesetzt statt geraten."""
+
+        from src.config_loader import load_properties_config
+
+        age = next(p for p in load_properties_config().individual_properties if p.id == "age")
+
+        assert "Eurostat" in age.quelle and "demo_pjangroup" in age.quelle
+        assert age.min_value == 18.0, "Kinder buchen keine Flüge"

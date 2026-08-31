@@ -171,12 +171,12 @@ class TestDiePreiselastizitaetIstDieEineStellschraube:
 
         e = self._elastizitaet(leute, properties, 130.0, 145.0)
 
-        assert e == pytest.approx(-1.83, abs=0.15), f"Elastizität am Betriebspunkt: {e:.2f}"
+        assert e == pytest.approx(-1.27, abs=0.15), f"Elastizität am Betriebspunkt: {e:.2f}"
 
         abstand = (abs(e) - abs(self.METAANALYSE_MITTEL)) / self.METAANALYSE_SD
-        assert 0.7 < abstand < 1.5, (
-            f"{abstand:.1f} Standardabweichungen vom Metaanalyse-Mittel. Bewegt sich "
-            "das, gehört der Befund in P2.8 neu geschrieben."
+        assert abstand < 0.6, (
+            f"{abstand:.1f} Standardabweichungen vom Metaanalyse-Mittel. Wächst das "
+            "wieder, ist die Bevölkerung homogener geworden — P2.4 neu prüfen."
         )
 
     def test_sie_ist_nicht_konstant_sondern_versechsfacht_sich(self, leute, properties):
@@ -192,36 +192,38 @@ class TestDiePreiselastizitaetIstDieEineStellschraube:
         flach = self._elastizitaet(leute, properties, 80.0, 100.0)
         steil = self._elastizitaet(leute, properties, 200.0, 250.0)
 
-        assert abs(steil) > 5 * abs(flach), (
-            f"Spanne {flach:.2f} bis {steil:.2f} — die Elastizität ist "
-            "gleichmäßiger geworden. Gute Nachricht, aber P2.8 stimmt dann nicht mehr."
+        assert abs(steil) > 4 * abs(flach), (
+            f"Spanne {flach:.2f} bis {steil:.2f} — die Elastizität ist deutlich "
+            "gleichmäßiger geworden. Gute Nachricht; P2.8 gehört dann neu gemessen."
         )
-        assert steil < self.METAANALYSE_NIEDRIGSTER, (
-            f"{steil:.2f} liegt nicht mehr jenseits des niedrigsten Schätzwerts "
-            f"({self.METAANALYSE_NIEDRIGSTER}) der Metaanalyse."
+        assert steil > self.METAANALYSE_NIEDRIGSTER, (
+            f"{steil:.2f} liegt wieder jenseits des niedrigsten Schätzwerts "
+            f"({self.METAANALYSE_NIEDRIGSTER}) aller 204 Beobachtungen der "
+            "Metaanalyse. Mit P2.4 war das behoben."
         )
 
     def test_der_preiskanal_erklaert_den_einbruch_fast_allein(self, leute, properties):
         """Die Rechnung, die P2.8 trägt.
 
-        Stand nach P2.8, also **mit** gespeistem Einkommen: Modellpreis
-        2015→2019 133,16 → 142,48 (+7,0 %), Buchungsrate 0,3500 → 0,3060
-        (−12,6 %). Bei der gemessenen Elastizität erwartet man aus dem Preis
-        allein rund −12,8 %.
+        Stand nach P2.4 (Alter formt die Person): Modellpreis 2015→2019
+        137,38 → 147,21 (+7,2 %), Buchungsrate 0,3652 → 0,3165 (−13,3 %). Bei
+        der gemessenen Elastizität von rund −1,27 erwartet man aus dem Preis
+        allein etwa −9 %.
 
-        Dass beides so nah beieinanderliegt, **obwohl** der Einkommenskanal
-        inzwischen +3,0 Punkte beisteuert, ist der Befund von P2.8: Der Beitrag
-        wird von den Ausgleichsmechanismen des Modells (Preisrückkopplung,
-        Sättigung) fast vollständig aufgezehrt.
+        **Der Preiskanal erklärt damit weiterhin den Löwenanteil**, aber nicht
+        mehr fast alles: Seit P2.4 ist die Bevölkerung altersheterogen, und die
+        Sättigung greift bei den Vielfliegern der Lebensmitte stärker. Der Rest
+        verteilt sich auf CO₂-Abgabe, Sättigung und Faktor-Shifts — der
+        Einkommenskanal aus P2.8 zieht dagegen.
         """
 
         e = self._elastizitaet(leute, properties, 130.0, 145.0)
-        preisanstieg = (142.48 - 133.16) / 133.16
+        preisanstieg = (147.21 - 137.38) / 137.38
         erwartet = e * preisanstieg
-        gemessen = (0.3060 - 0.3500) / 0.3500
+        gemessen = (0.3165 - 0.3652) / 0.3652
 
         anteil = erwartet / gemessen
-        assert 0.7 < anteil < 1.1, (
+        assert 0.5 < anteil < 1.0, (
             f"Der Preiskanal erklärt {anteil:.0%} des Einbruchs (erwartet "
             f"{erwartet:.1%}, gemessen {gemessen:.1%}). Weicht das ab, hat sich "
             "entweder die Elastizität bewegt oder ein zweiter Kanal ist dazugekommen."

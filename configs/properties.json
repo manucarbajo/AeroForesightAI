@@ -311,11 +311,12 @@
       "id": "age",
       "type": "distribution",
       "enabled": true,
-      "distribution": "lognormal",
-      "mean": 73.0,
-      "std_dev": 1.0,
-      "min_value": 2.0,
-      "max_value": 90.0
+      "distribution": "normal",
+      "mean": 50.8,
+      "std_dev": 18.8,
+      "min_value": 18.0,
+      "max_value": 90.0,
+      "quelle": "Eurostat demo_pjangroup, EU-27, Bevölkerung nach Fünfjahresgruppen, Stand 1.1.2023: Mittelwert 50,8 und Standardabweichung 18,8 der Bevölkerung ab 18 Jahren (Gruppenmitten, mit Bevölkerungsanteilen gewichtet; die Gruppe 15–19 anteilig zu 2/5). Untergrenze 18, weil ein Individuum hier eine Buchungsentscheidung trifft — Kinder buchen nicht. **Bewusst die Gesamtbevölkerung und nicht die der Flugreisenden:** Wer davon fliegt, soll das Modell über Einkommen und Zahlungsbereitschaft ergeben, statt es in die Ziehung vorwegzunehmen."
     },
     {
       "id": "substitution_readiness",
