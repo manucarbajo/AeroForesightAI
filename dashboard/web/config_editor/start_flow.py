@@ -31,6 +31,7 @@ from dash import html
 from dashboard.config_catalog import (
     issues_by_field,
     list_sweep_presets,
+    rahmenszenarien,
     unfielded_issues,
     validate_draft,
 )
@@ -145,11 +146,15 @@ def _vergleich_satz() -> str:
     Abschlusstext sehr wohl gerufen.
     """
 
-    count = len(list_sweep_presets())
+    # **Nicht `list_sweep_presets()`** (P2.2): Verglichen werden die
+    # Rahmenszenarien, nicht die Stresstests der Engine. Der Satz nannte bis
+    # dahin acht und meinte damit auch «Totaler Wahnsinn (Alle Parameter)».
+    count = len(rahmenszenarien())
     satz = (
-        f"Sie starten **alle {count} hinterlegten Szenarien** nacheinander — jedes "
+        f"Sie starten **alle {count} Rahmenszenarien** nacheinander — jedes "
         "aus seiner eigenen Datei und **in seiner eigenen Länge**, ohne Agenten-Dialog. "
-        "Am Ende liegen sie zum Vergleich nebeneinander."
+        "Am Ende liegen sie zum Vergleich nebeneinander. Die hinterlegten Stresstests "
+        "der Engine sind nicht dabei; sie behaupten kein Weltbild."
     )
     if SZENARIOTEXT_NUTZT_LLM:
         satz += (
@@ -199,7 +204,15 @@ def _kennzahl(preset) -> str:
 
     eingriffe = len(preset.property_overrides) + len(preset.factor_overrides)
     wort = "Änderung" if eingriffe == 1 else "Änderungen"
-    return f"{preset.max_ticks} Ticks · {eingriffe} {wort}"
+    kennzahl = f"{preset.max_ticks} Ticks · {eingriffe} {wort}"
+
+    # **Seit P2.2 steht die Art vorneweg**, und zwar nur bei den Stresstests:
+    # Ein Rahmen ist der Normalfall und braucht keine Marke, ein Belastungstest
+    # der Engine schon — er stand bis dahin gleichrangig neben «Business as
+    # Usual» und wurde als Zukunft angeboten.
+    if preset.art != "rahmen":
+        return f"Stresstest · {kennzahl}"
+    return kennzahl
 
 
 def _choice_label(title: str, description: str, kennzahl: str | None = None) -> html.Div:
@@ -296,6 +309,44 @@ def scenario_details(draft: dict) -> html.Div:
             "nächsten Schritt selbst ein."
         ),
     ]
+    # **Die Kohärenzbegründung (P2.2, Variante C).** Sie steht offen da und
+    # nicht hinter «Fachliches»: Sie ist die einzige Absicherung, die ein
+    # Rahmenszenario hat — es gibt keinen Algorithmus, der seine Stimmigkeit
+    # prüft, und das soll man sehen statt aufklappen müssen.
+    if preset.kohaerenz is not None:
+        k = preset.kohaerenz
+        children.append(
+            html.Div(
+                [
+                    html.P(k.these, className="font-body text-sm af-text mb-2 max-w-prose"),
+                    html.P(k.begruendung, className=f"{ui.CAPTION} mb-3 max-w-prose"),
+                    ui.expert(
+                        html.Div(
+                            [
+                                html.Ul(
+                                    [html.Li(q, className=ui.CAPTION) for q in k.quellen],
+                                    className="mb-3 list-disc pl-5",
+                                ),
+                                html.P(k.vorbehalt, className=f"{ui.CAPTION} max-w-prose"),
+                            ]
+                        ),
+                        title="Quellen und was davon nicht belegt ist",
+                    ),
+                ],
+                className="mb-4",
+            )
+        )
+    elif preset.art != "rahmen":
+        children.append(
+            ui.alert(
+                "Dies ist ein **Stresstest der Engine**, kein begründetes Weltbild. Die "
+                "Verläufe sind auf Sichtbarkeit und Belastung gebaut, nicht auf "
+                "Plausibilität — die Zahlen taugen zum Prüfen der Mechanik, nicht als "
+                "Aussage über die Zukunft. Ein Szenario-Vergleich lässt ihn deshalb aus.",
+                "warning",
+            )
+        )
+
     if preset.rationale:
         children.append(
             ui.expert(ui.markdown(preset.rationale), title="Warum dieses Szenario so aufgebaut ist")

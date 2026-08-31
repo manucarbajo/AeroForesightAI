@@ -2,7 +2,7 @@
   "id": "p5.7",
   "name": "P5.7",
   "description": "Explorer-Prüfung (P5.7 — vor Abgabe ausführlich durchtesten)\n",
-  "rationale": "Erstellt im Dashboard als benutzerdefiniertes Szenario.",
+  "rationale": "Im Dashboard gesichertes Experiment aus P5.7. Kein begründetes Weltbild; es liegt hier, weil das Sichern eines Experiments in denselben Ordner schreibt.",
   "max_ticks": 40,
   "base_price": null,
   "property_overrides": [
@@ -155,5 +155,6 @@
     }
   ],
   "factor_overrides": [],
-  "milestones": []
+  "milestones": [],
+  "art": "stresstest"
 }

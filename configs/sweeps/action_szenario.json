@@ -2,7 +2,7 @@
   "id": "action_szenario",
   "name": "Action-Szenario (Dauerhafte Bewegung)",
   "description": "Ein Szenario, bei dem die Wirtschaft und die Preise ununterbrochen in Bewegung sind. Statt sprunghafter SET-Regeln nutzen wir kontinuierliche RAMP-Regeln, die jeden einzelnen Tick die Werte verändern.",
-  "rationale": "Sorgt für durchgehende, logische Bewegung in den Animationen (Surplus, WTP, Einkommen), ohne dass die Agenten unlogisch ihr Alter ändern.",
+  "rationale": "Sichtprüfung der Animationen mit durchgehender, stetiger Bewegung statt Sprüngen (Surplus, WTP, Einkommen). Kein Weltbild.",
   "max_ticks": 40,
   "base_price": 100.0,
   "property_overrides": [
@@ -10,39 +10,112 @@
       "property_id": "income_index",
       "baseline": 1.0,
       "rules": [
-        { "active_from_tick": 1, "effect": { "type": "ramp", "value": 1.8 } },
-        { "active_from_tick": 10, "effect": { "type": "ramp", "value": 0.4 } },
-        { "active_from_tick": 20, "effect": { "type": "ramp", "value": 1.8 } },
-        { "active_from_tick": 30, "effect": { "type": "ramp", "value": 0.4 } }
+        {
+          "active_from_tick": 1,
+          "effect": {
+            "type": "ramp",
+            "value": 1.8
+          }
+        },
+        {
+          "active_from_tick": 10,
+          "effect": {
+            "type": "ramp",
+            "value": 0.4
+          }
+        },
+        {
+          "active_from_tick": 20,
+          "effect": {
+            "type": "ramp",
+            "value": 1.8
+          }
+        },
+        {
+          "active_from_tick": 30,
+          "effect": {
+            "type": "ramp",
+            "value": 0.4
+          }
+        }
       ]
     },
     {
       "property_id": "carbon_tax_level",
       "baseline": 0.0,
       "rules": [
-        { "active_from_tick": 1, "effect": { "type": "ramp", "value": 250.0 } },
-        { "active_from_tick": 15, "effect": { "type": "ramp", "value": 0.0 } },
-        { "active_from_tick": 25, "effect": { "type": "ramp", "value": 300.0 } }
+        {
+          "active_from_tick": 1,
+          "effect": {
+            "type": "ramp",
+            "value": 250.0
+          }
+        },
+        {
+          "active_from_tick": 15,
+          "effect": {
+            "type": "ramp",
+            "value": 0.0
+          }
+        },
+        {
+          "active_from_tick": 25,
+          "effect": {
+            "type": "ramp",
+            "value": 300.0
+          }
+        }
       ]
     },
     {
       "property_id": "oil_price_index",
       "baseline": 1.0,
       "rules": [
-        { "active_from_tick": 5, "effect": { "type": "ramp", "value": 3.0 } },
-        { "active_from_tick": 15, "effect": { "type": "ramp", "value": 0.5 } },
-        { "active_from_tick": 25, "effect": { "type": "ramp", "value": 3.0 } }
+        {
+          "active_from_tick": 5,
+          "effect": {
+            "type": "ramp",
+            "value": 3.0
+          }
+        },
+        {
+          "active_from_tick": 15,
+          "effect": {
+            "type": "ramp",
+            "value": 0.5
+          }
+        },
+        {
+          "active_from_tick": 25,
+          "effect": {
+            "type": "ramp",
+            "value": 3.0
+          }
+        }
       ]
     },
     {
       "property_id": "airport_fee",
       "baseline": 10.0,
       "rules": [
-        { "active_from_tick": 1, "effect": { "type": "ramp", "value": 150.0 } },
-        { "active_from_tick": 20, "effect": { "type": "ramp", "value": 10.0 } }
+        {
+          "active_from_tick": 1,
+          "effect": {
+            "type": "ramp",
+            "value": 150.0
+          }
+        },
+        {
+          "active_from_tick": 20,
+          "effect": {
+            "type": "ramp",
+            "value": 10.0
+          }
+        }
       ]
     }
   ],
   "factor_overrides": [],
-  "milestones": []
+  "milestones": [],
+  "art": "stresstest"
 }

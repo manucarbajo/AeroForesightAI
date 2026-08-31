@@ -131,6 +131,41 @@ Lauf.
 nicht erreichen, verschwindet. Er ist heute ein Fehler, weil der Endzustand vorgegeben
 ist. Nach der Umdrehung ist er das erwartete Verhalten.
 
+## Nachtrag: die Wahl ist getroffen (2026-08-31)
+
+**Variante C, umgesetzt als P2.2.** Die Entscheidung vom 2026-08-29 hatte die
+Rolle der CIB-Schicht abgewählt und offengelassen, was die Rahmenbündel
+stattdessen absichert; diese Frage war ausdrücklich hinter den Backtest gelegt.
+Der Backtest hat sie beantwortet, wenn auch anders als erwartet: Nicht dadurch,
+dass er das Modell für vertrauenswürdig genug erklärt hätte, um ein feineres
+Werkzeug darüber zu rechtfertigen — sondern dadurch, dass er die **Nachfrageseite
+als invertiert** ausgewiesen hat. Ein formales Konsistenzkriterium über einem
+Modell, das die Richtung verfehlt, verlagert nur die Frage.
+
+**Gewählt ist damit «nichts Formales»:** Die Kohärenz eines Rahmenszenarios wird
+in Prosa mit Quellen begründet. Das ist kein Verzicht, sondern eine Bringschuld —
+sie verlagert die Absicherung von der Mechanik in den Text, und der Text muss
+dann auch da sein. Vier ausgelieferte Rahmenszenarien tragen seither These,
+Begründung, Quellen und **Vorbehalt**; ein Wächter hält das fest, weil eine
+Prosa-Begründung, die niemand prüft, in sechs Monaten ein leeres Feld ist.
+
+**Ein Fund kam bei der Umsetzung dazu**, und er war in keiner der drei Varianten
+vorgesehen: Unter `configs/sweeps/` lagen **vier begründete Weltbilder und vier
+Stresstests der Engine** ununterscheidbar nebeneinander, und der
+Szenario-Vergleich startete beide. «Totaler Wahnsinn (Alle Parameter)» stand
+gleichrangig neben «Business as Usual». Einem Kunden wurde damit ein
+Belastungstest als Zukunft angeboten. Seit P2.2 sagt jede Datei, was sie ist.
+
+**Und eine Bestätigung der Leitentscheidung nebenbei:** Die Kohärenzbehauptung
+von «Freiwillige Wende» — verbindliche Beimischung schafft die
+Investitionssicherheit, die den Hochlauf trägt, und ohne Ausweichpfad ist
+strenge Regulierung politisch nicht durchzuhalten — ist **genau die
+Rückkopplung, die die Matrix mit −2 verneint**. Dass sich diese Welt in Prosa
+mühelos begründen lässt, während die Matrix sie als unplausibel führt, ist der
+vierte unabhängige Beleg dafür, dass der Score Polarität misst.
+
+Einzelheiten und Wächter: [P2.2 im Projektplan](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31).
+
 ## Die drei Wege — und warum C
 
 | | Weg | Preis |

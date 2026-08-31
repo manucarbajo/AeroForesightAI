@@ -5,6 +5,29 @@ passen davon ausgehend an.
 Die mitgelieferten Presets stehen mit Beschreibung und Begründung unter
 [Szenario-Presets](/doku/ref-presets).
 
+## Zwei Arten von Preset
+
+Unter den hinterlegten Szenarien liegen zwei verschiedene Dinge, und seit dem
+2026-08-31 sagen sie es auch:
+
+**Ein Rahmenszenario** ist eine begründete Behauptung über eine mögliche Welt —
+«Business as Usual», «CO₂-Verzögerung», «Freiwillige Wende»,
+«Transformationskonflikt». Sobald Sie eines auswählen, steht unter dem Raster,
+*was* es behauptet und *warum* diese Entwicklungen zusammen eine Welt ergeben;
+unter «Quellen und was davon nicht belegt ist» finden Sie die Belege und —
+ebenso wichtig — den Vorbehalt.
+
+Denn belegt ist immer die Geschichte, **nicht ihre Bezifferung**: Dass strenge
+Regulierung ohne verfügbaren Ausweichpfad zur reinen Verteuerung wird, ist
+begründbar. Bei welchem Tick die CO₂-Abgabe dann auf welchen Wert springt, ist
+gesetzt und nicht aus Daten geschätzt. Wer ein Szenario nach außen zitiert,
+zitiert die Geschichte, nicht die Zahl.
+
+**Ein Stresstest** ist ein Belastungs- oder Sichtprüfungslauf der Engine. Seine
+Verläufe fahren durch Extreme, damit man sieht, ob etwas bricht — sie behaupten
+nichts über die Zukunft. Die Kachel schreibt «Stresstest» davor, und ein
+Szenario-Vergleich lässt ihn aus.
+
 ## Ein Preset verwenden
 
 Unter **Simulation starten** ist die Auswahl die erste der drei Entscheidungen.
@@ -64,12 +87,19 @@ von «Einrichten»: Er stellt den Vergleich ein und bringt Sie unmittelbar zu
 hinter der «Feinabstimmung» des zweiten Schritts — es ist derselbe Schalter,
 nur an der Stelle, an der man ihn auch fein einstellt.
 
-So oder so wird jedes hinterlegte Preset einmal durchgerechnet, ohne
+So oder so wird jedes **Rahmenszenario** einmal durchgerechnet, ohne
 Agenten-Dialog und damit deutlich schneller. Die Ergebnisse liegen unter
 `outputs/sweeps/` und erscheinen einzeln in der Lauf-Auswahl.
 
 Das ist der schnellste Weg zu der Frage, wie weit die Annahmenwelten überhaupt
 auseinanderliegen.
+
+**Die Stresstests sind dabei nicht dabei**, und das ist seit dem 2026-08-31 so.
+Unter den hinterlegten Dateien liegen zwei verschiedene Dinge: begründete
+Weltbilder und Belastungstests der Engine. Ein Vergleich stellt Weltbilder
+gegeneinander — ein Stresstest, dessen Verläufe auf Sichtbarkeit gebaut sind,
+gehört nicht als Zukunft daneben. Starten lässt er sich weiterhin einzeln; in
+der Auswahl steht «Stresstest» an seiner Kachel.
 
 ## Meilensteine
 

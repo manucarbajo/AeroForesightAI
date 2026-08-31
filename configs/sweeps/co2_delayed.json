@@ -9,17 +9,47 @@
       "property_id": "carbon_tax_level",
       "baseline": 50.0,
       "rules": [
-        { "active_from_tick": 1, "effect": { "type": "set", "value": 50.0 } },
-        { "active_from_tick": 25, "effect": { "type": "set", "value": 120.0 } },
-        { "active_from_tick": 40, "effect": { "type": "set", "value": 200.0 } }
+        {
+          "active_from_tick": 1,
+          "effect": {
+            "type": "set",
+            "value": 50.0
+          }
+        },
+        {
+          "active_from_tick": 25,
+          "effect": {
+            "type": "set",
+            "value": 120.0
+          }
+        },
+        {
+          "active_from_tick": 40,
+          "effect": {
+            "type": "set",
+            "value": 200.0
+          }
+        }
       ]
     },
     {
       "property_id": "saf_mandate_share",
       "baseline": 0.0,
       "rules": [
-        { "active_from_tick": 16, "effect": { "type": "set", "value": 0.02 } },
-        { "active_from_tick": 24, "effect": { "type": "set", "value": 0.05 } }
+        {
+          "active_from_tick": 16,
+          "effect": {
+            "type": "set",
+            "value": 0.02
+          }
+        },
+        {
+          "active_from_tick": 24,
+          "effect": {
+            "type": "set",
+            "value": 0.05
+          }
+        }
       ]
     }
   ],
@@ -55,5 +85,18 @@
       "check_property": "carbon_tax_level",
       "expected_value": 200.0
     }
-  ]
+  ],
+  "art": "rahmen",
+  "kohaerenz": {
+    "these": "Die beschlossene Verschärfung kommt, aber deutlich später: Politische Trägheit verschiebt CO₂-Bepreisung und Beimischungsziel gemeinsam nach hinten, ohne sie aufzuheben.",
+    "begruendung": "Verzögerung ist ein eigener Rahmen wert, weil nicht das Ob revidiert wird, sondern das Wann — und weil das die Frage ist, die eine Fluggesellschaft wirklich umtreibt. Die beiden Verläufe sind aus einem Grund gemeinsam verschoben: Bepreisung und Beimischungspflicht stammen aus demselben Gesetzespaket und werden politisch gemeinsam verhandelt; nur eines von beiden zu verzögern wäre die unbegründetere Annahme. Auch der späte, dafür steilere Anstieg folgt daraus und ist kein Effekt um seiner selbst willen: Wer das Zieljahr beibehält und den Beginn verschiebt, muss den Rest steiler nachholen.",
+    "quellen": [
+      "docs/research/links.md — EU-ETS / Fit for 55 (Rat der EU, Europäische Kommission); Richtlinie (EU) 2023/958: Luftverkehr im ETS, Auslaufen der freien Zuteilung 2024–2026",
+      "Verordnung (EU) 2023/2405 (ReFuelEU Aviation): SAF-Beimischung 2 % ab 2025, 6 % ab 2030",
+      "docs/research/studies_future/policy-net-zero-roadmap.pdf (IATA)",
+      "docs/research/studies_future/european-parliament-study-green-deal.pdf",
+      "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt"
+    ],
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar."
+  }
 }

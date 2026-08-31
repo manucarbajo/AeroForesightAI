@@ -261,12 +261,30 @@ def load_sweep_config(path: Path) -> SweepConfig:
 
 
 def load_all_sweep_configs(directory: Path | None = None) -> list[SweepConfig]:
-    """Load all sweep configs from a directory."""
+    """Load all sweep configs from a directory — **Rahmen und Stresstests**."""
     directory = directory or SWEEPS_DIR
     configs: list[SweepConfig] = []
     for path in sorted(directory.glob("*.json")):
         configs.append(load_sweep_config(path))
     return configs
+
+
+def rahmenszenarien(directory: Path | None = None) -> list[SweepConfig]:
+    """Nur die **begründeten Weltbilder** — was ein Szenario-Vergleich vergleicht.
+
+    **Der Grund ist P2.2 / Variante C.** Bis dahin lagen unter `configs/sweeps/`
+    zwei Dinge ununterscheidbar nebeneinander, und `run_all_sweeps` startete
+    beide: vier Behauptungen über eine mögliche Welt und vier Stresstests der
+    Engine. «Totaler Wahnsinn (Alle Parameter)» stand gleichrangig neben
+    «Business as Usual» — einem Kunden wurde damit ein Belastungstest als
+    Zukunft angeboten, und der Vergleich stellte acht Ergebnisse nebeneinander,
+    von denen die Hälfte keine Aussage über die Welt war.
+
+    Ein Stresstest bleibt **lauffähig und wählbar** — er wird nur nicht mehr
+    mitverglichen. Wer ihn einzeln starten will, kann das weiterhin.
+    """
+
+    return [config for config in load_all_sweep_configs(directory) if config.art == "rahmen"]
 
 
 def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
@@ -561,9 +579,16 @@ def run_all_sweeps(
     sweep_filter: str | None = None,
     verbose: bool = True,
 ) -> SweepSummary:
-    """Run all sweep configs and produce a summary."""
+    """Run every **framework** scenario and produce a summary.
 
-    configs = load_all_sweep_configs()
+    Seit P2.2 sind das die Dateien mit ``art == "rahmen"`` — die Stresstests der
+    Engine sind hier heraus, weil ein Vergleich Weltbilder gegeneinanderstellt
+    und kein Belastungstest eine Zukunft ist. Ein `sweep_filter` greift
+    weiterhin auf **alle** Dateien zu: Wer einen Stresstest ausdrücklich nennt,
+    bekommt ihn.
+    """
+
+    configs = load_all_sweep_configs() if sweep_filter else rahmenszenarien()
     if sweep_filter:
         configs = [c for c in configs if c.id == sweep_filter or sweep_filter in c.id]
 

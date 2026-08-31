@@ -9,10 +9,34 @@
       "property_id": "carbon_tax_level",
       "baseline": 50.0,
       "rules": [
-        { "active_from_tick": 1, "effect": { "type": "set", "value": 50.0 } },
-        { "active_from_tick": 5, "effect": { "type": "set", "value": 90.0 } },
-        { "active_from_tick": 12, "effect": { "type": "set", "value": 180.0 } },
-        { "active_from_tick": 25, "effect": { "type": "set", "value": 250.0 } }
+        {
+          "active_from_tick": 1,
+          "effect": {
+            "type": "set",
+            "value": 50.0
+          }
+        },
+        {
+          "active_from_tick": 5,
+          "effect": {
+            "type": "set",
+            "value": 90.0
+          }
+        },
+        {
+          "active_from_tick": 12,
+          "effect": {
+            "type": "set",
+            "value": 180.0
+          }
+        },
+        {
+          "active_from_tick": 25,
+          "effect": {
+            "type": "set",
+            "value": 250.0
+          }
+        }
       ]
     },
     {
@@ -24,15 +48,34 @@
       "property_id": "oil_price_index",
       "baseline": 1.0,
       "rules": [
-        { "active_from_tick": 10, "effect": { "type": "set", "value": 1.2 } }
+        {
+          "active_from_tick": 10,
+          "effect": {
+            "type": "set",
+            "value": 1.2
+          }
+        }
       ]
     },
     {
       "property_id": "income_index",
       "baseline": 1.0,
       "rules": [
-        { "active_from_tick": 8, "effect": { "type": "ramp", "value": 0.85, "duration_ticks": 5 } },
-        { "active_from_tick": 30, "effect": { "type": "set", "value": 0.9 } }
+        {
+          "active_from_tick": 8,
+          "effect": {
+            "type": "ramp",
+            "value": 0.85,
+            "duration_ticks": 5
+          }
+        },
+        {
+          "active_from_tick": 30,
+          "effect": {
+            "type": "set",
+            "value": 0.9
+          }
+        }
       ]
     },
     {
@@ -90,5 +133,18 @@
       "check_factor": "F2",
       "expected_factor_state": "F2.2"
     }
-  ]
+  ],
+  "art": "rahmen",
+  "kohaerenz": {
+    "these": "Strenge Regulierung trifft auf ausbleibenden Technologiedurchbruch, während Ölpreis und wirtschaftlicher Druck gleichzeitig steigen: Die Kosten kommen an, der Ausweichpfad nicht.",
+    "begruendung": "Dieser Rahmen gibt für die Entscheidungsfrage des Produkts am meisten her, weil er die unbequeme Kombination durchspielt: Regulierung wirkt über den Preis, und wenn die Alternative fehlt, wird aus dem Lenkungsinstrument eine reine Verteuerung. Dass Ölpreis und Zertifikatspreis dabei gemeinsam steigen, ist keine Häufung von Pech, sondern in den Daten angelegt: 2022 lag Brent bei rund 101 USD und der Zertifikatspreis bei rund 80 EUR — beide auf dem Höchststand des gemessenen Fensters. Die Reaktion der Nachfrage darauf ist der Punkt, an dem die Preiselastizität des Luftverkehrs zur tragenden Größe wird.",
+    "quellen": [
+      "docs/research/links.md — EU-ETS / Fit for 55 (Rat der EU, Europäische Kommission); Richtlinie (EU) 2023/958: Luftverkehr im ETS, Auslaufen der freien Zuteilung 2024–2026",
+      "docs/research/literature/price_elasticities_of_demand_for_passenger_air_travel.pdf",
+      "docs/research/studies_future/gutachten-standortkosten-luftverkehr.pdf",
+      "configs/backtest/quellen.json — EEX-Auktionspreise und Brent, 2015–2024, im Repo eingecheckt und nachrechenbar",
+      "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt"
+    ],
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Der Rahmen ist bewusst ein Belastungsfall: Dass drei ungünstige Entwicklungen zusammenfallen, ist eine Annahme über Gleichzeitigkeit, für die es keinen Beleg gibt — nur den Zweck, die Grenzen des Systems zu zeigen."
+  }
 }

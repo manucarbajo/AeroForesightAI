@@ -101,6 +101,13 @@ Agenten-Texte sind Platzhalter.
 **Redebedarf** — Betriebsart, in der sich Akteure nur äußern, wenn sich für sie
 etwas Wesentliches geändert hat.
 
+**Rahmenszenario** — Ein benanntes Bündel äußerer Entwicklungen: Was die Welt
+dem Modell vorgibt, nicht was im Modell herauskommt. Jedes trägt seine
+**Begründung mit Quellen** — die Kohaerenz wird in Prosa belegt, es gibt keinen
+Algorithmus dafür. Belegt ist dabei immer die *Geschichte*, nicht ihre
+Bezifferung: Bei welchem Tick die CO₂-Abgabe auf welchen Wert springt, ist
+gesetzt und nicht aus Daten geschätzt. Siehe [Presets](/doku/presets).
+
 **Run-ID** — Eindeutige Kennung eines Laufs, zugleich der Name seines
 Ausgabeverzeichnisses.
 
@@ -113,6 +120,12 @@ Systemgröße, die die Kosten der Airline erhöht.
 **Segment** — Eine Personengruppe mit eigenem Verhalten, etwa Vielflieger oder
 preissensible Reisende. Anteile sind unabhängig; eine Person kann mehreren
 Segmenten angehören.
+
+**Stresstest** — Ein hinterlegtes Szenario, das die Engine belastet oder die
+Darstellung prüft, statt eine Zukunft zu behaupten. Seine Verläufe fahren durch
+Extreme, damit man sieht, ob etwas bricht. In der Auswahl steht das Wort an der
+Kachel; ein Szenario-Vergleich lässt ihn aus. Gegenstück zum
+**Rahmenszenario**.
 
 **Systemgröße** — Eine der Zahlen hinter den Faktoren: CO₂-Abgabe, SAF-Quote,
 Ölpreis, Einkommensindex und weitere. Siehe

@@ -18,6 +18,9 @@ from src.orchestration.scenario_sweeps import (
     load_all_sweep_configs,
     load_sweep_config,
 )
+from src.orchestration.scenario_sweeps import (
+    rahmenszenarien as _rahmenszenarien,
+)
 from src.validation import collect_state_errors, field_of, issue, validate_llm_settings
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -223,9 +226,23 @@ def sweeps_dir() -> Path:
 
 
 def list_sweep_presets() -> list[SweepConfig]:
+    """Alles unter `configs/sweeps/` — **Rahmen und Stresstests**.
+
+    Für die **Auswahl** richtig: Ein Stresstest bleibt einzeln startbar. Für
+    einen **Vergleich** falsch — dafür `rahmenszenarien()`.
+    """
+
     if not SWEEPS_DIR.is_dir():
         return []
     return load_all_sweep_configs(SWEEPS_DIR)
+
+
+def rahmenszenarien() -> list[SweepConfig]:
+    """Nur die begründeten Weltbilder (P2.2). Siehe `scenario_sweeps.rahmenszenarien`."""
+
+    if not SWEEPS_DIR.is_dir():
+        return []
+    return _rahmenszenarien(SWEEPS_DIR)
 
 
 def load_config_file(filename: str) -> dict[str, Any]:

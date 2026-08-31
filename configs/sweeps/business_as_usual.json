@@ -9,7 +9,13 @@
       "property_id": "carbon_tax_level",
       "baseline": 50.0,
       "rules": [
-        { "active_from_tick": 1, "effect": { "type": "set", "value": 50.0 } }
+        {
+          "active_from_tick": 1,
+          "effect": {
+            "type": "set",
+            "value": 50.0
+          }
+        }
       ]
     },
     {
@@ -64,5 +70,18 @@
       "check_factor": "F6",
       "expected_factor_state": "F6.1"
     }
-  ]
+  ],
+  "art": "rahmen",
+  "kohaerenz": {
+    "these": "Die Klimapolitik im Luftverkehr bleibt bei moderater Bepreisung stehen, ein Technologiesprung bei nachhaltigen Kraftstoffen bleibt aus, und Fliegen bleibt billig und gesellschaftlich akzeptiert.",
+    "begruendung": "Die drei Vorgaben stützen sich gegenseitig, statt nur nebeneinanderzustehen: Ohne verbindliches Beimischungsziel fehlt der Nachfragesog, der die Skalierung alternativer Kraftstoffe finanziert; ohne diese Skalierung bleiben sie ein Vielfaches teurer als fossiles Kerosin; und solange der Aufschlag nicht am Ticket ankommt, entsteht auch kein gesellschaftlicher Druck, der die Politik nachschärfen ließe. Das ist die Trägheitsvariante, gegen die sich die drei anderen Rahmen lesen lassen — nicht die wahrscheinlichste Welt, sondern die, in der nichts von dem eintritt, was die übrigen behaupten. Sie ist ausdrücklich KEIN Fortschreiben der Gegenwart: Der EU-Preis für Emissionszertifikate lag 2015 bei 7,6 EUR und 2022/2023 bei rund 80 EUR (im Repo gemessen), die freie Zuteilung für den Luftverkehr läuft 2024–2026 aus, und ReFuelEU schreibt Beimischung ab 2025 verbindlich vor. «Business as Usual» beschreibt damit das Ausbleiben der bereits beschlossenen Verschärfung, nicht deren Fortsetzung.",
+    "quellen": [
+      "docs/research/links.md — EU-ETS / Fit for 55 (Rat der EU, Europäische Kommission); Richtlinie (EU) 2023/958: Luftverkehr im ETS, Auslaufen der freien Zuteilung 2024–2026",
+      "Verordnung (EU) 2023/2405 (ReFuelEU Aviation): SAF-Beimischung 2 % ab 2025, 6 % ab 2030",
+      "docs/research/studies_future/aircraft-technology-net-zero-roadmap.pdf und evolution-of-alternative-fuels-for-aviation.pdf (IATA Net-Zero-Roadmaps)",
+      "configs/backtest/quellen.json — EEX-Auktionspreise und Brent, 2015–2024, im Repo eingecheckt und nachrechenbar",
+      "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt"
+    ],
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Zusätzlich hier: Die konstanten 50 EUR liegen unter dem seit 2021 beobachteten Niveau. Der Rahmen ist als Kontrast angelegt, nicht als Prognose, und darf nicht als «wenn nichts passiert» gelesen werden — er behauptet eine Rücknahme, keine Ruhe."
+  }
 }

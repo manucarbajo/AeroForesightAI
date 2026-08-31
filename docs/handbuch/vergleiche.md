@@ -175,6 +175,19 @@ unter `scenarios`, und der vom Sprachmodell behauptete Einflusswert heißt
 Läufe von davor und danach vergleicht, vergleicht dieselben Zahlen; wer sie
 maschinell ausliest, muss den Schlüssel nachziehen.
 
+Am **2026-08-31** kam ein fünfter Schnitt dazu, und er betrifft, **was ein
+Szenario-Vergleich überhaupt vergleicht**: Bis dahin rechnete er *alle acht*
+hinterlegten Dateien durch. Vier davon sind aber keine Zukünfte, sondern
+Stresstests der Engine — «Achterbahn der Extreme», «Action-Szenario», «Totaler
+Wahnsinn (Alle Parameter)» und ein gesichertes Experiment namens «P5.7». Ihre
+Verläufe sind auf Sichtbarkeit und Belastung gebaut, nicht auf Plausibilität.
+
+Ein Vergleich stellt seither **vier Rahmenszenarien** nebeneinander statt acht
+Dateien. Wer einen älteren Vergleichslauf offen hat, findet dort vier Ergebnisse
+mehr — und die vier zusätzlichen sagen nichts über die Welt. Die Stresstests
+sind nicht verschwunden: Sie lassen sich weiterhin einzeln starten, und die
+Auswahl schreibt jetzt «Stresstest» an die Kachel.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich
