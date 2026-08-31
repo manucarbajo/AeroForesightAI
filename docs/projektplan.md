@@ -1732,6 +1732,27 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 
 Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes Paket ist klein; zusammen entscheiden sie, ob die Engine trägt.
 
+### P3.7 — Titel und Legende teilen sich einen Rand ⚠️ neu 2026-08-31, zwei Versuche verworfen
+
+**Befund:** In den Plotly-Diagrammen des Dashboards überlappen sich Titel und Legende. Beide leben im oberen Rand: Die Legende steht waagerecht bei `y=1.02` über der Zeichenfläche, der Titel im selben `margin.t=56`. Gemessen am laufenden System: Titel y 681–702, erster Legendeneintrag y 696–715 — **6 px Überschneidung**. Bei fünf Legendeneinträgen («Buchungsrate nach Profil-Segment») wird die Legende **105 px** hoch und deckt den Titel weitgehend zu.
+
+**Fundstelle:** [`dashboard/web/theme.py`](../dashboard/web/theme.py), `_build_template` — `title` und `legend` im `go.Layout`.
+
+**Gefunden beim Einzeichnen des Ensemble-Bandes** ([P2.6](#p26--ensemble-läufe-je-rahmenszenario--erledigt-2026-08-31)). Dessen erste Fassung verschlimmerte es (längerer Titel plus zwei weitere Legendeneinträge → zweizeilige Legende, 58 px), das ist zurückgenommen. Der **vorbestehende** Rest ist dieser Befund.
+
+**Zwei Versuche sind gemessen und verworfen worden**, und das ist die eigentliche Auskunft dieses Pakets — wer es angeht, fängt nicht bei ihnen an:
+
+1. **Größeres `margin.t` plus `title.y=1`** (56 → 92 px): behebt es für drei der vier Aussagen. Die vierte hat eine Legende, die auf 105 px umbricht, und läuft weiterhin in den Titel. **Ein fester Rand kann eine Legende variabler Höhe nicht auffangen** — das ist keine Frage der Zahl.
+2. **`title.automargin=True`**, der dafür vorgesehene Plotly-Mechanismus: macht es **schlimmer**. Danach überlappten *beide* Diagramme der Aussage 3 statt einem. Der Titel zieht den Rand auf, die Legende sitzt aber relativ zur Zeichenfläche und wandert mit nach unten.
+
+**Was zu tun ist:** Die Legende gehört **unter** die Zeichenfläche (`yanchor="top"`, negatives `y`, größeres `margin.b`). Dann hat der Titel den oberen Rand für sich, und die Legende wächst nach unten, wo Platz ist. **Das ist eine Gestaltungsentscheidung für jedes Diagramm im Produkt**, nicht eine Zeile Reparatur — deshalb ein eigenes Paket und nicht am Rand von P2.6 erledigt.
+
+**Fallstrick:** Die x-Achsenbeschriftung lebt bereits unten. Wer die Legende dorthin setzt, prüft beide zusammen, sonst tauscht er eine Überlappung gegen die nächste.
+
+**Fertig wenn:** Kein Diagramm des Dashboards überlappt Titel und Legende — gemessen im Browser über **alle** vier Aussagen und beide Modi, nicht an einem Beispiel. Der Wächter gehört zu `tests/test_web_overflow.py`, der ohnehin als einziger einen echten Browser hat.
+
+**Doku zieht mit:** `CLAUDE.md` (Farb- und Layoutfundament), falls sich die Regel ändert.
+
 ### P3.1 — System-Properties täuschen keine Laufzeitwerte mehr vor
 
 **Befund:** Für Properties mit `source in {"runtime","computed"}` (z. B. `provider_markup`, `ticket_price`) liefert `resolve_system_properties` laut eigenem Docstring die statische Trajektorien-Baseline, nicht den Laufzeitwert. Folgenlos nur, solange keine ausgelieferte Regel diese IDs per `system_property`-Bedingung referenziert — eine neue Regel darauf würde still gegen eine veraltete Zahl prüfen.
