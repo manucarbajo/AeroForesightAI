@@ -383,10 +383,38 @@ def _validate_factor_rules(rules: list[FactorRule]) -> list[str]:
 
 
 def _validate_shift_rules(rules: list[ShiftRule]) -> list[str]:
+    """Bedingung **und Wirkung** prüfen (Wirkung seit P2.4, 2026-08-31).
+
+    Bis dahin prüfte diese Funktion nur die ``when``-Klausel. Das ``effect``
+    kam ungeprüft durch, und zur Laufzeit fiel ein unbekanntes Ziel still
+    heraus: Eine Regel auf ``age`` tat nichts, ein Tippfehler wie
+    ``price_sensitivty`` ebenso — keine Meldung, nur eine Regel, die nie greift.
+    Genau die Sorte Befund, gegen die Invariante 6 im ``rule_engine`` steht.
+    """
+
+    from src.population.population_sampler import SHIFT_ZIELE
+
     errors: list[str] = []
     for index, rule in enumerate(rules):
         prefix = f"shift_rules[{index}]" + (f" '{rule.id}'" if rule.id else "")
         errors.extend(_validate_when(rule.when, prefix, allow_empty=False))
+
+        effect = rule.effect or {}
+        ziel = str(effect.get("property", ""))
+        if not ziel:
+            errors.append(f"{prefix}: effect ohne 'property'")
+        elif ziel not in SHIFT_ZIELE:
+            errors.append(
+                f"{prefix}: unbekanntes Ziel '{ziel}'. Eine shift_rule erreicht "
+                f"{sorted(SHIFT_ZIELE)} — alles andere greift nie."
+            )
+
+        if "delta" in effect:
+            try:
+                float(effect["delta"])
+            except (TypeError, ValueError):
+                errors.append(f"{prefix}: 'delta' ist keine Zahl ({effect['delta']!r})")
+
     return errors
 
 

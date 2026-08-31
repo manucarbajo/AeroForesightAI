@@ -271,6 +271,27 @@ def initialize_population(
     return individuals
 
 
+#: Welche Individuen-Attribute eine ``shift_rule`` verändern kann — je Ziel das
+#: Attribut und seine Grenzen.
+#:
+#: **Das ist die Quelle, nicht eine Beschreibung daneben** (P2.4, 2026-08-31):
+#: `apply_factor_shifts` wertet sie aus, `validation._validate_shift_rules`
+#: prüft dagegen. Vorher stand die Liste als `if`/`elif`-Kette hier — **ohne
+#: `else`**. Eine Regel auf `age` tat nichts, ein Tippfehler wie
+#: `price_sensitivty` ebenso: keine Meldung, kein Fehler, nur eine Regel, die
+#: nie greift. Dieselbe Klasse von Befund, gegen die Invariante 6 im
+#: `rule_engine` angetreten ist — was nicht auswertbar ist, schlägt laut fehl.
+#:
+#: `income_factor` wirkt auf `base_income_factor`: Der laufende `income_factor`
+#: wird in jedem Tick aus Basis mal `income_index` neu gebildet, ein Schreiben
+#: darauf wäre im nächsten Tick weg.
+SHIFT_ZIELE: dict[str, tuple[str, float, float]] = {
+    "environmental_awareness": ("environmental_awareness", 0.0, 1.0),
+    "price_sensitivity": ("price_sensitivity", 0.0, 1.0),
+    "income_factor": ("base_income_factor", 0.0, 5.0),
+}
+
+
 def apply_factor_shifts(
     individuals: list[Individual],
     shift_rules: list[ShiftRule],
@@ -313,9 +334,7 @@ def apply_factor_shifts(
 
     updated: list[Individual] = []
     for person in individuals:
-        awareness = person.environmental_awareness
-        price_sensitivity = person.price_sensitivity
-        base_income_factor = person.base_income_factor
+        werte = {attribut: getattr(person, attribut) for attribut, _, _ in SHIFT_ZIELE.values()}
         applied_rules = list(person.applied_shift_rules)
 
         for index, rule in enumerate(active_rules):
@@ -324,22 +343,25 @@ def apply_factor_shifts(
                 continue
             effect = rule.effect
             prop_id = str(effect.get("property", ""))
+            ziel = SHIFT_ZIELE.get(prop_id)
+            if ziel is None:
+                # **Laut statt still** (P2.4). `validation` weist eine solche
+                # Regel schon beim Laden ab; wer eine Regel im Code baut, kommt
+                # daran vorbei und soll es hier erfahren.
+                raise ValueError(
+                    f"shift_rule '{rule_id}': unbekanntes Ziel {prop_id!r}. "
+                    f"Erreichbar sind {sorted(SHIFT_ZIELE)}."
+                )
+            attribut, unten, oben = ziel
             delta = float(effect.get("delta", 0.0))
-            if prop_id == "environmental_awareness":
-                awareness = float(np.clip(awareness + delta, 0.0, 1.0))
-            elif prop_id == "price_sensitivity":
-                price_sensitivity = float(np.clip(price_sensitivity + delta, 0.0, 1.0))
-            elif prop_id == "income_factor":
-                base_income_factor = float(np.clip(base_income_factor + delta, 0.0, 5.0))
+            werte[attribut] = float(np.clip(werte[attribut] + delta, unten, oben))
             if rule.once:
                 applied_rules.append(rule_id)
 
         updated.append(
             person.model_copy(
                 update={
-                    "environmental_awareness": round(awareness, 4),
-                    "price_sensitivity": round(price_sensitivity, 4),
-                    "base_income_factor": round(base_income_factor, 4),
+                    **{name: round(wert, 4) for name, wert in werte.items()},
                     "applied_shift_rules": applied_rules,
                 }
             )
