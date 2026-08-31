@@ -23,12 +23,27 @@ from src.models.state_models import Rahmenszenario
 from src.orchestration.scenario_sweeps import apply_sweep_overrides
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 
-ZIELREIHE = "hicp_flugreisen"
+#: Was gegen was gehalten wird. Zwei Seiten, dieselbe Rechnung: indexiert auf
+#: 2015 = 100, verglichen auf Jahresmitteln, 2020/21 mitgerechnet und nicht
+#: bewertet.
+#:
+#: Die **Preisseite** war der Vorlauf; die **Nachfrageseite** kam dazu, nachdem
+#: er getragen hat. Die Reihenfolge war Absicht: Träfe schon der Preispfad die
+#: Größenordnung nicht, sagte die Nachfrage nichts mehr dazu — sie hängt am Preis.
+ZIELREIHEN = {
+    "Preis": ("ticket_price", "hicp_flugreisen"),
+    "Nachfrage": ("booking_rate", "fluggaeste"),
+}
 BERICHT = REPO_ROOT / "docs" / "backtest_vorlauf.md"
 
 
-def modellpfad(*, seed: int = 42) -> dict[str, float]:
-    """Den Ticketpreis je Monat aus einem Lauf unter der historischen Außenwelt."""
+def modellpfade(*, seed: int = 42) -> dict[str, dict[str, float]]:
+    """Ticketpreis **und** Buchungsrate je Monat, aus **einem** Lauf.
+
+    Beide Seiten kommen aus demselben Lauf — sonst verglichen sie zwei
+    verschiedene Welten, und die Nachfrage antwortete auf einen anderen Preis
+    als den, der geprüft wird.
+    """
 
     reihen = {name: laden(name) for name in ZUORDNUNG}
     sweep = historischer_rahmen(reihen)
@@ -51,43 +66,51 @@ def modellpfad(*, seed: int = 42) -> dict[str, float]:
     ende = runner.run(state, seed=seed, run_id="backtest_vorlauf")
 
     monate = monat_je_tick()
-    return {
-        monate[eintrag.round_number]: eintrag.price
-        for eintrag in ende.price_history
-        if eintrag.round_number in monate
-    }
+    pfade: dict[str, dict[str, float]] = {"ticket_price": {}, "booking_rate": {}}
+    for eintrag in ende.price_history:
+        monat = monate.get(eintrag.round_number)
+        if monat is None:
+            continue
+        pfade["ticket_price"][monat] = eintrag.price
+        # `booking_rate` ist optional; ein fehlender Wert fällt heraus, statt als
+        # 0 in ein Jahresmittel einzugehen.
+        if eintrag.booking_rate is not None:
+            pfade["booking_rate"][monat] = eintrag.booking_rate
+    return pfade
 
 
 def main() -> int:
     print("Backtest-Vorlauf 2015–2024 …")
-    ziel = laden(ZIELREIHE)
-    pfad = modellpfad()
-    print(f"  Modellpfad: {len(pfad)} Monate")
-    print(f"  Zielreihe : {len(ziel.werte)} Monate ({ziel.quelle['url'][:60]}…)")
+    pfade = modellpfade()
+    ergebnisse: dict[str, object] = {}
 
-    ergebnis = bewerten(pfad, ziel.werte)
+    for titel, (modellgroesse, zielname) in ZIELREIHEN.items():
+        ziel = laden(zielname)
+        ergebnis = bewerten(pfade[modellgroesse], ziel.werte)
+        ergebnisse[titel] = (ergebnis, ziel)
 
-    print()
-    print("  Jahr   Modell    Ziel   Abstand")
-    for jahr in sorted(ergebnis.modell_je_jahr):
-        marke = "  (ungewertet)" if jahr in ergebnis.unbewertete_jahre else ""
-        m, z = ergebnis.modell_je_jahr[jahr], ergebnis.ziel_je_jahr[jahr]
-        print(f"  {jahr}  {m:7.2f} {z:7.2f}   {m - z:+7.2f}{marke}")
-    print()
-    print(f"  Mittlerer Abstand   {ergebnis.mittlerer_abstand:>7.2f} Indexpunkte")
-    print(
-        f"  Größter Abstand     {ergebnis.groesster_abstand:>7.2f} "
-        f"({ergebnis.groesster_abstand_jahr})"
-    )
-    print(f"  Richtung getroffen  {ergebnis.richtungstreffer:>7s} Jahresschritte")
-    print(f"  Saison Modell/Ziel  {ergebnis.saison_modell:>7.1f} / {ergebnis.saison_ziel:.1f}")
+        print()
+        print(f"  === {titel}: {modellgroesse} gegen {zielname} ===")
+        print("  Jahr   Modell    Ziel   Abstand")
+        for jahr in sorted(ergebnis.modell_je_jahr):
+            marke = "  (ungewertet)" if jahr in ergebnis.unbewertete_jahre else ""
+            m, z = ergebnis.modell_je_jahr[jahr], ergebnis.ziel_je_jahr[jahr]
+            print(f"  {jahr}  {m:7.2f} {z:7.2f}   {m - z:+7.2f}{marke}")
+        vor = [j for j in ergebnis.bewertete_jahre if j < "2020"]
+        nach = [j for j in ergebnis.bewertete_jahre if j > "2021"]
+        print(
+            f"  Abstand gesamt {ergebnis.mittlerer_abstand:>7.2f}  |  "
+            f"{vor[0]}–{vor[-1]}: {ergebnis.abstand_ueber(vor):.2f}  |  "
+            f"{nach[0]}–{nach[-1]}: {ergebnis.abstand_ueber(nach):.2f}"
+        )
+        print(f"  Richtung getroffen {ergebnis.richtungstreffer}")
 
-    BERICHT.write_text(_bericht(ergebnis, ziel, pfad), encoding="utf-8", newline="")
+    BERICHT.write_text(_bericht(ergebnisse), encoding="utf-8", newline="")
     print(f"\nBericht: {BERICHT.relative_to(REPO_ROOT)}")
     return 0
 
 
-def _bericht(ergebnis, ziel, pfad: dict[str, float]) -> str:
+def _bericht(ergebnisse: dict[str, object]) -> str:
     quellen = json.loads((REPO_ROOT / "configs" / "backtest" / "quellen.json").read_text("utf-8"))
     zeilen = [
         "# Backtest-Vorlauf 2015–2024",
@@ -95,42 +118,47 @@ def _bericht(ergebnis, ziel, pfad: dict[str, float]) -> str:
         "> Erzeugt von `python -m src.backtest.vorlauf`. **Diese Datei wird "
         "überschrieben** — wer ein Ergebnis festhalten will, kopiert es heraus.",
         "",
-        "## Ergebnis",
-        "",
-        "| Jahr | Modell | Zielreihe | Abstand | |",
-        "| --- | ---: | ---: | ---: | --- |",
     ]
-    for jahr in sorted(ergebnis.modell_je_jahr):
-        m, z = ergebnis.modell_je_jahr[jahr], ergebnis.ziel_je_jahr[jahr]
-        marke = "ungewertet" if jahr in ergebnis.unbewertete_jahre else ""
-        zeilen.append(f"| {jahr} | {m:.2f} | {z:.2f} | {m - z:+.2f} | {marke} |")
 
-    vor = [j for j in ergebnis.bewertete_jahre if j < "2020"]
-    nach = [j for j in ergebnis.bewertete_jahre if j > "2021"]
+    for titel, paket in ergebnisse.items():
+        ergebnis, ziel = paket  # type: ignore[misc]
+        modellgroesse, zielname = ZIELREIHEN[titel]
+        vor = [j for j in ergebnis.bewertete_jahre if j < "2020"]
+        nach = [j for j in ergebnis.bewertete_jahre if j > "2021"]
+
+        zeilen += [
+            f"## {titel}: `{modellgroesse}` gegen `{zielname}`",
+            "",
+            "| Jahr | Modell | Zielreihe | Abstand | |",
+            "| --- | ---: | ---: | ---: | --- |",
+        ]
+        for jahr in sorted(ergebnis.modell_je_jahr):
+            m, z = ergebnis.modell_je_jahr[jahr], ergebnis.ziel_je_jahr[jahr]
+            marke = "ungewertet" if jahr in ergebnis.unbewertete_jahre else ""
+            zeilen.append(f"| {jahr} | {m:.2f} | {z:.2f} | {m - z:+.2f} | {marke} |")
+
+        zeilen += [
+            "",
+            "| Kennzahl | Wert |",
+            "| --- | ---: |",
+            f"| Mittlerer Abstand, bewertete Jahre | {ergebnis.mittlerer_abstand:.2f} |",
+            f"| Größter Abstand | {ergebnis.groesster_abstand:.2f} "
+            f"({ergebnis.groesster_abstand_jahr}) |",
+        ]
+        if vor:
+            zeilen.append(f"| davon {vor[0]}–{vor[-1]} | {ergebnis.abstand_ueber(vor):.2f} |")
+        if nach:
+            zeilen.append(f"| davon {nach[0]}–{nach[-1]} | {ergebnis.abstand_ueber(nach):.2f} |")
+        zeilen += [
+            f"| Richtung der Jahresveränderung getroffen | {ergebnis.richtungstreffer} |",
+            f"| Saisonschwankung Modell / Ziel | {ergebnis.saison_modell:.1f} / "
+            f"{ergebnis.saison_ziel:.1f} |",
+            "",
+        ]
+        zeilen += [f"- {h}" for h in ergebnis.hinweise]
+        zeilen.append("")
+
     zeilen += [
-        "",
-        "| Kennzahl | Wert |",
-        "| --- | ---: |",
-        f"| Mittlerer Abstand, bewertete Jahre | {ergebnis.mittlerer_abstand:.2f} |",
-        f"| Größter Abstand | {ergebnis.groesster_abstand:.2f} ({ergebnis.groesster_abstand_jahr}) |",
-    ]
-    # Die beiden Teilfenster stehen getrennt, weil genau dort die Aussage liegt:
-    # vor der Pandemie und danach sind zwei verschiedene Ergebnisse.
-    if vor:
-        zeilen.append(f"| davon {vor[0]}–{vor[-1]} | {ergebnis.abstand_ueber(vor):.2f} |")
-    if nach:
-        zeilen.append(f"| davon {nach[0]}–{nach[-1]} | {ergebnis.abstand_ueber(nach):.2f} |")
-    zeilen += [
-        f"| Richtung der Jahresveränderung getroffen | {ergebnis.richtungstreffer} |",
-        f"| Saisonschwankung Modell / Ziel | {ergebnis.saison_modell:.1f} / "
-        f"{ergebnis.saison_ziel:.1f} |",
-        "",
-        "## Was das heißt",
-        "",
-    ]
-    zeilen += [f"- {h}" for h in ergebnis.hinweise]
-    zeilen += [
-        "",
         "## Datenquellen",
         "",
         "| Reihe | Monate | Abgerufen | Herkunft |",

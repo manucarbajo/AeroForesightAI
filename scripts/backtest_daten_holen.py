@@ -59,6 +59,15 @@ HICP_URL = (
     "?format=JSON&lang=EN&unit=I15&coicop=CP0733&geo=EU27_2020"
     f"&sinceTimePeriod={VON}&untilTimePeriod={BIS}"
 )
+#: Fluggäste, monatlich, EU-27. `PAS_CRD` sind die **beförderten** Passagiere
+#: (nicht die ein- und ausgestiegenen, die jeden Umsteiger doppelt zählen),
+#: `tra_cov=TOTAL` schließt Inlands- und Auslandsverkehr ein.
+FLUGGAESTE_URL = (
+    "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/avia_paoc"
+    "?format=JSON&lang=EN&geo=EU27_2020&freq=M&unit=PAS&tra_meas=PAS_CRD"
+    "&tra_cov=TOTAL&schedule=TOTAL"
+    f"&sinceTimePeriod={VON}&untilTimePeriod={BIS}"
+)
 
 
 def _laden(url: str) -> bytes:
@@ -205,8 +214,8 @@ def brent_monatsmittel() -> dict[str, float]:
     return dict(sorted(reihe.items()))
 
 
-def hicp_flugreisen() -> dict[str, float]:
-    daten = json.loads(_laden(HICP_URL).decode("utf-8"))
+def _eurostat_reihe(url: str) -> dict[str, float]:
+    daten = json.loads(_laden(url).decode("utf-8"))
     stellen = daten["dimension"]["time"]["category"]["index"]
     werte = daten["value"]
     umgekehrt = {v: k for k, v in stellen.items()}
@@ -215,6 +224,14 @@ def hicp_flugreisen() -> dict[str, float]:
         for i in sorted(umgekehrt)
         if werte.get(str(i)) is not None
     }
+
+
+def hicp_flugreisen() -> dict[str, float]:
+    return _eurostat_reihe(HICP_URL)
+
+
+def fluggaeste() -> dict[str, float]:
+    return _eurostat_reihe(FLUGGAESTE_URL)
 
 
 def _schreiben(name: str, spalte: str, reihe: dict[str, float]) -> dict[str, object]:
@@ -262,8 +279,18 @@ def main() -> int:
             "index_2015_100",
             HICP_URL,
             "Eurostat `prc_hicp_midx`, COICOP `CP0733` (Passenger transport by air), "
-            "EU-27, Index 2015 = 100. **Die Zielreihe des Backtests.**",
+            "EU-27, Index 2015 = 100. **Zielreihe der Preisseite.**",
             hicp_flugreisen,
+        ),
+        (
+            "fluggaeste",
+            "personen",
+            FLUGGAESTE_URL,
+            "Eurostat `avia_paoc`, beförderte Fluggäste (`PAS_CRD`), EU-27, monatlich, "
+            "Inlands- und Auslandsverkehr. **Zielreihe der Nachfrageseite.** Der Wert "
+            "für April 2020 — 0,89 statt rund 90 Millionen — ist echt und der Grund, "
+            "warum 2020/21 nicht bewertet werden.",
+            fluggaeste,
         ),
     ):
         print(f"  {name} …", end=" ", flush=True)

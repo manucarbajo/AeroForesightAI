@@ -184,21 +184,55 @@ class TestDieAuswertungMisstDasRichtige:
             bewerten({}, {m: 100.0 for m in alle_monate()})
 
 
-def test_der_vorlauf_laeuft_durch_und_liefert_beide_teilfenster():
-    """Der ganze Weg einmal — langsam, aber die einzige Zusage, die zählt."""
+def test_der_vorlauf_laeuft_durch_und_liefert_beide_seiten():
+    """Der ganze Weg einmal — langsam, aber die einzige Zusage, die zaehlt.
 
-    from src.backtest.vorlauf import modellpfad
+    **Beide Zielreihen kommen aus einem Lauf.** Zwei Laeufe verglichen zwei
+    verschiedene Welten, und die Nachfrage antwortete auf einen anderen Preis
+    als den, der geprueft wird.
+    """
 
-    pfad = modellpfad()
-    assert len(pfad) == 120, f"Der Lauf liefert {len(pfad)} statt 120 Monate"
+    from src.backtest.vorlauf import ZIELREIHEN, modellpfade
 
-    ergebnis = bewerten(pfad, laden("hicp_flugreisen").werte)
+    pfade = modellpfade()
 
-    vor = [j for j in ergebnis.bewertete_jahre if j < "2020"]
-    nach = [j for j in ergebnis.bewertete_jahre if j > "2021"]
-    assert ergebnis.abstand_ueber(vor) is not None
-    assert ergebnis.abstand_ueber(nach) is not None
-    assert ergebnis.abstand_ueber(nach) > ergebnis.abstand_ueber(vor), (
-        "Der Abstand nach der Pandemie ist nicht mehr größer als davor. Das wäre "
-        "eine gute Nachricht — und der Anlass, den Bericht neu zu schreiben."
+    for titel, (modellgroesse, zielname) in ZIELREIHEN.items():
+        assert (
+            len(pfade[modellgroesse]) == 120
+        ), f"{titel}: der Lauf liefert {len(pfade[modellgroesse])} statt 120 Monate"
+
+        ergebnis = bewerten(pfade[modellgroesse], laden(zielname).werte)
+        vor = [j for j in ergebnis.bewertete_jahre if j < "2020"]
+        nach = [j for j in ergebnis.bewertete_jahre if j > "2021"]
+
+        assert ergebnis.abstand_ueber(vor) is not None, titel
+        assert ergebnis.abstand_ueber(nach) is not None, titel
+        assert "2020" in ergebnis.unbewertete_jahre, titel
+
+
+def test_die_beiden_seiten_sagen_verschiedenes():
+    """Der eigentliche Befund des Pakets, als Messung festgehalten.
+
+    Die **Preisseite** trifft vor der Pandemie fast genau (rund zwei
+    Indexpunkte), die **Nachfrageseite** liegt schon dort um ein Vielfaches
+    daneben — und zwar in die falsche Richtung: Das Modell laesst die
+    Buchungsrate fallen, wo real die Fluggastzahlen stiegen.
+
+    Wuerde dieser Test gruen bleiben, waere das eine gute Nachricht und der
+    Anlass, den Bericht neu zu schreiben.
+    """
+
+    from src.backtest.vorlauf import modellpfade
+
+    pfade = modellpfade()
+    vorjahre = ["2015", "2016", "2017", "2018", "2019"]
+
+    preis = bewerten(pfade["ticket_price"], laden("hicp_flugreisen").werte)
+    nachfrage = bewerten(pfade["booking_rate"], laden("fluggaeste").werte)
+
+    assert nachfrage.abstand_ueber(vorjahre) > 3 * preis.abstand_ueber(vorjahre), (
+        f"Preis {preis.abstand_ueber(vorjahre)}, Nachfrage "
+        f"{nachfrage.abstand_ueber(vorjahre)} — die Zweiteilung ist weg. "
+        "Entweder hat jemand die Nachfrageseite repariert (dann gehoert der "
+        "Bericht neu geschrieben) oder die Preisseite ist schlechter geworden."
     )
