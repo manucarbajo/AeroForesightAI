@@ -296,3 +296,161 @@ class TestDieGesellschaftDarfAlternDieKohorteNicht:
         mit, _ = self._ziehen(properties, 50.8)
 
         assert mean(p.age for p in ohne) == pytest.approx(mean(p.age for p in mit), abs=0.01)
+
+
+class TestOhneNachwuchsPassiertNichts:
+    """P2.4-E (2026-08-31) — **es werden Menschen geboren, sie sterben nicht aus**.
+
+    **Der Fehler, den diese Klasse fängt, ist mein eigener.** P2.4-D hat
+    `altersmittel_jahre` als exogenen Verlauf eingebaut, und der Wächter dazu
+    prüfte die **erste Ziehung** — die stimmte. Über den Lauf hinweg war die
+    Vorgabe aber **wirkungslos**: Neue Personen entstanden nur, wenn die
+    Bevölkerung *wuchs*; bei gleichbleibender Größe lebten dieselben tausend
+    Menschen ewig weiter. Gemessen blieb das Altersmittel über 30 Ticks bei
+    50,8, während der Verlauf 60 verlangte.
+
+    **Die Lehre, und sie ist allgemeiner als dieser Fall:** Ein Wächter, der den
+    *Mechanismus* prüft statt die *Zusage*, ist grün und nutzlos. Die Zusage
+    lautete «eine Gesellschaft kann altern» — geprüft war «eine Ziehung
+    berücksichtigt das Altersmittel».
+
+    Deshalb misst diese Klasse über **mehrere Ticks** und gegen den Zustand
+    ohne Erneuerung.
+    """
+
+    ZIEL = 60.0
+    TICKS = 30
+
+    #: Der Ausgangswert der ausgelieferten Config (Eurostat, EU-27 ab 18).
+    START = 50.8
+
+    @classmethod
+    def _lauf(cls, properties, *, rate: float, ziel: float, ticks: int) -> float:
+        """Altersmittel nach *ticks* Ticks, wenn sich die Vorgabe **verschiebt**.
+
+        **Der erste Tick zieht bei `START`, nicht beim Ziel** — sonst käme die
+        Bevölkerung schon fertig gealtert zur Welt, und der Test prüfte gar
+        nichts. Genau dieser Fehler steckte in der ersten Fassung: Sie setzte
+        das Ziel ab Tick 1 und maß dann, dass es «angekommen» sei.
+        """
+
+        from src.population.population_sampler import run_population_tick
+
+        zustand = build_initial_state()
+        config = next(
+            agent for agent in zustand.agents if getattr(agent, "population_config", None)
+        ).population_config
+
+        leute = None
+        for tick in range(1, ticks + 1):
+            leute, _ = run_population_tick(
+                properties,
+                config,
+                leute,
+                ticket_price=140.0,
+                carbon_tax=50.0,
+                factors={},
+                system_properties={
+                    "bevoelkerungsentwicklung": 1000,
+                    "altersmittel_jahre": cls.START if tick == 1 else ziel,
+                    "erneuerungsrate": rate,
+                },
+                seed=42,
+                current_tick=tick,
+                metrics={},
+            )
+        return mean(person.age for person in leute)
+
+    def test_ohne_erneuerung_bleibt_die_vorgabe_wirkungslos(self, properties):
+        """**Der Befund selbst, als Messung.** Nicht «es wirkt schwächer» —
+        es wirkt gar nicht."""
+
+        ende = self._lauf(properties, rate=0.0, ziel=self.ZIEL, ticks=self.TICKS)
+
+        assert ende == pytest.approx(50.5, abs=0.5), (
+            f"Ohne Erneuerung steht das Altersmittel nach {self.TICKS} Ticks bei "
+            f"{ende:.1f}. Bewegt es sich, kommt der Nachwuchs jetzt von woanders "
+            "her — dann gehört P2.4-E neu geschrieben."
+        )
+
+    def test_mit_erneuerung_laeuft_sie_in_die_richtige_richtung(self, properties):
+        ohne = self._lauf(properties, rate=0.0, ziel=self.ZIEL, ticks=self.TICKS)
+        mit = self._lauf(properties, rate=0.05, ziel=self.ZIEL, ticks=self.TICKS)
+
+        assert (
+            mit > ohne + 2.0
+        ), f"Mit Erneuerung {mit:.1f}, ohne {ohne:.1f} — die Vorgabe kommt nicht an."
+        assert mit < self.ZIEL, (
+            "Das Altersmittel hat die Vorgabe erreicht oder überschritten. Eine "
+            "Gesellschaft springt nicht auf ihr Ziel, sie nähert sich an."
+        )
+
+    def test_die_richtung_stimmt_und_das_ist_nicht_selbstverstaendlich(self, properties):
+        """**Der erste Anlauf lief hier verkehrt herum**, und der Test hält fest,
+        warum.
+
+        Er gewichtete das Ausscheiden mit dem Alter, weil «Alte sterben eher»
+        realistischer aussieht. Gemessen zog die Bevölkerung damit von 50,8 auf
+        **45,5**, während die Vorgabe 60 verlangte: Wer die Ältesten entfernt und
+        aus der vollen Verteilung nachzieht, verjüngt zwangsläufig.
+
+        `altersmittel_jahre` ist ein **Kompositionsziel**, keine Sterbetafel.
+        Eine Ausscheide-Mechanik daraufzusetzen lässt zwei Modelle
+        gegeneinander rechnen.
+        """
+
+        jung = self._lauf(properties, rate=0.05, ziel=45.0, ticks=self.TICKS)
+        alt = self._lauf(properties, rate=0.05, ziel=self.ZIEL, ticks=self.TICKS)
+
+        assert jung < 50.5 < alt, (
+            f"Ziel 45 ergibt {jung:.1f}, Ziel 60 ergibt {alt:.1f} — die Bevölkerung "
+            "folgt der Vorgabe nicht in beide Richtungen."
+        )
+
+    def test_bei_festem_ziel_laeuft_sie_dorthin_und_bleibt(self, properties):
+        """Sie nähert sich an **und bleibt** — sonst wäre es eine Drift ohne
+        Ruhelage, und die Vorgabe hieße nichts.
+
+        Gemessen: Tick 20 rund 55,6 (noch unterwegs), Tick 90 rund 60,0
+        (angekommen), Tick 130 unverändert. Die Annäherung ist exponentiell mit
+        der Erneuerungsrate als Geschwindigkeit — bei 5 % je Tick sind nach 20
+        Ticks rund zwei Drittel der Bevölkerung ausgetauscht.
+        """
+
+        unterwegs = self._lauf(properties, rate=0.05, ziel=self.ZIEL, ticks=20)
+        angekommen = self._lauf(properties, rate=0.05, ziel=self.ZIEL, ticks=90)
+        später = self._lauf(properties, rate=0.05, ziel=self.ZIEL, ticks=130)
+
+        assert self.START < unterwegs < angekommen, (
+            f"Keine Annäherung: Start {self.START}, Tick 20 {unterwegs:.1f}, "
+            f"Tick 90 {angekommen:.1f}"
+        )
+        assert abs(angekommen - self.ZIEL) < 2.0, (
+            f"Ruhelage {angekommen:.1f} statt {self.ZIEL} — mehr als zwei Jahre "
+            "Abstand hat einen anderen Grund als die Klemmung bei 90."
+        )
+        assert abs(später - angekommen) < 1.5, (
+            f"Tick 90: {angekommen:.1f}, Tick 130: {später:.1f} — sie läuft weiter, "
+            "statt zur Ruhe zu kommen."
+        )
+
+    def test_die_erlaubte_spanne_ist_die_darstellbare(self, properties):
+        """**Der Klemm-Wächter aus P2.9 hat sie bestimmt**, nicht eine Meinung.
+
+        Mit Streuung 18,8 in [18, 90] klemmt eine Verteilung außerhalb von rund
+        44 bis 64 mehr als ein Zehntel ihrer Masse an einen Rand. Eine jüngere
+        Gesellschaft ist nicht «verboten» — sie braucht zuerst eine andere
+        Streuung, weil die Bevölkerung des Modells per Definition aus
+        Erwachsenen besteht und ein junges Volk viele Minderjährige hat.
+        """
+
+        prop = properties.get_system_property("altersmittel_jahre")
+
+        assert (prop.min_value, prop.max_value) == (44.0, 64.0)
+
+    def test_der_standard_ist_null_und_das_ist_eine_aussage(self, properties):
+        """Eine Config ohne Erneuerungsrate beschreibt eine Gesellschaft, die
+        sich nicht erneuert — der Stand vor P2.4-E, und er bleibt der Standard,
+        weil eine Erneuerungsrate an der noch offenen Tick-Dauer hängt (P3.8)."""
+
+        assert properties.get_system_property("erneuerungsrate").trajectory.baseline == 0.0

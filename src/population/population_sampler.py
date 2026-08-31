@@ -416,6 +416,77 @@ SHIFT_ZIELE: dict[str, tuple[str, float, float]] = {
 }
 
 
+def _kohorte_erneuern(
+    individuals: list[Individual],
+    properties: PropertiesConfig,
+    config: PopulationConfig,
+    system_properties: dict[str, float],
+    *,
+    seed: int,
+    current_tick: int,
+) -> list[Individual]:
+    """Ältere scheiden aus, ebenso viele kommen neu hinzu (P2.4-E, 2026-08-31).
+
+    **Der Befund, der das ausgelöst hat:** Ohne Erneuerung leben dieselben
+    Personen ewig weiter. Neue wurden bis dahin **nur beim Wachstum** gezogen —
+    bei gleichbleibender Bevölkerungsgröße also nie. Eine Vorgabe für
+    `altersmittel_jahre` war damit **wirkungslos**: gemessen blieb das
+    Altersmittel über 30 Ticks bei 50,8, während der Verlauf 60 verlangte.
+
+    **Wer geht, geht zufällig — und der erste Anlauf hat das falsch gemacht.**
+    Er gewichtete das Ausscheiden mit dem Alter, weil «Alte sterben eher» wie
+    die realistischere Annahme aussieht. Gemessen zog die Bevölkerung damit in
+    die **falsche Richtung**: von 50,8 auf 45,5, während der Verlauf 60
+    verlangte. Der Grund ist offensichtlich, sobald man ihn sieht — wer die
+    Ältesten entfernt und aus der vollen Verteilung nachzieht, verjüngt
+    zwangsläufig.
+
+    Dahinter steckt ein Denkfehler, der über diese Funktion hinausgeht:
+    `altersmittel_jahre` ist ein **Kompositionsziel**, keine Sterbetafel. Eine
+    Ausscheide-Mechanik daraufzusetzen heißt, zwei Modelle gegeneinander rechnen
+    zu lassen. Wer echte Geburten und Sterbefälle will, braucht ein
+    demografisches Modell mit Eintritt bei 18 und Austritt nach Sterbetafel —
+    und dann ist die Bevölkerungsgröße nicht mehr frei vorgebbar.
+
+    **Wer kommt, wird aus der Verteilung gezogen, die *jetzt* gilt.** Zusammen
+    mit dem zufälligen Ausscheiden nähert sich die Bevölkerung damit der
+    vorgegebenen Struktur an — exponentiell, mit der Erneuerungsrate als
+    Geschwindigkeit. Das ist die ehrliche Form dessen, was der exogene Verlauf
+    behauptet.
+
+    **Der eigene Zufallsstrom ist Absicht** (`SeedSequence([seed, tick, 991])`):
+    Er hängt am Tick, sonst schieden in jedem Tick dieselben Personen aus, und
+    er ist gegen den Buchungsstrom versetzt, damit die Erneuerung nicht die
+    Buchungsziehung verschiebt.
+
+    Der Standard ist **0,0** — keine Erneuerung, also der Stand von vorher. Wer
+    eine alternde Gesellschaft rechnen will, setzt beides: den Verlauf und die
+    Rate.
+    """
+
+    rate = float(system_properties.get("erneuerungsrate", 0.0) or 0.0)
+    anzahl = int(len(individuals) * rate)
+    if anzahl < 1:
+        return individuals
+
+    rng = np.random.default_rng(np.random.SeedSequence([int(seed), int(current_tick), 991]))
+
+    gehen = set(rng.choice(len(individuals), size=anzahl, replace=False).tolist())
+    bleiben = [person for i, person in enumerate(individuals) if i not in gehen]
+
+    nachwuchs = initialize_population(
+        properties,
+        config.model_copy(update={"total_population": anzahl}),
+        seed=seed + 7919 * current_tick,
+    )
+    naechste_id = max((person.id for person in individuals), default=-1) + 1
+    nachwuchs = [
+        person.model_copy(update={"id": naechste_id + i}) for i, person in enumerate(nachwuchs)
+    ]
+
+    return [*bleiben, *nachwuchs]
+
+
 def _mit_altersmittel(
     properties: PropertiesConfig,
     system_properties: dict[str, float],
@@ -802,6 +873,15 @@ def run_population_tick(
         rng = _rng(seed + len(individuals))
         to_keep = rng.choice(individuals, size=target_population, replace=False)
         individuals = list(to_keep)
+
+    individuals = _kohorte_erneuern(
+        individuals,
+        properties,
+        config,
+        system_properties,
+        seed=seed,
+        current_tick=current_tick,
+    )
 
     income_index = system_properties.get("income_index", 1.0)
     shifted = apply_factor_shifts(

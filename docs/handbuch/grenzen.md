@@ -72,6 +72,13 @@ Wächst die Bevölkerung im Lauf, kommen neu gezogene Personen dazu; die
 Altersstruktur bleibt stabil, weil sie aus derselben Verteilung stammen. Es ist
 eine stehende Gesellschaft, kein alternder Jahrgang.
 
+**Dafür braucht es aber Nachwuchs.** Ein Rahmenszenario, das nur das mittlere
+Alter steigen lässt, bewirkt nichts: Solange die Bevölkerung nicht wächst,
+kommt niemand hinzu, und dieselben Personen bleiben. Erst eine
+**Erneuerungsrate** tauscht je Runde einen Teil der Bevölkerung aus — dann
+nähert sich die Altersstruktur der Vorgabe an. Beides gehört zusammen
+eingestellt.
+
 **Die Zusammensetzung darf sich aber verschieben.** Ein Rahmenszenario kann das mittlere Alter der Bevölkerung über den Lauf steigen lassen — eine alternde
 *Gesellschaft*. Neu hinzukommende Personen werden dann aus der verschobenen
 Verteilung gezogen. Die Wirkung ist moderat und das ist richtig so: Neun Jahre

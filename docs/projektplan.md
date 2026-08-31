@@ -1593,7 +1593,30 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 **Ohne neuen Kontextparameter** (Invariante 1): Der Wert kommt aus `system_properties`, die `run_population_tick` ohnehin bekommt. Ein eigenes Argument mit Default hieße «irgendein Altersmittel» und wäre in jedem Tick dasselbe.
 
-**Der Wächter:** [`tests/test_alter_formt_die_person.py`](../tests/test_alter_formt_die_person.py), sechzehn Zusagen. Er ersetzt `test_bevoelkerung_altert_nicht.py`, dessen Prämisse mit dieser Korrektur entfallen ist.
+#### Korrektur noch am selben Tag: ohne Nachwuchs passiert nichts (P2.4-E)
+
+> **P2.4-D war fehlerhaft ausgeliefert**, und der Hinweis kam wieder von außen: «Es werden ja auch immer wieder Menschen geboren, die sterben ja nicht aus.»
+
+**Der Fehler:** `altersmittel_jahre` verschiebt die Verteilung, aus der **neue** Personen gezogen werden — und neue Personen entstanden nur, wenn die Bevölkerung **wuchs**. Bei gleichbleibender Größe lebten dieselben tausend Menschen ewig weiter. Gemessen: Über 30 Ticks blieb das Altersmittel bei **50,8**, während der Verlauf 60 verlangte. Die Vorgabe war **wirkungslos**.
+
+**Warum der Wächter das nicht gefangen hat, und das ist die Lehre:** Er prüfte die **erste Ziehung** — die stimmte. Die Zusage lautete «eine Gesellschaft kann altern», geprüft war «eine Ziehung berücksichtigt das Altersmittel». *Ein Wächter, der den Mechanismus prüft statt die Zusage, ist grün und nutzlos.*
+
+**Umgesetzt:** `erneuerungsrate` als Systemgröße — der Anteil der Bevölkerung, der je Tick ausgetauscht wird. Wer geht, geht **zufällig**; wer kommt, wird aus der Verteilung gezogen, die *jetzt* gilt. Damit nähert sich die Zusammensetzung der Vorgabe exponentiell an, mit der Rate als Geschwindigkeit.
+
+**Der erste Anlauf lief dabei verkehrt herum, und das gehört festgehalten:** Er gewichtete das Ausscheiden mit dem Alter, weil «Alte sterben eher» realistischer aussieht. Gemessen zog die Bevölkerung damit von 50,8 auf **45,5**, während die Vorgabe 60 verlangte — wer die Ältesten entfernt und aus der vollen Verteilung nachzieht, verjüngt zwangsläufig. Dahinter steckt ein Denkfehler, der über die Funktion hinausgeht: **`altersmittel_jahre` ist ein Kompositionsziel, keine Sterbetafel.** Eine Ausscheide-Mechanik daraufzusetzen lässt zwei Modelle gegeneinander rechnen. Wer echte Geburten und Sterbefälle will, braucht ein demografisches Modell mit Eintritt bei 18 und Austritt nach Sterbetafel — und dann ist die Bevölkerungsgröße nicht mehr frei vorgebbar.
+
+**Gemessen, Start 50,8, Ziel 60,0, Bevölkerung konstant:**
+
+| Erneuerungsrate | Tick 20 | Tick 90 | Tick 130 |
+| --- | ---: | ---: | ---: |
+| 0,0 (Standard) | 50,8 | 50,8 | 50,8 |
+| 0,05 je Tick | 55,6 | **60,0** | 60,0 |
+
+**Und der Klemm-Wächter aus P2.9 hat dabei mitgeredet**, ungeplant: Ein Zielalter von 40 klemmt 12,5 % der Ziehungen an der Untergrenze 18 und scheiterte laut. Das ist richtig — eine *junge* Gesellschaft hat viele Minderjährige, die Bevölkerung des Modells besteht aber per Definition aus Erwachsenen. Die erlaubte Spanne von `altersmittel_jahre` ist deshalb **44 bis 64**, und diese Grenzen sind gemessen statt gemeint.
+
+**Der Standard bleibt 0,0** — keine Erneuerung, also der Stand von vorher. Nicht aus Vorsicht, sondern weil eine sinnvolle Rate an der **Tick-Dauer** hängt, und die ist offen ([P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31)): Bei einem Tick als Jahr wären rund 0,014 realistisch, bei einem Tick als Monat ein Zwölftel davon. Ein Rahmenszenario, das eine alternde Gesellschaft rechnen will, setzt **beides** — den Verlauf und die Rate.
+
+**Der Wächter:** [`tests/test_alter_formt_die_person.py`](../tests/test_alter_formt_die_person.py), zweiundzwanzig Zusagen — darunter die, die vorher fehlte: dass eine Vorgabe **über mehrere Ticks** ankommt, gemessen gegen den Zustand ohne Erneuerung. Er ersetzt `test_bevoelkerung_altert_nicht.py`, dessen Prämisse mit dieser Korrektur entfallen ist.
 
 <details>
 <summary>Die erste Fassung vom selben Tag — als Beleg, wie die Frage falsch stand</summary>
