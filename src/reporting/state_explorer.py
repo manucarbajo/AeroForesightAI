@@ -311,6 +311,177 @@ def build_grounded_context_block(context: RunExplorerContext) -> str:
     return "\n".join(lines)
 
 
+#: Eine Zahl in einem Text — mit Tausendertrennung und beiden Dezimalzeichen.
+#:
+#: Bewusst **ohne** Vorzeichen: «-5 %» und «5 %» sollen dieselbe Zahl finden,
+#: sonst gälte ein Minuszeichen im Fließtext als eigene Behauptung.
+#:
+#: **Der abschließende Lookahead ist kein Schmuck.** Ohne ihn frisst die
+#: Tausender-Alternative die Nachkommastellen: `0.4818` wurde als `0.481`
+#: erkannt und zu **481** normalisiert — eine Buchungsrate von 48 % galt damit
+#: als unbelegt, obwohl sie in den Daten stand. Mit `(?!\d)` scheitert der
+#: Tausender-Zweig an der vierten Nachkommastelle und der einfache greift.
+_ZAHL = re.compile(r"(?:\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d+)?)(?!\d)")
+
+#: Zahlen, die keine Aussage über den Lauf sind: Jahreszahlen wären es fast,
+#: aber ein Tick hat keine Kalenderbedeutung (Invariante 5) — was hier steht,
+#: sind Größen, die in **jedem** Text vorkommen und nichts behaupten.
+_HARMLOS = frozenset({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "100"})
+
+
+#: Ob direkt hinter einer Zahl ein Prozentzeichen steht.
+_PROZENT = re.compile(r"\s*(%|prozent)", re.IGNORECASE)
+
+
+def _zerlegen(roh: str) -> tuple[float, int]:
+    """Eine gefundene Zahl in (Wert, Nachkommastellen) zerlegen.
+
+    **Die Trennzeichen sind mehrdeutig, und das ist der Kern der Arbeit hier.**
+    Im Deutschen trennt das Komma die Nachkommastellen und der Punkt die
+    Tausender, im Englischen umgekehrt — und eine Antwort des Sprachmodells
+    kann beides enthalten. Entschieden wird deshalb nach der **Stellenzahl**,
+    nicht nach dem Zeichen:
+
+    - mehrere Trennzeichen → das letzte trennt die Nachkommastellen
+    - genau eines mit **drei** Ziffern dahinter → Tausendertrennung (`1.080`)
+    - genau eines mit anderer Stellenzahl → Nachkommastellen (`0.4818`, `140,38`)
+
+    Der zweite Fall bleibt echt mehrdeutig — `1.080` kann tausendachtzig oder
+    ein Komma-null-acht sein. Die Tausenderlesart ist die häufigere in einem
+    Text über Bevölkerungszahlen, und der Fehler wäre in beide Richtungen
+    gleich groß.
+
+    **Der erste Anlauf las `0.4818` als 4818**, weil er nur ein- und
+    zweistellige Nachkommateile kannte. Eine Buchungsrate von 48 % galt damit
+    als unbelegt, obwohl sie in den Daten stand.
+    """
+
+    stellen = [i for i, zeichen in enumerate(roh) if zeichen in ".,"]
+    if not stellen:
+        return float(roh), 0
+
+    letzte = stellen[-1]
+    nachkomma = len(roh) - letzte - 1
+    ist_tausender = len(stellen) == 1 and nachkomma == 3
+
+    if ist_tausender:
+        return float(roh.replace(".", "").replace(",", "")), 0
+
+    ganz = roh[:letzte].replace(".", "").replace(",", "")
+    return float(f"{ganz}.{roh[letzte + 1 :]}"), nachkomma
+
+
+def _zahlen(text: str) -> list[tuple[str, float, int, bool]]:
+    """Alle Zahlen eines Textes als (Schreibweise, Wert, Nachkommastellen, Prozent).
+
+    **Die Genauigkeit wird mitgeführt**, weil die Prüfung sie braucht: «140» ist
+    mit anderer Genauigkeit behauptet als «140,38», und danach richtet sich, wie
+    streng verglichen wird.
+
+    **Und das Prozentzeichen**, weil es eine Einheit ist und keine andere Zahl:
+    Die Buchungsrate steht in den Daten als `0.4818`; «48,18 Prozent» ist
+    dieselbe Aussage. Das als unbelegt zu markieren wäre ein Fehlalarm — und
+    Fehlalarme sind hier teuer, weil sie den Leser darauf trainieren, die
+    Markierung zu überlesen.
+    """
+
+    gefunden: list[tuple[str, float, int, bool]] = []
+    for treffer in _ZAHL.finditer(text):
+        roh = treffer.group(0)
+        prozent = bool(_PROZENT.match(text[treffer.end() : treffer.end() + 10]))
+        try:
+            wert, stellen = _zerlegen(roh)
+        except ValueError:
+            continue
+        gefunden.append((roh, wert, stellen, prozent))
+    return gefunden
+
+
+@dataclass(frozen=True)
+class Antwort:
+    """Was der Explorer zurückgibt — **samt Prüfung** (P2.5).
+
+    `ask` gab bis P2.5 eine Zeichenkette zurück, die niemand gegen die Daten
+    hielt. Das Glossar nannte es «grounded Q&A ohne erfundene Zahlen»; im Code
+    war es eine Bitte im Prompt.
+    """
+
+    text: str
+    #: Zahlen der Antwort, die sich im Kontextblock **nicht** wiederfinden.
+    unbelegt: tuple[str, ...] = ()
+    #: Wie viele Zahlen überhaupt geprüft wurden. Ohne diese Angabe sähe eine
+    #: Antwort ohne Zahlen genauso «sauber» aus wie eine vollständig belegte.
+    geprueft: int = 0
+
+    @property
+    def belegt(self) -> bool:
+        return not self.unbelegt
+
+    def __str__(self) -> str:
+        """Antwort mit angehängtem Vorbehalt, wenn es einen gibt.
+
+        Damit bleibt jeder Aufrufer, der die Antwort als Text behandelt,
+        richtig — und bekommt die Warnung mit, statt sie zu verlieren.
+        """
+
+        if self.belegt:
+            return self.text
+        zahlen = ", ".join(self.unbelegt)
+        return (
+            f"{self.text}\n\n"
+            f"⚠️ **Nicht in den Laufdaten belegt:** {zahlen}\n\n"
+            "Diese Zahlen stehen so in keiner Datei dieses Laufs. Das kann eine "
+            "eigene Rechnung des Sprachmodells sein (etwa eine Differenz) oder "
+            "eine Erfindung — die Prüfung unterscheidet das nicht."
+        )
+
+
+def pruefe_gegen_kontext(antwort: str, kontext: str) -> Antwort:
+    """Jede Zahl der Antwort gegen die Zahlen des Kontextblocks halten.
+
+    **Was diese Prüfung beantwortet:** «Steht diese Zahl in den Laufdaten?» —
+    **nicht** «ist diese Zahl richtig». Der Unterschied ist keine Spitzfindigkeit:
+    Eine korrekt ausgerechnete Differenz («der Preis stieg um 12 Euro») steht
+    nirgends in den Daten und wird deshalb als unbelegt markiert. Das ist
+    **gewollt**. Ein Prüfer soll sehen, welche Zahl abgelesen und welche
+    gerechnet ist; ob die Rechnung stimmt, kann diese Funktion nicht wissen.
+
+    **Markieren statt zurückweisen**, und das ist die Produktentscheidung, die
+    das Paket offengelassen hatte. Zurückweisen wäre die härtere Zusage, aber
+    die falsche: Eine Antwort mit einer gerechneten Prozentangabe wäre damit
+    unbrauchbar, obwohl sie stimmt. Eine markierte Antwort lässt den Leser
+    entscheiden — und sie **verschweigt nichts**, was die Zurückweisung auch
+    nicht täte.
+
+    **Die Genauigkeit der Antwort bestimmt die Strenge.** «140» gilt als belegt,
+    wenn irgendeine Kontextzahl auf 140 rundet; «140,38» muss auf zwei Stellen
+    getroffen werden. Sonst wäre jede gerundete Angabe unbelegt, und die
+    Markierung würde zum Rauschen, das niemand mehr liest.
+    """
+
+    im_kontext = [wert for _, wert, _, _ in _zahlen(kontext)]
+    unbelegt: list[str] = []
+    geprueft = 0
+
+    for schreibweise, wert, stellen, prozent in _zahlen(antwort):
+        if schreibweise.strip("0.,") == "" or schreibweise in _HARMLOS:
+            continue
+        geprueft += 1
+
+        # Ein Prozentwert darf auch als Anteil in den Daten stehen und umgekehrt.
+        kandidaten = [wert, wert / 100.0] if prozent else [wert, wert * 100.0]
+        if any(
+            round(im_daten, stellen) == round(kandidat, stellen)
+            for im_daten in im_kontext
+            for kandidat in kandidaten
+        ):
+            continue
+        if schreibweise not in unbelegt:
+            unbelegt.append(schreibweise)
+
+    return Antwort(text=antwort, unbelegt=tuple(unbelegt), geprueft=geprueft)
+
+
 class StateExplorer:
     def __init__(
         self,
@@ -329,9 +500,22 @@ class StateExplorer:
             "ANSWER:"
         )
 
-    def ask(self, question: str) -> str:
-        prompt = self.build_prompt(question)
-        return self.llm.call(prompt)
+    def ask(self, question: str) -> Antwort:
+        """Fragen — und die Antwort **gegen die Daten halten** (P2.5).
+
+        Der Rückgabewert ist seit P2.5 ein `Antwort`-Objekt statt einer
+        Zeichenkette. Es verhält sich in `str()` wie vorher, trägt den Vorbehalt
+        aber im Text mit; wer die einzelnen Befunde braucht, liest `unbelegt`.
+        """
+
+        grounded = build_grounded_context_block(self.context)
+        prompt = (
+            f"{EXPLORER_INSTRUCTIONS}\n\n"
+            f"GROUND TRUTH DATA:\n{grounded}\n\n"
+            f"USER QUESTION:\n{question.strip()}\n\n"
+            "ANSWER:"
+        )
+        return pruefe_gegen_kontext(self.llm.call(prompt), grounded)
 
 
 def _build_parser() -> argparse.ArgumentParser:

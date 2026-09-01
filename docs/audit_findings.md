@@ -136,7 +136,6 @@ Beim Entfernen ist aufgefallen, **warum das nicht bloß Aufräumen ist**: Das Ko
 
 | Fundstelle | Befund | Auswirkung |
 | --- | --- | --- |
-| `src/reporting/state_explorer.py:241,323-334` — **neu am 2026-08-26** | `build_grounded_context_block` baut einen Kontextblock, `ask()` reicht ihn samt Frage ans LLM und gibt die Antwort unverändert zurück. Nichts prüft, ob die Antwort nur Zahlen aus diesem Block enthält. | Das Glossar in `CLAUDE.md` verspricht für den State Explorer "keine erfundenen Zahlen" — durchgesetzt ist das nirgends, die Zusage ist ein Prompt. Dieselbe Claim-vs-Code-Klasse wie beim Logit-Modell und bei der CIB-Konsistenz, nur an der Oberfläche, an der ein Kunde sie zuerst ausprobiert. Eingeplant als P2.5. |
 
 ## Sonstiges
 

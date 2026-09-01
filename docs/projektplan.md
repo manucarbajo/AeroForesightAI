@@ -1685,7 +1685,7 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 **Doku zieht mit:** `docs/handbuch/akteure.md`, `docs/handbuch/ref-config.md`, `CLAUDE.md` (Glossar, falls sich die Bedeutung von `mean` verschiebt).
 
-### P2.5 — State Explorer: Grounding durchsetzen statt darum bitten
+### P2.5 — State Explorer: Grounding durchsetzen statt darum bitten ✅ erledigt 2026-08-31
 
 **Befund (neu am 2026-08-26):** Der State Explorer ist im Glossar als "grounded Q&A ausschließlich über abgeschlossene Run-Daten — keine erfundenen Zahlen" beschrieben. Durchgesetzt wird davon nichts: `build_grounded_context_block` baut einen Kontextblock, `ask()` reicht ihn samt Frage ans LLM weiter und gibt die Antwort unverändert zurück. Ob die Antwort nur Zahlen aus diesem Block enthält, prüft niemand — die Zusage ist ein Prompt, keine Schranke. Dieselbe Klasse wie P2.1 und P2.2: ein Claim, den der Code nicht einlöst, nur an der Oberfläche, an der ein Kunde ihn zuerst ausprobiert.
 
@@ -1693,7 +1693,23 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 **Was zu tun ist:** Nach dem LLM-Aufruf die Zahlen aus der Antwort ziehen und gegen die Zahlen im Kontextblock abgleichen. Was sich nicht wiederfindet, wird markiert oder die Antwort zurückgewiesen — welche der beiden Härten die richtige ist, ist eine Produktentscheidung und gehört ins Paket. Bis dahin die Formulierung im Glossar und im Handbuch abschwächen (siehe die Regel "Was der Code nicht tut, darf die Doku nicht behaupten").
 
-**Fertig wenn:** Eine Antwort mit einer nicht im Kontext belegten Zahl wird erkannt; Tests decken den belegten und den erfundenen Fall ab.
+#### Umgesetzt am 2026-08-31
+
+**Die offene Produktentscheidung — markieren oder zurückweisen — ist gefallen: markieren.** Zurückweisen wäre die härtere Zusage und die falsche. Eine Antwort, die eine Prozentangabe korrekt ausrechnet, wäre damit unbrauchbar, obwohl sie stimmt; eine markierte Antwort lässt den Leser entscheiden und verschweigt nichts, was die Zurückweisung auch nicht täte.
+
+**Was die Prüfung beantwortet, und was ausdrücklich nicht:** «Steht diese Zahl in den Laufdaten?» — **nicht** «ist diese Zahl richtig». Eine korrekt gerechnete Differenz («der Preis stieg um 12,50 Euro») steht nirgends in den Daten und wird markiert. Das ist gewollt: Ein Prüfer soll sehen, welche Zahl **abgelesen** und welche **gerechnet** ist. Ob die Rechnung stimmt, kann keine Textprüfung wissen, und der angehängte Vorbehalt behauptet es auch nicht.
+
+**`ask` gibt seit P2.5 ein `Antwort`-Objekt zurück** (`text`, `unbelegt`, `geprueft`) statt einer Zeichenkette. `str()` hängt den Vorbehalt an — damit bleibt jede Oberfläche richtig, die die Antwort als Text behandelt, und verliert die Warnung nicht. Dashboard, Legacy-UI und CLI sind entsprechend nachgezogen.
+
+**Fehlalarme sind hier teurer als übersehene Fälle**, und das hat den Zuschnitt bestimmt: Wer dreimal eine Markierung an einer offensichtlich richtigen Zahl sieht, liest die vierte nicht mehr. Deshalb gelten als belegt: gerundete Angaben («rund 140» zu 140,38), beide Dezimalschreibweisen, Tausendertrennung, und Prozentangaben gegen gespeicherte Anteile («48,2 %» zu 0,4818).
+
+**Der wunde Punkt war die Zahlenzerlegung**, und der erste Anlauf lag dort falsch: Sein Muster für Tausendertrennung fraß die Nachkommastellen — `0.4818` wurde als `0.481` erkannt und zu **481** normalisiert. Eine Buchungsrate von 48 % galt damit als unbelegt, obwohl sie in den Daten stand: ein Fehlalarm auf der häufigsten Zahl des ganzen Modells. Trennzeichen sind mehrdeutig (deutsch Komma, englisch Punkt, in einer Antwort womöglich beides); entschieden wird jetzt nach der **Stellenzahl**, und der mehrdeutige Fall `1.080` ist als Tausenderlesart benannt statt stillschweigend gewählt.
+
+**Am laufenden System geprüft**, nicht nur im Test: Eine Demo-Antwort wird nicht fälschlich markiert, und gegen einen echten Lauf mit zwei Ticks fängt die Prüfung sowohl den erfundenen Preis (`213,50`) als auch die erfundene Runde (`Tick 40`).
+
+**Der Wächter:** [`tests/test_explorer_grounding.py`](../tests/test_explorer_grounding.py), 28 Zusagen. **Mehr davon prüfen die Ruhe der Prüfung als ihren Alarm** — acht Fälle, in denen nichts markiert werden darf, gegen drei, in denen etwas markiert werden muss. Dazu die Nachstellung des Zerlegungsfehlers und die Zusage, dass `ask` kein rohes `str` mehr zurückgibt: Fiele es darauf zurück, wäre die Prüfung weg und alles andere trotzdem grün.
+
+**Fertig wenn** ✅ **(2026-08-31):** Eine Antwort mit einer nicht im Kontext belegten Zahl wird erkannt; Tests decken den belegten und den erfundenen Fall ab.
 
 **Doku zieht mit:** `docs/handbuch/abfrage.md`, `docs/handbuch/zahlen-und-sprache.md`, `CLAUDE.md` (Glossar "State Explorer").
 

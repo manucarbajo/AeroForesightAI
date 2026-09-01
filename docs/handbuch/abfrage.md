@@ -9,8 +9,34 @@ Ereignisprotokoll. Sind Zwischenstände geschrieben worden, kommen einzelne
 Runden im Detail dazu.
 
 Über den Schalter «Datenkontext anzeigen» sehen Sie genau die Daten, die einer
-Frage mitgegeben werden. Das ist die verlässlichste Art, eine Antwort
-einzuordnen: Was dort nicht steht, kann in der Antwort nicht vorkommen.
+Frage mitgegeben werden.
+
+## Jede Zahl wird nachgeschlagen
+
+Seit dem 31. August 2026 prüft das Programm jede Zahl der Antwort gegen diesen
+Datenkontext. Was sich dort nicht wiederfindet, wird unter der Antwort
+aufgeführt:
+
+> ⚠️ **Nicht in den Laufdaten belegt:** 213,50
+
+**Die Prüfung beantwortet eine engere Frage, als es zunächst klingt:** «Steht
+diese Zahl in den Laufdaten?» — nicht «ist diese Zahl richtig». Der Unterschied
+ist wichtig, weil er beide Richtungen betrifft.
+
+Eine markierte Zahl ist **nicht automatisch falsch.** Rechnet das Modell eine
+Differenz aus — «der Preis stieg um 12,50 Euro» —, dann steht diese 12,50
+nirgends in den Daten, obwohl die Rechnung stimmen kann. Auch das wird markiert,
+und das ist Absicht: Sie sollen sehen, welche Zahl abgelesen und welche
+gerechnet ist. Ob eine Rechnung stimmt, kann die Prüfung nicht wissen.
+
+Umgekehrt gilt: Eine **nicht** markierte Zahl steht so in den Daten. Gerundete
+Angaben zählen dabei mit — «rund 140 Euro» gilt als belegt, wenn der Wert 140,38
+beträgt. Und Prozentangaben werden erkannt: «48,2 %» belegt einen gespeicherten
+Anteil von 0,4818.
+
+**Zurückgewiesen wird nichts.** Eine Antwort mit einer nicht belegten Zahl wäre
+oft trotzdem brauchbar — sie kommt deshalb vollständig, mit dem Vorbehalt
+darunter.
 
 ## Fragen stellen
 

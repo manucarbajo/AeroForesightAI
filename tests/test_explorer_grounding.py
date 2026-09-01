@@ -1,0 +1,247 @@
+"""P2.5 — die Antwort des State Explorers wird gegen die Daten gehalten.
+
+**Der Befund:** Das Glossar beschrieb den State Explorer als «grounded Q&A
+ausschließlich über abgeschlossene Run-Daten — keine erfundenen Zahlen».
+Durchgesetzt wurde davon **nichts**: `ask()` reichte die Antwort des
+Sprachmodells unverändert zurück. Die Zusage war ein Satz im Prompt, keine
+Schranke — und zwar an genau der Oberfläche, an der ein Fachprüfer sie zuerst
+ausprobiert.
+
+**Was die Prüfung beantwortet, und was nicht.** Sie sagt: *«Steht diese Zahl in
+den Laufdaten?»* — nicht *«ist diese Zahl richtig»*. Der Unterschied ist keine
+Spitzfindigkeit: Eine korrekt ausgerechnete Differenz («der Preis stieg um 12,50
+Euro») steht nirgends in den Daten und wird als unbelegt markiert. Das ist
+**gewollt**. Ein Prüfer soll sehen, welche Zahl abgelesen und welche gerechnet
+ist; ob die Rechnung stimmt, kann keine Textprüfung wissen.
+
+**Markieren statt zurückweisen** — die Produktentscheidung, die das Paket
+offengelassen hatte. Zurückweisen wäre die härtere Zusage und die falsche: Eine
+Antwort mit einer gerechneten Prozentangabe wäre damit unbrauchbar, obwohl sie
+stimmt. Eine markierte Antwort lässt den Leser entscheiden und verschweigt
+nichts.
+
+**Fehlalarme sind hier teuer**, teurer als anderswo: Wer dreimal eine Markierung
+an einer offensichtlich richtigen Zahl sieht, liest die vierte nicht mehr.
+Deshalb prüfen unten mehr Fälle die *Ruhe* der Prüfung als ihren Alarm.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from src.reporting.state_explorer import Antwort, _zahlen, pruefe_gegen_kontext
+
+#: Ein Kontextblock, wie ihn `build_grounded_context_block` erzeugt — knapp,
+#: aber mit den Formen, die wirklich vorkommen: Nachkommastellen, Anteile,
+#: ganze Zahlen.
+KONTEXT = """
+tick_mechanics:
+  tick: 12
+  ticket_price: 140.38
+  booking_rate: 0.4818
+  cost_pressure: 112.05
+population: 1080
+"""
+
+
+class TestEineAbgeleseneZahlGiltAlsBelegt:
+    """Die Ruhe der Prüfung — wichtiger als ihr Alarm."""
+
+    @pytest.mark.parametrize(
+        ("antwort", "warum"),
+        [
+            ("Der Ticketpreis lag bei 140,38 Euro.", "exakt, deutsche Schreibweise"),
+            ("The ticket price was 140.38 EUR.", "exakt, englische Schreibweise"),
+            ("Der Ticketpreis lag bei rund 140 Euro.", "gerundet auf ganze Euro"),
+            ("Die Buchungsrate betrug 48,18 Prozent.", "Anteil als Prozent geschrieben"),
+            ("Die Buchungsrate lag bei 48,2 %.", "Prozent, gerundet"),
+            ("Es waren 1.080 Personen.", "mit Tausenderpunkt"),
+            ("Es waren 1080 Personen in Tick 12.", "zwei Zahlen, beide abgelesen"),
+            ("Es gab keine auffälligen Ereignisse.", "gar keine Zahl"),
+        ],
+    )
+    def test_sie_wird_nicht_markiert(self, antwort: str, warum: str):
+        ergebnis = pruefe_gegen_kontext(antwort, KONTEXT)
+
+        assert ergebnis.belegt, f"Fehlalarm bei «{warum}»: {ergebnis.unbelegt}"
+
+
+class TestEineErfundeneZahlWirdMarkiert:
+    @pytest.mark.parametrize(
+        ("antwort", "erwartet"),
+        [
+            ("Der Ticketpreis lag bei 152,90 Euro.", "152,90"),
+            ("Die Buchungsrate betrug 61 Prozent.", "61"),
+            ("Es waren 2400 Personen.", "2400"),
+        ],
+    )
+    def test_sie_steht_im_befund(self, antwort: str, erwartet: str):
+        ergebnis = pruefe_gegen_kontext(antwort, KONTEXT)
+
+        assert not ergebnis.belegt
+        assert erwartet in ergebnis.unbelegt
+
+    def test_eine_gerechnete_zahl_wird_ebenfalls_markiert(self):
+        """**Gewollt, und die Grenze der Prüfung.**
+
+        «Der Preis stieg um 12,50 Euro» kann korrekt gerechnet sein — in den
+        Daten steht die Zahl trotzdem nicht. Die Prüfung kann eine richtige
+        Rechnung nicht von einer Erfindung unterscheiden und behauptet das auch
+        nicht; der angehängte Vorbehalt sagt es ausdrücklich.
+        """
+
+        ergebnis = pruefe_gegen_kontext("Der Preis stieg um 12,50 Euro.", KONTEXT)
+
+        assert "12,50" in ergebnis.unbelegt
+        assert "eigene Rechnung" in str(ergebnis)
+
+    def test_dieselbe_zahl_wird_nur_einmal_gemeldet(self):
+        ergebnis = pruefe_gegen_kontext("Erst 999, dann wieder 999.", KONTEXT)
+
+        assert ergebnis.unbelegt == ("999",)
+
+
+class TestDieZahlenzerlegungIstDerWundePunkt:
+    """**Hier saß der Fehler des ersten Anlaufs**, und er war unsichtbar.
+
+    Das Muster für Tausendertrennung fraß die Nachkommastellen: `0.4818` wurde
+    als `0.481` erkannt und zu **481** normalisiert. Eine Buchungsrate von 48 %
+    galt damit als unbelegt, obwohl sie in den Daten stand — ein Fehlalarm auf
+    der häufigsten Zahl des ganzen Modells.
+
+    Trennzeichen sind mehrdeutig: Im Deutschen trennt das Komma die
+    Nachkommastellen, im Englischen der Punkt, und eine Antwort kann beides
+    enthalten. Entschieden wird nach der **Stellenzahl**.
+    """
+
+    @pytest.mark.parametrize(
+        ("text", "wert", "stellen"),
+        [
+            ("140.38", 140.38, 2),
+            ("140,38", 140.38, 2),
+            ("0.4818", 0.4818, 4),
+            ("48,2", 48.2, 1),
+            ("1080", 1080.0, 0),
+            # Drei Ziffern hinter einem einzelnen Trennzeichen sind mehrdeutig.
+            # Gewählt ist die Tausenderlesart — in einem Text über
+            # Bevölkerungszahlen die häufigere.
+            ("1.080", 1080.0, 0),
+            ("12.345,67", 12345.67, 2),
+        ],
+    )
+    def test_sie_liest_beide_schreibweisen(self, text: str, wert: float, stellen: int):
+        gefunden = _zahlen(text)
+
+        assert len(gefunden) == 1, f"«{text}» zerfiel in {len(gefunden)} Zahlen"
+        assert gefunden[0][1] == pytest.approx(wert)
+        assert gefunden[0][2] == stellen
+
+    def test_der_alte_fehler_wuerde_heute_auffallen(self):
+        """Die Nachstellung — sonst prüft der Wächter nur sich selbst."""
+
+        _, wert, _, _ = _zahlen("0.4818")[0]
+
+        assert wert == pytest.approx(0.4818), f"Als {wert} gelesen statt als 0,4818"
+
+    def test_ein_prozentzeichen_wird_als_einheit_erkannt(self):
+        assert _zahlen("48,2 %")[0][3] is True
+        assert _zahlen("48,2 Prozent")[0][3] is True
+        assert _zahlen("48,2 Euro")[0][3] is False
+
+
+class TestDerVorbehaltGehtNichtVerloren:
+    """Eine Prüfung, deren Ergebnis niemand sieht, ist keine."""
+
+    def test_eine_belegte_antwort_bleibt_unveraendert(self):
+        text = "Der Ticketpreis lag bei 140,38 Euro."
+
+        assert str(pruefe_gegen_kontext(text, KONTEXT)) == text
+
+    def test_eine_unbelegte_antwort_traegt_die_warnung_im_text(self):
+        """`str()` ist der Weg, auf dem der Vorbehalt bei den Oberflächen
+        ankommt — Dashboard, Legacy-UI und CLI behandeln die Antwort als Text."""
+
+        ergebnis = pruefe_gegen_kontext("Der Preis lag bei 152,90 Euro.", KONTEXT)
+        ausgabe = str(ergebnis)
+
+        assert "152,90" in ausgabe
+        assert "Nicht in den Laufdaten belegt" in ausgabe
+        assert ergebnis.text in ausgabe, "Die eigentliche Antwort fehlt"
+
+    def test_die_zahl_der_geprueften_wird_mitgefuehrt(self):
+        """Ohne sie sähe eine Antwort **ohne** Zahlen genauso sauber aus wie
+        eine vollständig belegte — und das sind zwei verschiedene Aussagen."""
+
+        ohne = pruefe_gegen_kontext("Keine Auffälligkeiten.", KONTEXT)
+        mit = pruefe_gegen_kontext("Der Preis lag bei 140,38 Euro.", KONTEXT)
+
+        assert ohne.geprueft == 0 and ohne.belegt
+        assert mit.geprueft == 1 and mit.belegt
+
+
+class TestAskFuehrtDiePruefungAus:
+    """Die Zusage am Ende der Kette — nicht nur die Funktion daneben."""
+
+    @staticmethod
+    def _kontext(tmp_path):
+        from src.reporting.state_explorer import RunExplorerContext
+
+        return RunExplorerContext(
+            run_id="test",
+            run_dir=tmp_path,
+            tick_mechanics={
+                "ticks": [{"tick": 12, "ticket_price": 140.38, "booking_rate": 0.4818}]
+            },
+            event_log=[],
+            price_history=[],
+            factors_timeseries=[],
+            metadata={},
+            run_scenario={},
+            focus_tick=12,
+            checkpoint_tick=None,
+            checkpoint_snapshot=None,
+        )
+
+    def test_eine_erfundene_zahl_kommt_markiert_zurueck(self, tmp_path):
+        from src.reporting.state_explorer import StateExplorer
+
+        class ErfindetZahlen:
+            def call(self, prompt: str) -> str:
+                return "Der Ticketpreis lag bei 999,99 Euro."
+
+        explorer = StateExplorer(self._kontext(tmp_path), llm=ErfindetZahlen())
+        antwort = explorer.ask("Wie hoch war der Preis?")
+
+        assert isinstance(antwort, Antwort), "`ask` gibt wieder rohen Text zurück"
+        assert "999,99" in antwort.unbelegt
+
+    def test_der_rueckgabetyp_ist_kein_string_mehr(self, tmp_path):
+        """**Der Rückfall, den es zu verhindern gilt.**
+
+        Gäbe `ask` wieder eine Zeichenkette zurück, wäre die Prüfung weg und
+        alles andere hier grün — die Tests oben prüfen `pruefe_gegen_kontext`,
+        nicht den Weg dorthin.
+        """
+
+        from src.reporting.state_explorer import StateExplorer
+
+        class Stumm:
+            def call(self, prompt: str) -> str:
+                return "Keine Angabe."
+
+        explorer = StateExplorer(self._kontext(tmp_path), llm=Stumm())
+
+        assert not isinstance(explorer.ask("?"), str)
+
+    def test_eine_abgelesene_zahl_kommt_sauber_durch(self, tmp_path):
+        """Sonst könnte `ask` alles markieren und wäre trotzdem grün."""
+
+        from src.reporting.state_explorer import StateExplorer
+
+        class LiestAb:
+            def call(self, prompt: str) -> str:
+                return "Der Ticketpreis lag bei 140,38 Euro."
+
+        explorer = StateExplorer(self._kontext(tmp_path), llm=LiestAb())
+
+        assert explorer.ask("Wie hoch war der Preis?").belegt

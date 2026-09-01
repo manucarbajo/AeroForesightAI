@@ -227,7 +227,10 @@ def register_callbacks(app) -> None:
                 if use_mock
                 else StateExplorer(context)
             )
-            answer = explorer.ask(question)
+            # `str()` hängt den Vorbehalt an, wenn Zahlen unbelegt sind (P2.5).
+            # Ohne diese Umwandlung stünde das `Antwort`-Objekt selbst im
+            # Verlauf und der Hinweis ginge verloren.
+            answer = str(explorer.ask(question))
         except Exception as exc:  # noqa: BLE001 - Ollama offline ist ein Normalfall
             answer = f"Abfrage fehlgeschlagen: {exc}"
 
