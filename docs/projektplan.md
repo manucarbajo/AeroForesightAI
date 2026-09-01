@@ -2008,6 +2008,47 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 Über 500 Tests sind eine gute Grundlage, aber die Suite hat drei Eigenschaften, die beim Ausbau bremsen. (Die Zahl stand hier bis 2026-08-26 als "267" und in `CLAUDE.md` als "~330"; `pytest --collect-only` sammelt tatsächlich 506. Genau diese Drift ist der Anlass für P4.3.)
 
+### P3.9 — Ein Klick in der Schrittfolge kostet zwei Sekunden ⚠️ neu 2026-08-31
+
+> **Gemeldet von Haiko am laufenden System**, nachgemessen am selben Tag. Der Befund ist nicht «Python ist langsam» — die Rechnung dauert Millisekunden. Es sind die **Rundläufe**.
+
+**Befund:** Ein Klick auf einen Schritt der Einrichten-Schrittfolge braucht **1,1 bis 2,9 Sekunden**, bis der neue Schritt steht. Gemessen im Browser über alle sechs Schritte:
+
+| Schritt | Dauer | Server-Aufrufe |
+| --- | ---: | ---: |
+| Was soll gerechnet werden? | 2,04 s | 8 |
+| Wie weit reicht der Lauf? | 1,92 s | 8 |
+| Womit wird gerechnet? | 2,08 s | 10 |
+| Lauf & Ablage | 2,60 s | 10 |
+| Technik | 1,14 s | 6 |
+| Prüfen & Starten | **2,95 s** | **16** |
+
+**Die Ursache ist eine Kette, keine langsame Stelle.** Gegengeprüft, damit das nicht geraten ist:
+
+- **Im Leerlauf passiert nichts.** In drei Sekunden ohne Klick: **null** Aufrufe. Alle zehn gehören zum Klick.
+- **Die Prüfung ist es nicht.** `validate_draft` braucht **1,3 ms**, `build_initial_state` 1,8 ms. Der Verdacht in `CLAUDE.md` («baut jedes Mal den vollen `SimulationState` auf») trifft zu, ist aber folgenlos — er kostet Millisekunden.
+- **Das Zeichnen ist es auch nicht.** `content()` braucht 0,3 bis 3 ms für die Schritte 1 bis 4 und **57,6 ms** für «Technik» — den teuersten. Zusammen mit Liste und Fußleiste unter 60 ms.
+- **Der Server ist es nicht.** Ein Aufruf von `/app/_dash-dependencies` dauert **14 ms**, die Landingpage 16 ms.
+
+**Was übrig bleibt: zehn Rundläufe, die einander auslösen.** Der Klick schreibt `wizard-step-store`; das löst den Render aus, der die Slots füllt, die den Entwurf schreiben, was Status, Zusammenfassung und Laufanzeige nachzieht. **`config-draft-store.data` steht dreimal in derselben Kette.** Ein Aufruf mit 28 Byte Antwort brauchte dabei 410 ms, der letzte bei «Prüfen & Starten» **4,8 Sekunden** — er wartete auf die fünfzehn davor.
+
+**Fundstelle:** [`dashboard/web/config_editor/wizard.py:1062`](../dashboard/web/config_editor/wizard.py) (`_render` — neun Outputs in einem Callback, das ist schon zusammengefasst), plus die Callback-Kette über `config-draft-store`, `cfg-status`, `cfg-summary`, `run-summary`/`rail-summary` und die Laufanzeige.
+
+**Was zu tun ist — und zuerst das, was *nicht* zu tun ist:** Nicht die einzelnen Callbacks schneller machen. Sie sind schon schnell. Die Zahl der Rundläufe muss sinken.
+
+1. **Messen, welcher Aufruf welchen auslöst.** Die Kette oben ist aus den Ausgabe-Zielen rekonstruiert; wer sie kürzt, braucht sie vollständig. Dash liefert das über `dash.callback_context`.
+2. **Die dreifache Schreibung von `config-draft-store` auflösen.** Ein Store, der sich innerhalb einer Klickfolge dreimal ändert, zieht alles dreimal nach. Wahrscheinlich reicht ein Schritt-Callback, der den Entwurf **nicht** anfasst — der Schritt ist keine Einstellung.
+3. **Was den Schritt nicht betrifft, hört nicht auf ihn.** Laufstatus und Laufzusammenfassung ändern sich nicht dadurch, dass jemand einen Schritt öffnet.
+4. **Erst danach über Zusammenfassen nachdenken.** `_render` bündelt bereits neun Outputs; weiter zu bündeln hilft nur, wenn die Kette kürzer ist.
+
+**Fallstrick — die Messung gehört in den Browser.** Die Python-Zeiten sagen hier nichts: Alles Gemessene lag unter 60 ms, während der Nutzer zwei Sekunden wartet. Wer diese Arbeit ohne Browsermessung macht, optimiert die falsche Stelle. `tests/test_web_overflow.py` hat als einziger Test einen echten Browser — die Zählung der Rundläufe gehört dorthin.
+
+**Zweiter Fallstrick — der Entwicklungsserver ist nicht der Grund.** Naheliegend, aber gemessen widerlegt: Ein Aufruf kostet 14 ms. Wer das Problem auf «Flask-Devserver» schiebt, wird auf dem Hetzner-Server dieselben zehn Rundläufe haben.
+
+**Fertig wenn:** Ein Klick auf einen Schritt kostet **unter 500 ms**, gemessen im Browser über alle sechs Schritte — und die Zahl der ausgelösten Server-Aufrufe steht als Zahl im Wächter, nicht nur die Dauer. Eine Dauer allein wäre auf einer schnelleren Maschine grün, ohne dass sich etwas geändert hätte.
+
+**Doku zieht mit:** `CLAUDE.md` (der Vermerk zu `_live` und `validate_draft` nennt einen Grund, der gemessen nicht trägt — 1,3 ms).
+
 ### P4.1 — Gemeinsame Fixtures
 
 **Befund:** Kein `tests/conftest.py`; stattdessen 32 Vorkommen von `tempfile.mkdtemp(...)` mit `try/finally: shutil.rmtree(...)` über fünf Dateien, und `class MockLLM` vierfach near-identisch definiert.
