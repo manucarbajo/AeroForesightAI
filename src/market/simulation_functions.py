@@ -8,7 +8,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-from src.market.market_feedback import initial_provider_markup, resolve_market_feedback_config
+from src.market.market_feedback import (
+    initial_provider_markup,
+    resolve_market_feedback_config,
+    zielauslastung,
+)
 from src.market.property_engine import (
     MARKET_PROPERTY_IDS,
     resolve_exogenous_system_properties,
@@ -366,6 +370,19 @@ def compute_market_metrics(
     price_model = properties.price_model
 
     feedback = resolve_market_feedback_config(properties)
+
+    # **Die Zielauslastung folgt der Kapazität** (P2.8, 2026-08-31). Hier und
+    # nicht in `apply_market_feedback`, weil `system_properties` genau hier
+    # schon vorliegt — ein zusätzlicher Kontextparameter weiter unten müsste
+    # sonst durchgereicht werden, mit allem, was Invariante 1 dazu sagt.
+    #
+    # **Vor beiden Verwendern**, damit `apply_market_feedback` und
+    # `sync_demand_level` denselben Sollwert sehen. Getrennt gesetzt liefen sie
+    # auseinander, und das Nachfrageniveau folgte einem anderen Ziel als der
+    # Preis.
+    feedback = feedback.model_copy(
+        update={"target_booking_rate": zielauslastung(feedback, system_properties)}
+    )
 
     coefficients = price_model.coefficients
 

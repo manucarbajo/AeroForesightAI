@@ -1416,7 +1416,7 @@ Fällt die Wahl auf 2 oder 3, ist die Impact Balance dann auch zu implementieren
 
 **Doku zieht mit:** `docs/cib_role.md`, `docs/cib_rationale.md`, `docs/handbuch/cib.md`, `CLAUDE.md` (Glossar), `docs/entscheidung_szenarienschicht_2026-08-29.md` (die getroffene Wahl gehört dort nachgetragen).
 
-### P2.8 — Die Nachfrage kann nicht wachsen ⚠️ Einkommen gemessen 2026-08-31, Ursache liegt tiefer
+### P2.8 — Die Nachfrage kann nicht wachsen ✅ Weg A umgesetzt 2026-08-31
 
 > **Der erste Befund, den der Backtest ohne Zutun geliefert hat.** Er entstand nicht aus einem Audit und nicht aus einer Code-Lektüre, sondern daraus, dass zum ersten Mal etwas außerhalb des Modells als Maßstab danebenlag.
 
@@ -1495,13 +1495,60 @@ Drei Dinge stehen darin:
 **Der ursprüngliche Satz dazu bleibt richtig:** — Kapazität als Systemgröße, mehrere Anbieter, oder wenigstens ein exogener Kapazitätspfad. Das ist Architektur, nicht ein Parameter, und es gehört entschieden statt nebenbei gebaut.
 - **Bis dahin gilt die Aussage in `grenzen.md`:** Nachfragezahlen dieses Modells sind keine Mengenprognose. Belastbar bleibt die Richtung einer Annahme, nicht die Höhe.
 
+#### Weg A ist umgesetzt (2026-08-31)
+
+**Gewählt und gebaut ist Weg A** aus der [Entscheidungsvorlage](entscheidung_angebotsseite_2026-08-31.md): Kapazität als exogene Systemgröße. Die dort vorgelegte Messung ist der Grund — **die Nachfragehöhe war eine Konfigurationskonstante**: Der Anbieter steuerte den Preis auf eine feste `target_booking_rate` von 0,37 (ohne Quelle), und diese Zahl war rund **zwanzigmal** so wirksam wie das Einkommen.
+
+**Was gebaut ist:**
+
+- `kapazitaet_index` ist eine Systemgröße mit Verlauf, Standard **1,0**. Sie skaliert die Zielauslastung: `zielauslastung() = target_booking_rate × kapazitaet_index`. Wächst die Kapazität, darf die Nachfrage mitwachsen, ohne dass der Preis sie wegdrückt.
+- **Aufgelöst wird sie in `compute_market_metrics`**, wo `system_properties` ohnehin vorliegt — und **vor beiden Verwendern**, damit `apply_market_feedback` und `sync_demand_level` denselben Sollwert sehen. Getrennt gesetzt folgte das Nachfrageniveau einem anderen Ziel als der Preis.
+- **Der Standard 1,0 ändert nichts.** Nachgeprüft: Der Backtest liefert mit der neuen Größe und ohne Verlauf exakt dieselben Zahlen wie vorher (1,27 / 23,43). Die Aussage «die Kapazität bleibt gleich» ist damit ausgesprochen statt unterstellt.
+
+**Gemessen, was die Größe tut** (Standardlauf, letztes Viertel):
+
+| `kapazitaet_index` | Buchungsrate | Preis |
+| ---: | ---: | ---: |
+| 0,8 | 0,2079 | 136,19 |
+| 1,0 | 0,2587 | 118,85 |
+| 1,5 | 0,3370 | 88,63 |
+
+Mehr Kapazität, mehr Verkehr, niedrigerer Preis — **die Kombination, die das Modell vorher nicht darstellen konnte** und die real das Jahrzehnt 2015–2019 geprägt hat.
+
+#### Der Backtest mit echter Kapazität — beide Richtungen
+
+**Die Reihe:** Eurostat `avia_paoc`, gewerbliche Passagierflüge (`CAF_PAS`), EU-27, monatlich, 120 Monate. **Ein Näherungswert, und das steht dran:** Kapazität ist Flüge × Sitze je Flugzeug × Auslastung; gezählt sind nur die Flüge. Real wuchsen sie 2015–2019 um **14,5 %**, die Passagiere um **26,3 %** — die Differenz sind größere Flugzeuge und höhere Auslastung. Die Reihe **unterschätzt das Kapazitätswachstum systematisch**. Sie ist trotzdem die ehrlichere Wahl als ein gebastelter Sitzplatzindex: gezählt statt gerechnet, und Eurostat veröffentlicht auf dieser Ebene keine Sitzplatzreihe.
+
+**Saisonbereinigt eingespeist, und das ist keine Anpassung an den Backtest:** Die Flugzahlen schwanken saisonal um **57 Indexpunkte** im Jahr, das reale BIP daneben um 3, weil Eurostat es bereinigt liefert. Das Modell kennt **keine Saison** — P2.7 hat das gemessen und deshalb auf Jahresmitteln verglichen. Einen Eingang mit voller Saison in ein Modell ohne Saison zu speisen ist derselbe Kategorienfehler, nur an der anderen Seite: Der Anbieter jagte einem Sollwert hinterher, der sich zwölfmal im Jahr um ein Drittel bewegt, und sein Regler ist auf Trends ausgelegt. Der Unterschied ist gemessen — roh eingespeist verschlechterte die Kapazität die Nachfrageseite auf **25,35**, geglättet verbessert sie sie auf **18,13**.
+
+**Das Ergebnis, mittlerer Abstand in Indexpunkten:**
+
+| | vor P2.8-A | mit Kapazität |
+| --- | ---: | ---: |
+| **Preis** gesamt | 14,78 | **10,66** |
+| Preis 2015–2019 | **1,27** | 3,09 |
+| Preis 2022–2024 | 37,31 | **23,27** |
+| **Nachfrage** gesamt | 27,54 | 33,36 |
+| Nachfrage 2015–2019 | 23,43 | **18,13** |
+| Nachfrage 2022–2024 | 34,38 | 58,76 |
+
+**Zwei Verbesserungen und eine Verschlechterung, und alle drei sind erklärbar:**
+
+- **Die Preisseite gewinnt deutlich** (14,78 → 10,66), vor allem nach der Pandemie (37,31 → 23,27). Der Kapazitätseinbruch 2020/21 und der langsame Wiederaufbau erklären einen Teil des Preisanstiegs, den das Modell vorher gar nicht kannte.
+- **Die Nachfrageseite vor der Pandemie gewinnt** (23,43 → **18,13**), also dort, wo der Backtest überhaupt etwas über die Mechanik sagt.
+- **Die Nachfrageseite nach der Pandemie verliert stark** (34,38 → 58,76) — und der Grund ist der oben benannte Vorbehalt, nicht ein Fehler: Die Flüge erreichten 2024 nur **107,6**, die Passagiere **128,4**. Das Modell folgt jetzt treu den Flügen und verfehlt damit die Sitze. **Dass es dem Näherungswert folgt, ist der Beleg, dass die Mechanik greift** — und dass der Näherungswert zu grob ist, war vorher aufgeschrieben.
+
+**Nicht nachjustiert.** Eine Kapazitätskurve, die auf den Backtest hin eingestellt würde, machte ihn wertlos; ein «Sitze je Flug»-Faktor ohne Datenreihe wäre genau das. Die nächste Verbesserung ist deshalb eine **Datenfrage**, keine Parameterfrage.
+
+**Was Weg A ausdrücklich nicht ist:** eine Kapazitätsschranke im engeren Sinn. Der Anbieter kann seinen Preis weiterhin beliebig senken; er zielt nur auf ein anderes Füllniveau. Eine harte Grenze und ein Investitionszyklus sind Weg B, mehrere Anbieter Weg C — beide bauen auf A auf.
+
 **Fallstrick — die Reihenfolge der Messung:** Der Backtest wird **vor** dem Eingriff einmal festgehalten (die Zahlen stehen in P2.7 und in `tests/test_nachfragetreiber.py`) und danach neu gerechnet. Wer erst baut und dann misst, hat keinen Vorher-Wert mehr.
 
 **Zweiter Fallstrick — Invariante 1:** Ein Nachfragetreiber ist eine **Zahl aus Python**. Er darf nicht aus einem Agenten-Narrativ stammen und nicht aus einem Vorgabewert, den niemand benannt hat. Wer einen Rückfall braucht, trägt ihn mit Begründung ein — die AST-Prüfung in `test_cost_pressure_source.py` findet ihn sonst.
 
 **Gehalten von:** [`tests/test_nachfragetreiber.py`](../tests/test_nachfragetreiber.py) — er misst den **Ist-Stand** (Horizontlücke in Ticks, Zuwachs der Kurve) und schlägt an, sobald sich einer der beiden bewegt. **Ein rotes Ergebnis ist dort keine Panne**, sondern die Nachricht, dass jemand die Nachfrageseite angefasst hat; dann gehört dieser Abschnitt neu geschrieben und der Backtest neu gerechnet, in dieser Reihenfolge.
 
-**Fertig wenn:** Ein Lauf, der über den Horizont einer Trajektorie hinausgeht, sagt es; die Herkunft des Nachfragewachstums ist entschieden und begründet; und der Backtest ist mit **unverändertem Verfahren** neu gerechnet, mit beiden Zahlen nebeneinander — vorher und nachher.
+**Fertig wenn** ⚠️ **(teilweise, 2026-08-31):** Die Herkunft des Nachfragewachstums ist entschieden und begründet ✅, und der Backtest ist mit unverändertem Verfahren neu gerechnet, mit beiden Zahlen nebeneinander ✅. **Offen bleibt der Trajektorien-Horizont** — ein Lauf, der über den letzten Stützpunkt hinausgeht, sagt es weiterhin nicht. Das ist der Rest von P2.8 und hängt an [P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31): Ob eine Kurve «zu kurz» ist, entscheidet sich daran, wie lang ein Tick ist.
 
 **Doku zieht mit:** `CLAUDE.md` (Glossar, Invarianten), `docs/handbuch/grenzen.md`, `docs/handbuch/vergleiche.md` (ein Schnitt — Läufe von davor und danach sind nicht vergleichbar), `docs/backtest_vorlauf.md`.
 
@@ -1581,7 +1628,7 @@ Der Glockenverlauf des Erwerbslebens — Menschen in der Lebensmitte fliegen am 
 
 **Ein Nebenergebnis, auf das nicht hingebaut wurde und das deshalb zählt:** Die **Preiselastizität** des Modells verbesserte sich von **−1,83 auf −1,27**. Das Metaanalyse-Mittel bei Brons et al. (2002) liegt bei −1,146 mit Standardabweichung 0,619 — statt 1,1 Standardabweichungen sind es jetzt **0,2**. Auch die Spanne über plausible Preise schrumpfte von −0,58…−3,54 auf −0,46…−2,76 und liegt damit nicht mehr jenseits des niedrigsten aller 204 Schätzwerte. **Der Grund ist mechanisch:** Eine wirklich heterogene Bevölkerung kippt nicht mehr geschlossen über die Erschwinglichkeitsschwelle.
 
-**Und ein Ergebnis, das schlechter wurde — hier, damit es nicht untergeht:** Der Backtest verliert auf der Nachfrageseite leicht (21,81 → **23,43** vor der Pandemie), die Preisseite bleibt (1,29 → **1,27**). **Nicht zurückgebaut:** Die Änderung ist durch den Mechanismus begründet, nicht durch die Punktzahl, und [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--einkommen-gemessen-2026-08-31-ursache-liegt-tiefer) sagt bereits, dass die Nachfragelücke strukturell ist. Ein Modell zurückzudrehen, weil es nach einer Korrektur auf *einer* Kennzahl schlechter abschneidet, ist genau die Anpassung an den Backtest, gegen die dieses Projekt anschreibt.
+**Und ein Ergebnis, das schlechter wurde — hier, damit es nicht untergeht:** Der Backtest verliert auf der Nachfrageseite leicht (21,81 → **23,43** vor der Pandemie), die Preisseite bleibt (1,29 → **1,27**). **Nicht zurückgebaut:** Die Änderung ist durch den Mechanismus begründet, nicht durch die Punktzahl, und [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--weg-a-umgesetzt-2026-08-31) sagt bereits, dass die Nachfragelücke strukturell ist. Ein Modell zurückzudrehen, weil es nach einer Korrektur auf *einer* Kennzahl schlechter abschneidet, ist genau die Anpassung an den Backtest, gegen die dieses Projekt anschreibt.
 
 **Was von der ersten Fassung gilt — mit neuer Begründung:** **Es gibt weiterhin keinen Alterungspfad.** Nicht mehr, weil das Alter folgenlos wäre, sondern weil echte Alterung hieße, alle abgeleiteten Merkmale je Tick neu zu bestimmen — aus einer Person würde eine andere — *und* festzulegen, wie viele Jahre ein Tick ist. Letzteres ist die Kalendersemantik, die [Invariante 5](../CLAUDE.md) ausschließt. Die Bevölkerung bleibt eine **wiederholte Querschnittserhebung**: Wächst sie, kommen frisch gezogene Personen dazu, und die Altersstruktur bleibt stabil.
 

@@ -140,6 +140,12 @@ Sitzplätze, mehr Strecken, mehr Wettbewerb. Wachstum bei gleichbleibendem Preis
 setzt Kapazitätsausweitung voraus. Dafür hat dieses Modell keine Größe, und
 deshalb kann es einen wachsenden Markt nicht abbilden.
 
+**Seit dem 31. August 2026 gibt es dafür eine Größe.** Ein Rahmenszenario kann die
+verfügbare **Kapazität** vorgeben — wächst sie, darf die Nachfrage mitwachsen, ohne
+dass der Preis sie wegdrückt. Damit ist die reale Kombination «mehr Verkehr bei
+gleichbleibenden Preisen» erstmals darstellbar. Ohne Vorgabe bleibt die Kapazität
+konstant, und dann gilt weiterhin, was oben steht.
+
 **Praktische Folge:** Nutzen Sie Nachfragezahlen dieses Modells nicht als
 Mengenprognose. Belastbar bleibt die Frage, in welche Richtung und wie stark
 eine Annahme wirkt — nicht, wie viele Menschen am Ende fliegen. Die vollständige

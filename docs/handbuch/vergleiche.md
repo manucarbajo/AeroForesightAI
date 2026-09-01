@@ -213,6 +213,12 @@ Prozent der Bevölkerung auf exakt 90 Jahre setzte.
 nicht nebeneinander. Woran Sie es erkennen: `run_metadata.json` hält unter
 `code_version` fest, mit welchem Stand gerechnet wurde.
 
+Am **2026-08-31** kam ein siebter Schnitt dazu: **Die Kapazität ist eine eigene
+Größe geworden.** Bis dahin steuerte der Anbieter den Preis auf eine feste
+Zielauslastung, und die Nachfragehöhe hing an dieser Zahl statt an den simulierten
+Menschen. Ohne Vorgabe bleibt alles wie es war — die Standardwerte sind so gewählt,
+dass sich nichts ändert. Wer aber eine Kapazität vorgibt, bekommt andere Zahlen.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

@@ -169,6 +169,18 @@
       }
     },
     {
+      "id": "kapazitaet_index",
+      "type": "numeric",
+      "unit": "index",
+      "description": "Verfuegbare Kapazitaet, relativ zum Ausgangsniveau (1,0 = Start). Sie bestimmt, wie viele Menschen der Anbieter ueberhaupt befoerdern kann, und loest damit die feste Zielauslastung ab: Statt auf einen Sollwert zu steuern, fuellt der Anbieter, was da ist. WOZU: Ohne diese Groesse war die Nachfragehoehe eine Konfigurationskonstante -- gemessen war die frueher feste target_booking_rate rund zwanzigmal so wirksam wie das Einkommen (siehe docs/entscheidung_angebotsseite_2026-08-31.md). Ein Rahmenszenario kann jetzt Kapazitaetsausbau oder -knappheit vorgeben. Standard 1,0 = unveraendert gegenueber dem Stand vor P2.8.",
+      "source": "trajectory",
+      "min_value": 0.3,
+      "max_value": 3.0,
+      "trajectory": {
+        "baseline": 1.0
+      }
+    },
+    {
       "id": "bevoelkerungsentwicklung",
       "type": "numeric",
       "unit": "persons",

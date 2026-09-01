@@ -1,6 +1,6 @@
 # Entscheidung: die Angebotsseite
 
-**Stand 2026-08-31 · zur Entscheidung vorgelegt · Grundlage für [P2.8](projektplan.md#p28--die-nachfrage-kann-nicht-wachsen--einkommen-gemessen-2026-08-31-ursache-liegt-tiefer)**
+**Stand 2026-08-31 · Weg A entschieden und gebaut (siehe Nachtrag unten) · Grundlage für [P2.8](projektplan.md#p28--die-nachfrage-kann-nicht-wachsen--weg-a-umgesetzt-2026-08-31)**
 
 Der Backtest hat auf der Nachfrageseite einen Fehlschlag gemessen: Das Modell
 lässt die Nachfrage bis 2019 auf **86** fallen, real stiegen die europäischen
@@ -20,7 +20,8 @@ als «dem Modell fehlt ein Nachfragetreiber»:
 > Nachfrage; wer die Konsumenten ändert, kaum.
 
 Diese Vorlage legt die Messungen offen, benennt drei Wege und empfiehlt einen.
-Sie entscheidet nichts.
+Sie war als Entscheidungsgrundlage geschrieben; **Weg A ist am selben Tag gebaut
+worden**, der Nachtrag am Ende trägt das Ergebnis.
 
 ---
 
@@ -203,6 +204,37 @@ ist eine Frage der Unternehmensplanung — ein anderes Produkt.
    macht ihn wertlos.
 
 ---
+
+## Nachtrag: Weg A ist gebaut (2026-08-31, am selben Tag)
+
+`kapazitaet_index` skaliert die Zielauslastung, Standard 1,0 — nachgeprüft, dass der
+Backtest damit exakt dieselben Zahlen liefert wie vorher. Ein Rahmenszenario kann die
+Kapazität jetzt vorgeben, und der Backtest bekommt sie aus echten Daten.
+
+**Die Reihe ist ein Näherungswert, und das ist die wichtigste Einschränkung:** Eurostat
+veröffentlicht auf dieser Ebene keine Sitzplätze, gezählt sind **Flüge** (`CAF_PAS`).
+Kapazität ist aber Flüge × Sitze × Auslastung. Real wuchsen die Flüge 2015–2019 um
+14,5 %, die Passagiere um 26,3 %.
+
+**Das Ergebnis, mittlerer Abstand:**
+
+| | vorher | mit Kapazität |
+| --- | ---: | ---: |
+| Preis gesamt | 14,78 | **10,66** |
+| Preis 2022–2024 | 37,31 | **23,27** |
+| Nachfrage 2015–2019 | 23,43 | **18,13** |
+| Nachfrage 2022–2024 | 34,38 | 58,76 |
+
+Zwei Verbesserungen, eine Verschlechterung — und die Verschlechterung ist der Näherungswert
+selbst: Das Modell folgt jetzt treu den Flügen (2024: 107,6) und verfehlt damit die
+Passagiere (128,4). **Dass es dem Näherungswert folgt, ist der Beleg, dass die Mechanik
+greift.** Die nächste Verbesserung ist eine Datenfrage — eine Sitzplatzreihe —, keine
+Parameterfrage. Nachjustiert wurde nichts.
+
+**Was damit nicht erledigt ist:** Weg A ist keine Kapazitäts*schranke*. Der Anbieter kann
+seinen Preis weiterhin beliebig senken, er zielt nur auf ein anderes Füllniveau. Weg B
+(Investitionszyklus) und Weg C (mehrere Anbieter) stehen unverändert offen und bauen
+darauf auf.
 
 ## Was diese Entscheidung nicht berührt
 

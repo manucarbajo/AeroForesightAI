@@ -112,6 +112,10 @@ class TestDerRahmenSpeistDieAussenwelt:
             # historischen Lauf konstant auf 1,0, während alles andere sich
             # bewegte — für sich schon nicht zu rechtfertigen.
             "income_index",
+            # **Die Angebotsseite** (P2.8 Weg A): Ohne sie war die Nachfragehöhe
+            # eine Konfigurationskonstante, und die reale Kombination «Wachstum
+            # bei flachen Preisen» hatte keine Darstellung.
+            "kapazitaet_index",
         }
 
     def test_der_oelpreis_wird_indexiert_der_co2_preis_nicht(self):
@@ -239,4 +243,51 @@ def test_die_beiden_seiten_sagen_verschiedenes():
         f"{nachfrage.abstand_ueber(vorjahre)} — die Zweiteilung ist weg. "
         "Entweder hat jemand die Nachfrageseite repariert (dann gehoert der "
         "Bericht neu geschrieben) oder die Preisseite ist schlechter geworden."
+    )
+
+
+def test_die_kapazitaet_wird_saisonbereinigt_eingespeist():
+    """**Sonst jagt der Anbieter einer Saison hinterher, die es im Modell nicht gibt.**
+
+    Die Flugzahlen schwanken saisonal um **57 Indexpunkte** im Jahr — das reale
+    BIP daneben um 3, weil Eurostat es saisonbereinigt liefert. Das Modell kennt
+    keine Saison (P2.7 hat das gemessen und deshalb auf Jahresmitteln
+    verglichen). Ein Eingang mit voller Saison in ein Modell ohne Saison ist
+    derselbe Kategorienfehler, nur an der anderen Seite.
+
+    Gemessen ist der Unterschied groß: Roh eingespeist verschlechterte die
+    Kapazität die Nachfrageseite vor der Pandemie auf 25,35; geglättet
+    verbessert sie sie auf **18,13** (vorher 23,43).
+    """
+
+    from src.backtest.auswertung import saisonspanne
+    from src.backtest.rahmen import ZUORDNUNG, _normieren
+
+    roh = laden("fluege").werte
+    art = ZUORDNUNG["fluege"][1]
+
+    assert art == "index_saisonbereinigt"
+
+    # **Vor der Pandemie messen.** `saisonspanne` nimmt die Spanne *innerhalb*
+    # eines Jahres; 2020 ist darin der Einbruch und keine Saison, und er
+    # verwischt genau den Unterschied, um den es hier geht.
+    def vor_2020(reihe: dict[str, float]) -> dict[str, float]:
+        return {m: w for m, w in reihe.items() if m[:4] < "2020"}
+
+    # Beide auf denselben Maßstab bringen — `_normieren` liefert einen Index
+    # um 1,0, die Rohreihe steht in Flügen. Ohne das vergliche man Äpfel mit
+    # Hunderttausenden.
+    mittel = sum(roh.values()) / len(roh)
+    roh_relativ = {m: w / mittel for m, w in roh.items()}
+
+    roh_spanne = saisonspanne(vor_2020(roh_relativ))
+    glatt_spanne = saisonspanne(vor_2020(_normieren(roh, art)))
+
+    assert roh_spanne > 0.3, (
+        f"Die Reihe schwankt nur noch um {roh_spanne:.2f} — dann ist die Glättung "
+        "überflüssig geworden."
+    )
+    assert glatt_spanne < roh_spanne * 0.3, (
+        f"Geglättet bleiben {glatt_spanne / roh_spanne:.0%} der Schwankung übrig. "
+        "Erwartet ist rund ein Fünftel."
     )

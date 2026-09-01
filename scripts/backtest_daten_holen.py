@@ -89,6 +89,24 @@ BIP_URL = (
     "&freq=Q&sinceTimePeriod=2015-Q1&untilTimePeriod=2024-Q4"
 )
 
+#: Gewerbliche Passagierfluege, EU-27, monatlich. **Der Kapazitaetsnaeherungswert**
+#: fuer P2.8 -- eine Sitzplatzreihe veroeffentlicht Eurostat auf dieser Ebene
+#: nicht.
+#:
+#: **Was der Naeherungswert unterschlaegt, und das gehoert dazu:** Kapazitaet ist
+#: Fluege mal Sitze je Flugzeug mal Auslastung. Nur die Fluege sind hier
+#: gezaehlt. Real wuchsen sie 2015-2019 um **14,5 %**, die Passagiere aber um
+#: **26,3 %** -- die Differenz sind groessere Flugzeuge und hoehere Auslastung.
+#: Die Reihe unterschaetzt das Kapazitaetswachstum also, und zwar systematisch.
+#: Sie ist trotzdem die ehrlichere Wahl als ein gebastelter Sitzplatzindex: Sie
+#: ist gezaehlt, nicht gerechnet.
+FLUEGE_URL = (
+    "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/avia_paoc"
+    "?format=JSON&lang=EN&geo=EU27_2020&freq=M&unit=FLIGHT&tra_meas=CAF_PAS"
+    "&tra_cov=TOTAL&schedule=TOTAL"
+    f"&sinceTimePeriod={VON}&untilTimePeriod={BIS}"
+)
+
 
 def _laden(url: str) -> bytes:
     return urlopen(
@@ -254,6 +272,10 @@ def fluggaeste() -> dict[str, float]:
     return _eurostat_reihe(FLUGGAESTE_URL)
 
 
+def fluege() -> dict[str, float]:
+    return _eurostat_reihe(FLUEGE_URL)
+
+
 def bip_real() -> dict[str, float]:
     """Quartalswerte auf Monate bringen — linear zwischen den Quartalsmitten.
 
@@ -358,6 +380,18 @@ def main() -> int:
             "nominal, weil Brons et al. (2002) GDP preisbereinigt verwenden — nominal "
             "wüchse die Reihe fast doppelt so stark und schmeichelte dem Ergebnis.",
             bip_real,
+        ),
+        (
+            "fluege",
+            "anzahl",
+            FLUEGE_URL,
+            "Eurostat `avia_paoc`, gewerbliche Passagierfluege (`CAF_PAS`), EU-27, "
+            "monatlich. **Kapazitaetsnaeherungswert fuer P2.8** -- Eurostat veroeffentlicht "
+            "auf dieser Ebene keine Sitzplatzreihe. Er unterschaetzt das Wachstum "
+            "systematisch: Fluege +14,5 % von 2015 auf 2019, Passagiere +26,3 %; die "
+            "Differenz sind groessere Flugzeuge und hoehere Auslastung. Gezaehlt statt "
+            "gerechnet, und deshalb einem gebastelten Sitzplatzindex vorgezogen.",
+            fluege,
         ),
         (
             "fluggaeste",

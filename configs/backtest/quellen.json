@@ -16,7 +16,7 @@
       "bis": "2024-12",
       "sha256": "caab828ec0a73984",
       "url": "https://www.eex.com/fileadmin/EEX/Downloads/Markets/Environmentals/EUA_Emission_Spot_Primary_Market_Auction_Report/Archive_Reports/emission-spot-primary-market-auction-report-2012-2025-data.zip",
-      "abgerufen": "2026-08-31",
+      "abgerufen": "2026-09-01",
       "hinweis": "EEX, Emission Spot Primary Market Auction Report. Monatsmittel der Zuschlagspreise der gemeinsamen EU-Auktion allgemeiner Zertifikate; nationale Auktionen (DE, PL) und Luftverkehrszertifikate (EUAA) sind ausgeschlossen.",
       "spalte": "eur_je_tonne"
     },
@@ -27,7 +27,7 @@
       "bis": "2024-12",
       "sha256": "d783591a57da9a5b",
       "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MCOILBRENTEU",
-      "abgerufen": "2026-08-31",
+      "abgerufen": "2026-09-01",
       "hinweis": "Europe Brent Spot Price FOB, Monatsmittel. Erhoben von der US Energy Information Administration, hier über die FRED-Spiegelung (`MCOILBRENTEU`) bezogen, weil die EIA-Seite ihre Tabellen per JavaScript nachlädt.",
       "spalte": "usd_je_barrel"
     },
@@ -38,7 +38,7 @@
       "bis": "2024-12",
       "sha256": "63682b697bd29455",
       "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_midx?format=JSON&lang=EN&unit=I15&coicop=CP0733&geo=EU27_2020&sinceTimePeriod=2015-01&untilTimePeriod=2024-12",
-      "abgerufen": "2026-08-31",
+      "abgerufen": "2026-09-01",
       "hinweis": "Eurostat `prc_hicp_midx`, COICOP `CP0733` (Passenger transport by air), EU-27, Index 2015 = 100. **Zielreihe der Preisseite.**",
       "spalte": "index_2015_100"
     },
@@ -49,9 +49,20 @@
       "bis": "2024-12",
       "sha256": "941272945cc2a97f",
       "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/namq_10_gdp?format=JSON&lang=EN&geo=EU27_2020&na_item=B1GQ&unit=CLV15_MEUR&s_adj=SCA&freq=Q&sinceTimePeriod=2015-Q1&untilTimePeriod=2024-Q4",
-      "abgerufen": "2026-08-31",
+      "abgerufen": "2026-09-01",
       "hinweis": "Eurostat `namq_10_gdp`, reales BIP der EU-27 (`B1GQ`, verkettete Volumen zu Preisen von 2015, saison- und kalenderbereinigt), **vierteljährlich** und linear auf Monate interpoliert. Speist `income_index`. Real und nicht nominal, weil Brons et al. (2002) GDP preisbereinigt verwenden — nominal wüchse die Reihe fast doppelt so stark und schmeichelte dem Ergebnis.",
       "spalte": "mio_eur_kettenindex"
+    },
+    {
+      "datei": "fluege.csv",
+      "zeilen": 120,
+      "von": "2015-01",
+      "bis": "2024-12",
+      "sha256": "a6599278a1441c3c",
+      "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/avia_paoc?format=JSON&lang=EN&geo=EU27_2020&freq=M&unit=FLIGHT&tra_meas=CAF_PAS&tra_cov=TOTAL&schedule=TOTAL&sinceTimePeriod=2015-01&untilTimePeriod=2024-12",
+      "abgerufen": "2026-09-01",
+      "hinweis": "Eurostat `avia_paoc`, gewerbliche Passagierfluege (`CAF_PAS`), EU-27, monatlich. **Kapazitaetsnaeherungswert fuer P2.8** -- Eurostat veroeffentlicht auf dieser Ebene keine Sitzplatzreihe. Er unterschaetzt das Wachstum systematisch: Fluege +14,5 % von 2015 auf 2019, Passagiere +26,3 %; die Differenz sind groessere Flugzeuge und hoehere Auslastung. Gezaehlt statt gerechnet, und deshalb einem gebastelten Sitzplatzindex vorgezogen.",
+      "spalte": "anzahl"
     },
     {
       "datei": "fluggaeste.csv",
@@ -60,7 +71,7 @@
       "bis": "2024-12",
       "sha256": "5d4aeb6a4310a303",
       "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/avia_paoc?format=JSON&lang=EN&geo=EU27_2020&freq=M&unit=PAS&tra_meas=PAS_CRD&tra_cov=TOTAL&schedule=TOTAL&sinceTimePeriod=2015-01&untilTimePeriod=2024-12",
-      "abgerufen": "2026-08-31",
+      "abgerufen": "2026-09-01",
       "hinweis": "Eurostat `avia_paoc`, beförderte Fluggäste (`PAS_CRD`), EU-27, monatlich, Inlands- und Auslandsverkehr. **Zielreihe der Nachfrageseite.** Der Wert für April 2020 — 0,89 statt rund 90 Millionen — ist echt und der Grund, warum 2020/21 nicht bewertet werden.",
       "spalte": "personen"
     }

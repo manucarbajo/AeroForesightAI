@@ -41,6 +41,39 @@ def initial_ticket_price(properties: PropertiesConfig, *, tick: int) -> float:
     return properties.price_model.base_price + initial_provider_markup(properties, tick=tick)
 
 
+def zielauslastung(
+    config: MarketFeedbackConfig,
+    system_properties: dict[str, float],
+) -> float:
+    """Wie voll der Anbieter fahren will — **Kapazität mal Sollauslastung** (P2.8).
+
+    **Was sich damit ändert, und warum es der Kern von P2.8 ist:** Bis dahin war
+    `target_booking_rate` eine feste Zahl (0,37 ohne Quelle), und der Anbieter
+    steuerte den Preis, bis die Nachfrage sie traf. Damit war die
+    *Nachfragehöhe* eine Konfigurationskonstante — gemessen bewegte ein
+    Einkommensschock von +40 % die Buchungsrate um 4,6 %, während dieselbe
+    Konstante sie verdoppelte. Der Anbieter war die Nachfrageseite.
+
+    `kapazitaet_index` skaliert diesen Sollwert jetzt. Wächst die Kapazität, darf
+    die Nachfrage mitwachsen, ohne dass der Preis sie wegdrückt — genau die
+    Kombination, die real das Jahrzehnt 2015–2019 geprägt hat (+26 % Verkehr bei
+    flachen Realpreisen) und die das Modell vorher **nicht darstellen konnte**.
+
+    **Der Standard 1,0 lässt alles wie es war.** Ohne Verlauf ist das Verhalten
+    identisch mit dem Stand vor P2.8; die Aussage «die Kapazität bleibt gleich»
+    ist damit ausgesprochen statt unterstellt.
+
+    **Was das nicht ist:** eine Kapazitätsschranke im engeren Sinn. Der Anbieter
+    kann seinen Preis weiterhin beliebig senken; er zielt nur auf ein anderes
+    Füllniveau. Eine harte Grenze («mehr Sitze gibt es nicht») wäre der nächste
+    Schritt und ist in
+    `docs/entscheidung_angebotsseite_2026-08-31.md` als Weg B/C beschrieben.
+    """
+
+    index = float(system_properties.get("kapazitaet_index", 1.0) or 1.0)
+    return config.target_booking_rate * index
+
+
 def resolve_market_feedback_config(properties: PropertiesConfig) -> MarketFeedbackConfig:
     """Build feedback config from ``market_rules``; fall back to ``market_feedback``."""
 
