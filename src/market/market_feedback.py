@@ -74,6 +74,30 @@ def zielauslastung(
     return config.target_booking_rate * index
 
 
+def kapazitaetsschranke(
+    properties: PropertiesConfig,
+    system_properties: dict[str, float],
+) -> float | None:
+    """Wie viele Menschen der Anbieter höchstens befördern kann — als Anteil.
+
+    **Nur unter der Marge-Strategie eine Schranke.** Unter `auslastung` steuert
+    der Anbieter den Preis auf dieses Niveau *zu*; dort ist es ein Ziel, keine
+    Grenze, und die Nachfrage erreicht es ohnehin. `None` heißt «keine
+    Schranke» — die Buchungen sind dann so frei wie vor P2.8.
+
+    **Warum es die Schranke überhaupt braucht:** Ohne sie täte die Kapazität
+    unter `marge` *nichts*. Der Anbieter hält seinen Aufschlag, die Nachfrage
+    ergibt sich aus der Bevölkerung, und ob zehn oder tausend Sitze da sind,
+    stünde nirgends in der Rechnung. Erst als Grenze wird «mehr Plätze» zu
+    einer Aussage.
+    """
+
+    config = resolve_market_feedback_config(properties)
+    if config.strategie != "marge":
+        return None
+    return zielauslastung(config, system_properties)
+
+
 def resolve_market_feedback_config(properties: PropertiesConfig) -> MarketFeedbackConfig:
     """Build feedback config from ``market_rules``; fall back to ``market_feedback``."""
 
@@ -85,6 +109,7 @@ def resolve_market_feedback_config(properties: PropertiesConfig) -> MarketFeedba
         enabled = when.get("enabled", True)
         return MarketFeedbackConfig(
             enabled=bool(enabled),
+            strategie=str(effect.get("strategie", "auslastung")),
             target_booking_rate=float(effect.get("target_booking_rate", 0.37)),
             markup_adjustment_per_tick=float(effect.get("markup_adjustment_per_tick", 0.08)),
             max_price_change_fraction=float(effect.get("max_price_change_fraction", 0.08)),

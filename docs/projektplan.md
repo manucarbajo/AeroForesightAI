@@ -1542,6 +1542,52 @@ Mehr Kapazität, mehr Verkehr, niedrigerer Preis — **die Kombination, die das 
 
 **Was Weg A ausdrücklich nicht ist:** eine Kapazitätsschranke im engeren Sinn. Der Anbieter kann seinen Preis weiterhin beliebig senken; er zielt nur auf ein anderes Füllniveau. Eine harte Grenze und ein Investitionszyklus sind Weg B, mehrere Anbieter Weg C — beide bauen auf A auf.
 
+#### Nachtrag am selben Tag: eine Methodik ist ein Bias (P2.8-B)
+
+> **Der Einwand kam von Haiko, und er trifft:** «Es kann ja auch mal mehr Plätze geben, aber gleich teuer bleiben. Es ist eine Simulation, es kann alles passieren. Wenn wir nur eine Methodik haben, hat das System einen Bias und es wird nicht abgenommen.»
+
+**Er hat recht, und die Messung von Weg A zeigt es selbst:**
+
+| `kapazitaet_index` | Preis |
+| ---: | ---: |
+| 0,8 | 136,19 |
+| 1,5 | 88,63 |
+
+**Mehr Plätze erzwangen einen niedrigeren Preis.** Der Anbieter senkte ihn immer, bis er voll war — eine eingebaute Verhaltensannahme. Ausgerechnet die reale Lage 2015–2019, die Weg A darstellbar machen sollte (**mehr Sitze bei flachen Preisen**), war damit *weiterhin* nicht darstellbar. Weg A hat die Kapazität eingeführt, aber nur **eine** Art, auf sie zu reagieren.
+
+**Das ist mehr als eine fehlende Option.** Ein Szenariowerkzeug, das nur eine Verhaltensannahme kennt, beantwortet «was wäre wenn» immer nur unter dieser Annahme — und eine Simulation, die eine Möglichkeit baulich ausschließt, ist keine Simulation dieser Möglichkeit. Ein Fachprüfer liest darin zu Recht einen Bias.
+
+**Umgesetzt: die Preisstrategie ist eine Wahl.**
+
+| Strategie | Verhalten | Kapazität wirkt als |
+| --- | --- | --- |
+| `auslastung` *(Standard)* | Der Anbieter senkt den Preis, bis die Kapazität gefüllt ist | **Ziel** |
+| `marge` | Der Anbieter hält seinen Aufschlag, die Auslastung schwankt | **Schranke** |
+
+**Gemessen, beide Strategien nebeneinander:**
+
+| Kapazität | `auslastung` Rate / Preis | `marge` Rate / Preis |
+| ---: | --- | --- |
+| 0,5 | 0,1529 / 159,42 | 0,1063 / **189,78** |
+| 0,7 | 0,1956 / 141,85 | 0,1064 / **189,78** |
+| 1,0 | 0,2587 / 118,85 | 0,1064 / **189,78** |
+| 1,3 | 0,3052 / 100,50 | 0,1064 / **189,78** |
+
+Unter `marge` steht der Preis, egal wie viele Plätze da sind — **genau der Fall, der vorher fehlte.**
+
+**Zwei Entscheidungen dabei, beide bewusst:**
+
+1. **Die Kapazität ist nur unter `marge` eine Schranke.** Unter `auslastung` steuert der Preis ohnehin auf sie zu; ein zusätzlicher Deckel schnitte in eine Regelung hinein, die dorthin läuft. Ohne die Schranke täte die Kapazität unter `marge` allerdings **gar nichts** — der Anbieter hielte seinen Aufschlag, und ob zehn oder tausend Sitze da sind, stünde nirgends in der Rechnung.
+2. **Wer keinen Platz bekommt, wird zufällig gewählt.** Eine Auswahl nach Zahlungsbereitschaft wäre eine **zweite** Verhaltensannahme — sie unterstellte ein Erlösmanagement, das teure Buchungen bevorzugt. Genau solche stillen Annahmen sind der Grund für dieses Paket; wer sie will, macht sie zu einer eigenen Strategie. Ein Test misst, dass die Zahlungsbereitschaft der Buchenden sich nicht verschiebt.
+
+**Der Standard ändert nichts**, und das ist nachgeprüft: `auslastung` ist die ausgelieferte Strategie, und der Backtest liefert unverändert 10,66 / 33,36. Eine neue Wahlmöglichkeit darf nichts verschieben, solange niemand wählt.
+
+**Ein unbekannter Strategiename scheitert laut** — sonst fiele ein Tippfehler wie `marge_` still auf `auslastung` zurück, und jemand wunderte sich über seine Zahlen. Dieselbe Klasse von Befund wie bei den Shift-Zielen in P2.4.
+
+**Der Wächter:** [`tests/test_preisstrategie_ist_eine_wahl.py`](../tests/test_preisstrategie_ist_eine_wahl.py), elf Zusagen. Die tragende ist nicht «`marge` hält den Preis», sondern das **Paar**: dass er unter `marge` steht *und* sich unter `auslastung` um mehr als 30 EUR bewegt. Ohne die Gegenprobe prüfte der erste Test nur, dass irgendetwas konstant ist.
+
+**Was damit weiterhin offen ist:** Zwei Strategien sind zwei, nicht alle. Ein Anbieter, der bei knapper Kapazität die Marge *ausweitet* (Erlösmanagement), fehlt ebenso wie mehrere Anbieter im Wettbewerb (Weg C). Die Architektur nimmt beide jetzt auf — `STRATEGIEN` ist eine Liste, kein Schalter.
+
 **Fallstrick — die Reihenfolge der Messung:** Der Backtest wird **vor** dem Eingriff einmal festgehalten (die Zahlen stehen in P2.7 und in `tests/test_nachfragetreiber.py`) und danach neu gerechnet. Wer erst baut und dann misst, hat keinen Vorher-Wert mehr.
 
 **Zweiter Fallstrick — Invariante 1:** Ein Nachfragetreiber ist eine **Zahl aus Python**. Er darf nicht aus einem Agenten-Narrativ stammen und nicht aus einem Vorgabewert, den niemand benannt hat. Wer einen Rückfall braucht, trägt ihn mit Begründung ein — die AST-Prüfung in `test_cost_pressure_source.py` findet ihn sonst.

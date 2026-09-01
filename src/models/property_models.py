@@ -179,10 +179,33 @@ class PriceModelConfig(BaseModel):
     )
 
 
+#: Wie der Anbieter auf freie Kapazität reagiert. **Eine Wahl, keine Annahme.**
+#:
+#: **Der Grund ist ein Bias-Befund** (2026-08-31): Bis dahin gab es nur eine
+#: Strategie — der Anbieter senkte den Preis, bis er voll war. Gemessen hieß das:
+#: Kapazität +50 % erzwang Preis −25 %. Damit war die reale Lage 2015–2019
+#: (**mehr Sitze bei flachen Preisen**) im Modell **nicht darstellbar**, und das
+#: Werkzeug hatte eine Theorie der Preissetzung eingebaut, statt sie zur
+#: Auswahl zu stellen.
+#:
+#: Ein Szenariowerkzeug, das nur eine Verhaltensannahme kennt, beantwortet die
+#: Frage «was wäre wenn» immer nur unter dieser einen Annahme — und ein
+#: Fachprüfer liest darin zu Recht einen Bias.
+STRATEGIEN = ("auslastung", "marge")
+
+
 class MarketFeedbackConfig(BaseModel):
     """Provider markup adjusts each tick toward the target booking rate."""
 
     enabled: bool = True
+    #: **Wie der Anbieter preist** — `auslastung` senkt den Preis, bis die
+    #: Kapazität gefüllt ist (Verhalten bis 2026-08-31 und weiterhin der
+    #: Standard); `marge` hält den Aufschlag und lässt die Auslastung
+    #: schwanken. Unter `marge` bleibt der Preis gleich, wenn Kapazität
+    #: dazukommt — die Nachfrage darf dann wachsen, ohne dass der Preis
+    #: nachgibt. Beides kommt vor, und welches gilt, ist eine Frage an das
+    #: Szenario, nicht an das Modell.
+    strategie: str = "auslastung"
     # Target share of population booking per tick (calibrated ~DE annual flight rate).
     target_booking_rate: float = 0.37
     markup_adjustment_per_tick: float = 0.08
@@ -190,6 +213,20 @@ class MarketFeedbackConfig(BaseModel):
     damping: float = 0.85
     booking_weight: float = 0.6
     marginal_cost_fraction: float = 0.33
+
+    @field_validator("strategie")
+    @classmethod
+    def _strategie_ist_bekannt(cls, wert: str) -> str:
+        """Ein unbekannter Name fiele sonst still auf `auslastung` zurück.
+
+        Dieselbe Klasse von Befund wie bei den Shift-Zielen (P2.4): Wer
+        `marge_` schreibt, bekäme klammheimlich die andere Strategie und
+        wunderte sich über seine Zahlen.
+        """
+
+        if wert not in STRATEGIEN:
+            raise ValueError(f"Unbekannte Preisstrategie {wert!r}; erlaubt sind {STRATEGIEN}")
+        return wert
 
 
 class MarketRule(BaseModel):

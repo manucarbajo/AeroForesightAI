@@ -140,6 +140,12 @@ Sitzplätze, mehr Strecken, mehr Wettbewerb. Wachstum bei gleichbleibendem Preis
 setzt Kapazitätsausweitung voraus. Dafür hat dieses Modell keine Größe, und
 deshalb kann es einen wachsenden Markt nicht abbilden.
 
+**Und wie der Anbieter darauf reagiert, ist eine Wahl.** Er kann den Preis senken,
+bis die Plätze gefüllt sind — oder seinen Aufschlag halten und die Auslastung
+schwanken lassen. Im zweiten Fall bleibt der Preis gleich, wenn Kapazität
+dazukommt. Beides kommt in der Wirklichkeit vor, und das Modell legt sich nicht
+fest: Es fragt Sie.
+
 **Seit dem 31. August 2026 gibt es dafür eine Größe.** Ein Rahmenszenario kann die
 verfügbare **Kapazität** vorgeben — wächst sie, darf die Nachfrage mitwachsen, ohne
 dass der Preis sie wegdrückt. Damit ist die reale Kombination «mehr Verkehr bei

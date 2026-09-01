@@ -905,13 +905,70 @@ def run_population_tick(
         for person in individuals
     ]
 
-    return evaluate_booking(
+    gebucht, stats = evaluate_booking(
         individuals,
         ticket_price=ticket_price,
         carbon_tax=carbon_tax,
         properties=properties,
         rng=buchungsstrom(seed, current_tick),
     )
+
+    return _kapazitaet_begrenzen(
+        gebucht,
+        stats,
+        properties,
+        system_properties,
+        seed=seed,
+        current_tick=current_tick,
+    )
+
+
+def _kapazitaet_begrenzen(
+    individuals: list[Individual],
+    stats: PopulationStats,
+    properties: PropertiesConfig,
+    system_properties: dict[str, float],
+    *,
+    seed: int,
+    current_tick: int,
+) -> tuple[list[Individual], PopulationStats]:
+    """Mehr Menschen wollen fliegen, als Plätze da sind — dann bleiben welche übrig.
+
+    **Nur unter der Marge-Strategie** (P2.8-B). Unter `auslastung` steuert der
+    Anbieter den Preis auf die Kapazität *zu*; dort ist sie ein Ziel und keine
+    Grenze, und ein zusätzlicher Deckel schnitte in eine Regelung hinein, die
+    ohnehin dorthin läuft.
+
+    **Wer keinen Platz bekommt, wird zufällig gewählt.** Eine Auswahl nach
+    Zahlungsbereitschaft wäre eine zweite Verhaltensannahme — sie unterstellte
+    ein Erlösmanagement, das teure Buchungen bevorzugt, und genau solche
+    stillen Annahmen sind der Grund für dieses Paket. Wer sie will, macht sie
+    zu einer eigenen Strategie.
+
+    **Die Sättigung bleibt unberührt:** Wer keinen Platz bekommt, hat nicht
+    gebucht und wird deshalb auch nicht gesättigt. Das fällt automatisch heraus,
+    weil `booked` zurückgesetzt wird, bevor die Sättigung daran anknüpft.
+    """
+
+    from src.market.market_feedback import kapazitaetsschranke
+
+    schranke = kapazitaetsschranke(properties, system_properties)
+    if schranke is None or not individuals:
+        return individuals, stats
+
+    plaetze = int(len(individuals) * max(0.0, schranke))
+    gebucht = [i for i, person in enumerate(individuals) if person.booked]
+    if len(gebucht) <= plaetze:
+        return individuals, stats
+
+    rng = np.random.default_rng(np.random.SeedSequence([int(seed), int(current_tick), 4711]))
+    leer_ausgehen = set(rng.choice(gebucht, size=len(gebucht) - plaetze, replace=False).tolist())
+
+    begrenzt = [
+        person.model_copy(update={"booked": False}) if i in leer_ausgehen else person
+        for i, person in enumerate(individuals)
+    ]
+    return begrenzt, aggregate_population_stats(begrenzt, properties=properties)
 
 
 def run_population_sampling(

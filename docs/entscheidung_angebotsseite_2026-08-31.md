@@ -236,6 +236,40 @@ seinen Preis weiterhin beliebig senken, er zielt nur auf ein anderes Füllniveau
 (Investitionszyklus) und Weg C (mehrere Anbieter) stehen unverändert offen und bauen
 darauf auf.
 
+## Zweiter Nachtrag: eine Methodik ist ein Bias (2026-08-31)
+
+**Weg A allein war zu eng**, und der Einwand kam von außen: «Es kann ja auch mal mehr
+Plätze geben, aber gleich teuer bleiben. Wenn wir nur eine Methodik haben, hat das System
+einen Bias und es wird nicht abgenommen.»
+
+Die Messung von Weg A bestätigt es: Kapazität 0,8 → Preis 136,19; Kapazität 1,5 → Preis
+88,63. **Mehr Plätze erzwangen einen niedrigeren Preis.** Damit war ausgerechnet die reale
+Lage 2015–2019, um derentwillen Weg A gebaut wurde, weiterhin nicht darstellbar.
+
+**Die Preisstrategie ist deshalb jetzt eine Wahl** (`auslastung` / `marge`), nicht eine
+Annahme. Unter `marge` hält der Anbieter seinen Aufschlag, die Kapazität wirkt als
+Schranke statt als Ziel, und der Preis bleibt stehen, wenn Plätze dazukommen:
+
+| Kapazität | `auslastung` Rate / Preis | `marge` Rate / Preis |
+| ---: | --- | --- |
+| 0,5 | 0,1529 / 159,42 | 0,1063 / **189,78** |
+| 1,0 | 0,2587 / 118,85 | 0,1064 / **189,78** |
+| 1,3 | 0,3052 / 100,50 | 0,1064 / **189,78** |
+
+Der Standard bleibt `auslastung` — der Backtest liefert unverändert 10,66 / 33,36. Eine
+neue Wahlmöglichkeit darf nichts verschieben, solange niemand wählt.
+
+**Zwei Entscheidungen dabei, beide bewusst.** Die Kapazität ist nur unter `marge` eine
+Schranke — unter `auslastung` steuert der Preis ohnehin auf sie zu. Und **wer keinen Platz
+bekommt, wird zufällig gewählt**: Eine Auswahl nach Zahlungsbereitschaft wäre eine
+*zweite* stille Verhaltensannahme, und genau gegen solche steht dieses Paket.
+
+**Das ändert auch die Einordnung der drei Wege oben.** Sie waren als *Alternativen*
+geschrieben; richtig ist, dass Weg B und C weitere **Strategien** sind, keine Ersetzungen.
+`STRATEGIEN` ist eine Liste, kein Schalter: Ein Anbieter mit Erlösmanagement (Marge weitet
+sich bei Knappheit) oder mehrere Anbieter im Wettbewerb kommen als weitere Einträge dazu,
+nicht als Umbau.
+
 ## Was diese Entscheidung nicht berührt
 
 - **Die Preisseite des Backtests.** Sie trifft vor der Pandemie auf 1,27

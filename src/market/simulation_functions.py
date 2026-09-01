@@ -408,7 +408,13 @@ def compute_market_metrics(
         system_properties=system_properties,
     )
 
-    if booking_rate is not None and feedback.enabled:
+    # **Unter `marge` regelt der Anbieter nicht nach** (P2.8-B): Er hält seinen
+    # Aufschlag, und die Auslastung schwankt. Damit bleibt der Preis gleich,
+    # wenn Kapazität dazukommt — die reale Lage 2015–2019, die unter der
+    # Auslastungsstrategie nicht darstellbar ist.
+    regelt_nach = feedback.enabled and feedback.strategie == "auslastung"
+
+    if booking_rate is not None and regelt_nach:
 
         ticket_price, provider_markup = apply_market_feedback(
             cost_pressure,
