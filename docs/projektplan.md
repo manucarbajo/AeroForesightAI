@@ -107,7 +107,7 @@ drin" nicht die Frage, sondern "wird es gesetzt, wenn der Ausfall eintritt".
 > ganzen eingehenden Spalte. Der Rest reicht von plausibel (`F2.x`, `F4.x` lesen sich unter
 > beiden Bedeutungen) bis vertretbar — verlassen kann man sich darauf trotzdem nicht, weil er
 > unter einer anderen Bedeutung entstanden ist. Neu bewertet wird mit der Begründung aus
-> [P2.3](#p23--matrix-provenienz-herstellen--entfällt-seit-2026-08-31-ein-rest-bleibt) in einem Zug — zweimal durchgehen ist der teure
+> [P2.3](#p23--matrix-provenienz-herstellen--abgeschlossen-2026-08-31-entfallen-rest-erledigt) in einem Zug — zweimal durchgehen ist der teure
 > Weg. P0.2 ist deshalb **kein kleines Umbenennungs-Paket**; wer es anfasst, plant die
 > Zellendurchsicht mit ein.
 >
@@ -146,7 +146,7 @@ Die Drift ist **kein späterer Umbenennungsfehler**: Im allerersten Commit des R
 *Variante A — **Geopolitische Stabilität*** (Haikos Position und Empfehlung dieser Auswertung):
 
 1. `configs/factors.json`: Zustandsbezeichnungen entmischen — `F7.1` von „Offene Maerkte, Kooperation" auf „Offene Lufträume, multilaterale Kooperation", `F7.2` von „Fragmentierung, Konflikte" auf „Fragmentierung, Sperrungen, Konflikte". Name und Beschreibung bleiben.
-2. `configs/cib_frozen.json`: `metadata.factors` auf „F7 Geopolitische Stabilität" ziehen, `metadata.note` nachführen — **und die 48 F7-Zellen neu bewerten**, weil die heutigen Werte eine Marktlogik kodieren. Für diese Zellen [P2.3](#p23--matrix-provenienz-herstellen--entfällt-seit-2026-08-31-ein-rest-bleibt) vorziehen: Begründung gleich mitschreiben statt zweimal durchgehen. Die Matrix bleibt eingefroren (Invariante 3).
+2. `configs/cib_frozen.json`: `metadata.factors` auf „F7 Geopolitische Stabilität" ziehen, `metadata.note` nachführen — **und die 48 F7-Zellen neu bewerten**, weil die heutigen Werte eine Marktlogik kodieren. Für diese Zellen [P2.3](#p23--matrix-provenienz-herstellen--abgeschlossen-2026-08-31-entfallen-rest-erledigt) vorziehen: Begründung gleich mitschreiben statt zweimal durchgehen. Die Matrix bleibt eingefroren (Invariante 3).
 3. [`scripts/rebuild_cib_frozen.py`](../scripts/rebuild_cib_frozen.py) mitziehen, damit ein Neubau dieselben Werte erzeugt.
 4. `docs/cib_role.md`: die Active/Passive-Tabelle enthält F7-Scores, die aus den alten Zellen stammen — nach der Neubewertung neu rechnen. `docs/cib_rationale.md`: die Zeilen zu `f7_oil_stress` und `f7_open_markets` sprechen von „Marktfragmentierung" und „offene, integrierte Märkte" und müssen auf die geopolitische Lesart (Ölpreis als Indikator geopolitischer Spannung) umgeschrieben werden.
 5. Test, der Faktor-IDs **und -Namen** zwischen `factors.json` und `cib_frozen.json` mechanisch vergleicht — damit die Drift nicht wiederkommt.
@@ -174,9 +174,9 @@ Drei Dinge, die dabei über den Plan hinausgingen:
 
 **Was sich an den Kennzahlen verschoben hat:** BAU 0.973 → 0.970, Konflikt 0.867 (unverändert), Freiwillige Wende 0.603 → 0.629 bei einem Konflikt weniger. **Der Kernnachweis BAU > Konflikt hält.** Die Wende bewegt sich, weil ihr Widerspruch zum Teil daran hing, dass offene *Märkte* mit strenger Regulierung kollidierten — offene *Lufträume* tun das nicht im selben Maß. `test_cib_ranking.py` und beide CIB-Dokumente sind nachgezogen.
 
-**Offen und bewusst so markiert:** Die 48 Werte sind modellgeneriert und fachlich nicht abgenommen. `metadata.source` steht deshalb auf `llm_proposed_pending_review_v3`, und ein Test hält fest, dass das Label bleibt, solange die Durchsicht aussteht. Wer sie macht, ersetzt es.
+**Offen und bewusst so markiert:** Die 48 Werte sind modellgeneriert und fachlich nicht abgenommen; die Notiz in `cib_frozen.json` sagt das, und ein Test hält es fest. **Das Quellenlabel hat sich am 2026-08-31 geändert** — es hieß `llm_proposed_pending_review_v3` und kündigte damit eine Durchsicht an; seit P2.3-Rest heißt es `beleg_keine_bewertende_rolle`, weil unter Variante C keine mehr vorgesehen ist.
 
-**Zurückgestellt am 2026-08-29 — mit Grund, nicht vergessen.** Die fachliche Abnahme der 48 Zellen ist **nicht mehr eingeplant**, bis die Szenarienschicht steht ([Leitentscheidung](#leitentscheidung-die-szenarienschicht-2026-08-29)). Der Grund kam aus dem Versuch, sie vorzubereiten: Beim Nachmessen der übrigen 120 Zellen zeigte sich, dass die Matrix im Kern **eine einzige Achse** ist — nur 12 von 84 gleichpoligen Zellen tragen Spannung, und vier unbegründete Zellen verneinen die Rückkopplung, aus der gemischte Szenarien entstehen. Ob `F5.1 → F7.1` bei 0 oder +1 steht, bewegt dagegen nichts. Wer die 48 prüft, bevor über **Rolle und Erhebung** der Matrix entschieden ist, prüft Werte, die danach ohnehin neu erhoben werden müssten; unter der gewählten Variante C entfällt die Prüfung ganz. Das Label `llm_proposed_pending_review_v3` bleibt deshalb stehen und ist ab sofort **richtig**, nicht nur vorläufig.
+**Zurückgestellt am 2026-08-29 — mit Grund, nicht vergessen.** Die fachliche Abnahme der 48 Zellen ist **nicht mehr eingeplant**, bis die Szenarienschicht steht ([Leitentscheidung](#leitentscheidung-die-szenarienschicht-2026-08-29)). Der Grund kam aus dem Versuch, sie vorzubereiten: Beim Nachmessen der übrigen 120 Zellen zeigte sich, dass die Matrix im Kern **eine einzige Achse** ist — nur 12 von 84 gleichpoligen Zellen tragen Spannung, und vier unbegründete Zellen verneinen die Rückkopplung, aus der gemischte Szenarien entstehen. Ob `F5.1 → F7.1` bei 0 oder +1 steht, bewegt dagegen nichts. Wer die 48 prüft, bevor über **Rolle und Erhebung** der Matrix entschieden ist, prüft Werte, die danach ohnehin neu erhoben werden müssten; unter der gewählten Variante C entfällt die Prüfung ganz. Das Label `llm_proposed_pending_review_v3` blieb deshalb zunächst stehen und war ab da **richtig**, nicht nur vorläufig. **Am 2026-08-31 ist es ersetzt worden** (P2.3-Rest): Nachdem P2.2 die Abnahme endgültig hat entfallen lassen, kündigte ein «pending review» eine Prüfung an, die niemand mehr vorhat — die Quelle heißt jetzt `beleg_keine_bewertende_rolle`.
 
 **Doku zieht mit:** `docs/handbuch/faktoren.md`, `docs/cib_role.md`, `docs/cib_rationale.md`, `CLAUDE.md` (Glossar).
 
@@ -1505,7 +1505,7 @@ Drei Dinge stehen darin:
 
 **Doku zieht mit:** `CLAUDE.md` (Glossar, Invarianten), `docs/handbuch/grenzen.md`, `docs/handbuch/vergleiche.md` (ein Schnitt — Läufe von davor und danach sind nicht vergleichbar), `docs/backtest_vorlauf.md`.
 
-### P2.3 — Matrix-Provenienz herstellen ⚠️ entfällt seit 2026-08-31, ein Rest bleibt
+### P2.3 — Matrix-Provenienz herstellen ✅ abgeschlossen 2026-08-31 (entfallen, Rest erledigt)
 
 **Befund:** Alle 168 Zellen in `cib_frozen.json` haben ein leeres `reasoning`-Feld; `metadata.source` sagt `expert_defined_aviation_domain_v2` (Basis: Vorlesungsfolien, Experte = das Team selbst). Für einen Prototyp legitim — aber die Kalibrierung ist genau das Asset, das später verkauft wird.
 
@@ -1525,7 +1525,21 @@ Drei Dinge stehen darin:
 - Das leere `entries: []` verschwindet oder bekommt eine Erklärung.
 - `docs/cib_role.md` sagt, warum die Datei noch da ist, obwohl sie nichts mehr entscheidet.
 
-**Fertig wenn:** Die Datei behauptet nichts mehr über ihre eigene Zukunft, und wer sie öffnet, liest im ersten Absatz, dass sie ein Beleg ist und kein Werkzeug.
+#### Der Rest ist erledigt (2026-08-31)
+
+**Drei Handgriffe, kein Paket** — und alle drei betreffen, was die Datei über sich selbst *behauptet*, nicht ihre Werte:
+
+- **`metadata.source` heißt jetzt `beleg_keine_bewertende_rolle`.** Vorher stand dort `llm_proposed_pending_review_v3`, und das war eine Zusage an den nächsten Leser, die niemand einlöst: Es kündigte eine fachliche Abnahme an, die seit P2.2 nicht mehr kommt — sie prüfte Werte, die nichts mehr entscheiden.
+- **Die Notiz trägt die vier Messwerte**, auf denen die Abwahl steht, statt einer Provenienz-Warnung. Sie stehen damit *in* der Datei und nicht nur in einem Dokument daneben — wer sie öffnet, liest im ersten Satz, wozu sie noch da ist.
+- **`entries` ist weg.** Eine durchgängig leere Liste neben den 168 Zellen; `CIBMatrix` führt sie als «Deprecated: flat entry list for backward compatibility», kein aktiver Lesepfad füllte oder wertete sie aus, und das Modell setzt sie ohnehin auf `[]`. Wer die Datei zum ersten Mal öffnete, sah zwei Strukturen und musste raten, welche die eigentliche ist.
+
+**Der Erzeuger ist mitgeändert, und das war der eigentliche Punkt:** `scripts/rebuild_cib_frozen.py` schrieb beides. Nur die Datei zu korrigieren hätte genau bis zum nächsten Aufruf des Skripts gehalten. Zur Probe einmal neu gebaut — der Neubau schreibt nichts zurück.
+
+**Was ausdrücklich *nicht* passiert ist:** Die Datei wurde **nicht gelöscht**. Sie trägt die vier Messwerte, auf denen die Leitentscheidung steht; wer sie entfernt, entfernt den Beleg dafür, warum die Rolle abgewählt wurde.
+
+**Der Wächter:** sechs Zusagen in [`tests/test_cib_einachsigkeit.py`](../tests/test_cib_einachsigkeit.py) — dort, wo die vier Messwerte ohnehin liegen. Einer davon prüft den **Erzeuger** statt nur die Datei; und er prüft die *Zuweisung* von `source`, nicht das bloße Vorkommen des alten Labels: Die neue Notiz nennt es absichtlich, um zu erklären, warum es ersetzt wurde. Ein blankes «kommt nicht vor» wäre rot, obwohl alles stimmt — genau die Sorte Prüfung, die man später entnervt lockert.
+
+**Fertig wenn** ✅ **(2026-08-31):** Die Datei behauptet nichts mehr über ihre eigene Zukunft, und wer sie öffnet, liest im ersten Absatz, dass sie ein Beleg ist und kein Werkzeug.
 
 **Doku zieht mit:** `docs/cib_rationale.md`, `docs/handbuch/cib.md`, `docs/entscheidung_szenarienschicht_2026-08-29.md`.
 

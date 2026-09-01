@@ -112,12 +112,32 @@ def test_every_f7_cell_carries_a_reason(matrix):
 
 
 def test_the_provenance_of_the_matrix_is_stated(matrix):
-    """Die neu bewerteten Zellen sind modellgeneriert — das muss dranstehen."""
+    """Die neu bewerteten Zellen sind modellgeneriert — das muss dranstehen.
+
+    **Die Zusage hat sich am 2026-08-31 verschoben, und dieser Test mit ihr.**
+    Bis dahin verlangte er ein `pending_review` im Quellenlabel: Solange die 48
+    F7-Zellen nicht fachlich abgenommen sind, sollte die Quelle das sagen.
+
+    Mit [P2.2](../docs/projektplan.md) ist die Abnahme **entfallen** — unter
+    Variante C prüft kein Algorithmus mehr die Kohärenz, und die Zellen
+    entscheiden nichts. Ein Label, das eine Prüfung ankündigt, die niemand mehr
+    vorhat, ist keine Ehrlichkeit, sondern eine Zusage an den nächsten Leser,
+    die niemand einlöst (P2.3-Rest).
+
+    **Was der Test weiterhin hält, ist die eigentliche Zusage:** Die Datei sagt,
+    was sie ist. Nur heißt das jetzt «Beleg ohne bewertende Rolle» statt
+    «Prüfung ausstehend».
+    """
 
     metadata = matrix["metadata"]
 
     assert metadata["frozen"] is True
-    assert "pending_review" in metadata["source"], (
-        "Solange die 48 F7-Zellen nicht fachlich abgenommen sind, muss die "
-        "Quelle das sagen — sonst liest sie sich wie geprüfte Expertenarbeit."
+    assert "pending_review" not in metadata["source"], (
+        "Das Label kündigt wieder eine fachliche Abnahme an. Seit P2.2 ist "
+        "keine mehr vorgesehen — sie prüfte Werte, die nichts entscheiden."
+    )
+    assert metadata["source"] == "beleg_keine_bewertende_rolle"
+    assert "modellgeneriert" in metadata["note"], (
+        "Dass die 48 F7-Zellen modellgeneriert sind, muss weiterhin dranstehen — "
+        "sonst liest sich die Matrix wie geprüfte Expertenarbeit."
     )

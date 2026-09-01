@@ -243,7 +243,7 @@ Sie jetzt fachlich abnehmen zu lassen wäre verfrüht. Ob `F5.1 → F7.1` bei 0 
 bewegt gegen die Einachsigkeit nichts. Wer die 48 prüft, bevor über Rolle und Erhebung der
 Matrix entschieden ist, prüft Werte, die danach ohnehin neu erhoben werden müssten — und
 mit C entfällt die Prüfung ganz. Die offene Position aus P0.2 ist damit **zurückgestellt
-mit Grund**, nicht erledigt: `metadata.source` bleibt `llm_proposed_pending_review_v3`.
+mit Grund**, nicht erledigt. `metadata.source` trug dafür bis zum 2026-08-31 das Label `llm_proposed_pending_review_v3`; seit P2.3-Rest heißt es `beleg_keine_bewertende_rolle`, weil ein «pending review» eine Prüfung ankündigt, die unter Variante C nicht mehr vorgesehen ist.
 
 ## Was diese Entscheidung nicht berührt
 

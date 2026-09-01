@@ -394,22 +394,26 @@ def main() -> None:
 
     result = {
         "cells": cells,
-        "entries": [],
+        # `entries` ist hier bewusst **nicht** mehr dabei (P2.3-Rest, 2026-08-31).
+        # Es war eine durchgängig leere Liste mitten im eingefrorenen Asset —
+        # `CIBMatrix.entries` trägt sie als «Deprecated: flat entry list for
+        # backward compatibility», kein aktiver Lesepfad füllt oder wertet sie
+        # aus, und das Modell setzt sie ohnehin auf `[]` zurück. Wer die Datei
+        # zum ersten Mal öffnete, sah zwei Strukturen und musste raten, welche
+        # die eigentliche ist.
         "round_generated": 0,
         "factor_scores": factor_scores,
         "metadata": {
             "frozen": True,
-            "source": "llm_proposed_pending_review_v3",
+            # **Das Label sagt jetzt, was die Datei ist** (P2.3-Rest, 2026-08-31).
+            # Vorher stand hier `llm_proposed_pending_review_v3` — es versprach
+            # eine fachliche Abnahme, die seit P2.2 nicht mehr kommt: Sie würde
+            # Werte prüfen, die nichts mehr entscheiden. Ein Label, das eine
+            # Prüfung ankündigt, die niemand mehr vorhat, ist eine Zusage an
+            # den nächsten Leser, die niemand einlöst.
+            "source": "beleg_keine_bewertende_rolle",
             "note": (
-                "Reference matrix for the aviation socio-technical system (F1-F7). Values encode "
-                "cross-impact relationships based on Strategic Foresight methodology "
-                "(Weimer-Jehle 2023) and lecture slides (Folie 19-22). Frozen by design: CIB "
-                "methodology requires a static reference matrix for reproducible consistency "
-                "scoring. ACHTUNG PROVENIENZ: Die 48 F7-Zellen wurden am 2026-08-26 unter der "
-                "Lesart 'Geopolitische Stabilitaet' neu bewertet (P0.2) — modellgeneriert und "
-                "noch nicht fachlich abgenommen, siehe reasoning je Zelle. Die uebrigen 120 "
-                "Zellen stammen aus der Erstbewertung durch das Team und haben noch keine "
-                "Begruendung (P2.3)."
+                "BELEG, KEIN WERKZEUG. Diese Matrix hat seit dem 2026-08-31 keine bewertende Rolle mehr im Modell: P2.2 hat Variante C gewaehlt, die Kohaerenz eines Rahmenszenarios wird in Prosa mit Quellen begruendet, und F1-F7 werden seit P2.0 aus dem Lauf abgeleitet statt ihn zu bewerten. Die Datei bleibt liegen, weil sie die vier Messwerte traegt, auf denen diese Entscheidung steht (siehe docs/entscheidung_szenarienschicht_2026-08-29.md und tests/test_cib_einachsigkeit.py): der Score korreliert mit +0,56 mit der Zahl gleichpolig gesetzter Faktoren und misst damit Polaritaet statt Plausibilitaet; nur 12 der 84 gleichpoligen Zellen tragen Spannung; das echte Impact-Balance-Kriterium traegt 2 der 128 Zustaende statt der drei, die das Produkt verspricht; und vier unbegruendete Zellen (F1.1->F2.2, F1.1->F6.2, F1.1->F5.2, F4.1->F2.2, alle -2) verneinen die Rueckkopplung, aus der gemischte Szenarien entstehen. PROVENIENZ: Die 48 F7-Zellen wurden am 2026-08-26 unter der Lesart 'Geopolitische Stabilitaet' neu bewertet (P0.2), modellgeneriert; die uebrigen 120 stammen aus der Erstbewertung durch das Team und haben keine Begruendung. Eine fachliche Abnahme ist NICHT mehr vorgesehen -- sie wuerde Werte pruefen, die nichts mehr entscheiden. Das fruehere Label 'llm_proposed_pending_review_v3' versprach genau diese Pruefung und ist deshalb ersetzt worden. Urspruenglich erzeugt nach Weimer-Jehle (2023) und den Vorlesungsfolien 19-22; eingefroren, weil ein Maszstab sich nicht aus dem Messobjekt ableiten darf (Invariante 3)."
             ),
             # Nicht abgeschrieben, sondern aus `factors.json` gelesen: Genau
             # diese doppelte Pflege war die F7-Drift. Wer den Faktor dort
