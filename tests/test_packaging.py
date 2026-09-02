@@ -154,8 +154,13 @@ def test_internal_doc_anchors_point_somewhere():
     Anker. Dieselbe Sorte stiller Doku-Drift wie die toten Modulpfade darüber,
     nur eine Ebene höher: Der Text stimmt, das Ziel ist weg.
 
-    Geprüft werden nur Anker **innerhalb derselben Datei** (`](#…)`); Links auf
-    andere Dokumente hängen an deren Überschriften und gehören dorthin.
+    **Dateiübergreifende Anker werden seit dem 2026-08-31 mitgeprüft**, und die
+    frühere Begründung dafür, es zu lassen, war falsch: «Links auf andere
+    Dokumente hängen an deren Überschriften und gehören dorthin» — sie hängen
+    dort, aber *niemand* sah nach. Beim Durchgang durch Phase 2 fanden sich
+    **19 tote** solche Verweise (14 verschiedene), fast alle entstanden dadurch,
+    dass eine Paketüberschrift eine Statusmarke bekam und der Anker damit ein
+    anderer wurde.
     """
 
     def slug(heading: str) -> str:
@@ -164,12 +169,28 @@ def test_internal_doc_anchors_point_somewhere():
 
     docs = list((ROOT / "docs").rglob("*.md")) + [ROOT / "CLAUDE.md", ROOT / "README.md"]
 
+    ueberschriften = {
+        doc.resolve(): {
+            slug(m) for m in re.findall(r"^#{1,6}\s+(.*)$", doc.read_text("utf-8"), re.M)
+        }
+        for doc in docs
+    }
+
     tot: list[str] = []
     for doc in docs:
         text = doc.read_text(encoding="utf-8")
-        ueberschriften = {slug(m) for m in re.findall(r"^#{1,6}\s+(.*)$", text, re.M)}
+
+        # In derselben Datei.
         for anker in sorted(set(re.findall(r"\]\(#([^)]+)\)", text))):
-            if anker not in ueberschriften:
+            if anker not in ueberschriften[doc.resolve()]:
                 tot.append(f"{doc.relative_to(ROOT)}: #{anker}")
+
+        # In einer anderen — der blinde Fleck bis 2026-08-31.
+        for ziel, anker in sorted(set(re.findall(r"\]\(([^)#]+\.md)#([^)]+)\)", text))):
+            pfad = (doc.parent / ziel).resolve()
+            if pfad not in ueberschriften:
+                tot.append(f"{doc.relative_to(ROOT)}: {ziel} gibt es nicht")
+            elif anker not in ueberschriften[pfad]:
+                tot.append(f"{doc.relative_to(ROOT)}: {ziel}#{anker}")
 
     assert not tot, "Verweise auf Überschriften, die es nicht gibt:\n  " + "\n  ".join(tot)

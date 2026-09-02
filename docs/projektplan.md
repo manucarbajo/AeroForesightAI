@@ -1313,7 +1313,9 @@ Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
 - `_seed_runtime` ist **entfernt**. Sie seedete das stdlib-`random` und den globalen Legacy-Zustand von `np.random`; beides benutzt niemand, gezogen wird über `default_rng`. Sie war wirkungslos und zugleich gefährlich: Wer neuen Zufallscode schrieb, konnte sich auf sie verlassen.
 - **Null heißt «kann nicht», nicht «unwahrscheinlich»**: Wer sich das Ticket nicht leisten kann, bucht nicht — `< p` und nicht `<= p`, weil `rng.random()` die 0,0 mit positiver Wahrscheinlichkeit liefert.
 
-**Was das an den Zahlen verschiebt** (2000 Personen, `carbon_tax = 50`):
+**Was das an den Zahlen verschiebt** (2000 Personen, `carbon_tax = 50`, **gemessen am 2026-08-30**):
+
+> Die Bevölkerung hat sich mit [P2.4](#p24--das-alter-prägt-die-person--erledigt-2026-08-31-erste-fassung-korrigiert) verändert — das Alter formt seither die Merkmale, und die Werte unten liegen heute anders (bei 250 € etwa 0,090 statt 0,059 und 0,134 statt 0,072). **Die Aussage der Tabelle hält trotzdem**, und sie ist die Richtung, nicht die Zahl: Die Schwelle überzeichnet die Nachfrage bei niedrigen Preisen und unterzeichnet sie bei hohen. Nachgemessen am 2026-08-31.
 
 | Ticketpreis | Schwelle | Ziehung | Streuung über 20 Ströme |
 | --- | ---: | ---: | --- |
@@ -1368,7 +1370,7 @@ Jede `quelle` nennt deshalb **beides getrennt**: die belegte Form und den gesetz
 
 **Befund:** Die Konsistenzprüfung ist nicht der Weimer-Jehle-Algorithmus. Sie prüft einzelne Zellen gegen einen Schwellwert und summiert Konflikte. Das eigentliche CIB-Kriterium ist die **Impact Balance**: ein Szenario ist konsistent, wenn für jeden Faktor der gewählte Zustand die Summe der eingehenden Einflüsse maximiert. Diese Gleichgewichtsbedingung steht nirgends im Code.
 
-**Fundstelle:** [`src/cib/scenario_consistency.py:99`](../src/cib/scenario_consistency.py) (`check_consistency`, `compute_consistency_score`).
+**Fundstelle:** [`src/cib/scenario_consistency.py:99`](../src/cib/scenario_consistency.py) (`ConsistencyChecker.check_scenario` und `compute_consistency_score`; die Methode hiess in einer aelteren Fassung dieses Absatzes `check_consistency` — korrigiert am 2026-08-31).
 
 **Die offene Frage ist beantwortet — mit einer Zahl (2026-08-29):** Der Fallstrick unten fragte, was passiert, wenn das echte Kriterium weniger als drei konsistente Szenarien liefert. Über alle 128 Zustände nachgerechnet: Es liefert **genau zwei**, und beide sind Pole. Das Tripleset ist aus dem Impact-Balance-Kriterium auf der heutigen Matrix **nicht bedienbar** — nicht knapp, sondern grundsätzlich, weil die Matrix im Kern eine einzige Achse ist. Gemessen und festgehalten in [`tests/test_cib_einachsigkeit.py`](../tests/test_cib_einachsigkeit.py).
 
@@ -1837,6 +1839,8 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 **Gemessen am 2026-08-30** (20 Läufe, 12 Ticks, Standardrahmen):
 
+> **Die Niveaus sind seit P2.4 und P2.8 andere** — nachgemessen am 2026-08-31 liegt die Buchungsrate in Tick 7 bei 0,3353 / 0,3520 / 0,3668 und der Ticketpreis in Tick 13 bei 146,20 / 147,73 / 149,55. **Die Bandbreiten sind es nicht**, und die sind die eigentliche Zusage: 0,0315 statt 0,032 und 3,34 € statt 3,36 €.
+
 | Reihe | Tick | p10 | p50 | p90 | Bandbreite |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `booking_rate` | 7 | 0,3096 | 0,3215 | 0,3414 | 0,032 |
@@ -1901,6 +1905,8 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 - **Ein ganzer Jahrgang verschwand lautlos.** Der erste Filter prüfte, ob die Auktionsbezeichnung auf «EU» endet — 2016 heißt sie `EU (TCAP)`. Zwölf Monate fielen heraus, und 107 statt 120 Monate über zehn Jahre fallen niemandem auf. `einordnen` scheitert jetzt bei einer **unbekannten** Bezeichnung laut, statt sie zu überspringen.
 - **Die Januar-2021-Lücke ist echt.** Es fand keine gemeinsame EU-Auktion statt; der Kalender der vierten Handelsperiode begann im Februar. Sie wird **benannt, nicht gefüllt** — für die Eingabe in den Lauf wird fortgeschrieben, für die Auswertung nicht.
+
+> **Diese Zahlen sind vom 2026-08-30 und beschreiben das Modell von damals.** P2.4 (Alter), P2.8 (Einkommen, Kapazität) und P2.8-B (Preisstrategie) haben es seither verändert; **die jeweils aktuellen Werte stehen in [`backtest_vorlauf.md`](backtest_vorlauf.md)**, das bei jedem Aufruf neu geschrieben wird. Jedes Paket unten führt seine eigene Vorher-Nachher-Messung.
 
 **Das Ergebnis der Preisseite** (`ticket_price` gegen `hicp_flugreisen`; Index, Basis 2015 = 100, Jahresmittel):
 

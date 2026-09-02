@@ -5,7 +5,7 @@
 > **Abgewählt am 2026-08-29, ersetzt am 2026-08-31.** Die CIB-Schicht bewertet nichts
 > mehr im Modell:
 >
-> - Mit [P2.0](projektplan.md#p20--die-rolle-umdrehen-rahmen-statt-urteil) ist ein
+> - Mit [P2.0](projektplan.md#p20--die-rolle-umdrehen-rahmen-statt-urteil--erledigt-2026-08-30) ist ein
 >   Szenario ein benanntes Bündel **exogener Verläufe**; F1–F7 werden aus dem Lauf
 >   *abgeleitet* statt ihn zu bewerten.
 > - Mit [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31)
@@ -25,7 +25,7 @@
 > `metadata.source` das Label `llm_proposed_pending_review_v3` — es kündigte eine Prüfung
 > an, die niemand mehr vorhat, weil sie Werte prüfen würde, die nichts entscheiden. Das
 > Label heißt jetzt `beleg_keine_bewertende_rolle`, und die Notiz in der Datei sagt es
-> ausdrücklich ([P2.3-Rest](projektplan.md#p23--matrix-provenienz-herstellen--entfällt-seit-2026-08-31-ein-rest-bleibt)).
+> ausdrücklich ([P2.3-Rest](projektplan.md#p23--matrix-provenienz-herstellen--abgeschlossen-2026-08-31-entfallen-rest-erledigt)).
 >
 > **Was unterhalb dieses Kastens steht, beschreibt die abgewählte Rolle** — es bleibt als
 > Herleitung stehen, nicht als Beschreibung des heutigen Verhaltens. Zahlen und Argumente:
@@ -59,7 +59,7 @@ dem Zustand steht, den seine eingehende Einflussbilanz empfiehlt (Impact Balance
 > **Was der Code stattdessen tut:** `ConsistencyChecker.check_scenario` prüft **einzelne
 > Zellen** gegen einen Schwellwert (`≤ −1.5` gilt als Konflikt) und summiert die Konflikte;
 > `compute_consistency_score` bildet das Verhältnis positiver zu allen Einflüssen. Beides
-> ist eine eigene Heuristik, nicht die Impact Balance. Solange [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen)
+> ist eine eigene Heuristik, nicht die Impact Balance. Solange [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31)
 > offen ist, gehört sie nicht als „Algorithmus nach Weimer-Jehle" bezeichnet.
 
 ## Warum CIB in diesem Projekt?

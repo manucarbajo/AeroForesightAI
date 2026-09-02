@@ -1,6 +1,6 @@
 # Vorschlag: Datenquellen für den Backtest (P2.7)
 
-**Datum:** 2026-08-30 · **Status:** Vorschlag, zu entscheiden · **Betrifft:** [P2.7](projektplan.md#p27--backtest-gegen-20152024)
+**Datum:** 2026-08-30 · **Status:** Vorschlag, zu entscheiden · **Betrifft:** [P2.7](projektplan.md#p27--backtest-gegen-20152024--erledigt-2026-08-30)
 
 P2.7 sagt: *«Welche Reihe die Zielgröße ist und woher sie kommt, gehört **vor** die
 Umsetzung; sonst wird das Kriterium nachträglich an die Daten angepasst, die sich

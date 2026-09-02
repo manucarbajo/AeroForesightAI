@@ -135,8 +135,15 @@ Kapazität da ist; wächst sie, kann Nachfrage bei konstantem Preis wachsen.
   im Luftverkehr wirklich umtreibt.
 - **Was es nicht löst:** Die Kapazität ist dann eine *Annahme*, keine Reaktion.
   Ein Anbieter, der bei hoher Nachfrage investiert, entsteht nicht.
-- **Belegbarkeit:** gut. Eurostat und IATA weisen Sitzplatzkapazität aus; der
-  Backtest könnte sie wie BIP und Ölpreis einspeisen.
+- **Belegbarkeit:** brauchbar, aber schwächer als hier zunächst behauptet.
+  **Korrektur vom 2026-08-31:** Der Satz lautete «Eurostat und IATA weisen
+  Sitzplatzkapazität aus» — für Eurostat stimmt das auf dieser Ebene **nicht**.
+  Verfügbar sind gewerbliche Passagier**flüge** (`avia_paoc`, `CAF_PAS`),
+  monatlich; Sitze pro Flug und Auslastung fehlen. Der Näherungswert
+  unterschätzt das Kapazitätswachstum deshalb systematisch (Flüge +14,5 % von
+  2015 auf 2019, Passagiere +26,3 %). Siehe den Nachtrag unten — genau dieser
+  Unterschied erklärt, warum die Nachfrageseite nach der Pandemie schlechter
+  wird.
 
 ### B — Kapazität als Entscheidung des Anbieters
 
@@ -272,8 +279,10 @@ nicht als Umbau.
 
 ## Was diese Entscheidung nicht berührt
 
-- **Die Preisseite des Backtests.** Sie trifft vor der Pandemie auf 1,27
-  Indexpunkte; A soll sie nicht verschlechtern, und das ist zu messen.
+- **Die Preisseite des Backtests.** Sie traf vor der Pandemie auf 1,27
+  Indexpunkte; A sollte sie nicht verschlechtern. **Gemessen hat es sie dort
+  verschlechtert (3,09) und insgesamt verbessert (14,78 → 10,66)** — siehe den
+  Nachtrag.
 - **Die Szenarienschicht.** Variante C aus [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31)
   bleibt: Kapazität wäre ein weiterer exogener Verlauf im Rahmenszenario, mit
   Kohärenzbegründung wie die anderen.

@@ -46,7 +46,7 @@ dem Zustand steht, den seine eingehende Bilanz empfiehlt. Über alle 128 Zustän
 erfüllen das **genau zwei**: `(F1.1 … F7.1)` und `(F1.2, F2.2, F3.1, F4.2, F5.2, F6.2, F7.2)`.
 Beide sind Pole — der zweite mit der einen Ausnahme, dass F3 nicht mitkippt.
 
-Damit ist die Frage beantwortet, die [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen)
+Damit ist die Frage beantwortet, die [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31)
 als Fallstrick offengelassen hatte: Das Tripleset ist aus dem echten Kriterium **nicht**
 bedienbar. Mit einer Zahl statt einer Vermutung.
 
@@ -224,18 +224,18 @@ ein Produkt, das Unternehmen etwas verkaufen soll, wiegen diese fünf schwerer:
 
 1. **Rolle umdrehen** — Rahmenszenario = feste Lage der exogenen Größen, Lauf erzeugt den
    Rest; die Sweeps werden vom Nebenweg zum Hauptweg. *(klein · verdrahten, nicht neu bauen
-   — [P2.0](projektplan.md#p20--die-rolle-umdrehen-rahmen-statt-urteil))*
+   — [P2.0](projektplan.md#p20--die-rolle-umdrehen-rahmen-statt-urteil--erledigt-2026-08-30))*
 2. **Ziehung und Ensemble** — echte Ziehung im Buchungsmodell, dann Ensemble-Läufe je
    Rahmen. Ab hier liefert das Produkt Bandbreiten statt Punktwerte. *(mittel ·
-   [P2.1](projektplan.md#p21--buchungsmodell-echte-ziehung-statt-schwellwert) +
-   [P2.6](projektplan.md#p26--ensemble-läufe-je-rahmenszenario))*
+   [P2.1](projektplan.md#p21--buchungsmodell-echte-ziehung-statt-schwellwert--erledigt-2026-08-30) +
+   [P2.6](projektplan.md#p26--ensemble-läufe-je-rahmenszenario--erledigt-2026-08-31))*
 3. **Backtest** — gegen 2015–2024 rechnen und veröffentlichen, wie gut es trifft, auch wenn
    es schlecht trifft. Ein dokumentierter Fehlschlag ist mehr wert als ein ungeprüftes
-   Modell. *(mittel · [P2.7](projektplan.md#p27--backtest-gegen-20152024))*
+   Modell. *(mittel · [P2.7](projektplan.md#p27--backtest-gegen-20152024--erledigt-2026-08-30))*
 4. **Erst dann die Szenarienschicht endgültig festlegen** — ob ein Rest CIB oder
    morphologische Verträglichkeit die Bündel absichert, entscheidet sich leichter, wenn das
    Modell geeicht ist. Vorher wäre es eine Entscheidung über ein Werkzeug, dessen Wirkung
-   niemand kennt. *(offen · [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen))*
+   niemand kennt. *(offen · [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31))*
 
 ## Was daraus für die 48 F7-Zellen folgt
 

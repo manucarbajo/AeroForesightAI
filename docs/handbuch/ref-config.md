@@ -54,6 +54,26 @@ Wertebereich; unter `individual_properties` die Merkmale einer Person mit ihren
 Verteilungen. `price_model`, `market_feedback` und `saturation` enthalten die
 Werte, die im Editor unter **Nachfrage & Preisbildung** stehen.
 
+### Wie der Anbieter preist
+
+Unter `market_rules` steht die Regel `provider_yield_feedback`, und in ihr das
+Feld **`strategie`**. Es entscheidet, wie der Anbieter auf freie Kapazität
+reagiert, und es gibt genau zwei Werte:
+
+| Wert | Verhalten |
+| --- | --- |
+| `auslastung` *(Standard)* | Der Anbieter senkt den Preis, bis die Kapazität gefüllt ist. |
+| `marge` | Der Anbieter hält seinen Aufschlag; die Auslastung schwankt. Kommt Kapazität dazu, bleibt der Preis, wo er ist. |
+
+**Beides kommt in der Wirklichkeit vor**, und das Modell legt sich deshalb nicht
+fest. Ein unbekannter Wert wird beim Laden abgewiesen — sonst fiele ein
+Tippfehler still auf `auslastung` zurück.
+
+Wie viel Kapazität da ist, steht als Systemgröße `kapazitaet_index` (1,0 =
+Ausgangsniveau). Unter `marge` wirkt sie als **Grenze**: Mehr Menschen können
+buchen wollen, als Plätze da sind, und dann bleiben welche übrig — zufällig
+ausgewählt, nicht nach Zahlungsbereitschaft.
+
 ## Regeln und ihre Bedingungen
 
 Drei Abschnitte in `properties.json` arbeiten mit Regeln: `factor_rules`
