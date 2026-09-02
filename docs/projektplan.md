@@ -1156,6 +1156,8 @@ Gilt für jede Änderung an diesem Projekt — für alle im Team und für jede C
 
 Diese Punkte entscheiden, ob die wissenschaftlichen Aussagen einem Fachprüfer standhalten. Solange sie offen sind, gehören die Formulierungen in Pitch, README und Handbuch abgeschwächt.
 
+> **Alle zehn Pakete sind abgeschlossen.** Was sie zusammen verändert haben — und die Backtest-Kette über die Pakete hinweg, die sich aus den Einzelmessungen unten nicht ablesen lässt — steht in der [Bilanz der Phase 2](phase2_bilanz.md). Sie ist eine Synthese und keine Quelle: gepflegt wird **hier**, an den Paketen.
+
 ### Leitentscheidung: die Szenarienschicht (2026-08-29)
 
 **Rahmen statt Richter.** Die CIB-Schicht bewertet heute den Endzustand eines Laufs. Damit steht die Antwort vor der Rechnung: Der Lauf kann sie nur bestätigen oder danebenliegen, er erzeugt nichts, was nicht vorher als zulässig festgelegt war. Entschieden ist **Variante C** — ein Szenario wird ein benanntes Bündel **exogener Verläufe** (CO₂-Preis, SAF-Quote, Konjunktur, Ölpreis, Schienenkapazität, geopolitische Schocks); F1–F7 bleiben als **lesbare Zustandslabel, die aus dem Lauf abgeleitet werden**, nicht als Eingaben. Ein Rest von Variante B — eine Verträglichkeitsprüfung beim Einrichten («Rezession und Reiseboom gleichzeitig») — bleibt als Wächter. Die CIB-Matrix in ihrer heutigen Rolle entfällt; sie kann als Variante A zurückkommen, wenn jemand sie sauber erhebt.
