@@ -249,6 +249,13 @@ zeigen), beide Zahlenreihen einmal nachziehen, den Schnitt in
 `docs/handbuch/vergleiche.md` benennen. Die Aussage des Backtests wird dadurch
 nicht schlechter — sie wird prüfbar.
 
+> **Umgesetzt am 2026-09-03.** Die Kennzahlen stehen seither auf 12,18 / 3,87
+> (Preis) und 38,13 / 22,66 (Nachfrage). Eine Unterscheidung kam beim Bauen
+> dazu: Tautologisch ist das **Niveau** im Basisjahr, nicht die **Bewegung** zum
+> Folgejahr — die Richtungskennzahl zählt es deshalb weiterhin mit und steht
+> unverändert bei 3/7 und 5/7. Zwei Marken statt einer: «Basis» sagt etwas über
+> die Messung, «ungewertet» über das Modell.
+
 ### B4 · Eingang und Ziel der Nachfrageseite stammen aus derselben Erhebung 🔶 **mittel, Methodik**
 
 Seit P2.8 speist der Backtest:

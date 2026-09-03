@@ -219,6 +219,23 @@ Zielauslastung, und die Nachfragehöhe hing an dieser Zahl statt an den simulier
 Menschen. Ohne Vorgabe bleibt alles wie es war — die Standardwerte sind so gewählt,
 dass sich nichts ändert. Wer aber eine Kapazität vorgibt, bekommt andere Zahlen.
 
+Am **2026-09-03** kam ein achter Schnitt dazu, und er betrifft **nicht die
+Läufe, sondern den Backtest-Bericht**: Das Basisjahr 2015 zählt nicht mehr in
+den mittleren Abstand. Beide Reihen werden darauf indexiert — sein Abstand ist
+damit rechnerisch immer null und war keine Messung, sondern eine Tautologie, die
+den Mittelwert um rund ein Fünftel nach unten zog.
+
+Die Zahlen in [`backtest_vorlauf.md`](../backtest_vorlauf.md) sind dadurch
+**größer geworden, ohne dass sich am Modell etwas geändert hat**: Die Preisseite
+steht bei 12,18 statt 10,66, die Nachfrageseite bei 38,13 statt 33,36. Wer einen
+Bericht von vor diesem Datum neben einen neueren legt, vergleicht zwei
+Rechenweisen und nicht zwei Modelle.
+
+Das Jahr steht weiterhin in der Tabelle, mit der Marke «Basis, Abstand per
+Konstruktion 0». Und in die Kennzahl «Richtung der Jahresveränderung getroffen»
+zählt es nach wie vor mit: Rechnerisch festgelegt ist dort nur das *Niveau* im
+Basisjahr, nicht die *Bewegung* von 2015 nach 2016.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

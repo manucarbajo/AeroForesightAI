@@ -79,6 +79,8 @@ class Abweichung:
     saison_ziel: float
     bewertete_jahre: list[str]
     unbewertete_jahre: list[str]
+    #: Das Basisjahr — es steht in der Tabelle und **nicht** in den Abständen.
+    basisjahr: str = ""
     hinweise: list[str] = field(default_factory=list)
 
     def abstand_ueber(self, jahre: list[str]) -> float | None:
@@ -107,25 +109,41 @@ def bewerten(
     z_jahr = jahresmittel({m: v for m, v in ziel_idx.items() if m in gemeinsam})
 
     alle_jahre = sorted(set(m_jahr) & set(z_jahr))
-    bewertet = [j for j in alle_jahre if ist_bewertet(f"{j}-01")]
-    ausgenommen = [j for j in alle_jahre if j not in bewertet]
+    # **Das Basisjahr zählt nicht mit** (2026-09-03). Beide Reihen sind darauf
+    # indexiert, sein Abstand ist damit *per Konstruktion* null — er kann gar
+    # nicht anders ausfallen. Bis dahin ging er trotzdem in jeden Mittelwert
+    # ein und drückte ihn um rund ein Fünftel: Die Preisseite stand vor der
+    # Pandemie bei 3,09 statt 3,87, die Nachfrageseite bei 18,13 statt 22,66.
+    # Ein Wert, den ein Prüfer aus der veröffentlichten Tabelle nicht
+    # nachrechnen kann, kostet mehr Vertrauen als 0,8 Indexpunkte.
+    bewertet = [j for j in alle_jahre if ist_bewertet(f"{j}-01") and j != basisjahr]
+    ausgenommen = [j for j in alle_jahre if j not in bewertet and j != basisjahr]
     if not bewertet:
         raise ValueError("Keine bewertbaren Jahre")
 
     abstaende = {j: abs(m_jahr[j] - z_jahr[j]) for j in bewertet}
     groesstes = max(abstaende, key=abstaende.__getitem__)
 
-    # Richtung der Jahresveränderung, über die bewerteten Jahre in Folge.
+    # **Die Richtung schließt das Basisjahr ein, der Abstand nicht** — und der
+    # Unterschied ist keine Spitzfindigkeit: Tautologisch ist das *Niveau* im
+    # Basisjahr, nicht die *Veränderung* von dort zum Folgejahr. Beide Reihen
+    # bewegen sich zwischen 2015 und 2016 frei; diesen Vergleich wegzuwerfen
+    # verschenkte eine echte Messung.
+    fuer_richtung = [j for j in alle_jahre if ist_bewertet(f"{j}-01")]
     treffer = sum(
         1
-        for a, b in zip(bewertet, bewertet[1:])
+        for a, b in zip(fuer_richtung, fuer_richtung[1:])
         if (m_jahr[b] - m_jahr[a] > 0) == (z_jahr[b] - z_jahr[a] > 0)
     )
-    vergleiche = max(0, len(bewertet) - 1)
+    vergleiche = max(0, len(fuer_richtung) - 1)
 
     hinweise = [
         f"Verglichen wird der Index (Basis {basisjahr} = 100) auf **Jahresmitteln**, "
         "nicht das Preisniveau und nicht monatlich.",
+        f"{basisjahr} steht in der Tabelle, geht aber **nicht** in den Abstand ein: Beide "
+        "Reihen sind darauf indexiert, sein Abstand ist per Konstruktion null. In die "
+        "**Richtung** der Jahresveränderung zählt es mit — tautologisch ist das Niveau, "
+        "nicht die Bewegung zum Folgejahr.",
         "Die absoluten Euro-Beträge des Modells hängen an ungeeichten Koeffizienten "
         "(P2.1); ein Niveauvergleich prüfte eine Genauigkeit, die nie behauptet wurde.",
     ]
@@ -155,5 +173,6 @@ def bewerten(
         saison_ziel=round(saison_z, 2),
         bewertete_jahre=bewertet,
         unbewertete_jahre=ausgenommen,
+        basisjahr=basisjahr,
         hinweise=hinweise,
     )

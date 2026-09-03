@@ -67,9 +67,12 @@ hier. Angaben sind mittlere Abstände in Indexpunkten, Jahresmittel,
 | **+ Alter** (Merkmale nach Lebenszyklus) | 1,27 | **23,43** | P2.4 |
 | **+ Kapazität und Preisstrategie** | **3,09** | **18,13** | P2.8 / P2.8-B |
 
-Über alle bewerteten Jahre steht die Preisseite heute bei **10,66** (vor
-Kapazität und Preisstrategie 14,78), die Nachfrageseite bei **33,36** (27,54).
-2020 und 2021 werden mitgerechnet, aber nicht bewertet.
+Über alle bewerteten Jahre steht die Preisseite heute bei **12,18**, die
+Nachfrageseite bei **38,13**. 2020 und 2021 werden mitgerechnet, aber nicht
+bewertet — und **das Basisjahr 2015 seit dem 2026-09-03 ebenfalls nicht**: Beide
+Reihen sind darauf indexiert, sein Abstand ist per Konstruktion null. Die Kette
+oben ist mit dem alten Verfahren gemessen und bleibt als Verlauf gültig; die
+letzte Zeile lautet nach der Korrektur **3,87 / 22,66**.
 
 **Zwei Zeilen darin sind Verschlechterungen, und sie stehen bewusst da.** Das
 Altersprofil hat die Nachfrageseite verschlechtert und wurde trotzdem behalten;
@@ -89,7 +92,6 @@ nach Schwere und sagt, wo es steht.
 | **Die Kapazitätsreihe zählt Flüge, nicht Sitze.** Flüge +14,5 %, Passagiere +26,3 % (2015→2019). Erklärt den schlechten Wert nach der Pandemie. **Eine Datenfrage, keine Parameterfrage.** | P2.8, Abschnitt zur Reihe |
 | **Das Modell kennt keine Saison** — es schwankt um 18 Indexpunkte, die Zielreihe um 40 (auf der Nachfrageseite 29 gegen 76). Deshalb wird auf Jahresmitteln verglichen. | P2.7 |
 | **Die Kapazität wirkt nicht, wie zugesagt.** Unter `marge` ändert die doppelte Sitzzahl die Buchungsrate um 0,0001; unter `auslastung` wächst der Verkehr nur mit fallendem Preis. Dazu sättigt die Rationierung die Abgewiesenen. | P2.8-B, wieder offen · [Audit B1/B2](audit_phase2_2026-09-03.md) |
-| **Das Basisjahr steckt in jeder Backtest-Kennzahl** (2015 hat per Konstruktion den Abstand 0). Ohne es: Preis 3,87 statt 3,09, Nachfrage 22,66 statt 18,13. | P2.7 · [Audit B3](audit_phase2_2026-09-03.md) |
 | **Kein ausgeliefertes Szenario benutzt die Angebotsseite** — `kapazitaet_index` steht überall auf 1,0 ohne Regel. | P2.10, neu |
 | **Was ein Tick bedeutet, ist dreimal verschieden unterstellt** (Faktor 12). Blockiert unter anderem eine sinnvolle Erneuerungsrate. | P3.8, `tests/test_tickdauer_ist_uneinheitlich.py` |
 | **Trajektorien enden vor dem Lauf** (Tick 30 bei 40 bzw. 120 Ticks) und halten still ihren letzten Wert. | P2.8, Restposition |

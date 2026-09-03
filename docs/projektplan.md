@@ -1645,7 +1645,7 @@ Unter `marge` ändert die doppelte Sitzzahl die Buchungsrate um **0,0001**. Selb
 
 1. ~~**Die Sättigung erst nach der Rationierung vergeben.**~~ **Erledigt am 2026-09-03.** `_kapazitaet_begrenzen` ist entfallen; `evaluate_booking` macht jetzt alle drei Schritte — ziehen, rationieren, sättigen —, weil sie **eine** Entscheidung sind: wer wirklich fliegt. Ein nachträgliches Zurückrechnen wäre nicht einmal möglich gewesen, weil `min(1.0, …)` die Sättigung klemmt und der Ausgangswert damit verloren ist. `system_properties` ist dafür Pflicht ohne Default geworden (Invariante 1; der AST-Wächter hat die Signatur mitgenommen). **Der Standard bewegt sich nicht:** Unter `auslastung` gibt es keine Schranke, es wird nichts rationiert und auch nichts aus dem Zufallsstrom gezogen — ein Standardlauf über 40 Ticks liefert unverändert 0,2587 / 118,85. Der Wächter ist `tests/test_preisstrategie_ist_eine_wahl.py::TestWerKeinenPlatzBekommtWirdNichtGesaettigt` mit fünf Zusagen; die tragende prüft den **Zustand der Abgewiesenen**, dazu die Vorbedingung (greift die Schranke in diesem Aufbau überhaupt) und die Gegenprobe (wer fliegt, wird sehr wohl gesättigt) — sonst wäre er auch grün, wenn die Sättigung ganz ausfiele.
 2. **Neu entscheiden, was die Kapazität unter `marge` tun soll.** Als reine Obergrenze ist sie für ihren Zweck untauglich; sie müsste nach oben wirken (etwa: der Anbieter hält seine Marge, aber unbesetzte Kapazität senkt seine Stückkosten). Das ist eine Modellentscheidung mit eigenem Belegbedarf und gehört entschieden, nicht nebenbei gebaut.
-3. **Erst danach den Backtest neu rechnen**, mit unverändertem Verfahren — der Vorher-Wert steht oben (10,66 / 33,36).
+3. **Erst danach den Backtest neu rechnen**, mit unverändertem Verfahren — der Vorher-Wert ist seit dem 2026-09-03 **12,18 / 38,13** (ohne das Basisjahr, siehe P2.7).
 
 **Fertig wenn:** Wer keinen Platz bekommt, trägt keinen Sättigungsaufschlag; ein Test misst genau das. Und eine Zusage misst die **Wirkungsrichtung** der Kapazität unter beiden Strategien, nicht nur die Konstanz des Preises. Herleitung mit allen Messungen: [Audit Phase 2, B1 und B2](audit_phase2_2026-09-03.md).
 
@@ -2018,18 +2018,24 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 #### Zwei Methodikbefunde, nachgetragen am 2026-09-03
 
-> Beide stammen aus einem unabhängigen Audit und ändern **nichts am Ergebnis**, wohl aber daran, was es belegt. Sie gehören hierher, weil der Backtest die stärkste Aussage des Projekts trägt.
+> Beide stammen aus einem unabhängigen Audit. Sie gehören hierher, weil der Backtest die stärkste Aussage des Projekts trägt. **Der erste ist am selben Tag behoben, der zweite bleibt als Vorbehalt stehen.**
 
-**Erstens: Das Basisjahr steckt in der Kennzahl.** `bewerten()` indexiert Modell **und** Zielreihe auf 2015 = 100; 2015 hat damit per Konstruktion den Abstand 0 und geht trotzdem in jeden Mittelwert ein:
+**Erstens: Das Basisjahr steckte in der Kennzahl — behoben am 2026-09-03.** `bewerten()` indexiert Modell **und** Zielreihe auf 2015 = 100; 2015 hat damit per Konstruktion den Abstand 0 und geht trotzdem in jeden Mittelwert ein:
 
-| | veröffentlicht (mit 2015) | ohne 2015 |
+| | bis 2026-09-03 (mit 2015) | seither (ohne 2015) |
 | --- | ---: | ---: |
-| Preis 2015–2019 | **3,09** | 3,87 |
-| Preis, alle bewerteten Jahre | **10,66** | 12,18 |
-| Nachfrage 2015–2019 | **18,13** | 22,66 |
-| Nachfrage, alle bewerteten Jahre | **33,36** | 38,13 |
+| Preis 2015–2019 | 3,09 | **3,87** |
+| Preis, alle bewerteten Jahre | 10,66 | **12,18** |
+| Nachfrage 2015–2019 | 18,13 | **22,66** |
+| Nachfrage, alle bewerteten Jahre | 33,36 | **38,13** |
 
-Ein Fünftel des Vorpandemie-Fensters ist ein Datenpunkt, der **nicht anders ausfallen kann**. Der Vorbehalt oben nennt die Tautologie («2015 liegt durch die Indexbasis per Konstruktion auf null»), zieht daraus aber keine Konsequenz für die Kennzahl — und die Ergebnistabelle in diesem Abschnitt zeigt die Jahre **2016–2024**, das Basisjahr also gar nicht. **Der veröffentlichte Wert ist aus der veröffentlichten Tabelle nicht nachrechenbar**, und genau das prüft ein Fachprüfer zuerst nach. Zu tun: das Basisjahr aus der Kennzahl nehmen (die Tabelle darf es zeigen), die vier Zahlen einmal nachziehen und den Schnitt in `docs/handbuch/vergleiche.md` benennen.
+Ein Fünftel des Vorpandemie-Fensters war ein Datenpunkt, der **nicht anders ausfallen kann**. Der Vorbehalt oben nannte die Tautologie («2015 liegt durch die Indexbasis per Konstruktion auf null»), zog daraus aber keine Konsequenz für die Kennzahl — und die Ergebnistabelle zeigt die Jahre **2016–2024**, das Basisjahr also gar nicht. **Der veröffentlichte Wert war aus der veröffentlichten Tabelle nicht nachrechenbar**, und genau das prüft ein Fachprüfer zuerst nach.
+
+**Umgesetzt:** Das Basisjahr steht in der Tabelle und **nicht** im Abstand; es trägt dort die Marke «Basis, Abstand per Konstruktion 0». Die vier Kennzahlen stehen seither auf **12,18 / 3,87** (Preis) und **38,13 / 22,66** (Nachfrage), nachgerechnet mit unverändertem Verfahren.
+
+**Eine Unterscheidung ist dabei wichtig, und sie ist keine Spitzfindigkeit:** Tautologisch ist das **Niveau** im Basisjahr, nicht die **Bewegung** von dort zum Folgejahr. Beide Reihen bewegen sich zwischen 2015 und 2016 frei. Die Richtungskennzahl rechnet deshalb weiterhin über acht Werte und sieben Übergänge — sie steht unverändert bei 3/7 und 5/7 —, der Abstand über sieben Jahre. Zwei Marken statt einer: «Basis» ist eine Aussage über die *Messung*, «ungewertet» eine über das *Modell*; sie mit demselben Wort zu markieren hätte den ersten Fall als Modellschwäche gelesen.
+
+**Gehalten von** zwei neuen Zusagen in `tests/test_backtest_vorlauf.py`: dass das Basisjahr in der Tabelle steht und nicht im Abstand — und **aus einem anderen Grund als 2020/21** —, und dass es sehr wohl in die Richtung zählt (sonst wären es sechs Übergänge statt sieben).
 
 **Zweitens: Eingang und Ziel der Nachfrageseite stammen aus derselben Erhebung.** Seit P2.8 kommt `kapazitaet_index` aus Eurostat `avia_paoc`/`CAF_PAS` (Flüge) — die Zielreihe `fluggaeste` aus `avia_paoc`/`PAS_CRD` (Passagiere). Dieselbe Tabelle, und mechanisch verbunden: Passagiere = Flüge × Sitze × Auslastung. Die Doku benennt die *Näherung* sauber, **nicht** die Nähe von Eingang und Ziel. Folge: Der Nachfrage-Backtest misst ab 2022 überwiegend die Sitze-je-Flug-Lücke statt der Modellmechanik, und der Satz «ein Maßstab **außerhalb** seiner selbst» gilt für die Nachfrageseite nur noch eingeschränkt. **Nebenbefund:** Die Begründung, 2020/21 nicht zu bewerten («das Modell hat für Reisebeschränkungen keinen Mechanismus»), ist seit P2.8 überholt — der Einbruch *wird* über die Kapazitätsreihe eingespeist. Die Entscheidung bleibt richtig, ihre Begründung gehört neu geschrieben.
 

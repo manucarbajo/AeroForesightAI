@@ -6,7 +6,7 @@
 
 | Jahr | Modell | Zielreihe | Abstand | |
 | --- | ---: | ---: | ---: | --- |
-| 2015 | 100.00 | 100.00 | +0.00 |  |
+| 2015 | 100.00 | 100.00 | +0.00 | Basis, Abstand per Konstruktion 0 |
 | 2016 | 94.38 | 97.42 | -3.04 |  |
 | 2017 | 103.80 | 102.64 | +1.16 |  |
 | 2018 | 100.87 | 104.95 | -4.08 |  |
@@ -19,14 +19,15 @@
 
 | Kennzahl | Wert |
 | --- | ---: |
-| Mittlerer Abstand, bewertete Jahre | 10.66 |
+| Mittlerer Abstand, bewertete Jahre | 12.18 |
 | Größter Abstand | 36.94 (2024) |
-| davon 2015–2019 | 3.09 |
+| davon 2016–2019 | 3.87 |
 | davon 2022–2024 | 23.27 |
 | Richtung der Jahresveränderung getroffen | 3/7 |
 | Saisonschwankung Modell / Ziel | 17.9 / 39.8 |
 
 - Verglichen wird der Index (Basis 2015 = 100) auf **Jahresmitteln**, nicht das Preisniveau und nicht monatlich.
+- 2015 steht in der Tabelle, geht aber **nicht** in den Abstand ein: Beide Reihen sind darauf indexiert, sein Abstand ist per Konstruktion null. In die **Richtung** der Jahresveränderung zählt es mit — tautologisch ist das Niveau, nicht die Bewegung zum Folgejahr.
 - Die absoluten Euro-Beträge des Modells hängen an ungeeichten Koeffizienten (P2.1); ein Niveauvergleich prüfte eine Genauigkeit, die nie behauptet wurde.
 - 2020, 2021 sind mitgerechnet, aber nicht bewertet: Der Einbruch war keine Preiswirkung, und das Modell kennt keine Reisebeschränkung.
 - Die Zielreihe schwankt saisonal um 40 Indexpunkte im Jahr, das Modell um 18. **Ein Monatsvergleich misst deshalb vor allem die fehlende Saison** — deswegen die Jahresmittel.
@@ -35,7 +36,7 @@
 
 | Jahr | Modell | Zielreihe | Abstand | |
 | --- | ---: | ---: | ---: | --- |
-| 2015 | 100.00 | 100.00 | +0.00 |  |
+| 2015 | 100.00 | 100.00 | +0.00 | Basis, Abstand per Konstruktion 0 |
 | 2016 | 99.31 | 106.34 | -7.03 |  |
 | 2017 | 88.60 | 114.54 | -25.94 |  |
 | 2018 | 93.04 | 121.54 | -28.50 |  |
@@ -48,14 +49,15 @@
 
 | Kennzahl | Wert |
 | --- | ---: |
-| Mittlerer Abstand, bewertete Jahre | 33.36 |
+| Mittlerer Abstand, bewertete Jahre | 38.13 |
 | Größter Abstand | 64.09 (2023) |
-| davon 2015–2019 | 18.13 |
+| davon 2016–2019 | 22.66 |
 | davon 2022–2024 | 58.76 |
 | Richtung der Jahresveränderung getroffen | 5/7 |
 | Saisonschwankung Modell / Ziel | 28.9 / 75.9 |
 
 - Verglichen wird der Index (Basis 2015 = 100) auf **Jahresmitteln**, nicht das Preisniveau und nicht monatlich.
+- 2015 steht in der Tabelle, geht aber **nicht** in den Abstand ein: Beide Reihen sind darauf indexiert, sein Abstand ist per Konstruktion null. In die **Richtung** der Jahresveränderung zählt es mit — tautologisch ist das Niveau, nicht die Bewegung zum Folgejahr.
 - Die absoluten Euro-Beträge des Modells hängen an ungeeichten Koeffizienten (P2.1); ein Niveauvergleich prüfte eine Genauigkeit, die nie behauptet wurde.
 - 2020, 2021 sind mitgerechnet, aber nicht bewertet: Der Einbruch war keine Preiswirkung, und das Modell kennt keine Reisebeschränkung.
 - Die Zielreihe schwankt saisonal um 76 Indexpunkte im Jahr, das Modell um 29. **Ein Monatsvergleich misst deshalb vor allem die fehlende Saison** — deswegen die Jahresmittel.

@@ -166,6 +166,58 @@ class TestDieAuswertungMisstDasRichtige:
 
         assert jahresmittel(indexiert)["2015"] == pytest.approx(100.0)
 
+    def test_das_basisjahr_zaehlt_nicht_in_den_abstand(self):
+        """**Ein Datenpunkt, der nicht anders ausfallen kann, ist keine Messung.**
+
+        Beide Reihen werden auf das Basisjahr indexiert — sein Abstand ist damit
+        per Konstruktion null. Bis zum 2026-09-03 ging er trotzdem in jeden
+        Mittelwert ein und drückte ihn um rund ein Fünftel: Die Preisseite stand
+        vor der Pandemie bei 3,09 statt 3,87, die Nachfrageseite bei 18,13 statt
+        22,66. Verschärfend kam hinzu, dass die veröffentlichte Ergebnistabelle
+        bei 2016 begann — **der Wert war aus ihr nicht nachrechenbar**, und
+        genau das prüft ein Fachprüfer zuerst nach.
+        """
+
+        modell = {m: 100.0 for m in alle_monate()}
+        # Die Zielreihe weicht in **jedem** Jahr um denselben Betrag ab. Nach der
+        # Indexierung bleibt davon überall 10 Punkte Abstand — ausser im
+        # Basisjahr, wo beide auf 100 stehen.
+        ziel = {m: 100.0 + 10.0 * (int(m[:4]) - 2015) for m in alle_monate()}
+
+        ergebnis = bewerten(modell, ziel)
+
+        assert ergebnis.basisjahr == "2015"
+        assert "2015" in ergebnis.modell_je_jahr, "Das Basisjahr fehlt in der Tabelle"
+        assert "2015" not in ergebnis.bewertete_jahre
+        assert (
+            "2015" not in ergebnis.unbewertete_jahre
+        ), "Das Basisjahr ist nicht aus demselben Grund draussen wie 2020/21"
+
+    def test_und_es_zaehlt_sehr_wohl_in_die_richtung(self):
+        """**Tautologisch ist das Niveau, nicht die Bewegung.**
+
+        Zwischen Basisjahr und Folgejahr bewegen sich beide Reihen frei; diesen
+        Vergleich mit wegzuwerfen verschenkte eine echte Messung. Geprüft wird es
+        an der Zahl der Vergleiche: Von zehn Jahren fallen 2020 und 2021 heraus
+        (ungewertet) und 2015 (Basis) — bleiben **sieben** bewertete Abstände.
+        Die Richtung rechnet über dieselben sieben **plus** das Basisjahr, also
+        über acht Werte und damit **sieben** Übergänge. Rechnete sie nur über die
+        bewerteten, wären es sechs.
+        """
+
+        modell = {m: 100.0 + int(m[:4]) - 2015 for m in alle_monate()}
+        ziel = {m: 100.0 + 2 * (int(m[:4]) - 2015) for m in alle_monate()}
+
+        ergebnis = bewerten(modell, ziel)
+        treffer, vergleiche = ergebnis.richtungstreffer.split("/")
+
+        assert len(ergebnis.bewertete_jahre) == 7, ergebnis.bewertete_jahre
+        assert int(vergleiche) == 7, (
+            "Die Richtung rechnet über dieselben Jahre wie der Abstand — dann ist "
+            "der Übergang vom Basisjahr zum Folgejahr verlorengegangen."
+        )
+        assert treffer == vergleiche, "Beide Reihen steigen monoton"
+
     def test_die_saisonspanne_misst_innerhalb_eines_jahres(self):
         glatt = {m: 100.0 for m in alle_monate()}
         gezackt = {m: 100.0 + (20.0 if m.endswith("-07") else 0.0) for m in alle_monate()}

@@ -93,9 +93,11 @@ def main() -> int:
         print(f"  === {titel}: {modellgroesse} gegen {zielname} ===")
         print("  Jahr   Modell    Ziel   Abstand")
         for jahr in sorted(ergebnis.modell_je_jahr):
-            marke = "  (ungewertet)" if jahr in ergebnis.unbewertete_jahre else ""
+            marke = _marke(ergebnis, jahr)
             m, z = ergebnis.modell_je_jahr[jahr], ergebnis.ziel_je_jahr[jahr]
-            print(f"  {jahr}  {m:7.2f} {z:7.2f}   {m - z:+7.2f}{marke}")
+            print(
+                f"  {jahr}  {m:7.2f} {z:7.2f}   {m - z:+7.2f}{'  (' + marke + ')' if marke else ''}"
+            )
         vor = [j for j in ergebnis.bewertete_jahre if j < "2020"]
         nach = [j for j in ergebnis.bewertete_jahre if j > "2021"]
         print(
@@ -108,6 +110,24 @@ def main() -> int:
     BERICHT.write_text(_bericht(ergebnisse), encoding="utf-8", newline="")
     print(f"\nBericht: {BERICHT.relative_to(REPO_ROOT)}")
     return 0
+
+
+def _marke(ergebnis, jahr: str) -> str:
+    """Warum ein Jahr in der Tabelle steht, aber nicht in der Kennzahl.
+
+    **Zwei Gründe, und sie sind verschieden.** 2020/21 sind ungewertet, weil das
+    Modell keine Reisebeschränkung kennt — eine Aussage über das Modell. Das
+    Basisjahr ist ausgenommen, weil beide Reihen darauf indexiert sind und sein
+    Abstand *per Konstruktion* null ist — eine Aussage über die Messung. Sie mit
+    demselben Wort zu markieren hätte den zweiten Fall als Modellschwäche
+    gelesen.
+    """
+
+    if jahr == ergebnis.basisjahr:
+        return "Basis, Abstand per Konstruktion 0"
+    if jahr in ergebnis.unbewertete_jahre:
+        return "ungewertet"
+    return ""
 
 
 def _bericht(ergebnisse: dict[str, object]) -> str:
@@ -134,8 +154,9 @@ def _bericht(ergebnisse: dict[str, object]) -> str:
         ]
         for jahr in sorted(ergebnis.modell_je_jahr):
             m, z = ergebnis.modell_je_jahr[jahr], ergebnis.ziel_je_jahr[jahr]
-            marke = "ungewertet" if jahr in ergebnis.unbewertete_jahre else ""
-            zeilen.append(f"| {jahr} | {m:.2f} | {z:.2f} | {m - z:+.2f} | {marke} |")
+            zeilen.append(
+                f"| {jahr} | {m:.2f} | {z:.2f} | {m - z:+.2f} | {_marke(ergebnis, jahr)} |"
+            )
 
         zeilen += [
             "",
