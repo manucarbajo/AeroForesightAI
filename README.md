@@ -1,10 +1,12 @@
 # AeroForesight AI
 
-Hybride Multi-Agenten-Simulationsplattform für strategische Zukunftsplanung im europäischen Luftverkehr. Deterministische Massensimulation (Logit-Modelle, CIB-Konsistenzfilter nach Weimer-Jehle) liefert die Zahlen, generative KI liefert die narrative Ausdeutung — reproduzierbare Zukunftskorridore statt Glaskugel.
+Hybride Multi-Agenten-Simulationsplattform für strategische Zukunftsplanung im europäischen Luftverkehr. Deterministische Massensimulation (Logit-Modell mit echter Ziehung, dazu eine eigene Heuristik zur Konsistenzbewertung) liefert die Zahlen, generative KI liefert die narrative Ausdeutung — reproduzierbare Zukunftskorridore statt Glaskugel. **Nicht** der Impact-Balance-Algorithmus nach Weimer-Jehle: Der ist bewusst nicht implementiert, die Kohärenz eines Szenarios wird in Prosa mit Quellen begründet (siehe [`docs/cib_role.md`](docs/cib_role.md)).
 
 **Kernprinzip:** Zahlen kommen aus Python (`tick_mechanics`, `price_history`, Population) — LLM-Agenten liefern qualitative Narrative und Events. Der **State Explorer** antwortet ausschließlich aus diesen Run-Daten.
 
-Drei Akteure (Consumer, Provider, Regulator) interagieren über einen tick-basierten LangGraph-Zustandsgraphen; jeder Lauf erzeugt automatisch ein Tripleset aus Trendfortsetzung, Strukturwende und Krisenkonflikt.
+Drei Akteure (Consumer, Provider, Regulator) interagieren über einen tick-basierten LangGraph-Zustandsgraphen. Verglichen werden **benannte Rahmenszenarien** — Bündel exogener Verläufe, jedes mit These, Begründung, Quellen und Vorbehalt; die Faktorlage F1–F7 entsteht im Lauf daraus, statt ihn zu bestimmen.
+
+**Das Modell ist gegen 2015–2024 gemessen**, mit sechs eingecheckten Datenreihen (EUA-Preis, Brent, reales EU-BIP, Passagierflüge sowie die Zielreihen Flugpreisindex und Fluggäste). Das Ergebnis wird veröffentlicht, auch wo es schlecht ausfällt: [`docs/backtest_vorlauf.md`](docs/backtest_vorlauf.md) schreibt jeder Lauf neu. **Geeicht im Sinne einer Kalibrierung ist es nicht** — kein Koeffizient wurde an Daten angepasst; belastbar sind Wirkungsrichtungen, nicht Niveaus.
 
 ## Setup
 
@@ -225,7 +227,7 @@ Nach jedem Lauf unter `outputs/<run_id>/`:
 | Datei | Inhalt |
 | --- | --- |
 | `final_narrative.md` | Lesbarer Bericht (Kennzahlen, Segment-Buchung, Agenten) |
-| `run_scenario.md` / `run_scenario.json` | **Exploratives Szenario**: LLM wählt 3 CIB-Kandidaten, schreibt Narrativ |
+| `run_scenario.md` / `run_scenario.json` | **Exploratives Szenario**: LLM schreibt ein Narrativ zu den bestbewerteten Faktor-Konstellationen der Matrix (auf der ausgelieferten Matrix ist das **eine**, nicht drei) — die Konstellationen stammen **nicht** aus dem Lauf, und das Artefakt sagt es |
 | `tick_mechanics.json` | **Ground Truth** pro Tick: Booking, Preis vor/nach Feedback, Shocks |
 | `event_log.json` | Agenten-Events + Python-Deltas (`[delta:…]`, source=system/provider/market) |
 | `price_history.json` | Preis, demand_level, booking_rate pro Tick |
