@@ -308,3 +308,92 @@ class TestDieAngebotsseiteKommtImLaufAn:
             "wachsendes Angebot behauptet, muss mehr geflogen werden — sonst steht "
             "der Pfad in der Datei und nirgends sonst."
         )
+
+
+class TestAuchDerStandardIstEinRahmen:
+    """**Befund A1 des Audits vom 2026-09-03.**
+
+    P2.0 hatte als Abnahmekriterium «die Sweeps sind der reguläre Startpfad».
+    Erfüllt war das nie — ein Lauf ohne Preset rechnet gegen die Dateien unter
+    `configs/`, und Stufe C sagt das selbst. Die Klausel wurde trotzdem mit
+    abgehakt.
+
+    **Der Weg dorthin wäre aber der falsche gewesen.** Ein
+    `configs/sweeps/standard.json` müsste jede Trajektorie aus
+    `properties.json` wiederholen — zwei Quellen für denselben Wert, genau die
+    Klasse, die P2.11 gerade abgeräumt hat, und die dieses Projekt schon dreimal
+    bezahlt hat (F7, die drei Rule-Evaluatoren, der Kostendruck).
+
+    **Was wirklich fehlte, war etwas anderes und Kleineres:** P2.0-B hält fest,
+    «auch die ausgelieferten Dateien sind ein Rahmen, sie hießen nur bisher
+    nicht so» — und trotzdem war ausgerechnet dieser Rahmen der **einzige ohne
+    Begründung**, während dieselbe Datei sie von jedem Preset verlangt. Beim
+    meistgenutzten Weltbild überhaupt: Jeder Lauf, der kein Preset wählt, steht
+    darunter.
+    """
+
+    @staticmethod
+    def _standard():
+        from src.config_loader import load_properties_config
+
+        return load_properties_config().kohaerenz
+
+    def test_er_traegt_ueberhaupt_eine(self):
+        assert self._standard() is not None, (
+            "Die Standard-Ausgangslage trägt keine Kohärenzbegründung. Sie ist der "
+            "Rahmen, unter dem jeder Lauf ohne Preset-Wahl steht — und der einzige, "
+            "dem Variante C dann nichts abverlangt."
+        )
+
+    def test_und_zwar_nach_demselben_massstab_wie_die_presets(self):
+        """Dieselben Anforderungen, sonst ist es eine Ausnahme mit anderem Namen."""
+
+        k = self._standard()
+
+        assert len(k.these) >= 30 and len(k.begruendung) >= 30 and len(k.vorbehalt) >= 30
+        assert k.quellen, "Ohne Quellen ist es eine Meinung."
+
+    def test_sie_behauptet_keine_eichung(self):
+        """Dieselbe Zusage wie für die Presets: Belegt ist die Storyline, nicht
+        ihre Bezifferung."""
+
+        k = self._standard()
+        text = f"{k.these} {k.begruendung} {k.vorbehalt}".lower()
+
+        assert "gesetzt" in text, (
+            "Der Vorbehalt sagt nicht, dass die Zahlen gesetzt und nicht geschätzt "
+            "sind — genau die Trennung, die Variante C trägt."
+        )
+        assert not any(
+            wort in text for wort in ("kalibriert", "geeicht", "geschätzt aus")
+        ), "Eine Kohärenzbegründung darf keine Eichung behaupten."
+
+    def test_sie_benennt_die_konstante_kapazitaet(self):
+        """**Seit P2.10 ist der Standard der einzige Rahmen mit flachem Angebot.**
+
+        Das ist eine Annahme und keine Abwesenheit einer Annahme — und sie ist
+        die stärkste dieser Welt. Ein Rahmen, der sie nicht ausspricht, verbirgt
+        genau den Befund, den P2.10 abgeräumt hat.
+        """
+
+        k = self._standard()
+        text = f"{k.begruendung} {k.vorbehalt}".lower()
+
+        assert (
+            "kapazit" in text
+        ), "Die Standard-Ausgangslage hält die Kapazität konstant und sagt es nicht."
+
+    def test_die_werte_stehen_trotzdem_nur_einmal(self):
+        """**Die Begründung darf keine zweite Quelle für Zahlen werden.**
+
+        Sie steht neben den Trajektorien, die sie begründet — nicht in einer
+        eigenen Sweep-Datei, die sie wiederholen müsste.
+        """
+
+        from src.orchestration.scenario_sweeps import SWEEPS_DIR
+
+        assert not (SWEEPS_DIR / "standard.json").exists(), (
+            "Es gibt eine `standard.json` unter `configs/sweeps/`. Sie müsste jede "
+            "Trajektorie aus `properties.json` wiederholen — zwei Quellen für "
+            "denselben Wert."
+        )

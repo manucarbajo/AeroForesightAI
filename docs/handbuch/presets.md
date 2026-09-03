@@ -23,6 +23,13 @@ begründbar. Bei welchem Tick die CO₂-Abgabe dann auf welchen Wert springt, is
 gesetzt und nicht aus Daten geschätzt. Wer ein Szenario nach außen zitiert,
 zitiert die Geschichte, nicht die Zahl.
 
+**Auch «keine Auswahl» ist eine Auswahl.** Wer kein Szenario nimmt, rechnet unter der
+**Standard-Ausgangslage** — und das ist kein Nullpunkt, sondern ein Weltbild mit
+eigenen Annahmen über Politik, Kosten und Konjunktur. Seit dem 2026-09-03 steht seine
+Begründung an derselben Stelle wie die der vier Szenarien, mit Quellen und Vorbehalt.
+Wer eigene Werte zusammenstellt, findet dort stattdessen den Hinweis, dass es für sie
+keine hinterlegte Begründung gibt — die muss man dann selbst liefern.
+
 **Seit dem 2026-09-03 sagt jedes Rahmenszenario auch etwas über das Angebot.**
 Bis dahin beschrieben die vier Welten nur, was auf den Luftverkehr *einwirkt* —
 CO₂-Preis, Beimischung, Konjunktur, Ölpreis — und ließen offen, wie viele Sitze

@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal, Union
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from src.models.enums import DistributionType
+from src.models.sweep_models import Kohaerenz
 
 
 class SetEffect(BaseModel):
@@ -522,6 +523,22 @@ class PropertiesConfig(BaseModel):
     booking_model: BookingModelConfig = Field(default_factory=BookingModelConfig)
     #: Wie das Alter die Merkmale zieht (P2.4). Siehe `AltersProfil`.
     alters_profil: AltersProfil = Field(default_factory=AltersProfil)
+    #: **Warum die ausgelieferten Verläufe zusammen eine Welt ergeben** (A1 des
+    #: Audits, 2026-09-03).
+    #:
+    #: Ein Lauf ohne gewähltes Preset steht unter der «Standard-Ausgangslage» —
+    #: `Rahmenszenario(quelle="standard")` sagt das seit P2.0-B, und P2.0-B hält
+    #: auch fest, warum: «Auch die ausgelieferten Dateien sind ein Rahmen, sie
+    #: hießen nur bisher nicht so.» Nur trug ausgerechnet **dieser** Rahmen als
+    #: einziger keine Begründung, obwohl `test_rahmen_traegt_begruendung.py` sie
+    #: von jedem Preset verlangt — und obwohl er der meistgenutzte ist.
+    #:
+    #: **Sie steht hier und nicht in einer eigenen Sweep-Datei.** Ein
+    #: `configs/sweeps/standard.json` müsste jede Trajektorie dieser Datei
+    #: wiederholen — zwei Quellen für denselben Wert, genau die Klasse, die P2.11
+    #: gerade abgeräumt hat. Die Begründung gehört neben die Zahlen, die sie
+    #: begründet.
+    kohaerenz: Kohaerenz | None = None
 
     def system_property_ids(self) -> list[str]:
         return [prop.id for prop in self.system_properties]

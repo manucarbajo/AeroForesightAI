@@ -39,6 +39,7 @@ from dashboard.web import components as ui
 from dashboard.web.config_editor import compute_mode, dauer
 from dashboard.web.config_editor import controls as c
 from dashboard.web.state import draft_from_dict
+from src.config_loader import load_properties_config
 from src.models.state_models import DEFAULT_SEED
 from src.orchestration.scenario_sweeps import (
     SWEEP_SEED,
@@ -283,12 +284,74 @@ def _eigene_werte_wirken(draft: dict) -> bool:
     return bool(draft.get("apply_custom_overrides")) or of(draft) == CUSTOM
 
 
+def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
+    """Die Kohärenzbegründung eines Rahmens — **eine Stelle für alle Rahmen**.
+
+    Sie steht offen da und nicht hinter «Fachliches»: Sie ist die einzige
+    Absicherung, die ein Rahmenszenario hat — es gibt keinen Algorithmus, der
+    seine Stimmigkeit prüft (Variante C, P2.2), und das soll man sehen statt
+    aufklappen müssen. Quellen und Vorbehalt liegen darunter, weil sie beim
+    Nachprüfen gebraucht werden und nicht beim Auswählen.
+
+    **Gemeinsam für Preset und Standard seit A1** (2026-09-03): Vorher gab es
+    diesen Block nur für Presets, und der Standard — der meistgenutzte Rahmen —
+    zeigte gar nichts. Zwei Renderer für dieselbe Sache wären die zweite Quelle
+    gewesen, an der sie auseinanderlaufen.
+    """
+
+    if kohaerenz is None:
+        return html.Div()
+
+    kinder: list = [vorspann] if vorspann is not None else []
+    kinder += [
+        html.P(kohaerenz.these, className="font-body text-sm af-text mb-2 max-w-prose"),
+        html.P(kohaerenz.begruendung, className=f"{ui.CAPTION} mb-3 max-w-prose"),
+        ui.expert(
+            html.Div(
+                [
+                    html.Ul(
+                        [html.Li(q, className=ui.CAPTION) for q in kohaerenz.quellen],
+                        className="mb-3 list-disc pl-5",
+                    ),
+                    html.P(kohaerenz.vorbehalt, className=f"{ui.CAPTION} max-w-prose"),
+                ]
+            ),
+            title="Quellen und was davon nicht belegt ist",
+        ),
+    ]
+    return html.Div(kinder, className="mb-4")
+
+
 def scenario_details(draft: dict) -> html.Div:
     """Was zur aktuellen Auswahl gehört — Begründung und der Weg in den Editor."""
 
     choice = of(draft)
-    if choice in {STANDARD, CUSTOM}:
-        return html.Div()
+    if choice == CUSTOM:
+        # **Für eigene Werte gibt es keine Begründung, und das ist keine Lücke.**
+        # Ein selbst zusammengestellter Rahmen ist genau so stimmig, wie der
+        # Nutzer ihn macht; ihm eine Kohärenzbehauptung unterzuschieben wäre eine
+        # Aussage, die niemand getroffen hat.
+        return html.Div(
+            ui.note(
+                "Für eine eigene Zusammenstellung gibt es **keine hinterlegte "
+                "Begründung** — die Rahmenszenarien tragen je eine, weil jemand sie "
+                "aufgeschrieben und belegt hat. Wer eigene Verläufe nach außen "
+                "zitiert, begründet ihre Stimmigkeit selbst."
+            )
+        )
+    if choice == STANDARD:
+        # **Auch der Standard ist ein Rahmen** (P2.0-B), und seit A1 trägt er
+        # seine Begründung wie jeder andere. Sie stand als einzige nicht da —
+        # ausgerechnet beim meistgenutzten Weltbild, das jeder Lauf ohne
+        # Preset-Wahl benutzt.
+        return _kohaerenz_block(
+            load_properties_config().kohaerenz,
+            vorspann=ui.note(
+                "Der Lauf rechnet mit den Verläufen aus `configs/`. **Auch das ist "
+                "ein Rahmenszenario** — es trägt eigene Annahmen über Politik, "
+                "Kosten und Konjunktur und heißt nur nicht so."
+            ),
+        )
 
     preset = next((s for s in list_sweep_presets() if s.id == choice), None)
     if preset is None:
@@ -314,28 +377,7 @@ def scenario_details(draft: dict) -> html.Div:
     # Rahmenszenario hat — es gibt keinen Algorithmus, der seine Stimmigkeit
     # prüft, und das soll man sehen statt aufklappen müssen.
     if preset.kohaerenz is not None:
-        k = preset.kohaerenz
-        children.append(
-            html.Div(
-                [
-                    html.P(k.these, className="font-body text-sm af-text mb-2 max-w-prose"),
-                    html.P(k.begruendung, className=f"{ui.CAPTION} mb-3 max-w-prose"),
-                    ui.expert(
-                        html.Div(
-                            [
-                                html.Ul(
-                                    [html.Li(q, className=ui.CAPTION) for q in k.quellen],
-                                    className="mb-3 list-disc pl-5",
-                                ),
-                                html.P(k.vorbehalt, className=f"{ui.CAPTION} max-w-prose"),
-                            ]
-                        ),
-                        title="Quellen und was davon nicht belegt ist",
-                    ),
-                ],
-                className="mb-4",
-            )
-        )
+        children.append(_kohaerenz_block(preset.kohaerenz))
     elif preset.art != "rahmen":
         children.append(
             ui.alert(

@@ -110,6 +110,20 @@ Faktor-Endzustände jetzt kaum noch») und die betroffenen Tests in
 Faktoren überhaupt» umgestellt — **ohne das Abnahmekriterium von P2.0
 nachzuziehen**.
 
+> **Beantwortet am 2026-09-03.** Klausel 4 ist durch die tragfähige Fassung
+> ersetzt (verschiedene *Rahmen* erzeugen verschiedene Lagen — gemessen). Und
+> Klausel 2 ebenfalls: «Die Sweeps sind der reguläre Startpfad» war das falsche
+> Mittel, weil eine `configs/sweeps/standard.json` jede Trajektorie aus
+> `properties.json` wiederholen müsste — zwei Quellen für denselben Wert, genau
+> die Klasse aus **B7d**. Gefehlt hat etwas Kleineres und Konkreteres: Der
+> Standard war der **einzige Rahmen ohne Begründung**, obwohl derselbe Wächter
+> sie von jedem Preset verlangt und obwohl jeder Lauf ohne Preset-Wahl darunter
+> steht — im Assistenten war die Stelle sogar ausdrücklich leer. Er trägt sie
+> jetzt, in `properties.json` neben den Zahlen, die sie begründen, und beide
+> Wege benutzen denselben Renderer. Dabei kam heraus, dass der Standard seit
+> **B6/P2.10** der einzige Rahmen mit konstanter Kapazität ist — das steht nun
+> in seinem Vorbehalt.
+
 **Das ist keine Panne, sondern ein falsches Kriterium.** Über tausend Personen
 mitteln sich die Einzelentscheidungen aus, und die Faktorregeln sind
 Schwellwerte — Streuung *kann* dort nicht durchschlagen. Die tragfähige Fassung
