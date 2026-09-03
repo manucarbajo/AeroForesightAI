@@ -89,6 +89,11 @@ def test_ci_skips_exactly_the_documented_failures():
 
     Jeder Eintrag ist ein bekannter Fehlschlag aus `CLAUDE.md`. Kommt einer
     dazu, ohne dass er dort steht, verschwindet ein echter Fehler unbemerkt.
+
+    **Und die Liste schrumpft auch nicht heimlich** — genau das ist am
+    2026-09-03 passiert: P2.11 hat den dritten Deselect entfernt, und dieser
+    Wächter hat es gemeldet, bevor jemand die Liste vergessen konnte. Zwei sind
+    übrig, beide Ollama-Hänger, beide fallen mit P4.2.
     """
 
     workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -97,8 +102,6 @@ def test_ci_skips_exactly_the_documented_failures():
     erwartet = {
         "tests/test_scenario_sweeps.py::test_run_single_sweep_short",
         "tests/test_scenario_sweeps.py::test_sweep_base_price_override_raises_ticket_price",
-        "tests/test_market_feedback.py::TestM413ConfigurablePrice::"
-        "test_market_rules_resolve_marginal_cost_fraction",
     }
 
     assert deselected == erwartet, (
