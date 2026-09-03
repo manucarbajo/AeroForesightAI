@@ -1156,7 +1156,9 @@ Gilt für jede Änderung an diesem Projekt — für alle im Team und für jede C
 
 Diese Punkte entscheiden, ob die wissenschaftlichen Aussagen einem Fachprüfer standhalten. Solange sie offen sind, gehören die Formulierungen in Pitch, README und Handbuch abgeschwächt.
 
-> **Alle zehn Pakete sind abgeschlossen.** Was sie zusammen verändert haben — und die Backtest-Kette über die Pakete hinweg, die sich aus den Einzelmessungen unten nicht ablesen lässt — steht in der [Bilanz der Phase 2](phase2_bilanz.md). Sie ist eine Synthese und keine Quelle: gepflegt wird **hier**, an den Paketen.
+> **Stand 2026-09-03: acht der zehn Pakete sind abgeschlossen, zwei sind wieder offen.** Ein unabhängiges Audit hat drei schwere Befunde gefunden — zwei in [P2.8-B](#nachtrag-am-selben-tag-eine-methodik-ist-ein-bias-p28-b) und einen in [P2.0 Stufe C](#stufe-c--die-faktorlage-hört-auf-eingabe-zu-sein--erledigt-2026-08-30). Vollfassung mit allen Messungen: [`audit_phase2_2026-09-03.md`](audit_phase2_2026-09-03.md); die Detailliste steht wie immer in [`audit_findings.md`](audit_findings.md).
+>
+> Was die Phase zusammen verändert hat — und die Backtest-Kette über die Pakete hinweg, die sich aus den Einzelmessungen unten nicht ablesen lässt — steht in der [Bilanz der Phase 2](phase2_bilanz.md). Sie ist eine Synthese und keine Quelle: gepflegt wird **hier**, an den Paketen.
 
 ### Leitentscheidung: die Szenarienschicht (2026-08-29)
 
@@ -1195,7 +1197,9 @@ Vollfassung mit Herleitung, den drei Wegen und den Quellen: [`entscheidung_szena
 
 **Zweiter Fallstrick — die Außendarstellung hängt daran:** Das Tripleset (Trendfortsetzung / Strukturwende / Krisenkonflikt) kommt heute aus dem Ranking. Nach der Umdrehung kommt es aus der Wahl der Rahmenszenarien — drei benannte Bündel statt drei bestbewerteter Konstellationen. Das ist eine Produktaussage und gehört mit [P1.3](#p13--szenariogestaltung-neu-denken--erledigt-2026-08-30-datenschema-die-entstehung-bleibt-p20) abgestimmt, bevor jemand anfängt.
 
-**Fertig wenn** ✅ **(2026-08-30, Überschrift am 2026-08-31 nachgezogen):** Ein Lauf nimmt ein benanntes Rahmenszenario entgegen und erzeugt Faktorlabels, statt sie zu bekommen; die Sweeps sind der reguläre Startpfad; kein Codepfad bewertet mehr den Endzustand gegen die Matrix, um zu entscheiden, was gezeigt wird. Ein Test zeigt, dass zwei Läufe unter demselben Rahmen unterschiedliche Faktorlabels erzeugen können — das ist der Beleg, dass der Lauf etwas erzeugt statt zu bestätigen.
+**Fertig wenn** ⚠️ **(2026-08-30 abgehakt, am 2026-09-03 nachgeschärft):** Ein Lauf nimmt ein benanntes Rahmenszenario entgegen und erzeugt Faktorlabels, statt sie zu bekommen ✅; **zwei verschiedene Rahmen erzeugen verschiedene Faktorlagen** ✅ (gemessen: `business_as_usual` → `F2.1/F3.1`, `co2_delayed` → `F2.2/F3.2`, `transformation_conflict` → `F6.2/F7.2`); die Sweeps sind der reguläre Startpfad **⬜ offen**; kein Codepfad bewertet mehr den Endzustand gegen die Matrix, um zu entscheiden, was gezeigt wird ✅ (formal — der Endzustand ging nie ein, siehe Stufe B).
+
+> **Zwei Klauseln haben 2026-08-30 nicht gehalten, und eine davon war die falsche Frage** (Audit vom 2026-09-03). Der ursprüngliche Wortlaut verlangte: «die Sweeps sind der reguläre Startpfad» — Stufe C sagt selbst, dass sie es nicht sind, und die Klausel wurde trotzdem mit abgehakt; sie steht jetzt als offen da. Und: «Ein Test zeigt, dass zwei Läufe unter **demselben** Rahmen unterschiedliche Faktorlabels erzeugen können.» Den Test gibt es nicht, und die Eigenschaft ist **abwesend**: 50 Läufe (5 Seeds × Standard und vier Rahmen × 20 und 40 Ticks) enden **jedes Mal auf derselben Lage**. Das ist kein Fehler, sondern erwartbar — über tausend Personen mitteln sich die Einzelentscheidungen aus, und die Faktorregeln sind Schwellwerte; P2.1 hatte es nebenbei schon gemessen und zwei Kontrolltests deswegen umgebaut, ohne dieses Kriterium nachzuziehen. Die tragfähige Fassung ist die über **verschiedene Rahmen**, und die steht jetzt oben. Herleitung: [Audit Phase 2, A1](audit_phase2_2026-09-03.md).
 
 #### Stufe A — der Score verlässt den Lauf nicht mehr als Urteil ✅ erledigt 2026-08-29
 
@@ -1299,6 +1303,20 @@ Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
 **Am laufenden System nachgewiesen:** Ein Lauf über 40 Ticks startet mit allen sieben Faktoren auf `.1` und **erzeugt** bis Tick 40 `F1.2, F2.2, F3.2, F4.2, F5.2, F6.1, F7.1` — eine **gemischte** Lage, die niemand eingestellt hat und die die alte Bewertung als «weniger plausibel» abgewertet hätte.
 
 **Doku mitgezogen:** `docs/handbuch/faktoren.md` (das Kapitel heißt jetzt «Sie stellen sie nicht ein — der Lauf erzeugt sie»), `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`, `docs/handbuch/erste-simulation.md`, **`docs/handbuch/vergleiche.md`** (vierter Schnitt: Endzustände gleich, erste Ticks und damit die Preise nicht), `CLAUDE.md` (Glossar und Architektur-Map).
+
+#### ⚠️ Wieder geöffnet am 2026-09-03 — der Browser-Wächter ist seit dem Umbau rot
+
+**Der Schnitt war richtig, die Sperrklinke ist nicht mitgezogen worden.** Stufe C hat die Schrittfolge von sieben auf sechs Schritte verkürzt und den `apply_custom_overrides`-Schalter nach Schritt 1 verschoben. Beides misst `tests/test_web_overflow.py` — und beides hat ihn rot gemacht, **am 2026-08-30, unbemerkt bis zum 2026-09-03**:
+
+| Zusage | Meldung | Ursache |
+| --- | --- | --- |
+| «kein Schritt ist höher als sein Deckel» | «Bei 1280 px nicht gemessen: `['Schritt 7']`» (ebenso bei 1024 px) | `DECKEL` führt Schritt 1–7, `wizard.STEPS` hat sechs |
+| «keine Zeile läuft über 75 Zeichen» (P1.9-W5.4) | «Was soll gerechnet werden?: **89 Zeichen** in P — *Ist der Schalter aus, bleiben alle Anpas…*»; bei 1024 px 81 | der verschobene Schaltertext steht außerhalb des `af-mass`-Deckels |
+| der Selbsttest des Breiten-Wächters | `assert (96.7 >= 60.0 and 89 <= 75)` | er kann keinen Rückfall nachstellen, solange der Ist-Stand schon außerhalb liegt |
+
+**Warum es niemand gesehen hat, und das ist der eigentliche Befund:** Der Wächter ist opt-in (Extra `ui` plus Chromium) und überspringt sich sonst schweigend; die CI hat keinen Browser. Vier Tage lang waren beide Zusagen ungeprüft, und die Regel «Test und Doku im selben Commit» wurde ausgerechnet für den Wächter nicht eingehalten, der die Schrittfolge misst.
+
+**Zu tun:** `DECKEL` auf sechs Schritte nachziehen (mit neu gemessenen Werten, nicht durch Streichen der Zeile) und den Schaltertext unter das Lesemaß bringen. **Fertig wenn** `tests/test_web_overflow.py` wieder grün ist und im Commit steht, warum es durchging. Herleitung: [Audit Phase 2, C5](audit_phase2_2026-09-03.md).
 
 **Was Stufe C nicht ist:** Stufe B. Die Sweeps sind noch nicht der reguläre Startpfad — ein Einzellauf ohne Preset rechnet weiterhin gegen die Datei-Defaults, und `derive_scenarios` bewertet den Endzustand weiterhin gegen die Matrix. Der Unterschied ist, dass diese Bewertung jetzt nichts mehr **vorgibt**.
 
@@ -1590,6 +1608,34 @@ Unter `marge` steht der Preis, egal wie viele Plätze da sind — **genau der Fa
 
 **Der Wächter:** [`tests/test_preisstrategie_ist_eine_wahl.py`](../tests/test_preisstrategie_ist_eine_wahl.py), elf Zusagen. Die tragende ist nicht «`marge` hält den Preis», sondern das **Paar**: dass er unter `marge` steht *und* sich unter `auslastung` um mehr als 30 EUR bewegt. Ohne die Gegenprobe prüfte der erste Test nur, dass irgendetwas konstant ist.
 
+#### ⚠️ Wieder geöffnet am 2026-09-03 — die Zusage hält nicht, und ein Rechenfehler steckt darin
+
+> **Der Einwand von Haiko war richtig, und die Antwort darauf greift nicht.** Ein unabhängiges Audit hat beides nachgemessen. Der Befund ist unangenehm, weil er die tragende Zusage dieses Nachtrags betrifft — und weil der Wächter daneben grün steht.
+
+**Erstens, ein Rechenfehler:** `_kapazitaet_begrenzen` setzt bei knapper Kapazität `booked = False`, **nimmt aber den Sättigungsaufschlag nicht zurück**, den `evaluate_booking` unmittelbar davor vergeben hat. Der Docstring behauptet ausdrücklich das Gegenteil («Die Sättigung bleibt unberührt … weil `booked` zurückgesetzt wird, bevor die Sättigung daran anknüpft») — sie knüpft nicht *danach* an, sie ist schon vergeben. Gemessen (`marge`, `kapazitaet_index = 0,5`, ein Tick, 1000 Personen): 658 wollten buchen, 185 bekamen einen Platz, **473 gehen leer aus und tragen trotzdem `saturation_level = 0,6`** in den nächsten Tick. Sie werden für eine Reise bestraft, die sie nicht angetreten haben.
+
+**Zweitens, und das wiegt schwerer: «mehr Plätze bei gleichem Preis» ist weiterhin nicht darstellbar.** 40 Ticks, letztes Viertel:
+
+| `kapazitaet_index` | `marge` Rate / Preis | `auslastung` Rate / Preis |
+| ---: | --- | --- |
+| 0,3 | 0,1003 / 189,78 | — |
+| 0,5 | 0,1063 / 189,78 | 0,1529 / 159,42 |
+| 0,7 | 0,1064 / 189,78 | — |
+| 1,0 | 0,1064 / 189,78 | 0,2587 / 118,85 |
+| 1,3 | 0,1064 / 189,78 | 0,3052 / 100,50 |
+
+Unter `marge` ändert die doppelte Sitzzahl die Buchungsrate um **0,0001**. Selbst bei 0,3 (Schranke 0,111) bleibt die Rate mit 0,1003 **unter** der Schranke — sie greift dort gar nicht. Der Grund ist **strukturell und nicht numerisch: Eine Obergrenze kann Nachfrage nur senken, nie heben.** Unter `auslastung` wächst der Verkehr, aber nur mit fallendem Preis — also mit genau dem Verhalten, das dieser Nachtrag abschaffen wollte. Der Fall, für den er gebaut wurde, ist damit in **keiner** der beiden Strategien darstellbar.
+
+**Warum der Wächter grün ist:** Er prüft zwei Dinge getrennt, die zusammengehören — Preiskonstanz über Kapazitäten (`marge`, 40 Ticks) und das Greifen der Schranke (ein Tick, künstlich auf 100 EUR gesetzter Preis). Eine Zusage «mehr Kapazität ⇒ mehr Verkehr **bei gleichem Preis**» gibt es nicht, und sie wäre heute rot. Dieselbe Lehre wie bei P2.4-E: *Ein Wächter, der den Mechanismus prüft statt die Zusage, ist grün und nutzlos.*
+
+**Zu tun, in dieser Reihenfolge:**
+
+1. **Die Sättigung erst nach der Rationierung vergeben** (oder in `_kapazitaet_begrenzen` zurücknehmen) — ein reiner Fehler, keine Modellentscheidung. Dazu eine Zusage, die den Zustand der **Abgewiesenen** misst.
+2. **Neu entscheiden, was die Kapazität unter `marge` tun soll.** Als reine Obergrenze ist sie für ihren Zweck untauglich; sie müsste nach oben wirken (etwa: der Anbieter hält seine Marge, aber unbesetzte Kapazität senkt seine Stückkosten). Das ist eine Modellentscheidung mit eigenem Belegbedarf und gehört entschieden, nicht nebenbei gebaut.
+3. **Erst danach den Backtest neu rechnen**, mit unverändertem Verfahren — der Vorher-Wert steht oben (10,66 / 33,36).
+
+**Fertig wenn:** Wer keinen Platz bekommt, trägt keinen Sättigungsaufschlag; ein Test misst genau das. Und eine Zusage misst die **Wirkungsrichtung** der Kapazität unter beiden Strategien, nicht nur die Konstanz des Preises. Herleitung mit allen Messungen: [Audit Phase 2, B1 und B2](audit_phase2_2026-09-03.md).
+
 **Was damit weiterhin offen ist:** Zwei Strategien sind zwei, nicht alle. Ein Anbieter, der bei knapper Kapazität die Marge *ausweitet* (Erlösmanagement), fehlt ebenso wie mehrere Anbieter im Wettbewerb (Weg C). Die Architektur nimmt beide jetzt auf — `STRATEGIEN` ist eine Liste, kein Schalter.
 
 **Fallstrick — die Reihenfolge der Messung:** Der Backtest wird **vor** dem Eingriff einmal festgehalten (die Zahlen stehen in P2.7 und in `tests/test_nachfragetreiber.py`) und danach neu gerechnet. Wer erst baut und dann misst, hat keinen Vorher-Wert mehr.
@@ -1751,7 +1797,7 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 **Was stattdessen passiert ist:**
 
 - Die Grenze steht im Handbuch (`grenzen.md`, `akteure.md`) — in der Sprache der Nutzer, nicht als Fußnote: Die Altersstatistik beschreibt die *Zusammensetzung*, nicht denselben Menschen über die Zeit.
-- Ein Wächter hält die **Voraussetzung** der Entscheidung fest, nicht ihr Ergebnis: [`tests/test_bevoelkerung_altert_nicht.py`](../tests/test_bevoelkerung_altert_nicht.py). Sobald `age` anfängt, Verhalten zu beeinflussen, fällt der tragende Grund weg — und dann gehört die Entscheidung neu auf den Tisch, statt stillschweigend weiterzugelten. **Ein rotes Ergebnis ist dort keine Panne, sondern genau diese Nachricht.**
+- Ein Wächter hält die **Voraussetzung** der Entscheidung fest, nicht ihr Ergebnis: `tests/test_bevoelkerung_altert_nicht.py` (inzwischen gelöscht, ersetzt durch [`tests/test_alter_formt_die_person.py`](../tests/test_alter_formt_die_person.py)). Sobald `age` anfängt, Verhalten zu beeinflussen, fällt der tragende Grund weg — und dann gehört die Entscheidung neu auf den Tisch, statt stillschweigend weiterzugelten. **Ein rotes Ergebnis ist dort keine Panne, sondern genau diese Nachricht.**
 - Ein Nebenbefund ist separat behoben: Ein unbekanntes Ziel einer `shift_rule` verschwand still — eine Regel auf `age` tat nichts, ein Tippfehler wie `price_sensitivty` ebenso. Beides scheitert jetzt laut, beim Laden und zur Laufzeit.
 
 **Fertig wenn** ✅ **(2026-08-31):** Die Entscheidung ist getroffen, im Handbuch als Grenze benannt, und ein Wächter meldet, wenn ihre Voraussetzung entfällt.
@@ -1957,6 +2003,25 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 **Was der Backtest nicht belegt**, ausdrücklich: Die 1,84 Indexpunkte der Preisseite sind bemerkenswert, aber kein Beweis — vier freie Jahre, und 2015 liegt durch die Indexbasis per Konstruktion auf null. Der Backtest sagt, **wo** das Modell trägt und wo nicht; er macht es nicht richtig.
 
+#### Zwei Methodikbefunde, nachgetragen am 2026-09-03
+
+> Beide stammen aus einem unabhängigen Audit und ändern **nichts am Ergebnis**, wohl aber daran, was es belegt. Sie gehören hierher, weil der Backtest die stärkste Aussage des Projekts trägt.
+
+**Erstens: Das Basisjahr steckt in der Kennzahl.** `bewerten()` indexiert Modell **und** Zielreihe auf 2015 = 100; 2015 hat damit per Konstruktion den Abstand 0 und geht trotzdem in jeden Mittelwert ein:
+
+| | veröffentlicht (mit 2015) | ohne 2015 |
+| --- | ---: | ---: |
+| Preis 2015–2019 | **3,09** | 3,87 |
+| Preis, alle bewerteten Jahre | **10,66** | 12,18 |
+| Nachfrage 2015–2019 | **18,13** | 22,66 |
+| Nachfrage, alle bewerteten Jahre | **33,36** | 38,13 |
+
+Ein Fünftel des Vorpandemie-Fensters ist ein Datenpunkt, der **nicht anders ausfallen kann**. Der Vorbehalt oben nennt die Tautologie («2015 liegt durch die Indexbasis per Konstruktion auf null»), zieht daraus aber keine Konsequenz für die Kennzahl — und die Ergebnistabelle in diesem Abschnitt zeigt die Jahre **2016–2024**, das Basisjahr also gar nicht. **Der veröffentlichte Wert ist aus der veröffentlichten Tabelle nicht nachrechenbar**, und genau das prüft ein Fachprüfer zuerst nach. Zu tun: das Basisjahr aus der Kennzahl nehmen (die Tabelle darf es zeigen), die vier Zahlen einmal nachziehen und den Schnitt in `docs/handbuch/vergleiche.md` benennen.
+
+**Zweitens: Eingang und Ziel der Nachfrageseite stammen aus derselben Erhebung.** Seit P2.8 kommt `kapazitaet_index` aus Eurostat `avia_paoc`/`CAF_PAS` (Flüge) — die Zielreihe `fluggaeste` aus `avia_paoc`/`PAS_CRD` (Passagiere). Dieselbe Tabelle, und mechanisch verbunden: Passagiere = Flüge × Sitze × Auslastung. Die Doku benennt die *Näherung* sauber, **nicht** die Nähe von Eingang und Ziel. Folge: Der Nachfrage-Backtest misst ab 2022 überwiegend die Sitze-je-Flug-Lücke statt der Modellmechanik, und der Satz «ein Maßstab **außerhalb** seiner selbst» gilt für die Nachfrageseite nur noch eingeschränkt. **Nebenbefund:** Die Begründung, 2020/21 nicht zu bewerten («das Modell hat für Reisebeschränkungen keinen Mechanismus»), ist seit P2.8 überholt — der Einbruch *wird* über die Kapazitätsreihe eingespeist. Die Entscheidung bleibt richtig, ihre Begründung gehört neu geschrieben.
+
+Herleitung mit allen Messungen: [`audit_phase2_2026-09-03.md`](audit_phase2_2026-09-03.md), Abschnitte B3 und B4.
+
 **Doku zieht mit:** `docs/backtest_vorlauf.md` (wird bei jedem Aufruf überschrieben), `pyproject.toml` (Extra `backtest`), `CLAUDE.md` (Architektur-Map, Dev-Workflow).
 
 
@@ -2004,6 +2069,44 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 **Gehalten von** `tests/test_nachfragetreiber.py`: Er misst den Ist-Stand — die Horizontlücke in Ticks und den Nachfragezuwachs des Modells — und schlägt an, wenn sich einer der beiden bewegt. Dasselbe Muster wie `test_faktoren_abgeleitet.py`: **Ein roter Lauf ist dort keine Panne, sondern die Nachricht, dass jemand die Nachfrageseite angefasst hat.**
 
 **Doku zieht mit:** neues Kapitel unter `docs/`, `docs/handbuch/grenzen.md`, `README.md`, `CLAUDE.md` (falls eine neue Datenquelle in die Architektur-Map kommt).
+
+### P2.10 — Ein Rahmenszenario, das die Angebotsseite wirklich benutzt ⚠️ neu 2026-09-03
+
+**Befund:** Was P2.8, P2.8-B und P2.4-D/E gebaut haben, setzt **kein ausgeliefertes Szenario**. Nachgezählt über alle acht Dateien unter `configs/sweeps/` und über `configs/properties.json`:
+
+| Größe | ausgeliefert | von einem Szenario gesetzt? |
+| --- | --- | --- |
+| `kapazitaet_index` | 1,0, **keine Regel** | **nein, in keiner Datei** |
+| `strategie` | `auslastung` | **nein** |
+| `erneuerungsrate` | 0,0 | **nein** |
+| `altersmittel_jahre` | 50,8, konstant | **nein** |
+| `income_index` | 1,0 + 2 Regeln | ja, alle vier Rahmen |
+
+**Die Angebotsseite lebt damit ausschließlich im Backtest.** Für die vier ausgelieferten Weltbilder ist die Kapazität konstant — obwohl ihre Kohärenzbegründungen Nachfrageentwicklungen behaupten, die ohne Angebotsentwicklung nicht darstellbar sind. Das ist wörtlich der Befund von [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--weg-a-umgesetzt-2026-08-31), nur auf die eigenen Szenarien angewandt: Ein Rahmen, der Wachstum erzählt und die Kapazität festhält, erzählt eine Welt, die sein eigenes Modell für unmöglich hält.
+
+**Was zu tun ist:** Mindestens ein Rahmenszenario bekommt einen begründeten Kapazitätspfad — und seine `kohaerenz` sagt, warum Angebot und Nachfrage in dieser Welt zusammengehören. Die Wahl der Strategie (`auslastung` oder `marge`) gehört ausdrücklich dazu; sie ist seit P2.8-B eine Aussage über die Welt und keine technische Einstellung.
+
+**Vorbedingung:** [P2.8-B](#nachtrag-am-selben-tag-eine-methodik-ist-ein-bias-p28-b) muss zuerst wieder geschlossen sein. Solange die Kapazität unter `marge` nichts tut und die Rationierung die Abgewiesenen sättigt, würde ein Szenario mit Kapazitätspfad eine Wirkung behaupten, die es nicht gibt.
+
+**Fallstrick:** Nicht auf den Backtest hin wählen. Welcher Kapazitätspfad zu «Business as Usual» gehört, entscheidet die Fachlage — dieselbe Regel wie beim Einkommenskanal in P2.8.
+
+**Fertig wenn:** Mindestens ein Rahmen setzt `kapazitaet_index` mit Begründung und Quellen; ein Wächter zeigt, dass die Größe im Lauf ankommt (Unterschied gemessen, nicht Codelektüre); und `docs/handbuch/vergleiche.md` nennt den Schnitt.
+
+**Doku zieht mit:** `docs/handbuch/presets.md`, `docs/handbuch/vergleiche.md`, `CLAUDE.md` (Glossar «Rahmenszenario»).
+
+### P2.11 — Zwei Quellen für dieselbe Marktkonstante ⚠️ neu 2026-09-03
+
+**Befund:** `resolve_market_feedback_config` trägt sieben Literal-Rückfälle — `0.37`, `0.08`, `0.08`, `0.85`, `0.6`, `0.33` und seit P2.8-B `"auslastung"` — neben denselben Vorgabewerten in `MarketFeedbackConfig`. Zwei Quellen für denselben Wert, und sie laufen bereits auseinander: Der Code-Rückfall sagt `0.33`, `configs/properties.json` liefert `0.25`.
+
+**Fundstelle:** [`src/market/market_feedback.py`](../src/market/market_feedback.py) (`resolve_market_feedback_config`), Gegenstück in [`src/models/property_models.py`](../src/models/property_models.py) (`MarketFeedbackConfig`).
+
+**Das ist dieselbe Klasse, die zweimal schon abgeräumt wurde:** P1.9-W5.1 hat die Literal-Rückfälle aus den Feld-Renderern des Dashboards entfernt («Ein Feld ohne Wert wird leer gerendert, nicht mit einer erfundenen Zahl»), P2.1 dieselben aus `booking_probability`. Hier stehen sie weiter, und P2.8-B hat `strategie` in genau dieses Muster eingefügt, statt es aufzulösen.
+
+**Und es löst einen dauerhaft roten Test mit auf:** `test_market_feedback.py::TestM413ConfigurablePrice::test_market_rules_resolve_marginal_cost_fraction` erwartet `0.33` und bekommt `0.25`. Der Test ist seit dem 2026-08-25 als «veraltete Erwartung» geführt — er ist in Wahrheit die Meldung, dass es zwei Quellen gibt. Zu entscheiden bleibt trotzdem, welcher Grenzkostenanteil fachlich stimmt; das ist eine eigene Frage und gehört nicht in denselben Commit wie die Auflösung.
+
+**Fertig wenn:** Jeder Vorgabewert steht genau einmal, nämlich im Modell; `resolve_market_feedback_config` liest die Config und fällt auf `MarketFeedbackConfig()` zurück statt auf eigene Zahlen; der rote Test ist entweder grün oder mit begründet nachgezogener Erwartung.
+
+**Doku zieht mit:** `docs/handbuch/ref-config.md` (falls sich ein ausgelieferter Wert dabei ändert), `CLAUDE.md` (Dev-Workflow — die Liste der drei bekannten Ausnahmen wird um eine kürzer).
 
 ---
 
