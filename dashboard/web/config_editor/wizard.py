@@ -164,7 +164,8 @@ STEPS: list[Step] = [
         "szenario",
         "Was soll gerechnet werden?",
         "Die Annahmenwelt, von der der Lauf ausgeht. Ein vorbereitetes Szenario ist der "
-        "schnellste Einstieg — es legt Faktorlage, Politik und Kosten in einem Zug fest.",
+        "schnellste Einstieg — es legt Politik, Kosten und Konjunktur in einem Zug fest. "
+        "Die Faktorlage entsteht daraus im Lauf.",
         lambda draft: start_flow.scenario_step(draft, number=None),
     ),
     Step(
