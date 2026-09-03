@@ -213,7 +213,18 @@ Verhaltensannahme trägt einen Bias) ist richtig; die Behebung greift nicht.
 Verstärkt wird das durch **B1**: Die Rationierung drückt die Nachfrage
 zusätzlich unter die Kapazität.
 
-**Warum der Wächter es nicht sieht:** Er prüft zwei Dinge getrennt, die
+> **Behoben am 2026-09-03 — als Modellentscheidung, nicht als Fix.** Die
+> Kapazität steht seither als Merkmal der Alternative im Nutzen
+> (`gewicht × ln(kapazitaet_index)`): Mehr Angebot heißt mehr Frequenzen und
+> Strecken, also niedrigere generalisierte Reisekosten. Unter `marge` steigt der
+> Verkehr damit von 0,0692 auf 0,1151, **während der Preis bei 189,78 steht**.
+> `ln(1) = 0`, der Standard bewegt sich nicht. Der Backtest gewinnt in sieben von
+> acht Kennzahlen — mit dem Vorbehalt aus **B4**: Er speist die Kapazität aus
+> derselben Tabelle wie seine Nachfrage-Zielreihe, der neue Kanal macht diesen
+> Widerhall stärker. Die tragende Evidenz ist deshalb die Tabelle oben, nicht der
+> Backtest.
+
+**Warum der Wächter es nicht sah:** Er prüfte zwei Dinge getrennt, die
 zusammengehören — Preiskonstanz über Kapazitäten (`marge`, 40 Ticks) und das
 Greifen der Schranke (ein Tick, künstlich auf 100 EUR gesetzter Preis). Eine
 Zusage «mehr Kapazität ⇒ mehr Verkehr bei gleichem Preis» gibt es nicht, und

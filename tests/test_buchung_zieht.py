@@ -84,7 +84,13 @@ class TestDieWahrscheinlichkeitIstEineZahl:
 
     def test_sie_liegt_zwischen_null_und_eins(self, leute, koeffizienten):
         werte = [
-            booking_probability(x, ticket_price=140.0, carbon_tax=50.0, koeffizienten=koeffizienten)
+            booking_probability(
+                x,
+                ticket_price=140.0,
+                carbon_tax=50.0,
+                koeffizienten=koeffizienten,
+                verfuegbarkeit=1.0,
+            )
             for x in leute
         ]
         assert all(0.0 <= w <= 1.0 for w in werte)
@@ -99,7 +105,11 @@ class TestDieWahrscheinlichkeitIstEineZahl:
             w
             for w in (
                 booking_probability(
-                    x, ticket_price=140.0, carbon_tax=50.0, koeffizienten=koeffizienten
+                    x,
+                    ticket_price=140.0,
+                    carbon_tax=50.0,
+                    koeffizienten=koeffizienten,
+                    verfuegbarkeit=1.0,
                 )
                 for x in leute
             )
@@ -115,7 +125,11 @@ class TestDieWahrscheinlichkeitIstEineZahl:
 
         werte = [
             booking_probability(
-                x, ticket_price=100_000.0, carbon_tax=50.0, koeffizienten=koeffizienten
+                x,
+                ticket_price=100_000.0,
+                carbon_tax=50.0,
+                koeffizienten=koeffizienten,
+                verfuegbarkeit=1.0,
             )
             for x in leute
         ]
@@ -164,7 +178,13 @@ class TestEsWirdWirklichGezogen:
         """
 
         ps = [
-            booking_probability(x, ticket_price=80.0, carbon_tax=50.0, koeffizienten=koeffizienten)
+            booking_probability(
+                x,
+                ticket_price=80.0,
+                carbon_tax=50.0,
+                koeffizienten=koeffizienten,
+                verfuegbarkeit=1.0,
+            )
             for x in leute
         ]
         wie_schwelle = sum(1 for p in ps if p >= 0.5) / len(ps)

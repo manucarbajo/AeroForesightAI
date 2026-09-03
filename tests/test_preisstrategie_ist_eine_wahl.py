@@ -384,3 +384,123 @@ class TestWerKeinenPlatzBekommtWirdNichtGesaettigt:
 
         assert all(p.saturation_level > 0.0 for p in leute if p.booked)
         assert all(p.saturation_level == 0.0 for p in leute if not p.booked)
+
+
+class TestMehrPlaetzeBeiGleichemPreisHeisstMehrVerkehr:
+    """**Die Zusage, die bis zum 2026-09-03 keine Zeile geprüft hat.**
+
+    P2.8-B versprach, dass «mehr Sitze bei flachen Preisen» darstellbar wird —
+    die reale Lage 2015–2019. Geprüft wurden davon zwei Hälften: dass der Preis
+    unter `marge` über Kapazitäten hinweg steht, und dass die Schranke in einem
+    Ein-Tick-Aufbau greift. **Das Paar dazwischen fehlte**, und genau darin lag
+    der Befund: Über 40 Ticks änderte die doppelte Sitzzahl die Buchungsrate um
+    0,0001. Eine Obergrenze kann Nachfrage nur senken, nie heben.
+
+    Seit B2 ist die Kapazität ein **Merkmal der Alternative** und steht im
+    Nutzen: Mehr Angebot heißt mehr Frequenzen und Strecken, also niedrigere
+    generalisierte Reisekosten. Diese Klasse prüft die Zusage als Ganzes —
+    *beide* Größen zugleich, weil jede für sich trivial zu erfüllen wäre.
+    """
+
+    KAPAZITAETEN = (0.5, 1.0, 1.3)
+
+    def test_mehr_kapazitaet_heisst_mehr_verkehr(self):
+        raten = [_lauf("marge", k)[0] for k in self.KAPAZITAETEN]
+
+        assert raten == sorted(raten), (
+            f"Die Buchungsrate folgt der Kapazität nicht: {raten}. Unter `marge` "
+            "soll mehr Angebot mehr Verkehr bedeuten."
+        )
+        assert raten[-1] > raten[0] * 1.2, (
+            f"Von {self.KAPAZITAETEN[0]} auf {self.KAPAZITAETEN[-1]} bewegt sich die "
+            f"Rate nur von {raten[0]:.4f} auf {raten[-1]:.4f} — das ist der Zustand "
+            "vor B2, in dem die Kapazität nur als Obergrenze wirkte."
+        )
+
+    def test_und_zwar_ohne_dass_der_preis_nachgibt(self):
+        """**Das Paar ist die Zusage, nicht die Hälfte.**
+
+        Mehr Verkehr allein bekommt man auch unter `auslastung` — dort aber nur,
+        weil der Anbieter den Preis senkt. Genau diese eingebaute
+        Verhaltensannahme war der Bias-Befund.
+        """
+
+        preise = [_lauf("marge", k)[1] for k in self.KAPAZITAETEN]
+
+        assert max(preise) - min(preise) < 1.0, (
+            f"Der Preis bewegt sich um {max(preise) - min(preise):.2f} EUR — dann ist "
+            "es dieselbe Aussage wie unter `auslastung`."
+        )
+
+    def test_der_standard_bleibt_unberuehrt(self):
+        """`ln(1) = 0` — ohne Kapazitätsvorgabe ändert der Kanal exakt nichts.
+
+        Dieselbe Disziplin wie beim Einführen der Größe selbst (P2.8): Eine neue
+        Wirkung darf nichts verschieben, solange niemand sie einstellt.
+        """
+
+        from src.models.property_models import BookingModelConfig
+        from src.population.population_sampler import booking_probability
+
+        properties = load_properties_config()
+        zustand = build_initial_state()
+        config = next(
+            agent for agent in zustand.agents if getattr(agent, "population_config", None)
+        ).population_config
+
+        from src.population.population_sampler import initialize_population
+
+        leute = initialize_population(properties, config, seed=42)
+        ohne = BookingModelConfig(
+            **{
+                **properties.booking_model.model_dump(),
+                "verfuegbarkeit_gewicht": {
+                    "wert": 0.0,
+                    "quelle": properties.booking_model.verfuegbarkeit_gewicht.quelle,
+                },
+            }
+        )
+
+        for person in leute[:200]:
+            mit = booking_probability(
+                person,
+                ticket_price=140.0,
+                carbon_tax=50.0,
+                koeffizienten=properties.booking_model,
+                verfuegbarkeit=1.0,
+            )
+            neutral = booking_probability(
+                person,
+                ticket_price=140.0,
+                carbon_tax=50.0,
+                koeffizienten=ohne,
+                verfuegbarkeit=1.0,
+            )
+            assert mit == neutral
+
+    def test_ohne_sitze_fliegt_niemand(self):
+        """Der Rand des Wertebereichs — und zugleich der Grund, warum kein
+        Epsilon im Logarithmus steht."""
+
+        from src.population.population_sampler import booking_probability
+
+        properties = load_properties_config()
+        zustand = build_initial_state()
+        config = next(
+            agent for agent in zustand.agents if getattr(agent, "population_config", None)
+        ).population_config
+
+        from src.population.population_sampler import initialize_population
+
+        person = initialize_population(properties, config, seed=42)[0]
+
+        assert (
+            booking_probability(
+                person,
+                ticket_price=1.0,
+                carbon_tax=0.0,
+                koeffizienten=properties.booking_model,
+                verfuegbarkeit=0.0,
+            )
+            == 0.0
+        )

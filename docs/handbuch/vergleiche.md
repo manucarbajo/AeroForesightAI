@@ -236,6 +236,20 @@ Konstruktion 0». Und in die Kennzahl «Richtung der Jahresveränderung getroffe
 zählt es nach wie vor mit: Rechnerisch festgelegt ist dort nur das *Niveau* im
 Basisjahr, nicht die *Bewegung* von 2015 nach 2016.
 
+Am **2026-09-03** kam ein neunter Schnitt dazu, und er betrifft **nur Läufe mit
+eigener Kapazitätsvorgabe**: Das Angebot wirkt jetzt auf die Nachfrage. Bis dahin
+konnte mehr Kapazität den Verkehr nur über einen niedrigeren Preis steigern —
+oder ihn, als Obergrenze, gar nur begrenzen. Seither zählt sie als Eigenschaft
+des Angebots mit: Mehr Sitze heißt in der Wirklichkeit mehr Flüge und mehr
+Strecken, also kürzere Wartezeiten und mehr Ziele — und das macht das Fliegen
+attraktiver, ganz ohne Preisnachlass.
+
+**Ohne Vorgabe ändert sich nichts**, und das ist nachgerechnet: Ein Standardlauf
+über 40 Ticks liefert dieselbe Buchungsrate und denselben Preis wie zuvor. Wer
+aber eine Kapazität vorgibt, bekommt andere Zahlen als vor diesem Datum — und
+zwar in beide Richtungen: Bei weniger Kapazität sinkt die Nachfrage stärker als
+früher, bei mehr steigt sie überhaupt erst.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

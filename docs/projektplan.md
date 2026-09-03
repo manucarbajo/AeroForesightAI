@@ -1621,7 +1621,7 @@ Unter `marge` steht der Preis, egal wie viele Plätze da sind — **genau der Fa
 
 **Der Wächter:** [`tests/test_preisstrategie_ist_eine_wahl.py`](../tests/test_preisstrategie_ist_eine_wahl.py), elf Zusagen. Die tragende ist nicht «`marge` hält den Preis», sondern das **Paar**: dass er unter `marge` steht *und* sich unter `auslastung` um mehr als 30 EUR bewegt. Ohne die Gegenprobe prüfte der erste Test nur, dass irgendetwas konstant ist.
 
-#### ⚠️ Wieder geöffnet am 2026-09-03 — die Zusage hält nicht, und ein Rechenfehler steckt darin
+#### ✅ Wieder geöffnet und geschlossen am 2026-09-03 — die Zusage hielt nicht, und ein Rechenfehler steckte darin
 
 > **Der Einwand von Haiko war richtig, und die Antwort darauf greift nicht.** Ein unabhängiges Audit hat beides nachgemessen. Der Befund ist unangenehm, weil er die tragende Zusage dieses Nachtrags betrifft — und weil der Wächter daneben grün steht.
 
@@ -1647,7 +1647,50 @@ Unter `marge` ändert die doppelte Sitzzahl die Buchungsrate um **0,0001**. Selb
 2. **Neu entscheiden, was die Kapazität unter `marge` tun soll.** Als reine Obergrenze ist sie für ihren Zweck untauglich; sie müsste nach oben wirken (etwa: der Anbieter hält seine Marge, aber unbesetzte Kapazität senkt seine Stückkosten). Das ist eine Modellentscheidung mit eigenem Belegbedarf und gehört entschieden, nicht nebenbei gebaut.
 3. **Erst danach den Backtest neu rechnen**, mit unverändertem Verfahren — der Vorher-Wert ist seit dem 2026-09-03 **12,18 / 38,13** (ohne das Basisjahr, siehe P2.7).
 
-**Fertig wenn:** Wer keinen Platz bekommt, trägt keinen Sättigungsaufschlag; ein Test misst genau das. Und eine Zusage misst die **Wirkungsrichtung** der Kapazität unter beiden Strategien, nicht nur die Konstanz des Preises. Herleitung mit allen Messungen: [Audit Phase 2, B1 und B2](audit_phase2_2026-09-03.md).
+#### Erledigt am 2026-09-03 — das Angebot ist ein Merkmal der Alternative
+
+**Gewählt ist der Verfügbarkeitseffekt** (Haiko, 2026-09-03), nicht die Rücknahme der Zusage und nicht Weg B. Die Begründung ist der Mechanismus, den P2.8 selbst benannt hat: Mehr Kapazität heißt in der Wirklichkeit **mehr Frequenzen und mehr Strecken**, also niedrigere generalisierte Reisekosten — Wartezeit, Umsteigen, Zielauswahl. Genau damit wuchs der europäische Verkehr 2015–2019 um 26 % bei flachen Realpreisen.
+
+**Sie gehört deshalb in den Nutzen und nicht in die Ziehung.** Kapazität ist ein Merkmal der *Alternative*, wie der Preis — anders als das Alter, das über Einkommen und Lebensphase wirkt und im Nutzenterm doppelt zählte (P2.4). `booking_probability` trägt seither `gewicht × ln(kapazitaet_index)`.
+
+**Logarithmisch, und das ist keine Bequemlichkeit:** `ln(1) = 0` — der Standardfall ändert damit **exakt nichts**, dieselbe Disziplin wie beim Einführen der Größe selbst. Nachgeprüft: Ein Standardlauf über 40 Ticks liefert unverändert 0,258704 / 118,8492 und dieselbe Faktorlage, und die Preiselastizität steht unverändert bei −1,30 bzw. −2,80.
+
+**Die Höhe ist gesetzt, und sie stand fest, bevor der Backtest damit gerechnet hat.** `verfuegbarkeit_gewicht = 0,5`. Belegt sind Form (Merkmale der Alternative im Nutzen, Ben-Akiva/Lerman 1985; Angebotsgrößen logarithmisch) und Richtung; **eine Zahl gibt die vorliegende Literatur nicht her** — `docs/research/references.md` hat keinen Eintrag zu Frequenz- oder Angebotselastizität. Was 0,5 bedeutet, hängt wie bei der Preiselastizität vom Betriebspunkt ab (im Logit β·(1−p)): gemessen **+0,18** an der ruhenden Bevölkerung bei 140 EUR und **+0,37** im laufenden Modell unter `marge` — beides deutlich schwächer als der Preiskanal, was der durchgängige Befund ist.
+
+**Die Zusage hält jetzt** (40 Ticks, letztes Viertel):
+
+| `kapazitaet_index` | `marge` Rate | `marge` Preis | `auslastung` Rate / Preis |
+| ---: | ---: | ---: | --- |
+| 0,3 | 0,0692 | 189,78 | — |
+| 0,5 | 0,0823 | 189,78 | 0,1404 / 150,69 |
+| 0,7 | 0,0931 | 189,78 | — |
+| 1,0 | 0,1064 | 189,78 | 0,2587 / 118,85 |
+| 1,3 | 0,1151 | 189,78 | 0,3212 / 102,74 |
+
+Unter `marge` steigt der Verkehr um **66 %** von 0,3 auf 1,3 — **bei unverändertem Preis**. Das ist die Kombination, die vorher baulich unmöglich war. Unter `auslastung` wirkt die Kapazität jetzt über **zwei** Kanäle, den Preis und die Verfügbarkeit; das ist kein Doppelzählen desselben Mechanismus, sondern die Preissetzung des Anbieters *und* die Angebotsqualität — aber es gehört gesagt.
+
+**Der Backtest, mit unverändertem Verfahren neu gerechnet:**
+
+| | vor B2 | nach B2 |
+| --- | ---: | ---: |
+| **Preis** gesamt | 12,18 | **11,96** |
+| Preis 2016–2019 | 3,87 | **3,23** |
+| Preis 2022–2024 | **23,27** | 23,61 |
+| Preis, Richtung getroffen | 3/7 | **4/7** |
+| **Nachfrage** gesamt | 38,13 | **34,14** |
+| Nachfrage 2016–2019 | 22,66 | **22,47** |
+| Nachfrage 2022–2024 | 58,76 | **49,70** |
+| Nachfrage, Richtung getroffen | 5/7 | **6/7** |
+
+**Sieben von acht Kennzahlen werden besser, und die beiden wichtigsten sind die Richtungstreffer** — das Modell verspricht Wirkungsrichtungen und keine Niveaus.
+
+**Ein Vorbehalt gehört daneben, sonst liest sich das besser, als es ist.** Der Backtest speist `kapazitaet_index` aus derselben Eurostat-Tabelle, aus der die Zielreihe der Nachfrage kommt (`CAF_PAS` gegen `PAS_CRD`, siehe den Methodikabschnitt in [P2.7](#p27--backtest-gegen-20152024--erledigt-2026-08-30)). Der neue Kanal macht diesen Widerhall **stärker**, nicht schwächer. Die tragende Evidenz für B2 ist deshalb **nicht** der Backtest, sondern die Tabelle darüber: Preis konstant, Nachfrage folgt der Kapazität. Die steht unabhängig von den Daten.
+
+**Der Wächter, und er ist der eigentliche Preis dieses Pakets:** `TestMehrPlaetzeBeiGleichemPreisHeisstMehrVerkehr` prüft die Zusage als **Paar** — beide Größen zugleich, weil jede für sich trivial zu erfüllen wäre. Genau das fehlte: Geprüft waren die Preiskonstanz und das Greifen der Schranke, nie ihr Zusammenspiel. Dazu die Gegenprobe, dass der Standard unberührt bleibt, und der Rand: ohne Sitze fliegt niemand.
+
+**`tests/test_nachfragetreiber.py` ist mitgezogen** — er misst einen Ist-Stand, und der hat sich geändert. Seine Aussage «das Modell hat praktisch genau einen Nachfragekanal» stimmt nicht mehr; die Elastizitätsmessungen darin gelten weiter, weil sie bei unveränderter Kapazität rechnen.
+
+**Fertig wenn** ✅ **(2026-09-03):** Wer keinen Platz bekommt, trägt keinen Sättigungsaufschlag; eine Zusage misst die **Wirkungsrichtung** der Kapazität und nicht nur die Konstanz des Preises; und der Backtest ist mit unverändertem Verfahren davor und danach gerechnet. Herleitung: [Audit Phase 2, B1 und B2](audit_phase2_2026-09-03.md).
 
 **Was damit weiterhin offen ist:** Zwei Strategien sind zwei, nicht alle. Ein Anbieter, der bei knapper Kapazität die Marge *ausweitet* (Erlösmanagement), fehlt ebenso wie mehrere Anbieter im Wettbewerb (Weg C). Die Architektur nimmt beide jetzt auf — `STRATEGIEN` ist eine Liste, kein Schalter.
 

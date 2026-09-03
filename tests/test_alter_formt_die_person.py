@@ -75,6 +75,7 @@ def _rate(personen, properties, preis: float = 140.0) -> float:
             ticket_price=preis,
             carbon_tax=50.0,
             koeffizienten=properties.booking_model,
+            verfuegbarkeit=1.0,
         )
         for person in personen
     )

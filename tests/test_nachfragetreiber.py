@@ -1,4 +1,10 @@
-"""Der Befund aus P2.7: Dem Modell fehlt jeder Nachfragetreiber nach oben.
+"""Der Befund aus P2.7: was die Nachfrage nach oben treibt — und was nicht.
+
+**Der Befund hat sich am 2026-09-03 zur Hälfte erledigt** (B2 des Audits): Die
+Kapazität steht seither als Merkmal der Alternative im Nutzen, das Modell hat
+also einen zweiten Nachfragekanal. Was **bleibt**, ist der Rest des Befunds —
+die Bevölkerungskurve endet vor dem Lauf, und ihr Zuwachs reichte auch
+ungekürzt nicht. Die beiden Klassen dazu stehen unverändert.
 
 Diese Datei hält **nicht** eine Zusage, sondern einen **Ist-Stand** — dasselbe
 Muster wie `test_faktoren_abgeleitet.py` und `test_cib_einachsigkeit.py`. Sie
@@ -127,9 +133,16 @@ class TestDiePreiselastizitaetIstDieEineStellschraube:
     """**Die Diagnose, die den Befund von «es fehlt etwas» zu «es ist eines» macht.**
 
     Gemessen am 2026-08-31: Rund **85 %** des Nachfrageeinbruchs im Backtest
-    sind allein der Preiskanal, der auf den selbst erzeugten Preisanstieg wirkt.
-    Das Modell hat nicht zu wenige Nachfragekanäle — es hat praktisch **genau
-    einen**, und der läuft unopponiert.
+    waren allein der Preiskanal, der auf den selbst erzeugten Preisanstieg
+    wirkt. Das Modell hatte nicht zu wenige Nachfragekanäle — es hatte praktisch
+    **genau einen**, und der lief unopponiert.
+
+    **Seit dem 2026-09-03 sind es zwei** (B2): Die Kapazität steht als Merkmal
+    der Alternative im Nutzen, mit `gewicht × ln(kapazitaet_index)`. Die
+    Messungen unten gelten weiter, weil sie bei **unveränderter Kapazität**
+    rechnen (`verfuegbarkeit=1.0`, und `ln(1) = 0`) — sie messen den Preiskanal,
+    und der ist derselbe geblieben. Was sich geändert hat, ist nicht seine
+    Steilheit, sondern dass ihm jetzt etwas entgegensteht.
 
     Maßstab ist die Metaanalyse, die im Repo liegt: **Brons, Pels, Nijkamp &
     Rietveld (2002)**, *Journal of Air Transport Management* 8, 165–175 —
@@ -154,6 +167,11 @@ class TestDiePreiselastizitaetIstDieEineStellschraube:
                 ticket_price=preis,
                 carbon_tax=50.0,
                 koeffizienten=properties.booking_model,
+                # **Unveraenderte Kapazitaet**, seit B2 eine ausdrueckliche Angabe:
+                # Gemessen wird hier der Preiskanal. Das Angebot konstant zu
+                # halten ist die Bedingung dafuer, dass die Zahl unten den Preis
+                # misst und nicht die Summe zweier Kanaele.
+                verfuegbarkeit=1.0,
             )
             for person in leute
         )

@@ -233,6 +233,10 @@ class TestKeinKontextparameterHatEinenDefault:
             ("properties", "system_properties", "rng"),
         ),
         ("src.population.population_sampler", "aggregate_population_stats", ("properties",)),
+        # `verfuegbarkeit` seit B2: das Angebot ist ein Merkmal der Alternative
+        # und gehoert in den Nutzen. Ein Default waere "Kapazitaet unveraendert"
+        # -- eine Aussage ueber die Welt, die niemand getroffen haette.
+        ("src.population.population_sampler", "booking_probability", ("verfuegbarkeit",)),
     ]
 
     @pytest.mark.parametrize(("modul", "funktion", "parameter"), KONTEXTPARAMETER)
@@ -306,6 +310,11 @@ class TestKeinKontextparameterEntgehtDemSweep:
             # Generator" -- und weil `run_population_tick` in jedem Tick
             # denselben Seed bekommt, waere das in jedem Tick derselbe.
             "rng",
+            # `verfuegbarkeit` seit B2 (2026-09-03): der `kapazitaet_index` des
+            # Ticks. Ein Default hiesse "Kapazitaet unveraendert" -- und das ist
+            # keine Abwesenheit, sondern eine Aussage ueber die Welt. Wer sie
+            # trifft, soll sie hinschreiben.
+            "verfuegbarkeit",
         }
     )
 

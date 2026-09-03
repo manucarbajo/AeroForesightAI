@@ -395,6 +395,37 @@ class BookingModelConfig(BaseModel):
     sind sie sichtbar, änderbar und tragen je eine Herkunftsangabe.
     """
 
+    verfuegbarkeit_gewicht: BookingCoefficient = Field(
+        default_factory=lambda: BookingCoefficient(
+            wert=0.5,
+            quelle=(
+                "Wie stark das **Angebot** auf die Buchungsentscheidung wirkt: "
+                "`gewicht × ln(kapazitaet_index)` im Nutzen. Mehr Kapazität heißt in "
+                "der Wirklichkeit mehr Frequenzen und mehr Strecken, also niedrigere "
+                "generalisierte Reisekosten — Wartezeit, Umsteigen, Zielauswahl. "
+                "**Belegt ist die Form**: In einem Discrete-Choice-Modell stehen die "
+                "Merkmale der Alternative im Nutzen (Ben-Akiva/Lerman 1985), und "
+                "Angebotsgrößen gehen dort logarithmisch ein — damit ist der Beitrag "
+                "bei unveränderter Kapazität exakt null und die Elastizität konstant. "
+                "**Belegt ist auch die Richtung**: mehr Angebot, mehr Nachfrage; das "
+                "ist der Mechanismus, mit dem der europäische Verkehr 2015–2019 um "
+                "26 % wuchs, während die Realpreise flach blieben (P2.8). **Die Höhe "
+                "ist gesetzt** und nicht geschätzt. Was 0,5 bedeutet, hängt vom "
+                "Betriebspunkt ab — im Logit ist die Elastizität β·(1−p), sie ist also "
+                "wie die Preiselastizität keine Konstante: gemessen **+0,18** an der "
+                "ruhenden Bevölkerung bei 140 EUR (p ≈ 0,48) und **+0,37** im laufenden "
+                "Modell unter `marge` (p ≈ 0,09). Beides ist deutlich schwächer als die "
+                "Preiselastizität von −1,30 am selben Punkt, und dass Angebotseffekte "
+                "schwächer wirken als Preiseffekte, ist der durchgängige Befund. **Eine "
+                "Zahl dafür gibt die hier vorliegende Literatur nicht her** — "
+                "`references.md` hat keinen Eintrag zu Frequenz- oder "
+                "Angebotselastizität —, und eine Quellenangabe daran zu heften sähe aus "
+                "wie eine Kalibrierung. Der Wert stand fest, **bevor** der Backtest "
+                "damit gerechnet wurde."
+            ),
+        )
+    )
+
     base_utility: BookingCoefficient = Field(
         default_factory=lambda: BookingCoefficient(
             wert=2.0,

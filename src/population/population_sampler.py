@@ -599,6 +599,7 @@ def booking_probability(
     ticket_price: float,
     carbon_tax: float,
     koeffizienten: BookingModelConfig,
+    verfuegbarkeit: float,
     saturation_penalty_factor: float = 1.0,
 ) -> float:
     """Die Buchungswahrscheinlichkeit dieser Person — eine Zahl in [0, 1].
@@ -616,7 +617,31 @@ def booking_probability(
     **Null heißt hier «kann nicht», nicht «will nicht».** Wer sich das Ticket
     nicht leisten kann, bucht nicht — das ist eine harte Schranke und keine
     Wahrscheinlichkeit, die bei genug Ziehungen doch einmal zuschlägt.
+
+    *verfuegbarkeit* ist der `kapazitaet_index` und seit dem 2026-09-03 hier
+    (B2 des Audits). **Der Grund ist ein Befund, kein Wunsch:** Bis dahin konnte
+    die Kapazität die Nachfrage nur *senken* — unter `marge` als Obergrenze,
+    unter `auslastung` über den Preis. «Mehr Sitze bei gleichem Preis, also mehr
+    Verkehr» war damit baulich unmöglich, und ausgerechnet das ist die Lage, die
+    Europa 2015–2019 geprägt hat (+26 % Verkehr bei flachen Realpreisen).
+
+    Kapazität ist ein **Merkmal der Alternative**, wie der Preis: Mehr davon
+    heißt mehr Frequenzen und Strecken, also weniger Wartezeit, weniger
+    Umsteigen, mehr Ziele. Sie gehört deshalb in den Nutzen und nicht in die
+    Ziehung — anders als das Alter, das über Einkommen und Lebensphase wirkt und
+    dort doppelt zählte (P2.4).
+
+    **Logarithmisch, und das ist keine Bequemlichkeit:** `ln(1) = 0`, der
+    Standardfall ändert damit exakt nichts — dieselbe Disziplin wie beim
+    Einführen der Größe selbst (P2.8). Und die Elastizität bleibt über den
+    ganzen Bereich dieselbe, statt an einem Betriebspunkt zu hängen.
     """
+
+    # **Keine Sitze, keine Buchung.** Der Rand des Wertebereichs, nicht ein
+    # Modellparameter — deshalb steht die 0,0 hier und nicht in den
+    # Koeffizienten. Er verhindert zugleich den Logarithmus von null.
+    if verfuegbarkeit <= 0.0:
+        return 0.0
 
     k = koeffizienten
     affordability_limit = (
@@ -640,8 +665,16 @@ def booking_probability(
         person.substitution_readiness * normalized_price * k.substitution_weight.wert
     )
     saturation_penalty = person.saturation_level * saturation_penalty_factor
+    angebotsnutzen = k.verfuegbarkeit_gewicht.wert * float(np.log(verfuegbarkeit))
 
-    utility = base_utility - price_penalty - eco_penalty - substitution_penalty - saturation_penalty
+    utility = (
+        base_utility
+        + angebotsnutzen
+        - price_penalty
+        - eco_penalty
+        - substitution_penalty
+        - saturation_penalty
+    )
     return float(1.0 / (1.0 + np.exp(-utility)))
 
 
@@ -703,6 +736,10 @@ def evaluate_booking(
     # 0,5. `< p` und nicht `<= p`: Bei p = 0 darf niemand buchen — das ist die
     # Unbezahlbarkeits-Schranke, und `rng.random()` liefert die 0,0 mit
     # positiver Wahrscheinlichkeit.
+    # **Das Angebot ist für alle dasselbe** — eine Eigenschaft der Welt, nicht
+    # der Person. Einmal je Tick aufgelöst, nicht je Individuum.
+    verfuegbarkeit = float(system_properties.get("kapazitaet_index", 1.0) or 1.0)
+
     will_fliegen = [
         bool(
             rng.random()
@@ -711,6 +748,7 @@ def evaluate_booking(
                 ticket_price=ticket_price,
                 carbon_tax=carbon_tax,
                 koeffizienten=koeffizienten,
+                verfuegbarkeit=verfuegbarkeit,
                 saturation_penalty_factor=penalty_factor,
             )
         )
