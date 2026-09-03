@@ -643,6 +643,13 @@ def booking_probability(
     if verfuegbarkeit <= 0.0:
         return 0.0
 
+    # **Ohne Einkommen keine Reise.** Der andere Rand des Wertebereichs, und er
+    # ist seit B5 auch rechnerisch nötig: Der gefühlte Preis teilt durch diesen
+    # Faktor. Erreichbar ist der Fall nur bei einem Ticketpreis von null — sonst
+    # greift die Erschwinglichkeitsschranke darunter zuerst.
+    if person.income_factor <= 0.0:
+        return 0.0
+
     k = koeffizienten
     affordability_limit = (
         person.wtp_eur
@@ -654,13 +661,30 @@ def booking_probability(
 
     base_utility = k.base_utility.wert
     normalized_price = ticket_price / k.price_reference_eur.wert
-    price_penalty = person.price_sensitivity * normalized_price
+
+    # **Der Preis wird an dem gemessen, was jemand hat** (B5 des Audits,
+    # 2026-09-03). Bis dahin stand `income_factor` **ausschließlich** in der
+    # Erschwinglichkeitsschranke darüber: Wer sich das Ticket leisten konnte,
+    # für den war Einkommen danach exakt folgenlos. Ein Doppelverdiener und
+    # jemand knapp über der Grenze verspürten denselben Verzicht.
+    #
+    # Dieselbe Ausgabe ist ein anderer Verzicht, je nachdem wovon sie abgeht —
+    # das ist die Budgetanteils-Form und in der Nachfragetheorie der Regelfall.
+    # **Sie braucht keinen neuen Koeffizienten:** Einkommen wirkt über den
+    # Preiskanal, den es ohnehin gibt, statt über eine zweite gesetzte Zahl.
+    gefuehlter_preis = normalized_price / person.income_factor
+    price_penalty = person.price_sensitivity * gefuehlter_preis
     excess_carbon = max(0.0, carbon_tax - k.carbon_eco_baseline_eur.wert)
     normalized_tax = excess_carbon / k.carbon_reference_eur.wert
     eco_penalty = person.environmental_awareness * normalized_tax
     if person.price_sensitivity > k.high_price_sensitivity_threshold.wert and normalized_tax > 0:
         eco_penalty += k.high_price_sensitivity_penalty.wert * min(1.0, normalized_tax)
 
+    # **Die Bahn wird bewusst nicht am Einkommen gemessen.** Der
+    # Substitutionsterm sagt, wie attraktiv die Alternative gegenüber dem Flug
+    # ist — das hängt am Fahrpreis- und Zeitverhältnis, nicht am Budgetanteil.
+    # Ihn ebenfalls zu deflationieren hiesse, das Einkommen zweimal durch
+    # denselben Nutzenterm zu schicken.
     substitution_penalty = (
         person.substitution_readiness * normalized_price * k.substitution_weight.wert
     )

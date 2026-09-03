@@ -258,3 +258,154 @@ class TestDerLaufBleibtReproduzierbar:
             "Zwei Läufe mit demselben Seed liefern verschiedene Buchungsraten — "
             "dann hängt die Ziehung an etwas anderem als am Seed."
         )
+
+
+class TestEinkommenWirktNichtNurAlsSchwelle:
+    """**Der Befund B5 des Audits vom 2026-09-03, als Zusage.**
+
+    `income_factor` stand bis dahin **ausschließlich** in der
+    Erschwinglichkeitsschranke. Die Folge, und sie ist schwer zu übersehen,
+    sobald man sie ausspricht: **Wer sich das Ticket leisten konnte, für den war
+    Einkommen danach exakt folgenlos.** Ein Doppelverdiener und jemand knapp
+    über der Grenze verspürten denselben Verzicht, und die gemessene
+    «Einkommenselastizität» von +0,69 war nichts als die Dichte der
+    Zahlungsbereitschaft am Preis — kein Verhaltensparameter.
+
+    **Seither wird der Preis an dem gemessen, was jemand hat**
+    (`normalized_price / income_factor`): dieselbe Ausgabe ist ein anderer
+    Verzicht, je nachdem wovon sie abgeht. Das ist die Budgetanteils-Form und in
+    der Nachfragetheorie der Regelfall — und sie kostet **keinen neuen
+    Koeffizienten**, weil Einkommen über den Preiskanal wirkt, den es ohnehin
+    gibt.
+    """
+
+    @staticmethod
+    def _person(leute, *, einkommen: float):
+        """Jemand, für den die Schranke **nicht** bindet.
+
+        Das ist die Kontrolle, ohne die der Test nichts sagt: Ohne sie misst er
+        wieder nur die Erschwinglichkeit, also genau den Mechanismus, der schon
+        vorher da war.
+        """
+
+        vorlage = leute[0]
+        return vorlage.model_copy(
+            update={"wtp_eur": 1000.0, "income_factor": einkommen, "saturation_level": 0.0}
+        )
+
+    def test_wer_es_sich_beide_leisten_koennen_entscheidet_verschieden(self, leute, koeffizienten):
+        """**Die tragende Zusage.** Genau der Fall, der vorher folgenlos war."""
+
+        arm = self._person(leute, einkommen=0.7)
+        reich = self._person(leute, einkommen=1.4)
+
+        p_arm, p_reich = (
+            booking_probability(
+                person,
+                ticket_price=140.0,
+                carbon_tax=50.0,
+                koeffizienten=koeffizienten,
+                verfuegbarkeit=1.0,
+            )
+            for person in (arm, reich)
+        )
+
+        # Die Kontrolle: Bei 1000 EUR Zahlungsbereitschaft bindet die Schranke
+        # für keinen von beiden — was hier auseinandergeht, ist der Nutzen.
+        assert 0.0 < p_arm < p_reich, (
+            f"Ärmer {p_arm:.4f}, reicher {p_reich:.4f}. Beide können sich das Ticket "
+            "leisten; unterscheiden sie sich nicht, steht das Einkommen wieder nur "
+            "in der Schranke."
+        )
+        assert p_reich - p_arm > 0.05, (
+            f"Der Unterschied beträgt {p_reich - p_arm:.4f} — das ist Rauschen, " "keine Wirkung."
+        )
+
+    def test_die_elastizitaet_liegt_am_rand_ueber_eins(self, leute, koeffizienten):
+        """Luftverkehr gilt als Luxusgut — und das folgt hier aus der **Form**,
+        nicht aus einer gesetzten Zahl.
+
+        Geprüft wird am Rand (+5 %), weil die Elastizität im Logit vom
+        Betriebspunkt abhängt: Sie fällt mit steigendem Einkommen, wie die
+        Preiselastizität mit steigendem Preis.
+        """
+
+        from statistics import mean
+
+        def rate(faktor: float) -> float:
+            return mean(
+                booking_probability(
+                    person.model_copy(update={"income_factor": person.income_factor * faktor}),
+                    ticket_price=140.0,
+                    carbon_tax=50.0,
+                    koeffizienten=koeffizienten,
+                    verfuegbarkeit=1.0,
+                )
+                for person in leute
+            )
+
+        basis, hoch = rate(1.0), rate(1.05)
+        elastizitaet = ((hoch - basis) / basis) / 0.05
+
+        assert elastizitaet > 1.0, (
+            f"Einkommenselastizität {elastizitaet:.2f}. Unter 1 wäre Fliegen ein "
+            "gewöhnliches Gut — die Fachlage führt es als Luxusgut, und die "
+            "Budgetanteils-Form gibt das her, ohne dass jemand eine Zahl setzt."
+        )
+
+    def test_ohne_einkommen_keine_reise(self, leute, koeffizienten):
+        """Der Rand des Wertebereichs — und der Grund, warum kein Epsilon im
+        Nenner steht. Erreichbar ist der Fall nur bei einem Ticketpreis von
+        null; sonst greift die Erschwinglichkeitsschranke zuerst."""
+
+        assert (
+            booking_probability(
+                self._person(leute, einkommen=0.0),
+                ticket_price=0.0,
+                carbon_tax=0.0,
+                koeffizienten=koeffizienten,
+                verfuegbarkeit=1.0,
+            )
+            == 0.0
+        )
+
+    def test_die_bahn_wird_nicht_am_einkommen_gemessen(self, leute, koeffizienten):
+        """**Bewusst nicht deflationiert.** Der Substitutionsterm sagt, wie
+        attraktiv die Alternative gegenüber dem Flug ist — das hängt am Fahrpreis-
+        und Zeitverhältnis, nicht am Budgetanteil. Ihn mitzuskalieren hiesse, das
+        Einkommen zweimal durch denselben Nutzenterm zu schicken.
+
+        Gemessen daran, dass zwei Personen mit gleicher Zahlungsbereitschaft und
+        gleichem Einkommen, aber verschiedener Bahnbereitschaft, sich weiterhin
+        um genau den Substitutionsterm unterscheiden.
+        """
+
+        basis = self._person(leute, einkommen=1.0).model_copy(
+            update={"substitution_readiness": 0.0}
+        )
+        bahnaffin = basis.model_copy(update={"substitution_readiness": 0.8})
+
+        args = dict(
+            ticket_price=140.0, carbon_tax=50.0, koeffizienten=koeffizienten, verfuegbarkeit=1.0
+        )
+        reich = basis.model_copy(update={"income_factor": 2.0})
+        reich_bahnaffin = bahnaffin.model_copy(update={"income_factor": 2.0})
+
+        import math
+
+        def logit(p: float) -> float:
+            return math.log(p / (1.0 - p))
+
+        # Der Abstand im Nutzen ist der Substitutionsterm. Haengt er am
+        # Einkommen, waere er bei den Reichen kleiner.
+        arm_delta = logit(booking_probability(basis, **args)) - logit(
+            booking_probability(bahnaffin, **args)
+        )
+        reich_delta = logit(booking_probability(reich, **args)) - logit(
+            booking_probability(reich_bahnaffin, **args)
+        )
+
+        assert arm_delta == pytest.approx(reich_delta, rel=1e-9), (
+            f"Substitutionsabstand {arm_delta:.4f} gegen {reich_delta:.4f} — der Term "
+            "haengt am Einkommen, und damit zaehlt es zweimal."
+        )

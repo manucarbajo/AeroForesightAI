@@ -322,6 +322,18 @@ damit die Dichte der WTP-Verteilung am aktuellen Preis, kein
 Verhaltensparameter, und sie fällt mit steigendem Einkommen, weil die Masse
 jenseits der Schwelle dünner wird.
 
+> **Behoben am 2026-09-03 (P2.12).** Der Preis wird jetzt an dem gemessen, was
+> jemand hat (`normalized_price / income_factor`) — die Budgetanteils-Form, und
+> sie kostet **keinen neuen Koeffizienten**: Einkommen wirkt über den
+> Preiskanal, den es ohnehin gibt. Die Elastizität liegt am Rand bei **+1,02**
+> statt +0,75 und folgt damit aus der **Form** statt aus einer gesetzten Zahl.
+> Der Backtest gewinnt auf der Preisseite deutlich (3,23 → **1,01** vor der
+> Pandemie, der beste je gemessene Wert) und verliert auf der Nachfrageseite
+> leicht (22,47 → 24,85); behalten wird es wegen des Mechanismus, nicht wegen
+> der Punktzahl — dieselbe Entscheidung wie beim Altersprofil in P2.4.
+> **Anders als bei B2 bewegt sich der Standard**: 0,264167 / 120,13 statt
+> 0,258704 / 118,85, also ein Schnitt im Handbuch.
+
 **Was das für P2.8 heißt:** Die **Schlussfolgerung** — der Einkommenskanal
 schließt die Nachfragelücke nicht — wird dadurch **gestützt**, nicht
 angezweifelt. Falsch ist die **Begründung**: Ein Schwellenmechanismus ist mit

@@ -263,6 +263,19 @@ Runden, vorher gegen nachher: «Business as Usual» 0,30 → 0,39 Buchungsrate b
 bei 98 → 228 Euro. Läufe dieser vier Szenarien von vor diesem Datum gehören nicht
 neben spätere.
 
+Am **2026-09-03** kam ein elfter Schnitt dazu, und er trifft **jeden Lauf**:
+**Das Einkommen wirkt jetzt auf die Kaufentscheidung selbst.** Bis dahin
+entschied es nur darüber, ob jemand sich ein Ticket überhaupt leisten kann —
+wer über dieser Grenze lag, für den war das Einkommen danach ohne jede Wirkung.
+Ein Gutverdiener und jemand knapp über der Grenze empfanden denselben Preis als
+gleich schmerzhaft.
+
+Seither wird der Preis daran gemessen, was jemand hat: Dieselben 140 Euro sind
+ein anderer Verzicht, je nachdem wovon sie abgehen. **Das verschiebt jede Zahl**,
+wenn auch weniger stark als die Umstellung auf die gezogene Buchung: Ein
+Standardlauf über 40 Runden endet bei einer Buchungsrate von 0,264 statt 0,259
+und einem Preis von 120,13 statt 118,85. Die Faktorlage bleibt dieselbe.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

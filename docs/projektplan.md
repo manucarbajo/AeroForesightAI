@@ -2210,6 +2210,54 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 
 **Doku zieht mit:** `docs/handbuch/ref-config.md` (falls sich ein ausgelieferter Wert dabei ändert), `CLAUDE.md` (Dev-Workflow — die Liste der drei bekannten Ausnahmen wird um eine kürzer).
 
+### P2.12 — Einkommen wirkte nur als Schwelle ✅ erledigt 2026-09-03
+
+**Befund (B5 des Audits):** `income_factor` stand **ausschließlich** in der Erschwinglichkeitsschranke von `booking_probability` und **nicht im Nutzenterm**. Die Folge ist schwer zu übersehen, sobald man sie ausspricht: **Wer sich das Ticket leisten konnte, für den war Einkommen danach exakt folgenlos.** Ein Doppelverdiener und jemand knapp über der Grenze verspürten denselben Verzicht.
+
+Die gemessene «Einkommenselastizität» von **+0,69** war damit kein Verhaltensparameter, sondern die Dichte der Zahlungsbereitschaft am aktuellen Preis — und sie fiel mit steigendem Einkommen. [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--weg-a-umgesetzt-2026-08-31) hatte den Kanal als «korrekt geformt» geführt und mit der Einkommenselastizität bei Brons et al. verglichen; das war ein Kategorienunterschied.
+
+**Umgesetzt: der Preis wird an dem gemessen, was jemand hat.** `normalized_price / income_factor` statt `normalized_price` — dieselbe Ausgabe ist ein anderer Verzicht, je nachdem wovon sie abgeht. Das ist die **Budgetanteils-Form** und in der Nachfragetheorie der Regelfall.
+
+**Und sie kostet keinen neuen Koeffizienten.** Das ist das stärkste Argument für diese Form gegenüber einem eigenen Einkommensterm: Einkommen wirkt über den Preiskanal, den es ohnehin gibt, statt über eine zweite gesetzte Zahl. Das Modell bekommt eine richtigere Mechanik, **ohne** dass die Liste der ungeeichten Werte länger wird.
+
+**Gemessen** (5000 Personen, 140 EUR):
+
+| | vorher | nachher |
+| --- | ---: | ---: |
+| Einkommenselastizität (+5 %) | +0,75 | **+1,02** |
+| Einkommenselastizität (+40 %) | +0,48 | +0,71 |
+| Preiselastizität 130 → 145 EUR | −1,30 | −1,24 |
+| Preiselastizität 200 → 250 EUR | −2,80 | −2,63 |
+
+**Über 1 am Rand, und zwar aus der Form statt aus einer Zahl.** Die Fachlage führt Luftverkehr als Luxusgut mit Einkommenselastizität über 1; das folgt hier aus der Budgetanteils-Form, nicht aus einem gesetzten Wert. Nebenbei rückt die Preiselastizität etwas näher an das Metaanalyse-Mittel von −1,146 — nicht angestrebt und deshalb erwähnenswert.
+
+**Der Standard bewegt sich, anders als bei B2.** `ln(1) = 0` gab es hier nicht: `income_factor` streut auch bei `income_index = 1,0` über die Bevölkerung. Ein Standardlauf über 40 Ticks liefert **0,264167 / 120,13** statt 0,258704 / 118,85 — dieselbe Faktorlage, aber andere Zahlen. Das ist ein Schnitt in `docs/handbuch/vergleiche.md`.
+
+**Der Backtest, mit unverändertem Verfahren:**
+
+| | vor B5 | nach B5 |
+| --- | ---: | ---: |
+| **Preis** gesamt | 11,96 | **9,72** |
+| Preis 2016–2019 | 3,23 | **1,01** |
+| Preis 2022–2024 | 23,61 | **21,33** |
+| Preis, Richtung | 4/7 | **5/7** |
+| **Nachfrage** gesamt | 34,14 | 36,36 |
+| Nachfrage 2016–2019 | 22,47 | 24,85 |
+| Nachfrage 2022–2024 | 49,70 | 51,71 |
+| Nachfrage, Richtung | **6/7** | 5/7 |
+
+**Die Preisseite gewinnt deutlich — 1,01 Indexpunkte vor der Pandemie ist der beste Wert, den dieses Projekt je gemessen hat.** Die Nachfrageseite verliert leicht, und die Richtungstreffer tauschen die Seiten.
+
+**Behalten wird es trotzdem, und der Grund ist der Mechanismus und nicht die Punktzahl** — dieselbe Entscheidung wie beim Altersprofil in [P2.4](#p24--das-alter-prägt-die-person--erledigt-2026-08-31-erste-fassung-korrigiert), das die Nachfrageseite ebenfalls verschlechtert hat. «Einkommen hat für jeden, der sich das Ticket leisten kann, exakt keine Wirkung» ist keine Modellierungsentscheidung, die jemand verteidigen würde; sie war ein Versehen. Ein Modell zurückzudrehen, weil es nach einer Korrektur auf *einer* Kennzahl schlechter abschneidet, ist die Anpassung an den Backtest, gegen die dieses Projekt anschreibt.
+
+**Was ausdrücklich nicht mitskaliert:** der Substitutionsterm. Er sagt, wie attraktiv die Bahn **gegenüber** dem Flug ist — das hängt am Fahrpreis- und Zeitverhältnis, nicht am Budgetanteil. Ihn ebenfalls zu deflationieren hieße, das Einkommen zweimal durch denselben Nutzenterm zu schicken.
+
+**Der Wächter:** `TestEinkommenWirktNichtNurAlsSchwelle` in `tests/test_buchung_zieht.py`, vier Zusagen. Die tragende ist die mit der **Kontrolle**: Zwei Personen, die sich das Ticket **beide** leisten können, entscheiden verschieden — ohne diese Bedingung misst der Test wieder nur die Erschwinglichkeit, also genau den Mechanismus, der schon vorher da war. Nachgestellt: Auf dem alten Stand fallen zwei der vier um.
+
+**Fertig wenn** ✅ **(2026-09-03):** Einkommen wirkt auf jemanden, der sich das Ticket bereits leisten kann; die Elastizität liegt am Rand über 1 und folgt aus der Form statt aus einer gesetzten Zahl; der Backtest ist davor und danach mit unverändertem Verfahren gerechnet; und der Schnitt steht im Handbuch.
+
+**Doku zieht mit:** `CLAUDE.md` (Glossar «Logit-Modell»), `docs/handbuch/kaufentscheidung.md`, `docs/handbuch/vergleiche.md`.
+
 ---
 
 ## Phase 3 — Engine-Härtung

@@ -20,10 +20,21 @@ gemindert.
 
 | Was mindert | Wodurch |
 |---|---|
-| Preis | Preisempfindlichkeit der Person, multipliziert mit dem Ticketpreis |
+| Preis | Preisempfindlichkeit der Person, multipliziert mit dem Ticketpreis **im Verhältnis zu ihrem Einkommen** |
 | CO₂-Abgabe | Umweltbewusstsein, multipliziert mit dem Teil der Abgabe, der über dem Referenzwert von 50 EUR je Tonne liegt |
 | Bahn als Alternative | Wechselbereitschaft der Person, multipliziert mit dem Preis, mit anderthalbfachem Gewicht |
 | Sättigung | Wie viel diese Person zuletzt schon geflogen ist |
+
+**Der Preis zählt seit September 2026 relativ zum Einkommen**, und das ist mehr
+als eine Feinheit: Bis dahin entschied das Einkommen nur über die Hürde davor.
+Wer sie genommen hatte, für den war es danach ohne jede Wirkung — ein
+Gutverdiener und jemand knapp über der Grenze empfanden dieselben 140 Euro als
+gleich schmerzhaft. Jetzt ist derselbe Betrag ein anderer Verzicht, je nachdem
+wovon er abgeht.
+
+**Die Bahn wird bewusst nicht so gerechnet.** Sie steht mit dem Ticketpreis in
+der Tabelle, nicht mit dem einkommensrelativen — denn ob sich der Umstieg lohnt,
+hängt am Verhältnis von Fahrpreis und Reisezeit, nicht am eigenen Kontostand.
 
 Besonders preisempfindliche Personen bekommen zusätzlich einen Aufschlag auf den
 CO₂-Malus. Die Begründung: Wer ohnehin genau aufs Geld schaut, spürt eine Abgabe
