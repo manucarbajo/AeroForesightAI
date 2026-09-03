@@ -317,7 +317,9 @@ class AltersProfil(BaseModel):
                 "Wie breit der Gipfel ist, in Jahren (Streuung der Glockenform). "
                 "Belegt ist nur, dass der Abfall zu beiden Rändern allmählich und "
                 "nicht sprunghaft verläuft. Der Wert ist **gesetzt**: Er ergibt bei "
-                "18 und 90 Jahren rund ein Fünftel des Gipfelwerts."
+                "18 Jahren rund ein Fünftel des Gipfelwerts und bei 90 Jahren rund ein "
+                "Zwölftel — die Glocke ist um den Gipfel symmetrisch, die Altersspanne "
+                "ist es nicht."
             ),
         )
     )

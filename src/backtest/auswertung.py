@@ -9,8 +9,10 @@ prüfte eine Genauigkeit, die das Modell nie behauptet hat.
 Bequemlichkeit, sondern eine Korrektur: Der erste Anlauf maß die monatliche
 Bewegungsrichtung und kam auf 44 % Treffer — *unter* dem Münzwurf. Die Ursache
 war die Kennzahl, nicht das Modell. Air-Fare-Preise schwanken saisonal
-gewaltig — die Zielreihe um durchschnittlich **34 Indexpunkte innerhalb eines
-Jahres**, das Modell nur um **14**, weil es keine Saison kennt. Der
+gewaltig — die Zielreihe um rund **40 Indexpunkte innerhalb eines Jahres**
+(Nachfrageseite 76), das Modell nur um **18** (bzw. 29), weil es keine Saison
+kennt. Die jeweils gültigen Zahlen stehen im erzeugten Bericht; hier steht die
+Größenordnung, damit sie nicht wieder veraltet. Der
 Monatsvergleich maß damit vor allem, ob das Modell eine Sommersaison hat. Das
 tut es nicht, und das war nie behauptet.
 
