@@ -2094,7 +2094,7 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 
 **Doku zieht mit:** `docs/handbuch/presets.md`, `docs/handbuch/vergleiche.md`, `CLAUDE.md` (Glossar «Rahmenszenario»).
 
-### P2.11 — Zwei Quellen für dieselbe Marktkonstante ⚠️ neu 2026-09-03
+### P2.11 — Zwei Quellen für dieselbe Marktkonstante ✅ erledigt 2026-09-03
 
 **Befund:** `resolve_market_feedback_config` trägt sieben Literal-Rückfälle — `0.37`, `0.08`, `0.08`, `0.85`, `0.6`, `0.33` und seit P2.8-B `"auslastung"` — neben denselben Vorgabewerten in `MarketFeedbackConfig`. Zwei Quellen für denselben Wert, und sie laufen bereits auseinander: Der Code-Rückfall sagt `0.33`, `configs/properties.json` liefert `0.25`.
 
@@ -2104,7 +2104,13 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 
 **Und es löst einen dauerhaft roten Test mit auf:** `test_market_feedback.py::TestM413ConfigurablePrice::test_market_rules_resolve_marginal_cost_fraction` erwartet `0.33` und bekommt `0.25`. Der Test ist seit dem 2026-08-25 als «veraltete Erwartung» geführt — er ist in Wahrheit die Meldung, dass es zwei Quellen gibt. Zu entscheiden bleibt trotzdem, welcher Grenzkostenanteil fachlich stimmt; das ist eine eigene Frage und gehört nicht in denselben Commit wie die Auflösung.
 
-**Fertig wenn:** Jeder Vorgabewert steht genau einmal, nämlich im Modell; `resolve_market_feedback_config` liest die Config und fällt auf `MarketFeedbackConfig()` zurück statt auf eigene Zahlen; der rote Test ist entweder grün oder mit begründet nachgezogener Erwartung.
+**Erledigt am 2026-09-03.** `_FELDER` sagt, welche Felder eine Regel setzen darf und wie ihr Wert zu lesen ist; gesetzt wird nur, was die Regel **wirklich nennt**, alles andere füllt Pydantic aus `MarketFeedbackConfig`. **Entschieden ist 0,25** — die ausgelieferte Config gewinnt, sie war ohnehin der wirksame Wert, und jeder Lauf rechnet seit jeher damit. Keine Verhaltensänderung, kein Schnitt in `vergleiche.md`.
+
+**Zwei Zusagen statt einer:** Der alte Test sagt jetzt 0,25 samt Begründung, warum er zwei Wochen rot stand. Dazu kommt `test_was_die_regel_nicht_nennt_kommt_aus_dem_modell` — eine Regel, die **nur** ihren Typ nennt, muss exakt die Vorgaben des Modells ergeben. Ohne diese Zusage könnte jemand die Literale wieder einsetzen, ohne dass etwas rot wird; sie stimmen ja heute größtenteils mit dem Modell überein, und genau daran ist `marginal_cost_fraction` auseinandergelaufen.
+
+**Der dritte `--deselect` in der CI ist damit weg** — von drei auf zwei; die beiden verbliebenen sind die Ollama-Hänger und fallen mit [P4.2](#p42--suite-aufräumen-und-verlässlich-machen).
+
+**Fertig wenn** ✅: Jeder Vorgabewert steht genau einmal, nämlich im Modell; der Test ist grün, und ein zweiter hält den Rückfall offen.
 
 **Doku zieht mit:** `docs/handbuch/ref-config.md` (falls sich ein ausgelieferter Wert dabei ändert), `CLAUDE.md` (Dev-Workflow — die Liste der drei bekannten Ausnahmen wird um eine kürzer).
 

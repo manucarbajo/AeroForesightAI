@@ -98,25 +98,45 @@ def kapazitaetsschranke(
     return zielauslastung(config, system_properties)
 
 
+#: Welche Felder eine ``booking_yield_feedback``-Regel setzen darf — und wie ihr
+#: Wert zu lesen ist. **Was hier nicht steht, kommt aus dem Modell**, nicht aus
+#: einer zweiten Zahl an dieser Stelle (P2.11).
+_FELDER: dict[str, type] = {
+    "strategie": str,
+    "target_booking_rate": float,
+    "markup_adjustment_per_tick": float,
+    "max_price_change_fraction": float,
+    "damping": float,
+    "booking_weight": float,
+    "marginal_cost_fraction": float,
+}
+
+
 def resolve_market_feedback_config(properties: PropertiesConfig) -> MarketFeedbackConfig:
-    """Build feedback config from ``market_rules``; fall back to ``market_feedback``."""
+    """Build feedback config from ``market_rules``; fall back to ``market_feedback``.
+
+    **Kein Rückfall auf eigene Zahlen** (P2.11, 2026-09-03). Bis dahin standen
+    hier sieben Literale — ``0.37``, ``0.08``, ``0.08``, ``0.85``, ``0.6``,
+    ``0.33`` und seit P2.8-B ``"auslastung"`` — neben denselben Vorgabewerten in
+    :class:`MarketFeedbackConfig`. Zwei Quellen für denselben Wert, und sie waren
+    bereits auseinandergelaufen: Der Rückfall hier sagte ``0.33``, die
+    ausgelieferte Config ``0.25``.
+
+    Dieselbe Klasse, die P1.9-W5.1 im Dashboard und P2.1 in
+    ``booking_probability`` abgeräumt haben: *Ein Wert ohne Angabe kommt aus dem
+    Modell, nicht aus einer erfundenen Zahl an der Verwendungsstelle.* Gesetzt
+    wird deshalb nur, was die Regel wirklich nennt; alles andere füllt Pydantic
+    aus :class:`MarketFeedbackConfig`.
+    """
 
     for rule in properties.market_rules:
         effect = rule.effect
         if effect.get("type") != BOOKING_YIELD_FEEDBACK:
             continue
-        when = rule.when
-        enabled = when.get("enabled", True)
-        return MarketFeedbackConfig(
-            enabled=bool(enabled),
-            strategie=str(effect.get("strategie", "auslastung")),
-            target_booking_rate=float(effect.get("target_booking_rate", 0.37)),
-            markup_adjustment_per_tick=float(effect.get("markup_adjustment_per_tick", 0.08)),
-            max_price_change_fraction=float(effect.get("max_price_change_fraction", 0.08)),
-            damping=float(effect.get("damping", 0.85)),
-            booking_weight=float(effect.get("booking_weight", 0.6)),
-            marginal_cost_fraction=float(effect.get("marginal_cost_fraction", 0.33)),
-        )
+        gesetzt = {
+            name: wandeln(effect[name]) for name, wandeln in _FELDER.items() if name in effect
+        }
+        return MarketFeedbackConfig(enabled=bool(rule.when.get("enabled", True)), **gesetzt)
     return properties.market_feedback
 
 
