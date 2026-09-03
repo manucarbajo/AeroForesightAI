@@ -1,6 +1,8 @@
 # Bilanz der Phase 2 — Modellsubstanz
 
-**Stand 2026-09-02 · zehn Pakete, alle abgeschlossen · [Projektplan](projektplan.md)**
+**Stand 2026-09-03 · acht Pakete abgeschlossen, zwei wieder offen · [Projektplan](projektplan.md)**
+
+> **Ein unabhängiges Audit hat am 2026-09-03 drei schwere Befunde gefunden** ([`audit_phase2_2026-09-03.md`](audit_phase2_2026-09-03.md)). Zwei liegen in P2.8-B: Die Kapazitätsschranke **sättigt, wen sie abweist** (473 von 815 Abgewiesenen tragen den Aufschlag), und die Zusage «mehr Plätze bei gleichem Preis» ist in **keiner** der beiden Strategien darstellbar. Der dritte betrifft nicht das Modell: Der Browser-Wächter ist seit dem 2026-08-30 rot, weil P2.0 Stufe C einen Schritt entfernt und die Sperrklinke nicht mitgezogen hat. **Die Tabellen unten stehen unverändert** — sie beschreiben, was gemessen wurde, und das gilt weiter.
 
 Diese Datei fasst zusammen, was Phase 2 am Modell verändert hat. Sie ist
 **Synthese, keine Quelle**: Jede Zahl unten steht mit ihrer Herleitung im
@@ -85,7 +87,10 @@ nach Schwere und sagt, wo es steht.
 | --- | --- |
 | **Zwei Preisstrategien sind zwei, nicht alle.** Erlösmanagement (Marge weitet sich bei Knappheit) und mehrere Anbieter fehlen. `STRATEGIEN` nimmt beide auf. | P2.8-B, Wege B und C der [Entscheidungsvorlage](entscheidung_angebotsseite_2026-08-31.md) |
 | **Die Kapazitätsreihe zählt Flüge, nicht Sitze.** Flüge +14,5 %, Passagiere +26,3 % (2015→2019). Erklärt den schlechten Wert nach der Pandemie. **Eine Datenfrage, keine Parameterfrage.** | P2.8, Abschnitt zur Reihe |
-| **Das Modell kennt keine Saison** — es schwankt um 12 Indexpunkte, die Zielreihe um 40. Deshalb wird auf Jahresmitteln verglichen. | P2.7 |
+| **Das Modell kennt keine Saison** — es schwankt um 18 Indexpunkte, die Zielreihe um 40 (auf der Nachfrageseite 29 gegen 76). Deshalb wird auf Jahresmitteln verglichen. | P2.7 |
+| **Die Kapazität wirkt nicht, wie zugesagt.** Unter `marge` ändert die doppelte Sitzzahl die Buchungsrate um 0,0001; unter `auslastung` wächst der Verkehr nur mit fallendem Preis. Dazu sättigt die Rationierung die Abgewiesenen. | P2.8-B, wieder offen · [Audit B1/B2](audit_phase2_2026-09-03.md) |
+| **Das Basisjahr steckt in jeder Backtest-Kennzahl** (2015 hat per Konstruktion den Abstand 0). Ohne es: Preis 3,87 statt 3,09, Nachfrage 22,66 statt 18,13. | P2.7 · [Audit B3](audit_phase2_2026-09-03.md) |
+| **Kein ausgeliefertes Szenario benutzt die Angebotsseite** — `kapazitaet_index` steht überall auf 1,0 ohne Regel. | P2.10, neu |
 | **Was ein Tick bedeutet, ist dreimal verschieden unterstellt** (Faktor 12). Blockiert unter anderem eine sinnvolle Erneuerungsrate. | P3.8, `tests/test_tickdauer_ist_uneinheitlich.py` |
 | **Trajektorien enden vor dem Lauf** (Tick 30 bei 40 bzw. 120 Ticks) und halten still ihren letzten Wert. | P2.8, Restposition |
 | **Ein Klick in der Schrittfolge kostet bis zu 2,9 s** — zehn Rundläufe, nicht die Rechnung. | P3.9 |
