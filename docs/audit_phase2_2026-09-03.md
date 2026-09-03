@@ -291,6 +291,26 @@ Zwei Konsequenzen:
    eingeschränkt. Das gehört dazugeschrieben, weil es die stärkste Aussage der
    ganzen Phase relativiert.
 
+> **Gemessen am 2026-09-03 — und Punkt 2 war zu pessimistisch. Diese Einschätzung
+> korrigiere ich hiermit.** Die Sorge ließ sich nachrechnen statt beteuern:
+> derselbe Lauf ohne die Kapazitätsreihe, sonst unverändertes Verfahren. Ergebnis:
+> Auf der Nachfrageseite ist der Abstand **mit** dem Eingang **größer** (36,36
+> gegen 28,65). Ein Widerhall sähe umgekehrt aus — die Zirkularität bläht die
+> Übereinstimmung also **nicht** auf, das Modell folgt treu den Flügen und
+> verfehlt damit die Passagiere.
+>
+> Was der Eingang beiträgt, zeigt sich an zwei Stellen, die nicht zirkulär sein
+> können: an der **Richtung** (5/7 gegen 1/7 — ohne Kapazität trifft das Modell
+> die Wendepunkte praktisch nie) und an der **Preisseite** mit ihrer unabhängigen
+> Zielreihe (16,70 → **9,72**). Auch die Bemerkung bei **B2**, der neue
+> Verfügbarkeitskanal mache den Widerhall «stärker», hält so nicht — er macht die
+> Richtung besser und den Abstand schlechter.
+>
+> **Der Vorbehalt bleibt, nur präziser:** Nicht die Zirkularität ist das Problem,
+> sondern die Sitze-gegen-Flüge-Lücke. Die Gegenprobe steht seither dauerhaft im
+> Bericht (P2.7, Abschnitt «Gegenprobe»), gehalten von
+> `TestDieGegenprobeStehtImBericht`.
+
 **Nebenbefund:** Die Begründung, 2020/21 nicht zu bewerten («das Modell hat für
 Reisebeschränkungen keinen Mechanismus»), ist seit P2.8 überholt — der Einbruch
 *wird* über die Kapazitätsreihe eingespeist, und das Modell fällt 2021 auf 27,3.

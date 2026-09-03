@@ -62,6 +62,25 @@
 - 2020, 2021 sind mitgerechnet, aber nicht bewertet: Der Einbruch war keine Preiswirkung, und das Modell kennt keine Reisebeschränkung.
 - Die Zielreihe schwankt saisonal um 76 Indexpunkte im Jahr, das Modell um 31. **Ein Monatsvergleich misst deshalb vor allem die fehlende Saison** — deswegen die Jahresmittel.
 
+## Gegenprobe: was hängt am Kapazitätseingang?
+
+Der Eingang `kapazitaet_index` (Eurostat `avia_paoc`, `CAF_PAS` — Flüge) und die Nachfrage-Zielreihe (`avia_paoc`, `PAS_CRD` — Passagiere) stammen aus **derselben Tabelle** und hängen mechanisch zusammen. Unten steht deshalb derselbe Lauf ohne die Kapazitätsreihe, mit sonst unverändertem Verfahren.
+
+| Seite | Kennzahl | mit Kapazität | ohne |
+| --- | --- | ---: | ---: |
+| Preis | Abstand gesamt | 9.72 | 16.70 |
+| Preis | davon 2016–2019 | 1.01 | 2.16 |
+| Preis | davon 2022–2024 | 21.33 | 36.08 |
+| Preis | Richtung getroffen | 5/7 | 5/7 |
+| Nachfrage | Abstand gesamt | 36.36 | 28.65 |
+| Nachfrage | davon 2016–2019 | 24.85 | 27.18 |
+| Nachfrage | davon 2022–2024 | 51.71 | 30.61 |
+| Nachfrage | Richtung getroffen | 5/7 | 1/7 |
+
+**Wie das zu lesen ist:** Würde der Eingang die Übereinstimmung nur widerhallen, müsste der **Abstand** mit ihm kleiner sein. Auf der Nachfrageseite ist er größer — das Modell folgt den *Flügen* und verfehlt damit die *Passagiere*, die stärker gewachsen sind. Was er beiträgt, zeigt sich an der **Richtung** und an der **Preisseite**, deren Zielreihe aus einer ganz anderen Quelle stammt (Eurostat `prc_hicp_midx`) und deshalb nicht zirkulär sein kann.
+
+Der Vorbehalt bleibt trotzdem stehen: Eine Kapazitätsreihe, die Sitze zählt statt Flüge, gibt es bei Eurostat auf dieser Ebene nicht. Das ist eine **Datenfrage**, keine Parameterfrage.
+
 ## Datenquellen
 
 | Reihe | Monate | Abgerufen | Herkunft |

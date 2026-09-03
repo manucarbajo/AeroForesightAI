@@ -88,7 +88,7 @@ nach Schwere und sagt, wo es steht.
 
 | Offen | Wo es steht |
 | --- | --- |
-| **Der Backtest speist die Kapazität aus derselben Eurostat-Tabelle wie seine Nachfrage-Zielreihe** (`CAF_PAS` gegen `PAS_CRD`). Seit die Kapazität auch auf die Nachfrage wirkt, ist dieser Widerhall stärker — die Nachfrageseite prüft das Modell nur noch eingeschränkt gegen etwas Äußeres. | P2.7, Methodikabschnitt |
+| **Die Kapazitätsreihe zählt Flüge, nicht Sitze** — und sie stammt aus derselben Eurostat-Tabelle wie die Nachfrage-Zielreihe. **Nachgemessen bläht diese Nähe die Übereinstimmung nicht auf** (der Abstand ist *mit* dem Eingang größer, 36,36 gegen 28,65); was bleibt, ist die Sitze-gegen-Flüge-Lücke. Eine Datenfrage. | P2.7, Gegenprobe im Vorlauf-Bericht |
 | **Zwei Preisstrategien sind zwei, nicht alle.** Erlösmanagement (Marge weitet sich bei Knappheit) und mehrere Anbieter fehlen. `STRATEGIEN` nimmt beide auf. | P2.8-B, Wege B und C der [Entscheidungsvorlage](entscheidung_angebotsseite_2026-08-31.md) |
 | **Die Kapazitätsreihe zählt Flüge, nicht Sitze.** Flüge +14,5 %, Passagiere +26,3 % (2015→2019). Erklärt den schlechten Wert nach der Pandemie. **Eine Datenfrage, keine Parameterfrage.** | P2.8, Abschnitt zur Reihe |
 | **Das Modell kennt keine Saison** — es schwankt um 18 Indexpunkte, die Zielreihe um 40 (auf der Nachfrageseite 29 gegen 76). Deshalb wird auf Jahresmitteln verglichen. | P2.7 |

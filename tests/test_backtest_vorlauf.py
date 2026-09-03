@@ -343,3 +343,82 @@ def test_die_kapazitaet_wird_saisonbereinigt_eingespeist():
         f"Geglättet bleiben {glatt_spanne / roh_spanne:.0%} der Schwankung übrig. "
         "Erwartet ist rund ein Fünftel."
     )
+
+
+class TestDieGegenprobeStehtImBericht:
+    """**Befund B4 des Audits vom 2026-09-03, als stehende Messung.**
+
+    Der Eingang `kapazitaet_index` kommt aus Eurostat `avia_paoc`/`CAF_PAS`
+    (Flüge), die Nachfrage-Zielreihe aus `avia_paoc`/`PAS_CRD` (Passagiere) —
+    **dieselbe Tabelle**, und mechanisch verbunden über Sitze und Auslastung.
+    Ein Modell, das einen nahen Verwandten seiner Zielgröße als Eingabe bekommt,
+    kann gut aussehen, ohne etwas zu können.
+
+    **Die Sorge ist berechtigt, die naheliegende Schlussfolgerung war es
+    nicht** — und genau deshalb steht die Gegenprobe im Bericht statt als
+    Vorbehalt daneben: Gemessen ist der Abstand auf der Nachfrageseite **mit**
+    dem Eingang *größer* (36,36 gegen 28,65), weil das Modell den Flügen folgt
+    und damit die stärker gewachsenen Passagiere verfehlt. Was der Eingang
+    beiträgt, zeigt sich an der Richtung (5/7 gegen 1/7) und an der
+    **Preisseite**, deren Zielreihe aus einer ganz anderen Quelle stammt.
+
+    **Diese Zusagen halten das Verfahren, nicht die Zahlen.** Ein Bericht ohne
+    Gegenprobe wäre der Zustand von vorher: ein Vorbehalt in Prosa, den niemand
+    nachrechnet.
+    """
+
+    def test_eingang_und_zielreihe_stammen_wirklich_aus_derselben_tabelle(self):
+        """Ohne diesen Nachweis wäre die Gegenprobe eine Vorsichtsmaßnahme gegen
+        ein Problem, das es vielleicht gar nicht gibt."""
+
+        import json
+
+        from src.backtest.reihen import DATEN
+
+        quellen = json.loads((DATEN / "quellen.json").read_text(encoding="utf-8"))
+        nach_datei = {q["datei"]: q for q in quellen["reihen"]}
+
+        eingang = nach_datei["fluege.csv"]["url"]
+        ziel = nach_datei["fluggaeste.csv"]["url"]
+
+        assert "avia_paoc" in eingang and "avia_paoc" in ziel, (
+            "Der Kapazitätseingang kommt nicht mehr aus derselben Tabelle wie die "
+            "Zielreihe — dann ist B4 erledigt und dieser Abschnitt gehört neu "
+            "geschrieben, statt eine Sorge weiterzutragen, die keine mehr ist."
+        )
+        assert eingang != ziel, "Es ist dieselbe Abfrage — dann wäre es keine Näherung."
+
+    def test_der_bericht_traegt_die_gegenprobe(self):
+        """Sie muss **im** Bericht stehen, nicht auf Zuruf nachrechenbar sein."""
+
+        from src.backtest.vorlauf import BERICHT
+
+        if not BERICHT.exists():
+            pytest.skip("Der Bericht wird von `python -m src.backtest.vorlauf` erzeugt.")
+
+        text = BERICHT.read_text(encoding="utf-8")
+
+        assert "## Gegenprobe" in text, "Der Bericht nennt die Gegenprobe nicht."
+        assert "ohne" in text.lower() and "CAF_PAS" in text and "PAS_CRD" in text, (
+            "Der Abschnitt nennt die beiden Reihen nicht beim Namen — dann kann "
+            "niemand prüfen, worin die Nähe besteht."
+        )
+
+    def test_ohne_kapazitaet_kommt_wirklich_etwas_anderes_heraus(self):
+        """Die Gegenprobe muss **rechnen**, nicht denselben Lauf zweimal zeigen.
+
+        Zwei Läufe über 120 Ticks kosten Sekunden; ohne diese Zusage wäre ein
+        Verdrahtungsfehler unsichtbar — beide Spalten trügen dieselben Zahlen und
+        sähen wie ein beruhigendes Ergebnis aus.
+        """
+
+        from src.backtest.vorlauf import modellpfade
+
+        mit = modellpfade(mit_kapazitaet=True)["booking_rate"]
+        ohne = modellpfade(mit_kapazitaet=False)["booking_rate"]
+
+        assert mit and ohne
+        assert mit != ohne, (
+            "Mit und ohne Kapazitätsreihe kommt derselbe Pfad heraus — dann greift "
+            "der Override nicht, und die Gegenprobe im Bericht ist eine Attrappe."
+        )

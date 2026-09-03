@@ -2082,7 +2082,25 @@ Ein Fünftel des Vorpandemie-Fensters war ein Datenpunkt, der **nicht anders aus
 
 **Gehalten von** zwei neuen Zusagen in `tests/test_backtest_vorlauf.py`: dass das Basisjahr in der Tabelle steht und nicht im Abstand — und **aus einem anderen Grund als 2020/21** —, und dass es sehr wohl in die Richtung zählt (sonst wären es sechs Übergänge statt sieben).
 
-**Zweitens: Eingang und Ziel der Nachfrageseite stammen aus derselben Erhebung.** Seit P2.8 kommt `kapazitaet_index` aus Eurostat `avia_paoc`/`CAF_PAS` (Flüge) — die Zielreihe `fluggaeste` aus `avia_paoc`/`PAS_CRD` (Passagiere). Dieselbe Tabelle, und mechanisch verbunden: Passagiere = Flüge × Sitze × Auslastung. Die Doku benennt die *Näherung* sauber, **nicht** die Nähe von Eingang und Ziel. Folge: Der Nachfrage-Backtest misst ab 2022 überwiegend die Sitze-je-Flug-Lücke statt der Modellmechanik, und der Satz «ein Maßstab **außerhalb** seiner selbst» gilt für die Nachfrageseite nur noch eingeschränkt. **Nebenbefund:** Die Begründung, 2020/21 nicht zu bewerten («das Modell hat für Reisebeschränkungen keinen Mechanismus»), ist seit P2.8 überholt — der Einbruch *wird* über die Kapazitätsreihe eingespeist. Die Entscheidung bleibt richtig, ihre Begründung gehört neu geschrieben.
+**Zweitens: Eingang und Ziel der Nachfrageseite stammen aus derselben Erhebung.** Seit P2.8 kommt `kapazitaet_index` aus Eurostat `avia_paoc`/`CAF_PAS` (Flüge) — die Zielreihe `fluggaeste` aus `avia_paoc`/`PAS_CRD` (Passagiere). Dieselbe Tabelle, und mechanisch verbunden: Passagiere = Flüge × Sitze × Auslastung. Die Doku benennt die *Näherung* sauber, **nicht** die Nähe von Eingang und Ziel. Folge: Der Nachfrage-Backtest misst ab 2022 überwiegend die Sitze-je-Flug-Lücke statt der Modellmechanik, und der Satz «ein Maßstab **außerhalb** seiner selbst» gilt für die Nachfrageseite nur noch eingeschränkt. **Beantwortet am 2026-09-03 — und die Antwort war nicht die erwartete.** Die Sorge ließ sich messen, statt sie zu beteuern: derselbe Lauf **ohne** die Kapazitätsreihe, sonst unverändertes Verfahren. Die Gegenprobe steht seither **im Bericht** und nicht in einer Fußnote, weil ein Vorbehalt, den man erst nachrechnen muss, nicht gelesen wird.
+
+| Seite | Kennzahl | mit Kapazität | ohne |
+| --- | --- | ---: | ---: |
+| Preis | Abstand gesamt | **9,72** | 16,70 |
+| Preis | 2016–2019 | **1,01** | 2,16 |
+| Preis | Richtung | 5/7 | 5/7 |
+| Nachfrage | Abstand gesamt | 36,36 | **28,65** |
+| Nachfrage | 2016–2019 | 24,85 | **27,18** |
+| Nachfrage | 2022–2024 | 51,71 | **30,61** |
+| Nachfrage | Richtung | **5/7** | 1/7 |
+
+**Ein Widerhall sähe anders aus.** Würde der Eingang die Übereinstimmung nur zurückwerfen, müsste der **Abstand** mit ihm kleiner sein. Auf der Nachfrageseite ist er **größer** (36,36 gegen 28,65) — das Modell folgt treu den *Flügen* und verfehlt damit die *Passagiere*, die stärker gewachsen sind. Die Zirkularität bläht die Übereinstimmung also **nicht** auf.
+
+**Was der Eingang wirklich beiträgt, steht an zwei Stellen, die nicht zirkulär sein können:** an der **Richtung** der Nachfrage (5/7 gegen 1/7 — ohne die Kapazität trifft das Modell die Wendepunkte praktisch nie) und an der **Preisseite**, deren Zielreihe aus einer ganz anderen Quelle stammt (Eurostat `prc_hicp_midx`) und sich mit der Kapazität von 16,70 auf **9,72** verbessert.
+
+**Der Vorbehalt bleibt trotzdem stehen, nur präziser gefasst:** Nicht die Zirkularität ist das Problem, sondern die **Sitze-gegen-Flüge-Lücke**. Eine Kapazitätsreihe, die Sitze zählt, veröffentlicht Eurostat auf dieser Ebene nicht — eine **Datenfrage**, keine Parameterfrage. Gehalten von `TestDieGegenprobeStehtImBericht`: dass die beiden Reihen wirklich aus derselben Tabelle stammen, dass der Bericht die Gegenprobe trägt, und dass sie wirklich rechnet statt denselben Lauf zweimal zu zeigen.
+
+**Nebenbefund:** Die Begründung, 2020/21 nicht zu bewerten («das Modell hat für Reisebeschränkungen keinen Mechanismus»), ist seit P2.8 überholt — der Einbruch *wird* über die Kapazitätsreihe eingespeist. Die Entscheidung bleibt richtig, ihre Begründung gehört neu geschrieben.
 
 Herleitung mit allen Messungen: [`audit_phase2_2026-09-03.md`](audit_phase2_2026-09-03.md), Abschnitte B3 und B4.
 
