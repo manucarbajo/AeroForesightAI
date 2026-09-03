@@ -571,8 +571,22 @@ Reihen** — wertvoll, aber etwas anderes. Ein Fachprüfer liest «geeicht» als
 **Fairerweise:** Die Formulierung ist **nicht im Artefakt erfunden** — der
 Projektplan trägt sie im Vorspann von P2.7 wörtlich («Das Modell ist geeicht —
 und das Ergebnis ist zweigeteilt»). Das Artefakt hat sie zur Überschrift
-befördert. Zu korrigieren ist sie an beiden Stellen; nach außen wiegt sie
-schwerer.
+befördert. Und die Erwartung stand noch eine Stufe früher: Die Einleitung von
+`CLAUDE.md` versprach «geeicht wird erst mit P2.7». Nach dem Lauf wurde aus der
+Erwartung eine Behauptung — niemand hat sie erfunden, sie ist durchgereicht
+worden.
+
+> **Im Repo behoben am 2026-09-03.** Drei Stellen: die Einleitung von `CLAUDE.md`
+> (das Versprechen), die Architektur-Map (`src/backtest/` heißt jetzt «der
+> Vergleich», nicht «die Eichung») und der Vorspann von P2.7 («zum ersten Mal an
+> etwas gemessen, das nicht aus ihm selbst stammt»). `README.md` trug die
+> Korrektur schon aus **C1**.
+>
+> **Das Artefakt bleibt offen, und zwar nicht aus Nachlässigkeit:** Es ist mit
+> Haiko *geteilt*, nicht sein eigenes — es lässt sich von hier aus nicht ändern.
+> Solange es die Überschrift «Das Modell ist geeicht» trägt, widerspricht die nach
+> außen gereichte Fassung dem Repo. Das gehört zu **D2** und **D3** in einem
+> Aufwasch zurück an Manu.
 
 ### D2 · «10 / 10 Pakete abgeschlossen» stimmt nicht mit dem eigenen Plan überein 🔶
 

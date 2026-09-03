@@ -1992,7 +1992,9 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 ### P2.7 — Backtest gegen 2015–2024 ✅ erledigt 2026-08-30
 
-> **Das Modell ist geeicht — und das Ergebnis ist zweigeteilt, in zwei Richtungen.** Auf der **Preisseite** trifft es den realen Pfad vor der Pandemie auf **1,84 Indexpunkte** genau und verfehlt ihn danach um **38,4**. Auf der **Nachfrageseite** liegt es schon vor der Pandemie um **21,8** daneben — und zwar *verkehrt herum*: Es lässt die Nachfrage auf 86 fallen, wo real 126 stand. Beides ist gemessen, nicht geschätzt.
+> **Das Modell ist zum ersten Mal an etwas gemessen, das nicht aus ihm selbst stammt — und das Ergebnis ist zweigeteilt, in zwei Richtungen.**
+>
+> **«Geeicht» stand hier bis zum 2026-09-03, und das war die falsche Vokabel** (D1 des Audits). Geeicht wurde nichts: **Kein einziger Koeffizient ist an diese Daten angepasst worden** — P2.1 hält das ausdrücklich fest («Keiner der acht Werte ist an Daten geprüft»), und der Absatz «Was der Backtest nicht belegt» weiter unten sagt es auch. Ein Fachprüfer liest «geeicht» als «kalibriert» und sucht danach die Schätzung, die es nicht gibt. Der Unterschied ist keine Wortklauberei, sondern genau die Trennung, auf der dieses Projekt sonst besteht — und die Formulierung ist von hier aus nach außen gewandert: Im Artefakt «Bilanz der Modellsubstanz» wurde sie zur **Überschrift**. Auf der **Preisseite** trifft es den realen Pfad vor der Pandemie auf **1,84 Indexpunkte** genau und verfehlt ihn danach um **38,4**. Auf der **Nachfrageseite** liegt es schon vor der Pandemie um **21,8** daneben — und zwar *verkehrt herum*: Es lässt die Nachfrage auf 86 fallen, wo real 126 stand. Beides ist gemessen, nicht geschätzt.
 
 **Entschieden am 2026-08-30** (Haiko), auf Grundlage von [`vorschlag_backtest_daten_2026-08-30.md`](vorschlag_backtest_daten_2026-08-30.md): 2020/21 werden **mitgerechnet, aber nicht bewertet**; der EUA-Preis kommt über **EEX**.
 
