@@ -165,9 +165,16 @@ Aussage, für die er gebaut wurde (siehe **B2**).
 `test_preisstrategie_ist_eine_wahl.py` prüfen den Preis über Kapazitäten hinweg
 und die Zufälligkeit der Auswahl. Den **Zustand der Abgewiesenen** prüft keine.
 
-**Fix:** die Sättigung erst *nach* der Rationierung vergeben (oder in
-`_kapazitaet_begrenzen` zurücknehmen), plus eine Zusage, die genau diese
-Personengruppe misst.
+**Fix:** die Sättigung erst *nach* der Rationierung vergeben, plus eine Zusage,
+die genau diese Personengruppe misst.
+
+> **Behoben noch am 2026-09-03.** `_kapazitaet_begrenzen` ist entfallen;
+> `evaluate_booking` zieht, rationiert und sättigt jetzt in dieser Reihenfolge,
+> weil das *eine* Entscheidung ist. Ein Zurückrechnen wäre nicht einmal möglich
+> gewesen — `min(1.0, …)` klemmt die Sättigung, der Ausgangswert ist damit weg.
+> Der Standard bewegt sich nicht: Unter `auslastung` gibt es keine Schranke, ein
+> Standardlauf über 40 Ticks liefert unverändert 0,2587 / 118,85. Wächter:
+> `TestWerKeinenPlatzBekommtWirdNichtGesaettigt`, fünf Zusagen.
 
 ### B2 · «Mehr Plätze bei gleichem Preis» ist weiterhin nicht darstellbar ⛔ **schwer, Zusage**
 

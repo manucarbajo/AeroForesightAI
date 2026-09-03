@@ -110,10 +110,20 @@ def test_higher_ticket_price_reduces_booking_rate():
     individuals = initialize_population(properties, config, seed=3)
 
     _, low_price_stats = evaluate_booking(
-        individuals, ticket_price=90.0, carbon_tax=30.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=90.0,
+        carbon_tax=30.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
     _, high_price_stats = evaluate_booking(
-        individuals, ticket_price=250.0, carbon_tax=30.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=250.0,
+        carbon_tax=30.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
 
     assert high_price_stats.total_demand < low_price_stats.total_demand
@@ -174,10 +184,20 @@ def test_eco_penalty_only_applies_when_carbon_tax_exceeds_baseline():
     individuals = initialize_population(properties, config, seed=42)
 
     _, stats_no_tax = evaluate_booking(
-        individuals, ticket_price=100.0, carbon_tax=0.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=100.0,
+        carbon_tax=0.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
     _, stats_with_tax = evaluate_booking(
-        individuals, ticket_price=100.0, carbon_tax=150.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=100.0,
+        carbon_tax=150.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
 
     # With high carbon tax, price-sensitive individuals should book less
@@ -191,10 +211,20 @@ def test_eco_penalty_scales_with_carbon_tax():
     individuals = initialize_population(properties, config, seed=42)
 
     _, stats_low_tax = evaluate_booking(
-        individuals, ticket_price=100.0, carbon_tax=75.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=100.0,
+        carbon_tax=75.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
     _, stats_high_tax = evaluate_booking(
-        individuals, ticket_price=100.0, carbon_tax=200.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=100.0,
+        carbon_tax=200.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
 
     assert stats_high_tax.total_demand < stats_low_tax.total_demand
@@ -207,10 +237,20 @@ def test_eco_penalty_zero_at_baseline():
     individuals = initialize_population(properties, config, seed=42)
 
     _, stats_at_baseline = evaluate_booking(
-        individuals, ticket_price=100.0, carbon_tax=50.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=100.0,
+        carbon_tax=50.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
     _, stats_below_baseline = evaluate_booking(
-        individuals, ticket_price=100.0, carbon_tax=0.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=100.0,
+        carbon_tax=0.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
 
     assert stats_at_baseline.total_demand == stats_below_baseline.total_demand
@@ -255,7 +295,12 @@ def test_saturation_increases_on_booking():
 
     # Tick 1: book at low price
     booked_t1, stats_t1 = evaluate_booking(
-        individuals, ticket_price=80.0, carbon_tax=30.0, properties=properties, rng=_strom()
+        individuals,
+        ticket_price=80.0,
+        carbon_tax=30.0,
+        properties=properties,
+        system_properties={},
+        rng=_strom(),
     )
     for person in booked_t1:
         if person.booked:
@@ -303,7 +348,12 @@ def test_saturation_config_drives_booking_increase():
     individuals = initialize_population(properties, config, seed=7)
 
     booked, _ = evaluate_booking(
-        individuals, ticket_price=80.0, carbon_tax=30.0, properties=properties, rng=_strom()
+        individuals,
+        ticket_price=80.0,
+        carbon_tax=30.0,
+        properties=properties,
+        system_properties={},
+        rng=_strom(),
     )
     for person in booked:
         if person.booked:
@@ -320,7 +370,12 @@ def test_high_saturation_reduces_booking_probability():
 
     # Base case (saturation = 0)
     _, stats_base = evaluate_booking(
-        individuals, ticket_price=100.0, carbon_tax=50.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=100.0,
+        carbon_tax=50.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
 
     # Saturated case (saturation = 1.0)
@@ -329,7 +384,12 @@ def test_high_saturation_reduces_booking_probability():
         saturated_individuals.append(person.model_copy(update={"saturation_level": 1.0}))
 
     _, stats_saturated = evaluate_booking(
-        saturated_individuals, ticket_price=100.0, carbon_tax=50.0, properties=None, rng=_strom()
+        saturated_individuals,
+        ticket_price=100.0,
+        carbon_tax=50.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
 
     assert stats_saturated.total_demand < stats_base.total_demand
@@ -348,7 +408,12 @@ def test_segment_keys_match_boolean_individual_properties():
     config = PopulationConfig(segments=[], total_population=200)
     individuals = initialize_population(properties, config, seed=11)
     booked, stats_dynamic = evaluate_booking(
-        individuals, ticket_price=100.0, carbon_tax=50.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=100.0,
+        carbon_tax=50.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
 
     # Re-aggregate with properties to get dynamic keys
@@ -369,7 +434,12 @@ def test_dynamic_segments_all_have_valid_booking_rates():
     config = PopulationConfig(segments=[], total_population=500)
     individuals = initialize_population(properties, config, seed=99)
     booked, _ = evaluate_booking(
-        individuals, ticket_price=110.0, carbon_tax=50.0, properties=None, rng=_strom()
+        individuals,
+        ticket_price=110.0,
+        carbon_tax=50.0,
+        properties=None,
+        system_properties={},
+        rng=_strom(),
     )
     stats = aggregate_population_stats(booked, properties=properties)
     for seg_id, seg in stats.segments.items():

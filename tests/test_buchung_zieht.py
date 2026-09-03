@@ -73,6 +73,7 @@ def _rate(leute, properties, *, preis: float, tick: int) -> float:
         ticket_price=preis,
         carbon_tax=50.0,
         properties=properties,
+        system_properties={},
         rng=buchungsstrom(42, tick),
     )
     return stats.total_demand
@@ -125,6 +126,7 @@ class TestDieWahrscheinlichkeitIstEineZahl:
             ticket_price=100_000.0,
             carbon_tax=50.0,
             properties=None,
+            system_properties={},
             rng=buchungsstrom(42, 1),
         )
         assert stats.total_demand == 0.0, (

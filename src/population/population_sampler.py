@@ -651,6 +651,7 @@ def evaluate_booking(
     ticket_price: float,
     carbon_tax: float,
     properties: PropertiesConfig | None,
+    system_properties: Mapping[str, float],
     rng: np.random.Generator,
 ) -> tuple[list[Individual], PopulationStats]:
     """Evaluate booking decisions for persistent individuals.
@@ -671,6 +672,21 @@ def evaluate_booking(
     würde zur Stufenfunktion, und das Ergebnis sähe dabei plausibel aus. Wer den
     Strom aufbaut, weiß als Einziger, wofür er stehen soll — deshalb kommt er
     von außen (`run_population_tick`).
+
+    *system_properties* ist seit dem 2026-09-03 dabei, und der Grund ist ein
+    **Rechenfehler**: Die Kapazitätsschranke lief bis dahin als eigener Schritt
+    **nach** dieser Funktion (`_kapazitaet_begrenzen`) und setzte den
+    Überzähligen `booked = False` — der Sättigungsaufschlag war da aber schon
+    vergeben. Gemessen (`marge`, `kapazitaet_index = 0,5`, ein Tick, 1000
+    Personen): 658 wollten buchen, 185 bekamen einen Platz, und **473 gingen
+    leer aus und trugen trotzdem `saturation_level = 0,6`** in den nächsten
+    Tick. Sie wurden für eine Reise bestraft, die sie nicht angetreten haben.
+
+    **Die Reihenfolge ist die Behebung, nicht ein Zurücknehmen.** Ziehen,
+    rationieren, sättigen — in dieser Folge, und alle drei Schritte hier, weil
+    sie zusammen *eine* Entscheidung sind: wer wirklich fliegt. Ein
+    nachträgliches Zurückrechnen wäre nicht einmal möglich gewesen, weil
+    `min(1.0, …)` die Sättigung klemmt und der Ausgangswert damit verloren ist.
     """
 
     saturation = properties.saturation if properties is not None else None
@@ -683,27 +699,82 @@ def evaluate_booking(
     # und er trägt seine Herkunftsangabe mit.
     koeffizienten = properties.booking_model if properties is not None else BookingModelConfig()
 
-    booked_individuals: list[Individual] = []
-    for person in individuals:
-        wahrscheinlichkeit = booking_probability(
-            person,
-            ticket_price=ticket_price,
-            carbon_tax=carbon_tax,
-            koeffizienten=koeffizienten,
-            saturation_penalty_factor=penalty_factor,
+    # **Schritt 1 — die Ziehung** (P2.1). Vorher stand hier ein Vergleich gegen
+    # 0,5. `< p` und nicht `<= p`: Bei p = 0 darf niemand buchen — das ist die
+    # Unbezahlbarkeits-Schranke, und `rng.random()` liefert die 0,0 mit
+    # positiver Wahrscheinlichkeit.
+    will_fliegen = [
+        bool(
+            rng.random()
+            < booking_probability(
+                person,
+                ticket_price=ticket_price,
+                carbon_tax=carbon_tax,
+                koeffizienten=koeffizienten,
+                saturation_penalty_factor=penalty_factor,
+            )
         )
-        # **Die Ziehung** (P2.1). Vorher stand hier ein Vergleich gegen 0,5.
-        # `< p` und nicht `<= p`: Bei p = 0 darf niemand buchen — das ist die
-        # Unbezahlbarkeits-Schranke, und `rng.random()` liefert die 0,0 mit
-        # positiver Wahrscheinlichkeit.
-        booked = bool(rng.random() < wahrscheinlichkeit)
-        update: dict[str, object] = {"booked": booked}
-        if booked:
+        for person in individuals
+    ]
+
+    # **Schritt 2 — die Kapazität**, wenn sie eine Schranke ist.
+    fliegt = _plaetze_verteilen(will_fliegen, properties, system_properties, rng=rng)
+
+    # **Schritt 3 — die Sättigung**, und nur für die, die wirklich fliegen.
+    booked_individuals = []
+    for person, gebucht in zip(individuals, fliegt):
+        update: dict[str, object] = {"booked": gebucht}
+        if gebucht:
             new_saturation = min(1.0, person.saturation_level + booking_increase)
             update["saturation_level"] = round(new_saturation, 4)
         booked_individuals.append(person.model_copy(update=update))
 
     return booked_individuals, aggregate_population_stats(booked_individuals, properties=properties)
+
+
+def _plaetze_verteilen(
+    will_fliegen: list[bool],
+    properties: PropertiesConfig | None,
+    system_properties: Mapping[str, float],
+    *,
+    rng: np.random.Generator,
+) -> list[bool]:
+    """Mehr Menschen wollen fliegen, als Plätze da sind — dann bleiben welche übrig.
+
+    **Nur unter der Marge-Strategie** (P2.8-B). Unter `auslastung` steuert der
+    Anbieter den Preis auf die Kapazität *zu*; dort ist sie ein Ziel und keine
+    Grenze, und ein zusätzlicher Deckel schnitte in eine Regelung hinein, die
+    ohnehin dorthin läuft. Ohne Schranke gibt diese Funktion die Ziehung
+    unverändert zurück — und zieht dann auch **nichts** aus `rng`, damit der
+    Strom eines Ticks derselbe bleibt wie vor dieser Änderung.
+
+    **Wer keinen Platz bekommt, wird zufällig gewählt.** Eine Auswahl nach
+    Zahlungsbereitschaft wäre eine zweite Verhaltensannahme — sie unterstellte
+    ein Erlösmanagement, das teure Buchungen bevorzugt, und genau solche
+    stillen Annahmen sind der Grund für P2.8-B. Wer sie will, macht sie zu
+    einer eigenen Strategie.
+
+    **Gezogen wird aus dem Buchungsstrom des Ticks**, nicht aus einem eigenen:
+    Die Rationierung findet statt, *nachdem* alle Buchungsziehungen erfolgt
+    sind, verschiebt sie also nicht — und sie gehört zu derselben Entscheidung.
+    """
+
+    if properties is None:
+        return will_fliegen
+
+    from src.market.market_feedback import kapazitaetsschranke
+
+    schranke = kapazitaetsschranke(properties, dict(system_properties))
+    if schranke is None or not will_fliegen:
+        return will_fliegen
+
+    plaetze = int(len(will_fliegen) * max(0.0, schranke))
+    gebucht = [i for i, ja in enumerate(will_fliegen) if ja]
+    if len(gebucht) <= plaetze:
+        return will_fliegen
+
+    leer_ausgehen = set(rng.choice(gebucht, size=len(gebucht) - plaetze, replace=False).tolist())
+    return [ja and i not in leer_ausgehen for i, ja in enumerate(will_fliegen)]
 
 
 def aggregate_population_stats(
@@ -905,70 +976,20 @@ def run_population_tick(
         for person in individuals
     ]
 
-    gebucht, stats = evaluate_booking(
+    # **Ziehen, rationieren, sättigen — alles in `evaluate_booking`** (seit dem
+    # 2026-09-03). Die Kapazitätsschranke war bis dahin ein eigener Schritt
+    # *danach*: Sie setzte den Überzähligen `booked = False`, ihr
+    # Sättigungsaufschlag war aber schon vergeben, und sie trugen ihn in den
+    # nächsten Tick. Die drei Schritte sind **eine** Entscheidung — wer wirklich
+    # fliegt — und gehören deshalb zusammen.
+    return evaluate_booking(
         individuals,
         ticket_price=ticket_price,
         carbon_tax=carbon_tax,
         properties=properties,
+        system_properties=system_properties,
         rng=buchungsstrom(seed, current_tick),
     )
-
-    return _kapazitaet_begrenzen(
-        gebucht,
-        stats,
-        properties,
-        system_properties,
-        seed=seed,
-        current_tick=current_tick,
-    )
-
-
-def _kapazitaet_begrenzen(
-    individuals: list[Individual],
-    stats: PopulationStats,
-    properties: PropertiesConfig,
-    system_properties: dict[str, float],
-    *,
-    seed: int,
-    current_tick: int,
-) -> tuple[list[Individual], PopulationStats]:
-    """Mehr Menschen wollen fliegen, als Plätze da sind — dann bleiben welche übrig.
-
-    **Nur unter der Marge-Strategie** (P2.8-B). Unter `auslastung` steuert der
-    Anbieter den Preis auf die Kapazität *zu*; dort ist sie ein Ziel und keine
-    Grenze, und ein zusätzlicher Deckel schnitte in eine Regelung hinein, die
-    ohnehin dorthin läuft.
-
-    **Wer keinen Platz bekommt, wird zufällig gewählt.** Eine Auswahl nach
-    Zahlungsbereitschaft wäre eine zweite Verhaltensannahme — sie unterstellte
-    ein Erlösmanagement, das teure Buchungen bevorzugt, und genau solche
-    stillen Annahmen sind der Grund für dieses Paket. Wer sie will, macht sie
-    zu einer eigenen Strategie.
-
-    **Die Sättigung bleibt unberührt:** Wer keinen Platz bekommt, hat nicht
-    gebucht und wird deshalb auch nicht gesättigt. Das fällt automatisch heraus,
-    weil `booked` zurückgesetzt wird, bevor die Sättigung daran anknüpft.
-    """
-
-    from src.market.market_feedback import kapazitaetsschranke
-
-    schranke = kapazitaetsschranke(properties, system_properties)
-    if schranke is None or not individuals:
-        return individuals, stats
-
-    plaetze = int(len(individuals) * max(0.0, schranke))
-    gebucht = [i for i, person in enumerate(individuals) if person.booked]
-    if len(gebucht) <= plaetze:
-        return individuals, stats
-
-    rng = np.random.default_rng(np.random.SeedSequence([int(seed), int(current_tick), 4711]))
-    leer_ausgehen = set(rng.choice(gebucht, size=len(gebucht) - plaetze, replace=False).tolist())
-
-    begrenzt = [
-        person.model_copy(update={"booked": False}) if i in leer_ausgehen else person
-        for i, person in enumerate(individuals)
-    ]
-    return begrenzt, aggregate_population_stats(begrenzt, properties=properties)
 
 
 def run_population_sampling(

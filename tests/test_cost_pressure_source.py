@@ -224,7 +224,14 @@ class TestKeinKontextparameterHatEinenDefault:
         ("src.market.market_feedback", "initial_ticket_price", ("tick",)),
         # `rng` seit P2.1: Ein selbst besorgter Generator waere in jedem Tick
         # derselbe -- es buchten immer dieselben Individuen.
-        ("src.population.population_sampler", "evaluate_booking", ("properties", "rng")),
+        # `system_properties` seit dem 2026-09-03: Die Kapazitaetsschranke gehoert
+        # vor die Saettigung, also in diese Funktion. Ein Default hiesse "keine
+        # Kapazitaet" -- und das ist eine andere Zahl, kein Fehler.
+        (
+            "src.population.population_sampler",
+            "evaluate_booking",
+            ("properties", "system_properties", "rng"),
+        ),
         ("src.population.population_sampler", "aggregate_population_stats", ("properties",)),
     ]
 

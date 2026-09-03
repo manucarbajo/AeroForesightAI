@@ -258,3 +258,129 @@ class TestDieKapazitaetIstUnterMargeEineSchranke:
             "Verhaltensannahme, die niemand getroffen hat."
         )
         assert resolve_market_feedback_config(properties).strategie == "marge"
+
+
+class TestWerKeinenPlatzBekommtWirdNichtGesaettigt:
+    """**Der Rechenfehler, den das Audit vom 2026-09-03 gefunden hat.**
+
+    Bis dahin lief die Kapazitätsschranke als eigener Schritt **nach**
+    `evaluate_booking` und setzte den Überzähligen `booked = False` — der
+    Sättigungsaufschlag war da aber schon vergeben. Gemessen (`marge`,
+    `kapazitaet_index = 0,5`, ein Tick, 1000 Personen): 658 wollten buchen, 185
+    bekamen einen Platz, und **473 gingen leer aus und trugen trotzdem
+    `saturation_level = 0,6`** in den nächsten Tick. Sie wurden für eine Reise
+    bestraft, die sie nicht angetreten haben — und die Nachfrage sank dadurch
+    dauerhaft unter die Kapazität, statt sich an ihr zu stauen.
+
+    **Warum ihn kein Wächter gefangen hat, und das ist die Lehre:** Die elf
+    Zusagen dieser Datei prüften den *Preis* über Kapazitäten hinweg und die
+    Zufälligkeit der Auswahl. Den **Zustand der Abgewiesenen** prüfte keine —
+    dieselbe Klasse wie bei P2.4-E: *Ein Wächter, der den Mechanismus prüft
+    statt die Zusage, ist grün und nutzlos.*
+
+    Der Docstring der Funktion behauptete das Gegenteil («Die Sättigung bleibt
+    unberührt … weil `booked` zurückgesetzt wird, bevor die Sättigung daran
+    anknüpft»). Sie knüpfte nicht danach an, sie war schon vergeben.
+    """
+
+    @staticmethod
+    def _ein_tick(kapazitaet: float, preis: float = 100.0):
+        from src.population.population_sampler import run_population_tick
+
+        properties = load_properties_config()
+        regeln = []
+        for regel in properties.market_rules:
+            if regel.effect.get("type") == "booking_yield_feedback":
+                effekt = dict(regel.effect)
+                effekt["strategie"] = "marge"
+                regel = regel.model_copy(update={"effect": effekt})
+            regeln.append(regel)
+        properties = properties.model_copy(update={"market_rules": regeln})
+
+        zustand = build_initial_state()
+        config = next(
+            agent for agent in zustand.agents if getattr(agent, "population_config", None)
+        ).population_config
+
+        return run_population_tick(
+            properties,
+            config,
+            None,
+            ticket_price=preis,
+            carbon_tax=50.0,
+            factors={},
+            system_properties={"bevoelkerungsentwicklung": 1000, "kapazitaet_index": kapazitaet},
+            seed=42,
+            current_tick=1,
+            metrics={},
+        )
+
+    def test_die_schranke_greift_in_diesem_aufbau_ueberhaupt(self):
+        """Ohne diese Vorbedingung wäre der Test unten trivial grün."""
+
+        leute, stats = self._ein_tick(0.5)
+        gebucht = [p for p in leute if p.booked]
+
+        assert len(gebucht) < len(leute) * 0.5, "in diesem Aufbau bleibt niemand übrig"
+        assert stats.total_demand > 0, "es bucht niemand — dann misst der Test nichts"
+
+    @pytest.mark.parametrize("kapazitaet", [0.3, 0.5])
+    def test_niemand_ohne_buchung_traegt_einen_aufschlag(self, kapazitaet: float):
+        """**Die eigentliche Zusage.**
+
+        Im ersten Tick startet jede Person bei 0 und der Abbau lässt sie dort.
+        Wer danach `booked = False` trägt, darf keine Sättigung haben — sonst
+        ist er für eine Reise bestraft, die er nicht angetreten hat.
+        """
+
+        leute, _ = self._ein_tick(kapazitaet)
+        falsch = [p for p in leute if not p.booked and p.saturation_level > 0.0]
+
+        assert not falsch, (
+            f"{len(falsch)} von {sum(1 for p in leute if not p.booked)} Nicht-Buchenden "
+            f"tragen einen Sättigungsaufschlag (z. B. id={falsch[0].id}: "
+            f"{falsch[0].saturation_level}). Die Rationierung muss **vor** die "
+            "Sättigung, nicht danach — zurückrechnen geht nicht, weil `min(1.0, …)` "
+            "klemmt."
+        )
+
+    def test_wer_fliegt_wird_sehr_wohl_gesaettigt(self):
+        """Die Gegenprobe — sonst wäre der Test oben auch grün, wenn die
+        Sättigung ganz ausfiele."""
+
+        leute, _ = self._ein_tick(0.5)
+        gebucht = [p for p in leute if p.booked]
+
+        assert gebucht, "niemand hat gebucht"
+        assert all(p.saturation_level > 0.0 for p in gebucht), (
+            "Buchende tragen keine Sättigung mehr — dann ist der Aufschlag beim "
+            "Umbau ganz verlorengegangen."
+        )
+
+    def test_unter_auslastung_bleibt_alles_wie_es_war(self):
+        """Ohne Schranke wird nicht rationiert, also auch nichts verschoben —
+        und der Zufallsstrom des Ticks bleibt derselbe."""
+
+        from src.population.population_sampler import run_population_tick
+
+        properties = load_properties_config()
+        zustand = build_initial_state()
+        config = next(
+            agent for agent in zustand.agents if getattr(agent, "population_config", None)
+        ).population_config
+
+        leute, _ = run_population_tick(
+            properties,
+            config,
+            None,
+            ticket_price=100.0,
+            carbon_tax=50.0,
+            factors={},
+            system_properties={"bevoelkerungsentwicklung": 1000, "kapazitaet_index": 0.5},
+            seed=42,
+            current_tick=1,
+            metrics={},
+        )
+
+        assert all(p.saturation_level > 0.0 for p in leute if p.booked)
+        assert all(p.saturation_level == 0.0 for p in leute if not p.booked)
