@@ -4,6 +4,7 @@
   "description": "Die CO₂-Bepreisung bleibt lange niedrig und steigt erst ab Tick 25 steil an. SAF-Mandat ebenfalls verzögert. Simuliert politische Trägheit.",
   "rationale": "In der Basisversion steigt carbon_tax_level bei Tick 15 auf 120 EUR und bei Tick 30 auf 200 EUR. Dieses Szenario verzögert beide Stufen um 10 Ticks (Tick 25 und Tick 40), sodass die Regulierung viel später greift. SAF-Mandat wird ebenfalls um 8 Ticks verschoben. Damit bleiben F2 (moderate Regulierung) und F6 (Fliegen akzeptiert) länger aktiv, da die Schwellwerte (carbon_tax > 100 für F2.2, carbon_tax > 80 für F6.2) erst spät erreicht werden.",
   "max_ticks": 50,
+  "preisstrategie": "auslastung",
   "property_overrides": [
     {
       "property_id": "carbon_tax_level",
@@ -51,6 +52,40 @@
           }
         }
       ]
+    },
+    {
+      "property_id": "kapazitaet_index",
+      "baseline": 1.0,
+      "rules": [
+        {
+          "active_from_tick": 10,
+          "effect": {
+            "type": "set",
+            "value": 1.06
+          }
+        },
+        {
+          "active_from_tick": 20,
+          "effect": {
+            "type": "set",
+            "value": 1.12
+          }
+        },
+        {
+          "active_from_tick": 28,
+          "effect": {
+            "type": "set",
+            "value": 1.13
+          }
+        },
+        {
+          "active_from_tick": 42,
+          "effect": {
+            "type": "set",
+            "value": 1.1
+          }
+        }
+      ]
     }
   ],
   "factor_overrides": [],
@@ -89,14 +124,15 @@
   "art": "rahmen",
   "kohaerenz": {
     "these": "Die beschlossene Verschärfung kommt, aber deutlich später: Politische Trägheit verschiebt CO₂-Bepreisung und Beimischungsziel gemeinsam nach hinten, ohne sie aufzuheben.",
-    "begruendung": "Verzögerung ist ein eigener Rahmen wert, weil nicht das Ob revidiert wird, sondern das Wann — und weil das die Frage ist, die eine Fluggesellschaft wirklich umtreibt. Die beiden Verläufe sind aus einem Grund gemeinsam verschoben: Bepreisung und Beimischungspflicht stammen aus demselben Gesetzespaket und werden politisch gemeinsam verhandelt; nur eines von beiden zu verzögern wäre die unbegründetere Annahme. Auch der späte, dafür steilere Anstieg folgt daraus und ist kein Effekt um seiner selbst willen: Wer das Zieljahr beibehält und den Beginn verschiebt, muss den Rest steiler nachholen.",
+    "begruendung": "Verzögerung ist ein eigener Rahmen wert, weil nicht das Ob revidiert wird, sondern das Wann — und weil das die Frage ist, die eine Fluggesellschaft wirklich umtreibt. Die beiden Verläufe sind aus einem Grund gemeinsam verschoben: Bepreisung und Beimischungspflicht stammen aus demselben Gesetzespaket und werden politisch gemeinsam verhandelt; nur eines von beiden zu verzögern wäre die unbegründetere Annahme. Auch der späte, dafür steilere Anstieg folgt daraus und ist kein Effekt um seiner selbst willen: Wer das Zieljahr beibehält und den Beginn verschiebt, muss den Rest steiler nachholen. **Der Kapazitätspfad ist die Probe auf die These.** Solange die Verschärfung ausbleibt, wächst das Angebot wie im Fortschreibungsfall — eine Airline plant ihre Flotte Jahre im Voraus und richtet sie nach dem aus, was gilt, nicht nach dem, was angekündigt ist. Erst wenn die Bepreisung ab Tick 25 wirklich greift, flacht der Ausbau ab und geht leicht zurück. Genau darin besteht die Verzögerung: nicht in einer anderen Endlage, sondern in einem Jahrzehnt weiter gebauter Kapazität, die danach teuer wird. Die Preisstrategie bleibt `auslastung` — der Wettbewerb ist in dieser Welt nicht ausgesetzt, nur die Regulierung.",
     "quellen": [
       "docs/research/links.md — EU-ETS / Fit for 55 (Rat der EU, Europäische Kommission); Richtlinie (EU) 2023/958: Luftverkehr im ETS, Auslaufen der freien Zuteilung 2024–2026",
       "Verordnung (EU) 2023/2405 (ReFuelEU Aviation): SAF-Beimischung 2 % ab 2025, 6 % ab 2030",
       "docs/research/studies_future/policy-net-zero-roadmap.pdf (IATA)",
       "docs/research/studies_future/european-parliament-study-green-deal.pdf",
-      "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt"
+      "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt",
+      "Eurostat `avia_paoc`, gewerbliche Passagierflüge EU-27, als Größenordnung für den Ausbaupfad vor einer Verschärfung"
     ],
-    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar."
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Der Kapazitätspfad teilt diesen Vorbehalt: Die **Reihenfolge** — erst Ausbau, dann Abflachen nach dem Kostenschub — ist die Aussage; die Höhen und die Ticks sind gesetzt."
   }
 }

@@ -28,6 +28,7 @@ import pytest
 from pydantic import ValidationError
 
 from dashboard.config_catalog import list_sweep_presets, rahmenszenarien
+from src.models.property_models import STRATEGIEN
 from src.models.sweep_models import ARTEN, SweepConfig
 from src.orchestration.scenario_sweeps import SWEEPS_DIR
 
@@ -192,3 +193,118 @@ def test_die_dateien_tragen_das_feld_wirklich():
         assert "art" in roh, f"{pfad.name} sagt nicht, was es ist"
         if roh["art"] == "rahmen":
             assert "kohaerenz" in roh, f"{pfad.name} ist ein Rahmen ohne Begründung"
+
+
+class TestJederRahmenSagtEtwasUeberDasAngebot:
+    """**Der Befund B6 des Audits vom 2026-09-03, als Zusage.**
+
+    P2.8 hat die Kapazität als exogene Größe eingeführt, P2.8-B die
+    Preisstrategie zur Wahl gestellt, B2 das Angebot in den Nutzen gebracht —
+    und **kein einziges ausgeliefertes Szenario benutzte davon irgendetwas.**
+    `kapazitaet_index` stand in allen acht Dateien und in `properties.json` auf
+    1,0 ohne Regel, `strategie` überall auf `auslastung`. Die Angebotsseite
+    lebte ausschließlich im Backtest.
+
+    **Das ist mehr als eine ungenutzte Möglichkeit.** Ein Rahmenszenario, das
+    von wachsender oder einbrechender Nachfrage erzählt und die Kapazität
+    stillschweigend festhält, behauptet eine Welt, die sein eigenes Modell für
+    unmöglich hält — genau der Befund von P2.8, nur auf die eigenen Dateien
+    angewandt. Und es *behauptet* sie stillschweigend: «die Kapazität bleibt
+    gleich» ist eine Aussage über die Welt, keine Abwesenheit einer Aussage.
+    """
+
+    @pytest.mark.parametrize("sweep", RAHMEN, ids=lambda s: s.id)
+    def test_er_setzt_einen_kapazitaetspfad(self, sweep) -> None:
+        ids = {o.property_id for o in sweep.property_overrides}
+
+        assert "kapazitaet_index" in ids, (
+            f"`{sweep.id}` sagt nichts über das Angebot. Damit unterstellt er "
+            "unveränderte Kapazität, ohne es auszusprechen — und seine "
+            "Kohärenzbegründung kann das nicht begründen, weil sie es nicht kennt."
+        )
+
+    @pytest.mark.parametrize("sweep", RAHMEN, ids=lambda s: s.id)
+    def test_und_er_begruendet_ihn(self, sweep) -> None:
+        """Ein Pfad ohne Begründung ist eine Zahl, die jemand gewählt hat."""
+
+        text = f"{sweep.kohaerenz.begruendung} {sweep.kohaerenz.vorbehalt}".lower()
+
+        assert any(
+            wort in text for wort in ("angebot", "kapazit", "flotte", "sitze")
+        ), f"`{sweep.id}` setzt einen Kapazitätspfad, erklärt ihn aber nirgends."
+
+    @pytest.mark.parametrize("sweep", RAHMEN, ids=lambda s: s.id)
+    def test_und_er_sagt_wie_der_anbieter_preist(self, sweep) -> None:
+        """**Seit P2.10 kann ein Szenario das überhaupt sagen.**
+
+        P2.8-B nannte die Preisstrategie «eine Frage an das Szenario, nicht an
+        das Modell» — nur konnte ein Szenario sie nicht stellen: Sie lebt in
+        `market_rules`, und ein Sweep überschrieb nur Systemgrößen.
+        """
+
+        assert sweep.preisstrategie in STRATEGIEN, (
+            f"`{sweep.id}` überlässt die Preisstrategie der ausgelieferten Config. "
+            "Wie der Anbieter auf freie Kapazität reagiert, ist eine Aussage über "
+            "diese Welt und gehört in die Datei."
+        )
+
+
+class TestDieAngebotsseiteKommtImLaufAn:
+    """**Gemessen, nicht gelesen** — das Abnahmekriterium von P2.10.
+
+    Ein Feld in einer Datei ist keine Wirkung. Diese Zusage rechnet denselben
+    Rahmen zweimal, einmal mit und einmal ohne seinen Kapazitätspfad, und hält
+    die Buchungsrate im letzten Viertel dagegen. Genau dieses Verfahren hat in
+    P1.9-W0.2 gezeigt, dass auf dem Sweep-Pfad **ein einziges** Feld die
+    Simulation erreichte.
+
+    Ein Rahmen genügt dafür, und es ist bewusst der klarste: Zwei Läufe über
+    50 Ticks kosten Sekunden, acht kosteten eine Minute für dieselbe Aussage.
+    """
+
+    @staticmethod
+    def _lauf(sweep, *, mit_angebot: bool) -> float:
+        from statistics import mean
+
+        from src.config_loader import build_initial_state
+        from src.llm.studio_helpers import MockLLM
+        from src.orchestration.scenario_sweeps import apply_sweep_overrides
+        from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
+
+        if not mit_angebot:
+            sweep = sweep.model_copy(
+                update={
+                    "property_overrides": [
+                        o for o in sweep.property_overrides if o.property_id != "kapazitaet_index"
+                    ],
+                    "preisstrategie": None,
+                }
+            )
+
+        zustand = apply_sweep_overrides(build_initial_state(), sweep)
+        zustand.clock.max_ticks = sweep.max_ticks
+        ende = SimulationRunner(
+            llm=MockLLM(),
+            options=RunnerOptions(
+                enable_market=True,
+                enable_cib=True,
+                deterministic_only=True,
+                checkpoint_interval=0,
+                verbose_ticks=False,
+            ),
+        ).run(zustand, seed=42, run_id=f"rahmen_angebot_{sweep.id}_{mit_angebot}")
+
+        spaet = [e for e in ende.price_history if e.round_number > sweep.max_ticks * 0.75]
+        return mean(e.booking_rate for e in spaet if e.booking_rate is not None)
+
+    def test_ohne_den_pfad_kaeme_eine_andere_zahl_heraus(self) -> None:
+        sweep = next(s for s in RAHMEN if s.id == "business_as_usual")
+
+        ohne = self._lauf(sweep, mit_angebot=False)
+        mit = self._lauf(sweep, mit_angebot=True)
+
+        assert mit > ohne * 1.1, (
+            f"Mit Kapazitätspfad {mit:.4f}, ohne {ohne:.4f}. In einer Welt, die "
+            "wachsendes Angebot behauptet, muss mehr geflogen werden — sonst steht "
+            "der Pfad in der Datei und nirgends sonst."
+        )

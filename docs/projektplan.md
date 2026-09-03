@@ -2134,7 +2134,7 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 
 **Doku zieht mit:** neues Kapitel unter `docs/`, `docs/handbuch/grenzen.md`, `README.md`, `CLAUDE.md` (falls eine neue Datenquelle in die Architektur-Map kommt).
 
-### P2.10 — Ein Rahmenszenario, das die Angebotsseite wirklich benutzt ⚠️ neu 2026-09-03
+### P2.10 — Ein Rahmenszenario, das die Angebotsseite wirklich benutzt ✅ erledigt 2026-09-03
 
 **Befund:** Was P2.8, P2.8-B und P2.4-D/E gebaut haben, setzt **kein ausgeliefertes Szenario**. Nachgezählt über alle acht Dateien unter `configs/sweeps/` und über `configs/properties.json`:
 
@@ -2154,7 +2154,39 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 
 **Fallstrick:** Nicht auf den Backtest hin wählen. Welcher Kapazitätspfad zu «Business as Usual» gehört, entscheidet die Fachlage — dieselbe Regel wie beim Einkommenskanal in P2.8.
 
-**Fertig wenn:** Mindestens ein Rahmen setzt `kapazitaet_index` mit Begründung und Quellen; ein Wächter zeigt, dass die Größe im Lauf ankommt (Unterschied gemessen, nicht Codelektüre); und `docs/handbuch/vergleiche.md` nennt den Schnitt.
+#### Erledigt am 2026-09-03 — und es sind alle vier geworden, nicht einer
+
+**Warum alle vier:** Ein Rahmen, der die Kapazität offenlässt, rechnet nicht «ohne Annahme», sondern mit einer **unausgesprochenen** — nämlich unveränderter. Drei Welten mit stiller Konstante neben einer mit begründetem Pfad wären genau die Ungleichbehandlung, die ein Vergleich unlesbar macht.
+
+**Ein Szenario kann seit P2.10 auch sagen, wie der Anbieter preist.** P2.8-B nannte die Strategie «eine Frage an das Szenario, nicht an das Modell» — nur konnte ein Szenario sie nicht stellen: Sie lebt in `market_rules[].effect`, und ein Sweep überschreibt nur Systemgrößen. Wer ein Weltbild mit gehaltener Marge ausliefern wollte, musste die ausgelieferte Konfiguration ändern — also **das Modell statt des Experiments**, Regel 7 der Oberfläche eine Ebene tiefer. `SweepConfig.preisstrategie` schließt das; `None` heißt «wie ausgeliefert», ein Tippfehler scheitert über `MarketFeedbackConfig` und nicht über eine zweite Prüfung.
+
+**Die vier Pfade folgen je aus ihrer eigenen Storyline**, nicht aus dem Backtest — der rechnet diese Dateien ohnehin nicht:
+
+| Rahmen | Kapazität | Strategie | Begründung in einem Satz |
+| --- | --- | --- | --- |
+| Business as Usual | 1,00 → 1,24 | `auslastung` | Ohne Kostenschock und ohne Beimischungspflicht gibt es keinen Grund, den Ausbau zu stoppen |
+| CO₂-Verzögerung | 1,00 → 1,13 → 1,10 | `auslastung` | Erst wird weitergebaut, dann wird es teuer — die Verzögerung *ist* der Ausbau davor |
+| Freiwillige Wende | 1,00 → 0,96 | `auslastung` | Knappes SAF verteuert jede zusätzliche Flotteneinheit, der Ausbau stockt |
+| Transformationskonflikt | 1,00 → 0,80 | `marge` | Kapazität ist die erste Größe, die unter dreifachem Druck nachgibt |
+
+**Gemessen, dass es ankommt** (letztes Viertel, mit gegen ohne Angebotsseite):
+
+| Rahmen | Rate ohne → mit | Preis ohne → mit |
+| --- | --- | --- |
+| Business as Usual | 0,3024 → **0,3892** | 144,66 → 128,94 |
+| CO₂-Verzögerung | 0,2484 → 0,2717 | 123,62 → 117,57 |
+| Freiwillige Wende | 0,2915 → 0,2848 | 103,81 → 104,84 |
+| Transformationskonflikt | 0,2585 → **0,0363** | 97,72 → **227,98** |
+
+#### Eine Messung hat eine Wahl widerlegt, und das gehört festgehalten
+
+**Für «Freiwillige Wende» war `marge` die naheliegende Strategie** — wer einen Beimischungsaufschlag trägt, gibt ihn weiter, statt Sitze mit Nachlässen zu füllen. Nachgerechnet fiel die Buchungsrate damit über 50 Ticks von 0,29 auf **0,08** und der Preis stieg von 104 auf **202**: **genau der Nachfrageeinbruch, den die These dieses Szenarios ausdrücklich ausschließt.** Gewählt ist deshalb `auslastung`, und der Grund steht in der Datei.
+
+**Der Befund dahinter ist größer als die Wahl:** Das Modell kennt keinen Kanal, über den eine Wende bei gehaltener Marge *ohne* Nachfrageeinbruch gelänge — dafür bräuchte es fallende SAF-Kosten oder wachsende Einkommen, und beides steht in diesem Rahmen nicht. Das ist eine Grenze des Modells, kein Fehler des Szenarios, und sie ist in seinem `vorbehalt` benannt.
+
+**Die Wächter:** `TestJederRahmenSagtEtwasUeberDasAngebot` (jeder Rahmen setzt einen Pfad, begründet ihn und nennt seine Strategie) und `TestDieAngebotsseiteKommtImLaufAn` — zwei Läufe desselben Rahmens, mit und ohne, gegen die Buchungsrate gehalten. **Gemessen und nicht gelesen**, dasselbe Verfahren wie P1.9-W0.2, das gezeigt hat, dass auf dem Sweep-Pfad ein einziges Feld ankam.
+
+**Fertig wenn** ✅ **(2026-09-03):** Jeder Rahmen setzt `kapazitaet_index` mit Begründung und Quellen und sagt seine Preisstrategie; ein Wächter misst, dass die Größe im Lauf ankommt; und `docs/handbuch/vergleiche.md` nennt den Schnitt.
 
 **Doku zieht mit:** `docs/handbuch/presets.md`, `docs/handbuch/vergleiche.md`, `CLAUDE.md` (Glossar «Rahmenszenario»).
 

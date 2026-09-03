@@ -250,6 +250,19 @@ aber eine Kapazität vorgibt, bekommt andere Zahlen als vor diesem Datum — und
 zwar in beide Richtungen: Bei weniger Kapazität sinkt die Nachfrage stärker als
 früher, bei mehr steigt sie überhaupt erst.
 
+Am **2026-09-03** kam ein zehnter Schnitt dazu, und er trifft **die vier
+Rahmenszenarien**: Sie sagen jetzt auch etwas über das Angebot. Bis dahin ließen
+sie die Kapazität offen und rechneten damit stillschweigend mit einer
+unveränderten; seither trägt jedes einen begründeten Kapazitätspfad und die Wahl,
+wie der Anbieter preist.
+
+**Das verschiebt die Zahlen aller vier deutlich.** Gemessen über die letzten
+Runden, vorher gegen nachher: «Business as Usual» 0,30 → 0,39 Buchungsrate bei
+145 → 129 Euro, «CO₂-Verzögerung» 0,25 → 0,27 bei 124 → 118, «Freiwillige Wende»
+0,292 → 0,285 bei nahezu gleichem Preis, «Transformationskonflikt» 0,26 → 0,04
+bei 98 → 228 Euro. Läufe dieser vier Szenarien von vor diesem Datum gehören nicht
+neben spätere.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

@@ -44,7 +44,12 @@ Der Bereich **Modell** im Dashboard zeigt diese Felder noch nicht — sie sind
 | `agents.json` | Die drei Akteure mit ihren Rollen |
 | `agent_profiles.json` | Was jeder Akteur sehen und vorschlagen darf |
 
-Dazu kommt `configs/sweeps/` mit den Szenario-Presets, je eines pro Datei.
+Dazu kommt `configs/sweeps/` mit den Szenario-Presets, je eines pro Datei. Eine
+solche Datei überschreibt Systemgrößen (`property_overrides`) und darf seit dem
+2026-09-03 zusätzlich `preisstrategie` setzen — `auslastung` oder `marge`. Fehlt
+das Feld, gilt die ausgelieferte Konfiguration; ein unbekannter Name wird beim
+Laden abgewiesen. Es hat bewusst keinen Tick-Verlauf: Ein Anbieter wechselt nicht
+mitten im Lauf seine Preislogik.
 
 ## Was wo drinsteht
 

@@ -23,6 +23,24 @@ begründbar. Bei welchem Tick die CO₂-Abgabe dann auf welchen Wert springt, is
 gesetzt und nicht aus Daten geschätzt. Wer ein Szenario nach außen zitiert,
 zitiert die Geschichte, nicht die Zahl.
 
+**Seit dem 2026-09-03 sagt jedes Rahmenszenario auch etwas über das Angebot.**
+Bis dahin beschrieben die vier Welten nur, was auf den Luftverkehr *einwirkt* —
+CO₂-Preis, Beimischung, Konjunktur, Ölpreis — und ließen offen, wie viele Sitze
+es gibt. Damit unterstellten sie stillschweigend eine unveränderte Kapazität, und
+das ist eine Aussage über die Welt und keine Abwesenheit einer Aussage: In
+«Business as Usual» wächst das Angebot mit, in der «Freiwilligen Wende» stagniert
+es, im «Transformationskonflikt» geht es zurück.
+
+**Dazu gehört, wie der Anbieter preist.** Zwei Möglichkeiten stehen zur Wahl: Er
+senkt den Preis, bis die Sitze voll sind, oder er hält seinen Aufschlag und nimmt
+eine schwankende Auslastung in Kauf. Beides kommt vor, und welches gilt, ist eine
+Frage an die Welt und nicht an das Modell — deshalb steht es jetzt in der Datei
+des Szenarios. Drei der vier Rahmen wählen den Wettbewerbsfall, der
+«Transformationskonflikt» den anderen.
+
+Beides ist im Text des Szenarios begründet, und beides trägt denselben Vorbehalt
+wie der Rest: **Die Richtung ist argumentiert, die Zahlen sind gesetzt.**
+
 **Ein Stresstest** ist ein Belastungs- oder Sichtprüfungslauf der Engine. Seine
 Verläufe fahren durch Extreme, damit man sieht, ob etwas bricht — sie behaupten
 nichts über die Zukunft. Die Kachel schreibt «Stresstest» davor, und ein

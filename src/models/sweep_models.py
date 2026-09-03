@@ -119,6 +119,21 @@ class SweepConfig(BaseModel):
         return self
 
     max_ticks: int = 50
+    #: Wie der Anbieter in **dieser Welt** preist — `auslastung` oder `marge`.
+    #:
+    #: **P2.8-B hat die Strategie zu einer Wahl gemacht und sie zugleich
+    #: unerreichbar gelassen** (P2.10, 2026-09-03): «Welche gilt, ist eine Frage
+    #: an das Szenario, nicht an das Modell» — nur konnte ein Szenario sie nicht
+    #: stellen. Sie lebt in `market_rules[].effect`, und ein Sweep überschreibt
+    #: nur Systemgrößen. Wer ein Weltbild ausliefern wollte, in dem der Anbieter
+    #: seine Marge hält, musste die ausgelieferte Konfiguration ändern — also
+    #: das Modell statt des Experiments (Regel 7 der Oberfläche, eine Ebene
+    #: tiefer).
+    #:
+    #: `None` heißt «wie ausgeliefert» und ist der Standard: Ein Szenario, das
+    #: nichts sagt, ändert nichts. Ein unbekannter Name scheitert laut — beim
+    #: Laden der Datei, über `MarketFeedbackConfig`.
+    preisstrategie: str | None = None
     base_price: float | None = None  # P2.3: override price_model.base_price
     property_overrides: list[PropertyOverride] = Field(default_factory=list)
     factor_overrides: list[FactorOverride] = Field(default_factory=list)

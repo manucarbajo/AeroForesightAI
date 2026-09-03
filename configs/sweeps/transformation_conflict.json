@@ -4,6 +4,7 @@
   "description": "Strenge Regulierung (B2) trifft auf technologische Trägheit (A1). Die CO₂-Steuer wird früh und aggressiv angehoben, aber der SAF-Durchbruch bleibt aus. Gleichzeitig steigt der Ölpreis und die Wirtschaft gerät unter Druck. Ein inhärent widersprüchliches Szenario.",
   "rationale": "B2 = Ambitionierte Klimapolitik → CO₂-Steuer wird bei Tick 5 schon auf 90 EUR und bei Tick 12 auf 180 EUR gesetzt. Dies erzwingt F2.2 und F6.2 früh. A1 = Kein Technologiedurchbruch → saf_mandate_share bleibt bei 0 (F3.1 bleibt bestehen). Der Konflikt entsteht, weil hohe Regulierungskosten den Ticketpreis treiben, ohne dass SAF-Effizienz die Kosten senken kann. Zusätzlich wird der oil_price_index auf 1.2 bei Tick 10 gesetzt (→ F7.2 Fragmentierung), und der income_index fällt ab Tick 8 auf 0.85 (→ Rezessionsdruck, F4.2). Das Szenario produziert viele CIB-Konflikte: F2.2 + F3.1 (strenge Politik ohne Technik), F4.2 + F6.2 (Rezession + Klimabewusstsein), F7.2 + F2.2 (Fragmentierung + strenge Regulierung).",
   "max_ticks": 50,
+  "preisstrategie": "marge",
   "property_overrides": [
     {
       "property_id": "carbon_tax_level",
@@ -81,6 +82,33 @@
     {
       "property_id": "demand_growth_rate",
       "baseline": 0.01
+    },
+    {
+      "property_id": "kapazitaet_index",
+      "baseline": 1.0,
+      "rules": [
+        {
+          "active_from_tick": 12,
+          "effect": {
+            "type": "set",
+            "value": 0.95
+          }
+        },
+        {
+          "active_from_tick": 26,
+          "effect": {
+            "type": "set",
+            "value": 0.86
+          }
+        },
+        {
+          "active_from_tick": 38,
+          "effect": {
+            "type": "set",
+            "value": 0.8
+          }
+        }
+      ]
     }
   ],
   "factor_overrides": [],
@@ -137,14 +165,15 @@
   "art": "rahmen",
   "kohaerenz": {
     "these": "Strenge Regulierung trifft auf ausbleibenden Technologiedurchbruch, während Ölpreis und wirtschaftlicher Druck gleichzeitig steigen: Die Kosten kommen an, der Ausweichpfad nicht.",
-    "begruendung": "Dieser Rahmen gibt für die Entscheidungsfrage des Produkts am meisten her, weil er die unbequeme Kombination durchspielt: Regulierung wirkt über den Preis, und wenn die Alternative fehlt, wird aus dem Lenkungsinstrument eine reine Verteuerung. Dass Ölpreis und Zertifikatspreis dabei gemeinsam steigen, ist keine Häufung von Pech, sondern in den Daten angelegt: 2022 lag Brent bei rund 101 USD und der Zertifikatspreis bei rund 80 EUR — beide auf dem Höchststand des gemessenen Fensters. Die Reaktion der Nachfrage darauf ist der Punkt, an dem die Preiselastizität des Luftverkehrs zur tragenden Größe wird.",
+    "begruendung": "Dieser Rahmen gibt für die Entscheidungsfrage des Produkts am meisten her, weil er die unbequeme Kombination durchspielt: Regulierung wirkt über den Preis, und wenn die Alternative fehlt, wird aus dem Lenkungsinstrument eine reine Verteuerung. Dass Ölpreis und Zertifikatspreis dabei gemeinsam steigen, ist keine Häufung von Pech, sondern in den Daten angelegt: 2022 lag Brent bei rund 101 USD und der Zertifikatspreis bei rund 80 EUR — beide auf dem Höchststand des gemessenen Fensters. Die Reaktion der Nachfrage darauf ist der Punkt, an dem die Preiselastizität des Luftverkehrs zur tragenden Größe wird. **Kapazität ist die erste Größe, die in einem solchen Zusammentreffen nachgibt.** Steigende CO₂-Kosten, ein teurerer Ölpreis und ein einbrechendes Einkommen treffen zusammen; eine Airline reagiert darauf nicht mit Preisnachlässen, sondern mit dem Stilllegen von Flugzeugen und dem Streichen von Strecken. Der Rückgang auf 0,80 ist deshalb keine zusätzliche schlechte Nachricht neben den drei anderen, sondern ihre **Folge** — und er verstärkt sie: Weniger Frequenzen und weniger Ziele machen das Fliegen auch für die unattraktiv, die es sich noch leisten könnten. Die Strategie ist `marge`, weil ein Anbieter unter Kostendruck seinen Aufschlag verteidigt statt ihn wegzugeben.",
     "quellen": [
       "docs/research/links.md — EU-ETS / Fit for 55 (Rat der EU, Europäische Kommission); Richtlinie (EU) 2023/958: Luftverkehr im ETS, Auslaufen der freien Zuteilung 2024–2026",
       "docs/research/literature/price_elasticities_of_demand_for_passenger_air_travel.pdf",
       "docs/research/studies_future/gutachten-standortkosten-luftverkehr.pdf",
       "configs/backtest/quellen.json — EEX-Auktionspreise und Brent, 2015–2024, im Repo eingecheckt und nachrechenbar",
-      "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt"
+      "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt",
+      "Eurostat `avia_paoc` — der Einbruch 2020/21 zeigt die Größenordnung, in der Kapazität in dieser Branche tatsächlich zurückgenommen wird"
     ],
-    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Der Rahmen ist bewusst ein Belastungsfall: Dass drei ungünstige Entwicklungen zusammenfallen, ist eine Annahme über Gleichzeitigkeit, für die es keinen Beleg gibt — nur den Zweck, die Grenzen des Systems zu zeigen."
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Der Rahmen ist bewusst ein Belastungsfall: Dass drei ungünstige Entwicklungen zusammenfallen, ist eine Annahme über Gleichzeitigkeit, für die es keinen Beleg gibt — nur den Zweck, die Grenzen des Systems zu zeigen. Für die Angebotsseite gilt dasselbe wie für den Rest: **Die Richtung** — Kapazitätsabbau als Reaktion auf gleichzeitigen Kosten- und Nachfragedruck — ist argumentiert; **wie schnell und wie weit**, ist gesetzt. Der Pfad ist bewusst ein Belastungsfall und keine Prognose. **Wie drastisch das ausfällt, gehört dazugesagt:** Mit Kapazitätspfad und `marge` gerechnet fällt die Buchungsrate über 50 Ticks von 0,26 auf 0,04 und der Ticketpreis steigt von 98 auf 228. Das ist die **Folge der drei Annahmen**, nicht eine Prognose — und es ist der Grund, warum dieser Rahmen neben den anderen steht und nicht an ihrer Stelle."
   }
 }

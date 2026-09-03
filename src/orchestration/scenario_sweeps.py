@@ -28,6 +28,7 @@ if hasattr(sys.stdout, "reconfigure"):
 from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
+from src.market.market_feedback import BOOKING_YIELD_FEEDBACK
 from src.models.llm_models import LLMIncident
 from src.models.state_models import Rahmenszenario
 from src.models.sweep_models import (
@@ -339,10 +340,43 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
     # Invariante 7 verlangt, dass ein Pfad sagt, was er verwirft, steht es in
     # `UNBEACHTET`.
 
+    if sweep.preisstrategie is not None:
+        _preisstrategie_setzen(state, sweep.preisstrategie)
+
     if sweep.base_price is not None:
         state.properties.price_model.base_price = sweep.base_price
 
     return state
+
+
+def _preisstrategie_setzen(state: Any, strategie: str) -> None:
+    """Die Preisstrategie dieser Welt in die Marktregel schreiben (P2.10).
+
+    **Warum das hier steht und nicht in `property_overrides`:** Die Strategie
+    ist keine Systemgröße mit Verlauf, sondern eine Eigenschaft der einen
+    `booking_yield_feedback`-Regel. Sie hat keinen Tick-Pfad — ein Anbieter
+    wechselt nicht mitten im Lauf seine Preislogik, und wer das modellieren
+    will, braucht dafür ein eigenes Paket.
+
+    **Ein unbekannter Name scheitert laut**, und zwar über
+    `MarketFeedbackConfig` — dieselbe Prüfung wie überall sonst, statt einer
+    zweiten hier. Ein Tippfehler wie `marge_` fiele sonst still auf
+    `auslastung` zurück, und das Szenario erzählte etwas anderes als seine
+    Begründung.
+    """
+
+    from src.models.property_models import MarketFeedbackConfig
+
+    MarketFeedbackConfig(strategie=strategie)  # wirft bei unbekanntem Namen
+
+    regeln = []
+    for regel in state.properties.market_rules:
+        if regel.effect.get("type") == BOOKING_YIELD_FEEDBACK:
+            effekt = dict(regel.effect)
+            effekt["strategie"] = strategie
+            regel = regel.model_copy(update={"effect": effekt})
+        regeln.append(regel)
+    state.properties = state.properties.model_copy(update={"market_rules": regeln})
 
 
 def _property_at_tick(state: Any, tick: int, property_id: str) -> Any:

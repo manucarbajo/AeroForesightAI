@@ -355,6 +355,15 @@ Tick 30, die vier Rahmen laufen über 50 Ticks — **20 von 50 Ticks mit
 eingefrorener Bevölkerung, in jedem ausgelieferten Weltbild**. Als Restposition
 von P2.8 korrekt benannt und offen.
 
+> **Behoben am 2026-09-03 (P2.10).** Alle vier Rahmen tragen jetzt einen
+> begründeten Kapazitätspfad und ihre Preisstrategie — letztere konnte ein
+> Szenario bis dahin gar nicht setzen, obwohl P2.8-B sie «eine Frage an das
+> Szenario» nannte. Gemessen kommt sie an: «Business as Usual» 0,3024 → 0,3892,
+> «Transformationskonflikt» 0,2585 → 0,0363. **Eine Messung hat dabei eine Wahl
+> widerlegt** — `marge` für «Freiwillige Wende» erzeugte den Nachfrageeinbruch,
+> den die These des Szenarios ausschließt; gewählt ist `auslastung`, und der
+> Grund steht in der Datei. Die Restposition zur Bevölkerungskurve bleibt.
+
 ### B7 · Kleinere Befunde
 
 **B7a — `co2_delayed` trägt keinen eigenen Vorbehalt.** Sein `vorbehalt`-Feld
