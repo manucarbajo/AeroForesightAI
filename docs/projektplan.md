@@ -1304,7 +1304,7 @@ Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
 
 **Doku mitgezogen:** `docs/handbuch/faktoren.md` (das Kapitel heißt jetzt «Sie stellen sie nicht ein — der Lauf erzeugt sie»), `docs/handbuch/lauf-konfigurieren.md`, `docs/handbuch/presets.md`, `docs/handbuch/erste-simulation.md`, **`docs/handbuch/vergleiche.md`** (vierter Schnitt: Endzustände gleich, erste Ticks und damit die Preise nicht), `CLAUDE.md` (Glossar und Architektur-Map).
 
-#### ⚠️ Wieder geöffnet am 2026-09-03 — der Browser-Wächter ist seit dem Umbau rot
+#### ✅ Wieder geöffnet und geschlossen am 2026-09-03 — der Browser-Wächter war seit dem Umbau rot
 
 **Der Schnitt war richtig, die Sperrklinke ist nicht mitgezogen worden.** Stufe C hat die Schrittfolge von sieben auf sechs Schritte verkürzt und den `apply_custom_overrides`-Schalter nach Schritt 1 verschoben. Beides misst `tests/test_web_overflow.py` — und beides hat ihn rot gemacht, **am 2026-08-30, unbemerkt bis zum 2026-09-03**:
 
@@ -1316,7 +1316,20 @@ Drei Gruppen stecken darin, und ihre Aufteilung ist der eigentliche Fund:
 
 **Warum es niemand gesehen hat, und das ist der eigentliche Befund:** Der Wächter ist opt-in (Extra `ui` plus Chromium) und überspringt sich sonst schweigend; die CI hat keinen Browser. Vier Tage lang waren beide Zusagen ungeprüft, und die Regel «Test und Doku im selben Commit» wurde ausgerechnet für den Wächter nicht eingehalten, der die Schrittfolge misst.
 
-**Zu tun:** `DECKEL` auf sechs Schritte nachziehen (mit neu gemessenen Werten, nicht durch Streichen der Zeile) und den Schaltertext unter das Lesemaß bringen. **Fertig wenn** `tests/test_web_overflow.py` wieder grün ist und im Commit steht, warum es durchging. Herleitung: [Audit Phase 2, C5](audit_phase2_2026-09-03.md).
+**Erledigt am 2026-09-03, und beide Hälften anders als vermutet.**
+
+*Die Zeilenlänge war kein Textproblem, sondern ein Strukturproblem.* Nicht der verschobene Schaltertext war zu lang — `ui.explainer` rendert **jede** Glossar-Erklärung ohne Lesemaß, an jedem Feld. P2.0-C hat es nur sichtbar gemacht, weil der Wächter Schritt 1 misst. Den einen Text zu kürzen hätte den Fall behoben und den Mechanismus stehen lassen; jetzt trägt der Körper einer Erklärung `af-mass` wie jeder andere Fließtext.
+
+*Und der Deckel ist nachgemessen statt gestrichen.* Ist-Stand bei 1280 / 1024 px:
+
+| | Einstieg | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1280 px | 1,00 | **1,34** | 1,00 | 1,00 | 1,22 | 1,02 | 1,45 |
+| 1024 px | 1,00 | **1,42** | 1,00 | 1,00 | 1,22 | 1,08 | 1,45 |
+
+Die Schritte 4 bis 6 sind **dieselben wie vorher, eine Nummer weiter** — der alte 5 (1,31) misst als neuer 4 nun 1,22, der alte 6 als neuer 5 nun 1,02. Gewachsen ist nur **Schritt 1**, von 1,20 auf 1,34 (bzw. 1,37 auf 1,42), und der Zuwachs ist gemessen zugeordnet: Er kommt **vollständig** vom zugezogenen Schalter und **nicht** vom neuen Lesemaß — mit und ohne `af-mass` misst der Schritt dieselben 1,34, weil der Erklärungskörper in einem zugeklappten `<details>` steckt und keine Höhe trägt.
+
+**Fertig wenn** ✅ `tests/test_web_overflow.py` wieder grün ist und im Commit steht, warum es durchging. Herleitung: [Audit Phase 2, C5](audit_phase2_2026-09-03.md).
 
 **Was Stufe C nicht ist:** Stufe B. Die Sweeps sind noch nicht der reguläre Startpfad — ein Einzellauf ohne Preset rechnet weiterhin gegen die Datei-Defaults, und `derive_scenarios` bewertet den Endzustand weiterhin gegen die Matrix. Der Unterschied ist, dass diese Bewertung jetzt nichts mehr **vorgibt**.
 

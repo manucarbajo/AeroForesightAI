@@ -505,6 +505,14 @@ sein Deckel» und «keine Zeile läuft über 75 Zeichen» sind damit seit dem
 wurde bei P2.0-C für genau den Wächter nicht eingehalten, der die Schrittfolge
 misst.
 
+> **Behoben noch am 2026-09-03.** Und beide Hälften anders als vermutet: Die
+> Zeilenlänge war kein Textproblem — `ui.explainer` rendert **jede**
+> Glossar-Erklärung ohne Lesemaß, P2.0-C hat es nur sichtbar gemacht. Der
+> Deckel ist nachgemessen (1280 px: 1,00 / 1,34 / 1,00 / 1,00 / 1,22 / 1,02 /
+> 1,45), und der Zuwachs auf Schritt 1 kommt **vollständig** vom zugezogenen
+> Schalter, nicht vom neuen Lesemaß: Mit und ohne `af-mass` misst der Schritt
+> dieselben 1,34, weil der Erklärungskörper zugeklappt keine Höhe trägt.
+
 Der siebte Fehlschlag ist der bekannte Dauerläufer
 `test_market_feedback.py::TestM413ConfigurablePrice::test_market_rules_resolve_marginal_cost_fraction`
 (0,25 gegen 0,33). Er ist **kein Testproblem**, sondern die doppelte Wertquelle
