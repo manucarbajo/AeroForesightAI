@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 import time
 from dataclasses import dataclass
@@ -21,7 +22,9 @@ from src.models.state_models import DEFAULT_SEED, SimulationState
 from src.orchestration.environment_node import EnvironmentNode
 from src.reporting.output_writer import append_individuals_history, resolve_run_output_dir
 from src.reporting.output_writer.provenance import config_fingerprint
-from src.validation import validate_state
+from src.validation import horizontluecken, validate_state
+
+_LOG = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -258,6 +261,15 @@ class SimulationRunner:
             state.config.seed = DEFAULT_SEED
 
         validate_state(state)
+
+        # **Was über den letzten Stützpunkt hinausläuft, sagt es** (P2.8,
+        # Restposition). Kein Fehler und deshalb nicht in `validate_state`: Eine
+        # Stufenfunktion hält hinter ihrem letzten Punkt korrekt den letzten Wert,
+        # und bei einer CO₂-Abgabe, die ihren Endwert erreicht hat, ist genau das
+        # gemeint. Unsichtbar war es trotzdem — der Backtest rechnete 90 von 120
+        # Ticks mit eingefrorener Bevölkerung, ohne dass irgendwo etwas stand.
+        for luecke in horizontluecken(state.resolved_properties(), max_ticks=state.clock.max_ticks):
+            _LOG.info("Trajektorien-Horizont: %s", luecke)
 
         # Der Fingerabdruck der Eingaben, genommen **bevor** ein Tick etwas
         # daran verschiebt. Beim Fortsetzen aus einem Checkpoint steht er schon

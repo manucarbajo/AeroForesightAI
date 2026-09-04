@@ -246,3 +246,87 @@ class TestDiePreiselastizitaetIstDieEineStellschraube:
             f"{erwartet:.1%}, gemessen {gemessen:.1%}). Weicht das ab, hat sich "
             "entweder die Elastizität bewegt oder ein zweiter Kanal ist dazugekommen."
         )
+
+
+class TestEinLaufSagtWieWeitSeineVorgabenReichen:
+    """**Die Restposition von P2.8, geschlossen am 2026-09-03.**
+
+    Der Befund stand seit dem 2026-08-31 in dieser Datei als *Ist-Stand*: Die
+    Bevölkerungskurve endet bei Tick 30, `_resolve_step_function` hält danach
+    still den letzten Wert, und **nichts sagt es**. Der Backtest rechnet 90 von
+    120 Ticks mit eingefrorener Bevölkerung; die vier ausgelieferten Rahmen
+    laufen 50 Ticks bei einer Kurve, die bei 30 aufhört.
+
+    **Gemeldet wird, nicht abgewiesen** — und diese Unterscheidung ist die
+    eigentliche Entscheidung des Pakets. Über den letzten Stützpunkt
+    hinauszulaufen ist zulässig und meistens gewollt: Eine CO₂-Abgabe, die
+    ihren Endwert erreicht hat, *bleibt* dort. Ein Fehler wäre die falsche
+    Antwort und hätte jeden ausgelieferten Rahmen sofort ungültig gemacht.
+    Was fehlte, war die **Auskunft**.
+
+    **Und sie braucht P3.8 nicht.** Ob eine Kurve *zu kurz* ist, hängt daran,
+    wie lang ein Tick ist — diese Frage ist offen. Ob ein Lauf **über sie
+    hinausgeht**, hängt an nichts dergleichen: Das ist eine Beschreibung, keine
+    Bewertung, und genau deshalb ließ sie sich vorziehen.
+    """
+
+    def test_die_bevoelkerungskurve_faellt_auf(self, properties):
+        """Der Fall, aus dem der Befund kam."""
+
+        from src.validation import horizontluecken
+
+        luecken = horizontluecken(properties, max_ticks=STANDARDLAUF_TICKS)
+        betroffen = {luecke.property_id for luecke in luecken}
+
+        assert "bevoelkerungsentwicklung" in betroffen, (
+            "Die einzige Trajektorie des Modells endet vor dem Standardlauf und wird "
+            "nicht gemeldet — genau der Zustand, den P2.8 beanstandet hat."
+        )
+
+    def test_eine_flache_baseline_hat_keinen_horizont(self, properties):
+        """**Die Unterscheidung, ohne die der Hinweis zum Rauschen wird.**
+
+        Ein Verlauf ohne Stützpunkte sagt «konstant» — das ist eine Aussage und
+        keine aufgebrauchte Vorgabe. Würde er mitgemeldet, stünden dreizehn
+        Zeilen im Preflight und niemand läse die eine, auf die es ankommt.
+        """
+
+        from src.validation import horizontluecken
+
+        betroffen = {luecke.property_id for luecke in horizontluecken(properties, max_ticks=999)}
+
+        assert "oil_price_index" not in betroffen
+        assert "kapazitaet_index" not in betroffen, (
+            "Eine flache Baseline wird als Horizontlücke gemeldet — dann meldet der "
+            "Hinweis jede Größe des Modells und sagt nichts mehr."
+        )
+
+    def test_ein_kurzer_lauf_meldet_nichts(self, properties):
+        """Die Gegenprobe: Wer innerhalb seiner Vorgaben bleibt, hört nichts."""
+
+        from src.validation import horizontluecken
+
+        assert horizontluecken(properties, max_ticks=1) == []
+
+    def test_der_hinweis_ist_kein_fehler(self, properties):
+        """**Er darf keinen Lauf verhindern.**
+
+        Stünde er in `collect_state_errors`, wäre jeder ausgelieferte Rahmen ab
+        sofort ungültig — alle vier laufen 50 Ticks bei Kurven, die früher
+        enden. Ein Wächter, der den Normalfall abweist, wird binnen einer Woche
+        entnervt gelockert.
+        """
+
+        from src.config_loader import build_initial_state
+        from src.validation import collect_state_errors, horizontluecken
+
+        zustand = build_initial_state()
+        zustand.clock.max_ticks = BACKTEST_TICKS
+
+        assert horizontluecken(
+            zustand.resolved_properties(), max_ticks=BACKTEST_TICKS
+        ), "Über 120 Ticks muss etwas zu melden sein"
+        assert collect_state_errors(zustand) == [], (
+            "Der Horizont-Hinweis ist unter die Fehler geraten — damit startet kein "
+            "ausgelieferter Rahmen mehr."
+        )

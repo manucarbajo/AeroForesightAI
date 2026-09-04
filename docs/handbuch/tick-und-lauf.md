@@ -38,7 +38,24 @@ vermerkt.
 
 ## Der Lauf
 
-Ein Lauf ist eine Folge von Ticks aus einer festgelegten Ausgangslage. Er erzeugt
+Ein Lauf ist eine Folge von Ticks aus einer festgelegten Ausgangslage.
+
+## Wie weit die Vorgaben reichen
+
+Manche Systemgrößen haben einen Verlauf mit Stützpunkten — die CO₂-Abgabe steigt
+etwa in zwei Stufen, die Bevölkerung wächst bis zu einer bestimmten Runde. **Hinter
+dem letzten Stützpunkt hält eine solche Kurve ihren letzten Wert.**
+
+Das ist meistens gemeint: Eine Abgabe, die ihren Endwert erreicht hat, bleibt dort.
+Bei der Bevölkerung heißt derselbe Mechanismus aber «ab hier wächst niemand mehr»,
+und das ist eine ganz andere Aussage — im Standardlauf betrifft es die letzten zehn
+von vierzig Runden.
+
+**Deshalb sagt der Lauf es seit September 2026.** Der Preflight nennt vor dem Start
+den frühesten Verlauf und wie viele Runden über ihn hinauslaufen; im Protokoll steht
+es für jeden betroffenen Verlauf. Es ist ein **Hinweis und kein Fehler**: Der Lauf
+startet, die Zahlen stimmen, Sie wissen nur, worauf sie beruhen.
+ Er erzeugt
 ein eigenes Verzeichnis unter `outputs/` mit allen Zwischenständen, Zeitreihen
 und Auswertungen. Was genau darin liegt, steht unter
 [Ausgabedateien](/doku/ref-ausgaben).

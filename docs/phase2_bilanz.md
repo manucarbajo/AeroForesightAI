@@ -95,7 +95,7 @@ nach Schwere und sagt, wo es steht.
 | **Die Kapazität wirkt nicht, wie zugesagt.** Unter `marge` ändert die doppelte Sitzzahl die Buchungsrate um 0,0001; unter `auslastung` wächst der Verkehr nur mit fallendem Preis. Dazu sättigt die Rationierung die Abgewiesenen. | P2.8-B, wieder offen · [Audit B1/B2](audit_phase2_2026-09-03.md) |
 | **Kein ausgeliefertes Szenario benutzt die Angebotsseite** — `kapazitaet_index` steht überall auf 1,0 ohne Regel. | P2.10, neu |
 | **Was ein Tick bedeutet, ist dreimal verschieden unterstellt** (Faktor 12). Blockiert unter anderem eine sinnvolle Erneuerungsrate. | P3.8, `tests/test_tickdauer_ist_uneinheitlich.py` |
-| **Trajektorien enden vor dem Lauf** (Tick 30 bei 40 bzw. 120 Ticks) und halten still ihren letzten Wert. | P2.8, Restposition |
+| **Trajektorien enden vor dem Lauf** (der früheste bei Tick 16, die Bevölkerung bei 30) und halten still ihren letzten Wert. **Seit dem 2026-09-03 sagt der Lauf es** — im Log und vor dem Start; ob eine Kurve deswegen *zu kurz* ist, hängt an der offenen Tick-Frage. | P2.8 erledigt · P3.8 offen |
 | **Ein Klick in der Schrittfolge kostet bis zu 2,9 s** — zehn Rundläufe, nicht die Rechnung. | P3.9 |
 | **Titel und Legende überlappen** in jedem Diagramm. | P3.7 |
 | **Impressum, Datenschutz und AGB brauchen Inhalte.** | P1.4, [`landingpage.md`](landingpage.md) |

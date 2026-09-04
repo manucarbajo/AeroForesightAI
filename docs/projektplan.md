@@ -1463,7 +1463,7 @@ Fällt die Wahl auf 2 oder 3, ist die Impact Balance dann auch zu implementieren
 
 **Doku zieht mit:** `docs/cib_role.md`, `docs/cib_rationale.md`, `docs/handbuch/cib.md`, `CLAUDE.md` (Glossar), `docs/entscheidung_szenarienschicht_2026-08-29.md` (die getroffene Wahl gehört dort nachgetragen).
 
-### P2.8 — Die Nachfrage kann nicht wachsen ✅ Weg A umgesetzt 2026-08-31
+### P2.8 — Die Nachfrage kann nicht wachsen ✅ erledigt 2026-09-03 (Weg A 2026-08-31)
 
 > **Der erste Befund, den der Backtest ohne Zutun geliefert hat.** Er entstand nicht aus einem Audit und nicht aus einer Code-Lektüre, sondern daraus, dass zum ersten Mal etwas außerhalb des Modells als Maßstab danebenlag.
 
@@ -1712,7 +1712,30 @@ Unter `marge` steigt der Verkehr um **66 %** von 0,3 auf 1,3 — **bei unveränd
 
 **Gehalten von:** [`tests/test_nachfragetreiber.py`](../tests/test_nachfragetreiber.py) — er misst den **Ist-Stand** (Horizontlücke in Ticks, Zuwachs der Kurve) und schlägt an, sobald sich einer der beiden bewegt. **Ein rotes Ergebnis ist dort keine Panne**, sondern die Nachricht, dass jemand die Nachfrageseite angefasst hat; dann gehört dieser Abschnitt neu geschrieben und der Backtest neu gerechnet, in dieser Reihenfolge.
 
-**Fertig wenn** ⚠️ **(teilweise, 2026-08-31):** Die Herkunft des Nachfragewachstums ist entschieden und begründet ✅, und der Backtest ist mit unverändertem Verfahren neu gerechnet, mit beiden Zahlen nebeneinander ✅. **Offen bleibt der Trajektorien-Horizont** — ein Lauf, der über den letzten Stützpunkt hinausgeht, sagt es weiterhin nicht. Das ist der Rest von P2.8 und hängt an [P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31): Ob eine Kurve «zu kurz» ist, entscheidet sich daran, wie lang ein Tick ist.
+#### Der Trajektorien-Horizont, geschlossen am 2026-09-03
+
+**Er hing angeblich an [P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31), und das war eine Verwechslung von zwei Fragen.** Ob eine Kurve **zu kurz** ist, hängt wirklich daran, wie lang ein Tick ist — die Frage bleibt offen. Ob ein Lauf **über sie hinausgeht**, hängt an nichts dergleichen: Das ist eine Beschreibung und keine Bewertung. Damit ließ sich der Rest vorziehen, statt ihn ein viertes Mal zu verschieben.
+
+**Gemeldet wird, nicht abgewiesen** — die tragende Entscheidung. Über den letzten Stützpunkt hinauszulaufen ist zulässig und meistens gewollt: Eine CO₂-Abgabe, die ihren Endwert erreicht hat, *bleibt* dort. Ein Fehler in `collect_state_errors` hätte **jeden ausgelieferten Rahmen sofort ungültig gemacht** — alle vier laufen 50 Ticks bei Kurven, die früher enden —, und ein Wächter, der den Normalfall abweist, wird binnen einer Woche entnervt gelockert. Was fehlte, war die **Auskunft**.
+
+**`validation.horizontluecken`** liefert sie; der Runner schreibt sie ins Log, der Assistent zeigt sie vor dem Start. Gemeldet wird der **früheste** Horizont und wie viele Verläufe betroffen sind — eine Liste von dreizehn Zeilen läse niemand.
+
+**Eine flache Baseline hat keinen Horizont**, und diese Unterscheidung entscheidet darüber, ob der Hinweis trägt: Ein Verlauf ohne Stützpunkte sagt «konstant», das ist eine Aussage und keine aufgebrauchte Vorgabe. Ohne sie meldete der Preflight jede Größe des Modells und sagte nichts mehr.
+
+**Gemessen am ausgelieferten Stand** (vier Verläufe mit Stützpunkten):
+
+| Verlauf | letzter Stützpunkt | Standardlauf (40) | Rahmen (50) | Backtest (120) |
+| --- | ---: | ---: | ---: | ---: |
+| `saf_mandate_share` | 16 | 24 Ticks darüber | 34 | 104 |
+| `income_index` | 20 | 20 | 30 | 100 |
+| `carbon_tax_level` | 30 | 10 | 20 | 90 |
+| `bevoelkerungsentwicklung` | 30 | 10 | 20 | **90** |
+
+Der letzte ist der Anlass gewesen: die **einzige** Trajektorie des Modells, und der Backtest rechnet drei Viertel seiner Länge mit eingefrorener Bevölkerung.
+
+**Gehalten von** `TestEinLaufSagtWieWeitSeineVorgabenReichen` in `tests/test_nachfragetreiber.py`, vier Zusagen — darunter die beiden, die den Hinweis brauchbar halten: dass eine flache Baseline **nicht** gemeldet wird, und dass der Hinweis **kein Fehler** ist.
+
+**Fertig wenn** ✅ **(2026-09-03):** Die Herkunft des Nachfragewachstums ist entschieden und begründet; der Backtest ist mit unverändertem Verfahren neu gerechnet, mit beiden Zahlen nebeneinander; und ein Lauf, der über den letzten Stützpunkt hinausgeht, sagt es — im Log und vor dem Start.
 
 **Doku zieht mit:** `CLAUDE.md` (Glossar, Invarianten), `docs/handbuch/grenzen.md`, `docs/handbuch/vergleiche.md` (ein Schnitt — Läufe von davor und danach sind nicht vergleichbar), `docs/backtest_vorlauf.md`.
 
@@ -1792,7 +1815,7 @@ Der Glockenverlauf des Erwerbslebens — Menschen in der Lebensmitte fliegen am 
 
 **Ein Nebenergebnis, auf das nicht hingebaut wurde und das deshalb zählt:** Die **Preiselastizität** des Modells verbesserte sich von **−1,83 auf −1,27**. Das Metaanalyse-Mittel bei Brons et al. (2002) liegt bei −1,146 mit Standardabweichung 0,619 — statt 1,1 Standardabweichungen sind es jetzt **0,2**. Auch die Spanne über plausible Preise schrumpfte von −0,58…−3,54 auf −0,46…−2,76 und liegt damit nicht mehr jenseits des niedrigsten aller 204 Schätzwerte. **Der Grund ist mechanisch:** Eine wirklich heterogene Bevölkerung kippt nicht mehr geschlossen über die Erschwinglichkeitsschwelle.
 
-**Und ein Ergebnis, das schlechter wurde — hier, damit es nicht untergeht:** Der Backtest verliert auf der Nachfrageseite leicht (21,81 → **23,43** vor der Pandemie), die Preisseite bleibt (1,29 → **1,27**). **Nicht zurückgebaut:** Die Änderung ist durch den Mechanismus begründet, nicht durch die Punktzahl, und [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--weg-a-umgesetzt-2026-08-31) sagt bereits, dass die Nachfragelücke strukturell ist. Ein Modell zurückzudrehen, weil es nach einer Korrektur auf *einer* Kennzahl schlechter abschneidet, ist genau die Anpassung an den Backtest, gegen die dieses Projekt anschreibt.
+**Und ein Ergebnis, das schlechter wurde — hier, damit es nicht untergeht:** Der Backtest verliert auf der Nachfrageseite leicht (21,81 → **23,43** vor der Pandemie), die Preisseite bleibt (1,29 → **1,27**). **Nicht zurückgebaut:** Die Änderung ist durch den Mechanismus begründet, nicht durch die Punktzahl, und [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--erledigt-2026-09-03-weg-a-2026-08-31) sagt bereits, dass die Nachfragelücke strukturell ist. Ein Modell zurückzudrehen, weil es nach einer Korrektur auf *einer* Kennzahl schlechter abschneidet, ist genau die Anpassung an den Backtest, gegen die dieses Projekt anschreibt.
 
 **Was von der ersten Fassung gilt — mit neuer Begründung:** **Es gibt weiterhin keinen Alterungspfad.** Nicht mehr, weil das Alter folgenlos wäre, sondern weil echte Alterung hieße, alle abgeleiteten Merkmale je Tick neu zu bestimmen — aus einer Person würde eine andere — *und* festzulegen, wie viele Jahre ein Tick ist. Letzteres ist die Kalendersemantik, die [Invariante 5](../CLAUDE.md) ausschließt. Die Bevölkerung bleibt eine **wiederholte Querschnittserhebung**: Wächst sie, kommen frisch gezogene Personen dazu, und die Altersstruktur bleibt stabil.
 
@@ -2176,7 +2199,7 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 | `altersmittel_jahre` | 50,8, konstant | **nein** |
 | `income_index` | 1,0 + 2 Regeln | ja, alle vier Rahmen |
 
-**Die Angebotsseite lebt damit ausschließlich im Backtest.** Für die vier ausgelieferten Weltbilder ist die Kapazität konstant — obwohl ihre Kohärenzbegründungen Nachfrageentwicklungen behaupten, die ohne Angebotsentwicklung nicht darstellbar sind. Das ist wörtlich der Befund von [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--weg-a-umgesetzt-2026-08-31), nur auf die eigenen Szenarien angewandt: Ein Rahmen, der Wachstum erzählt und die Kapazität festhält, erzählt eine Welt, die sein eigenes Modell für unmöglich hält.
+**Die Angebotsseite lebt damit ausschließlich im Backtest.** Für die vier ausgelieferten Weltbilder ist die Kapazität konstant — obwohl ihre Kohärenzbegründungen Nachfrageentwicklungen behaupten, die ohne Angebotsentwicklung nicht darstellbar sind. Das ist wörtlich der Befund von [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--erledigt-2026-09-03-weg-a-2026-08-31), nur auf die eigenen Szenarien angewandt: Ein Rahmen, der Wachstum erzählt und die Kapazität festhält, erzählt eine Welt, die sein eigenes Modell für unmöglich hält.
 
 **Was zu tun ist:** Mindestens ein Rahmenszenario bekommt einen begründeten Kapazitätspfad — und seine `kohaerenz` sagt, warum Angebot und Nachfrage in dieser Welt zusammengehören. Die Wahl der Strategie (`auslastung` oder `marge`) gehört ausdrücklich dazu; sie ist seit P2.8-B eine Aussage über die Welt und keine technische Einstellung.
 
@@ -2244,7 +2267,7 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 
 **Befund (B5 des Audits):** `income_factor` stand **ausschließlich** in der Erschwinglichkeitsschranke von `booking_probability` und **nicht im Nutzenterm**. Die Folge ist schwer zu übersehen, sobald man sie ausspricht: **Wer sich das Ticket leisten konnte, für den war Einkommen danach exakt folgenlos.** Ein Doppelverdiener und jemand knapp über der Grenze verspürten denselben Verzicht.
 
-Die gemessene «Einkommenselastizität» von **+0,69** war damit kein Verhaltensparameter, sondern die Dichte der Zahlungsbereitschaft am aktuellen Preis — und sie fiel mit steigendem Einkommen. [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--weg-a-umgesetzt-2026-08-31) hatte den Kanal als «korrekt geformt» geführt und mit der Einkommenselastizität bei Brons et al. verglichen; das war ein Kategorienunterschied.
+Die gemessene «Einkommenselastizität» von **+0,69** war damit kein Verhaltensparameter, sondern die Dichte der Zahlungsbereitschaft am aktuellen Preis — und sie fiel mit steigendem Einkommen. [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--erledigt-2026-09-03-weg-a-2026-08-31) hatte den Kanal als «korrekt geformt» geführt und mit der Einkommenselastizität bei Brons et al. verglichen; das war ein Kategorienunterschied.
 
 **Umgesetzt: der Preis wird an dem gemessen, was jemand hat.** `normalized_price / income_factor` statt `normalized_price` — dieselbe Ausgabe ist ein anderer Verzicht, je nachdem wovon sie abgeht. Das ist die **Budgetanteils-Form** und in der Nachfragetheorie der Regelfall.
 

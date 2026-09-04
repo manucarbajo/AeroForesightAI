@@ -1,6 +1,6 @@
 # Entscheidung: die Angebotsseite
 
-**Stand 2026-08-31 · Weg A entschieden und gebaut (siehe Nachtrag unten) · Grundlage für [P2.8](projektplan.md#p28--die-nachfrage-kann-nicht-wachsen--weg-a-umgesetzt-2026-08-31)**
+**Stand 2026-08-31 · Weg A entschieden und gebaut (siehe Nachtrag unten) · Grundlage für [P2.8](projektplan.md#p28--die-nachfrage-kann-nicht-wachsen--erledigt-2026-09-03-weg-a-2026-08-31)**
 
 Der Backtest hat auf der Nachfrageseite einen Fehlschlag gemessen: Das Modell
 lässt die Nachfrage bis 2019 auf **86** fallen, real stiegen die europäischen

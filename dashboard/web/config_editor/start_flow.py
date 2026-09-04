@@ -46,6 +46,7 @@ from src.orchestration.scenario_sweeps import (
     SZENARIOTEXT_NUTZT_LLM,
     vorgegebene_felder,
 )
+from src.validation import horizontluecken
 
 #: Die Szenario-Auswahl ist kein Draft-Feld: aus ihr folgen `scenario_mode` und
 #: `sweep_id`. Dieselbe Übersetzung wie beim Rechenmodus, aus demselben Grund —
@@ -644,7 +645,45 @@ def _warnings(draft: dict, errors: list[str]) -> list:
                 "warning",
             )
         )
+
+    # **Wie weit die Vorgaben reichen** (P2.8, Restposition). Ein Lauf über den
+    # letzten Stützpunkt hinaus ist zulässig — die Kurve hält dort ihren letzten
+    # Wert, und bei einer CO₂-Abgabe am Endwert ist genau das gemeint. Er soll es
+    # nur **sagen**: Bis dahin rechnete ein Standardlauf ein Viertel seiner Länge
+    # mit einer fortgeschriebenen Bevölkerung, ohne dass irgendwo etwas stand.
+    warnings.extend(_horizont_hinweis(draft))
     return warnings
+
+
+def _horizont_hinweis(draft: dict) -> list:
+    """Ein Satz, keine Liste — sonst steht der Preflight voller Selbstverständlichkeiten.
+
+    Genannt wird der **früheste** Horizont und wie viele Verläufe betroffen sind;
+    welche es im Einzelnen sind, steht im Modell-Bereich, wo man sie auch ändern
+    kann.
+    """
+
+    ticks = int(draft.get("rounds") or 0)
+    if ticks <= 0:
+        return []
+
+    luecken = horizontluecken(load_properties_config(), max_ticks=ticks)
+    if not luecken:
+        return []
+
+    frueheste = luecken[0]
+    wie_viele = "Ein Verlauf endet" if len(luecken) == 1 else f"{len(luecken)} Verläufe enden"
+    return [
+        ui.alert(
+            f"{wie_viele} vor dem Ende des Laufs — der früheste ist "
+            f"`{frueheste.property_id}` bei Tick {frueheste.letzter_stuetzpunkt}. "
+            f"Danach hält er seinen letzten Wert; die letzten "
+            f"{frueheste.ticks_darueber} Ticks rechnen also mit einer "
+            "fortgeschriebenen Vorgabe. Das ist zulässig — gemeint ist es nicht "
+            "immer.",
+            "info",
+        )
+    ]
 
 
 #: Was im Bedienfeld von den sechs Kacheln übrig bleibt. Die drei, die vor dem
