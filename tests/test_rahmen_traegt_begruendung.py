@@ -397,3 +397,84 @@ class TestAuchDerStandardIstEinRahmen:
             "Trajektorie aus `properties.json` wiederholen — zwei Quellen für "
             "denselben Wert."
         )
+
+
+class TestEineQuelleLaesstSichAuchOeffnen:
+    """**Befund B7b des Audits vom 2026-09-03.**
+
+    `test_die_quellen_sind_nicht_leer` prüft, **dass** Quellen dastehen — nicht,
+    **ob** ein genannter Pfad existiert. Zwei Rahmen zitierten
+    `evolution-of-alternative-fuels-for-aviation.pdf`; im Repo hieß die Datei
+    `…-for-aviation.pdf.coredownload.inline.pdf`, ein Rest des Downloads. Der
+    Verweis ging ins Leere.
+
+    **Eine Quellenangabe, die niemand öffnen kann, ist der halbe Weg zur
+    erfundenen Provenienz** — und genau dagegen ist Variante C angetreten: Die
+    Kohärenz eines Rahmens wird in Prosa **mit Quellen** begründet, weil kein
+    Algorithmus sie prüft. Dann müssen die Quellen auffindbar sein.
+
+    **Geprüft wird der Dateiname, nicht der Pfad**, und das ist Absicht: Quellen
+    stehen als Fließtext da («… und evolution-of-….pdf»), mal mit Verzeichnis,
+    mal ohne, und ein Titel darf Leerzeichen enthalten (Rounsevell 2010). Ein
+    Muster auf ganze Pfade fand deshalb beim ersten Anlauf vier Phantome und den
+    echten Fall nicht.
+    """
+
+    #: Wo eine zitierte Datei liegen darf.
+    WURZELN = ("docs", "configs")
+
+    #: **Leerzeichen nur mit Verzeichnis davor**, und das ist die Regel, die den
+    #: ersten Anlauf gerettet hat: Ein Muster, das Leerzeichen überall erlaubt,
+    #: zog «roadmap.pdf und gibt-es-nicht.pdf» zu *einem* Dateinamen zusammen und
+    #: fand damit keinen der beiden. Ein Titel mit Leerzeichen kommt in diesen
+    #: Quellen immer mit Pfad (Rounsevell 2010); ein blanker Dateiname im
+    #: Fließtext ist ein einzelnes Wort.
+    _MUSTER = (
+        r"(?:docs|configs|src|tests)/[^,;()]+?\.(?:pdf|md|json)" r"|[^\s,;()]+\.(?:pdf|md|json)"
+    )
+
+    @classmethod
+    def _dateinamen(cls, text: str) -> list[str]:
+        import re
+
+        return [treffer.split("/")[-1].strip() for treffer in re.findall(cls._MUSTER, text)]
+
+    @classmethod
+    def _vorhandene(cls) -> set[str]:
+        from pathlib import Path
+
+        namen: set[str] = set()
+        for wurzel in cls.WURZELN:
+            namen.update(p.name for p in Path(wurzel).rglob("*") if p.is_file())
+        return namen
+
+    @pytest.mark.parametrize("szenario", RAHMEN, ids=lambda s: s.id)
+    def test_jede_genannte_datei_liegt_im_repo(self, szenario: SweepConfig) -> None:
+        vorhanden = self._vorhandene()
+
+        fehlend = [
+            name
+            for quelle in szenario.kohaerenz.quellen
+            for name in self._dateinamen(quelle)
+            if name not in vorhanden
+        ]
+
+        assert not fehlend, (
+            f"`{szenario.id}` zitiert Dateien, die es nicht gibt: {fehlend}. Eine "
+            "Quellenangabe, die niemand öffnen kann, belegt nichts."
+        )
+
+    def test_der_waechter_wuerde_einen_rueckfall_bemerken(self) -> None:
+        """Er muss beide Formen finden — mit Verzeichnis und ohne, mit Leerzeichen
+        im Titel — sonst ist er beim nächsten Mal wieder blind."""
+
+        mit_pfad = "docs/research/studies_future/gibt-es-nicht.pdf — eine Studie"
+        ohne_pfad = "… roadmap.pdf und gibt-es-auch-nicht.pdf (IATA)"
+        mit_leerzeichen = "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell.pdf"
+
+        assert self._dateinamen(mit_pfad) == ["gibt-es-nicht.pdf"]
+        assert "gibt-es-auch-nicht.pdf" in self._dateinamen(ohne_pfad)
+        assert self._dateinamen(mit_leerzeichen) == ["WIREs Climate Change - 2010 - Rounsevell.pdf"]
+
+        vorhanden = self._vorhandene()
+        assert "gibt-es-nicht.pdf" not in vorhanden

@@ -425,6 +425,15 @@ Zusage «der Vorbehalt geht über den Baustein hinaus».
 im Repo heißt die Datei `…-for-aviation.pdf.coredownload.inline.pdf`. Der
 Wächter prüft nicht, ob die genannten Pfade existieren.
 
+> **Behoben am 2026-09-03.** Die Datei trägt jetzt ihren sauberen Namen — der
+> `.coredownload.inline`-Zusatz war ein Rest des Downloads und nicht Teil der
+> Quelle. `TestEineQuelleLaesstSichAuchOeffnen` prüft seither jede genannte
+> Datei gegen das Repo; die Gegenprobe (Datei zurückbenannt) meldet beide
+> Rahmen. **Das Muster hat dabei zwei Anläufe gebraucht:** Leerzeichen überall
+> zu erlauben zog «roadmap.pdf und gibt-es-nicht.pdf» zu *einem* Namen zusammen
+> und fand keinen von beiden. Es gilt jetzt: Leerzeichen nur mit Verzeichnis
+> davor.
+
 **B7c — Trennschärfe der Grounding-Prüfung.** `pruefe_gegen_kontext` hält jede
 Zahl der Antwort gegen **alle** Zahlen des Kontextblocks, ohne Bezug zur Größe,
 und akzeptiert zusätzlich `wert × 100` bzw. `wert / 100`; 0–10 und 100 sind
