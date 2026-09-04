@@ -245,3 +245,64 @@ class TestAskFuehrtDiePruefungAus:
         explorer = StateExplorer(self._kontext(tmp_path), llm=LiestAb())
 
         assert explorer.ask("Wie hoch war der Preis?").belegt
+
+
+class TestDieTrennschaerfeStehtDabei:
+    """**Befund B7c des Audits vom 2026-09-03.**
+
+    Die Prüfung fragt «steht diese Zahl irgendwo in den Laufdaten» — **ohne
+    Bezug zur Größe**. Das ist so gewollt und im Docstring von
+    `pruefe_gegen_kontext` sauber gesagt; unsichtbar war die Folge daraus: Je
+    mehr Zahlen im Kontextblock stehen, desto eher findet sich für eine
+    erfundene zufällig eine Entsprechung. Ein «belegt» aus einem Block mit
+    dreißig Zahlen wiegt anders als eines aus einem mit dreihundert, und wer die
+    Antwort las, konnte das nicht wissen.
+
+    **Behoben wird das nicht durch eine schärfere Prüfung, sondern durch eine
+    ehrlichere Auskunft.** Eine Zuordnung von Zahl zu Größe wäre eine zweite
+    Behauptung — sie müsste raten, worauf sich «140,38» im Satz bezieht. Die
+    Grenze bleibt; sie steht jetzt nur dabei.
+    """
+
+    KONTEXT = "tick 1: preis 140.38, rate 0.4818; tick 2: preis 141.02, rate 0.4712"
+
+    def test_die_zahl_der_kontextzahlen_wird_mitgefuehrt(self):
+        antwort = pruefe_gegen_kontext("Der Preis lag bei 140,38.", self.KONTEXT)
+
+        assert antwort.kontextzahlen > 0
+        assert antwort.geprueft == 1
+
+    def test_doppelte_zaehlen_nur_einmal(self):
+        """Sonst maesse die Zahl die Laenge des Blocks statt seiner Vielfalt —
+        und genau die Vielfalt entscheidet, wie leicht ein Zufallstreffer fällt."""
+
+        einmal = pruefe_gegen_kontext("x", "preis 140.38")
+        dreimal = pruefe_gegen_kontext("x", "preis 140.38, 140.38, 140.38")
+
+        assert einmal.kontextzahlen == dreimal.kontextzahlen
+
+    def test_der_vorbehalt_nennt_beide_zahlen(self):
+        """Der angehängte Satz ist der einzige Weg, auf dem die Auskunft eine
+        Oberfläche erreicht, die `str()` benutzt."""
+
+        antwort = pruefe_gegen_kontext(
+            "Der Preis lag bei 140,38 und stieg um 213,50.", self.KONTEXT
+        )
+        text = str(antwort)
+
+        assert not antwort.belegt
+        assert f"{antwort.geprueft} Zahlen" in text
+        assert f"{antwort.kontextzahlen} verschiedene Zahlen" in text
+
+    def test_eine_belegte_antwort_bleibt_still(self):
+        """**Die Auskunft gehört zum Vorbehalt, nicht zu jeder Antwort.**
+
+        Wer nichts Unbelegtes sagt, bekommt keinen Anhang — sonst stünde unter
+        jeder Antwort eine Fußnote, und die Markierung, auf die es ankommt,
+        ginge darin unter.
+        """
+
+        antwort = pruefe_gegen_kontext("Der Preis lag bei 140,38.", self.KONTEXT)
+
+        assert antwort.belegt
+        assert str(antwort) == antwort.text

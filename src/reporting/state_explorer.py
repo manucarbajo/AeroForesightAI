@@ -412,6 +412,15 @@ class Antwort:
     #: Wie viele Zahlen überhaupt geprüft wurden. Ohne diese Angabe sähe eine
     #: Antwort ohne Zahlen genauso «sauber» aus wie eine vollständig belegte.
     geprueft: int = 0
+    #: Wie viele **verschiedene** Zahlen im Kontextblock standen (B7c, 2026-09-03).
+    #:
+    #: **Das ist die Trennschärfe der Prüfung, und sie war unsichtbar.** Geprüft
+    #: wird «steht diese Zahl irgendwo in den Laufdaten» — ohne Bezug zur Größe.
+    #: Je mehr Zahlen im Block stehen, desto eher findet sich für eine erfundene
+    #: zufällig eine Entsprechung. Ein «belegt» aus einem Block mit dreißig Zahlen
+    #: wiegt anders als eines aus einem mit dreihundert, und wer die Antwort liest,
+    #: konnte das bisher nicht wissen.
+    kontextzahlen: int = 0
 
     @property
     def belegt(self) -> bool:
@@ -432,7 +441,11 @@ class Antwort:
             f"⚠️ **Nicht in den Laufdaten belegt:** {zahlen}\n\n"
             "Diese Zahlen stehen so in keiner Datei dieses Laufs. Das kann eine "
             "eigene Rechnung des Sprachmodells sein (etwa eine Differenz) oder "
-            "eine Erfindung — die Prüfung unterscheidet das nicht."
+            "eine Erfindung — die Prüfung unterscheidet das nicht.\n\n"
+            f"Geprüft wurden {self.geprueft} Zahlen der Antwort gegen "
+            f"{self.kontextzahlen} verschiedene Zahlen der Laufdaten. Die Prüfung "
+            "fragt, **ob** eine Zahl dort vorkommt — nicht, ob sie an der richtigen "
+            "Stelle steht."
         )
 
 
@@ -479,7 +492,12 @@ def pruefe_gegen_kontext(antwort: str, kontext: str) -> Antwort:
         if schreibweise not in unbelegt:
             unbelegt.append(schreibweise)
 
-    return Antwort(text=antwort, unbelegt=tuple(unbelegt), geprueft=geprueft)
+    return Antwort(
+        text=antwort,
+        unbelegt=tuple(unbelegt),
+        geprueft=geprueft,
+        kontextzahlen=len(set(im_kontext)),
+    )
 
 
 class StateExplorer:

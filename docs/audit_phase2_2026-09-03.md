@@ -443,6 +443,13 @@ erfundene Zahl, die irgendwo im Kontext vorkommt, gilt als belegt. **Kein
 Fehler, eine Grenze** — sichtbar machen ließe sie sich, indem `Antwort` die Zahl
 der Kontextzahlen mitführt.
 
+> **Umgesetzt am 2026-09-03.** `Antwort.kontextzahlen` führt mit, gegen wie viele
+> **verschiedene** Zahlen geprüft wurde, und der angehängte Vorbehalt nennt beide:
+> «Geprüft wurden 2 Zahlen der Antwort gegen 6 verschiedene Zahlen der Laufdaten.»
+> Die Prüfung selbst bleibt, wie sie war — eine Zuordnung von Zahl zu Größe wäre
+> eine zweite Behauptung, die raten müsste, worauf sich eine Zahl im Satz bezieht.
+> Die Grenze wird nicht beseitigt, sie wird lesbar.
+
 **B7d — `resolve_market_feedback_config` hat sieben Literal-Rückfälle.** *(Behoben am 2026-09-03: `_FELDER` setzt nur, was eine Regel wirklich nennt; alles andere füllt `MarketFeedbackConfig`. Die ausgelieferte 0,25 gilt, der Test sagt es, und der dritte `--deselect` in der CI ist weg.)*
 `0.37`, `0.08`, `0.08`, `0.85`, `0.6`, `0.33` und seit P2.8-B `"auslastung"`
 stehen dort neben denselben Vorgabewerten in `MarketFeedbackConfig`. Zwei

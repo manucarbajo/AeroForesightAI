@@ -23,6 +23,15 @@ aufgeführt:
 diese Zahl in den Laufdaten?» — nicht «ist diese Zahl richtig». Der Unterschied
 ist wichtig, weil er beide Richtungen betrifft.
 
+**Und umgekehrt ist eine *nicht* markierte Zahl nicht automatisch an der
+richtigen Stelle.** Geprüft wird, ob sie in den Laufdaten **vorkommt** — nicht,
+ob sie zu der Größe gehört, über die der Satz spricht. Je mehr Zahlen in den
+Daten stehen, desto eher trifft eine erfundene zufällig eine davon. Der Hinweis
+unter einer markierten Antwort sagt deshalb seit September 2026 dazu, gegen wie
+viele verschiedene Zahlen geprüft wurde: «Geprüft wurden 2 Zahlen der Antwort
+gegen 6 verschiedene Zahlen der Laufdaten.» Bei sechs heißt «belegt» mehr als
+bei sechshundert.
+
 Eine markierte Zahl ist **nicht automatisch falsch.** Rechnet das Modell eine
 Differenz aus — «der Preis stieg um 12,50 Euro» —, dann steht diese 12,50
 nirgends in den Daten, obwohl die Rechnung stimmen kann. Auch das wird markiert,

@@ -1961,7 +1961,15 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 **Der Wächter:** [`tests/test_explorer_grounding.py`](../tests/test_explorer_grounding.py), 28 Zusagen. **Mehr davon prüfen die Ruhe der Prüfung als ihren Alarm** — acht Fälle, in denen nichts markiert werden darf, gegen drei, in denen etwas markiert werden muss. Dazu die Nachstellung des Zerlegungsfehlers und die Zusage, dass `ask` kein rohes `str` mehr zurückgibt: Fiele es darauf zurück, wäre die Prüfung weg und alles andere trotzdem grün.
 
-**Fertig wenn** ✅ **(2026-08-31):** Eine Antwort mit einer nicht im Kontext belegten Zahl wird erkannt; Tests decken den belegten und den erfundenen Fall ab.
+#### Die Trennschärfe steht seit dem 2026-09-03 dabei (B7c)
+
+Die Prüfung fragt «steht diese Zahl irgendwo in den Laufdaten» — **ohne Bezug zur Größe**. Das ist gewollt und im Docstring sauber gesagt; unsichtbar war die Folge: Je mehr Zahlen im Kontextblock stehen, desto eher findet sich für eine erfundene zufällig eine Entsprechung. Ein «belegt» aus einem Block mit dreißig Zahlen wiegt anders als eines aus einem mit dreihundert.
+
+**Behoben nicht durch eine schärfere Prüfung, sondern durch eine ehrlichere Auskunft.** Eine Zuordnung von Zahl zu Größe wäre eine zweite Behauptung — sie müsste raten, worauf sich «140,38» im Satz bezieht, und läge damit genau dort falsch, wo es darauf ankommt. `Antwort.kontextzahlen` führt stattdessen mit, gegen **wie viele verschiedene** Zahlen geprüft wurde, und der angehängte Vorbehalt nennt beide Zahlen: «Geprüft wurden 2 Zahlen der Antwort gegen 6 verschiedene Zahlen der Laufdaten.» Die Grenze bleibt; sie steht jetzt dabei.
+
+**Verschiedene, nicht alle** — sonst maße die Zahl die Länge des Blocks statt seiner Vielfalt, und die Vielfalt entscheidet, wie leicht ein Zufallstreffer fällt. **Und nur am Vorbehalt**, nicht unter jeder Antwort: Sonst stünde eine Fußnote unter jeder Auskunft und die Markierung, auf die es ankommt, ginge darin unter.
+
+**Fertig wenn** ✅ **(2026-08-31, ergänzt 2026-09-03):** Eine Antwort mit einer nicht im Kontext belegten Zahl wird erkannt; Tests decken den belegten und den erfundenen Fall ab; und der Vorbehalt sagt, wie trennscharf die Prüfung an dieser Stelle überhaupt war.
 
 **Doku zieht mit:** `docs/handbuch/abfrage.md`, `docs/handbuch/zahlen-und-sprache.md`, `CLAUDE.md` (Glossar "State Explorer").
 
