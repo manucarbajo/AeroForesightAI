@@ -465,6 +465,12 @@ nur die obere Klemme (1,6 %, reproduziert). Zusammen sind 5,5 % der Masse
 geklemmt — deutlich unter dem 10-%-Deckel und kein Fehler, aber die untere Zahl
 gehört genannt, weil sie dieselbe Frage betrifft.
 
+> **Beide behoben am 2026-09-03.** Die Lebenszyklus-Quelle sagt jetzt «bei 18 ein
+> Fünftel, bei 90 ein Zwölftel», die P2.4-Tabelle trägt ihr Datum und daneben die
+> heutigen Werte (22,9 / 43,2 / 58,8 / 59,7 / 34,3 %) samt dem Hinweis, dass die
+> Rangfolge *innerhalb* der Lebensmitte Rauschen ist — die Glocke ist um 50
+> symmetrisch. Und die untere Klemme steht in P2.9 neben der oberen.
+
 ### B8 · Effizienz — 63 % des Bevölkerungs-Ticks sind Objektkopien 🔷 **klein**
 
 cProfile, 10 Ticks, 1000 Personen, Standardkonfiguration:
