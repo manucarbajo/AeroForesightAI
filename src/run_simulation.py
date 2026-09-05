@@ -546,15 +546,33 @@ def _schreibe(zeile: str) -> None:
     `backslashreplace` und nicht `replace`: Ein `\\u2265` ist nachschlagbar, ein
     `?` ist verloren. Wer den Befund weitermeldet, soll sagen koennen, was dort
     stand.
+
+    **Der Ausweichpfad braucht nichts als `write`** (P3.14). Bis zum 2026-09-05
+    schrieb er die entschaerften Bytes nach ``sys.stderr.buffer`` — und ein
+    Strom **ohne** dieses Attribut machte aus dem `UnicodeEncodeError` einen
+    `AttributeError`: einen Traceback an genau der Stelle, an der P3.3 einen
+    weggeraeumt hat. Ein Fehlerweg, der selbst scheitern kann, ist keiner, und
+    dieser hier ist die Reserve fuer genau den Fall, den `stdio_auf_utf8`
+    offenlaesst (ein Strom, der die Umstellung verweigert — dafuer warnt sie,
+    statt zu scheitern).
+
+    **Der Umweg ueber die Bytes war ueberfluessig**, und das ist der Grund, warum
+    hier kein `getattr(..., "buffer", None)` steht: `backslashreplace` ersetzt
+    genau die Zeichen, die diese Kodierung *nicht* kann, durch ASCII-Escapes —
+    was uebrig bleibt, ist per Konstruktion schreibbar. Zurueckdekodiert geht es
+    deshalb durch dieselbe `print`-Zeile wie der Normalfall. Ein Zeichen, das
+    die Konsole darstellen kann (`oe`, `—`), bleibt dabei stehen; nur das
+    Unschreibbare wird zu `\\u2265`.
     """
 
     try:
         print(zeile, file=sys.stderr)
     except UnicodeEncodeError:
-        kodierung = sys.stderr.encoding or "ascii"
-        roh = zeile.encode(kodierung, errors="backslashreplace")
-        sys.stderr.buffer.write(roh + b"\n")
-        sys.stderr.flush()
+        kodierung = getattr(sys.stderr, "encoding", None) or "ascii"
+        entschaerft = zeile.encode(kodierung, errors="backslashreplace").decode(
+            kodierung, errors="replace"
+        )
+        print(entschaerft, file=sys.stderr)
 
 
 def main() -> int:

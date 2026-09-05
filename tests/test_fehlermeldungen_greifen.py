@@ -183,26 +183,78 @@ class TestDerFehlerwegScheitertNichtSelbst:
     Stellen ist ein eigener Befund (P3.10).
     """
 
-    def test_ein_unschreibbares_zeichen_verliert_nicht_die_meldung(self, monkeypatch, capsys):
+    # **Hier stand bis P3.14 ein Test, der seine eigene Zusage nie geprüft hat.**
+    # Er ersetzte `builtins.print` durch eine Fassung, die cp1252-Fehler wirft,
+    # ließ `sys.stderr` aber das Auffangobjekt von `capsys` — und dessen
+    # `encoding` ist **utf-8**. Der Ausweichpfad kodierte also nach utf-8, wo
+    # `backslashreplace` nichts zu ersetzen hat; geschrieben wurde
+    # `'… cost_pressure ≥ 0,8 …'` mit echtem Zeichen. Durchgegangen ist er über
+    # das zweite Glied seiner eigenen Bedingung:
+    #
+    #     assert "u2265" in ausgabe or "≥" in ausgabe
+    #
+    # Eine Attrappe, die an einer Stelle scheitert und an der anderen so tut,
+    # als sei alles in Ordnung, prüft die Verbindung dazwischen nicht. Ersetzt
+    # durch den Test darunter: ein echter Strom, dessen `write` wirft **und**
+    # dessen `encoding` cp1252 sagt — in beiden Bauformen.
+
+    @pytest.mark.parametrize("mit_puffer", [True, False], ids=["mit .buffer", "ohne .buffer"])
+    def test_der_ausweichpfad_braucht_keinen_byte_puffer(self, monkeypatch, mit_puffer):
+        """**Prüfling und Prüfer teilten dieselbe Voraussetzung** (P3.14, B2 des Audits).
+
+        Der Test darüber schreibt in den `stderr` von `capsys` — und der *hat*
+        einen `.buffer`. Der Ausweichpfad las genau dieses Attribut, und ein
+        Strom ohne machte aus dem `UnicodeEncodeError` einen `AttributeError`:
+        einen Traceback an der Stelle, an der P3.3 einen weggeräumt hat.
+
+        Ein Tee, ein Wrapper einer Oberfläche oder ein Testharnisch ist genau so
+        ein Strom. Beide Formen laufen hier durch dieselbe Zusage, damit der
+        pufferlose Fall nicht wieder der ungeprüfte ist.
+        """
+
+        import io
+        import sys
+
         from src.run_simulation import _melde_befunde
 
-        echtes_print = builtins.print
+        class NurText(io.TextIOBase):
+            """Ein Strom mit `write` und sonst nichts — kein `buffer`."""
 
-        def print_wie_cp1252(*args, **kwargs):
-            text = " ".join(str(a) for a in args)
-            text.encode("cp1252")  # wirft, wie die echte Konsole
-            return echtes_print(*args, **kwargs)
+            def __init__(self) -> None:
+                self.stuecke: list[str] = []
 
-        monkeypatch.setattr(builtins, "print", print_wie_cp1252)
+            @property
+            def encoding(self) -> str:
+                return "cp1252"
+
+            def write(self, s: str) -> int:
+                s.encode("cp1252")  # wirft, wie die echte Konsole
+                self.stuecke.append(s)
+                return len(s)
+
+        class MitPuffer(NurText):
+            """Dieselbe Konsole, aber mit Byte-Puffer darunter — wie `capsys`."""
+
+            def __init__(self) -> None:
+                super().__init__()
+                self._roh = io.BytesIO()
+
+            @property
+            def buffer(self) -> io.BytesIO:
+                return self._roh
+
+        strom = MitPuffer() if mit_puffer else NurText()
+        monkeypatch.setattr(sys, "stderr", strom)
 
         _melde_befunde("validierungsfehler:", ["Bedingung: cost_pressure ≥ 0,8 (CO₂-Abgabe)"])
 
-        ausgabe = capsys.readouterr().err
+        ausgabe = "".join(strom.stuecke)
         assert "cost_pressure" in ausgabe, "Der Befund ist verschwunden"
-        assert "u2265" in ausgabe or "≥" in ausgabe, (
-            "Das unschreibbare Zeichen wurde still weggelassen statt ersetzt — "
-            "wer den Befund weitermeldet, kann nicht sagen, was dort stand."
-        )
+        assert "u2265" in ausgabe, "Das unschreibbare Zeichen wurde nicht nachschlagbar ersetzt"
+        assert "u2082" in ausgabe, "CO₂ ebenso"
+        # Was die Konsole kann, bleibt stehen — `backslashreplace` ersetzt nur,
+        # was sie nicht kann. Sonst wäre jede Umlautmeldung unlesbar.
+        assert "0,8" in ausgabe
 
 
 class TestEinFehlenderGraphSagtWasFehlt:

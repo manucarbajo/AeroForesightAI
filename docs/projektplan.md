@@ -2344,7 +2344,7 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 | [P3.10](#p310--46-zeichenketten-die-die-konsole-nicht-schreiben-kann--erledigt-2026-09-05) Zeichensatz der Konsole | ✅ erledigt (aus P3.3) |
 | [P3.11](#p311--die-lauf-argumente-sind-ein-simplenamespace--erledigt-2026-09-05) Lauf-Argumente ohne Form | ✅ erledigt (aus P3.6) |
 | [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--erledigt-2026-09-05) Rückfall auf `llama3.2` | ✅ erledigt (aus dem Audit) |
-| [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--offen-2026-09-05) Fehlerweg braucht `.buffer` | 🟡 offen (aus dem Audit) |
+| [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--erledigt-2026-09-05) Fehlerweg braucht `.buffer` | ✅ erledigt (aus dem Audit) |
 | [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--offen-2026-09-05) Annotation gegen Rumpf | 🟡 offen (aus dem Audit) |
 | [P3.16](#p316--das-500-ms-kriterium-und-sein-deckel--zu-entscheiden-2026-09-05) 500 ms gegen einen Deckel von 900 | 🟡 zu entscheiden (aus dem Audit) |
 | [P3.17](#p317--der-browser-wächter-ist-rot-und-niemand-läuft-ihn--offen-2026-09-05) Browser-Wächter rot, C5 zum zweiten Mal | 🔴 offen (aus dem Audit, **vorbestehend**) |
@@ -2650,7 +2650,7 @@ Rückfall aus Phase 2, den dieses Audit gefunden hat (P3.17):
 | Paket | Befund | Schwere |
 | --- | --- | --- |
 | [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--erledigt-2026-09-05) | `draft_to_launch_config` erfindet `llama3.2` für ein leeres Modellfeld — der Rückfall, den P3.4 zwanzig Zeilen weiter abgeschafft hat | 🔶 **behoben** |
-| [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--offen-2026-09-05) | `_schreibe` setzt `sys.stderr.buffer` voraus; ohne wird aus dem `UnicodeEncodeError` ein `AttributeError` — und alle drei Tests teilen die Annahme | 🔶 |
+| [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--erledigt-2026-09-05) | `_schreibe` setzt `sys.stderr.buffer` voraus; ohne wird aus dem `UnicodeEncodeError` ein `AttributeError` — und alle drei Tests teilen die Annahme | 🔶 |
 | [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--offen-2026-09-05) | `sweep_metadata_args` sagt `-> SimpleNamespace` und liefert `RunArgs`; `sweep_id` ist unbenutzt; der tote Import bleibt für `ruff` unsichtbar | 🔶 |
 | [P3.16](#p316--das-500-ms-kriterium-und-sein-deckel--zu-entscheiden-2026-09-05) | P3.9s Kriterium lautet 500 ms, sein Wächter deckelt bei 900 — ein Rückfall auf 800 bliebe grün | 🔶 |
 | [P3.17](#p317--der-browser-wächter-ist-rot-und-niemand-läuft-ihn--offen-2026-09-05) | Der Browser-Wächter ist **112 zu 6** rot — **vorbestehend**, auf `main` identisch nachgemessen. C5 des Phase-2-Audits gilt als behoben und ist es nicht, mit neuen Ursachen | ⛔ |
@@ -2738,7 +2738,7 @@ jedes Mal wurde es rot.
 
 ---
 
-### P3.14 — Der Fehlerweg braucht keinen Puffer 🟡 offen (2026-09-05)
+### P3.14 — Der Fehlerweg braucht keinen Puffer ✅ erledigt 2026-09-05
 
 **Fundstelle:** [`src/run_simulation.py:556`](../src/run_simulation.py) (`_schreibe`),
 [`tests/test_zeichensatz.py`](../tests/test_zeichensatz.py).
@@ -2764,6 +2764,37 @@ dort fällt er um.
 ersetzte Zeichenkette durch `write`. Dazu ein vierter Test mit einem Strom
 **ohne** `.buffer` — er ist der eigentliche Gegenstand des Pakets, nicht die zwei
 Zeilen Code.
+
+**Was gilt** (2026-09-05), und es ist einfacher als das Kriterium verlangte: Es
+steht **kein** `getattr(..., "buffer", None)` dort, weil der Umweg über die
+Bytes von Anfang an überflüssig war. `backslashreplace` ersetzt genau die
+Zeichen, die die Kodierung *nicht* kann, durch ASCII-Escapes — was übrig bleibt,
+ist per Konstruktion schreibbar. Zurückdekodiert geht es deshalb durch dieselbe
+`print`-Zeile wie der Normalfall, und die Abhängigkeit ist nicht abgefangen,
+sondern **weg**. Ein Zeichen, das die Konsole darstellen kann (`ö`, `—`), bleibt
+dabei stehen; nur das Unschreibbare wird zu seiner nachschlagbaren Escape-Folge (`U+2265` als Text, nicht `?`). Auch `sys.stderr.flush()`
+ist entfallen — der Normalfall flusht ebenfalls nicht, und es war eine zweite
+Attributabhängigkeit derselben Art.
+
+**Der vierte Test ist eine Parametrisierung über beide Bauformen** (mit und ohne
+`.buffer`), damit der pufferlose Fall nicht wieder der ungeprüfte ist. Drei
+Mutationen geprüft: alte Fassung zurück, `errors="replace"` statt
+`backslashreplace`, Ausweichpfad ganz weg — dreimal rot.
+
+> **Und dabei kam ein dritter Befund derselben Familie heraus, in diesem Paket
+> selbst.** Der bestehende Test des Ausweichpfads hat seine Zusage **nie
+> geprüft**: Er ersetzte `builtins.print` durch eine Fassung, die
+> cp1252-Fehler wirft, ließ `sys.stderr` aber das Auffangobjekt von `capsys` —
+> und dessen `encoding` ist **utf-8**. Der Ausweichpfad kodierte also nach
+> utf-8, wo `backslashreplace` nichts zu ersetzen hat; geschrieben wurde das
+> echte `≥`. Durchgegangen ist er über das zweite Glied seiner eigenen
+> Bedingung (`assert "u2265" in ausgabe or "≥" in ausgabe`). **Nachgemessen**,
+> nicht vermutet: Der alte Pfad schrieb `'… cost_pressure ≥ 0,8 …'`, `"u2265"`
+> war nicht enthalten. Er ist ersetzt, nicht repariert — die Lehre steht als
+> Kommentar an seiner Stelle: *Eine Attrappe, die an einer Stelle scheitert und
+> an der anderen so tut, als sei alles in Ordnung, prüft die Verbindung
+> dazwischen nicht.* Und eine `or`-verknüpfte Zusage prüft im Zweifel die
+> lockerere Hälfte.
 
 ---
 

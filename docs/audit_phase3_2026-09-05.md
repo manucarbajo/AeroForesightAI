@@ -216,6 +216,30 @@ Ausweichpfad, und genau dort kann er umfallen.
 Puffer die ersetzte Zeichenkette durch `write` schicken. Dazu ein vierter Test
 mit einem Strom **ohne** `.buffer`.
 
+> **Behoben noch am 2026-09-05 (P3.14) — und einfacher als hier vorgeschlagen.**
+> Es steht **kein** `getattr(..., "buffer", None)` dort: Der Umweg über die Bytes
+> war von Anfang an überflüssig. `backslashreplace` ersetzt genau die Zeichen,
+> die die Kodierung nicht kann, durch ASCII-Escapes — was übrig bleibt, ist per
+> Konstruktion schreibbar und geht durch dieselbe `print`-Zeile wie der
+> Normalfall. Die Abhängigkeit ist nicht abgefangen, sondern weg; `flush()` als
+> zweite Attributabhängigkeit ebenso.
+>
+> **Der Befund war größer als beschrieben.** Oben steht «alle drei Tests teilen
+> die Annahme» — richtig ist etwas Schlimmeres: Der **eine** Test, der wirklich
+> den Ausweichpfad anfasst (die drei in `test_zeichensatz.py` prüfen
+> `stdio_auf_utf8`, nicht `_schreibe`), hat seine Zusage **nie** geprüft. Er
+> ersetzte `builtins.print` durch eine cp1252-werfende Fassung, ließ `sys.stderr`
+> aber das Auffangobjekt von `capsys`, dessen `encoding` **utf-8** ist — der
+> Ausweichpfad kodierte also nach utf-8, wo `backslashreplace` nichts zu
+> ersetzen hat. Nachgemessen geschrieben wurde `'… cost_pressure ≥ 0,8 …'`, und
+> `"u2265"` war nicht enthalten; durchgegangen ist er über das zweite Glied
+> seiner eigenen Bedingung (`assert "u2265" in ausgabe or "≥" in ausgabe`).
+> Ersetzt durch eine Parametrisierung über beide Bauformen, drei Mutationen
+> geprüft. **Zwei Lehren stehen als Kommentar an seiner Stelle:** Eine Attrappe,
+> die an einer Stelle scheitert und an der anderen so tut, als sei alles in
+> Ordnung, prüft die Verbindung dazwischen nicht — und eine `or`-verknüpfte
+> Zusage prüft im Zweifel die lockerere Hälfte.
+
 ### B3 · `sweep_metadata_args` sagt `SimpleNamespace` und liefert `RunArgs` 🔶 **mittel, Vertrag**
 
 P3.11 hat diese Funktion von einem Namensraum auf `RunArgs` umgestellt und dabei
@@ -524,7 +548,7 @@ ein rotes Ergebnis dort ist eine gute Nachricht.
 | --- | --- | --- | --- |
 | ⛔ | **B6** Der Browser-Wächter ist wieder rot; C5 gilt als behoben | `tests/test_web_overflow.py` | **Vorbestehend, auf `main` identisch nachgemessen.** Schritt 1 der Schrittfolge ist 1,96 Schirme hoch gegen einen Deckel von 1,34, zwei Zeilen laufen 109 und 98 Zeichen gegen 75. Der Fix vom 2026-09-03 wurde von Commits desselben Tages ungültig gemacht — C5s eigentlicher Befund zum zweiten Mal |
 | 🔶 | **B1** Der Rückfall auf `llama3.2` lebt eine Ebene höher — **behoben (P3.13)** | `dashboard/run_launcher.py:144` | Preflight und Lauf widersprechen sich bei leerem Modellfeld; das Artefakt nennt ein Modell, das niemand gewählt hat |
-| 🔶 | **B2** Der Ausweichpfad des Schreibers braucht `.buffer` | `src/run_simulation.py:556` | Aus `UnicodeEncodeError` wird `AttributeError` — im Paket über Fehlerwege; alle drei Tests teilen die Annahme |
+| 🔶 | **B2** Der Ausweichpfad des Schreibers braucht `.buffer` — **behoben (P3.14)** | `src/run_simulation.py:556` | Aus `UnicodeEncodeError` wird `AttributeError` — im Paket über Fehlerwege; alle drei Tests teilen die Annahme |
 | 🔶 | **B3** Annotation widerspricht dem Rumpf | `src/orchestration/scenario_sweeps.py:232` | `SimpleNamespace` statt `RunArgs`, `sweep_id` unbenutzt, toter Import bleibt für `ruff` unsichtbar |
 | 🔶 | **B4** Das 500-ms-Kriterium hat keinen Wächter auf seiner Höhe | `tests/test_web_overflow.py:1732` | Ein Rückfall auf 800 ms bliebe grün, während der Plan das Kriterium als erfüllt führt |
 | 🔷 | **B5a** `availability` nennt ein unkonfiguriertes Modell — **behoben (P3.13)** | `compute_mode.py:116` | Nutzermeldung erfindet `llama3.2` |
