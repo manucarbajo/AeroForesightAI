@@ -20,6 +20,7 @@ from src.config_loader import build_initial_state
 from src.llm import STUDIO_DIR, MockLLM, OllamaClient, OllamaConfig, load_env
 from src.logging_setup import configure_logging
 from src.models.llm_models import LLMIncident
+from src.models.state_models import Rahmenszenario
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 from src.reporting.output_writer import (
@@ -238,10 +239,18 @@ def _save_run_outputs(
     if not args.no_scenarios and state.cib_matrix is not None:
         scenario_node = ScenarioAgentNode(llm=llm)
         state = scenario_node.invoke(state)
-        scenarios_payload = {
-            "scenarios": (
-                state.cib_matrix.metadata.get("scenarios", []) if state.cib_matrix.metadata else []
-            )
+        # **`erzaehlte_szenarien`, nicht `scenarios`** (behoben mit P2.0-B).
+        # P1.3 hat den Metadaten-Schlüssel umbenannt und diesen Leser nicht
+        # mitgezogen — seither schrieb jeder Lauf ein leeres `scenarios.json`.
+        # Dieselbe Drift hatte P1.3 in `render_scenarios_markdown` schon einmal
+        # gefunden; sie saß eine Ebene weiter außen ein zweites Mal.
+        #
+        # Die Form ist die von `ErzaehlteSzenarien.model_dump()`, also
+        # `{"szenarien": [...]}` — genau das, was der Bericht erwartet. Vorher
+        # bekam er `{"scenarios": …}` und hätte auch mit gefülltem Schlüssel
+        # nichts anzeigen können.
+        scenarios_payload = (state.cib_matrix.metadata or {}).get("erzaehlte_szenarien") or {
+            "szenarien": []
         }
         scenarios_path = save_scenarios(scenarios_payload, run_dir=run_dir)
         scenarios_md_path = save_scenarios_markdown(
@@ -575,6 +584,12 @@ def main() -> int:
         return 0
 
     base_state = build_initial_state()
+    # Die ausgelieferten Dateien **sind** ein Rahmenszenario — sie tragen eigene
+    # exogene Verläufe (P2.0-B). Sie hießen bisher nur nicht so, und deshalb sah
+    # ein CLI-Lauf aus, als liefe er «ohne Szenario».
+    base_state.rahmen = Rahmenszenario(
+        id="standard", name="Standard-Ausgangslage", quelle="standard"
+    )
     if args.rounds is not None:
         base_state.clock.max_ticks = int(args.rounds)
     if args.seed is not None:

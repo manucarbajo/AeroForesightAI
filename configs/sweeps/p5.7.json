@@ -2,7 +2,7 @@
   "id": "p5.7",
   "name": "P5.7",
   "description": "Explorer-Prüfung (P5.7 — vor Abgabe ausführlich durchtesten)\n",
-  "rationale": "Erstellt im Dashboard als benutzerdefiniertes Szenario.",
+  "rationale": "Im Dashboard gesichertes Experiment aus P5.7. Kein begründetes Weltbild; es liegt hier, weil das Sichern eines Experiments in denselben Ordner schreibt.",
   "max_ticks": 40,
   "base_price": null,
   "property_overrides": [
@@ -154,35 +154,7 @@
       "rules": []
     }
   ],
-  "factor_overrides": [
-    {
-      "factor_id": "F1",
-      "initial_state": "F1.2"
-    },
-    {
-      "factor_id": "F2",
-      "initial_state": "F2.2"
-    },
-    {
-      "factor_id": "F3",
-      "initial_state": "F3.1"
-    },
-    {
-      "factor_id": "F4",
-      "initial_state": "F4.1"
-    },
-    {
-      "factor_id": "F5",
-      "initial_state": "F5.1"
-    },
-    {
-      "factor_id": "F6",
-      "initial_state": "F6.1"
-    },
-    {
-      "factor_id": "F7",
-      "initial_state": "F7.1"
-    }
-  ],
-  "milestones": []
+  "factor_overrides": [],
+  "milestones": [],
+  "art": "stresstest"
 }

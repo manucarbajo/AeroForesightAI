@@ -169,6 +169,18 @@
       }
     },
     {
+      "id": "kapazitaet_index",
+      "type": "numeric",
+      "unit": "index",
+      "description": "Verfuegbare Kapazitaet, relativ zum Ausgangsniveau (1,0 = Start). Sie bestimmt, wie viele Menschen der Anbieter ueberhaupt befoerdern kann, und loest damit die feste Zielauslastung ab: Statt auf einen Sollwert zu steuern, fuellt der Anbieter, was da ist. WOZU: Ohne diese Groesse war die Nachfragehoehe eine Konfigurationskonstante -- gemessen war die frueher feste target_booking_rate rund zwanzigmal so wirksam wie das Einkommen (siehe docs/entscheidung_angebotsseite_2026-08-31.md). Ein Rahmenszenario kann jetzt Kapazitaetsausbau oder -knappheit vorgeben. Standard 1,0 = unveraendert gegenueber dem Stand vor P2.8.",
+      "source": "trajectory",
+      "min_value": 0.3,
+      "max_value": 3.0,
+      "trajectory": {
+        "baseline": 1.0
+      }
+    },
+    {
       "id": "bevoelkerungsentwicklung",
       "type": "numeric",
       "unit": "persons",
@@ -193,6 +205,30 @@
             "value": 1080
           }
         ]
+      }
+    },
+    {
+      "id": "altersmittel_jahre",
+      "type": "numeric",
+      "unit": "years",
+      "source": "trajectory",
+      "min_value": 44.0,
+      "max_value": 64.0,
+      "trajectory": {
+        "baseline": 50.8
+      },
+      "description": "Mittleres Alter der Bevoelkerung in Jahren. Neue Personen werden aus der Verteilung um diesen Wert gezogen — eine alternde GESELLSCHAFT (verschobene Zusammensetzung), keine alternde Kohorte. Standard 50,8: EU-27 ab 18 Jahren, Eurostat demo_pjangroup, Stand 1.1.2023. Ohne Verlauf bleibt die Gesellschaft stationaer; ein Rahmenszenario kann sie altern lassen. Die Spanne 44 bis 64 ist keine Meinung, sondern gemessen: Ausserhalb klemmt die Altersverteilung (Streuung 18,8, Grenzen 18 bis 90) mehr als ein Zehntel ihrer Masse an einen Rand und ist dann keine Verteilung mehr. Wer eine juengere Gesellschaft rechnen will, aendert zuerst die Streuung."
+    },
+    {
+      "id": "erneuerungsrate",
+      "type": "numeric",
+      "unit": "share_per_tick",
+      "description": "Anteil der Bevoelkerung, der je Tick ausgetauscht wird: Aeltere scheiden aus, ebenso viele kommen neu hinzu. Ohne diese Erneuerung leben dieselben Personen ewig weiter, und eine Vorgabe fuer altersmittel_jahre bliebe wirkungslos. Standard 0,0 = keine Erneuerung, also der Stand vor P2.4-E. ACHTUNG: Die Rate haengt an der Tick-Dauer, und die ist im Modell noch nicht einheitlich festgelegt (P3.8) -- bei einem Tick als Jahr waeren rund 0,014 realistisch, bei einem Tick als Monat ein Zwoelftel davon.",
+      "source": "trajectory",
+      "min_value": 0.0,
+      "max_value": 0.2,
+      "trajectory": {
+        "baseline": 0.0
       }
     },
     {
@@ -311,11 +347,12 @@
       "id": "age",
       "type": "distribution",
       "enabled": true,
-      "distribution": "lognormal",
-      "mean": 73.0,
-      "std_dev": 1.0,
-      "min_value": 2.0,
-      "max_value": 90.0
+      "distribution": "normal",
+      "mean": 50.8,
+      "std_dev": 18.8,
+      "min_value": 18.0,
+      "max_value": 90.0,
+      "quelle": "Eurostat demo_pjangroup, EU-27, Bevölkerung nach Fünfjahresgruppen, Stand 1.1.2023: Mittelwert 50,8 und Standardabweichung 18,8 der Bevölkerung ab 18 Jahren (Gruppenmitten, mit Bevölkerungsanteilen gewichtet; die Gruppe 15–19 anteilig zu 2/5). Untergrenze 18, weil ein Individuum hier eine Buchungsentscheidung trifft — Kinder buchen nicht. **Bewusst die Gesamtbevölkerung und nicht die der Flugreisenden:** Wer davon fliegt, soll das Modell über Einkommen und Zahlungsbereitschaft ergeben, statt es in die Ziehung vorwegzunehmen."
     },
     {
       "id": "substitution_readiness",
@@ -711,6 +748,44 @@
     "booking_increase": 0.6,
     "utility_penalty_factor": 1.0
   },
+  "booking_model": {
+    "verfuegbarkeit_gewicht": {
+      "wert": 0.5,
+      "quelle": "Wie stark das **Angebot** auf die Buchungsentscheidung wirkt: `gewicht × ln(kapazitaet_index)` im Nutzen. Mehr Kapazität heißt in der Wirklichkeit mehr Frequenzen und mehr Strecken, also niedrigere generalisierte Reisekosten — Wartezeit, Umsteigen, Zielauswahl. **Belegt ist die Form**: In einem Discrete-Choice-Modell stehen die Merkmale der Alternative im Nutzen (Ben-Akiva/Lerman 1985), und Angebotsgrößen gehen dort logarithmisch ein — damit ist der Beitrag bei unveränderter Kapazität exakt null und die Elastizität konstant. **Belegt ist auch die Richtung**: mehr Angebot, mehr Nachfrage; das ist der Mechanismus, mit dem der europäische Verkehr 2015–2019 um 26 % wuchs, während die Realpreise flach blieben (P2.8). **Die Höhe ist gesetzt** und nicht geschätzt. Was 0,5 bedeutet, hängt vom Betriebspunkt ab — im Logit ist die Elastizität β·(1−p), sie ist also wie die Preiselastizität keine Konstante: gemessen **+0,18** an der ruhenden Bevölkerung bei 140 EUR (p ≈ 0,48) und **+0,37** im laufenden Modell unter `marge` (p ≈ 0,09). Beides ist deutlich schwächer als die Preiselastizität von −1,30 am selben Punkt, und dass Angebotseffekte schwächer wirken als Preiseffekte, ist der durchgängige Befund. **Eine Zahl dafür gibt die hier vorliegende Literatur nicht her** — `references.md` hat keinen Eintrag zu Frequenz- oder Angebotselastizität —, und eine Quellenangabe daran zu heften sähe aus wie eine Kalibrierung. Der Wert stand fest, **bevor** der Backtest damit gerechnet wurde."
+    },
+    "base_utility": {
+      "wert": 2.0,
+      "quelle": "Konstante des Nutzenterms (Ben-Akiva/Lerman 1985, McFadden 1974: Alternativenspezifische Konstante). Der Wert 2,0 ist in diesem Modell gesetzt und nicht geschätzt — er legt fest, bei welchem Preisniveau die Buchungswahrscheinlichkeit durch 0,5 geht."
+    },
+    "price_reference_eur": {
+      "wert": 100.0,
+      "quelle": "Normierungsgröße, kein Verhaltensparameter: Der Ticketpreis wird darauf bezogen, damit `price_sensitivity` in einer Größenordnung um 1 liegt. Gesetzt, nicht geschätzt; verschiebt man sie, verschiebt sich die Bedeutung jeder Preisempfindlichkeit mit."
+    },
+    "substitution_weight": {
+      "wert": 1.5,
+      "quelle": "Gewicht der Bahnalternative gegenüber dem reinen Preisterm. Die Form folgt der diskreten Wahltheorie (Ben-Akiva/Lerman 1985), der Wert ist in diesem Modell gesetzt: `docs/research/references.md` hält fest, dass es für Substitutionseffekte keine Standard-Einheitsformel gibt."
+    },
+    "carbon_reference_eur": {
+      "wert": 100.0,
+      "quelle": "Normierungsgröße für den Teil der CO₂-Abgabe oberhalb des Referenzwerts. Gesetzt wie `price_reference_eur` und aus demselben Grund."
+    },
+    "carbon_eco_baseline_eur": {
+      "wert": 50.0,
+      "quelle": "Ab welcher Abgabe ein Umwelt-Malus überhaupt entsteht — der Ausgangswert von `carbon_tax_level` in der ausgelieferten Konfiguration. Damit ist der Malus im Startzustand null und misst die Veränderung, nicht das Niveau."
+    },
+    "green_premium": {
+      "wert": 0.1,
+      "quelle": "Aufschlag auf die Zahlungsbereitschaft umweltbewusster Personen (Bamberg/Ajzen/Schmidt 2003: Einstellung wirkt auf die Verkehrsmittelwahl). Zehn Prozent sind gesetzt, nicht aus einer Erhebung übernommen."
+    },
+    "high_price_sensitivity_threshold": {
+      "wert": 0.8,
+      "quelle": "Ab welcher Preisempfindlichkeit der zusätzliche Abgaben-Malus greift. Gesetzt; die Begründung ist inhaltlich (wer aufs Geld schaut, spürt eine Abgabe doppelt) und nicht empirisch belegt."
+    },
+    "high_price_sensitivity_penalty": {
+      "wert": 0.3,
+      "quelle": "Höhe dieses zusätzlichen Malus. Gesetzt wie die Schwelle darüber und aus demselben Grund ohne empirischen Beleg."
+    }
+  },
   "regulatory_influences": [
     {
       "id": "eu_ets",
@@ -763,5 +838,15 @@
         "state": "F4.2"
       }
     }
-  ]
+  ],
+  "kohaerenz": {
+    "these": "Die beschlossene Verschärfung kommt wie angekündigt, der Beimischungspfad folgt dem Regulierungsfahrplan, die Konjunktur macht eine Delle und erholt sich — und das Angebot bleibt, wo es ist.",
+    "begruendung": "Die Verläufe dieser Datei sind kein Nullpunkt, sondern eine Behauptung, und sie hängen zusammen. Die CO₂-Abgabe steigt in zwei Stufen von 50 auf 120 und dann auf 200 EUR je Tonne: Das ist der Pfad, den EU-ETS und das Auslaufen der freien Zuteilung angelegt haben, und er kommt **nicht** überraschend, sondern nach Fahrplan. Die Beimischungsquote zieht kurz davor an (2 %, dann 5 %) — genau die Reihenfolge, die ReFuelEU vorsieht: Erst muss der Ausweichpfad existieren, dann wird der alte teuer. Die Konjunkturdelle auf 0,92 und die Erholung auf 1,05 sind der übliche Zyklus und keine Krise; die Bevölkerung wächst um 8 %. **Und die Kapazität bleibt konstant — das ist die stärkste Annahme dieser Welt und seit P2.10 auch die einzige unter den fünf Rahmen, die das tut.** Sie ist vertretbar, wenn man den Zeitraum als eine Phase liest, in der die Branche unter steigenden Kosten weder ausbaut noch abbaut; sie ist es nicht, wenn man daraus eine Aussage über die Nachfragehöhe ableitet.",
+    "quellen": [
+      "docs/research/links.md — EU-ETS / Fit for 55 (Rat der EU, Europäische Kommission); Richtlinie (EU) 2023/958: Luftverkehr im ETS, Auslaufen der freien Zuteilung 2024–2026",
+      "Verordnung (EU) 2023/2405 (ReFuelEU Aviation): SAF-Beimischung 2 % ab 2025, 6 % ab 2030 — Anlass für die Reihenfolge aus Quote vor Preisstufe",
+      "configs/backtest/quellen.json — EEX-Auktionspreise und Brent, 2015–2024, im Repo eingecheckt und nachrechenbar"
+    ],
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung: Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Zwei Dinge zusätzlich, weil sie leicht übersehen werden: Die **konstante Kapazität** ist eine Annahme und keine Abwesenheit einer Annahme — wer eine wachsende oder schrumpfende Angebotsseite meint, wählt einen der anderen Rahmen oder setzt `kapazitaet_index` selbst. Und die **Bevölkerungskurve endet bei Tick 30**, während ein Standardlauf 40 Ticks geht: Das letzte Viertel rechnet mit einer eingefrorenen Bevölkerung, ohne dass etwas darauf hinweist (offene Restposition von P2.8)."
+  }
 }

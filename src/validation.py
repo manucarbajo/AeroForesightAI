@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from src.agents.agent_dependencies import KNOWN_DEPENDENCIES
 from src.agents.agent_permissions import parse_factor_permission
 from src.models.agent_models import AgentConfig
@@ -383,10 +385,38 @@ def _validate_factor_rules(rules: list[FactorRule]) -> list[str]:
 
 
 def _validate_shift_rules(rules: list[ShiftRule]) -> list[str]:
+    """Bedingung **und Wirkung** prüfen (Wirkung seit P2.4, 2026-08-31).
+
+    Bis dahin prüfte diese Funktion nur die ``when``-Klausel. Das ``effect``
+    kam ungeprüft durch, und zur Laufzeit fiel ein unbekanntes Ziel still
+    heraus: Eine Regel auf ``age`` tat nichts, ein Tippfehler wie
+    ``price_sensitivty`` ebenso — keine Meldung, nur eine Regel, die nie greift.
+    Genau die Sorte Befund, gegen die Invariante 6 im ``rule_engine`` steht.
+    """
+
+    from src.population.population_sampler import SHIFT_ZIELE
+
     errors: list[str] = []
     for index, rule in enumerate(rules):
         prefix = f"shift_rules[{index}]" + (f" '{rule.id}'" if rule.id else "")
         errors.extend(_validate_when(rule.when, prefix, allow_empty=False))
+
+        effect = rule.effect or {}
+        ziel = str(effect.get("property", ""))
+        if not ziel:
+            errors.append(f"{prefix}: effect ohne 'property'")
+        elif ziel not in SHIFT_ZIELE:
+            errors.append(
+                f"{prefix}: unbekanntes Ziel '{ziel}'. Eine shift_rule erreicht "
+                f"{sorted(SHIFT_ZIELE)} — alles andere greift nie."
+            )
+
+        if "delta" in effect:
+            try:
+                float(effect["delta"])
+            except (TypeError, ValueError):
+                errors.append(f"{prefix}: 'delta' ist keine Zahl ({effect['delta']!r})")
+
     return errors
 
 
@@ -466,6 +496,76 @@ def _validate_trajectory(prop: SystemProperty, prefix: str) -> list[str]:
             )
 
     return errors
+
+
+@dataclass(frozen=True)
+class Horizontluecke:
+    """Ein Verlauf, dessen letzter Stützpunkt vor dem Ende des Laufs liegt."""
+
+    property_id: str
+    letzter_stuetzpunkt: int
+    max_ticks: int
+
+    @property
+    def ticks_darueber(self) -> int:
+        return self.max_ticks - self.letzter_stuetzpunkt
+
+    def __str__(self) -> str:
+        return (
+            f"`{self.property_id}` endet bei Tick {self.letzter_stuetzpunkt}, der Lauf "
+            f"geht bis {self.max_ticks} — {self.ticks_darueber} Ticks halten den letzten "
+            "Wert."
+        )
+
+
+def _letzter_stuetzpunkt(prop: SystemProperty) -> int | None:
+    """Ab welchem Tick ein Verlauf nichts Neues mehr sagt.
+
+    **Eine flache Baseline hat keinen Horizont.** Sie ist überall definiert und
+    sagt «konstant» — das ist eine Aussage und keine aufgebrauchte Vorgabe.
+    Einen Horizont hat nur, wer Stützpunkte gesetzt hat und hinter dem letzten
+    weiterläuft.
+    """
+
+    trajectory = prop.trajectory
+    if isinstance(trajectory, StepFunctionTrajectory):
+        return max((point.tick for point in trajectory.points), default=None)
+    return max((regel.active_from_tick for regel in trajectory.rules), default=None)
+
+
+def horizontluecken(properties: PropertiesConfig, *, max_ticks: int) -> list[Horizontluecke]:
+    """Welche Verläufe vor dem Ende des Laufs aufhören (P2.8, Restposition).
+
+    **Der Befund kam aus dem Backtest und ist genau deshalb unsichtbar
+    gewesen:** `bevoelkerungsentwicklung` ist eine `step_function` mit vier
+    Stützpunkten, der letzte bei Tick 30. `_resolve_step_function` hält danach
+    still den letzten Wert — für eine Stufenfunktion **korrektes** Verhalten,
+    und es gibt keine Meldung, weil nichts falsch ist. Der Backtest läuft 120
+    Ticks, davon 90 mit eingefrorener Bevölkerung; die vier ausgelieferten
+    Rahmen laufen 50 Ticks bei einer Kurve, die bei 30 endet.
+
+    **Deshalb ist das hier kein Fehler und steht nicht in
+    `collect_state_errors`.** Über den letzten Stützpunkt hinauszulaufen ist
+    zulässig und meistens gewollt: Eine CO₂-Abgabe, die ihren Endwert erreicht
+    hat, *bleibt* dort. Was fehlte, war nicht eine Schranke, sondern die
+    **Auskunft** — dass ein Viertel des Laufs mit einer fortgeschriebenen
+    Vorgabe rechnet, soll dastehen, statt dass man es aus der Config erschließen
+    muss.
+
+    Der Aufrufer entscheidet, was er damit tut: Der Runner schreibt es ins Log,
+    der Assistent zeigt es vor dem Start.
+    """
+
+    luecken = []
+    for prop in properties.system_properties:
+        letzter = _letzter_stuetzpunkt(prop)
+        if letzter is not None and max_ticks > letzter:
+            luecken.append(
+                Horizontluecke(
+                    property_id=prop.id, letzter_stuetzpunkt=letzter, max_ticks=max_ticks
+                )
+            )
+    return sorted(luecken, key=lambda h: h.letzter_stuetzpunkt)
 
 
 def collect_state_errors(state: SimulationState) -> list[str]:

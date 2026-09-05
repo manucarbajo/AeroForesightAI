@@ -110,9 +110,50 @@ class TestM413ConfigurablePrice:
         assert len(werte) == 1
 
     def test_market_rules_resolve_marginal_cost_fraction(self):
+        """**Die Regel gewinnt, und der Test sagt es jetzt auch** (P2.11).
+
+        Er erwartete bis zum 2026-09-03 den Wert ``0.33`` — den *Code*-Rückfall
+        aus `resolve_market_feedback_config`, nicht das, was die ausgelieferte
+        Config sagt. Sie sagt ``0.25``, und die Auflösung hat immer korrekt
+        gearbeitet: Der Wert aus der Regel gewinnt. Rot war seit dem 2026-08-25
+        also nicht der Code, sondern die Erwartung — und dahinter lag der
+        eigentliche Befund: **zwei Quellen für denselben Wert.** Der Rückfall
+        ist mit P2.11 entfallen; was eine Regel nicht nennt, füllt
+        `MarketFeedbackConfig` aus.
+        """
+
         properties = load_properties_config()
         config = resolve_market_feedback_config(properties)
-        assert config.marginal_cost_fraction == 0.33
+        assert config.marginal_cost_fraction == 0.25
+
+    def test_was_die_regel_nicht_nennt_kommt_aus_dem_modell(self):
+        """Der Rückfall ist eine Quelle, nicht zwei.
+
+        Ohne diese Zusage könnte jemand die Literale wieder einsetzen, ohne dass
+        etwas rot wird — sie stimmen ja heute größtenteils mit dem Modell
+        überein. Genau daran ist `marginal_cost_fraction` auseinandergelaufen.
+        """
+
+        from src.models.property_models import MarketFeedbackConfig, MarketRule
+
+        properties = load_properties_config().model_copy(
+            update={
+                "market_rules": [
+                    MarketRule(
+                        id="nur_der_typ",
+                        when={"enabled": True},
+                        effect={"type": "booking_yield_feedback"},
+                    )
+                ]
+            }
+        )
+        config = resolve_market_feedback_config(properties)
+        vorgabe = MarketFeedbackConfig()
+
+        assert config.model_dump() == vorgabe.model_dump(), (
+            "Eine Regel ohne Werte muss die Vorgaben des Modells ergeben. Weicht "
+            "etwas ab, steht die Zahl ein zweites Mal in `market_feedback.py`."
+        )
 
 
 class TestApplyMarketFeedback:

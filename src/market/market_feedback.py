@@ -41,24 +41,102 @@ def initial_ticket_price(properties: PropertiesConfig, *, tick: int) -> float:
     return properties.price_model.base_price + initial_provider_markup(properties, tick=tick)
 
 
+def zielauslastung(
+    config: MarketFeedbackConfig,
+    system_properties: dict[str, float],
+) -> float:
+    """Wie voll der Anbieter fahren will — **Kapazität mal Sollauslastung** (P2.8).
+
+    **Was sich damit ändert, und warum es der Kern von P2.8 ist:** Bis dahin war
+    `target_booking_rate` eine feste Zahl (0,37 ohne Quelle), und der Anbieter
+    steuerte den Preis, bis die Nachfrage sie traf. Damit war die
+    *Nachfragehöhe* eine Konfigurationskonstante — gemessen bewegte ein
+    Einkommensschock von +40 % die Buchungsrate um 4,6 %, während dieselbe
+    Konstante sie verdoppelte. Der Anbieter war die Nachfrageseite.
+
+    `kapazitaet_index` skaliert diesen Sollwert jetzt. Wächst die Kapazität, darf
+    die Nachfrage mitwachsen, ohne dass der Preis sie wegdrückt — genau die
+    Kombination, die real das Jahrzehnt 2015–2019 geprägt hat (+26 % Verkehr bei
+    flachen Realpreisen) und die das Modell vorher **nicht darstellen konnte**.
+
+    **Der Standard 1,0 lässt alles wie es war.** Ohne Verlauf ist das Verhalten
+    identisch mit dem Stand vor P2.8; die Aussage «die Kapazität bleibt gleich»
+    ist damit ausgesprochen statt unterstellt.
+
+    **Was das nicht ist:** eine Kapazitätsschranke im engeren Sinn. Der Anbieter
+    kann seinen Preis weiterhin beliebig senken; er zielt nur auf ein anderes
+    Füllniveau. Eine harte Grenze («mehr Sitze gibt es nicht») wäre der nächste
+    Schritt und ist in
+    `docs/entscheidung_angebotsseite_2026-08-31.md` als Weg B/C beschrieben.
+    """
+
+    index = float(system_properties.get("kapazitaet_index", 1.0) or 1.0)
+    return config.target_booking_rate * index
+
+
+def kapazitaetsschranke(
+    properties: PropertiesConfig,
+    system_properties: dict[str, float],
+) -> float | None:
+    """Wie viele Menschen der Anbieter höchstens befördern kann — als Anteil.
+
+    **Nur unter der Marge-Strategie eine Schranke.** Unter `auslastung` steuert
+    der Anbieter den Preis auf dieses Niveau *zu*; dort ist es ein Ziel, keine
+    Grenze, und die Nachfrage erreicht es ohnehin. `None` heißt «keine
+    Schranke» — die Buchungen sind dann so frei wie vor P2.8.
+
+    **Warum es die Schranke überhaupt braucht:** Ohne sie täte die Kapazität
+    unter `marge` *nichts*. Der Anbieter hält seinen Aufschlag, die Nachfrage
+    ergibt sich aus der Bevölkerung, und ob zehn oder tausend Sitze da sind,
+    stünde nirgends in der Rechnung. Erst als Grenze wird «mehr Plätze» zu
+    einer Aussage.
+    """
+
+    config = resolve_market_feedback_config(properties)
+    if config.strategie != "marge":
+        return None
+    return zielauslastung(config, system_properties)
+
+
+#: Welche Felder eine ``booking_yield_feedback``-Regel setzen darf — und wie ihr
+#: Wert zu lesen ist. **Was hier nicht steht, kommt aus dem Modell**, nicht aus
+#: einer zweiten Zahl an dieser Stelle (P2.11).
+_FELDER: dict[str, type] = {
+    "strategie": str,
+    "target_booking_rate": float,
+    "markup_adjustment_per_tick": float,
+    "max_price_change_fraction": float,
+    "damping": float,
+    "booking_weight": float,
+    "marginal_cost_fraction": float,
+}
+
+
 def resolve_market_feedback_config(properties: PropertiesConfig) -> MarketFeedbackConfig:
-    """Build feedback config from ``market_rules``; fall back to ``market_feedback``."""
+    """Build feedback config from ``market_rules``; fall back to ``market_feedback``.
+
+    **Kein Rückfall auf eigene Zahlen** (P2.11, 2026-09-03). Bis dahin standen
+    hier sieben Literale — ``0.37``, ``0.08``, ``0.08``, ``0.85``, ``0.6``,
+    ``0.33`` und seit P2.8-B ``"auslastung"`` — neben denselben Vorgabewerten in
+    :class:`MarketFeedbackConfig`. Zwei Quellen für denselben Wert, und sie waren
+    bereits auseinandergelaufen: Der Rückfall hier sagte ``0.33``, die
+    ausgelieferte Config ``0.25``.
+
+    Dieselbe Klasse, die P1.9-W5.1 im Dashboard und P2.1 in
+    ``booking_probability`` abgeräumt haben: *Ein Wert ohne Angabe kommt aus dem
+    Modell, nicht aus einer erfundenen Zahl an der Verwendungsstelle.* Gesetzt
+    wird deshalb nur, was die Regel wirklich nennt; alles andere füllt Pydantic
+    aus :class:`MarketFeedbackConfig`.
+    """
 
     for rule in properties.market_rules:
         effect = rule.effect
         if effect.get("type") != BOOKING_YIELD_FEEDBACK:
             continue
-        when = rule.when
-        enabled = when.get("enabled", True)
-        return MarketFeedbackConfig(
-            enabled=bool(enabled),
-            target_booking_rate=float(effect.get("target_booking_rate", 0.37)),
-            markup_adjustment_per_tick=float(effect.get("markup_adjustment_per_tick", 0.08)),
-            max_price_change_fraction=float(effect.get("max_price_change_fraction", 0.08)),
-            damping=float(effect.get("damping", 0.85)),
-            booking_weight=float(effect.get("booking_weight", 0.6)),
-            marginal_cost_fraction=float(effect.get("marginal_cost_fraction", 0.33)),
-        )
+        gesetzt = {
+            name: wandeln(effect[name]) for name, wandeln in _FELDER.items() if name in effect
+        }
+        return MarketFeedbackConfig(enabled=bool(rule.when.get("enabled", True)), **gesetzt)
     return properties.market_feedback
 
 

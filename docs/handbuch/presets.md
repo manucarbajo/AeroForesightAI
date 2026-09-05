@@ -5,13 +5,61 @@ passen davon ausgehend an.
 Die mitgelieferten Presets stehen mit Beschreibung und Begründung unter
 [Szenario-Presets](/doku/ref-presets).
 
+## Zwei Arten von Preset
+
+Unter den hinterlegten Szenarien liegen zwei verschiedene Dinge, und seit dem
+2026-08-31 sagen sie es auch:
+
+**Ein Rahmenszenario** ist eine begründete Behauptung über eine mögliche Welt —
+«Business as Usual», «CO₂-Verzögerung», «Freiwillige Wende»,
+«Transformationskonflikt». Sobald Sie eines auswählen, steht unter dem Raster,
+*was* es behauptet und *warum* diese Entwicklungen zusammen eine Welt ergeben;
+unter «Quellen und was davon nicht belegt ist» finden Sie die Belege und —
+ebenso wichtig — den Vorbehalt.
+
+Denn belegt ist immer die Geschichte, **nicht ihre Bezifferung**: Dass strenge
+Regulierung ohne verfügbaren Ausweichpfad zur reinen Verteuerung wird, ist
+begründbar. Bei welchem Tick die CO₂-Abgabe dann auf welchen Wert springt, ist
+gesetzt und nicht aus Daten geschätzt. Wer ein Szenario nach außen zitiert,
+zitiert die Geschichte, nicht die Zahl.
+
+**Auch «keine Auswahl» ist eine Auswahl.** Wer kein Szenario nimmt, rechnet unter der
+**Standard-Ausgangslage** — und das ist kein Nullpunkt, sondern ein Weltbild mit
+eigenen Annahmen über Politik, Kosten und Konjunktur. Seit dem 2026-09-03 steht seine
+Begründung an derselben Stelle wie die der vier Szenarien, mit Quellen und Vorbehalt.
+Wer eigene Werte zusammenstellt, findet dort stattdessen den Hinweis, dass es für sie
+keine hinterlegte Begründung gibt — die muss man dann selbst liefern.
+
+**Seit dem 2026-09-03 sagt jedes Rahmenszenario auch etwas über das Angebot.**
+Bis dahin beschrieben die vier Welten nur, was auf den Luftverkehr *einwirkt* —
+CO₂-Preis, Beimischung, Konjunktur, Ölpreis — und ließen offen, wie viele Sitze
+es gibt. Damit unterstellten sie stillschweigend eine unveränderte Kapazität, und
+das ist eine Aussage über die Welt und keine Abwesenheit einer Aussage: In
+«Business as Usual» wächst das Angebot mit, in der «Freiwilligen Wende» stagniert
+es, im «Transformationskonflikt» geht es zurück.
+
+**Dazu gehört, wie der Anbieter preist.** Zwei Möglichkeiten stehen zur Wahl: Er
+senkt den Preis, bis die Sitze voll sind, oder er hält seinen Aufschlag und nimmt
+eine schwankende Auslastung in Kauf. Beides kommt vor, und welches gilt, ist eine
+Frage an die Welt und nicht an das Modell — deshalb steht es jetzt in der Datei
+des Szenarios. Drei der vier Rahmen wählen den Wettbewerbsfall, der
+«Transformationskonflikt» den anderen.
+
+Beides ist im Text des Szenarios begründet, und beides trägt denselben Vorbehalt
+wie der Rest: **Die Richtung ist argumentiert, die Zahlen sind gesetzt.**
+
+**Ein Stresstest** ist ein Belastungs- oder Sichtprüfungslauf der Engine. Seine
+Verläufe fahren durch Extreme, damit man sieht, ob etwas bricht — sie behaupten
+nichts über die Zukunft. Die Kachel schreibt «Stresstest» davor, und ein
+Szenario-Vergleich lässt ihn aus.
+
 ## Ein Preset verwenden
 
 Unter **Simulation starten** ist die Auswahl die erste der drei Entscheidungen.
 Jedes Preset steht dort mit seiner Beschreibung; aufklappbar daneben die
 Begründung, warum es so aufgebaut ist.
 
-**Das gewählte Preset gilt unverändert.** Faktorlage, Politik und Kosten kommen
+**Das gewählte Preset gilt unverändert.** Politik, Kosten und Nachfrageumfeld kommen
 aus seiner Datei unter `configs/sweeps/`; was Sie unten unter «Alle
 Einstellungen» eingestellt haben, bleibt dafür außen vor. Genau eine Größe
 bleibt Ihre Entscheidung: die **Länge** des Laufs. Auf wie viele Ticks ein
@@ -64,12 +112,19 @@ von «Einrichten»: Er stellt den Vergleich ein und bringt Sie unmittelbar zu
 hinter der «Feinabstimmung» des zweiten Schritts — es ist derselbe Schalter,
 nur an der Stelle, an der man ihn auch fein einstellt.
 
-So oder so wird jedes hinterlegte Preset einmal durchgerechnet, ohne
+So oder so wird jedes **Rahmenszenario** einmal durchgerechnet, ohne
 Agenten-Dialog und damit deutlich schneller. Die Ergebnisse liegen unter
 `outputs/sweeps/` und erscheinen einzeln in der Lauf-Auswahl.
 
 Das ist der schnellste Weg zu der Frage, wie weit die Annahmenwelten überhaupt
 auseinanderliegen.
+
+**Die Stresstests sind dabei nicht dabei**, und das ist seit dem 2026-08-31 so.
+Unter den hinterlegten Dateien liegen zwei verschiedene Dinge: begründete
+Weltbilder und Belastungstests der Engine. Ein Vergleich stellt Weltbilder
+gegeneinander — ein Stresstest, dessen Verläufe auf Sichtbarkeit gebaut sind,
+gehört nicht als Zukunft daneben. Starten lässt er sich weiterhin einzeln; in
+der Auswahl steht «Stresstest» an seiner Kachel.
 
 ## Meilensteine
 

@@ -59,6 +59,14 @@ Green_premium erhöht effektive Zahlungsbereitschaft.
 - **Quelle:** WTP wird in Choice-Modellen als monetäre Zahlungsbereitschaft bzw. Nutzenäquivalent verwendet; oft als Verteilungsparameter geschätzt, nicht als fester Wert.
 - **Modell:** WTP als individuelle Schwelle bzw. Teil der Erschwinglichkeitsprüfung.<br> affordability_limit = wtp_eur * income_factor * (1.0 + green_premium * environmental_awareness)
 
+> **Zu den Zahlenwerten (August 2026).** Die Einträge unten belegen die
+> **Funktionsform** — dass der Preis negativ in den Nutzen eingeht, dass
+> Substitution aus relativen Nutzenunterschieden entsteht. Die konkreten
+> Koeffizienten des Buchungsmodells sind davon **nicht** abgedeckt: Sie sind in
+> diesem Modell gesetzt und nicht geschätzt. Seit P2.1 stehen sie mit dieser
+> Auskunft in `configs/properties.json` unter `booking_model`; jeder Wert trägt
+> dort eine eigene Herkunftsangabe, die Form und Zahl auseinanderhält.
+
 ### Preiselastizität
 Ticketpreis wirkt direkt auf Buchungswahrscheinlichkeit.
 - **`_booking_probability`**

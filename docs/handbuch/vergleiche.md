@@ -51,6 +51,36 @@ von null messen und danach jeden Unterschied für belastbar halten.
 Ist der Unterschied zwischen Ihren beiden Läufen kleiner als diese Streuung, ist
 er nicht belastbar.
 
+**Seit August 2026 müssen Sie das nicht mehr von Hand vergleichen.** Ein Lauf mit
+Wiederholungen legt in `multi_run_summary.json` ein **Band** ab: für jede Runde
+den Median und ein 80-Prozent-Intervall über alle Wiederholungen, für
+Buchungsrate und Ticketpreis. Die Streuung steht damit als Zahl da, statt aus
+mehreren Läufen abgelesen werden zu müssen.
+
+**Und Sie sehen es.** Wählen Sie einen der Läufe aus einem Durchgang mit
+Wiederholungen aus — in der Lauf-Auswahl steht er als
+`batch_…/run_003` — und öffnen Sie unter **Ergebnisse** die Ansicht **Figures**,
+Aussage 1 «Preis und Nachfrage». Die Linien zeigen weiterhin **diesen einen**
+Lauf; hinter ihnen liegen getönte Flächen, und die zeigen, wo 80 Prozent aller
+Wiederholungen lagen.
+
+So liest man das: Läuft Ihre Linie mitten im Band, ist sie ein typischer
+Vertreter. Läuft sie am Rand, haben Sie einen Ausreißer erwischt — und sollten
+für eine Aussage lieber den Median nehmen. Ist das Band an einer Stelle breit,
+ist die Zahl dort schlecht bestimmt, egal wie genau sie angezeigt wird.
+
+Perzentile und nicht Minimum und Maximum, und das ist kein Detail: Die Ränder
+einer Stichprobe wandern mit jeder weiteren Wiederholung nach außen. Ein Band aus
+Minimum und Maximum sähe mit fünfzig Läufen breiter aus als mit zehn, ohne dass
+sich am Modell etwas geändert hätte.
+
+Zwei Hinweise dazu. Das Band ist **so lang wie der kürzeste** Lauf — sonst stünde
+am Ende ein Wert aus zwei statt fünfzig Läufen und sähe wie ein zusammenlaufendes
+Band aus. Und Wiederholungen lohnen sich vor allem **ohne Sprachmodell**:
+gemessen brauchen fünfzig Wiederholungen über acht Szenarien rund vier Minuten im
+Modus «Nur Zahlen» und knapp zwölf ohne Sprachmodell — mit Modell wären es
+Stunden, und für die Streuung der Zahlen trägt es nichts bei.
+
 ## Läufe aus verschiedenen Ständen der Software
 
 Vergleichen Sie nur Läufe, die mit demselben Stand gerechnet wurden. Am
@@ -77,6 +107,54 @@ CO₂-Abgabe ausdrücklich aus, gerechnet wurde sie trotzdem, womit die Regulier
 in Runde 15 auf «streng» kippte. Preset-Läufe von davor beschreiben also nicht
 die Annahmenwelt, deren Namen sie tragen. Über die Kommandozeile gestartete
 Sweeps waren nie betroffen.
+
+Am 2026-08-30 kam ein vierter Schnitt dazu: **Die Faktorlage wird nicht mehr
+vorgegeben.** Vier der acht Szenarien setzten bis dahin Faktorzustände fest,
+und der Assistent bot dafür einen eigenen Schritt an. Beides ist entfallen — die
+Faktoren entstehen jetzt im Lauf aus den Systemgrößen.
+
+Für die **Endzustände** ändert das nichts: Nachgemessen über 20 Runden landen in
+allen vier betroffenen Szenarien alle sieben Faktoren auf denselben Zuständen wie
+zuvor. Was sich ändert, sind die **ersten Runden**, in denen die Vorgabe noch
+stand, bevor die Regeln sie überschrieben — und über die Rückkopplung auch die
+Preise am Ende: bei «Totaler Wahnsinn» 588,47 statt 574,47 Euro (2,4 %), bei
+«P5.7» 121,27 statt 120,59 (0,6 %). Für die anderen beiden ist kein Unterschied
+messbar. Läufe dieser vier Szenarien von vor diesem Datum sind mit späteren also
+nur eingeschränkt vergleichbar.
+
+Am 2026-08-30 kam ein **fünfter Schnitt** dazu, und er ist der größte: **Die
+Buchungsentscheidung wird gezogen, nicht mehr geschwellt.** Bis dahin buchte
+jeder, dessen rechnerische Buchungswahrscheinlichkeit über 50 Prozent lag — und
+zwar mit Sicherheit. Zwei Personen mit 51 und 99 Prozent waren nicht zu
+unterscheiden.
+
+Das verschiebt **jede** Zahl, und zwar systematisch. Gemessen an 2000 Personen
+der Standardkonfiguration:
+
+| Ticketpreis | vorher | heute | Streuung über 20 Ziehungen |
+|---|---:|---:|---|
+| 80 € | 0,968 | 0,742 | 0,715 – 0,755 |
+| 110 € | 0,847 | 0,602 | 0,577 – 0,615 |
+| 140 € | 0,621 | 0,439 | 0,419 – 0,449 |
+| 180 € | 0,299 | 0,243 | 0,229 – 0,255 |
+| 250 € | 0,059 | 0,072 | 0,065 – 0,082 |
+
+Die alte Schwelle **überzeichnete** die Nachfrage bei niedrigen Preisen und
+**unterzeichnete** sie bei hohen: Sie drückte jede Wahrscheinlichkeit auf null
+oder eins und stauchte die Nachfragekurve damit zu den Rändern hin. Läufe von
+vor diesem Datum sind mit späteren **nicht** vergleichbar — auch nicht in der
+Richtung, denn die Verzerrung hat je nach Preisniveau ein anderes Vorzeichen.
+
+Dafür gibt es jetzt eine **Streuung**, wo vorher keine war: Derselbe Lauf mit
+demselben Ausgangspunkt liefert je nach Zufallsstartwert leicht verschiedene
+Raten. Das ist kein Mangel an Genauigkeit, sondern die Bandbreite, die eine
+Einzelzahl nur vorgetäuscht hat.
+
+Zwei Dinge bleiben: Ein Lauf mit demselben Zufallsstartwert liefert weiterhin
+**exakt** dasselbe Ergebnis. Und ein Seed ändert die **Faktor-Endzustände**
+heute kaum noch — nachgemessen landen die Startwerte 1, 2 und 3 nach 10, 15 und
+20 Runden auf denselben sieben Zuständen. Die Einzelentscheidungen mitteln sich
+über tausend Personen aus; was streut, sind die Raten, nicht die Lage.
 
 Ebenfalls am 2026-08-28 kam ein vierter Schnitt, und er trifft **nur den
 Szenario-Vergleich** — also den Weg, der alle hinterlegten Szenarien
@@ -108,6 +186,95 @@ unter `scenarios`, und der vom Sprachmodell behauptete Einflusswert heißt
 `behaupteter_einfluss` statt `influence`. **Gerechnet wird dasselbe** — wer
 Läufe von davor und danach vergleicht, vergleicht dieselben Zahlen; wer sie
 maschinell ausliest, muss den Schlüssel nachziehen.
+
+Am **2026-08-31** kam ein fünfter Schnitt dazu, und er betrifft, **was ein
+Szenario-Vergleich überhaupt vergleicht**: Bis dahin rechnete er *alle acht*
+hinterlegten Dateien durch. Vier davon sind aber keine Zukünfte, sondern
+Stresstests der Engine — «Achterbahn der Extreme», «Action-Szenario», «Totaler
+Wahnsinn (Alle Parameter)» und ein gesichertes Experiment namens «P5.7». Ihre
+Verläufe sind auf Sichtbarkeit und Belastung gebaut, nicht auf Plausibilität.
+
+Ein Vergleich stellt seither **vier Rahmenszenarien** nebeneinander statt acht
+Dateien. Wer einen älteren Vergleichslauf offen hat, findet dort vier Ergebnisse
+mehr — und die vier zusätzlichen sagen nichts über die Welt. Die Stresstests
+sind nicht verschwunden: Sie lassen sich weiterhin einzeln starten, und die
+Auswahl schreibt jetzt «Stresstest» an die Kachel.
+
+Am **2026-08-31** kam ein sechster Schnitt dazu, und er ist der tiefste seit
+Langem: **Das Alter prägt jetzt, wer eine simulierte Person ist.** Vorher wurde
+jedes Merkmal unabhängig gezogen und das Alter beeinflusste die
+Buchungsentscheidung überhaupt nicht; seither bestimmt es Einkommen,
+Zahlungsbereitschaft, Preisempfindlichkeit, Umweltbewusstsein und
+Bahnbereitschaft mit. Zugleich wurde die Altersverteilung selbst korrigiert —
+sie stammt jetzt aus Eurostat-Daten statt aus einer Parametrisierung, die 41
+Prozent der Bevölkerung auf exakt 90 Jahre setzte.
+
+**Jede Zahl bewegt sich dadurch.** Läufe von vor und nach diesem Datum gehören
+nicht nebeneinander. Woran Sie es erkennen: `run_metadata.json` hält unter
+`code_version` fest, mit welchem Stand gerechnet wurde.
+
+Am **2026-08-31** kam ein siebter Schnitt dazu: **Die Kapazität ist eine eigene
+Größe geworden.** Bis dahin steuerte der Anbieter den Preis auf eine feste
+Zielauslastung, und die Nachfragehöhe hing an dieser Zahl statt an den simulierten
+Menschen. Ohne Vorgabe bleibt alles wie es war — die Standardwerte sind so gewählt,
+dass sich nichts ändert. Wer aber eine Kapazität vorgibt, bekommt andere Zahlen.
+
+Am **2026-09-03** kam ein achter Schnitt dazu, und er betrifft **nicht die
+Läufe, sondern den Backtest-Bericht**: Das Basisjahr 2015 zählt nicht mehr in
+den mittleren Abstand. Beide Reihen werden darauf indexiert — sein Abstand ist
+damit rechnerisch immer null und war keine Messung, sondern eine Tautologie, die
+den Mittelwert um rund ein Fünftel nach unten zog.
+
+Die Zahlen in [`backtest_vorlauf.md`](../backtest_vorlauf.md) sind dadurch
+**größer geworden, ohne dass sich am Modell etwas geändert hat**: Die Preisseite
+steht bei 12,18 statt 10,66, die Nachfrageseite bei 38,13 statt 33,36. Wer einen
+Bericht von vor diesem Datum neben einen neueren legt, vergleicht zwei
+Rechenweisen und nicht zwei Modelle.
+
+Das Jahr steht weiterhin in der Tabelle, mit der Marke «Basis, Abstand per
+Konstruktion 0». Und in die Kennzahl «Richtung der Jahresveränderung getroffen»
+zählt es nach wie vor mit: Rechnerisch festgelegt ist dort nur das *Niveau* im
+Basisjahr, nicht die *Bewegung* von 2015 nach 2016.
+
+Am **2026-09-03** kam ein neunter Schnitt dazu, und er betrifft **nur Läufe mit
+eigener Kapazitätsvorgabe**: Das Angebot wirkt jetzt auf die Nachfrage. Bis dahin
+konnte mehr Kapazität den Verkehr nur über einen niedrigeren Preis steigern —
+oder ihn, als Obergrenze, gar nur begrenzen. Seither zählt sie als Eigenschaft
+des Angebots mit: Mehr Sitze heißt in der Wirklichkeit mehr Flüge und mehr
+Strecken, also kürzere Wartezeiten und mehr Ziele — und das macht das Fliegen
+attraktiver, ganz ohne Preisnachlass.
+
+**Ohne Vorgabe ändert sich nichts**, und das ist nachgerechnet: Ein Standardlauf
+über 40 Ticks liefert dieselbe Buchungsrate und denselben Preis wie zuvor. Wer
+aber eine Kapazität vorgibt, bekommt andere Zahlen als vor diesem Datum — und
+zwar in beide Richtungen: Bei weniger Kapazität sinkt die Nachfrage stärker als
+früher, bei mehr steigt sie überhaupt erst.
+
+Am **2026-09-03** kam ein zehnter Schnitt dazu, und er trifft **die vier
+Rahmenszenarien**: Sie sagen jetzt auch etwas über das Angebot. Bis dahin ließen
+sie die Kapazität offen und rechneten damit stillschweigend mit einer
+unveränderten; seither trägt jedes einen begründeten Kapazitätspfad und die Wahl,
+wie der Anbieter preist.
+
+**Das verschiebt die Zahlen aller vier deutlich.** Gemessen über die letzten
+Runden, vorher gegen nachher: «Business as Usual» 0,30 → 0,39 Buchungsrate bei
+145 → 129 Euro, «CO₂-Verzögerung» 0,25 → 0,27 bei 124 → 118, «Freiwillige Wende»
+0,292 → 0,285 bei nahezu gleichem Preis, «Transformationskonflikt» 0,26 → 0,04
+bei 98 → 228 Euro. Läufe dieser vier Szenarien von vor diesem Datum gehören nicht
+neben spätere.
+
+Am **2026-09-03** kam ein elfter Schnitt dazu, und er trifft **jeden Lauf**:
+**Das Einkommen wirkt jetzt auf die Kaufentscheidung selbst.** Bis dahin
+entschied es nur darüber, ob jemand sich ein Ticket überhaupt leisten kann —
+wer über dieser Grenze lag, für den war das Einkommen danach ohne jede Wirkung.
+Ein Gutverdiener und jemand knapp über der Grenze empfanden denselben Preis als
+gleich schmerzhaft.
+
+Seither wird der Preis daran gemessen, was jemand hat: Dieselben 140 Euro sind
+ein anderer Verzicht, je nachdem wovon sie abgehen. **Das verschiebt jede Zahl**,
+wenn auch weniger stark als die Umstellung auf die gezogene Buchung: Ein
+Standardlauf über 40 Runden endet bei einer Buchungsrate von 0,264 statt 0,259
+und einem Preis von 120,13 statt 118,85. Die Faktorlage bleibt dieselbe.
 
 ## Wo Sie vergleichen
 

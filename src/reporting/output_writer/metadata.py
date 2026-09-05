@@ -53,6 +53,13 @@ def save_run_metadata(
         # Schreiben mehrerer Artefakte und misst sonst die falsche Spanne —
         # derselbe Fehler, den P0.6 beim Config-Fingerabdruck gefunden hat.
         "elapsed_seconds": getattr(state, "elapsed_seconds", None),
+        # **Unter welchem Rahmenszenario der Lauf stand** (P2.0-B). Kommt aus
+        # dem Zustand, wo der Startpfad ihn abgelegt hat. `None` bei einem Lauf
+        # aus der Zeit davor oder von einem Pfad, der ihn nicht setzt — dann
+        # steht in der Oberfläche «nicht festgehalten» und keine Vermutung.
+        "rahmen": (
+            state.rahmen.model_dump() if getattr(state, "rahmen", None) is not None else None
+        ),
         "tick_unit": state.clock.tick_unit,
         "market_enabled": not args.no_market,
         "total_events": len(state.event_log),

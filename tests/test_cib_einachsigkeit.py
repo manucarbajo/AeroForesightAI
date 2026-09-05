@@ -59,6 +59,17 @@ def matrix() -> CIBMatrix:
 
 
 @pytest.fixture(scope="module")
+def roh() -> dict:
+    """Die Datei, **wie sie auf der Platte steht**.
+
+    `CIBMatrix` füllt fehlende Felder aus seinen Defaults auf — über das
+    Modell ließe sich nie prüfen, dass ein Feld in der Datei *fehlt*.
+    """
+
+    return json.loads(CIB_PATH.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
 def checker(matrix: CIBMatrix) -> ConsistencyChecker:
     return ConsistencyChecker(matrix)
 
@@ -209,3 +220,100 @@ class TestDieMatrixIstEineAchse:
                 f"{src}->{tgt} ({klartext}) hat jetzt eine Begründung — "
                 "dann ist P2.3 für diese Zelle erledigt und der Test nachzuziehen."
             )
+
+
+class TestDieMatrixBehauptetNichtsUeberIhreEigeneZukunft:
+    """P2.3-Rest (2026-08-31) — **die Datei ist ein Beleg, kein Werkzeug**.
+
+    P2.3 hieß «Matrix-Provenienz herstellen»: 168 Zellen begründen. Das Paket
+    hing an [P2.2](../docs/projektplan.md), und dort steht seit dem 2026-08-31
+    **Variante C** — die Kohärenz eines Rahmenszenarios wird in Prosa mit
+    Quellen begründet, es gibt keinen Algorithmus mehr, der sie prüft. Damit
+    entfällt der Auftrag: Man würde Werte belegen, die nichts mehr entscheiden.
+
+    **Die Datei bleibt trotzdem liegen**, und das ist eine Entscheidung: Sie
+    trägt die vier Messwerte, auf denen die Leitentscheidung steht (oben in
+    dieser Datei geprüft). Wer sie löscht, löscht den Beleg dafür, warum die
+    Rolle abgewählt wurde.
+
+    **Was zu tun blieb, war deshalb nicht Begründen, sondern Aufhören zu
+    behaupten:** Das Label `llm_proposed_pending_review_v3` versprach eine
+    fachliche Abnahme, die nicht mehr kommt — eine Zusage an den nächsten
+    Leser, die niemand einlöst.
+    """
+
+    def test_das_label_verspricht_keine_pruefung_mehr(self, roh):
+        quelle = roh["metadata"]["source"]
+
+        assert "pending_review" not in quelle, (
+            f"`{quelle}` kündigt eine fachliche Abnahme an. Seit P2.2 ist keine "
+            "mehr vorgesehen — sie prüfte Werte, die nichts entscheiden."
+        )
+        assert quelle == "beleg_keine_bewertende_rolle"
+
+    def test_die_notiz_sagt_wozu_die_datei_noch_da_ist(self, roh):
+        """Ohne diesen Satz liest der Nächste sie als Maßstab weiter."""
+
+        notiz = roh["metadata"]["note"]
+
+        assert "BELEG, KEIN WERKZEUG" in notiz
+        assert "keine bewertende Rolle" in notiz
+        assert "NICHT mehr vorgesehen" in notiz
+
+    def test_die_notiz_traegt_die_vier_messwerte(self, roh):
+        """Sie sind der Grund, warum die Datei bleibt — und stehen deshalb
+        *in* ihr, nicht nur in einem Dokument daneben."""
+
+        notiz = roh["metadata"]["note"]
+
+        for beleg in ("+0,56", "12 der 84", "2 der 128", "F1.1->F2.2"):
+            assert beleg in notiz, f"Messwert fehlt in der Notiz: {beleg}"
+
+    def test_die_leere_zweitstruktur_ist_weg(self, roh):
+        """`entries` war eine durchgängig leere Liste neben den 168 Zellen.
+
+        Kein aktiver Lesepfad füllte oder wertete sie aus — `CIBMatrix` führt
+        sie als «Deprecated: flat entry list for backward compatibility». Wer
+        die Datei zum ersten Mal öffnete, sah zwei Strukturen und musste raten,
+        welche die eigentliche ist.
+        """
+
+        assert "entries" not in roh, "Die leere Zweitstruktur ist zurück"
+
+    def test_sie_laedt_trotzdem(self):
+        """Das Modell setzt `entries` auf `[]` — die Datei braucht das Feld nicht."""
+
+        from src.config_loader import load_cib_frozen
+
+        geladen = load_cib_frozen()
+
+        assert len(geladen.cells) == 168
+        assert geladen.entries == []
+
+    def test_der_erzeuger_schreibt_dasselbe(self):
+        """**Sonst wäre die Korrektur beim nächsten Neubau weg.**
+
+        `scripts/rebuild_cib_frozen.py` erzeugt die Datei. Stünde das alte Label
+        dort weiter, hielte dieser Test genau bis zum nächsten Aufruf des
+        Skripts — und das ist die Sorte Grün, die nichts wert ist.
+
+        **Geprüft wird die Zuweisung, nicht das Vorkommen.** Die neue Notiz
+        nennt das alte Label absichtlich, um zu erklären, warum es ersetzt
+        wurde; ein blankes «kommt nicht vor» wäre rot, obwohl alles stimmt —
+        genau die Sorte Prüfung, die man später entnervt lockert.
+        """
+
+        quelltext = (
+            Path(__file__).resolve().parents[1] / "scripts" / "rebuild_cib_frozen.py"
+        ).read_text(encoding="utf-8")
+        zeilen = quelltext.splitlines()
+
+        quellen = [z.strip() for z in zeilen if '"source":' in z]
+        assert len(quellen) == 1, f"Mehr als eine Quelle im Erzeuger: {quellen}"
+        assert "beleg_keine_bewertende_rolle" in quellen[0]
+        assert "pending_review" not in quellen[0]
+
+        # Kommentarzeilen ausgenommen: Der erklärende Kommentar nennt `entries`
+        # weiterhin, geschrieben werden darf es nicht mehr.
+        schreibt_entries = [z for z in zeilen if '"entries"' in z and not z.strip().startswith("#")]
+        assert not schreibt_entries, f"Der Erzeuger schreibt `entries` wieder: {schreibt_entries}"

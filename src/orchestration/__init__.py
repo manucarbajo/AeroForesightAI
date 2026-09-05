@@ -10,6 +10,7 @@ from src.orchestration.scenario_sweeps import (
     apply_sweep_overrides,
     load_all_sweep_configs,
     load_sweep_config,
+    rahmenszenarien,
     run_all_sweeps,
     run_single_sweep,
 )
@@ -29,6 +30,7 @@ __all__ = [
     "build_playground_stategraph",
     "apply_sweep_overrides",
     "load_all_sweep_configs",
+    "rahmenszenarien",
     "load_sweep_config",
     "run_all_sweeps",
     "run_single_sweep",

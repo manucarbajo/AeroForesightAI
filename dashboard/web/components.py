@@ -531,6 +531,14 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
     dort, wo entschieden wird. Zugeklappt, weil der Kurzhinweis darüber für die
     meisten reicht; wer mehr will, klappt an Ort und Stelle auf, statt die Seite
     zu verlassen.
+
+    **`af-mass` seit dem 2026-09-03, und es ist eine Struktur- und keine
+    Textkorrektur.** Der Körper einer Erklärung ist Fließtext und lief bis dahin
+    ohne Lesemaß über die ganze Spalte — gemessen 89 Zeichen je Zeile bei 1280 px
+    (zugesagt sind höchstens 75, P1.9-W5.4). Aufgefallen ist es an **einer**
+    Erklärung, weil P2.0-C den Schalter «Eigene Werte anwenden» nach Schritt 1
+    verschoben hat; betroffen war aber **jede** Erklärung an jedem Feld. Den Text
+    zu kürzen hätte den einen Fall behoben und den Mechanismus stehen lassen.
     """
 
     return html.Details(
@@ -542,7 +550,7 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
                 ],
                 className="af-acc__summary flex items-center gap-1 cursor-pointer select-none py-1",
             ),
-            markdown(text, class_name="af-md--tight af-text-body pl-5 pb-1"),
+            markdown(text, class_name="af-md--tight af-text-body af-mass pl-5 pb-1"),
         ],
         className="af-acc mt-1.5",
     )

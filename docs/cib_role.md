@@ -1,11 +1,34 @@
 # Rolle der Cross-Impact-Balance-Analyse im System
 
-> **Diese Rolle ist am 2026-08-29 abgewählt worden.** Die Szenarienschicht wird ein
-> **Rahmen** statt eines Richters: Ein Szenario ist künftig ein benanntes Bündel exogener
-> Verläufe, F1–F7 werden aus dem Lauf *abgeleitet* statt ihn zu bewerten. Bis
-> [P2.0](projektplan.md#p20--die-rolle-umdrehen-rahmen-statt-urteil) umgesetzt ist,
-> beschreibt dieses Dokument, was der Code **heute** tut — mit den Einschränkungen, die
-> beim Nachmessen sichtbar wurden. Herleitung und Zahlen:
+> ## Diese Rolle gibt es nicht mehr
+>
+> **Abgewählt am 2026-08-29, ersetzt am 2026-08-31.** Die CIB-Schicht bewertet nichts
+> mehr im Modell:
+>
+> - Mit [P2.0](projektplan.md#p20--die-rolle-umdrehen-rahmen-statt-urteil--erledigt-2026-08-30) ist ein
+>   Szenario ein benanntes Bündel **exogener Verläufe**; F1–F7 werden aus dem Lauf
+>   *abgeleitet* statt ihn zu bewerten.
+> - Mit [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31)
+>   ist **Variante C** gewählt: Die Kohärenz eines Rahmenszenarios wird in **Prosa mit
+>   Quellen** begründet. Es gibt keinen Algorithmus, der sie prüft — die Impact Balance
+>   wird nicht implementiert.
+>
+> **Warum `configs/cib_frozen.json` trotzdem im Repo liegt:** Sie ist ein **Beleg, kein
+> Werkzeug.** Die Datei trägt die vier Messwerte, auf denen die Abwahl steht — der Score
+> korreliert mit **+0,56** mit der Zahl gleichpolig gesetzter Faktoren, nur **12** von 84
+> gleichpoligen Zellen tragen Spannung, das echte Impact-Balance-Kriterium trägt **2** von
+> 128 Zuständen statt der drei, die das Produkt verspricht, und **vier** unbegründete
+> Zellen verneinen die Rückkopplung, aus der gemischte Szenarien entstehen. Wer die Datei
+> löscht, löscht den Beleg. `tests/test_cib_einachsigkeit.py` hält alle vier fest.
+>
+> **Und eine fachliche Abnahme ist nicht mehr vorgesehen.** Bis zum 2026-08-31 trug
+> `metadata.source` das Label `llm_proposed_pending_review_v3` — es kündigte eine Prüfung
+> an, die niemand mehr vorhat, weil sie Werte prüfen würde, die nichts entscheiden. Das
+> Label heißt jetzt `beleg_keine_bewertende_rolle`, und die Notiz in der Datei sagt es
+> ausdrücklich ([P2.3-Rest](projektplan.md#p23--matrix-provenienz-herstellen--abgeschlossen-2026-08-31-entfallen-rest-erledigt)).
+>
+> **Was unterhalb dieses Kastens steht, beschreibt die abgewählte Rolle** — es bleibt als
+> Herleitung stehen, nicht als Beschreibung des heutigen Verhaltens. Zahlen und Argumente:
 > [`entscheidung_szenarienschicht_2026-08-29.md`](entscheidung_szenarienschicht_2026-08-29.md).
 
 > Anwendernahe Fassung im Dashboard unter «Dokumentation → CIB-Konsistenzprüfung».
@@ -36,7 +59,7 @@ dem Zustand steht, den seine eingehende Einflussbilanz empfiehlt (Impact Balance
 > **Was der Code stattdessen tut:** `ConsistencyChecker.check_scenario` prüft **einzelne
 > Zellen** gegen einen Schwellwert (`≤ −1.5` gilt als Konflikt) und summiert die Konflikte;
 > `compute_consistency_score` bildet das Verhältnis positiver zu allen Einflüssen. Beides
-> ist eine eigene Heuristik, nicht die Impact Balance. Solange [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen)
+> ist eine eigene Heuristik, nicht die Impact Balance. Solange [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31)
 > offen ist, gehört sie nicht als „Algorithmus nach Weimer-Jehle" bezeichnet.
 
 ## Warum CIB in diesem Projekt?
@@ -95,8 +118,14 @@ CIB leistet hier drei Dinge:
 
 ## Referenz-Matrix (`configs/cib_frozen.json`)
 
+> **Sie entscheidet seit dem 2026-08-31 nichts mehr** — siehe den Kasten oben. Was hier
+> folgt, beschreibt ihren Aufbau, weil sie als Beleg im Repo bleibt.
+
 Die Referenz-CIB wurde deterministisch mit Seed 42 erzeugt und ist **eingefroren**
-(`"frozen": true`). Sie enthält 14 Deskriptoren (F1.1, F1.2, …, F7.1, F7.2) mit
+(`"frozen": true`). **`entries` ist mit dem 2026-08-31 daraus entfernt worden**: eine
+durchgängig leere Liste neben den 168 Zellen, die kein Lesepfad füllte oder auswertete —
+wer die Datei zum ersten Mal öffnete, sah zwei Strukturen und musste raten, welche die
+eigentliche ist. Sie enthält 14 Deskriptoren (F1.1, F1.2, …, F7.1, F7.2) mit
 168 Cross-Factor-Zellen (14×14 − 7×4 Diagonal-Blöcke)..
 
 Active/Passive-Scores aus der Matrix (Faktor-Wichtigkeit):

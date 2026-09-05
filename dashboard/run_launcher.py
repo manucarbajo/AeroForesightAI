@@ -33,7 +33,8 @@ class RunLaunchConfig:
     simulation_description: str | None = None
     apply_custom_overrides: bool = False
     property_edits: dict[str, PropertyEditState] | None = None
-    factor_states: dict[str, str] | None = None
+    # `factor_states` ist mit P2.0-C entfallen: Die Faktorlage wird nicht
+    # mehr vorgegeben, sie entsteht im Lauf aus den exogenen Systemgrößen.
     mock_llm: bool = True
     deterministic_only: bool = False
     model: str = "llama3.2"
@@ -93,8 +94,6 @@ def launch_config_to_draft(config: RunLaunchConfig) -> ConfigDraft:
     draft.apply_custom_overrides = config.apply_custom_overrides
     if config.property_edits:
         draft.property_edits = dict(config.property_edits)
-    if config.factor_states:
-        draft.factor_states = dict(config.factor_states)
     draft.mock_llm = config.mock_llm
     draft.deterministic_only = config.deterministic_only
     draft.model = config.model
@@ -129,7 +128,6 @@ def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
         simulation_description=draft.simulation_description or None,
         apply_custom_overrides=draft.apply_custom_overrides or draft.scenario_mode == "custom",
         property_edits=draft.property_edits,
-        factor_states=draft.factor_states,
         mock_llm=draft.mock_llm,
         deterministic_only=draft.deterministic_only,
         model=draft.model.strip() or "llama3.2",
@@ -304,6 +302,18 @@ def launch_simulation(
                 no_protocol=config.no_protocol,
                 no_scenarios=config.no_scenarios,
                 deterministic_only=config.deterministic_only,
+                # **`mock_llm` gehört hierher** — es fehlte, und
+                # `save_run_metadata` fällt bei einem fehlenden Feld auf `False`
+                # zurück. Jeder Dashboard-Lauf «Ohne Sprachmodell» wurde damit
+                # als vollwertiger LLM-Lauf protokolliert.
+                mock_llm=config.mock_llm,
+                # **Ausgeschrieben statt ausgelassen.** Dieser Pfad erzeugt nie
+                # den Hybridmodus: `generate_and_save_run_scenario` bekommt
+                # `prefer_llm=not deterministic_only`, ein reiner Zahlenlauf also
+                # gar kein Modell. `False` ist damit richtig — aber es steht hier,
+                # weil ein weggelassenes Feld von einem abgeschalteten nicht zu
+                # unterscheiden ist.
+                llm_narrative=False,
                 quiet=False,
                 run_id=batch_id,
                 checkpoint_dir=str(ck_path),
@@ -371,6 +381,11 @@ def launch_simulation(
             no_protocol=config.no_protocol,
             no_scenarios=config.no_scenarios,
             deterministic_only=config.deterministic_only,
+            # Siehe oben: ohne dieses Feld behauptet das Artefakt einen Lauf mit
+            # Sprachmodell, während der Mock gerechnet hat.
+            mock_llm=config.mock_llm,
+            # Siehe oben: eine Aussage statt einer Auslassung.
+            llm_narrative=False,
             quiet=False,
             run_id=run_id,
             checkpoint_dir=str(ck_path),

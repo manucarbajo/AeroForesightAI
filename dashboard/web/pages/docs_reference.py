@@ -86,13 +86,13 @@ def faktoren() -> str:
     payload = load_config_file("factors.json")
     lines = [
         "Die sieben Faktoren beschreiben die Welt, in der ein Lauf stattfindet. Jeder hat "
-        "genau zwei mögliche Zustände. Welche Kombination Sie wählen, legen Sie unter "
-        "«Simulation starten» im Tab «Rahmenbedingungen» fest.",
+        "genau zwei mögliche Zustände. **Sie stellen sie nicht ein** — der Lauf erzeugt "
+        "sie aus den exogenen Größen des gewählten Rahmenszenarios.",
         "",
-        "Aus der Kombination aller sieben Zustände berechnet die CIB-Matrix, ob eine "
-        "Konstellation in sich stimmig ist. Widersprüchliche Kombinationen sind erlaubt — "
-        "sie werden nur als weniger konsistent bewertet und tauchen im Szenario-Tripleset "
-        "typischerweise als Spannungs-Szenario auf.",
+        "Zu einer Kombination aller sieben Zustände kann die eingefrorene Matrix einen "
+        "Konsistenzwert ausrechnen. **Er misst Polarität, nicht Plausibilität** — wie "
+        "einheitlich gepolt eine Lage ist, nicht wie wahrscheinlich sie eintritt. Deshalb "
+        "heißt er im Artefakt «Widerspruchsfreiheit» und nicht mehr «Plausibilität».",
         "",
     ]
     for key in sorted(payload):

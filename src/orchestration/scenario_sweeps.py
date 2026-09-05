@@ -28,7 +28,9 @@ if hasattr(sys.stdout, "reconfigure"):
 from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
+from src.market.market_feedback import BOOKING_YIELD_FEEDBACK
 from src.models.llm_models import LLMIncident
+from src.models.state_models import Rahmenszenario
 from src.models.sweep_models import (
     MilestoneCheck,
     SweepConfig,
@@ -124,9 +126,17 @@ UNBEACHTET: tuple[Festlegung, ...] = (
     Festlegung(
         "apply_custom_overrides",
         None,
-        "Jedes Szenario gilt unvermischt aus seiner eigenen Datei. Eigene Faktoren "
-        "und Systemgrößen wirken im Vergleich nicht — sonst verglichen Sie nicht mehr "
+        "Jedes Szenario gilt unvermischt aus seiner eigenen Datei. Eigene "
+        "Systemgrößen wirken im Vergleich nicht — sonst verglichen Sie nicht mehr "
         "die Szenarien, sondern Ihre Änderung mit sich selbst.",
+    ),
+    Festlegung(
+        "factor_states",
+        None,
+        "Die Faktorlage entsteht im Lauf aus den Systemgrößen des Szenarios — sie "
+        "wird nicht mehr vorgegeben. Das gilt für jeden Startweg, nicht nur für den "
+        "Vergleich: Ein vorher gesetzter Faktorzustand hieße, die Antwort vor die "
+        "Rechnung zu stellen.",
     ),
     Festlegung(
         "use_seed",
@@ -252,12 +262,30 @@ def load_sweep_config(path: Path) -> SweepConfig:
 
 
 def load_all_sweep_configs(directory: Path | None = None) -> list[SweepConfig]:
-    """Load all sweep configs from a directory."""
+    """Load all sweep configs from a directory — **Rahmen und Stresstests**."""
     directory = directory or SWEEPS_DIR
     configs: list[SweepConfig] = []
     for path in sorted(directory.glob("*.json")):
         configs.append(load_sweep_config(path))
     return configs
+
+
+def rahmenszenarien(directory: Path | None = None) -> list[SweepConfig]:
+    """Nur die **begründeten Weltbilder** — was ein Szenario-Vergleich vergleicht.
+
+    **Der Grund ist P2.2 / Variante C.** Bis dahin lagen unter `configs/sweeps/`
+    zwei Dinge ununterscheidbar nebeneinander, und `run_all_sweeps` startete
+    beide: vier Behauptungen über eine mögliche Welt und vier Stresstests der
+    Engine. «Totaler Wahnsinn (Alle Parameter)» stand gleichrangig neben
+    «Business as Usual» — einem Kunden wurde damit ein Belastungstest als
+    Zukunft angeboten, und der Vergleich stellte acht Ergebnisse nebeneinander,
+    von denen die Hälfte keine Aussage über die Welt war.
+
+    Ein Stresstest bleibt **lauffähig und wählbar** — er wird nur nicht mehr
+    mitverglichen. Wer ihn einzeln starten will, kann das weiterhin.
+    """
+
+    return [config for config in load_all_sweep_configs(directory) if config.art == "rahmen"]
 
 
 def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
@@ -295,15 +323,60 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
                     new_rules.append(TrajectoryRule.model_validate(rule_data))
                 traj.rules = new_rules
 
-    for factor_override in sweep.factor_overrides:
-        factor = state.environment.factors.get(factor_override.factor_id)
-        if factor is not None and factor_override.initial_state in factor.possible_states:
-            factor.current_state = factor_override.initial_state
+    # **`factor_overrides` werden seit P2.0-C nicht mehr angewendet.** Ein
+    # Rahmenszenario setzt die exogenen Verläufe; die Faktorlage entsteht daraus
+    # im Lauf. Sie vorher zu setzen hieße, die Antwort vor die Rechnung zu
+    # stellen (Leitentscheidung vom 2026-08-29).
+    #
+    # Gemessen, bevor das entfernt wurde — vier Presets trugen eine Vorgabe, je
+    # 20 Ticks mit und ohne: **In allen vieren landen alle sieben Faktoren auf
+    # denselben Zuständen.** Die Vorgabe bestimmte das Ergebnis also nicht, sie
+    # störte nur die ersten Ticks, solange die Regeln sie noch nicht
+    # überschrieben hatten (Ticketpreis 0,6 % bei `p5.7`, 2,4 % bei
+    # `alles_drin_szenario`).
+    #
+    # Das Feld bleibt im Modell und in den Dateien lesbar — es beschreibt, von
+    # welcher Lage ein Szenario erzählt. Wirksam ist es nicht mehr, und weil
+    # Invariante 7 verlangt, dass ein Pfad sagt, was er verwirft, steht es in
+    # `UNBEACHTET`.
+
+    if sweep.preisstrategie is not None:
+        _preisstrategie_setzen(state, sweep.preisstrategie)
 
     if sweep.base_price is not None:
         state.properties.price_model.base_price = sweep.base_price
 
     return state
+
+
+def _preisstrategie_setzen(state: Any, strategie: str) -> None:
+    """Die Preisstrategie dieser Welt in die Marktregel schreiben (P2.10).
+
+    **Warum das hier steht und nicht in `property_overrides`:** Die Strategie
+    ist keine Systemgröße mit Verlauf, sondern eine Eigenschaft der einen
+    `booking_yield_feedback`-Regel. Sie hat keinen Tick-Pfad — ein Anbieter
+    wechselt nicht mitten im Lauf seine Preislogik, und wer das modellieren
+    will, braucht dafür ein eigenes Paket.
+
+    **Ein unbekannter Name scheitert laut**, und zwar über
+    `MarketFeedbackConfig` — dieselbe Prüfung wie überall sonst, statt einer
+    zweiten hier. Ein Tippfehler wie `marge_` fiele sonst still auf
+    `auslastung` zurück, und das Szenario erzählte etwas anderes als seine
+    Begründung.
+    """
+
+    from src.models.property_models import MarketFeedbackConfig
+
+    MarketFeedbackConfig(strategie=strategie)  # wirft bei unbekanntem Namen
+
+    regeln = []
+    for regel in state.properties.market_rules:
+        if regel.effect.get("type") == BOOKING_YIELD_FEEDBACK:
+            effekt = dict(regel.effect)
+            effekt["strategie"] = strategie
+            regel = regel.model_copy(update={"effect": effekt})
+        regeln.append(regel)
+    state.properties = state.properties.model_copy(update={"market_rules": regeln})
 
 
 def _property_at_tick(state: Any, tick: int, property_id: str) -> Any:
@@ -385,6 +458,8 @@ def run_single_sweep(
 
     # Apply sweep overrides
     state = apply_sweep_overrides(state, sweep)
+    # Welcher Rahmen gilt (P2.0-B) — hier bekannt, später nicht mehr.
+    state.rahmen = Rahmenszenario(id=sweep.id, name=sweep.name, quelle="preset")
     if ticks_override:
         state.clock.max_ticks = ticks_override
 
@@ -538,9 +613,16 @@ def run_all_sweeps(
     sweep_filter: str | None = None,
     verbose: bool = True,
 ) -> SweepSummary:
-    """Run all sweep configs and produce a summary."""
+    """Run every **framework** scenario and produce a summary.
 
-    configs = load_all_sweep_configs()
+    Seit P2.2 sind das die Dateien mit ``art == "rahmen"`` — die Stresstests der
+    Engine sind hier heraus, weil ein Vergleich Weltbilder gegeneinanderstellt
+    und kein Belastungstest eine Zukunft ist. Ein `sweep_filter` greift
+    weiterhin auf **alle** Dateien zu: Wer einen Stresstest ausdrücklich nennt,
+    bekommt ihn.
+    """
+
+    configs = load_all_sweep_configs() if sweep_filter else rahmenszenarien()
     if sweep_filter:
         configs = [c for c in configs if c.id == sweep_filter or sweep_filter in c.id]
 

@@ -46,7 +46,7 @@ dem Zustand steht, den seine eingehende Bilanz empfiehlt. Über alle 128 Zustän
 erfüllen das **genau zwei**: `(F1.1 … F7.1)` und `(F1.2, F2.2, F3.1, F4.2, F5.2, F6.2, F7.2)`.
 Beide sind Pole — der zweite mit der einen Ausnahme, dass F3 nicht mitkippt.
 
-Damit ist die Frage beantwortet, die [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen)
+Damit ist die Frage beantwortet, die [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31)
 als Fallstrick offengelassen hatte: Das Tripleset ist aus dem echten Kriterium **nicht**
 bedienbar. Mit einer Zahl statt einer Vermutung.
 
@@ -131,6 +131,41 @@ Lauf.
 nicht erreichen, verschwindet. Er ist heute ein Fehler, weil der Endzustand vorgegeben
 ist. Nach der Umdrehung ist er das erwartete Verhalten.
 
+## Nachtrag: die Wahl ist getroffen (2026-08-31)
+
+**Variante C, umgesetzt als P2.2.** Die Entscheidung vom 2026-08-29 hatte die
+Rolle der CIB-Schicht abgewählt und offengelassen, was die Rahmenbündel
+stattdessen absichert; diese Frage war ausdrücklich hinter den Backtest gelegt.
+Der Backtest hat sie beantwortet, wenn auch anders als erwartet: Nicht dadurch,
+dass er das Modell für vertrauenswürdig genug erklärt hätte, um ein feineres
+Werkzeug darüber zu rechtfertigen — sondern dadurch, dass er die **Nachfrageseite
+als invertiert** ausgewiesen hat. Ein formales Konsistenzkriterium über einem
+Modell, das die Richtung verfehlt, verlagert nur die Frage.
+
+**Gewählt ist damit «nichts Formales»:** Die Kohärenz eines Rahmenszenarios wird
+in Prosa mit Quellen begründet. Das ist kein Verzicht, sondern eine Bringschuld —
+sie verlagert die Absicherung von der Mechanik in den Text, und der Text muss
+dann auch da sein. Vier ausgelieferte Rahmenszenarien tragen seither These,
+Begründung, Quellen und **Vorbehalt**; ein Wächter hält das fest, weil eine
+Prosa-Begründung, die niemand prüft, in sechs Monaten ein leeres Feld ist.
+
+**Ein Fund kam bei der Umsetzung dazu**, und er war in keiner der drei Varianten
+vorgesehen: Unter `configs/sweeps/` lagen **vier begründete Weltbilder und vier
+Stresstests der Engine** ununterscheidbar nebeneinander, und der
+Szenario-Vergleich startete beide. «Totaler Wahnsinn (Alle Parameter)» stand
+gleichrangig neben «Business as Usual». Einem Kunden wurde damit ein
+Belastungstest als Zukunft angeboten. Seit P2.2 sagt jede Datei, was sie ist.
+
+**Und eine Bestätigung der Leitentscheidung nebenbei:** Die Kohärenzbehauptung
+von «Freiwillige Wende» — verbindliche Beimischung schafft die
+Investitionssicherheit, die den Hochlauf trägt, und ohne Ausweichpfad ist
+strenge Regulierung politisch nicht durchzuhalten — ist **genau die
+Rückkopplung, die die Matrix mit −2 verneint**. Dass sich diese Welt in Prosa
+mühelos begründen lässt, während die Matrix sie als unplausibel führt, ist der
+vierte unabhängige Beleg dafür, dass der Score Polarität misst.
+
+Einzelheiten und Wächter: [P2.2 im Projektplan](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31).
+
 ## Die drei Wege — und warum C
 
 | | Weg | Preis |
@@ -189,18 +224,18 @@ ein Produkt, das Unternehmen etwas verkaufen soll, wiegen diese fünf schwerer:
 
 1. **Rolle umdrehen** — Rahmenszenario = feste Lage der exogenen Größen, Lauf erzeugt den
    Rest; die Sweeps werden vom Nebenweg zum Hauptweg. *(klein · verdrahten, nicht neu bauen
-   — [P2.0](projektplan.md#p20--die-rolle-umdrehen-rahmen-statt-urteil))*
+   — [P2.0](projektplan.md#p20--die-rolle-umdrehen-rahmen-statt-urteil--erledigt-2026-08-30))*
 2. **Ziehung und Ensemble** — echte Ziehung im Buchungsmodell, dann Ensemble-Läufe je
    Rahmen. Ab hier liefert das Produkt Bandbreiten statt Punktwerte. *(mittel ·
-   [P2.1](projektplan.md#p21--buchungsmodell-echte-ziehung-statt-schwellwert) +
-   [P2.6](projektplan.md#p26--ensemble-läufe-je-rahmenszenario))*
+   [P2.1](projektplan.md#p21--buchungsmodell-echte-ziehung-statt-schwellwert--erledigt-2026-08-30) +
+   [P2.6](projektplan.md#p26--ensemble-läufe-je-rahmenszenario--erledigt-2026-08-31))*
 3. **Backtest** — gegen 2015–2024 rechnen und veröffentlichen, wie gut es trifft, auch wenn
    es schlecht trifft. Ein dokumentierter Fehlschlag ist mehr wert als ein ungeprüftes
-   Modell. *(mittel · [P2.7](projektplan.md#p27--backtest-gegen-20152024))*
+   Modell. *(mittel · [P2.7](projektplan.md#p27--backtest-gegen-20152024--erledigt-2026-08-30))*
 4. **Erst dann die Szenarienschicht endgültig festlegen** — ob ein Rest CIB oder
    morphologische Verträglichkeit die Bündel absichert, entscheidet sich leichter, wenn das
    Modell geeicht ist. Vorher wäre es eine Entscheidung über ein Werkzeug, dessen Wirkung
-   niemand kennt. *(offen · [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen))*
+   niemand kennt. *(offen · [P2.2](projektplan.md#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31))*
 
 ## Was daraus für die 48 F7-Zellen folgt
 
@@ -208,7 +243,7 @@ Sie jetzt fachlich abnehmen zu lassen wäre verfrüht. Ob `F5.1 → F7.1` bei 0 
 bewegt gegen die Einachsigkeit nichts. Wer die 48 prüft, bevor über Rolle und Erhebung der
 Matrix entschieden ist, prüft Werte, die danach ohnehin neu erhoben werden müssten — und
 mit C entfällt die Prüfung ganz. Die offene Position aus P0.2 ist damit **zurückgestellt
-mit Grund**, nicht erledigt: `metadata.source` bleibt `llm_proposed_pending_review_v3`.
+mit Grund**, nicht erledigt. `metadata.source` trug dafür bis zum 2026-08-31 das Label `llm_proposed_pending_review_v3`; seit P2.3-Rest heißt es `beleg_keine_bewertende_rolle`, weil ein «pending review» eine Prüfung ankündigt, die unter Variante C nicht mehr vorgesehen ist.
 
 ## Was diese Entscheidung nicht berührt
 

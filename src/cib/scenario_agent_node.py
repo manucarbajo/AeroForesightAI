@@ -350,6 +350,19 @@ def render_scenarios_markdown(payload: dict[str, Any], state: SimulationState) -
                     f"{gerechnet.get('total_evaluated', 0)} Konstellationen konsistent"
                 )
     lines.append("")
+    # **Woher diese Konstellationen kommen** (P2.0-B). Sie stehen in einem
+    # Lauf-Verzeichnis und sehen deshalb aus, als kämen sie aus dem Lauf. Sie
+    # kommen aus der Matrix: `derive_scenarios` zählt alle 2^7 Kombinationen
+    # durch und rankt sie nach ihrem Konsistenzwert — der Endzustand des Laufs
+    # geht dabei an keiner Stelle ein. Wer das nicht weiß, liest hier ein
+    # Ergebnis, wo eine Eigenschaft der Matrix steht.
+    lines.append(
+        "> Diese Konstellationen stammen aus der **Einflussmatrix**, nicht aus "
+        "diesem Lauf: Es sind die bestbewerteten aller Kombinationen von F1–F7. "
+        "Sie fallen deshalb für jeden Lauf gleich aus. Das Szenario-Tripleset "
+        "*dieses* Laufs steht in `run_scenario.md`."
+    )
+    lines.append("")
 
     # **`szenarien`, nicht `scenarios`** (P1.3). Der Bericht las den alten
     # Schlüssel weiter und wäre leer geblieben — gefunden vom Test, nicht beim

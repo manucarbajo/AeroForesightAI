@@ -119,13 +119,24 @@ def _provenance(metadata: dict) -> html.Div:
     else:
         code_label = "nicht festgehalten"
 
+    # **Der Rahmen steht vorn** (P2.0-B). Er ist die zentrale Eingabe eines
+    # Laufs: Bis dahin sagte kein Artefakt, welches Szenario zugrunde lag —
+    # der Fingerabdruck unterschied die Rahmen zwar, aber nur als Hash.
+    rahmen = metadata.get("rahmen") or {}
+    rahmen_label = str(rahmen.get("name") or "") or "nicht festgehalten"
+
     tiles = [
+        ui.metric_tile(
+            "Rahmenszenario",
+            rahmen_label,
+            hint="Die Außenwelt, aus der die Zahlen entstanden sind",
+        ),
         ui.metric_tile("Rechenmodus", mode_label),
         ui.metric_tile("Seed", seed_label, hint="Gleicher Seed, gleiche Ziehung"),
         ui.metric_tile("Codestand", code_label),
     ]
 
-    children: list = [html.Div(ui.grid(*tiles, cols="sm:grid-cols-3"), className="mt-4")]
+    children: list = [html.Div(ui.grid(*tiles, cols="sm:grid-cols-2"), className="mt-4")]
 
     if mode in MODES_WITHOUT_ANY_LLM:
         children.append(

@@ -214,3 +214,84 @@ def cib_state():
     if zustand.cib_matrix is None:
         pytest.skip("Kein CIB-Matrix im Ausgangszustand — dann prüft dieser Test nichts")
     return zustand
+
+
+# --- Der Weg vom Node ins Artefakt (P2.0-B) --------------------------------
+
+
+class TestDerSchluesselDriftetNichtWiederWeg:
+    """Zweimal derselbe Fehler, eine Ebene auseinander.
+
+    P1.3 hat die Metadaten-Schlüssel umbenannt (`scenarios` →
+    `erzaehlte_szenarien`) und dabei `render_scenarios_markdown` mitgezogen —
+    der Kommentar dort hält es fest. **Nicht mitgezogen wurde
+    `run_simulation.py`**, das den alten Schlüssel weiterlas. Ergebnis: Jeder
+    Lauf schrieb ein leeres `scenarios.json`, und niemand hat es bemerkt, weil
+    niemand die Datei liest.
+
+    Diese Tests prüfen den **Weg**, nicht die Namen: Was der Node ablegt, muss
+    der Schreiber finden, und was der Schreiber übergibt, muss der Bericht
+    lesen können. Ein Umbenennen, das eine der beiden Seiten vergisst, wird rot.
+    """
+
+    def test_der_schreiber_liest_den_schluessel_des_nodes(self):
+        """Der Bauplan von `run_simulation`, gegen den Node gehalten."""
+
+        import inspect
+
+        from src import run_simulation
+        from src.cib import scenario_agent_node
+
+        quelle = inspect.getsource(run_simulation)
+        block = quelle[quelle.index("scenarios_path = save_scenarios") - 2000 :]
+
+        abgelegt = "erzaehlte_szenarien"
+        assert abgelegt in inspect.getsource(
+            scenario_agent_node.ScenarioAgentNode.invoke
+        ), "Der Node legt das Narrativ unter einem anderen Schlüssel ab."
+        assert abgelegt in block, (
+            "`run_simulation` liest nicht den Schlüssel, unter dem der Node ablegt. "
+            "Genau so ist das Artefakt seit P1.3 leer geblieben."
+        )
+
+    def test_das_artefakt_traegt_das_narrativ_und_nicht_nichts(self, cib_state):
+        """Der Weg als Ganzes, an einem echten Mock-Narrativ gemessen."""
+
+        state = ScenarioAgentNode(llm=_Antwort(_narrativ_mit_zahlen())).invoke(cib_state)
+
+        nutzlast = (state.cib_matrix.metadata or {}).get("erzaehlte_szenarien") or {"szenarien": []}
+
+        assert nutzlast.get("szenarien"), "Der Node hat kein Narrativ abgelegt"
+
+        bericht = render_scenarios_markdown(nutzlast, state)
+        assert "_Keine Szenarien generiert._" not in bericht, (
+            "Der Bericht findet das Narrativ nicht — die Form der Nutzlast passt nicht "
+            "zu dem, was er liest."
+        )
+
+    def test_der_bericht_sagt_woher_die_konstellationen_kommen(self, cib_state):
+        bericht = render_scenarios_markdown({"szenarien": []}, cib_state)
+
+        assert "Einflussmatrix" in bericht and "nicht aus" in bericht, (
+            "Der Bericht steht in einem Lauf-Verzeichnis und sagt nicht, dass seine "
+            "Konstellationen aus der Matrix stammen statt aus dem Lauf."
+        )
+
+    def test_der_nenner_ist_die_zahl_der_bewerteten(self):
+        """«1 von 1 konsistent» machte aus einem Befund eine Erfolgsmeldung."""
+
+        from pathlib import Path
+
+        from src.cib.scenario_consistency import ScenarioDeriver
+        from src.models.cib_models import CIBMatrix
+
+        matrix = CIBMatrix.model_validate(
+            json.loads(Path("configs/cib_frozen.json").read_text(encoding="utf-8"))
+        )
+        ergebnis = ScenarioDeriver(matrix).derive_scenarios(top_n=3, allow_inconsistent=False)
+
+        assert ergebnis.total_evaluated == 128, (
+            f"Der Nenner ist {ergebnis.total_evaluated} statt 128 — dann zählt er "
+            "wieder die behaltenen statt die bewerteten Konstellationen."
+        )
+        assert ergebnis.consistent_count <= ergebnis.total_evaluated

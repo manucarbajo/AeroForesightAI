@@ -111,22 +111,23 @@ class TestModellUndExperimentSindZweiOrte:
     """
 
     def test_the_dense_areas_left_the_step_sequence(self, draft):
-        """Die **Formularwaende** sind weg — die eine Frage dazwischen nicht.
+        """Die **Formularwaende** sind weg — und seit P2.0-C auch die Ausgangslage.
 
-        W3.3 hat die Ausgangslage zurückgeholt: sieben Auswahlen, ein
-        Bildschirm. Das ist kein Rückschritt gegenüber W3.1, sondern dessen
-        Ergänzung — dort ging es um 168 Bedienelemente, hier um sieben.
+        W3.1 hat 168 Bedienelemente in den Modell-Editor verschoben, W3.3 die
+        Faktorlage als *eine* Frage zurückgeholt. P2.0-C nimmt diese Frage
+        wieder heraus, aber aus einem anderen Grund: nicht weil sie zu groß
+        wäre, sondern weil sie **keine Wirkung hatte**.
         """
 
         schluessel = [s.key for s in wizard.STEPS]
 
         assert "rahmen" not in schluessel
         assert "nachfrage" not in schluessel
+        assert "faktorlage" not in schluessel
         assert schluessel == [
             "szenario",
             "umfang",
             "modus",
-            "faktorlage",
             "ablage",
             "technik",
             "start",
@@ -160,22 +161,48 @@ class TestModellUndExperimentSindZweiOrte:
         assert any(f.startswith("population_edits.") for f in felder), "Die Bevölkerung fehlt"
         assert any(f.startswith("market_feedback_edit.") for f in felder), "Die Preisbildung fehlt"
         assert not any(f.startswith("factor_states.") for f in felder), (
-            "Die Faktorlage steht wieder im Modell — sie beschreibt die Ausgangslage "
-            "*eines Laufs* und gehört seit W3.3 in die Schrittfolge."
+            "Die Faktorlage steht wieder im Modell — sie ist seit P2.0-C gar keine "
+            "Eingabe mehr, weder hier noch im Assistenten."
         )
 
-    def test_the_starting_position_belongs_to_the_experiment(self, draft):
-        """Und sie steht dort, wo über den Lauf entschieden wird."""
+    def test_die_faktorlage_ist_nirgends_mehr_eine_eingabe(self, draft):
+        """P2.0-C kehrt W3.3 um — und das ist der Kern der Umdrehung.
+
+        W3.3 hatte die Faktorlage in den Assistenten geholt, weil sie zum
+        Experiment gehört und nicht zum Modell. Das war richtig, solange sie
+        überhaupt eine Eingabe war. Gemessen ist sie es nicht: Vier der sieben
+        Faktoren sind nach *einem* Tick überschrieben, und in allen vier Presets
+        mit Vorgabe landeten alle sieben auf denselben Zuständen wie ohne sie
+        (`test_faktoren_abgeleitet.py`).
+
+        Ein Rahmenszenario setzt die exogenen Verläufe — die Faktorlage entsteht
+        daraus im Lauf.
+        """
+
+        from dashboard.web.pages import model_editor
+
+        ueberall = _fields(model_editor.layout(draft))
+        for index in range(len(wizard.STEPS)):
+            ueberall |= _fields(wizard.content(draft, index))
+
+        faktoren = {f for f in ueberall if f.startswith("factor_states")}
+        assert not faktoren, (
+            f"Die Faktorlage ist wieder ein Eingabefeld: {sorted(faktoren)}. "
+            "Damit stünde die Antwort wieder vor der Rechnung."
+        )
+
+    def test_der_schalter_ist_mit_umgezogen(self, draft):
+        """Er entschied über die Wirkung der Faktorauswahl und steuert heute die
+        Systemgrößen — er gehört dorthin, wo der Ausgangspunkt gewählt wird."""
 
         in_schritten = set()
         for index in range(len(wizard.STEPS)):
             in_schritten |= _fields(wizard.content(draft, index))
 
-        faktoren = {f for f in in_schritten if f.startswith("factor_states.")}
-        assert len(faktoren) == 7, f"Erwartet sieben Faktoren im Assistenten, gefunden {faktoren}"
         assert "apply_custom_overrides" in in_schritten, (
-            "Der Schalter, der über die Wirkung dieser Auswahl entscheidet, steht "
-            "nicht auf demselben Bildschirm."
+            "Der Schalter «Eigene Werte anwenden» ist mit dem Schritt «Ausgangslage» "
+            "verschwunden, statt umzuziehen — dann wirken Änderungen am Modell "
+            "stillschweigend oder stillschweigend nicht."
         )
 
     def test_the_model_area_survives_a_broken_config(self, draft):
@@ -291,12 +318,15 @@ class TestWasAbweichtStehtVorDemStart:
 
         from dashboard.web.config_editor import delta
 
-        faktoren = dict(draft["factor_states"])
-        faktoren["F3"] = "F3.2"
-        faktoren["F5"] = "F5.2"
-        (abweichung,) = delta.unterschiede({**draft, "factor_states": faktoren})
+        groessen = {
+            pid: {**wert, "baseline": float(wert["baseline"]) + 1.0}
+            for pid, wert in list(draft["property_edits"].items())[:2]
+        }
+        (abweichung,) = delta.unterschiede(
+            {**draft, "property_edits": {**draft["property_edits"], **groessen}}
+        )
 
-        assert abweichung.feld == "factor_states"
+        assert abweichung.feld == "property_edits"
         assert "2" in abweichung.jetzt, abweichung.jetzt
 
     def test_the_path_choice_is_not_a_deviation(self, draft):

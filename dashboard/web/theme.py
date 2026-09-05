@@ -244,6 +244,34 @@ def color(name: str, mode: str | None = LIGHT) -> str:
     return palette(mode)[name]
 
 
+#: Deckkraft eines Unsicherheitsbandes. Bewusst niedrig: Das Band ist der
+#: **Hintergrund** der Aussage, der Median die Aussage selbst. Ein kräftigeres
+#: Band zöge den Blick auf die Ränder — und die Ränder sind gerade das, was man
+#: nicht als Punktwert lesen soll.
+BAND_DECKKRAFT = 0.18
+
+
+def band_fill(name: str, mode: str | None = LIGHT, *, deckkraft: float = BAND_DECKKRAFT) -> str:
+    """Die Füllfarbe eines Perzentilbandes zur Linienfarbe *name*.
+
+    **Warum das hier steht und nicht in `figures.py`:** Plotly braucht für eine
+    Fläche eine Farbe *mit Alpha*, und die Tokens sind Hex ohne Alpha. Die
+    Umrechnung an der Zeichenstelle zu machen hieße, dort einen Farbwert zu
+    bilden — genau das, was Regel 4 verbietet und `tests/test_web_theme.py`
+    meldet. Der Bandton wird deshalb **aus dem Token abgeleitet**, nicht neben
+    ihm definiert: Ändert sich `price`, ändert sich das Band mit.
+    """
+
+    roh = color(name, mode).lstrip("#")
+    if len(roh) == 3:
+        roh = "".join(zeichen * 2 for zeichen in roh)
+    if len(roh) != 6:
+        raise ValueError(f"Token `{name}` ist kein Hex-Farbwert: {color(name, mode)!r}")
+
+    r, g, b = (int(roh[i : i + 2], 16) for i in (0, 2, 4))
+    return f"rgba({r}, {g}, {b}, {deckkraft})"
+
+
 # --- Rückwärtskompatible Kurznamen -----------------------------------------
 # Die Light-Werte der wichtigsten Rollen. Neuer Code nimmt `palette(mode)`;
 # diese Namen bleiben, damit bestehende Aufrufer nicht in einem Zug mitziehen

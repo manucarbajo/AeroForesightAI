@@ -20,28 +20,56 @@ gemindert.
 
 | Was mindert | Wodurch |
 |---|---|
-| Preis | Preisempfindlichkeit der Person, multipliziert mit dem Ticketpreis |
+| Preis | Preisempfindlichkeit der Person, multipliziert mit dem Ticketpreis **im Verhältnis zu ihrem Einkommen** |
 | CO₂-Abgabe | Umweltbewusstsein, multipliziert mit dem Teil der Abgabe, der über dem Referenzwert von 50 EUR je Tonne liegt |
 | Bahn als Alternative | Wechselbereitschaft der Person, multipliziert mit dem Preis, mit anderthalbfachem Gewicht |
 | Sättigung | Wie viel diese Person zuletzt schon geflogen ist |
+
+**Der Preis zählt seit September 2026 relativ zum Einkommen**, und das ist mehr
+als eine Feinheit: Bis dahin entschied das Einkommen nur über die Hürde davor.
+Wer sie genommen hatte, für den war es danach ohne jede Wirkung — ein
+Gutverdiener und jemand knapp über der Grenze empfanden dieselben 140 Euro als
+gleich schmerzhaft. Jetzt ist derselbe Betrag ein anderer Verzicht, je nachdem
+wovon er abgeht.
+
+**Die Bahn wird bewusst nicht so gerechnet.** Sie steht mit dem Ticketpreis in
+der Tabelle, nicht mit dem einkommensrelativen — denn ob sich der Umstieg lohnt,
+hängt am Verhältnis von Fahrpreis und Reisezeit, nicht am eigenen Kontostand.
 
 Besonders preisempfindliche Personen bekommen zusätzlich einen Aufschlag auf den
 CO₂-Malus. Die Begründung: Wer ohnehin genau aufs Geld schaut, spürt eine Abgabe
 doppelt — einmal als Preis und einmal als Anlass, das Fliegen zu hinterfragen.
 
-Aus der Summe wird über eine logistische Funktion eine Wahrscheinlichkeit. Liegt
-sie bei mindestens 0,5, wird gebucht.
+Aus der Summe wird über eine logistische Funktion eine Wahrscheinlichkeit — und
+gegen die wird **gezogen**. Eine Person mit 70 Prozent bucht in etwa sieben von
+zehn Fällen, eine mit 51 Prozent in gut der Hälfte.
 
-## Warum das deterministisch ist
+Eine Ausnahme gibt es: Wer sich das Ticket schlicht nicht leisten kann, bucht
+nicht. Das ist eine harte Grenze und keine kleine Wahrscheinlichkeit, die bei
+genug Versuchen doch einmal zuschlägt.
 
-Es wird nicht gewürfelt. Der Schwellwert entscheidet, nicht ein Zufallszug. Bei
-gleicher Ausgangslage und gleichem Preis fällt dieselbe Person immer gleich.
+## Warum gezogen wird — und was das ändert
 
-Zufall steckt nur an einer Stelle im Modell, nämlich beim Ziehen der Bevölkerung
-zu Beginn: Wer welche Zahlungsbereitschaft, welches Alter und welche Merkmale
-bekommt, hängt vom Zufallsstartwert ab. Der ganze Lauf ist damit reproduzierbar —
-auch dann, wenn Sie unter **Technik** keinen eigenen Startwert setzen: Dann
-rechnet der Lauf mit einem Standardwert.
+**Bis August 2026 wurde nicht gezogen, sondern geschwellt:** Wer über 50 Prozent
+lag, buchte mit Sicherheit; wer darunter lag, gar nicht. Zwei Personen mit 51 und
+99 Prozent waren nicht zu unterscheiden.
+
+Das hatte zwei Folgen. Erstens verzerrte es die Nachfrage systematisch — bei
+niedrigen Preisen nach oben, bei hohen nach unten, weil jede Wahrscheinlichkeit
+auf null oder eins gedrückt wurde. Zweitens gab es zu jedem Preis genau **eine**
+mögliche Buchungsrate: keine Bandbreite, und damit keine Aussage darüber, wie
+sicher eine Zahl ist. Die Größenordnung der Verzerrung steht in
+[Vergleiche](/doku/vergleiche).
+
+**Reproduzierbar bleibt der Lauf trotzdem.** Der Zufallsstartwert bestimmt beides:
+das Ziehen der Bevölkerung zu Beginn und die Buchungsentscheidungen in jeder
+Runde. Zwei Läufe mit demselben Startwert liefern exakt dasselbe Ergebnis — auch
+dann, wenn Sie unter **Technik** keinen eigenen setzen: Dann rechnet der Lauf mit
+einem Standardwert.
+
+Jede Runde bekommt dabei ihren eigenen Zufallsstrom. Ohne das buchten in jeder
+Runde dieselben Personen, und die Buchungsrate würde zur Treppe statt zu einer
+Kurve.
 
 ## Was daraus folgt
 

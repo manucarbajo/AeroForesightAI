@@ -72,7 +72,6 @@ def draft_from_dict(payload: dict[str, Any] | None) -> ConfigDraft:
     draft.market_feedback_edit = _build(
         MarketFeedbackEditState, payload.get("market_feedback_edit")
     )
-    draft.factor_states = dict(payload.get("factor_states") or {})
     return draft
 
 

@@ -10,12 +10,16 @@ from typing import Any
 from src.config_loader import CONFIGS_DIR, build_initial_state, load_properties_config
 from src.market.market_feedback import resolve_market_feedback_config
 from src.models.property_models import BaselineTrajectory, StepFunctionTrajectory
-from src.models.sweep_models import FactorOverride, PropertyOverride, SweepConfig
+from src.models.state_models import Rahmenszenario
+from src.models.sweep_models import PropertyOverride, SweepConfig
 from src.orchestration.scenario_sweeps import (
     SWEEPS_DIR,
     apply_sweep_overrides,
     load_all_sweep_configs,
     load_sweep_config,
+)
+from src.orchestration.scenario_sweeps import (
+    rahmenszenarien as _rahmenszenarien,
 )
 from src.validation import collect_state_errors, field_of, issue, validate_llm_settings
 
@@ -184,7 +188,9 @@ class ConfigDraft:
     apply_custom_overrides: bool = True
 
     property_edits: dict[str, PropertyEditState] = field(default_factory=dict)
-    factor_states: dict[str, str] = field(default_factory=dict)
+    # `factor_states` ist mit P2.0-C entfallen. Die Faktorlage war eine
+    # **Eingabe** des Entwurfs und wurde als `factor_overrides` in den Lauf
+    # gereicht; heute entsteht sie im Lauf aus den exogenen Systemgrößen.
     population_edits: list[PopulationEditState] = field(default_factory=list)
     saturation_edit: SaturationEditState = field(default_factory=SaturationEditState)
     market_feedback_edit: MarketFeedbackEditState = field(default_factory=MarketFeedbackEditState)
@@ -220,9 +226,23 @@ def sweeps_dir() -> Path:
 
 
 def list_sweep_presets() -> list[SweepConfig]:
+    """Alles unter `configs/sweeps/` — **Rahmen und Stresstests**.
+
+    Für die **Auswahl** richtig: Ein Stresstest bleibt einzeln startbar. Für
+    einen **Vergleich** falsch — dafür `rahmenszenarien()`.
+    """
+
     if not SWEEPS_DIR.is_dir():
         return []
     return load_all_sweep_configs(SWEEPS_DIR)
+
+
+def rahmenszenarien() -> list[SweepConfig]:
+    """Nur die begründeten Weltbilder (P2.2). Siehe `scenario_sweeps.rahmenszenarien`."""
+
+    if not SWEEPS_DIR.is_dir():
+        return []
+    return _rahmenszenarien(SWEEPS_DIR)
 
 
 def load_config_file(filename: str) -> dict[str, Any]:
@@ -241,7 +261,6 @@ def default_config_draft() -> ConfigDraft:
         simulation_description=str(sim.get("description", "")),
     )
     draft.property_edits = extract_property_edits_from_file("properties.json")
-    draft.factor_states = extract_factor_states_from_file("factors.json")
     draft.population_edits = extract_population_edits_from_file("properties.json")
     draft.saturation_edit = extract_saturation_from_file("properties.json")
     draft.market_feedback_edit = extract_market_feedback_from_file("properties.json")
@@ -442,15 +461,6 @@ def save_market_feedback_to_file(
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def extract_factor_states_from_file(filename: str = "factors.json") -> dict[str, str]:
-    data = load_config_file(filename)
-    return {
-        factor_id: str(factor.get("current_state", ""))
-        for factor_id, factor in data.items()
-        if isinstance(factor, dict)
-    }
-
-
 def factor_options_from_file(filename: str = "factors.json") -> dict[str, dict[str, str]]:
     data = load_config_file(filename)
     options: dict[str, dict[str, str]] = {}
@@ -483,10 +493,6 @@ def apply_sweep_to_draft(draft: ConfigDraft, sweep: SweepConfig) -> ConfigDraft:
             rules=list(rules),
         )
 
-    factor_states = dict(draft.factor_states)
-    for fo in sweep.factor_overrides:
-        factor_states[fo.factor_id] = fo.initial_state
-
     # «Werte dieses Szenarios übernehmen» heißt: ab hier sind es *meine* Werte.
     # Der Modus muss deshalb auf `custom` wechseln — im Modus `sweep` gilt seit
     # P1.1 ausschließlich die Preset-Datei, die eben übernommenen Werte im
@@ -496,7 +502,6 @@ def apply_sweep_to_draft(draft: ConfigDraft, sweep: SweepConfig) -> ConfigDraft:
     draft.sweep_id = sweep.id
     draft.rounds = sweep.max_ticks
     draft.property_edits = prop_edits
-    draft.factor_states = factor_states
     draft.apply_custom_overrides = True
     return draft
 
@@ -523,12 +528,10 @@ def property_overrides_from_edits(edits: dict[str, PropertyEditState]) -> list[P
     return overrides
 
 
-def factor_overrides_from_states(states: dict[str, str]) -> list[FactorOverride]:
-    return [
-        FactorOverride(factor_id=factor_id, initial_state=state)
-        for factor_id, state in sorted(states.items())
-        if state
-    ]
+# `factor_overrides_from_states` ist mit P2.0-C entfallen. Sie übersetzte die im
+# Assistenten gewählte Faktorlage in Vorgaben für den Lauf — und stellte damit
+# die Antwort vor die Rechnung. Die Faktoren entstehen heute im Lauf aus den
+# exogenen Systemgrößen des Rahmenszenarios.
 
 
 def build_custom_sweep_from_draft(draft: ConfigDraft, filename: str = "") -> SweepConfig:
@@ -544,7 +547,6 @@ def build_custom_sweep_from_draft(draft: ConfigDraft, filename: str = "") -> Swe
         max_ticks=draft.rounds,
         base_price=draft.base_price,
         property_overrides=property_overrides_from_edits(draft.property_edits),
-        factor_overrides=factor_overrides_from_states(draft.factor_states),
         milestones=[],
     )
 
@@ -585,13 +587,39 @@ def prepare_simulation_state(draft: ConfigDraft):
     # Sprung auf 120 in Tick 15. Über die CLI (`run_single_sweep`) stimmte es,
     # nur dieser Pfad nicht. Wer von einem Preset ausgehen und dann eigene
     # Werte setzen will, nimmt «Werte übernehmen» — das schaltet auf `custom`.
+    # **Der Rahmen wird hier gesetzt** (P2.0-B). Nur an dieser Stelle ist
+    # bekannt, welches Szenario gilt — nach `apply_sweep_overrides` stehen nur
+    # noch Zahlen im Zustand, aus denen sich kein Name zurückgewinnen lässt.
+    #
+    # **Er folgt der Wahl des Nutzers, nicht dem internen Pfad.** Der erste
+    # Anlauf hängte ihn an den Zweig, der die Overrides anwendet — und weil
+    # `apply_custom_overrides` per Vorgabe an ist, hätte ein Lauf mit der
+    # Standard-Ausgangslage das Etikett «eigene Werte» getragen, ohne dass
+    # jemand etwas geändert hat. Der Wirkungstest hat das gemeldet: Das Feld
+    # erreichte plötzlich die Simulation, die es vorher nachweislich nicht
+    # erreichte.
     if draft.scenario_mode == "sweep" and draft.sweep_id:
         sweep_path = SWEEPS_DIR / f"{draft.sweep_id}.json"
         if not sweep_path.is_file():
             sweep_path = Path(draft.sweep_id)
         sweep = load_sweep_config(sweep_path)
+        state.rahmen = Rahmenszenario(id=sweep.id, name=sweep.name, quelle="preset")
         state = apply_sweep_overrides(state, sweep)
-    elif draft.apply_custom_overrides or draft.scenario_mode == "custom":
+    elif draft.scenario_mode == "custom":
+        state.rahmen = Rahmenszenario(id="eigen", name="Eigene Werte", quelle="eigen")
+    else:
+        # Auch das ist ein Rahmen — die ausgelieferten Dateien tragen eigene
+        # exogene Verläufe. Er hieß bisher nur nicht so, und deshalb sah es aus,
+        # als liefe der Lauf «ohne Szenario».
+        state.rahmen = Rahmenszenario(
+            id="standard",
+            name="Standard-Ausgangslage",
+            quelle="standard",
+        )
+
+    if draft.scenario_mode != "sweep" and (
+        draft.apply_custom_overrides or draft.scenario_mode == "custom"
+    ):
         custom = build_custom_sweep_from_draft(draft)
         state = apply_sweep_overrides(state, custom)
 
@@ -736,7 +764,6 @@ def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:
             }
             for edit in draft.property_edits.values()
         ]
-        summary["factor_overrides"] = draft.factor_states
     return summary
 
 

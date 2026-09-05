@@ -384,7 +384,8 @@ ZIEL = 1.0
 #: ein Rahmen ohne den auf jedem Schritt wiederholten Einführungstext (−116 px,
 #: W3.5) und eine Gliederungsebene weniger innerhalb der Schritte.
 #:
-#: **Schritt 7 ist mit W4.1, W4.2 und W4.4 von 1,00 auf 1,29 gewachsen**, und beides
+#: **Der letzte Schritt ist mit W4.1, W4.2 und W4.4 von 1,00 auf 1,29 gewachsen**
+#: (er hiess bis P2.0-C «Schritt 7», seither «Schritt 6»), und beides
 #: war eine bewusste Abwägung. Der Name des Laufs steht seither dort, weil das
 #: der einzige Schritt ist, den jeder Startweg passiert; die Abweichungsliste
 #: ebenso, weil «was habe ich geändert» vor dem Start beantwortet gehört. Ein
@@ -403,12 +404,24 @@ ZIEL = 1.0
 DECKEL: dict[int, dict[str, float]] = {
     1280: {
         "Einstieg": 1.00,
-        "Schritt 1": 1.20,
+        # **1,20 → 1,34 mit P2.0-C, und der Zuwachs ist gemessen zugeordnet.**
+        # Der Schalter «Eigene Werte anwenden» ist mit P2.0-C von seinem
+        # eigenen Schritt hierher gezogen, hinter «Feinabstimmung» — die
+        # Faktorlage ist seither keine Eingabe mehr, und der Schritt
+        # «Ausgangslage» ist entfallen. Nachgemessen liegt der Zuwachs
+        # **vollständig** daran: Mit und ohne das Lesemaß auf den
+        # Glossar-Erklärungen (`ui.explainer`, 2026-09-03) misst der Schritt
+        # dieselben 1,34 — der Erklärungskörper steckt in einem zugeklappten
+        # `<details>` und trägt keine Höhe.
+        "Schritt 1": 1.34,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
-        "Schritt 4": 1.28,
-        "Schritt 5": 1.31,
-        "Schritt 6": 1.00,
+        # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
+        # weiter**: P2.0-C hat den vierten entfernt. Der alte Schritt 5 (1,31)
+        # ist der neue 4 und misst 1,22, der alte 6 (1,00) ist der neue 5 und
+        # misst 1,02. Nicht gewachsen, nur umnummeriert.
+        "Schritt 4": 1.22,
+        "Schritt 5": 1.02,
         # **1,29 → 1,45 mit W5.4, und das ist bezahlt, nicht verrutscht.** Das
         # Lesemaß bricht den Preflight-Text bei 75 statt bei 124 Zeichen um;
         # dieselben Sätze brauchen dadurch mehr Zeilen. Der Handel: 0,16
@@ -416,8 +429,9 @@ DECKEL: dict[int, dict[str, float]] = {
         # Auf «Prüfen & Starten» hält man ohnehin inne — von den drei
         # Zuwächsen aus W4 lagen alle drei auf diesem Schritt, aus demselben
         # Grund. **Die Zahl steht hier, damit der nächste Zuwachs wieder
-        # auffällt**; sie ist keine Freigabe für den übernächsten.
-        "Schritt 7": 1.45,
+        # auffällt**; sie ist keine Freigabe für den übernächsten. Er hiess bis
+        # P2.0-C «Schritt 7».
+        "Schritt 6": 1.45,
     },
     1024: {
         "Einstieg": 1.00,
@@ -427,17 +441,17 @@ DECKEL: dict[int, dict[str, float]] = {
         # setzt. Mit den lokalen Schriften und dem Warten auf
         # `document.fonts.ready` misst er zum ersten Mal durchgehend die
         # echten Metriken. Die alte Zahl war zu guenstig, nicht diese zu hoch.
-        "Schritt 1": 1.37,
+        # **1,37 → 1,42 mit P2.0-C**, aus demselben Grund wie bei 1280: der
+        # zugezogene Schalter. Bei der engeren Breite kostet er 0,05 statt 0,14,
+        # weil hier schon vorher mehr umbrach.
+        "Schritt 1": 1.42,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
-        "Schritt 4": 1.34,
-        "Schritt 5": 1.31,
-        # 1,05 → 1,08: Der Schritt trägt hier keine eigene Breite (das kostete
-        # 0,08 für ein Schmälern der Felder, das keine Zeile kürzer machte),
-        # wohl aber das Lesemaß auf seinem Fließtext — und das schlägt bei der
-        # engeren Breite mit 0,03 zu Buche. Bei 1280 bleibt er auf 1,00.
-        "Schritt 6": 1.08,
-        "Schritt 7": 1.45,  # siehe die Begründung bei 1280
+        # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
+        # alter 6 (1,08) → neuer 5, misst 1,08.
+        "Schritt 4": 1.22,
+        "Schritt 5": 1.08,
+        "Schritt 6": 1.45,  # siehe die Begründung bei 1280
     },
 }
 

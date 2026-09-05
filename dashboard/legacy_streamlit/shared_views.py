@@ -254,7 +254,7 @@ def render_explorer(run_id: str) -> None:
         with st.chat_message("assistant"):
             with st.spinner("Antwort wird erstellt …"):
                 try:
-                    answer = explorer.ask(question)
+                    answer = str(explorer.ask(question))
                 except Exception as exc:
                     answer = f"Abfrage fehlgeschlagen: {exc}"
                 st.markdown(answer)

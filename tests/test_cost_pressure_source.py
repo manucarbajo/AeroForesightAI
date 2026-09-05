@@ -222,8 +222,21 @@ class TestKeinKontextparameterHatEinenDefault:
         ("src.market.simulation_functions", "apply_market_feedback", ("properties", "tick")),
         ("src.market.market_feedback", "initial_provider_markup", ("tick",)),
         ("src.market.market_feedback", "initial_ticket_price", ("tick",)),
-        ("src.population.population_sampler", "evaluate_booking", ("properties",)),
+        # `rng` seit P2.1: Ein selbst besorgter Generator waere in jedem Tick
+        # derselbe -- es buchten immer dieselben Individuen.
+        # `system_properties` seit dem 2026-09-03: Die Kapazitaetsschranke gehoert
+        # vor die Saettigung, also in diese Funktion. Ein Default hiesse "keine
+        # Kapazitaet" -- und das ist eine andere Zahl, kein Fehler.
+        (
+            "src.population.population_sampler",
+            "evaluate_booking",
+            ("properties", "system_properties", "rng"),
+        ),
         ("src.population.population_sampler", "aggregate_population_stats", ("properties",)),
+        # `verfuegbarkeit` seit B2: das Angebot ist ein Merkmal der Alternative
+        # und gehoert in den Nutzen. Ein Default waere "Kapazitaet unveraendert"
+        # -- eine Aussage ueber die Welt, die niemand getroffen haette.
+        ("src.population.population_sampler", "booking_probability", ("verfuegbarkeit",)),
     ]
 
     @pytest.mark.parametrize(("modul", "funktion", "parameter"), KONTEXTPARAMETER)
@@ -292,6 +305,16 @@ class TestKeinKontextparameterEntgehtDemSweep:
             "properties",
             "factors",
             "system_properties",
+            # `rng` seit P2.1: Ein Zufallsstrom traegt den Kontext eines Ticks
+            # genauso wie `tick` selbst. Ein Default hiesse hier "irgendein
+            # Generator" -- und weil `run_population_tick` in jedem Tick
+            # denselben Seed bekommt, waere das in jedem Tick derselbe.
+            "rng",
+            # `verfuegbarkeit` seit B2 (2026-09-03): der `kapazitaet_index` des
+            # Ticks. Ein Default hiesse "Kapazitaet unveraendert" -- und das ist
+            # keine Abwesenheit, sondern eine Aussage ueber die Welt. Wer sie
+            # trifft, soll sie hinschreiben.
+            "verfuegbarkeit",
         }
     )
 

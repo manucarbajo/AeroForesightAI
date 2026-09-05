@@ -34,6 +34,15 @@ dev = [
 ui = [
     "playwright",
 ]
+# Nur zum **Auffrischen** der Backtest-Reihen (`scripts/backtest_daten_holen.py`).
+# Die Daten liegen fertig unter `configs/backtest/` und sind eingecheckt -- wer
+# das Repo klont, rechnet den Backtest ohne diese Zeile. Gebraucht werden sie,
+# weil das EEX-Archiv seine Jahrgaenge bis 2019 als altes .xls ausliefert und ab
+# 2020 als .xlsx: zwei Formate, zwei Leser.
+backtest = [
+    "openpyxl",
+    "xlrd<3",
+]
 
 [tool.black]
 line-length = 100

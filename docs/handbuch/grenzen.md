@@ -37,13 +37,125 @@ schwanken die Ergebnisse zwischen Läufen spürbar. Bevor Sie einen Unterschied 
 eine Wirkung halten, prüfen Sie mit Wiederholungen, wie groß die natürliche
 Streuung ist — siehe [Läufe vergleichen](/doku/vergleiche).
 
-## Das Modell ist nicht kalibriert
+## Niemand wird älter — aber das Alter zählt
+
+Seit dem 31. August 2026 prägt das Alter, wer eine simulierte Person ist. Beim
+Ziehen bestimmt es mit über ihr Einkommen, ihre Zahlungsbereitschaft, ihre
+Preisempfindlichkeit, ihr Umweltbewusstsein und ihre Bereitschaft, die Bahn zu
+nehmen. Das Einkommen folgt dabei einer **Glocke über den Lebenszyklus** — es
+steigt bis zur Lebensmitte und fällt danach —, Umweltbewusstsein und
+Bahnbereitschaft nehmen mit dem Alter ab.
+
+Im Ergebnis buchen Menschen in der Lebensmitte am meisten: Bei einem
+Ticketpreis von 140 Euro liegt die Buchungsneigung der 18- bis 25-Jährigen bei
+rund 25 Prozent, der 36- bis 50-Jährigen bei 58 Prozent und der über
+65-Jährigen bei 36 Prozent.
+
+**Davor war das anders, und es lohnt sich zu wissen:** Bis dahin wurde jedes
+Merkmal unabhängig gezogen. Ein 90-Jähriger hatte genauso wahrscheinlich ein
+hohes Einkommen und eine niedrige Preisempfindlichkeit wie ein 25-Jähriger, und
+das Alter beeinflusste die Buchungsentscheidung überhaupt nicht. Läufe von vor
+diesem Datum sind mit späteren nicht vergleichbar.
+
+**Was weiterhin gilt: Niemand wird im Lauf älter.** Das Alter wirkt beim Ziehen
+einer Person, nicht über die Zeit. Wer dieselbe Person zehn Runden später
+ansieht, findet sie unverändert alt — und mit unverändertem Einkommen.
+
+Das ist eine Entscheidung, keine Lücke. Eine Runde hat bewusst keine
+Kalenderbedeutung; jemanden je Runde altern zu lassen hieße festzulegen, wie
+viele Jahre eine Runde ist. Und es hieße, alle abgeleiteten Merkmale in jeder
+Runde neu zu bestimmen — aus einer Person würde damit eine andere.
+
+**Wie Sie die Altersgrafik deshalb lesen:** Sie beschreibt die
+**Zusammensetzung** der Bevölkerung, nicht denselben Menschen über die Zeit.
+Wächst die Bevölkerung im Lauf, kommen neu gezogene Personen dazu; die
+Altersstruktur bleibt stabil, weil sie aus derselben Verteilung stammen. Es ist
+eine stehende Gesellschaft, kein alternder Jahrgang.
+
+**Dafür braucht es aber Nachwuchs.** Ein Rahmenszenario, das nur das mittlere
+Alter steigen lässt, bewirkt nichts: Solange die Bevölkerung nicht wächst,
+kommt niemand hinzu, und dieselben Personen bleiben. Erst eine
+**Erneuerungsrate** tauscht je Runde einen Teil der Bevölkerung aus — dann
+nähert sich die Altersstruktur der Vorgabe an. Beides gehört zusammen
+eingestellt.
+
+**Die Zusammensetzung darf sich aber verschieben.** Ein Rahmenszenario kann das mittlere Alter der Bevölkerung über den Lauf steigen lassen — eine alternde
+*Gesellschaft*. Neu hinzukommende Personen werden dann aus der verschobenen
+Verteilung gezogen. Die Wirkung ist moderat und das ist richtig so: Neun Jahre
+höheres Durchschnittsalter senken die Buchungsneigung um rund fünf Prozent.
+Zum Vergleich: Ließe man stattdessen dieselben Menschen vierzig Runden lang
+altern, ohne dass junge nachkommen, wären es fast fünfzig Prozent — und die
+Bevölkerung wäre am Ende im Schnitt 83 Jahre alt.
+
+**Die Altersverteilung selbst kommt aus echten Daten** (Eurostat, EU-27, Stand
+2023): Mittelwert 50,8 Jahre bei einer Standardabweichung von 18,8, begrenzt auf
+18 bis 90. Bewusst die **Gesamtbevölkerung** und nicht die der Flugreisenden —
+wer davon fliegt, soll das Modell über Einkommen und Zahlungsbereitschaft
+ergeben, statt es in die Ziehung vorwegzunehmen.
+
+## Die Parameter sind gesetzt, nicht geschätzt
 
 Die Parameter sind fachlich plausibel gewählt, aber nicht gegen historische
 Marktdaten geschätzt. Absolute Werte — ein Ticketpreis von 141 Euro, eine
 Buchungsrate von 43 Prozent — sind deshalb keine Aussage über den realen Markt.
 Belastbar sind Vergleiche innerhalb desselben Modells: dass Preis A höher liegt
 als Preis B, wenn Annahme X gilt.
+
+## Was der Vergleich mit der Wirklichkeit ergeben hat
+
+Seit dem 30. August 2026 gibt es dazu eine Messung statt einer Vermutung. Das
+Modell wurde gegen die Jahre 2015–2024 gerechnet: Die tatsächlichen CO₂- und
+Ölpreise gingen als Außenwelt hinein, und was herauskam, wurde gegen die realen
+Flugpreise und Fluggastzahlen gehalten. Das Ergebnis ist zweigeteilt, und beide
+Hälften sollten Sie kennen, bevor Sie eine Zahl aus diesem Modell zitieren.
+
+**Die Preisseite trifft — bis 2019.** Die mittlere Abweichung liegt bei 1,8
+Indexpunkten. Für ein Modell, dessen Parameter sämtlich von Hand gesetzt und nie
+angepasst wurden, ist das bemerkenswert. Ein Beweis ist es nicht: Es sind vier
+frei vergleichbare Jahre, und das Basisjahr liegt per Konstruktion auf null.
+
+**Ab 2022 verfehlt sie den Markt deutlich** — 38 Indexpunkte. Die realen
+Flugpreise liegen seither rund die Hälfte über dem Niveau von 2015, das Modell
+bei plus zwei Prozent. Es kennt den Strukturbruch nach der Pandemie nicht.
+
+**Die Nachfrageseite läuft in die falsche Richtung**, und das ist die wichtigere
+Einschränkung. Das Modell lässt die Buchungsrate bis 2019 auf 86 sinken; real
+stiegen die europäischen Fluggastzahlen auf 126. Die Ursache ist nachgemessen:
+Das Modell hat praktisch **nur einen** Kanal, über den Nachfrage sich bewegt,
+und der ist der Preis. Real wuchs der Luftverkehr, *obwohl* die Preise anzogen —
+getragen von Einkommen, Netzausbau und Kapazität. Davon kennt das Modell nichts.
+
+Nachgemessen wurde auch, **woran es liegt** — der naheliegende Verdacht war
+falsch. Ein fehlender Einkommenseffekt ist es nicht: Seit dem 31. August 2026
+speist der Backtest das reale europäische Bruttoinlandsprodukt ein, und die
+Nachfrage bewegt sich dadurch um **1,6 von 40 fehlenden Prozentpunkten**. Die
+Ursache liegt eine Ebene tiefer, und sie steht schon weiter oben in diesem
+Kapitel: **Das Modell kennt einen Anbieter ohne Kapazitätsgrenze.** Jeder
+Nachfrageimpuls treibt darin sofort den Preis, und der Preis nimmt die Nachfrage
+wieder weg.
+
+Real wuchs der europäische Luftverkehr 2015–2019 um gut ein Viertel, **während
+die Realpreise ungefähr flach blieben** — weil das Angebot wuchs: mehr
+Sitzplätze, mehr Strecken, mehr Wettbewerb. Wachstum bei gleichbleibendem Preis
+setzt Kapazitätsausweitung voraus. Dafür hat dieses Modell keine Größe, und
+deshalb kann es einen wachsenden Markt nicht abbilden.
+
+**Und wie der Anbieter darauf reagiert, ist eine Wahl.** Er kann den Preis senken,
+bis die Plätze gefüllt sind — oder seinen Aufschlag halten und die Auslastung
+schwanken lassen. Im zweiten Fall bleibt der Preis gleich, wenn Kapazität
+dazukommt. Beides kommt in der Wirklichkeit vor, und das Modell legt sich nicht
+fest: Es fragt Sie.
+
+**Seit dem 31. August 2026 gibt es dafür eine Größe.** Ein Rahmenszenario kann die
+verfügbare **Kapazität** vorgeben — wächst sie, darf die Nachfrage mitwachsen, ohne
+dass der Preis sie wegdrückt. Damit ist die reale Kombination «mehr Verkehr bei
+gleichbleibenden Preisen» erstmals darstellbar. Ohne Vorgabe bleibt die Kapazität
+konstant, und dann gilt weiterhin, was oben steht.
+
+**Praktische Folge:** Nutzen Sie Nachfragezahlen dieses Modells nicht als
+Mengenprognose. Belastbar bleibt die Frage, in welche Richtung und wie stark
+eine Annahme wirkt — nicht, wie viele Menschen am Ende fliegen. Die vollständige
+Auswertung samt Datenquellen steht in `docs/backtest_vorlauf.md`.
 
 ## Die Konsistenzbewertung ist ein Urteil
 

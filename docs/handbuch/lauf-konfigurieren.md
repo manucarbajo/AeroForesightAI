@@ -65,7 +65,7 @@ vor den Feldern dieses Schritts und muss sich nicht erst durch Kopfzeile und
 Schrittliste tasten. Wer schon selbst irgendwohin geklickt oder getabbt ist,
 behält seinen Platz; die Seite reißt niemandem den Fokus weg.
 
-Angesagt wird der Wechsel ebenfalls: «Schritt 4 von 7: Ausgangslage». Dasselbe
+Angesagt wird der Wechsel ebenfalls: «Schritt 4 von 6: Lauf & Ablage». Dasselbe
 gilt für Statusmeldungen — eine gesperrte Weiter-Taste sagt sofort, was noch
 fehlt, statt stumm nicht zu reagieren. In der Schrittliste ist der offene Schritt
 nicht nur farblich markiert, sondern auch als solcher ausgezeichnet.
@@ -82,22 +82,24 @@ Leitstands sind noch nicht in gleicher Weise durchgegangen.
 **Drei Schritte genügen.** Was gerechnet wird, wie weit, und womit: Danach ist
 alles Weitere mit sinnvollen Werten vorbelegt, und der Knopf **Direkt zum Start**
 bringt Sie ans Ende. Die Schritte vier bis sechs sind als *optional*
-gekennzeichnet — Ausgangslage, Lauf & Ablage, Technik. Wer sie braucht, findet
-sie; wer nicht, geht daran vorbei.
+gekennzeichnet — Lauf & Ablage und Technik. Wer sie braucht, findet sie; wer
+nicht, geht daran vorbei.
 
-Der Schritt **Ausgangslage** ist die feinere Fassung der ersten Frage: Von
-welcher Weltlage geht der Lauf aus? Sieben Faktoren, je zwei Zustände, jeder mit
-seiner Leitfrage daneben. Haben Sie im ersten Schritt ein vorbereitetes Szenario
-gewählt, bringt das seine eigene Faktorlage mit und setzt sich durch — der
-Schritt sagt Ihnen das, statt eine Auswahl anzubieten, die im Lauf nichts
-bewirkt.
+> **Der Schritt «Ausgangslage» ist im August 2026 entfallen.** Er fragte die
+> sieben Faktorzustände ab, mit denen der Lauf startet. Nachgemessen war die
+> Antwort folgenlos: Vier der sieben Faktoren werden schon in der **ersten**
+> Runde von den Regeln überschrieben, die sie an CO₂-Abgabe, SAF-Quote und
+> Ölpreis binden; und in allen vier Szenarien, die eine Faktorvorgabe trugen,
+> endete der Lauf auf denselben Zuständen wie ohne sie. Die Faktorlage ist heute
+> ein **Ergebnis**: Sie entsteht im Lauf aus den Annahmen, die Sie im ersten
+> Schritt wählen. Mehr dazu unter [Faktoren](/doku/faktoren-konzept).
 
 ## Die Annahmen stehen woanders
 
 Systemgrößen, Bevölkerung und Preisbildung finden Sie seit August 2026 nicht
 mehr hier, sondern im eigenen Bereich **Modell** in der Kopfzeile. Die
-**Faktorlage** ist geblieben, als Schritt «Ausgangslage»: Sie beschreibt einen
-einzelnen Lauf und nicht das Modell.
+**Faktorlage** ist seit August 2026 gar keine Einstellung mehr: Sie entsteht im
+Lauf.
 
 Der Grund ist eine Messung: Diese beiden Bereiche trugen zusammen **168
 Bedienelemente** und brauchten drei bzw. vier Bildschirme, während die drei
@@ -249,8 +251,7 @@ Befunde hängen an keinem Eingabefeld und stehen deshalb nur im roten Kasten.
 
 ### Rahmenbedingungen
 
-Die Ausgangslage. Oben die sieben Faktoren mit Namen und Leitfrage, darunter die
-Systemgrößen für Politik, Kosten und Konjunktur.
+Die Systemgrößen für Politik, Kosten und Konjunktur.
 
 Jede Systemgröße hat einen Startwert und kann über Regeln einen zeitlichen
 Verlauf bekommen: «ab Runde 10 springt die CO₂-Abgabe auf 120» oder «ab Runde 5

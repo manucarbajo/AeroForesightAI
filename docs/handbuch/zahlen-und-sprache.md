@@ -72,5 +72,15 @@ gegeneinander abgleicht — etwa ob die Preise in `tick_mechanics.json` und
 als Python-Deltas markiert sind.
 
 Über «Datenkontext anzeigen» sehen Sie außerdem genau die Daten, die einer
-Abfrage übergeben werden. Was dort nicht steht, kann in der Antwort nicht
-vorkommen.
+Abfrage übergeben werden.
+
+**Und seit dem 31. August 2026 müssen Sie nicht mehr selbst abgleichen.** Jede
+Zahl einer Antwort wird gegen diesen Datenkontext gehalten; was sich nicht
+wiederfindet, steht als Vorbehalt unter der Antwort. Bis dahin war die Zusage
+«keine erfundenen Zahlen» eine Anweisung an das Sprachmodell und keine Schranke
+— das Programm hat die Antwort ungeprüft weitergereicht.
+
+Eine markierte Zahl ist dabei nicht automatisch falsch: Eine vom Modell
+ausgerechnete Differenz steht ebenfalls nicht in den Daten. Die Markierung
+trennt **Abgelesenes von Gerechnetem**, nicht Richtiges von Falschem.
+Einzelheiten in [Abfrage](/doku/abfrage).

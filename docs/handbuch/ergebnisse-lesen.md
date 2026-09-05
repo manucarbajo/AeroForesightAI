@@ -27,7 +27,7 @@ Diagramme zu suchen.
 | Szenario | Was ist passiert, und wie könnte es weitergehen? |
 | Übersicht | Wie haben sich Buchungsrate und Preis entwickelt? |
 | Animation | Wie verteilt sich das Verhalten über die einzelnen Personen? |
-| Figures | Wie sehen Markt, Segmente, Politik, Kosten und Faktoren im Detail aus? |
+| Figures | Vier Fragen entlang der Wirkungskette: Wie antwortet die Nachfrage auf den Preis, was bewirkt die Politik, wer bleibt zuerst weg, worin unterscheiden sich die Szenarien? Bei einem Lauf mit Wiederholungen zeigt die erste Frage zusätzlich das **Streuband**. |
 | Bericht | Was geschah in einer bestimmten Runde? |
 | Abfrage | Eine konkrete Frage an die Daten dieses Laufs. |
 | Dateien | Die Rohdaten, zum Prüfen oder Weiterverarbeiten. |

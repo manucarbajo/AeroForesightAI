@@ -19,19 +19,47 @@ from src.models.population_models import (
     PopulationStats,
     SegmentStats,
 )
-from src.models.property_models import IndividualProperty, PropertiesConfig, ShiftRule
+from src.models.property_models import (
+    BookingModelConfig,
+    IndividualProperty,
+    PropertiesConfig,
+    ShiftRule,
+)
 from src.models.state_models import DEFAULT_SEED, FactorState
 from src.rule_engine import KNOWN_METRICS, RuleContext, rule_matches
 
-DEFAULT_LOGIT_THRESHOLD = 0.5
-DEFAULT_GREEN_PREMIUM = 0.1
-HIGH_PRICE_SENSITIVITY_THRESHOLD = 0.8
-HIGH_PRICE_SENSITIVITY_PENALTY = 0.3
-DEFAULT_CARBON_ECO_BASELINE = 50.0
+# `DEFAULT_LOGIT_THRESHOLD` ist mit P2.1 entfallen. Gegen 0,5 zu vergleichen
+# hieß, die Sigmoid zu berechnen und dann wegzuwerfen: Weil sie monoton ist,
+# war `p >= 0.5` identisch mit `utility >= 0`. Gezogen wird jetzt gegen die
+# Wahrscheinlichkeit (`evaluate_booking`).
+# Die Koeffizienten des Buchungsmodells stehen seit P2.1 in
+# `PropertiesConfig.booking_model` — als Daten mit Herkunftsangabe statt als
+# Literale hier. `DEFAULT_GREEN_PREMIUM`, `HIGH_PRICE_SENSITIVITY_THRESHOLD`,
+# `HIGH_PRICE_SENSITIVITY_PENALTY` und `DEFAULT_CARBON_ECO_BASELINE` sind damit
+# entfallen; ihre Werte und ihre Begründung stehen in
+# `src/models/property_models.BookingModelConfig`.
 
 
 def _rng(seed: int) -> np.random.Generator:
     return np.random.default_rng(seed)
+
+
+def buchungsstrom(seed: int, tick: int) -> np.random.Generator:
+    """Der Zufallsstrom **eines Ticks** eines **bestimmten Laufs** (P2.1).
+
+    Der Fallstrick, den der Projektplan seit dem 2026-08-26 benannt hat, und er
+    ist keiner der Theorie: `run_population_tick` bekommt in **jedem** Tick
+    denselben `state.config.seed`. Ein naiv daraus gebauter Generator zöge in
+    jedem Tick dieselbe Zahlenfolge — es buchten immer dieselben Individuen,
+    und die Buchungsrate würde zur Stufenfunktion. Reproduzierbar, aber falsch,
+    und schwer zu bemerken, weil die Zahlen plausibel aussehen.
+
+    `SeedSequence([seed, tick])` mischt beide zu einem eigenen Strom: gleicher
+    Lauf und gleicher Tick ergeben dieselbe Folge, verschiedene Ticks
+    verschiedene. Das ist die Eigenschaft, auf der P2.6 (Ensemble) aufsetzt.
+    """
+
+    return np.random.default_rng(np.random.SeedSequence([int(seed), int(tick)]))
 
 
 def _get_individual_property(
@@ -42,6 +70,62 @@ def _get_individual_property(
         if prop.id == prop_id:
             return prop
     return None
+
+
+#: Wie viel Wahrscheinlichkeitsmasse eine Verteilung höchstens an ihre Grenzen
+#: verlieren darf, bevor sie als falsch parametrisiert gilt.
+#:
+#: **Zehn Prozent, und die Zahl ist ein Deckel, kein Ideal.** Etwas Klemmung ist
+#: bei einer beschränkten Größe normal — eine Normalverteilung um 45 mit
+#: Streuung 15 verliert an einer Untergrenze von 2 fast nichts. Wer ein Zehntel
+#: verliert, hat dagegen keine geklemmte Verteilung mehr, sondern einen Stapel
+#: an der Wand.
+#:
+#: **Der Anlass ist gemessen** (P2.9, 2026-08-31): `age` stand als `lognormal`
+#: mit `mean: 73.0, std_dev: 1.0` in der Config. `_sample_lognormal` liest
+#: `mean` als **Median**, die Verteilung hat damit den Mittelwert 120 und legt
+#: **41,8 %** ihrer Masse über die Obergrenze 90. Genau dieser Anteil landete
+#: dort — 41 % der Bevölkerung waren exakt 90 Jahre alt, und niemand hat es
+#: bemerkt, weil `np.clip` still ist.
+KLEMM_DECKEL = 0.10
+
+
+class VerteilungGeklemmt(ValueError):
+    """Eine Verteilung verliert zu viel Masse an ihre Grenzen.
+
+    Kein Rechenfehler, sondern eine **Fehlparametrisierung**: Die Ziehung tut,
+    was dasteht — was dasteht, ergibt aber keine Verteilung mehr.
+    """
+
+
+def _klemmen(
+    werte: np.ndarray | float,
+    *,
+    min_value: float,
+    max_value: float,
+    name: str,
+) -> np.ndarray | float:
+    """Auf die Grenzen bringen — und melden, wenn dabei zu viel hängen bleibt.
+
+    **Die Prüfung braucht viele Ziehungen, nicht eine.** Eine einzelne Ziehung
+    ist entweder geklemmt oder nicht; ob die *Verteilung* falsch steht, zeigt
+    sich erst am Anteil. Deshalb prüft diese Funktion nur, wenn sie ein ganzes
+    Feld bekommt — bei Einzelwerten klemmt sie schweigend, wie zuvor.
+    """
+
+    geklemmt = np.clip(werte, min_value, max_value)
+    if not isinstance(werte, np.ndarray) or werte.size < 50:
+        return geklemmt
+
+    anteil = float(np.mean((werte < min_value) | (werte > max_value)))
+    if anteil > KLEMM_DECKEL:
+        raise VerteilungGeklemmt(
+            f"'{name}': {anteil:.1%} der Ziehungen liegen außerhalb von "
+            f"[{min_value:g}, {max_value:g}] und würden dorthin geklemmt. "
+            f"Erlaubt sind {KLEMM_DECKEL:.0%}. Die Verteilung ist falsch "
+            "parametrisiert — geklemmte Masse ist kein Rand, sondern ein Stapel."
+        )
+    return geklemmt
 
 
 def _sample_beta(rng: np.random.Generator, alpha: float, beta: float) -> float:
@@ -68,10 +152,47 @@ def _sample_lognormal(
     min_value: float,
     max_value: float,
 ) -> float:
+    """**`mean` ist der Median der Lognormalen, nicht ihr Mittelwert.**
+
+    `mu = log(mean)` heißt: Die Hälfte der Ziehungen liegt unter *mean*. Der
+    Mittelwert der Verteilung ist `mean * exp(sigma²/2)` und damit größer —
+    bei `sigma = 1` um den Faktor 1,65. Das ist eine Falle im Feldnamen und in
+    P2.9 als offene Frage vermerkt; hier steht es wenigstens da.
+    """
+
     mu = np.log(max(0.01, mean))
     sigma = max(0.01, std_dev)
     value = float(rng.lognormal(mean=mu, sigma=sigma))
     return float(np.clip(value, min_value, max_value))
+
+
+def pruefe_verteilung(
+    rng: np.random.Generator,
+    prop: IndividualProperty,
+    *,
+    stichprobe: int = 4000,
+) -> None:
+    """Einmal vorab ziehen und prüfen, ob die Parameter eine Verteilung ergeben.
+
+    Läuft **vor** dem Aufbau der Bevölkerung, mit einem eigenen Generator: Die
+    Prüfziehung darf den Zufallsstrom des Laufs nicht verschieben, sonst hinge
+    die Bevölkerung daran, ob geprüft wurde.
+    """
+
+    if prop.distribution is None or prop.min_value is None or prop.max_value is None:
+        return
+
+    if prop.distribution == DistributionType.NORMAL:
+        roh = rng.normal(prop.mean or 0.0, max(0.001, prop.std_dev or 1.0), stichprobe)
+    elif prop.distribution == DistributionType.LOGNORMAL:
+        roh = rng.lognormal(
+            np.log(max(0.01, prop.mean or 1.0)), max(0.01, prop.std_dev or 1.0), stichprobe
+        )
+    else:
+        # Beta und Uniform ziehen per Konstruktion innerhalb ihrer Grenzen.
+        return
+
+    _klemmen(roh, min_value=prop.min_value, max_value=prop.max_value, name=prop.id)
 
 
 def _assign_boolean_labels(
@@ -123,6 +244,13 @@ def initialize_population(
     seed: int = 42,
 ) -> list[Individual]:
     """Create N persistent individuals once per simulation run."""
+
+    # **Erst prüfen, ob die Verteilungen welche sind** (P2.9). Mit eigenem
+    # Generator, damit die Prüfziehung den Zufallsstrom des Laufs nicht
+    # verschiebt: Sonst hinge die Bevölkerung daran, ob geprüft wurde.
+    for prop in properties.individual_properties:
+        if prop.type == "distribution" and prop.enabled:
+            pruefe_verteilung(np.random.default_rng(0), prop)
 
     rng = _rng(seed)
     total_pop = config.total_population
@@ -224,7 +352,31 @@ def initialize_population(
                     price_sensitivity += mods["price_sensitivity_delta"]
 
         base_income = float(np.clip(base_income + rng.normal(0.0, 0.05), 0.5, 1.5))
+
+        # **Das Alter zieht die Merkmale** (P2.4, 2026-08-31) — nach den
+        # Segment-Modifikatoren und **vor** dem Klemmen, damit beides zusammen
+        # in denselben Grenzen landet.
+        #
+        # Bis dahin wurde jedes Merkmal unabhängig gezogen: Ein 90-Jähriger
+        # hatte genauso wahrscheinlich ein hohes Einkommen und niedrige
+        # Preisempfindlichkeit wie ein 25-Jähriger, und `age` war für das
+        # Verhalten exakt folgenlos. Alter wirkt hier über die Merkmale und
+        # **nicht** als eigener Term im Nutzen — sonst zählte es doppelt.
+        profil = properties.alters_profil
+        zyklus = profil.lebenszyklus(age)
+        jahrzehnte = (age - profil.gipfel_alter.wert) / 10.0
+
+        base_income *= 1.0 + profil.einkommen_spanne.wert * (zyklus - 0.5)
+        wtp *= 1.0 + profil.einkommen_spanne.wert * (zyklus - 0.5)
+        price_sensitivity += profil.preissensitivitaet_kopplung.wert * (1.0 - zyklus)
+        awareness += profil.awareness_je_jahrzehnt.wert * jahrzehnte
+        substitution_readiness += profil.substitution_je_jahrzehnt.wert * jahrzehnte
+
+        base_income = float(np.clip(base_income, 0.5, 1.5))
         price_sensitivity = float(np.clip(price_sensitivity, 0.0, 1.0))
+        awareness = float(np.clip(awareness, 0.0, 1.0))
+        substitution_readiness = float(np.clip(substitution_readiness, 0.0, 1.0))
+        wtp = float(max(0.0, wtp))
 
         individuals.append(
             Individual(
@@ -241,6 +393,126 @@ def initialize_population(
         )
 
     return individuals
+
+
+#: Welche Individuen-Attribute eine ``shift_rule`` verändern kann — je Ziel das
+#: Attribut und seine Grenzen.
+#:
+#: **Das ist die Quelle, nicht eine Beschreibung daneben** (P2.4, 2026-08-31):
+#: `apply_factor_shifts` wertet sie aus, `validation._validate_shift_rules`
+#: prüft dagegen. Vorher stand die Liste als `if`/`elif`-Kette hier — **ohne
+#: `else`**. Eine Regel auf `age` tat nichts, ein Tippfehler wie
+#: `price_sensitivty` ebenso: keine Meldung, kein Fehler, nur eine Regel, die
+#: nie greift. Dieselbe Klasse von Befund, gegen die Invariante 6 im
+#: `rule_engine` angetreten ist — was nicht auswertbar ist, schlägt laut fehl.
+#:
+#: `income_factor` wirkt auf `base_income_factor`: Der laufende `income_factor`
+#: wird in jedem Tick aus Basis mal `income_index` neu gebildet, ein Schreiben
+#: darauf wäre im nächsten Tick weg.
+SHIFT_ZIELE: dict[str, tuple[str, float, float]] = {
+    "environmental_awareness": ("environmental_awareness", 0.0, 1.0),
+    "price_sensitivity": ("price_sensitivity", 0.0, 1.0),
+    "income_factor": ("base_income_factor", 0.0, 5.0),
+}
+
+
+def _kohorte_erneuern(
+    individuals: list[Individual],
+    properties: PropertiesConfig,
+    config: PopulationConfig,
+    system_properties: dict[str, float],
+    *,
+    seed: int,
+    current_tick: int,
+) -> list[Individual]:
+    """Ältere scheiden aus, ebenso viele kommen neu hinzu (P2.4-E, 2026-08-31).
+
+    **Der Befund, der das ausgelöst hat:** Ohne Erneuerung leben dieselben
+    Personen ewig weiter. Neue wurden bis dahin **nur beim Wachstum** gezogen —
+    bei gleichbleibender Bevölkerungsgröße also nie. Eine Vorgabe für
+    `altersmittel_jahre` war damit **wirkungslos**: gemessen blieb das
+    Altersmittel über 30 Ticks bei 50,8, während der Verlauf 60 verlangte.
+
+    **Wer geht, geht zufällig — und der erste Anlauf hat das falsch gemacht.**
+    Er gewichtete das Ausscheiden mit dem Alter, weil «Alte sterben eher» wie
+    die realistischere Annahme aussieht. Gemessen zog die Bevölkerung damit in
+    die **falsche Richtung**: von 50,8 auf 45,5, während der Verlauf 60
+    verlangte. Der Grund ist offensichtlich, sobald man ihn sieht — wer die
+    Ältesten entfernt und aus der vollen Verteilung nachzieht, verjüngt
+    zwangsläufig.
+
+    Dahinter steckt ein Denkfehler, der über diese Funktion hinausgeht:
+    `altersmittel_jahre` ist ein **Kompositionsziel**, keine Sterbetafel. Eine
+    Ausscheide-Mechanik daraufzusetzen heißt, zwei Modelle gegeneinander rechnen
+    zu lassen. Wer echte Geburten und Sterbefälle will, braucht ein
+    demografisches Modell mit Eintritt bei 18 und Austritt nach Sterbetafel —
+    und dann ist die Bevölkerungsgröße nicht mehr frei vorgebbar.
+
+    **Wer kommt, wird aus der Verteilung gezogen, die *jetzt* gilt.** Zusammen
+    mit dem zufälligen Ausscheiden nähert sich die Bevölkerung damit der
+    vorgegebenen Struktur an — exponentiell, mit der Erneuerungsrate als
+    Geschwindigkeit. Das ist die ehrliche Form dessen, was der exogene Verlauf
+    behauptet.
+
+    **Der eigene Zufallsstrom ist Absicht** (`SeedSequence([seed, tick, 991])`):
+    Er hängt am Tick, sonst schieden in jedem Tick dieselben Personen aus, und
+    er ist gegen den Buchungsstrom versetzt, damit die Erneuerung nicht die
+    Buchungsziehung verschiebt.
+
+    Der Standard ist **0,0** — keine Erneuerung, also der Stand von vorher. Wer
+    eine alternde Gesellschaft rechnen will, setzt beides: den Verlauf und die
+    Rate.
+    """
+
+    rate = float(system_properties.get("erneuerungsrate", 0.0) or 0.0)
+    anzahl = int(len(individuals) * rate)
+    if anzahl < 1:
+        return individuals
+
+    rng = np.random.default_rng(np.random.SeedSequence([int(seed), int(current_tick), 991]))
+
+    gehen = set(rng.choice(len(individuals), size=anzahl, replace=False).tolist())
+    bleiben = [person for i, person in enumerate(individuals) if i not in gehen]
+
+    nachwuchs = initialize_population(
+        properties,
+        config.model_copy(update={"total_population": anzahl}),
+        seed=seed + 7919 * current_tick,
+    )
+    naechste_id = max((person.id for person in individuals), default=-1) + 1
+    nachwuchs = [
+        person.model_copy(update={"id": naechste_id + i}) for i, person in enumerate(nachwuchs)
+    ]
+
+    return [*bleiben, *nachwuchs]
+
+
+def _mit_altersmittel(
+    properties: PropertiesConfig,
+    system_properties: dict[str, float],
+) -> PropertiesConfig:
+    """Die Altersverteilung auf das aktuell geltende Mittel setzen.
+
+    **Kein neuer Kontextparameter** (Invariante 1): Der Wert kommt aus
+    ``system_properties``, die ``run_population_tick`` ohnehin bekommt. Ein
+    eigenes Argument mit Default hieße «irgendein Altersmittel» und wäre in
+    jedem Tick dasselbe — genau die Falle, die die Regel abräumt.
+
+    Fehlt die Systemgröße, bleibt alles wie es ist: Eine Config ohne
+    ``altersmittel_jahre`` beschreibt eine **stationäre** Gesellschaft, und das
+    ist eine gültige Aussage, kein Versehen.
+    """
+
+    mittel = system_properties.get("altersmittel_jahre")
+    if mittel is None:
+        return properties
+
+    merkmale = []
+    for prop in properties.individual_properties:
+        if prop.id == "age" and prop.mean is not None:
+            prop = prop.model_copy(update={"mean": float(mittel)})
+        merkmale.append(prop)
+    return properties.model_copy(update={"individual_properties": merkmale})
 
 
 def apply_factor_shifts(
@@ -285,9 +557,7 @@ def apply_factor_shifts(
 
     updated: list[Individual] = []
     for person in individuals:
-        awareness = person.environmental_awareness
-        price_sensitivity = person.price_sensitivity
-        base_income_factor = person.base_income_factor
+        werte = {attribut: getattr(person, attribut) for attribut, _, _ in SHIFT_ZIELE.values()}
         applied_rules = list(person.applied_shift_rules)
 
         for index, rule in enumerate(active_rules):
@@ -296,22 +566,25 @@ def apply_factor_shifts(
                 continue
             effect = rule.effect
             prop_id = str(effect.get("property", ""))
+            ziel = SHIFT_ZIELE.get(prop_id)
+            if ziel is None:
+                # **Laut statt still** (P2.4). `validation` weist eine solche
+                # Regel schon beim Laden ab; wer eine Regel im Code baut, kommt
+                # daran vorbei und soll es hier erfahren.
+                raise ValueError(
+                    f"shift_rule '{rule_id}': unbekanntes Ziel {prop_id!r}. "
+                    f"Erreichbar sind {sorted(SHIFT_ZIELE)}."
+                )
+            attribut, unten, oben = ziel
             delta = float(effect.get("delta", 0.0))
-            if prop_id == "environmental_awareness":
-                awareness = float(np.clip(awareness + delta, 0.0, 1.0))
-            elif prop_id == "price_sensitivity":
-                price_sensitivity = float(np.clip(price_sensitivity + delta, 0.0, 1.0))
-            elif prop_id == "income_factor":
-                base_income_factor = float(np.clip(base_income_factor + delta, 0.0, 5.0))
+            werte[attribut] = float(np.clip(werte[attribut] + delta, unten, oben))
             if rule.once:
                 applied_rules.append(rule_id)
 
         updated.append(
             person.model_copy(
                 update={
-                    "environmental_awareness": round(awareness, 4),
-                    "price_sensitivity": round(price_sensitivity, 4),
-                    "base_income_factor": round(base_income_factor, 4),
+                    **{name: round(wert, 4) for name, wert in werte.items()},
                     "applied_shift_rules": applied_rules,
                 }
             )
@@ -320,39 +593,113 @@ def apply_factor_shifts(
     return updated
 
 
-def _booking_probability(
+def booking_probability(
     person: Individual,
     *,
     ticket_price: float,
     carbon_tax: float,
-    green_premium: float = DEFAULT_GREEN_PREMIUM,
-    logit_threshold: float = DEFAULT_LOGIT_THRESHOLD,
+    koeffizienten: BookingModelConfig,
+    verfuegbarkeit: float,
     saturation_penalty_factor: float = 1.0,
-) -> bool:
+) -> float:
+    """Die Buchungswahrscheinlichkeit dieser Person — eine Zahl in [0, 1].
 
+    **Bis P2.1 gab diese Funktion ein `bool` zurück.** Sie rechnete die Sigmoid
+    und verglich sie gegen 0,5 — weil die Sigmoid monoton ist, war das
+    mathematisch identisch mit `utility >= 0`. Der Logit-Teil tat nichts: Es
+    wurde nie gegen die Wahrscheinlichkeit gezogen, und zwei Personen mit
+    p = 0,51 und p = 0,99 buchten gleichermaßen sicher.
+
+    Ohne Ziehung gibt es keine Verteilung, und ohne Verteilung keine
+    Bandbreite — der Grund, warum P2.6 (Ensemble) ohne dieses Paket sinnlos
+    wäre: Fünfzig Seeds ergäben fünfzig identische Buchungsverläufe.
+
+    **Null heißt hier «kann nicht», nicht «will nicht».** Wer sich das Ticket
+    nicht leisten kann, bucht nicht — das ist eine harte Schranke und keine
+    Wahrscheinlichkeit, die bei genug Ziehungen doch einmal zuschlägt.
+
+    *verfuegbarkeit* ist der `kapazitaet_index` und seit dem 2026-09-03 hier
+    (B2 des Audits). **Der Grund ist ein Befund, kein Wunsch:** Bis dahin konnte
+    die Kapazität die Nachfrage nur *senken* — unter `marge` als Obergrenze,
+    unter `auslastung` über den Preis. «Mehr Sitze bei gleichem Preis, also mehr
+    Verkehr» war damit baulich unmöglich, und ausgerechnet das ist die Lage, die
+    Europa 2015–2019 geprägt hat (+26 % Verkehr bei flachen Realpreisen).
+
+    Kapazität ist ein **Merkmal der Alternative**, wie der Preis: Mehr davon
+    heißt mehr Frequenzen und Strecken, also weniger Wartezeit, weniger
+    Umsteigen, mehr Ziele. Sie gehört deshalb in den Nutzen und nicht in die
+    Ziehung — anders als das Alter, das über Einkommen und Lebensphase wirkt und
+    dort doppelt zählte (P2.4).
+
+    **Logarithmisch, und das ist keine Bequemlichkeit:** `ln(1) = 0`, der
+    Standardfall ändert damit exakt nichts — dieselbe Disziplin wie beim
+    Einführen der Größe selbst (P2.8). Und die Elastizität bleibt über den
+    ganzen Bereich dieselbe, statt an einem Betriebspunkt zu hängen.
+    """
+
+    # **Keine Sitze, keine Buchung.** Der Rand des Wertebereichs, nicht ein
+    # Modellparameter — deshalb steht die 0,0 hier und nicht in den
+    # Koeffizienten. Er verhindert zugleich den Logarithmus von null.
+    if verfuegbarkeit <= 0.0:
+        return 0.0
+
+    # **Ohne Einkommen keine Reise.** Der andere Rand des Wertebereichs, und er
+    # ist seit B5 auch rechnerisch nötig: Der gefühlte Preis teilt durch diesen
+    # Faktor. Erreichbar ist der Fall nur bei einem Ticketpreis von null — sonst
+    # greift die Erschwinglichkeitsschranke darunter zuerst.
+    if person.income_factor <= 0.0:
+        return 0.0
+
+    k = koeffizienten
     affordability_limit = (
         person.wtp_eur
         * person.income_factor
-        * (1.0 + green_premium * person.environmental_awareness)
+        * (1.0 + k.green_premium.wert * person.environmental_awareness)
     )
     if ticket_price > affordability_limit:
-        return False
+        return 0.0
 
-    base_utility = 2.0
-    normalized_price = ticket_price / 100.0
-    price_penalty = person.price_sensitivity * normalized_price
-    excess_carbon = max(0.0, carbon_tax - DEFAULT_CARBON_ECO_BASELINE)
-    normalized_tax = excess_carbon / 100.0
+    base_utility = k.base_utility.wert
+    normalized_price = ticket_price / k.price_reference_eur.wert
+
+    # **Der Preis wird an dem gemessen, was jemand hat** (B5 des Audits,
+    # 2026-09-03). Bis dahin stand `income_factor` **ausschließlich** in der
+    # Erschwinglichkeitsschranke darüber: Wer sich das Ticket leisten konnte,
+    # für den war Einkommen danach exakt folgenlos. Ein Doppelverdiener und
+    # jemand knapp über der Grenze verspürten denselben Verzicht.
+    #
+    # Dieselbe Ausgabe ist ein anderer Verzicht, je nachdem wovon sie abgeht —
+    # das ist die Budgetanteils-Form und in der Nachfragetheorie der Regelfall.
+    # **Sie braucht keinen neuen Koeffizienten:** Einkommen wirkt über den
+    # Preiskanal, den es ohnehin gibt, statt über eine zweite gesetzte Zahl.
+    gefuehlter_preis = normalized_price / person.income_factor
+    price_penalty = person.price_sensitivity * gefuehlter_preis
+    excess_carbon = max(0.0, carbon_tax - k.carbon_eco_baseline_eur.wert)
+    normalized_tax = excess_carbon / k.carbon_reference_eur.wert
     eco_penalty = person.environmental_awareness * normalized_tax
-    if person.price_sensitivity > HIGH_PRICE_SENSITIVITY_THRESHOLD and normalized_tax > 0:
-        eco_penalty += HIGH_PRICE_SENSITIVITY_PENALTY * min(1.0, normalized_tax)
+    if person.price_sensitivity > k.high_price_sensitivity_threshold.wert and normalized_tax > 0:
+        eco_penalty += k.high_price_sensitivity_penalty.wert * min(1.0, normalized_tax)
 
-    substitution_penalty = person.substitution_readiness * normalized_price * 1.5
+    # **Die Bahn wird bewusst nicht am Einkommen gemessen.** Der
+    # Substitutionsterm sagt, wie attraktiv die Alternative gegenüber dem Flug
+    # ist — das hängt am Fahrpreis- und Zeitverhältnis, nicht am Budgetanteil.
+    # Ihn ebenfalls zu deflationieren hiesse, das Einkommen zweimal durch
+    # denselben Nutzenterm zu schicken.
+    substitution_penalty = (
+        person.substitution_readiness * normalized_price * k.substitution_weight.wert
+    )
     saturation_penalty = person.saturation_level * saturation_penalty_factor
+    angebotsnutzen = k.verfuegbarkeit_gewicht.wert * float(np.log(verfuegbarkeit))
 
-    utility = base_utility - price_penalty - eco_penalty - substitution_penalty - saturation_penalty
-    probability = float(1.0 / (1.0 + np.exp(-utility)))
-    return bool(probability >= logit_threshold)
+    utility = (
+        base_utility
+        + angebotsnutzen
+        - price_penalty
+        - eco_penalty
+        - substitution_penalty
+        - saturation_penalty
+    )
+    return float(1.0 / (1.0 + np.exp(-utility)))
 
 
 def evaluate_booking(
@@ -361,6 +708,8 @@ def evaluate_booking(
     ticket_price: float,
     carbon_tax: float,
     properties: PropertiesConfig | None,
+    system_properties: Mapping[str, float],
+    rng: np.random.Generator,
 ) -> tuple[list[Individual], PopulationStats]:
     """Evaluate booking decisions for persistent individuals.
 
@@ -373,27 +722,121 @@ def evaluate_booking(
     haben aber eine eigene Bedienung im Config-Editor, und nach einer Änderung
     dort läuft die Sättigung still auseinander (nachgestellt: Summe 195.25
     gegen 468.60). Sie trägt in die Buchungsentscheidungen des nächsten Ticks.
+
+    *rng* ist seit P2.1 **Pflicht und ohne Default** — aus demselben Grund. Ein
+    Generator, den die Funktion sich selbst besorgt, wäre bei jedem Aufruf
+    derselbe: Es buchten in jedem Tick dieselben Individuen, die Buchungsrate
+    würde zur Stufenfunktion, und das Ergebnis sähe dabei plausibel aus. Wer den
+    Strom aufbaut, weiß als Einziger, wofür er stehen soll — deshalb kommt er
+    von außen (`run_population_tick`).
+
+    *system_properties* ist seit dem 2026-09-03 dabei, und der Grund ist ein
+    **Rechenfehler**: Die Kapazitätsschranke lief bis dahin als eigener Schritt
+    **nach** dieser Funktion (`_kapazitaet_begrenzen`) und setzte den
+    Überzähligen `booked = False` — der Sättigungsaufschlag war da aber schon
+    vergeben. Gemessen (`marge`, `kapazitaet_index = 0,5`, ein Tick, 1000
+    Personen): 658 wollten buchen, 185 bekamen einen Platz, und **473 gingen
+    leer aus und trugen trotzdem `saturation_level = 0,6`** in den nächsten
+    Tick. Sie wurden für eine Reise bestraft, die sie nicht angetreten haben.
+
+    **Die Reihenfolge ist die Behebung, nicht ein Zurücknehmen.** Ziehen,
+    rationieren, sättigen — in dieser Folge, und alle drei Schritte hier, weil
+    sie zusammen *eine* Entscheidung sind: wer wirklich fliegt. Ein
+    nachträgliches Zurückrechnen wäre nicht einmal möglich gewesen, weil
+    `min(1.0, …)` die Sättigung klemmt und der Ausgangswert damit verloren ist.
     """
 
     saturation = properties.saturation if properties is not None else None
     booking_increase = saturation.booking_increase if saturation is not None else 0.6
     penalty_factor = saturation.utility_penalty_factor if saturation is not None else 1.0
+    # Ohne Config gelten die Vorgabewerte **des Modells** — nicht Literale an
+    # dieser Stelle. Der Unterschied ist der aus P1.9-W5.1: Ein Rückfall auf
+    # eine zweite, hier hingeschriebene Zahl wäre eine eigene Quelle; der
+    # Rückfall auf `BookingModelConfig()` ist derselbe Wert wie überall sonst,
+    # und er trägt seine Herkunftsangabe mit.
+    koeffizienten = properties.booking_model if properties is not None else BookingModelConfig()
 
-    booked_individuals: list[Individual] = []
-    for person in individuals:
-        booked = _booking_probability(
-            person,
-            ticket_price=ticket_price,
-            carbon_tax=carbon_tax,
-            saturation_penalty_factor=penalty_factor,
+    # **Schritt 1 — die Ziehung** (P2.1). Vorher stand hier ein Vergleich gegen
+    # 0,5. `< p` und nicht `<= p`: Bei p = 0 darf niemand buchen — das ist die
+    # Unbezahlbarkeits-Schranke, und `rng.random()` liefert die 0,0 mit
+    # positiver Wahrscheinlichkeit.
+    # **Das Angebot ist für alle dasselbe** — eine Eigenschaft der Welt, nicht
+    # der Person. Einmal je Tick aufgelöst, nicht je Individuum.
+    verfuegbarkeit = float(system_properties.get("kapazitaet_index", 1.0) or 1.0)
+
+    will_fliegen = [
+        bool(
+            rng.random()
+            < booking_probability(
+                person,
+                ticket_price=ticket_price,
+                carbon_tax=carbon_tax,
+                koeffizienten=koeffizienten,
+                verfuegbarkeit=verfuegbarkeit,
+                saturation_penalty_factor=penalty_factor,
+            )
         )
-        update: dict[str, object] = {"booked": bool(booked)}
-        if booked:
+        for person in individuals
+    ]
+
+    # **Schritt 2 — die Kapazität**, wenn sie eine Schranke ist.
+    fliegt = _plaetze_verteilen(will_fliegen, properties, system_properties, rng=rng)
+
+    # **Schritt 3 — die Sättigung**, und nur für die, die wirklich fliegen.
+    booked_individuals = []
+    for person, gebucht in zip(individuals, fliegt):
+        update: dict[str, object] = {"booked": gebucht}
+        if gebucht:
             new_saturation = min(1.0, person.saturation_level + booking_increase)
             update["saturation_level"] = round(new_saturation, 4)
         booked_individuals.append(person.model_copy(update=update))
 
     return booked_individuals, aggregate_population_stats(booked_individuals, properties=properties)
+
+
+def _plaetze_verteilen(
+    will_fliegen: list[bool],
+    properties: PropertiesConfig | None,
+    system_properties: Mapping[str, float],
+    *,
+    rng: np.random.Generator,
+) -> list[bool]:
+    """Mehr Menschen wollen fliegen, als Plätze da sind — dann bleiben welche übrig.
+
+    **Nur unter der Marge-Strategie** (P2.8-B). Unter `auslastung` steuert der
+    Anbieter den Preis auf die Kapazität *zu*; dort ist sie ein Ziel und keine
+    Grenze, und ein zusätzlicher Deckel schnitte in eine Regelung hinein, die
+    ohnehin dorthin läuft. Ohne Schranke gibt diese Funktion die Ziehung
+    unverändert zurück — und zieht dann auch **nichts** aus `rng`, damit der
+    Strom eines Ticks derselbe bleibt wie vor dieser Änderung.
+
+    **Wer keinen Platz bekommt, wird zufällig gewählt.** Eine Auswahl nach
+    Zahlungsbereitschaft wäre eine zweite Verhaltensannahme — sie unterstellte
+    ein Erlösmanagement, das teure Buchungen bevorzugt, und genau solche
+    stillen Annahmen sind der Grund für P2.8-B. Wer sie will, macht sie zu
+    einer eigenen Strategie.
+
+    **Gezogen wird aus dem Buchungsstrom des Ticks**, nicht aus einem eigenen:
+    Die Rationierung findet statt, *nachdem* alle Buchungsziehungen erfolgt
+    sind, verschiebt sie also nicht — und sie gehört zu derselben Entscheidung.
+    """
+
+    if properties is None:
+        return will_fliegen
+
+    from src.market.market_feedback import kapazitaetsschranke
+
+    schranke = kapazitaetsschranke(properties, dict(system_properties))
+    if schranke is None or not will_fliegen:
+        return will_fliegen
+
+    plaetze = int(len(will_fliegen) * max(0.0, schranke))
+    gebucht = [i for i, ja in enumerate(will_fliegen) if ja]
+    if len(gebucht) <= plaetze:
+        return will_fliegen
+
+    leer_ausgehen = set(rng.choice(gebucht, size=len(gebucht) - plaetze, replace=False).tolist())
+    return [ja and i not in leer_ausgehen for i, ja in enumerate(will_fliegen)]
 
 
 def aggregate_population_stats(
@@ -535,6 +978,17 @@ def run_population_tick(
     Tick- und Metrik-Regeln abgeschaltet.
     """
 
+    # **Die alternde Gesellschaft ist ein exogener Verlauf** (P2.4-D,
+    # 2026-08-31), kein Alterungspfad je Person. Wer neu in die Bevölkerung
+    # kommt, wird aus der Verteilung gezogen, die *jetzt* gilt.
+    #
+    # Der Unterschied ist nicht kosmetisch: Eine mitalternde Kohorte ohne
+    # Nachwuchs verliert über 40 Ticks **47,6 %** ihrer Buchungsrate und ist am
+    # Ende im Schnitt 83 Jahre alt — das ist ein Jahrgang, keine Gesellschaft.
+    # Eine Gesellschaft altert, weil sich die *Zusammensetzung* verschiebt, und
+    # das tut sie langsam.
+    properties = _mit_altersmittel(properties, system_properties)
+
     if not individuals:
         individuals = initialize_population(properties, config, seed=seed)
 
@@ -552,6 +1006,15 @@ def run_population_tick(
         rng = _rng(seed + len(individuals))
         to_keep = rng.choice(individuals, size=target_population, replace=False)
         individuals = list(to_keep)
+
+    individuals = _kohorte_erneuern(
+        individuals,
+        properties,
+        config,
+        system_properties,
+        seed=seed,
+        current_tick=current_tick,
+    )
 
     income_index = system_properties.get("income_index", 1.0)
     shifted = apply_factor_shifts(
@@ -575,11 +1038,19 @@ def run_population_tick(
         for person in individuals
     ]
 
+    # **Ziehen, rationieren, sättigen — alles in `evaluate_booking`** (seit dem
+    # 2026-09-03). Die Kapazitätsschranke war bis dahin ein eigener Schritt
+    # *danach*: Sie setzte den Überzähligen `booked = False`, ihr
+    # Sättigungsaufschlag war aber schon vergeben, und sie trugen ihn in den
+    # nächsten Tick. Die drei Schritte sind **eine** Entscheidung — wer wirklich
+    # fliegt — und gehören deshalb zusammen.
     return evaluate_booking(
         individuals,
         ticket_price=ticket_price,
         carbon_tax=carbon_tax,
         properties=properties,
+        system_properties=system_properties,
+        rng=buchungsstrom(seed, current_tick),
     )
 
 

@@ -31,6 +31,7 @@ from dash import html
 from dashboard.config_catalog import (
     issues_by_field,
     list_sweep_presets,
+    rahmenszenarien,
     unfielded_issues,
     validate_draft,
 )
@@ -38,12 +39,14 @@ from dashboard.web import components as ui
 from dashboard.web.config_editor import compute_mode, dauer
 from dashboard.web.config_editor import controls as c
 from dashboard.web.state import draft_from_dict
+from src.config_loader import load_properties_config
 from src.models.state_models import DEFAULT_SEED
 from src.orchestration.scenario_sweeps import (
     SWEEP_SEED,
     SZENARIOTEXT_NUTZT_LLM,
     vorgegebene_felder,
 )
+from src.validation import horizontluecken
 
 #: Die Szenario-Auswahl ist kein Draft-Feld: aus ihr folgen `scenario_mode` und
 #: `sweep_id`. Dieselbe Übersetzung wie beim Rechenmodus, aus demselben Grund —
@@ -145,11 +148,15 @@ def _vergleich_satz() -> str:
     Abschlusstext sehr wohl gerufen.
     """
 
-    count = len(list_sweep_presets())
+    # **Nicht `list_sweep_presets()`** (P2.2): Verglichen werden die
+    # Rahmenszenarien, nicht die Stresstests der Engine. Der Satz nannte bis
+    # dahin acht und meinte damit auch «Totaler Wahnsinn (Alle Parameter)».
+    count = len(rahmenszenarien())
     satz = (
-        f"Sie starten **alle {count} hinterlegten Szenarien** nacheinander — jedes "
+        f"Sie starten **alle {count} Rahmenszenarien** nacheinander — jedes "
         "aus seiner eigenen Datei und **in seiner eigenen Länge**, ohne Agenten-Dialog. "
-        "Am Ende liegen sie zum Vergleich nebeneinander."
+        "Am Ende liegen sie zum Vergleich nebeneinander. Die hinterlegten Stresstests "
+        "der Engine sind nicht dabei; sie behaupten kein Weltbild."
     )
     if SZENARIOTEXT_NUTZT_LLM:
         satz += (
@@ -199,7 +206,15 @@ def _kennzahl(preset) -> str:
 
     eingriffe = len(preset.property_overrides) + len(preset.factor_overrides)
     wort = "Änderung" if eingriffe == 1 else "Änderungen"
-    return f"{preset.max_ticks} Ticks · {eingriffe} {wort}"
+    kennzahl = f"{preset.max_ticks} Ticks · {eingriffe} {wort}"
+
+    # **Seit P2.2 steht die Art vorneweg**, und zwar nur bei den Stresstests:
+    # Ein Rahmen ist der Normalfall und braucht keine Marke, ein Belastungstest
+    # der Engine schon — er stand bis dahin gleichrangig neben «Business as
+    # Usual» und wurde als Zukunft angeboten.
+    if preset.art != "rahmen":
+        return f"Stresstest · {kennzahl}"
+    return kennzahl
 
 
 def _choice_label(title: str, description: str, kennzahl: str | None = None) -> html.Div:
@@ -261,12 +276,83 @@ def choice_options() -> list[dict]:
     return options
 
 
+def _eigene_werte_wirken(draft: dict) -> bool:
+    """Ob die eigenen Werte des Entwurfs in den Lauf eingehen.
+
+    Lag bis P2.0-C in `config_editor/factors.py`, zusammen mit dem Schalter.
+    """
+
+    return bool(draft.get("apply_custom_overrides")) or of(draft) == CUSTOM
+
+
+def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
+    """Die Kohärenzbegründung eines Rahmens — **eine Stelle für alle Rahmen**.
+
+    Sie steht offen da und nicht hinter «Fachliches»: Sie ist die einzige
+    Absicherung, die ein Rahmenszenario hat — es gibt keinen Algorithmus, der
+    seine Stimmigkeit prüft (Variante C, P2.2), und das soll man sehen statt
+    aufklappen müssen. Quellen und Vorbehalt liegen darunter, weil sie beim
+    Nachprüfen gebraucht werden und nicht beim Auswählen.
+
+    **Gemeinsam für Preset und Standard seit A1** (2026-09-03): Vorher gab es
+    diesen Block nur für Presets, und der Standard — der meistgenutzte Rahmen —
+    zeigte gar nichts. Zwei Renderer für dieselbe Sache wären die zweite Quelle
+    gewesen, an der sie auseinanderlaufen.
+    """
+
+    if kohaerenz is None:
+        return html.Div()
+
+    kinder: list = [vorspann] if vorspann is not None else []
+    kinder += [
+        html.P(kohaerenz.these, className="font-body text-sm af-text mb-2 max-w-prose"),
+        html.P(kohaerenz.begruendung, className=f"{ui.CAPTION} mb-3 max-w-prose"),
+        ui.expert(
+            html.Div(
+                [
+                    html.Ul(
+                        [html.Li(q, className=ui.CAPTION) for q in kohaerenz.quellen],
+                        className="mb-3 list-disc pl-5",
+                    ),
+                    html.P(kohaerenz.vorbehalt, className=f"{ui.CAPTION} max-w-prose"),
+                ]
+            ),
+            title="Quellen und was davon nicht belegt ist",
+        ),
+    ]
+    return html.Div(kinder, className="mb-4")
+
+
 def scenario_details(draft: dict) -> html.Div:
     """Was zur aktuellen Auswahl gehört — Begründung und der Weg in den Editor."""
 
     choice = of(draft)
-    if choice in {STANDARD, CUSTOM}:
-        return html.Div()
+    if choice == CUSTOM:
+        # **Für eigene Werte gibt es keine Begründung, und das ist keine Lücke.**
+        # Ein selbst zusammengestellter Rahmen ist genau so stimmig, wie der
+        # Nutzer ihn macht; ihm eine Kohärenzbehauptung unterzuschieben wäre eine
+        # Aussage, die niemand getroffen hat.
+        return html.Div(
+            ui.note(
+                "Für eine eigene Zusammenstellung gibt es **keine hinterlegte "
+                "Begründung** — die Rahmenszenarien tragen je eine, weil jemand sie "
+                "aufgeschrieben und belegt hat. Wer eigene Verläufe nach außen "
+                "zitiert, begründet ihre Stimmigkeit selbst."
+            )
+        )
+    if choice == STANDARD:
+        # **Auch der Standard ist ein Rahmen** (P2.0-B), und seit A1 trägt er
+        # seine Begründung wie jeder andere. Sie stand als einzige nicht da —
+        # ausgerechnet beim meistgenutzten Weltbild, das jeder Lauf ohne
+        # Preset-Wahl benutzt.
+        return _kohaerenz_block(
+            load_properties_config().kohaerenz,
+            vorspann=ui.note(
+                "Der Lauf rechnet mit den Verläufen aus `configs/`. **Auch das ist "
+                "ein Rahmenszenario** — es trägt eigene Annahmen über Politik, "
+                "Kosten und Konjunktur und heißt nur nicht so."
+            ),
+        )
 
     preset = next((s for s in list_sweep_presets() if s.id == choice), None)
     if preset is None:
@@ -281,12 +367,29 @@ def scenario_details(draft: dict) -> html.Div:
         # steht, statt zehnmal im Raster.
         html.P(preset.description, className=f"{ui.CAPTION} mb-4 max-w-prose"),
         ui.note(
-            "Das Szenario gilt **unverändert**: Faktorlage, Politik und Kosten kommen aus "
+            "Das Szenario gilt **unverändert**: Politik, Kosten und Nachfrageumfeld kommen aus "
             f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
             f"Angelegt ist es auf **{preset.max_ticks} Ticks** — die Länge stellen Sie im "
             "nächsten Schritt selbst ein."
         ),
     ]
+    # **Die Kohärenzbegründung (P2.2, Variante C).** Sie steht offen da und
+    # nicht hinter «Fachliches»: Sie ist die einzige Absicherung, die ein
+    # Rahmenszenario hat — es gibt keinen Algorithmus, der seine Stimmigkeit
+    # prüft, und das soll man sehen statt aufklappen müssen.
+    if preset.kohaerenz is not None:
+        children.append(_kohaerenz_block(preset.kohaerenz))
+    elif preset.art != "rahmen":
+        children.append(
+            ui.alert(
+                "Dies ist ein **Stresstest der Engine**, kein begründetes Weltbild. Die "
+                "Verläufe sind auf Sichtbarkeit und Belastung gebaut, nicht auf "
+                "Plausibilität — die Zahlen taugen zum Prüfen der Mechanik, nicht als "
+                "Aussage über die Zukunft. Ein Szenario-Vergleich lässt ihn deshalb aus.",
+                "warning",
+            )
+        )
+
     if preset.rationale:
         children.append(
             ui.expert(ui.markdown(preset.rationale), title="Warum dieses Szenario so aufgebaut ist")
@@ -537,12 +640,50 @@ def _warnings(draft: dict, errors: list[str]) -> list:
     ):
         warnings.append(
             ui.alert(
-                "«Eigene Werte anwenden» ist aus — Änderungen an Faktoren und Systemgrößen "
+                "«Eigene Werte anwenden» ist aus — Änderungen an den Systemgrößen "
                 "wirken in diesem Lauf nicht.",
                 "warning",
             )
         )
+
+    # **Wie weit die Vorgaben reichen** (P2.8, Restposition). Ein Lauf über den
+    # letzten Stützpunkt hinaus ist zulässig — die Kurve hält dort ihren letzten
+    # Wert, und bei einer CO₂-Abgabe am Endwert ist genau das gemeint. Er soll es
+    # nur **sagen**: Bis dahin rechnete ein Standardlauf ein Viertel seiner Länge
+    # mit einer fortgeschriebenen Bevölkerung, ohne dass irgendwo etwas stand.
+    warnings.extend(_horizont_hinweis(draft))
     return warnings
+
+
+def _horizont_hinweis(draft: dict) -> list:
+    """Ein Satz, keine Liste — sonst steht der Preflight voller Selbstverständlichkeiten.
+
+    Genannt wird der **früheste** Horizont und wie viele Verläufe betroffen sind;
+    welche es im Einzelnen sind, steht im Modell-Bereich, wo man sie auch ändern
+    kann.
+    """
+
+    ticks = int(draft.get("rounds") or 0)
+    if ticks <= 0:
+        return []
+
+    luecken = horizontluecken(load_properties_config(), max_ticks=ticks)
+    if not luecken:
+        return []
+
+    frueheste = luecken[0]
+    wie_viele = "Ein Verlauf endet" if len(luecken) == 1 else f"{len(luecken)} Verläufe enden"
+    return [
+        ui.alert(
+            f"{wie_viele} vor dem Ende des Laufs — der früheste ist "
+            f"`{frueheste.property_id}` bei Tick {frueheste.letzter_stuetzpunkt}. "
+            f"Danach hält er seinen letzten Wert; die letzten "
+            f"{frueheste.ticks_darueber} Ticks rechnen also mit einer "
+            "fortgeschriebenen Vorgabe. Das ist zulässig — gemeint ist es nicht "
+            "immer.",
+            "info",
+        )
+    ]
 
 
 #: Was im Bedienfeld von den sechs Kacheln übrig bleibt. Die drei, die vor dem
@@ -624,7 +765,7 @@ def scenario_step(draft: dict, number: int | None = 1) -> object:
         number,
         "Was soll gerechnet werden?",
         "Die Annahmenwelt, von der der Lauf ausgeht. Ein vorbereitetes Szenario ist der "
-        "schnellste Einstieg — es legt Faktorlage, Politik und Kosten in einem Zug fest.",
+        "schnellste Einstieg — es legt Politik, Kosten und Nachfrageumfeld in einem Zug fest.",
         ui.card(
             ui.radio(
                 choice_options(),
@@ -634,6 +775,22 @@ def scenario_step(draft: dict, number: int | None = 1) -> object:
                 legend="Was soll gerechnet werden? Die Annahmenwelt des Laufs.",
             ),
             html.Div(scenario_details(draft), id=slot_id("scenario"), className="mt-5"),
+            # **Der Schalter stand bis P2.0-C im Schritt «Ausgangslage».** Mit
+            # dem Wegfall der Faktorlage hat er dort nichts mehr zu steuern; was
+            # bleibt, sind die Systemgrößen aus dem Modell-Editor. Er gehört
+            # damit hierher: Die Frage, ob *meine* Werte gelten, ist Teil der
+            # Wahl des Ausgangspunkts.
+            #
+            # **Hinter «Feinabstimmung» und mit `detail=True`**, nicht auf der
+            # Entscheidungsfläche. Der erste Anlauf legte ihn daneben, und der
+            # Wächter aus P1.1 hat das sofort gemeldet: vier Felder statt drei.
+            # Er hatte recht — «gelten meine Werte» ist kein vierter Schritt zum
+            # Lauf, sondern eine Einstellung für den, der schon etwas geändert
+            # hat.
+            ui.expert(
+                c.check("apply_custom_overrides", _eigene_werte_wirken(draft), detail=True),
+                title="Feinabstimmung",
+            ),
         ),
         actions=ui.doc_link("presets"),
     )

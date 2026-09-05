@@ -9,7 +9,7 @@ Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 |---|---|
 | `run_scenario.md` / `.json` | Das Szenario-Tripleset — Hauptergebnis eines Laufs, Grundlage des Tabs «Szenario» |
 | `final_narrative.md` | Der Tick-für-Tick-Bericht mit Kennzahlen und Akteursbeiträgen |
-| `scenarios.md` / `.json` | Die CIB-Kandidaten mit ihren Konsistenzwerten |
+| `scenarios.md` / `.json` | Die CIB-Kandidaten mit ihren Konsistenzwerten. **Sie stammen aus der Einflussmatrix, nicht aus dem Lauf** — es sind die bestbewerteten aller Kombinationen von F1–F7 und fallen deshalb für jeden Lauf gleich aus. Das Szenario-Tripleset *dieses* Laufs steht in `run_scenario.md`. |
 | `protocol.md` / `.json` | Das Gesprächsprotokoll der Akteure |
 
 ### Der Konsistenzwert in `run_scenario.json`
@@ -63,6 +63,7 @@ welchen Bedingungen er lief.
 
 | Feld | Bedeutung |
 |---|---|
+| `rahmen` | **Unter welchem Rahmenszenario der Lauf stand** — `id`, `name` und `quelle`. `quelle` ist `preset` (eine Datei unter `configs/sweeps/`), `eigen` (im Assistenten zusammengestellt) oder `standard` (die ausgelieferten Konfigurationsdateien — auch das ist ein Rahmen, nur ein unbenannter). Läufe von vor dem 2026-08-30 haben das Feld nicht; dann steht in der Oberfläche «nicht festgehalten». |
 | `seed` | Der tatsächlich benutzte Startwert der Zufallsziehung — auch dann, wenn Sie keinen angegeben haben: Dann steht hier der Standardwert, mit dem gerechnet wurde. Gleicher Seed und gleiche Konfiguration ergeben denselben Lauf. |
 | `compute_mode` | `llm` (mit Sprachmodell), `mock_llm` (ohne, mit Platzhaltertexten), `deterministic_only` (nur Zahlen) oder `deterministic_with_llm_narrative` (Zahlen deterministisch, Abschlusstext vom Modell — so laufen die Sweeps). |
 | `mock_llm`, `deterministic_only` | Die beiden Schalter einzeln, für die maschinelle Auswertung. |
@@ -70,6 +71,12 @@ welchen Bedingungen er lief.
 | `code_version` | Git-Commit, Branch und ob der Arbeitsbaum dabei ungesicherte Änderungen trug. `null`, wenn kein Repository verfügbar war. |
 | `elapsed_seconds` | Wie lange der Lauf **gerechnet** hat, in Sekunden — die reine Tick-Zeit ohne das Schreiben der Artefakte danach. Aus diesen Werten schätzt der Prüfschritt, wie lange der nächste Lauf dauert; ohne sie zeigt er dort nichts. Läufe von vor August 2026 haben das Feld nicht. |
 | `model`, `base_url`, `temperature`, `max_tokens` | Das befragte Sprachmodell und seine Einstellungen. Bei einem Lauf **ohne** Modell (`mock_llm`, `deterministic_only`) stehen alle vier auf `null` — die Felder beschreiben dort nichts. Ein Sweep behält seinen Modellnamen, denn dort schreibt das Modell den Abschlusstext. |
+
+> **Warum `rahmen` neben dem Fingerabdruck steht.** Der Fingerabdruck
+> *unterscheidet* die Rahmen — jedes der acht Szenarien erzeugt einen eigenen
+> `properties`-Hash —, aber er *benennt* sie nicht. Man sah damit, **dass** ein
+> anderer Rahmen lief, nicht **welcher**. Für die Frage, unter welcher Außenwelt
+> eine Zahl entstanden ist, war das keine Antwort.
 
 Der Fingerabdruck beschreibt, **was gelaufen ist** — nicht, was gerade in
 `configs/` liegt. Das ist der wichtige Unterschied: Ein Lauf aus dem Dashboard
@@ -93,6 +100,26 @@ Zahlen sind vollwertig, die Texte der Akteure stammen aus Platzhaltern.
 
 Ältere Läufe kennen diese Felder nicht. Dann steht in der Oberfläche «nicht
 festgehalten» — statt einer Angabe, die niemand belegen kann.
+
+## Läufe mit Wiederholungen
+
+Ein Lauf mit mehreren Wiederholungen legt sie unter `outputs/batch_…/` ab, je
+Wiederholung ein eigenes Verzeichnis plus eine `multi_run_summary.json`.
+
+Deren `aggregate` enthält neben der Buchhaltung (Zahl der Läufe, Startwerte,
+erreichte Runden) das Feld **`baender`**:
+
+| Feld | Inhalt |
+|---|---|
+| `laeufe` | Wie viele Wiederholungen in das Band eingegangen sind |
+| `ticks` | Wie weit es trägt — so lang wie der **kürzeste** Lauf |
+| `perzentile` | Welche Perzentile berechnet wurden (`10`, `50`, `90`) |
+| `reihen` | Je Reihe (`booking_rate`, `ticket_price`) und Perzentil eine Liste mit einem Wert je Runde |
+
+Das Band ist die Antwort auf «wie sicher ist diese Zahl». Ein einzelner Lauf
+liefert einen Punktwert; erst mehrere zeigen, wie weit er wandern kann. Bei
+**einer** Wiederholung fallen alle drei Perzentile zusammen — ein Band aus einem
+Lauf ist eine Linie, und das steht dann auch so da.
 
 ## Zeitreihen
 

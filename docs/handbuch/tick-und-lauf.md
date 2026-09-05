@@ -17,9 +17,45 @@ Ein längerer Lauf bildet deshalb nicht mehr Zeit ab, sondern mehr Gelegenheiten
 für Anpassung und Rückkopplung. Vierzig Ticks zeigen, wohin sich ein System
 einpendelt; zehn zeigen die erste Reaktion.
 
+**Eine Einschränkung dazu, seit dem 31. August 2026 gemessen und offen benannt:**
+Der Satz oben gilt für das, was das Modell *ausgibt* — dort steht nirgends ein
+Datum. Er gilt nicht durchgehend für das, was es *rechnet*.
+
+Denn jeder Mechanismus, der sich pro Runde verändert, unterstellt stillschweigend
+eine Zeitskala. Im Modell unterstellen sie nicht dieselbe: Die hinterlegte
+Bevölkerungskurve wächst um acht Prozent über 29 Runden — plausibel, wenn eine
+Runde ein Jahr ist, und unmöglich, wenn sie ein Monat ist. Die Sättigung dagegen
+lässt eine Reise nach etwa drei Runden «vergessen» sein; als Jahre gelesen wären
+das drei Jahre zwischen zwei Familienflügen. Und der Backtest, der das Modell
+gegen die Jahre 2015 bis 2024 hält, bildet eine Runde ausdrücklich auf einen
+Monat ab.
+
+**Was Sie daraus mitnehmen sollten:** Lesen Sie einen Lauf weiterhin als
+Wirkungskette, nicht als Zeitreihe — dafür ist er gebaut. Aber übersetzen Sie
+Rundenzahlen nicht in Jahre, auch nicht im Kopf, und vergleichen Sie zwei Läufe
+nur bei gleicher Rundenzahl. Die offene Frage ist im Projektplan als P3.8
+vermerkt.
+
 ## Der Lauf
 
-Ein Lauf ist eine Folge von Ticks aus einer festgelegten Ausgangslage. Er erzeugt
+Ein Lauf ist eine Folge von Ticks aus einer festgelegten Ausgangslage.
+
+## Wie weit die Vorgaben reichen
+
+Manche Systemgrößen haben einen Verlauf mit Stützpunkten — die CO₂-Abgabe steigt
+etwa in zwei Stufen, die Bevölkerung wächst bis zu einer bestimmten Runde. **Hinter
+dem letzten Stützpunkt hält eine solche Kurve ihren letzten Wert.**
+
+Das ist meistens gemeint: Eine Abgabe, die ihren Endwert erreicht hat, bleibt dort.
+Bei der Bevölkerung heißt derselbe Mechanismus aber «ab hier wächst niemand mehr»,
+und das ist eine ganz andere Aussage — im Standardlauf betrifft es die letzten zehn
+von vierzig Runden.
+
+**Deshalb sagt der Lauf es seit September 2026.** Der Preflight nennt vor dem Start
+den frühesten Verlauf und wie viele Runden über ihn hinauslaufen; im Protokoll steht
+es für jeden betroffenen Verlauf. Es ist ein **Hinweis und kein Fehler**: Der Lauf
+startet, die Zahlen stimmen, Sie wissen nur, worauf sie beruhen.
+ Er erzeugt
 ein eigenes Verzeichnis unter `outputs/` mit allen Zwischenständen, Zeitreihen
 und Auswertungen. Was genau darin liegt, steht unter
 [Ausgabedateien](/doku/ref-ausgaben).
