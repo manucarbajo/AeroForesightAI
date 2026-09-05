@@ -549,7 +549,7 @@ def run_single_sweep(
     # wurde verworfen, und `save_llm_incidents` lief nie. Ein Sweep rechnet
     # deterministisch und hat damit genau eine Ausfallquelle: diesen Text.
     # Fiel er auf das Template zurück, stand im Sweep trotzdem
-    # `degraded: false`. Dieselbe Kette wie in `run_simulation._save_run_outputs`,
+    # `degraded: false`. Dieselbe Kette wie in `run_simulation.save_run_outputs`,
     # und in derselben Reihenfolge: erst der Vorfall, dann die Metadaten.
     scenario_llm_error = scenario_result.get("llm_error")
     if scenario_llm_error:

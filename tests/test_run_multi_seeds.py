@@ -111,13 +111,13 @@ class TestDieAngabeImArtefakt:
         """Ohne diese Zusage wäre die Angleichung nicht nachprüfbar."""
 
         from src.reporting.output_writer.metadata import save_run_metadata
-        from src.run_simulation import _build_run_args
+        from src.run_simulation import build_run_args
 
         ergebnis = _runner().run_multi(2, base_state=_basis())
 
         gelesen = []
         for index, lauf in enumerate(ergebnis.runs, start=1):
-            args = _build_run_args(
+            args = build_run_args(
                 SimpleNamespace(
                     model="m",
                     base_url="u",

@@ -1,3 +1,30 @@
+"""Der CLI-Einstieg der Simulation — **und die geteilte Schnittstelle darum** (P3.6).
+
+Dieses Modul ist zwei Dinge, und bis zum 2026-09-05 gab es nur für das erste
+einen Namen: Es ist der Batch-Einstieg (`python -m src.run_simulation`), **und**
+es hält, was jeder Startpfad nach einem Lauf tut — Artefakte schreiben,
+Lauf-Argumente normalisieren, eine Mehrfachlauf-Zusammenfassung ablegen.
+
+`dashboard/run_launcher.py` braucht genau dieses zweite und importierte dafür
+drei **unterstrichs-präfixierte** Namen: `_build_run_args`, `_save_run_outputs`,
+`_write_multi_run_summary`. Ein Unterstrich sagt «privat, kann sich jederzeit
+ändern» — ein Refactor hätte den Launcher stumm gebrochen, und niemand hätte es
+vor dem nächsten Dashboard-Lauf gemerkt.
+
+**Was öffentlich ist, steht in `__all__`:**
+
+* :func:`main` — der Einstieg, den `__main__` ruft.
+* :func:`build_run_args` — die Lauf-Argumente eines Teillaufs.
+* :func:`save_run_outputs` — alle Artefakte eines fertigen Laufs.
+* :func:`write_multi_run_summary` — die Zusammenfassung über mehrere Läufe.
+* :data:`EXIT_KONFIGURATION` — der Exit-Code für eine Konfiguration, die
+  keinen Lauf zulässt (P3.3).
+
+Alles andere hier ist Innenleben des CLI-Ablaufs und trägt weiter einen
+Unterstrich. Wer aus `dashboard/` etwas davon braucht, hebt es hierher — nicht
+den Import.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -58,6 +85,16 @@ from src.reporting.protocol_generator import (
 )
 from src.reporting.run_scenario_generator import generate_and_save_run_scenario
 from src.validation import ValidationError, validate_llm_settings
+
+#: Die öffentliche Schnittstelle dieses Moduls (P3.6). Was nicht hier steht,
+#: ist Innenleben des CLI-Ablaufs — `dashboard/` importiert es nicht.
+__all__ = [
+    "main",
+    "build_run_args",
+    "save_run_outputs",
+    "write_multi_run_summary",
+    "EXIT_KONFIGURATION",
+]
 
 
 def _parse_args() -> argparse.Namespace:
@@ -183,7 +220,7 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _save_run_outputs(
+def save_run_outputs(
     state,
     args: argparse.Namespace,
     llm: OllamaClient,
@@ -374,7 +411,7 @@ def _launch_studio() -> int:
     )
 
 
-def _build_run_args(
+def build_run_args(
     base_args: argparse.Namespace, *, run_index: int, seed: int | None
 ) -> SimpleNamespace:
     return SimpleNamespace(
@@ -399,7 +436,7 @@ def _build_run_args(
     )
 
 
-def _write_multi_run_summary(
+def write_multi_run_summary(
     *,
     summary_path: Path,
     result: MultiRunResult,
@@ -678,9 +715,9 @@ def _main() -> int:
             resume_from=args.resume,
             run_id=run_id,
         )
-        artifacts = _save_run_outputs(
+        artifacts = save_run_outputs(
             final_state,
-            _build_run_args(args, run_index=1, seed=final_state.config.seed),
+            build_run_args(args, run_index=1, seed=final_state.config.seed),
             llm,
             run_dir=run_dir,
             run_id=run_id,
@@ -733,9 +770,9 @@ def _main() -> int:
             checkpoint_store=checkpoint_manager,
             run_id=run_id,
         )
-        artifacts = _save_run_outputs(
+        artifacts = save_run_outputs(
             final_state,
-            _build_run_args(args, run_index=1, seed=args.seed),
+            build_run_args(args, run_index=1, seed=args.seed),
             llm,
             run_dir=run_dir,
             run_id=run_id,
@@ -779,8 +816,8 @@ def _main() -> int:
         run_id = f"run_{index:03d}"
         run_dir = batch_dir / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
-        run_args = _build_run_args(args, run_index=index, seed=run_result.seed)
-        artifacts = _save_run_outputs(
+        run_args = build_run_args(args, run_index=index, seed=run_result.seed)
+        artifacts = save_run_outputs(
             run_result.final_state,
             run_args,
             llm,
@@ -803,7 +840,7 @@ def _main() -> int:
                 print(f"Warning: failed to ensure checkpoint for {run_result.run_id}: {exc}")
 
     summary_path = batch_dir / "multi_run_summary.json"
-    _write_multi_run_summary(
+    write_multi_run_summary(
         summary_path=summary_path, result=multi_result, run_artifacts=all_artifacts
     )
 

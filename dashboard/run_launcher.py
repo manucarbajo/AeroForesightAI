@@ -187,7 +187,7 @@ def launch_simulation(
     import sys
 
     from src.orchestration.scenario_sweeps import SWEEP_OUTPUT_DIR, run_all_sweeps
-    from src.run_simulation import _build_run_args, _save_run_outputs, _write_multi_run_summary
+    from src.run_simulation import build_run_args, save_run_outputs, write_multi_run_summary
 
     def _maybe_generate_figures(run_directory: Path) -> None:
         if not config.generate_figures:
@@ -347,8 +347,8 @@ def launch_simulation(
                 sub_run_id = f"run_{index:03d}"
                 run_dir = batch_dir / sub_run_id
                 run_dir.mkdir(parents=True, exist_ok=True)
-                run_args = _build_run_args(args, run_index=index, seed=run_result.seed)
-                artifacts = _save_run_outputs(
+                run_args = build_run_args(args, run_index=index, seed=run_result.seed)
+                artifacts = save_run_outputs(
                     run_result.final_state,
                     run_args,
                     llm,
@@ -365,7 +365,7 @@ def launch_simulation(
                 )
 
             summary_path = batch_dir / "multi_run_summary.json"
-            _write_multi_run_summary(
+            write_multi_run_summary(
                 summary_path=summary_path,
                 result=multi_result,
                 run_artifacts=all_artifacts,
@@ -444,9 +444,9 @@ def launch_simulation(
             # Mutationsprüfung am 2026-08-27.
             seed = final_state.config.seed
 
-        artifacts = _save_run_outputs(
+        artifacts = save_run_outputs(
             final_state,
-            _build_run_args(args, run_index=1, seed=seed),
+            build_run_args(args, run_index=1, seed=seed),
             llm,
             run_dir=run_dir,
             run_id=run_id,

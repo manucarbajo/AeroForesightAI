@@ -1028,7 +1028,7 @@ P1.7 wurde am laufenden System nachgemessen. **Die tragenden Zusagen halten:** d
 | [P1.7](#p17--der-ablauf-wird-die-oberfläche--erledigt-2026-08-28) ✅ | **wieder öffnen** | «Eine Frage auf dem Schirm» ist nicht gehalten (Befund 3), dazu Befund 4 und die Handwerksbefunde. |
 | [P1.8](#p18--gegenprobe-zu-p17-haiko-2026-08-28--erledigt) ✅ | **Verfahren nachschärfen** | Das Ergebnis bleibt gültig, der Prüfumfang war zu eng: Die Gegenprobe hat drei gemeldete Befunde geprüft, aber keine der Zusagen **gemessen**. Genau die Messung hätte Befund 3 gefunden. |
 | [P1.3](#p13--szenariogestaltung-neu-denken--erledigt-2026-08-30-datenschema-die-entstehung-bleibt-p20) | **vorziehen** | Der Sweep-Pfad ist die Ursache der Befunde 1 und 2. Ihn kosmetisch zu reparieren, ohne die Szenariogestaltung zu klären, wäre doppelte Arbeit. |
-| [P3.6](#p36--stabiler-vertrag-für-den-run-launcher) | **vorziehen** | Befund 1 ist im Kern ein fehlender Vertrag zwischen Assistent, Run-Launcher und Sweeps. Ohne ihn lässt sich die Zusage aus W1.3 nicht mechanisch halten. |
+| [P3.6](#p36--stabiler-vertrag-für-den-run-launcher--erledigt-2026-09-05) | **vorziehen** | Befund 1 ist im Kern ein fehlender Vertrag zwischen Assistent, Run-Launcher und Sweeps. Ohne ihn lässt sich die Zusage aus W1.3 nicht mechanisch halten. |
 
 Unangetastet bleiben [P1.2](#p12--ergebnisse-und-plots-refactoren--erledigt-2026-08-30) und [P1.4](#p14--landingpage-produktionsreif--erledigt-bis-auf-die-rechtstexte-2026-08-30) — sie liegen hinter diesem Schnitt.
 
@@ -2484,14 +2484,41 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Fertig, gemessen:** [`tests/test_stille_klemmungen.py`](../tests/test_stille_klemmungen.py) — 17 Zusagen. **Doku ist mitgezogen:** `docs/handbuch/akteure.md` (eine Zeile je Runde statt acht, plus die Sicherheitsgrenze).
 
-### P3.6 — Stabiler Vertrag für den Run-Launcher
+### P3.6 — Stabiler Vertrag für den Run-Launcher ✅ erledigt 2026-09-05
 
 **Befund:** `run_launcher` importiert drei unterstrichs-präfixierte Funktionen aus `run_simulation` (`_build_run_args`, `_save_run_outputs`, `_write_multi_run_summary`). Kein stabiler Vertrag — ein Refactor der internen Helper bricht den Launcher unbemerkt.
 **Fundstelle:** [`dashboard/run_launcher.py:168`](../dashboard/run_launcher.py).
-**Was zu tun ist:** Öffentliche Schnittstelle in `src/run_simulation.py` definieren und den Launcher darauf ziehen.
-**Fertig wenn:** Kein Dashboard-Modul importiert mehr Unterstrich-Namen aus `src/`. **Doku:** `CLAUDE.md` (Architektur-Map, Service-Layer-Absatz).
+**Umgesetzt am 2026-09-05.** Die drei Namen heißen ohne Unterstrich, stehen im `__all__` von [`src/run_simulation.py`](../src/run_simulation.py), und dessen **neuer Modul-Docstring** sagt, dass dieses Modul zwei Dinge ist: der Batch-Einstieg *und* das, was jeder Startpfad nach einem Lauf tut. Bis dahin gab es nur für das erste einen Namen — daher der Griff ins Innenleben.
+
+**Die alten Namen sind weg, nicht daneben stehen geblieben.** Beide gleichzeitig zu führen wäre die schlechteste Variante: Der Launcher hinge weiter am alten, und niemand merkte es.
+
+**Der Wächter musste in den Funktionsrumpf schauen**, und das ist die Lehre des Pakets: Der Import stand nicht im Dateikopf, sondern **mitten in `_run_body`** (`dashboard/run_launcher.py:179`). Ein Test, der die obersten Importzeilen liest — der naheliegende —, hätte ihn nie gefunden. [`tests/test_launcher_vertrag.py`](../tests/test_launcher_vertrag.py) läuft deshalb über den ganzen Syntaxbaum und prüft das mit einem eigenen Fall nach.
+
+**Die andere Hälfte dieses Pakets war schon erledigt.** Beim Vorziehen am 2026-08-28 lautete die Begründung: Ohne eine Schnittstelle, die sagt, *was ein Startpfad entgegennimmt*, lässt sich W1.1 nicht mechanisch halten. Das leisten seit P1.9-W1.1 `scenario_sweeps.FESTLEGUNGEN` und `UNBEACHTET` (Invariante 7); übrig blieb die Namensfrage.
+
+**Nicht gemacht, bewusst:** Die Lauf-Argumente sind weiterhin ein `SimpleNamespace`, den `run_launcher` an zwei Stellen von Hand baut, und die Artefakt-Schreiber lesen daraus mit `getattr(..., False)`. **Genau daraus ist der `mock_llm`-Fehler von P0.6 entstanden** — ein fehlendes Feld war von einem abgeschalteten nicht zu unterscheiden, und jeder Dashboard-Lauf «Ohne Sprachmodell» wurde als vollwertiger LLM-Lauf protokolliert. Ein typisiertes Modell an dieser Grenze wäre Invariante 4 und macht aus dem stillen Rückfall einen `TypeError`; es ist **ein eigenes Paket**, weil es die Artefakt-Schreiber mit anfasst und nicht nur den Import. Eingeplant als [P3.11](#p311--die-lauf-argumente-sind-ein-simplenamespace--neu-2026-09-05).
+
+**Fertig, gemessen:** neun Zusagen. **Doku ist mitgezogen:** `CLAUDE.md` (Service-Layer-Absatz der Architektur-Map).
 
 > **Vorgezogen am 2026-08-28** (aus [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28)): Der fehlende Vertrag ist nicht nur ein Refactor-Risiko — er ist die Ursache dafür, dass der Assistent Felder erfragt, die der Sweep-Pfad still verwirft. Ohne eine öffentliche Schnittstelle, die sagt, **was ein Startpfad entgegennimmt**, lässt sich W1.1 nicht mechanisch halten.
+
+### P3.11 — Die Lauf-Argumente sind ein `SimpleNamespace` ⚠️ neu 2026-09-05
+
+> **Aus der Umsetzung von [P3.6](#p36--stabiler-vertrag-für-den-run-launcher--erledigt-2026-09-05).** Dessen Kriterium ist erfüllt — die Namen sind öffentlich —, aber der *Vertrag* ist weiterhin keiner: Er ist ein Namensraum ohne Form.
+
+**Befund:** `save_run_outputs`, `build_run_args` und `save_run_metadata` bekommen ihre Lauf-Argumente als `argparse.Namespace` bzw. `types.SimpleNamespace` und lesen daraus mit `getattr(args, "feld", False)`. `dashboard/run_launcher.py` baut diesen Namensraum an **zwei** Stellen von Hand, mit je fünfzehn Feldern. Eine Struktur gibt es nicht: Kein Modell beschreibt, was ein Startpfad liefern muss, und ein fehlendes Feld ist von einem abgeschalteten nicht zu unterscheiden.
+
+**Der Schaden ist eingetreten und dokumentiert, zweimal in derselben Datei.** `mock_llm` fehlte im handgebauten Namensraum, `save_run_metadata` fiel auf `False` zurück, und **jeder Dashboard-Lauf «Ohne Sprachmodell» wurde als vollwertiger LLM-Lauf protokolliert** — gefunden in der zweiten Gegenprobe zu P0.6. Der zweite Fall ist `llm_narrative`: Dort steht heute ein ausgeschriebenes `False` mit einem Kommentar, der erklärt, *warum* es ausgeschrieben dasteht («ein weggelassenes Feld ist von einem abgeschalteten nicht zu unterscheiden»). Dieser Kommentar ist der Befund.
+
+**Fundstellen:** [`src/run_simulation.py`](../src/run_simulation.py) (`build_run_args`, `save_run_outputs`), [`dashboard/run_launcher.py`](../dashboard/run_launcher.py) (zwei handgebaute `SimpleNamespace`), [`src/reporting/output_writer/metadata.py`](../src/reporting/output_writer/metadata.py) und [`provenance.py`](../src/reporting/output_writer/provenance.py) (`getattr`-Rückfälle).
+
+**Was zu tun ist:** Ein typisiertes Modell an dieser Grenze — **Invariante 4**, die für Agenten-Grenzen längst gilt und hier nicht. Aus dem stillen Rückfall wird damit ein `TypeError` beim Bauen: Wer ein Feld vergisst, erfährt es beim Start und nicht aus einem falschen Artefakt drei Wochen später. Die `getattr`-Rückfälle in den Schreibern fallen mit weg — sie sind nur da, weil der Namensraum formlos ist.
+
+**Fallstrick:** Ein Feld, dessen Rückfall eine *Aussage* ist (`no_run_scenario` bei einem Pfad, der nie eines erzeugt), braucht einen Vorgabewert mit Begründung — dieselbe Unterscheidung wie `AUSNAHMEN` in `tests/test_cost_pressure_source.py`. Wer alles zur Pflicht macht, erzeugt fünfzehn Felder, die jeder Aufrufer stumpf ausschreibt, und gewinnt nichts.
+
+**Fertig wenn:** Kein Artefakt-Schreiber liest ein Lauf-Argument mit `getattr(..., default)`, und ein Startpfad, der ein Feld vergisst, scheitert beim Bauen statt im Artefakt. Der Wächter ist ein AST-Durchlauf über die Schreiber — dieselbe Bauform wie bei Invariante 1.
+
+**Doku zieht mit:** `CLAUDE.md` (Invariante 4 — sie gilt dann auch für diese Grenze), `docs/handbuch/ref-ausgaben.md`, falls sich ein Feld in `run_metadata.json` ändert.
 
 ### P3.10 — 46 Zeichenketten, die die Konsole nicht schreiben kann ⚠️ neu 2026-09-05
 

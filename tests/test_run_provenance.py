@@ -299,25 +299,25 @@ class TestDerFingerabdruckWandertNicht:
 
 
 class TestMultiRunTraegtDenRechenmodus:
-    """Gegenprobe 2026-08-27: `_build_run_args` ließ sich `mock_llm` entziehen,
+    """Gegenprobe 2026-08-27: `build_run_args` ließ sich `mock_llm` entziehen,
     ohne dass ein Test rot wurde — dann verlöre jeder Teillauf eines Multi-Runs
     seinen Rechenmodus."""
 
     def test_run_args_carry_the_compute_mode(self) -> None:
-        from src.run_simulation import _build_run_args
+        from src.run_simulation import build_run_args
 
         base = _args(mock_llm=True, deterministic_only=False)
-        built = _build_run_args(base, run_index=2, seed=77)
+        built = build_run_args(base, run_index=2, seed=77)
         assert compute_mode(built) == "mock_llm"
         assert built.seed == 77
 
     def test_metadata_of_a_sub_run_says_mock(self, tmp_path) -> None:
-        from src.run_simulation import _build_run_args
+        from src.run_simulation import build_run_args
 
         state = build_initial_state()
         state.config.seed = 78
         metadata = _write(
-            tmp_path, state, _build_run_args(_args(mock_llm=True), run_index=2, seed=78)
+            tmp_path, state, build_run_args(_args(mock_llm=True), run_index=2, seed=78)
         )
         assert metadata["compute_mode"] == "mock_llm"
         assert metadata["seed"] == 78
