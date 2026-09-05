@@ -16,7 +16,7 @@ from src.llm.defaults import (
 )
 from src.market.market_feedback import resolve_market_feedback_config
 from src.models.property_models import BaselineTrajectory, StepFunctionTrajectory
-from src.models.state_models import Rahmenszenario
+from src.models.state_models import LLMConfig, Rahmenszenario
 from src.models.sweep_models import PropertyOverride, SweepConfig
 from src.orchestration.scenario_sweeps import (
     SWEEPS_DIR,
@@ -27,7 +27,7 @@ from src.orchestration.scenario_sweeps import (
 from src.orchestration.scenario_sweeps import (
     rahmenszenarien as _rahmenszenarien,
 )
-from src.validation import collect_state_errors, field_of, issue, validate_llm_settings
+from src.validation import collect_state_errors, field_of, issue
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -567,6 +567,37 @@ def resolve_config_paths(draft: ConfigDraft) -> dict[str, Path]:
     }
 
 
+def llm_config_from_draft(draft: ConfigDraft) -> LLMConfig | None:
+    """Welches Sprachmodell dieser Entwurf benutzt — oder `None`, wenn keines (P3.4).
+
+    **Die eine Ableitungsregel.** Sie hat zwei Leser: `prepare_simulation_state`
+    legt das Ergebnis in `state.config.llm` ab, und `run_launcher` baut seinen
+    `OllamaClient` daraus. Vorher hatte jeder seine eigene Ableitung, und
+    `state.config.llm` las überhaupt niemand — der Client entstand direkt aus
+    `RunLaunchConfig`, also stand im Zustand etwas anderes als im Lauf.
+
+    `None` heißt «ohne Sprachmodell»: `mock_llm` beantwortet die Frage, welches
+    Modell rechnet, mit «keines». Ein `LLMConfig` mit Vorgabewerten
+    zurückzugeben wäre hier eine Aussage über ein Modell, das nie gerufen wird.
+    """
+
+    if draft.mock_llm:
+        return None
+    # **Kein Rückfall auf einen Vorgabewert.** Ein leeres Modellfeld ist ein
+    # Befund und keine Gelegenheit, `llama3.2` einzusetzen: Der erste Anlauf
+    # dieser Funktion schrieb `draft.model.strip() or DEFAULT_MODEL`, und damit
+    # wurde aus «kein Modell angegeben» stillschweigend ein Lauf mit dem
+    # Vorgabemodell — dieselbe erfundene Vorgabe, die P1.9-W5.1 im Dashboard
+    # abgeräumt hat. Leer weitergegeben landet der Wert in `state.config.llm`,
+    # und `validate_config` meldet ihn.
+    return LLMConfig(
+        model=draft.model.strip(),
+        base_url=draft.base_url.strip(),
+        temperature=float(draft.temperature),
+        max_tokens=int(draft.max_tokens),
+    )
+
+
 def prepare_simulation_state(draft: ConfigDraft):
     """Build SimulationState with file paths, sweep and/or custom overrides."""
 
@@ -633,6 +664,17 @@ def prepare_simulation_state(draft: ConfigDraft):
     if draft.use_seed and draft.seed is not None:
         state.config.seed = int(draft.seed)
 
+    # **Das Sprachmodell gehört in den Zustand** (P3.4). Bis dahin las
+    # `state.config.llm` kein Laufpfad: Der Client entstand direkt aus
+    # `RunLaunchConfig`, im Zustand stand weiter, was in der Config-Datei stand,
+    # und `validate_draft` musste die Werte deshalb eigens danebenprüfen.
+    #
+    # Bei `mock_llm` bleibt das Feld unberührt — gerufen wird nichts, also
+    # beschreibt es nichts, und `compute_mode` sagt das im Artefakt.
+    llm = llm_config_from_draft(draft)
+    if llm is not None:
+        state.config.llm = llm
+
     return state
 
 
@@ -672,26 +714,22 @@ def validate_draft(draft: ConfigDraft) -> list[str]:
 
     errors = collect_state_errors(state)
 
-    # Die Sprachmodell-Felder des Drafts landen **nicht** im State — sie gehen
-    # über `RunLaunchConfig` direkt an den `OllamaClient` (das Durchschreiben
-    # nach `config.llm` ist P3.4). Ohne diese Zeilen prüfte die Oberfläche
-    # deshalb die Werte aus der Config-Datei statt die eingestellten: ein Draft
-    # mit temperature=5.0 und max_tokens=0 galt als fehlerfrei.
+    # **Hier stand bis P3.4 eine zweite Prüfung der Sprachmodell-Felder.** Sie
+    # war nötig, solange sie den State nicht erreichten: Der Client entstand
+    # direkt aus `RunLaunchConfig`, und `collect_state_errors` prüfte deshalb die
+    # Werte aus der Config-Datei statt die eingestellten — ein Draft mit
+    # temperature=5.0 galt als fehlerfrei.
     #
-    # Nur wenn sie auch benutzt werden: `mock_llm` bedeutet `MockLLM()`, und
-    # dann fasst niemand Modellname, Temperatur oder Antwortlänge an. Beide
-    # unteren Rechenmodi («Ohne Sprachmodell» und «Nur Zahlen») setzen das Feld,
-    # also darf ein leeres Modellfeld dort keinen Lauf verhindern.
-    if not draft.mock_llm:
-        errors.extend(
-            validate_llm_settings(
-                draft.model,
-                draft.temperature,
-                draft.max_tokens,
-                context="Technik",
-            )
-        )
-
+    # Seit `prepare_simulation_state` sie nach `state.config.llm` schreibt, prüft
+    # `collect_state_errors` genau die eingestellten Werte, und die zweite
+    # Prüfung lieferte jeden Befund **doppelt** — einmal als «config.llm: …» und
+    # einmal als «Technik: …», mit demselben Feld daran. Nachgemessen am
+    # 2026-09-05, deshalb ist sie weg.
+    #
+    # Die Bedingung, die sie trug, gilt weiter und liegt jetzt in
+    # `llm_config_from_draft`: Bei `mock_llm` fasst niemand Modellname,
+    # Temperatur oder Antwortlänge an, also darf ein leeres Modellfeld in beiden
+    # unteren Rechenmodi keinen Lauf verhindern.
     return errors
 
 

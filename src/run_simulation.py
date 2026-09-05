@@ -26,7 +26,7 @@ from src.llm.defaults import (
 )
 from src.logging_setup import configure_logging
 from src.models.llm_models import LLMIncident
-from src.models.state_models import Rahmenszenario
+from src.models.state_models import LLMConfig, Rahmenszenario
 from src.orchestration.checkpoint_manager import CheckpointManager, CheckpointVersionError
 from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 from src.reporting.output_writer import (
@@ -436,6 +436,39 @@ def _write_multi_run_summary(
 EXIT_KONFIGURATION = 2
 
 
+def _llm_config_from_args(args: argparse.Namespace) -> LLMConfig:
+    """Welches Sprachmodell dieser Aufruf benutzt — **die eine Ableitung** (P3.4).
+
+    Sie hat zwei Leser: den `OllamaClient` und `state.config.llm`. Vorher baute
+    jede der drei Client-Stellen ihre `OllamaConfig` selbst aus `args`, und
+    `state.config.llm` las niemand — im Zustand stand, was in der Config-Datei
+    stand, während der Lauf mit den Argumenten rechnete.
+
+    Das Gegenstück auf der Dashboard-Seite ist
+    `dashboard.config_catalog.llm_config_from_draft`. Zwei Oberflächen, zwei
+    Eingabeformen, aber je genau eine Ableitung — und `tests/test_llm_defaults.py`
+    hält beide gegen den Client, der daraus entsteht.
+    """
+
+    return LLMConfig(
+        model=args.model,
+        base_url=args.base_url,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens,
+    )
+
+
+def _ollama_client(llm_config: LLMConfig) -> OllamaClient:
+    return OllamaClient(
+        OllamaConfig(
+            base_url=llm_config.base_url,
+            model=llm_config.model,
+            temperature=llm_config.temperature,
+            max_tokens=llm_config.max_tokens,
+        )
+    )
+
+
 def _melde_befunde(kopf: str, befunde: list[str]) -> None:
     """Eine Fehlerliste auf `stderr`, wie das Dashboard sie im roten Kasten zeigt.
 
@@ -517,16 +550,22 @@ def _main() -> int:
     configure_logging(logging.WARNING if args.quiet else logging.INFO)
     load_env()
 
+    # **Einmal abgeleitet, zweimal benutzt** (P3.4): hier für den Client, unten
+    # für `state.config.llm`. Nach `load_env()`, weil die Umgebung aus
+    # `langgraph_studio/.env` sonst zu spät käme.
+    llm_config = _llm_config_from_args(args)
+
     # Diese drei gehen direkt an den `OllamaClient` und nie durch `validate_state`
     # — ohne die Prüfung hier käme ein `--temperature 99` erst beim Modell an.
     # Mit `--mock-llm` wird gar kein Client gebaut, dann wäre die Prüfung eine
     # Schranke vor einer Tür, durch die niemand geht.
     if not args.mock_llm:
         llm_errors = validate_llm_settings(
-            args.model,
-            args.temperature,
-            args.max_tokens,
+            llm_config.model,
+            llm_config.temperature,
+            llm_config.max_tokens,
             context="CLI",
+            base_url=llm_config.base_url,
         )
         if llm_errors:
             raise ValidationError(
@@ -546,14 +585,7 @@ def _main() -> int:
         if args.mock_llm:
             llm = MockLLM()
         else:
-            llm = OllamaClient(
-                OllamaConfig(
-                    base_url=args.base_url,
-                    model=args.model,
-                    temperature=args.temperature,
-                    max_tokens=args.max_tokens,
-                )
-            )
+            llm = _ollama_client(llm_config)
         run_dir = resolve_run_output_dir(args.run_id)
         result = generate_and_save_run_scenario(
             args.run_id,
@@ -586,14 +618,7 @@ def _main() -> int:
                 f"Requested local Ollama model '{model_tag}' not found in `ollama ps` output. Start it with `ollama run {model_tag}`."
             )
 
-        llm = OllamaClient(
-            OllamaConfig(
-                base_url=args.base_url,
-                model=args.model,
-                temperature=args.temperature,
-                max_tokens=args.max_tokens,
-            )
-        )
+        llm = _ollama_client(llm_config)
         print(
             f"Waiting up to {args.ollama_wait_seconds}s for local Ollama model '{args.model}' to become ready..."
         )
@@ -624,14 +649,7 @@ def _main() -> int:
                 f"Local Ollama model '{args.model}' did not become ready within {args.ollama_wait_seconds} seconds."
             )
     else:
-        llm = OllamaClient(
-            OllamaConfig(
-                base_url=args.base_url,
-                model=args.model,
-                temperature=args.temperature,
-                max_tokens=args.max_tokens,
-            )
-        )
+        llm = _ollama_client(llm_config)
 
     runner = SimulationRunner(
         llm=llm,
@@ -690,6 +708,13 @@ def _main() -> int:
         base_state.clock.max_ticks = int(args.rounds)
     if args.seed is not None:
         base_state.config.seed = int(args.seed)
+    if not args.mock_llm:
+        # **Der Zustand trägt jetzt, mit welchem Modell gerechnet wird** (P3.4).
+        # Vorher stand hier weiter der Wert aus `configs/simulation_config.json`,
+        # während der Lauf mit `--model` rechnete — und weil niemand das Feld
+        # las, fiel der Widerspruch nicht auf. Bei `--mock-llm` bleibt es
+        # unberührt: Gerufen wird nichts, also beschreibt es nichts.
+        base_state.config.llm = llm_config
 
     if args.runs == 1:
         run_id, run_dir, ck_path = _resolve_run_layout(args, repo_root)

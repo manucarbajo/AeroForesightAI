@@ -91,7 +91,31 @@ def test_empty_model_is_rejected():
     errors = validate_config(_config(llm=LLMConfig(model="")))
 
     assert "Modellname" in _messages(errors)
-    assert "config.llm" in _messages(errors)
+    # **«Sprachmodell», nicht «config.llm»** (P3.4): Seit die Einstellung nur
+    # noch an einer Stelle geprüft wird, liest jede Oberfläche diese Meldung —
+    # und «config.llm» ist der Name eines Datenfelds, nicht der einer
+    # Einstellung.
+    assert "Sprachmodell" in _messages(errors)
+
+
+def test_an_empty_endpoint_is_rejected():
+    """Mit P3.4 dazugekommen: vorher prüfte niemand den Endpunkt.
+
+    Ein leeres Feld ergab einen Aufruf gegen `/api/generate` **ohne Host** — ein
+    Verbindungsfehler, dem niemand die Ursache ansieht.
+    """
+
+    errors = validate_config(_config(llm=LLMConfig(base_url="")))
+
+    assert "Endpunkt" in _messages(errors)
+
+
+def test_an_endpoint_without_a_scheme_is_rejected():
+    """`127.0.0.1:11434` sieht richtig aus und ist keine URL."""
+
+    errors = validate_config(_config(llm=LLMConfig(base_url="127.0.0.1:11434")))
+
+    assert "Schema" in _messages(errors)
 
 
 def test_empty_description_is_allowed():
@@ -299,7 +323,9 @@ def test_llm_rules_live_in_one_place():
     from dashboard.config_catalog import ConfigDraft, validate_draft
     from src.validation import validate_llm_settings
 
-    direct = validate_llm_settings("llama3.2", 5.0, 2048, context="X")
+    direct = validate_llm_settings(
+        "llama3.2", 5.0, 2048, context="X", base_url="http://127.0.0.1:11434"
+    )
     from_draft = validate_draft(ConfigDraft(rounds=2, mock_llm=False, temperature=5.0))
     from_config = validate_config(_config(llm=LLMConfig(temperature=5.0)))
 
@@ -311,12 +337,12 @@ def test_llm_rules_live_in_one_place():
 
 @pytest.mark.parametrize(
     "context,expected",
-    [("config.llm", "config.llm:"), ("Technik", "Technik:"), ("CLI", "CLI:")],
+    [("Sprachmodell", "Sprachmodell:"), ("Technik", "Technik:"), ("CLI", "CLI:")],
 )
 def test_the_message_names_where_the_value_came_from(context, expected):
     from src.validation import validate_llm_settings
 
-    errors = validate_llm_settings("m", 9.0, 1, context=context)
+    errors = validate_llm_settings("m", 9.0, 1, context=context, base_url="http://127.0.0.1:11434")
 
     assert _messages(errors).startswith(expected)
 
@@ -352,9 +378,10 @@ class TestBefundeTragenIhrFeld:
         assert "simulation_name" in [field_of(entry) for entry in befunde]
 
     def test_the_llm_rules_name_their_own_fields(self) -> None:
-        befunde = validate_llm_settings("", 9.0, 0, context="Technik")
+        befunde = validate_llm_settings("", 9.0, 0, context="Technik", base_url="")
 
         assert sorted(field_of(entry) for entry in befunde) == [
+            "base_url",
             "max_tokens",
             "model",
             "temperature",

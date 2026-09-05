@@ -86,8 +86,16 @@ class LLMConfig(BaseModel):
     niemandem fiel es auf, weil der Wert nirgends ankam. `validation` prüfte ihn
     trotzdem, also eine Prüfung ohne Gegenstand.
 
-    Jetzt schreiben CLI und Dashboard hierher, der Client wird **daraus** gebaut,
-    und `run_metadata.json` beschreibt damit den Lauf, der wirklich lief.
+    Jetzt schreiben CLI und Dashboard hierher, und der Client wird **daraus**
+    gebaut — eine Quelle, zwei Leser statt zwei Quellen.
+
+    **Bei einem Lauf ohne Sprachmodell bleibt das Feld auf den Werten der
+    Config-Datei**, und das ist eine Regel und keine Lücke: Gerufen wurde nichts,
+    also beschreibt es nichts. Was ein Lauf wirklich benutzt hat, sagt
+    `compute_mode` in `run_metadata.json` — und dort stehen die vier
+    Modellfelder bei einem Mock-Lauf ausdrücklich auf `null`. Die Werte hier
+    ungeprüft mitzuschreiben würde außerdem einen Mock-Lauf an einer Temperatur
+    scheitern lassen, die niemand benutzt.
 
     `base_url` gehört seither dazu: Ein Modellname ohne Endpunkt beschreibt den
     Lauf nur halb, und der Endpunkt war das Feld, das am weitesten

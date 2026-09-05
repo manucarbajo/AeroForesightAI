@@ -265,6 +265,11 @@ FELD_SCHRITT: dict[str, int] = {
     # Felder ab — eine von Hand gepflegte Zahl läuft sonst still weg, und dann
     # sperrt «Weiter» im falschen Schritt.
     "model": 4,
+    # **Mit P3.4 dazugekommen**, und der Wächter hat es gemeldet, nicht ein
+    # Blick: Seit `validate_llm_settings` auch den Endpunkt prüft, kann ein
+    # Befund an `base_url` hängen — ohne diese Zeile landete er auf «Prüfen &
+    # Starten», also *nicht* in dem Schritt, in dem das Feld steht.
+    "base_url": 4,
     "temperature": 4,
     "max_tokens": 4,
 }

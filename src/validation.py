@@ -164,15 +164,21 @@ def validate_llm_settings(
     max_tokens: int,
     *,
     context: str,
+    base_url: str,
 ) -> list[str]:
     """Die Regeln für Modellname, Temperatur und Antwortlänge — an *einer* Stelle.
 
-    Diese Werte stehen im Projekt an drei Orten: in `simulation_config.json`
-    (`config.llm`), im Dashboard-Draft und in den CLI-Argumenten. Nur die letzten
-    beiden erreichen tatsächlich den `OllamaClient` — `config.llm` liest heute
-    kein Laufpfad (siehe P3.4). Geprüft werden trotzdem alle drei, aber gegen
-    dieselbe Regel: eine zweite Regelquelle wäre genau die Doppelung, die P0.4
-    und P0.5 an anderer Stelle abräumen.
+    Diese Werte standen im Projekt an drei Orten: in `simulation_config.json`
+    (`config.llm`), im Dashboard-Draft und in den CLI-Argumenten. **Seit P3.4 ist
+    es einer**: Beide Oberflächen schreiben nach `config.llm`, und der Client
+    entsteht daraus — geprüft wird damit genau das, womit gerechnet wird. Vorher
+    war `config.llm` die einzige Stelle, die *nicht* im Lauf ankam, und das
+    Dashboard musste seine Werte eigens danebenprüfen; jeder Befund stand
+    dadurch doppelt da.
+
+    *base_url* ist mit P3.4 dazugekommen — vorher prüfte niemand ihn, und ein
+    leeres Feld ergab einen Aufruf gegen `/api/generate` ohne Host: ein
+    Verbindungsfehler, dem niemand die Ursache ansieht.
 
     *context* sagt, wo der Wert herkommt, damit die Meldung zum Ort passt.
     """
@@ -181,6 +187,18 @@ def validate_llm_settings(
 
     if not str(model).strip():
         errors.append(issue(f"{context}: Modellname darf nicht leer sein", "model"))
+
+    endpunkt = str(base_url).strip()
+    if not endpunkt:
+        errors.append(issue(f"{context}: Endpunkt darf nicht leer sein", "base_url"))
+    elif not endpunkt.startswith(("http://", "https://")):
+        errors.append(
+            issue(
+                f"{context}: Endpunkt '{base_url}' braucht ein Schema "
+                "(http:// oder https://) — sonst erreicht der Aufruf keinen Host",
+                "base_url",
+            )
+        )
 
     if not (MIN_TEMPERATURE <= temperature <= MAX_TEMPERATURE):
         errors.append(
@@ -218,7 +236,14 @@ def validate_config(config: SimulationConfig) -> list[str]:
             config.llm.model,
             config.llm.temperature,
             config.llm.max_tokens,
-            context="config.llm",
+            # **«Sprachmodell» und nicht «config.llm»** (P3.4). Der
+            # Herkunftsort steht jetzt nur noch an einer Stelle, also liest
+            # *jede* Oberfläche diese Meldung — und «config.llm» ist der Name
+            # eines Datenfelds, nicht der einer Einstellung. Bis dahin sah ein
+            # Dashboard-Nutzer «Technik: …», weil die Oberfläche eigens
+            # danebenprüfte; genau diese Doppelprüfung ist weg.
+            context="Sprachmodell",
+            base_url=config.llm.base_url,
         )
     )
 

@@ -7,7 +7,12 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Callable
 
-from dashboard.config_catalog import ConfigDraft, PropertyEditState, prepare_simulation_state
+from dashboard.config_catalog import (
+    ConfigDraft,
+    PropertyEditState,
+    llm_config_from_draft,
+    prepare_simulation_state,
+)
 from dashboard.run_browser import generate_figures_for_run
 from src.llm import MockLLM, OllamaClient, OllamaConfig
 from src.llm.defaults import (
@@ -194,17 +199,27 @@ def launch_simulation(
             print(f"Warning: figure generation failed for {run_directory.name}: {exc}")
 
     def _build_llm():
-        if config.mock_llm:
+        """Der Client aus **derselben** Ableitung, die auch den Zustand füllt (P3.4).
+
+        `llm_config_from_draft` ist die eine Regel; `prepare_simulation_state`
+        legt ihr Ergebnis in `state.config.llm` ab, hier wird der Client daraus
+        gebaut. Vorher las `state.config.llm` niemand, und dieser Client entstand
+        direkt aus `RunLaunchConfig` — im Zustand stand damit etwas anderes als
+        im Lauf.
+        """
+
+        llm_config = llm_config_from_draft(launch_config_to_draft(config))
+        if llm_config is None:
             # `MockLLM` statt `get_llm()`: letzteres liefert `LocalOllama`, sobald
             # OLLAMA_MODEL gesetzt ist. Seit P0.1 heisst «Ohne Sprachmodell
             # rechnen» genau das, unabhaengig von der Umgebung.
             return MockLLM()
         return OllamaClient(
             OllamaConfig(
-                base_url=config.base_url,
-                model=config.model,
-                temperature=config.temperature,
-                max_tokens=config.max_tokens,
+                base_url=llm_config.base_url,
+                model=llm_config.model,
+                temperature=llm_config.temperature,
+                max_tokens=llm_config.max_tokens,
             )
         )
 

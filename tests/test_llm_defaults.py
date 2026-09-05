@@ -115,7 +115,8 @@ class TestEineQuelleFuerModellUndEndpunkt:
 
         zeichenketten = _laufzeit_zeichenketten(rueckfall)
 
-        assert ("llama3.2" in text for _, text in zeichenketten)
+        # (Kein `assert (... for ...)` hier — ein Generator ist immer wahr. Die
+        # Zusage steht in der Zeile darunter und prüft die *vollständige* Menge.)
         assert [t for _, t in zeichenketten] == ["llama3.2"], (
             "Der Docstring wurde mitgezählt oder die Zuweisung übersehen — im "
             "ersten Fall meldet der Wächter Erklärungen, im zweiten nichts."
@@ -236,3 +237,131 @@ class TestDieUmgebungWirktUeberall:
         monkeypatch.setenv("OLLAMA_MODEL", "ein-anderes-modell")
 
         assert OllamaConfig().model == "ein-anderes-modell" != vorher
+
+
+class TestDerZustandTraegtDasSprachmodell:
+    """P3.4, zweite Hälfte: `state.config.llm` wird wirklich benutzt.
+
+    **Das Feld war da und tat nichts.** `SimulationConfig.llm` las kein
+    Laufpfad — der echte Client entstand aus den CLI-Argumenten bzw. aus
+    `RunLaunchConfig`, und die einzigen Leser waren die Studio-Schema-Defaults.
+    Sichtbarster Beleg: `configs/simulation_config.json` führte `llama3`, während
+    überall sonst `llama3.2` stand, und niemandem fiel es auf, weil der Wert
+    nirgends ankam. `validation` prüfte ihn trotzdem — eine Prüfung ohne
+    Gegenstand.
+
+    Der Plan nennt drei Möglichkeiten und die schlechteste davon: «Halb
+    stehenlassen». Entschieden wurde **anschließen**.
+    """
+
+    @staticmethod
+    def _draft(**overrides):
+        from dashboard.config_catalog import default_config_draft
+
+        draft = default_config_draft()
+        draft.mock_llm = False
+        draft.rounds = 2
+        for name, wert in overrides.items():
+            setattr(draft, name, wert)
+        return draft
+
+    def test_der_entwurf_erreicht_den_zustand(self):
+        from dashboard.config_catalog import prepare_simulation_state
+
+        state = prepare_simulation_state(self._draft(model="mistral", temperature=0.25))
+
+        assert state.config.llm.model == "mistral"
+        assert state.config.llm.temperature == 0.25
+
+    def test_der_client_bekommt_genau_das_was_im_zustand_steht(self):
+        """**Die tragende Zusage.** Eine Quelle, zwei Leser — nicht zwei Quellen.
+
+        Gemessen wird nicht «beide rufen dieselbe Funktion» (das wäre
+        Codelektüre), sondern dass der gebaute Client Feld für Feld dasselbe
+        trägt wie der Zustand.
+        """
+
+        from dashboard.config_catalog import llm_config_from_draft, prepare_simulation_state
+        from src.llm import OllamaClient, OllamaConfig
+
+        draft = self._draft(model="mistral", base_url="http://127.0.0.1:9", temperature=0.25)
+        state = prepare_simulation_state(draft)
+        aus_draft = llm_config_from_draft(draft)
+        client = OllamaClient(
+            OllamaConfig(
+                base_url=aus_draft.base_url,
+                model=aus_draft.model,
+                temperature=aus_draft.temperature,
+                max_tokens=aus_draft.max_tokens,
+            )
+        )
+
+        assert client.config.model == state.config.llm.model
+        assert client.config.base_url == state.config.llm.base_url
+        assert client.config.temperature == state.config.llm.temperature
+        assert client.config.max_tokens == state.config.llm.max_tokens
+
+    def test_die_cli_leitet_dasselbe_ab(self):
+        from argparse import Namespace
+
+        from src.run_simulation import _llm_config_from_args, _ollama_client
+
+        args = Namespace(
+            model="mistral", base_url="http://127.0.0.1:9", temperature=0.25, max_tokens=128
+        )
+        llm_config = _llm_config_from_args(args)
+        client = _ollama_client(llm_config)
+
+        assert client.config.model == llm_config.model == "mistral"
+        assert client.config.base_url == llm_config.base_url
+        assert client.config.temperature == llm_config.temperature
+        assert client.config.max_tokens == llm_config.max_tokens
+
+    def test_ohne_sprachmodell_bleibt_das_feld_unberuehrt(self):
+        """**Eine Regel, keine Lücke.** Gerufen wird nichts, also beschreibt es nichts.
+
+        Die Werte ungeprüft mitzuschreiben hätte außerdem einen Mock-Lauf an
+        einer Temperatur scheitern lassen, die niemand benutzt — und genau das
+        war die bewusste Entscheidung, die vorher in `validate_draft` stand.
+        """
+
+        from dashboard.config_catalog import llm_config_from_draft, prepare_simulation_state
+        from src.config_loader import load_simulation_config
+        from src.llm.defaults import DEFAULT_MODEL
+
+        draft = self._draft(mock_llm=True, model="mistral", temperature=5.0)
+
+        assert llm_config_from_draft(draft) is None
+        state = prepare_simulation_state(draft)
+        assert state.config.llm.model == DEFAULT_MODEL != "mistral"
+        assert state.config.llm.temperature == load_simulation_config().llm.temperature
+
+    def test_ein_leeres_modellfeld_wird_gemeldet_und_nicht_ersetzt(self):
+        """Kein erfundener Vorgabewert — die Regel aus P1.9-W5.1.
+
+        Der erste Anlauf von `llm_config_from_draft` schrieb
+        `draft.model.strip() or DEFAULT_MODEL`, und damit wurde aus «kein Modell
+        angegeben» stillschweigend ein Lauf mit `llama3.2`. Aufgefallen ist es,
+        weil die alte Doppelprüfung in `validate_draft` diesen Fall gemeldet
+        hatte und die neue nicht mehr.
+        """
+
+        from dashboard.config_catalog import validate_draft
+
+        befunde = [str(b) for b in validate_draft(self._draft(model=""))]
+
+        assert any("Modellname" in b for b in befunde), befunde
+
+    def test_die_pruefung_meldet_jeden_befund_genau_einmal(self):
+        """Vorher stand jeder doppelt da — als «config.llm: …» und «Technik: …».
+
+        Solange die Werte den Zustand nicht erreichten, war die zweite Prüfung
+        nötig; seit sie es tun, war sie eine Doppelung. Gemessen am 2026-09-05.
+        """
+
+        from dashboard.config_catalog import validate_draft
+
+        befunde = [str(b) for b in validate_draft(self._draft(temperature=5.0, max_tokens=0))]
+
+        assert len(befunde) == 2, befunde
+        assert len({b.split(":", 1)[1] for b in befunde}) == 2
