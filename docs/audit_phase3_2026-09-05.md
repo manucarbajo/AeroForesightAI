@@ -320,6 +320,33 @@ mit einer benannten Toleranz und einer Wiederholung bei Rot, oder im Plan
 festhalten, dass das Kriterium **einmal** erreicht wurde und die Sperrklinke bei
 900 steht. Die zweite Variante ist ehrlicher und billiger.
 
+> **Behoben noch am 2026-09-05 (P3.16) — und gegen die Empfehlung dieses
+> Abschnitts.** Der Einwand gegen die erste Variante war richtig, die
+> Schlussfolgerung nicht: Aus «ein Wächter, der flackert, wird nicht gelaufen»
+> folgt nicht, den **Maßstab** zu lockern, sondern das **Rauschen aus der
+> Messung** zu nehmen. `SICHTBAR_MAX_MS = 500` ist jetzt die Zusage im Wortlaut;
+> gemessen wird jeder Schritt **dreimal** und gewertet die **schnellste**
+> Messung, weil Last eine Messung nur langsamer machen kann. Durchgelassen wird
+> 550 = 500 + 10 % benannte Toleranz — und die Toleranz ist gemessen, nicht
+> vorsichtshalber: Zwei Durchgänge an derselben Codefassung lieferten für «Prüfen
+> & Starten» bei 1024 px **507** und **476 ms**.
+>
+> **Die Regression wird nachweislich weiter gefunden** (Mutation mit dem echten
+> Vor-P3.12-Zustand): rot an beiden Breiten, 606 bis 1489 ms. Der Deckel hat also
+> Reserve nach beiden Seiten — anders als die 900, die genau diese Regression
+> durchgelassen hätten.
+>
+> **Zwei Nebenergebnisse, beide über Wächter:** Erstens hat die im selben Commit
+> gebaute Sperrklinke gegen *verfallene Ausnahmen* sofort zugeschlagen — der
+> erste Anlauf trug für Schritt 6 eine Ausnahme von 520 ms ein, der zweite
+> Durchgang maß 476, und die Ausnahme flog wieder heraus. Zweitens war die
+> **naheliegende Mutation untauglich**: `layout()` wieder eifrig zu füllen —
+> genau die Mutation, mit der Teil D dieses Audits P3.12 geprüft hat — bleibt
+> grün, weil der Routing-Callback den Wirt unmittelbar danach wieder leert. Für
+> die *strukturelle* Zusage ist sie richtig, für die *Kosten* reproduziert sie
+> nichts. **Eine Mutation prüft, was sie ändert — nicht, was sie zu ändern
+> vorgibt.**
+
 ### B6 · Der Browser-Wächter ist wieder rot — C5 gilt als behoben und ist es nicht ⛔ **schwer, vorbestehend**
 
 **Nicht aus Phase 3, und das ist nachgemessen und nicht angenommen:** Derselbe
@@ -565,11 +592,11 @@ ein rotes Ergebnis dort ist eine gute Nachricht.
 | 🔶 | **B1** Der Rückfall auf `llama3.2` lebt eine Ebene höher — **behoben (P3.13)** | `dashboard/run_launcher.py:144` | Preflight und Lauf widersprechen sich bei leerem Modellfeld; das Artefakt nennt ein Modell, das niemand gewählt hat |
 | 🔶 | **B2** Der Ausweichpfad des Schreibers braucht `.buffer` — **behoben (P3.14)** | `src/run_simulation.py:556` | Aus `UnicodeEncodeError` wird `AttributeError` — im Paket über Fehlerwege; alle drei Tests teilen die Annahme |
 | 🔶 | **B3** Annotation widerspricht dem Rumpf — **behoben (P3.15)**, Klasse offen als P4.4 | `src/orchestration/scenario_sweeps.py:232` | `SimpleNamespace` statt `RunArgs`, `sweep_id` unbenutzt, toter Import bleibt für `ruff` unsichtbar |
-| 🔶 | **B4** Das 500-ms-Kriterium hat keinen Wächter auf seiner Höhe | `tests/test_web_overflow.py:1732` | Ein Rückfall auf 800 ms bliebe grün, während der Plan das Kriterium als erfüllt führt |
+| 🔶 | **B4** Das 500-ms-Kriterium hat keinen Wächter auf seiner Höhe — **behoben (P3.16)** | `tests/test_web_overflow.py:1732` | Ein Rückfall auf 800 ms bliebe grün, während der Plan das Kriterium als erfüllt führt |
 | 🔷 | **B5a** `availability` nennt ein unkonfiguriertes Modell — **behoben (P3.13)** | `compute_mode.py:116` | Nutzermeldung erfindet `llama3.2` |
 | 🔷 | **C1** «46» nur ohne Docstrings | Plan, `_melde_befunde` | Wer nachzählt, bekommt 55 |
 | 🔷 | **C2** Kopfzeile klein geschrieben | `validation.py:661` | erste Zeile eines CLI-Fehlers; vorbestehend |
-| 🔷 | **C3** Docstring nennt Zahlen von vor P3.12 | `test_web_overflow.py:1855` | sagt, das Kriterium sei verfehlt |
+| 🔷 | **C3** Docstring nennt Zahlen von vor P3.12 — **behoben (P3.16)** | `test_web_overflow.py:1855` | sagt, das Kriterium sei verfehlt |
 | 🔷 | **C4** Verweis auf `save_start.py` | `projektplan.md:651` | Datei existiert nicht; vorbestehend |
 
 **Aus Phase 3 selbst: kein ⛔.** Zum Vergleich: Das Audit der Phase 2 fand drei
