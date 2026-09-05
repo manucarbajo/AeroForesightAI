@@ -324,6 +324,45 @@ def template_for(mode: str | None = LIGHT) -> str:
     return TEMPLATE_NAMES[normalise(mode)]
 
 
+#: Der untere Rand jeder Figur und der Abstand der Legende darunter (P3.7).
+#:
+#: **Der untere Rand traegt drei Beschriftungen**, und darin liegt der Befund:
+#: Achsenbeschriftung, Achsentitel und -- seit dem 2026-09-05 -- die Legende.
+#: Vorher lag die Legende **oben** (`y=1.02`) und teilte sich den 56 px hohen
+#: Rand mit dem Titel; gemessen ueberschnitten sich beide in **allen vier
+#: Aussagen und beiden Modi** -- 11 px im Regelfall, 21 px bei der 105 px hohen
+#: Legende von «Buchungsrate nach Profil-Segment», die den Titel weitgehend
+#: zudeckte.
+#:
+#: **Drei Wege sind gemessen und verworfen** -- wer hier etwas aendert, faengt
+#: nicht bei ihnen an:
+#:
+#: 1. **Groesserer oberer Rand** (56 auf 92 px): behebt drei von vier Aussagen.
+#:    Ein fester Rand kann eine Legende variabler Hoehe grundsaetzlich nicht
+#:    auffangen -- das ist keine Frage der Zahl.
+#: 2. **`title.automargin`**, der dafuer vorgesehene Mechanismus: macht es
+#:    schlimmer. Der Titel zieht den Rand auf, die Legende sitzt aber relativ
+#:    zur Zeichenflaeche und wandert mit nach unten.
+#: 3. **Legende am Container festnageln** (`yref="container"`, `y=0`): loest die
+#:    Ueberlappung, nimmt die Legende aber aus Plotlys Automargin heraus. Der
+#:    Rand muss dann den schlechtesten Fall abdecken -- gemessen 148 px, und das
+#:    kostete im Regelfall 100 px Zeichenflaeche fuer eine 29 px hohe Legende.
+#:
+#: **Was gilt:** Die Legende steht in Papierkoordinaten unter der
+#: Zeichenflaeche. Damit zieht Plotly den unteren Rand selbst auf, so weit die
+#: Legende ihn braucht -- `LEGENDE_RAND` ist deshalb nur die Untergrenze fuer
+#: eine Figur ohne Legende und nicht der reservierte Platz.
+#:
+#: **`LEGENDE_Y` ist gemessen, nicht gewaehlt.** Bei -0,22 lag die hohe Legende
+#: 5 px im **Achsentitel** -- die Ueberlappung war getauscht, nicht behoben. Bei
+#: -0,30 bleiben 8 bis 25 px Luft zum Achsentitel und 35 bis 52 px zur
+#: Achsenbeschriftung. Wer eine der beiden Zahlen anfasst, laesst Teil 8 von
+#: `tests/test_web_overflow.py` laufen: Er misst alle drei Abstaende in beiden
+#: Modi, und der Achsentitel ist der, den man vergisst.
+LEGENDE_RAND = 48
+LEGENDE_Y = -0.30
+
+
 def _build_template(mode: str) -> go.layout.Template:
     tone = PALETTE[mode]
     axis = dict(
@@ -336,6 +375,7 @@ def _build_template(mode: str) -> go.layout.Template:
         ticks="outside",
         tickcolor=tone["grid"],
         ticklen=4,
+        automargin=True,
     )
     return go.layout.Template(
         layout=go.Layout(
@@ -349,7 +389,10 @@ def _build_template(mode: str) -> go.layout.Template:
                 xanchor="left",
                 pad=dict(b=12),
             ),
-            margin=dict(l=56, r=24, t=56, b=48),
+            # Der obere Rand traegt den Titel **allein** (P3.7); den unteren zieht
+            # Plotly fuer die Legende selbst auf, `LEGENDE_RAND` ist nur die
+            # Untergrenze. Deshalb `t` als Zahl und `b` als benannte Konstante.
+            margin=dict(l=56, r=24, t=56, b=LEGENDE_RAND),
             hoverlabel=dict(
                 bgcolor=tone["surface-raised"],
                 bordercolor=tone["border"],
@@ -359,8 +402,16 @@ def _build_template(mode: str) -> go.layout.Template:
                 bgcolor="rgba(0,0,0,0)",
                 font=dict(family=FONT_BODY, size=12, color=tone["text-muted"]),
                 orientation="h",
-                yanchor="bottom",
-                y=1.02,
+                # **Unter der Zeichenflaeche, nicht ueber ihr** (P3.7). Oben
+                # teilte sie sich den Rand mit dem Titel und deckte ihn zu; unten
+                # hat der Titel den oberen Rand fuer sich, und die Legende waechst
+                # in einen Rand, den Plotly fuer sie aufzieht. Der Bezug bleibt
+                # bewusst `paper` (Voreinstellung): Nur dann greift das Automargin
+                # -- am Container festgenagelt muesste `LEGENDE_RAND` den
+                # schlechtesten Fall abdecken und kostete im Regelfall 100 px
+                # Zeichenflaeche.
+                yanchor="top",
+                y=LEGENDE_Y,
                 xanchor="left",
                 x=0,
             ),

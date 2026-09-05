@@ -2327,7 +2327,7 @@ Die gemessene «Einkommenselastizität» von **+0,69** war damit kein Verhaltens
 
 Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes Paket ist klein; zusammen entscheiden sie, ob die Engine trägt.
 
-### P3.7 — Titel und Legende teilen sich einen Rand ⚠️ neu 2026-08-31, zwei Versuche verworfen
+### P3.7 — Titel und Legende teilen sich einen Rand ✅ erledigt 2026-09-05 (drei Versuche verworfen)
 
 **Befund:** In den Plotly-Diagrammen des Dashboards überlappen sich Titel und Legende. Beide leben im oberen Rand: Die Legende steht waagerecht bei `y=1.02` über der Zeichenfläche, der Titel im selben `margin.t=56`. Gemessen am laufenden System: Titel y 681–702, erster Legendeneintrag y 696–715 — **6 px Überschneidung**. Bei fünf Legendeneinträgen («Buchungsrate nach Profil-Segment») wird die Legende **105 px** hoch und deckt den Titel weitgehend zu.
 
@@ -2340,13 +2340,21 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 1. **Größeres `margin.t` plus `title.y=1`** (56 → 92 px): behebt es für drei der vier Aussagen. Die vierte hat eine Legende, die auf 105 px umbricht, und läuft weiterhin in den Titel. **Ein fester Rand kann eine Legende variabler Höhe nicht auffangen** — das ist keine Frage der Zahl.
 2. **`title.automargin=True`**, der dafür vorgesehene Plotly-Mechanismus: macht es **schlimmer**. Danach überlappten *beide* Diagramme der Aussage 3 statt einem. Der Titel zieht den Rand auf, die Legende sitzt aber relativ zur Zeichenfläche und wandert mit nach unten.
 
-**Was zu tun ist:** Die Legende gehört **unter** die Zeichenfläche (`yanchor="top"`, negatives `y`, größeres `margin.b`). Dann hat der Titel den oberen Rand für sich, und die Legende wächst nach unten, wo Platz ist. **Das ist eine Gestaltungsentscheidung für jedes Diagramm im Produkt**, nicht eine Zeile Reparatur — deshalb ein eigenes Paket und nicht am Rand von P2.6 erledigt.
+**Umgesetzt am 2026-09-05, und der Befund war größer als gemeldet:** Gemessen am laufenden System überschnitten sich Titel und Legende in **allen** vier Aussagen und **beiden** Modi — **12 Überschneidungen** über sechs Diagramme, 11 px im Regelfall und 21 px bei «Buchungsrate nach Profil-Segment». Der Plan nannte 6 px an einem Beispiel; die Zahl war zu klein, weil sie an einem Diagramm erhoben war.
 
-**Fallstrick:** Die x-Achsenbeschriftung lebt bereits unten. Wer die Legende dorthin setzt, prüft beide zusammen, sonst tauscht er eine Überlappung gegen die nächste.
+**Die Legende steht jetzt unter der Zeichenfläche** (`yanchor="top"`, `y=-0.30`), der Titel hat den oberen Rand für sich. Zwei Zahlen tragen das, beide in [`dashboard/web/theme.py`](../dashboard/web/theme.py) als benannte Konstanten mit ihrer Herleitung: `LEGENDE_RAND` (48 px) und `LEGENDE_Y` (−0,30).
 
-**Fertig wenn:** Kein Diagramm des Dashboards überlappt Titel und Legende — gemessen im Browser über **alle** vier Aussagen und beide Modi, nicht an einem Beispiel. Der Wächter gehört zu `tests/test_web_overflow.py`, der ohnehin als einziger einen echten Browser hat.
+**Ein dritter Versuch ist dazugekommen und ebenfalls verworfen** — er sah nach der saubersten Lösung aus und ist es nicht:
 
-**Doku zieht mit:** `CLAUDE.md` (Farb- und Layoutfundament), falls sich die Regel ändert.
+3. **Legende am Container festnageln** (`yref="container"`, `y=0`, `yanchor="bottom"`): löst die Überlappung deterministisch, weil die Unterkante fest steht. Nimmt die Legende damit aber aus Plotlys Automargin heraus — der untere Rand muss dann den schlechtesten Fall abdecken. Gemessen 148 px, und das kostete im Regelfall **100 px Zeichenfläche** für eine 29 px hohe Legende (216 statt 316 px Zeichenhöhe bei 420 px Figurenhöhe). Bei 88 px lief die hohe Legende 21 px in die Achsenbeschriftung: **Plotly zieht den Rand für eine container-bezogene Legende nicht auf.** Mit Papierbezug tut es das.
+
+**Der Fallstrick ist eingetreten, und der Wächter hat ihn gefunden**, nicht ein Blick aufs Bild: Bei `y=-0.22` war die Titel-Überlappung weg und die hohe Legende lag **5 px im Achsentitel** — eine Überlappung gegen die nächste getauscht. Bei −0,30 bleiben 8 bis 25 px Luft zum Achsentitel und 35 bis 52 px zur Achsenbeschriftung. Deshalb misst der Wächter **drei** Abstände, nicht einen.
+
+**Nebenwirkung, bewusst behalten:** `automargin=True` auf beiden Achsen. Ohne es zieht Plotly den unteren Rand nicht auf, und die Legende landet außerhalb der Figur. Der Preis ist eine Zeichenfläche, die je nach Legendenhöhe unterschiedlich hoch ist — richtig so: Eine Figur mit fünf Reihen braucht mehr Beschriftungsfläche als eine mit zwei.
+
+**Fertig, gemessen:** Kein Diagramm des Dashboards überlappt Titel und Legende — Teil 8 von [`tests/test_web_overflow.py`](../tests/test_web_overflow.py) misst alle vier Aussagen, alle fünf Bereiche, beide Modi und beide Breiten: **16 Zusagen, alle grün**. Dazu `test_the_legend_guard_would_notice_a_relapse`, der die Legende per `Plotly.relayout` an ihren alten Platz zurückschiebt und prüft, dass der Wächter das meldet — ein Wächter, der nie etwas sieht, könnte auch blind sein.
+
+**Doku ist mitgezogen:** `CLAUDE.md` (Regel 4 des Dash-Abschnitts nennt jetzt auch die Layoutseite des Templates).
 
 ### P3.8 — Was ein Tick bedeutet, ist dreimal verschieden entschieden ⚠️ neu 2026-08-31
 

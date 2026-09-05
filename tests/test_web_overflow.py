@@ -1489,3 +1489,168 @@ def test_the_symbol_guard_would_notice_a_relapse(page):
         "Der Wächter übersieht ein Symbol außerhalb des Teilsatzes — dann steht "
         "beim nächsten Mal wieder ein Wort im Bild."
     )
+
+
+# --- Teil 8: Titel und Legende teilen sich keinen Rand (P3.7) ----------------
+#
+# **Der Befund war sichtbar und stand trotzdem monatelang da.** In allen vier
+# Aussagen und beiden Modi überschnitten sich Titel und Legende: 11 px im
+# Regelfall, 21 px bei «Buchungsrate nach Profil-Segment», dessen fünf Einträge
+# die Legende **105 px** hoch machen und den Titel weitgehend zudecken.
+# Gemessen am 2026-09-05, zwölf Überschneidungen über sechs Diagramme.
+#
+# **Zwei Reparaturen sind vorher gemessen und verworfen worden** — beide stehen
+# in P3.7 und sind hier festgehalten, damit sie niemand ein drittes Mal
+# versucht: Ein größerer oberer Rand kann eine Legende variabler Höhe
+# grundsätzlich nicht auffangen, und `title.automargin` macht es schlimmer.
+#
+# **Was hier gemessen wird, sind drei Abstände, nicht einer.** Die Legende unter
+# die Zeichenfläche zu setzen tauscht sonst eine Überlappung gegen die nächste:
+# Unten wohnen bereits die Achsenbeschriftung und der Achsentitel. Genau das
+# ist beim Einstellen passiert — bei einem Abstand von 0,22 Zeichenflächenhöhen
+# lag die hohe Legende 5 px im Achsentitel. Der Wächter hätte es gefunden, ein
+# Blick auf ein Beispieldiagramm nicht.
+#
+# **Kein Bildvergleich.** Gemessen werden die Kästen der vier Beschriftungen
+# gegeneinander — ein Bildvergleich wäre bei jeder Schriftaktualisierung rot,
+# ohne dass etwas überlappt.
+
+#: Läuft im Browser. Gibt je Plotly-Diagramm die Lage der vier Beschriftungen
+#: und ihre Überschneidungen zurück. `null` heißt «gibt es in dieser Figur
+#: nicht» — ein Diagramm ohne Legende kann keine Überlappung haben.
+_BESCHRIFTUNGEN = """
+() => {
+  const kasten = (el) => {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) return null;
+    return { top: Math.round(r.top), bottom: Math.round(r.bottom), hoehe: Math.round(r.height) };
+  };
+  const ueber = (a, b) =>
+    a && b ? Math.round(Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)) : null;
+
+  const out = [];
+  for (const plot of document.querySelectorAll('.js-plotly-plot')) {
+    if (!plot.checkVisibility || !plot.checkVisibility({ checkVisibilityCSS: true })) continue;
+    const legende = kasten(plot.querySelector('g.legend'));
+    if (!legende) continue;  // ohne Legende kein Konflikt
+    const titel = kasten(plot.querySelector('.gtitle'));
+    const achsentitel = kasten(plot.querySelector('.xtitle'));
+    const marken = kasten(plot.querySelector('.xaxislayer-above'));
+    out.push({
+      name: (plot.querySelector('.gtitle')?.textContent || '(ohne Titel)').trim().slice(0, 52),
+      legende: legende,
+      abstaende: {
+        Titel: ueber(titel, legende),
+        Achsentitel: ueber(achsentitel, legende),
+        Achsenbeschriftung: ueber(marken, legende),
+      },
+    });
+  }
+  return out;
+}
+"""
+
+
+def _legendenkonflikte(page) -> list[str]:
+    """Jede Beschriftung, die in die Legende hineinragt — als lesbare Zeile."""
+
+    page.wait_for_timeout(RUHE_MS)
+    befunde: list[str] = []
+    for figur in page.evaluate(_BESCHRIFTUNGEN):
+        for wer, ueber in figur["abstaende"].items():
+            if ueber is not None and ueber > 0:
+                befunde.append(
+                    f"«{figur['name']}»: {wer} überschneidet die Legende um {ueber} px "
+                    f"(Legende {figur['legende']['hoehe']} px hoch, "
+                    f"y {figur['legende']['top']}–{figur['legende']['bottom']})"
+                )
+    return befunde
+
+
+#: Die vier Aussagen aus `views/figures.py`. Sie stehen hier als Namen und nicht
+#: als Zählung, damit die Meldung sagt, *welche* Aussage bricht.
+AUSSAGEN = [
+    "1 · Preis und Nachfrage",
+    "2 · Was die Politik bewirkt",
+    "3 · Wer noch fliegt",
+    "4 · Die Szenarien nebeneinander",
+]
+
+
+def _oeffne_figures(page) -> None:
+    """Zum Reiter «Figures» der Ergebnisse — dort wohnen die vier Aussagen."""
+
+    page.goto(page.basis + "runs", wait_until="networkidle")
+    page.wait_for_selector(".af-viewbar__item")
+    leiste = page.locator(".af-viewbar__item")
+    for index in range(leiste.count()):
+        if "Figures" in leiste.nth(index).inner_text():
+            leiste.nth(index).click()
+            break
+    else:  # pragma: no cover - die Leiste ohne «Figures» wäre ein anderer Befund
+        pytest.fail("Der Reiter «Figures» fehlt in der Ergebnisleiste")
+    page.wait_for_selector("#figures-tabs", timeout=15_000)
+
+
+def _auf_dunkel(page) -> None:
+    page.click(f"#{'theme-toggle'}")
+    page.wait_for_timeout(RUHE_MS)
+
+
+class TestTitelUndLegendeTeilenSichKeinenRand:
+    """Die Zusage von P3.7: **alle** vier Aussagen, **beide** Modi."""
+
+    @pytest.mark.parametrize("modus", ["hell", "dunkel"])
+    def test_no_statement_overlaps_its_own_labels(self, page, modus):
+        _oeffne_figures(page)
+        if modus == "dunkel":
+            _auf_dunkel(page)
+            _oeffne_figures(page)
+
+        reiter = page.locator("#figures-tabs .af-tab")
+        assert reiter.count() >= len(
+            AUSSAGEN
+        ), f"Gezählt {reiter.count()} Aussagen, erwartet mindestens {len(AUSSAGEN)}"
+        for index, name in enumerate(AUSSAGEN):
+            reiter.nth(index).click()
+            befunde = _legendenkonflikte(page)
+            assert not befunde, f"{name} bei {page.breite} px, {modus}:\n  " + "\n  ".join(befunde)
+
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_no_other_area_overlaps_either(self, page, name):
+        """Die Zusage gilt fürs ganze Dashboard, nicht nur für die vier Aussagen."""
+
+        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
+        befunde = _legendenkonflikte(page)
+
+        assert not befunde, f"«{name}» bei {page.breite} px:\n  " + "\n  ".join(befunde)
+
+
+def test_the_legend_guard_would_notice_a_relapse(page):
+    """Ein Wächter, der nie etwas sieht, könnte auch blind sein.
+
+    Nachgestellt wird genau der alte Zustand: die Legende waagerecht über der
+    Zeichenfläche, im selben Rand wie der Titel. Gemessen wird am laufenden
+    Diagramm, nicht an einer Attrappe — `Plotly.relayout` verschiebt sie, ohne
+    dass dafür jemand das Template ändern müsste.
+    """
+
+    _oeffne_figures(page)
+    page.locator("#figures-tabs .af-tab").nth(0).click()
+    page.wait_for_timeout(RUHE_MS)
+    assert not _legendenkonflikte(page), "Vor der Nachstellung ist schon etwas kaputt"
+
+    page.evaluate("""
+        () => {
+          for (const plot of document.querySelectorAll('.js-plotly-plot')) {
+            if (!plot.querySelector('g.legend')) continue;
+            window.Plotly.relayout(plot, {'legend.yanchor': 'bottom', 'legend.y': 1.02});
+          }
+        }
+        """)
+
+    assert _legendenkonflikte(page), (
+        "Der Wächter übersieht eine Legende, die im Rand des Titels sitzt — "
+        "dann ist seine Zusage keine."
+    )
