@@ -19,6 +19,7 @@ from src.backtest.rahmen import ZUORDNUNG, historischer_rahmen
 from src.backtest.reihen import REPO_ROOT, laden, monat_je_tick
 from src.config_loader import build_initial_state
 from src.llm.studio_helpers import MockLLM
+from src.logging_setup import stdio_auf_utf8
 from src.models.state_models import Rahmenszenario
 from src.orchestration.scenario_sweeps import apply_sweep_overrides
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
@@ -288,4 +289,8 @@ def _bericht(ergebnisse: dict[str, object], gegenprobe: dict[str, object]) -> st
 
 
 if __name__ == "__main__":
+    # Der Prozess sichert seine Ausgabe, bevor er das erste Zeichen schreibt
+    # (P3.10): Umgeleitet spricht `sys.stdout` unter Windows cp1252, und dann
+    # wirft jede Meldung mit `→`, `≥` oder `₂` statt zu erscheinen.
+    stdio_auf_utf8()
     sys.exit(main())

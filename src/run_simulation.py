@@ -50,7 +50,7 @@ from src.llm.defaults import (
     DEFAULT_MODEL,
     DEFAULT_TEMPERATURE,
 )
-from src.logging_setup import configure_logging
+from src.logging_setup import configure_logging, stdio_auf_utf8
 from src.models.llm_models import LLMIncident
 from src.models.run_models import RunArgs, run_args_from
 from src.models.state_models import LLMConfig, Rahmenszenario
@@ -589,6 +589,11 @@ def main() -> int:
 
 
 def _main() -> int:
+    # **Vor dem ersten Zeichen** (P3.10): Ist die Ausgabe umgeleitet, spricht
+    # `sys.stdout` unter Windows cp1252, und jede Meldung mit `→`, `≥` oder `₂`
+    # wirft einen `UnicodeEncodeError` statt zu erscheinen. Auf einer echten
+    # Konsole ändert der Aufruf nichts — sie spricht schon UTF-8.
+    stdio_auf_utf8()
     args = _parse_args()
     # Vor allem anderen: ohne diesen Aufruf hat das Projekt keinen Log-Handler,
     # und jede Warnung unterhalb von WARNING verschwindet spurlos. `--quiet`

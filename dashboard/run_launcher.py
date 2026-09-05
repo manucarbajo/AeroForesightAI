@@ -20,7 +20,7 @@ from src.llm.defaults import (
     DEFAULT_MODEL,
     DEFAULT_TEMPERATURE,
 )
-from src.logging_setup import configure_logging, progress_logging
+from src.logging_setup import configure_logging, progress_logging, stdio_auf_utf8
 from src.models.run_models import RunArgs
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
@@ -466,6 +466,11 @@ def launch_simulation(
     # der Aufruf hier bindet den Konsolen-Handler an das *echte* stdout, bevor
     # der Tee unten `sys.stdout` umbiegt. Sonst liefe jede Zeile zweimal durch
     # das Fortschrittsfenster.
+    # **Vor dem Tee** (P3.10). Er schreibt *zuerst* auf die echte Konsole und
+    # ruft erst danach den Fortschritts-Callback: Wirft der erste Schritt an
+    # einem cp1252-Strom, sieht das Fortschrittsfenster die Zeile nie, und die
+    # Ausnahme läuft in den Lauf hinein. Gemessen am 2026-09-05.
+    stdio_auf_utf8()
     configure_logging()
 
     if on_progress is None:

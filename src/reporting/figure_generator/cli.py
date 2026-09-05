@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from src.logging_setup import stdio_auf_utf8
 from src.reporting.figure_generator.global_figures import DEFAULT_FIGURES_DIR, generate_all_figures
 from src.reporting.figure_generator.run_figures import generate_run_figures
 from src.reporting.output_writer import OUTPUT_DIR
@@ -76,4 +77,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # Der Prozess sichert seine Ausgabe, bevor er das erste Zeichen schreibt
+    # (P3.10): Umgeleitet spricht `sys.stdout` unter Windows cp1252, und dann
+    # wirft jede Meldung mit `→`, `≥` oder `₂` statt zu erscheinen.
+    stdio_auf_utf8()
     raise SystemExit(main())

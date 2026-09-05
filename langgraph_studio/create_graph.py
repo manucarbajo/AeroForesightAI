@@ -11,6 +11,12 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT.parent) not in sys.path:
     sys.path.insert(0, str(ROOT.parent))
 
+# **Nach dem `sys.path`-Eingriff, nicht davor.** Dieses Skript wird auch aus
+# einem fremden Arbeitsverzeichnis gestartet; oben stehend scheitert der Import
+# dort mit `ModuleNotFoundError: No module named 'src'`. Beim ersten Anlauf von
+# P3.10 ist genau das passiert.
+from src.logging_setup import stdio_auf_utf8  # noqa: E402
+
 
 def build_static_graph() -> dict:
     """Die statische Topologie — aber erst, wenn der echte Graph baut (P3.3).
@@ -99,4 +105,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # Der Prozess sichert seine Ausgabe, bevor er das erste Zeichen schreibt
+    # (P3.10): Umgeleitet spricht `sys.stdout` unter Windows cp1252, und dann
+    # wirft jede Meldung mit `→`, `≥` oder `₂` statt zu erscheinen.
+    stdio_auf_utf8()
     raise SystemExit(main())

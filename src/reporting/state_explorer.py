@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from src.llm import OllamaClient, OllamaConfig
+from src.logging_setup import stdio_auf_utf8
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.reporting.output_writer import OUTPUT_DIR
 
@@ -562,6 +563,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # **Diese CLI ist der schlimmste Fall von P3.10.** Der Vorbehalt einer
+    # geprüften Antwort beginnt mit `⚠️` (P2.5), und `Antwort.__str__` hängt ihn
+    # an — bei umgeleiteter Ausgabe warf `print` damit einen
+    # `UnicodeEncodeError` statt zu warnen: ausgerechnet die Marke, die vor
+    # unbelegten Zahlen schützt, riss den Aufruf ab. Dazu kommen die Antworten
+    # des Modells selbst, die jedes Zeichen enthalten können.
+    stdio_auf_utf8()
     args = _build_parser().parse_args(argv)
     context = load_run_context(
         args.run_id,

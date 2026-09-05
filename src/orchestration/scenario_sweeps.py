@@ -22,12 +22,26 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-
+# **Hier stand bis P3.10 ein Import-Seiteneffekt** (2026-09-05):
+#
+#     if hasattr(sys.stdout, "reconfigure"):
+#         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+#
+# Zwei Zeilen auf Modulebene, die einen **prozessglobalen** Zustand ändern —
+# ausgelöst dadurch, dass irgendjemand irgendetwas aus `src.orchestration`
+# importiert (das Paket-`__init__` zieht dieses Modul mit). Gemessen deckte das
+# 7 von 11 Einstiegspunkten ab, ohne dass es irgendwo stand: Der CLI-Lauf, das
+# Dashboard und der State Explorer waren **zufällig** sicher, `create_graph.py`,
+# `serve_graph.py` und `cib_visualizer.py` nicht. Und `stderr` war nirgends
+# gesichert — dort landen die Logging-Fehler und die Befundliste aus P3.3.
+#
+# Die Umstellung liegt jetzt in `logging_setup.stdio_auf_utf8()`, und jeder
+# Einstieg ruft sie ausdrücklich. Ein Prozess, dessen Ausgabe von der
+# Importreihenfolge abhängt, sagt niemandem, warum er es tut.
 from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
+from src.logging_setup import stdio_auf_utf8
 from src.market.market_feedback import BOOKING_YIELD_FEEDBACK
 from src.models.llm_models import LLMIncident
 from src.models.run_models import RunArgs
@@ -743,4 +757,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Der Prozess sichert seine Ausgabe, bevor er das erste Zeichen schreibt
+    # (P3.10): Umgeleitet spricht `sys.stdout` unter Windows cp1252, und dann
+    # wirft jede Meldung mit `→`, `≥` oder `₂` statt zu erscheinen.
+    stdio_auf_utf8()
     main()

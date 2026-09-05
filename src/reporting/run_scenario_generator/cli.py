@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 
+from src.logging_setup import stdio_auf_utf8
 from src.reporting.output_writer import OUTPUT_DIR
 from src.reporting.run_scenario_generator.pipeline import generate_and_save_run_scenario
 from src.reporting.state_explorer import resolve_run_dir
@@ -44,4 +45,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # Der Prozess sichert seine Ausgabe, bevor er das erste Zeichen schreibt
+    # (P3.10): Umgeleitet spricht `sys.stdout` unter Windows cp1252, und dann
+    # wirft jede Meldung mit `→`, `≥` oder `₂` statt zu erscheinen.
+    stdio_auf_utf8()
     raise SystemExit(main())

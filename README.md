@@ -297,6 +297,11 @@ zu (die Befunde stehen als Liste auf `stderr`, ebenso ein Zwischenstand mit frem
 Formatversion). Ein **Traceback** heißt seit P3.3 nicht mehr «Eingabe falsch»,
 sondern «Programmfehler» — er gehört gemeldet.
 
+**Umleiten ist sicher** (seit P3.10): `… > lauf.log` schreibt UTF-8. Unter Windows
+spricht ein umgeleiteter `stdout` sonst `cp1252`, und jede Meldung mit `→`, `≥` oder
+`CO₂` wäre mit einem `UnicodeEncodeError` verschwunden statt zu erscheinen — auf
+einer Konsole trat das nie auf, weshalb es lange niemandem aufgefallen ist.
+
 ### Figures
 
 **Pro Run** (Hauptweg): `outputs/<run_id>/figures/` — 6 PNGs + `manifest.json`

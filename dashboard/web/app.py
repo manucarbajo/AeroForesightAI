@@ -50,6 +50,7 @@ from dashboard.web.pages import runs as runs_page
 from dashboard.web.pages import setup as setup_page
 from dashboard.web.state import STORE_ID, draft_from_dict
 from dashboard.web.views import scene, telemetry
+from src.logging_setup import stdio_auf_utf8
 
 TITLE = "Technology Lab · Leitstand"
 
@@ -672,4 +673,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Der Prozess sichert seine Ausgabe, bevor er das erste Zeichen schreibt
+    # (P3.10): Umgeleitet spricht `sys.stdout` unter Windows cp1252, und dann
+    # wirft jede Meldung mit `→`, `≥` oder `₂` statt zu erscheinen.
+    stdio_auf_utf8()
     main()
