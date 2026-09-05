@@ -558,3 +558,108 @@ class TestEineVerteilungDieAnDieWandKlemmtSagtEs:
 
         assert "Eurostat" in age.quelle and "demo_pjangroup" in age.quelle
         assert age.min_value == 18.0, "Kinder buchen keine Flüge"
+
+
+class TestEineRegelLiestKeinenLaufzeitwert:
+    """P3.1 (2026-09-05) — **der Name stimmte, die Zahl war veraltet.**
+
+    Für Systemgrößen mit ``source in {"runtime", "computed"}`` — heute
+    ``provider_markup`` und ``ticket_price`` — liefert
+    ``resolve_system_properties`` laut eigenem Docstring die statische
+    Trajektorien-Baseline und nicht den Wert des laufenden Ticks. Die
+    Namensprüfung aus P0.4 ließ eine Regel darauf durch: Sie **existiert** ja.
+    Folgenlos war das nur, solange keine ausgelieferte Regel eine solche Größe
+    nennt — die nächste hätte still gegen eine veraltete Zahl geprüft, und
+    genau das ist die stille Wirkungslosigkeit, gegen die P0.4 angetreten ist.
+
+    **Der Laufzeitwert wird bewusst nicht durchgereicht.** Er machte die
+    Auswertung innerhalb eines Ticks reihenfolgeabhängig:
+    ``apply_factor_rules_at_tick_start`` läuft **vor** der Preisberechnung, eine
+    Regel auf ``ticket_price`` prüfte je nach Einhängepunkt gegen den Preis von
+    vorhin oder von jetzt. Das ist eine Modellentscheidung, und sie gehört nicht
+    nebenbei getroffen.
+    """
+
+    @staticmethod
+    def _config_mit_regel(prop_id: str):
+        from src.config_loader import load_properties_config
+        from src.models.property_models import FactorRule
+
+        properties = load_properties_config()
+        return properties.model_copy(
+            update={
+                "factor_rules": [
+                    FactorRule(
+                        id="test",
+                        factor_id="F1",
+                        when={"system_property": prop_id, "above": 1.0},
+                        effect={"set_state": "F1.2"},
+                    )
+                ]
+            }
+        )
+
+    def test_eine_exogene_systemgroesse_geht_durch(self):
+        from src.validation import _validate_rule_property_names
+
+        assert _validate_rule_property_names(self._config_mit_regel("carbon_tax_level")) == []
+
+    @pytest.mark.parametrize("prop_id", ["provider_markup", "ticket_price"])
+    def test_eine_laufzeitgebundene_wird_abgewiesen(self, prop_id):
+        from src.validation import _validate_rule_property_names
+
+        befunde = _validate_rule_property_names(self._config_mit_regel(prop_id))
+
+        assert len(befunde) == 1, befunde
+        assert prop_id in befunde[0]
+        assert "laufzeitgebunden" in befunde[0]
+        # Die Meldung sagt, was stattdessen geht — sonst weiß niemand weiter.
+        assert "metric" in befunde[0]
+
+    def test_eine_unbekannte_bleibt_unbekannt(self):
+        """Die alte Meldung darf nicht von der neuen verdeckt werden."""
+
+        from src.validation import _validate_rule_property_names
+
+        befunde = _validate_rule_property_names(self._config_mit_regel("gibt_es_nicht"))
+
+        assert len(befunde) == 1
+        assert "unbekannte Systemgröße" in befunde[0]
+        assert "laufzeitgebunden" not in befunde[0]
+
+    def test_der_ganze_lauf_weist_es_ab_nicht_nur_die_teilpruefung(self):
+        """**Die Zusage von P3.1 im Wortlaut**: abgewiesen *beim Laden*."""
+
+        from src.config_loader import build_initial_state
+
+        state = build_initial_state()
+        state.properties = self._config_mit_regel("ticket_price")
+
+        befunde = collect_state_errors(state)
+
+        assert any("laufzeitgebunden" in b for b in befunde), befunde
+        with pytest.raises(ValidationError, match="laufzeitgebunden"):
+            validate_state(state)
+
+    def test_die_quelle_der_regel_liegt_beim_mechanismus(self):
+        """Nicht in `validation.py` — dort steht nur ihre Anwendung.
+
+        Dieselbe Bauform wie `SHIFT_ZIELE` (P2.4) und `KNOWN_METRICS` (P0.4):
+        Das Vokabular wohnt bei dem Code, der es auswertet. Eine zweite Liste in
+        der Validierung liefe beim nächsten `source`-Wert auseinander.
+        """
+
+        from src.config_loader import load_properties_config
+        from src.market.property_engine import darf_in_regel_stehen
+
+        properties = load_properties_config()
+        erlaubt = {p.id for p in properties.system_properties if darf_in_regel_stehen(p)}
+        gesperrt = {p.id for p in properties.system_properties} - erlaubt
+
+        assert gesperrt == {"provider_markup", "ticket_price"}, (
+            "Die Menge der laufzeitgebundenen Systemgrößen hat sich geändert. "
+            "Wenn das gewollt ist, gehört die neue hier hinein — und ein Blick "
+            "darauf, ob `resolve_system_properties` für sie wirklich nur die "
+            "Baseline liefert."
+        )
+        assert erlaubt, "Ohne erlaubte Systemgröße wäre die Prüfung sinnlos scharf"

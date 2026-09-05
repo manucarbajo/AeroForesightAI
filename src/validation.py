@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from src.agents.agent_dependencies import KNOWN_DEPENDENCIES
 from src.agents.agent_permissions import parse_factor_permission
+from src.market.property_engine import darf_in_regel_stehen
 from src.models.agent_models import AgentConfig
 from src.models.enums import DistributionType
 from src.models.population_models import (
@@ -446,6 +447,15 @@ def _validate_rule_property_names(properties: PropertiesConfig) -> list[str]:
     Tippfehler im Namen sieht davon ununterscheidbar aus — und wäre damit
     wieder genau die stille Wirkungslosigkeit, gegen die P0.4 antritt. Hier
     sind beide Vokabulare bekannt, also fällt er hier auf.
+
+    **Seit P3.1 prüft er nicht nur den Namen, sondern die Quelle** (2026-09-05).
+    Eine Systemgröße mit ``source in {"runtime", "computed"}`` — heute
+    ``provider_markup`` und ``ticket_price`` — existiert, liefert einer Regel
+    aber die statische Baseline statt des Laufzeitwerts. Der Name stimmt, die
+    Zahl ist veraltet: dieselbe stille Wirkungslosigkeit, nur eine Ebene
+    tiefer. Warum das Durchreichen des Laufzeitwerts die schlechtere Antwort
+    wäre, steht bei :func:`~src.market.property_engine.darf_in_regel_stehen` —
+    dort liegt die Regel, hier nur ihre Anwendung.
     """
 
     known_properties = set(properties.system_property_ids())
@@ -468,8 +478,21 @@ def _validate_rule_property_names(properties: PropertiesConfig) -> list[str]:
                     f"Bekannt sind: {', '.join(sorted(KNOWN_METRICS))}"
                 )
             prop = when.get("system_property")
-            if prop is not None and str(prop) not in known_properties:
+            if prop is None:
+                continue
+            if str(prop) not in known_properties:
                 errors.append(f"{prefix}: unbekannte Systemgröße '{prop}'")
+                continue
+            eintrag = properties.get_system_property(str(prop))
+            if eintrag is not None and not darf_in_regel_stehen(eintrag):
+                errors.append(
+                    f"{prefix}: Systemgröße '{prop}' ist laufzeitgebunden "
+                    f"(source '{eintrag.source}') und in einer Bedingung nicht lesbar. "
+                    "Eine Regel darauf prüfte gegen die Trajektorien-Baseline, nicht "
+                    "gegen den Wert des laufenden Ticks. Erlaubt sind Systemgrößen mit "
+                    "source 'trajectory'; für den Preis oder den Aufschlag des laufenden "
+                    "Ticks gibt es 'metric'."
+                )
     return errors
 
 

@@ -2394,12 +2394,18 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Doku zieht mit:** `CLAUDE.md` (Invariante 5 — sie ist zu schärfen oder zu ersetzen), `docs/handbuch/tick-und-lauf.md`, `docs/handbuch/grenzen.md`.
 
-### P3.1 — System-Properties täuschen keine Laufzeitwerte mehr vor
+### P3.1 — System-Properties täuschen keine Laufzeitwerte mehr vor ✅ erledigt 2026-09-05
 
 **Befund:** Für Properties mit `source in {"runtime","computed"}` (z. B. `provider_markup`, `ticket_price`) liefert `resolve_system_properties` laut eigenem Docstring die statische Trajektorien-Baseline, nicht den Laufzeitwert. Folgenlos nur, solange keine ausgelieferte Regel diese IDs per `system_property`-Bedingung referenziert — eine neue Regel darauf würde still gegen eine veraltete Zahl prüfen.
 **Fundstelle:** [`src/market/property_engine.py:127-136`](../src/market/property_engine.py).
 **Was zu tun ist:** **Vorgabe (2026-08-26): den Zugriff hart ablehnen.** Eine unbekannte oder laufzeitgebundene Property in einer `when`-Bedingung wird ein Konfigurationsfehler, keine stille Baseline. Grund: Laufzeitwerte durchzureichen macht die Regelauswertung innerhalb eines Ticks reihenfolgeabhängig — `apply_factor_rules_at_tick_start` läuft **vor** der Preisberechnung in `environment_node._run_population_tick`, eine Regel auf `ticket_price` würde also je nach Einhängepunkt gegen den Preis von vorhin oder von jetzt prüfen. Das ist eine Modellentscheidung, keine Implementierungsdetailfrage, und sie gehört nicht nebenbei getroffen. Wer die Laufzeitwerte später wirklich braucht, führt sie mit einer bewussten Tick-Phase ein. Zusammen mit P0.4 erledigen — dieselbe Regelmechanik, und dort wird ohnehin festgelegt, dass unbekannte Bedingungstypen laut fehlschlagen.
-**Fertig wenn:** Eine Regel, die `ticket_price` oder `provider_markup` per `system_property` referenziert, wird beim Laden mit klarer Meldung abgewiesen statt still gegen eine Baseline zu prüfen. **Doku:** `docs/handbuch/ref-config.md`.
+**Umgesetzt am 2026-09-05, nicht zusammen mit P0.4** — der Plan hatte das vorgesehen, und es ist nicht passiert. P0.4 hat die *Namen* geprüft; eine Regel auf `ticket_price` kam durch, weil der Name ja stimmt. Der Befund lag also die ganze Zeit hinter einer grünen Prüfung.
+
+**Das Vokabular liegt beim Mechanismus, nicht in der Validierung:** [`property_engine.darf_in_regel_stehen`](../src/market/property_engine.py) sagt, welche Quelle eine Bedingung lesen darf, und trägt die Begründung; `validation._validate_rule_property_names` prüft dagegen. Dieselbe Bauform wie `SHIFT_ZIELE` (P2.4) und `KNOWN_METRICS` (P0.4) — eine zweite Liste in der Validierung liefe beim nächsten `source`-Wert auseinander.
+
+**Die Meldung sagt, was stattdessen geht.** Eine Abweisung ohne Ausweg ist eine Sackgasse: Den Preis des laufenden Ticks gibt es als `metric`, und der Text nennt ihn.
+
+**Fertig, gemessen:** `tests/test_validation.py::TestEineRegelLiestKeinenLaufzeitwert` — sechs Zusagen. Darunter zwei, die über den Wortlaut hinausgehen: dass die alte Meldung («unbekannte Systemgröße») von der neuen **nicht verdeckt** wird, und dass die Menge der gesperrten Größen genau `{provider_markup, ticket_price}` ist — kommt eine dritte dazu, wird es rot, und dann gehört ein Blick darauf, ob `resolve_system_properties` für sie wirklich nur die Baseline liefert. **Doku ist mitgezogen:** `docs/handbuch/ref-config.md` (die Tabelle der Bezugsgrößen plus der Grund, warum der Laufzeitwert nicht durchgereicht wird).
 
 ### P3.2 — Checkpoint-Version wirklich prüfen
 
