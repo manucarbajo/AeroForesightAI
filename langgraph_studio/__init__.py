@@ -1,1 +1,1 @@
-﻿"""LangGraph Studio package marker."""
+"""LangGraph Studio package marker."""
