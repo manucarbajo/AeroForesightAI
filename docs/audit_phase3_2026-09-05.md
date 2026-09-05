@@ -279,6 +279,21 @@ oder entfernen — mit einem Satz dazu, welches von beidem gemeint ist. Und als
 eigenes Paket: einen Typprüfer für `src/models/` und die Grenzen aufsetzen, sonst
 ist dies der erste von vielen.
 
+> **Behoben noch am 2026-09-05 (P3.15).** `-> RunArgs`, Import weg, `sweep_id`
+> **entfernt** statt behalten: Sieben Aufrufstellen und kein Grund — ein
+> Parameter, der das Ergebnis nicht ändern kann, ist dieselbe Lüge wie die
+> Annotation, nur eine Klammer weiter. Der Wächter sucht die Erzeuger, statt sie
+> aufzuzählen (jedes `return`, das ein `RunArgs` liefert, muss es in der Signatur
+> sagen); vier Mutationen geprüft, darunter eine Lüge an einem **zweiten**
+> Erzeuger — er greift also nicht nur an der gemeldeten Stelle.
+>
+> **Die Klasse bleibt offen und hat ein Paket:**
+> [P4.4](projektplan.md#p44--ein-typprüfer-für-die-grenzen--offen-neu-2026-09-05-aus-p315).
+> Dieser Wächter deckt eine Familie ab, weil genau die einen Schaden angerichtet
+> hat. Die Zahl, die das Ausmaß der Lücke beschreibt: **zwölf Tage** stand die
+> Lüge in einer Datei, die zweimal angefasst wurde, und `ruff check .` war die
+> ganze Zeit grün.
+
 ### B4 · Das 500-ms-Kriterium hat keinen Wächter auf seiner Höhe 🔶 **mittel, Verfahren**
 
 P3.9s Abnahmeklausel lautet wörtlich:
@@ -549,7 +564,7 @@ ein rotes Ergebnis dort ist eine gute Nachricht.
 | ⛔ | **B6** Der Browser-Wächter ist wieder rot; C5 gilt als behoben | `tests/test_web_overflow.py` | **Vorbestehend, auf `main` identisch nachgemessen.** Schritt 1 der Schrittfolge ist 1,96 Schirme hoch gegen einen Deckel von 1,34, zwei Zeilen laufen 109 und 98 Zeichen gegen 75. Der Fix vom 2026-09-03 wurde von Commits desselben Tages ungültig gemacht — C5s eigentlicher Befund zum zweiten Mal |
 | 🔶 | **B1** Der Rückfall auf `llama3.2` lebt eine Ebene höher — **behoben (P3.13)** | `dashboard/run_launcher.py:144` | Preflight und Lauf widersprechen sich bei leerem Modellfeld; das Artefakt nennt ein Modell, das niemand gewählt hat |
 | 🔶 | **B2** Der Ausweichpfad des Schreibers braucht `.buffer` — **behoben (P3.14)** | `src/run_simulation.py:556` | Aus `UnicodeEncodeError` wird `AttributeError` — im Paket über Fehlerwege; alle drei Tests teilen die Annahme |
-| 🔶 | **B3** Annotation widerspricht dem Rumpf | `src/orchestration/scenario_sweeps.py:232` | `SimpleNamespace` statt `RunArgs`, `sweep_id` unbenutzt, toter Import bleibt für `ruff` unsichtbar |
+| 🔶 | **B3** Annotation widerspricht dem Rumpf — **behoben (P3.15)**, Klasse offen als P4.4 | `src/orchestration/scenario_sweeps.py:232` | `SimpleNamespace` statt `RunArgs`, `sweep_id` unbenutzt, toter Import bleibt für `ruff` unsichtbar |
 | 🔶 | **B4** Das 500-ms-Kriterium hat keinen Wächter auf seiner Höhe | `tests/test_web_overflow.py:1732` | Ein Rückfall auf 800 ms bliebe grün, während der Plan das Kriterium als erfüllt führt |
 | 🔷 | **B5a** `availability` nennt ein unkonfiguriertes Modell — **behoben (P3.13)** | `compute_mode.py:116` | Nutzermeldung erfindet `llama3.2` |
 | 🔷 | **C1** «46» nur ohne Docstrings | Plan, `_melde_befunde` | Wer nachzählt, bekommt 55 |

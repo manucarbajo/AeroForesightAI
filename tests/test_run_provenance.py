@@ -225,7 +225,7 @@ class TestSweepSchreibtNichtMehrVorbei:
 
         from src.orchestration.scenario_sweeps import SWEEP_SEED, sweep_metadata_args
 
-        args = sweep_metadata_args("demo")
+        args = sweep_metadata_args()
         assert compute_mode(args) == "deterministic_with_llm_narrative"
         assert args.seed == SWEEP_SEED
 
@@ -237,7 +237,7 @@ class TestSweepSchreibtNichtMehrVorbei:
         from src.llm import OllamaConfig
         from src.orchestration.scenario_sweeps import sweep_metadata_args
 
-        args = sweep_metadata_args("demo")
+        args = sweep_metadata_args()
         assert args.model == OllamaConfig().model
         assert args.base_url == OllamaConfig().base_url
 
@@ -727,7 +727,7 @@ class TestDerHybridModusDesSweeps:
     def test_the_mode_says_both_halves(self) -> None:
         from src.orchestration.scenario_sweeps import sweep_metadata_args
 
-        modus = compute_mode(sweep_metadata_args("demo"))
+        modus = compute_mode(sweep_metadata_args())
         label = COMPUTE_MODE_LABELS[modus]
         assert "Nur Zahlen" in label
         assert "Modell" in label
@@ -742,7 +742,7 @@ class TestDerHybridModusDesSweeps:
         )
         from src.orchestration.scenario_sweeps import sweep_metadata_args
 
-        metadata = _write(tmp_path, state, sweep_metadata_args("demo"))
+        metadata = _write(tmp_path, state, sweep_metadata_args())
         assert metadata["compute_mode"] == "deterministic_with_llm_narrative"
         assert metadata["degraded"] is True
 
@@ -848,7 +848,7 @@ class TestDasArtefaktBehauptetKeinModell:
         from src.orchestration.scenario_sweeps import sweep_metadata_args
 
         state = build_initial_state()
-        metadata = _write(tmp_path, state, sweep_metadata_args("demo"))
+        metadata = _write(tmp_path, state, sweep_metadata_args())
 
         assert metadata["compute_mode"] == "deterministic_with_llm_narrative"
         assert metadata["model"] is not None

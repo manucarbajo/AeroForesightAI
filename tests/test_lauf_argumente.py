@@ -180,6 +180,148 @@ class TestDurchreichenVerliertNichts:
         assert not hasattr(run_args_from(lose, run_index=1, seed=None), "sweep")
 
 
+class TestJedeSignaturSagtWasSieLiefert:
+    """P3.15: Eine Annotation, die ihrem Rumpf widerspricht, hebelt Invariante 4 aus.
+
+    **Der Befund war kein Tippfehler, sondern eine halbe Umstellung.** P3.11 hat
+    `sweep_metadata_args` von einem `SimpleNamespace` auf `RunArgs` umgestellt und
+    die Signatur stehen lassen: ``-> SimpleNamespace``. Damit sagte sie einem
+    Leser und jedem Werkzeug, das Rückgabetypen auswertet, es käme ein formloser
+    Namensraum heraus — genau die Aussage, gegen die P3.11 angetreten ist.
+
+    **Warum `ruff` schwieg:** Die falsche Annotation hielt den Import
+    ``from types import SimpleNamespace`` am Leben. Ein toter Import, der von
+    einer Lüge benutzt wird, sieht wie ein lebender aus. Und das Projekt hat
+    keinen Typprüfer — weder mypy noch pyright in `pyproject.toml` oder der CI —,
+    also prüfte niemand die Annotation gegen das `return`.
+
+    **Warum dieser Wächter die Erzeuger sucht statt sie aufzuzählen:** Eine Liste
+    der drei heutigen Stellen fängt einen Rückfall an bekannter Stelle und
+    übersieht die vierte. Gesucht wird deshalb am Syntaxbaum nach dem
+    *Mechanismus* — jedes `return`, das ein `RunArgs` baut oder weitergibt —, und
+    dann muss die Signatur dieser Funktion es auch sagen. Dieselbe Bauform wie
+    bei Invariante 1 und beim Farbfundament.
+
+    **Was er nicht ersetzt:** einen Typprüfer. Er deckt genau eine Familie ab,
+    weil genau die einen Schaden angerichtet hat; die allgemeine Antwort steht
+    als eigenes Paket in Phase 4.
+    """
+
+    #: Die Bäume, in denen ein Erzeuger stehen darf. `tests` bleibt draußen —
+    #: dort baut jeder Test seine Vorlagen, und eine Annotation dort trägt keine
+    #: Grenze.
+    BAEUME = ("src", "dashboard")
+
+    #: Was als «erzeugt Lauf-Argumente» gilt: der Konstruktor selbst und die
+    #: eine Fabrik, die ihn füllt.
+    ERZEUGER_NAMEN = {"RunArgs", "run_args_from"}
+
+    @classmethod
+    def _erzeuger(cls) -> list[tuple[Path, ast.FunctionDef]]:
+        """Jede Funktion, deren `return` Lauf-Argumente liefert."""
+
+        gefunden: list[tuple[Path, ast.FunctionDef]] = []
+        for baum_name in cls.BAEUME:
+            for pfad in sorted((ROOT / baum_name).rglob("*.py")):
+                if "legacy" in pfad.parts:
+                    continue
+                baum = ast.parse(pfad.read_text(encoding="utf-8-sig"))
+                for knoten in ast.walk(baum):
+                    if not isinstance(knoten, ast.FunctionDef):
+                        continue
+                    for inner in ast.walk(knoten):
+                        if not isinstance(inner, ast.Return) or inner.value is None:
+                            continue
+                        aufruf = inner.value
+                        if not isinstance(aufruf, ast.Call):
+                            continue
+                        name = getattr(aufruf.func, "id", None) or getattr(
+                            aufruf.func, "attr", None
+                        )
+                        if name in cls.ERZEUGER_NAMEN:
+                            gefunden.append((pfad.relative_to(ROOT), knoten))
+                            break
+        return gefunden
+
+    def test_es_gibt_ueberhaupt_erzeuger(self):
+        """Ein Wächter, der nichts findet, könnte auch blind sein."""
+
+        erzeuger = self._erzeuger()
+        namen = {funktion.name for _, funktion in erzeuger}
+        assert "sweep_metadata_args" in namen, (
+            "Die Fundstelle des Befunds wird nicht mehr gefunden — dann prüft dieser "
+            f"Wächter nichts. Gefunden: {sorted(namen)}"
+        )
+        assert len(erzeuger) >= 3, sorted(namen)
+
+    def test_jeder_erzeuger_gibt_runargs_zurueck_und_sagt_es(self):
+        befunde: list[str] = []
+        for relativ, funktion in self._erzeuger():
+            rueckgabe = funktion.returns
+            gesagt = ast.unparse(rueckgabe) if rueckgabe is not None else "— keine —"
+            if gesagt != "RunArgs":
+                befunde.append(
+                    f"{relativ.as_posix()}:{funktion.lineno} — {funktion.name}() "
+                    f"liefert RunArgs, sagt aber «{gesagt}»"
+                )
+
+        assert not befunde, (
+            "Diese Signaturen widersprechen ihrem Rumpf:\n  "
+            + "\n  ".join(befunde)
+            + "\n\nInvariante 4 hängt daran, dass die Typangabe stimmt: Wer hier "
+            "etwas anderes liest als RunArgs, hält die Grenze für formlos."
+        )
+
+    def test_der_waechter_wuerde_die_luege_bemerken(self):
+        """Nachgestellt wird die Form, in der der Befund wirklich stand."""
+
+        quelle = "def f(x) -> SimpleNamespace:\n    return RunArgs(a=1)\n"
+        baum = ast.parse(quelle)
+        funktion = baum.body[0]
+        assert isinstance(funktion, ast.FunctionDef)
+        liefert_runargs = any(
+            isinstance(k, ast.Return)
+            and isinstance(k.value, ast.Call)
+            and getattr(k.value.func, "id", None) == "RunArgs"
+            for k in ast.walk(funktion)
+        )
+        assert liefert_runargs, "Der Wächter erkennt den Erzeuger nicht"
+        assert (
+            ast.unparse(funktion.returns) != "RunArgs"
+        ), "Die nachgestellte Lüge sieht für den Wächter wie die Wahrheit aus"
+
+    def test_und_die_rueckgabe_ist_zur_laufzeit_wirklich_eine(self):
+        """Die Annotation zu prüfen ist Codelektüre — das hier ist die Messung.
+
+        `sweep_metadata_args` ist der einzige Erzeuger, der sich ohne Aufbau
+        rufen lässt; die anderen zwei brauchen einen Träger. Also wird er
+        gerufen.
+        """
+
+        from src.orchestration.scenario_sweeps import sweep_metadata_args
+
+        assert type(sweep_metadata_args()) is RunArgs
+
+    def test_kein_parameter_ohne_wirkung(self):
+        """`sweep_id` war unbenutzt, seit sein einziges Feld entfiel (P3.15).
+
+        Zwei verschiedene Kennungen ergaben gemessen identische Argumente — ein
+        Aufrufer übergab also eine Angabe in der Annahme, sie werde verwendet.
+        Geprüft wird nicht «der Parameter ist weg», sondern die Eigenschaft, die
+        ihn wertlos machte: Der Aufruf trägt kein Argument mehr, das etwas
+        ändern könnte.
+        """
+
+        import inspect
+
+        from src.orchestration.scenario_sweeps import sweep_metadata_args
+
+        assert not inspect.signature(sweep_metadata_args).parameters, (
+            "Dieser Erzeuger hat wieder einen Parameter. Wenn er wirkt, gehört ein "
+            "Test daneben, der es zeigt; wenn nicht, gehört er weg."
+        )
+
+
 class TestKeinSchreiberRaetMehr:
     """Ein `getattr(args, …, default)` in einem Schreiber ist eine zweite Quelle."""
 

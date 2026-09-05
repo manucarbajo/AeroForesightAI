@@ -15,7 +15,6 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -229,13 +228,30 @@ def festlegung_fuer(feld: str) -> Festlegung | None:
     return vorgegebene_felder().get(feld)
 
 
-def sweep_metadata_args(sweep_id: str) -> SimpleNamespace:
+def sweep_metadata_args() -> RunArgs:
     """Die Argumente, unter denen ein Sweep sein `run_metadata.json` schreibt.
 
     Eigene Funktion, damit prüfbar ist, was dort behauptet wird. Der Sweep
     **rechnet** deterministisch, erzeugt den Szenariotext am Ende aber mit
     ``prefer_llm=True`` — er ist damit weder das eine noch das andere und
     trägt den eigenen Modus ``deterministic_with_llm_narrative``.
+
+    **Signatur und Rumpf sind seit P3.15 einer Meinung.** P3.11 hat den Rumpf von
+    einem ``SimpleNamespace`` auf :class:`~src.models.run_models.RunArgs`
+    umgestellt und die Annotation stehen lassen — sie sagte also einem Leser und
+    jedem Werkzeug das Gegenteil, und weil sie den Import ``from types import
+    SimpleNamespace`` am Leben hielt, schwieg auch `ruff`. Genau die Aussage, gegen
+    die P3.11 angetreten ist: ein formloser Namensraum an einer Grenze
+    (Invariante 4).
+
+    **Der Parameter ``sweep_id`` ist mit weggefallen**, und das ist dieselbe
+    Sorte Aufräumen: Sein einziger Verwender war das Feld ``sweep=sweep_id``, das
+    P3.11 entfernt hat, weil es niemand las. Danach ergaben zwei verschiedene
+    Kennungen gemessen identische Argumente — ein Aufrufer übergab also eine
+    Angabe in der Annahme, sie werde verwendet. Wer die Zugehörigkeit eines Laufs
+    zu seinem Sweep braucht, findet sie im Ablageort und im Rahmenszenario; wer
+    sie im Artefakt will, gibt `RunArgs` ein Feld — ``extra="forbid"`` erzwingt
+    dann die bewusste Entscheidung.
 
     Zwei Angaben waren hier vorher unwahr. ``deterministic_only=False`` machte
     aus dem Sweep im Dashboard einen Lauf «Mit Sprachmodell», obwohl an seinen
@@ -536,7 +552,7 @@ def run_single_sweep(
     # Save artifacts like a normal run
     run_dir_path = resolve_run_output_dir(run_id_str)
 
-    dummy_args = sweep_metadata_args(sweep.id)
+    dummy_args = sweep_metadata_args()
 
     save_event_log(final_state.event_log, run_dir=run_dir_path)
     save_tick_mechanics(final_state, run_dir=run_dir_path)
