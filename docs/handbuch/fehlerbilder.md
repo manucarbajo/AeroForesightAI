@@ -79,6 +79,27 @@ dem Klick auf «Start».
 Angezeigt werden immer **alle** Fehler auf einmal, nicht einer nach dem anderen —
 eine Konfiguration lässt sich so in einem Durchgang reparieren.
 
+**Auf der Kommandozeile ist es dieselbe Liste.** `python -m src.run_simulation`
+schreibt sie nach `stderr` und endet mit dem Code **2** — nicht 1: So lässt sich
+«die Eingabe war falsch» von «das Programm ist abgestürzt» unterscheiden, ohne die
+Meldung zu lesen, was für Skripte und CI der Unterschied ist. Bis September 2026
+kam an dieser Stelle ein Python-Traceback, in dem die eigentliche Meldung unterging;
+die Prüfung war schon richtig, nur ihre Darstellung nicht.
+
+Ein Traceback auf der Kommandozeile heißt seither: **kein Konfigurationsfehler,
+sondern ein Programmfehler.** Er gehört gemeldet, mit den vollen Zeilen.
+
+## Der Zwischenstand passt nicht zu dieser Fassung
+
+Beim Fortsetzen eines Laufs erscheint eine Meldung, dass der Zwischenstand eine
+andere Formatversion trägt. Dann stammt er aus einer anderen Fassung des Programms,
+und was darin steht, muss nicht mehr zu dem passen, was der heutige Code erwartet.
+
+Der Lauf wird deshalb **nicht** fortgesetzt: Ein stillschweigend geladener
+Zwischenstand mit fehlenden Feldern rechnete mit Vorgabewerten weiter, die niemand
+gewählt hat. Es gibt bewusst keine Umwandlung alter Zwischenstände — der Lauf wird
+neu gestartet. Zwischenstände sind Fortsetzungspunkte, kein Archiv.
+
 ## Der Lauf ist als beeinträchtigt markiert
 
 Über den Tabs steht ein gelber Hinweis, dass Aufrufe an das Sprachmodell

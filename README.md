@@ -264,6 +264,11 @@ auf `null` — die Datei behauptet kein Modell, das nie gefragt wurde.
 | `--no-market` | MarketNode deaktivieren |
 | `--runs N` | Mehrere unabhängige Läufe (Batch unter `outputs/batch_<timestamp>/`) |
 
+**Exit-Codes:** `0` = Lauf durchgelaufen, `2` = die Konfiguration lässt keinen Lauf
+zu (die Befunde stehen als Liste auf `stderr`, ebenso ein Zwischenstand mit fremder
+Formatversion). Ein **Traceback** heißt seit P3.3 nicht mehr «Eingabe falsch»,
+sondern «Programmfehler» — er gehört gemeldet.
+
 ### Figures
 
 **Pro Run** (Hauptweg): `outputs/<run_id>/figures/` — 6 PNGs + `manifest.json`

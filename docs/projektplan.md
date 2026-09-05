@@ -2419,14 +2419,26 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Fertig, gemessen:** `tests/test_checkpoint_manager.py::TestDieVersionWirdWirklichGeprueft` — fünf Zusagen, darunter der eigene Schreiber (eine Prüfung, die den eigenen Checkpoint abweist, wäre schlimmer als keine) und die *zukünftige* Version: Der Maßstab ist «nicht meine», nicht «älter als meine». **Doku ist mitgezogen:** `docs/handbuch/ref-ausgaben.md`.
 
-### P3.3 — Fehlermeldungen, die auch greifen
+### P3.3 — Fehlermeldungen, die auch greifen ✅ erledigt 2026-09-05
 
 **Befund:** Zwei Stellen, an denen Fehlerbehandlung nur so aussieht: In `langgraph_workflow` steht ein `try: pass` mit `except`, das nie feuern kann — die beabsichtigte freundliche Meldung bei fehlendem `langgraph` bleibt aus, stattdessen kommt später ein roher `ImportError`. In `create_graph.py` verschluckt ein `except Exception: pass` auch den absichtlich re-raisten Graph-Build-Fehler, und das Skript schreibt trotzdem ein statisches `graph.json`.
 **Fundstelle:** [`src/orchestration/langgraph_workflow.py:41-44`](../src/orchestration/langgraph_workflow.py), [`langgraph_studio/create_graph.py:16-24`](../langgraph_studio/create_graph.py).
 **Dazugekommen aus der P0.1-Gegenprobe (2026-08-26): der dritte Fall ist die CLI.** Seit P0.3 weist ein Lauf mit kaputter Config sauber ab — im Dashboard als roter Kasten mit allen Befunden, auf der CLI als **roher Python-Traceback**. `main()` in [`src/run_simulation.py`](../src/run_simulation.py) lässt `ValidationError` einfach durchschlagen; wer `--temperature 99` tippt, sieht zwanzig Zeilen Stack, in denen die eigentliche Meldung untergeht, und bekommt keinen sprechenden Exit-Code. Die Prüfung ist richtig, ihre Darstellung nicht.
 
-**Was zu tun ist:** Echten Import in den `try`-Block ziehen; im Studio-Skript den Build-Fehler durchreichen statt ein irreführendes `graph.json` zu schreiben. `ValidationError` in `main()` abfangen und als Fehlerliste auf `stderr` ausgeben, mit Exit-Code ungleich 0 statt Traceback.
-**Fertig wenn:** Fehlendes `langgraph` erzeugt die gemeinte Meldung; ein kaputter Graph-Build bricht sichtbar ab; eine kaputte Config auf der CLI erzeugt dieselbe lesbare Liste wie im Dashboard. **Doku:** `docs/handbuch/fehlerbilder.md`, `README.md` (CLI).
+**Umgesetzt am 2026-09-05, alle drei Stellen.** Der echte `langgraph`-Import steht im `try` und **vor** `get_llm()` — die Reihenfolge entscheidet, ob der Nutzer «kein langgraph» oder «kein Ollama erreichbar» liest. `create_graph.py` reicht den Build-Fehler durch: kein `graph.json`, kein `Wrote …`. Und die CLI schreibt die Befunde als Liste auf `stderr` und endet mit **2**.
+
+**Der Exit-Code ist 2 und nicht 1**, weil ein Aufrufer «deine Eingabe ist falsch» von «mir ist etwas kaputtgegangen» unterscheiden können soll, ohne die Meldung zu lesen — Skripte und CI tun genau das. Die 2 ist die Konvention, die `argparse` für denselben Fall schon benutzt.
+
+**Was ausdrücklich *nicht* gefangen wird:** alles andere. Ein `KeyError` aus der Engine ist keine Nachricht an den Nutzer, sondern ein Befund für die Entwicklung, und der Stack ist dort die nützlichere Ausgabe. Ein `except Exception` in der Hülle wäre genau das Muster, das dieses Paket an zwei anderen Stellen abräumt — ein Test hält das über den Syntaxbaum fest. **Ein Traceback auf der CLI heißt seither: Programmfehler, nicht Eingabefehler**, und das steht auch so im Handbuch.
+
+**Ein fehlendes `langgraph` ist kein kaputter Graph**, und nur das zweite ist ein Befund: Ohne das Paket schreibt `create_graph.py` die statische Topologie weiterhin — sie ist eine Beschreibung, keine Ausführung — sagt aber, dass sie ungeprüft ist.
+
+**Zwei Funde nebenbei, beide aus der Umsetzung:**
+
+1. **Der Fehlerweg konnte selbst scheitern.** Die Windows-Konsole dieses Projekts steht auf `cp1252`, und in `src/` stehen **46** Zeichenketten mit Zeichen, die dieser Zeichensatz nicht kennt (`→`, `≥`, `₂`, `Δ`, `β`, `✓`). Kein heutiger Validierungsbefund enthält eines davon — ein einziges hätte die Liste durch einen `UnicodeEncodeError` ersetzt, also durch einen Traceback an genau der Stelle, an der dieses Paket eben einen weggeräumt hat. `_schreibe` schreibt deshalb notfalls mit `backslashreplace` (nicht `replace`: ein `≥` ist nachschlagbar, ein `?` ist verloren). Der weitere Umgang mit den 46 Stellen ist [P3.10](#p310--46-zeichenketten-die-die-konsole-nicht-schreiben-kann--neu-2026-09-05).
+2. **Die eigenen Wächter fielen auf die eigene Prosa herein.** Der erste Anlauf prüfte mit Zeichenkettensuche (`"except Exception" not in quelle`), und **drei von drei** Zusagen schlugen an — an den Kommentaren und Docstrings, die den alten Zustand beschreiben und dabei `try: pass`, `except Exception` und `get_llm()` zitieren. Geprüft wird jetzt der Syntaxbaum. *Ein Wächter, den eine Erklärung über ihn selbst umlenken kann, ist keiner.*
+
+**Fertig, gemessen:** `tests/test_fehlermeldungen_greifen.py` — zwölf Zusagen über alle drei Stellen. Die CLI wird als **eigener Prozess** gestartet: Nur so ist der Exit-Code echt, `main()` im selben Prozess prüfte einen Rückgabewert. **Doku ist mitgezogen:** `docs/handbuch/fehlerbilder.md` (zwei Abschnitte: die Liste auf der CLI und der fremde Zwischenstand aus P3.2), `README.md` (Exit-Codes).
 
 ### P3.4 — LLM-Konfiguration zentralisieren
 
@@ -2457,6 +2469,29 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 **Fertig wenn:** Kein Dashboard-Modul importiert mehr Unterstrich-Namen aus `src/`. **Doku:** `CLAUDE.md` (Architektur-Map, Service-Layer-Absatz).
 
 > **Vorgezogen am 2026-08-28** (aus [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28)): Der fehlende Vertrag ist nicht nur ein Refactor-Risiko — er ist die Ursache dafür, dass der Assistent Felder erfragt, die der Sweep-Pfad still verwirft. Ohne eine öffentliche Schnittstelle, die sagt, **was ein Startpfad entgegennimmt**, lässt sich W1.1 nicht mechanisch halten.
+
+### P3.10 — 46 Zeichenketten, die die Konsole nicht schreiben kann ⚠️ neu 2026-09-05
+
+> **Gefunden beim Bau des Fehlerwegs von [P3.3](#p33--fehlermeldungen-die-auch-greifen--erledigt-2026-09-05)** — und das Prüfskript, das den Befund erhob, ist selbst daran gescheitert. Ehrlicher lässt sich ein Befund kaum belegen.
+
+**Befund:** Die Windows-Konsole dieses Projekts steht auf **`cp1252`** (`sys.stdout.encoding` nachgemessen). In `src/` stehen **46** Zeichenketten — Laufzeittexte, keine Docstrings —, die Zeichen enthalten, die dieser Zeichensatz nicht kennt: `→` (28×), `₂` (8×), `≥`/`≤` (4×), dazu `Δ`, `β`, `≈`, `✓`, `⚠`. Jeder `print` und jede Log-Zeile mit einem dieser Zeichen wirft einen `UnicodeEncodeError`.
+
+**Warum es heute meistens nicht auffällt:** Die betroffenen Texte gehen überwiegend in **Dateien**, und die werden mit `encoding="utf-8"` geschrieben — dort ist alles richtig. Getroffen wird nur, was wirklich auf die Konsole geht. Zwei Stellen sind dabei die heiklen: `rule_engine._OPERATOR_LABELS` (`≥`, `≤`) speist `describe_when`, und `agent_dependencies` trägt ein `→` in einem Meldungstext.
+
+**Warum es trotzdem ein Befund ist:** Ein `UnicodeEncodeError` beim *Melden* verschluckt die Meldung. Innerhalb von `logging` wird er zu einem «--- Logging error ---» mit Stack statt der Zeile; in einem `print` reißt er den Aufruf ab. Das ist dieselbe Klasse wie P3.3 selbst — eine Ausgabe, auf die man sich verlässt, kann still oder laut verschwinden, und zwar genau dann, wenn man sie braucht.
+
+**Fundstellen:** 46 Stellen über `src/`; die Liste erzeugt ein AST-Durchlauf (Vorlage steht in der Umsetzung von P3.3). Die Zeichensatz-Grenze liegt in `sys.stdout.encoding`, nicht im Code.
+
+**Was zu tun ist — und was nicht:** Nicht 46 Zeichenketten umschreiben. `→` in einem Erklärtext ist richtig, und `CO₂` ist der korrekte Name des Stoffs. Zu entscheiden ist die **Ausgabeseite**, und dafür gibt es zwei Wege:
+
+1. **Die Stdio-Kodierung auf UTF-8 stellen** (`sys.stdout.reconfigure(encoding="utf-8")` im CLI-Einstieg, oder `PYTHONUTF8=1`). Löst die ganze Klasse mit einer Zeile. **Der Preis ist zu messen:** Eine `cp1252`-Konsole zeigt UTF-8-Bytes als Buchstabensalat, und das Fortschritts-Log des Dashboards liest denselben Strom (`run_launcher` leitet `stdout` in einen Tee um) — was dort ankommt, entscheidet über die Darstellung im Browser. **Nicht ohne diese Messung entscheiden.**
+2. **Jede Ausgabestelle zeichensatzfest machen** (wie `_schreibe` in P3.3). Ehrlich und lokal, aber es sind viele Stellen, und die nächste vergisst es wieder.
+
+**Fallstrick:** Wer Weg 1 wählt, prüft **beide** Enden — die Konsole *und* das Fortschritts-Log im Dashboard. Der Tee ist der Grund, warum P3.5 nicht vor P0.1 durfte; hier ist er es wieder.
+
+**Fertig wenn:** Eine Meldung mit `≥` oder `CO₂` erreicht Konsole **und** Fortschritts-Log lesbar — gemessen an beiden Enden, nicht an einem. Der Wächter ist der AST-Durchlauf: Er zählt die Stellen und darf nach der Entscheidung entweder auf 0 stehen (Weg 1 macht ihn überflüssig) oder als Zähler bleiben.
+
+**Doku zieht mit:** `CLAUDE.md` (Dev-Workflow, falls eine Umgebungsvariable dazukommt), `docs/handbuch/fehlerbilder.md`.
 
 ---
 

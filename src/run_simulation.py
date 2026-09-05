@@ -21,7 +21,7 @@ from src.llm import STUDIO_DIR, MockLLM, OllamaClient, OllamaConfig, load_env
 from src.logging_setup import configure_logging
 from src.models.llm_models import LLMIncident
 from src.models.state_models import Rahmenszenario
-from src.orchestration.checkpoint_manager import CheckpointManager
+from src.orchestration.checkpoint_manager import CheckpointManager, CheckpointVersionError
 from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 from src.reporting.output_writer import (
     create_run_id,
@@ -412,7 +412,89 @@ def _write_multi_run_summary(
     )
 
 
+#: Exit-Code fuer eine Konfiguration, die einen Lauf nicht zulaesst (P3.3).
+#:
+#: **Nicht 1.** Ein Aufrufer soll «deine Eingabe ist falsch» von «mir ist etwas
+#: kaputtgegangen» unterscheiden koennen, ohne die Meldung zu lesen — Skripte und
+#: CI tun genau das. Die 2 ist die Konvention, die `argparse` fuer denselben Fall
+#: schon benutzt (unbekanntes Argument), und damit die einzige, die hier keinen
+#: neuen Dialekt einfuehrt.
+EXIT_KONFIGURATION = 2
+
+
+def _melde_befunde(kopf: str, befunde: list[str]) -> None:
+    """Eine Fehlerliste auf `stderr`, wie das Dashboard sie im roten Kasten zeigt.
+
+    **Dieselbe Liste, nicht dieselbe Ausnahme.** Seit P0.3 weist ein Lauf mit
+    kaputter Config sauber ab — im Dashboard als roter Kasten mit *allen*
+    Befunden, auf der CLI als roher Python-Traceback: zwanzig Zeilen Stack, in
+    denen die eigentliche Meldung unterging, und ein Exit-Code, der nichts sagte.
+    Die Pruefung war richtig, ihre Darstellung nicht.
+
+    **Geschrieben wird zeichensatzfest**, und der Grund ist gemessen: Die
+    Windows-Konsole dieses Projekts steht auf `cp1252`, und in `src/` stehen 46
+    Zeichenketten mit Zeichen, die dieser Zeichensatz nicht kennt (`→`, `≥`,
+    `₂`, `Δ`). Kein heutiger Validierungsbefund enthaelt eines davon — aber ein
+    einziges genuegte, um die Liste durch einen `UnicodeEncodeError` zu
+    ersetzen: einen Traceback an der Stelle, an der dieses Paket gerade einen
+    weggeraeumt hat. Ein Fehlerweg, der selbst scheitern kann, ist keiner.
+    Der weitere Umgang mit diesen 46 Stellen ist ein eigener Befund (P3.10).
+    """
+
+    _schreibe(kopf)
+    for befund in befunde:
+        _schreibe(f"  - {befund}")
+
+
+def _schreibe(zeile: str) -> None:
+    """Eine Zeile auf `stderr`, notfalls mit ersetzten Zeichen statt gar nicht.
+
+    `backslashreplace` und nicht `replace`: Ein `\\u2265` ist nachschlagbar, ein
+    `?` ist verloren. Wer den Befund weitermeldet, soll sagen koennen, was dort
+    stand.
+    """
+
+    try:
+        print(zeile, file=sys.stderr)
+    except UnicodeEncodeError:
+        kodierung = sys.stderr.encoding or "ascii"
+        roh = zeile.encode(kodierung, errors="backslashreplace")
+        sys.stderr.buffer.write(roh + b"\n")
+        sys.stderr.flush()
+
+
 def main() -> int:
+    """Der Einstieg der CLI — und die Stelle, an der ein Befund lesbar wird (P3.3).
+
+    Was hier gefangen wird, sind die **erwarteten** Fehlschläge: eine
+    Konfiguration, die keinen Lauf zulässt, und ein Zwischenstand aus einem
+    fremden Format. Beide sind Aussagen über die Eingabe und kein Programmfehler,
+    also gehören sie als Liste auf `stderr` und nicht als Traceback.
+
+    **Alles andere schlägt weiterhin durch.** Ein `KeyError` aus der Engine ist
+    keine Nachricht an den Nutzer, sondern ein Befund für die Entwicklung — der
+    Stack ist dort die nützlichere Ausgabe. Ein `except Exception` an dieser
+    Stelle wäre genau das Muster, das P3.3 an zwei anderen Stellen abräumt.
+    """
+
+    try:
+        return _main()
+    except ValidationError as fehler:
+        # `validate_state` und die CLI-Pruefung werfen beide mit dem Kopf
+        # "validierungsfehler:" und einer eingerueckten Liste. Hier wird sie
+        # wieder in Zeilen zerlegt, damit die Darstellung an *einer* Stelle
+        # entsteht und nicht zweimal formatiert wird.
+        zeilen = str(fehler).splitlines()
+        kopf = zeilen[0] if zeilen else "validierungsfehler:"
+        befunde = [z.strip().removeprefix("- ") for z in zeilen[1:] if z.strip()]
+        _melde_befunde(kopf, befunde or [str(fehler)])
+        return EXIT_KONFIGURATION
+    except CheckpointVersionError as fehler:
+        _melde_befunde("Der Zwischenstand passt nicht zu dieser Fassung:", [str(fehler)])
+        return EXIT_KONFIGURATION
+
+
+def _main() -> int:
     args = _parse_args()
     # Vor allem anderen: ohne diesen Aufruf hat das Projekt keinen Log-Handler,
     # und jede Warnung unterhalb von WARNING verschwindet spurlos. `--quiet`

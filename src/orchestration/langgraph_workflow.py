@@ -38,10 +38,26 @@ def build_playground_stategraph(
     consumer / provider / regulator nodes.
     """
 
+    # **Der echte Import gehört in den Versuch** (P3.3). Hier stand bis zum
+    # 2026-09-05 ein `try: pass`: Der `except`-Zweig konnte nie feuern, die
+    # gemeinte Meldung blieb aus, und wer `langgraph` nicht installiert hatte,
+    # bekam stattdessen zwanzig Zeilen später einen rohen `ImportError` aus
+    # `_build_parallel_stategraph`. Fehlerbehandlung, die nur so aussah.
+    #
+    # Geprüft wird vor `get_llm()`: Ohne Graph braucht niemand ein Sprachmodell,
+    # und die Reihenfolge entscheidet, welche der beiden Meldungen der Nutzer
+    # sieht.
     try:
-        pass  # type: ignore
-    except Exception as exc:
-        raise RuntimeError("langgraph package not available in this environment") from exc
+        from langgraph.graph import END, StateGraph  # type: ignore # noqa: F401
+    except ImportError as exc:
+        raise RuntimeError(
+            "Das Paket `langgraph` ist in dieser Umgebung nicht installiert — "
+            "der Studio-Graph lässt sich ohne es nicht bauen. Es ist eine "
+            "Kern-Abhängigkeit und kein Extra: In einem vollständig "
+            "eingerichteten venv ist es da. Fehlt es, ist die Umgebung "
+            'unvollständig — `pip install -e ".[dev]"` im aktivierten venv '
+            "(siehe Dev-Workflow in CLAUDE.md)."
+        ) from exc
 
     runner_options = options or _runner_options_from_env()
     if llm is None:
