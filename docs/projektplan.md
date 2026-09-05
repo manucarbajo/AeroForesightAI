@@ -2356,7 +2356,7 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Doku ist mitgezogen:** `CLAUDE.md` (Regel 4 des Dash-Abschnitts nennt jetzt auch die Layoutseite des Templates).
 
-### P3.8 — Was ein Tick bedeutet, ist dreimal verschieden entschieden ⚠️ neu 2026-08-31
+### P3.8 — Was ein Tick bedeutet, ist dreimal verschieden entschieden ⏸️ zurückgestellt mit Grund 2026-09-05 (neu 2026-08-31)
 
 > **Der Anlass war eine Nutzerfrage**, und sie hat eine Invariante getroffen: «Es kommt doch darauf an, wie viele Ticks man macht — evtl. möchte man Jahre.» Beim Nachmessen kam heraus, dass die Frage schon beantwortet ist. Dreimal. Verschieden.
 
@@ -2383,6 +2383,12 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 3. **Konfigurierbar** («Jahre je Tick» als Systemgröße). Ehrlichste Variante, bricht Invariante 5 ausdrücklich — und **jede** zeitabhängige Größe muss dann daran hängen, sonst ist der Widerspruch nur verschoben.
 
 **Fallstrick:** Wer nur eine der drei Stellen anfasst, verschiebt den Widerspruch, statt ihn aufzulösen. Der Wächter misst deshalb alle drei zusammen.
+
+**Zurückgestellt am 2026-09-05, mit Grund und nicht auf Sicht.** Beim Durchgang durch Phase 3 wurde die Festlegung Haiko vorgelegt — mit den drei Wegen und ihren Folgekosten. Entschieden ist: **noch nicht festlegen.** Der Grund ist nicht Aufwand, sondern Reihenfolge. Alle drei Wege verlangen eine Umparametrisierung, die der Backtest anschließend nicht mehr prüfen kann: Wer die Sättigung oder die Bevölkerungskurve auf eine gewählte Tickdauer einstellt, stellt genau die Größen ein, an denen P2.7 das Modell gegen 2015–2024 misst — und ein Modell, das den Vergleich besteht, weil es auf ihn hin eingestellt wurde, ist an nichts geprüft. Dieselbe Begründung, mit der P2.7 keine Eichung ist.
+
+**Was der Widerspruch heute kostet: nichts.** Er ist dokumentiert, von [`tests/test_tickdauer_ist_uneinheitlich.py`](../tests/test_tickdauer_ist_uneinheitlich.py) an drei Stellen gemessen, und keine ausgelieferte Zahl hängt daran — die Alterung, die ihn teuer machen würde, gibt es nicht (P2.4). Er schlägt zu, sobald ein **neuer** zeitabhängiger Mechanismus dazukommt; genau dann ist dieses Paket zu öffnen, und dann liegt die Entscheidung vor der Implementierung statt danach.
+
+**Was das Zurückstellen ausdrücklich nicht heißt:** dass die Frage offen ist. Sie ist gestellt, gemessen und mit drei Optionen samt Preis beantwortbar. Was fehlt, ist der Anlass — und der Wächter meldet ihn.
 
 **Fertig wenn:** Eine Tick-Dauer ist festgelegt und **jeder** zeitabhängige Mechanismus rechnet mit ihr — nachgewiesen an denselben drei Messungen, nicht an einer Absichtserklärung.
 
