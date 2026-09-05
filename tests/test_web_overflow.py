@@ -1713,13 +1713,23 @@ KLICK_AUFRUFE_MAX = 7
 
 #: Obergrenze für «bis der neue Schritt im DOM steht», in Millisekunden.
 #:
-#: **Bewusst großzügig und ausdrücklich nicht das Ziel.** P3.9 nennt 500 ms; das
-#: ist mit dieser Architektur nicht erreichbar, weil die Zeit in *einer*
-#: Browser-Aufgabe liegt und nicht in den Aufrufen (siehe der Kopf dieses Teils).
-#: Gemessen: 665 bis 1426 ms. Hier steht 2500, damit dieser Wächter auf einer
-#: ausgelasteten Maschine nicht rot wird, ohne dass sich etwas geändert hat —
-#: die zweite Warnung von P3.9 in eigener Sache.
-SICHTBAR_MAX_MS = 2500
+#: **Der Deckel ist mit P3.12 von 2500 auf 900 gefallen, und das ist der Punkt
+#: dieser Sperrklinke:** Sie verlangt, dass ein Gewinn eingetragen wird, sonst
+#: verfällt er still.
+#:
+#: Die Geschichte dieser Zahl gehört dazu, weil sie eine Fehldiagnose enthält.
+#: P3.9 hielt 500 ms für unerreichbar — «die Zeit liegt in *einer*
+#: Browser-Aufgabe», und die schien an Regel 1 und Regel 6 zu hängen. Das CPU-
+#: Profil sagte etwas anderes: 71,6 % in `dash_renderer`, und dessen Kosten
+#: hängen an der **Zahl** eingehängter Dash-Komponenten. Der Modell-Bereich
+#: stellte davon knapp die Hälfte, ohne je sichtbar zu sein — P3.12 hängt ihn
+#: aus, und damit ist das Kriterium erfüllt: **gemessen 213 bis 487 ms.**
+#:
+#: 900 statt 500, weil eine ausgelastete Maschine anders misst und dieser
+#: Wächter sonst rot wird, ohne dass sich etwas geändert hat (bei drei parallelen
+#: Läufen brauchte er einmal 1:56 h). Er hält damit den erreichten Stand und
+#: würde einen Rückfall auf die alten ~1400 ms melden.
+SICHTBAR_MAX_MS = 900
 
 _MESSUNG = """
 () => {
@@ -1885,4 +1895,107 @@ class TestEinKlickInDerSchrittfolgeKostetWenigRundlaeufe:
         assert kosten["takt"], (
             "Kein einzelner Taktgeber-Aufruf gesehen — dann trennt der Wächter "
             "nichts mehr, und ein stiller Herzschlag zählt als Klick."
+        )
+
+
+# --- Teil 10: Der Modell-Bereich liegt nur im DOM, wenn er offen ist (P3.12) ---
+#
+# **Aus P3.9, mit korrigierter Ursache.** Das CPU-Profil eines Klicks lag zu
+# **71,6 %** in `dash_renderer` (`notifyNestedSubs`: Redux benachrichtigt bei
+# jeder Antwort alle angeschlossenen Komponenten), zu 10,5 % in React, und
+# Plotly kam gar nicht vor. Die Kosten hängen an der **Zahl** eingehängter
+# Dash-Komponenten — und der Modell-Bereich stellte mit seinen 168
+# Bedienelementen 1404 der 2882 Knoten, auch während niemand hinsah.
+#
+# Gemessen nach der Änderung: 1218 → 252 ms `dash_renderer`, längste Aufgabe
+# 1144 → 271 ms, DOM in der Schrittfolge 2882 → 1477 Knoten.
+#
+# **Was hier geprüft wird, ist die Verdrahtung** — die Entscheidung selbst hängt
+# an einer reinen Funktion und steht in `tests/test_web_lazy_modell.py`. Nur der
+# Browser sagt, ob der Callback beim Bereichswechsel wirklich feuert.
+
+#: Wie viele Knoten der Wirt des Modell-Bereichs tragen darf, wenn er *nicht*
+#: offen ist. Null wäre zu scharf: Dash lässt einen leeren `Div` stehen.
+LEER_MAX = 2
+
+_WIRT = """
+() => {
+  const wirt = document.getElementById('model-editor-host');
+  return {
+    wirt: wirt ? wirt.querySelectorAll('*').length : -1,
+    gesamt: document.querySelectorAll('*').length,
+  };
+}
+"""
+
+
+class TestDerModellBereichLiegtNurImDomWennErOffenIst:
+    def test_er_ist_leer_solange_niemand_ihn_aufsucht(self, page):
+        for name, pfad in (("Einstieg", ""), ("Leitstand", "lauf"), ("Ergebnisse", "runs")):
+            page.goto(page.basis + pfad, wait_until="networkidle")
+            page.wait_for_timeout(RUHE_MS)
+            gemessen = page.evaluate(_WIRT)
+
+            assert gemessen["wirt"] <= LEER_MAX, (
+                f"«{name}» bei {page.breite} px trägt {gemessen['wirt']} Knoten im "
+                "Wirt des Modell-Bereichs — dann liegen die 168 Bedienelemente "
+                "wieder dauernd im DOM, und jeder Klick zahlt dafür."
+            )
+
+    def test_beim_aufsuchen_wird_er_gebaut(self, page):
+        page.goto(page.basis + "modell", wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS * 2)
+        gemessen = page.evaluate(_WIRT)
+
+        assert gemessen["wirt"] > 500, (
+            f"Der Modell-Bereich bleibt leer ({gemessen['wirt']} Knoten) — dann "
+            "ist er unbenutzbar. Der Callback muss auf den Pfad hören."
+        )
+
+    def test_ein_tieflink_zeigt_ihn_auch(self, page):
+        """**`prevent_initial_call` ist weg, und das ist der Grund.** Wer die
+        Adresse direkt öffnet, muss den Bereich sehen — mit unterdrücktem
+        Erstaufruf hätte er einen leeren Bildschirm."""
+
+        page.goto(page.basis + "modell", wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS * 2)
+
+        assert page.evaluate(_WIRT)["wirt"] > 500
+        assert page.locator("#model-editor-host input").count() > 50
+
+    def test_beim_verlassen_wird_er_wieder_abgebaut(self, page):
+        """Sonst hätte der erste Besuch die Ersparnis für immer aufgebraucht."""
+
+        page.goto(page.basis + "modell", wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS * 2)
+        assert page.evaluate(_WIRT)["wirt"] > 500, "Vorbedingung: er war nie da"
+
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS * 2)
+
+        assert page.evaluate(_WIRT)["wirt"] <= LEER_MAX, (
+            "Der Bereich bleibt nach dem Verlassen eingehängt — die Ersparnis "
+            "gilt dann nur bis zum ersten Besuch."
+        )
+
+    def test_der_baum_ist_wirklich_kleiner_geworden(self, page):
+        """Die Zahl, an der der Gewinn hängt — als Sperrklinke.
+
+        Gemessen: 2882 Knoten vor P3.12, 1477 danach. Der Deckel steht auf 2000,
+        also deutlich unter dem alten Stand und mit Luft für gewachsene
+        Oberfläche. Wächst er darüber, ist entweder der Modell-Bereich zurück
+        oder ein neuer Bereich hat dasselbe Muster.
+        """
+
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+        page.click("#wizard-way-new")
+        page.wait_for_timeout(RUHE_MS * 2)
+
+        gemessen = page.evaluate(_WIRT)
+
+        assert gemessen["gesamt"] < 2000, (
+            f"Die Schrittfolge trägt {gemessen['gesamt']} DOM-Knoten (gemessen "
+            "waren es 1477 nach P3.12, 2882 davor). Jeder Klick zahlt dafür in "
+            "`dash_renderer`."
         )

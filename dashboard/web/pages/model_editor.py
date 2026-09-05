@@ -38,6 +38,18 @@ from dashboard.web.config_editor import macro, micro
 #: Wirt für den Inhalt. Eigener Knoten, damit ein Callback ihn nachziehen kann,
 #: ohne die Überschrift neu zu bauen — dieselbe Aufteilung wie bei den Wirten
 #: der Schrittfolge.
+#:
+#: **Er bleibt leer, bis jemand den Bereich aufsucht** (P3.12, 2026-09-05). Die
+#: 168 Bedienelemente hier waren **1404 der 2882 Knoten** der ganzen Anwendung
+#: und lagen auch dann im DOM, wenn jemand in der Schrittfolge arbeitete.
+#: Gemessen kostete das **jeden Klick in der Schrittfolge rund eine Sekunde**:
+#: Dashs `dash_renderer` benachrichtigt bei *jeder* Callback-Antwort alle
+#: angeschlossenen Komponenten (`notifyNestedSubs`), und das skaliert mit ihrer
+#: Zahl — nicht mit der Größe des sichtbaren Bereichs.
+#:
+#: Gemessen im CPU-Profil eines Klicks: 71,6 % der Zeit in `dash_renderer`,
+#: 10,5 % in React, Plotly gar nicht. Mit leerem Wirt fielen die 1218 ms auf
+#: 246 ms und die längste Browser-Aufgabe von 1144 ms auf 267 ms.
 HOST = "model-editor-host"
 
 #: Wo die Rückmeldung einer Aktion erscheint — «Segment gelöscht», «Population
@@ -50,6 +62,14 @@ HOST = "model-editor-host"
 #: Umsetzung von W3.2 aufgefallen: Der Umzug aus W3.1 hat die Aktionen
 #: mitgenommen, ihre Rückmeldung aber nicht.
 STATUS = "model-editor-status"
+
+#: Unter welcher Adresse dieser Bereich liegt — **eine** Quelle (P3.12).
+#:
+#: Der Callback, der den Rumpf baut, muss wissen, ob der Bereich offen ist. Den
+#: Pfad `"modell"` dort als Zeichenkette hinzuschreiben wäre eine zweite Quelle
+#: neben `shell.ROUTES`: Wer den Bereich später umbenennt, ließe einen Bereich
+#: zurück, der nie mehr gebaut wird — und zwar lautlos.
+ROUTE = "modell"
 
 
 def body(draft: dict) -> html.Div:
@@ -66,10 +86,39 @@ def body(draft: dict) -> html.Div:
         return ui.alert(f"Modell konnte nicht aufgebaut werden: {exc}", "error")
 
 
-def layout(draft: dict | None = None) -> html.Div:
-    from dashboard.web.state import initial_draft_dict
+def rumpf_fuer(pathname: str | None, draft: dict | None) -> object:
+    """Der Rumpf, wenn dieser Bereich offen ist — sonst nichts (P3.12).
 
-    entwurf = draft if draft is not None else initial_draft_dict()
+    Als eigene Funktion und nicht im Callback, aus demselben Grund wie bei
+    `shell.active_route`: So ist die Entscheidung ohne laufende App prüfbar, und
+    `config_editor._model_editor` bleibt eine Verdrahtung. Ein umhüllter
+    Dash-Callback lässt sich von außen nicht aufrufen — er verlangt seinen
+    Kontext —, und eine Entscheidung, die nur im Browser prüfbar ist, wird
+    seltener geprüft.
+
+    **Leeren statt stehen lassen**, wenn der Bereich nicht offen ist: Ein
+    Bereich, den niemand sieht, soll auch nicht mitgerechnet werden. Genau darin
+    liegt der Gewinn — Dashs `dash_renderer` benachrichtigt bei jeder Antwort
+    alle angeschlossenen Komponenten, und die 168 Bedienelemente hier waren
+    knapp die Hälfte aller.
+    """
+
+    from dashboard.web import shell
+
+    if shell.active_route(pathname) != ROUTE:
+        return []
+    return body(draft or {})
+
+
+def layout(draft: dict | None = None) -> html.Div:
+    """Der Rahmen des Bereichs — **ohne** seine 168 Bedienelemente (P3.12).
+
+    *draft* wird nicht mehr gelesen und bleibt in der Signatur: `app.py` ruft
+    `layout(draft)` beim Aufbau des Bildschirms, und der Rumpf entsteht jetzt im
+    Callback `config_editor._model_editor`, sobald jemand den Bereich aufsucht.
+    Ein Parameter zu entfernen, den ein Aufrufer noch übergibt, wäre eine zweite
+    Änderung in derselben Zeile.
+    """
 
     return html.Div(
         [
@@ -86,7 +135,10 @@ def layout(draft: dict | None = None) -> html.Div:
                 # die man gerade ausgelöst hat — sie gehört angesagt (W5.3).
                 **{"aria-live": "polite"},
             ),
-            html.Div(body(entwurf), id=HOST),
+            # **Leer** — gefüllt wird beim Aufsuchen des Bereichs (P3.12). Der
+            # Callback `_model_editor` hört dafür auf den Pfad; `entwurf` steht
+            # hier nur noch für die Überschriften darüber.
+            html.Div([], id=HOST),
         ],
         className="af-pane af-pane--focus",
     )

@@ -31,8 +31,17 @@ import dataclasses
 
 import pytest
 
+#: Der Modell-Bereich wird seit P3.12 erst beim Aufsuchen gebaut — diese
+#: Wächter meinen seinen **Rumpf**, nicht den leeren Rahmen. Ohne den Pfad
+#: lieferte `rumpf_fuer` eine leere Liste, und die Zusagen wären lautlos
+#: hohl: Der Regel-1-Test verglich dann eine leere Feldmenge mit der
+#: Schrittfolge und wäre für immer grün.
+from dashboard.web import routing
 from dashboard.web.config_editor import controls, wizard
+from dashboard.web.pages.model_editor import ROUTE as _MODELL_ROUTE
 from dashboard.web.state import initial_draft_dict
+
+_MODELL_PFAD = routing.url(_MODELL_ROUTE)
 
 
 @pytest.fixture
@@ -138,7 +147,7 @@ class TestModellUndExperimentSindZweiOrte:
 
         from dashboard.web.pages import model_editor
 
-        im_modell = _fields(model_editor.layout(draft))
+        im_modell = _fields(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
         in_schritten = set()
         for index in range(len(wizard.STEPS)):
             in_schritten |= _fields(wizard.content(draft, index))
@@ -155,7 +164,7 @@ class TestModellUndExperimentSindZweiOrte:
 
         from dashboard.web.pages import model_editor
 
-        felder = _fields(model_editor.layout(draft))
+        felder = _fields(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
 
         assert any(f.startswith("property_edits.") for f in felder), "Die Systemgrößen fehlen"
         assert any(f.startswith("population_edits.") for f in felder), "Die Bevölkerung fehlt"
@@ -181,7 +190,7 @@ class TestModellUndExperimentSindZweiOrte:
 
         from dashboard.web.pages import model_editor
 
-        ueberall = _fields(model_editor.layout(draft))
+        ueberall = _fields(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
         for index in range(len(wizard.STEPS)):
             ueberall |= _fields(wizard.content(draft, index))
 
@@ -213,7 +222,7 @@ class TestModellUndExperimentSindZweiOrte:
         kaputt = dict(draft)
         kaputt["properties_file"] = "gibt-es-nicht.json"
 
-        gerendert = str(model_editor.layout(kaputt))
+        gerendert = str(model_editor.rumpf_fuer(_MODELL_PFAD, kaputt))
 
         assert gerendert
         assert "Traceback" not in gerendert
@@ -657,7 +666,7 @@ class TestNurDasModellSchreibtInsModell:
 
         from dashboard.web.pages import model_editor
 
-        baum = model_editor.layout(draft)
+        baum = model_editor.rumpf_fuer(_MODELL_PFAD, draft)
         mit_rueckfrage = {
             str(item.id)
             for item in _walk(baum)
@@ -690,7 +699,7 @@ class TestNurDasModellSchreibtInsModell:
 
         provider = [
             item
-            for item in _walk(model_editor.layout(draft))
+            for item in _walk(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
             if isinstance(item, dcc.ConfirmDialogProvider)
         ]
 
