@@ -57,6 +57,30 @@ ROUTES = [
 #: Alte Adressen, die weiterhin funktionieren sollen — Pfad → Bereich.
 ALIASES = {"setup": ""}
 
+
+def active_route(pathname: str | None) -> str:
+    """Welcher Bereich zu einer Adresse gehört.
+
+    Als eigene Funktion und nicht im Callback: So ist die Entscheidung ohne
+    laufende App prüfbar, und der Callback bleibt eine Verdrahtung.
+
+    **Sie steht seit P3.12 hier und nicht in `app.py`**, weil sie ausschließlich
+    aus `ROUTES` und `ALIASES` folgt — beide stehen darüber. Der Anlass war ein
+    zweiter Aufrufer: `config_editor` muss wissen, ob der Modell-Bereich offen
+    ist, und `app.py` von dort zu importieren wäre ein Zyklus. Die Antwort
+    zweimal zu berechnen wäre die Alternative gewesen: zwei Quellen für die
+    Frage, welcher Bereich gilt.
+    """
+
+    relative = routing.relative(pathname)
+    # Das Handbuch hat Unterseiten (`doku/cib`) — hier zählt der Anfang.
+    if relative.startswith("doku"):
+        return "doku"
+    if relative in ALIASES:
+        return ALIASES[relative]
+    return relative if relative in {route for route, _ in ROUTES} else ""
+
+
 LANDING_URL = routing.LANDING_PATH
 
 #: Der Umschalter zwischen hell und dunkel. Der Wert steht zusätzlich in
