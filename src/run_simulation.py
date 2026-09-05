@@ -18,6 +18,12 @@ if __package__ in {None, ""}:
 from src.cib.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 from src.config_loader import build_initial_state
 from src.llm import STUDIO_DIR, MockLLM, OllamaClient, OllamaConfig, load_env
+from src.llm.defaults import (
+    DEFAULT_BASE_URL,
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_MODEL,
+    DEFAULT_TEMPERATURE,
+)
 from src.logging_setup import configure_logging
 from src.models.llm_models import LLMIncident
 from src.models.state_models import Rahmenszenario
@@ -56,14 +62,22 @@ from src.validation import ValidationError, validate_llm_settings
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the AeroForesight simulation.")
-    parser.add_argument("--model", default="llama3.2", help="Ollama model name, e.g. llama3.2")
+    parser.add_argument(
+        "--model",
+        default=DEFAULT_MODEL,
+        help=f"Ollama model name, default: {DEFAULT_MODEL}",
+    )
     parser.add_argument(
         "--base-url",
-        default="http://localhost:11434",
-        help="Ollama base URL, default: http://localhost:11434",
+        default=DEFAULT_BASE_URL,
+        help=f"Ollama base URL, default: {DEFAULT_BASE_URL}",
     )
-    parser.add_argument("--temperature", type=float, default=0.7, help="LLM temperature")
-    parser.add_argument("--max-tokens", type=int, default=2048, help="Max tokens per response")
+    parser.add_argument(
+        "--temperature", type=float, default=DEFAULT_TEMPERATURE, help="LLM temperature"
+    )
+    parser.add_argument(
+        "--max-tokens", type=int, default=DEFAULT_MAX_TOKENS, help="Max tokens per response"
+    )
     parser.add_argument(
         "--rounds",
         type=int,

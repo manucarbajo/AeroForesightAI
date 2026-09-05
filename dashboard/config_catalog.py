@@ -8,6 +8,12 @@ from pathlib import Path
 from typing import Any
 
 from src.config_loader import CONFIGS_DIR, build_initial_state, load_properties_config
+from src.llm.defaults import (
+    DEFAULT_BASE_URL,
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_MODEL,
+    DEFAULT_TEMPERATURE,
+)
 from src.market.market_feedback import resolve_market_feedback_config
 from src.models.property_models import BaselineTrajectory, StepFunctionTrajectory
 from src.models.state_models import Rahmenszenario
@@ -198,10 +204,10 @@ class ConfigDraft:
     # UI State
     mock_llm: bool = True
     deterministic_only: bool = False
-    model: str = "llama3.2"
-    base_url: str = "http://localhost:11434"
-    temperature: float = 0.7
-    max_tokens: int = 2048
+    model: str = DEFAULT_MODEL
+    base_url: str = DEFAULT_BASE_URL
+    temperature: float = DEFAULT_TEMPERATURE
+    max_tokens: int = DEFAULT_MAX_TOKENS
 
     no_market: bool = False
     redebedarf: bool = False

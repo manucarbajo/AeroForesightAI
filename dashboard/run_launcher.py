@@ -10,6 +10,12 @@ from typing import Callable
 from dashboard.config_catalog import ConfigDraft, PropertyEditState, prepare_simulation_state
 from dashboard.run_browser import generate_figures_for_run
 from src.llm import MockLLM, OllamaClient, OllamaConfig
+from src.llm.defaults import (
+    DEFAULT_BASE_URL,
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_MODEL,
+    DEFAULT_TEMPERATURE,
+)
 from src.logging_setup import configure_logging, progress_logging
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
@@ -37,10 +43,10 @@ class RunLaunchConfig:
     # mehr vorgegeben, sie entsteht im Lauf aus den exogenen Systemgrößen.
     mock_llm: bool = True
     deterministic_only: bool = False
-    model: str = "llama3.2"
-    base_url: str = "http://localhost:11434"
-    temperature: float = 0.7
-    max_tokens: int = 2048
+    model: str = DEFAULT_MODEL
+    base_url: str = DEFAULT_BASE_URL
+    temperature: float = DEFAULT_TEMPERATURE
+    max_tokens: int = DEFAULT_MAX_TOKENS
     no_market: bool = False
     redebedarf: bool = False
     checkpoint_interval: int = 5
@@ -130,7 +136,7 @@ def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
         property_edits=draft.property_edits,
         mock_llm=draft.mock_llm,
         deterministic_only=draft.deterministic_only,
-        model=draft.model.strip() or "llama3.2",
+        model=draft.model.strip() or DEFAULT_MODEL,
         base_url=draft.base_url.strip(),
         temperature=float(draft.temperature),
         max_tokens=int(draft.max_tokens),

@@ -12,6 +12,8 @@ from typing import Iterable, Protocol
 
 import requests
 
+from src.llm import defaults
+
 
 class LLMCallable(Protocol):
     def call(self, prompt: str) -> str: ...
@@ -122,22 +124,21 @@ class LocalOllama:
     """
 
     def __init__(self, model: str | None = None, base_url: str | None = None) -> None:
-        model_name = model or os.environ.get("OLLAMA_MODEL")
+        # **Die Env-Übersetzung liegt seit P3.4 in `OllamaConfig`**, nicht mehr
+        # hier. Sie war der Grund, warum `OLLAMA_BASE_URL` für jeden Aufrufer
+        # wirkungslos blieb, der seinen Client direkt baut — der Sweep-Pfad tut
+        # genau das. Was hier bleibt, ist der Unterschied zum allgemeinen Fall:
+        # Diese Klasse **verlangt** ein Modell, weil `get_llm()` sie nur wählt,
+        # wenn eines genannt ist. Ein Vorgabewert wäre hier eine Anmaßung.
+        model_name = model or os.environ.get("OLLAMA_MODEL", "").strip()
         if not model_name:
             raise RuntimeError("OLLAMA_MODEL nicht gesetzt")
         self.model = model_name
 
-        base = base_url or os.environ.get("OLLAMA_BASE_URL") or "http://127.0.0.1:11434"
-        self.base_url = base.rstrip("/")
+        self.base_url = (base_url or defaults.env_base_url()).rstrip("/")
         self.url = self.base_url + "/api/generate"
-        try:
-            self.temperature = float(os.environ.get("OLLAMA_TEMPERATURE", "0.7"))
-        except ValueError:
-            self.temperature = 0.7
-        try:
-            self.max_tokens = int(os.environ.get("OLLAMA_MAX_TOKENS", "2048"))
-        except ValueError:
-            self.max_tokens = 2048
+        self.temperature = defaults.env_temperature()
+        self.max_tokens = defaults.env_max_tokens()
         self.system_prompt = os.environ.get("OLLAMA_SYSTEM_PROMPT")
         try:
             self.request_timeout = float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "180"))

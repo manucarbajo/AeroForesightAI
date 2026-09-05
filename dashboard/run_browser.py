@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from src.llm import MockLLM, OllamaClient, OllamaConfig
+from src.llm.defaults import DEFAULT_BASE_URL, DEFAULT_MODEL
 from src.reporting.output_writer import OUTPUT_DIR, resolve_run_output_dir
 
 
@@ -153,8 +154,8 @@ def regenerate_run_scenario(
     run_dir: Path | str | None = None,
     mock_llm: bool = True,
     deterministic_only: bool = False,
-    model: str = "llama3.2",
-    base_url: str = "http://localhost:11434",
+    model: str = DEFAULT_MODEL,
+    base_url: str = DEFAULT_BASE_URL,
     temperature: float = 0.7,
     max_tokens: int = 2048,
 ) -> dict[str, Any]:

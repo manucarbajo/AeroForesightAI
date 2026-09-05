@@ -4,6 +4,12 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
+from src.llm.defaults import (
+    DEFAULT_BASE_URL,
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_MODEL,
+    DEFAULT_TEMPERATURE,
+)
 from src.models.llm_models import LLMIncident
 from src.models.population_models import Individual
 from src.models.property_models import PropertiesConfig
@@ -70,9 +76,28 @@ class SimulationClock(BaseModel):
 
 
 class LLMConfig(BaseModel):
-    model: str = "llama3"
-    temperature: float = 0.7
-    max_tokens: int = 2048
+    """Mit welchem Sprachmodell ein Lauf rechnet (P3.4).
+
+    **Seit dem 2026-09-05 wird dieses Feld wirklich benutzt.** Vorher las es kein
+    Laufpfad: Der echte Client entstand aus den CLI-Argumenten bzw. aus
+    `RunLaunchConfig`, und die einzigen Leser waren die Studio-Schema-Defaults in
+    `langgraph_adapter`. Sichtbarster Beleg war `configs/simulation_config.json`
+    mit `llm.model: "llama3"`, während überall sonst `llama3.2` stand — und
+    niemandem fiel es auf, weil der Wert nirgends ankam. `validation` prüfte ihn
+    trotzdem, also eine Prüfung ohne Gegenstand.
+
+    Jetzt schreiben CLI und Dashboard hierher, der Client wird **daraus** gebaut,
+    und `run_metadata.json` beschreibt damit den Lauf, der wirklich lief.
+
+    `base_url` gehört seither dazu: Ein Modellname ohne Endpunkt beschreibt den
+    Lauf nur halb, und der Endpunkt war das Feld, das am weitesten
+    auseinandergelaufen war (zwei Schreibweisen über sieben Dateien).
+    """
+
+    model: str = DEFAULT_MODEL
+    base_url: str = DEFAULT_BASE_URL
+    temperature: float = DEFAULT_TEMPERATURE
+    max_tokens: int = DEFAULT_MAX_TOKENS
 
 
 #: Der Seed, mit dem gerechnet wird, wenn die Konfiguration keinen nennt.
@@ -209,14 +234,16 @@ class InputState(BaseModel):
     max_rounds: int = Field(default=40, description="Maximale Anzahl an Ticks")
     rounds: int = Field(default=4, description="Alias für max_rounds")
     seed: int | None = Field(default=None, description="Seed für Multi-Run")
-    llm_model: str = Field(default="llama3.2", description="LLM-Modellname")
-    llm_temperature: float = Field(default=0.7, description="LLM-Temperatur")
-    llm_max_tokens: int = Field(default=2048, description="Maximale Token pro Antwort")
+    llm_model: str = Field(default=DEFAULT_MODEL, description="LLM-Modellname")
+    llm_temperature: float = Field(default=DEFAULT_TEMPERATURE, description="LLM-Temperatur")
+    llm_max_tokens: int = Field(
+        default=DEFAULT_MAX_TOKENS, description="Maximale Token pro Antwort"
+    )
     enable_redebedarf: bool = Field(
         default=False,
         description="C3 Redebedarf-Scheduler statt paralleler Agenten pro Tick",
     )
-    ollama_base_url: str = Field(default="http://localhost:11434", description="Ollama-Base-URL")
+    ollama_base_url: str = Field(default=DEFAULT_BASE_URL, description="Ollama-Base-URL")
 
 
 class PlaygroundState(InputState):

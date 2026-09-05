@@ -148,6 +148,25 @@ OLLAMA_BASE_URL=http://127.0.0.1:11434
 
 Backend-Auswahl in Code: `src/llm/studio_helpers.get_llm()` (Priorität: Ollama → HTTP → Transformers → Mock).
 
+**Die Vorgabewerte stehen an genau einer Stelle** (seit P3.4): `src/llm/defaults.py`
+— Modellname, Endpunkt, Temperatur, Antwortlänge. Ein Endpunktwechsel ist damit eine
+Änderung und nicht neun; ein AST-Wächter (`tests/test_llm_defaults.py`) meldet jede
+zweite Quelle, auch in einem Modul, das es heute noch nicht gibt.
+
+**Und die vier Variablen wirken überall**, nicht nur im Studio: `OLLAMA_BASE_URL`,
+`OLLAMA_MODEL`, `OLLAMA_TEMPERATURE` und `OLLAMA_MAX_TOKENS` werden in
+`OllamaConfig` selbst gelesen. Vorher saß diese Übersetzung allein in
+`LocalOllama`, und jeder Aufrufer, der seinen Client direkt baut — der Sweep-Pfad
+tut das —, ignorierte sie stillschweigend: Ein Sweep gegen
+`OLLAMA_BASE_URL=http://127.0.0.1:9` lief trotzdem gegen Port 11434. Ein
+ausdrücklich gesetzter Wert (CLI-Argument, Dashboard-Feld) gewinnt weiterhin gegen
+die Umgebung. Eine Variable, die keine Zahl enthält (`OLLAMA_TEMPERATURE=0,7` mit
+Komma), fällt auf den Vorgabewert zurück und **sagt es im Log** — vorher war das
+still.
+
+Der Endpunkt lautet `127.0.0.1` und nicht `localhost`: Letzteres löst auf manchen
+Windows-Installationen zuerst nach `::1` auf, während Ollama nur auf IPv4 lauscht.
+
 `--mock-llm` geht seit P0.1 **an dieser Auswahl vorbei** und liefert immer das
 Mock-Backend. Vorher hing der Schalter an der Umgebung: war `OLLAMA_MODEL`
 gesetzt, versuchte auch ein „Mock"-Lauf, Ollama zu erreichen. Fällt ein echtes

@@ -15,6 +15,7 @@ from dash import html
 
 from dashboard import llm_status
 from dashboard.web import components as ui
+from src.llm.defaults import DEFAULT_BASE_URL, DEFAULT_MODEL
 
 #: Die Auswahl ist kein Draft-Feld; `config_editor._normalise` übersetzt sie
 #: in `mock_llm` und `deterministic_only`.
@@ -111,8 +112,8 @@ def availability(draft: dict) -> html.Div:
     warten.
     """
 
-    base_url = draft.get("base_url") or "http://localhost:11434"
-    model = draft.get("model") or "llama3.2"
+    base_url = draft.get("base_url") or DEFAULT_BASE_URL
+    model = draft.get("model") or DEFAULT_MODEL
     status = llm_status.check(base_url)
 
     if not status.reachable:
