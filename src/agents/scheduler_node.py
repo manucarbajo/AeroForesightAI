@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from src.agents._scheduling_helpers import (
     initial_score_ledger as _initial_score_ledger,
 )
@@ -15,6 +17,8 @@ from src.agents._scheduling_helpers import (
 from src.agents.redebedarf_scheduler import FactorChangeObservation, RedebedarfScheduler
 from src.models.event_models import RoundResult
 from src.models.state_models import SimulationState, SpeechCandidateState, SpeechPlanState
+
+logger = logging.getLogger(__name__)
 
 
 def _apply_latest_turn_deltas(
@@ -49,9 +53,19 @@ class SchedulerNode:
     """Computes the speaking order via RedebedarfScheduler and manages speech plans."""
 
     def invoke(self, state: SimulationState) -> SimulationState:
-        print("\n--- SCHEDULER DEBUG ---")
-        print(f"Round: {state.clock.current_tick}/{state.clock.max_ticks}")
-        print(f"Spoken so far: {state.current_round_spoken_agents}")
+        # **`logging` statt `print`** (P3.5). Diese acht Zeilen liefen in *jedem*
+        # Tick unbedingt mit, ohne Level und ohne Abschaltmöglichkeit. Der
+        # Unterschied ist nicht nur der Kanal, sondern die Einteilung: Was
+        # Fortschritt ist, bleibt `info` und steht damit weiter im
+        # Fortschrittsfenster des Dashboards (es hängt seit P0.1 über
+        # `progress_logging` an `logging`); der Rest ist `debug` und schweigt in
+        # einem normalen Lauf.
+        logger.debug(
+            "Scheduler, Tick %s/%s — bereits gesprochen: %s",
+            state.clock.current_tick,
+            state.clock.max_ticks,
+            state.current_round_spoken_agents,
+        )
 
         round_number = state.clock.current_tick
         if round_number < 1:
@@ -59,7 +73,7 @@ class SchedulerNode:
             state.current_speech_candidates = []
             state.redebedarf_scores = {}
             state.speech_plan = None
-            print("Next speaker order: []\n")
+            logger.debug("Tick %s liegt vor dem ersten — keine Reihenfolge", round_number)
             return state
 
         scheduler = RedebedarfScheduler.from_simulation_state(state, apply_score_deltas=False)
@@ -89,8 +103,17 @@ class SchedulerNode:
                 candidates=[],
                 scores=dict(state.redebedarf_scores),
             )
-            print("Next speaker order: []")
-            print("Safety limit reached, routing to market.\n")
+            # **Als Warnung, nicht als Debugzeile.** Diese Grenze greift nur,
+            # wenn in einem Tick mehr als zehn Beiträge gefallen sind, und dass
+            # der Rest des Ticks danach übersprungen wird, gehört zu den Dingen,
+            # die jemand sehen soll — bis P3.5 stand sie zwischen sieben anderen
+            # `print`-Zeilen und war damit praktisch unsichtbar.
+            logger.warning(
+                "Tick %s: Sicherheitsgrenze von 10 Beiträgen erreicht (%s Sprecher) — "
+                "der Rest des Ticks geht direkt an den Markt.",
+                round_number,
+                len(spoken_agents_this_round),
+            )
             return state
 
         candidates = scheduler.build_speech_candidates()
@@ -106,14 +129,22 @@ class SchedulerNode:
         ]
         state.current_speech_order = [candidate.agent_id for candidate in candidates]
         state.redebedarf_scores = scheduler.snapshot_scores()
-        print(f"Scores: {state.redebedarf_scores}")
+        logger.debug("Redebedarf-Punkte: %s", state.redebedarf_scores)
         state.speech_plan = SpeechPlanState(
             round_number=round_number,
             order=list(state.current_speech_order),
             candidates=list(state.current_speech_candidates),
             scores=dict(state.redebedarf_scores),
         )
-        print(f"Next speaker order: {state.current_speech_order}\n")
+        # **Die eine Zeile, die Fortschritt ist**, und deshalb `info`: Sie sagt,
+        # wer in diesem Tick spricht. Das Fortschrittsfenster des Dashboards
+        # zeigt damit weiter, was es vorher zeigte — nur ohne die sieben
+        # Debugzeilen darum herum.
+        logger.info(
+            "Tick %s: Redebedarf-Reihenfolge %s",
+            round_number,
+            state.current_speech_order or "keine",
+        )
         return state
 
     @staticmethod

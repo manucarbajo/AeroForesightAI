@@ -48,3 +48,13 @@ Akteur meldet sich nur, wenn sich für ihn etwas Wesentliches verändert hat.
 Die Protokolle werden dadurch kürzer und dichter. Für lange Läufe ist das meist
 die bessere Wahl; für die Vorführung eines kurzen Laufs ist der vollständige
 Dialog anschaulicher.
+
+Im Fortschrittsfenster steht in diesem Modus je Runde **eine** Zeile: wer spricht.
+Bis September 2026 waren es acht — eine Sprechreihenfolge zwischen sieben Zeilen
+Innenansicht des Zählwerks. Die sieben gibt es weiterhin, aber nur auf Nachfrage
+(Logstufe `DEBUG`); weggeworfen wären sie beim Nachstellen eines Laufs zu
+vermissen.
+
+Greift die **Sicherheitsgrenze** — mehr als zehn Beiträge in einer Runde —, wird
+der Rest der Runde übersprungen und geht direkt an die Marktberechnung. Das steht
+seither als Warnung da, nicht mehr als eine Zeile unter acht.

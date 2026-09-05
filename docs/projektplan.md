@@ -2466,13 +2466,23 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Fertig, gemessen:** [`tests/test_llm_defaults.py`](../tests/test_llm_defaults.py) — 25 Zusagen in vier Gruppen. Der Wächter gegen eine zweite Quelle ist ein **AST-Durchlauf über `src/` und `dashboard/`** und keine Liste der neun Dateien: Genau so ist der Befund gewachsen — die beim Dash-Umbau neu entstandenen `config_editor`-Module haben die Hartkodierung *geerbt*, per Kopie, ohne dass jemand sie dort hingeschrieben hätte. Eine Aufzählung fängt den Rückfall an bekannter Stelle und übersieht das zehnte Modul. **Doku ist mitgezogen:** `README.md` (Umgebung, Exit-Codes, Backend-Auswahl), `langgraph_studio/.env.example`, `docs/handbuch/lauf-konfigurieren.md` (die Adresse in der Prüftabelle und der Absatz «Technik»).
 
-### P3.5 — Stille Klemmungen und Debug-Ausgaben
+### P3.5 — Stille Klemmungen und Debug-Ausgaben ✅ erledigt 2026-09-05
 
 **Befund:** `threshold` und `max_contributions_per_agent` werden ohne Warnung auf einen Wunschbereich geklemmt — wer bewusst `threshold=1` setzt, bekommt stillschweigend 3. Dazu acht `print()`-Debugausgaben im Scheduler, die bei jedem Tick unbedingt laufen.
 **Fundstelle:** [`src/agents/redebedarf_scheduler.py:73,75`](../src/agents/redebedarf_scheduler.py), [`src/agents/scheduler_node.py`](../src/agents/scheduler_node.py) (8 Vorkommen).
 **Was zu tun ist:** Klemmung protokollieren oder als Konfigurationsfehler abweisen; `print()` durch `logging` mit Level-Guard ersetzen.
 **Reihenfolge (2026-08-26):** **nicht vor P0.1.** Das Fortschritts-Log des Dashboards wird ausschließlich von `print()` gespeist (`run_launcher.py:397` leitet `stdout` in einen Tee um). Der Logging-Handler, der in denselben Tee schreibt, entsteht in P0.1; landet P3.5 vorher, verschwinden die Scheduler-Zeilen aus dem Live-Log, ohne dass jemand einen Fehler sieht.
-**Fertig wenn:** Ein geklemmter Wert erzeugt eine sichtbare Warnung; ein normaler Lauf ist auf stdout still, und das Fortschritts-Log im Dashboard zeigt weiterhin, was es vorher zeigte. **Doku:** `docs/handbuch/ref-config.md`, `docs/handbuch/akteure.md`.
+**Umgesetzt am 2026-09-05, und aus «protokollieren» ist «abweisen» geworden.** Der Plan ließ beides zu; abgewiesen wird jetzt, weil ein geklemmter Wert eine Einstellung *annimmt* und mit einer anderen rechnet — dieselbe Bauform, die [P2.11](#p211--zwei-quellen-für-dieselbe-marktkonstante--erledigt-2026-09-03) bei den Marktkonstanten und P1.9-W5.1 im Dashboard abgeräumt hat. **Die Grenzen sind dieselben wie vorher**, geändert hat sich nur, dass sie etwas sagen; kein Aufrufer im Repo setzt die beiden Werte, das Abweisen bricht also nichts.
+
+**Ein Fall kam dazu, den die Klemmung nicht kannte:** `threshold > max_score`. Die alte Klemmung fing nur nach unten ab — liegt die Schwelle über der Skala, kann kein Agent sie je überschreiten, und der Scheduler bliebe **dauerhaft stumm**. Das sah aus wie ein Lauf, in dem niemand Redebedarf hatte.
+
+**Und die Grenzen stehen nicht mehr als Literale im Konstruktor.** `max(3, threshold)` stand neben `DEFAULT_THRESHOLD = 3`: Wer die Konstante geändert hätte, hätte die Klemmung unverändert gelassen — die zweite Quelle noch einmal, eine Ebene tiefer. Ein Test hält per AST fest, dass im Konstruktor nicht wieder geklemmt wird.
+
+**Bei den acht `print()` war die Einteilung die Arbeit**, nicht der Kanal. «Auf stdout still» und «das Fortschritts-Log zeigt weiterhin, was es vorher zeigte» widersprechen sich, wenn man alles auf `debug` legt. Es sind daher drei Stufen: die **Sprechreihenfolge** bleibt `info` und steht damit weiter im Fortschrittsfenster (es hängt seit P0.1 über `progress_logging` an `logging`), die **Sicherheitsgrenze** wird eine `warning` — dass der Rest eines Ticks übersprungen wird, gehört gesehen —, der Rest ist `debug`.
+
+**Die Reihenfolgeregel ist eingehalten** (nicht vor P0.1), und die tragende Zusage prüft genau sie: `test_das_fortschrittsfenster_sieht_die_reihenfolge` schickt die Zeile durch `progress_logging` — dieselbe Kette, die das Dashboard benutzt — statt nur zu prüfen, dass irgendwo geloggt wird.
+
+**Fertig, gemessen:** [`tests/test_stille_klemmungen.py`](../tests/test_stille_klemmungen.py) — 17 Zusagen. **Doku ist mitgezogen:** `docs/handbuch/akteure.md` (eine Zeile je Runde statt acht, plus die Sicherheitsgrenze).
 
 ### P3.6 — Stabiler Vertrag für den Run-Launcher
 

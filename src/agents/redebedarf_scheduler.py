@@ -33,6 +33,32 @@ DEFAULT_MAX_SCORE = 10
 DEFAULT_MAX_CONTRIBUTIONS_PER_AGENT = 3
 
 
+def _im_bereich(
+    wert: int,
+    name: str,
+    *,
+    mindestens: int,
+    hoechstens: int | None = None,
+) -> int:
+    """Ein Wert, der außerhalb seiner Grenzen liegt, wird abgewiesen (P3.5).
+
+    **Nicht geklemmt.** Ein geklemmter Wert nimmt die Einstellung an und rechnet
+    mit einer anderen — die Oberfläche zeigt dann eine 1, der Lauf benutzt eine 3,
+    und niemand erfährt es. Genau die Bauform, die P2.11 bei den Marktkonstanten
+    und P1.9-W5.1 im Dashboard abgeräumt hat.
+    """
+
+    if wert < mindestens or (hoechstens is not None and wert > hoechstens):
+        bereich = f"mindestens {mindestens}" if hoechstens is None else f"{mindestens}–{hoechstens}"
+        raise ValueError(
+            f"{name}={wert} liegt außerhalb des zulässigen Bereichs ({bereich}). "
+            "Der Wert wurde bis P3.5 stillschweigend geklemmt — eine Einstellung, "
+            "die entgegengenommen und nicht benutzt wird, ist schlimmer als eine "
+            "abgewiesene."
+        )
+    return wert
+
+
 @dataclass(frozen=True)
 class FactorChangeObservation:
     """Observed factor change used to trigger speech demand."""
@@ -70,9 +96,33 @@ class RedebedarfScheduler:
             self.agent_ids
         )
         self.factor_relevance_map = self._normalize_factor_relevance_map(base_map)
-        self.threshold = max(3, threshold)
+        # **Abweisen statt klemmen** (P3.5). Hier stand `max(3, threshold)` und
+        # `max(1, min(3, max_contributions_per_agent))`: Wer bewusst
+        # `threshold=1` setzte, bekam stillschweigend 3 — die Einstellung war
+        # entgegengenommen und nicht wirksam. Dieselbe Klasse wie die erfundenen
+        # Vorgabewerte aus P1.9-W5.1 und P2.11: eine zweite Quelle für einen
+        # Wert, den jemand ausdrücklich genannt hat.
+        #
+        # **Die Grenzen sind dieselben wie vorher** — geändert hat sich nur, dass
+        # sie etwas sagen. Kein Aufrufer im Repo setzt die beiden Werte
+        # (nachgeprüft am 2026-09-05), das Abweisen bricht also nichts.
+        self.threshold = _im_bereich(threshold, "threshold", mindestens=DEFAULT_THRESHOLD)
         self.max_score = max_score
-        self.max_contributions_per_agent = max(1, min(3, max_contributions_per_agent))
+        self.max_contributions_per_agent = _im_bereich(
+            max_contributions_per_agent,
+            "max_contributions_per_agent",
+            mindestens=1,
+            hoechstens=DEFAULT_MAX_CONTRIBUTIONS_PER_AGENT,
+        )
+        if self.threshold > self.max_score:
+            # Kein Wert der Skala erreicht die Schwelle, also spricht **nie**
+            # jemand. Vorher blieb der Scheduler dabei stumm und sah aus wie ein
+            # Lauf, in dem niemand Redebedarf hatte.
+            raise ValueError(
+                f"threshold ({self.threshold}) liegt über max_score ({self.max_score}) — "
+                "damit könnte kein Agent die Schwelle je überschreiten und der "
+                "Scheduler bliebe dauerhaft stumm."
+            )
 
         self._current_round = 0
         self._score_by_agent: dict[str, int] = {agent_id: 0 for agent_id in self.agent_ids}
