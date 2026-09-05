@@ -74,7 +74,7 @@ Dashboard. **Drei Punkte hat die Gegenprobe zusätzlich gefunden** — keiner bl
 alle drei sind unten eingeplant:
 
 - **Ein Sweep kann nicht als degradiert markiert werden.** Eingeplant in [P0.6](#p06--ein-lauf-sagt-wie-er-entstanden-ist--erledigt-2026-08-27).
-- **`get_llm()` wählt weiterhin still den Mock**, wenn keine Umgebungsvariable gesetzt ist. Eingeplant in [P3.4](#p34--llm-konfiguration-zentralisieren).
+- **`get_llm()` wählt weiterhin still den Mock**, wenn keine Umgebungsvariable gesetzt ist. Eingeplant in [P3.4](#p34--llm-konfiguration-zentralisieren--erledigt-2026-09-05).
 - **Ein Config-Fehler auf der CLI kommt als roher Traceback.** Eingeplant in [P3.3](#p33--fehlermeldungen-die-auch-greifen--erledigt-2026-09-05).
 
 Der erste Punkt war in der Nachprüfung oben als erledigt vermerkt („Sweeps schreiben die
@@ -204,7 +204,7 @@ Behoben: `validate_llm_settings` hält die Regeln **einmal** und wird von drei O
 
 **Zweite Nachprüfung, gleicher Tag — die Korrektur hatte selbst einen Fehler.** Die neue Prüfung lief unbedingt und blockierte damit Läufe, die gar kein Sprachmodell benutzen: Beide unteren Rechenmodi («Ohne Sprachmodell» und «Nur Zahlen») setzen `mock_llm`, und dann liefert `_build_llm()` ein `MockLLM` — Modellname, Temperatur und Antwortlänge werden nie angefasst. Ein leeres Modellfeld verhinderte trotzdem den Start. Dasselbe auf der CLI mit `--mock-llm --max-tokens 0`. Die Prüfung hängt jetzt an `mock_llm`, und zwei Tests halten beide Richtungen fest. Aufgefallen ist es, weil `ConfigDraft` per Default `mock_llm=True` führt — meine eigenen Tests prüften deshalb ins Leere und mussten mitgezogen werden.
 
-Bewusst **nicht** hier behoben: dass `state.config.llm` von niemandem gelesen wird. Das gehört zu [P3.4](#p34--llm-konfiguration-zentralisieren).
+Bewusst **nicht** hier behoben: dass `state.config.llm` von niemandem gelesen wird. Das gehört zu [P3.4](#p34--llm-konfiguration-zentralisieren--erledigt-2026-09-05).
 
 **Dritte Nachprüfung — mechanisch statt nach Gefühl.** Weil die beiden vorigen Funde dieselbe Ursache hatten (ein Test, der seine eigene Voraussetzung nicht erreichte), wurde diesmal jede Zusage einzeln im Code abgeschaltet und geprüft, ob ein Test das merkt. **Dreizehn von dreizehn** Zusagen aus P0.1 und P0.3 sind so gedeckt. Eine Lücke kam dabei heraus: Der Start-Callback in `dashboard/web/pages/launch.py` — also die Zusage „«Start» weist ab" — war von keinem Test berührt; gedeckt war nur die Ansicht im Tab «Kontrolle». Zwei Tests in `tests/test_web_runner.py` prüfen ihn jetzt mitsamt der Reihenfolge seines Rückgabe-Tupels, die zu den fünf `Output`s passen muss.
 
@@ -2440,7 +2440,7 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Fertig, gemessen:** `tests/test_fehlermeldungen_greifen.py` — zwölf Zusagen über alle drei Stellen. Die CLI wird als **eigener Prozess** gestartet: Nur so ist der Exit-Code echt, `main()` im selben Prozess prüfte einen Rückgabewert. **Doku ist mitgezogen:** `docs/handbuch/fehlerbilder.md` (zwei Abschnitte: die Liste auf der CLI und der fremde Zwischenstand aus P3.2), `README.md` (Exit-Codes).
 
-### P3.4 — LLM-Konfiguration zentralisieren
+### P3.4 — LLM-Konfiguration zentralisieren ✅ erledigt 2026-09-05
 
 **Befund:** Modellname `"llama3.2"` steht in **10 Produktionsdateien** (nachgezählt am 2026-08-25, das Audit sprach von sieben Stellen), der Endpoint uneinheitlich als `http://localhost:11434` in sieben und `http://127.0.0.1:11434` in zwei Dateien. Bemerkenswert: die beim Dash-Umbau **neu** entstandenen Module `config_editor/compute_mode.py` und `config_editor/llm_pipeline.py` haben die Hartkodierung geerbt — das Finding wächst mit jedem Modul weiter.
 **Fundstelle:** `src/run_simulation.py`, `src/llm/llm_client.py`, `src/models/state_models.py`, `src/orchestration/langgraph_adapter.py`, `dashboard/config_catalog.py`, `dashboard/llm_status.py`, `dashboard/run_browser.py`, `dashboard/run_launcher.py`, `dashboard/web/config_editor/compute_mode.py`, `dashboard/web/config_editor/llm_pipeline.py` (plus `tests/test_web_compute_mode.py`, `tests/test_web_layout.py`).
@@ -2450,8 +2450,21 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Dazugekommen aus der P0.1-Gegenprobe (2026-08-26): `get_llm()` wählt still den Mock.** P0.1 hat den stillen Mock **bei Fehlern** beseitigt — die Auswahl davor ist geblieben. [`studio_helpers.get_llm()`](../src/llm/studio_helpers.py) fällt am Ende seiner Kette kommentarlos auf `MockLLM()` zurück, wenn weder `OLLAMA_MODEL` noch `LLAMA_HTTP_URL` noch `LLAMA_TRANSFORMERS_MODEL` gesetzt ist. Zwei Aufrufer hängen noch daran: [`langgraph_workflow.py:48`](../src/orchestration/langgraph_workflow.py) (der Graph für LangGraph Studio) und [`run_scenario_generator/cli.py:33`](../src/reporting/run_scenario_generator/cli.py). Wer Studio ohne gesetzte Umgebung startet, bekommt erfundene Agenten-Antworten, ohne sie angefordert zu haben — kein `--mock-llm`, kein Hinweis, und nach der Definition aus Invariante 1 auch kein „Ausfall", weil nie ein Aufruf gescheitert ist. Der bewusste Mock (`--mock-llm`, «Ohne Sprachmodell») ist davon unberührt und richtig so.
 
-**Was zu tun ist:** Eine Defaults-Quelle (Config plus `.env`-Override), alle Stellen darauf ziehen — und dabei `state.config.llm` entweder wirklich anschließen (Draft und CLI schreiben hinein, der Client liest daraus) oder ersatzlos entfernen. Halb stehenlassen ist die schlechteste der drei Möglichkeiten. Fällt mit der Client-Zusammenführung aus P0.1 zusammen. **Dazu die Backend-Auswahl entscheidbar machen:** `get_llm()` sagt über `logging`, welches Backend es gewählt hat, und der Griff zum Mock passiert nur auf ausdrückliche Ansage (Parameter oder Umgebungsvariable) statt als letzter Zweig einer `if`-Kette.
-**Fertig wenn:** Ein Endpoint-Wechsel erfordert genau eine Änderung, und kein Codepfad rechnet mit dem Mock, ohne dass es jemand angefordert hat oder mindestens im Log steht. **Doku:** `README.md` (Umgebung), `docs/handbuch/ref-config.md`.
+**Umgesetzt am 2026-09-05 in drei Schritten**, weil es drei verschiedene Befunde in einem Paket waren.
+
+**1 — Eine Quelle.** [`src/llm/defaults.py`](../src/llm/defaults.py) hält Modellname, Endpunkt, Temperatur und Antwortlänge; alle Stellen zeigen darauf, auch `configs/simulation_config.json`. **Der Endpunkt ist jetzt `127.0.0.1` und nicht `localhost`**, und das ist keine Kosmetik: `localhost` löst auf manchen Windows-Installationen zuerst nach `::1` auf, während Ollama nur auf IPv4 lauscht. **Und die Umgebungsvariablen liegen *in* der Quelle**: `OllamaConfig` liest sie selbst, per `default_factory` beim Bauen und nicht beim Importieren. Damit wirkt `OLLAMA_BASE_URL` auch für den Sweep-Pfad, der seinen Client direkt baut — der Befund vom 2026-08-27.
+
+**2 — `state.config.llm` ist angeschlossen** (entschieden gegen «ersatzlos entfernen»). Je Oberfläche eine Ableitung — `llm_config_from_draft` und `_llm_config_from_args` —, sie füllt den Zustand, und der Client entsteht daraus: eine Quelle, zwei Leser. `LLMConfig` trägt dazu `base_url`, weil ein Modellname ohne Endpunkt den Lauf nur halb beschreibt. **Bei einem Lauf ohne Sprachmodell bleibt das Feld unberührt** — gerufen wird nichts, also beschreibt es nichts, und `compute_mode` sagt das im Artefakt.
+
+**3 — Der Mock kommt nur auf Ansage.** `get_llm()` scheitert jetzt, wenn kein Backend konfiguriert ist, statt kommentarlos `MockLLM()` zu liefern; die Meldung nennt alle vier Wege hinaus, und **jede** getroffene Wahl steht als `INFO` im Log. Der Schalter dafür ist eine Umgebungsvariable (`AEROFORESIGHT_MOCK_LLM`) und **nicht** nur ein Parameter: Die beiden Aufrufer — der Studio-Graph und die Szenario-CLI — bauen `get_llm()` ohne Argumente, ein Parameter allein hätte niemanden erreicht.
+
+**Drei Funde aus der Umsetzung, alle gemessen:**
+
+1. **Jeder Befund stand danach doppelt da.** Solange die Sprachmodell-Werte den Zustand nicht erreichten, musste `validate_draft` sie eigens danebenprüfen; seit sie es tun, prüft `collect_state_errors` genau dieselben Werte — einmal als «config.llm: …» und einmal als «Technik: …». Die zweite Prüfung ist weg, und der Herkunftsort heißt jetzt **«Sprachmodell»** statt «config.llm»: Der Name eines Datenfelds ist kein Name für eine Einstellung, und jetzt liest *jede* Oberfläche diese Meldung.
+2. **Ein leeres Modellfeld wurde stillschweigend zu `llama3.2`.** Der erste Anlauf von `llm_config_from_draft` schrieb `draft.model.strip() or DEFAULT_MODEL` — dieselbe erfundene Vorgabe, die [P1.9-W5.1](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28) im Dashboard abgeräumt hat. Aufgefallen ist es, weil die alte Doppelprüfung diesen Fall meldete und die neue nicht mehr.
+3. **`base_url` wurde nie geprüft.** Ein Feld ohne Schema (`127.0.0.1:11434`) sieht richtig aus und ergibt einen Aufruf ohne Host: ein Verbindungsfehler mitten im Lauf, dem niemand die Ursache ansieht. Er wird jetzt beim Start gemeldet — und der **Wizard-Wächter** hat dabei gemeldet, dass das neue Feld in `FELD_SCHRITT` fehlte, sein Befund also auf «Prüfen & Starten» gelandet wäre statt an seinem Feld.
+
+**Fertig, gemessen:** [`tests/test_llm_defaults.py`](../tests/test_llm_defaults.py) — 25 Zusagen in vier Gruppen. Der Wächter gegen eine zweite Quelle ist ein **AST-Durchlauf über `src/` und `dashboard/`** und keine Liste der neun Dateien: Genau so ist der Befund gewachsen — die beim Dash-Umbau neu entstandenen `config_editor`-Module haben die Hartkodierung *geerbt*, per Kopie, ohne dass jemand sie dort hingeschrieben hätte. Eine Aufzählung fängt den Rückfall an bekannter Stelle und übersieht das zehnte Modul. **Doku ist mitgezogen:** `README.md` (Umgebung, Exit-Codes, Backend-Auswahl), `langgraph_studio/.env.example`, `docs/handbuch/lauf-konfigurieren.md` (die Adresse in der Prüftabelle und der Absatz «Technik»).
 
 ### P3.5 — Stille Klemmungen und Debug-Ausgaben
 

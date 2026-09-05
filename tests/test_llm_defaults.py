@@ -365,3 +365,124 @@ class TestDerZustandTraegtDasSprachmodell:
 
         assert len(befunde) == 2, befunde
         assert len({b.split(":", 1)[1] for b in befunde}) == 2
+
+
+class TestDerMockKommtNurAufAnsage:
+    """P3.4, dritte Hälfte: `get_llm()` wählte still den Mock.
+
+    **P0.1 hat den stillen Mock bei *Fehlern* beseitigt — die Auswahl davor
+    blieb.** War weder ``OLLAMA_MODEL`` noch ``LLAMA_HTTP_URL`` noch
+    ``LLAMA_TRANSFORMERS_MODEL`` gesetzt, gab `get_llm()` kommentarlos ein
+    `MockLLM()` zurück. Wer Studio ohne gesetzte Umgebung startete, bekam
+    **erfundene Agenten-Antworten, ohne sie angefordert zu haben** — kein
+    `--mock-llm`, kein Hinweis, und nach der Definition aus Invariante 1 auch
+    kein «Ausfall», weil nie ein Aufruf gescheitert ist.
+
+    Zwei Aufrufer hingen daran: der Studio-Graph und die Szenario-CLI.
+    """
+
+    @staticmethod
+    def _ohne_backend(monkeypatch) -> None:
+        for name in (
+            "OLLAMA_MODEL",
+            "LLAMA_HTTP_URL",
+            "LLAMA_TRANSFORMERS_MODEL",
+            "AEROFORESIGHT_MOCK_LLM",
+        ):
+            monkeypatch.delenv(name, raising=False)
+
+    def test_ohne_backend_wird_nichts_erfunden(self, monkeypatch):
+        """**Die tragende Zusage.** Ohne Ansage kein Mock — lieber gar keine Antwort."""
+
+        from src.llm import get_llm
+
+        self._ohne_backend(monkeypatch)
+
+        with pytest.raises(RuntimeError, match="Kein Sprachmodell konfiguriert"):
+            get_llm()
+
+    def test_die_meldung_nennt_jeden_weg_hinaus(self, monkeypatch):
+        """Eine Abweisung ohne Ausweg ist eine Sackgasse."""
+
+        from src.llm import get_llm
+        from src.llm.studio_helpers import MOCK_ENV
+
+        self._ohne_backend(monkeypatch)
+
+        with pytest.raises(RuntimeError) as fehler:
+            get_llm()
+
+        text = str(fehler.value)
+        for weg in ("OLLAMA_MODEL", "LLAMA_HTTP_URL", "LLAMA_TRANSFORMERS_MODEL", MOCK_ENV):
+            assert weg in text, f"Die Meldung nennt {weg} nicht"
+
+    def test_auf_ansage_kommt_er(self, monkeypatch):
+        from src.llm import MockLLM, get_llm
+
+        self._ohne_backend(monkeypatch)
+
+        assert isinstance(get_llm(mock=True), MockLLM)
+
+    def test_auch_ueber_die_umgebung(self, monkeypatch):
+        """Nötig, weil die beiden Aufrufer `get_llm()` **ohne Parameter** bauen.
+
+        Ein Schalter allein im Aufruf hätte den Studio-Graphen und die
+        Szenario-CLI nicht erreicht — dort gibt es keine Stelle, die ihn setzt.
+        """
+
+        from src.llm import MockLLM, get_llm
+        from src.llm.studio_helpers import MOCK_ENV
+
+        self._ohne_backend(monkeypatch)
+        monkeypatch.setenv(MOCK_ENV, "1")
+
+        assert isinstance(get_llm(), MockLLM)
+
+    def test_jede_wahl_steht_im_log(self, monkeypatch, caplog):
+        """Ein Lauf, dessen Backend man nicht feststellen kann, ist der Zustand,
+        den Invariante 1 verhindern soll."""
+
+        import logging
+
+        from src.llm import get_llm
+
+        self._ohne_backend(monkeypatch)
+        monkeypatch.setenv("OLLAMA_MODEL", "mistral")
+
+        with caplog.at_level(logging.INFO):
+            get_llm()
+
+        assert "mistral" in caplog.text
+        assert "Ollama" in caplog.text
+
+    def test_der_bewusste_mock_geht_weiterhin_an_dieser_auswahl_vorbei(self):
+        """`--mock-llm` und «Ohne Sprachmodell» bauen `MockLLM()` direkt.
+
+        Das ist seit P0.1 so und richtig: Der Schalter soll nicht davon abhängen,
+        ob gerade `OLLAMA_MODEL` in der Umgebung steht.
+        """
+
+        import ast
+        from pathlib import Path
+
+        for pfad, funktion in (
+            (ROOT / "src" / "run_simulation.py", "_main"),
+            (ROOT / "dashboard" / "run_launcher.py", "_build_llm"),
+        ):
+            quelle = Path(pfad).read_text(encoding="utf-8")
+            baum = ast.parse(quelle)
+            treffer = [
+                knoten
+                for knoten in ast.walk(baum)
+                if isinstance(knoten, ast.FunctionDef) and knoten.name == funktion
+            ]
+            assert treffer, f"{pfad.name} hat keine Funktion '{funktion}'"
+            aufrufe = {
+                knoten.func.id
+                for knoten in ast.walk(treffer[0])
+                if isinstance(knoten, ast.Call) and isinstance(knoten.func, ast.Name)
+            }
+            assert "MockLLM" in aufrufe, (
+                f"{pfad.name}::{funktion} baut den bewussten Mock nicht mehr selbst — "
+                "wenn er über `get_llm()` geht, hängt er wieder an der Umgebung."
+            )

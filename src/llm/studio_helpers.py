@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import sys
@@ -13,6 +14,8 @@ from typing import Iterable, Protocol
 import requests
 
 from src.llm import defaults
+
+logger = logging.getLogger(__name__)
 
 
 class LLMCallable(Protocol):
@@ -201,19 +204,60 @@ class MockLLM:
         return _build_mock_response(prompt)
 
 
-def get_llm() -> LLMCallable:
-    """Select the best available LLM backend for Studio and playground runs."""
+#: Die Umgebungsvariable, mit der man den Mock **anfordert** (P3.4).
+#:
+#: Nötig, weil `get_llm()` keine Argumente durchreichen kann: Seine Aufrufer
+#: sind der Studio-Graph und die Szenario-CLI, und beide bauen ihn ohne
+#: Parameter. Ein Schalter im Aufruf hätte also niemanden erreicht.
+MOCK_ENV = "AEROFORESIGHT_MOCK_LLM"
+
+
+def get_llm(*, mock: bool = False) -> LLMCallable:
+    """Das Backend für Studio- und Playground-Läufe — **und es sagt, welches** (P3.4).
+
+    **Der Griff zum Mock war der letzte Zweig einer `if`-Kette.** War weder
+    ``OLLAMA_MODEL`` noch ``LLAMA_HTTP_URL`` noch ``LLAMA_TRANSFORMERS_MODEL``
+    gesetzt, gab diese Funktion kommentarlos ein ``MockLLM()`` zurück. Wer Studio
+    ohne gesetzte Umgebung startete, bekam **erfundene Agenten-Antworten, ohne
+    sie angefordert zu haben** — kein `--mock-llm`, kein Hinweis, und nach der
+    Definition aus Invariante 1 auch kein «Ausfall», weil nie ein Aufruf
+    gescheitert ist. P0.1 hat den stillen Mock *bei Fehlern* beseitigt; die
+    Auswahl davor blieb.
+
+    **Was jetzt gilt:** Der Mock kommt nur auf ausdrückliche Ansage — über
+    ``mock=True`` oder :data:`MOCK_ENV`. Ohne Ansage und ohne konfiguriertes
+    Backend wird nichts erfunden, sondern gescheitert. Und jede Wahl steht im
+    Log: Ein Lauf, dessen Backend man nicht mehr feststellen kann, ist genau der
+    Zustand, den Invariante 1 verhindern soll.
+
+    Der bewusste Mock ist davon unberührt und richtig so: ``--mock-llm`` auf der
+    CLI und «Ohne Sprachmodell» im Dashboard bauen ``MockLLM()`` direkt und gehen
+    an dieser Auswahl vorbei.
+    """
+
+    if mock or os.environ.get(MOCK_ENV, "").strip().lower() in {"1", "true", "yes", "on"}:
+        logger.info("LLM-Backend: MockLLM (ausdrücklich angefordert)")
+        return MockLLM()
 
     omodel = os.environ.get("OLLAMA_MODEL")
     if omodel:
+        logger.info("LLM-Backend: Ollama, Modell %s", omodel)
         return LocalOllama(model=omodel, base_url=os.environ.get("OLLAMA_BASE_URL"))
 
     http_url = os.environ.get("LLAMA_HTTP_URL")
     if http_url:
+        logger.info("LLM-Backend: HTTP-Endpunkt %s", http_url)
         return LocalLlamaHTTP(http_url)
 
     tmodel = os.environ.get("LLAMA_TRANSFORMERS_MODEL")
     if tmodel:
+        logger.info("LLM-Backend: transformers, Modell %s", tmodel)
         return LocalLlamaTransformers(tmodel)
 
-    return MockLLM()
+    raise RuntimeError(
+        "Kein Sprachmodell konfiguriert. Eine dieser Variablen setzen: "
+        f"OLLAMA_MODEL, LLAMA_HTTP_URL, LLAMA_TRANSFORMERS_MODEL — oder {MOCK_ENV}=1, "
+        "um ausdrücklich mit erfundenen Antworten zu rechnen. "
+        "Bis P3.4 wurde hier stillschweigend der Mock gewählt: Ein Lauf sah "
+        "vollwertig aus und war es nicht."
+    )

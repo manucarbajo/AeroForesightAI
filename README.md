@@ -142,7 +142,7 @@ OLLAMA_BASE_URL=http://127.0.0.1:11434
 | Ziel | Variablen in `.env` |
 | --- | --- |
 | **Ollama lokal** (Standard) | `OLLAMA_MODEL=llama3.2`, `OLLAMA_BASE_URL=http://127.0.0.1:11434` — Modell vorher starten: `ollama run llama3.2` |
-| **Mock ohne Ollama** | Batch mit `--mock-llm`; Studio und Dashboard nutzen den Mock, wenn keine Ollama-Variablen gesetzt sind |
+| **Mock ohne Ollama** | Batch mit `--mock-llm`, Dashboard mit «Ohne Sprachmodell»; in Studio und der Szenario-CLI ausdrücklich mit `AEROFORESIGHT_MOCK_LLM=1` |
 | **HTTP-LLM** | `LLAMA_HTTP_URL=http://…` |
 | **Transformers lokal** | `LLAMA_TRANSFORMERS_MODEL=…` |
 
@@ -173,6 +173,15 @@ gesetzt, versuchte auch ein „Mock"-Lauf, Ollama zu erreichen. Fällt ein echte
 Backend aus, wird das jetzt gemeldet und im Lauf festgehalten, statt still durch
 eine erfundene Antwort ersetzt zu werden — siehe
 [Fehlerbilder](docs/handbuch/fehlerbilder.md).
+
+**Und seit P3.4 wird der Mock nicht mehr still gewählt.** Bis dahin war er der
+letzte Zweig der Kette: War keine der drei Variablen gesetzt, gab `get_llm()`
+kommentarlos den Mock zurück — wer Studio ohne `.env` startete, bekam erfundene
+Agenten-Antworten, ohne sie angefordert zu haben, und nach Invariante 1 war das
+nicht einmal ein „Ausfall", weil nie ein Aufruf gescheitert war. Jetzt scheitert
+`get_llm()` in diesem Fall mit einer Meldung, die alle vier Wege nennt, und
+**jede** getroffene Wahl steht als `INFO` im Log. Wer den Mock will, sagt es:
+`AEROFORESIGHT_MOCK_LLM=1`.
 
 ### Schritt 3: LangSmith (optional)
 
