@@ -14,9 +14,9 @@ ohne dass irgendwo stand, warum. Angeglichen — und hier festgehalten.
 from __future__ import annotations
 
 import json
-from types import SimpleNamespace
 
 from src.config_loader import build_initial_state
+from src.models.run_models import RunArgs
 from src.models.state_models import DEFAULT_SEED
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 
@@ -118,7 +118,7 @@ class TestDieAngabeImArtefakt:
         gelesen = []
         for index, lauf in enumerate(ergebnis.runs, start=1):
             args = build_run_args(
-                SimpleNamespace(
+                RunArgs(
                     model="m",
                     base_url="u",
                     temperature=0.1,
@@ -126,6 +126,7 @@ class TestDieAngabeImArtefakt:
                     no_market=False,
                     mock_llm=True,
                     deterministic_only=True,
+                    llm_narrative=False,
                     simulation_name=None,
                     simulation_description=None,
                 ),

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import logging
-from argparse import Namespace
 
 import pytest
 import requests
@@ -19,6 +18,7 @@ from src.config_loader import build_initial_state
 from src.llm.studio_helpers import LocalOllama, MockLLM
 from src.logging_setup import configure_logging, progress_logging
 from src.models.llm_models import LLMDegradation, LLMIncident
+from src.models.run_models import RunArgs
 from src.reporting.output_writer import save_llm_incidents, save_run_metadata
 
 
@@ -221,13 +221,25 @@ def test_clean_run_summary_is_not_degraded() -> None:
 # --- Die Artefakte ----------------------------------------------------------
 
 
-def _run_args() -> Namespace:
-    return Namespace(
+def _run_args() -> RunArgs:
+    """Seit P3.11 typisiert — der Rechenmodus muss ausgeschrieben werden.
+
+    Vorher ein `Namespace` ohne `mock_llm`, `deterministic_only` und
+    `llm_narrative`; die drei kamen aus `getattr(args, …, False)`. Für einen
+    Test über Degradation ist das kein Zufall, sondern der Kern: Ein Lauf, der
+    sein Sprachmodell verloren hat, darf nicht aussehen wie einer, der nie eines
+    hatte.
+    """
+
+    return RunArgs(
         model="llama3.2",
-        base_url="http://localhost:11434",
+        base_url="http://127.0.0.1:11434",
         temperature=0.7,
         max_tokens=2048,
         no_market=False,
+        mock_llm=False,
+        deterministic_only=False,
+        llm_narrative=False,
         simulation_name=None,
         simulation_description=None,
     )

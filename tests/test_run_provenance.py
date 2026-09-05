@@ -10,12 +10,13 @@ vorbei.
 from __future__ import annotations
 
 import json
-from types import SimpleNamespace
 
 import pytest
 
 from src.config_loader import build_initial_state
+from src.llm.defaults import DEFAULT_BASE_URL
 from src.models.llm_models import LLMIncident
+from src.models.run_models import RunArgs
 from src.reporting.output_writer.metadata import save_run_metadata
 from src.reporting.output_writer.provenance import (
     COMPUTE_MODE_LABELS,
@@ -25,21 +26,30 @@ from src.reporting.output_writer.provenance import (
 )
 
 
-def _args(**overrides) -> SimpleNamespace:
+def _args(**overrides) -> RunArgs:
+    """Die Lauf-Argumente eines Tests — seit P3.11 **typisiert**.
+
+    Vorher ein `SimpleNamespace`, und der Helfer nannte `llm_narrative` nicht:
+    Er verliess sich auf `getattr(args, "llm_narrative", False)` in
+    `provenance.py`. Genau dieser Rückfall ist der Befund von P3.11 — der Helfer
+    hat ihn mitbenutzt und damit auch mitgetestet.
+    """
+
     base = dict(
         model="llama3.2",
-        base_url="http://localhost:11434",
+        base_url=DEFAULT_BASE_URL,
         temperature=0.7,
         max_tokens=2048,
         no_market=False,
         seed=None,
         mock_llm=False,
         deterministic_only=False,
+        llm_narrative=False,
         simulation_name="Test",
         simulation_description="Test",
     )
     base.update(overrides)
-    return SimpleNamespace(**base)
+    return RunArgs(**base)
 
 
 def _write(tmp_path, state, args) -> dict:
@@ -827,7 +837,7 @@ class TestDasArtefaktBehauptetKeinModell:
 
         assert metadata["compute_mode"] == "llm"
         assert metadata["model"] == "llama3.2"
-        assert metadata["base_url"] == "http://localhost:11434"
+        assert metadata["base_url"] == DEFAULT_BASE_URL
         assert metadata["temperature"] == 0.7
         assert metadata["max_tokens"] == 2048
 

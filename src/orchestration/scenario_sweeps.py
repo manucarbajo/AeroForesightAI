@@ -30,6 +30,7 @@ from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
 from src.market.market_feedback import BOOKING_YIELD_FEEDBACK
 from src.models.llm_models import LLMIncident
+from src.models.run_models import RunArgs
 from src.models.state_models import Rahmenszenario
 from src.models.sweep_models import (
     MilestoneCheck,
@@ -236,8 +237,11 @@ def sweep_metadata_args(sweep_id: str) -> SimpleNamespace:
     """
 
     llm_defaults = OllamaConfig()
-    return SimpleNamespace(
-        sweep=sweep_id,
+    # `sweep=sweep_id` stand hier bis P3.11 und wurde **von niemandem gelesen** —
+    # ein Feld, das der typisierte Vertrag nicht kennt und das deshalb auffällt,
+    # statt still mitzureisen. Die Zugehörigkeit eines Laufs zu seinem Sweep
+    # steht ohnehin im Ablageort und im Rahmenszenario.
+    return RunArgs(
         deterministic_only=True,
         llm_narrative=True,
         mock_llm=False,

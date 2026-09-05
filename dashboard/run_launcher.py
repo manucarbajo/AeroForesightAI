@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Callable
 
 from dashboard.config_catalog import (
@@ -22,6 +21,7 @@ from src.llm.defaults import (
     DEFAULT_TEMPERATURE,
 )
 from src.logging_setup import configure_logging, progress_logging
+from src.models.run_models import RunArgs
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.reporting.output_writer import create_run_id, resolve_run_output_dir
@@ -313,7 +313,7 @@ def launch_simulation(
                 checkpoint_store=checkpoint_manager,
             )
 
-            args = SimpleNamespace(
+            args = RunArgs(
                 model=config.model,
                 base_url=config.base_url,
                 temperature=config.temperature,
@@ -328,6 +328,11 @@ def launch_simulation(
                 # zurück. Jeder Dashboard-Lauf «Ohne Sprachmodell» wurde damit
                 # als vollwertiger LLM-Lauf protokolliert.
                 mock_llm=config.mock_llm,
+                # `run_id` und `checkpoint_dir` standen hier bis P3.11 mit —
+                # und wurden von niemandem gelesen: `save_run_outputs` bekommt
+                # beides als eigenes Argument. Der typisierte Vertrag kennt sie
+                # deshalb nicht, und ein Feld, das niemand liest, reist nicht
+                # mehr stillschweigend mit.
                 # **Ausgeschrieben statt ausgelassen.** Dieser Pfad erzeugt nie
                 # den Hybridmodus: `generate_and_save_run_scenario` bekommt
                 # `prefer_llm=not deterministic_only`, ein reiner Zahlenlauf also
@@ -336,8 +341,6 @@ def launch_simulation(
                 # unterscheiden ist.
                 llm_narrative=False,
                 quiet=False,
-                run_id=batch_id,
-                checkpoint_dir=str(ck_path),
             )
 
             all_artifacts: list[dict[str, str | None]] = []
@@ -392,7 +395,7 @@ def launch_simulation(
         ck_path = run_dir / "checkpoints"
         checkpoint_manager = CheckpointManager(ck_path)
 
-        args = SimpleNamespace(
+        args = RunArgs(
             model=config.model,
             base_url=config.base_url,
             temperature=config.temperature,
@@ -408,8 +411,6 @@ def launch_simulation(
             # Siehe oben: eine Aussage statt einer Auslassung.
             llm_narrative=False,
             quiet=False,
-            run_id=run_id,
-            checkpoint_dir=str(ck_path),
             simulation_name=config.simulation_name,
             simulation_description=config.simulation_description,
         )

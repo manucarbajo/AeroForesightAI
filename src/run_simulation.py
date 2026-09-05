@@ -34,7 +34,6 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import requests
@@ -53,6 +52,7 @@ from src.llm.defaults import (
 )
 from src.logging_setup import configure_logging
 from src.models.llm_models import LLMIncident
+from src.models.run_models import RunArgs, run_args_from
 from src.models.state_models import LLMConfig, Rahmenszenario
 from src.orchestration.checkpoint_manager import CheckpointManager, CheckpointVersionError
 from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
@@ -217,12 +217,21 @@ def _parse_args() -> argparse.Namespace:
         default=None,
         help="Path to a sweep config JSON file. Overrides simulation parameters with sweep settings.",
     )
+    # **Eine Aussage ohne Schalter** (P3.11). `llm_narrative` beschreibt den
+    # Hybridmodus: deterministisch gerechnete Ticks, aber ein Abschlusstext vom
+    # Modell. Den erzeugt **nur** der Sweep-Pfad — dieser Einstieg gibt
+    # `prefer_llm=not deterministic_only` weiter, ein rein deterministischer Lauf
+    # bekommt hier also gar kein Modell zu sehen. `False` ist damit kein
+    # Rückfall, sondern eine Eigenschaft dieses Pfades; sie steht hier, weil
+    # `RunArgs` das Feld zu Recht verlangt und ein weggelassenes von einem
+    # abgeschalteten nicht zu unterscheiden wäre.
+    parser.set_defaults(llm_narrative=False)
     return parser.parse_args()
 
 
 def save_run_outputs(
     state,
-    args: argparse.Namespace,
+    args: RunArgs,
     llm: OllamaClient,
     *,
     run_dir: Path,
@@ -277,7 +286,7 @@ def save_run_outputs(
     if not args.no_protocol:
         protocol_payload = build_protocol_payload(
             state,
-            ProtocolOptions(include_redebedarf=bool(getattr(args, "redebedarf", False))),
+            ProtocolOptions(include_redebedarf=args.redebedarf),
         )
         protocol_path = save_protocol(protocol_payload, run_dir=run_dir)
         protocol_md_path = save_protocol_markdown(
@@ -311,12 +320,12 @@ def save_run_outputs(
 
     run_scenario_md_path = None
     run_scenario_json_path = None
-    if not getattr(args, "no_run_scenario", False):
+    if not args.no_run_scenario:
         scenario_result = generate_and_save_run_scenario(
             run_id,
             llm,
             run_dir=run_dir,
-            prefer_llm=not bool(getattr(args, "deterministic_only", False)),
+            prefer_llm=not args.deterministic_only,
         )
         paths = scenario_result.get("paths") or {}
         run_scenario_md_path = paths.get("markdown")
@@ -411,29 +420,30 @@ def _launch_studio() -> int:
     )
 
 
-def build_run_args(
-    base_args: argparse.Namespace, *, run_index: int, seed: int | None
-) -> SimpleNamespace:
-    return SimpleNamespace(
-        model=base_args.model,
-        base_url=base_args.base_url,
-        temperature=base_args.temperature,
-        max_tokens=base_args.max_tokens,
-        no_market=base_args.no_market,
-        redebedarf=getattr(base_args, "redebedarf", False),
-        no_protocol=getattr(base_args, "no_protocol", False),
-        no_scenarios=getattr(base_args, "no_scenarios", False),
-        no_run_scenario=getattr(base_args, "no_run_scenario", False),
-        deterministic_only=getattr(base_args, "deterministic_only", False),
-        # P0.6: Der Rechenmodus gehört ins Run-Artefakt — ohne ihn hier wäre er
-        # bei jedem Multi-Run-Teillauf verloren.
-        mock_llm=getattr(base_args, "mock_llm", False),
-        quiet=getattr(base_args, "quiet", False),
-        run_index=run_index,
-        seed=seed,
-        simulation_name=getattr(base_args, "simulation_name", None),
-        simulation_description=getattr(base_args, "simulation_description", None),
-    )
+def build_run_args(base_args: object, *, run_index: int, seed: int | None) -> RunArgs:
+    """Die Lauf-Argumente eines Teillaufs — **typisiert** seit P3.11.
+
+    Hier stand bis zum 2026-09-05 ein handgeschriebener `SimpleNamespace` mit
+    sechzehn Feldern, von denen zehn über ``getattr(..., False)`` entstanden.
+    Zwei Folgen davon sind belegt:
+
+    * Ein Feld, das der Aufrufer vergisst, war von einem abgeschalteten nicht zu
+      unterscheiden. Genau so wurde jeder Dashboard-Lauf «Ohne Sprachmodell» als
+      vollwertiger LLM-Lauf protokolliert (Gegenprobe zu P0.6).
+    * **`llm_narrative` wurde gar nicht mitkopiert.** Nachgestellt: Aus
+      ``deterministic_with_llm_narrative`` wurde beim Durchreichen
+      ``deterministic_only``. Kein Pfad erreicht den Fall heute — die nächste
+      Änderung hätte ihn erreicht, und niemand hätte es gesehen.
+
+    Beides geht mit der Typisierung weg, ohne dass hier eine Feldliste stünde:
+    :func:`~src.models.run_models.run_args_from` übernimmt, was das Modell kennt,
+    und das Modell allein hält die Vorgabewerte.
+
+    *base_args* ist bewusst `object` und nicht `argparse.Namespace`: Auch das
+    Dashboard baut hier hinein, und es hat keine CLI.
+    """
+
+    return run_args_from(base_args, run_index=run_index, seed=seed)
 
 
 def write_multi_run_summary(
@@ -693,7 +703,7 @@ def _main() -> int:
         options=RunnerOptions(
             enable_market=not args.no_market,
             enable_redebedarf=bool(args.redebedarf),
-            deterministic_only=bool(getattr(args, "deterministic_only", False)),
+            deterministic_only=bool(args.deterministic_only),
             checkpoint_interval=max(0, int(args.checkpoint_interval)),
             verbose_ticks=not args.quiet,
         ),

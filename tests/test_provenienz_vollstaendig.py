@@ -51,30 +51,34 @@ AUSNAHMEN = {
 def _herkunftsfelder() -> set[str]:
     """Welche `args`-Felder die Herkunft eines Laufs bestimmen.
 
-    Gelesen statt aufgezählt: Jeder `getattr(args, "x", …)` in den beiden
-    Modulen, die `run_metadata.json` füllen.
+    Gelesen statt aufgezählt — **und seit P3.11 als Attributzugriff**, nicht mehr
+    als `getattr(args, "x", …)`. Der Docstring dieser Datei hat den Fall
+    vorweggenommen: «Entweder ist es weg, oder es wird jetzt anders gelesen —
+    dann greift dieser Test ins Leere.» Eingetreten ist das Zweite: Mit dem
+    typisierten Vertrag sind die Rückfälle verschwunden, und was die Schreiber
+    lesen, steht als `args.feld` da.
     """
 
     gefunden: set[str] = set()
     for pfad in (METADATA, PROVENANCE):
         baum = ast.parse(pfad.read_text(encoding="utf-8"))
         for knoten in ast.walk(baum):
-            if not isinstance(knoten, ast.Call):
-                continue
-            if not (isinstance(knoten.func, ast.Name) and knoten.func.id == "getattr"):
-                continue
-            if len(knoten.args) < 2:
-                continue
-            ziel, name = knoten.args[0], knoten.args[1]
-            if not (isinstance(ziel, ast.Name) and ziel.id == "args"):
-                continue
-            if isinstance(name, ast.Constant) and isinstance(name.value, str):
-                gefunden.add(name.value)
+            if (
+                isinstance(knoten, ast.Attribute)
+                and isinstance(knoten.value, ast.Name)
+                and knoten.value.id == "args"
+            ):
+                gefunden.add(knoten.attr)
     return gefunden - AUSNAHMEN
 
 
-def _felder_des_namespace(quelle: str, anker: str) -> set[str]:
-    """Die Schlüsselwörter eines `SimpleNamespace(...)`-Aufrufs im Quelltext."""
+def _felder_des_aufrufs(quelle: str, anker: str, *, gebaut: str = "RunArgs") -> set[str]:
+    """Die Schlüsselwörter eines `RunArgs(...)`-Aufrufs im Quelltext.
+
+    Bis P3.11 hieß der gesuchte Aufruf `SimpleNamespace` — und genau das war der
+    Befund: ein Namensraum, der alles entgegennahm, was man hineinschrieb, und
+    nichts einforderte, was fehlte.
+    """
 
     baum = ast.parse(quelle)
     treffer: set[str] = set()
@@ -83,7 +87,7 @@ def _felder_des_namespace(quelle: str, anker: str) -> set[str]:
             continue
         func = knoten.func
         name = getattr(func, "id", None) or getattr(func, "attr", None)
-        if name != "SimpleNamespace":
+        if name != gebaut:
             continue
         felder = {kw.arg for kw in knoten.keywords if kw.arg}
         if anker in felder:
@@ -113,9 +117,14 @@ def test_der_dashboard_startpfad_traegt_alle_herkunftsfelder():
     noetig = _herkunftsfelder()
 
     fehlend = {}
-    for anker in ("run_id",):
-        felder = _felder_des_namespace(quelle, anker)
-        assert felder, "Kein `SimpleNamespace` mit `run_id` gefunden"
+    # **Anker seit P3.11 `mock_llm` statt `run_id`.** `run_id` stand im
+    # handgebauten Namensraum, wurde aber von niemandem gelesen und ist mit dem
+    # typisierten Vertrag entfallen — ein Anker auf ein totes Feld hätte diesen
+    # Test stumm gemacht. `mock_llm` ist ohnehin das Feld, um dessentwillen es
+    # ihn gibt.
+    for anker in ("mock_llm",):
+        felder = _felder_des_aufrufs(quelle, anker)
+        assert felder, "Kein `RunArgs` mit `mock_llm` gefunden"
         luecke = sorted(noetig - felder)
         if luecke:
             fehlend[anker] = luecke
@@ -129,31 +138,51 @@ def test_der_dashboard_startpfad_traegt_alle_herkunftsfelder():
 
 
 def test_der_waechter_wuerde_eine_auslassung_bemerken():
-    """Ein Namespace ohne `mock_llm` muss auffallen."""
+    """Ein Aufruf ohne `mock_llm` muss auffallen."""
 
-    quelle = "from types import SimpleNamespace\nx = SimpleNamespace(run_id='r', model='m')\n"
-    felder = _felder_des_namespace(quelle, "run_id")
+    quelle = "x = RunArgs(run_id='r', model='m')\n"
+    felder = _felder_des_aufrufs(quelle, "run_id")
 
     assert felder == {"run_id", "model"}
     assert "mock_llm" not in felder, "Die Auslassung bliebe unbemerkt"
 
 
+def test_der_vertrag_erzwingt_es_jetzt_ohnehin():
+    """**Seit P3.11 hängt die Zusage nicht mehr allein an diesem Test.**
+
+    Die drei Felder, die den Rechenmodus bestimmen, sind Pflichtfelder von
+    `RunArgs` — ein Startpfad, der eines auslässt, scheitert beim Bauen und
+    schreibt gar kein Artefakt erst. Der Durchlauf oben bleibt trotzdem: Er
+    misst, was die *Schreiber* lesen, und findet damit auch ein neues
+    Herkunftsfeld, das jemand als optional anlegt.
+    """
+
+    from src.models.run_models import RunArgs
+
+    pflicht = {name for name, feld in RunArgs.model_fields.items() if feld.is_required()}
+
+    assert {"mock_llm", "deterministic_only", "llm_narrative"} <= pflicht, (
+        "Ein Feld des Rechenmodus ist optional geworden — dann ist eine "
+        "Auslassung wieder von einer Aussage nicht zu unterscheiden."
+    )
+
+
 def test_ein_mock_lauf_heisst_im_artefakt_auch_so(tmp_path):
     """Die Wirkung, nicht nur die Form: `compute_mode` sagt `mock_llm`."""
 
-    from types import SimpleNamespace
-
     from dashboard.config_catalog import default_config_draft, prepare_simulation_state
+    from src.models.run_models import RunArgs
     from src.reporting.output_writer.metadata import save_run_metadata
 
     state = prepare_simulation_state(default_config_draft())
-    args = SimpleNamespace(
+    args = RunArgs(
         model="llama3.2",
-        base_url="http://localhost:11434",
+        base_url="http://127.0.0.1:11434",
         temperature=0.7,
         max_tokens=2048,
         no_market=False,
         deterministic_only=False,
+        llm_narrative=False,
         mock_llm=True,
     )
 

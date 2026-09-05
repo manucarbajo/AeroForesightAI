@@ -32,8 +32,11 @@ from src.models.state_models import (
     SpeechPlanState,
 )
 from src.models.event_models import EventLogEntry, PriceHistoryEntry, RoundResult
+from src.models.run_models import RunArgs, run_args_from
 
 __all__ = [
+    "RunArgs",
+    "run_args_from",
     "AgentType",
     "DistributionType",
     "EventType",
