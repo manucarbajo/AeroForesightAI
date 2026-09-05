@@ -2407,12 +2407,17 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Fertig, gemessen:** `tests/test_validation.py::TestEineRegelLiestKeinenLaufzeitwert` — sechs Zusagen. Darunter zwei, die über den Wortlaut hinausgehen: dass die alte Meldung («unbekannte Systemgröße») von der neuen **nicht verdeckt** wird, und dass die Menge der gesperrten Größen genau `{provider_markup, ticket_price}` ist — kommt eine dritte dazu, wird es rot, und dann gehört ein Blick darauf, ob `resolve_system_properties` für sie wirklich nur die Baseline liefert. **Doku ist mitgezogen:** `docs/handbuch/ref-config.md` (die Tabelle der Bezugsgrößen plus der Grund, warum der Laufzeitwert nicht durchgereicht wird).
 
-### P3.2 — Checkpoint-Version wirklich prüfen
+### P3.2 — Checkpoint-Version wirklich prüfen ✅ erledigt 2026-09-05
 
 **Befund:** `checkpoint_version` wird in jedes Checkpoint-Metadatum geschrieben (`= 2`), aber nirgends zurückgelesen — `CheckpointManager.load` ignoriert `payload["metadata"]` komplett. Das Feld täuscht eine Versionsprüfung vor, die es nicht gibt.
 **Fundstelle:** [`src/orchestration/checkpoint_manager.py:26`](../src/orchestration/checkpoint_manager.py).
-**Was zu tun ist:** Beim Laden die Version prüfen und bei Mismatch klar abbrechen (Migration erst, wenn es eine zweite Version gibt).
-**Fertig wenn:** Ein Checkpoint mit fremder Version wird mit verständlicher Meldung abgelehnt, Test dazu. **Doku:** `docs/handbuch/ref-ausgaben.md`.
+**Umgesetzt am 2026-09-05.** `load` prüft die Version, `CheckpointVersionError` sagt, welche Datei welche Version trägt und was zu tun ist. Eine Migration gibt es bewusst nicht — solange es *eine* Version gibt, wäre sie Code ohne Fall.
+
+**Der Fall, den ein bequemes `.get(..., CHECKPOINT_VERSION)` verschluckt hätte:** ein Checkpoint **ohne** Metadatenblock. Die Metadaten gibt es erst seit Version 2, und `latest_checkpoint` findet die alten `round_*.json` weiterhin. Ein fehlendes Feld ist deshalb eine *fremde* Version und keine passende — es als aktuell zu behandeln wäre genau die stille Annahme, gegen die das Paket antritt.
+
+**Die Zahl steht jetzt an einer Stelle** (`CHECKPOINT_VERSION`), und ein Test hält Schreiber und Leser zusammen. Vorher hätte niemand gemerkt, wenn `save` eine 3 geschrieben hätte.
+
+**Fertig, gemessen:** `tests/test_checkpoint_manager.py::TestDieVersionWirdWirklichGeprueft` — fünf Zusagen, darunter der eigene Schreiber (eine Prüfung, die den eigenen Checkpoint abweist, wäre schlimmer als keine) und die *zukünftige* Version: Der Maßstab ist «nicht meine», nicht «älter als meine». **Doku ist mitgezogen:** `docs/handbuch/ref-ausgaben.md`.
 
 ### P3.3 — Fehlermeldungen, die auch greifen
 

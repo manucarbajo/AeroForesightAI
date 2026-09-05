@@ -1,7 +1,12 @@
 """Tick-loop execution, graph wiring, checkpointing, and batch/sweep runs -
 everything that manages the lifecycle of a simulation run."""
 
-from src.orchestration.checkpoint_manager import CheckpointManager, CheckpointMetadata
+from src.orchestration.checkpoint_manager import (
+    CHECKPOINT_VERSION,
+    CheckpointManager,
+    CheckpointMetadata,
+    CheckpointVersionError,
+)
 from src.orchestration.environment_node import EnvironmentNode
 from src.orchestration.event_deltas import write_events_from_deltas
 from src.orchestration.langgraph_adapter import get_build_options
@@ -22,8 +27,10 @@ from src.orchestration.simulation_runner import (
 )
 
 __all__ = [
+    "CHECKPOINT_VERSION",
     "CheckpointManager",
     "CheckpointMetadata",
+    "CheckpointVersionError",
     "EnvironmentNode",
     "write_events_from_deltas",
     "get_build_options",
