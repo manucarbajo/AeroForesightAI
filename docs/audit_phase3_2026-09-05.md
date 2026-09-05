@@ -161,6 +161,17 @@ Ableitung. Die Zeile steht zwischen dreißig gleichförmigen Feldzuweisungen.
 kein neuer Test, sondern eine Erweiterung von `tests/test_llm_defaults.py`:
 Derselbe leere Entwurf muss auf **beiden** Wegen denselben Modellnamen ergeben.
 
+> **Behoben noch am 2026-09-05 (P3.13).** Und der Befund war größer als hier
+> beschrieben: `availability` erfand nicht nur den Modellnamen (B5a), sondern
+> zwei Zeilen darüber auch die **Adresse** — und das war der schlimmere Fall,
+> weil dann eine erfundene Adresse angepingt wurde und ihr Ergebnis darüber
+> entschied, ob «Mit Sprachmodell» als möglich angezeigt wird. Vier Rückfälle
+> statt zwei, alle weg, alle vier mutationsgeprüft. Der tragende Wächter prüft
+> nicht den Fall, sondern den **Mechanismus**: Die Rundreise
+> `draft_to_launch_config` → `launch_config_to_draft` muss auf `model` **und**
+> `base_url` ein Festpunkt sein — genau dort wäscht ein `or DEFAULT_…` einen
+> erfundenen Wert zu etwas, das wie eine Eingabe aussieht.
+
 ### B2 · Der Fehlerweg kann selbst noch scheitern — und sein Wächter teilt die Annahme 🔶 **mittel, Fehlerweg**
 
 P3.3 hat `_schreibe` gebaut, damit eine Befundliste auch dann erscheint, wenn die
@@ -322,7 +333,7 @@ der Wächter läuft**, damit die dritte Wiederholung nicht kommt.
 
 ### B5 · Kleinere Befunde
 
-**B5a · `availability` nennt ein Modell, das niemand eingestellt hat** 🔷
+**B5a · `availability` nennt ein Modell, das niemand eingestellt hat** 🔷 *behoben (P3.13) — und die Adresse tat es auch, siehe B1*
 `dashboard/web/config_editor/compute_mode.py:116` liest
 `draft.get("model") or DEFAULT_MODEL` und schreibt den Namen in eine
 Nutzermeldung («Modell … nicht vorhanden»). Bei leerem Feld nennt der Preflight
@@ -512,11 +523,11 @@ ein rotes Ergebnis dort ist eine gute Nachricht.
 | | Befund | Ort | Auswirkung |
 | --- | --- | --- | --- |
 | ⛔ | **B6** Der Browser-Wächter ist wieder rot; C5 gilt als behoben | `tests/test_web_overflow.py` | **Vorbestehend, auf `main` identisch nachgemessen.** Schritt 1 der Schrittfolge ist 1,96 Schirme hoch gegen einen Deckel von 1,34, zwei Zeilen laufen 109 und 98 Zeichen gegen 75. Der Fix vom 2026-09-03 wurde von Commits desselben Tages ungültig gemacht — C5s eigentlicher Befund zum zweiten Mal |
-| 🔶 | **B1** Der Rückfall auf `llama3.2` lebt eine Ebene höher | `dashboard/run_launcher.py:144` | Preflight und Lauf widersprechen sich bei leerem Modellfeld; das Artefakt nennt ein Modell, das niemand gewählt hat |
+| 🔶 | **B1** Der Rückfall auf `llama3.2` lebt eine Ebene höher — **behoben (P3.13)** | `dashboard/run_launcher.py:144` | Preflight und Lauf widersprechen sich bei leerem Modellfeld; das Artefakt nennt ein Modell, das niemand gewählt hat |
 | 🔶 | **B2** Der Ausweichpfad des Schreibers braucht `.buffer` | `src/run_simulation.py:556` | Aus `UnicodeEncodeError` wird `AttributeError` — im Paket über Fehlerwege; alle drei Tests teilen die Annahme |
 | 🔶 | **B3** Annotation widerspricht dem Rumpf | `src/orchestration/scenario_sweeps.py:232` | `SimpleNamespace` statt `RunArgs`, `sweep_id` unbenutzt, toter Import bleibt für `ruff` unsichtbar |
 | 🔶 | **B4** Das 500-ms-Kriterium hat keinen Wächter auf seiner Höhe | `tests/test_web_overflow.py:1732` | Ein Rückfall auf 800 ms bliebe grün, während der Plan das Kriterium als erfüllt führt |
-| 🔷 | **B5a** `availability` nennt ein unkonfiguriertes Modell | `compute_mode.py:116` | Nutzermeldung erfindet `llama3.2` |
+| 🔷 | **B5a** `availability` nennt ein unkonfiguriertes Modell — **behoben (P3.13)** | `compute_mode.py:116` | Nutzermeldung erfindet `llama3.2` |
 | 🔷 | **C1** «46» nur ohne Docstrings | Plan, `_melde_befunde` | Wer nachzählt, bekommt 55 |
 | 🔷 | **C2** Kopfzeile klein geschrieben | `validation.py:661` | erste Zeile eines CLI-Fehlers; vorbestehend |
 | 🔷 | **C3** Docstring nennt Zahlen von vor P3.12 | `test_web_overflow.py:1855` | sagt, das Kriterium sei verfehlt |

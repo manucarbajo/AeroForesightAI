@@ -206,6 +206,15 @@ wählen.
 **3. Womit wird gerechnet?** Der Rechenmodus, dazu die Auskunft, ob Ollama
 gerade erreichbar ist. Hinter «Feinabstimmung» der Zufallsstartwert.
 
+Diese Auskunft beantwortet genau, was eingestellt ist — und sagt es auch, wenn
+nichts eingestellt ist. Ist das Feld für den Modellnamen leer, steht dort
+«Ollama läuft, aber es ist kein Modell eingestellt» samt der Liste dessen, was
+dort tatsächlich liegt; ist die Adresse leer, wird **keine** befragt. Bis zum
+2026-09-05 setzte die Anzeige in diesen Fällen die Vorgabewerte ein und meldete
+etwa «llama3.2 fehlt dort» für ein Modell, das niemand gewählt hatte — bei
+leerer Adresse pingte sie sogar eine erfundene an, und deren Antwort entschied
+darüber, ob «Mit Sprachmodell» als möglich angezeigt wird.
+
 Zu jeder Einstellung steht die kurze Wirkungsbeschreibung direkt unter dem Feld,
 die ausführliche hinter «Mehr dazu» daneben. Die vollständige Liste aller
 Einstellungen mit Einheit und Config-Feld steht unter

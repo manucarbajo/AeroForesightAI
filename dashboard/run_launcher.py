@@ -141,7 +141,21 @@ def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
         property_edits=draft.property_edits,
         mock_llm=draft.mock_llm,
         deterministic_only=draft.deterministic_only,
-        model=draft.model.strip() or DEFAULT_MODEL,
+        # **Kein Rückfall auf den Vorgabewert** (P3.13). Hier stand
+        # `draft.model.strip() or DEFAULT_MODEL`, und damit lebte genau die
+        # Notlösung weiter, die P3.4 in `llm_config_from_draft` abgeschafft
+        # hat — eine Ebene darüber. Der Weg dorthin führt über
+        # `launch_config_to_draft`, und der **wäscht** den erfundenen Wert:
+        # Danach ist er von einem eingetippten nicht mehr zu unterscheiden.
+        # Gemessen sagte der Preflight «Modellname darf nicht leer sein»,
+        # während der Lauf mit `llama3.2` rechnete und diesen Namen ins
+        # Artefakt schrieb. Leer weitergegeben landet er in
+        # `state.config.llm`, und `validate_config` meldet ihn.
+        #
+        # `DEFAULT_MODEL` bleibt der Vorgabewert von `RunLaunchConfig` selbst
+        # (oben im Feld) — das ist **eine** Quelle für einen unbenannten
+        # Startwert und nicht die Übersetzung eines leeren Feldes.
+        model=draft.model.strip(),
         base_url=draft.base_url.strip(),
         temperature=float(draft.temperature),
         max_tokens=int(draft.max_tokens),

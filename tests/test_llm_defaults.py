@@ -352,6 +352,63 @@ class TestDerZustandTraegtDasSprachmodell:
 
         assert any("Modellname" in b for b in befunde), befunde
 
+    def test_beide_wege_lesen_dasselbe_leere_feld(self):
+        """**Der Wächter, den P3.4 gebraucht hätte** (P3.13, Befund B1 des Audits).
+
+        Der Test darüber prüft `llm_config_from_draft` — und der war korrekt.
+        Der Rückfall lebte eine Ebene höher: `draft_to_launch_config` schrieb
+        `draft.model.strip() or DEFAULT_MODEL`, und `launch_config_to_draft`
+        **wäscht** den erfundenen Wert, weil er danach von einem eingetippten
+        nicht mehr zu unterscheiden ist.
+
+        Gemessen wird deshalb nicht eine Funktion, sondern der **Unterschied
+        zwischen zwei Wegen**: Der Preflight ruft
+        `prepare_simulation_state(entwurf)`, der Lauf schickt denselben Entwurf
+        durch die Datenklasse des Launchers und zurück. Vor P3.13 kam dabei
+        `''` gegen `'llama3.2'` heraus — ein Befund gegen keinen.
+        """
+
+        from dashboard.config_catalog import prepare_simulation_state
+        from dashboard.run_launcher import draft_to_launch_config, launch_config_to_draft
+        from src.validation import collect_state_errors
+
+        entwurf = self._draft(model="")
+
+        preflight = prepare_simulation_state(entwurf)
+        lauf = prepare_simulation_state(launch_config_to_draft(draft_to_launch_config(entwurf)))
+
+        assert preflight.config.llm.model == lauf.config.llm.model == ""
+
+        # Und beide Wege müssen denselben Befund tragen — nicht nur denselben
+        # Wert. Ein Weg, der schweigt, ist der Weg, auf dem jemand startet.
+        for name, state in (("Preflight", preflight), ("Lauf", lauf)):
+            befunde = [str(b) for b in collect_state_errors(state)]
+            assert any("Modellname" in b for b in befunde), (name, befunde)
+
+    @pytest.mark.parametrize("feld", ["model", "base_url"])
+    def test_der_rundlauf_des_launchers_erfindet_nichts(self, feld):
+        """**Ein Mechanismus, keine Liste** — der nächste Geschwisterfall fällt auf.
+
+        `draft_to_launch_config` → `launch_config_to_draft` ist eine Rundreise
+        durch eine Datenklasse mit Vorgabewerten. Genau dort kann ein `or
+        DEFAULT_…` ein leeres Feld füllen, ohne dass es jemandem auffällt: Der
+        Wert *sieht* danach aus wie eine Eingabe. Geprüft wird deshalb, dass die
+        Rundreise auf den LLM-Feldern ein **Festpunkt** ist.
+
+        `model` war der Befund; `base_url` steht daneben und war nur deshalb
+        heil, weil dort nie jemand ein `or` geschrieben hat.
+        """
+
+        from dashboard.run_launcher import draft_to_launch_config, launch_config_to_draft
+
+        entwurf = self._draft(**{feld: ""})
+        zurueck = launch_config_to_draft(draft_to_launch_config(entwurf))
+
+        assert getattr(zurueck, feld) == "", (
+            f"Der Rundlauf hat «{feld}» von '' auf {getattr(zurueck, feld)!r} gesetzt. "
+            "Ein leeres Feld ist ein Befund und keine Gelegenheit für einen Vorgabewert."
+        )
+
     def test_die_pruefung_meldet_jeden_befund_genau_einmal(self):
         """Vorher stand jeder doppelt da — als «config.llm: …» und «Technik: …».
 

@@ -2343,7 +2343,7 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 | [P3.12](#p312--der-modell-bereich-lag-dauernd-im-dom--erledigt-2026-09-05) Modell-Bereich dauernd im DOM | ✅ erledigt (aus P3.9) |
 | [P3.10](#p310--46-zeichenketten-die-die-konsole-nicht-schreiben-kann--erledigt-2026-09-05) Zeichensatz der Konsole | ✅ erledigt (aus P3.3) |
 | [P3.11](#p311--die-lauf-argumente-sind-ein-simplenamespace--erledigt-2026-09-05) Lauf-Argumente ohne Form | ✅ erledigt (aus P3.6) |
-| [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--offen-2026-09-05) Rückfall auf `llama3.2` | 🟡 offen (aus dem Audit) |
+| [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--erledigt-2026-09-05) Rückfall auf `llama3.2` | ✅ erledigt (aus dem Audit) |
 | [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--offen-2026-09-05) Fehlerweg braucht `.buffer` | 🟡 offen (aus dem Audit) |
 | [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--offen-2026-09-05) Annotation gegen Rumpf | 🟡 offen (aus dem Audit) |
 | [P3.16](#p316--das-500-ms-kriterium-und-sein-deckel--zu-entscheiden-2026-09-05) 500 ms gegen einen Deckel von 900 | 🟡 zu entscheiden (aus dem Audit) |
@@ -2649,7 +2649,7 @@ Rückfall aus Phase 2, den dieses Audit gefunden hat (P3.17):
 
 | Paket | Befund | Schwere |
 | --- | --- | --- |
-| [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--offen-2026-09-05) | `draft_to_launch_config` erfindet `llama3.2` für ein leeres Modellfeld — der Rückfall, den P3.4 zwanzig Zeilen weiter abgeschafft hat | 🔶 |
+| [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--erledigt-2026-09-05) | `draft_to_launch_config` erfindet `llama3.2` für ein leeres Modellfeld — der Rückfall, den P3.4 zwanzig Zeilen weiter abgeschafft hat | 🔶 **behoben** |
 | [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--offen-2026-09-05) | `_schreibe` setzt `sys.stderr.buffer` voraus; ohne wird aus dem `UnicodeEncodeError` ein `AttributeError` — und alle drei Tests teilen die Annahme | 🔶 |
 | [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--offen-2026-09-05) | `sweep_metadata_args` sagt `-> SimpleNamespace` und liefert `RunArgs`; `sweep_id` ist unbenutzt; der tote Import bleibt für `ruff` unsichtbar | 🔶 |
 | [P3.16](#p316--das-500-ms-kriterium-und-sein-deckel--zu-entscheiden-2026-09-05) | P3.9s Kriterium lautet 500 ms, sein Wächter deckelt bei 900 — ein Rückfall auf 800 bliebe grün | 🔶 |
@@ -2672,7 +2672,7 @@ Höhen-Deckel an dessen Inhalt hängt.
 
 ---
 
-### P3.13 — Der abgeschaffte Rückfall lebt eine Ebene höher 🟡 offen (2026-09-05)
+### P3.13 — Der abgeschaffte Rückfall lebt eine Ebene höher ✅ erledigt 2026-09-05
 
 **Fundstelle:** [`dashboard/run_launcher.py:144`](../dashboard/run_launcher.py),
 dazu [`dashboard/web/config_editor/compute_mode.py:116`](../dashboard/web/config_editor/compute_mode.py).
@@ -2706,6 +2706,35 @@ und verlangt dasselbe Ergebnis. Die Nutzermeldung in `availability` sagt «kein
 Modell eingestellt» statt einen Namen zu erfinden. **Nicht** in denselben Commit
 gehört eine Änderung an der Reihenfolge oder am Tor — das wäre eine zweite
 Änderung in derselben Zeile.
+
+**Was gilt** (2026-09-05): `draft_to_launch_config` schreibt
+`model=draft.model.strip()`, ohne `or`. Beide Wege führen bei leerem Feld auf
+`''` und **beide** melden «Modellname darf nicht leer sein». `DEFAULT_MODEL`
+bleibt der Vorgabewert des Feldes in `RunLaunchConfig` selbst — das ist eine
+Quelle für einen unbenannten Startwert und nicht die Übersetzung eines leeren
+Feldes.
+
+**Zwei Wächter, und der zweite ist der wichtigere:** Der eine prüft den
+gemeldeten Fall (derselbe leere Entwurf über Preflight und Lauf, gleicher Wert
+*und* gleicher Befund). Der andere prüft den **Mechanismus** — die Rundreise
+`draft_to_launch_config` → `launch_config_to_draft` muss auf den LLM-Feldern ein
+**Festpunkt** sein. Genau dort kann ein `or DEFAULT_…` ein leeres Feld füllen,
+ohne dass es auffällt: Der Wert *sieht* danach aus wie eine Eingabe. Geprüft
+werden `model` **und** `base_url`; letzteres war nur deshalb heil, weil dort nie
+jemand ein `or` geschrieben hat.
+
+**Und der Befund hatte zwei Hälften in `availability`, nicht eine.** Die
+gemeldete war der Modellname; zwei Zeilen darüber stand dasselbe für die
+Adresse, und das war der **schlimmere** Fall: Bei leerem Feld wurde eine
+*erfundene* Adresse angepingt, und deren Antwort entschied darüber, ob «Mit
+Sprachmodell» als möglich angezeigt wird. Läuft dort zufällig ein Ollama, sagte
+die Oberfläche «alle drei Modi stehen zur Verfügung» für einen Lauf, der keinen
+Endpunkt hat. Beide sind weg, der Import von `defaults` ist damit fort — nicht
+nur unbenutzt.
+
+**Alle vier Zusagen sind mutationsgeprüft:** Jeder der beiden Rückfälle im
+Launcher und jeder der beiden in `availability` wurde wieder eingesetzt, und
+jedes Mal wurde es rot.
 
 ---
 

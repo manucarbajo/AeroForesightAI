@@ -126,3 +126,54 @@ def test_availability_flags_a_missing_model(monkeypatch):
 
     assert "llama3.2" in rendered
     assert "mistral:latest" in rendered
+
+
+def test_availability_erfindet_kein_modell_fuer_ein_leeres_feld(monkeypatch):
+    """P3.13: «kein Modell eingestellt» ist eine andere Aussage als «fehlt dort».
+
+    Vorher stand hier `draft.get("model") or DEFAULT_MODEL`, und die Meldung
+    nannte bei leerem Feld «llama3.2 fehlt dort» — ein Modell, das niemand
+    eingestellt hat. Dieselbe Erfindung wie im Launcher (B1 des Audits), nur in
+    einem Satz statt in einem Feld.
+    """
+
+    monkeypatch.setattr(
+        llm_status,
+        "check",
+        lambda url, **kw: llm_status.OllamaStatus(
+            base_url=url, reachable=True, models=("mistral:latest",)
+        ),
+    )
+    draft = initial_draft_dict()
+    draft["model"] = "   "
+
+    rendered = str(compute_mode.availability(draft))
+
+    assert "kein Modell eingestellt" in rendered
+    assert "llama3.2" not in rendered, "Die Meldung nennt ein Modell, das nicht eingestellt ist"
+    assert "mistral:latest" in rendered, "Was dort liegt, hilft beim Eintragen"
+
+
+def test_availability_pingt_keine_erfundene_adresse_an(monkeypatch):
+    """P3.13, die schlimmere Hälfte: eine erfundene Adresse beantwortet die falsche Frage.
+
+    `llm_status.check` wurde mit `DEFAULT_BASE_URL` gerufen, wenn das Feld leer
+    war — und ihr Ergebnis entschied darüber, ob «Mit Sprachmodell» als möglich
+    angezeigt wird. Läuft dort zufällig ein Ollama, sagte die Oberfläche «alle
+    drei Modi stehen zur Verfügung» für einen Lauf, der keinen Endpunkt hat.
+    """
+
+    gefragt: list[str] = []
+
+    def _merke(url, **kw):
+        gefragt.append(url)
+        return llm_status.OllamaStatus(base_url=url, reachable=True, models=("mistral:latest",))
+
+    monkeypatch.setattr(llm_status, "check", _merke)
+    draft = initial_draft_dict()
+    draft["base_url"] = ""
+
+    rendered = str(compute_mode.availability(draft))
+
+    assert gefragt == [], f"Es wurde trotzdem eine Adresse befragt: {gefragt}"
+    assert "Keine Adresse" in rendered
