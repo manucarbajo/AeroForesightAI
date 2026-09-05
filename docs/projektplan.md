@@ -75,7 +75,7 @@ alle drei sind unten eingeplant:
 
 - **Ein Sweep kann nicht als degradiert markiert werden.** Eingeplant in [P0.6](#p06--ein-lauf-sagt-wie-er-entstanden-ist--erledigt-2026-08-27).
 - **`get_llm()` wählt weiterhin still den Mock**, wenn keine Umgebungsvariable gesetzt ist. Eingeplant in [P3.4](#p34--llm-konfiguration-zentralisieren).
-- **Ein Config-Fehler auf der CLI kommt als roher Traceback.** Eingeplant in [P3.3](#p33--fehlermeldungen-die-auch-greifen).
+- **Ein Config-Fehler auf der CLI kommt als roher Traceback.** Eingeplant in [P3.3](#p33--fehlermeldungen-die-auch-greifen--erledigt-2026-09-05).
 
 Der erste Punkt war in der Nachprüfung oben als erledigt vermerkt („Sweeps schreiben die
 `degraded`-Felder mit"). Die Aussage stimmt wörtlich und führt trotzdem in die Irre: Geprüft war,
@@ -445,7 +445,7 @@ Manus vier Commits sind einzeln nachgestellt worden — jede Behauptung am laufe
 **Nachgestellt und bestätigt:**
 
 - *Der Fingerabdruck hat den Lauf mitgehasht.* Seine Kopfzeile stimmt aufs Wort: Seeds 1 und 2 über vier Ticks mit aktivem CIB — vier Komponenten gleich, `factors` verschieden, weil F1 auseinanderläuft. (Mein erster Reproduktionsversuch mit abgeschaltetem CIB über 40 Ticks zeigte nichts, weil beide Läufe bis dahin wieder in derselben Endlage ankommen. Der Aufbau entscheidet, nicht der Befund.) Deutlicher noch ohne Seed-Unterschied: **dieselbe Konfiguration, derselbe Seed, nur 5 statt 40 Ticks** ergab am Ende `31e57fbb…` gegen `1b6de2d0…`, beim Start beidemal `31e57fbb…`.
-- *Der Abdruck überlebt Checkpoint und Fortsetzen.* 30-Tick-Lauf mit Checkpoints: Der Startabdruck steht im Checkpoint, wird beim Fortsetzen nicht neu genommen, obwohl die Faktoren sich bewegt haben. Alte Checkpoints (ohne das Feld) laden weiterhin — sie bekommen beim Fortsetzen allerdings einen Abdruck aus bereits gelaufenem Zustand. Enger Randfall, gehört in die Zuständigkeit von [P3.2](#p32--checkpoint-version-wirklich-prüfen).
+- *Der Abdruck überlebt Checkpoint und Fortsetzen.* 30-Tick-Lauf mit Checkpoints: Der Startabdruck steht im Checkpoint, wird beim Fortsetzen nicht neu genommen, obwohl die Faktoren sich bewegt haben. Alte Checkpoints (ohne das Feld) laden weiterhin — sie bekommen beim Fortsetzen allerdings einen Abdruck aus bereits gelaufenem Zustand. Enger Randfall, gehört in die Zuständigkeit von [P3.2](#p32--checkpoint-version-wirklich-prüfen--erledigt-2026-09-05).
 - *`seed: null` bei jedem Standardlauf.* Bestätigt und behoben: Ein Lauf ohne `--seed` schreibt jetzt `42`, und zwei solche Läufe sind in `price_history.json`, `tick_mechanics.json` und `factors.csv` **bitgleich** — die Reproduzierbarkeit war schon vorher da, nur sagte es niemand.
 - *Der Sweep-Modus.* Ein Sweep gegen einen toten Endpunkt trägt jetzt `deterministic_with_llm_narrative`, den echten Modellnamen, `degraded: true` und ein `llm_incidents.json` mit dem Verbindungsfehler. Das «Fertig wenn» von P0.6 hält unverändert.
 - *Beide Audit-Findings.* `run_multi` beginnt seine Folge tatsächlich bei 0 und 1, während ein Einzellauf 42 nimmt — gemessen. `run_population_sampling` reicht Tick und Metriken wirklich nicht durch. Beide zu Recht ins Audit statt in einen Fix.
@@ -1714,7 +1714,7 @@ Unter `marge` steigt der Verkehr um **66 %** von 0,3 auf 1,3 — **bei unveränd
 
 #### Der Trajektorien-Horizont, geschlossen am 2026-09-03
 
-**Er hing angeblich an [P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31), und das war eine Verwechslung von zwei Fragen.** Ob eine Kurve **zu kurz** ist, hängt wirklich daran, wie lang ein Tick ist — die Frage bleibt offen. Ob ein Lauf **über sie hinausgeht**, hängt an nichts dergleichen: Das ist eine Beschreibung und keine Bewertung. Damit ließ sich der Rest vorziehen, statt ihn ein viertes Mal zu verschieben.
+**Er hing angeblich an [P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--zurückgestellt-mit-grund-2026-09-05-neu-2026-08-31), und das war eine Verwechslung von zwei Fragen.** Ob eine Kurve **zu kurz** ist, hängt wirklich daran, wie lang ein Tick ist — die Frage bleibt offen. Ob ein Lauf **über sie hinausgeht**, hängt an nichts dergleichen: Das ist eine Beschreibung und keine Bewertung. Damit ließ sich der Rest vorziehen, statt ihn ein viertes Mal zu verschieben.
 
 **Gemeldet wird, nicht abgewiesen** — die tragende Entscheidung. Über den letzten Stützpunkt hinauszulaufen ist zulässig und meistens gewollt: Eine CO₂-Abgabe, die ihren Endwert erreicht hat, *bleibt* dort. Ein Fehler in `collect_state_errors` hätte **jeden ausgelieferten Rahmen sofort ungültig gemacht** — alle vier laufen 50 Ticks bei Kurven, die früher enden —, und ein Wächter, der den Normalfall abweist, wird binnen einer Woche entnervt gelockert. Was fehlte, war die **Auskunft**.
 
@@ -1827,7 +1827,7 @@ Der Glockenverlauf des Erwerbslebens — Menschen in der Lebensmitte fliegen am 
 
 **Der zweite Einwand traf den wunden Punkt:** «Es kommt doch darauf an, wie viele Ticks man macht — evtl. möchte man Jahre, und dann verändert es sich doch.» Zwei Dinge sind daraus geworden.
 
-**Erstens ein eigener Befund über die Tick-Dauer** ([P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31)): Sie ist bereits dreimal entschieden, um den Faktor 12 verschieden. Meine Begründung gegen Alterung stand also auf einer Invariante, die als Verhaltensaussage nicht hält.
+**Erstens ein eigener Befund über die Tick-Dauer** ([P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--zurückgestellt-mit-grund-2026-09-05-neu-2026-08-31)): Sie ist bereits dreimal entschieden, um den Faktor 12 verschieden. Meine Begründung gegen Alterung stand also auf einer Invariante, die als Verhaltensaussage nicht hält.
 
 **Zweitens die Messung, die zeigt, warum «einfach altern lassen» trotzdem falsch wäre:**
 
@@ -1866,7 +1866,7 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 **Und der Klemm-Wächter aus P2.9 hat dabei mitgeredet**, ungeplant: Ein Zielalter von 40 klemmt 12,5 % der Ziehungen an der Untergrenze 18 und scheiterte laut. Das ist richtig — eine *junge* Gesellschaft hat viele Minderjährige, die Bevölkerung des Modells besteht aber per Definition aus Erwachsenen. Die erlaubte Spanne von `altersmittel_jahre` ist deshalb **44 bis 64**, und diese Grenzen sind gemessen statt gemeint.
 
-**Der Standard bleibt 0,0** — keine Erneuerung, also der Stand von vorher. Nicht aus Vorsicht, sondern weil eine sinnvolle Rate an der **Tick-Dauer** hängt, und die ist offen ([P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31)): Bei einem Tick als Jahr wären rund 0,014 realistisch, bei einem Tick als Monat ein Zwölftel davon. Ein Rahmenszenario, das eine alternde Gesellschaft rechnen will, setzt **beides** — den Verlauf und die Rate.
+**Der Standard bleibt 0,0** — keine Erneuerung, also der Stand von vorher. Nicht aus Vorsicht, sondern weil eine sinnvolle Rate an der **Tick-Dauer** hängt, und die ist offen ([P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--zurückgestellt-mit-grund-2026-09-05-neu-2026-08-31)): Bei einem Tick als Jahr wären rund 0,014 realistisch, bei einem Tick als Monat ein Zwölftel davon. Ein Rahmenszenario, das eine alternde Gesellschaft rechnen will, setzt **beides** — den Verlauf und die Rate.
 
 **Der Wächter:** [`tests/test_alter_formt_die_person.py`](../tests/test_alter_formt_die_person.py), zweiundzwanzig Zusagen — darunter die, die vorher fehlte: dass eine Vorgabe **über mehrere Ticks** ankommt, gemessen gegen den Zustand ohne Erneuerung. Er ersetzt `test_bevoelkerung_altert_nicht.py`, dessen Prämisse mit dieser Korrektur entfallen ist.
 
