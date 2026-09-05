@@ -2725,14 +2725,14 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Audit-Abschnitt | Pakete |
 | --- | --- |
 | Faktoren / Modellsubstanz | ~~P0.2 (F7-Drift)~~ ✅, P2.0 (Rolle der Szenarienschicht), P2.1, P2.2, P2.3 (die übrigen 120 Zellen — hängt an P2.2), P2.4 |
-| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, ~~P0.7 (Kostendruck an zwei Stellen)~~ ✅, P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen) |
-| Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), P3.5 (Klemmung, `print`), P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
-| Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, ~~P0.6 (Sweep-Pfad an P0.1 vorbei)~~ ✅, P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`, CLI-Traceback) |
-| LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`) |
-| Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), P3.6 (private Imports), P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen) |
-| LangGraph Studio | P3.3 |
+| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, ~~P0.7 (Kostendruck an zwei Stellen)~~ ✅, ~~P3.1 (Property-Baseline)~~ ✅, P5.1 (toter Code, Preisfunktions-Namen) |
+| Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), ~~P3.5 (Klemmung, `print`)~~ ✅, P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
+| Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, ~~P0.6 (Sweep-Pfad an P0.1 vorbei)~~ ✅, P2.1 (`_seed_runtime`), ~~P3.2 (Checkpoint-Version)~~ ✅, ~~P3.3 (leerer `try`, CLI-Traceback)~~ ✅, P3.11 (Lauf-Argumente ohne typisierte Form) |
+| LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, ~~P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`)~~ ✅ |
+| Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), ~~P3.6 (private Imports)~~ ✅, P3.9 (Klickkosten — Rest ist eine Architekturentscheidung), P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen) |
+| LangGraph Studio | ~~P3.3~~ ✅ |
 | Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests, der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction` und der drei `--deselect`-Zeilen in der CI) |
-| Sonstiges | P5.3 |
+| Sonstiges | P3.10 (Zeichensatz der Konsole), P5.3 |
 | **Landingpage** (neu 2026-08-26) | P1.4 (Formular-Endpunkt, Rechtstexte, CDN-Abhängigkeiten) |
 | **Reproduzierbarkeit / Run-Artefakte** (neu 2026-08-26) | ~~P0.6 (Seed, Rechenmodus, Config-Hash in `run_metadata.json`)~~ ✅ |
 | **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) |
