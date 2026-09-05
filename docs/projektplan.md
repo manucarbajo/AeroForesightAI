@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-09-05 — **Phase 3 ist abgeschlossen** (elf Pakete erledigt, allein die Tickdauer zurückgestellt mit Grund; drei der elf sind erst aus der Arbeit entstanden — [Bilanz](#phase-3--engine-härtung--abgeschlossen-am-2026-09-05-eine-position-zurückgestellt-mit-grund)). Davor: 2026-08-28 — **Phase 0 ist abgeschlossen**, **P1.1 ist erledigt**, und darauf ist **P1.5** gefolgt: Das Dashboard ist jetzt ein **Leitstand** — ein Bildschirm mit fünf Zonen statt eines Stapels Seiten, mit umschaltbarem hellen und dunklen Design und einer Tick-Zeitleiste, die Szene, Kennzahlen und Verläufe gemeinsam führt ([Einzelheiten](#p15--leitstand-oberfläche--erledigt-2026-08-28)). Auch dort lag der eigentliche Fund unter der Oberfläche: Die Stile für Dashs eigene Komponenten griffen seit dem Sprung auf Dash 4 an **keiner einzigen Stelle** mehr — im hellen Modus unsichtbar, im dunklen ein violetter Regler mit schwarzer Beschriftung auf schwarzem Grund. Direkt darauf folgte **P1.6**, weil die Vermessung des Ergebnisses einen Rückschritt zeigte: Die linke Spalte war mit der hineingepressten Konfiguration **10,7 Bildschirme** hoch, und der Start-Knopf lag 6,1 Bildschirme tief — bei erfüllten Abnahmekriterien beider Vorgängerpakete. Einrichten und Beobachten sind jetzt getrennt, die Spalte ist ein Bedienfeld, und die Kriterien von P1.1 und P1.5 sind um eine Größe ergänzt, die **Erreichbarkeit** misst statt Anzahl ([Einzelheiten](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28)). Zu P1.1: «Simulation starten» führt jetzt in drei Entscheidungen zum Lauf ([Einzelheiten](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28)). Dabei kam ein Fund heraus, der nicht in der Oberfläche lag: Ein gewähltes Szenario-Preset wurde im Dashboard **still von den Datei-Defaults überschrieben** — bei allen acht ausgelieferten Presets, ein Lauf «Business as Usual» rechnete mit steigender CO₂-Abgabe. Behoben, mit einem Wächter über jede Datei unter `configs/sweeps/`. Phase 0 im Übrigen unverändert und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2 war die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase; sie ist seit dem **2026-08-29 zurückgestellt mit Grund** und nicht mehr eingeplant, siehe die Entscheidung unten. Die drei Phase-1-Pakete sind **gegengeprüft** (Manu, 2026-08-28): Die tragenden Zusagen halten, drei Befunde lagen in der Darstellung — ein Schubladen-Knopf, dessen Versteck-Regel die Kaskade verlor und deshalb nie wirkte, sein Haltepunkt, der der falschen Zone gehörte, und ein Laufzustand, der nur die eigene Sitzung kannte; alle drei behoben ([Einzelheiten](#gegenprobe-zu-p11p15p16-manu-2026-08-28)). Daraus ist **P1.7** entstanden, und es ist erledigt: Der Ablauf **ist** jetzt die Oberfläche — Einrichten zuerst, der Lauf als eigener Bildschirm, das Einrichten als Schrittfolge hinter einem Einstieg mit drei Wegen statt einer Bildlaufstrecke ([Einzelheiten](#p17--der-ablauf-wird-die-oberfläche--erledigt-2026-08-28)). **Alle vier Stufen sind fertig** — zuletzt am 2026-08-28 der Einstieg mit den drei Wegen (Stufe C) und der mechanische Überlauf-Wächter (Stufe D). Beim Wächter kam die Entscheidung dazu, die der Plan offengelassen hatte: Playwright als **optionales** Extra, damit die CI ohne Browser grün bleibt und wer die Oberfläche anfasst ihn lokal scharf hat. Und er hat sich beim ersten Durchlauf selbst korrigiert — zwei weitere Phantome kamen zu den drei aus P1.8 dazu, darunter `scrollWidth` selbst: Ein ausgeschwebtes Kind zählt in den `scrollWidth` seines Vorfahren, und Dashs eigenes Dropdown ließ die Zeitleiste 145 px Überlauf melden, obwohl nichts zu sehen war. P1.7 ist gegengeprüft (Haiko, 2026-08-28): drei Befunde behoben — der Start aus der Schrittfolge wechselte den Bildschirm nicht, ein Widerspruch von 1,7 s zwischen Kopfzeile und Mitte, und ein Text, der auf einen aufgelösten Abschnitt zeigte; ein vierter Befund hat sich unter genauerer Messung aufgelöst und ist samt zurückgenommener Korrektur protokolliert ([Einzelheiten](#p18--gegenprobe-zu-p17-haiko-2026-08-28--erledigt)). Am **2026-08-28** ist der Einrichten-Assistent unabhängig auditiert worden — bewusst ohne die Abnahmekriterien dieses Plans als Maßstab, und genau dadurch hat das Audit gefunden, was die Kriterien durchgelassen haben: Auf dem Sweep-Pfad erreicht **genau ein** Feld des Entwurfs die Simulation, während der Preflight einen Lauf beschreibt, der so nicht stattfindet; fünf Bedienelemente in als *optional* gekennzeichneten Schritten schreiben ohne Rückfrage in `configs/properties.json`; und **kein einziger der acht Schritte passt auf einen Bildschirm** (1,13 bis 4,44), obwohl genau das die Zusage von P1.7 war. Daraus ist [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28) entstanden: **P1.1 und P1.7 sind wieder offen**, P1.5 bekommt ein Kriterium dazu, P1.8 schärft sein Verfahren nach, P1.3 und P3.6 werden vorgezogen ([Einzelheiten](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28), Vollfassung in [`wizard_audit_2026-08-28.md`](wizard_audit_2026-08-28.md)). Dieselbe Lehre wie bei P1.6, diesmal als Regel festgehalten: **Eine Zusage kommt mit ihrer Messung, nicht mit ihrer Zählung** — nachzulesen im [Commit-Regelwerk](#regelwerk-atomare-commits-ab-2026-08-28-verbindlich), das ab sofort für jede Änderung gilt. Am **2026-08-29** ist die Szenarienschicht entschieden worden — **Rahmen statt Richter**, und der Anlass war eine kleinere Frage: ob die 48 F7-Zellen jetzt fachlich abzunehmen sind. Beim Nachmessen der übrigen 120 kam heraus, dass der Konsistenz-Score **Polarität misst, nicht Plausibilität** (Korrelation +0,56 mit der Zahl gleichpolig gesetzter Faktoren, über alle vier Gruppen monoton), dass das **echte** Impact-Balance-Kriterium **genau zwei** der 128 Zustände trägt statt der drei, die das Produkt verspricht, und dass **vier unbegründete Zellen** die Rückkopplung verneinen, aus der gemischte Szenarien überhaupt erst entstehen: Nachfrage- und Wirtschaftswachstum hemmen dort strenge Regulierung, Flugscham und Schienenausbau. Damit bewertet das Modell die reale europäische Lage — strenge Regulierung *bei* starker Nachfrage — als unplausibel. Entschieden ist **Variante C**: Ein Szenario wird ein benanntes Bündel exogener Verläufe, F1–F7 werden aus dem Lauf *abgeleitet* statt ihn zu bewerten; die Sweeps sind bereits solche Bündel und werden vom Nebenweg zum Hauptweg. Phase 2 ist danach neu geschnitten — [P2.0](#p20--die-rolle-umdrehen-rahmen-statt-urteil--erledigt-2026-08-30) (Rolle umdrehen), P2.1, [P2.6](#p26--ensemble-läufe-je-rahmenszenario--erledigt-2026-08-31) (Ensemble), [P2.7](#p27--backtest-gegen-20152024--erledigt-2026-08-30) (Backtest), und **erst danach** [P2.2](#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31), weil sich eine Entscheidung über ein Werkzeug leichter trifft, wenn das Modell geeicht ist ([Einzelheiten](#leitentscheidung-die-szenarienschicht-2026-08-29), Vollfassung in [`entscheidung_szenarienschicht_2026-08-29.md`](entscheidung_szenarienschicht_2026-08-29.md)). Am **2026-08-30 ist Phase 1 abgeschlossen** — mit genau einer benannten Restposition. P1.9 ist vollständig (W3.5 entschieden: der Höhen-Deckel hält den Ist-Stand statt Inhalt wegzulassen), womit **P1.1 und P1.7 wieder geschlossen** sind. Dazu erledigt: **P1.2** (vier Aussagen statt sechs Datenquellen; Figuren entstehen ganz oder gar nicht; ein Farb- und Achsensystem für PNG und Bildschirm), **P1.3** im zugesagten Umfang (die Grenze zwischen Gerechnetem und Erzähltem steht im Schema — wie die Szenarien *entstehen*, bleibt P2.0), **P1.5** (der Bereichswechsel ist ansagbar und führt den Fokus) und **P1.4** bis auf die Rechtstexte: Kein Seitenaufruf verlässt mehr den eigenen Server, und die Demo-Anfrage kommt an. **Offen bleibt allein, dass Impressum, Datenschutzerklärung und AGB Inhalte brauchen** — die Gliederung steht, jede Pflichtangabe ist als benannte Lücke markiert, und `docs/landingpage.md` führt die Liste zum Abarbeiten. Auffällig an diesem Durchgang: **Fünf der neuen Wächter haben beim ersten scharfen Durchlauf zugeschlagen**, drei davon auf Fehler, die im selben Commit entstanden waren — darunter ein Symbol-Teilsatz, dem vier Namen fehlten, weil sie in einem Modul-Dict statt im Aufruf stehen; die Schrittliste brach daraufhin um 308 px aus. Daraus kam die Regel, die über das Paket hinausgeht: **Ein Parser findet, was jemand hingeschrieben hat; eine Messung findet, was wirklich dasteht.** · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-09-05 — **Phase 3 ist abgeschlossen und am selben Tag vollständig geprüft** (elf Pakete erledigt, allein die Tickdauer zurückgestellt mit Grund; drei der elf sind erst aus der Arbeit entstanden — [Bilanz](#phase-3--engine-härtung--abgeschlossen-am-2026-09-05-eine-position-zurückgestellt-mit-grund)). Das [Audit](#audit-der-phase-3-2026-09-05--fünf-pakete-der-schwere-befund-ist-vorbestehend) bestätigt elf von zwölf Paketen **nachgemessen** und alle fünfzehn tragenden Wächter über eine Mutationsprobe; **kein Befund berührt die Zahlen eines Laufs**. Vier Ränder halten nicht (P3.13 bis P3.16), und **der einzige schwere Befund ist vorbestehend**: Der Browser-Wächter ist 112 zu 6 rot, weil C5 des Phase-2-Audits am 2026-09-03 behoben und von Commits desselben Tages ungültig gemacht wurde (P3.17). Die Einschränkung gehört dazu — **das Audit ist nicht unabhängig**, dieselbe Sitzung hat gebaut und geprüft. Davor: 2026-08-28 — **Phase 0 ist abgeschlossen**, **P1.1 ist erledigt**, und darauf ist **P1.5** gefolgt: Das Dashboard ist jetzt ein **Leitstand** — ein Bildschirm mit fünf Zonen statt eines Stapels Seiten, mit umschaltbarem hellen und dunklen Design und einer Tick-Zeitleiste, die Szene, Kennzahlen und Verläufe gemeinsam führt ([Einzelheiten](#p15--leitstand-oberfläche--erledigt-2026-08-28)). Auch dort lag der eigentliche Fund unter der Oberfläche: Die Stile für Dashs eigene Komponenten griffen seit dem Sprung auf Dash 4 an **keiner einzigen Stelle** mehr — im hellen Modus unsichtbar, im dunklen ein violetter Regler mit schwarzer Beschriftung auf schwarzem Grund. Direkt darauf folgte **P1.6**, weil die Vermessung des Ergebnisses einen Rückschritt zeigte: Die linke Spalte war mit der hineingepressten Konfiguration **10,7 Bildschirme** hoch, und der Start-Knopf lag 6,1 Bildschirme tief — bei erfüllten Abnahmekriterien beider Vorgängerpakete. Einrichten und Beobachten sind jetzt getrennt, die Spalte ist ein Bedienfeld, und die Kriterien von P1.1 und P1.5 sind um eine Größe ergänzt, die **Erreichbarkeit** misst statt Anzahl ([Einzelheiten](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28)). Zu P1.1: «Simulation starten» führt jetzt in drei Entscheidungen zum Lauf ([Einzelheiten](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28)). Dabei kam ein Fund heraus, der nicht in der Oberfläche lag: Ein gewähltes Szenario-Preset wurde im Dashboard **still von den Datei-Defaults überschrieben** — bei allen acht ausgelieferten Presets, ein Lauf «Business as Usual» rechnete mit steigender CO₂-Abgabe. Behoben, mit einem Wächter über jede Datei unter `configs/sweeps/`. Phase 0 im Übrigen unverändert und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2 war die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase; sie ist seit dem **2026-08-29 zurückgestellt mit Grund** und nicht mehr eingeplant, siehe die Entscheidung unten. Die drei Phase-1-Pakete sind **gegengeprüft** (Manu, 2026-08-28): Die tragenden Zusagen halten, drei Befunde lagen in der Darstellung — ein Schubladen-Knopf, dessen Versteck-Regel die Kaskade verlor und deshalb nie wirkte, sein Haltepunkt, der der falschen Zone gehörte, und ein Laufzustand, der nur die eigene Sitzung kannte; alle drei behoben ([Einzelheiten](#gegenprobe-zu-p11p15p16-manu-2026-08-28)). Daraus ist **P1.7** entstanden, und es ist erledigt: Der Ablauf **ist** jetzt die Oberfläche — Einrichten zuerst, der Lauf als eigener Bildschirm, das Einrichten als Schrittfolge hinter einem Einstieg mit drei Wegen statt einer Bildlaufstrecke ([Einzelheiten](#p17--der-ablauf-wird-die-oberfläche--erledigt-2026-08-28)). **Alle vier Stufen sind fertig** — zuletzt am 2026-08-28 der Einstieg mit den drei Wegen (Stufe C) und der mechanische Überlauf-Wächter (Stufe D). Beim Wächter kam die Entscheidung dazu, die der Plan offengelassen hatte: Playwright als **optionales** Extra, damit die CI ohne Browser grün bleibt und wer die Oberfläche anfasst ihn lokal scharf hat. Und er hat sich beim ersten Durchlauf selbst korrigiert — zwei weitere Phantome kamen zu den drei aus P1.8 dazu, darunter `scrollWidth` selbst: Ein ausgeschwebtes Kind zählt in den `scrollWidth` seines Vorfahren, und Dashs eigenes Dropdown ließ die Zeitleiste 145 px Überlauf melden, obwohl nichts zu sehen war. P1.7 ist gegengeprüft (Haiko, 2026-08-28): drei Befunde behoben — der Start aus der Schrittfolge wechselte den Bildschirm nicht, ein Widerspruch von 1,7 s zwischen Kopfzeile und Mitte, und ein Text, der auf einen aufgelösten Abschnitt zeigte; ein vierter Befund hat sich unter genauerer Messung aufgelöst und ist samt zurückgenommener Korrektur protokolliert ([Einzelheiten](#p18--gegenprobe-zu-p17-haiko-2026-08-28--erledigt)). Am **2026-08-28** ist der Einrichten-Assistent unabhängig auditiert worden — bewusst ohne die Abnahmekriterien dieses Plans als Maßstab, und genau dadurch hat das Audit gefunden, was die Kriterien durchgelassen haben: Auf dem Sweep-Pfad erreicht **genau ein** Feld des Entwurfs die Simulation, während der Preflight einen Lauf beschreibt, der so nicht stattfindet; fünf Bedienelemente in als *optional* gekennzeichneten Schritten schreiben ohne Rückfrage in `configs/properties.json`; und **kein einziger der acht Schritte passt auf einen Bildschirm** (1,13 bis 4,44), obwohl genau das die Zusage von P1.7 war. Daraus ist [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28) entstanden: **P1.1 und P1.7 sind wieder offen**, P1.5 bekommt ein Kriterium dazu, P1.8 schärft sein Verfahren nach, P1.3 und P3.6 werden vorgezogen ([Einzelheiten](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28), Vollfassung in [`wizard_audit_2026-08-28.md`](wizard_audit_2026-08-28.md)). Dieselbe Lehre wie bei P1.6, diesmal als Regel festgehalten: **Eine Zusage kommt mit ihrer Messung, nicht mit ihrer Zählung** — nachzulesen im [Commit-Regelwerk](#regelwerk-atomare-commits-ab-2026-08-28-verbindlich), das ab sofort für jede Änderung gilt. Am **2026-08-29** ist die Szenarienschicht entschieden worden — **Rahmen statt Richter**, und der Anlass war eine kleinere Frage: ob die 48 F7-Zellen jetzt fachlich abzunehmen sind. Beim Nachmessen der übrigen 120 kam heraus, dass der Konsistenz-Score **Polarität misst, nicht Plausibilität** (Korrelation +0,56 mit der Zahl gleichpolig gesetzter Faktoren, über alle vier Gruppen monoton), dass das **echte** Impact-Balance-Kriterium **genau zwei** der 128 Zustände trägt statt der drei, die das Produkt verspricht, und dass **vier unbegründete Zellen** die Rückkopplung verneinen, aus der gemischte Szenarien überhaupt erst entstehen: Nachfrage- und Wirtschaftswachstum hemmen dort strenge Regulierung, Flugscham und Schienenausbau. Damit bewertet das Modell die reale europäische Lage — strenge Regulierung *bei* starker Nachfrage — als unplausibel. Entschieden ist **Variante C**: Ein Szenario wird ein benanntes Bündel exogener Verläufe, F1–F7 werden aus dem Lauf *abgeleitet* statt ihn zu bewerten; die Sweeps sind bereits solche Bündel und werden vom Nebenweg zum Hauptweg. Phase 2 ist danach neu geschnitten — [P2.0](#p20--die-rolle-umdrehen-rahmen-statt-urteil--erledigt-2026-08-30) (Rolle umdrehen), P2.1, [P2.6](#p26--ensemble-läufe-je-rahmenszenario--erledigt-2026-08-31) (Ensemble), [P2.7](#p27--backtest-gegen-20152024--erledigt-2026-08-30) (Backtest), und **erst danach** [P2.2](#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31), weil sich eine Entscheidung über ein Werkzeug leichter trifft, wenn das Modell geeicht ist ([Einzelheiten](#leitentscheidung-die-szenarienschicht-2026-08-29), Vollfassung in [`entscheidung_szenarienschicht_2026-08-29.md`](entscheidung_szenarienschicht_2026-08-29.md)). Am **2026-08-30 ist Phase 1 abgeschlossen** — mit genau einer benannten Restposition. P1.9 ist vollständig (W3.5 entschieden: der Höhen-Deckel hält den Ist-Stand statt Inhalt wegzulassen), womit **P1.1 und P1.7 wieder geschlossen** sind. Dazu erledigt: **P1.2** (vier Aussagen statt sechs Datenquellen; Figuren entstehen ganz oder gar nicht; ein Farb- und Achsensystem für PNG und Bildschirm), **P1.3** im zugesagten Umfang (die Grenze zwischen Gerechnetem und Erzähltem steht im Schema — wie die Szenarien *entstehen*, bleibt P2.0), **P1.5** (der Bereichswechsel ist ansagbar und führt den Fokus) und **P1.4** bis auf die Rechtstexte: Kein Seitenaufruf verlässt mehr den eigenen Server, und die Demo-Anfrage kommt an. **Offen bleibt allein, dass Impressum, Datenschutzerklärung und AGB Inhalte brauchen** — die Gliederung steht, jede Pflichtangabe ist als benannte Lücke markiert, und `docs/landingpage.md` führt die Liste zum Abarbeiten. Auffällig an diesem Durchgang: **Fünf der neuen Wächter haben beim ersten scharfen Durchlauf zugeschlagen**, drei davon auf Fehler, die im selben Commit entstanden waren — darunter ein Symbol-Teilsatz, dem vier Namen fehlten, weil sie in einem Modul-Dict statt im Aufruf stehen; die Schrittliste brach daraufhin um 308 px aus. Daraus kam die Regel, die über das Paket hinausgeht: **Ein Parser findet, was jemand hingeschrieben hat; eine Messung findet, was wirklich dasteht.** · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -2327,7 +2327,7 @@ Die gemessene «Einkommenselastizität» von **+0,69** war damit kein Verhaltens
 
 Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes Paket ist klein; zusammen entscheiden sie, ob die Engine trägt.
 
-**Stand 2026-09-05: elf Pakete erledigt, eines zurückgestellt mit Grund.** Alle drei aus der Arbeit entstandenen Pakete (P3.10, P3.11, P3.12) sind mit erledigt; offen bleibt allein die Tickdauer (P3.8), und die ist eine Entscheidung.
+**Stand 2026-09-05: elf Pakete erledigt, eines zurückgestellt mit Grund, vier aus dem Audit neu.** Alle drei aus der Arbeit entstandenen Pakete (P3.10, P3.11, P3.12) sind mit erledigt; zurückgestellt bleibt allein die Tickdauer (P3.8), und die ist eine Entscheidung. **Am selben Tag ist die Phase vollständig geprüft worden** ([Audit](#audit-der-phase-3-2026-09-05--fünf-pakete-der-schwere-befund-ist-vorbestehend), Vollfassung in [`audit_phase3_2026-09-05.md`](audit_phase3_2026-09-05.md)): elf von zwölf Paketen halten nachgemessen, alle fünfzehn tragenden Wächter gehen rot, wenn man ihre Zusage bricht, **kein schwerer Befund, und keiner berührt die Zahlen eines Laufs.** Vier Ränder halten nicht und sind als P3.13 bis P3.16 eingeplant. Die Einschränkung gehört dazu: **das Audit ist nicht unabhängig** — dieselbe Sitzung hat gebaut und geprüft.
 
 | Paket | Stand |
 | --- | --- |
@@ -2343,12 +2343,19 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 | [P3.12](#p312--der-modell-bereich-lag-dauernd-im-dom--erledigt-2026-09-05) Modell-Bereich dauernd im DOM | ✅ erledigt (aus P3.9) |
 | [P3.10](#p310--46-zeichenketten-die-die-konsole-nicht-schreiben-kann--erledigt-2026-09-05) Zeichensatz der Konsole | ✅ erledigt (aus P3.3) |
 | [P3.11](#p311--die-lauf-argumente-sind-ein-simplenamespace--erledigt-2026-09-05) Lauf-Argumente ohne Form | ✅ erledigt (aus P3.6) |
+| [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--offen-2026-09-05) Rückfall auf `llama3.2` | 🟡 offen (aus dem Audit) |
+| [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--offen-2026-09-05) Fehlerweg braucht `.buffer` | 🟡 offen (aus dem Audit) |
+| [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--offen-2026-09-05) Annotation gegen Rumpf | 🟡 offen (aus dem Audit) |
+| [P3.16](#p316--das-500-ms-kriterium-und-sein-deckel--zu-entscheiden-2026-09-05) 500 ms gegen einen Deckel von 900 | 🟡 zu entscheiden (aus dem Audit) |
+| [P3.17](#p317--der-browser-wächter-ist-rot-und-niemand-läuft-ihn--offen-2026-09-05) Browser-Wächter rot, C5 zum zweiten Mal | 🔴 offen (aus dem Audit, **vorbestehend**) |
 
 **Die Lehre des Durchgangs, weil sie sich dreimal wiederholt hat: eine Prüfung, die nur so aussieht, ist teurer als keine.** P3.2 schrieb eine Versionsnummer, die niemand las. P3.3 hatte ein `try: pass`, dessen `except` nie feuern konnte. P3.4 prüfte ein `config.llm`, das kein Laufpfad benutzte. In allen drei Fällen war die *Absicht* im Code sichtbar und die *Wirkung* nicht — und niemandem fiel es auf, weil nichts rot war.
 
 **Zweite Lehre, gegen die eigenen Wächter gerichtet:** Drei der neuen Zusagen sind beim ersten Anlauf an der **eigenen Prosa** gescheitert. Sie prüften Quelltext als Zeichenkette (`"except Exception" not in quelle`), und die Kommentare, die den alten Zustand erklären, zitieren ihn — `try: pass`, `except Exception`, `get_llm()`. Geprüft wird jetzt der Syntaxbaum. *Ein Wächter, den eine Erklärung über ihn selbst umlenken kann, ist keiner.*
 
 **Dritte, aus P3.9:** Auch eine Messung kann das Falsche messen. `wait_for_function` pollt über `requestAnimationFrame`, das in einem unsichtbaren Tab gar nicht feuert — dieselbe Falle wie in P1.9-W5.3, und sie meldete 2,0 s, wo 1,1 s standen. Und die *vorherige* Messung dieses Pakets hatte den Statusherzschlag mitgezählt, den P1.6 eingeführt hatte.
+
+**Vierte, aus dem Audit der Phase am selben Tag: ein Selbstaudit findet die Ränder, nicht die Mitte** — und es findet sie nur, wenn es ein Verfahren hat, das nicht von der eigenen Absicht abhängt. Die neun Befunde liegen ausnahmslos am Rand einer Zusage: eine Notlösung eine Ebene über ihrer Abschaffung, ein Ausweichpfad mit einer unausgesprochenen Voraussetzung, eine Signatur neben einem richtigen Rumpf. Was **nicht** gefunden wurde, ist eine falsche Mitte — und das ist genau die Aussage, für die ein Selbstaudit am wenigsten taugt. Was getragen hat, war die Mutationsprobe: fünfzehn Zusagen absichtlich gebrochen, fünfzehnmal rot. Was nicht getragen hat, war der erste Anlauf von sechs Messungen — der Prüfling war falsch, nicht der Prüfgegenstand, und in einem Fall (P3.6) hätte das eine ungeprüfte Zusage als geprüft gezählt, weil ein nicht gefundenes Suchmuster wie ein grünes Ergebnis aussieht. **Ein Prüfling, der nichts findet, muss sagen können, ob er gesucht hat.**
 
 ### P3.7 — Titel und Legende teilen sich einen Rand ✅ erledigt 2026-09-05 (drei Versuche verworfen)
 
@@ -2607,6 +2614,266 @@ Das erklärt auch, warum der erste Ende-zu-Ende-Versuch «vorher» *nicht* schei
 **Fertig, gemessen:** [`tests/test_zeichensatz.py`](../tests/test_zeichensatz.py) — 14 Zusagen. Beide Enden (Strom *und* Fortschrittsfenster, letzteres **durch den Tee**, weil nur dort der Verlust auftrat), der Gegenbeweis ohne die Sicherung, `stderr`, die Idempotenz, ein Strom der sich weigert (er wird gemeldet, nicht verschluckt) — und zwei Zusagen gegen den Rückfall: kein Import stellt die Ausgabe wieder heimlich um, und die Umstellung steht an genau einer Stelle.
 
 **Doku ist mitgezogen:** `CLAUDE.md` (Architektur-Map zu `logging_setup.py`, Dev-Workflow), `README.md` (Umleiten ist sicher).
+
+---
+
+### Audit der Phase 3 (2026-09-05) — fünf Pakete, der schwere Befund ist vorbestehend
+
+Phase 3 ist am Tag ihres Abschlusses vollständig geprüft worden. Vollfassung:
+[`audit_phase3_2026-09-05.md`](audit_phase3_2026-09-05.md).
+
+**Die Einschränkung gehört an den Anfang, weil sie das Gewicht des Ergebnisses
+bestimmt: dieses Audit ist nicht unabhängig.** Phase 2 hat jemand geprüft, der
+sie nicht gebaut hat; hier fällt beides zusammen. Wer eine Zusage aufgeschrieben
+hat, sucht nicht mit demselben Eifer nach ihrer Lücke — und er kennt die Stellen,
+an denen er weggeschaut hat, nicht als Lücken, sondern als Entscheidungen.
+Ersetzt wurde das durch **Verfahren statt Absicht**: jeder tragende Wächter
+absichtlich kaputtgemacht und musste rot werden (**fünfzehn von fünfzehn**), jede
+veröffentlichte Zahl neu erhoben statt nachgelesen, geprüft am laufenden System
+statt am Quelltext, der die Zusage behauptet. **Sechs Messungen mussten ihren
+ersten Anlauf verwerfen, weil der Prüfling falsch war** — das steht in der
+Vollfassung jeweils dabei, weil ein Audit, das nur seine Treffer zeigt, seine
+eigene Trefferquote überzeichnet.
+
+**Was hält:** Elf von zwölf Paketen, und zwar nachgemessen und nicht gelesen —
+die CLI wirklich mit zwei fremden Checkpointformen gestartet (beide abgewiesen,
+Exitcode 2, kein Traceback), die LLM-Validierung in drei Varianten ausgelöst,
+P3.1 an **allen drei** Regelarten geprüft, ein Dashboard-Lauf wirklich gerechnet
+und sein `run_metadata.json` gelesen (`compute_mode: mock_llm` — die Zusage, an
+der P3.11 hängt). **Kein Befund berührt die Zahlen eines Laufs.**
+
+**Was nicht hält**, sind vier Ränder — und drei davon sind dieselbe Fehlerart wie
+die Lehre der Phase selbst: eine Prüfung oder eine Zusage, die nur so aussieht.
+**Der einzige schwere Befund kommt nicht aus Phase 3**, sondern ist ein
+Rückfall aus Phase 2, den dieses Audit gefunden hat (P3.17):
+
+| Paket | Befund | Schwere |
+| --- | --- | --- |
+| [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--offen-2026-09-05) | `draft_to_launch_config` erfindet `llama3.2` für ein leeres Modellfeld — der Rückfall, den P3.4 zwanzig Zeilen weiter abgeschafft hat | 🔶 |
+| [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--offen-2026-09-05) | `_schreibe` setzt `sys.stderr.buffer` voraus; ohne wird aus dem `UnicodeEncodeError` ein `AttributeError` — und alle drei Tests teilen die Annahme | 🔶 |
+| [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--offen-2026-09-05) | `sweep_metadata_args` sagt `-> SimpleNamespace` und liefert `RunArgs`; `sweep_id` ist unbenutzt; der tote Import bleibt für `ruff` unsichtbar | 🔶 |
+| [P3.16](#p316--das-500-ms-kriterium-und-sein-deckel--zu-entscheiden-2026-09-05) | P3.9s Kriterium lautet 500 ms, sein Wächter deckelt bei 900 — ein Rückfall auf 800 bliebe grün | 🔶 |
+| [P3.17](#p317--der-browser-wächter-ist-rot-und-niemand-läuft-ihn--offen-2026-09-05) | Der Browser-Wächter ist **112 zu 6** rot — **vorbestehend**, auf `main` identisch nachgemessen. C5 des Phase-2-Audits gilt als behoben und ist es nicht, mit neuen Ursachen | ⛔ |
+
+Fünf kleine Befunde stehen in `docs/audit_findings.md` und brauchen kein eigenes
+Paket: die Nutzermeldung, die `llama3.2` erfindet (fällt mit P3.13), die
+Zähldefinition hinter der «46», die klein geschriebene Kopfzeile der CLI, der
+veraltete Docstring an der Klickmessung (fällt mit P3.16) und ein Doku-Verweis
+auf ein Modul, das es nicht gibt. Zwei davon sind **vorbestehend**.
+
+**Der Prüfstand, damit die Zahlen nachschlagbar sind:** `pytest` ohne die zwei
+dokumentierten Ollama-Hänger und ohne den Browser-Wächter — **1641 passed, 1
+skipped, 2 deselected** in 2:17, kein Fehlschlag. Der Browser-Wächter separat:
+**112 passed, 6 failed** in 22:17 (das ist P3.17). `ruff check .` und
+`black --check .` grün über 250 Dateien. Keine Datei bleibt verändert: Die
+Mutationsprobe schreibt in dreizehn Dateien und nimmt jede Änderung in einem
+`finally` zurück, und ein Probelauf in `outputs/` ist entfernt — weil der
+Höhen-Deckel an dessen Inhalt hängt.
+
+---
+
+### P3.13 — Der abgeschaffte Rückfall lebt eine Ebene höher 🟡 offen (2026-09-05)
+
+**Fundstelle:** [`dashboard/run_launcher.py:144`](../dashboard/run_launcher.py),
+dazu [`dashboard/web/config_editor/compute_mode.py:116`](../dashboard/web/config_editor/compute_mode.py).
+
+**Befund.** P3.4 hat `draft.model.strip() or DEFAULT_MODEL` aus
+`llm_config_from_draft` entfernt und mit einem Kommentar zum Befund erklärt —
+«Ein leeres Modellfeld ist ein Befund und keine Gelegenheit, `llama3.2`
+einzusetzen». Zwanzig Zeilen weiter steht dieselbe Zeile noch. Gemessen mit
+geleertem Feld und `mock_llm=False`:
+
+| Weg | `state.config.llm.model` | Befund der Validierung |
+| --- | --- | --- |
+| Preflight (`prepare_simulation_state(entwurf)`) | `''` | «Sprachmodell: Modellname darf nicht leer sein» |
+| Lauf (`draft_to_launch_config` → `launch_config_to_draft`) | `'llama3.2'` | **keine** |
+
+Der Rundlauf **wäscht** den erfundenen Wert: Danach ist er von einem eingetippten
+nicht mehr zu unterscheiden. `_build_llm` trägt dazu den Docstring «der Client
+aus **derselben** Ableitung, die auch den Zustand füllt» — die Ableitung ist
+dieselbe, ihre **Eingabe** ist es nicht.
+
+**Warum es zählt.** Der Preflight sagt etwas anderes als der Lauf, und das
+Artefakt nennt ein Modell, das niemand gewählt hat. Dieselbe Klasse wie
+P1.9-W5.1 (ein Literal als zweite Quelle für einen Vorgabewert) und P2.11 (zwei
+Quellen für denselben Wert). **Praktisch abgeschirmt** ist es durch das Tor aus
+P1.9-W2.2 — aber die Abschirmung liegt in der Oberfläche und nicht im
+Service-Layer, den auch andere aufrufen.
+
+**Fertig wenn:** Das `or DEFAULT_MODEL` ist weg, und ein Wächter in
+`tests/test_llm_defaults.py` schickt **denselben** leeren Entwurf über beide Wege
+und verlangt dasselbe Ergebnis. Die Nutzermeldung in `availability` sagt «kein
+Modell eingestellt» statt einen Namen zu erfinden. **Nicht** in denselben Commit
+gehört eine Änderung an der Reihenfolge oder am Tor — das wäre eine zweite
+Änderung in derselben Zeile.
+
+---
+
+### P3.14 — Der Fehlerweg braucht keinen Puffer 🟡 offen (2026-09-05)
+
+**Fundstelle:** [`src/run_simulation.py:556`](../src/run_simulation.py) (`_schreibe`),
+[`tests/test_zeichensatz.py`](../tests/test_zeichensatz.py).
+
+**Befund.** Der Ausweichpfad nach einem `UnicodeEncodeError` schreibt über
+`sys.stderr.buffer`. Gemessen an zwei Strömen, die beide `cp1252` melden: mit
+`.buffer` hält er, ohne `.buffer` wirft er `AttributeError` — ein Traceback an
+genau der Stelle, an der P3.3 einen weggeräumt hat. **Und der Wächter teilt die
+Annahme:** Alle drei Tests des Fehlerwegs lesen ihr Ergebnis über
+`strom.buffer.getvalue()`, brauchen also einen Puffer und können den pufferlosen
+Fall nicht sehen. Prüfling und Prüfer haben dieselbe Voraussetzung — die
+Fehlerart, die diese Phase dreimal gefunden hat, hier in ihrem eigenen Wächter.
+
+**Ehrlich eingegrenzt.** Es braucht drei Dinge gleichzeitig: einen
+`stderr`-Wrapper ohne `.buffer`, ein Sonderzeichen im Befundtext und einen
+`cp1252`-Strom. Heute leitet das Projekt `stderr` **nirgends** um, und
+`stdio_auf_utf8()` läuft als erste Anweisung in `_main`. Der Pfad ist die Reserve
+für genau den Fall, den sie offenlässt — ein Strom, der die Umstellung
+verweigert; dafür warnt sie, statt zu scheitern. Genau dort greift er, und genau
+dort fällt er um.
+
+**Fertig wenn:** `getattr(sys.stderr, "buffer", None)`, und ohne Puffer geht die
+ersetzte Zeichenkette durch `write`. Dazu ein vierter Test mit einem Strom
+**ohne** `.buffer` — er ist der eigentliche Gegenstand des Pakets, nicht die zwei
+Zeilen Code.
+
+---
+
+### P3.15 — Eine Signatur, die ihrem Rumpf widerspricht 🟡 offen (2026-09-05)
+
+**Fundstelle:** [`src/orchestration/scenario_sweeps.py:232`](../src/orchestration/scenario_sweeps.py).
+
+**Befund**, gemessen:
+
+| Frage | Antwort |
+| --- | --- |
+| Rückgabe-Annotation | `SimpleNamespace` |
+| tatsächliche Rückgabe | `RunArgs` |
+| Parameter | `['sweep_id']`, davon im Rumpf benutzt: **keiner** |
+| zwei verschiedene `sweep_id` ergeben | **identische** Argumente |
+| `SimpleNamespace` erscheint in | Zeile 18 (Import) und 232 (Annotation) — sonst nirgends |
+
+Drei Dinge auf einmal: Die Annotation sagt das Gegenteil des Rumpfs (P3.11 hat
+den Rumpf umgestellt, die Signatur nicht); der Parameter wird ignoriert, seit
+sein einziger Verwender `sweep=sweep_id` entfallen ist; und die falsche
+Annotation hält den Import am Leben, weshalb `ruff` schweigt — **`ruff check .`
+ist grün.**
+
+**Warum es mehr ist als Kosmetik.** Invariante 4 verlangt Pydantic-Typisierung an
+den Grenzen; ihre Durchsetzung hängt daran, dass die Typangabe stimmt. Hier sagt
+sie einem Leser und jedem Werkzeug, es käme ein formloser Namensraum heraus — die
+genaue Aussage, gegen die P3.11 angetreten ist. **Strukturelle Ursache: Das
+Projekt hat keinen Typprüfer** (weder mypy noch pyright in `pyproject.toml` oder
+der CI), und `ruff` prüft Annotationen nicht gegen `return`.
+
+Der unbenutzte Parameter ist die schwächere Hälfte — es gibt im selben Zweig eine
+Stelle, an der ein unbenutzter Parameter **richtig** ist: `model_editor.layout`
+behält ihn bewusst und sagt im Docstring, warum. Hier steht kein solcher Satz,
+und die Aufrufer übergeben eine Kennung in der Annahme, sie werde verwendet.
+
+**Fertig wenn:** `-> RunArgs`, Import weg, und `sweep_id` benutzt oder
+entfernt — mit einem Satz, welches von beidem gemeint ist. **Und die Klasse
+getrennt davon:** ein Typprüfer über `src/models/` und die Grenzen, als eigenes
+Paket in Phase 4. Die drei Zeilen zu reparieren behebt den Fall; ohne Prüfer ist
+die nächste falsche Annotation genauso unsichtbar.
+
+---
+
+### P3.16 — Das 500-ms-Kriterium und sein Deckel 🟡 zu entscheiden (2026-09-05)
+
+**Fundstelle:** [`tests/test_web_overflow.py:1732`](../tests/test_web_overflow.py)
+(`SICHTBAR_MAX_MS`) und die Abnahmeklausel von
+[P3.9](#p39--ein-klick-in-der-schrittfolge-kostet-zwei-sekunden--erledigt-2026-09-05-ursache-zweimal-korrigiert).
+
+**Befund.** Die Klausel lautet «ein Klick kostet **unter 500 ms**, gemessen im
+Browser über alle sechs Schritte — und die Zahl der Server-Aufrufe steht als Zahl
+im Wächter». Die zweite Hälfte ist erfüllt (`KLICK_AUFRUFE_MAX = 7`, Sperrklinke
+in beide Richtungen). Die erste ist **gemessen** erfüllt — 213 bis 487 ms — aber
+der Wächter deckelt bei **900**, also fast dem Doppelten. Ein Rückfall auf 800 ms
+bliebe grün, während der Plan das Kriterium als erfüllt führt.
+
+**Die Begründung für 900 trägt** und steht im Code: Eine ausgelastete Maschine
+misst anders, und dieser Wächter wird sonst rot, ohne dass sich etwas geändert
+hat (bei drei parallelen Läufen brauchte er einmal 1:56 h — beim Schreiben dieses
+Audits ist derselbe Effekt erneut aufgetreten). Was nicht trägt, ist die
+Kombination aus dieser Grenze und einem ✅, das auf einer Einzelmessung steht.
+Die Doku-Pflicht sagt es selbst: *wer eine Zusage aufstellt, baut den Wächter,
+der sie misst — nicht die Zählung, die sie umgeht.*
+
+**Zu entscheiden ist eines von beidem, nicht beides:**
+
+* **(a)** Deckel auf 500, mit benannter Toleranz und einer Wiederholung bei Rot.
+  Ehrlich gegenüber dem Kriterium, aber es verlagert das Problem: Ein Wächter,
+  der auf einer belegten Maschine flackert, wird nicht mehr gelaufen — und
+  genau daran ist C5 des Phase-2-Audits gestorben.
+* **(b)** Im Plan festhalten, dass das Kriterium **einmal** erreicht wurde und
+  die Sperrklinke bei 900 steht. Billiger, und es sagt die Wahrheit über den
+  Schutzumfang.
+
+**Empfehlung: (b).** Dazu gehört der veraltete Docstring an
+`test_the_step_shows_up_in_reasonable_time` (er nennt noch 665–1426, die Zahlen
+von vor P3.12) — in denselben Commit.
+
+---
+
+### P3.17 — Der Browser-Wächter ist rot, und niemand läuft ihn 🔴 offen (2026-09-05)
+
+**Nicht aus Phase 3** — auf `main` (`af71a3f`) in einem eigenen Arbeitsbaum
+identisch nachgemessen, mit Prüfung über `__file__`, dass wirklich der
+`main`-Code geladen war. Gefunden hat es das [Audit der Phase 3](#audit-der-phase-3-2026-09-05--fünf-pakete-der-schwere-befund-ist-vorbestehend),
+und es ist dessen einziger schwerer Befund.
+
+**Der Stand:** `tests/test_web_overflow.py` — **112 bestanden, 6 gescheitert** in
+22:17.
+
+| Test | Gemessen | Deckel |
+| --- | --- | --- |
+| `test_no_step_grew_beyond_its_ratchet` `[1280px]` | Schritt 1: **1,96** Schirme · Schritt 6: 1,70 | 1,34 · 1,45 |
+| `test_no_step_grew_beyond_its_ratchet` `[1024px]` | Schritt 1: **2,03** Schirme · Schritt 6: 1,61 | 1,42 · 1,45 |
+| `test_no_line_runs_longer_than_the_eye_can_follow` | **109** Zeichen in einem `LI` («docs/research/links.md — EU-ETS / Fit fo…»), **98** in einem `P` auf «Prüfen & Starten» («bei Tick 16. Danach hält er seinen letzt…») | 75 |
+| `test_the_width_guard_would_notice_a_relapse` (×2) | scheitert an der **Vorbedingung** — er kann keinen Rückfall nachstellen, solange der Ist-Stand außerhalb liegt | — |
+
+**Warum das mehr ist als ein rotes Feld.** Das Audit der Phase 2 hat genau diese
+sechs als **C5** geführt, mit ⛔ bewertet und **noch am 2026-09-03 behoben** — der
+Deckel steht seither auf nachgemessenen Werten, für Schritt 1 auf **1,34**;
+`docs/audit_findings.md` führt C5 deshalb nicht mehr. Heute misst derselbe
+Schritt **1,96**.
+
+**Und die Ursachen sind neue.** C5s Zeilenbefund waren 89 Zeichen im Erklärtext
+des `apply_custom_overrides`-Schalters. Die 109 Zeichen von heute stehen in einem
+**Quellenverzeichnis**, die 98 in einem Satz über einen **Verlauf, der vor dem
+Laufende aufhört** — beides Oberfläche, die am **selben 2026-09-03** dazukam: die
+Kohärenzbegründungen mit ihren Quellen (P2.2/P2.10) und der Hinweis auf die
+Horizontlücken. Der Fix wurde gemessen und **von späteren Commits desselben Tages
+ungültig gemacht**; den 22-Minuten-Wächter hat danach niemand mehr gestartet.
+
+**Damit ist C5s eigentlicher Befund zum zweiten Mal eingetreten** — und der
+lautete nicht «der Deckel stimmt nicht», sondern: *Der Wächter ist opt-in,
+überspringt sich schweigend, und die CI hat keinen Browser; die Zusagen sind
+ungeprüft, ohne dass etwas rot wird.* Innerhalb einer Woche, am selben Wächter,
+mit anderen Ursachen. **Wer nur die Deckel nachmisst, behebt den Fall und nicht
+das Muster.**
+
+**Zwei Teile, und der zweite ist der wichtigere:**
+
+1. **Die vier Fehlschläge nachmessen und zuordnen.** Bei Schritt 6 ist die
+   Laufhistorie in `outputs/` herauszurechnen — sie trägt 0,09 Schirme und ist ein
+   eigener, schon erfasster Befund (der Deckel ist nicht zwischen Rechnern
+   vergleichbar). Bei Schritt 1 ist der Zuwachs von 1,34 auf 1,96 zu erklären,
+   bevor eine Zahl in `DECKEL` geht: Ein Deckel, der einen unerklärten Zuwachs
+   festschreibt, ist wieder aus dem falschen Grund grün. Die beiden langen Zeilen
+   brauchen ein Lesemaß an der Stelle, an der sie entstehen — nicht am Text.
+2. **Entscheiden, wo dieser Wächter läuft.** Solange die Antwort «wer die
+   Oberfläche anfasst, lässt ihn einmal laufen» lautet, ist sie zweimal
+   widerlegt. Denkbar: ein eigener CI-Job mit Browser (nächtlich oder auf
+   Anforderung, nicht in der Hauptstrecke — 22 Minuten), oder die gemessenen
+   Zahlen als Pflichtangabe in der Commit-Message jeder Änderung an
+   `dashboard/web/`. **Die Entscheidung gehört an Phase 4** (Testfundament) und
+   ist dort der Anschluss an P4.2; hier steht sie, weil dieses Audit sie
+   ausgelöst hat.
+
+**Fertig wenn:** Der Wächter ist grün, jede geänderte Zahl in `DECKEL` trägt ihre
+Begründung, und im Plan steht ein Satz darüber, **wo** er läuft — nicht, dass er
+laufen sollte.
 
 ---
 
