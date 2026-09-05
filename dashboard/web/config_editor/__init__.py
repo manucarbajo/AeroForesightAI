@@ -169,6 +169,28 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def _sync(_values, _flags, _rules, draft: dict | None):
+        """Sichtbare Felder in den Store — **und nur, wenn sich etwas ändert** (P3.9).
+
+        Der zweite Halbsatz ist die ganze Arbeit von P3.9. Dieser Callback feuert
+        nicht nur beim Tippen: Sobald ein Schritt gezeichnet wird, melden seine
+        Eingabefelder ihren *unveränderten* Wert, und bis zum 2026-09-05 schrieb
+        `_sync` daraufhin einen neuen Entwurf in den Store. Ein neues Dict ist für
+        Dash eine Änderung, also zog es alles nach, was am Entwurf hängt:
+        Preflight, Feldfehler, Tor, Zusammenfassungen, Laufübersicht — **acht bis
+        elf Server-Aufrufe für einen Klick, der keine Einstellung anfasst.**
+
+        Gemessen im Browser (die einzige Messung, die hier zählt): 0,72 bis 1,49
+        Sekunden je Klick, und `config-draft-store.data` stand **dreimal** in
+        derselben Kette.
+
+        **Ein Vergleich, keine Ausnahmeliste.** Der naheliegende Weg wäre, den
+        Schritt-Wechsel als Sonderfall auszunehmen. Das wäre eine zweite Stelle,
+        die wissen muss, was ein Schritt ist — und die nächste Ursache für ein
+        folgenloses Schreiben käme von woanders. Ist der berechnete Entwurf
+        gleich dem gespeicherten, gibt es nichts mitzuziehen: Jeder Verwender
+        hat genau diese Daten schon gesehen.
+        """
+
         scalars, flags, rules = ctx.inputs_list[0], ctx.inputs_list[1], ctx.inputs_list[2]
         entries = [(entry.get("id"), entry.get("value")) for entry in list(scalars) + list(flags)]
         updated = c.apply_inputs(draft or {}, entries)
@@ -181,7 +203,10 @@ def register_callbacks(app) -> None:
             edit = edits.setdefault(prop, {"property_id": prop, "baseline": 0.0, "rules": []})
             edit["rules"] = _rules_from_entries(cells)
 
-        return _normalise(updated)
+        neu = _normalise(updated)
+        if draft is not None and neu == draft:
+            return no_update
+        return neu
 
     @app.callback(
         Output({"type": start_flow.SUMMARY, "slot": ALL}, "children"),

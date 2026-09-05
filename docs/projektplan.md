@@ -2549,7 +2549,7 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 Über 500 Tests sind eine gute Grundlage, aber die Suite hat drei Eigenschaften, die beim Ausbau bremsen. (Die Zahl stand hier bis 2026-08-26 als "267" und in `CLAUDE.md` als "~330"; `pytest --collect-only` sammelt tatsächlich 506. Genau diese Drift ist der Anlass für P4.3.)
 
-### P3.9 — Ein Klick in der Schrittfolge kostet zwei Sekunden ⚠️ neu 2026-08-31
+### P3.9 — Ein Klick in der Schrittfolge kostet zwei Sekunden ⚠️ Kette gekürzt, Ursache korrigiert 2026-09-05 (neu 2026-08-31)
 
 > **Gemeldet von Haiko am laufenden System**, nachgemessen am selben Tag. Der Befund ist nicht «Python ist langsam» — die Rechnung dauert Millisekunden. Es sind die **Rundläufe**.
 
@@ -2589,6 +2589,33 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 **Fertig wenn:** Ein Klick auf einen Schritt kostet **unter 500 ms**, gemessen im Browser über alle sechs Schritte — und die Zahl der ausgelösten Server-Aufrufe steht als Zahl im Wächter, nicht nur die Dauer. Eine Dauer allein wäre auf einer schnelleren Maschine grün, ohne dass sich etwas geändert hätte.
 
 **Doku zieht mit:** `CLAUDE.md` (der Vermerk zu `_live` und `validate_draft` nennt einen Grund, der gemessen nicht trägt — 1,3 ms).
+
+---
+
+**Nachgemessen am 2026-09-05: die Kette ist gekürzt, die Ursache war eine andere.** Das ist der eigentliche Ertrag dieses Durchgangs — die Zählung oben stimmte, der Schluss daraus nicht.
+
+**Was jetzt gilt** (alles im Browser gemessen, wie das Paket es verlangt):
+
+| Größe | vorher | nachher |
+| --- | ---: | ---: |
+| Klickbedingte Server-Aufrufe je Schritt | 8–11 | **6–7** |
+| ms, bis der neue Schritt im DOM steht | 759–1799 | 665–1426 |
+| Längste Browser-Aufgabe je Klick | 1230 ms | 1144 ms |
+
+**Die Rundläufe sind gesunken, die Wartezeit nicht** — weil sie nie dort lag. Jeder einzelne Serveraufruf dauert **16 bis 115 ms**; daneben steht **eine einzelne Aufgabe im Hauptthread des Browsers von 850 bis 1150 ms** (`PerformanceObserver`, `longtask`). Der JS-Heap der Seite ist **111 MiB**: Alle fünf Bereiche des Leitstands liegen gleichzeitig im DOM (Regel 6 — bedingt Sichtbares wird ausgeblendet, nicht weggelassen), und React vergleicht bei jedem Schrittwechsel diesen Baum. Die Antworten sind dabei klein (18–31 KiB) — es ist keine Datenmenge, sondern Rechenzeit im Browser.
+
+**Behoben ist eine echte Fehlerursache, nur nicht die vermutete:** `_sync` schrieb bei **jedem Zeichnen** einen neuen Entwurf in den Store. Der Callback feuert nicht nur beim Tippen — sobald ein Schritt gezeichnet wird, melden seine Felder ihren *unveränderten* Wert, und ein neues Dict ist für Dash eine Änderung. Damit zog ein Klick, der keine Einstellung anfasst, Preflight, Feldfehler, Tor, Zusammenfassungen und Laufübersicht nach. Jetzt gibt `_sync` `no_update` zurück, wenn der berechnete Entwurf dem gespeicherten gleicht. **Ein Vergleich, keine Ausnahmeliste** — den Schrittwechsel als Sonderfall auszunehmen wäre eine zweite Stelle, die wissen muss, was ein Schritt ist, und die nächste Ursache käme von woanders.
+
+**Zwei Prämissen des Befundtexts oben halten nicht mehr:**
+
+1. **«Im Leerlauf passiert nichts: null Aufrufe»** — gemessen sind es rund **zwei pro Sekunde**, seit `pages/launch.py` den Laufzustand beim Server erfragt statt ihn aus der Sitzung abzuleiten (P1.6, Regel 5). Ein Wächter, der das nicht heraussortiert, misst den Herzschlag; `TAKTGEBER` in Teil 9 tut es.
+2. **«1,14 bis 2,95 s»** — reproduziert wurden 0,76 bis 1,80 s. Die alte Messung enthielt vermutlich denselben Herzschlag.
+
+**Und die Messung selbst hatte einen Fallstrick, der hier festgehalten gehört:** Der erste Anlauf nahm die Zeit mit `wait_for_function`. Dessen Voreinstellung pollt über `requestAnimationFrame`, und das feuert in einem Tab, den niemand sieht, **gar nicht** — dieselbe Falle wie bei P1.9-W5.3. Gemessen wurden damit 2,0 s, wo 1,1 s standen. Teil 9 nimmt die Zeit über einen `MutationObserver` **in der Seite**.
+
+**Offen bleibt die Sekunde im Browser**, und sie ist kein Parameter, sondern die Bauform: Die fünf Bereiche liegen gleichzeitig im DOM, weil ein Eingabefeld nur an einer Stelle stehen darf (Regel 1) und bedingt Sichtbares ausgeblendet statt weggelassen wird (Regel 6). Wer sie angeht, fasst diese beiden Regeln an — **nicht** weitere Callbacks. Das ist eine eigene Entscheidung und gehört nicht nebenbei getroffen; die Zahlen dafür stehen jetzt hier.
+
+**Gehalten von Teil 9 von [`tests/test_web_overflow.py`](../tests/test_web_overflow.py)** — sechs Zusagen über beide Breiten. Die Zahl der Aufrufe ist eine **Sperrklinke** (`KLICK_AUFRUFE_MAX = 7`) und schlägt in beide Richtungen an; die Dauer steht mit einer bewusst weiten Grenze daneben (2500 ms), weil eine scharfe auf einer langsameren Maschine rot wäre, ohne dass sich etwas geändert hat — die zweite Warnung dieses Pakets in eigener Sache.
 
 ### P4.1 — Gemeinsame Fixtures
 

@@ -89,6 +89,7 @@ und der Wächter wäre wieder aus dem falschen Grund grün. Das Ziel steht als
 
 from __future__ import annotations
 
+import json
 import re
 import socket
 import threading
@@ -1654,3 +1655,234 @@ def test_the_legend_guard_would_notice_a_relapse(page):
         "Der Wächter übersieht eine Legende, die im Rand des Titels sitzt — "
         "dann ist seine Zusage keine."
     )
+
+
+# --- Teil 9: Was ein Klick in der Schrittfolge kostet (P3.9) ------------------
+#
+# **Der Plan hat die Rundläufe richtig gezählt und die falsche Ursache benannt.**
+# Er schloss: «Was übrig bleibt: zehn Rundläufe, die einander auslösen» — und
+# daraus, dass ihre *Zahl* die zwei Sekunden macht. Nachgemessen am 2026-09-05
+# stimmt das nicht:
+#
+# * Jeder Serveraufruf dauert **16 bis 115 ms**. Alle zusammen erklären keine
+#   Sekunde.
+# * Daneben steht **eine einzelne Aufgabe im Hauptthread des Browsers von 850
+#   bis 1150 ms** (`PerformanceObserver`, `longtask`). Dort liegt die Wartezeit.
+# * Der JS-Heap der Seite ist **111 MiB**: Alle fünf Bereiche des Leitstands
+#   liegen gleichzeitig im DOM (Regel 6 — bedingt Sichtbares wird ausgeblendet,
+#   nicht weggelassen), und React vergleicht bei jedem Schrittwechsel diesen
+#   Baum.
+#
+# Die Kette zu kürzen war trotzdem richtig, nur nicht aus dem gedachten Grund:
+# Ein Store, der sich nicht geändert hat, darf nichts nachziehen. Gemessen
+# sinken die klickbedingten Aufrufe von **8–11 auf 6–7**; die Zeit bis der neue
+# Schritt steht bleibt, weil sie nie dort lag.
+#
+# **Deshalb misst dieser Teil beides und behauptet nur das eine.** Die Zahl der
+# Aufrufe ist eine Sperrklinke wie der Höhen-Deckel: Sie hält den erreichten
+# Stand. Die Zeit steht als Messung daneben, mit einer großzügigen Obergrenze —
+# eine schärfere wäre auf einer langsameren Maschine rot, ohne dass sich etwas
+# geändert hat, und genau davor warnt P3.9 selbst.
+
+#: Ausgaben, die ein **Zeitgeber** anstößt und kein Klick — im Leerlauf gemessen.
+#:
+#: **Ohne diese Trennung misst der Wächter den Herzschlag.** Der Plan notierte
+#: «Im Leerlauf passiert nichts: null Aufrufe»; am 2026-09-05 sind es rund **zwei
+#: pro Sekunde**, weil `pages/launch.py` seit P1.6 den Laufzustand beim Server
+#: erfragt (Regel 5) statt ihn aus der Sitzung abzuleiten. In einem Fenster von
+#: drei Sekunden sind das sechs Aufrufe, die keinem Klick gehören.
+TAKTGEBER = (
+    "run-progress-store",
+    "run-running-store",
+    "run-job-store",
+    "scene-content",
+    "scene-zoom-store",
+    "telemetry-host",
+    "tick-store",
+    "timeline-",
+    "shell-status",
+)
+
+#: Wie viele Server-Aufrufe ein Klick auf einen Schritt auslösen darf.
+#:
+#: **Der Ist-Stand nach P3.9**, gemessen über alle sechs Schritte: 6 oder 7. Vor
+#: der Änderung waren es 8 bis 11. Wächst die Zahl, hat jemand eine neue Kette
+#: gebaut; **sinkt sie deutlich**, gehört der Gewinn hier eingetragen — sonst
+#: verfällt er still, dieselbe Sperrklinke wie beim Höhen-Deckel.
+KLICK_AUFRUFE_MAX = 7
+
+#: Obergrenze für «bis der neue Schritt im DOM steht», in Millisekunden.
+#:
+#: **Bewusst großzügig und ausdrücklich nicht das Ziel.** P3.9 nennt 500 ms; das
+#: ist mit dieser Architektur nicht erreichbar, weil die Zeit in *einer*
+#: Browser-Aufgabe liegt und nicht in den Aufrufen (siehe der Kopf dieses Teils).
+#: Gemessen: 665 bis 1426 ms. Hier steht 2500, damit dieser Wächter auf einer
+#: ausgelasteten Maschine nicht rot wird, ohne dass sich etwas geändert hat —
+#: die zweite Warnung von P3.9 in eigener Sache.
+SICHTBAR_MAX_MS = 2500
+
+_MESSUNG = """
+() => {
+  window.__p39 = { lang: [], marken: [] };
+  if (window.__p39_obs) window.__p39_obs.disconnect();
+  if (window.__p39_mut) window.__p39_mut.disconnect();
+  window.__p39_obs = new PerformanceObserver((liste) => {
+    for (const e of liste.getEntries()) window.__p39.lang.push(Math.round(e.duration));
+  });
+  window.__p39_obs.observe({ entryTypes: ['longtask'] });
+  window.__p39_mut = new MutationObserver(() => {
+    const zaehler = document.querySelector('.af-wizard__counter');
+    if (zaehler) window.__p39.marken.push({ t: performance.now(), text: zaehler.innerText });
+  });
+  window.__p39_mut.observe(document.body, { childList: true, subtree: true });
+  window.__p39.t0 = performance.now();
+  return true;
+}
+"""
+
+
+def _ziel_der_anfrage(anfrage) -> str:
+    """Welche Ausgaben ein Dash-Aufruf setzt — als lesbarer Name.
+
+    **Die Verschachtelung ist der Fallstrick.** Bei einem Pattern-Callback
+    (`Output({"type": …, "field": ALL}, …)`) ist `outputs` eine Liste **von
+    Listen**, und ein `eintrag.get("id")` darauf wirft. Beim ersten Anlauf
+    dieses Wächters lief der Fehler in einen Playwright-Ereignishorcher und kam
+    als `Page.wait_for_timeout: 'list' object has no attribute 'get'` wieder
+    heraus — eine Meldung, die nichts mit der Ursache zu tun hat.
+
+    Deshalb rekursiv, und deshalb ohne breites `except`: Ein Zähler, der eine
+    unbekannte Form still als `"?"` verbucht, zählt sie beim nächsten Dash-Sprung
+    als klickbedingten Aufruf mit und macht die Sperrklinke unbrauchbar.
+    """
+
+    def namen(ziel) -> list[str]:
+        if isinstance(ziel, dict):
+            return [f"{ziel.get('id')}.{ziel.get('property')}"]
+        if isinstance(ziel, list):
+            return [name for eintrag in ziel for name in namen(eintrag)]
+        return [str(ziel)]
+
+    try:
+        ziel = json.loads(anfrage.post_data or "{}").get("outputs")
+    except (TypeError, ValueError):
+        return "(kein lesbarer Rumpf)"
+    return ",".join(namen(ziel))
+
+
+def _klick_kosten(page, index: int) -> dict:
+    """Einen Schritt anklicken und zählen, was er kostet.
+
+    Die Zeit wird **in der Seite** genommen, über einen `MutationObserver` —
+    nicht mit `wait_for_function`. Dessen Voreinstellung pollt über
+    `requestAnimationFrame`, und das feuert in einem Tab, den niemand sieht, gar
+    nicht: dieselbe Falle, in die W5.3 schon einmal gelaufen ist. Der erste
+    Anlauf dieser Messung meldete damit 2,0 s, wo 1,1 s standen.
+    """
+
+    aufrufe: list[str] = []
+
+    def mitschreiben(anfrage) -> None:
+        if "_dash-update-component" in anfrage.url:
+            aufrufe.append(_ziel_der_anfrage(anfrage))
+
+    page.evaluate(_MESSUNG)
+    vorher = page.locator(".af-wizard__counter").inner_text()
+    page.on("request", mitschreiben)
+    try:
+        page.locator(".af-step").nth(index).click()
+        page.wait_for_timeout(3000)
+    finally:
+        page.remove_listener("request", mitschreiben)
+
+    daten = page.evaluate("() => window.__p39")
+    neu = next((m for m in daten["marken"] if m["text"] != vorher), None)
+    return {
+        "titel": page.locator(".af-wizard__counter").inner_text().replace("\n", " "),
+        "klick": [n for n in aufrufe if not any(t in n for t in TAKTGEBER)],
+        "takt": [n for n in aufrufe if any(t in n for t in TAKTGEBER)],
+        "sichtbar_ms": (neu["t"] - daten["t0"]) if neu else None,
+        "laengste_aufgabe_ms": max(daten["lang"]) if daten["lang"] else 0,
+    }
+
+
+def _in_die_schrittfolge(page) -> int:
+    page.goto(page.basis, wait_until="networkidle")
+    page.wait_for_selector(".af-way")
+    page.click("#wizard-way-new")
+    page.wait_for_timeout(RUHE_MS * 3)
+    return page.locator(".af-step").count()
+
+
+class TestEinKlickInDerSchrittfolgeKostetWenigRundlaeufe:
+    """Die Sperrklinke von P3.9 — als Zahl, nicht als Dauer."""
+
+    def test_no_step_click_triggers_more_calls_than_agreed(self, page):
+        schritte = _in_die_schrittfolge(page)
+        befunde: list[str] = []
+        gemessen: list[int] = []
+        for index in range(schritte):
+            kosten = _klick_kosten(page, index)
+            gemessen.append(len(kosten["klick"]))
+            if len(kosten["klick"]) > KLICK_AUFRUFE_MAX:
+                befunde.append(
+                    f"{kosten['titel']}: {len(kosten['klick'])} Aufrufe "
+                    f"(erlaubt {KLICK_AUFRUFE_MAX})\n      " + "\n      ".join(kosten["klick"])
+                )
+
+        assert not befunde, (
+            f"Bei {page.breite} px lösen diese Schritte mehr Server-Aufrufe aus als "
+            "vereinbart:\n  " + "\n  ".join(befunde)
+        )
+        # Die Sperrklinke schlägt in beide Richtungen an: Ein Deckel, der weit
+        # über dem Ist-Stand schwebt, ist wieder aus dem falschen Grund grün.
+        assert max(gemessen) >= KLICK_AUFRUFE_MAX - 2, (
+            f"Gemessen höchstens {max(gemessen)} Aufrufe, der Deckel steht auf "
+            f"{KLICK_AUFRUFE_MAX} — den Gewinn eintragen, sonst verfällt er still."
+        )
+
+    def test_the_step_shows_up_in_reasonable_time(self, page):
+        """**Eine Messung, kein Ziel.** P3.9 nennt 500 ms; erreicht sind 665–1426.
+
+        Die Grenze hier ist bewusst weit: Was die Zeit kostet, ist eine einzelne
+        Browser-Aufgabe und keine Zahl von Aufrufen — eine scharfe Grenze wäre
+        auf einer langsameren Maschine rot, ohne dass sich etwas geändert hat.
+        """
+
+        schritte = _in_die_schrittfolge(page)
+        langsam: list[str] = []
+        for index in range(schritte):
+            kosten = _klick_kosten(page, index)
+            dauer = kosten["sichtbar_ms"]
+            if dauer is not None and dauer > SICHTBAR_MAX_MS:
+                langsam.append(
+                    f"{kosten['titel']}: {dauer:.0f} ms bis im DOM "
+                    f"(längste Browser-Aufgabe {kosten['laengste_aufgabe_ms']} ms)"
+                )
+
+        assert not langsam, "Diese Schritte brauchen zu lange:\n  " + "\n  ".join(langsam)
+
+    def test_the_cost_guard_would_notice_a_relapse(self, page):
+        """Ein Wächter, der nie etwas sieht, könnte auch blind sein.
+
+        Den Zustand vor P3.9 nachzustellen geht von außen nicht — geprüft wird
+        deshalb die **Zählung selbst**: Sie darf einen klickbedingten Aufruf nicht
+        für einen Taktgeber halten, und die Zeitmessung muss greifen. Beides
+        stumm zu haben wäre ein Wächter, der immer grün ist.
+        """
+
+        _in_die_schrittfolge(page)
+        kosten = _klick_kosten(page, 1)
+
+        assert kosten["klick"], "Der Zähler sieht überhaupt keinen klickbedingten Aufruf"
+        assert any("wizard-step-store" in n for n in kosten["klick"]), (
+            "Der Klick auf einen Schritt schreibt nicht einmal den Schritt-Store — "
+            f"dann zählt der Wächter das Falsche: {kosten['klick']}"
+        )
+        assert (
+            kosten["sichtbar_ms"] is not None
+        ), "Die Zeitmessung greift nicht — ohne sie ist die Zahl daneben wertlos."
+        assert kosten["takt"], (
+            "Kein einzelner Taktgeber-Aufruf gesehen — dann trennt der Wächter "
+            "nichts mehr, und ein stiller Herzschlag zählt als Klick."
+        )
