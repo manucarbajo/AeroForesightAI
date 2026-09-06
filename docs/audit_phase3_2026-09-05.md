@@ -628,7 +628,7 @@ ein rotes Ergebnis dort ist eine gute Nachricht.
 | 🔷 | **C1** «46» nur ohne Docstrings | Plan, `_melde_befunde` | Wer nachzählt, bekommt 55 |
 | 🔷 | **C2** Kopfzeile klein geschrieben | `validation.py:661` | erste Zeile eines CLI-Fehlers; vorbestehend |
 | 🔷 | **C3** Docstring nennt Zahlen von vor P3.12 — **behoben (P3.16)** | `test_web_overflow.py:1855` | sagt, das Kriterium sei verfehlt |
-| 🔷 | **C4** Verweis auf `save_start.py` | `projektplan.md:651` | Datei existiert nicht; vorbestehend |
+| 🔷 | **C4** Verweis auf `save_start.py` — **behoben (2026-09-06)** | `projektplan.md:651` | Datei existiert nicht; vorbestehend. Die Ankerprobe meldet jetzt **null** kaputte Verweise |
 
 **Aus Phase 3 selbst: kein ⛔.** Zum Vergleich: Das Audit der Phase 2 fand drei
 schwere Befunde in der Umsetzung, darunter einen Rechenfehler und eine tragende
