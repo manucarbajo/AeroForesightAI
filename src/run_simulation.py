@@ -84,7 +84,7 @@ from src.reporting.protocol_generator import (
     render_protocol_markdown,
 )
 from src.reporting.run_scenario_generator import generate_and_save_run_scenario
-from src.validation import ValidationError, validate_llm_settings
+from src.validation import BEFUND_KOPF, ValidationError, validate_llm_settings
 
 #: Die öffentliche Schnittstelle dieses Moduls (P3.6). Was nicht hier steht,
 #: ist Innenleben des CLI-Ablaufs — `dashboard/` importiert es nicht.
@@ -595,11 +595,14 @@ def main() -> int:
         return _main()
     except ValidationError as fehler:
         # `validate_state` und die CLI-Pruefung werfen beide mit dem Kopf
-        # "validierungsfehler:" und einer eingerueckten Liste. Hier wird sie
-        # wieder in Zeilen zerlegt, damit die Darstellung an *einer* Stelle
-        # entsteht und nicht zweimal formatiert wird.
+        # `BEFUND_KOPF` und einer eingerueckten Liste. Hier wird sie wieder in
+        # Zeilen zerlegt, damit die Darstellung an *einer* Stelle entsteht und
+        # nicht zweimal formatiert wird. **Der Rueckfall nimmt dieselbe
+        # Konstante**: Ein zweiter Wortlaut hier waere eine zweite Quelle fuer
+        # denselben Satz -- genau die Sorte, die C2 sichtbar gemacht hat (der
+        # alte Text stand an drei Stellen woertlich).
         zeilen = str(fehler).splitlines()
-        kopf = zeilen[0] if zeilen else "validierungsfehler:"
+        kopf = zeilen[0] if zeilen else BEFUND_KOPF
         befunde = [z.strip().removeprefix("- ") for z in zeilen[1:] if z.strip()]
         _melde_befunde(kopf, befunde or [str(fehler)])
         return EXIT_KONFIGURATION
@@ -640,9 +643,7 @@ def _main() -> int:
             base_url=llm_config.base_url,
         )
         if llm_errors:
-            raise ValidationError(
-                "validierungsfehler:\n" + "\n".join(f"  - {e}" for e in llm_errors)
-            )
+            raise ValidationError(BEFUND_KOPF + "\n" + "\n".join(f"  - {e}" for e in llm_errors))
 
     if args.studio:
         if args.resume is not None:

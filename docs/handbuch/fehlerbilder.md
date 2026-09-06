@@ -79,7 +79,7 @@ dem Klick auf «Start».
 Angezeigt werden immer **alle** Fehler auf einmal, nicht einer nach dem anderen —
 eine Konfiguration lässt sich so in einem Durchgang reparieren.
 
-**Auf der Kommandozeile ist es dieselbe Liste.** `python -m src.run_simulation`
+**Auf der Kommandozeile ist es dieselbe Liste**, mit «Die Konfiguration lässt diesen Lauf nicht zu:» als erster Zeile. `python -m src.run_simulation`
 schreibt sie nach `stderr` und endet mit dem Code **2** — nicht 1: So lässt sich
 «die Eingabe war falsch» von «das Programm ist abgestürzt» unterscheiden, ohne die
 Meldung zu lesen, was für Skripte und CI der Unterschied ist. Bis September 2026

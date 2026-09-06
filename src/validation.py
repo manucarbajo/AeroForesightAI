@@ -32,6 +32,23 @@ from src.rule_engine import KNOWN_METRICS, UnknownRuleConditionError, check_when
 MIN_TEMPERATURE = 0.0
 MAX_TEMPERATURE = 2.0
 
+#: Die erste Zeile, die ein Nutzer liest, wenn seine Konfiguration abgewiesen
+#: wird — **an einer Stelle** (P3.17-Nachlauf, C2 des Phase-3-Audits).
+#:
+#: Hier stand bis zum 2026-09-06 `"validierungsfehler:"`: klein geschrieben,
+#: ohne Satzform, und an **drei** Stellen wörtlich wiederholt (hier, im
+#: LLM-Zweig der CLI und als Rückfall in `run_simulation._melde_befunde`). Sie
+#: ist älter als Phase 3 — aber P3.3 hat sie zur ersten Zeile befördert, die ein
+#: CLI-Nutzer überhaupt sieht, und direkt neben einen ordentlich gebauten Satz
+#: gestellt: «Der Zwischenstand passt nicht zu dieser Fassung:» meldet der
+#: Checkpoint-Zweig zwei Zeilen weiter.
+#:
+#: **Der Text sagt jetzt, was passiert ist, und nicht, wie der Fehler heißt.**
+#: «Validierungsfehler» ist ein Wort aus dem Code; was der Nutzer wissen muss,
+#: ist, dass sein Lauf nicht startet und warum — die Liste darunter nennt die
+#: Gründe, jeder mit seinem Feld.
+BEFUND_KOPF = "Die Konfiguration lässt diesen Lauf nicht zu:"
+
 
 class ValidationError(Exception):
     pass
@@ -658,6 +675,6 @@ def validate_state(state: SimulationState) -> list[str]:
     errors = collect_state_errors(state)
 
     if errors:
-        raise ValidationError("validierungsfehler:\n" + "\n".join(f"  - {e}" for e in errors))
+        raise ValidationError(BEFUND_KOPF + "\n" + "\n".join(f"  - {e}" for e in errors))
 
     return errors

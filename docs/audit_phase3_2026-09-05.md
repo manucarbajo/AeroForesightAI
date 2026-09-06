@@ -521,6 +521,26 @@ ein CLI-Nutzer liest, direkt neben einen ordentlich gebauten deutschen Satz. In
 einem Paket, dessen Gegenstand die Lesbarkeit von Fehlermeldungen ist, gehört sie
 mitgezogen.
 
+> **Behoben am 2026-09-06 — und der Wortlaut war die kleinere Hälfte.** Die
+> Kopfzeile lautet jetzt «Die Konfiguration lässt diesen Lauf nicht zu:»: Sie
+> sagt, was passiert ist, statt wie die Ausnahme heißt. «Validierungsfehler» ist
+> ein Wort aus dem Code.
+>
+> **Die größere Hälfte fiel erst beim Anfassen auf:** Derselbe Text stand an
+> **drei** Stellen wörtlich — in `validate_state`, im LLM-Zweig der CLI und als
+> Rückfall in `_melde_befunde`. Drei Quellen für einen Satz, und niemand hätte
+> gemerkt, wenn zwei davon auseinanderlaufen; dass sie bis hierher identisch
+> waren, war Zufall und kein Mechanismus. Dieselbe Klasse wie P2.11 und wie das
+> zweite Lesemaß aus P3.17.
+>
+> Es gibt jetzt `validation.BEFUND_KOPF`, und **der Wortlaut hat keinen Wächter,
+> die eine Quelle schon**: Ein Textdurchlauf über `src/` und `dashboard/` meldet
+> jede wörtliche Wiederholung, dazu prüfen zwei Zusagen am laufenden System, dass
+> **beide** werfenden Wege mit derselben Zeile beginnen, und drei prüfen die
+> Eigenschaften des Satzes (groß, Doppelpunkt, kein «Fehler» im Text). Drei
+> Mutationen geprüft, dreimal rot. Das Handbuch nennt die Zeile jetzt, weil sie
+> sichtbares CLI-Verhalten ist.
+
 ### C3 · Der Docstring der Klickmessung nennt die Zahlen von vor P3.12 🔷
 
 In derselben Datei, 140 Zeilen auseinander:
@@ -645,7 +665,7 @@ ein rotes Ergebnis dort ist eine gute Nachricht.
 | 🔶 | **B4** Das 500-ms-Kriterium hat keinen Wächter auf seiner Höhe — **behoben (P3.16)** | `tests/test_web_overflow.py:1732` | Ein Rückfall auf 800 ms bliebe grün, während der Plan das Kriterium als erfüllt führt |
 | 🔷 | **B5a** `availability` nennt ein unkonfiguriertes Modell — **behoben (P3.13)** | `compute_mode.py:116` | Nutzermeldung erfindet `llama3.2` |
 | 🔷 | **C1** «46» nur ohne Docstrings — **behoben (2026-09-06)**, und der Befund war größer: **drei** Zahlen zum Modell-Bereich reproduzierten nicht | Plan, `_melde_befunde`, `model_editor.py`, `CLAUDE.md` | Wer nachzählt, bekommt 55 — und 146 statt 168 Bedienelemente, 1886 von 3364 statt 1404 von 2882 Knoten |
-| 🔷 | **C2** Kopfzeile klein geschrieben | `validation.py:661` | erste Zeile eines CLI-Fehlers; vorbestehend |
+| 🔷 | **C2** Kopfzeile klein geschrieben — **behoben (2026-09-06)**, und sie stand an **drei** Stellen wörtlich | `validation.py:661` | erste Zeile eines CLI-Fehlers; vorbestehend. Jetzt `BEFUND_KOPF` an einer Stelle, mit Wächter |
 | 🔷 | **C3** Docstring nennt Zahlen von vor P3.12 — **behoben (P3.16)** | `test_web_overflow.py:1855` | sagt, das Kriterium sei verfehlt |
 | 🔷 | **C4** Verweis auf `save_start.py` — **behoben (2026-09-06)** | `projektplan.md:651` | Datei existiert nicht; vorbestehend. Die Ankerprobe meldet jetzt **null** kaputte Verweise |
 

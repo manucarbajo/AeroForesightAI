@@ -2655,11 +2655,29 @@ Rückfall aus Phase 2, den dieses Audit gefunden hat (P3.17):
 | [P3.16](#p316--das-500-ms-kriterium-und-sein-deckel--erledigt-2026-09-05) | P3.9s Kriterium lautet 500 ms, sein Wächter deckelt bei 900 — ein Rückfall auf 800 bliebe grün | 🔶 **behoben** |
 | [P3.17](#p317--der-browser-wächter-ist-rot-und-niemand-läuft-ihn--erledigt-2026-09-06) | Der Browser-Wächter ist **112 zu 6** rot — **vorbestehend**, auf `main` identisch nachgemessen. C5 des Phase-2-Audits gilt als behoben und ist es nicht, mit neuen Ursachen | ⛔ **behoben** |
 
-Fünf kleine Befunde stehen in `docs/audit_findings.md` und brauchen kein eigenes
-Paket: die Nutzermeldung, die `llama3.2` erfindet (fällt mit P3.13), die
-Zähldefinition hinter der «46», die klein geschriebene Kopfzeile der CLI, der
-veraltete Docstring an der Klickmessung (fällt mit P3.16) und ein Doku-Verweis
-auf ein Modul, das es nicht gibt. Zwei davon sind **vorbestehend**.
+Fünf kleine Befunde brauchten kein eigenes Paket, und **alle fünf sind am
+2026-09-06 erledigt**: die Nutzermeldung, die `llama3.2` erfindet (mit P3.13), der
+veraltete Docstring an der Klickmessung (mit P3.16), ein Doku-Verweis auf ein
+Modul, das es nicht gibt (C4), die Zähldefinition hinter der «46» (C1) und die
+klein geschriebene Kopfzeile der CLI (C2). Zwei davon waren **vorbestehend**.
+
+**Zwei der fünf waren beim Anfassen größer als gemeldet**, und beide auf dieselbe
+Weise — die gemeldete Kleinigkeit war ein Symptom:
+
+* **C1** nannte eine ungenannte Zähldefinition. Nachgemessen reproduzierte
+  **keine** der drei Zahlen, die den Modell-Bereich beschreiben (146 statt 168
+  Bedienelemente, 1886 von 3364 statt 1404 von 2882 Knoten). Zwei davon waren
+  *irgendwann* richtig und sind in eine Aussage über heute gewandert. Die Klasse
+  ist [P4.3](#p43--doku-zahlen-mechanisch-halten), das dort jetzt drei konkrete
+  Kandidaten hat.
+* **C2** nannte einen kleingeschriebenen Wortlaut. Derselbe Text stand an **drei**
+  Stellen wörtlich; dass sie identisch waren, war Zufall und kein Mechanismus. Es
+  gibt jetzt `validation.BEFUND_KOPF` und einen Wächter über die eine Quelle —
+  der Wortlaut selbst braucht keinen.
+
+**Die Lehre über beide:** Ein 🔷 sagt etwas über die *Auswirkung*, nicht über die
+*Tiefe*. Wer einen kleinen Befund behebt, ohne ihn nachzumessen, behebt das
+Symptom.
 
 **Der Prüfstand, damit die Zahlen nachschlagbar sind:** `pytest` ohne die zwei
 dokumentierten Ollama-Hänger und ohne den Browser-Wächter — **1641 passed, 1

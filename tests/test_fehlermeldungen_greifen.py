@@ -32,6 +32,7 @@ from pathlib import Path
 import pytest
 
 from src.run_simulation import EXIT_KONFIGURATION
+from src.validation import BEFUND_KOPF
 
 REPO = Path(__file__).resolve().parent.parent
 
@@ -115,7 +116,9 @@ class TestEineKaputteConfigIstEineListeKeinTraceback:
         assert "Traceback" not in ergebnis.stderr, (
             "Der Traceback ist zurück — die Meldung geht darin unter:\n" + ergebnis.stderr
         )
-        assert "validierungsfehler" in ergebnis.stderr
+        assert BEFUND_KOPF in ergebnis.stderr, (
+            "Die Kopfzeile fehlt oder lautet anders: " + ergebnis.stderr
+        )
         assert "seed" in ergebnis.stderr
         assert ergebnis.stderr.strip().splitlines()[1].lstrip().startswith("- "), (
             "Die Befunde stehen nicht als Liste da:\n" + ergebnis.stderr
@@ -169,6 +172,86 @@ class TestEineKaputteConfigIstEineListeKeinTraceback:
         )
         assert "ValidationError" in gefangen
         assert "CheckpointVersionError" in gefangen
+
+
+class TestDieKopfzeileKommtAusEinerQuelle:
+    """C2 hatte zwei Hälften, und die zweite ist die, die wiederkommt.
+
+    Die eine war der Wortlaut: `validierungsfehler:`, klein geschrieben und ohne
+    Satzform — die **erste Zeile**, die ein CLI-Nutzer liest, und das direkt
+    neben einem ordentlich gebauten Satz («Der Zwischenstand passt nicht zu
+    dieser Fassung:»). Die andere: Derselbe Text stand an **drei** Stellen
+    wörtlich — in `validate_state`, im LLM-Zweig der CLI und als Rückfall in
+    `_melde_befunde`. Drei Quellen für einen Satz, und niemand hätte gemerkt,
+    wenn zwei davon auseinanderlaufen.
+
+    Der Wortlaut ist Geschmackssache und braucht keinen Wächter. **Die eine
+    Quelle braucht einen** — dieselbe Klasse wie P2.11 (zwei Quellen für
+    `marginal_cost_fraction`) und wie das Lesemaß aus P3.17.
+    """
+
+    #: Wo eine wörtliche Kopfzeile stehen dürfte — nirgends außer an der
+    #: Konstante selbst. `tests/` ist draußen: Ein Test darf den erwarteten Text
+    #: nennen, sonst prüfte er nur, dass eine Konstante gleich sich selbst ist.
+    BAEUME = ("src", "dashboard")
+
+    def test_kein_modul_schreibt_die_kopfzeile_woertlich(self):
+        from src.validation import BEFUND_KOPF
+
+        befunde: list[str] = []
+        for baum in self.BAEUME:
+            for pfad in sorted((REPO / baum).rglob("*.py")):
+                if "legacy" in pfad.parts:
+                    continue
+                quelle = pfad.read_text(encoding="utf-8-sig")
+                if BEFUND_KOPF not in quelle:
+                    continue
+                # Die Definition selbst ist die Quelle und darf ihn tragen.
+                if pfad == REPO / "src" / "validation.py":
+                    continue
+                for nr, zeile in enumerate(quelle.splitlines(), start=1):
+                    if BEFUND_KOPF in zeile:
+                        befunde.append(f"{pfad.relative_to(REPO).as_posix()}:{nr}")
+
+        assert not befunde, (
+            "Diese Stellen schreiben die Kopfzeile wörtlich statt `BEFUND_KOPF` zu "
+            "benutzen:\n  " + "\n  ".join(befunde) + "\n\nVor C2 stand sie an drei "
+            "Stellen; zwei Quellen für einen Satz laufen früher oder später auseinander."
+        )
+
+    def test_beide_werfenden_wege_tragen_denselben_kopf(self):
+        """Gemessen, nicht gelesen: zwei Ausnahmen, dieselbe erste Zeile.
+
+        Der eine Weg ist `validate_state` (kaputte Config), der andere die
+        CLI-Prüfung der LLM-Angaben. Vor C2 hatten sie zufällig denselben
+        Wortlaut, weil beide dieselbe Zeichenkette hingeschrieben hatten.
+        """
+
+        from src.validation import BEFUND_KOPF
+
+        aus_config = _cli("--mock-llm", "--rounds", "1", "--quiet", "--seed", "-1").stderr
+        aus_llm = _cli("--rounds", "1", "--quiet", "--temperature", "99").stderr
+
+        for name, ausgabe in (("Config", aus_config), ("LLM", aus_llm)):
+            erste = ausgabe.strip().splitlines()[0]
+            assert erste == BEFUND_KOPF, f"{name}-Weg beginnt mit {erste!r}"
+
+    def test_die_kopfzeile_ist_ein_satz(self):
+        """Die eine Zusage zum Wortlaut, die sich prüfen lässt.
+
+        Nicht «sie klingt gut», sondern: Sie fängt groß an und endet mit einem
+        Doppelpunkt, wie die Kopfzeile des Checkpoint-Zweigs daneben. Der alte
+        Text erfüllte beides nicht.
+        """
+
+        from src.validation import BEFUND_KOPF
+
+        assert BEFUND_KOPF[0].isupper(), BEFUND_KOPF
+        assert BEFUND_KOPF.endswith(":"), BEFUND_KOPF
+        assert "fehler" not in BEFUND_KOPF.lower(), (
+            "Die Kopfzeile nennt den Namen der Ausnahme statt zu sagen, was "
+            f"passiert ist: {BEFUND_KOPF!r}"
+        )
 
 
 class TestDerFehlerwegScheitertNichtSelbst:
@@ -246,7 +329,7 @@ class TestDerFehlerwegScheitertNichtSelbst:
         strom = MitPuffer() if mit_puffer else NurText()
         monkeypatch.setattr(sys, "stderr", strom)
 
-        _melde_befunde("validierungsfehler:", ["Bedingung: cost_pressure ≥ 0,8 (CO₂-Abgabe)"])
+        _melde_befunde(BEFUND_KOPF, ["Bedingung: cost_pressure ≥ 0,8 (CO₂-Abgabe)"])
 
         ausgabe = "".join(strom.stuecke)
         assert "cost_pressure" in ausgabe, "Der Befund ist verschwunden"
