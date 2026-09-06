@@ -2465,7 +2465,7 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Zwei Funde nebenbei, beide aus der Umsetzung:**
 
-1. **Der Fehlerweg konnte selbst scheitern.** Die Windows-Konsole dieses Projekts steht auf `cp1252`, und in `src/` stehen **46** Zeichenketten mit Zeichen, die dieser Zeichensatz nicht kennt (`→`, `≥`, `₂`, `Δ`, `β`, `✓`). Kein heutiger Validierungsbefund enthält eines davon — ein einziges hätte die Liste durch einen `UnicodeEncodeError` ersetzt, also durch einen Traceback an genau der Stelle, an der dieses Paket eben einen weggeräumt hat. `_schreibe` schreibt deshalb notfalls mit `backslashreplace` (nicht `replace`: ein `≥` ist nachschlagbar, ein `?` ist verloren). Der weitere Umgang mit den 46 Stellen ist [P3.10](#p310--46-zeichenketten-die-die-konsole-nicht-schreiben-kann--erledigt-2026-09-05).
+1. **Der Fehlerweg konnte selbst scheitern.** Die Windows-Konsole dieses Projekts steht auf `cp1252`, und in `src/` stehen **46** Zeichenketten mit Zeichen, die dieser Zeichensatz nicht kennt (`→`, `≥`, `₂`, `Δ`, `β`, `✓`) — **gezählt ohne Docstrings**, weil ein Docstring nicht ausgegeben wird; alle Konstanten wären 55. Die Definition steht hier, weil die Zahl ohne sie nicht reproduziert (C1 des Audits). Kein heutiger Validierungsbefund enthält eines davon — ein einziges hätte die Liste durch einen `UnicodeEncodeError` ersetzt, also durch einen Traceback an genau der Stelle, an der dieses Paket eben einen weggeräumt hat. `_schreibe` schreibt deshalb notfalls mit `backslashreplace` (nicht `replace`: ein `≥` ist nachschlagbar, ein `?` ist verloren). Der weitere Umgang mit den 46 Stellen ist [P3.10](#p310--46-zeichenketten-die-die-konsole-nicht-schreiben-kann--erledigt-2026-09-05).
 2. **Die eigenen Wächter fielen auf die eigene Prosa herein.** Der erste Anlauf prüfte mit Zeichenkettensuche (`"except Exception" not in quelle`), und **drei von drei** Zusagen schlugen an — an den Kommentaren und Docstrings, die den alten Zustand beschreiben und dabei `try: pass`, `except Exception` und `get_llm()` zitieren. Geprüft wird jetzt der Syntaxbaum. *Ein Wächter, den eine Erklärung über ihn selbst umlenken kann, ist keiner.*
 
 **Fertig, gemessen:** `tests/test_fehlermeldungen_greifen.py` — zwölf Zusagen über alle drei Stellen. Die CLI wird als **eigener Prozess** gestartet: Nur so ist der Exit-Code echt, `main()` im selben Prozess prüfte einen Rückgabewert. **Doku ist mitgezogen:** `docs/handbuch/fehlerbilder.md` (zwei Abschnitte: die Liste auf der CLI und der fremde Zwischenstand aus P3.2), `README.md` (Exit-Codes).
@@ -2570,7 +2570,7 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Warum es trotzdem ein Befund ist:** Ein `UnicodeEncodeError` beim *Melden* verschluckt die Meldung. Innerhalb von `logging` wird er zu einem «--- Logging error ---» mit Stack statt der Zeile; in einem `print` reißt er den Aufruf ab. Das ist dieselbe Klasse wie P3.3 selbst — eine Ausgabe, auf die man sich verlässt, kann still oder laut verschwinden, und zwar genau dann, wenn man sie braucht.
 
-**Fundstellen:** 46 Stellen über `src/`; die Liste erzeugt ein AST-Durchlauf (Vorlage steht in der Umsetzung von P3.3). Die Zeichensatz-Grenze liegt in `sys.stdout.encoding`, nicht im Code.
+**Fundstellen:** 46 Stellen über `src/` (Zeichenketten-Konstanten **ohne Docstrings** — alle wären 55); die Liste erzeugt ein AST-Durchlauf (Vorlage steht in der Umsetzung von P3.3). Die Zeichensatz-Grenze liegt in `sys.stdout.encoding`, nicht im Code.
 
 **Was zu tun ist — und was nicht:** Nicht 46 Zeichenketten umschreiben. `→` in einem Erklärtext ist richtig, und `CO₂` ist der korrekte Name des Stoffs. Zu entscheiden ist die **Ausgabeseite**, und dafür gibt es zwei Wege:
 
@@ -3133,7 +3133,7 @@ Auslöser, an den niemand denken muss.
 | 10,5 % | 179 ms | React-DOM |
 | — | — | Plotly kommt gar nicht vor |
 
-Darin `notifyNestedSubs`: Redux benachrichtigt bei **jeder** Callback-Antwort alle angeschlossenen Komponenten. Die Kosten hängen an deren **Zahl**, nicht an der Größe des sichtbaren Bereichs. Und der Modell-Bereich stellte mit seinen 168 Bedienelementen **1404 der 2882 Knoten** der ganzen Anwendung — auch während jemand in der Schrittfolge arbeitete und ihn nie zu Gesicht bekam.
+Darin `notifyNestedSubs`: Redux benachrichtigt bei **jeder** Callback-Antwort alle angeschlossenen Komponenten. Die Kosten hängen an deren **Zahl**, nicht an der Größe des sichtbaren Bereichs. Und der Modell-Bereich stellt **mehr als die Hälfte** aller Knoten (1886 von 3364, darunter 146 Bedienelemente — nachgemessen am 2026-09-06, Methode im Docstring von `model_editor.HOST`) — auch während jemand in der Schrittfolge arbeitete und ihn nie zu Gesicht bekam. **Die Zahlen standen hier bis zum 2026-09-06 als «168 Bedienelemente, 1404 der 2882 Knoten», und keine davon reproduzierte** (C1 des Audits): Sie stammten aus verschiedenen Messungen — 2882 − 1404 ergibt 1478 und nicht 1477, und daran fiel es auf. Die 168 beschreiben zudem die beiden Assistenten-Schritte **vor** P1.9-W3.1, nicht diesen Bereich.
 
 **Fundstellen:** [`dashboard/web/pages/model_editor.py`](../dashboard/web/pages/model_editor.py) (`layout` baute den Rumpf eifrig), [`dashboard/web/config_editor/__init__.py`](../dashboard/web/config_editor/__init__.py) (`_model_editor` hing nur an `cfg-editor-refresh`).
 
@@ -3144,7 +3144,7 @@ Darin `notifyNestedSubs`: Redux benachrichtigt bei **jeder** Callback-Antwort al
 | bis der Schritt im DOM steht | 665–1426 ms | **213–487 ms** |
 | längste Browser-Aufgabe | 1144 ms | **271 ms** |
 | `dash_renderer` im Profil | 1218 ms | **252 ms** |
-| DOM-Knoten in der Schrittfolge | 2882 | **1477** |
+| DOM-Knoten in der Schrittfolge | 3364 | **1477** |
 
 **Damit ist das 500-ms-Kriterium von P3.9 erfüllt — ohne Regel 1 oder Regel 6 zu ändern.** Das ist der Kern dieses Pakets: Der Gewinn liegt gemessen zu rund 80 % in **einem** Bereich, und die beiden Regeln bleiben, wie sie sind.
 
@@ -3267,6 +3267,18 @@ Darin `notifyNestedSubs`: Redux benachrichtigt bei **jeder** Callback-Antwort al
 **Fundstelle:** `CLAUDE.md` (Abschnitte Architektur-Map und Dev-Workflow), `docs/projektplan.md` (Phase 4), `.github/workflows/tests.yml`.
 
 **Was zu tun ist:** Einen kleinen Test ergänzen, der die in der Doku genannten überprüfbaren Zahlen gegen die Realität hält — Testanzahl, Anzahl der CIB-Zellen, Anzahl der Editor-Tabs. Wo eine Zahl nicht stabil zu halten ist, gehört sie nicht in die Doku, sondern durch eine Größenordnung ersetzt.
+
+**Nachtrag am 2026-09-06 (aus C1 des Phase-3-Audits): drei konkrete Kandidaten, und eine Lehre dazu.** Beim Beheben von C1 ist genau die Drift eingetreten, gegen die dieses Paket antritt — und zwar innerhalb **eines Tages**:
+
+| in der Doku | tatsächlich | Methode |
+| --- | --- | --- |
+| «168 Bedienelemente» im Modell-Bereich | **146** | `#model-editor-host input, select, textarea` im Browser |
+| «1404 der 2882 Knoten» | **1886** von **3364** | Teilbaum des Wirts bzw. `querySelectorAll('*')` bei 1280 px |
+| «46 Zeichenketten» in `src/` | **46** ✓ | Zeichenketten-Konstanten **ohne** Docstrings (alle wären 55) |
+
+**Die Lehre ist nicht «jemand war unsorgfältig», sondern struktureller:** Zwei der drei Zahlen waren *irgendwann* richtig. Die 168 beschrieben die beiden Assistenten-Schritte **vor** P1.9-W3.1 und sind dann in eine Aussage über den heutigen Bereich gewandert; die 1404/2882 stammten aus verschiedenen Messungen und widersprachen sich um einen Knoten (2882 − 1404 = 1478 gegen die genannten 1477). Die 46 hält — weil sie jetzt ihre **Zähldefinition** mitträgt.
+
+**Daraus folgt für die Umsetzung:** Der Test hält nicht nur die Zahl, sondern verlangt die **Methode** daneben. Eine Zahl ohne sie ist nicht prüfbar und driftet unbemerkt: Bei der «46» kamen je nach Definition 0, 46, 45, 54 oder 55 heraus, und alle fünf wären mit demselben Satz vereinbar gewesen. Die browserseitigen Zahlen gehören dabei in den Browser-Wächter (er läuft seit P3.17 nächtlich), die statischen in die Hauptsuite.
 
 **Fertig wenn:** Eine veraltete Zahl in `CLAUDE.md` lässt die Suite rot werden.
 

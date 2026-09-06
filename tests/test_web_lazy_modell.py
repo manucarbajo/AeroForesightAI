@@ -14,8 +14,9 @@ Klicks sagt:
 
 Darin `notifyNestedSubs`: Redux benachrichtigt bei **jeder** Callback-Antwort
 alle angeschlossenen Komponenten. Die Kosten hängen an deren **Zahl**, nicht an
-der Größe des sichtbaren Bereichs — und der Modell-Bereich stellte mit seinen
-168 Bedienelementen **1404 der 2882 Knoten** der ganzen Anwendung, auch während
+der Größe des sichtbaren Bereichs — und der Modell-Bereich stellt **mehr als die
+Hälfte** aller Knoten (1886 von 3364, darunter 146 Bedienelemente; nachgemessen
+am 2026-09-06, Methode im Docstring von `model_editor.HOST`), auch während
 niemand hinsah.
 
 **Gemessen am laufenden System, vorher/nachher:**
@@ -25,7 +26,7 @@ niemand hinsah.
 | bis der Schritt im DOM steht | 665–1426 ms | **213–487 ms** |
 | längste Browser-Aufgabe | 1144 ms | **271 ms** |
 | `dash_renderer` im Profil | 1218 ms | **252 ms** |
-| DOM-Knoten in der Schrittfolge | 2882 | **1477** |
+| DOM-Knoten in der Schrittfolge | 3364 | **1477** |
 
 Damit ist das 500-ms-Kriterium von P3.9 erfüllt — **ohne** Regel 1 oder Regel 6
 zu ändern.

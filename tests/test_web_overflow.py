@@ -282,9 +282,10 @@ BEREICHE = {
     "Einstieg": "",
     "Leitstand": "lauf",
     "Ergebnisse": "runs",
-    # Seit P1.9-W3.1: der Modell-Editor. Er traegt die 168 Bedienelemente, die
-    # bis dahin in den Schritten 4 und 5 lagen -- also genau die dichtesten
-    # Formulare der Anwendung. Wenn irgendwo etwas herausragt, dann hier.
+    # Seit P1.9-W3.1: der Modell-Editor. Er traegt die Felder, die bis dahin in
+    # den Schritten 4 und 5 lagen -- also genau die dichtesten Formulare der
+    # Anwendung (heute 146 Bedienelemente; die 168 von damals beschreiben die
+    # beiden Schritte vor dem Umzug). Wenn irgendwo etwas herausragt, dann hier.
     "Modell": "modell",
     "Handbuch": "doku",
 }
@@ -2026,11 +2027,13 @@ class TestEinKlickInDerSchrittfolgeKostetWenigRundlaeufe:
 # **71,6 %** in `dash_renderer` (`notifyNestedSubs`: Redux benachrichtigt bei
 # jeder Antwort alle angeschlossenen Komponenten), zu 10,5 % in React, und
 # Plotly kam gar nicht vor. Die Kosten hängen an der **Zahl** eingehängter
-# Dash-Komponenten — und der Modell-Bereich stellte mit seinen 168
-# Bedienelementen 1404 der 2882 Knoten, auch während niemand hinsah.
+# Dash-Komponenten — und der Modell-Bereich stellt **mehr als die Hälfte** aller
+# Knoten (1886 von 3364, darunter 146 Bedienelemente; nachgemessen am
+# 2026-09-06, Methode im Docstring von `model_editor.HOST`), auch während
+# niemand hinsah.
 #
 # Gemessen nach der Änderung: 1218 → 252 ms `dash_renderer`, längste Aufgabe
-# 1144 → 271 ms, DOM in der Schrittfolge 2882 → 1477 Knoten.
+# 1144 → 271 ms, DOM in der Schrittfolge 3364 → 1477 Knoten.
 #
 # **Was hier geprüft wird, ist die Verdrahtung** — die Entscheidung selbst hängt
 # an einer reinen Funktion und steht in `tests/test_web_lazy_modell.py`. Nur der
@@ -2060,7 +2063,7 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
 
             assert gemessen["wirt"] <= LEER_MAX, (
                 f"«{name}» bei {page.breite} px trägt {gemessen['wirt']} Knoten im "
-                "Wirt des Modell-Bereichs — dann liegen die 168 Bedienelemente "
+                "Wirt des Modell-Bereichs — dann liegen die 146 Bedienelemente "
                 "wieder dauernd im DOM, und jeder Klick zahlt dafür."
             )
 
@@ -2103,7 +2106,7 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
     def test_der_baum_ist_wirklich_kleiner_geworden(self, page):
         """Die Zahl, an der der Gewinn hängt — als Sperrklinke.
 
-        Gemessen: 2882 Knoten vor P3.12, 1477 danach. Der Deckel steht auf 2000,
+        Gemessen: 3364 Knoten vor P3.12, 1477 danach. Der Deckel steht auf 2000,
         also deutlich unter dem alten Stand und mit Luft für gewachsene
         Oberfläche. Wächst er darüber, ist entweder der Modell-Bereich zurück
         oder ein neuer Bereich hat dasselbe Muster.
@@ -2118,6 +2121,6 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
 
         assert gemessen["gesamt"] < 2000, (
             f"Die Schrittfolge trägt {gemessen['gesamt']} DOM-Knoten (gemessen "
-            "waren es 1477 nach P3.12, 2882 davor). Jeder Klick zahlt dafür in "
+            "waren es 1477 nach P3.12, 3364 davor). Jeder Klick zahlt dafür in "
             "`dash_renderer`."
         )

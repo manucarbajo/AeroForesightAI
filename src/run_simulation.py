@@ -528,7 +528,9 @@ def _melde_befunde(kopf: str, befunde: list[str]) -> None:
     **Geschrieben wird zeichensatzfest**, und der Grund ist gemessen: Die
     Windows-Konsole dieses Projekts steht auf `cp1252`, und in `src/` stehen 46
     Zeichenketten mit Zeichen, die dieser Zeichensatz nicht kennt (`→`, `≥`,
-    `₂`, `Δ`). Kein heutiger Validierungsbefund enthaelt eines davon — aber ein
+    `₂`, `Δ`) — **gezaehlt ohne Docstrings**, denn ein Docstring wird nicht
+    ausgegeben. Wer alle Konstanten zaehlt, kommt auf 55; die Definition gehoert
+    deshalb neben die Zahl (C1 des Phase-3-Audits). Kein heutiger Validierungsbefund enthaelt eines davon — aber ein
     einziges genuegte, um die Liste durch einen `UnicodeEncodeError` zu
     ersetzen: einen Traceback an der Stelle, an der dieses Paket gerade einen
     weggeraeumt hat. Ein Fehlerweg, der selbst scheitern kann, ist keiner.

@@ -477,6 +477,25 @@ Dazu zwei Nebenpunkte:
   = 1478, die Tabelle nennt **1477**. Zwei Messungen an verschiedenen Momenten,
   kein Sachfehler — erwähnt, weil ein aufmerksamer Leser subtrahiert.
 
+> **Behoben am 2026-09-06 — und der zweite Nebenpunkt war die Spur zu einem
+> größeren Befund.** «Kein Sachfehler» war zu freundlich: Als der eine Knoten
+> Widerspruch nachgemessen wurde, reproduzierte **keine** der drei Zahlen, die
+> den Modell-Bereich beschreiben. Gemessen in **einem** Durchlauf (statt drei):
+> **146** Bedienelemente statt 168, **1886 von 3364** Knoten statt 1404 von
+> 2882; nur die 1477 hielt exakt.
+>
+> Zwei der drei waren *irgendwann* richtig, und das ist die eigentliche
+> Fehlerart: Die 168 beschrieben die beiden Assistenten-Schritte **vor**
+> P1.9-W3.1 und sind dann in eine Aussage über den heutigen Bereich gewandert;
+> die 1404/2882 stammten aus verschiedenen Messungen. Korrigiert an sechs
+> Stellen in vier Dateien, und die Methode steht jetzt an **einer** Stelle
+> (`model_editor.HOST`), auf die die übrigen verweisen.
+>
+> **Die «46» hält, weil sie ihre Zähldefinition mitträgt** — und das ist der
+> Beleg für C1s Punkt: Je nach Definition kamen 0, 45, 46, 54 oder 55 heraus,
+> und alle fünf wären mit demselben Satz vereinbar gewesen. Die Klasse ist als
+> [P4.3](projektplan.md) eingeplant und hat dort jetzt drei konkrete Kandidaten.
+
 *Zur Ehrlichkeit dieser Messung:* Ihre ersten zwei Anläufe zählten falsch — der
 erste nur `print`-Argumente (Ergebnis 0), der zweite alle Konstanten
 einschließlich Docstrings (55). Erst die dritte Definition traf die des Plans.
@@ -625,7 +644,7 @@ ein rotes Ergebnis dort ist eine gute Nachricht.
 | 🔶 | **B3** Annotation widerspricht dem Rumpf — **behoben (P3.15)**, Klasse offen als P4.4 | `src/orchestration/scenario_sweeps.py:232` | `SimpleNamespace` statt `RunArgs`, `sweep_id` unbenutzt, toter Import bleibt für `ruff` unsichtbar |
 | 🔶 | **B4** Das 500-ms-Kriterium hat keinen Wächter auf seiner Höhe — **behoben (P3.16)** | `tests/test_web_overflow.py:1732` | Ein Rückfall auf 800 ms bliebe grün, während der Plan das Kriterium als erfüllt führt |
 | 🔷 | **B5a** `availability` nennt ein unkonfiguriertes Modell — **behoben (P3.13)** | `compute_mode.py:116` | Nutzermeldung erfindet `llama3.2` |
-| 🔷 | **C1** «46» nur ohne Docstrings | Plan, `_melde_befunde` | Wer nachzählt, bekommt 55 |
+| 🔷 | **C1** «46» nur ohne Docstrings — **behoben (2026-09-06)**, und der Befund war größer: **drei** Zahlen zum Modell-Bereich reproduzierten nicht | Plan, `_melde_befunde`, `model_editor.py`, `CLAUDE.md` | Wer nachzählt, bekommt 55 — und 146 statt 168 Bedienelemente, 1886 von 3364 statt 1404 von 2882 Knoten |
 | 🔷 | **C2** Kopfzeile klein geschrieben | `validation.py:661` | erste Zeile eines CLI-Fehlers; vorbestehend |
 | 🔷 | **C3** Docstring nennt Zahlen von vor P3.12 — **behoben (P3.16)** | `test_web_overflow.py:1855` | sagt, das Kriterium sei verfehlt |
 | 🔷 | **C4** Verweis auf `save_start.py` — **behoben (2026-09-06)** | `projektplan.md:651` | Datei existiert nicht; vorbestehend. Die Ankerprobe meldet jetzt **null** kaputte Verweise |
