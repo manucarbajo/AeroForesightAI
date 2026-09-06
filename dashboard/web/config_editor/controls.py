@@ -105,7 +105,7 @@ def write_action(
                 id=identifier or write_id(name),
                 message=f"{frage}\n\n{REICHWEITE}",
             ),
-            ui.hint_text(REICHWEITE, class_name="mt-2 max-w-prose"),
+            ui.hint_text(REICHWEITE, class_name="mt-2 af-mass"),
         ],
         className=class_name,
     )

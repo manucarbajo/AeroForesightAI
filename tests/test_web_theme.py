@@ -254,6 +254,72 @@ class TestKeineFarbklasseEntgehtDemSweep:
         assert all("bg-white" not in text for _lineno, text in _string_literals(tree))
 
 
+class TestEsGibtEinLesemassUndNichtZwei:
+    """P3.17: `max-w-prose` ist ein zweites, **ungeeichtes** Lesemaß.
+
+    **Der Befund ist gemessen, nicht stilistisch.** Die Zusage aus P1.9-W5.4
+    lautet «keine Zeile über 75 Zeichen», und das Projekt hat dafür ein eigenes,
+    daran geeichtes Maß: `.af-mass { max-width: 53ch }`. Tailwinds `max-w-prose`
+    ist **65ch** — im Browser gemessen lief ein Absatz damit auf **88 Zeichen**,
+    also 17 über der Zusage. Fünf Stellen trugen es, und weil sie *aussahen* wie
+    ein Lesemaß, hat niemand sie nachgemessen.
+
+    Dieselbe Klasse wie das Farbfundament (Regel 4) und wie P2.11: **zwei Quellen
+    für denselben Wert**, von denen nur eine stimmt. Und derselbe Grund, warum
+    der Wächter hier statisch ist und nicht im Browser-Wächter steht: Der ist
+    opt-in und überspringt sich ohne Chromium — genau daran ist C5 gestorben.
+    Diese Prüfung läuft in jeder CI.
+
+    **Was `af-mass` nicht ist:** ein Layout-Maß. `max-w-md` an einem Dialog oder
+    `max-w-xs` an einer Kachel sind Breiten von Kästen und bleiben erlaubt;
+    verboten ist nur das zweite Maß für **Fließtext**.
+    """
+
+    #: Tailwinds Fließtext-Maß. Nur dieses eine — `max-w-md` und Geschwister sind
+    #: Kastenbreiten und haben mit der Zeilenlänge nichts zu tun.
+    ZWEITES_MASS = "max-w-prose"
+
+    def test_no_module_writes_a_second_reading_measure(self):
+        befunde: list[str] = []
+        for path in _python_files():
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for lineno, text in _string_literals(tree):
+                if self.ZWEITES_MASS in text:
+                    befunde.append(f"{path.relative_to(WEB_ROOT)}:{lineno} → {text[:60]}")
+
+        assert not befunde, (
+            f"`{self.ZWEITES_MASS}` unter `dashboard/web/`:\n  "
+            + "\n  ".join(befunde)
+            + "\n\nDas Lesemaß ist `af-mass` (53ch, geeicht auf die zugesagten 75 "
+            f"Zeichen). `{self.ZWEITES_MASS}` sind 65ch und liefern gemessen 88 — "
+            "ein zweites Maß, das aussieht wie das erste."
+        )
+
+    def test_das_lesemass_ist_ueberhaupt_definiert(self):
+        """Ein Verbot ohne Alternative wäre nur eine Einschränkung."""
+
+        css = (WEB_ROOT / "assets" / "dashboard.css").read_text(encoding="utf-8")
+
+        assert ".af-mass {" in css, "Das Lesemaß fehlt im Stylesheet"
+        assert "ch;" in css.split(".af-mass {", 1)[1].split("}", 1)[0], (
+            "Das Lesemaß steht nicht in `ch` — die Zusage handelt von Zeichen, und "
+            "ein `rem`-Deckel hängt an der Schriftgröße (P1.9-W5.4)."
+        )
+
+    def test_der_sweep_wuerde_einen_rueckfall_bemerken(self):
+        tree = ast.parse('x = "font-body text-sm max-w-prose mb-2"\n')
+        gefunden = [text for _lineno, text in _string_literals(tree)]
+
+        assert self.ZWEITES_MASS in gefunden[0]
+
+    def test_eine_kastenbreite_ist_kein_lesemass(self):
+        """Kontrolle in die andere Richtung: `max-w-md` bleibt erlaubt."""
+
+        tree = ast.parse('x = "af-card max-w-md"\n')
+
+        assert all(self.ZWEITES_MASS not in text for _lineno, text in _string_literals(tree))
+
+
 class TestPngUndBildschirmSprechenDieselbeSprache:
     """Eine Größe, eine Farbe — im Bericht wie auf dem Schirm (P1.2)."""
 

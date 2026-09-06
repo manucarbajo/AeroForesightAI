@@ -414,7 +414,37 @@ DECKEL: dict[int, dict[str, float]] = {
         # Glossar-Erklärungen (`ui.explainer`, 2026-09-03) misst der Schritt
         # dieselben 1,34 — der Erklärungskörper steckt in einem zugeklappten
         # `<details>` und trägt keine Höhe.
-        "Schritt 1": 1.34,
+        #
+        # **1,34 → 2,02 mit P3.17, und der Zuwachs ist git-belegt zugeordnet.**
+        # Zwei Commits haben nach der Messung von 1,34 in diesen Rumpf
+        # geschrieben, und **keiner** hat den Deckel mitgezogen:
+        #
+        # * `4a5417d` (A1, 2026-09-03) zeigt die **Kohärenzbegründung auch für
+        #   die Standard-Ausgangslage**. Vorher stand hier für den
+        #   Vorgabe-Entwurf nichts; jetzt These, Begründung und ein
+        #   aufklappbarer Quellenblock. Das ist der weit größere Teil des
+        #   Zuwachses — und es ist eine **bewusste** Entscheidung von A1: Die
+        #   Begründung steht offen da, weil sie unter Variante C die einzige
+        #   Absicherung eines Rahmens ist.
+        # * `976395d` (P2.8-Rest, 2026-09-04) fügt den Hinweis auf Verläufe
+        #   hinzu, die vor dem Laufende aufhören.
+        #
+        # Dazu 0,06 aus P3.17 selbst: Das Lesemaß auf Quellenliste und
+        # Hinweisen bricht früher um, dieselben Sätze brauchen mehr Zeilen.
+        #
+        # **Das ist die dritte Wiederholung desselben Musters** (C5, dann
+        # P3.17): Der Wächter ist opt-in, niemand lässt ihn laufen, und ein
+        # gewollter Zuwachs verwandelt sich in einen roten Wächter, den man erst
+        # Tage später sieht. Die Antwort darauf steht nicht hier, sondern in
+        # `.github/workflows/browser.yml`.
+        #
+        # **Zwei Schirme sind kein guter Zustand**, und die Zahl steht hier als
+        # Ist-Stand, nicht als Freigabe: Dieser Schritt ist damit der höchste der
+        # Schrittfolge, und das Ziel bleibt `ZIEL`. Ob die Kohärenzbegründung
+        # offen stehen muss oder ihre Quellen genügen, ist eine **Produktfrage**
+        # und kein Messfehler — sie gehört in ein eigenes Paket, nicht in einen
+        # Wächter.
+        "Schritt 1": 2.02,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
@@ -432,7 +462,22 @@ DECKEL: dict[int, dict[str, float]] = {
         # Grund. **Die Zahl steht hier, damit der nächste Zuwachs wieder
         # auffällt**; sie ist keine Freigabe für den übernächsten. Er hiess bis
         # P2.0-C «Schritt 7».
-        "Schritt 6": 1.45,
+        #
+        # **1,45 → 1,73 mit P3.17**, aus drei benannten Teilen: der
+        # Horizontlücken-Hinweis aus `976395d` (P2.8-Rest, 2026-09-04), das
+        # Lesemaß auf Hinweisen aus P3.17, und **0,09 aus der Laufhistorie**.
+        # Der letzte Teil ist der unangenehme: «Prüfen & Starten» zeigt eine
+        # Laufzeitschätzung, sobald vergleichbare Läufe in `outputs/` liegen —
+        # gemessen 1,61 in einem frischen Arbeitsbaum gegen 1,70 mit 264 Läufen,
+        # an derselben Codefassung.
+        #
+        # **Der Deckel gilt für den bestückten Fall, und das ist eine
+        # Entscheidung.** Wer frisch klont, misst niedriger; die Sperrklinke
+        # gegen stilles Schrumpfen lässt 0,25 zu und deckt das ab. Die
+        # Alternative — die Schätzung aus der Messung herausnehmen — hätte den
+        # Wächter blind für genau den Teil gemacht, den ein Nutzer im Alltag
+        # sieht.
+        "Schritt 6": 1.73,
     },
     1024: {
         "Einstieg": 1.00,
@@ -445,14 +490,16 @@ DECKEL: dict[int, dict[str, float]] = {
         # **1,37 → 1,42 mit P2.0-C**, aus demselben Grund wie bei 1280: der
         # zugezogene Schalter. Bei der engeren Breite kostet er 0,05 statt 0,14,
         # weil hier schon vorher mehr umbrach.
-        "Schritt 1": 1.42,
+        # **1,42 → 2,10 mit P3.17**, dieselben drei Ursachen wie bei 1280 (siehe
+        # dort); schmaler bricht mehr um, deshalb 0,08 mehr.
+        "Schritt 1": 2.10,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
         "Schritt 4": 1.22,
         "Schritt 5": 1.08,
-        "Schritt 6": 1.45,  # siehe die Begründung bei 1280
+        "Schritt 6": 1.73,  # siehe die Begründung bei 1280
     },
 }
 

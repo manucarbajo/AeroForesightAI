@@ -391,11 +391,42 @@ deshalb ungeprüft, ohne dass etwas rot wird.* Innerhalb einer Woche, am selben
 Wächter, mit anderen Ursachen. Ein Deckel nachzumessen behebt den Fall; das
 Muster behebt nur eine Antwort auf die Frage, **wo dieser Wächter läuft**.
 
-**Was zu tun ist** → [P3.17](projektplan.md#p317--der-browser-wächter-ist-rot-und-niemand-läuft-ihn--offen-2026-09-05).
+**Was zu tun ist** → [P3.17](projektplan.md#p317--der-browser-wächter-ist-rot-und-niemand-läuft-ihn--erledigt-2026-09-06).
 Zwei Teile, und der zweite ist der wichtigere: die vier konkreten Fehlschläge
 nachmessen und zuordnen (Schritt 6 dabei um die Laufhistorie in `outputs/`
 korrigieren — das ist ein eigener, schon erfasster Befund), und **entscheiden, wo
 der Wächter läuft**, damit die dritte Wiederholung nicht kommt.
+
+> **Behoben am 2026-09-06 (P3.17) — 118 bestanden, 0 gescheitert in 28:05, zum
+> ersten Mal seit dem 2026-08-30. Und der Satz «damit die dritte Wiederholung
+> nicht kommt» war schon falsch, als er geschrieben wurde:** Sie war längst da.
+> Die Zuordnung über `git log` zeigt **zwei** Commits nach dem C5-Fix, die in
+> Schritt 1 geschrieben und den Deckel nicht mitgezogen haben — `4a5417d` (A1,
+> die Kohärenzbegründung auch für den Standard) und `976395d` (P2.8-Rest, der
+> Horizontlücken-Hinweis). Also nicht ein Rückfall, sondern zwei.
+>
+> **Die beiden Zeilenlängen waren die Spitze eines größeren Befunds.**
+> `ui.alert` und `HINT` hatten **überhaupt kein Lesemaß** — jeder Hinweis der
+> Anwendung lief so weit wie seine Zone —, und fünf Stellen trugen Tailwinds
+> `max-w-prose` (65ch, gemessen **88 Zeichen**) neben dem geeichten `af-mass`
+> (53ch). Zwei Maße für dieselbe Zusage, von denen nur eines stimmt, und weil das
+> zweite *aussah* wie ein Lesemaß, hat niemand es nachgemessen. Behoben an den
+> **Komponenten**; gehalten von einem **statischen** AST-Durchlauf in
+> `test_web_theme.py`, damit die Prüfung in jeder CI läuft und nicht in dem
+> Wächter, dessen Ausfall der Anlass war.
+>
+> **Die Höhen sind eingetragen, nicht gesenkt:** Schritt 1 auf 2,02 / 2,10,
+> Schritt 6 auf 1,73 — mit der git-belegten Zuordnung und dem Satz, dass zwei
+> Schirme kein guter Zustand sind. Ob die Kohärenzbegründung offen stehen muss,
+> ist eine Produktfrage und gehört nicht in einen Wächter.
+>
+> **Und die Antwort auf «wo läuft er»:**
+> [`.github/workflows/browser.yml`](../.github/workflows/browser.yml) — von Hand,
+> nächtlich, und bei jedem Pull Request, der `dashboard/web/**` anfasst. **Der
+> Pfadfilter ist nachgezählt und nicht geraten:** Alle drei Rückfälle dieser
+> Geschichte haben genau dieses Verzeichnis berührt. Ein Vorbehalt bleibt offen
+> benannt: Die Deckel sind unter Windows erhoben, und der erste Linux-Lauf muss
+> sie bestätigen.
 
 ### B5 · Kleinere Befunde
 
@@ -588,7 +619,7 @@ ein rotes Ergebnis dort ist eine gute Nachricht.
 
 | | Befund | Ort | Auswirkung |
 | --- | --- | --- | --- |
-| ⛔ | **B6** Der Browser-Wächter ist wieder rot; C5 gilt als behoben | `tests/test_web_overflow.py` | **Vorbestehend, auf `main` identisch nachgemessen.** Schritt 1 der Schrittfolge ist 1,96 Schirme hoch gegen einen Deckel von 1,34, zwei Zeilen laufen 109 und 98 Zeichen gegen 75. Der Fix vom 2026-09-03 wurde von Commits desselben Tages ungültig gemacht — C5s eigentlicher Befund zum zweiten Mal |
+| ⛔ | **B6** Der Browser-Wächter ist wieder rot; C5 gilt als behoben — **behoben (P3.17)**, jetzt mit Ort | `tests/test_web_overflow.py` | **Vorbestehend, auf `main` identisch nachgemessen.** Schritt 1 der Schrittfolge ist 1,96 Schirme hoch gegen einen Deckel von 1,34, zwei Zeilen laufen 109 und 98 Zeichen gegen 75. Der Fix vom 2026-09-03 wurde von Commits desselben Tages ungültig gemacht — C5s eigentlicher Befund zum zweiten Mal |
 | 🔶 | **B1** Der Rückfall auf `llama3.2` lebt eine Ebene höher — **behoben (P3.13)** | `dashboard/run_launcher.py:144` | Preflight und Lauf widersprechen sich bei leerem Modellfeld; das Artefakt nennt ein Modell, das niemand gewählt hat |
 | 🔶 | **B2** Der Ausweichpfad des Schreibers braucht `.buffer` — **behoben (P3.14)** | `src/run_simulation.py:556` | Aus `UnicodeEncodeError` wird `AttributeError` — im Paket über Fehlerwege; alle drei Tests teilen die Annahme |
 | 🔶 | **B3** Annotation widerspricht dem Rumpf — **behoben (P3.15)**, Klasse offen als P4.4 | `src/orchestration/scenario_sweeps.py:232` | `SimpleNamespace` statt `RunArgs`, `sweep_id` unbenutzt, toter Import bleibt für `ruff` unsichtbar |

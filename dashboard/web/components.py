@@ -25,7 +25,15 @@ from dashboard.web import routing
 CARD = "af-card"
 CARD_PAD = f"{CARD} p-5 sm:p-6"
 LABEL = "block font-body text-sm font-medium af-text-body mb-1.5"
-HINT = "font-body text-xs af-text-muted mt-1.5 leading-relaxed"
+#: Der kleine Erklaertext unter einem Feld oder einer Zustandsanzeige.
+#:
+#: **Mit Lesemass seit P3.17.** Ohne lief er so weit wie seine Zone; gemessen
+#: hat es der Browser-Waechter an `status_dot` in der Verfuegbarkeitsanzeige:
+#: 106 Zeichen je Zeile bei 1024 px («Nicht erreichbar: [WinError 10061] …»),
+#: zugesagt sind 75. Eine Fehlermeldung eines fremden Dienstes ist die
+#: laengste Zeichenkette, die hier ankommen kann — und niemand schreibt sie
+#: kuerzer.
+HINT = "font-body text-xs af-text-muted mt-1.5 leading-relaxed af-mass"
 CAPTION = "font-body text-xs af-text-muted"
 H1 = "font-headline text-2xl sm:text-3xl font-bold af-text tracking-tight"
 H2 = "font-headline text-xl font-semibold af-text tracking-tight"
@@ -450,12 +458,27 @@ def console(lines: Iterable[Any], *, empty: str = "Noch keine Meldungen.") -> ht
 
 
 def alert(text: Any, kind: str = "info", *, class_name: str = "") -> html.Div:
+    """Ein Hinweis mit Symbol — **und mit Lesemaß** (P3.17).
+
+    Der Rumpf trug bis zum 2026-09-05 kein `af-mass`, und damit lief **jeder**
+    Hinweis dieser Anwendung so weit, wie seine Zone breit ist. Gemessen hat es
+    der Browser-Wächter an der längsten Stelle: Der Hinweis auf Verläufe, die vor
+    dem Laufende aufhören, brauchte **98 Zeichen** je Zeile — zugesagt sind 75
+    (P1.9-W5.4).
+
+    **Das Maß gehört an die Komponente und nicht an die Aufrufstelle**, aus
+    demselben Grund wie bei `explainer` am 2026-09-03: Sonst ist es eine Frage
+    der Sorgfalt an jedem einzelnen Aufruf, und der nächste vergisst es. Es ist
+    eine Obergrenze — ein Hinweis in einer engen Zone bleibt so breit, wie er
+    war.
+    """
+
     tone, icon_name = _ALERT_VARIANTS.get(kind, _ALERT_VARIANTS["info"])
     body = dcc.Markdown(text, className="af-md") if isinstance(text, str) else text
     return html.Div(
         [
             icon(icon_name, "text-lg shrink-0 mt-0.5"),
-            html.Div(body, className="font-body text-sm leading-relaxed min-w-0"),
+            html.Div(body, className="font-body text-sm leading-relaxed min-w-0 af-mass"),
         ],
         className=f"af-alert {tone} flex items-start gap-3 px-4 py-3 {class_name}".strip(),
     )
