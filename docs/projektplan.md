@@ -2463,6 +2463,25 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Was ausdrücklich nicht entschieden ist: der Horizont der Rahmenszenarien.** Sie laufen 50 Ticks — als Monate gut vier Jahre — und lassen die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 EUR steigen. Das ist keine Rate, sondern eine Erzählung über die Welt, und ihre Kohärenzbegründungen nennen dafür Quellen. Sie stillschweigend umzuskalieren hieße, vier Szenarien etwas anderes sagen zu lassen, ohne ihre Begründung anzufassen. Eingeplant als [P4.5](#p45--was-ein-rahmenszenario-über-die-zeit-behauptet--offen-neu-2026-09-07).
 
+**Nachtrag vom selben Tag: der erste Anlauf war unvollständig, und zwar an genau der Stelle, vor der dieses Paket warnt.** Auf die Frage, ob die Monatsrechnung *systemübergreifend* stimmt, kam die Messung: **Drei der vier ausgelieferten Rahmenszenarien überschrieben `demand_growth_rate` weiterhin mit ihrer Jahresrate** — `business_as_usual` 0,03 (**42,58 % p.a.**), `freiwillige_wende` 0,02 (26,82 %), `transformation_conflict` 0,01 (12,68 %). `co2_delayed` trug keine eigene Vorgabe und erbte still den korrigierten Wert.
+
+**Der Wächter konnte es nicht finden, weil seine Ausnahme zu weit gefasst war.** Sein Docstring begründete, die Sweeps würden bewusst nicht geprüft: Deren Tick-Zahlen seien *Erzählungen* und keine Raten. Das stimmt für `active_from_tick` — und nicht für einen `baseline`-Wert einer Größe mit der Einheit `*_per_tick`. Das ist dieselbe Rate an einer zweiten Stelle. Exakt der **Fallstrick** oben: *Wer nur eine der Stellen anfasst, verschiebt den Widerspruch, statt ihn aufzulösen.*
+
+**Der Schaden war nicht der einzelne Wert, sondern die Vergleichbarkeit.** Drei Rahmen rechneten in Jahren, einer in Monaten — und der Szenario-Vergleich stellt sie nebeneinander. Umgerechnet unter Erhalt der Jahresrate: 0,0025 (3 % p.a.), 0,00165 (2 %), 0,00083 (1 %).
+
+**Gemessen über 50 Ticks je Szenario, vorher gegen nachher** — und das Ergebnis ist enger, als man erwarten würde:
+
+| Rahmen | Nachfrageniveau vorher | nachher | Preis | Buchungsrate | Faktorlage |
+| --- | ---: | ---: | --- | --- | --- |
+| Business as Usual | 0,9141 | 0,8981 | unverändert | unverändert | unverändert |
+| CO₂-Verzögerung | 0,6921 | 0,6921 | unverändert | unverändert | unverändert |
+| Freiwillige Wende | 0,7959 | 0,7864 | unverändert | unverändert | unverändert |
+| Transformationskonflikt | **1,2480** | **0,7909** | unverändert | unverändert | unverändert |
+
+**Bewegt hat sich allein `demand_level`** — die Makrogröße, die neben der gerechneten Buchung mitläuft und in Faktorregeln und Agenten-Prompts eingeht. Preis, Buchungsrate und alle sieben Faktoren sind in allen vier gleich geblieben, weil keine Schwelle überschritten wurde. **Beim Transformationskonflikt geht die Korrektur in die Richtung, die zur Erzählung passt:** Ein Krisenszenario wies vorher ein Nachfrageniveau **über** dem Ausgangswert aus.
+
+**Der Wächter deckt die Lücke jetzt** (`TestAuchDieRahmenszenarienRechnenInMonaten`, drei Zusagen): jede Ratenvorgabe eines Rahmens gegen dieselbe Obergrenze, plus die **Vergleichbarkeit** der vier untereinander. Die zweite ist nicht überflüssig — eine Mutation mit 12,68 % p.a. liegt *unter* der Obergrenze und wird allein von ihr gemeldet. **Stresstests bleiben ausgenommen**, und das ist die Unterscheidung aus P2.2: Ihre Verläufe sind auf Sichtbarkeit gebaut, nicht auf Plausibilität.
+
 **Fertig, gemessen:** `tests/test_ein_tick_ist_ein_monat.py` — zwölf Zusagen über vier Mechanismen, dazu die Sperrklinke, dass der Wächter überhaupt etwas findet. Der Backtest ist neu gerechnet (`docs/backtest_vorlauf.md`), ein Standardlauf über 40 Ticks endet bei **0,267857 / 116,5883** statt 0,268519 / 116,4595 — ein Schnitt in `docs/handbuch/vergleiche.md`. **Doku ist mitgezogen:** `CLAUDE.md` (Invariante 5, Glossar «Tick» und `erneuerungsrate`, Testliste, P2.7-Befund), `docs/handbuch/tick-und-lauf.md`, `docs/handbuch/grenzen.md`, `docs/handbuch/vergleiche.md`, `docs/handbuch/ref-config.md`, `docs/audit_findings.md`.
 
 ### P3.1 — System-Properties täuschen keine Laufzeitwerte mehr vor ✅ erledigt 2026-09-05

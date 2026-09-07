@@ -149,6 +149,89 @@ class TestJedeRateJeTickIstAlsMonatsratePlausibel:
         assert _jahresrate(0.03) == pytest.approx(0.4258, abs=5e-4)
 
 
+class TestAuchDieRahmenszenarienRechnenInMonaten:
+    """**Die Lücke des ersten Anlaufs**, gefunden durch eine Nachfrage.
+
+    Der Wächter oben las nur `configs/properties.json`. Der Docstring dieser
+    Datei begründete das damit, dass die Tick-Zahlen in `configs/sweeps/*.json`
+    *Erzählungen* seien und keine Raten. **Die Begründung war zu weit gefasst:**
+    Ein `baseline` einer Größe mit der Einheit `*_per_tick` ist keine
+    Erzählung, sondern dieselbe Rate an einer zweiten Stelle.
+
+    Gemessen am 2026-09-07, nachdem P3.8 bereits als erledigt galt: **Drei der
+    vier ausgelieferten Rahmen trugen die alte Jahresrate weiter** —
+    `business_as_usual` 0,03 (42,58 % p.a.), `freiwillige_wende` 0,02
+    (26,82 %), `transformation_conflict` 0,01 (12,68 %). `co2_delayed` hatte
+    keine eigene Vorgabe und erbte still den korrigierten Wert. Damit waren die
+    vier auf dem Nachfragekanal **nicht mehr vergleichbar** — und sie
+    nebeneinanderzustellen ist der Zweck des Szenario-Vergleichs.
+
+    Genau der Fallstrick, den P3.8 selbst benennt: *Wer nur eine der Stellen
+    anfasst, verschiebt den Widerspruch, statt ihn aufzulösen.*
+
+    **Stresstests sind ausgenommen, und das ist keine Nachlässigkeit**: Ihre
+    Verläufe sind auf Sichtbarkeit gebaut und nicht auf Plausibilität (P2.2),
+    sie fahren die Grenzen bewusst aus. Ein Rahmen dagegen ist eine **Aussage
+    über die Welt** und muss auf derselben Zeitskala rechnen wie das Modell.
+    """
+
+    def test_es_gibt_ueberhaupt_rahmen_mit_einer_rate(self):
+        """Sonst misst die Zusage unten nichts und ist trotzdem grün."""
+
+        from src.orchestration.scenario_sweeps import rahmenszenarien
+
+        rahmen = rahmenszenarien()
+        assert len(rahmen) >= 4, f"Nur {len(rahmen)} Rahmenszenarien gefunden."
+
+    def test_kein_rahmen_traegt_eine_jahresrate(self, properties):
+        """Dieselbe Messung wie oben, an der zweiten Stelle."""
+
+        from src.orchestration.scenario_sweeps import rahmenszenarien
+
+        raten = {
+            prop.id for prop in properties.system_properties if prop.unit.endswith("_per_tick")
+        }
+
+        for sweep in rahmenszenarien():
+            for override in sweep.property_overrides:
+                if override.property_id not in raten or override.baseline is None:
+                    continue
+                jahresrate = _jahresrate(override.baseline)
+
+                assert abs(jahresrate) <= RATE_OBERGRENZE_PA, (
+                    f"{sweep.id}: {override.property_id} = {override.baseline} je Tick "
+                    f"sind {jahresrate:.2%} im Jahr. Ein Rahmenszenario sagt etwas ueber "
+                    "die Welt und muss auf derselben Zeitskala rechnen wie das Modell."
+                )
+
+    def test_die_vier_rahmen_sind_auf_diesem_kanal_vergleichbar(self, properties):
+        """**Der eigentliche Schaden war nicht der einzelne Wert.**
+
+        Solange drei Rahmen in Jahren rechneten und einer in Monaten, verglich
+        der Szenario-Vergleich Nachfragepfade, die um den Faktor zwölf
+        auseinanderlagen — ohne dass es irgendwo stand.
+        """
+
+        from src.config_loader import build_initial_state
+        from src.market.property_engine import resolve_system_properties
+        from src.orchestration.scenario_sweeps import apply_sweep_overrides, rahmenszenarien
+
+        je_rahmen = {}
+        for sweep in rahmenszenarien():
+            zustand = apply_sweep_overrides(build_initial_state(), sweep)
+            je_rahmen[sweep.id] = resolve_system_properties(1, zustand.properties)[
+                "demand_growth_rate"
+            ]
+
+        groesste = max(je_rahmen.values())
+        kleinste = min(v for v in je_rahmen.values() if v > 0)
+
+        assert groesste / kleinste < 12.0, (
+            "Die Rahmen liegen auf dem Nachfragekanal um mehr als den Faktor zwölf "
+            f"auseinander — der Verdacht ist eine gemischte Zeitskala: {je_rahmen}"
+        )
+
+
 class TestDieBevoelkerungskurveRechnetInMonaten:
     """Der eine Mechanismus, der vor P3.8 Jahre unterstellte."""
 

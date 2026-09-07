@@ -26,7 +26,7 @@
     },
     {
       "property_id": "demand_growth_rate",
-      "baseline": 0.03
+      "baseline": 0.0025
     },
     {
       "property_id": "oil_price_index",

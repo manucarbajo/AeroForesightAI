@@ -60,7 +60,7 @@
     },
     {
       "property_id": "demand_growth_rate",
-      "baseline": 0.02
+      "baseline": 0.00165
     },
     {
       "property_id": "kapazitaet_index",
