@@ -287,7 +287,7 @@ nicht als Umbau.
   bleibt: Kapazität wäre ein weiterer exogener Verlauf im Rahmenszenario, mit
   Kohärenzbegründung wie die anderen.
 - **Invariante 1.** Kapazität ist eine Zahl aus Python; kein Agent bestimmt sie.
-- **Die offene Tick-Dauer** ([P3.8](projektplan.md#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--zurückgestellt-mit-grund-2026-09-05-neu-2026-08-31)).
+- **Die offene Tick-Dauer** ([P3.8](projektplan.md#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31)).
   Eine Kapazitätskurve hängt daran wie jede zeitabhängige Größe — sie ist als
   exogener Verlauf in Ticks formulierbar, aber ihre Steigung ist erst
   interpretierbar, wenn die Tick-Dauer feststeht. **Das ist ein Argument, P3.8

@@ -276,6 +276,26 @@ wenn auch weniger stark als die Umstellung auf die gezogene Buchung: Ein
 Standardlauf über 40 Runden endet bei einer Buchungsrate von 0,264 statt 0,259
 und einem Preis von 120,13 statt 118,85. Die Faktorlage bleibt dieselbe.
 
+Am **2026-09-07** kam ein zwölfter Schnitt dazu, und er trifft **jeden Lauf**:
+**Eine Runde ist ein Monat.** Bis dahin war das nicht festgelegt, und drei
+Mechanismen unterstellten drei verschiedene Zeitskalen — um den Faktor zwölf
+auseinander. Zwei Vorgaben rechneten in Jahren und rechnen jetzt in Monaten:
+
+* Die **Bevölkerungskurve** wächst um 2,7 Prozent über zehn Jahre statt um acht
+  Prozent über 29 Runden. Sie reicht außerdem bis Runde 120 statt bis Runde 30 —
+  in einem Standardlauf wächst die Bevölkerung damit bis zum Schluss, statt nach
+  drei Vierteln stehenzubleiben.
+* Das **Nachfragewachstum** steht bei 0,0025 je Runde statt bei 0,03. Der alte
+  Wert war als Jahresrate gemeint und wurde je Runde aufgezinst — das waren
+  42,6 Prozent im Jahr.
+
+**Die Jahresraten sind dabei unverändert geblieben**; geändert wurde die
+Einheit, nicht die Aussage über die Welt. **Die Zahlen verschieben sich
+trotzdem**, wenn auch schwach: Ein Standardlauf über 40 Runden endet bei einer
+Buchungsrate von **0,2679 statt 0,2685** und einem Preis von **116,59 statt
+116,46**. Die Faktorlage bleibt dieselbe. Am deutlichsten ist der Unterschied
+bei **langen** Läufen, weil sich dort beide Vorgaben am stärksten aufsummieren.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

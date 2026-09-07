@@ -1,12 +1,25 @@
 Ein Modell ist nur brauchbar, wenn man weiß, wo es aufhört zu tragen. Diese
 Grenzen sind bekannt und bewusst in Kauf genommen.
 
-## Keine Kalenderzeit
+## Kein Datum, aber ein Takt
 
-Ein Tick ist eine Modellrunde ohne Zeitbezug. Aussagen der Form «im Jahr 2032»
-lassen sich aus einem Lauf nicht ableiten, auch nicht durch Umrechnung. Was das
-Modell liefert, sind Wirkungsrichtungen und Größenordnungen unter gegebenen
-Annahmen.
+**Ein Tick ist ein Monat** — seit dem 7. September 2026 festgelegt, und zwar für
+alles, was sich im Lauf pro Runde verändert. Vierzig Runden sind gut drei Jahre.
+
+**Ein Datum ist er trotzdem nicht.** Aussagen der Form «im Jahr 2032 kostet das
+Ticket 214 Euro» lassen sich aus einem Lauf nicht ableiten, auch nicht durch
+Umrechnung: Das Modell ist auf keine Jahreszahl geeicht, kennt keine Saison und
+keinen Startzeitpunkt. Was es liefert, sind Wirkungsrichtungen und
+Größenordnungen unter gegebenen Annahmen.
+
+**Die Grenze liegt also nicht mehr beim Takt, sondern beim Bezugspunkt.** Sie
+dürfen «zwölf Runden sind ein Jahr» rechnen, wenn Sie eine Vorgabe einstellen.
+Sie dürfen nicht «Runde 40 ist der Dezember 2029» rechnen.
+
+**Und eine Einschränkung, die daraus folgt:** Ein Standardlauf über 40 Runden
+deckt gut drei Jahre ab, die mitgelieferten Szenarien gut vier. Für eine Frage
+über 2040 ist das der falsche Ausschnitt. Ob die Szenarien gestreckt werden,
+steht als offene Frage im Projektplan (P4.5).
 
 ## Ein Anbieter statt eines Marktes
 
@@ -61,10 +74,17 @@ diesem Datum sind mit späteren nicht vergleichbar.
 einer Person, nicht über die Zeit. Wer dieselbe Person zehn Runden später
 ansieht, findet sie unverändert alt — und mit unverändertem Einkommen.
 
-Das ist eine Entscheidung, keine Lücke. Eine Runde hat bewusst keine
-Kalenderbedeutung; jemanden je Runde altern zu lassen hieße festzulegen, wie
-viele Jahre eine Runde ist. Und es hieße, alle abgeleiteten Merkmale in jeder
-Runde neu zu bestimmen — aus einer Person würde damit eine andere.
+Das ist eine Entscheidung, keine Lücke — und ihre Begründung hat sich am 7.
+September 2026 verschoben, ohne dass sie schwächer geworden wäre. Bis dahin
+lautete sie: Eine Runde hat keine Kalenderbedeutung, jemanden je Runde altern zu
+lassen hieße erst festzulegen, wie viele Jahre eine Runde ist. Seit P3.8 ist das
+festgelegt — eine Runde ist ein Monat. **Der zweite Teil der Begründung trägt
+allein weiter, und er ist der stärkere:** Altern hieße, alle abgeleiteten
+Merkmale in jeder Runde neu zu bestimmen — Einkommen, Zahlungsbereitschaft,
+Preisempfindlichkeit —, und aus einer Person würde damit eine andere. Über einen
+Lauf von 40 Monaten wäre der Effekt ohnehin klein; über die 40 *Jahre*, als die
+man dieselbe Zahl früher lesen konnte, fiele die Buchungsrate um fast die Hälfte
+— und die Bevölkerung wäre am Ende im Schnitt 83.
 
 **Wie Sie die Altersgrafik deshalb lesen:** Sie beschreibt die
 **Zusammensetzung** der Bevölkerung, nicht denselben Menschen über die Zeit.

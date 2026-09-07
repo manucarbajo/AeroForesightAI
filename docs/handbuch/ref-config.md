@@ -59,6 +59,28 @@ Wertebereich; unter `individual_properties` die Merkmale einer Person mit ihren
 Verteilungen. `price_model`, `market_feedback` und `saturation` enthalten die
 Werte, die im Editor unter **Nachfrage & Preisbildung** stehen.
 
+### Einheiten, die eine Zeitskala tragen
+
+**Eine Runde ist ein Monat** (P3.8, seit dem 7. September 2026). Das steht in
+keiner Datei als Feld, wirkt sich aber auf jede Größe aus, deren Einheit auf
+`_per_tick` endet: Ihr Wert wird Runde für Runde aufgezinst.
+
+| Größe | Einheit | ausgeliefert | im Jahr |
+| --- | --- | ---: | ---: |
+| `demand_growth_rate` | `fraction_per_tick` | 0,0025 | 3,04 % |
+| `fuel_price_change` | `fraction_per_tick` | 0,005 | 6,17 % |
+| `erneuerungsrate` | `share_per_tick` | 0,0 | 0 % |
+
+**Wenn Sie einen dieser Werte ändern, rechnen Sie ihn zuerst aufs Jahr hoch** —
+zwölfmal aufgezinst, nicht mal zwölf. Der Unterschied ist der Grund, aus dem
+P3.8 überhaupt aufgefallen ist: `demand_growth_rate` stand auf 0,03 und war in
+der Beschreibung als *jährliche* Rate ausgewiesen. Aufgezinst waren es 42,6
+Prozent im Jahr.
+
+Dasselbe gilt für Verläufe mit Stützpunkten: `bevoelkerungsentwicklung` trägt
+Jahresstufen im Abstand von zwölf Runden und reicht bis Runde 120, also über
+zehn Jahre.
+
 ### Wie der Anbieter preist
 
 Unter `market_rules` steht die Regel `provider_yield_feedback`, und in ihr das

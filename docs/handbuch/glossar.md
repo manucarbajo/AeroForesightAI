@@ -139,7 +139,7 @@ Bild eine Bewegung der Bevölkerung ist und nicht eine nachgeführte Achse.
 **Szenario** — Eine mögliche Fortsetzung nach dem Lauf, nicht der Lauf selbst.
 Jeder Lauf erzeugt drei davon.
 
-**Tick** — Eine Modellrunde. Ohne Kalenderbedeutung. Siehe
+**Tick** — Eine Modellrunde. **In der Mechanik ein Monat** (seit dem 7. September 2026): Alles, was sich pro Runde verändert, rechnet in Monaten, vierzig Runden sind gut drei Jahre. **Ein Datum ist eine Runde trotzdem nicht** — sie lässt sich auf keine Jahreszahl abbilden. Siehe
 [Tick, Lauf und Szenario](/doku/tick-und-lauf).
 
 **Telemetrie** — Der rechte Bereich des Leitstands: Kennzahlen des gewählten
