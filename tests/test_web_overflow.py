@@ -868,7 +868,7 @@ _BREITE = """
 
     // (2) Zeichen je Zeile: jedes Zeichen bekommt sein eigenes Rechteck,
     //     Zeichen mit derselben Oberkante stehen auf derselben Zeile.
-    let zeile = 0, probe = null, wo = null;
+    let zeile = 0, probe = null, wo = null, traeger = null;
     const lauf = document.createTreeWalker(spalte, NodeFilter.SHOW_TEXT);
     let k;
     while ((k = lauf.nextNode())) {
@@ -903,14 +903,75 @@ _BREITE = """
                 // der die Meldung darunter fragt. Ein Befund, der die eigene
                 // Frage nicht beantwortet, kostet einen Durchlauf.
                 wo = k.parentElement.tagName + "." + String(k.parentElement.className);
+                traeger = k.parentElement;
             }
         });
+    }
+
+    // **Womit gemessen wurde, nicht nur was gemessen wurde** (2026-09-07).
+    //
+    // Die Zeichenzahl haengt an der Schrift: `af-mass` deckelt auf `53ch`, und
+    // `ch` ist die Breite der "0" in der gerade gesetzten Schrift. Wie viele
+    // Kleinbuchstaben in dieselbe Breite passen, entscheidet das Verhaeltnis von
+    // Ziffern- zu Buchstabenbreite -- und das ist je Schrift verschieden.
+    //
+    // Gemessen: lokal (Windows) <= 75 Zeichen, auf ubuntu-latest 78. Beide Male
+    // mit `af-mass` am Element und beide Male nach `document.fonts.ready`.
+    // Dessen Versprechen loest allerdings auch auf, wenn eine Schrift **nicht**
+    // geladen werden konnte -- es heisst "Laden abgeschlossen", nicht "Laden
+    // erfolgreich". Ohne die Angaben hier laesst sich nicht unterscheiden, ob
+    // Inter fehlt oder ob 53ch fuer Inter zu weit ist. Das sind zwei ganz
+    // verschiedene Reparaturen, und eine davon trifft das Deployment-Ziel.
+    let schrift = null;
+    if (traeger) {
+        const st = getComputedStyle(traeger);
+        // **Die Eigenschaften einzeln setzen, nicht die Kurzschreibweise.**
+        // `getComputedStyle(el).font` kam in Chromium leer zurueck, die Sonde
+        // erbte damit die Standardgroesse und meldete 10,38 px fuer eine Ziffer
+        // bei 12 px Schrift — 0,87 em, was fuer keine Schrift stimmt. Der erste
+        // Anlauf dieser Diagnose war damit selbst die Fehlmessung, die er
+        // aufklaeren sollte.
+        const probe0 = document.createElement("span");
+        probe0.textContent = "0";
+        probe0.style.position = "absolute";
+        probe0.style.visibility = "hidden";
+        probe0.style.whiteSpace = "pre";
+        probe0.style.fontFamily = st.fontFamily;
+        probe0.style.fontSize = st.fontSize;
+        probe0.style.fontWeight = st.fontWeight;
+        probe0.style.fontStyle = st.fontStyle;
+        // **Ohne `letter-spacing`**, weil `1ch` den reinen Vorschub der «0»
+        // meint. Ein Hinweis zum Deuten der Zahl: Unter Windows misst diese
+        // Sonde 7,78 px, waehrend der Deckel 401,227 px / 53 = **7,57 px** je
+        // `ch` unterstellt — 2,7 % Abstand. An der Laufweite liegt es nicht,
+        // das ist nachgeprueft (ohne sie kommt derselbe Wert heraus); woran
+        // dann, ist offen. Fuer die Diagnose reicht es: Verglichen wird
+        // Plattform gegen Plattform, nicht diese Sonde gegen `ch`.
+        document.body.appendChild(probe0);
+        const nullBreite = probe0.getBoundingClientRect().width;
+        probe0.remove();
+        const familien = new Set();
+        document.fonts.forEach((f) => {
+            if (f.status === "loaded") familien.add(f.family);
+        });
+        schrift = {
+            berechnet: st.fontFamily,
+            groesse: st.fontSize,
+            inter_benutzbar: document.fonts.check(st.fontSize + " Inter"),
+            null_px: +nullBreite.toFixed(2),
+            // Zum Gegenrechnen: `af-mass` deckelt auf 53ch, also muss
+            // `breite_px` ungefaehr 53 * null_px sein. Weicht das ab, misst die
+            // Sonde etwas anderes als der Browser umbricht.
+            breite_px: +traeger.getBoundingClientRect().width.toFixed(1),
+            deckel: st.maxWidth,
+            geladen: Array.from(familien).sort().join(", ") || "(keine)",
+        };
     }
 
     return {
         rumpf: Math.round(rb.width),
         fuellung: rechts > 0 ? +(((rechts - links) / rb.width) * 100).toFixed(1) : null,
-        zeichen: zeile, probe: probe, wo: wo,
+        zeichen: zeile, probe: probe, wo: wo, schrift: schrift,
     };
 }
 """
@@ -986,16 +1047,31 @@ class TestJederSchrittHatSeineBreite:
         für wirkungslos zu halten, der wirkte.
         """
 
-        lang = [
-            f"{titel}: {mass['zeichen']} Zeichen in {mass['wo']} — {mass['probe']!r}"
-            for titel, mass in _durch_die_schritte(page)
-            if mass and mass["zeichen"] > ZEILE_MAX
-        ]
+        lang = []
+        for titel, mass in _durch_die_schritte(page):
+            if not mass or mass["zeichen"] <= ZEILE_MAX:
+                continue
+            zeile = f"{titel}: {mass['zeichen']} Zeichen in {mass['wo']} — {mass['probe']!r}"
+            # **Womit gemessen wurde, gehört in die Meldung.** Ohne die Schrift
+            # ist «78 Zeichen» nicht zu deuten: Es kann heißen, dass `af-mass`
+            # zu weit ist, oder dass Inter fehlt und die Ersatzschrift gemessen
+            # wurde. Der erste Anlauf am 2026-09-07 hat genau daran einen
+            # CI-Durchlauf verloren.
+            if mass.get("schrift"):
+                s = mass["schrift"]
+                zeile += (
+                    f"\n      Schrift: {s['berechnet']} @ {s['groesse']}, "
+                    f"«0» = {s['null_px']} px, Inter benutzbar: {s['inter_benutzbar']}"
+                    f"\n      geladen: {s['geladen']}"
+                )
+            lang.append(zeile)
 
         assert not lang, (
             f"Diese Zeilen laufen bei {page.breite} px über {ZEILE_MAX} Zeichen:\n  "
             + "\n  ".join(lang)
-            + "\n\nDas Lesemaß (`af-mass`) fehlt dort — oder es ist zu weit."
+            + "\n\nDas Lesemaß (`af-mass`) fehlt dort — oder es ist zu weit. "
+            "Sagt «Inter benutzbar: False», ist keins von beidem der Befund, "
+            "sondern die Auslieferung der Schriften."
         )
 
     def test_the_entry_reserves_no_column_for_a_list_it_does_not_have(self, page):
