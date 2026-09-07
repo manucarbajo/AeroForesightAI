@@ -235,6 +235,48 @@ _SEITE_SCHIEBT = """
 """
 
 
+def _warte_auf_schriften(page) -> None:
+    """Warten, bis die Webschriften wirklich gesetzt sind.
+
+    **Auf das Versprechen warten, nicht auf den Status.** `document.fonts.status`
+    steht schon auf `loaded`, wenn die Schriften der *vorigen* Ansicht da sind —
+    fordert die neue eine weitere Schnittvariante an, misst man trotzdem zu früh.
+    `document.fonts.ready` wartet auf alles, was gerade läuft.
+
+    **Warum das seit dem 2026-09-07 eine eigene Funktion ist:** Sie stand im
+    Überlaufpfad und *nur* dort. Der Breitenwächter aus P1.9-W5.4 hat die Lehre
+    nicht geerbt und wartete auf einen Selektor, auf 900 ms und auf eine
+    Funktion — nicht auf die Schrift. Das ist bei warmem Cache folgenlos und auf
+    einem kalten CI-Runner nicht: Er zählt echte Zeichen bei `max-width: 53ch`,
+    und `ch` ist die Breite der «0» **in der gerade gesetzten Schrift**. Wird die
+    Ersatzschrift gemessen, ändert sich das Verhältnis von Ziffern- zu
+    Kleinbuchstabenbreite und damit die Zahl der Zeichen, die in dieselbe Breite
+    passen. Gemessen: lokal ≤ 75, auf ubuntu-latest **78**.
+
+    Der Satz dazu steht seit dem 2026-08-30 im Docstring von :func:`_befunde`
+    und galt auch hier: *Ein Wächter, der vom Ladezeitpunkt einer Schrift
+    abhängt, ist keiner.*
+    """
+
+    # **Zweimal fragen, einmal warten** — genau die Form, die im Überlaufpfad
+    # seit dem 2026-08-30 steht. Ein *dritter* Takt hinten dran (erster Anlauf
+    # am 2026-09-07) kostet 900 ms je Aufruf, ohne etwas zu beruhigen: Nach dem
+    # zweiten `ready` ist die Schrift gesetzt, sonst hätte das Versprechen
+    # nicht aufgelöst.
+    try:
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+    except PlaywrightError:
+        # Ohne Netz laedt keine Webschrift; dann misst man eben die
+        # Ersatzschrift — besser als gar nicht zu messen, und der Fall
+        # faellt woanders auf.
+        return
+    page.wait_for_timeout(RUHE_MS)
+    try:
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+    except PlaywrightError:
+        return
+
+
 def _befunde(page) -> list[dict]:
     """Erst warten, bis die **Schriften** da sind, dann messen.
 
@@ -248,21 +290,7 @@ def _befunde(page) -> list[dict]:
     Ein Wächter, der vom Ladezeitpunkt einer Schrift abhängt, ist keiner.
     """
 
-    # **Auf das Versprechen warten, nicht auf den Status.** `document.fonts.status`
-    # steht schon auf `loaded`, wenn die Schriften der *vorigen* Ansicht da sind
-    # — fordert die neue eine weitere Schnittvariante an, misst man trotzdem zu
-    # früh. `document.fonts.ready` wartet auf alles, was gerade lauft.
-    try:
-        page.evaluate("() => document.fonts.ready.then(() => true)")
-    except PlaywrightError:
-        # Ohne Netz laedt keine Webschrift; dann misst man eben die Ersatzschrift
-        # — besser als gar nicht zu messen, und der Fall faellt woanders auf.
-        pass
-    page.wait_for_timeout(RUHE_MS)
-    try:
-        page.evaluate("() => document.fonts.ready.then(() => true)")
-    except PlaywrightError:
-        pass
+    _warte_auf_schriften(page)
     return page.evaluate(_DETEKTOR)
 
 
@@ -869,7 +897,12 @@ _BREITE = """
             if (anzahl > zeile) {
                 zeile = anzahl;
                 probe = text.trim().slice(0, 40);
-                wo = k.parentElement.tagName + "." + String(k.parentElement.className).slice(0, 40);
+                // **Ungekuerzt.** Bis zum 2026-09-07 stand hier `.slice(0, 40)`,
+                // und die Meldung endete regelmaessig auf "... mt-1 af-" --
+                // abgeschnitten genau vor `af-mass`, also vor der Klasse, nach
+                // der die Meldung darunter fragt. Ein Befund, der die eigene
+                // Frage nicht beantwortet, kostet einen Durchlauf.
+                wo = k.parentElement.tagName + "." + String(k.parentElement.className);
             }
         });
     }
@@ -914,6 +947,10 @@ def _durch_die_schritte(page):
             " return e && e.getBoundingClientRect().height > 50; }",
             timeout=10_000,
         )
+        # **Vor jeder Messung**, nicht einmal am Anfang: Jeder Schritt kann eine
+        # weitere Schnittvariante anfordern, und `_BREITE` zählt Zeichen — die
+        # Zahl hängt an der Schrift, die in diesem Moment gesetzt ist.
+        _warte_auf_schriften(page)
         yield wizard.STEPS[index].title, page.evaluate(_BREITE)
 
 
@@ -1628,7 +1665,30 @@ AUSSAGEN = [
 
 
 def _oeffne_figures(page) -> None:
-    """Zum Reiter «Figures» der Ergebnisse — dort wohnen die vier Aussagen."""
+    """Zum Reiter «Figures» der Ergebnisse — dort wohnen die vier Aussagen.
+
+    **Erst prüfen, ob es überhaupt einen Lauf gibt.** Ohne einen zeigt die
+    Ergebnis-Ansicht keine Reiter, und der Wächter lief bis zum 2026-09-07 in
+    sechs Timeouts à fünfzehn Sekunden, deren Meldung «`#figures-tabs` nicht
+    sichtbar» lautete — richtig und nutzlos.
+
+    Der Fall ist nicht theoretisch: Er ist der **Normalzustand eines sauberen
+    Checkouts** und deshalb der Zustand jedes CI-Laufs. Aufgefallen ist er erst,
+    als P3.17 den Wächter in die CI gestellt hat; auf der Entwicklungsmaschine
+    lagen 389 Läufe in `outputs/`, und er war grün, weil sie da waren.
+    """
+
+    from dashboard.run_browser import list_runs
+
+    if not list_runs():
+        pytest.fail(
+            "Kein Lauf in `outputs/` — diese Zusagen messen die Ergebnis-Ansicht und "
+            "brauchen Daten. Einen erzeugen:\n"
+            "  python -m src.run_simulation --mock-llm --rounds 20 --seed 42 --quiet "
+            "--run-id run_ci_referenz\n"
+            "Der Name muss mit `run_` beginnen, sonst findet `list_runs` ihn nicht. "
+            "In der CI erledigt das der Schritt «Ein Lauf zum Messen» in browser.yml."
+        )
 
     page.goto(page.basis + "runs", wait_until="networkidle")
     page.wait_for_selector(".af-viewbar__item")
