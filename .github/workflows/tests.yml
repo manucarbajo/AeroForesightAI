@@ -43,9 +43,16 @@ jobs:
         # tests/test_web_overflow.py (the P1.7-D overflow guard) is NOT deselected --
         # it skips itself, because playwright lives in the optional `ui` extra and no
         # browser is installed here. That was a deliberate call: the guard needs a real
-        # browser (~150 MB per run) and is meant to be run locally by whoever touches
-        # the presentation layer. To arm it in CI, add `pip install playwright &&
-        # playwright install chromium` above -- and expect roughly four more minutes.
+        # browser (~150 MB per run) and takes ~25 minutes, so it does not belong in the
+        # path of every commit.
+        #
+        # It now runs in its own workflow: .github/workflows/browser.yml -- on demand,
+        # nightly, and on every pull request that touches dashboard/web/** (P3.17).
+        # Do NOT arm it here as well. The reason it needed its own workflow is worth
+        # knowing: "whoever touches the presentation layer runs it locally" was refuted
+        # three times in six days, and each time the regression sat unseen for days
+        # (P2.0-C, then A1 and P2.8-Rest -- all three touched dashboard/web/**, which is
+        # exactly what the new paths filter watches).
         run: |
           pytest -q \
             --deselect tests/test_scenario_sweeps.py::test_run_single_sweep_short \

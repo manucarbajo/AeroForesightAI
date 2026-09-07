@@ -142,11 +142,30 @@ OLLAMA_BASE_URL=http://127.0.0.1:11434
 | Ziel | Variablen in `.env` |
 | --- | --- |
 | **Ollama lokal** (Standard) | `OLLAMA_MODEL=llama3.2`, `OLLAMA_BASE_URL=http://127.0.0.1:11434` — Modell vorher starten: `ollama run llama3.2` |
-| **Mock ohne Ollama** | Batch mit `--mock-llm`; Studio und Dashboard nutzen den Mock, wenn keine Ollama-Variablen gesetzt sind |
+| **Mock ohne Ollama** | Batch mit `--mock-llm`, Dashboard mit «Ohne Sprachmodell»; in Studio und der Szenario-CLI ausdrücklich mit `AEROFORESIGHT_MOCK_LLM=1` |
 | **HTTP-LLM** | `LLAMA_HTTP_URL=http://…` |
 | **Transformers lokal** | `LLAMA_TRANSFORMERS_MODEL=…` |
 
 Backend-Auswahl in Code: `src/llm/studio_helpers.get_llm()` (Priorität: Ollama → HTTP → Transformers → Mock).
+
+**Die Vorgabewerte stehen an genau einer Stelle** (seit P3.4): `src/llm/defaults.py`
+— Modellname, Endpunkt, Temperatur, Antwortlänge. Ein Endpunktwechsel ist damit eine
+Änderung und nicht neun; ein AST-Wächter (`tests/test_llm_defaults.py`) meldet jede
+zweite Quelle, auch in einem Modul, das es heute noch nicht gibt.
+
+**Und die vier Variablen wirken überall**, nicht nur im Studio: `OLLAMA_BASE_URL`,
+`OLLAMA_MODEL`, `OLLAMA_TEMPERATURE` und `OLLAMA_MAX_TOKENS` werden in
+`OllamaConfig` selbst gelesen. Vorher saß diese Übersetzung allein in
+`LocalOllama`, und jeder Aufrufer, der seinen Client direkt baut — der Sweep-Pfad
+tut das —, ignorierte sie stillschweigend: Ein Sweep gegen
+`OLLAMA_BASE_URL=http://127.0.0.1:9` lief trotzdem gegen Port 11434. Ein
+ausdrücklich gesetzter Wert (CLI-Argument, Dashboard-Feld) gewinnt weiterhin gegen
+die Umgebung. Eine Variable, die keine Zahl enthält (`OLLAMA_TEMPERATURE=0,7` mit
+Komma), fällt auf den Vorgabewert zurück und **sagt es im Log** — vorher war das
+still.
+
+Der Endpunkt lautet `127.0.0.1` und nicht `localhost`: Letzteres löst auf manchen
+Windows-Installationen zuerst nach `::1` auf, während Ollama nur auf IPv4 lauscht.
 
 `--mock-llm` geht seit P0.1 **an dieser Auswahl vorbei** und liefert immer das
 Mock-Backend. Vorher hing der Schalter an der Umgebung: war `OLLAMA_MODEL`
@@ -154,6 +173,15 @@ gesetzt, versuchte auch ein „Mock"-Lauf, Ollama zu erreichen. Fällt ein echte
 Backend aus, wird das jetzt gemeldet und im Lauf festgehalten, statt still durch
 eine erfundene Antwort ersetzt zu werden — siehe
 [Fehlerbilder](docs/handbuch/fehlerbilder.md).
+
+**Und seit P3.4 wird der Mock nicht mehr still gewählt.** Bis dahin war er der
+letzte Zweig der Kette: War keine der drei Variablen gesetzt, gab `get_llm()`
+kommentarlos den Mock zurück — wer Studio ohne `.env` startete, bekam erfundene
+Agenten-Antworten, ohne sie angefordert zu haben, und nach Invariante 1 war das
+nicht einmal ein „Ausfall", weil nie ein Aufruf gescheitert war. Jetzt scheitert
+`get_llm()` in diesem Fall mit einer Meldung, die alle vier Wege nennt, und
+**jede** getroffene Wahl steht als `INFO` im Log. Wer den Mock will, sagt es:
+`AEROFORESIGHT_MOCK_LLM=1`.
 
 ### Schritt 3: LangSmith (optional)
 
@@ -263,6 +291,16 @@ auf `null` — die Datei behauptet kein Modell, das nie gefragt wurde.
 | `--checkpoint-interval N` | Checkpoint alle N Ticks (Default: 5) |
 | `--no-market` | MarketNode deaktivieren |
 | `--runs N` | Mehrere unabhängige Läufe (Batch unter `outputs/batch_<timestamp>/`) |
+
+**Exit-Codes:** `0` = Lauf durchgelaufen, `2` = die Konfiguration lässt keinen Lauf
+zu (die Befunde stehen als Liste auf `stderr`, ebenso ein Zwischenstand mit fremder
+Formatversion). Ein **Traceback** heißt seit P3.3 nicht mehr «Eingabe falsch»,
+sondern «Programmfehler» — er gehört gemeldet.
+
+**Umleiten ist sicher** (seit P3.10): `… > lauf.log` schreibt UTF-8. Unter Windows
+spricht ein umgeleiteter `stdout` sonst `cp1252`, und jede Meldung mit `→`, `≥` oder
+`CO₂` wäre mit einem `UnicodeEncodeError` verschwunden statt zu erscheinen — auf
+einer Konsole trat das nie auf, weshalb es lange niemandem aufgefallen ist.
 
 ### Figures
 

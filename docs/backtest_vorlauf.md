@@ -7,22 +7,22 @@
 | Jahr | Modell | Zielreihe | Abstand | |
 | --- | ---: | ---: | ---: | --- |
 | 2015 | 100.00 | 100.00 | +0.00 | Basis, Abstand per Konstruktion 0 |
-| 2016 | 97.84 | 97.42 | +0.42 |  |
-| 2017 | 104.93 | 102.64 | +2.29 |  |
-| 2018 | 105.95 | 104.95 | +1.00 |  |
-| 2019 | 107.31 | 107.00 | +0.31 |  |
-| 2020 | 130.23 | 102.48 | +27.75 | ungewertet |
-| 2021 | 157.20 | 105.98 | +51.22 | ungewertet |
-| 2022 | 141.09 | 131.93 | +9.16 |  |
-| 2023 | 124.62 | 144.57 | -19.95 |  |
-| 2024 | 113.37 | 148.25 | -34.88 |  |
+| 2016 | 97.76 | 97.42 | +0.34 |  |
+| 2017 | 105.57 | 102.64 | +2.93 |  |
+| 2018 | 105.96 | 104.95 | +1.01 |  |
+| 2019 | 107.33 | 107.00 | +0.33 |  |
+| 2020 | 130.19 | 102.48 | +27.71 | ungewertet |
+| 2021 | 157.16 | 105.98 | +51.18 | ungewertet |
+| 2022 | 141.02 | 131.93 | +9.09 |  |
+| 2023 | 124.51 | 144.57 | -20.06 |  |
+| 2024 | 113.28 | 148.25 | -34.97 |  |
 
 | Kennzahl | Wert |
 | --- | ---: |
-| Mittlerer Abstand, bewertete Jahre | 9.72 |
-| Größter Abstand | 34.88 (2024) |
-| davon 2016–2019 | 1.01 |
-| davon 2022–2024 | 21.33 |
+| Mittlerer Abstand, bewertete Jahre | 9.82 |
+| Größter Abstand | 34.97 (2024) |
+| davon 2016–2019 | 1.15 |
+| davon 2022–2024 | 21.37 |
 | Richtung der Jahresveränderung getroffen | 5/7 |
 | Saisonschwankung Modell / Ziel | 17.9 / 39.8 |
 
@@ -37,24 +37,24 @@
 | Jahr | Modell | Zielreihe | Abstand | |
 | --- | ---: | ---: | ---: | --- |
 | 2015 | 100.00 | 100.00 | +0.00 | Basis, Abstand per Konstruktion 0 |
-| 2016 | 95.19 | 106.34 | -11.15 |  |
-| 2017 | 90.24 | 114.54 | -24.30 |  |
-| 2018 | 91.54 | 121.54 | -30.00 |  |
-| 2019 | 92.35 | 126.28 | -33.93 |  |
-| 2020 | 48.67 | 33.76 | +14.91 | ungewertet |
-| 2021 | 30.71 | 45.60 | -14.89 | ungewertet |
-| 2022 | 47.82 | 99.63 | -51.81 |  |
-| 2023 | 61.45 | 118.70 | -57.25 |  |
-| 2024 | 82.30 | 128.38 | -46.08 |  |
+| 2016 | 94.99 | 106.34 | -11.35 |  |
+| 2017 | 89.13 | 114.54 | -25.41 |  |
+| 2018 | 92.06 | 121.54 | -29.48 |  |
+| 2019 | 92.37 | 126.28 | -33.91 |  |
+| 2020 | 48.47 | 33.76 | +14.71 | ungewertet |
+| 2021 | 30.84 | 45.60 | -14.76 | ungewertet |
+| 2022 | 47.74 | 99.63 | -51.89 |  |
+| 2023 | 61.47 | 118.70 | -57.23 |  |
+| 2024 | 82.57 | 128.38 | -45.81 |  |
 
 | Kennzahl | Wert |
 | --- | ---: |
-| Mittlerer Abstand, bewertete Jahre | 36.36 |
-| Größter Abstand | 57.25 (2023) |
-| davon 2016–2019 | 24.85 |
-| davon 2022–2024 | 51.71 |
+| Mittlerer Abstand, bewertete Jahre | 36.44 |
+| Größter Abstand | 57.22 (2023) |
+| davon 2016–2019 | 25.04 |
+| davon 2022–2024 | 51.64 |
 | Richtung der Jahresveränderung getroffen | 5/7 |
-| Saisonschwankung Modell / Ziel | 31.0 / 75.9 |
+| Saisonschwankung Modell / Ziel | 30.5 / 75.9 |
 
 - Verglichen wird der Index (Basis 2015 = 100) auf **Jahresmitteln**, nicht das Preisniveau und nicht monatlich.
 - 2015 steht in der Tabelle, geht aber **nicht** in den Abstand ein: Beide Reihen sind darauf indexiert, sein Abstand ist per Konstruktion null. In die **Richtung** der Jahresveränderung zählt es mit — tautologisch ist das Niveau, nicht die Bewegung zum Folgejahr.
@@ -68,14 +68,14 @@ Der Eingang `kapazitaet_index` (Eurostat `avia_paoc`, `CAF_PAS` — Flüge) und 
 
 | Seite | Kennzahl | mit Kapazität | ohne |
 | --- | --- | ---: | ---: |
-| Preis | Abstand gesamt | 9.72 | 16.70 |
-| Preis | davon 2016–2019 | 1.01 | 2.16 |
-| Preis | davon 2022–2024 | 21.33 | 36.08 |
+| Preis | Abstand gesamt | 9.82 | 16.56 |
+| Preis | davon 2016–2019 | 1.15 | 1.96 |
+| Preis | davon 2022–2024 | 21.37 | 36.03 |
 | Preis | Richtung getroffen | 5/7 | 5/7 |
-| Nachfrage | Abstand gesamt | 36.36 | 28.65 |
-| Nachfrage | davon 2016–2019 | 24.85 | 27.18 |
-| Nachfrage | davon 2022–2024 | 51.71 | 30.61 |
-| Nachfrage | Richtung getroffen | 5/7 | 1/7 |
+| Nachfrage | Abstand gesamt | 36.44 | 28.15 |
+| Nachfrage | davon 2016–2019 | 25.04 | 26.13 |
+| Nachfrage | davon 2022–2024 | 51.64 | 30.84 |
+| Nachfrage | Richtung getroffen | 5/7 | 3/7 |
 
 **Wie das zu lesen ist:** Würde der Eingang die Übereinstimmung nur widerhallen, müsste der **Abstand** mit ihm kleiner sein. Auf der Nachfrageseite ist er größer — das Modell folgt den *Flügen* und verfehlt damit die *Passagiere*, die stärker gewachsen sind. Was er beiträgt, zeigt sich an der **Richtung** und an der **Preisseite**, deren Zielreihe aus einer ganz anderen Quelle stammt (Eurostat `prc_hicp_midx`) und deshalb nicht zirkulär sein kann.
 

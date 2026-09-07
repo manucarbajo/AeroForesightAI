@@ -288,9 +288,9 @@ def abdruck_von(monkeypatch, tmp_path):
     monkeypatch.setattr(sweeps, "SWEEP_OUTPUT_DIR", tmp_path / "sweeps")
     monkeypatch.setattr(run_launcher, "resolve_run_output_dir", lambda run_id: tmp_path / run_id)
     monkeypatch.setattr(run_launcher, "generate_figures_for_run", lambda *_a, **_k: None)
-    monkeypatch.setattr(run_simulation, "_save_run_outputs", lambda *_a, **_k: {})
-    monkeypatch.setattr(run_simulation, "_build_run_args", lambda *_a, **_k: None)
-    monkeypatch.setattr(run_simulation, "_write_multi_run_summary", lambda **_k: None)
+    monkeypatch.setattr(run_simulation, "save_run_outputs", lambda *_a, **_k: {})
+    monkeypatch.setattr(run_simulation, "build_run_args", lambda *_a, **_k: None)
+    monkeypatch.setattr(run_simulation, "write_multi_run_summary", lambda **_k: None)
 
     def nehmen(draft: ConfigDraft) -> Abdruck:
         aufzeichnung.zustand = aufzeichnung.optionen = None

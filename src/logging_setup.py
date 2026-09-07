@@ -14,6 +14,9 @@ Zwei Kanäle, absichtlich getrennt:
   Tee und stünde im Dashboard doppelt.
 * `progress_logging` hängt für die Dauer eines Laufs einen zweiten Handler an,
   der die Zeilen an das Fortschrittsfenster des Dashboards weiterreicht.
+
+Dazu kommt seit P3.10 eine dritte Frage, die vor beiden liegt: **ob der Strom
+das Zeichen überhaupt schreiben kann.** `stdio_auf_utf8` beantwortet sie.
 """
 
 from __future__ import annotations
@@ -31,6 +34,67 @@ CONSOLE_FORMAT = "%(levelname)s %(name)s: %(message)s"
 #: Marker am Handler, damit ein zweiter Aufruf ihn wiedererkennt statt zu doppeln.
 _CONSOLE_MARKER = "_aeroforesight_console"
 _PROGRESS_MARKER = "_aeroforesight_progress"
+
+logger = logging.getLogger(__name__)
+
+
+def stdio_auf_utf8() -> None:
+    """`stdout` und `stderr` auf UTF-8 stellen, damit keine Meldung am Zeichensatz scheitert (P3.10).
+
+    **Der Befund war nicht die Konsole, sondern die Umleitung** — gemessen am
+    2026-09-05, und die Messung hat die Vermutung des Projektplans widerlegt:
+
+    * Auf einer **echten Konsole** ist `sys.stdout` ein `_WindowsConsoleIO` mit
+      `encoding="utf-8"`. Ein `≥` läuft dort seit jeher durch.
+    * Ist die Ausgabe **umgeleitet** (Datei, Pipe, CI, ein Dienst, der `stdout`
+      einsammelt), ist es ein `FileIO` mit `encoding="cp1252"` — und dann wirft
+      jedes `print` mit `→`, `≥`, `₂` oder `Δ` einen `UnicodeEncodeError`.
+
+    In `src/` stehen **46** solcher Laufzeittexte. Die schlimmsten drei Wege:
+
+    1. **Der Vorbehalt des State Explorers** (P2.5) beginnt mit `⚠️`. Bei
+       umgeleiteter Ausgabe stürzt damit ausgerechnet die Marke ab, die vor
+       unbelegten Zahlen warnt.
+    2. **Das Fortschrittsfenster des Dashboards verliert die Zeile ganz.** Der
+       Tee in `run_launcher` schreibt **zuerst** auf die echte Konsole und ruft
+       *danach* den Callback; wirft der erste Schritt, sieht das Fenster nichts
+       — und die Ausnahme läuft in den Lauf hinein.
+    3. `logging` verschluckt die Zeile und schreibt «--- Logging error ---»
+       samt Stack auf `stderr`.
+
+    **Warum UTF-8 und nicht 46 Umschreibungen:** `CO₂` ist der Name des Stoffs
+    und `→` gehört in einen Erklärtext. Der Fehler liegt am Ausgabeende, also
+    wird er dort behoben — an einer Stelle statt an sechsundvierzig.
+
+    **Und warum ohne den befürchteten Preis:** Der Plan hatte gegen diesen Weg
+    eingewendet, eine cp1252-Konsole zeige UTF-8-Bytes als Buchstabensalat.
+    Diese Konsole gibt es nicht — wo cp1252 auftaucht, schreibt Python in eine
+    Datei oder Pipe, und dort ist UTF-8 genau richtig. Auf einer Konsole ändert
+    der Aufruf nichts, weil sie schon UTF-8 spricht.
+
+    **Idempotent und harmlos, wo es nicht geht:** Unter `pytest` ist `sys.stdout`
+    kein `TextIOWrapper` und kennt kein `reconfigure` — dann passiert nichts, und
+    das ist richtig: Die Erfassung von pytest ist ohnehin UTF-8.
+    """
+
+    for name in ("stdout", "stderr"):
+        strom = getattr(sys, name, None)
+        neu_einstellen = getattr(strom, "reconfigure", None)
+        if neu_einstellen is None:
+            continue
+        try:
+            neu_einstellen(encoding="utf-8")
+        except (ValueError, OSError) as fehler:
+            # **Nicht still.** Ein Strom, der sich nicht umstellen lässt (bereits
+            # abgetrennt, geschlossen), bleibt bei seinem Zeichensatz — dann
+            # scheitert die nächste Meldung mit `≥` wieder, und wer das sucht,
+            # soll hier fündig werden.
+            logger.warning(
+                "sys.%s ließ sich nicht auf UTF-8 stellen (%s) — Meldungen mit "
+                "Sonderzeichen können an diesem Strom weiterhin scheitern.",
+                name,
+                fehler,
+            )
 
 
 def configure_logging(level: int = logging.INFO, *, stream: TextIO | None = None) -> None:

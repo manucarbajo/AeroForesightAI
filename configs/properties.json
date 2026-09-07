@@ -4,12 +4,12 @@
       "id": "demand_growth_rate",
       "type": "numeric",
       "unit": "fraction_per_tick",
-      "description": "Jaehrliche Wachstumsrate der Flugnachfrage",
+      "description": "Wachstumsrate der Flugnachfrage JE TICK, also je Monat (P3.8). Sie wird in sync_demand_level und compute_demand aufgezinst, ein Tick nach dem anderen. ACHTUNG BEIM AENDERN: Bis zum 2026-09-07 stand hier 0,03 und daneben das Wort 'Jaehrliche' -- das Feld widersprach sich selbst, Einheit gegen Beschreibung. Aufgezinst waren 0,03 je Monat 42,58 % im Jahr; ueber die 120 Ticks des Backtests der Faktor 34,7. Der Wert ist deshalb die MONATSRATE derselben Jahresrate: 0,0025 je Tick sind 3,04 % p.a. Geaendert hat sich die Einheit, nicht die Aussage. Die Grenzen -0,05 bis 0,1 bleiben absichtlich weit -- die Stresstests in configs/sweeps/ fahren sie bewusst aus, und ihre Verlaeufe sind auf Sichtbarkeit gebaut, nicht auf Plausibilitaet.",
       "source": "trajectory",
       "min_value": -0.05,
       "max_value": 0.1,
       "trajectory": {
-        "baseline": 0.03,
+        "baseline": 0.0025,
         "rules": []
       }
     },
@@ -17,7 +17,7 @@
       "id": "fuel_price_change",
       "type": "numeric",
       "unit": "fraction_per_tick",
-      "description": "Veraenderung der Treibstoffkosten pro Tick",
+      "description": "Veraenderung der Treibstoffkosten je Tick, also je Monat (P3.8). Wird in update_cost_index aufgezinst. Der Standard 0,005 entspricht 6,17 % im Jahr -- als Monatsrate plausibel fuer einen Kostentrend, als Jahresrate (0,5 % p.a.) waere er fuer Treibstoff unplausibel niedrig. Dieses Feld hat die Monatslesart also schon vor P3.8 unterstellt und ist deshalb bei der Festlegung UNVERAENDERT geblieben.",
       "source": "trajectory",
       "min_value": -0.1,
       "max_value": 0.2,
@@ -184,6 +184,7 @@
       "id": "bevoelkerungsentwicklung",
       "type": "numeric",
       "unit": "persons",
+      "description": "Groesse der simulierten Bevoelkerung je Tick. EIN TICK IST EIN MONAT (P3.8, entschieden 2026-09-07) -- diese Kurve rechnet seither in Monaten. Die JAHRESRATE ist dabei unveraendert geblieben: 0,2657 % p.a., genau der Wert, den die Kurve vor P3.8 behauptete, wenn man ihre 29 Ticks als Jahre las (1000 -> 1080). Geaendert hat sich die Einheit, nicht die Aussage ueber die Welt -- als Monate gelesen hatte dieselbe Kurve +3,24 % p.a. verlangt, und das gibt es in Europa nirgends. Die Rate liegt am oberen Rand des Bandes, das Eurostat fuer die EU-27 ausweist (0,1 bis 0,3 % p.a.); sie ist gesetzt und nicht geschaetzt. JAHRESSTUFEN, weil Bevoelkerungsstatistik jaehrlich erhoben wird -- ein Monatsraster taeuschte eine Genauigkeit vor, die die Quelle nicht hat. HORIZONT bis Tick 120: das sind zehn Jahre und zugleich das Fenster des Backtests (2015-01 bis 2024-12). Vorher endete die Kurve bei Tick 30, und der Backtest rechnete 90 seiner 120 Ticks mit eingefrorener Bevoelkerung.",
       "source": "trajectory",
       "trajectory": {
         "type": "step_function",
@@ -193,16 +194,44 @@
             "value": 1000
           },
           {
-            "tick": 10,
-            "value": 1020
+            "tick": 13,
+            "value": 1003
           },
           {
-            "tick": 20,
-            "value": 1050
+            "tick": 25,
+            "value": 1005
           },
           {
-            "tick": 30,
-            "value": 1080
+            "tick": 37,
+            "value": 1008
+          },
+          {
+            "tick": 49,
+            "value": 1011
+          },
+          {
+            "tick": 61,
+            "value": 1013
+          },
+          {
+            "tick": 73,
+            "value": 1016
+          },
+          {
+            "tick": 85,
+            "value": 1019
+          },
+          {
+            "tick": 97,
+            "value": 1021
+          },
+          {
+            "tick": 109,
+            "value": 1024
+          },
+          {
+            "tick": 120,
+            "value": 1027
           }
         ]
       }
@@ -223,7 +252,7 @@
       "id": "erneuerungsrate",
       "type": "numeric",
       "unit": "share_per_tick",
-      "description": "Anteil der Bevoelkerung, der je Tick ausgetauscht wird: Aeltere scheiden aus, ebenso viele kommen neu hinzu. Ohne diese Erneuerung leben dieselben Personen ewig weiter, und eine Vorgabe fuer altersmittel_jahre bliebe wirkungslos. Standard 0,0 = keine Erneuerung, also der Stand vor P2.4-E. ACHTUNG: Die Rate haengt an der Tick-Dauer, und die ist im Modell noch nicht einheitlich festgelegt (P3.8) -- bei einem Tick als Jahr waeren rund 0,014 realistisch, bei einem Tick als Monat ein Zwoelftel davon.",
+      "description": "Anteil der Bevoelkerung, der je Tick ausgetauscht wird: Wer geht, wird ZUFAELLIG gezogen -- nicht nach Alter gewichtet; ebenso viele kommen neu hinzu, gezogen aus der Verteilung, die dann gilt. Das Ausscheiden nach Alter zu gewichten war der erste Anlauf und ist gemessen falsch: Wer die Aeltesten entfernt und aus der vollen Verteilung nachzieht, verjuengt zwangslaeufig -- die Bevoelkerung zog damit auf 45,5 statt auf die verlangten 60. altersmittel_jahre ist ein Kompositionsziel, keine Sterbetafel. Ohne diese Erneuerung leben dieselben Personen ewig weiter, und eine Vorgabe fuer altersmittel_jahre bliebe wirkungslos. Standard 0,0 = keine Erneuerung, also der Stand vor P2.4-E. Die Rate haengt an der Tick-Dauer, und die ist seit P3.8 festgelegt: EIN TICK IST EIN MONAT, realistisch waeren also rund 0,0012 je Tick (ein Zwoelftel der jaehrlichen 0,014). Der Standard bleibt trotzdem 0,0, und der Grund ist seit P3.8 ein anderer als vorher: Nicht die Tick-Dauer ist offen, sondern eine stehende Gesellschaft ist eine gueltige Aussage -- und eine Erneuerung ohne Verlauf fuer altersmittel_jahre tauscht Personen gegen statistisch gleiche aus, also ohne jede Wirkung. Wer eine alternde Gesellschaft rechnen will, setzt BEIDES.",
       "source": "trajectory",
       "min_value": 0.0,
       "max_value": 0.2,
@@ -847,6 +876,6 @@
       "Verordnung (EU) 2023/2405 (ReFuelEU Aviation): SAF-Beimischung 2 % ab 2025, 6 % ab 2030 — Anlass für die Reihenfolge aus Quote vor Preisstufe",
       "configs/backtest/quellen.json — EEX-Auktionspreise und Brent, 2015–2024, im Repo eingecheckt und nachrechenbar"
     ],
-    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung: Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Zwei Dinge zusätzlich, weil sie leicht übersehen werden: Die **konstante Kapazität** ist eine Annahme und keine Abwesenheit einer Annahme — wer eine wachsende oder schrumpfende Angebotsseite meint, wählt einen der anderen Rahmen oder setzt `kapazitaet_index` selbst. Und die **Bevölkerungskurve endet bei Tick 30**, während ein Standardlauf 40 Ticks geht: Das letzte Viertel rechnet mit einer eingefrorenen Bevölkerung, ohne dass etwas darauf hinweist (offene Restposition von P2.8)."
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung: Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick ist seit P3.8 zwar ein **Monat**, trägt aber weiterhin **kein Datum** (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Ein Standardlauf über 40 Ticks deckt damit gut drei Jahre ab. Ob das die Spanne ist, die diese Begründung meint, ist eine offene Produktfrage (P4.5). Zwei Dinge zusätzlich, weil sie leicht übersehen werden: Die **konstante Kapazität** ist eine Annahme und keine Abwesenheit einer Annahme — wer eine wachsende oder schrumpfende Angebotsseite meint, wählt einen der anderen Rahmen oder setzt `kapazitaet_index` selbst. Die **Bevölkerungskurve** reicht seit P3.8 bis Tick 120 und deckt damit jeden üblichen Lauf — bis zum 2026-09-07 endete sie bei Tick 30, und das letzte Viertel eines Standardlaufs rechnete mit einer eingefrorenen Bevölkerung. Was bleibt, ist ihre **Höhe**: Über zehn Jahre wächst sie um 2,7 Prozent, und mehr Nachfragewachstum nach oben kennt das Modell nicht (Befund aus P2.7)."
   }
 }

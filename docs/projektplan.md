@@ -1,6 +1,6 @@
 # Projektplan
 
-**Stand:** 2026-08-28 — **Phase 0 ist abgeschlossen**, **P1.1 ist erledigt**, und darauf ist **P1.5** gefolgt: Das Dashboard ist jetzt ein **Leitstand** — ein Bildschirm mit fünf Zonen statt eines Stapels Seiten, mit umschaltbarem hellen und dunklen Design und einer Tick-Zeitleiste, die Szene, Kennzahlen und Verläufe gemeinsam führt ([Einzelheiten](#p15--leitstand-oberfläche--erledigt-2026-08-28)). Auch dort lag der eigentliche Fund unter der Oberfläche: Die Stile für Dashs eigene Komponenten griffen seit dem Sprung auf Dash 4 an **keiner einzigen Stelle** mehr — im hellen Modus unsichtbar, im dunklen ein violetter Regler mit schwarzer Beschriftung auf schwarzem Grund. Direkt darauf folgte **P1.6**, weil die Vermessung des Ergebnisses einen Rückschritt zeigte: Die linke Spalte war mit der hineingepressten Konfiguration **10,7 Bildschirme** hoch, und der Start-Knopf lag 6,1 Bildschirme tief — bei erfüllten Abnahmekriterien beider Vorgängerpakete. Einrichten und Beobachten sind jetzt getrennt, die Spalte ist ein Bedienfeld, und die Kriterien von P1.1 und P1.5 sind um eine Größe ergänzt, die **Erreichbarkeit** misst statt Anzahl ([Einzelheiten](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28)). Zu P1.1: «Simulation starten» führt jetzt in drei Entscheidungen zum Lauf ([Einzelheiten](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28)). Dabei kam ein Fund heraus, der nicht in der Oberfläche lag: Ein gewähltes Szenario-Preset wurde im Dashboard **still von den Datei-Defaults überschrieben** — bei allen acht ausgelieferten Presets, ein Lauf «Business as Usual» rechnete mit steigender CO₂-Abgabe. Behoben, mit einem Wächter über jede Datei unter `configs/sweeps/`. Phase 0 im Übrigen unverändert und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2 war die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase; sie ist seit dem **2026-08-29 zurückgestellt mit Grund** und nicht mehr eingeplant, siehe die Entscheidung unten. Die drei Phase-1-Pakete sind **gegengeprüft** (Manu, 2026-08-28): Die tragenden Zusagen halten, drei Befunde lagen in der Darstellung — ein Schubladen-Knopf, dessen Versteck-Regel die Kaskade verlor und deshalb nie wirkte, sein Haltepunkt, der der falschen Zone gehörte, und ein Laufzustand, der nur die eigene Sitzung kannte; alle drei behoben ([Einzelheiten](#gegenprobe-zu-p11p15p16-manu-2026-08-28)). Daraus ist **P1.7** entstanden, und es ist erledigt: Der Ablauf **ist** jetzt die Oberfläche — Einrichten zuerst, der Lauf als eigener Bildschirm, das Einrichten als Schrittfolge hinter einem Einstieg mit drei Wegen statt einer Bildlaufstrecke ([Einzelheiten](#p17--der-ablauf-wird-die-oberfläche--erledigt-2026-08-28)). **Alle vier Stufen sind fertig** — zuletzt am 2026-08-28 der Einstieg mit den drei Wegen (Stufe C) und der mechanische Überlauf-Wächter (Stufe D). Beim Wächter kam die Entscheidung dazu, die der Plan offengelassen hatte: Playwright als **optionales** Extra, damit die CI ohne Browser grün bleibt und wer die Oberfläche anfasst ihn lokal scharf hat. Und er hat sich beim ersten Durchlauf selbst korrigiert — zwei weitere Phantome kamen zu den drei aus P1.8 dazu, darunter `scrollWidth` selbst: Ein ausgeschwebtes Kind zählt in den `scrollWidth` seines Vorfahren, und Dashs eigenes Dropdown ließ die Zeitleiste 145 px Überlauf melden, obwohl nichts zu sehen war. P1.7 ist gegengeprüft (Haiko, 2026-08-28): drei Befunde behoben — der Start aus der Schrittfolge wechselte den Bildschirm nicht, ein Widerspruch von 1,7 s zwischen Kopfzeile und Mitte, und ein Text, der auf einen aufgelösten Abschnitt zeigte; ein vierter Befund hat sich unter genauerer Messung aufgelöst und ist samt zurückgenommener Korrektur protokolliert ([Einzelheiten](#p18--gegenprobe-zu-p17-haiko-2026-08-28--erledigt)). Am **2026-08-28** ist der Einrichten-Assistent unabhängig auditiert worden — bewusst ohne die Abnahmekriterien dieses Plans als Maßstab, und genau dadurch hat das Audit gefunden, was die Kriterien durchgelassen haben: Auf dem Sweep-Pfad erreicht **genau ein** Feld des Entwurfs die Simulation, während der Preflight einen Lauf beschreibt, der so nicht stattfindet; fünf Bedienelemente in als *optional* gekennzeichneten Schritten schreiben ohne Rückfrage in `configs/properties.json`; und **kein einziger der acht Schritte passt auf einen Bildschirm** (1,13 bis 4,44), obwohl genau das die Zusage von P1.7 war. Daraus ist [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28) entstanden: **P1.1 und P1.7 sind wieder offen**, P1.5 bekommt ein Kriterium dazu, P1.8 schärft sein Verfahren nach, P1.3 und P3.6 werden vorgezogen ([Einzelheiten](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28), Vollfassung in [`wizard_audit_2026-08-28.md`](wizard_audit_2026-08-28.md)). Dieselbe Lehre wie bei P1.6, diesmal als Regel festgehalten: **Eine Zusage kommt mit ihrer Messung, nicht mit ihrer Zählung** — nachzulesen im [Commit-Regelwerk](#regelwerk-atomare-commits-ab-2026-08-28-verbindlich), das ab sofort für jede Änderung gilt. Am **2026-08-29** ist die Szenarienschicht entschieden worden — **Rahmen statt Richter**, und der Anlass war eine kleinere Frage: ob die 48 F7-Zellen jetzt fachlich abzunehmen sind. Beim Nachmessen der übrigen 120 kam heraus, dass der Konsistenz-Score **Polarität misst, nicht Plausibilität** (Korrelation +0,56 mit der Zahl gleichpolig gesetzter Faktoren, über alle vier Gruppen monoton), dass das **echte** Impact-Balance-Kriterium **genau zwei** der 128 Zustände trägt statt der drei, die das Produkt verspricht, und dass **vier unbegründete Zellen** die Rückkopplung verneinen, aus der gemischte Szenarien überhaupt erst entstehen: Nachfrage- und Wirtschaftswachstum hemmen dort strenge Regulierung, Flugscham und Schienenausbau. Damit bewertet das Modell die reale europäische Lage — strenge Regulierung *bei* starker Nachfrage — als unplausibel. Entschieden ist **Variante C**: Ein Szenario wird ein benanntes Bündel exogener Verläufe, F1–F7 werden aus dem Lauf *abgeleitet* statt ihn zu bewerten; die Sweeps sind bereits solche Bündel und werden vom Nebenweg zum Hauptweg. Phase 2 ist danach neu geschnitten — [P2.0](#p20--die-rolle-umdrehen-rahmen-statt-urteil--erledigt-2026-08-30) (Rolle umdrehen), P2.1, [P2.6](#p26--ensemble-läufe-je-rahmenszenario--erledigt-2026-08-31) (Ensemble), [P2.7](#p27--backtest-gegen-20152024--erledigt-2026-08-30) (Backtest), und **erst danach** [P2.2](#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31), weil sich eine Entscheidung über ein Werkzeug leichter trifft, wenn das Modell geeicht ist ([Einzelheiten](#leitentscheidung-die-szenarienschicht-2026-08-29), Vollfassung in [`entscheidung_szenarienschicht_2026-08-29.md`](entscheidung_szenarienschicht_2026-08-29.md)). Am **2026-08-30 ist Phase 1 abgeschlossen** — mit genau einer benannten Restposition. P1.9 ist vollständig (W3.5 entschieden: der Höhen-Deckel hält den Ist-Stand statt Inhalt wegzulassen), womit **P1.1 und P1.7 wieder geschlossen** sind. Dazu erledigt: **P1.2** (vier Aussagen statt sechs Datenquellen; Figuren entstehen ganz oder gar nicht; ein Farb- und Achsensystem für PNG und Bildschirm), **P1.3** im zugesagten Umfang (die Grenze zwischen Gerechnetem und Erzähltem steht im Schema — wie die Szenarien *entstehen*, bleibt P2.0), **P1.5** (der Bereichswechsel ist ansagbar und führt den Fokus) und **P1.4** bis auf die Rechtstexte: Kein Seitenaufruf verlässt mehr den eigenen Server, und die Demo-Anfrage kommt an. **Offen bleibt allein, dass Impressum, Datenschutzerklärung und AGB Inhalte brauchen** — die Gliederung steht, jede Pflichtangabe ist als benannte Lücke markiert, und `docs/landingpage.md` führt die Liste zum Abarbeiten. Auffällig an diesem Durchgang: **Fünf der neuen Wächter haben beim ersten scharfen Durchlauf zugeschlagen**, drei davon auf Fehler, die im selben Commit entstanden waren — darunter ein Symbol-Teilsatz, dem vier Namen fehlten, weil sie in einem Modul-Dict statt im Aufruf stehen; die Schrittliste brach daraufhin um 308 px aus. Daraus kam die Regel, die über das Paket hinausgeht: **Ein Parser findet, was jemand hingeschrieben hat; eine Messung findet, was wirklich dasteht.** · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
+**Stand:** 2026-09-07 — **Phase 3 ist vollständig abgeschlossen**: Die zuletzt zurückgestellte Tickdauer ist entschieden und umgesetzt — **ein Tick ist ein Monat** ([P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31)); geändert wurde die **Einheit** und nicht die Aussage über die Welt, und am Backtest fünf von acht Kennzahlen verschlechtern sich, eine verbessert sich geringfügig, zwei bleiben gleich — **keine einzige spricht für die Änderung** — genau der Beleg, dass nicht auf ihn hin eingestellt wurde. Dabei kam ein **vierter** Zeitskalen-Widerspruch heraus, den der alte Wächter nicht finden konnte: `demand_growth_rate` trug «je Tick» in der Einheit und «jährlich» in der Beschreibung, aufgezinst 42,58 % im Jahr. Neu offen ist allein die Frage, die dabei sichtbar wurde und bewusst nicht mitentschieden ist: der Zeithorizont der Rahmenszenarien ([P4.5](#p45--was-ein-rahmenszenario-über-die-zeit-behauptet--offen-neu-2026-09-07)). Davor: 2026-09-05 — **Phase 3 abgeschlossen und am selben Tag vollständig geprüft** (elf Pakete erledigt; drei der elf sind erst aus der Arbeit entstanden — [Bilanz](#phase-3--engine-härtung--vollständig-abgeschlossen-am-2026-09-07)). Das [Audit](#audit-der-phase-3-2026-09-05--fünf-pakete-der-schwere-befund-ist-vorbestehend) bestätigt elf von zwölf Paketen **nachgemessen** und alle fünfzehn tragenden Wächter über eine Mutationsprobe; **kein Befund berührt die Zahlen eines Laufs**. Vier Ränder hielten nicht (P3.13 bis P3.16); **alle vier sind am selben Tag behoben** — der erfundene `llama3.2` im Launcher, der Ausweichpfad, der `sys.stderr.buffer` voraussetzte, die Signatur, die ihrem Rumpf widersprach (deren **Klasse** offen bleibt als P4.4: kein Typprüfer im Projekt), und das 500-ms-Kriterium, das jetzt einen Wächter auf seiner Höhe hat. **Auch die fünf kleinen Befunde sind erledigt**, und zwei davon waren beim Anfassen größer als gemeldet: Bei C1 reproduzierte **keine** der drei Zahlen zum Modell-Bereich, bei C2 stand die Kopfzeile an **drei** Stellen wörtlich. **Der einzige schwere Befund war vorbestehend und ist am 2026-09-06 behoben**: Der Browser-Wächter war 112 zu 6 rot, weil C5 des Phase-2-Audits am 2026-09-03 behoben und von Commits desselben Tages ungültig gemacht wurde; er ist jetzt **118 zu 0** grün und läuft nächtlich sowie bei jedem Pull Request auf `dashboard/web/**` (P3.17). Die Einschränkung gehört dazu — **das Audit ist nicht unabhängig**, dieselbe Sitzung hat gebaut und geprüft. Davor: 2026-08-28 — **Phase 0 ist abgeschlossen**, **P1.1 ist erledigt**, und darauf ist **P1.5** gefolgt: Das Dashboard ist jetzt ein **Leitstand** — ein Bildschirm mit fünf Zonen statt eines Stapels Seiten, mit umschaltbarem hellen und dunklen Design und einer Tick-Zeitleiste, die Szene, Kennzahlen und Verläufe gemeinsam führt ([Einzelheiten](#p15--leitstand-oberfläche--erledigt-2026-08-28)). Auch dort lag der eigentliche Fund unter der Oberfläche: Die Stile für Dashs eigene Komponenten griffen seit dem Sprung auf Dash 4 an **keiner einzigen Stelle** mehr — im hellen Modus unsichtbar, im dunklen ein violetter Regler mit schwarzer Beschriftung auf schwarzem Grund. Direkt darauf folgte **P1.6**, weil die Vermessung des Ergebnisses einen Rückschritt zeigte: Die linke Spalte war mit der hineingepressten Konfiguration **10,7 Bildschirme** hoch, und der Start-Knopf lag 6,1 Bildschirme tief — bei erfüllten Abnahmekriterien beider Vorgängerpakete. Einrichten und Beobachten sind jetzt getrennt, die Spalte ist ein Bedienfeld, und die Kriterien von P1.1 und P1.5 sind um eine Größe ergänzt, die **Erreichbarkeit** misst statt Anzahl ([Einzelheiten](#p16--einrichten-und-beobachten-trennen--erledigt-2026-08-28)). Zu P1.1: «Simulation starten» führt jetzt in drei Entscheidungen zum Lauf ([Einzelheiten](#p11--simulation-starten-neu-bauen--erledigt-2026-08-28)). Dabei kam ein Fund heraus, der nicht in der Oberfläche lag: Ein gewähltes Szenario-Preset wurde im Dashboard **still von den Datei-Defaults überschrieben** — bei allen acht ausgelieferten Presets, ein Lauf «Business as Usual» rechnete mit steigender CO₂-Abgabe. Behoben, mit einem Wächter über jede Datei unter `configs/sweeps/`. Phase 0 im Übrigen unverändert und **sechsfach** gegengeprüft: Haikos Gegenprobe deckte 36 von 36 Zusagen mechanisch ab ([Einzelheiten](#gegenprobe-zu-p04p06-2026-08-27)), Manus zweite Runde am laufenden System fand drei Zusagen von P0.6, die im Artefakt nicht hielten — alle behoben ([Einzelheiten](#zweite-gegenprobe-zu-p06-manu-2026-08-27)) —, die dritte Runde hat seine Befunde nachgestellt und drei Lücken in den neuen Tests geschlossen ([Einzelheiten](#dritte-runde-manus-gegenprobe-nachgeprüft-haiko-2026-08-27)), die vierte hat die Phase als Ganzes geprüft (**im Code hält alles, fünf Lücken lagen in der Doku**, [Einzelheiten](#vierte-runde-phase-0-als-ganzes-geprüft-2026-08-27)), und die fünfte hat P0.7 gegengeprüft: Der Fix hält, ein Geschwister seines Musters lag noch in der Bevölkerungshälfte und ist mit behoben ([Einzelheiten](#fünfte-runde-p07-gegengeprüft-manu-2026-08-27)), und die sechste hat diese Verallgemeinerung gegengeprüft: Sie hält, zwei weitere Geschwister lagen in derselben Datei und sind mit behoben ([Einzelheiten](#sechste-runde-die-verallgemeinerung-gegengeprüft-haiko-2026-08-28)). P0.7 kam aus der Umsetzung von P0.4 dazu und ist ebenfalls erledigt; drei seiner eigenen Befundaussagen mussten dabei korrigiert werden. Offen aus P0.2 war die fachliche Abnahme der 48 neu bewerteten Matrixzellen — die einzige offene Position der Phase; sie ist seit dem **2026-08-29 zurückgestellt mit Grund** und nicht mehr eingeplant, siehe die Entscheidung unten. Die drei Phase-1-Pakete sind **gegengeprüft** (Manu, 2026-08-28): Die tragenden Zusagen halten, drei Befunde lagen in der Darstellung — ein Schubladen-Knopf, dessen Versteck-Regel die Kaskade verlor und deshalb nie wirkte, sein Haltepunkt, der der falschen Zone gehörte, und ein Laufzustand, der nur die eigene Sitzung kannte; alle drei behoben ([Einzelheiten](#gegenprobe-zu-p11p15p16-manu-2026-08-28)). Daraus ist **P1.7** entstanden, und es ist erledigt: Der Ablauf **ist** jetzt die Oberfläche — Einrichten zuerst, der Lauf als eigener Bildschirm, das Einrichten als Schrittfolge hinter einem Einstieg mit drei Wegen statt einer Bildlaufstrecke ([Einzelheiten](#p17--der-ablauf-wird-die-oberfläche--erledigt-2026-08-28)). **Alle vier Stufen sind fertig** — zuletzt am 2026-08-28 der Einstieg mit den drei Wegen (Stufe C) und der mechanische Überlauf-Wächter (Stufe D). Beim Wächter kam die Entscheidung dazu, die der Plan offengelassen hatte: Playwright als **optionales** Extra, damit die CI ohne Browser grün bleibt und wer die Oberfläche anfasst ihn lokal scharf hat. Und er hat sich beim ersten Durchlauf selbst korrigiert — zwei weitere Phantome kamen zu den drei aus P1.8 dazu, darunter `scrollWidth` selbst: Ein ausgeschwebtes Kind zählt in den `scrollWidth` seines Vorfahren, und Dashs eigenes Dropdown ließ die Zeitleiste 145 px Überlauf melden, obwohl nichts zu sehen war. P1.7 ist gegengeprüft (Haiko, 2026-08-28): drei Befunde behoben — der Start aus der Schrittfolge wechselte den Bildschirm nicht, ein Widerspruch von 1,7 s zwischen Kopfzeile und Mitte, und ein Text, der auf einen aufgelösten Abschnitt zeigte; ein vierter Befund hat sich unter genauerer Messung aufgelöst und ist samt zurückgenommener Korrektur protokolliert ([Einzelheiten](#p18--gegenprobe-zu-p17-haiko-2026-08-28--erledigt)). Am **2026-08-28** ist der Einrichten-Assistent unabhängig auditiert worden — bewusst ohne die Abnahmekriterien dieses Plans als Maßstab, und genau dadurch hat das Audit gefunden, was die Kriterien durchgelassen haben: Auf dem Sweep-Pfad erreicht **genau ein** Feld des Entwurfs die Simulation, während der Preflight einen Lauf beschreibt, der so nicht stattfindet; fünf Bedienelemente in als *optional* gekennzeichneten Schritten schreiben ohne Rückfrage in `configs/properties.json`; und **kein einziger der acht Schritte passt auf einen Bildschirm** (1,13 bis 4,44), obwohl genau das die Zusage von P1.7 war. Daraus ist [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28) entstanden: **P1.1 und P1.7 sind wieder offen**, P1.5 bekommt ein Kriterium dazu, P1.8 schärft sein Verfahren nach, P1.3 und P3.6 werden vorgezogen ([Einzelheiten](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28), Vollfassung in [`wizard_audit_2026-08-28.md`](wizard_audit_2026-08-28.md)). Dieselbe Lehre wie bei P1.6, diesmal als Regel festgehalten: **Eine Zusage kommt mit ihrer Messung, nicht mit ihrer Zählung** — nachzulesen im [Commit-Regelwerk](#regelwerk-atomare-commits-ab-2026-08-28-verbindlich), das ab sofort für jede Änderung gilt. Am **2026-08-29** ist die Szenarienschicht entschieden worden — **Rahmen statt Richter**, und der Anlass war eine kleinere Frage: ob die 48 F7-Zellen jetzt fachlich abzunehmen sind. Beim Nachmessen der übrigen 120 kam heraus, dass der Konsistenz-Score **Polarität misst, nicht Plausibilität** (Korrelation +0,56 mit der Zahl gleichpolig gesetzter Faktoren, über alle vier Gruppen monoton), dass das **echte** Impact-Balance-Kriterium **genau zwei** der 128 Zustände trägt statt der drei, die das Produkt verspricht, und dass **vier unbegründete Zellen** die Rückkopplung verneinen, aus der gemischte Szenarien überhaupt erst entstehen: Nachfrage- und Wirtschaftswachstum hemmen dort strenge Regulierung, Flugscham und Schienenausbau. Damit bewertet das Modell die reale europäische Lage — strenge Regulierung *bei* starker Nachfrage — als unplausibel. Entschieden ist **Variante C**: Ein Szenario wird ein benanntes Bündel exogener Verläufe, F1–F7 werden aus dem Lauf *abgeleitet* statt ihn zu bewerten; die Sweeps sind bereits solche Bündel und werden vom Nebenweg zum Hauptweg. Phase 2 ist danach neu geschnitten — [P2.0](#p20--die-rolle-umdrehen-rahmen-statt-urteil--erledigt-2026-08-30) (Rolle umdrehen), P2.1, [P2.6](#p26--ensemble-läufe-je-rahmenszenario--erledigt-2026-08-31) (Ensemble), [P2.7](#p27--backtest-gegen-20152024--erledigt-2026-08-30) (Backtest), und **erst danach** [P2.2](#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31), weil sich eine Entscheidung über ein Werkzeug leichter trifft, wenn das Modell geeicht ist ([Einzelheiten](#leitentscheidung-die-szenarienschicht-2026-08-29), Vollfassung in [`entscheidung_szenarienschicht_2026-08-29.md`](entscheidung_szenarienschicht_2026-08-29.md)). Am **2026-08-30 ist Phase 1 abgeschlossen** — mit genau einer benannten Restposition. P1.9 ist vollständig (W3.5 entschieden: der Höhen-Deckel hält den Ist-Stand statt Inhalt wegzulassen), womit **P1.1 und P1.7 wieder geschlossen** sind. Dazu erledigt: **P1.2** (vier Aussagen statt sechs Datenquellen; Figuren entstehen ganz oder gar nicht; ein Farb- und Achsensystem für PNG und Bildschirm), **P1.3** im zugesagten Umfang (die Grenze zwischen Gerechnetem und Erzähltem steht im Schema — wie die Szenarien *entstehen*, bleibt P2.0), **P1.5** (der Bereichswechsel ist ansagbar und führt den Fokus) und **P1.4** bis auf die Rechtstexte: Kein Seitenaufruf verlässt mehr den eigenen Server, und die Demo-Anfrage kommt an. **Offen bleibt allein, dass Impressum, Datenschutzerklärung und AGB Inhalte brauchen** — die Gliederung steht, jede Pflichtangabe ist als benannte Lücke markiert, und `docs/landingpage.md` führt die Liste zum Abarbeiten. Auffällig an diesem Durchgang: **Fünf der neuen Wächter haben beim ersten scharfen Durchlauf zugeschlagen**, drei davon auf Fehler, die im selben Commit entstanden waren — darunter ein Symbol-Teilsatz, dem vier Namen fehlten, weil sie in einem Modul-Dict statt im Aufruf stehen; die Schrittliste brach daraufhin um 308 px aus. Daraus kam die Regel, die über das Paket hinausgeht: **Ein Parser findet, was jemand hingeschrieben hat; eine Messung findet, was wirklich dasteht.** · **Leitentscheidung:** Erst Funktionalität und UI, dann B2B-Readiness. Ein Produkt, das im Demo unverständlich aussieht, wird nicht gekauft — egal wie sauber die Engine darunter ist.
 
 Dieser Plan ist die verbindliche Reihenfolge der nächsten Schritte. **Alle Findings aus [`audit_findings.md`](audit_findings.md) sind hier eingeplant** — die Zeit der dokumentierten, aber unangefassten Baustellen ist vorbei. Das Audit bleibt die Detailliste mit Befund und Auswirkung; dieser Plan sagt, wann was drankommt. Die Zuordnung steht am Ende unter [Abdeckung](#abdeckung-des-audits).
 
@@ -74,8 +74,8 @@ Dashboard. **Drei Punkte hat die Gegenprobe zusätzlich gefunden** — keiner bl
 alle drei sind unten eingeplant:
 
 - **Ein Sweep kann nicht als degradiert markiert werden.** Eingeplant in [P0.6](#p06--ein-lauf-sagt-wie-er-entstanden-ist--erledigt-2026-08-27).
-- **`get_llm()` wählt weiterhin still den Mock**, wenn keine Umgebungsvariable gesetzt ist. Eingeplant in [P3.4](#p34--llm-konfiguration-zentralisieren).
-- **Ein Config-Fehler auf der CLI kommt als roher Traceback.** Eingeplant in [P3.3](#p33--fehlermeldungen-die-auch-greifen).
+- **`get_llm()` wählt weiterhin still den Mock**, wenn keine Umgebungsvariable gesetzt ist. Eingeplant in [P3.4](#p34--llm-konfiguration-zentralisieren--erledigt-2026-09-05).
+- **Ein Config-Fehler auf der CLI kommt als roher Traceback.** Eingeplant in [P3.3](#p33--fehlermeldungen-die-auch-greifen--erledigt-2026-09-05).
 
 Der erste Punkt war in der Nachprüfung oben als erledigt vermerkt („Sweeps schreiben die
 `degraded`-Felder mit"). Die Aussage stimmt wörtlich und führt trotzdem in die Irre: Geprüft war,
@@ -204,7 +204,7 @@ Behoben: `validate_llm_settings` hält die Regeln **einmal** und wird von drei O
 
 **Zweite Nachprüfung, gleicher Tag — die Korrektur hatte selbst einen Fehler.** Die neue Prüfung lief unbedingt und blockierte damit Läufe, die gar kein Sprachmodell benutzen: Beide unteren Rechenmodi («Ohne Sprachmodell» und «Nur Zahlen») setzen `mock_llm`, und dann liefert `_build_llm()` ein `MockLLM` — Modellname, Temperatur und Antwortlänge werden nie angefasst. Ein leeres Modellfeld verhinderte trotzdem den Start. Dasselbe auf der CLI mit `--mock-llm --max-tokens 0`. Die Prüfung hängt jetzt an `mock_llm`, und zwei Tests halten beide Richtungen fest. Aufgefallen ist es, weil `ConfigDraft` per Default `mock_llm=True` führt — meine eigenen Tests prüften deshalb ins Leere und mussten mitgezogen werden.
 
-Bewusst **nicht** hier behoben: dass `state.config.llm` von niemandem gelesen wird. Das gehört zu [P3.4](#p34--llm-konfiguration-zentralisieren).
+Bewusst **nicht** hier behoben: dass `state.config.llm` von niemandem gelesen wird. Das gehört zu [P3.4](#p34--llm-konfiguration-zentralisieren--erledigt-2026-09-05).
 
 **Dritte Nachprüfung — mechanisch statt nach Gefühl.** Weil die beiden vorigen Funde dieselbe Ursache hatten (ein Test, der seine eigene Voraussetzung nicht erreichte), wurde diesmal jede Zusage einzeln im Code abgeschaltet und geprüft, ob ein Test das merkt. **Dreizehn von dreizehn** Zusagen aus P0.1 und P0.3 sind so gedeckt. Eine Lücke kam dabei heraus: Der Start-Callback in `dashboard/web/pages/launch.py` — also die Zusage „«Start» weist ab" — war von keinem Test berührt; gedeckt war nur die Ansicht im Tab «Kontrolle». Zwei Tests in `tests/test_web_runner.py` prüfen ihn jetzt mitsamt der Reihenfolge seines Rückgabe-Tupels, die zu den fünf `Output`s passen muss.
 
@@ -445,7 +445,7 @@ Manus vier Commits sind einzeln nachgestellt worden — jede Behauptung am laufe
 **Nachgestellt und bestätigt:**
 
 - *Der Fingerabdruck hat den Lauf mitgehasht.* Seine Kopfzeile stimmt aufs Wort: Seeds 1 und 2 über vier Ticks mit aktivem CIB — vier Komponenten gleich, `factors` verschieden, weil F1 auseinanderläuft. (Mein erster Reproduktionsversuch mit abgeschaltetem CIB über 40 Ticks zeigte nichts, weil beide Läufe bis dahin wieder in derselben Endlage ankommen. Der Aufbau entscheidet, nicht der Befund.) Deutlicher noch ohne Seed-Unterschied: **dieselbe Konfiguration, derselbe Seed, nur 5 statt 40 Ticks** ergab am Ende `31e57fbb…` gegen `1b6de2d0…`, beim Start beidemal `31e57fbb…`.
-- *Der Abdruck überlebt Checkpoint und Fortsetzen.* 30-Tick-Lauf mit Checkpoints: Der Startabdruck steht im Checkpoint, wird beim Fortsetzen nicht neu genommen, obwohl die Faktoren sich bewegt haben. Alte Checkpoints (ohne das Feld) laden weiterhin — sie bekommen beim Fortsetzen allerdings einen Abdruck aus bereits gelaufenem Zustand. Enger Randfall, gehört in die Zuständigkeit von [P3.2](#p32--checkpoint-version-wirklich-prüfen).
+- *Der Abdruck überlebt Checkpoint und Fortsetzen.* 30-Tick-Lauf mit Checkpoints: Der Startabdruck steht im Checkpoint, wird beim Fortsetzen nicht neu genommen, obwohl die Faktoren sich bewegt haben. Alte Checkpoints (ohne das Feld) laden weiterhin — sie bekommen beim Fortsetzen allerdings einen Abdruck aus bereits gelaufenem Zustand. Enger Randfall, gehört in die Zuständigkeit von [P3.2](#p32--checkpoint-version-wirklich-prüfen--erledigt-2026-09-05).
 - *`seed: null` bei jedem Standardlauf.* Bestätigt und behoben: Ein Lauf ohne `--seed` schreibt jetzt `42`, und zwei solche Läufe sind in `price_history.json`, `tick_mechanics.json` und `factors.csv` **bitgleich** — die Reproduzierbarkeit war schon vorher da, nur sagte es niemand.
 - *Der Sweep-Modus.* Ein Sweep gegen einen toten Endpunkt trägt jetzt `deterministic_with_llm_narrative`, den echten Modellnamen, `degraded: true` und ein `llm_incidents.json` mit dem Verbindungsfehler. Das «Fertig wenn» von P0.6 hält unverändert.
 - *Beide Audit-Findings.* `run_multi` beginnt seine Folge tatsächlich bei 0 und 1, während ein Einzellauf 42 nimmt — gemessen. `run_population_sampling` reicht Tick und Metriken wirklich nicht durch. Beide zu Recht ins Audit statt in einen Fix.
@@ -648,7 +648,7 @@ Manus drei Commits sind einzeln nachgestellt worden. **Die tragenden Behauptunge
 
 **Was hier nicht mehr gilt:** Die ursprüngliche Fassung nannte einen "blockierenden Wartezustand". Den gibt es nicht mehr — [`dashboard/web/runner.py`](../dashboard/web/runner.py) fährt den Lauf in einem Worker-Thread mit Queue, und [`pages/launch.py:37,147-182`](../dashboard/web/pages/launch.py) holt die Fortschrittszeilen per `dcc.Interval` ab. Fortschrittsanzeige ist erledigt und kein Teil dieses Pakets mehr.
 
-**Fundstelle:** [`dashboard/web/pages/launch.py`](../dashboard/web/pages/launch.py), [`dashboard/web/config_editor/save_start.py`](../dashboard/web/config_editor/save_start.py), [`dashboard/web/runner.py`](../dashboard/web/runner.py), die sechs Editor-Tabs in [`dashboard/web/config_editor/`](../dashboard/web/config_editor/).
+**Fundstelle (Stand des Befunds, 2026-08-26):** [`dashboard/web/pages/launch.py`](../dashboard/web/pages/launch.py), `dashboard/web/config_editor/save_start.py`, [`dashboard/web/runner.py`](../dashboard/web/runner.py), die sechs Editor-Tabs in [`dashboard/web/config_editor/`](../dashboard/web/config_editor/). **`save_start.py` gibt es nicht mehr** — das Modul ist mit `5c6cf7e` entfallen, Sichern und Starten liegen seit P1.7 in [`wizard.py`](../dashboard/web/config_editor/wizard.py) und [`config_editor/__init__.py`](../dashboard/web/config_editor/__init__.py); aus den sechs Tabs sind mit P2.0-C sechs **Schritte** geworden. Der Verweis stand hier als toter Link, bis ihn am 2026-09-05 eine Ankerprobe über 491 Überschriften gefunden hat. **Der Dateiname bleibt als Name stehen und nicht als Link:** Eine Fundstelle beschreibt den Zustand *bei der Aufnahme des Befunds* — sie nachträglich auf das heutige Modul umzubiegen machte die Befundgeschichte unlesbar.
 
 **Was zu tun ist:** Den Weg von "Preset wählen" bis "Lauf läuft" auf einen geführten Ablauf reduzieren. Presets nach vorn (`configs/sweeps/`), Expertenparameter dahinter. Erklärtexte aus `config_editor/glossary.py` dort zeigen, wo entschieden wird, nicht in einem eigenen Tab. Fehlermeldungen aus P0.3 direkt am Feld. Seed und Rechenmodus aus P0.6 sichtbar machen, damit vor dem Start klar ist, ob ein echter oder ein Mock-Lauf entsteht.
 
@@ -1028,7 +1028,7 @@ P1.7 wurde am laufenden System nachgemessen. **Die tragenden Zusagen halten:** d
 | [P1.7](#p17--der-ablauf-wird-die-oberfläche--erledigt-2026-08-28) ✅ | **wieder öffnen** | «Eine Frage auf dem Schirm» ist nicht gehalten (Befund 3), dazu Befund 4 und die Handwerksbefunde. |
 | [P1.8](#p18--gegenprobe-zu-p17-haiko-2026-08-28--erledigt) ✅ | **Verfahren nachschärfen** | Das Ergebnis bleibt gültig, der Prüfumfang war zu eng: Die Gegenprobe hat drei gemeldete Befunde geprüft, aber keine der Zusagen **gemessen**. Genau die Messung hätte Befund 3 gefunden. |
 | [P1.3](#p13--szenariogestaltung-neu-denken--erledigt-2026-08-30-datenschema-die-entstehung-bleibt-p20) | **vorziehen** | Der Sweep-Pfad ist die Ursache der Befunde 1 und 2. Ihn kosmetisch zu reparieren, ohne die Szenariogestaltung zu klären, wäre doppelte Arbeit. |
-| [P3.6](#p36--stabiler-vertrag-für-den-run-launcher) | **vorziehen** | Befund 1 ist im Kern ein fehlender Vertrag zwischen Assistent, Run-Launcher und Sweeps. Ohne ihn lässt sich die Zusage aus W1.3 nicht mechanisch halten. |
+| [P3.6](#p36--stabiler-vertrag-für-den-run-launcher--erledigt-2026-09-05) | **vorziehen** | Befund 1 ist im Kern ein fehlender Vertrag zwischen Assistent, Run-Launcher und Sweeps. Ohne ihn lässt sich die Zusage aus W1.3 nicht mechanisch halten. |
 
 Unangetastet bleiben [P1.2](#p12--ergebnisse-und-plots-refactoren--erledigt-2026-08-30) und [P1.4](#p14--landingpage-produktionsreif--erledigt-bis-auf-die-rechtstexte-2026-08-30) — sie liegen hinter diesem Schnitt.
 
@@ -1339,7 +1339,7 @@ Die Schritte 4 bis 6 sind **dieselben wie vorher, eine Nummer weiter** — der a
 
 **Umgesetzt:** `PropertiesConfig.kohaerenz` — These, Begründung, Quellen und Vorbehalt **neben den Zahlen, die sie begründen**, nicht in einer zweiten Datei. Der Assistent zeigt sie jetzt für den Standard wie für jedes Preset, und beide benutzen **denselben** Renderer; zwei wären die nächste Stelle gewesen, an der sie auseinanderlaufen. Für **eigene Werte** steht dort bewusst keine Begründung, sondern der Satz, dass es keine gibt: Wer eigene Verläufe nach außen zitiert, begründet ihre Stimmigkeit selbst.
 
-**Was die Begründung dabei aufdeckt:** Der Standard ist seit [P2.10](#p210--ein-rahmenszenario-das-die-angebotsseite-wirklich-benutzt--erledigt-2026-09-03) der **einzige** Rahmen mit konstanter Kapazität — eine Annahme und keine Abwesenheit einer Annahme. Sie steht jetzt in seinem Vorbehalt, zusammen mit der offenen Restposition von P2.8 (die Bevölkerungskurve endet bei Tick 30, ein Standardlauf geht 40).
+**Was die Begründung dabei aufdeckt:** Der Standard ist seit [P2.10](#p210--ein-rahmenszenario-das-die-angebotsseite-wirklich-benutzt--erledigt-2026-09-03) der **einzige** Rahmen mit konstanter Kapazität — eine Annahme und keine Abwesenheit einer Annahme. Sie steht jetzt in seinem Vorbehalt, zusammen mit der damals offenen Restposition von P2.8 (die Bevölkerungskurve endete bei Tick 30, ein Standardlauf geht 40). **Diese zweite ist seit dem 2026-09-07 geschlossen** ([P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31)): Die Kurve reicht bis Tick 120. Der Vorbehalt nennt jetzt ihre **Höhe** statt ihres Horizonts.
 
 **Gehalten von** `TestAuchDerStandardIstEinRahmen`, fünf Zusagen — darunter die, die den Umweg verbaut: Es darf **keine** `configs/sweeps/standard.json` geben.
 
@@ -1467,9 +1467,9 @@ Fällt die Wahl auf 2 oder 3, ist die Impact Balance dann auch zu implementieren
 
 > **Der erste Befund, den der Backtest ohne Zutun geliefert hat.** Er entstand nicht aus einem Audit und nicht aus einer Code-Lektüre, sondern daraus, dass zum ersten Mal etwas außerhalb des Modells als Maßstab danebenlag.
 
-**Befund:** Dem Modell fehlt **jeder** Mechanismus, der Nachfrage wachsen lässt. Die Buchungsrate reagiert auf Preis, Kostendruck, Sättigung und Faktor-Shifts — sämtlich Kanäle nach unten. Die einzige Größe, über die die Nachfragemenge steigen könnte, ist `bevoelkerungsentwicklung` mit **+8 %** über die ganze Kurve; real stieg der europäische Luftverkehr 2015–2019 um **+26 %**. `income_index` existiert, bewegt sich aber nicht mit. Herleitung und Messwerte: [P2.7](#befund-dem-modell-fehlt-jeder-nachfragetreiber-nach-oben-2026-08-31).
+**Befund:** Dem Modell fehlt **jeder** Mechanismus, der Nachfrage wachsen lässt. Die Buchungsrate reagiert auf Preis, Kostendruck, Sättigung und Faktor-Shifts — sämtlich Kanäle nach unten. Die einzige Größe, über die die Nachfragemenge steigen könnte, ist `bevoelkerungsentwicklung` mit **+8 %** über die ganze Kurve; real stieg der europäische Luftverkehr 2015–2019 um **+26 %**. `income_index` existiert, bewegt sich aber nicht mit. Herleitung und Messwerte: [P2.7](#befund-dem-modell-fehlt-jeder-nachfragetreiber-nach-oben-2026-08-31). **Seit dem 2026-09-07 sind es +2,7 %** ([P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31)) — dieselbe Jahresrate, jetzt in Monaten statt in vermeintlichen Jahren gerechnet. Der Befund ist damit **schärfer** geworden, nicht kleiner.
 
-**Zweiter Befund, technisch unabhängig:** Die Bevölkerungskurve ist eine `step_function` mit vier Stützpunkten, der letzte bei **Tick 30**; `_resolve_step_function` hält danach still den letzten Wert. Sie ist die **einzige** Trajektorie im Modell, und ihr Horizont hängt an nichts. Der Backtest läuft 120 Ticks — 90 davon mit eingefrorener Bevölkerung; schon ein Standardlauf über 40 Ticks verbringt ein Viertel seiner Länge jenseits des letzten Stützpunkts. Für eine Stufenfunktion korrektes Verhalten und **genau deshalb unsichtbar**.
+**Zweiter Befund, technisch unabhängig:** Die Bevölkerungskurve ist eine `step_function` mit vier Stützpunkten, der letzte bei **Tick 30**; `_resolve_step_function` hält danach still den letzten Wert. Sie ist die **einzige** Trajektorie im Modell, und ihr Horizont hängt an nichts. Der Backtest läuft 120 Ticks — 90 davon mit eingefrorener Bevölkerung; schon ein Standardlauf über 40 Ticks verbringt ein Viertel seiner Länge jenseits des letzten Stützpunkts. Für eine Stufenfunktion korrektes Verhalten und **genau deshalb unsichtbar**. **Erledigt am 2026-09-07 mit [P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31):** Die Kurve trägt Jahresstufen bis Tick 120 — kein Tick des Backtests rechnet mehr mit eingefrorener Bevölkerung.
 
 **Fundstelle:** [`configs/properties.json`](../configs/properties.json) (`bevoelkerungsentwicklung`), [`src/market/property_engine.py:37`](../src/market/property_engine.py) (`_resolve_step_function`), [`src/population/population_sampler.py:606`](../src/population/population_sampler.py).
 
@@ -1714,7 +1714,7 @@ Unter `marge` steigt der Verkehr um **66 %** von 0,3 auf 1,3 — **bei unveränd
 
 #### Der Trajektorien-Horizont, geschlossen am 2026-09-03
 
-**Er hing angeblich an [P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31), und das war eine Verwechslung von zwei Fragen.** Ob eine Kurve **zu kurz** ist, hängt wirklich daran, wie lang ein Tick ist — die Frage bleibt offen. Ob ein Lauf **über sie hinausgeht**, hängt an nichts dergleichen: Das ist eine Beschreibung und keine Bewertung. Damit ließ sich der Rest vorziehen, statt ihn ein viertes Mal zu verschieben.
+**Er hing angeblich an [P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31), und das war eine Verwechslung von zwei Fragen.** Ob eine Kurve **zu kurz** ist, hängt wirklich daran, wie lang ein Tick ist — die Frage war damals offen und ist es seit dem 2026-09-07 nicht mehr. Ob ein Lauf **über sie hinausgeht**, hängt an nichts dergleichen: Das ist eine Beschreibung und keine Bewertung. Damit ließ sich der Rest vorziehen, statt ihn ein viertes Mal zu verschieben.
 
 **Gemeldet wird, nicht abgewiesen** — die tragende Entscheidung. Über den letzten Stützpunkt hinauszulaufen ist zulässig und meistens gewollt: Eine CO₂-Abgabe, die ihren Endwert erreicht hat, *bleibt* dort. Ein Fehler in `collect_state_errors` hätte **jeden ausgelieferten Rahmen sofort ungültig gemacht** — alle vier laufen 50 Ticks bei Kurven, die früher enden —, und ein Wächter, der den Normalfall abweist, wird binnen einer Woche entnervt gelockert. Was fehlte, war die **Auskunft**.
 
@@ -1827,7 +1827,7 @@ Der Glockenverlauf des Erwerbslebens — Menschen in der Lebensmitte fliegen am 
 
 **Der zweite Einwand traf den wunden Punkt:** «Es kommt doch darauf an, wie viele Ticks man macht — evtl. möchte man Jahre, und dann verändert es sich doch.» Zwei Dinge sind daraus geworden.
 
-**Erstens ein eigener Befund über die Tick-Dauer** ([P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31)): Sie ist bereits dreimal entschieden, um den Faktor 12 verschieden. Meine Begründung gegen Alterung stand also auf einer Invariante, die als Verhaltensaussage nicht hält.
+**Erstens ein eigener Befund über die Tick-Dauer** ([P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31)): Sie ist bereits dreimal entschieden, um den Faktor 12 verschieden. Meine Begründung gegen Alterung stand also auf einer Invariante, die als Verhaltensaussage nicht hält.
 
 **Zweitens die Messung, die zeigt, warum «einfach altern lassen» trotzdem falsch wäre:**
 
@@ -1866,7 +1866,7 @@ Eine mitalternde Kohorte ohne Nachwuchs stirbt sich zu Tode. Real altern Mensche
 
 **Und der Klemm-Wächter aus P2.9 hat dabei mitgeredet**, ungeplant: Ein Zielalter von 40 klemmt 12,5 % der Ziehungen an der Untergrenze 18 und scheiterte laut. Das ist richtig — eine *junge* Gesellschaft hat viele Minderjährige, die Bevölkerung des Modells besteht aber per Definition aus Erwachsenen. Die erlaubte Spanne von `altersmittel_jahre` ist deshalb **44 bis 64**, und diese Grenzen sind gemessen statt gemeint.
 
-**Der Standard bleibt 0,0** — keine Erneuerung, also der Stand von vorher. Nicht aus Vorsicht, sondern weil eine sinnvolle Rate an der **Tick-Dauer** hängt, und die ist offen ([P3.8](#p38--was-ein-tick-bedeutet-ist-dreimal-verschieden-entschieden--neu-2026-08-31)): Bei einem Tick als Jahr wären rund 0,014 realistisch, bei einem Tick als Monat ein Zwölftel davon. Ein Rahmenszenario, das eine alternde Gesellschaft rechnen will, setzt **beides** — den Verlauf und die Rate.
+**Der Standard bleibt 0,0** — keine Erneuerung, also der Stand von vorher. Der Grund war zunächst, dass eine sinnvolle Rate an der **Tick-Dauer** hängt und die offen war. **Seit [P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31) ist sie das nicht mehr** (2026-09-07): Ein Tick ist ein Monat, realistisch wären rund **0,0012** je Tick — ein Zwölftel der jährlichen 0,014. Der Standard bleibt trotzdem 0,0, jetzt aus dem Sachgrund: Eine stehende Gesellschaft ist eine gültige Aussage, und eine Erneuerung ohne Verlauf für `altersmittel_jahre` tauscht Personen gegen statistisch gleiche aus. Ein Rahmenszenario, das eine alternde Gesellschaft rechnen will, setzt **beides** — den Verlauf und die Rate.
 
 **Der Wächter:** [`tests/test_alter_formt_die_person.py`](../tests/test_alter_formt_die_person.py), zweiundzwanzig Zusagen — darunter die, die vorher fehlte: dass eine Vorgabe **über mehrere Ticks** ankommt, gemessen gegen den Zustand ohne Erneuerung. Er ersetzt `test_bevoelkerung_altert_nicht.py`, dessen Prämisse mit dieser Korrektur entfallen ist.
 
@@ -2158,7 +2158,7 @@ Herleitung mit allen Messungen: [`audit_phase2_2026-09-03.md`](audit_phase2_2026
 
 **Vorbedingung:** [P2.0](#p20--die-rolle-umdrehen-rahmen-statt-urteil--erledigt-2026-08-30) — vor der Umdrehung gibt es keinen Weg, eine historische Außenwelt einzuspeisen, ohne zugleich den Endzustand vorzugeben. Damit wäre der Backtest zirkulär.
 
-**Fallstrick — Invariante 5:** Ein Tick hat keine Kalenderbedeutung, und das bleibt so. Der Backtest braucht eine **Abbildung** von Jahren auf Ticks, die in der Auswertung lebt, nicht im Modell. Wer stattdessen ein Datum in Config, Checkpoint oder Output einführt, bricht die Invariante für einen einmaligen Zweck.
+**Fallstrick — Invariante 5:** In Config, Checkpoint und Ausgabe steht kein Datum, und das bleibt so (seit [P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31) ist ein Tick in der *Mechanik* ein Monat — an dieser Regel über Daten ändert das nichts). Der Backtest braucht eine **Abbildung** von Jahren auf Ticks, die in der Auswertung lebt, nicht im Modell. Wer stattdessen ein Datum in Config, Checkpoint oder Output einführt, bricht die Invariante für einen einmaligen Zweck.
 
 **Zweiter Fallstrick — die Daten:** Kerosin- und ETS-Preise sind frei verfügbar, die europäische Nachfrage- und Yield-Seite nicht durchgängig. Welche Reihe die Zielgröße ist und woher sie kommt, gehört **vor** die Umsetzung; sonst wird das Kriterium nachträglich an die Daten angepasst, die sich beschaffen ließen.
 
@@ -2194,6 +2194,8 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 **Nicht repariert, und das mit Absicht.** Eine Nachfragemechanik, die auf diesen Backtest hin gebaut wird, kann er danach nicht mehr prüfen — er bestätigte dann seine eigene Eingabe. Der Fix gehört in ein eigenes Paket mit eigener Begründung, und der Backtest bleibt der Maßstab davor und danach.
 
 **Gehalten von** `tests/test_nachfragetreiber.py`: Er misst den Ist-Stand — die Horizontlücke in Ticks und den Nachfragezuwachs des Modells — und schlägt an, wenn sich einer der beiden bewegt. Dasselbe Muster wie `test_faktoren_abgeleitet.py`: **Ein roter Lauf ist dort keine Panne, sondern die Nachricht, dass jemand die Nachfrageseite angefasst hat.**
+
+> **Und genau das ist am 2026-09-07 passiert** ([P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31)). Der Wächter ist rot geworden, weil die Festlegung «ein Tick ist ein Monat» beide Ist-Stände oben bewegt hat. **Befund 1 ist damit erledigt** — die Kurve reicht bis Tick 120, kein Tick des Backtests rechnet mehr mit eingefrorener Bevölkerung. **Befund 2 ist schärfer geworden**: Aus +8 % werden +2,7 % über zehn Jahre, weil dieselbe Jahresrate jetzt in Monaten gerechnet wird. Am Backtest fünf von acht Kennzahlen verschlechtern sich, eine verbessert sich geringfügig, zwei bleiben gleich — **keine einzige spricht für die Änderung** — und das ist der Beleg, dass die Reihenfolge oben eingehalten wurde: erst die Mechanik richtig, dann messen.
 
 **Doku zieht mit:** neues Kapitel unter `docs/`, `docs/handbuch/grenzen.md`, `README.md`, `CLAUDE.md` (falls eine neue Datenquelle in die Architektur-Map kommt).
 
@@ -2323,11 +2325,41 @@ Die gemessene «Einkommenselastizität» von **+0,69** war damit kein Verhaltens
 
 ---
 
-## Phase 3 — Engine-Härtung
+## Phase 3 — Engine-Härtung ✅ vollständig abgeschlossen am 2026-09-07
 
 Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes Paket ist klein; zusammen entscheiden sie, ob die Engine trägt.
 
-### P3.7 — Titel und Legende teilen sich einen Rand ⚠️ neu 2026-08-31, zwei Versuche verworfen
+**Stand 2026-09-07: siebzehn Pakete erledigt, keines mehr offen — die Phase ist vollständig.** Alle drei aus der Arbeit entstandenen Pakete (P3.10, P3.11, P3.12) sind mit erledigt, und die zuletzt zurückgestellte Tickdauer (P3.8) ist am 2026-09-07 **entschieden und umgesetzt**: ein Tick ist ein Monat. **Der Grund für das Zurückstellen hat der Umsetzung nicht standgehalten** — die Sorge war, eine Umparametrisierung nehme dem Backtest seinen Prüfwert; tatsächlich blieb die Jahresrate jeder Größe unverändert (geändert wurde die Einheit), und am Backtest fünf von acht Kennzahlen verschlechtern sich, eine verbessert sich geringfügig, zwei bleiben gleich — **keine einzige spricht für die Änderung**. Genau das ist der Beleg, dass nicht auf ihn hin eingestellt wurde. Dabei kam ein **vierter** Widerspruch heraus, den der Wächter nicht gefunden hatte: `demand_growth_rate` trug «je Tick» in der Einheit und «jährlich» in der Beschreibung — aufgezinst 42,58 % im Jahr. **Am selben Tag ist die Phase vollständig geprüft worden** ([Audit](#audit-der-phase-3-2026-09-05--fünf-pakete-der-schwere-befund-ist-vorbestehend), Vollfassung in [`audit_phase3_2026-09-05.md`](audit_phase3_2026-09-05.md)): elf von zwölf Paketen halten nachgemessen, alle fünfzehn tragenden Wächter gehen rot, wenn man ihre Zusage bricht, **kein schwerer Befund, und keiner berührt die Zahlen eines Laufs.** Vier Ränder hielten nicht (P3.13 bis P3.16) und sind behoben, dazu der vorbestehende schwere Befund am Browser-Wächter (P3.17) und **alle fünf kleinen Befunde** (C1 bis C4 plus die erfundene Nutzermeldung). **Offen bleibt aus diesem Audit nur die Klasse hinter P3.15**, eingeplant als [P4.4](#p44--ein-typprüfer-für-die-grenzen--offen-neu-2026-09-05-aus-p315) — das Projekt hat keinen Typprüfer. Die Einschränkung gehört dazu: **das Audit ist nicht unabhängig** — dieselbe Sitzung hat gebaut und geprüft.
+
+| Paket | Stand |
+| --- | --- |
+| [P3.7](#p37--titel-und-legende-teilen-sich-einen-rand--erledigt-2026-09-05-drei-versuche-verworfen) Legende unter der Zeichenfläche | ✅ erledigt |
+| [P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31) Tickdauer | ✅ erledigt 2026-09-07 — ein Tick ist ein Monat |
+| [P3.1](#p31--system-properties-täuschen-keine-laufzeitwerte-mehr-vor--erledigt-2026-09-05) Laufzeitwerte in `when` | ✅ erledigt |
+| [P3.2](#p32--checkpoint-version-wirklich-prüfen--erledigt-2026-09-05) Checkpoint-Version | ✅ erledigt |
+| [P3.3](#p33--fehlermeldungen-die-auch-greifen--erledigt-2026-09-05) Fehlermeldungen | ✅ erledigt |
+| [P3.4](#p34--llm-konfiguration-zentralisieren--erledigt-2026-09-05) LLM-Konfiguration | ✅ erledigt |
+| [P3.5](#p35--stille-klemmungen-und-debug-ausgaben--erledigt-2026-09-05) Klemmungen und `print()` | ✅ erledigt |
+| [P3.6](#p36--stabiler-vertrag-für-den-run-launcher--erledigt-2026-09-05) Launcher-Vertrag | ✅ erledigt |
+| [P3.9](#p39--ein-klick-in-der-schrittfolge-kostet-zwei-sekunden--erledigt-2026-09-05-ursache-zweimal-korrigiert) Klickkosten | ✅ erledigt (Ursache zweimal korrigiert) |
+| [P3.12](#p312--der-modell-bereich-lag-dauernd-im-dom--erledigt-2026-09-05) Modell-Bereich dauernd im DOM | ✅ erledigt (aus P3.9) |
+| [P3.10](#p310--46-zeichenketten-die-die-konsole-nicht-schreiben-kann--erledigt-2026-09-05) Zeichensatz der Konsole | ✅ erledigt (aus P3.3) |
+| [P3.11](#p311--die-lauf-argumente-sind-ein-simplenamespace--erledigt-2026-09-05) Lauf-Argumente ohne Form | ✅ erledigt (aus P3.6) |
+| [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--erledigt-2026-09-05) Rückfall auf `llama3.2` | ✅ erledigt (aus dem Audit) |
+| [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--erledigt-2026-09-05) Fehlerweg braucht `.buffer` | ✅ erledigt (aus dem Audit) |
+| [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--erledigt-2026-09-05) Annotation gegen Rumpf | ✅ erledigt (aus dem Audit) |
+| [P3.16](#p316--das-500-ms-kriterium-und-sein-deckel--erledigt-2026-09-05) 500 ms gegen einen Deckel von 900 | ✅ erledigt (aus dem Audit) |
+| [P3.17](#p317--der-browser-wächter-ist-rot-und-niemand-läuft-ihn--erledigt-2026-09-06) Browser-Wächter rot, C5 zum zweiten Mal | ✅ erledigt 2026-09-06 (aus dem Audit, **vorbestehend**) |
+
+**Die Lehre des Durchgangs, weil sie sich dreimal wiederholt hat: eine Prüfung, die nur so aussieht, ist teurer als keine.** P3.2 schrieb eine Versionsnummer, die niemand las. P3.3 hatte ein `try: pass`, dessen `except` nie feuern konnte. P3.4 prüfte ein `config.llm`, das kein Laufpfad benutzte. In allen drei Fällen war die *Absicht* im Code sichtbar und die *Wirkung* nicht — und niemandem fiel es auf, weil nichts rot war.
+
+**Zweite Lehre, gegen die eigenen Wächter gerichtet:** Drei der neuen Zusagen sind beim ersten Anlauf an der **eigenen Prosa** gescheitert. Sie prüften Quelltext als Zeichenkette (`"except Exception" not in quelle`), und die Kommentare, die den alten Zustand erklären, zitieren ihn — `try: pass`, `except Exception`, `get_llm()`. Geprüft wird jetzt der Syntaxbaum. *Ein Wächter, den eine Erklärung über ihn selbst umlenken kann, ist keiner.*
+
+**Dritte, aus P3.9:** Auch eine Messung kann das Falsche messen. `wait_for_function` pollt über `requestAnimationFrame`, das in einem unsichtbaren Tab gar nicht feuert — dieselbe Falle wie in P1.9-W5.3, und sie meldete 2,0 s, wo 1,1 s standen. Und die *vorherige* Messung dieses Pakets hatte den Statusherzschlag mitgezählt, den P1.6 eingeführt hatte.
+
+**Vierte, aus dem Audit der Phase am selben Tag: ein Selbstaudit findet die Ränder, nicht die Mitte** — und es findet sie nur, wenn es ein Verfahren hat, das nicht von der eigenen Absicht abhängt. Die neun Befunde liegen ausnahmslos am Rand einer Zusage: eine Notlösung eine Ebene über ihrer Abschaffung, ein Ausweichpfad mit einer unausgesprochenen Voraussetzung, eine Signatur neben einem richtigen Rumpf. Was **nicht** gefunden wurde, ist eine falsche Mitte — und das ist genau die Aussage, für die ein Selbstaudit am wenigsten taugt. Was getragen hat, war die Mutationsprobe: fünfzehn Zusagen absichtlich gebrochen, fünfzehnmal rot. Was nicht getragen hat, war der erste Anlauf von sechs Messungen — der Prüfling war falsch, nicht der Prüfgegenstand, und in einem Fall (P3.6) hätte das eine ungeprüfte Zusage als geprüft gezählt, weil ein nicht gefundenes Suchmuster wie ein grünes Ergebnis aussieht. **Ein Prüfling, der nichts findet, muss sagen können, ob er gesucht hat.**
+
+### P3.7 — Titel und Legende teilen sich einen Rand ✅ erledigt 2026-09-05 (drei Versuche verworfen)
 
 **Befund:** In den Plotly-Diagrammen des Dashboards überlappen sich Titel und Legende. Beide leben im oberen Rand: Die Legende steht waagerecht bei `y=1.02` über der Zeichenfläche, der Titel im selben `margin.t=56`. Gemessen am laufenden System: Titel y 681–702, erster Legendeneintrag y 696–715 — **6 px Überschneidung**. Bei fünf Legendeneinträgen («Buchungsrate nach Profil-Segment») wird die Legende **105 px** hoch und deckt den Titel weitgehend zu.
 
@@ -2340,17 +2372,25 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 1. **Größeres `margin.t` plus `title.y=1`** (56 → 92 px): behebt es für drei der vier Aussagen. Die vierte hat eine Legende, die auf 105 px umbricht, und läuft weiterhin in den Titel. **Ein fester Rand kann eine Legende variabler Höhe nicht auffangen** — das ist keine Frage der Zahl.
 2. **`title.automargin=True`**, der dafür vorgesehene Plotly-Mechanismus: macht es **schlimmer**. Danach überlappten *beide* Diagramme der Aussage 3 statt einem. Der Titel zieht den Rand auf, die Legende sitzt aber relativ zur Zeichenfläche und wandert mit nach unten.
 
-**Was zu tun ist:** Die Legende gehört **unter** die Zeichenfläche (`yanchor="top"`, negatives `y`, größeres `margin.b`). Dann hat der Titel den oberen Rand für sich, und die Legende wächst nach unten, wo Platz ist. **Das ist eine Gestaltungsentscheidung für jedes Diagramm im Produkt**, nicht eine Zeile Reparatur — deshalb ein eigenes Paket und nicht am Rand von P2.6 erledigt.
+**Umgesetzt am 2026-09-05, und der Befund war größer als gemeldet:** Gemessen am laufenden System überschnitten sich Titel und Legende in **allen** vier Aussagen und **beiden** Modi — **12 Überschneidungen** über sechs Diagramme, 11 px im Regelfall und 21 px bei «Buchungsrate nach Profil-Segment». Der Plan nannte 6 px an einem Beispiel; die Zahl war zu klein, weil sie an einem Diagramm erhoben war.
 
-**Fallstrick:** Die x-Achsenbeschriftung lebt bereits unten. Wer die Legende dorthin setzt, prüft beide zusammen, sonst tauscht er eine Überlappung gegen die nächste.
+**Die Legende steht jetzt unter der Zeichenfläche** (`yanchor="top"`, `y=-0.30`), der Titel hat den oberen Rand für sich. Zwei Zahlen tragen das, beide in [`dashboard/web/theme.py`](../dashboard/web/theme.py) als benannte Konstanten mit ihrer Herleitung: `LEGENDE_RAND` (48 px) und `LEGENDE_Y` (−0,30).
 
-**Fertig wenn:** Kein Diagramm des Dashboards überlappt Titel und Legende — gemessen im Browser über **alle** vier Aussagen und beide Modi, nicht an einem Beispiel. Der Wächter gehört zu `tests/test_web_overflow.py`, der ohnehin als einziger einen echten Browser hat.
+**Ein dritter Versuch ist dazugekommen und ebenfalls verworfen** — er sah nach der saubersten Lösung aus und ist es nicht:
 
-**Doku zieht mit:** `CLAUDE.md` (Farb- und Layoutfundament), falls sich die Regel ändert.
+3. **Legende am Container festnageln** (`yref="container"`, `y=0`, `yanchor="bottom"`): löst die Überlappung deterministisch, weil die Unterkante fest steht. Nimmt die Legende damit aber aus Plotlys Automargin heraus — der untere Rand muss dann den schlechtesten Fall abdecken. Gemessen 148 px, und das kostete im Regelfall **100 px Zeichenfläche** für eine 29 px hohe Legende (216 statt 316 px Zeichenhöhe bei 420 px Figurenhöhe). Bei 88 px lief die hohe Legende 21 px in die Achsenbeschriftung: **Plotly zieht den Rand für eine container-bezogene Legende nicht auf.** Mit Papierbezug tut es das.
 
-### P3.8 — Was ein Tick bedeutet, ist dreimal verschieden entschieden ⚠️ neu 2026-08-31
+**Der Fallstrick ist eingetreten, und der Wächter hat ihn gefunden**, nicht ein Blick aufs Bild: Bei `y=-0.22` war die Titel-Überlappung weg und die hohe Legende lag **5 px im Achsentitel** — eine Überlappung gegen die nächste getauscht. Bei −0,30 bleiben 8 bis 25 px Luft zum Achsentitel und 35 bis 52 px zur Achsenbeschriftung. Deshalb misst der Wächter **drei** Abstände, nicht einen.
 
-> **Der Anlass war eine Nutzerfrage**, und sie hat eine Invariante getroffen: «Es kommt doch darauf an, wie viele Ticks man macht — evtl. möchte man Jahre.» Beim Nachmessen kam heraus, dass die Frage schon beantwortet ist. Dreimal. Verschieden.
+**Nebenwirkung, bewusst behalten:** `automargin=True` auf beiden Achsen. Ohne es zieht Plotly den unteren Rand nicht auf, und die Legende landet außerhalb der Figur. Der Preis ist eine Zeichenfläche, die je nach Legendenhöhe unterschiedlich hoch ist — richtig so: Eine Figur mit fünf Reihen braucht mehr Beschriftungsfläche als eine mit zwei.
+
+**Fertig, gemessen:** Kein Diagramm des Dashboards überlappt Titel und Legende — Teil 8 von [`tests/test_web_overflow.py`](../tests/test_web_overflow.py) misst alle vier Aussagen, alle fünf Bereiche, beide Modi und beide Breiten: **16 Zusagen, alle grün**. Dazu `test_the_legend_guard_would_notice_a_relapse`, der die Legende per `Plotly.relayout` an ihren alten Platz zurückschiebt und prüft, dass der Wächter das meldet — ein Wächter, der nie etwas sieht, könnte auch blind sein.
+
+**Doku ist mitgezogen:** `CLAUDE.md` (Regel 4 des Dash-Abschnitts nennt jetzt auch die Layoutseite des Templates).
+
+### P3.8 — Ein Tick ist ein Monat ✅ erledigt 2026-09-07 (neu 2026-08-31)
+
+> **Der Anlass war eine Nutzerfrage**, und sie hat eine Invariante getroffen: «Es kommt doch darauf an, wie viele Ticks man macht — evtl. möchte man Jahre.» Beim Nachmessen kam heraus, dass die Frage schon beantwortet ist. Dreimal. Verschieden. **Am 2026-09-07 ist sie einmal beantwortet: ein Tick ist ein Monat.**
 
 **Befund:** [Invariante 5](../CLAUDE.md) sagt «ein Tick ist ein Tick» — keine Kalendersemantik in Configs, Checkpoints oder Ausgaben. Als **Regel für Datenformate** ist das eingehalten: Nirgends steht ein Datum. Als Aussage über das **Modellverhalten** hält sie nicht. Eine Zeitskala verschwindet nicht dadurch, dass man sie nicht aufschreibt — jeder Mechanismus, der pro Tick etwas verändert, unterstellt eine.
 
@@ -2376,34 +2416,121 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Fallstrick:** Wer nur eine der drei Stellen anfasst, verschiebt den Widerspruch, statt ihn aufzulösen. Der Wächter misst deshalb alle drei zusammen.
 
-**Fertig wenn:** Eine Tick-Dauer ist festgelegt und **jeder** zeitabhängige Mechanismus rechnet mit ihr — nachgewiesen an denselben drei Messungen, nicht an einer Absichtserklärung.
+**Zurückgestellt am 2026-09-05, mit Grund und nicht auf Sicht.** Beim Durchgang durch Phase 3 wurde die Festlegung Haiko vorgelegt — mit den drei Wegen und ihren Folgekosten. Entschieden war zunächst: **noch nicht festlegen.** Der Grund war nicht Aufwand, sondern Reihenfolge. Alle drei Wege verlangen eine Umparametrisierung, die der Backtest anschließend nicht mehr prüfen kann: Wer die Sättigung oder die Bevölkerungskurve auf eine gewählte Tickdauer einstellt, stellt genau die Größen ein, an denen P2.7 das Modell gegen 2015–2024 misst — und ein Modell, das den Vergleich besteht, weil es auf ihn hin eingestellt wurde, ist an nichts geprüft. Dieselbe Begründung, mit der P2.7 keine Eichung ist.
 
-**Doku zieht mit:** `CLAUDE.md` (Invariante 5 — sie ist zu schärfen oder zu ersetzen), `docs/handbuch/tick-und-lauf.md`, `docs/handbuch/grenzen.md`.
+---
 
-### P3.1 — System-Properties täuschen keine Laufzeitwerte mehr vor
+**Entschieden am 2026-09-07: Weg 1, ein Tick ist ein Monat.** Die Entscheidung ist Haikos; was hier steht, ist ihre Umsetzung und was dabei herauskam.
+
+**Der Grund, aus dem zurückgestellt wurde, hält der Umsetzung nicht stand** — und das ist der wichtigste Satz dieses Abschnitts. Die Sorge war, eine Umparametrisierung nehme dem Backtest seinen Prüfwert. Sie tut es hier aus zwei Gründen nicht:
+
+1. **Der Anker ist außen, nicht innen.** Geändert wurde die **Einheit**, nicht die Aussage über die Welt. Die Bevölkerungskurve behauptete als Jahre gelesen 0,2657 % p.a.; genau diese Jahresrate trägt sie weiterhin, nur in Monaten gerechnet. `demand_growth_rate` behauptete 3 % p.a.; auch die stehen weiter da. Kein Wert ist gewählt worden, weil er den Vergleich verbessert — ein eigener Wächter hält die Jahresrate gegen die von vorher.
+2. **Der Backtest wird schlechter.** Fünf von acht Kennzahlen verschlechtern sich, eine verbessert sich geringfügig, zwei bleiben gleich — **keine einzige spricht für die Änderung**. Wäre hier auf ihn hin eingestellt worden, sähe das anders aus.
+
+| Kennzahl | vorher | nachher |
+| --- | ---: | ---: |
+| Preis, Abstand gesamt | 9,72 | **9,82** |
+| Preis, 2016–2019 | 1,01 | **1,15** |
+| Preis, 2022–2024 | 21,33 | **21,37** |
+| Preis, Richtung | 5/7 | 5/7 |
+| Nachfrage, Abstand gesamt | 36,36 | **36,44** |
+| Nachfrage, 2016–2019 | 24,85 | **25,04** |
+| Nachfrage, 2022–2024 | 51,71 | 51,64 |
+| Nachfrage, Richtung | 5/7 | 5/7 |
+
+**Der Grund für die Verschlechterung ist derselbe Befund wie in P2.7:** Die Bevölkerungskurve wuchs um 8 % über eine Strecke, die als *Jahre* gemeint war. In Monaten sind es +2,7 % über zehn Jahre — dem Modell fehlt der Nachfragetreiber nach oben also **noch deutlicher** als vorher. Der Befund wird schärfer, nicht kleiner.
+
+**Ein vierter Widerspruch kam bei der Umsetzung dazu, und er war der schärfste:** `demand_growth_rate` trug `unit: "fraction_per_tick"` und daneben die Beschreibung «Jaehrliche Wachstumsrate». **Das Feld widersprach sich selbst**, Einheit gegen Beschreibung — und gerechnet wurde die Einheit: `sync_demand_level` zinst den Wert Tick für Tick auf. 0,03 je Monat sind **42,58 % im Jahr**, über die 120 Ticks des Backtests der Faktor **34,7**. Der Wächter aus P3.8 hat ihn nicht gefunden, weil er die drei bekannten Mechanismen aufzählte statt sie zu suchen — genau der Fallstrick, den derselbe Abschnitt oben benennt.
+
+**Was geändert wurde, und was ausdrücklich nicht:**
+
+| Mechanismus | vorher | Lesart | Maßnahme |
+| --- | --- | --- | --- |
+| Sättigung (`booking_increase` / `saturation_decay`) | 2 bis 12 Ticks zwischen zwei Reisen | Monate ✅ | **unverändert** |
+| Backtest (`reihen.tick_je_monat`) | zwölf Ticks je Jahr | Monate ✅ | **unverändert** |
+| `fuel_price_change` = 0,005 je Tick | 6,17 % p.a. | Monate ✅ | unverändert, Einheit dokumentiert |
+| `bevoelkerungsentwicklung` | +8 % über 29 Ticks | **Jahre** ❌ | Jahresstufen bis Tick 120, Jahresrate erhalten |
+| `demand_growth_rate` = 0,03 je Tick | 42,58 % p.a. | **Jahre** ❌ | 0,0025 je Tick = 3,04 % p.a. |
+| `erneuerungsrate` = 0,0 | Standard verwies auf das offene P3.8 | — | Begründung ersetzt, 0,0012 benannt |
+
+**Der Horizont der Bevölkerungskurve ist mit erledigt** — die offene Restposition von [P2.8](#p28--die-nachfrage-kann-nicht-wachsen--erledigt-2026-09-03-weg-a-2026-08-31). Sie endete bei Tick 30, der Backtest rechnete **90 von 120** Ticks mit eingefrorener Bevölkerung. Jetzt reicht sie bis Tick 120, also zehn Jahre — und das ist genau das Fenster des Backtests. **Jahresstufen und kein Monatsraster**, weil Bevölkerungsstatistik jährlich erhoben wird; ein feineres Raster täuschte eine Genauigkeit vor, die die Quelle nicht hat. Innerhalb eines Standardlaufs liegen damit drei Stufen — ein gedeckter Horizont ohne jede Bewegung im Lauf wäre die halbe Lösung gewesen, und ein eigener Wächter prüft genau das.
+
+**Der Wächter misst, statt zu lesen.** [`tests/test_ein_tick_ist_ein_monat.py`](../tests/test_ein_tick_ist_ein_monat.py) löst `test_tickdauer_ist_uneinheitlich.py` ab (gelöscht). Der alte hielt den Ist-Stand «die Skalen widersprechen sich noch» und ist rot geworden, als jemand sie anglich — genau wie sein Docstring angekündigt hatte. Der neue hält die Gegenrichtung, und sein tragender Teil sucht sich die Raten über ihre **Einheit** (`*_per_tick`) selbst: Zwölfmal aufgezinst muss jede eine plausible Jahresrate ergeben. Eine Textsuche nach «jährlich» wäre an den Erklärtexten hängen geblieben, die genau diesen Fall schildern — dieselbe Falle, in die die ersten Wächter von [P3.3](#p33--fehlermeldungen-die-auch-greifen--erledigt-2026-09-05) gelaufen sind. **Sechs Mutationen, sechsmal rot**, darunter die, die eine Jahresrate hinter einer anderen Einheit versteckt.
+
+**Zwei Zusagen gehen über den heutigen Zustand hinaus**, weil sie sonst nichts sagen würden: dass die Kurve als *Jahre* gelesen jetzt **unplausibel** ist (sonst wäre der Wächter mit einer Kurve zufrieden, die beides zulässt), und dass ihre Jahresrate **die von vor P3.8** ist (sonst zöge unter dem Deckmantel einer Einheitenkorrektur eine Neuschätzung ein).
+
+**Invariante 5 ist geschärft, nicht ersetzt.** «Ein Tick ist ein Tick» bleibt als Regel über **Daten** wortgleich stehen — in Config, Checkpoint und Ausgabe steht weiterhin kein Datum, und die Kalenderzuordnung lebt weiterhin nur im Backtest. Was danebentritt, ist die Antwort auf eine andere Frage: welche Zeitskala die **Mechanik** unterstellt. Beide gelten zusammen.
+
+**Was ausdrücklich nicht entschieden ist: der Horizont der Rahmenszenarien.** Sie laufen 50 Ticks — als Monate gut vier Jahre — und lassen die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 EUR steigen. Das ist keine Rate, sondern eine Erzählung über die Welt, und ihre Kohärenzbegründungen nennen dafür Quellen. Sie stillschweigend umzuskalieren hieße, vier Szenarien etwas anderes sagen zu lassen, ohne ihre Begründung anzufassen. Eingeplant als [P4.5](#p45--was-ein-rahmenszenario-über-die-zeit-behauptet--offen-neu-2026-09-07).
+
+**Nachtrag vom selben Tag: der erste Anlauf war unvollständig, und zwar an genau der Stelle, vor der dieses Paket warnt.** Auf die Frage, ob die Monatsrechnung *systemübergreifend* stimmt, kam die Messung: **Drei der vier ausgelieferten Rahmenszenarien überschrieben `demand_growth_rate` weiterhin mit ihrer Jahresrate** — `business_as_usual` 0,03 (**42,58 % p.a.**), `freiwillige_wende` 0,02 (26,82 %), `transformation_conflict` 0,01 (12,68 %). `co2_delayed` trug keine eigene Vorgabe und erbte still den korrigierten Wert.
+
+**Der Wächter konnte es nicht finden, weil seine Ausnahme zu weit gefasst war.** Sein Docstring begründete, die Sweeps würden bewusst nicht geprüft: Deren Tick-Zahlen seien *Erzählungen* und keine Raten. Das stimmt für `active_from_tick` — und nicht für einen `baseline`-Wert einer Größe mit der Einheit `*_per_tick`. Das ist dieselbe Rate an einer zweiten Stelle. Exakt der **Fallstrick** oben: *Wer nur eine der Stellen anfasst, verschiebt den Widerspruch, statt ihn aufzulösen.*
+
+**Der Schaden war nicht der einzelne Wert, sondern die Vergleichbarkeit.** Drei Rahmen rechneten in Jahren, einer in Monaten — und der Szenario-Vergleich stellt sie nebeneinander. Umgerechnet unter Erhalt der Jahresrate: 0,0025 (3 % p.a.), 0,00165 (2 %), 0,00083 (1 %).
+
+**Gemessen über 50 Ticks je Szenario, vorher gegen nachher** — und das Ergebnis ist enger, als man erwarten würde:
+
+| Rahmen | Nachfrageniveau vorher | nachher | Preis | Buchungsrate | Faktorlage |
+| --- | ---: | ---: | --- | --- | --- |
+| Business as Usual | 0,9141 | 0,8981 | unverändert | unverändert | unverändert |
+| CO₂-Verzögerung | 0,6921 | 0,6921 | unverändert | unverändert | unverändert |
+| Freiwillige Wende | 0,7959 | 0,7864 | unverändert | unverändert | unverändert |
+| Transformationskonflikt | **1,2480** | **0,7909** | unverändert | unverändert | unverändert |
+
+**Bewegt hat sich allein `demand_level`** — die Makrogröße, die neben der gerechneten Buchung mitläuft und in Faktorregeln und Agenten-Prompts eingeht. Preis, Buchungsrate und alle sieben Faktoren sind in allen vier gleich geblieben, weil keine Schwelle überschritten wurde. **Beim Transformationskonflikt geht die Korrektur in die Richtung, die zur Erzählung passt:** Ein Krisenszenario wies vorher ein Nachfrageniveau **über** dem Ausgangswert aus.
+
+**Der Wächter deckt die Lücke jetzt** (`TestAuchDieRahmenszenarienRechnenInMonaten`, drei Zusagen): jede Ratenvorgabe eines Rahmens gegen dieselbe Obergrenze, plus die **Vergleichbarkeit** der vier untereinander. Die zweite ist nicht überflüssig — eine Mutation mit 12,68 % p.a. liegt *unter* der Obergrenze und wird allein von ihr gemeldet. **Stresstests bleiben ausgenommen**, und das ist die Unterscheidung aus P2.2: Ihre Verläufe sind auf Sichtbarkeit gebaut, nicht auf Plausibilität.
+
+**Fertig, gemessen:** `tests/test_ein_tick_ist_ein_monat.py` — zwölf Zusagen über vier Mechanismen, dazu die Sperrklinke, dass der Wächter überhaupt etwas findet. Der Backtest ist neu gerechnet (`docs/backtest_vorlauf.md`), ein Standardlauf über 40 Ticks endet bei **0,267857 / 116,5883** statt 0,268519 / 116,4595 — ein Schnitt in `docs/handbuch/vergleiche.md`. **Doku ist mitgezogen:** `CLAUDE.md` (Invariante 5, Glossar «Tick» und `erneuerungsrate`, Testliste, P2.7-Befund), `docs/handbuch/tick-und-lauf.md`, `docs/handbuch/grenzen.md`, `docs/handbuch/vergleiche.md`, `docs/handbuch/ref-config.md`, `docs/audit_findings.md`.
+
+### P3.1 — System-Properties täuschen keine Laufzeitwerte mehr vor ✅ erledigt 2026-09-05
 
 **Befund:** Für Properties mit `source in {"runtime","computed"}` (z. B. `provider_markup`, `ticket_price`) liefert `resolve_system_properties` laut eigenem Docstring die statische Trajektorien-Baseline, nicht den Laufzeitwert. Folgenlos nur, solange keine ausgelieferte Regel diese IDs per `system_property`-Bedingung referenziert — eine neue Regel darauf würde still gegen eine veraltete Zahl prüfen.
 **Fundstelle:** [`src/market/property_engine.py:127-136`](../src/market/property_engine.py).
 **Was zu tun ist:** **Vorgabe (2026-08-26): den Zugriff hart ablehnen.** Eine unbekannte oder laufzeitgebundene Property in einer `when`-Bedingung wird ein Konfigurationsfehler, keine stille Baseline. Grund: Laufzeitwerte durchzureichen macht die Regelauswertung innerhalb eines Ticks reihenfolgeabhängig — `apply_factor_rules_at_tick_start` läuft **vor** der Preisberechnung in `environment_node._run_population_tick`, eine Regel auf `ticket_price` würde also je nach Einhängepunkt gegen den Preis von vorhin oder von jetzt prüfen. Das ist eine Modellentscheidung, keine Implementierungsdetailfrage, und sie gehört nicht nebenbei getroffen. Wer die Laufzeitwerte später wirklich braucht, führt sie mit einer bewussten Tick-Phase ein. Zusammen mit P0.4 erledigen — dieselbe Regelmechanik, und dort wird ohnehin festgelegt, dass unbekannte Bedingungstypen laut fehlschlagen.
-**Fertig wenn:** Eine Regel, die `ticket_price` oder `provider_markup` per `system_property` referenziert, wird beim Laden mit klarer Meldung abgewiesen statt still gegen eine Baseline zu prüfen. **Doku:** `docs/handbuch/ref-config.md`.
+**Umgesetzt am 2026-09-05, nicht zusammen mit P0.4** — der Plan hatte das vorgesehen, und es ist nicht passiert. P0.4 hat die *Namen* geprüft; eine Regel auf `ticket_price` kam durch, weil der Name ja stimmt. Der Befund lag also die ganze Zeit hinter einer grünen Prüfung.
 
-### P3.2 — Checkpoint-Version wirklich prüfen
+**Das Vokabular liegt beim Mechanismus, nicht in der Validierung:** [`property_engine.darf_in_regel_stehen`](../src/market/property_engine.py) sagt, welche Quelle eine Bedingung lesen darf, und trägt die Begründung; `validation._validate_rule_property_names` prüft dagegen. Dieselbe Bauform wie `SHIFT_ZIELE` (P2.4) und `KNOWN_METRICS` (P0.4) — eine zweite Liste in der Validierung liefe beim nächsten `source`-Wert auseinander.
+
+**Die Meldung sagt, was stattdessen geht.** Eine Abweisung ohne Ausweg ist eine Sackgasse: Den Preis des laufenden Ticks gibt es als `metric`, und der Text nennt ihn.
+
+**Fertig, gemessen:** `tests/test_validation.py::TestEineRegelLiestKeinenLaufzeitwert` — sechs Zusagen. Darunter zwei, die über den Wortlaut hinausgehen: dass die alte Meldung («unbekannte Systemgröße») von der neuen **nicht verdeckt** wird, und dass die Menge der gesperrten Größen genau `{provider_markup, ticket_price}` ist — kommt eine dritte dazu, wird es rot, und dann gehört ein Blick darauf, ob `resolve_system_properties` für sie wirklich nur die Baseline liefert. **Doku ist mitgezogen:** `docs/handbuch/ref-config.md` (die Tabelle der Bezugsgrößen plus der Grund, warum der Laufzeitwert nicht durchgereicht wird).
+
+### P3.2 — Checkpoint-Version wirklich prüfen ✅ erledigt 2026-09-05
 
 **Befund:** `checkpoint_version` wird in jedes Checkpoint-Metadatum geschrieben (`= 2`), aber nirgends zurückgelesen — `CheckpointManager.load` ignoriert `payload["metadata"]` komplett. Das Feld täuscht eine Versionsprüfung vor, die es nicht gibt.
 **Fundstelle:** [`src/orchestration/checkpoint_manager.py:26`](../src/orchestration/checkpoint_manager.py).
-**Was zu tun ist:** Beim Laden die Version prüfen und bei Mismatch klar abbrechen (Migration erst, wenn es eine zweite Version gibt).
-**Fertig wenn:** Ein Checkpoint mit fremder Version wird mit verständlicher Meldung abgelehnt, Test dazu. **Doku:** `docs/handbuch/ref-ausgaben.md`.
+**Umgesetzt am 2026-09-05.** `load` prüft die Version, `CheckpointVersionError` sagt, welche Datei welche Version trägt und was zu tun ist. Eine Migration gibt es bewusst nicht — solange es *eine* Version gibt, wäre sie Code ohne Fall.
 
-### P3.3 — Fehlermeldungen, die auch greifen
+**Der Fall, den ein bequemes `.get(..., CHECKPOINT_VERSION)` verschluckt hätte:** ein Checkpoint **ohne** Metadatenblock. Die Metadaten gibt es erst seit Version 2, und `latest_checkpoint` findet die alten `round_*.json` weiterhin. Ein fehlendes Feld ist deshalb eine *fremde* Version und keine passende — es als aktuell zu behandeln wäre genau die stille Annahme, gegen die das Paket antritt.
+
+**Die Zahl steht jetzt an einer Stelle** (`CHECKPOINT_VERSION`), und ein Test hält Schreiber und Leser zusammen. Vorher hätte niemand gemerkt, wenn `save` eine 3 geschrieben hätte.
+
+**Fertig, gemessen:** `tests/test_checkpoint_manager.py::TestDieVersionWirdWirklichGeprueft` — fünf Zusagen, darunter der eigene Schreiber (eine Prüfung, die den eigenen Checkpoint abweist, wäre schlimmer als keine) und die *zukünftige* Version: Der Maßstab ist «nicht meine», nicht «älter als meine». **Doku ist mitgezogen:** `docs/handbuch/ref-ausgaben.md`.
+
+### P3.3 — Fehlermeldungen, die auch greifen ✅ erledigt 2026-09-05
 
 **Befund:** Zwei Stellen, an denen Fehlerbehandlung nur so aussieht: In `langgraph_workflow` steht ein `try: pass` mit `except`, das nie feuern kann — die beabsichtigte freundliche Meldung bei fehlendem `langgraph` bleibt aus, stattdessen kommt später ein roher `ImportError`. In `create_graph.py` verschluckt ein `except Exception: pass` auch den absichtlich re-raisten Graph-Build-Fehler, und das Skript schreibt trotzdem ein statisches `graph.json`.
 **Fundstelle:** [`src/orchestration/langgraph_workflow.py:41-44`](../src/orchestration/langgraph_workflow.py), [`langgraph_studio/create_graph.py:16-24`](../langgraph_studio/create_graph.py).
 **Dazugekommen aus der P0.1-Gegenprobe (2026-08-26): der dritte Fall ist die CLI.** Seit P0.3 weist ein Lauf mit kaputter Config sauber ab — im Dashboard als roter Kasten mit allen Befunden, auf der CLI als **roher Python-Traceback**. `main()` in [`src/run_simulation.py`](../src/run_simulation.py) lässt `ValidationError` einfach durchschlagen; wer `--temperature 99` tippt, sieht zwanzig Zeilen Stack, in denen die eigentliche Meldung untergeht, und bekommt keinen sprechenden Exit-Code. Die Prüfung ist richtig, ihre Darstellung nicht.
 
-**Was zu tun ist:** Echten Import in den `try`-Block ziehen; im Studio-Skript den Build-Fehler durchreichen statt ein irreführendes `graph.json` zu schreiben. `ValidationError` in `main()` abfangen und als Fehlerliste auf `stderr` ausgeben, mit Exit-Code ungleich 0 statt Traceback.
-**Fertig wenn:** Fehlendes `langgraph` erzeugt die gemeinte Meldung; ein kaputter Graph-Build bricht sichtbar ab; eine kaputte Config auf der CLI erzeugt dieselbe lesbare Liste wie im Dashboard. **Doku:** `docs/handbuch/fehlerbilder.md`, `README.md` (CLI).
+**Umgesetzt am 2026-09-05, alle drei Stellen.** Der echte `langgraph`-Import steht im `try` und **vor** `get_llm()` — die Reihenfolge entscheidet, ob der Nutzer «kein langgraph» oder «kein Ollama erreichbar» liest. `create_graph.py` reicht den Build-Fehler durch: kein `graph.json`, kein `Wrote …`. Und die CLI schreibt die Befunde als Liste auf `stderr` und endet mit **2**.
 
-### P3.4 — LLM-Konfiguration zentralisieren
+**Der Exit-Code ist 2 und nicht 1**, weil ein Aufrufer «deine Eingabe ist falsch» von «mir ist etwas kaputtgegangen» unterscheiden können soll, ohne die Meldung zu lesen — Skripte und CI tun genau das. Die 2 ist die Konvention, die `argparse` für denselben Fall schon benutzt.
+
+**Was ausdrücklich *nicht* gefangen wird:** alles andere. Ein `KeyError` aus der Engine ist keine Nachricht an den Nutzer, sondern ein Befund für die Entwicklung, und der Stack ist dort die nützlichere Ausgabe. Ein `except Exception` in der Hülle wäre genau das Muster, das dieses Paket an zwei anderen Stellen abräumt — ein Test hält das über den Syntaxbaum fest. **Ein Traceback auf der CLI heißt seither: Programmfehler, nicht Eingabefehler**, und das steht auch so im Handbuch.
+
+**Ein fehlendes `langgraph` ist kein kaputter Graph**, und nur das zweite ist ein Befund: Ohne das Paket schreibt `create_graph.py` die statische Topologie weiterhin — sie ist eine Beschreibung, keine Ausführung — sagt aber, dass sie ungeprüft ist.
+
+**Zwei Funde nebenbei, beide aus der Umsetzung:**
+
+1. **Der Fehlerweg konnte selbst scheitern.** Die Windows-Konsole dieses Projekts steht auf `cp1252`, und in `src/` stehen **46** Zeichenketten mit Zeichen, die dieser Zeichensatz nicht kennt (`→`, `≥`, `₂`, `Δ`, `β`, `✓`) — **gezählt ohne Docstrings**, weil ein Docstring nicht ausgegeben wird; alle Konstanten wären 55. Die Definition steht hier, weil die Zahl ohne sie nicht reproduziert (C1 des Audits). Kein heutiger Validierungsbefund enthält eines davon — ein einziges hätte die Liste durch einen `UnicodeEncodeError` ersetzt, also durch einen Traceback an genau der Stelle, an der dieses Paket eben einen weggeräumt hat. `_schreibe` schreibt deshalb notfalls mit `backslashreplace` (nicht `replace`: ein `≥` ist nachschlagbar, ein `?` ist verloren). Der weitere Umgang mit den 46 Stellen ist [P3.10](#p310--46-zeichenketten-die-die-konsole-nicht-schreiben-kann--erledigt-2026-09-05).
+2. **Die eigenen Wächter fielen auf die eigene Prosa herein.** Der erste Anlauf prüfte mit Zeichenkettensuche (`"except Exception" not in quelle`), und **drei von drei** Zusagen schlugen an — an den Kommentaren und Docstrings, die den alten Zustand beschreiben und dabei `try: pass`, `except Exception` und `get_llm()` zitieren. Geprüft wird jetzt der Syntaxbaum. *Ein Wächter, den eine Erklärung über ihn selbst umlenken kann, ist keiner.*
+
+**Fertig, gemessen:** `tests/test_fehlermeldungen_greifen.py` — zwölf Zusagen über alle drei Stellen. Die CLI wird als **eigener Prozess** gestartet: Nur so ist der Exit-Code echt, `main()` im selben Prozess prüfte einen Rückgabewert. **Doku ist mitgezogen:** `docs/handbuch/fehlerbilder.md` (zwei Abschnitte: die Liste auf der CLI und der fremde Zwischenstand aus P3.2), `README.md` (Exit-Codes).
+
+### P3.4 — LLM-Konfiguration zentralisieren ✅ erledigt 2026-09-05
 
 **Befund:** Modellname `"llama3.2"` steht in **10 Produktionsdateien** (nachgezählt am 2026-08-25, das Audit sprach von sieben Stellen), der Endpoint uneinheitlich als `http://localhost:11434` in sieben und `http://127.0.0.1:11434` in zwei Dateien. Bemerkenswert: die beim Dash-Umbau **neu** entstandenen Module `config_editor/compute_mode.py` und `config_editor/llm_pipeline.py` haben die Hartkodierung geerbt — das Finding wächst mit jedem Modul weiter.
 **Fundstelle:** `src/run_simulation.py`, `src/llm/llm_client.py`, `src/models/state_models.py`, `src/orchestration/langgraph_adapter.py`, `dashboard/config_catalog.py`, `dashboard/llm_status.py`, `dashboard/run_browser.py`, `dashboard/run_launcher.py`, `dashboard/web/config_editor/compute_mode.py`, `dashboard/web/config_editor/llm_pipeline.py` (plus `tests/test_web_compute_mode.py`, `tests/test_web_layout.py`).
@@ -2413,25 +2540,658 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Dazugekommen aus der P0.1-Gegenprobe (2026-08-26): `get_llm()` wählt still den Mock.** P0.1 hat den stillen Mock **bei Fehlern** beseitigt — die Auswahl davor ist geblieben. [`studio_helpers.get_llm()`](../src/llm/studio_helpers.py) fällt am Ende seiner Kette kommentarlos auf `MockLLM()` zurück, wenn weder `OLLAMA_MODEL` noch `LLAMA_HTTP_URL` noch `LLAMA_TRANSFORMERS_MODEL` gesetzt ist. Zwei Aufrufer hängen noch daran: [`langgraph_workflow.py:48`](../src/orchestration/langgraph_workflow.py) (der Graph für LangGraph Studio) und [`run_scenario_generator/cli.py:33`](../src/reporting/run_scenario_generator/cli.py). Wer Studio ohne gesetzte Umgebung startet, bekommt erfundene Agenten-Antworten, ohne sie angefordert zu haben — kein `--mock-llm`, kein Hinweis, und nach der Definition aus Invariante 1 auch kein „Ausfall", weil nie ein Aufruf gescheitert ist. Der bewusste Mock (`--mock-llm`, «Ohne Sprachmodell») ist davon unberührt und richtig so.
 
-**Was zu tun ist:** Eine Defaults-Quelle (Config plus `.env`-Override), alle Stellen darauf ziehen — und dabei `state.config.llm` entweder wirklich anschließen (Draft und CLI schreiben hinein, der Client liest daraus) oder ersatzlos entfernen. Halb stehenlassen ist die schlechteste der drei Möglichkeiten. Fällt mit der Client-Zusammenführung aus P0.1 zusammen. **Dazu die Backend-Auswahl entscheidbar machen:** `get_llm()` sagt über `logging`, welches Backend es gewählt hat, und der Griff zum Mock passiert nur auf ausdrückliche Ansage (Parameter oder Umgebungsvariable) statt als letzter Zweig einer `if`-Kette.
-**Fertig wenn:** Ein Endpoint-Wechsel erfordert genau eine Änderung, und kein Codepfad rechnet mit dem Mock, ohne dass es jemand angefordert hat oder mindestens im Log steht. **Doku:** `README.md` (Umgebung), `docs/handbuch/ref-config.md`.
+**Umgesetzt am 2026-09-05 in drei Schritten**, weil es drei verschiedene Befunde in einem Paket waren.
 
-### P3.5 — Stille Klemmungen und Debug-Ausgaben
+**1 — Eine Quelle.** [`src/llm/defaults.py`](../src/llm/defaults.py) hält Modellname, Endpunkt, Temperatur und Antwortlänge; alle Stellen zeigen darauf, auch `configs/simulation_config.json`. **Der Endpunkt ist jetzt `127.0.0.1` und nicht `localhost`**, und das ist keine Kosmetik: `localhost` löst auf manchen Windows-Installationen zuerst nach `::1` auf, während Ollama nur auf IPv4 lauscht. **Und die Umgebungsvariablen liegen *in* der Quelle**: `OllamaConfig` liest sie selbst, per `default_factory` beim Bauen und nicht beim Importieren. Damit wirkt `OLLAMA_BASE_URL` auch für den Sweep-Pfad, der seinen Client direkt baut — der Befund vom 2026-08-27.
+
+**2 — `state.config.llm` ist angeschlossen** (entschieden gegen «ersatzlos entfernen»). Je Oberfläche eine Ableitung — `llm_config_from_draft` und `_llm_config_from_args` —, sie füllt den Zustand, und der Client entsteht daraus: eine Quelle, zwei Leser. `LLMConfig` trägt dazu `base_url`, weil ein Modellname ohne Endpunkt den Lauf nur halb beschreibt. **Bei einem Lauf ohne Sprachmodell bleibt das Feld unberührt** — gerufen wird nichts, also beschreibt es nichts, und `compute_mode` sagt das im Artefakt.
+
+**3 — Der Mock kommt nur auf Ansage.** `get_llm()` scheitert jetzt, wenn kein Backend konfiguriert ist, statt kommentarlos `MockLLM()` zu liefern; die Meldung nennt alle vier Wege hinaus, und **jede** getroffene Wahl steht als `INFO` im Log. Der Schalter dafür ist eine Umgebungsvariable (`AEROFORESIGHT_MOCK_LLM`) und **nicht** nur ein Parameter: Die beiden Aufrufer — der Studio-Graph und die Szenario-CLI — bauen `get_llm()` ohne Argumente, ein Parameter allein hätte niemanden erreicht.
+
+**Drei Funde aus der Umsetzung, alle gemessen:**
+
+1. **Jeder Befund stand danach doppelt da.** Solange die Sprachmodell-Werte den Zustand nicht erreichten, musste `validate_draft` sie eigens danebenprüfen; seit sie es tun, prüft `collect_state_errors` genau dieselben Werte — einmal als «config.llm: …» und einmal als «Technik: …». Die zweite Prüfung ist weg, und der Herkunftsort heißt jetzt **«Sprachmodell»** statt «config.llm»: Der Name eines Datenfelds ist kein Name für eine Einstellung, und jetzt liest *jede* Oberfläche diese Meldung.
+2. **Ein leeres Modellfeld wurde stillschweigend zu `llama3.2`.** Der erste Anlauf von `llm_config_from_draft` schrieb `draft.model.strip() or DEFAULT_MODEL` — dieselbe erfundene Vorgabe, die [P1.9-W5.1](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28) im Dashboard abgeräumt hat. Aufgefallen ist es, weil die alte Doppelprüfung diesen Fall meldete und die neue nicht mehr.
+3. **`base_url` wurde nie geprüft.** Ein Feld ohne Schema (`127.0.0.1:11434`) sieht richtig aus und ergibt einen Aufruf ohne Host: ein Verbindungsfehler mitten im Lauf, dem niemand die Ursache ansieht. Er wird jetzt beim Start gemeldet — und der **Wizard-Wächter** hat dabei gemeldet, dass das neue Feld in `FELD_SCHRITT` fehlte, sein Befund also auf «Prüfen & Starten» gelandet wäre statt an seinem Feld.
+
+**Fertig, gemessen:** [`tests/test_llm_defaults.py`](../tests/test_llm_defaults.py) — 25 Zusagen in vier Gruppen. Der Wächter gegen eine zweite Quelle ist ein **AST-Durchlauf über `src/` und `dashboard/`** und keine Liste der neun Dateien: Genau so ist der Befund gewachsen — die beim Dash-Umbau neu entstandenen `config_editor`-Module haben die Hartkodierung *geerbt*, per Kopie, ohne dass jemand sie dort hingeschrieben hätte. Eine Aufzählung fängt den Rückfall an bekannter Stelle und übersieht das zehnte Modul. **Doku ist mitgezogen:** `README.md` (Umgebung, Exit-Codes, Backend-Auswahl), `langgraph_studio/.env.example`, `docs/handbuch/lauf-konfigurieren.md` (die Adresse in der Prüftabelle und der Absatz «Technik»).
+
+### P3.5 — Stille Klemmungen und Debug-Ausgaben ✅ erledigt 2026-09-05
 
 **Befund:** `threshold` und `max_contributions_per_agent` werden ohne Warnung auf einen Wunschbereich geklemmt — wer bewusst `threshold=1` setzt, bekommt stillschweigend 3. Dazu acht `print()`-Debugausgaben im Scheduler, die bei jedem Tick unbedingt laufen.
 **Fundstelle:** [`src/agents/redebedarf_scheduler.py:73,75`](../src/agents/redebedarf_scheduler.py), [`src/agents/scheduler_node.py`](../src/agents/scheduler_node.py) (8 Vorkommen).
 **Was zu tun ist:** Klemmung protokollieren oder als Konfigurationsfehler abweisen; `print()` durch `logging` mit Level-Guard ersetzen.
 **Reihenfolge (2026-08-26):** **nicht vor P0.1.** Das Fortschritts-Log des Dashboards wird ausschließlich von `print()` gespeist (`run_launcher.py:397` leitet `stdout` in einen Tee um). Der Logging-Handler, der in denselben Tee schreibt, entsteht in P0.1; landet P3.5 vorher, verschwinden die Scheduler-Zeilen aus dem Live-Log, ohne dass jemand einen Fehler sieht.
-**Fertig wenn:** Ein geklemmter Wert erzeugt eine sichtbare Warnung; ein normaler Lauf ist auf stdout still, und das Fortschritts-Log im Dashboard zeigt weiterhin, was es vorher zeigte. **Doku:** `docs/handbuch/ref-config.md`, `docs/handbuch/akteure.md`.
+**Umgesetzt am 2026-09-05, und aus «protokollieren» ist «abweisen» geworden.** Der Plan ließ beides zu; abgewiesen wird jetzt, weil ein geklemmter Wert eine Einstellung *annimmt* und mit einer anderen rechnet — dieselbe Bauform, die [P2.11](#p211--zwei-quellen-für-dieselbe-marktkonstante--erledigt-2026-09-03) bei den Marktkonstanten und P1.9-W5.1 im Dashboard abgeräumt hat. **Die Grenzen sind dieselben wie vorher**, geändert hat sich nur, dass sie etwas sagen; kein Aufrufer im Repo setzt die beiden Werte, das Abweisen bricht also nichts.
 
-### P3.6 — Stabiler Vertrag für den Run-Launcher
+**Ein Fall kam dazu, den die Klemmung nicht kannte:** `threshold > max_score`. Die alte Klemmung fing nur nach unten ab — liegt die Schwelle über der Skala, kann kein Agent sie je überschreiten, und der Scheduler bliebe **dauerhaft stumm**. Das sah aus wie ein Lauf, in dem niemand Redebedarf hatte.
+
+**Und die Grenzen stehen nicht mehr als Literale im Konstruktor.** `max(3, threshold)` stand neben `DEFAULT_THRESHOLD = 3`: Wer die Konstante geändert hätte, hätte die Klemmung unverändert gelassen — die zweite Quelle noch einmal, eine Ebene tiefer. Ein Test hält per AST fest, dass im Konstruktor nicht wieder geklemmt wird.
+
+**Bei den acht `print()` war die Einteilung die Arbeit**, nicht der Kanal. «Auf stdout still» und «das Fortschritts-Log zeigt weiterhin, was es vorher zeigte» widersprechen sich, wenn man alles auf `debug` legt. Es sind daher drei Stufen: die **Sprechreihenfolge** bleibt `info` und steht damit weiter im Fortschrittsfenster (es hängt seit P0.1 über `progress_logging` an `logging`), die **Sicherheitsgrenze** wird eine `warning` — dass der Rest eines Ticks übersprungen wird, gehört gesehen —, der Rest ist `debug`.
+
+**Die Reihenfolgeregel ist eingehalten** (nicht vor P0.1), und die tragende Zusage prüft genau sie: `test_das_fortschrittsfenster_sieht_die_reihenfolge` schickt die Zeile durch `progress_logging` — dieselbe Kette, die das Dashboard benutzt — statt nur zu prüfen, dass irgendwo geloggt wird.
+
+**Fertig, gemessen:** [`tests/test_stille_klemmungen.py`](../tests/test_stille_klemmungen.py) — 17 Zusagen. **Doku ist mitgezogen:** `docs/handbuch/akteure.md` (eine Zeile je Runde statt acht, plus die Sicherheitsgrenze).
+
+### P3.6 — Stabiler Vertrag für den Run-Launcher ✅ erledigt 2026-09-05
 
 **Befund:** `run_launcher` importiert drei unterstrichs-präfixierte Funktionen aus `run_simulation` (`_build_run_args`, `_save_run_outputs`, `_write_multi_run_summary`). Kein stabiler Vertrag — ein Refactor der internen Helper bricht den Launcher unbemerkt.
 **Fundstelle:** [`dashboard/run_launcher.py:168`](../dashboard/run_launcher.py).
-**Was zu tun ist:** Öffentliche Schnittstelle in `src/run_simulation.py` definieren und den Launcher darauf ziehen.
-**Fertig wenn:** Kein Dashboard-Modul importiert mehr Unterstrich-Namen aus `src/`. **Doku:** `CLAUDE.md` (Architektur-Map, Service-Layer-Absatz).
+**Umgesetzt am 2026-09-05.** Die drei Namen heißen ohne Unterstrich, stehen im `__all__` von [`src/run_simulation.py`](../src/run_simulation.py), und dessen **neuer Modul-Docstring** sagt, dass dieses Modul zwei Dinge ist: der Batch-Einstieg *und* das, was jeder Startpfad nach einem Lauf tut. Bis dahin gab es nur für das erste einen Namen — daher der Griff ins Innenleben.
+
+**Die alten Namen sind weg, nicht daneben stehen geblieben.** Beide gleichzeitig zu führen wäre die schlechteste Variante: Der Launcher hinge weiter am alten, und niemand merkte es.
+
+**Der Wächter musste in den Funktionsrumpf schauen**, und das ist die Lehre des Pakets: Der Import stand nicht im Dateikopf, sondern **mitten in `_run_body`** (`dashboard/run_launcher.py:179`). Ein Test, der die obersten Importzeilen liest — der naheliegende —, hätte ihn nie gefunden. [`tests/test_launcher_vertrag.py`](../tests/test_launcher_vertrag.py) läuft deshalb über den ganzen Syntaxbaum und prüft das mit einem eigenen Fall nach.
+
+**Die andere Hälfte dieses Pakets war schon erledigt.** Beim Vorziehen am 2026-08-28 lautete die Begründung: Ohne eine Schnittstelle, die sagt, *was ein Startpfad entgegennimmt*, lässt sich W1.1 nicht mechanisch halten. Das leisten seit P1.9-W1.1 `scenario_sweeps.FESTLEGUNGEN` und `UNBEACHTET` (Invariante 7); übrig blieb die Namensfrage.
+
+**Nicht gemacht, bewusst:** Die Lauf-Argumente sind weiterhin ein `SimpleNamespace`, den `run_launcher` an zwei Stellen von Hand baut, und die Artefakt-Schreiber lesen daraus mit `getattr(..., False)`. **Genau daraus ist der `mock_llm`-Fehler von P0.6 entstanden** — ein fehlendes Feld war von einem abgeschalteten nicht zu unterscheiden, und jeder Dashboard-Lauf «Ohne Sprachmodell» wurde als vollwertiger LLM-Lauf protokolliert. Ein typisiertes Modell an dieser Grenze wäre Invariante 4 und macht aus dem stillen Rückfall einen `TypeError`; es ist **ein eigenes Paket**, weil es die Artefakt-Schreiber mit anfasst und nicht nur den Import. Eingeplant als [P3.11](#p311--die-lauf-argumente-sind-ein-simplenamespace--erledigt-2026-09-05).
+
+**Fertig, gemessen:** neun Zusagen. **Doku ist mitgezogen:** `CLAUDE.md` (Service-Layer-Absatz der Architektur-Map).
 
 > **Vorgezogen am 2026-08-28** (aus [P1.9](#p19--der-assistent-richtet-ein-experiment-ein--erledigt-2026-08-30-audit-2026-08-28)): Der fehlende Vertrag ist nicht nur ein Refactor-Risiko — er ist die Ursache dafür, dass der Assistent Felder erfragt, die der Sweep-Pfad still verwirft. Ohne eine öffentliche Schnittstelle, die sagt, **was ein Startpfad entgegennimmt**, lässt sich W1.1 nicht mechanisch halten.
+
+### P3.11 — Die Lauf-Argumente sind ein `SimpleNamespace` ✅ erledigt 2026-09-05
+
+> **Aus der Umsetzung von [P3.6](#p36--stabiler-vertrag-für-den-run-launcher--erledigt-2026-09-05).** Dessen Kriterium ist erfüllt — die Namen sind öffentlich —, aber der *Vertrag* ist weiterhin keiner: Er ist ein Namensraum ohne Form.
+
+**Befund:** `save_run_outputs`, `build_run_args` und `save_run_metadata` bekommen ihre Lauf-Argumente als `argparse.Namespace` bzw. `types.SimpleNamespace` und lesen daraus mit `getattr(args, "feld", False)`. `dashboard/run_launcher.py` baut diesen Namensraum an **zwei** Stellen von Hand, mit je fünfzehn Feldern. Eine Struktur gibt es nicht: Kein Modell beschreibt, was ein Startpfad liefern muss, und ein fehlendes Feld ist von einem abgeschalteten nicht zu unterscheiden.
+
+**Der Schaden ist eingetreten und dokumentiert, zweimal in derselben Datei.** `mock_llm` fehlte im handgebauten Namensraum, `save_run_metadata` fiel auf `False` zurück, und **jeder Dashboard-Lauf «Ohne Sprachmodell» wurde als vollwertiger LLM-Lauf protokolliert** — gefunden in der zweiten Gegenprobe zu P0.6. Der zweite Fall ist `llm_narrative`: Dort steht heute ein ausgeschriebenes `False` mit einem Kommentar, der erklärt, *warum* es ausgeschrieben dasteht («ein weggelassenes Feld ist von einem abgeschalteten nicht zu unterscheiden»). Dieser Kommentar ist der Befund.
+
+**Fundstellen:** [`src/run_simulation.py`](../src/run_simulation.py) (`build_run_args`, `save_run_outputs`), [`dashboard/run_launcher.py`](../dashboard/run_launcher.py) (zwei handgebaute `SimpleNamespace`), [`src/reporting/output_writer/metadata.py`](../src/reporting/output_writer/metadata.py) und [`provenance.py`](../src/reporting/output_writer/provenance.py) (`getattr`-Rückfälle).
+
+**Was zu tun ist:** Ein typisiertes Modell an dieser Grenze — **Invariante 4**, die für Agenten-Grenzen längst gilt und hier nicht. Aus dem stillen Rückfall wird damit ein `TypeError` beim Bauen: Wer ein Feld vergisst, erfährt es beim Start und nicht aus einem falschen Artefakt drei Wochen später. Die `getattr`-Rückfälle in den Schreibern fallen mit weg — sie sind nur da, weil der Namensraum formlos ist.
+
+**Fallstrick:** Ein Feld, dessen Rückfall eine *Aussage* ist (`no_run_scenario` bei einem Pfad, der nie eines erzeugt), braucht einen Vorgabewert mit Begründung — dieselbe Unterscheidung wie `AUSNAHMEN` in `tests/test_cost_pressure_source.py`. Wer alles zur Pflicht macht, erzeugt fünfzehn Felder, die jeder Aufrufer stumpf ausschreibt, und gewinnt nichts.
+
+**Umgesetzt am 2026-09-05.** [`models.run_models.RunArgs`](../src/models/run_models.py) mit `extra="forbid"`; alle vier Bauer liefern es (CLI, die zwei handgebauten des Dashboards, der Sweep-Pfad), und die Schreiber lesen Attribute statt zu raten.
+
+**Die Trennlinie zwischen Pflicht und Vorgabe ist der Rechenmodus**, und das ist die eigentliche Entscheidung dieses Pakets. Pflicht ist, was in `compute_mode` einfließt — `mock_llm`, `deterministic_only`, `llm_narrative` —, denn ein falscher Wert *dort* lässt den Lauf im eigenen Artefakt etwas Falsches über sich behaupten, und genau das ist zweimal passiert. Alles andere beschreibt, was ein Lauf *nebenbei* tut (ein Protokoll schreiben, ein Szenario erzeugen); dort heißt ein ausgelassenes Feld ohne Zweideutigkeit «nein», und der Vorgabewert steht **nur im Modell**. Der Fallstrick des Pakets ist damit beantwortet, ohne fünfzehn Pflichtfelder zu erzeugen.
+
+**Ein zweiter Verlust ist dabei aufgefallen, latent seit Langem:** `build_run_args` kopierte **`llm_narrative` gar nicht mit**. Nachgestellt vor der Änderung — aus `deterministic_with_llm_narrative` wurde beim Durchreichen `deterministic_only`. Kein Pfad erreicht die Kombination heute (das Dashboard setzt `False`, die CLI hat keinen Schalter, der Sweep-Pfad ruft `save_run_metadata` direkt), **die nächste Änderung hätte sie erreicht**. Dieselbe Auslassung wie bei `mock_llm`, nur ein Feld weiter.
+
+**Wo ein Pfad ein Pflichtfeld strukturell nicht kennen kann, sagt er es ausdrücklich:** Die CLI hat keinen `--llm-narrative`-Schalter, weil nur der Sweep-Pfad den Hybridmodus erzeugt — sie setzt das Feld per `parser.set_defaults(llm_narrative=False)`, mit dem Grund daneben. Das ist ein Vorgabewert **als Aussage des Pfades**, nicht als Rückfall des Lesers, und damit genau die Unterscheidung, die der Fallstrick verlangt.
+
+**Zwei Felder sind dabei verschwunden, weil sie niemand las:** `sweep` im Sweep-Pfad und `run_id`/`checkpoint_dir` in den beiden Namensräumen des Dashboards. `save_run_outputs` bekommt beides als eigenes Argument; im Namensraum reisten sie nur mit. `extra="forbid"` hat sie beim ersten Lauf gemeldet — der Vertrag findet totes Beiwerk, ohne dass jemand danach sucht.
+
+**Ein Wächter musste dabei umgebaut werden, und er hatte es vorhergesagt.** `tests/test_provenienz_vollstaendig.py` suchte die Herkunftsfelder als `getattr(args, "x", …)` in den Schreibern — genau das, was P3.11 entfernt. Sein eigener Docstring nannte den Fall: «Entweder ist es weg, oder es wird jetzt anders gelesen — dann greift dieser Test ins Leere.» Er liest jetzt Attributzugriffe, sein Anker ist `mock_llm` statt des entfallenen `run_id`, und eine Zusage ist dazugekommen: dass die drei Felder des Rechenmodus **Pflicht** sind.
+
+**Fertig, gemessen:** [`tests/test_lauf_argumente.py`](../tests/test_lauf_argumente.py) — 13 Zusagen. Darunter der AST-Durchlauf über die drei Schreiber (kein neues `getattr(args, …, default)`), der Nachweis, dass **jedes** Feld das Durchreichen übersteht (nicht nur das eine, das aufgefallen ist), und dass kein Startpfad wieder einen formlosen Namensraum baut. **Doku ist mitgezogen:** `CLAUDE.md` (Invariante 4 und die Architektur-Map).
+
+### P3.10 — 46 Zeichenketten, die die Konsole nicht schreiben kann ✅ erledigt 2026-09-05
+
+> **Gefunden beim Bau des Fehlerwegs von [P3.3](#p33--fehlermeldungen-die-auch-greifen--erledigt-2026-09-05)** — und das Prüfskript, das den Befund erhob, ist selbst daran gescheitert. Ehrlicher lässt sich ein Befund kaum belegen.
+
+**Befund:** Die Windows-Konsole dieses Projekts steht auf **`cp1252`** (`sys.stdout.encoding` nachgemessen). In `src/` stehen **46** Zeichenketten — Laufzeittexte, keine Docstrings —, die Zeichen enthalten, die dieser Zeichensatz nicht kennt: `→` (28×), `₂` (8×), `≥`/`≤` (4×), dazu `Δ`, `β`, `≈`, `✓`, `⚠`. Jeder `print` und jede Log-Zeile mit einem dieser Zeichen wirft einen `UnicodeEncodeError`.
+
+**Warum es heute meistens nicht auffällt:** Die betroffenen Texte gehen überwiegend in **Dateien**, und die werden mit `encoding="utf-8"` geschrieben — dort ist alles richtig. Getroffen wird nur, was wirklich auf die Konsole geht. Zwei Stellen sind dabei die heiklen: `rule_engine._OPERATOR_LABELS` (`≥`, `≤`) speist `describe_when`, und `agent_dependencies` trägt ein `→` in einem Meldungstext.
+
+**Warum es trotzdem ein Befund ist:** Ein `UnicodeEncodeError` beim *Melden* verschluckt die Meldung. Innerhalb von `logging` wird er zu einem «--- Logging error ---» mit Stack statt der Zeile; in einem `print` reißt er den Aufruf ab. Das ist dieselbe Klasse wie P3.3 selbst — eine Ausgabe, auf die man sich verlässt, kann still oder laut verschwinden, und zwar genau dann, wenn man sie braucht.
+
+**Fundstellen:** 46 Stellen über `src/` (Zeichenketten-Konstanten **ohne Docstrings** — alle wären 55); die Liste erzeugt ein AST-Durchlauf (Vorlage steht in der Umsetzung von P3.3). Die Zeichensatz-Grenze liegt in `sys.stdout.encoding`, nicht im Code.
+
+**Was zu tun ist — und was nicht:** Nicht 46 Zeichenketten umschreiben. `→` in einem Erklärtext ist richtig, und `CO₂` ist der korrekte Name des Stoffs. Zu entscheiden ist die **Ausgabeseite**, und dafür gibt es zwei Wege:
+
+1. **Die Stdio-Kodierung auf UTF-8 stellen** (`sys.stdout.reconfigure(encoding="utf-8")` im CLI-Einstieg, oder `PYTHONUTF8=1`). Löst die ganze Klasse mit einer Zeile. **Der Preis ist zu messen:** Eine `cp1252`-Konsole zeigt UTF-8-Bytes als Buchstabensalat, und das Fortschritts-Log des Dashboards liest denselben Strom (`run_launcher` leitet `stdout` in einen Tee um) — was dort ankommt, entscheidet über die Darstellung im Browser. **Nicht ohne diese Messung entscheiden.**
+2. **Jede Ausgabestelle zeichensatzfest machen** (wie `_schreibe` in P3.3). Ehrlich und lokal, aber es sind viele Stellen, und die nächste vergisst es wieder.
+
+**Fallstrick:** Wer Weg 1 wählt, prüft **beide** Enden — die Konsole *und* das Fortschritts-Log im Dashboard. Der Tee ist der Grund, warum P3.5 nicht vor P0.1 durfte; hier ist er es wieder.
+
+**Fertig wenn:** Eine Meldung mit `≥` oder `CO₂` erreicht Konsole **und** Fortschritts-Log lesbar — gemessen an beiden Enden, nicht an einem. Der Wächter ist der AST-Durchlauf: Er zählt die Stellen und darf nach der Entscheidung entweder auf 0 stehen (Weg 1 macht ihn überflüssig) oder als Zähler bleiben.
+
+---
+
+**Umgesetzt am 2026-09-05 — und die Messung hat den Befundtext an zwei Stellen widerlegt.** Beides gehört hierher, weil es die Entscheidung getragen hat.
+
+**Erstens: es ist kein Konsolenproblem.**
+
+| `sys.stdout` ist … | `encoding` | `print("≥")` |
+| --- | --- | --- |
+| eine echte Konsole | `utf-8` (`_WindowsConsoleIO`) | läuft durch |
+| umgeleitet (Datei, Pipe, CI, Dienst) | `cp1252` (`FileIO`) | `UnicodeEncodeError` |
+
+Damit fällt der Einwand gegen **Weg 1** weg: Eine cp1252-Konsole, die UTF-8 als Buchstabensalat zeigte, gibt es nicht — wo cp1252 auftaucht, schreibt Python in eine Datei oder Pipe, und dort ist UTF-8 genau richtig. Der Fallstrick («beide Enden prüfen») bleibt richtig und ist eingelöst; die Sorge um die Darstellung war gegenstandslos.
+
+**Zweitens, und unangenehmer: die Umstellung gab es schon — als Import-Seiteneffekt.** In `src/orchestration/scenario_sweeps.py` standen auf Modulebene zwei Zeilen:
+
+```python
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+```
+
+Sie änderten einen **prozessglobalen** Zustand, sobald jemand irgendetwas aus `src.orchestration` importierte — das Paket-`__init__` zieht das Sweep-Modul mit. Gemessen deckte das **7 von 11** Einstiegspunkten ab, ohne dass es irgendwo dokumentiert war: Der CLI-Lauf, das Dashboard und der State Explorer waren *zufällig* sicher; `create_graph.py`, `serve_graph.py` und `cib_visualizer.py` nicht. Und **`stderr` war nirgends gesichert** — dort landen die Logging-Fehler und die Befundliste einer kaputten Konfiguration (P3.3).
+
+Das erklärt auch, warum der erste Ende-zu-Ende-Versuch «vorher» *nicht* scheiterte: Der Seiteneffekt hatte ihn gerettet. Der ehrliche Beweis läuft deshalb über `cib_visualizer` — einen Pfad, den er nicht deckte: **vorher `UnicodeEncodeError`, nachher durchgelaufen.**
+
+**Was gilt:** `logging_setup.stdio_auf_utf8()` stellt `stdout` **und** `stderr`, jeder Einstiegspunkt ruft sie ausdrücklich, und der Seiteneffekt ist weg. Die 46 Zeichenketten bleiben, wie sie sind — `CO₂` ist der Name des Stoffs.
+
+**Die Ausnahme ist der Ordner `scripts/`**, mit Grund: Die drei Helfer sind eigenständig, importieren sonst nichts aus `src` und tragen keine einzige Zeichenkette, die cp1252 nicht kann (gemessen). **Beim ersten Anlauf war die Kopplung drin und hat zwei von ihnen gebrochen** (`ModuleNotFoundError: No module named 'src'`) — daher die Ausnahme, und daher prüft der Wächter ihre Begründung nach, statt sie zu glauben.
+
+**Ein Nebenbefund, vom Wächter selbst gefunden:** `langgraph_studio/__init__.py` trug ein **BOM**, an dem `ast.parse` scheitert (`invalid non-printable character U+FEFF`). Kein Ausgabe-, sondern ein Quelltext-Zeichensatz — aufgefallen, weil dieser Durchlauf als erster `langgraph_studio/` liest. Das BOM ist weg, und der Wächter liest `utf-8-sig`, damit das nächste ihn nicht umbringt.
+
+**Fertig, gemessen:** [`tests/test_zeichensatz.py`](../tests/test_zeichensatz.py) — 14 Zusagen. Beide Enden (Strom *und* Fortschrittsfenster, letzteres **durch den Tee**, weil nur dort der Verlust auftrat), der Gegenbeweis ohne die Sicherung, `stderr`, die Idempotenz, ein Strom der sich weigert (er wird gemeldet, nicht verschluckt) — und zwei Zusagen gegen den Rückfall: kein Import stellt die Ausgabe wieder heimlich um, und die Umstellung steht an genau einer Stelle.
+
+**Doku ist mitgezogen:** `CLAUDE.md` (Architektur-Map zu `logging_setup.py`, Dev-Workflow), `README.md` (Umleiten ist sicher).
+
+---
+
+### Audit der Phase 3 (2026-09-05) — fünf Pakete, der schwere Befund ist vorbestehend
+
+Phase 3 ist am Tag ihres Abschlusses vollständig geprüft worden. Vollfassung:
+[`audit_phase3_2026-09-05.md`](audit_phase3_2026-09-05.md).
+
+**Die Einschränkung gehört an den Anfang, weil sie das Gewicht des Ergebnisses
+bestimmt: dieses Audit ist nicht unabhängig.** Phase 2 hat jemand geprüft, der
+sie nicht gebaut hat; hier fällt beides zusammen. Wer eine Zusage aufgeschrieben
+hat, sucht nicht mit demselben Eifer nach ihrer Lücke — und er kennt die Stellen,
+an denen er weggeschaut hat, nicht als Lücken, sondern als Entscheidungen.
+Ersetzt wurde das durch **Verfahren statt Absicht**: jeder tragende Wächter
+absichtlich kaputtgemacht und musste rot werden (**fünfzehn von fünfzehn**), jede
+veröffentlichte Zahl neu erhoben statt nachgelesen, geprüft am laufenden System
+statt am Quelltext, der die Zusage behauptet. **Sechs Messungen mussten ihren
+ersten Anlauf verwerfen, weil der Prüfling falsch war** — das steht in der
+Vollfassung jeweils dabei, weil ein Audit, das nur seine Treffer zeigt, seine
+eigene Trefferquote überzeichnet.
+
+**Was hält:** Elf von zwölf Paketen, und zwar nachgemessen und nicht gelesen —
+die CLI wirklich mit zwei fremden Checkpointformen gestartet (beide abgewiesen,
+Exitcode 2, kein Traceback), die LLM-Validierung in drei Varianten ausgelöst,
+P3.1 an **allen drei** Regelarten geprüft, ein Dashboard-Lauf wirklich gerechnet
+und sein `run_metadata.json` gelesen (`compute_mode: mock_llm` — die Zusage, an
+der P3.11 hängt). **Kein Befund berührt die Zahlen eines Laufs.**
+
+**Was nicht hält**, sind vier Ränder — und drei davon sind dieselbe Fehlerart wie
+die Lehre der Phase selbst: eine Prüfung oder eine Zusage, die nur so aussieht.
+**Der einzige schwere Befund kommt nicht aus Phase 3**, sondern ist ein
+Rückfall aus Phase 2, den dieses Audit gefunden hat (P3.17):
+
+| Paket | Befund | Schwere |
+| --- | --- | --- |
+| [P3.13](#p313--der-abgeschaffte-rückfall-lebt-eine-ebene-höher--erledigt-2026-09-05) | `draft_to_launch_config` erfindet `llama3.2` für ein leeres Modellfeld — der Rückfall, den P3.4 zwanzig Zeilen weiter abgeschafft hat | 🔶 **behoben** |
+| [P3.14](#p314--der-fehlerweg-braucht-keinen-puffer--erledigt-2026-09-05) | `_schreibe` setzt `sys.stderr.buffer` voraus; ohne wird aus dem `UnicodeEncodeError` ein `AttributeError` — und alle drei Tests teilen die Annahme | 🔶 |
+| [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--erledigt-2026-09-05) | `sweep_metadata_args` sagt `-> SimpleNamespace` und liefert `RunArgs`; `sweep_id` ist unbenutzt; der tote Import bleibt für `ruff` unsichtbar | 🔶 **behoben** |
+| [P3.16](#p316--das-500-ms-kriterium-und-sein-deckel--erledigt-2026-09-05) | P3.9s Kriterium lautet 500 ms, sein Wächter deckelt bei 900 — ein Rückfall auf 800 bliebe grün | 🔶 **behoben** |
+| [P3.17](#p317--der-browser-wächter-ist-rot-und-niemand-läuft-ihn--erledigt-2026-09-06) | Der Browser-Wächter ist **112 zu 6** rot — **vorbestehend**, auf `main` identisch nachgemessen. C5 des Phase-2-Audits gilt als behoben und ist es nicht, mit neuen Ursachen | ⛔ **behoben** |
+
+Fünf kleine Befunde brauchten kein eigenes Paket, und **alle fünf sind am
+2026-09-06 erledigt**: die Nutzermeldung, die `llama3.2` erfindet (mit P3.13), der
+veraltete Docstring an der Klickmessung (mit P3.16), ein Doku-Verweis auf ein
+Modul, das es nicht gibt (C4), die Zähldefinition hinter der «46» (C1) und die
+klein geschriebene Kopfzeile der CLI (C2). Zwei davon waren **vorbestehend**.
+
+**Zwei der fünf waren beim Anfassen größer als gemeldet**, und beide auf dieselbe
+Weise — die gemeldete Kleinigkeit war ein Symptom:
+
+* **C1** nannte eine ungenannte Zähldefinition. Nachgemessen reproduzierte
+  **keine** der drei Zahlen, die den Modell-Bereich beschreiben (146 statt 168
+  Bedienelemente, 1886 von 3364 statt 1404 von 2882 Knoten). Zwei davon waren
+  *irgendwann* richtig und sind in eine Aussage über heute gewandert. Die Klasse
+  ist [P4.3](#p43--doku-zahlen-mechanisch-halten), das dort jetzt drei konkrete
+  Kandidaten hat.
+* **C2** nannte einen kleingeschriebenen Wortlaut. Derselbe Text stand an **drei**
+  Stellen wörtlich; dass sie identisch waren, war Zufall und kein Mechanismus. Es
+  gibt jetzt `validation.BEFUND_KOPF` und einen Wächter über die eine Quelle —
+  der Wortlaut selbst braucht keinen.
+
+**Die Lehre über beide:** Ein 🔷 sagt etwas über die *Auswirkung*, nicht über die
+*Tiefe*. Wer einen kleinen Befund behebt, ohne ihn nachzumessen, behebt das
+Symptom.
+
+**Der Prüfstand, damit die Zahlen nachschlagbar sind:** `pytest` ohne die zwei
+dokumentierten Ollama-Hänger und ohne den Browser-Wächter — **1641 passed, 1
+skipped, 2 deselected** in 2:17, kein Fehlschlag. Der Browser-Wächter separat:
+**112 passed, 6 failed** in 22:17 (das ist P3.17). `ruff check .` und
+`black --check .` grün über 250 Dateien. Keine Datei bleibt verändert: Die
+Mutationsprobe schreibt in dreizehn Dateien und nimmt jede Änderung in einem
+`finally` zurück, und ein Probelauf in `outputs/` ist entfernt — weil der
+Höhen-Deckel an dessen Inhalt hängt.
+
+---
+
+### P3.13 — Der abgeschaffte Rückfall lebt eine Ebene höher ✅ erledigt 2026-09-05
+
+**Fundstelle:** [`dashboard/run_launcher.py:144`](../dashboard/run_launcher.py),
+dazu [`dashboard/web/config_editor/compute_mode.py:116`](../dashboard/web/config_editor/compute_mode.py).
+
+**Befund.** P3.4 hat `draft.model.strip() or DEFAULT_MODEL` aus
+`llm_config_from_draft` entfernt und mit einem Kommentar zum Befund erklärt —
+«Ein leeres Modellfeld ist ein Befund und keine Gelegenheit, `llama3.2`
+einzusetzen». Zwanzig Zeilen weiter steht dieselbe Zeile noch. Gemessen mit
+geleertem Feld und `mock_llm=False`:
+
+| Weg | `state.config.llm.model` | Befund der Validierung |
+| --- | --- | --- |
+| Preflight (`prepare_simulation_state(entwurf)`) | `''` | «Sprachmodell: Modellname darf nicht leer sein» |
+| Lauf (`draft_to_launch_config` → `launch_config_to_draft`) | `'llama3.2'` | **keine** |
+
+Der Rundlauf **wäscht** den erfundenen Wert: Danach ist er von einem eingetippten
+nicht mehr zu unterscheiden. `_build_llm` trägt dazu den Docstring «der Client
+aus **derselben** Ableitung, die auch den Zustand füllt» — die Ableitung ist
+dieselbe, ihre **Eingabe** ist es nicht.
+
+**Warum es zählt.** Der Preflight sagt etwas anderes als der Lauf, und das
+Artefakt nennt ein Modell, das niemand gewählt hat. Dieselbe Klasse wie
+P1.9-W5.1 (ein Literal als zweite Quelle für einen Vorgabewert) und P2.11 (zwei
+Quellen für denselben Wert). **Praktisch abgeschirmt** ist es durch das Tor aus
+P1.9-W2.2 — aber die Abschirmung liegt in der Oberfläche und nicht im
+Service-Layer, den auch andere aufrufen.
+
+**Fertig wenn:** Das `or DEFAULT_MODEL` ist weg, und ein Wächter in
+`tests/test_llm_defaults.py` schickt **denselben** leeren Entwurf über beide Wege
+und verlangt dasselbe Ergebnis. Die Nutzermeldung in `availability` sagt «kein
+Modell eingestellt» statt einen Namen zu erfinden. **Nicht** in denselben Commit
+gehört eine Änderung an der Reihenfolge oder am Tor — das wäre eine zweite
+Änderung in derselben Zeile.
+
+**Was gilt** (2026-09-05): `draft_to_launch_config` schreibt
+`model=draft.model.strip()`, ohne `or`. Beide Wege führen bei leerem Feld auf
+`''` und **beide** melden «Modellname darf nicht leer sein». `DEFAULT_MODEL`
+bleibt der Vorgabewert des Feldes in `RunLaunchConfig` selbst — das ist eine
+Quelle für einen unbenannten Startwert und nicht die Übersetzung eines leeren
+Feldes.
+
+**Zwei Wächter, und der zweite ist der wichtigere:** Der eine prüft den
+gemeldeten Fall (derselbe leere Entwurf über Preflight und Lauf, gleicher Wert
+*und* gleicher Befund). Der andere prüft den **Mechanismus** — die Rundreise
+`draft_to_launch_config` → `launch_config_to_draft` muss auf den LLM-Feldern ein
+**Festpunkt** sein. Genau dort kann ein `or DEFAULT_…` ein leeres Feld füllen,
+ohne dass es auffällt: Der Wert *sieht* danach aus wie eine Eingabe. Geprüft
+werden `model` **und** `base_url`; letzteres war nur deshalb heil, weil dort nie
+jemand ein `or` geschrieben hat.
+
+**Und der Befund hatte zwei Hälften in `availability`, nicht eine.** Die
+gemeldete war der Modellname; zwei Zeilen darüber stand dasselbe für die
+Adresse, und das war der **schlimmere** Fall: Bei leerem Feld wurde eine
+*erfundene* Adresse angepingt, und deren Antwort entschied darüber, ob «Mit
+Sprachmodell» als möglich angezeigt wird. Läuft dort zufällig ein Ollama, sagte
+die Oberfläche «alle drei Modi stehen zur Verfügung» für einen Lauf, der keinen
+Endpunkt hat. Beide sind weg, der Import von `defaults` ist damit fort — nicht
+nur unbenutzt.
+
+**Alle vier Zusagen sind mutationsgeprüft:** Jeder der beiden Rückfälle im
+Launcher und jeder der beiden in `availability` wurde wieder eingesetzt, und
+jedes Mal wurde es rot.
+
+---
+
+### P3.14 — Der Fehlerweg braucht keinen Puffer ✅ erledigt 2026-09-05
+
+**Fundstelle:** [`src/run_simulation.py:556`](../src/run_simulation.py) (`_schreibe`),
+[`tests/test_zeichensatz.py`](../tests/test_zeichensatz.py).
+
+**Befund.** Der Ausweichpfad nach einem `UnicodeEncodeError` schreibt über
+`sys.stderr.buffer`. Gemessen an zwei Strömen, die beide `cp1252` melden: mit
+`.buffer` hält er, ohne `.buffer` wirft er `AttributeError` — ein Traceback an
+genau der Stelle, an der P3.3 einen weggeräumt hat. **Und der Wächter teilt die
+Annahme:** Alle drei Tests des Fehlerwegs lesen ihr Ergebnis über
+`strom.buffer.getvalue()`, brauchen also einen Puffer und können den pufferlosen
+Fall nicht sehen. Prüfling und Prüfer haben dieselbe Voraussetzung — die
+Fehlerart, die diese Phase dreimal gefunden hat, hier in ihrem eigenen Wächter.
+
+**Ehrlich eingegrenzt.** Es braucht drei Dinge gleichzeitig: einen
+`stderr`-Wrapper ohne `.buffer`, ein Sonderzeichen im Befundtext und einen
+`cp1252`-Strom. Heute leitet das Projekt `stderr` **nirgends** um, und
+`stdio_auf_utf8()` läuft als erste Anweisung in `_main`. Der Pfad ist die Reserve
+für genau den Fall, den sie offenlässt — ein Strom, der die Umstellung
+verweigert; dafür warnt sie, statt zu scheitern. Genau dort greift er, und genau
+dort fällt er um.
+
+**Fertig wenn:** `getattr(sys.stderr, "buffer", None)`, und ohne Puffer geht die
+ersetzte Zeichenkette durch `write`. Dazu ein vierter Test mit einem Strom
+**ohne** `.buffer` — er ist der eigentliche Gegenstand des Pakets, nicht die zwei
+Zeilen Code.
+
+**Was gilt** (2026-09-05), und es ist einfacher als das Kriterium verlangte: Es
+steht **kein** `getattr(..., "buffer", None)` dort, weil der Umweg über die
+Bytes von Anfang an überflüssig war. `backslashreplace` ersetzt genau die
+Zeichen, die die Kodierung *nicht* kann, durch ASCII-Escapes — was übrig bleibt,
+ist per Konstruktion schreibbar. Zurückdekodiert geht es deshalb durch dieselbe
+`print`-Zeile wie der Normalfall, und die Abhängigkeit ist nicht abgefangen,
+sondern **weg**. Ein Zeichen, das die Konsole darstellen kann (`ö`, `—`), bleibt
+dabei stehen; nur das Unschreibbare wird zu seiner nachschlagbaren Escape-Folge (`U+2265` als Text, nicht `?`). Auch `sys.stderr.flush()`
+ist entfallen — der Normalfall flusht ebenfalls nicht, und es war eine zweite
+Attributabhängigkeit derselben Art.
+
+**Der vierte Test ist eine Parametrisierung über beide Bauformen** (mit und ohne
+`.buffer`), damit der pufferlose Fall nicht wieder der ungeprüfte ist. Drei
+Mutationen geprüft: alte Fassung zurück, `errors="replace"` statt
+`backslashreplace`, Ausweichpfad ganz weg — dreimal rot.
+
+> **Und dabei kam ein dritter Befund derselben Familie heraus, in diesem Paket
+> selbst.** Der bestehende Test des Ausweichpfads hat seine Zusage **nie
+> geprüft**: Er ersetzte `builtins.print` durch eine Fassung, die
+> cp1252-Fehler wirft, ließ `sys.stderr` aber das Auffangobjekt von `capsys` —
+> und dessen `encoding` ist **utf-8**. Der Ausweichpfad kodierte also nach
+> utf-8, wo `backslashreplace` nichts zu ersetzen hat; geschrieben wurde das
+> echte `≥`. Durchgegangen ist er über das zweite Glied seiner eigenen
+> Bedingung (`assert "u2265" in ausgabe or "≥" in ausgabe`). **Nachgemessen**,
+> nicht vermutet: Der alte Pfad schrieb `'… cost_pressure ≥ 0,8 …'`, `"u2265"`
+> war nicht enthalten. Er ist ersetzt, nicht repariert — die Lehre steht als
+> Kommentar an seiner Stelle: *Eine Attrappe, die an einer Stelle scheitert und
+> an der anderen so tut, als sei alles in Ordnung, prüft die Verbindung
+> dazwischen nicht.* Und eine `or`-verknüpfte Zusage prüft im Zweifel die
+> lockerere Hälfte.
+
+---
+
+### P3.15 — Eine Signatur, die ihrem Rumpf widerspricht ✅ erledigt 2026-09-05
+
+**Fundstelle:** [`src/orchestration/scenario_sweeps.py:232`](../src/orchestration/scenario_sweeps.py).
+
+**Befund**, gemessen:
+
+| Frage | Antwort |
+| --- | --- |
+| Rückgabe-Annotation | `SimpleNamespace` |
+| tatsächliche Rückgabe | `RunArgs` |
+| Parameter | `['sweep_id']`, davon im Rumpf benutzt: **keiner** |
+| zwei verschiedene `sweep_id` ergeben | **identische** Argumente |
+| `SimpleNamespace` erscheint in | Zeile 18 (Import) und 232 (Annotation) — sonst nirgends |
+
+Drei Dinge auf einmal: Die Annotation sagt das Gegenteil des Rumpfs (P3.11 hat
+den Rumpf umgestellt, die Signatur nicht); der Parameter wird ignoriert, seit
+sein einziger Verwender `sweep=sweep_id` entfallen ist; und die falsche
+Annotation hält den Import am Leben, weshalb `ruff` schweigt — **`ruff check .`
+ist grün.**
+
+**Warum es mehr ist als Kosmetik.** Invariante 4 verlangt Pydantic-Typisierung an
+den Grenzen; ihre Durchsetzung hängt daran, dass die Typangabe stimmt. Hier sagt
+sie einem Leser und jedem Werkzeug, es käme ein formloser Namensraum heraus — die
+genaue Aussage, gegen die P3.11 angetreten ist. **Strukturelle Ursache: Das
+Projekt hat keinen Typprüfer** (weder mypy noch pyright in `pyproject.toml` oder
+der CI), und `ruff` prüft Annotationen nicht gegen `return`.
+
+Der unbenutzte Parameter ist die schwächere Hälfte — es gibt im selben Zweig eine
+Stelle, an der ein unbenutzter Parameter **richtig** ist: `model_editor.layout`
+behält ihn bewusst und sagt im Docstring, warum. Hier steht kein solcher Satz,
+und die Aufrufer übergeben eine Kennung in der Annahme, sie werde verwendet.
+
+**Fertig wenn:** `-> RunArgs`, Import weg, und `sweep_id` benutzt oder
+entfernt — mit einem Satz, welches von beidem gemeint ist. **Und die Klasse
+getrennt davon:** ein Typprüfer über `src/models/` und die Grenzen, als eigenes
+Paket in Phase 4. Die drei Zeilen zu reparieren behebt den Fall; ohne Prüfer ist
+die nächste falsche Annotation genauso unsichtbar.
+
+**Was gilt** (2026-09-05): `-> RunArgs`, der Import ist weg, und **`sweep_id` ist
+entfernt** — nicht bewusst behalten. Der Unterschied zu
+`model_editor.layout(draft)`, wo ein unbenutzter Parameter richtig ist: Dort
+hielt ihn ein Aufrufer, dessen Zeile nicht zweimal geändert werden sollte. Hier
+gab es sieben Aufrufstellen und keinen Grund; ein Parameter, der das Ergebnis
+nicht ändern kann, ist dieselbe Lüge wie die Annotation, nur eine Klammer weiter.
+Die Zugehörigkeit eines Laufs zu seinem Sweep steht im Ablageort und im
+Rahmenszenario; wer sie im Artefakt will, gibt `RunArgs` ein Feld — `extra="forbid"`
+erzwingt dann die bewusste Entscheidung.
+
+**Der Wächter sucht die Erzeuger, statt sie aufzuzählen**
+(`tests/test_lauf_argumente.py::TestJedeSignaturSagtWasSieLiefert`): ein
+AST-Durchlauf über `src/` und `dashboard/` nach **jedem** `return`, das ein
+`RunArgs` baut oder weitergibt — heute drei —, und dann muss die Signatur es
+sagen. Dazu eine Messung statt einer Lektüre (`type(sweep_metadata_args()) is
+RunArgs`) und die Zusage über den wirkungslosen Parameter. **Vier Mutationen
+geprüft, viermal rot** — darunter eine Lüge an einem *zweiten* Erzeuger
+(`build_run_args`), also greift er nicht nur an der gemeldeten Stelle.
+
+**Die Klasse bleibt offen und hat jetzt ein Paket:**
+[P4.4](#p44--ein-typprüfer-für-die-grenzen--offen-neu-2026-09-05-aus-p315). Dieser
+Wächter deckt **eine Familie** ab, weil genau die einen Schaden angerichtet hat;
+für jede andere Grenze gilt die Lücke weiter. Zwölf Tage lang war `ruff check .`
+grün, während die Annotation log — weil sie den Import am Leben hielt, den `ruff`
+sonst gemeldet hätte.
+
+---
+
+### P3.16 — Das 500-ms-Kriterium und sein Deckel ✅ erledigt 2026-09-05
+
+**Fundstelle:** [`tests/test_web_overflow.py:1732`](../tests/test_web_overflow.py)
+(`SICHTBAR_MAX_MS`) und die Abnahmeklausel von
+[P3.9](#p39--ein-klick-in-der-schrittfolge-kostet-zwei-sekunden--erledigt-2026-09-05-ursache-zweimal-korrigiert).
+
+**Befund.** Die Klausel lautet «ein Klick kostet **unter 500 ms**, gemessen im
+Browser über alle sechs Schritte — und die Zahl der Server-Aufrufe steht als Zahl
+im Wächter». Die zweite Hälfte ist erfüllt (`KLICK_AUFRUFE_MAX = 7`, Sperrklinke
+in beide Richtungen). Die erste ist **gemessen** erfüllt — 213 bis 487 ms — aber
+der Wächter deckelt bei **900**, also fast dem Doppelten. Ein Rückfall auf 800 ms
+bliebe grün, während der Plan das Kriterium als erfüllt führt.
+
+**Die Begründung für 900 trägt** und steht im Code: Eine ausgelastete Maschine
+misst anders, und dieser Wächter wird sonst rot, ohne dass sich etwas geändert
+hat (bei drei parallelen Läufen brauchte er einmal 1:56 h — beim Schreiben dieses
+Audits ist derselbe Effekt erneut aufgetreten). Was nicht trägt, ist die
+Kombination aus dieser Grenze und einem ✅, das auf einer Einzelmessung steht.
+Die Doku-Pflicht sagt es selbst: *wer eine Zusage aufstellt, baut den Wächter,
+der sie misst — nicht die Zählung, die sie umgeht.*
+
+**Zu entscheiden ist eines von beidem, nicht beides:**
+
+* **(a)** Deckel auf 500, mit benannter Toleranz und einer Wiederholung bei Rot.
+  Ehrlich gegenüber dem Kriterium, aber es verlagert das Problem: Ein Wächter,
+  der auf einer belegten Maschine flackert, wird nicht mehr gelaufen — und
+  genau daran ist C5 des Phase-2-Audits gestorben.
+* **(b)** Im Plan festhalten, dass das Kriterium **einmal** erreicht wurde und
+  die Sperrklinke bei 900 steht. Billiger, und es sagt die Wahrheit über den
+  Schutzumfang.
+
+**Empfehlung: (b).** Dazu gehört der veraltete Docstring an
+`test_the_step_shows_up_in_reasonable_time` (er nennt noch 665–1426, die Zahlen
+von vor P3.12) — in denselben Commit.
+
+**Entschieden wurde (a) — mit einem Mittel, das die Empfehlung nicht kannte**
+(2026-09-05). Der Einwand gegen (a) war richtig: Ein Wächter, der auf einer
+belegten Maschine flackert, wird nicht mehr gelaufen. Nur folgt daraus nicht,
+den **Maßstab** zu lockern, sondern das **Rauschen aus der Messung** zu nehmen.
+
+**Was gilt:** `SICHTBAR_MAX_MS = 500` — die Zusage im Wortlaut. Gemessen wird
+jeder Schritt **dreimal**, gewertet die **schnellste** Messung
+(`MESSUNGEN_JE_SCHRITT`): Last kann eine Messung nur langsamer machen, nie
+schneller, also schätzt das Minimum, was der *Code* kostet. Eine Regression
+macht umgekehrt jede Messung langsam, auch die beste. Durchgelassen wird
+`SICHTBAR_DECKEL_MS` = 500 + **10 % benannte Toleranz** = 550.
+
+**Warum überhaupt noch eine Toleranz** — und das ist gemessen, nicht
+vorsichtshalber: Zwei Durchgänge an derselben Codefassung, beide mit dem Minimum
+aus drei Messungen, lieferten für «Prüfen & Starten» bei 1024 px **507** und
+**476 ms**. Dieser Schritt liegt *auf* der Linie; ein Deckel von exakt 500 wäre
+in jedem zweiten Lauf rot, ohne dass sich etwas geändert hat. Der Unterschied zu
+den 900 von vorher ist trotzdem der Punkt: 900 war das **1,8-fache** der Zusage
+und hätte genau die Regression durchgelassen, die P3.12 behoben hat.
+
+**Zwischenstation, weil sie zum Ergebnis gehört:** Der erste Anlauf setzte 500
+scharf und trug für Schritt 6 eine benannte Ausnahme (520 ms) nach dem Muster der
+Einstiege in `test_zeichensatz.py`. Der zweite Durchgang misst 476 — und die
+**Sperrklinke gegen verfallene Ausnahmen**, die derselbe Commit eingebaut hatte,
+hat sie sofort als überholt gemeldet. Die Ausnahme ist deshalb wieder weg: Sie
+hätte über dem Ist-Stand geschwebt, und genau das ist der Zustand, gegen den
+dieses Paket antritt.
+
+**Die Regression wird nachweislich weiter gefunden.** Mutationsprobe mit dem
+echten Vor-P3.12-Zustand (`rumpf_fuer` liefert den Rumpf unabhängig vom Pfad):
+**rot an beiden Breiten**, gemessen 606 bis 1489 ms — der Deckel von 550 hat
+also Reserve nach beiden Seiten.
+
+> **Und die erste Mutation war untauglich, was einen eigenen Merksatz wert ist.**
+> Naheliegend war, `layout()` wieder eifrig zu füllen (`html.Div(body(draft), id=HOST)`) —
+> genau die Mutation, mit der das Audit P3.12 geprüft hat. Sie ist **grün**
+> geblieben: Der Routing-Callback `_model_editor` läuft unmittelbar nach dem
+> ersten Zeichnen und **leert** den Wirt wieder, weil `rumpf_fuer` bei fremdem
+> Pfad `[]` liefert. Für die *strukturelle* Zusage aus P3.12 ist diese Mutation
+> richtig; für die *Kosten* reproduziert sie nichts. **Eine Mutation prüft, was
+> sie ändert — nicht, was sie zu ändern vorgibt.**
+
+**Der veraltete Docstring ist mit erledigt** (C3): Der Test heißt jetzt
+`test_the_step_shows_up_within_the_agreed_budget` und nennt die Zahlen, die
+gelten. **Und er kann nicht mehr aus dem falschen Grund grün werden:** Bleibt die
+Mutationsmarke aus, ist `sichtbar_ms` gleich `None`; vorher wurden solche
+Schritte übersprungen, und ein Durchlauf ohne eine einzige Messung galt als
+bestanden. Der Test verlangt jetzt Messungen für jeden Schritt.
+
+**Der Preis:** Die Klickmessung braucht 3:52 statt rund 1:20, der ganze
+Browser-Wächter damit **28:05** statt 22:17 — nachgemessen am 2026-09-06, und
+zwar mit einem parallel laufenden `pytest` daneben, also am oberen Rand.
+
+---
+
+### P3.17 — Der Browser-Wächter ist rot, und niemand läuft ihn ✅ erledigt 2026-09-06
+
+**Nicht aus Phase 3** — auf `main` (`af71a3f`) in einem eigenen Arbeitsbaum
+identisch nachgemessen, mit Prüfung über `__file__`, dass wirklich der
+`main`-Code geladen war. Gefunden hat es das [Audit der Phase 3](#audit-der-phase-3-2026-09-05--fünf-pakete-der-schwere-befund-ist-vorbestehend),
+und es ist dessen einziger schwerer Befund.
+
+**Der Stand:** `tests/test_web_overflow.py` — **112 bestanden, 6 gescheitert** in
+22:17.
+
+| Test | Gemessen | Deckel |
+| --- | --- | --- |
+| `test_no_step_grew_beyond_its_ratchet` `[1280px]` | Schritt 1: **1,96** Schirme · Schritt 6: 1,70 | 1,34 · 1,45 |
+| `test_no_step_grew_beyond_its_ratchet` `[1024px]` | Schritt 1: **2,03** Schirme · Schritt 6: 1,61 | 1,42 · 1,45 |
+| `test_no_line_runs_longer_than_the_eye_can_follow` | **109** Zeichen in einem `LI` («docs/research/links.md — EU-ETS / Fit fo…»), **98** in einem `P` auf «Prüfen & Starten» («bei Tick 16. Danach hält er seinen letzt…») | 75 |
+| `test_the_width_guard_would_notice_a_relapse` (×2) | scheitert an der **Vorbedingung** — er kann keinen Rückfall nachstellen, solange der Ist-Stand außerhalb liegt | — |
+
+**Warum das mehr ist als ein rotes Feld.** Das Audit der Phase 2 hat genau diese
+sechs als **C5** geführt, mit ⛔ bewertet und **noch am 2026-09-03 behoben** — der
+Deckel steht seither auf nachgemessenen Werten, für Schritt 1 auf **1,34**;
+`docs/audit_findings.md` führt C5 deshalb nicht mehr. Heute misst derselbe
+Schritt **1,96**.
+
+**Und die Ursachen sind neue.** C5s Zeilenbefund waren 89 Zeichen im Erklärtext
+des `apply_custom_overrides`-Schalters. Die 109 Zeichen von heute stehen in einem
+**Quellenverzeichnis**, die 98 in einem Satz über einen **Verlauf, der vor dem
+Laufende aufhört** — beides Oberfläche, die am **selben 2026-09-03** dazukam: die
+Kohärenzbegründungen mit ihren Quellen (P2.2/P2.10) und der Hinweis auf die
+Horizontlücken. Der Fix wurde gemessen und **von späteren Commits desselben Tages
+ungültig gemacht**; den 22-Minuten-Wächter hat danach niemand mehr gestartet.
+
+**Damit ist C5s eigentlicher Befund zum zweiten Mal eingetreten** — und der
+lautete nicht «der Deckel stimmt nicht», sondern: *Der Wächter ist opt-in,
+überspringt sich schweigend, und die CI hat keinen Browser; die Zusagen sind
+ungeprüft, ohne dass etwas rot wird.* Innerhalb einer Woche, am selben Wächter,
+mit anderen Ursachen. **Wer nur die Deckel nachmisst, behebt den Fall und nicht
+das Muster.**
+
+**Zwei Teile, und der zweite ist der wichtigere:**
+
+1. **Die vier Fehlschläge nachmessen und zuordnen.** Bei Schritt 6 ist die
+   Laufhistorie in `outputs/` herauszurechnen — sie trägt 0,09 Schirme und ist ein
+   eigener, schon erfasster Befund (der Deckel ist nicht zwischen Rechnern
+   vergleichbar). Bei Schritt 1 ist der Zuwachs von 1,34 auf 1,96 zu erklären,
+   bevor eine Zahl in `DECKEL` geht: Ein Deckel, der einen unerklärten Zuwachs
+   festschreibt, ist wieder aus dem falschen Grund grün. Die beiden langen Zeilen
+   brauchen ein Lesemaß an der Stelle, an der sie entstehen — nicht am Text.
+2. **Entscheiden, wo dieser Wächter läuft.** Solange die Antwort «wer die
+   Oberfläche anfasst, lässt ihn einmal laufen» lautet, ist sie zweimal
+   widerlegt. Denkbar: ein eigener CI-Job mit Browser (nächtlich oder auf
+   Anforderung, nicht in der Hauptstrecke — 22 Minuten), oder die gemessenen
+   Zahlen als Pflichtangabe in der Commit-Message jeder Änderung an
+   `dashboard/web/`. **Die Entscheidung gehört an Phase 4** (Testfundament) und
+   ist dort der Anschluss an P4.2; hier steht sie, weil dieses Audit sie
+   ausgelöst hat.
+
+**Fertig wenn:** Der Wächter ist grün, jede geänderte Zahl in `DECKEL` trägt ihre
+Begründung, und im Plan steht ein Satz darüber, **wo** er läuft — nicht, dass er
+laufen sollte.
+
+---
+
+**Was gilt (2026-09-06).** Beide Teile sind umgesetzt, und der zweite ist der
+wichtigere.
+
+**Der Wächter ist grün: 118 bestanden, 0 gescheitert** in 28:05 — zum ersten Mal
+seit dem 2026-08-30, also nach sieben Tagen. Die Zahl 118 ist dieselbe wie zuvor
+(112 + 6); es sind keine Zusagen weggefallen, sie halten jetzt alle.
+
+#### Teil 1 — die vier Fehlschläge, zugeordnet statt weggedeckelt
+
+**Die beiden Zeilenlängen waren keine Textfrage, sondern ein zweites Lesemaß.**
+Die 109 Zeichen standen in der Quellenliste der Kohärenzbegründung, die 98 im
+Hinweis auf Verläufe, die vor dem Laufende aufhören. Beim Beheben kam der
+eigentliche Befund heraus: **`ui.alert` hatte überhaupt kein Lesemaß** — jeder
+Hinweis dieser Anwendung lief so weit wie seine Zone —, und `HINT` ebenso, was
+die Verfügbarkeitsanzeige mit **106 Zeichen** auffliegen ließ (die Fehlermeldung
+eines fremden Dienstes ist die längste Zeichenkette, die dort ankommen kann).
+Beides ist an der **Komponente** behoben und nicht an der Aufrufstelle, aus
+demselben Grund wie bei `ui.explainer` am 2026-09-03.
+
+**Und dahinter lagen zwei konkurrierende Maße für dieselbe Regel.** Fünf Stellen
+trugen Tailwinds `max-w-prose` — **65ch**, gemessen **88 Zeichen**, also 13 über
+der Zusage; das Projekt hat für genau diese Zusage aber ein eigenes, daran
+geeichtes Maß (`.af-mass { max-width: 53ch }`). Weil `max-w-prose` *aussah* wie
+ein Lesemaß, hat niemand es nachgemessen. Dieselbe Klasse wie P2.11 und wie das
+Farbfundament: **zwei Quellen für einen Wert, von denen nur eine stimmt.** Alle
+fünf sind ersetzt, und `tests/test_web_theme.py` hält es fest — als **statischer**
+AST-Durchlauf, damit die Prüfung in jeder CI läuft und nicht im opt-in-Wächter
+liegt, dessen Ausfall der Anlass dieses Pakets ist.
+
+**Die beiden Höhen sind eingetragen, nicht gesenkt** — und ihr Zuwachs ist
+git-belegt zugeordnet. Nach der Messung von 1,34 haben genau zwei Commits in
+diesen Rumpf geschrieben, beide ohne den Deckel mitzuziehen: `4a5417d` (A1) zeigt
+die Kohärenzbegründung auch für die Standard-Ausgangslage, `976395d` (P2.8-Rest)
+den Horizontlücken-Hinweis. Dazu 0,06 aus diesem Paket selbst, weil das Lesemaß
+früher umbricht. Beide Zuwächse sind **gewollt**, also verlangt der Vertrag des
+Wächters genau das: die neue Zahl eintragen und die Begründung dazu.
+
+| | vorher | jetzt | wovon |
+| --- | ---: | ---: | --- |
+| Schritt 1, 1280 px | 1,34 | **2,02** | A1 (Kohärenzblock), P2.8-Rest, Lesemaß |
+| Schritt 1, 1024 px | 1,42 | **2,10** | dieselben, schmaler bricht mehr um |
+| Schritt 6, beide | 1,45 | **1,73** | Horizonthinweis, Lesemaß, **0,09 Laufhistorie** |
+
+**Bei Schritt 6 ist die Laufhistorie eine Entscheidung**, nicht ein Restfehler:
+Der Schritt zeigt eine Laufzeitschätzung, sobald vergleichbare Läufe in
+`outputs/` liegen — gemessen 1,61 in einem frischen Arbeitsbaum gegen 1,70 mit
+264 Läufen, an derselben Codefassung. Der Deckel gilt für den **bestückten** Fall;
+wer frisch klont, misst niedriger, und die Sperrklinke gegen stilles Schrumpfen
+lässt 0,25 zu. Die Alternative — die Schätzung aus der Messung herausnehmen —
+hätte den Wächter für genau den Teil blind gemacht, den ein Nutzer im Alltag
+sieht.
+
+**Zwei Schirme sind kein guter Zustand**, und die Zahl steht als Ist-Stand da,
+nicht als Freigabe. Ob die Kohärenzbegründung offen stehen muss oder ihre Quellen
+genügen, ist eine **Produktfrage** — A1 hat sie bewusst offen gestellt, weil sie
+unter Variante C die einzige Absicherung eines Rahmens ist. Sie gehört in ein
+eigenes Paket und nicht in einen Wächter.
+
+#### Teil 2 — wo der Wächter läuft
+
+**Ein eigener Workflow:** [`.github/workflows/browser.yml`](../.github/workflows/browser.yml).
+Drei Auslöser, und der mittlere ist der tragende:
+
+* **`workflow_dispatch`** — von Hand, wann immer jemand die Zahlen sehen will.
+* **`pull_request` mit Pfadfilter** auf `dashboard/web/**`,
+  `aeroforesight-ai-landing-page/**` und die Datei des Wächters selbst.
+* **nächtlich** als Netz für alles, was der Filter nicht sieht.
+
+**Der Pfadfilter ist nachgezählt und nicht geraten:** Alle drei Rückfälle, die
+diese Geschichte hat — P2.0-C, A1 und P2.8-Rest — haben `dashboard/web/**`
+angefasst. Der Filter hätte also **jeden einzelnen** erwischt, ohne dass jemand
+daran denken muss, und ohne die 25 Minuten in die Hauptstrecke zu hängen, wo sie
+jeden Commit aufhielten.
+
+**Warum das Netz trotzdem gebraucht wird:** Oberflächentext kann aus `src/`
+kommen. Eine längere Validierungsmeldung landet in einem Hinweis, und Fall 3
+berührte `src/orchestration/` mit — er wäre über den Filter erwischt worden, der
+nächste vielleicht nicht.
+
+**Zwei Dinge sind im Job ausdrücklich abgesichert**, weil sonst die Antwort auf
+dieses Paket dasselbe Problem hätte wie der Zustand davor: `playwright install
+--with-deps` holt die Systembibliotheken mit (ohne sie startet Chromium nicht,
+der Wächter **überspringt sich** und der Job wäre grün, ohne etwas geprüft zu
+haben), und `-ra` zeigt jeden Skip mit Grund.
+
+**Ein Vorbehalt, offen benannt:** Die Deckel in `DECKEL` und die Klickdauern sind
+unter **Windows** erhoben. Chromium rechnet sein Layout selbst und die Schriften
+liegen im Repo, die Zahlen sollten also übertragbar sein — **geprüft ist das
+nicht**, weil der erste Linux-Lauf einen Push braucht. Weicht er ab, ist die
+Antwort ein Deckel **je Plattform** und nicht ein gelockerter für beide; der
+Grund gehört dann in `DECKEL`. Das steht auch im Workflow, damit es der erste
+Leser dort findet.
+
+**Die Lehre, weil sie über das Paket hinausgeht:** *Eine Zusage, die von der
+Sorgfalt des Einzelnen abhängt, ist keine.* Der Wächter war nie kaputt — er wurde
+nicht gelaufen, dreimal in sechs Tagen, und jedes Mal hat es Tage gekostet, das
+zu merken. Was ihn scharf macht, ist nicht ein besserer Test, sondern ein
+Auslöser, an den niemand denken muss.
 
 ---
 
@@ -2439,7 +3199,44 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 Über 500 Tests sind eine gute Grundlage, aber die Suite hat drei Eigenschaften, die beim Ausbau bremsen. (Die Zahl stand hier bis 2026-08-26 als "267" und in `CLAUDE.md` als "~330"; `pytest --collect-only` sammelt tatsächlich 506. Genau diese Drift ist der Anlass für P4.3.)
 
-### P3.9 — Ein Klick in der Schrittfolge kostet zwei Sekunden ⚠️ neu 2026-08-31
+### P3.12 — Der Modell-Bereich lag dauernd im DOM ✅ erledigt 2026-09-05
+
+> **Aus [P3.9](#p39--ein-klick-in-der-schrittfolge-kostet-zwei-sekunden--erledigt-2026-09-05-ursache-zweimal-korrigiert), und mit einer korrigierten Ursache.** P3.9 hatte richtig gemessen, dass die Wartezeit nicht in den Server-Rundläufen liegt — und daraus falsch geschlossen, sie liege im React-Vergleich des Baums aller fünf Bereiche und hänge damit an Regel 1 und Regel 6. Das CPU-Profil sagt etwas anderes.
+
+**Befund:** Ein Klick in der Einrichten-Schrittfolge kostet rund eine Sekunde, und die Zeit liegt in **Dashs eigenem JavaScript**:
+
+| Anteil | Zeit | Wo |
+| ---: | ---: | --- |
+| **71,6 %** | **1218 ms** | `dash_renderer` |
+| 10,5 % | 179 ms | React-DOM |
+| — | — | Plotly kommt gar nicht vor |
+
+Darin `notifyNestedSubs`: Redux benachrichtigt bei **jeder** Callback-Antwort alle angeschlossenen Komponenten. Die Kosten hängen an deren **Zahl**, nicht an der Größe des sichtbaren Bereichs. Und der Modell-Bereich stellt **mehr als die Hälfte** aller Knoten (1886 von 3364, darunter 146 Bedienelemente — nachgemessen am 2026-09-06, Methode im Docstring von `model_editor.HOST`) — auch während jemand in der Schrittfolge arbeitete und ihn nie zu Gesicht bekam. **Die Zahlen standen hier bis zum 2026-09-06 als «168 Bedienelemente, 1404 der 2882 Knoten», und keine davon reproduzierte** (C1 des Audits): Sie stammten aus verschiedenen Messungen — 2882 − 1404 ergibt 1478 und nicht 1477, und daran fiel es auf. Die 168 beschreiben zudem die beiden Assistenten-Schritte **vor** P1.9-W3.1, nicht diesen Bereich.
+
+**Fundstellen:** [`dashboard/web/pages/model_editor.py`](../dashboard/web/pages/model_editor.py) (`layout` baute den Rumpf eifrig), [`dashboard/web/config_editor/__init__.py`](../dashboard/web/config_editor/__init__.py) (`_model_editor` hing nur an `cfg-editor-refresh`).
+
+**Umgesetzt am 2026-09-05.** Der Rumpf entsteht beim Aufsuchen und verschwindet beim Verlassen; `_model_editor` hört dafür zusätzlich auf den Pfad. Die Entscheidung selbst ist eine reine Funktion (`model_editor.rumpf_fuer`) — dieselbe Begründung wie bei `shell.active_route`: So ist sie ohne laufende App prüfbar, und der Callback bleibt eine Verdrahtung. Ein umhüllter Dash-Callback lässt sich von außen nicht aufrufen, und eine Entscheidung, die nur im Browser prüfbar ist, wird seltener geprüft.
+
+| | vorher | nachher |
+| --- | ---: | ---: |
+| bis der Schritt im DOM steht | 665–1426 ms | **213–487 ms** |
+| längste Browser-Aufgabe | 1144 ms | **271 ms** |
+| `dash_renderer` im Profil | 1218 ms | **252 ms** |
+| DOM-Knoten in der Schrittfolge | 3364 | **1477** |
+
+**Damit ist das 500-ms-Kriterium von P3.9 erfüllt — ohne Regel 1 oder Regel 6 zu ändern.** Das ist der Kern dieses Pakets: Der Gewinn liegt gemessen zu rund 80 % in **einem** Bereich, und die beiden Regeln bleiben, wie sie sind.
+
+**Warum das Weglassen hier erlaubt ist, obwohl Regel 6 es verbietet:** Weil der Rumpf **keine einzige feste ID** trägt. Alle neun Kennungen darin sind Muster (`cfg`, `cfg-bool`, `cfg-rule`, …), und ein Muster-Eingang mit `ALL` verträgt null Treffer von Haus aus. Regel 6 richtet sich gegen einen *fehlenden festen* `Input` — den gibt es hier nicht. Gemessen, nicht vermutet, und von `TestRegel6IstNichtBeruehrt` festgehalten: Wer dort eine feste ID einbaut, an der ein Callback hängt, erfährt es aus einem Test statt aus einer stillen Oberfläche.
+
+**Zwei Wächter wären dabei lautlos hohl geworden**, und das ist der lehrreiche Teil: `test_web_wizard.py` prüft mit `_fields(model_editor.layout(draft))` die Regel 1 (kein Feld zweimal) und die Reichweite jeder schreibenden Schaltfläche (Regel 7). Mit leerem Rahmen verglichen sie eine **leere Menge** — der Regel-1-Test wäre für immer grün gewesen, ohne rot zu werden. Sie holen den Rumpf jetzt über `rumpf_fuer(...)`; der Pfad dafür kommt aus `model_editor.ROUTE`, damit eine Umbenennung nicht denselben Effekt hat.
+
+**`prevent_initial_call` ist weggefallen**, mit Grund: Wer `/app/modell` direkt öffnet, muss den Bereich sehen. Der erste Aufruf entscheidet anhand des Pfads; auf einem anderen Bereich kostet er nichts.
+
+**Fertig, gemessen:** [`tests/test_web_lazy_modell.py`](../tests/test_web_lazy_modell.py) (sieben Zusagen ohne Browser: die Entscheidung, der leere Rahmen, keine feste ID im Rumpf, die Statuszeile als Gegenbeweis, die Adresse aus einer Quelle) plus **Teil 10** von [`tests/test_web_overflow.py`](../tests/test_web_overflow.py) für die Verdrahtung (leer in drei Bereichen, gebaut beim Aufsuchen, gebaut per Tieflink, wieder abgebaut beim Verlassen, DOM unter 2000 Knoten). **Und die Sperrklinke von Teil 9 ist mitgezogen**: `SICHTBAR_MAX_MS` fällt von 2500 auf 900 — genau dafür schlägt sie in beide Richtungen an.
+
+**Doku ist mitgezogen:** `CLAUDE.md` (Regel 1 mit ihrer Ausnahme, Regel 6 mit ihrem Umkehrschluss, der Vermerk zu den Klickkosten).
+
+### P3.9 — Ein Klick in der Schrittfolge kostet zwei Sekunden ✅ erledigt 2026-09-05 (Ursache zweimal korrigiert)
 
 > **Gemeldet von Haiko am laufenden System**, nachgemessen am selben Tag. Der Befund ist nicht «Python ist langsam» — die Rechnung dauert Millisekunden. Es sind die **Rundläufe**.
 
@@ -2480,6 +3277,41 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Doku zieht mit:** `CLAUDE.md` (der Vermerk zu `_live` und `validate_draft` nennt einen Grund, der gemessen nicht trägt — 1,3 ms).
 
+---
+
+**Nachgemessen am 2026-09-05: die Kette ist gekürzt, die Ursache war eine andere.** Das ist der eigentliche Ertrag dieses Durchgangs — die Zählung oben stimmte, der Schluss daraus nicht.
+
+**Was jetzt gilt** (alles im Browser gemessen, wie das Paket es verlangt):
+
+| Größe | vorher | nachher |
+| --- | ---: | ---: |
+| Klickbedingte Server-Aufrufe je Schritt | 8–11 | **6–7** |
+| ms, bis der neue Schritt im DOM steht | 759–1799 | 665–1426 |
+| Längste Browser-Aufgabe je Klick | 1230 ms | 1144 ms |
+
+**Die Rundläufe sind gesunken, die Wartezeit nicht** — weil sie nie dort lag. Jeder einzelne Serveraufruf dauert **16 bis 115 ms**; daneben steht **eine einzelne Aufgabe im Hauptthread des Browsers von 850 bis 1150 ms** (`PerformanceObserver`, `longtask`). Der JS-Heap der Seite ist **111 MiB**: Alle fünf Bereiche des Leitstands liegen gleichzeitig im DOM (Regel 6 — bedingt Sichtbares wird ausgeblendet, nicht weggelassen), und React vergleicht bei jedem Schrittwechsel diesen Baum. Die Antworten sind dabei klein (18–31 KiB) — es ist keine Datenmenge, sondern Rechenzeit im Browser.
+
+**Behoben ist eine echte Fehlerursache, nur nicht die vermutete:** `_sync` schrieb bei **jedem Zeichnen** einen neuen Entwurf in den Store. Der Callback feuert nicht nur beim Tippen — sobald ein Schritt gezeichnet wird, melden seine Felder ihren *unveränderten* Wert, und ein neues Dict ist für Dash eine Änderung. Damit zog ein Klick, der keine Einstellung anfasst, Preflight, Feldfehler, Tor, Zusammenfassungen und Laufübersicht nach. Jetzt gibt `_sync` `no_update` zurück, wenn der berechnete Entwurf dem gespeicherten gleicht. **Ein Vergleich, keine Ausnahmeliste** — den Schrittwechsel als Sonderfall auszunehmen wäre eine zweite Stelle, die wissen muss, was ein Schritt ist, und die nächste Ursache käme von woanders.
+
+**Zwei Prämissen des Befundtexts oben halten nicht mehr:**
+
+1. **«Im Leerlauf passiert nichts: null Aufrufe»** — gemessen sind es rund **zwei pro Sekunde**, seit `pages/launch.py` den Laufzustand beim Server erfragt statt ihn aus der Sitzung abzuleiten (P1.6, Regel 5). Ein Wächter, der das nicht heraussortiert, misst den Herzschlag; `TAKTGEBER` in Teil 9 tut es.
+2. **«1,14 bis 2,95 s»** — reproduziert wurden 0,76 bis 1,80 s. Die alte Messung enthielt vermutlich denselben Herzschlag.
+
+**Und die Messung selbst hatte einen Fallstrick, der hier festgehalten gehört:** Der erste Anlauf nahm die Zeit mit `wait_for_function`. Dessen Voreinstellung pollt über `requestAnimationFrame`, und das feuert in einem Tab, den niemand sieht, **gar nicht** — dieselbe Falle wie bei P1.9-W5.3. Gemessen wurden damit 2,0 s, wo 1,1 s standen. Teil 9 nimmt die Zeit über einen `MutationObserver` **in der Seite**.
+
+**Offen bleibt die Sekunde im Browser**, und sie ist kein Parameter, sondern die Bauform: Die fünf Bereiche liegen gleichzeitig im DOM, weil ein Eingabefeld nur an einer Stelle stehen darf (Regel 1) und bedingt Sichtbares ausgeblendet statt weggelassen wird (Regel 6). Wer sie angeht, fasst diese beiden Regeln an — **nicht** weitere Callbacks. Das ist eine eigene Entscheidung und gehört nicht nebenbei getroffen; die Zahlen dafür stehen jetzt hier.
+
+**Gehalten von Teil 9 von [`tests/test_web_overflow.py`](../tests/test_web_overflow.py)** — sechs Zusagen über beide Breiten. Die Zahl der Aufrufe ist eine **Sperrklinke** (`KLICK_AUFRUFE_MAX = 7`) und schlägt in beide Richtungen an; die Dauer steht daneben.
+
+---
+
+**Abgeschlossen am 2026-09-05 — und die Ursache war ein zweites Mal eine andere.** Der Absatz darüber schloss aus «die Zeit liegt in *einer* Browser-Aufgabe», sie hänge an Regel 1 und Regel 6 und sei deshalb eine Architekturentscheidung. **Auch das war eine Schlussfolgerung, keine Messung.** Ein CPU-Profil des Klicks sagt: **71,6 % in `dash_renderer`**, 10,5 % in React, Plotly gar nicht. Dessen `notifyNestedSubs` benachrichtigt bei jeder Antwort alle angeschlossenen Komponenten — die Kosten hängen an ihrer **Zahl**, nicht am Baum des sichtbaren Bereichs. Der Modell-Bereich stellte davon knapp die Hälfte, ohne je sichtbar zu sein.
+
+[P3.12](#p312--der-modell-bereich-lag-dauernd-im-dom--erledigt-2026-09-05) hängt ihn aus. **Damit ist das Kriterium erfüllt: 213 bis 487 ms** über alle sechs Schritte, längste Browser-Aufgabe 271 ms statt 1144 — und **keine der beiden Regeln musste angefasst werden**. Die Sperrklinke ist mitgezogen (`SICHTBAR_MAX_MS` 2500 → 900).
+
+**Die Lehre dieses Pakets ist seine eigene Fehlerkette, dreimal derselbe Fehler:** Der Plan schloss von zehn Rundläufen auf deren Zahl als Ursache. Ich schloss von «nicht die Rundläufe» auf React und die beiden Regeln. Beide Male war die Messung richtig und die *Zuschreibung* falsch — bis ein Profil sagte, welcher Code die Zeit verbraucht. **Wer eine Wartezeit erklärt, ohne sie zu profilieren, benennt die Ursache, die er erwartet.**
+
 ### P4.1 — Gemeinsame Fixtures
 
 **Befund:** Kein `tests/conftest.py`; stattdessen 32 Vorkommen von `tempfile.mkdtemp(...)` mit `try/finally: shutil.rmtree(...)` über fünf Dateien, und `class MockLLM` vierfach near-identisch definiert.
@@ -2514,9 +3346,127 @@ Fallen, die heute niemanden stören und beim nächsten Feature zuschlagen. Jedes
 
 **Was zu tun ist:** Einen kleinen Test ergänzen, der die in der Doku genannten überprüfbaren Zahlen gegen die Realität hält — Testanzahl, Anzahl der CIB-Zellen, Anzahl der Editor-Tabs. Wo eine Zahl nicht stabil zu halten ist, gehört sie nicht in die Doku, sondern durch eine Größenordnung ersetzt.
 
+**Nachtrag am 2026-09-06 (aus C1 des Phase-3-Audits): drei konkrete Kandidaten, und eine Lehre dazu.** Beim Beheben von C1 ist genau die Drift eingetreten, gegen die dieses Paket antritt — und zwar innerhalb **eines Tages**:
+
+| in der Doku | tatsächlich | Methode |
+| --- | --- | --- |
+| «168 Bedienelemente» im Modell-Bereich | **146** | `#model-editor-host input, select, textarea` im Browser |
+| «1404 der 2882 Knoten» | **1886** von **3364** | Teilbaum des Wirts bzw. `querySelectorAll('*')` bei 1280 px |
+| «46 Zeichenketten» in `src/` | **46** ✓ | Zeichenketten-Konstanten **ohne** Docstrings (alle wären 55) |
+
+**Die Lehre ist nicht «jemand war unsorgfältig», sondern struktureller:** Zwei der drei Zahlen waren *irgendwann* richtig. Die 168 beschrieben die beiden Assistenten-Schritte **vor** P1.9-W3.1 und sind dann in eine Aussage über den heutigen Bereich gewandert; die 1404/2882 stammten aus verschiedenen Messungen und widersprachen sich um einen Knoten (2882 − 1404 = 1478 gegen die genannten 1477). Die 46 hält — weil sie jetzt ihre **Zähldefinition** mitträgt.
+
+**Daraus folgt für die Umsetzung:** Der Test hält nicht nur die Zahl, sondern verlangt die **Methode** daneben. Eine Zahl ohne sie ist nicht prüfbar und driftet unbemerkt: Bei der «46» kamen je nach Definition 0, 46, 45, 54 oder 55 heraus, und alle fünf wären mit demselben Satz vereinbar gewesen. Die browserseitigen Zahlen gehören dabei in den Browser-Wächter (er läuft seit P3.17 nächtlich), die statischen in die Hauptsuite.
+
 **Fertig wenn:** Eine veraltete Zahl in `CLAUDE.md` lässt die Suite rot werden.
 
 **Doku zieht mit:** `CLAUDE.md` (Doku-Pflicht um "prüfbare Zahlen gehören in einen Test" ergänzen).
+
+---
+
+### P4.4 — Ein Typprüfer für die Grenzen 🟡 offen (neu 2026-09-05, aus P3.15)
+
+**Befund.** Das Projekt hat **keinen Typprüfer** — weder mypy noch pyright, nicht in
+`pyproject.toml` und nicht in der CI. `ruff` prüft Stil und Importhygiene, aber
+keine Typangabe gegen ein `return`. Aufgefallen ist die Lücke an einer Stelle, an
+der sie etwas gekostet hat ([P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--erledigt-2026-09-05)):
+`sweep_metadata_args` war mit `-> SimpleNamespace` annotiert und lieferte
+`RunArgs`. Zwölf Tage lang, in einer Datei, die zweimal angefasst wurde, und
+`ruff check .` war die ganze Zeit grün — die falsche Annotation hielt den Import
+am Leben, den `ruff` sonst gemeldet hätte.
+
+**Warum das mehr ist als Kosmetik.** **Invariante 4** verlangt Pydantic-Typisierung
+an allen Agenten-Grenzen; ihre Durchsetzung hängt daran, dass die Typangabe
+stimmt. Eine Annotation, die lügt, ist genau die Aussage «hier ist es formlos» —
+gegen die die Invariante antritt.
+
+**Was P3.15 stattdessen gebaut hat, und warum es nicht reicht:**
+`tests/test_lauf_argumente.py::TestJedeSignaturSagtWasSieLiefert` sucht am
+Syntaxbaum jede Funktion, deren `return` ein `RunArgs` liefert, und verlangt, dass
+die Signatur es sagt. Das ist ein Mechanismus und keine Liste (nachgeprüft: eine
+Lüge an einem **zweiten** Erzeuger wird gemeldet) — aber es deckt **eine Familie**
+ab, weil genau die einen Schaden angerichtet hat. Für jede andere Grenze gilt die
+Lücke weiter.
+
+**Was zu tun ist — und was ausdrücklich nicht.** Nicht das ganze Repo auf
+`--strict` ziehen: In `src/reporting/` und `dashboard/web/` stehen bewusst
+`object`- und `Any`-Signaturen (`build_run_args` nimmt `object`, weil auch das
+Dashboard hineinbaut), und ein Prüfer, der hundert Meldungen wirft, wird
+abgeschaltet statt gelesen — dieselbe Mechanik, an der der Browser-Wächter
+gestorben ist (P3.17). Anzufangen ist bei den **Grenzen**: `src/models/`, dazu die
+Module, die `RunArgs` und `SimulationState` erzeugen oder lesen. Eine Datei- oder
+Paketliste, die wächst, statt eine Zahl, die niemand erreicht.
+
+**Fertig wenn:** Eine Annotation, die ihrem `return` widerspricht, lässt einen
+Befehl rot werden, der in der CI läuft — und der Umfang steht als Liste im
+Werkzeug, nicht als Vorsatz in der Doku. Der AST-Wächter aus P3.15 bleibt
+daneben: Er sagt etwas Fachliches («dieser Erzeuger gehört zu `RunArgs`»), was
+ein Typprüfer nicht weiß.
+
+**Doku zieht mit:** `CLAUDE.md` (Dev-Workflow — der Befehl gehört neben `ruff`
+und `black`; Invariante 4 um den Satz, wer sie durchsetzt).
+
+### P4.5 — Was ein Rahmenszenario über die Zeit behauptet 🟡 offen (neu 2026-09-07)
+
+> **Aus [P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31).**
+> Solange die Tick-Dauer offen war, ließ sich über den Zeithorizont eines
+> Szenarios nichts sagen. Seit dem 2026-09-07 lässt es sich, und dann steht die
+> Frage sofort da.
+
+**Befund:** Ein Tick ist ein Monat. Die vier ausgelieferten Rahmenszenarien laufen
+`max_ticks: 50` — **gut vier Jahre** — und erzählen darin Folgendes:
+
+| Rahmen | erzählt | als Monate gelesen |
+| --- | --- | --- |
+| Freiwillige Wende | CO₂-Abgabe 50 → 120 → 200 EUR bei Tick 1 / 8 / 20 | 200 EUR nach **20 Monaten** |
+| Transformationskonflikt | 50 → 90 → 180 → 250 EUR bis Tick 25 | 250 EUR nach gut **zwei Jahren** |
+| CO₂-Verzögerung | «verzögert»: 120 EUR bei Tick 25, 200 bei Tick 40 | die *späte* Variante liegt bei **3,3 Jahren** |
+| Business as Usual | konstant 50 EUR über 50 Ticks | ein Ausblick über **vier Jahre** |
+
+**Das ist keine Rate, sondern eine Aussage über die Welt** — und deshalb ist sie
+in P3.8 ausdrücklich *nicht* mitentschieden worden. Jedes dieser Szenarien trägt
+seit [P2.2](#p22--die-szenarienschicht-endgültig-festlegen--entschieden-2026-08-31)
+eine `kohaerenz`-Begründung mit **Quellen**; diese Quellen beschreiben
+Dekarbonisierungspfade, die bis 2040 laufen. Die Tick-Zahlen still zu
+verzwölffachen hieße, vier Szenarien etwas anderes sagen zu lassen, ohne ihre
+Begründung anzufassen — genau die Trennung «Form belegt, Wert gesetzt», auf die
+das Projekt sonst besteht.
+
+**Und es trifft das Produktversprechen.** «Strategische Zukunftsplanung» und ein
+Standardlauf über 40 Ticks = gut drei Jahre passen nicht ohne Weiteres zusammen.
+Weg 2 aus P3.8 (ein Tick ist ein Jahr) war genau deshalb attraktiv; gewählt wurde
+Weg 1, weil zwei von drei Mechanismen und der Backtest schon Monate rechneten.
+**Der Preis der Wahl ist dieser Punkt**, und er gehört benannt statt weggelassen.
+
+**Drei Wege, wie schon bei P3.8 — jeder mit Folgekosten:**
+
+1. **Die Rahmen auf einen realistischen Kalender strecken** (`max_ticks` auf 120
+   und jede Marke mit): zehn Jahre, wie der Backtest. Kostet einen Neulauf des
+   Szenario-Vergleichs, und jede Kohärenzbegründung ist gegen ihre Quellen neu zu
+   lesen. Läufe von davor sind mit späteren nicht vergleichbar.
+2. **Die Rahmen als das lesen, was sie sind** — kurze, dichte Wirkungsketten —
+   und das Produktversprechen entsprechend fassen. Kostet nichts am Code und
+   verlangt eine ehrliche Formulierung auf der Landingpage.
+3. **Beides trennen:** kurze Stresstests, lange Rahmen. Der Schnitt zwischen
+   `art: "rahmen"` und `art: "stresstest"` liegt bereits, er müsste nur auch für
+   den Horizont gelten.
+
+**Fundstellen:** [`configs/sweeps/`](../configs/sweeps/) (vier Dateien mit
+`art: "rahmen"`), [`configs/simulation_config.json`](../configs/simulation_config.json)
+(`max_ticks: 40`).
+
+**Nicht vorziehen, ohne zu entscheiden.** Wer nur `max_ticks` hochsetzt, hat
+denselben Fehler gemacht wie der, der nur eine der drei Zeitskalen anfasste: Der
+Widerspruch ist verschoben, nicht aufgelöst — die Marken innerhalb des Szenarios
+lägen dann relativ noch früher.
+
+**Fertig wenn:** Jeder ausgelieferte Rahmen sagt selbst, welche Kalenderspanne er
+beschreibt, und seine Kohärenzbegründung deckt sie — nachgewiesen an
+`tests/test_rahmen_traegt_begruendung.py`, nicht an einer Absichtserklärung.
+
+**Doku zieht mit:** `docs/handbuch/presets.md`, `docs/handbuch/tick-und-lauf.md`,
+`docs/handbuch/grenzen.md`, bei Weg 1 zusätzlich `docs/handbuch/vergleiche.md`
+(neuer Schnitt) und `CLAUDE.md` (Glossar «Rahmenszenario»).
 
 ---
 
@@ -2526,7 +3476,7 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 
 ### P5.1 — Toter Code und irreführende Namen
 
-**Befund:** Mehrere Konstrukte, die Funktionalität vortäuschen: `initial_ticket_price` und `active_market_rule` (keine Referenz), `run_population_sampling` ("backward-compatible entry point", nirgends aufgerufen), `speech_plan.aborted` (Feld existiert nicht), der leere `pass`-Zweig in `_format_factors` mit hartcodiertem Agenten-String, der `state._population_updates`-Pfad — ein komplettes Population-Shift-Feature mit Modellen und Unit-Tests, das der Laufzeitpfad nie erzeugt — und (neu am 2026-08-26) der Parameter `current_tick` in `run_population_tick`, der entgegengenommen und im ganzen Funktionskörper nie benutzt wird. Letzterer ist der einzige der Liste, der **nicht** entfernt werden sollte: P2.1 braucht genau ihn, um pro Tick einen eigenen Zufallsstrom abzuleiten. Dazu die irreführende Paarung `compute_ticket_price` / `compose_ticket_price`: die erste berechnet **nicht** den Kundenpreis.
+**Befund:** Mehrere Konstrukte, die Funktionalität vortäuschen — **neu am 2026-09-07 der schwerste davon**: `src/run_simulation.py` deklariert `--sweep` samt Hilfetext «Overrides simulation parameters with sweep settings» und **liest `args.sweep` nirgends**. Ein Aufruf mit `--sweep` rechnet stumm den Standardlauf (gemessen: vier Rahmen, viermal 116,5883 / 0,267857, `rahmen: standard` im Artefakt, Exit-Code 0). Das verstößt gegen [Invariante 7](../CLAUDE.md) — ein Startpfad, der etwas verwirft, sagt es. **Die Entscheidung gehört dazu und ist kein Fix:** Entweder die CLI bekommt den Weg wirklich, oder der Schalter wird entfernt; `scenario_sweeps` hat ihn bereits, und ein zweiter Einstieg wäre eine zweite Quelle. Weiter: `initial_ticket_price` und `active_market_rule` (keine Referenz), `run_population_sampling` ("backward-compatible entry point", nirgends aufgerufen), `speech_plan.aborted` (Feld existiert nicht), der leere `pass`-Zweig in `_format_factors` mit hartcodiertem Agenten-String, der `state._population_updates`-Pfad — ein komplettes Population-Shift-Feature mit Modellen und Unit-Tests, das der Laufzeitpfad nie erzeugt — und (neu am 2026-08-26) der Parameter `current_tick` in `run_population_tick`, der entgegengenommen und im ganzen Funktionskörper nie benutzt wird. Letzterer ist der einzige der Liste, der **nicht** entfernt werden sollte: P2.1 braucht genau ihn, um pro Tick einen eigenen Zufallsstrom abzuleiten. Dazu die irreführende Paarung `compute_ticket_price` / `compose_ticket_price`: die erste berechnet **nicht** den Kundenpreis.
 **Fundstelle:** [`src/market/market_feedback.py`](../src/market/market_feedback.py) (bis P0.4 `market_rules.py`), [`src/population/population_sampler.py:558`](../src/population/population_sampler.py), [`src/agents/scheduler_node.py:123`](../src/agents/scheduler_node.py), [`src/agents/agent_node.py:258-260`](../src/agents/agent_node.py), [`src/orchestration/environment_node.py:282-283`](../src/orchestration/environment_node.py), [`src/market/simulation_functions.py`](../src/market/simulation_functions.py).
 **Was zu tun ist:** Pro Konstrukt entscheiden — entfernen oder anschließen. Beim Population-Shift-Feature ist die Frage produktinhaltlich (gehört es zu P1.3?), nicht technisch. Die zwei Preisfunktionen so benennen, dass die Rolle aus dem Namen hervorgeht.
 **Fertig wenn:** Kein Modul mehr, das nur von seiner eigenen Definition oder einem Test am Leben gehalten wird. **Doku:** `CLAUDE.md` (Architektur-Map), `docs/handbuch/preisbildung.md`.
@@ -2566,14 +3516,14 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Audit-Abschnitt | Pakete |
 | --- | --- |
 | Faktoren / Modellsubstanz | ~~P0.2 (F7-Drift)~~ ✅, P2.0 (Rolle der Szenarienschicht), P2.1, P2.2, P2.3 (die übrigen 120 Zellen — hängt an P2.2), P2.4 |
-| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, ~~P0.7 (Kostendruck an zwei Stellen)~~ ✅, P3.1 (Property-Baseline), P5.1 (toter Code, Preisfunktions-Namen) |
-| Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), P3.5 (Klemmung, `print`), P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
-| Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, ~~P0.6 (Sweep-Pfad an P0.1 vorbei)~~ ✅, P2.1 (`_seed_runtime`), P3.2 (Checkpoint-Version), P3.3 (leerer `try`, CLI-Traceback) |
-| LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`) |
-| Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), P3.6 (private Imports), P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen) |
-| LangGraph Studio | P3.3 |
+| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, ~~P0.7 (Kostendruck an zwei Stellen)~~ ✅, ~~P3.1 (Property-Baseline)~~ ✅, P5.1 (toter Code, Preisfunktions-Namen), **offen ohne Paket** (F6 kippt in jedem Tick — neu 2026-09-07) |
+| Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), ~~P3.5 (Klemmung, `print`)~~ ✅, P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
+| Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, ~~P0.6 (Sweep-Pfad an P0.1 vorbei)~~ ✅, P2.1 (`_seed_runtime`), ~~P3.2 (Checkpoint-Version)~~ ✅, ~~P3.3 (leerer `try`, CLI-Traceback)~~ ✅, ~~P3.11 (Lauf-Argumente ohne typisierte Form)~~ ✅, P5.1 (`--sweep` deklariert und nie gelesen), P5.1 (`round_history`-Snapshot trägt den Endzustand) |
+| LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, ~~P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`)~~ ✅ |
+| Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), ~~P3.6 (private Imports)~~ ✅, ~~P3.9 (Klickkosten)~~ ✅, ~~P3.12 (Modell-Bereich dauernd im DOM)~~ ✅, P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen), P1.2 (leere Ergebnis-Ansicht ohne Lauf — neu 2026-09-07) |
+| LangGraph Studio | ~~P3.3~~ ✅ |
 | Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests, der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction` und der drei `--deselect`-Zeilen in der CI) |
-| Sonstiges | P5.3 |
+| Sonstiges | ~~P3.10 (Zeichensatz der Konsole)~~ ✅, P5.3 |
 | **Landingpage** (neu 2026-08-26) | P1.4 (Formular-Endpunkt, Rechtstexte, CDN-Abhängigkeiten) |
 | **Reproduzierbarkeit / Run-Artefakte** (neu 2026-08-26) | ~~P0.6 (Seed, Rechenmodus, Config-Hash in `run_metadata.json`)~~ ✅ |
 | **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) |

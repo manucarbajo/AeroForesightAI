@@ -206,6 +206,15 @@ wählen.
 **3. Womit wird gerechnet?** Der Rechenmodus, dazu die Auskunft, ob Ollama
 gerade erreichbar ist. Hinter «Feinabstimmung» der Zufallsstartwert.
 
+Diese Auskunft beantwortet genau, was eingestellt ist — und sagt es auch, wenn
+nichts eingestellt ist. Ist das Feld für den Modellnamen leer, steht dort
+«Ollama läuft, aber es ist kein Modell eingestellt» samt der Liste dessen, was
+dort tatsächlich liegt; ist die Adresse leer, wird **keine** befragt. Bis zum
+2026-09-05 setzte die Anzeige in diesen Fällen die Vorgabewerte ein und meldete
+etwa «llama3.2 fehlt dort» für ein Modell, das niemand gewählt hatte — bei
+leerer Adresse pingte sie sogar eine erfundene an, und deren Antwort entschied
+darüber, ob «Mit Sprachmodell» als möglich angezeigt wird.
+
 Zu jeder Einstellung steht die kurze Wirkungsbeschreibung direkt unter dem Feld,
 die ausführliche hinter «Mehr dazu» daneben. Die vollständige Liste aller
 Einstellungen mit Einheit und Config-Feld steht unter
@@ -231,10 +240,16 @@ noch, wie viele es sind. Geprüft wird:
 | Zufallsstartwert | 0 oder größer | immer |
 | Länge des Laufs | mindestens 1 Tick | immer |
 | Ollama-Modell | nicht leer | nur bei «Mit Sprachmodell» |
+| Ollama-Adresse | nicht leer, mit `http://` oder `https://` | nur bei «Mit Sprachmodell» |
 | Kreativität der Agenten | 0 bis 2 | nur bei «Mit Sprachmodell» |
 | Antwortlänge | mindestens 1 | nur bei «Mit Sprachmodell» |
 
-Die letzten drei betreffen ausschließlich Ollama. In den Modi «Ohne
+Die **Adresse** wird seit September 2026 mitgeprüft. Ohne Schema (`127.0.0.1:11434`
+statt `http://127.0.0.1:11434`) sieht sie richtig aus und erreicht keinen Host —
+vorher endete das in einem Verbindungsfehler mitten im Lauf, dem niemand die
+Ursache ansah.
+
+Die letzten vier betreffen ausschließlich Ollama. In den Modi «Ohne
 Sprachmodell» und «Nur Zahlen» wird gar kein Client aufgebaut — dort dürfen die
 Felder also stehen, wie sie wollen, und blockieren nichts.
 
@@ -286,7 +301,16 @@ unten die Rohdaten: was tatsächlich an die Simulation übergeben wird.
 
 Welches Sprachmodell unter welcher Adresse, wie oft ein Zwischenstand
 geschrieben wird, und was am Ende ausgegeben wird. Nichts davon verändert die
-berechneten Zahlen. **Ob** überhaupt ein Sprachmodell beteiligt ist und mit
+berechneten Zahlen.
+
+Was Sie hier einstellen, **steht im Lauf und nicht nur im Formular**: Modellname,
+Adresse, Kreativität und Antwortlänge gehen in die Konfiguration des Laufs, und
+der Client wird daraus gebaut. Bis September 2026 waren das zwei getrennte Wege —
+der Lauf rechnete mit dem Formular, im Zustand stand weiter der Wert aus
+`simulation_config.json`, und beide konnten auseinanderlaufen, ohne dass es
+auffiel. Bei einem Lauf **ohne** Sprachmodell bleiben die vier Felder unberührt:
+Gerufen wird nichts, also beschreiben sie nichts, und in `run_metadata.json`
+stehen sie dann ausdrücklich leer. **Ob** überhaupt ein Sprachmodell beteiligt ist und mit
 welchem Zufallsstartwert gerechnet wird, entscheiden Sie oben im dritten
 Schritt.
 

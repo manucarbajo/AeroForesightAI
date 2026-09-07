@@ -2,9 +2,24 @@
 
 **Der Befund hat sich am 2026-09-03 zur Hälfte erledigt** (B2 des Audits): Die
 Kapazität steht seither als Merkmal der Alternative im Nutzen, das Modell hat
-also einen zweiten Nachfragekanal. Was **bleibt**, ist der Rest des Befunds —
-die Bevölkerungskurve endet vor dem Lauf, und ihr Zuwachs reichte auch
-ungekürzt nicht. Die beiden Klassen dazu stehen unverändert.
+also einen zweiten Nachfragekanal.
+
+**Und am 2026-09-07 hat P3.8 die Bevölkerungskurve angefasst** — ein Tick ist
+seither ein Monat, die Kurve rechnet in Monaten und reicht bis Tick 120. Zwei
+der drei Ist-Stände dieser Datei sind damit andere, und beide in dieselbe
+Richtung:
+
+* **Der Horizont ist gedeckt** — die Kurve endet nicht mehr vor dem Lauf. Der
+  Backtest rechnet keinen einzigen seiner 120 Ticks mehr mit eingefrorener
+  Bevölkerung, vorher waren es 90.
+* **Der Zuwachs ist kleiner geworden**, nicht größer: +2,7 % über zehn Jahre
+  statt +8 % über eine Kurve, die als Jahre gemeint war. Der Befund «dem Modell
+  fehlt jeder Nachfragetreiber nach oben» wird dadurch **schärfer**. Gemessen
+  am Backtest: Preisseite 9,72 → 9,82, Nachfrageseite 36,36 → 36,44. Fünf von
+  acht Kennzahlen verschlechtern sich, eine verbessert sich geringfügig, zwei
+  bleiben gleich — keine einzige spricht für die Änderung. Das ist der Beleg,
+  dass hier eine Einheit korrigiert und nicht auf den Vergleich hin eingestellt
+  wurde.
 
 Diese Datei hält **nicht** eine Zusage, sondern einen **Ist-Stand** — dasselbe
 Muster wie `test_faktoren_abgeleitet.py` und `test_cib_einachsigkeit.py`. Sie
@@ -25,8 +40,9 @@ import pytest
 from src.config_loader import load_properties_config
 from src.market.property_engine import resolve_property
 
-#: Was ein Standardlauf braucht. Er ist heute länger als die einzige
-#: Trajektorie des Modells reicht — genau das ist der Befund.
+#: Was ein Standardlauf braucht. Er war bis zum 2026-09-07 länger, als die
+#: einzige Trajektorie des Modells reichte — genau das war Befund 1. Seit P3.8
+#: reicht sie bis Tick 120 und deckt ihn.
 STANDARDLAUF_TICKS = 40
 BACKTEST_TICKS = 120
 
@@ -55,8 +71,18 @@ def leute(properties):
     return initialize_population(properties, config, seed=42)
 
 
-class TestDieBevoelkerungskurveEndetVorDemLauf:
-    """Befund 1 — der Horizont der Trajektorie hängt an nichts."""
+class TestDieBevoelkerungskurveDecktDenLauf:
+    """Befund 1, **erledigt am 2026-09-07 mit P3.8** — der Horizont ist gedeckt.
+
+    Bis dahin hieß diese Klasse `TestDieBevoelkerungskurveEndetVorDemLauf` und
+    hielt den Ist-Stand «der Horizont hängt an nichts» fest. Er hängt jetzt an
+    etwas: Die Kurve rechnet in Monaten und reicht bis Tick 120, also über den
+    Standardlauf **und** über das Fenster des Backtests.
+
+    Die Klasse bleibt trotzdem stehen, mit umgekehrter Blickrichtung — ein
+    gedeckter Horizont ist nicht selbstverständlich, sondern eine Zusage, und
+    ohne sie fiele ein Rückfall auf eine kurze Kurve wieder niemandem auf.
+    """
 
     def test_es_gibt_genau_eine_trajektorie_im_modell(self, properties):
         """Wächst diese Zahl, ist der Befund unvollständig: Dann hat eine
@@ -75,34 +101,43 @@ class TestDieBevoelkerungskurveEndetVorDemLauf:
             "wer eine zweite anlegt, prüft ihren Horizont mit."
         )
 
-    def test_der_letzte_stuetzpunkt_liegt_vor_dem_ende_eines_standardlaufs(self, properties):
+    def test_der_letzte_stuetzpunkt_liegt_hinter_dem_ende_eines_standardlaufs(self, properties):
         prop = properties.get_system_property("bevoelkerungsentwicklung")
         letzter = max(punkt.tick for punkt in prop.trajectory.points)
 
-        assert letzter == 30, f"Letzter Stützpunkt bei Tick {letzter}, erwartet 30"
-        assert letzter < STANDARDLAUF_TICKS, (
-            "Die Kurve reicht jetzt über einen Standardlauf hinaus — schöne "
-            "Nachricht, aber der Befund in P2.7 stimmt dann nicht mehr."
+        assert letzter >= STANDARDLAUF_TICKS, (
+            f"Letzter Stützpunkt bei Tick {letzter}, ein Standardlauf geht "
+            f"{STANDARDLAUF_TICKS}. Die Kurve endet wieder vor dem Lauf — das ist "
+            "der Zustand, den P3.8 aufgelöst hat."
         )
 
-    def test_jenseits_des_horizonts_haelt_sie_still_ihren_letzten_wert(self, properties):
-        """Für eine Stufenfunktion korrekt — und genau deshalb unsichtbar.
+    def test_der_backtest_rechnet_keinen_tick_mehr_mit_eingefrorener_bevoelkerung(self, properties):
+        """Die Zahl, die den Befund groß gemacht hat: **90 von 120**.
 
-        Nichts im Lauf sagt, dass die Vorgabe aufgebraucht ist. Der Backtest
-        verbringt so **90 von 120 Ticks** mit eingefrorener Bevölkerung.
+        Jenseits des letzten Stützpunkts hält `_resolve_step_function` still den
+        letzten Wert — für eine Stufenfunktion korrekt und genau deshalb
+        unsichtbar. Solange die Kurve bei Tick 30 endete, verbrachte der
+        Backtest drei Viertel seines Fensters in diesem Zustand. Jetzt keinen
+        Tick.
         """
 
-        bei_30 = resolve_property("bevoelkerungsentwicklung", 30, properties)
-        bei_120 = resolve_property("bevoelkerungsentwicklung", BACKTEST_TICKS, properties)
+        punkte = properties.get_system_property("bevoelkerungsentwicklung").trajectory.points
+        letzter = max(punkt.tick for punkt in punkte)
+        eingefroren = max(0, BACKTEST_TICKS - letzter)
 
-        assert bei_30 == bei_120 == 1080.0
-        assert BACKTEST_TICKS - 30 == 90
+        assert eingefroren == 0, (
+            f"Der Backtest rechnet {eingefroren} seiner {BACKTEST_TICKS} Ticks mit "
+            f"eingefrorener Bevölkerung (letzter Stützpunkt: Tick {letzter})."
+        )
+        assert resolve_property(
+            "bevoelkerungsentwicklung", BACKTEST_TICKS, properties
+        ) > resolve_property("bevoelkerungsentwicklung", 1, properties)
 
 
 class TestDerZuwachsReichteAuchUngekuerztNicht:
     """Befund 2 — die Größenordnung stimmt unabhängig vom Horizont nicht."""
 
-    def test_die_kurve_waechst_um_acht_prozent_der_reale_verkehr_um_sechsundzwanzig(
+    def test_die_kurve_waechst_um_knapp_drei_prozent_der_reale_verkehr_um_sechsundzwanzig(
         self, properties
     ):
         """Die Zahlen des Backtests, nebeneinander.
@@ -110,6 +145,11 @@ class TestDerZuwachsReichteAuchUngekuerztNicht:
         Real: Eurostat `avia_paoc`, EU27, Jahresmittel 2015 → 2019, Index
         100 → 126,28. Modell: die einzige Größe, über die die Nachfragemenge
         wachsen könnte.
+
+        **Seit P3.8 ist der Abstand größer, nicht kleiner** (2026-09-07): Die
+        Kurve wuchs um 8 % über eine Strecke, die als *Jahre* gemeint war; in
+        Monaten gerechnet sind es +2,7 % über zehn Jahre. Derselbe Satz über die
+        Welt, eine andere Zahl im Modell — und der Befund wird davon schärfer.
         """
 
         punkte = sorted(
@@ -119,9 +159,9 @@ class TestDerZuwachsReichteAuchUngekuerztNicht:
         zuwachs_modell = punkte[-1].value / punkte[0].value - 1.0
         zuwachs_real = 126.28 / 100.0 - 1.0
 
-        assert zuwachs_modell == pytest.approx(0.08), (
-            f"Die Kurve wächst um {zuwachs_modell:.1%} statt 8 % — der Befund in "
-            "P2.7 nennt diese Zahl."
+        assert zuwachs_modell == pytest.approx(0.027, abs=5e-4), (
+            f"Die Kurve wächst um {zuwachs_modell:.1%} statt 2,7 % — der Befund in "
+            "P2.7 nennt diese Zahl, seit P3.8 in Monaten gerechnet."
         )
         assert zuwachs_modell < zuwachs_real / 3, (
             f"Modell +{zuwachs_modell:.1%} gegen real +{zuwachs_real:.1%}. Nähert "
@@ -264,23 +304,52 @@ class TestEinLaufSagtWieWeitSeineVorgabenReichen:
     Antwort und hätte jeden ausgelieferten Rahmen sofort ungültig gemacht.
     Was fehlte, war die **Auskunft**.
 
-    **Und sie braucht P3.8 nicht.** Ob eine Kurve *zu kurz* ist, hängt daran,
-    wie lang ein Tick ist — diese Frage ist offen. Ob ein Lauf **über sie
+    **Und sie brauchte P3.8 nicht.** Ob eine Kurve *zu kurz* ist, hängt daran,
+    wie lang ein Tick ist — diese Frage war damals offen. Ob ein Lauf **über sie
     hinausgeht**, hängt an nichts dergleichen: Das ist eine Beschreibung, keine
     Bewertung, und genau deshalb ließ sie sich vorziehen.
+
+    **Seit dem 2026-09-07 ist die Bevölkerungskurve nicht mehr ihr Beispiel**
+    (P3.8): Sie reicht bis Tick 120 und fällt bei keinem üblichen Lauf mehr auf.
+    Der Mechanismus wird deshalb an einem Lauf gemessen, der über *jede* Vorgabe
+    hinausgeht — an dem Fall festzuhalten, der zufällig einmal der Anlass war,
+    hieße einen Wächter zu haben, der eine Config prüft statt eine Mechanik.
     """
 
-    def test_die_bevoelkerungskurve_faellt_auf(self, properties):
-        """Der Fall, aus dem der Befund kam."""
+    def test_ein_lauf_jenseits_jeder_vorgabe_meldet_es(self, properties):
+        """Der Fall, aus dem der Befund kam — an einem Lauf, der ihn noch zeigt."""
 
         from src.validation import horizontluecken
 
-        luecken = horizontluecken(properties, max_ticks=STANDARDLAUF_TICKS)
-        betroffen = {luecke.property_id for luecke in luecken}
+        jenseits = 200
+        betroffen = {
+            luecke.property_id for luecke in horizontluecken(properties, max_ticks=jenseits)
+        }
 
         assert "bevoelkerungsentwicklung" in betroffen, (
-            "Die einzige Trajektorie des Modells endet vor dem Standardlauf und wird "
-            "nicht gemeldet — genau der Zustand, den P2.8 beanstandet hat."
+            f"Ein Lauf über {jenseits} Ticks läuft über den letzten Stützpunkt der "
+            "Bevölkerungskurve hinaus und bekommt es nicht gesagt — genau der "
+            "Zustand, den P2.8 beanstandet hat."
+        )
+
+    def test_ein_standardlauf_bleibt_innerhalb_der_bevoelkerungskurve(self, properties):
+        """Die Gegenrichtung, seit P3.8 — und der Grund, warum sie hier steht.
+
+        Ein Hinweis, der bei jedem Lauf erscheint, wird überlesen. Dass die
+        meistgenutzte Kurve ihn im Normalfall **nicht** auslöst, ist deshalb
+        keine Nebensache, sondern die Bedingung dafür, dass er etwas sagt.
+        """
+
+        from src.validation import horizontluecken
+
+        betroffen = {
+            luecke.property_id
+            for luecke in horizontluecken(properties, max_ticks=STANDARDLAUF_TICKS)
+        }
+
+        assert "bevoelkerungsentwicklung" not in betroffen, (
+            "Die Bevölkerungskurve endet wieder vor einem Standardlauf — P3.8 hat "
+            "sie auf Tick 120 verlängert."
         )
 
     def test_eine_flache_baseline_hat_keinen_horizont(self, properties):

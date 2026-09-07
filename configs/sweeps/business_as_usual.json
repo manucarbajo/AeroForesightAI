@@ -26,7 +26,7 @@
     },
     {
       "property_id": "demand_growth_rate",
-      "baseline": 0.03
+      "baseline": 0.0025
     },
     {
       "property_id": "oil_price_index",
@@ -118,6 +118,6 @@
       "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt",
       "Eurostat `avia_paoc`, gewerbliche Passagierflüge EU-27 — die Reihe, die auch der Backtest benutzt: +14,5 % zwischen 2015 und 2019, bei flachen Realpreisen"
     ],
-    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Zusätzlich hier: Die konstanten 50 EUR liegen unter dem seit 2021 beobachteten Niveau. Der Rahmen ist als Kontrast angelegt, nicht als Prognose, und darf nicht als «wenn nichts passiert» gelesen werden — er behauptet eine Rücknahme, keine Ruhe. Das gilt auch für den Kapazitätspfad: **Dass** das Angebot in dieser Welt wächst, ist argumentiert; **dass** es bis Tick 40 um ein knappes Viertel wächst, ist gesetzt."
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick ist seit P3.8 zwar ein **Monat**, trägt aber weiterhin **kein Datum** (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Dieser Rahmen läuft 50 Ticks, also gut vier Jahre. Ob das die Spanne ist, die diese Begründung meint, ist eine offene Produktfrage (P4.5). Zusätzlich hier: Die konstanten 50 EUR liegen unter dem seit 2021 beobachteten Niveau. Der Rahmen ist als Kontrast angelegt, nicht als Prognose, und darf nicht als «wenn nichts passiert» gelesen werden — er behauptet eine Rücknahme, keine Ruhe. Das gilt auch für den Kapazitätspfad: **Dass** das Angebot in dieser Welt wächst, ist argumentiert; **dass** es bis Tick 40 um ein knappes Viertel wächst, ist gesetzt."
   }
 }

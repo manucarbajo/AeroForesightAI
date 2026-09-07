@@ -171,8 +171,9 @@ STEPS: list[Step] = [
     Step(
         "umfang",
         "Wie weit reicht der Lauf?",
-        "Ein Tick ist eine Modellrunde, kein Kalenderzeitraum. Mehr Ticks heißt mehr "
-        "Gelegenheiten für Rückkopplung zwischen Preis und Nachfrage.",
+        "Ein Tick ist ein Monat, vierzig sind gut drei Jahre — in den Zahlen steht "
+        "trotzdem kein Datum. Mehr Ticks heißt vor allem mehr Gelegenheiten für "
+        "Rückkopplung zwischen Preis und Nachfrage.",
         lambda draft: start_flow.scope_step(draft, number=None),
         breite="lesen",
     ),
@@ -265,6 +266,11 @@ FELD_SCHRITT: dict[str, int] = {
     # Felder ab — eine von Hand gepflegte Zahl läuft sonst still weg, und dann
     # sperrt «Weiter» im falschen Schritt.
     "model": 4,
+    # **Mit P3.4 dazugekommen**, und der Wächter hat es gemeldet, nicht ein
+    # Blick: Seit `validate_llm_settings` auch den Endpunkt prüft, kann ein
+    # Befund an `base_url` hängen — ohne diese Zeile landete er auf «Prüfen &
+    # Starten», also *nicht* in dem Schritt, in dem das Feld steht.
+    "base_url": 4,
     "temperature": 4,
     "max_tokens": 4,
 }

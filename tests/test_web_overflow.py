@@ -89,6 +89,7 @@ und der Wächter wäre wieder aus dem falschen Grund grün. Das Ziel steht als
 
 from __future__ import annotations
 
+import json
 import re
 import socket
 import threading
@@ -234,6 +235,48 @@ _SEITE_SCHIEBT = """
 """
 
 
+def _warte_auf_schriften(page) -> None:
+    """Warten, bis die Webschriften wirklich gesetzt sind.
+
+    **Auf das Versprechen warten, nicht auf den Status.** `document.fonts.status`
+    steht schon auf `loaded`, wenn die Schriften der *vorigen* Ansicht da sind —
+    fordert die neue eine weitere Schnittvariante an, misst man trotzdem zu früh.
+    `document.fonts.ready` wartet auf alles, was gerade läuft.
+
+    **Warum das seit dem 2026-09-07 eine eigene Funktion ist:** Sie stand im
+    Überlaufpfad und *nur* dort. Der Breitenwächter aus P1.9-W5.4 hat die Lehre
+    nicht geerbt und wartete auf einen Selektor, auf 900 ms und auf eine
+    Funktion — nicht auf die Schrift. Das ist bei warmem Cache folgenlos und auf
+    einem kalten CI-Runner nicht: Er zählt echte Zeichen bei `max-width: 53ch`,
+    und `ch` ist die Breite der «0» **in der gerade gesetzten Schrift**. Wird die
+    Ersatzschrift gemessen, ändert sich das Verhältnis von Ziffern- zu
+    Kleinbuchstabenbreite und damit die Zahl der Zeichen, die in dieselbe Breite
+    passen. Gemessen: lokal ≤ 75, auf ubuntu-latest **78**.
+
+    Der Satz dazu steht seit dem 2026-08-30 im Docstring von :func:`_befunde`
+    und galt auch hier: *Ein Wächter, der vom Ladezeitpunkt einer Schrift
+    abhängt, ist keiner.*
+    """
+
+    # **Zweimal fragen, einmal warten** — genau die Form, die im Überlaufpfad
+    # seit dem 2026-08-30 steht. Ein *dritter* Takt hinten dran (erster Anlauf
+    # am 2026-09-07) kostet 900 ms je Aufruf, ohne etwas zu beruhigen: Nach dem
+    # zweiten `ready` ist die Schrift gesetzt, sonst hätte das Versprechen
+    # nicht aufgelöst.
+    try:
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+    except PlaywrightError:
+        # Ohne Netz laedt keine Webschrift; dann misst man eben die
+        # Ersatzschrift — besser als gar nicht zu messen, und der Fall
+        # faellt woanders auf.
+        return
+    page.wait_for_timeout(RUHE_MS)
+    try:
+        page.evaluate("() => document.fonts.ready.then(() => true)")
+    except PlaywrightError:
+        return
+
+
 def _befunde(page) -> list[dict]:
     """Erst warten, bis die **Schriften** da sind, dann messen.
 
@@ -247,21 +290,7 @@ def _befunde(page) -> list[dict]:
     Ein Wächter, der vom Ladezeitpunkt einer Schrift abhängt, ist keiner.
     """
 
-    # **Auf das Versprechen warten, nicht auf den Status.** `document.fonts.status`
-    # steht schon auf `loaded`, wenn die Schriften der *vorigen* Ansicht da sind
-    # — fordert die neue eine weitere Schnittvariante an, misst man trotzdem zu
-    # früh. `document.fonts.ready` wartet auf alles, was gerade lauft.
-    try:
-        page.evaluate("() => document.fonts.ready.then(() => true)")
-    except PlaywrightError:
-        # Ohne Netz laedt keine Webschrift; dann misst man eben die Ersatzschrift
-        # — besser als gar nicht zu messen, und der Fall faellt woanders auf.
-        pass
-    page.wait_for_timeout(RUHE_MS)
-    try:
-        page.evaluate("() => document.fonts.ready.then(() => true)")
-    except PlaywrightError:
-        pass
+    _warte_auf_schriften(page)
     return page.evaluate(_DETEKTOR)
 
 
@@ -281,9 +310,10 @@ BEREICHE = {
     "Einstieg": "",
     "Leitstand": "lauf",
     "Ergebnisse": "runs",
-    # Seit P1.9-W3.1: der Modell-Editor. Er traegt die 168 Bedienelemente, die
-    # bis dahin in den Schritten 4 und 5 lagen -- also genau die dichtesten
-    # Formulare der Anwendung. Wenn irgendwo etwas herausragt, dann hier.
+    # Seit P1.9-W3.1: der Modell-Editor. Er traegt die Felder, die bis dahin in
+    # den Schritten 4 und 5 lagen -- also genau die dichtesten Formulare der
+    # Anwendung (heute 146 Bedienelemente; die 168 von damals beschreiben die
+    # beiden Schritte vor dem Umzug). Wenn irgendwo etwas herausragt, dann hier.
     "Modell": "modell",
     "Handbuch": "doku",
 }
@@ -413,7 +443,49 @@ DECKEL: dict[int, dict[str, float]] = {
         # Glossar-Erklärungen (`ui.explainer`, 2026-09-03) misst der Schritt
         # dieselben 1,34 — der Erklärungskörper steckt in einem zugeklappten
         # `<details>` und trägt keine Höhe.
-        "Schritt 1": 1.34,
+        #
+        # **1,34 → 2,02 mit P3.17, und der Zuwachs ist git-belegt zugeordnet.**
+        # Zwei Commits haben nach der Messung von 1,34 in diesen Rumpf
+        # geschrieben, und **keiner** hat den Deckel mitgezogen:
+        #
+        # * `4a5417d` (A1, 2026-09-03) zeigt die **Kohärenzbegründung auch für
+        #   die Standard-Ausgangslage**. Vorher stand hier für den
+        #   Vorgabe-Entwurf nichts; jetzt These, Begründung und ein
+        #   aufklappbarer Quellenblock. Das ist der weit größere Teil des
+        #   Zuwachses — und es ist eine **bewusste** Entscheidung von A1: Die
+        #   Begründung steht offen da, weil sie unter Variante C die einzige
+        #   Absicherung eines Rahmens ist.
+        # * `976395d` (P2.8-Rest, 2026-09-04) fügt den Hinweis auf Verläufe
+        #   hinzu, die vor dem Laufende aufhören.
+        #
+        # Dazu 0,06 aus P3.17 selbst: Das Lesemaß auf Quellenliste und
+        # Hinweisen bricht früher um, dieselben Sätze brauchen mehr Zeilen.
+        #
+        # **Das ist die dritte Wiederholung desselben Musters** (C5, dann
+        # P3.17): Der Wächter ist opt-in, niemand lässt ihn laufen, und ein
+        # gewollter Zuwachs verwandelt sich in einen roten Wächter, den man erst
+        # Tage später sieht. Die Antwort darauf steht nicht hier, sondern in
+        # `.github/workflows/browser.yml`.
+        #
+        # **Zwei Schirme sind kein guter Zustand**, und die Zahl steht hier als
+        # Ist-Stand, nicht als Freigabe: Dieser Schritt ist damit der höchste der
+        # Schrittfolge, und das Ziel bleibt `ZIEL`. Ob die Kohärenzbegründung
+        # offen stehen muss oder ihre Quellen genügen, ist eine **Produktfrage**
+        # und kein Messfehler — sie gehört in ein eigenes Paket, nicht in einen
+        # Wächter.
+        # **+0,07 am 2026-09-07, und der Zuwachs ist gewollt.** Das Lesemaß
+        # `af-mass` ist von 53ch auf 48ch enger geworden, weil `ch` **plattform-
+        # abhängig** ist: Die Einheit ist der Vorschub der Null, und Chromium
+        # quantisiert den unter Linux auf ganze Pixel (8,00 gegen 7,78 px).
+        # Dieselbe Regel trug dort 78 Zeichen statt 71 — über der Zusage von 75.
+        # Gewählt ist die Plattform, auf der das Produkt läuft; die Begründung
+        # steht bei `.af-mass` in `dashboard/web/assets/dashboard.css`.
+        #
+        # Schmalerer Fließtext bricht früher um, dieselben Sätze brauchen mehr
+        # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
+        # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
+        # Ist-Stand hält und nicht die Absicht.
+        "Schritt 1": 2.09,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
@@ -431,7 +503,22 @@ DECKEL: dict[int, dict[str, float]] = {
         # Grund. **Die Zahl steht hier, damit der nächste Zuwachs wieder
         # auffällt**; sie ist keine Freigabe für den übernächsten. Er hiess bis
         # P2.0-C «Schritt 7».
-        "Schritt 6": 1.45,
+        #
+        # **1,45 → 1,73 mit P3.17**, aus drei benannten Teilen: der
+        # Horizontlücken-Hinweis aus `976395d` (P2.8-Rest, 2026-09-04), das
+        # Lesemaß auf Hinweisen aus P3.17, und **0,09 aus der Laufhistorie**.
+        # Der letzte Teil ist der unangenehme: «Prüfen & Starten» zeigt eine
+        # Laufzeitschätzung, sobald vergleichbare Läufe in `outputs/` liegen —
+        # gemessen 1,61 in einem frischen Arbeitsbaum gegen 1,70 mit 264 Läufen,
+        # an derselben Codefassung.
+        #
+        # **Der Deckel gilt für den bestückten Fall, und das ist eine
+        # Entscheidung.** Wer frisch klont, misst niedriger; die Sperrklinke
+        # gegen stilles Schrumpfen lässt 0,25 zu und deckt das ab. Die
+        # Alternative — die Schätzung aus der Messung herausnehmen — hätte den
+        # Wächter blind für genau den Teil gemacht, den ein Nutzer im Alltag
+        # sieht.
+        "Schritt 6": 1.80,  # +0,07 aus `af-mass` 53ch -> 48ch, siehe Schritt 1
     },
     1024: {
         "Einstieg": 1.00,
@@ -444,14 +531,28 @@ DECKEL: dict[int, dict[str, float]] = {
         # **1,37 → 1,42 mit P2.0-C**, aus demselben Grund wie bei 1280: der
         # zugezogene Schalter. Bei der engeren Breite kostet er 0,05 statt 0,14,
         # weil hier schon vorher mehr umbrach.
-        "Schritt 1": 1.42,
+        # **1,42 → 2,10 mit P3.17**, dieselben drei Ursachen wie bei 1280 (siehe
+        # dort); schmaler bricht mehr um, deshalb 0,08 mehr.
+        # **+0,07 am 2026-09-07, und der Zuwachs ist gewollt.** Das Lesemaß
+        # `af-mass` ist von 53ch auf 48ch enger geworden, weil `ch` **plattform-
+        # abhängig** ist: Die Einheit ist der Vorschub der Null, und Chromium
+        # quantisiert den unter Linux auf ganze Pixel (8,00 gegen 7,78 px).
+        # Dieselbe Regel trug dort 78 Zeichen statt 71 — über der Zusage von 75.
+        # Gewählt ist die Plattform, auf der das Produkt läuft; die Begründung
+        # steht bei `.af-mass` in `dashboard/web/assets/dashboard.css`.
+        #
+        # Schmalerer Fließtext bricht früher um, dieselben Sätze brauchen mehr
+        # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
+        # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
+        # Ist-Stand hält und nicht die Absicht.
+        "Schritt 1": 2.17,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
         "Schritt 4": 1.22,
         "Schritt 5": 1.08,
-        "Schritt 6": 1.45,  # siehe die Begründung bei 1280
+        "Schritt 6": 1.80,  # siehe die Begründung bei 1280
     },
 }
 
@@ -791,7 +892,7 @@ _BREITE = """
 
     // (2) Zeichen je Zeile: jedes Zeichen bekommt sein eigenes Rechteck,
     //     Zeichen mit derselben Oberkante stehen auf derselben Zeile.
-    let zeile = 0, probe = null, wo = null;
+    let zeile = 0, probe = null, wo = null, traeger = null;
     const lauf = document.createTreeWalker(spalte, NodeFilter.SHOW_TEXT);
     let k;
     while ((k = lauf.nextNode())) {
@@ -806,6 +907,25 @@ _BREITE = """
         if (text.trim().length < 40) continue;      // Beschriftungen sind kein Fliesstext
         // Code bricht nicht bei 75 Zeichen um, er wird gescrollt.
         if (k.parentElement.closest("pre, code")) continue;
+        // **Zwei weitere Ausnahmen, beide am 2026-09-07 gemessen dazugekommen.**
+        // Sie sind aufgefallen, als `af-mass` von 53ch auf 48ch enger wurde:
+        // Danach war die laengste Zeile nicht mehr Fliesstext, sondern das hier.
+        //
+        // 1. **Was nicht umbrechen kann.** Tailwinds `truncate` ist
+        //    `white-space: nowrap` plus Ellipse -- der Text steht per
+        //    Konstruktion auf einer Zeile und wird beschnitten, nicht
+        //    umgebrochen. Die Zusage handelt davon, dass das Auge am
+        //    Zeilenende die Spur zum naechsten Anfang verliert; wo es keinen
+        //    naechsten Anfang gibt, gilt sie nicht. Drei Beschriftungen der
+        //    Schrittfolge meldeten so bis zu 72 Zeichen.
+        // 2. **Kennungen in der Festbreitenschrift.** `.af-delta__wert` zeigt
+        //    Commit-Kuerzel und Branch-Namen; gemessen 75 Zeichen, und die
+        //    Laenge haengt am *Branch-Namen der messenden Maschine*, nicht am
+        //    Produkt. Dieselbe Begruendung wie fuer `pre`/`code` eine Zeile
+        //    darueber -- eine Kennung liest man nicht, man vergleicht sie.
+        const stil = getComputedStyle(k.parentElement);
+        if (stil.whiteSpace === "nowrap" || stil.whiteSpace === "pre") continue;
+        if (/mono/i.test(stil.fontFamily)) continue;
         const zeilen = new Map();
         for (let i = 0; i < text.length; i++) {
             const r = document.createRange();
@@ -820,15 +940,81 @@ _BREITE = """
             if (anzahl > zeile) {
                 zeile = anzahl;
                 probe = text.trim().slice(0, 40);
-                wo = k.parentElement.tagName + "." + String(k.parentElement.className).slice(0, 40);
+                // **Ungekuerzt.** Bis zum 2026-09-07 stand hier `.slice(0, 40)`,
+                // und die Meldung endete regelmaessig auf "... mt-1 af-" --
+                // abgeschnitten genau vor `af-mass`, also vor der Klasse, nach
+                // der die Meldung darunter fragt. Ein Befund, der die eigene
+                // Frage nicht beantwortet, kostet einen Durchlauf.
+                wo = k.parentElement.tagName + "." + String(k.parentElement.className);
+                traeger = k.parentElement;
             }
         });
+    }
+
+    // **Womit gemessen wurde, nicht nur was gemessen wurde** (2026-09-07).
+    //
+    // Die Zeichenzahl haengt an der Schrift: `af-mass` deckelt auf `53ch`, und
+    // `ch` ist die Breite der "0" in der gerade gesetzten Schrift. Wie viele
+    // Kleinbuchstaben in dieselbe Breite passen, entscheidet das Verhaeltnis von
+    // Ziffern- zu Buchstabenbreite -- und das ist je Schrift verschieden.
+    //
+    // Gemessen: lokal (Windows) <= 75 Zeichen, auf ubuntu-latest 78. Beide Male
+    // mit `af-mass` am Element und beide Male nach `document.fonts.ready`.
+    // Dessen Versprechen loest allerdings auch auf, wenn eine Schrift **nicht**
+    // geladen werden konnte -- es heisst "Laden abgeschlossen", nicht "Laden
+    // erfolgreich". Ohne die Angaben hier laesst sich nicht unterscheiden, ob
+    // Inter fehlt oder ob 53ch fuer Inter zu weit ist. Das sind zwei ganz
+    // verschiedene Reparaturen, und eine davon trifft das Deployment-Ziel.
+    let schrift = null;
+    if (traeger) {
+        const st = getComputedStyle(traeger);
+        // **Die Eigenschaften einzeln setzen, nicht die Kurzschreibweise.**
+        // `getComputedStyle(el).font` kam in Chromium leer zurueck, die Sonde
+        // erbte damit die Standardgroesse und meldete 10,38 px fuer eine Ziffer
+        // bei 12 px Schrift — 0,87 em, was fuer keine Schrift stimmt. Der erste
+        // Anlauf dieser Diagnose war damit selbst die Fehlmessung, die er
+        // aufklaeren sollte.
+        const probe0 = document.createElement("span");
+        probe0.textContent = "0";
+        probe0.style.position = "absolute";
+        probe0.style.visibility = "hidden";
+        probe0.style.whiteSpace = "pre";
+        probe0.style.fontFamily = st.fontFamily;
+        probe0.style.fontSize = st.fontSize;
+        probe0.style.fontWeight = st.fontWeight;
+        probe0.style.fontStyle = st.fontStyle;
+        // **Ohne `letter-spacing`**, weil `1ch` den reinen Vorschub der «0»
+        // meint. Ein Hinweis zum Deuten der Zahl: Unter Windows misst diese
+        // Sonde 7,78 px, waehrend der Deckel 401,227 px / 53 = **7,57 px** je
+        // `ch` unterstellt — 2,7 % Abstand. An der Laufweite liegt es nicht,
+        // das ist nachgeprueft (ohne sie kommt derselbe Wert heraus); woran
+        // dann, ist offen. Fuer die Diagnose reicht es: Verglichen wird
+        // Plattform gegen Plattform, nicht diese Sonde gegen `ch`.
+        document.body.appendChild(probe0);
+        const nullBreite = probe0.getBoundingClientRect().width;
+        probe0.remove();
+        const familien = new Set();
+        document.fonts.forEach((f) => {
+            if (f.status === "loaded") familien.add(f.family);
+        });
+        schrift = {
+            berechnet: st.fontFamily,
+            groesse: st.fontSize,
+            inter_benutzbar: document.fonts.check(st.fontSize + " Inter"),
+            null_px: +nullBreite.toFixed(2),
+            // Zum Gegenrechnen: `af-mass` deckelt auf 53ch, also muss
+            // `breite_px` ungefaehr 53 * null_px sein. Weicht das ab, misst die
+            // Sonde etwas anderes als der Browser umbricht.
+            breite_px: +traeger.getBoundingClientRect().width.toFixed(1),
+            deckel: st.maxWidth,
+            geladen: Array.from(familien).sort().join(", ") || "(keine)",
+        };
     }
 
     return {
         rumpf: Math.round(rb.width),
         fuellung: rechts > 0 ? +(((rechts - links) / rb.width) * 100).toFixed(1) : null,
-        zeichen: zeile, probe: probe, wo: wo,
+        zeichen: zeile, probe: probe, wo: wo, schrift: schrift,
     };
 }
 """
@@ -865,6 +1051,10 @@ def _durch_die_schritte(page):
             " return e && e.getBoundingClientRect().height > 50; }",
             timeout=10_000,
         )
+        # **Vor jeder Messung**, nicht einmal am Anfang: Jeder Schritt kann eine
+        # weitere Schnittvariante anfordern, und `_BREITE` zählt Zeichen — die
+        # Zahl hängt an der Schrift, die in diesem Moment gesetzt ist.
+        _warte_auf_schriften(page)
         yield wizard.STEPS[index].title, page.evaluate(_BREITE)
 
 
@@ -900,16 +1090,35 @@ class TestJederSchrittHatSeineBreite:
         für wirkungslos zu halten, der wirkte.
         """
 
-        lang = [
-            f"{titel}: {mass['zeichen']} Zeichen in {mass['wo']} — {mass['probe']!r}"
-            for titel, mass in _durch_die_schritte(page)
-            if mass and mass["zeichen"] > ZEILE_MAX
-        ]
+        lang = []
+        for titel, mass in _durch_die_schritte(page):
+            if not mass or mass["zeichen"] <= ZEILE_MAX:
+                continue
+            zeile = f"{titel}: {mass['zeichen']} Zeichen in {mass['wo']} — {mass['probe']!r}"
+            # **Womit gemessen wurde, gehört in die Meldung.** Ohne die Schrift
+            # ist «78 Zeichen» nicht zu deuten: Es kann heißen, dass `af-mass`
+            # zu weit ist, oder dass Inter fehlt und die Ersatzschrift gemessen
+            # wurde. Der erste Anlauf am 2026-09-07 hat genau daran einen
+            # CI-Durchlauf verloren.
+            if mass.get("schrift"):
+                s = mass["schrift"]
+                zeile += (
+                    f"\n      Schrift: {s['berechnet']} @ {s['groesse']}, "
+                    f"«0» = {s['null_px']} px, Inter benutzbar: {s['inter_benutzbar']}"
+                    # **Die Breite gehört dazu.** Der erste Anlauf hat sie
+                    # gemessen und nicht berichtet; die Deutung «53ch sind hier
+                    # 424 px» blieb damit gerechnet statt gemessen.
+                    f"\n      Breite: {s['breite_px']} px bei max-width {s['deckel']}"
+                    f"\n      geladen: {s['geladen']}"
+                )
+            lang.append(zeile)
 
         assert not lang, (
             f"Diese Zeilen laufen bei {page.breite} px über {ZEILE_MAX} Zeichen:\n  "
             + "\n  ".join(lang)
-            + "\n\nDas Lesemaß (`af-mass`) fehlt dort — oder es ist zu weit."
+            + "\n\nDas Lesemaß (`af-mass`) fehlt dort — oder es ist zu weit. "
+            "Sagt «Inter benutzbar: False», ist keins von beidem der Befund, "
+            "sondern die Auslieferung der Schriften."
         )
 
     def test_the_entry_reserves_no_column_for_a_list_it_does_not_have(self, page):
@@ -1489,3 +1698,612 @@ def test_the_symbol_guard_would_notice_a_relapse(page):
         "Der Wächter übersieht ein Symbol außerhalb des Teilsatzes — dann steht "
         "beim nächsten Mal wieder ein Wort im Bild."
     )
+
+
+# --- Teil 8: Titel und Legende teilen sich keinen Rand (P3.7) ----------------
+#
+# **Der Befund war sichtbar und stand trotzdem monatelang da.** In allen vier
+# Aussagen und beiden Modi überschnitten sich Titel und Legende: 11 px im
+# Regelfall, 21 px bei «Buchungsrate nach Profil-Segment», dessen fünf Einträge
+# die Legende **105 px** hoch machen und den Titel weitgehend zudecken.
+# Gemessen am 2026-09-05, zwölf Überschneidungen über sechs Diagramme.
+#
+# **Zwei Reparaturen sind vorher gemessen und verworfen worden** — beide stehen
+# in P3.7 und sind hier festgehalten, damit sie niemand ein drittes Mal
+# versucht: Ein größerer oberer Rand kann eine Legende variabler Höhe
+# grundsätzlich nicht auffangen, und `title.automargin` macht es schlimmer.
+#
+# **Was hier gemessen wird, sind drei Abstände, nicht einer.** Die Legende unter
+# die Zeichenfläche zu setzen tauscht sonst eine Überlappung gegen die nächste:
+# Unten wohnen bereits die Achsenbeschriftung und der Achsentitel. Genau das
+# ist beim Einstellen passiert — bei einem Abstand von 0,22 Zeichenflächenhöhen
+# lag die hohe Legende 5 px im Achsentitel. Der Wächter hätte es gefunden, ein
+# Blick auf ein Beispieldiagramm nicht.
+#
+# **Kein Bildvergleich.** Gemessen werden die Kästen der vier Beschriftungen
+# gegeneinander — ein Bildvergleich wäre bei jeder Schriftaktualisierung rot,
+# ohne dass etwas überlappt.
+
+#: Läuft im Browser. Gibt je Plotly-Diagramm die Lage der vier Beschriftungen
+#: und ihre Überschneidungen zurück. `null` heißt «gibt es in dieser Figur
+#: nicht» — ein Diagramm ohne Legende kann keine Überlappung haben.
+_BESCHRIFTUNGEN = """
+() => {
+  const kasten = (el) => {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) return null;
+    return { top: Math.round(r.top), bottom: Math.round(r.bottom), hoehe: Math.round(r.height) };
+  };
+  const ueber = (a, b) =>
+    a && b ? Math.round(Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)) : null;
+
+  const out = [];
+  for (const plot of document.querySelectorAll('.js-plotly-plot')) {
+    if (!plot.checkVisibility || !plot.checkVisibility({ checkVisibilityCSS: true })) continue;
+    const legende = kasten(plot.querySelector('g.legend'));
+    if (!legende) continue;  // ohne Legende kein Konflikt
+    const titel = kasten(plot.querySelector('.gtitle'));
+    const achsentitel = kasten(plot.querySelector('.xtitle'));
+    const marken = kasten(plot.querySelector('.xaxislayer-above'));
+    out.push({
+      name: (plot.querySelector('.gtitle')?.textContent || '(ohne Titel)').trim().slice(0, 52),
+      legende: legende,
+      abstaende: {
+        Titel: ueber(titel, legende),
+        Achsentitel: ueber(achsentitel, legende),
+        Achsenbeschriftung: ueber(marken, legende),
+      },
+    });
+  }
+  return out;
+}
+"""
+
+
+def _legendenkonflikte(page) -> list[str]:
+    """Jede Beschriftung, die in die Legende hineinragt — als lesbare Zeile."""
+
+    page.wait_for_timeout(RUHE_MS)
+    befunde: list[str] = []
+    for figur in page.evaluate(_BESCHRIFTUNGEN):
+        for wer, ueber in figur["abstaende"].items():
+            if ueber is not None and ueber > 0:
+                befunde.append(
+                    f"«{figur['name']}»: {wer} überschneidet die Legende um {ueber} px "
+                    f"(Legende {figur['legende']['hoehe']} px hoch, "
+                    f"y {figur['legende']['top']}–{figur['legende']['bottom']})"
+                )
+    return befunde
+
+
+#: Die vier Aussagen aus `views/figures.py`. Sie stehen hier als Namen und nicht
+#: als Zählung, damit die Meldung sagt, *welche* Aussage bricht.
+AUSSAGEN = [
+    "1 · Preis und Nachfrage",
+    "2 · Was die Politik bewirkt",
+    "3 · Wer noch fliegt",
+    "4 · Die Szenarien nebeneinander",
+]
+
+
+def _oeffne_figures(page) -> None:
+    """Zum Reiter «Figures» der Ergebnisse — dort wohnen die vier Aussagen.
+
+    **Erst prüfen, ob es überhaupt einen Lauf gibt.** Ohne einen zeigt die
+    Ergebnis-Ansicht keine Reiter, und der Wächter lief bis zum 2026-09-07 in
+    sechs Timeouts à fünfzehn Sekunden, deren Meldung «`#figures-tabs` nicht
+    sichtbar» lautete — richtig und nutzlos.
+
+    Der Fall ist nicht theoretisch: Er ist der **Normalzustand eines sauberen
+    Checkouts** und deshalb der Zustand jedes CI-Laufs. Aufgefallen ist er erst,
+    als P3.17 den Wächter in die CI gestellt hat; auf der Entwicklungsmaschine
+    lagen 389 Läufe in `outputs/`, und er war grün, weil sie da waren.
+    """
+
+    from dashboard.run_browser import list_runs
+
+    if not list_runs():
+        pytest.fail(
+            "Kein Lauf in `outputs/` — diese Zusagen messen die Ergebnis-Ansicht und "
+            "brauchen Daten. Einen erzeugen:\n"
+            "  python -m src.run_simulation --mock-llm --rounds 20 --seed 42 --quiet "
+            "--run-id run_ci_referenz\n"
+            "Der Name muss mit `run_` beginnen, sonst findet `list_runs` ihn nicht. "
+            "In der CI erledigt das der Schritt «Ein Lauf zum Messen» in browser.yml."
+        )
+
+    page.goto(page.basis + "runs", wait_until="networkidle")
+    page.wait_for_selector(".af-viewbar__item")
+    leiste = page.locator(".af-viewbar__item")
+    for index in range(leiste.count()):
+        if "Figures" in leiste.nth(index).inner_text():
+            leiste.nth(index).click()
+            break
+    else:  # pragma: no cover - die Leiste ohne «Figures» wäre ein anderer Befund
+        pytest.fail("Der Reiter «Figures» fehlt in der Ergebnisleiste")
+    page.wait_for_selector("#figures-tabs", timeout=15_000)
+
+
+def _auf_dunkel(page) -> None:
+    page.click(f"#{'theme-toggle'}")
+    page.wait_for_timeout(RUHE_MS)
+
+
+class TestTitelUndLegendeTeilenSichKeinenRand:
+    """Die Zusage von P3.7: **alle** vier Aussagen, **beide** Modi."""
+
+    @pytest.mark.parametrize("modus", ["hell", "dunkel"])
+    def test_no_statement_overlaps_its_own_labels(self, page, modus):
+        _oeffne_figures(page)
+        if modus == "dunkel":
+            _auf_dunkel(page)
+            _oeffne_figures(page)
+
+        reiter = page.locator("#figures-tabs .af-tab")
+        assert reiter.count() >= len(
+            AUSSAGEN
+        ), f"Gezählt {reiter.count()} Aussagen, erwartet mindestens {len(AUSSAGEN)}"
+        for index, name in enumerate(AUSSAGEN):
+            reiter.nth(index).click()
+            befunde = _legendenkonflikte(page)
+            assert not befunde, f"{name} bei {page.breite} px, {modus}:\n  " + "\n  ".join(befunde)
+
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_no_other_area_overlaps_either(self, page, name):
+        """Die Zusage gilt fürs ganze Dashboard, nicht nur für die vier Aussagen."""
+
+        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
+        befunde = _legendenkonflikte(page)
+
+        assert not befunde, f"«{name}» bei {page.breite} px:\n  " + "\n  ".join(befunde)
+
+
+def test_the_legend_guard_would_notice_a_relapse(page):
+    """Ein Wächter, der nie etwas sieht, könnte auch blind sein.
+
+    Nachgestellt wird genau der alte Zustand: die Legende waagerecht über der
+    Zeichenfläche, im selben Rand wie der Titel. Gemessen wird am laufenden
+    Diagramm, nicht an einer Attrappe — `Plotly.relayout` verschiebt sie, ohne
+    dass dafür jemand das Template ändern müsste.
+    """
+
+    _oeffne_figures(page)
+    page.locator("#figures-tabs .af-tab").nth(0).click()
+    page.wait_for_timeout(RUHE_MS)
+    assert not _legendenkonflikte(page), "Vor der Nachstellung ist schon etwas kaputt"
+
+    page.evaluate("""
+        () => {
+          for (const plot of document.querySelectorAll('.js-plotly-plot')) {
+            if (!plot.querySelector('g.legend')) continue;
+            window.Plotly.relayout(plot, {'legend.yanchor': 'bottom', 'legend.y': 1.02});
+          }
+        }
+        """)
+
+    assert _legendenkonflikte(page), (
+        "Der Wächter übersieht eine Legende, die im Rand des Titels sitzt — "
+        "dann ist seine Zusage keine."
+    )
+
+
+# --- Teil 9: Was ein Klick in der Schrittfolge kostet (P3.9) ------------------
+#
+# **Der Plan hat die Rundläufe richtig gezählt und die falsche Ursache benannt.**
+# Er schloss: «Was übrig bleibt: zehn Rundläufe, die einander auslösen» — und
+# daraus, dass ihre *Zahl* die zwei Sekunden macht. Nachgemessen am 2026-09-05
+# stimmt das nicht:
+#
+# * Jeder Serveraufruf dauert **16 bis 115 ms**. Alle zusammen erklären keine
+#   Sekunde.
+# * Daneben steht **eine einzelne Aufgabe im Hauptthread des Browsers von 850
+#   bis 1150 ms** (`PerformanceObserver`, `longtask`). Dort liegt die Wartezeit.
+# * Der JS-Heap der Seite ist **111 MiB**: Alle fünf Bereiche des Leitstands
+#   liegen gleichzeitig im DOM (Regel 6 — bedingt Sichtbares wird ausgeblendet,
+#   nicht weggelassen), und React vergleicht bei jedem Schrittwechsel diesen
+#   Baum.
+#
+# Die Kette zu kürzen war trotzdem richtig, nur nicht aus dem gedachten Grund:
+# Ein Store, der sich nicht geändert hat, darf nichts nachziehen. Gemessen
+# sinken die klickbedingten Aufrufe von **8–11 auf 6–7**; die Zeit bis der neue
+# Schritt steht bleibt, weil sie nie dort lag.
+#
+# **Deshalb misst dieser Teil beides und behauptet nur das eine.** Die Zahl der
+# Aufrufe ist eine Sperrklinke wie der Höhen-Deckel: Sie hält den erreichten
+# Stand. Die Zeit steht als Messung daneben, mit einer großzügigen Obergrenze —
+# eine schärfere wäre auf einer langsameren Maschine rot, ohne dass sich etwas
+# geändert hat, und genau davor warnt P3.9 selbst.
+
+#: Ausgaben, die ein **Zeitgeber** anstößt und kein Klick — im Leerlauf gemessen.
+#:
+#: **Ohne diese Trennung misst der Wächter den Herzschlag.** Der Plan notierte
+#: «Im Leerlauf passiert nichts: null Aufrufe»; am 2026-09-05 sind es rund **zwei
+#: pro Sekunde**, weil `pages/launch.py` seit P1.6 den Laufzustand beim Server
+#: erfragt (Regel 5) statt ihn aus der Sitzung abzuleiten. In einem Fenster von
+#: drei Sekunden sind das sechs Aufrufe, die keinem Klick gehören.
+TAKTGEBER = (
+    "run-progress-store",
+    "run-running-store",
+    "run-job-store",
+    "scene-content",
+    "scene-zoom-store",
+    "telemetry-host",
+    "tick-store",
+    "timeline-",
+    "shell-status",
+)
+
+#: Wie viele Server-Aufrufe ein Klick auf einen Schritt auslösen darf.
+#:
+#: **Der Ist-Stand nach P3.9**, gemessen über alle sechs Schritte: 6 oder 7. Vor
+#: der Änderung waren es 8 bis 11. Wächst die Zahl, hat jemand eine neue Kette
+#: gebaut; **sinkt sie deutlich**, gehört der Gewinn hier eingetragen — sonst
+#: verfällt er still, dieselbe Sperrklinke wie beim Höhen-Deckel.
+KLICK_AUFRUFE_MAX = 7
+
+#: Obergrenze für «bis der neue Schritt im DOM steht», in Millisekunden — **das
+#: Kriterium von P3.9 im Wortlaut**.
+#:
+#: Die Geschichte dieser Zahl gehört dazu, weil sie eine Fehldiagnose enthält.
+#: P3.9 hielt 500 ms für unerreichbar — «die Zeit liegt in *einer*
+#: Browser-Aufgabe», und die schien an Regel 1 und Regel 6 zu hängen. Das CPU-
+#: Profil sagte etwas anderes: 71,6 % in `dash_renderer`, und dessen Kosten
+#: hängen an der **Zahl** eingehängter Dash-Komponenten. Der Modell-Bereich
+#: stellte davon knapp die Hälfte, ohne je sichtbar zu sein — P3.12 hängt ihn
+#: aus, und damit ist das Kriterium erfüllt: **gemessen 213 bis 487 ms.**
+#:
+#: **Der Deckel stand von P3.12 bis P3.16 auf 900, und das war ein Widerspruch**
+#: (B4 des Audits): Ein Rückfall auf 800 ms wäre grün geblieben, während der Plan
+#: «das 500-ms-Kriterium ist erfüllt» behauptete. Die Begründung für 900 trug —
+#: eine ausgelastete Maschine misst anders, und ein Wächter, der ohne Anlass rot
+#: wird, wird nicht mehr gelaufen (bei drei parallelen Läufen brauchte er einmal
+#: 1:56 h). Nur war die Antwort darauf die falsche: **Nicht den Maßstab lockern,
+#: sondern das Rauschen aus der Messung nehmen** — siehe
+#: :data:`MESSUNGEN_JE_SCHRITT`.
+SICHTBAR_MAX_MS = 500
+
+#: Wie oft jeder Schritt gemessen wird; gewertet wird die **schnellste**
+#: Messung (P3.16).
+#:
+#: **Warum das Minimum und nicht der Mittelwert:** Last kann eine Messung nur
+#: langsamer machen, nie schneller. Das Minimum aus mehreren Durchgängen ist
+#: deshalb die beste Schätzung dafür, was der *Code* kostet — und genau darüber
+#: redet das Kriterium. Eine Regression macht dagegen **jede** Messung langsam,
+#: auch die beste: Als der Modell-Bereich noch im DOM hing, lagen alle Werte
+#: zwischen 665 und 1426 ms, kein einziger unter 500.
+#:
+#: Damit hält dieser Wächter das Kriterium wörtlich, ohne auf einer belegten
+#: Maschine zu flackern. Der Preis sind zwei zusätzliche Durchgänge über sechs
+#: Schritte, also rund eine Minute in einem Lauf, der zwanzig braucht.
+#:
+#: **Und er kann nicht mehr aus dem falschen Grund grün werden:**
+#: `sichtbar_ms` ist `None`, wenn die Marke ausbleibt — vorher wären damit *alle*
+#: Schritte übersprungen worden und die Zusage leer. Der Test verlangt jetzt
+#: Messungen für jeden Schritt.
+MESSUNGEN_JE_SCHRITT = 3
+
+#: Was der Wächter tatsächlich durchlässt: die Zusage plus **10 % Toleranz**.
+#:
+#: **Warum überhaupt eine Toleranz, wenn schon das Minimum aus drei Messungen
+#: gewertet wird:** Weil sie nicht verschwindet. Zwei Durchgänge an derselben
+#: Codefassung, beide mit dem Minimum aus drei Messungen, lieferten für «Prüfen &
+#: Starten» bei 1024 px **507** und **476 ms** — dieser Schritt liegt *auf* der
+#: Linie, und ein Deckel von exakt 500 wäre in jedem zweiten Lauf rot, ohne dass
+#: sich etwas geändert hat. **Ein Wächter, der ohne Anlass rot wird, wird
+#: abgeschaltet statt gelesen** — genau daran ist C5 des Phase-2-Audits gestorben,
+#: und das kostete dort einen unentdeckten Rückfall über vier Tage.
+#:
+#: **Der Unterschied zu den 900 von vorher ist der Punkt** (B4 des Audits): 900
+#: war das 1,8-fache der Zusage und hätte genau die Regression durchgelassen, die
+#: P3.12 behoben hat (665–1426 ms). 550 lässt eine Maschinenschwankung durch und
+#: eine Verschlechterung nicht: Käme der Modell-Bereich zurück in den Baum, wäre
+#: der schnellste von drei Werten weiterhin über 600.
+#:
+#: Wer die Toleranz weiter zudrehen will, erhöht :data:`MESSUNGEN_JE_SCHRITT` —
+#: nicht diese Zahl. Mehr Messungen machen das Minimum stabiler; ein engerer
+#: Deckel macht nur den Wächter unbrauchbar.
+SICHTBAR_DECKEL_MS = int(SICHTBAR_MAX_MS * 1.1)
+
+_MESSUNG = """
+() => {
+  window.__p39 = { lang: [], marken: [] };
+  if (window.__p39_obs) window.__p39_obs.disconnect();
+  if (window.__p39_mut) window.__p39_mut.disconnect();
+  window.__p39_obs = new PerformanceObserver((liste) => {
+    for (const e of liste.getEntries()) window.__p39.lang.push(Math.round(e.duration));
+  });
+  window.__p39_obs.observe({ entryTypes: ['longtask'] });
+  window.__p39_mut = new MutationObserver(() => {
+    const zaehler = document.querySelector('.af-wizard__counter');
+    if (zaehler) window.__p39.marken.push({ t: performance.now(), text: zaehler.innerText });
+  });
+  window.__p39_mut.observe(document.body, { childList: true, subtree: true });
+  window.__p39.t0 = performance.now();
+  return true;
+}
+"""
+
+
+def _ziel_der_anfrage(anfrage) -> str:
+    """Welche Ausgaben ein Dash-Aufruf setzt — als lesbarer Name.
+
+    **Die Verschachtelung ist der Fallstrick.** Bei einem Pattern-Callback
+    (`Output({"type": …, "field": ALL}, …)`) ist `outputs` eine Liste **von
+    Listen**, und ein `eintrag.get("id")` darauf wirft. Beim ersten Anlauf
+    dieses Wächters lief der Fehler in einen Playwright-Ereignishorcher und kam
+    als `Page.wait_for_timeout: 'list' object has no attribute 'get'` wieder
+    heraus — eine Meldung, die nichts mit der Ursache zu tun hat.
+
+    Deshalb rekursiv, und deshalb ohne breites `except`: Ein Zähler, der eine
+    unbekannte Form still als `"?"` verbucht, zählt sie beim nächsten Dash-Sprung
+    als klickbedingten Aufruf mit und macht die Sperrklinke unbrauchbar.
+    """
+
+    def namen(ziel) -> list[str]:
+        if isinstance(ziel, dict):
+            return [f"{ziel.get('id')}.{ziel.get('property')}"]
+        if isinstance(ziel, list):
+            return [name for eintrag in ziel for name in namen(eintrag)]
+        return [str(ziel)]
+
+    try:
+        ziel = json.loads(anfrage.post_data or "{}").get("outputs")
+    except (TypeError, ValueError):
+        return "(kein lesbarer Rumpf)"
+    return ",".join(namen(ziel))
+
+
+def _klick_kosten(page, index: int) -> dict:
+    """Einen Schritt anklicken und zählen, was er kostet.
+
+    Die Zeit wird **in der Seite** genommen, über einen `MutationObserver` —
+    nicht mit `wait_for_function`. Dessen Voreinstellung pollt über
+    `requestAnimationFrame`, und das feuert in einem Tab, den niemand sieht, gar
+    nicht: dieselbe Falle, in die W5.3 schon einmal gelaufen ist. Der erste
+    Anlauf dieser Messung meldete damit 2,0 s, wo 1,1 s standen.
+    """
+
+    aufrufe: list[str] = []
+
+    def mitschreiben(anfrage) -> None:
+        if "_dash-update-component" in anfrage.url:
+            aufrufe.append(_ziel_der_anfrage(anfrage))
+
+    page.evaluate(_MESSUNG)
+    vorher = page.locator(".af-wizard__counter").inner_text()
+    page.on("request", mitschreiben)
+    try:
+        page.locator(".af-step").nth(index).click()
+        page.wait_for_timeout(3000)
+    finally:
+        page.remove_listener("request", mitschreiben)
+
+    daten = page.evaluate("() => window.__p39")
+    neu = next((m for m in daten["marken"] if m["text"] != vorher), None)
+    return {
+        "titel": page.locator(".af-wizard__counter").inner_text().replace("\n", " "),
+        "klick": [n for n in aufrufe if not any(t in n for t in TAKTGEBER)],
+        "takt": [n for n in aufrufe if any(t in n for t in TAKTGEBER)],
+        "sichtbar_ms": (neu["t"] - daten["t0"]) if neu else None,
+        "laengste_aufgabe_ms": max(daten["lang"]) if daten["lang"] else 0,
+    }
+
+
+def _in_die_schrittfolge(page) -> int:
+    page.goto(page.basis, wait_until="networkidle")
+    page.wait_for_selector(".af-way")
+    page.click("#wizard-way-new")
+    page.wait_for_timeout(RUHE_MS * 3)
+    return page.locator(".af-step").count()
+
+
+class TestEinKlickInDerSchrittfolgeKostetWenigRundlaeufe:
+    """Die Sperrklinke von P3.9 — als Zahl, nicht als Dauer."""
+
+    def test_no_step_click_triggers_more_calls_than_agreed(self, page):
+        schritte = _in_die_schrittfolge(page)
+        befunde: list[str] = []
+        gemessen: list[int] = []
+        for index in range(schritte):
+            kosten = _klick_kosten(page, index)
+            gemessen.append(len(kosten["klick"]))
+            if len(kosten["klick"]) > KLICK_AUFRUFE_MAX:
+                befunde.append(
+                    f"{kosten['titel']}: {len(kosten['klick'])} Aufrufe "
+                    f"(erlaubt {KLICK_AUFRUFE_MAX})\n      " + "\n      ".join(kosten["klick"])
+                )
+
+        assert not befunde, (
+            f"Bei {page.breite} px lösen diese Schritte mehr Server-Aufrufe aus als "
+            "vereinbart:\n  " + "\n  ".join(befunde)
+        )
+        # Die Sperrklinke schlägt in beide Richtungen an: Ein Deckel, der weit
+        # über dem Ist-Stand schwebt, ist wieder aus dem falschen Grund grün.
+        assert max(gemessen) >= KLICK_AUFRUFE_MAX - 2, (
+            f"Gemessen höchstens {max(gemessen)} Aufrufe, der Deckel steht auf "
+            f"{KLICK_AUFRUFE_MAX} — den Gewinn eintragen, sonst verfällt er still."
+        )
+
+    def test_the_step_shows_up_within_the_agreed_budget(self, page):
+        """**Das Kriterium von P3.9, wörtlich** — unter 500 ms je Klick (P3.16).
+
+        Bis P3.16 stand hier ein Deckel von 900 und ein Docstring, der noch die
+        Zahlen von vor P3.12 nannte («erreicht sind 665–1426»). Beides war
+        überholt: Erreicht sind 213 bis 487 ms, und ein Rückfall auf 800 wäre
+        grün geblieben, während der Plan das Kriterium als erfüllt führte.
+
+        **Gewertet wird die schnellste von drei Messungen je Schritt**, und das
+        ist der Grund, warum der scharfe Deckel jetzt trägt: Last kann eine
+        Messung nur langsamer machen, nie schneller — das Minimum schätzt also,
+        was der *Code* kostet. Eine Regression macht umgekehrt jede Messung
+        langsam, auch die beste. Die Alternative wäre gewesen, den Maßstab zu
+        lockern, und ein Wächter, der sein eigenes Kriterium um 80 % überschreitet,
+        misst etwas anderes als das, was zugesagt ist.
+        """
+
+        from dashboard.web.config_editor import wizard
+
+        titel_von = {i + 1: schritt.title for i, schritt in enumerate(wizard.STEPS)}
+        schritte = _in_die_schrittfolge(page)
+        beste: dict[int, float] = {}
+        for _ in range(MESSUNGEN_JE_SCHRITT):
+            for index in range(schritte):
+                dauer = _klick_kosten(page, index)["sichtbar_ms"]
+                if dauer is None:
+                    continue
+                nummer = index + 1
+                if dauer < beste.get(nummer, float("inf")):
+                    beste[nummer] = dauer
+
+        # **Ohne diese Zeile wäre die Zusage leer.** Bleibt die Marke aus, ist
+        # `sichtbar_ms` gleich `None`; vorher wurden solche Schritte übersprungen,
+        # und ein Durchlauf ohne eine einzige Messung galt als bestanden.
+        assert len(beste) >= schritte - 1, (
+            f"Nur {len(beste)} von {schritte} Schritten wurden überhaupt gemessen "
+            f"({sorted(beste)}). Ein Wächter, der nichts sieht, ist nicht grün — "
+            "er ist blind."
+        )
+
+        langsam = [
+            f"Schritt {nummer} «{titel_von.get(nummer, '?')}»: {dauer:.0f} ms bis im DOM"
+            for nummer, dauer in sorted(beste.items())
+            if dauer > SICHTBAR_DECKEL_MS
+        ]
+        assert not langsam, (
+            "Diese Schritte brauchen länger als der Deckel erlaubt "
+            f"({SICHTBAR_DECKEL_MS} ms = {SICHTBAR_MAX_MS} zugesagt + 10 % Toleranz): "
+            + " · ".join(langsam)
+            + f" — gewertet ist jeweils die schnellste von {MESSUNGEN_JE_SCHRITT} "
+            "Messungen, Maschinenlast erklärt das also nicht."
+        )
+
+    def test_the_cost_guard_would_notice_a_relapse(self, page):
+        """Ein Wächter, der nie etwas sieht, könnte auch blind sein.
+
+        Den Zustand vor P3.9 nachzustellen geht von außen nicht — geprüft wird
+        deshalb die **Zählung selbst**: Sie darf einen klickbedingten Aufruf nicht
+        für einen Taktgeber halten, und die Zeitmessung muss greifen. Beides
+        stumm zu haben wäre ein Wächter, der immer grün ist.
+        """
+
+        _in_die_schrittfolge(page)
+        kosten = _klick_kosten(page, 1)
+
+        assert kosten["klick"], "Der Zähler sieht überhaupt keinen klickbedingten Aufruf"
+        assert any("wizard-step-store" in n for n in kosten["klick"]), (
+            "Der Klick auf einen Schritt schreibt nicht einmal den Schritt-Store — "
+            f"dann zählt der Wächter das Falsche: {kosten['klick']}"
+        )
+        assert (
+            kosten["sichtbar_ms"] is not None
+        ), "Die Zeitmessung greift nicht — ohne sie ist die Zahl daneben wertlos."
+        assert kosten["takt"], (
+            "Kein einzelner Taktgeber-Aufruf gesehen — dann trennt der Wächter "
+            "nichts mehr, und ein stiller Herzschlag zählt als Klick."
+        )
+
+
+# --- Teil 10: Der Modell-Bereich liegt nur im DOM, wenn er offen ist (P3.12) ---
+#
+# **Aus P3.9, mit korrigierter Ursache.** Das CPU-Profil eines Klicks lag zu
+# **71,6 %** in `dash_renderer` (`notifyNestedSubs`: Redux benachrichtigt bei
+# jeder Antwort alle angeschlossenen Komponenten), zu 10,5 % in React, und
+# Plotly kam gar nicht vor. Die Kosten hängen an der **Zahl** eingehängter
+# Dash-Komponenten — und der Modell-Bereich stellt **mehr als die Hälfte** aller
+# Knoten (1886 von 3364, darunter 146 Bedienelemente; nachgemessen am
+# 2026-09-06, Methode im Docstring von `model_editor.HOST`), auch während
+# niemand hinsah.
+#
+# Gemessen nach der Änderung: 1218 → 252 ms `dash_renderer`, längste Aufgabe
+# 1144 → 271 ms, DOM in der Schrittfolge 3364 → 1477 Knoten.
+#
+# **Was hier geprüft wird, ist die Verdrahtung** — die Entscheidung selbst hängt
+# an einer reinen Funktion und steht in `tests/test_web_lazy_modell.py`. Nur der
+# Browser sagt, ob der Callback beim Bereichswechsel wirklich feuert.
+
+#: Wie viele Knoten der Wirt des Modell-Bereichs tragen darf, wenn er *nicht*
+#: offen ist. Null wäre zu scharf: Dash lässt einen leeren `Div` stehen.
+LEER_MAX = 2
+
+_WIRT = """
+() => {
+  const wirt = document.getElementById('model-editor-host');
+  return {
+    wirt: wirt ? wirt.querySelectorAll('*').length : -1,
+    gesamt: document.querySelectorAll('*').length,
+  };
+}
+"""
+
+
+class TestDerModellBereichLiegtNurImDomWennErOffenIst:
+    def test_er_ist_leer_solange_niemand_ihn_aufsucht(self, page):
+        for name, pfad in (("Einstieg", ""), ("Leitstand", "lauf"), ("Ergebnisse", "runs")):
+            page.goto(page.basis + pfad, wait_until="networkidle")
+            page.wait_for_timeout(RUHE_MS)
+            gemessen = page.evaluate(_WIRT)
+
+            assert gemessen["wirt"] <= LEER_MAX, (
+                f"«{name}» bei {page.breite} px trägt {gemessen['wirt']} Knoten im "
+                "Wirt des Modell-Bereichs — dann liegen die 146 Bedienelemente "
+                "wieder dauernd im DOM, und jeder Klick zahlt dafür."
+            )
+
+    def test_beim_aufsuchen_wird_er_gebaut(self, page):
+        page.goto(page.basis + "modell", wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS * 2)
+        gemessen = page.evaluate(_WIRT)
+
+        assert gemessen["wirt"] > 500, (
+            f"Der Modell-Bereich bleibt leer ({gemessen['wirt']} Knoten) — dann "
+            "ist er unbenutzbar. Der Callback muss auf den Pfad hören."
+        )
+
+    def test_ein_tieflink_zeigt_ihn_auch(self, page):
+        """**`prevent_initial_call` ist weg, und das ist der Grund.** Wer die
+        Adresse direkt öffnet, muss den Bereich sehen — mit unterdrücktem
+        Erstaufruf hätte er einen leeren Bildschirm."""
+
+        page.goto(page.basis + "modell", wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS * 2)
+
+        assert page.evaluate(_WIRT)["wirt"] > 500
+        assert page.locator("#model-editor-host input").count() > 50
+
+    def test_beim_verlassen_wird_er_wieder_abgebaut(self, page):
+        """Sonst hätte der erste Besuch die Ersparnis für immer aufgebraucht."""
+
+        page.goto(page.basis + "modell", wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS * 2)
+        assert page.evaluate(_WIRT)["wirt"] > 500, "Vorbedingung: er war nie da"
+
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_timeout(RUHE_MS * 2)
+
+        assert page.evaluate(_WIRT)["wirt"] <= LEER_MAX, (
+            "Der Bereich bleibt nach dem Verlassen eingehängt — die Ersparnis "
+            "gilt dann nur bis zum ersten Besuch."
+        )
+
+    def test_der_baum_ist_wirklich_kleiner_geworden(self, page):
+        """Die Zahl, an der der Gewinn hängt — als Sperrklinke.
+
+        Gemessen: 3364 Knoten vor P3.12, 1477 danach. Der Deckel steht auf 2000,
+        also deutlich unter dem alten Stand und mit Luft für gewachsene
+        Oberfläche. Wächst er darüber, ist entweder der Modell-Bereich zurück
+        oder ein neuer Bereich hat dasselbe Muster.
+        """
+
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+        page.click("#wizard-way-new")
+        page.wait_for_timeout(RUHE_MS * 2)
+
+        gemessen = page.evaluate(_WIRT)
+
+        assert gemessen["gesamt"] < 2000, (
+            f"Die Schrittfolge trägt {gemessen['gesamt']} DOM-Knoten (gemessen "
+            "waren es 1477 nach P3.12, 3364 davor). Jeder Klick zahlt dafür in "
+            "`dash_renderer`."
+        )

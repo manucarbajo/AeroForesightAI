@@ -60,7 +60,7 @@
     },
     {
       "property_id": "demand_growth_rate",
-      "baseline": 0.02
+      "baseline": 0.00165
     },
     {
       "property_id": "kapazitaet_index",
@@ -145,6 +145,6 @@
       "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt",
       "Verordnung (EU) 2023/2405 (ReFuelEU Aviation) — die Beimischung ist an die getankte Menge gebunden, wächst also mit der Flotte"
     ],
-    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick trägt keine Kalenderbedeutung (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Die optimistische Seite ist hier die stärkere Annahme: Dass die Umstellung ohne Nachfrageeinbruch gelingt, ist gesetzt — und das Modell hat für Nachfragewachstum ohnehin keinen Kanal (Befund aus P2.7). Auch die Angebotsseite ist so zu lesen: **Dass** der Ausbau in einer Wende mit knappem SAF stockt, ist argumentiert; die Zahlen dazu sind gesetzt. Der Rückgang auf 0,96 ist eine Stagnation, keine Schrumpfung des Verkehrs — was daraus für die Nachfrage folgt, rechnet der Lauf. Und die stärkste Annahme bleibt die alte: dass die Umstellung ohne Nachfrageeinbruch gelingt. Sie hängt in diesem Modell daran, dass der Anbieter im Wettbewerb bleibt."
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick ist seit P3.8 zwar ein **Monat**, trägt aber weiterhin **kein Datum** (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Dieser Rahmen läuft 50 Ticks, also gut vier Jahre — die 200 EUR sind bei Tick 20 erreicht, also nach gut anderthalb Jahren. Ob das die Spanne ist, die diese Begründung meint, ist eine offene Produktfrage (P4.5). Die optimistische Seite ist hier die stärkere Annahme: Dass die Umstellung ohne Nachfrageeinbruch gelingt, ist gesetzt — und das Modell hat für Nachfragewachstum ohnehin keinen Kanal (Befund aus P2.7). Auch die Angebotsseite ist so zu lesen: **Dass** der Ausbau in einer Wende mit knappem SAF stockt, ist argumentiert; die Zahlen dazu sind gesetzt. Der Rückgang auf 0,96 ist eine Stagnation, keine Schrumpfung des Verkehrs — was daraus für die Nachfrage folgt, rechnet der Lauf. Und die stärkste Annahme bleibt die alte: dass die Umstellung ohne Nachfrageeinbruch gelingt. Sie hängt in diesem Modell daran, dass der Anbieter im Wettbewerb bleibt."
   }
 }

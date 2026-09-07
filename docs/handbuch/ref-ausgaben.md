@@ -145,6 +145,14 @@ eingeschaltet war. Sie werden gebraucht, um einen Lauf fortzusetzen und um im Ta
 **Abfrage** einzelne Runden im Detail nachzuschlagen. Ohne sie funktioniert die
 Abfrage weiterhin, aber gröber.
 
+Jeder Zwischenstand trägt neben dem Zustand einen Metadatenblock mit `run_id`,
+Rundennummer, Zeitstempel und **Formatversion**. Die Version wird beim Fortsetzen
+geprüft: Ein Zwischenstand aus einer anderen Fassung des Programms wird mit einer
+Meldung abgewiesen, statt mit stillen Vorgabewerten geladen zu werden. Es gibt
+bewusst keine Umwandlung alter Zwischenstände — ein Lauf, dessen Format nicht mehr
+gelesen wird, wird neu gestartet. Zwischenstände sind Fortsetzungspunkte, kein
+Archiv; was von einem Lauf bleiben soll, steht in den übrigen Dateien.
+
 ## Bilddateien
 
 Unter `figures/` liegen sechs Diagramme im PNG-Format plus eine

@@ -13,20 +13,38 @@ import json
 import logging
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import requests
+
+from src.llm import defaults
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class OllamaConfig:
-    base_url: str = "http://127.0.0.1:11434"
-    model: str = "llama3.2"
-    temperature: float = 0.7
-    max_tokens: int = 2048
+    """Was der Client wissen muss — mit den Umgebungsvariablen **darin** (P3.4).
+
+    Die vier Werte kommen aus :mod:`src.llm.defaults`, und die
+    ``default_factory`` liest dabei die Umgebung. Das ist der eigentliche Fix:
+    Vorher trug diese Klasse reine Literale, und die Env-Übersetzung saß
+    ausschließlich in ``studio_helpers.LocalOllama``. Jeder Aufrufer, der
+    ``OllamaConfig()`` direkt baute — der Sweep-Pfad tut genau das —, ignorierte
+    ``OLLAMA_BASE_URL`` stillschweigend. Beim Nachstellen eines Sweeps gegen
+    einen toten Endpunkt (2026-08-27) stand trotz ``OLLAMA_BASE_URL=…:9``
+    weiterhin der Vorgabewert da.
+
+    **Gelesen wird beim Bauen, nicht beim Importieren.** Ein Modul-Import darf
+    nicht festlegen, was eine Stunde später gilt — und ein Test, der die
+    Umgebung setzt, käme sonst zu spät.
+    """
+
+    base_url: str = field(default_factory=defaults.env_base_url)
+    model: str = field(default_factory=defaults.env_model)
+    temperature: float = field(default_factory=defaults.env_temperature)
+    max_tokens: int = field(default_factory=defaults.env_max_tokens)
     #: Lesetimeout der ersten Runde in Sekunden. ``None`` heißt: aus
     #: ``OLLAMA_READ_TIMEOUT`` nehmen (Default 120). Explizit gesetzt, damit
     #: Aufrufer mit eigener Timeout-Quelle — `LocalOllama` liest

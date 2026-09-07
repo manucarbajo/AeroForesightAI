@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from src.models.llm_models import LLMDegradation
+from src.models.run_models import RunArgs
 from src.reporting.output_writer.paths import ensure_output_dir, resolve_output_path
 from src.reporting.output_writer.provenance import (
     MODES_WITHOUT_ANY_LLM,
@@ -21,7 +22,7 @@ LLM_ONLY_FIELDS = ("model", "base_url", "temperature", "max_tokens")
 
 def save_run_metadata(
     state,
-    args,
+    args: RunArgs,
     filename: str = "run_metadata.json",
     *,
     output_subdir: str | Path | None = None,
@@ -40,8 +41,8 @@ def save_run_metadata(
     metadata = {
         "timestamp": datetime.now(UTC).isoformat(),
         "run_id": run_id or (run_dir.name if run_dir is not None else None),
-        "simulation_name": getattr(args, "simulation_name", None),
-        "simulation_description": getattr(args, "simulation_description", None),
+        "simulation_name": args.simulation_name,
+        "simulation_description": args.simulation_description,
         "model": args.model,
         "base_url": args.base_url,
         "temperature": args.temperature,
@@ -74,10 +75,10 @@ def save_run_metadata(
     # tatsächlich benutzte, während `args.seed` bei einem Multi-Run nur der
     # Ausgangswert der Folge ist.
     state_seed = getattr(getattr(state, "config", None), "seed", None)
-    metadata["seed"] = state_seed if state_seed is not None else getattr(args, "seed", None)
+    metadata["seed"] = state_seed if state_seed is not None else args.seed
     metadata["compute_mode"] = compute_mode(args)
-    metadata["mock_llm"] = bool(getattr(args, "mock_llm", False))
-    metadata["deterministic_only"] = bool(getattr(args, "deterministic_only", False))
+    metadata["mock_llm"] = args.mock_llm
+    metadata["deterministic_only"] = args.deterministic_only
     metadata["config_fingerprint"] = recorded_fingerprint(state).model_dump()
     metadata["code_version"] = code_version()
 

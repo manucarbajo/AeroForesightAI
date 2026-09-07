@@ -19,6 +19,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 
+from src.logging_setup import stdio_auf_utf8
 from src.models.cib_models import (
     DESCRIPTOR_IDS,
     FACTOR_IDS,
@@ -295,4 +296,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Der Prozess sichert seine Ausgabe, bevor er das erste Zeichen schreibt
+    # (P3.10): Umgeleitet spricht `sys.stdout` unter Windows cp1252, und dann
+    # wirft jede Meldung mit `→`, `≥` oder `₂` statt zu erscheinen.
+    stdio_auf_utf8()
     main()

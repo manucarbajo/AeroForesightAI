@@ -25,11 +25,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
 from dashboard.config_catalog import default_config_draft, prepare_simulation_state
+from src.models.run_models import RunArgs
 from src.models.state_models import Rahmenszenario
 from src.orchestration.scenario_sweeps import SWEEPS_DIR, load_sweep_config
 
@@ -115,13 +115,16 @@ class TestErStehtImArtefakt:
         draft.sweep_id = "business_as_usual"
         state = prepare_simulation_state(draft)
 
-        args = SimpleNamespace(
+        args = RunArgs(
             model="x",
             base_url="y",
             temperature=0.0,
             max_tokens=1,
             no_market=False,
             seed=None,
+            mock_llm=False,
+            deterministic_only=False,
+            llm_narrative=False,
             simulation_name=None,
             simulation_description=None,
         )
@@ -140,13 +143,16 @@ class TestErStehtImArtefakt:
         state = prepare_simulation_state(draft)
         state.rahmen = None
 
-        args = SimpleNamespace(
+        args = RunArgs(
             model="x",
             base_url="y",
             temperature=0.0,
             max_tokens=1,
             no_market=False,
             seed=None,
+            mock_llm=False,
+            deterministic_only=False,
+            llm_narrative=False,
             simulation_name=None,
             simulation_description=None,
         )

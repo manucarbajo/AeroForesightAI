@@ -1,0 +1,168 @@
+#  Der Browser-Wächter — und die Antwort auf «wo läuft er?» (P3.17).
+#
+#  `tests/test_web_overflow.py` misst vier Dinge, die ohne echten Browser
+#  niemand messen kann: was aus seinem Kasten tritt, wie viele Bildschirme ein
+#  Schritt hoch ist, wie breit sein Inhalt wirklich wird, und was ein Klick
+#  kostet. Er hängt deshalb im optionalen Extra `ui` und überspringt sich in der
+#  Haupt-CI schweigend — eine bewusste Entscheidung (siehe `tests.yml`).
+#
+#  **Die Entscheidung war richtig, ihre Folge nicht.** «Wer die Oberfläche
+#  anfasst, lässt ihn einmal laufen» ist **dreimal** widerlegt:
+#
+#    1. P2.0-C (2026-08-30) entfernte einen Schritt und zog die Sperrklinke nicht
+#       mit. Gesehen hat es erst das Audit der Phase 2 am 2026-09-03 — vier Tage.
+#    2. A1 (`4a5417d`, 2026-09-03) zeigte die Kohärenzbegründung auch für die
+#       Standard-Ausgangslage. Schritt 1 wuchs von 1,34 auf ~2,0 Schirme.
+#    3. P2.8-Rest (`976395d`, 2026-09-04) fügte den Horizontlücken-Hinweis
+#       hinzu — 98 Zeichen je Zeile, zugesagt sind 75.
+#
+#  Die beiden letzten hat erst das Audit der Phase 3 am 2026-09-05 gefunden,
+#  also zwei Tage nachdem C5 als behoben galt. **Der eigentliche Befund von C5
+#  war nie der Deckel, sondern dass niemand den Wächter laufen lässt.**
+#
+#  **Warum der Pfadfilter der tragende Teil ist, und das ist nachgezählt:** Alle
+#  drei Commits oben haben `dashboard/web/**` angefasst. Dieser Filter hätte also
+#  jeden einzelnen erwischt — ohne dass jemand daran denken muss, und ohne den
+#  Wächter in die Hauptstrecke zu hängen, wo seine 25 Minuten jeden Commit
+#  aufhalten würden.
+#
+#  Der nächtliche Lauf ist das Netz darunter: Oberflächentext kann auch aus
+#  `src/` kommen (eine längere Validierungsmeldung landet in einem Hinweis, und
+#  genau so kam Fall 3 zustande — er berührte `src/orchestration/` mit).
+name: Browser-Wächter
+
+on:
+  # Von Hand, wann immer jemand die Zahlen sehen will.
+  workflow_dispatch:
+
+  # Der tragende Auslöser: Änderungen an der Darstellungsschicht.
+  pull_request:
+    paths:
+      - "dashboard/web/**"
+      - "aeroforesight-ai-landing-page/**"
+      - "tests/test_web_overflow.py"
+      - ".github/workflows/browser.yml"
+
+  # Das Netz für alles, was der Pfadfilter nicht sieht.
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    # Gemessen 22:17 vor P3.16 und rund 25 Minuten danach (die Klickmessung
+    # läuft dreimal durch, damit die schnellste Messung gewertet werden kann).
+    # 45 Minuten lassen Luft für einen belegten Runner, ohne einen Hänger
+    # unbegrenzt laufen zu lassen.
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Abhängigkeiten
+        run: |
+          pip install -r requirements.txt
+          pip install pytest playwright
+
+      # `--with-deps` holt die Systembibliotheken mit, die Chromium auf einem
+      # nackten Runner braucht. Ohne sie startet der Browser nicht, und der
+      # Wächter überspringt sich — also wäre der Job grün, ohne etwas geprüft zu
+      # haben. Genau der Zustand, gegen den dieser Workflow antritt.
+      - name: Chromium
+        run: python -m playwright install --with-deps chromium
+
+      # **Ein Lauf muss da sein, sonst misst der Wächter eine leere Fläche.**
+      #
+      # Sechs seiner Zusagen betreffen die Ergebnis-Ansicht: die Legende darf
+      # ihren Titel in keiner der vier Aussagen verdecken (P3.7), und der
+      # Selbsttest daneben. Sie öffnen «Ergebnisse → Figures» und warten auf
+      # `#figures-tabs`. Ohne Lauf gibt es keine Auswahl (`runs.default_selection`
+      # gibt `None` zurück), ohne Auswahl keine Daten und ohne Daten keine
+      # Reiter — sie liefen fünfzehn Sekunden in einen Timeout.
+      #
+      # **Aufgefallen ist das erst beim ersten CI-Lauf am 2026-09-07**, und der
+      # Grund gehört dazu: Der Wächter war nie gegen einen sauberen Checkout
+      # gelaufen. Auf der Entwicklungsmaschine lagen 389 Einträge in `outputs/`,
+      # und er war deshalb grün. Dieselbe Klasse hatte diese Branch schon als
+      # Befund notiert (`be6afb4`: der Höhen-Deckel hängt am Inhalt von
+      # `outputs/`) — hier beißt sie.
+      #
+      # `--mock-llm` und nicht `--deterministic-only`: Beide rechnen ohne
+      # Sprachmodell, aber der deterministische Weg *versucht* den Aufruf und
+      # läuft gegen ein nicht vorhandenes Ollama in Retry und Backoff. Der Mock
+      # ist die Ansage «ohne Sprachmodell» (P0.1) und braucht kein Netz.
+      #
+      # Der Name muss mit `run_` beginnen — `run_browser.list_runs` nimmt nur
+      # solche Verzeichnisse, alles andere ist für die Oberfläche unsichtbar.
+      #
+      # Gemessen 3,4 s bei 20 Ticks; die Länge ist so gewählt, dass die vier
+      # Aussagen eine Legende mit mehreren Einträgen haben.
+      - name: Ein Lauf zum Messen
+        run: |
+          python -m src.run_simulation --mock-llm --rounds 20 --seed 42 --quiet \
+            --run-id run_ci_referenz
+
+      # `-p no:randomly` hält die Reihenfolge fest (die Messungen bauen
+      # aufeinander auf), `-ra` zeigt jeden Skip mit Grund, `--strict-markers`
+      # lässt einen Tippfehler in einem Marker auffallen statt ihn zu ignorieren,
+      # und `--junitxml` liefert dem Schritt darunter Zahlen statt Text.
+      - name: Browser-Wächter
+        run: |
+          pytest tests/test_web_overflow.py -q -ra --strict-markers -p no:randomly \
+            --junitxml=browser-guard.xml
+
+      # **Ein übersprungener Wächter darf nicht als Erfolg zählen** — und `-ra`
+      # allein macht ihn nur *sichtbar*, nicht rot.
+      #
+      # Der Wächter überspringt sich, wenn Playwright oder der Browser fehlt.
+      # Das ist lokal richtig (wer nur an der Engine arbeitet, braucht kein
+      # Chromium) und hier **falsch**: Ein Job, der grün wird, ohne etwas geprüft
+      # zu haben, ist genau der Zustand, gegen den dieser Workflow antritt — er
+      # sähe aus wie ein Schutz und wäre keiner. Fehlte etwa
+      # `--with-deps` oben, startete Chromium nicht, und ohne diesen Schritt
+      # wüsste es niemand.
+      #
+      # Geprüft wird deshalb die **Zahl**: Am 2026-09-06 liefen 118 Zusagen. Die
+      # Untergrenze liegt bewusst darunter, damit ein einzelner neuer Test die
+      # Schwelle nicht sprengt — aber weit über null, denn genau null ist der
+      # Fall, den es zu erkennen gilt.
+      - name: Ein übersprungener Wächter ist kein Erfolg
+        if: always()
+        run: |
+          python - <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          MINDESTENS = 100
+
+          wurzel = ET.parse("browser-guard.xml").getroot()
+          suite = wurzel if wurzel.tag == "testsuite" else wurzel.find("testsuite")
+          gesamt = int(suite.get("tests", 0))
+          uebersprungen = int(suite.get("skipped", 0))
+          gelaufen = gesamt - uebersprungen
+
+          print(f"{gesamt} gesammelt, {uebersprungen} uebersprungen, {gelaufen} gelaufen")
+          if gelaufen < MINDESTENS:
+              sys.exit(
+                  f"Nur {gelaufen} Zusagen sind gelaufen (mindestens {MINDESTENS} erwartet). "
+                  "Der Waechter hat sich uebersprungen -- meist fehlt Chromium oder eine "
+                  "seiner Systembibliotheken. Ein gruener Job waere hier eine Luege."
+              )
+          PY
+
+      # Erst wenn der Wächter durch ist, sagen wir, was er gemessen hat: Die
+      # Deckel in `DECKEL` und die Klickdauern sind auf **Windows** erhoben
+      # worden (siehe die Kommentare dort). Chromium rechnet sein Layout selbst
+      # und die Schriften liegen im Repo, die Zahlen sollten also übertragbar
+      # sein — **geprüft ist das nicht.** Weicht der erste Lauf hier ab, ist die
+      # Antwort ein Deckel je Plattform und nicht ein gelockerter Deckel für
+      # beide; der Grund gehört dann in `DECKEL`.
+      - name: Hinweis zur Plattform
+        if: always()
+        run: |
+          echo "Die Deckel dieses Wächters sind unter Windows gemessen."
+          echo "Beim ersten Lauf hier: Zahlen vergleichen, nicht anpassen."

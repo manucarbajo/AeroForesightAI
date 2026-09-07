@@ -15,6 +15,23 @@ from typing import Any
 
 from src.models.state_models import SimulationState
 
+#: Das Format, das dieser Code schreibt **und** liest (P3.2).
+#:
+#: Die Zahl stand bis zum 2026-09-05 nur in der Datei: `save` schrieb sie, `load`
+#: las `payload["metadata"]` überhaupt nicht. Damit täuschte das Feld eine
+#: Versionsprüfung vor, die es nicht gab — ein Checkpoint aus einem fremden
+#: Format wäre in `SimulationState.model_validate` gelaufen und hätte dort
+#: entweder einen Pydantic-Fehler ohne Bezug zur Version geworfen oder, viel
+#: schlimmer, mit stillen Vorgabewerten für die fehlenden Felder durchgekommen.
+#:
+#: **Wer das Zustandsschema bricht, erhöht diese Zahl.** Eine Migration gibt es
+#: bewusst nicht: Solange es nur eine Version gibt, wäre sie Code ohne Fall.
+CHECKPOINT_VERSION = 2
+
+
+class CheckpointVersionError(Exception):
+    """Ein Checkpoint aus einem Format, das dieser Code nicht liest (P3.2)."""
+
 
 @dataclass(frozen=True)
 class CheckpointMetadata:
@@ -23,7 +40,7 @@ class CheckpointMetadata:
     run_id: str
     tick_number: int
     saved_at: str
-    checkpoint_version: int = 2
+    checkpoint_version: int = CHECKPOINT_VERSION
 
 
 class CheckpointManager:
@@ -59,12 +76,45 @@ class CheckpointManager:
         return checkpoint_path
 
     def load(self, reference: str | Path) -> SimulationState:
-        """Load a checkpoint from a file path or from the latest checkpoint of a run."""
+        """Load a checkpoint from a file path or from the latest checkpoint of a run.
+
+        Prüft zuerst die Version (P3.2). Ein Checkpoint aus einem fremden Format
+        wird abgewiesen, statt in `model_validate` zu laufen — dort wären die
+        fehlenden Felder entweder ein Pydantic-Fehler ohne Bezug zur Version oder
+        stille Vorgabewerte.
+        """
 
         checkpoint_path = self._resolve_reference(reference)
         payload = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        self._pruefe_version(payload, checkpoint_path)
         state_data: dict[str, Any] = payload["state"]
         return SimulationState.model_validate(state_data)
+
+    @staticmethod
+    def _pruefe_version(payload: dict[str, Any], pfad: Path) -> None:
+        """Die Version des Checkpoints gegen die dieses Codes.
+
+        **Ein fehlendes Feld ist eine fremde Version, keine passende.** Die
+        Metadaten gibt es seit Version 2; ein Checkpoint ohne sie stammt von
+        davor (die alten `round_*.json`, die `latest_checkpoint` noch findet) und
+        trägt ein anderes Zustandsschema. Ihn als aktuell zu behandeln wäre
+        genau die stille Annahme, gegen die dieses Paket antritt.
+        """
+
+        metadata = payload.get("metadata")
+        version = metadata.get("checkpoint_version") if isinstance(metadata, dict) else None
+
+        if version == CHECKPOINT_VERSION:
+            return
+
+        gefunden = "keine Angabe" if version is None else repr(version)
+        raise CheckpointVersionError(
+            f"Checkpoint '{pfad.name}' hat Version {gefunden}, dieser Code liest "
+            f"Version {CHECKPOINT_VERSION}. Ein Lauf lässt sich daraus nicht "
+            "fortsetzen — das Zustandsschema kann sich seither geändert haben. "
+            "Den Lauf neu starten oder den Checkpoint mit der Fassung öffnen, "
+            "die ihn geschrieben hat."
+        )
 
     def latest_checkpoint(self, run_id: str) -> Path | None:
         """Return the most recent checkpoint file for a given run id."""

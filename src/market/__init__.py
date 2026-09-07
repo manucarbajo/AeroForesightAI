@@ -11,6 +11,7 @@ from src.market.market_feedback import initial_provider_markup, resolve_market_f
 from src.market.market_node import MarketNode
 from src.market.property_engine import (
     MARKET_PROPERTY_IDS,
+    darf_in_regel_stehen,
     resolve_exogenous_system_properties,
     resolve_system_properties,
     resolve_trajectory,
@@ -31,6 +32,7 @@ __all__ = [
     "initial_provider_markup",
     "resolve_market_feedback_config",
     "MARKET_PROPERTY_IDS",
+    "darf_in_regel_stehen",
     "resolve_exogenous_system_properties",
     "resolve_system_properties",
     "resolve_trajectory",

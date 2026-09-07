@@ -91,7 +91,31 @@ def test_empty_model_is_rejected():
     errors = validate_config(_config(llm=LLMConfig(model="")))
 
     assert "Modellname" in _messages(errors)
-    assert "config.llm" in _messages(errors)
+    # **«Sprachmodell», nicht «config.llm»** (P3.4): Seit die Einstellung nur
+    # noch an einer Stelle geprüft wird, liest jede Oberfläche diese Meldung —
+    # und «config.llm» ist der Name eines Datenfelds, nicht der einer
+    # Einstellung.
+    assert "Sprachmodell" in _messages(errors)
+
+
+def test_an_empty_endpoint_is_rejected():
+    """Mit P3.4 dazugekommen: vorher prüfte niemand den Endpunkt.
+
+    Ein leeres Feld ergab einen Aufruf gegen `/api/generate` **ohne Host** — ein
+    Verbindungsfehler, dem niemand die Ursache ansieht.
+    """
+
+    errors = validate_config(_config(llm=LLMConfig(base_url="")))
+
+    assert "Endpunkt" in _messages(errors)
+
+
+def test_an_endpoint_without_a_scheme_is_rejected():
+    """`127.0.0.1:11434` sieht richtig aus und ist keine URL."""
+
+    errors = validate_config(_config(llm=LLMConfig(base_url="127.0.0.1:11434")))
+
+    assert "Schema" in _messages(errors)
 
 
 def test_empty_description_is_allowed():
@@ -299,7 +323,9 @@ def test_llm_rules_live_in_one_place():
     from dashboard.config_catalog import ConfigDraft, validate_draft
     from src.validation import validate_llm_settings
 
-    direct = validate_llm_settings("llama3.2", 5.0, 2048, context="X")
+    direct = validate_llm_settings(
+        "llama3.2", 5.0, 2048, context="X", base_url="http://127.0.0.1:11434"
+    )
     from_draft = validate_draft(ConfigDraft(rounds=2, mock_llm=False, temperature=5.0))
     from_config = validate_config(_config(llm=LLMConfig(temperature=5.0)))
 
@@ -311,12 +337,12 @@ def test_llm_rules_live_in_one_place():
 
 @pytest.mark.parametrize(
     "context,expected",
-    [("config.llm", "config.llm:"), ("Technik", "Technik:"), ("CLI", "CLI:")],
+    [("Sprachmodell", "Sprachmodell:"), ("Technik", "Technik:"), ("CLI", "CLI:")],
 )
 def test_the_message_names_where_the_value_came_from(context, expected):
     from src.validation import validate_llm_settings
 
-    errors = validate_llm_settings("m", 9.0, 1, context=context)
+    errors = validate_llm_settings("m", 9.0, 1, context=context, base_url="http://127.0.0.1:11434")
 
     assert _messages(errors).startswith(expected)
 
@@ -352,9 +378,10 @@ class TestBefundeTragenIhrFeld:
         assert "simulation_name" in [field_of(entry) for entry in befunde]
 
     def test_the_llm_rules_name_their_own_fields(self) -> None:
-        befunde = validate_llm_settings("", 9.0, 0, context="Technik")
+        befunde = validate_llm_settings("", 9.0, 0, context="Technik", base_url="")
 
         assert sorted(field_of(entry) for entry in befunde) == [
+            "base_url",
             "max_tokens",
             "model",
             "temperature",
@@ -558,3 +585,108 @@ class TestEineVerteilungDieAnDieWandKlemmtSagtEs:
 
         assert "Eurostat" in age.quelle and "demo_pjangroup" in age.quelle
         assert age.min_value == 18.0, "Kinder buchen keine Flüge"
+
+
+class TestEineRegelLiestKeinenLaufzeitwert:
+    """P3.1 (2026-09-05) — **der Name stimmte, die Zahl war veraltet.**
+
+    Für Systemgrößen mit ``source in {"runtime", "computed"}`` — heute
+    ``provider_markup`` und ``ticket_price`` — liefert
+    ``resolve_system_properties`` laut eigenem Docstring die statische
+    Trajektorien-Baseline und nicht den Wert des laufenden Ticks. Die
+    Namensprüfung aus P0.4 ließ eine Regel darauf durch: Sie **existiert** ja.
+    Folgenlos war das nur, solange keine ausgelieferte Regel eine solche Größe
+    nennt — die nächste hätte still gegen eine veraltete Zahl geprüft, und
+    genau das ist die stille Wirkungslosigkeit, gegen die P0.4 angetreten ist.
+
+    **Der Laufzeitwert wird bewusst nicht durchgereicht.** Er machte die
+    Auswertung innerhalb eines Ticks reihenfolgeabhängig:
+    ``apply_factor_rules_at_tick_start`` läuft **vor** der Preisberechnung, eine
+    Regel auf ``ticket_price`` prüfte je nach Einhängepunkt gegen den Preis von
+    vorhin oder von jetzt. Das ist eine Modellentscheidung, und sie gehört nicht
+    nebenbei getroffen.
+    """
+
+    @staticmethod
+    def _config_mit_regel(prop_id: str):
+        from src.config_loader import load_properties_config
+        from src.models.property_models import FactorRule
+
+        properties = load_properties_config()
+        return properties.model_copy(
+            update={
+                "factor_rules": [
+                    FactorRule(
+                        id="test",
+                        factor_id="F1",
+                        when={"system_property": prop_id, "above": 1.0},
+                        effect={"set_state": "F1.2"},
+                    )
+                ]
+            }
+        )
+
+    def test_eine_exogene_systemgroesse_geht_durch(self):
+        from src.validation import _validate_rule_property_names
+
+        assert _validate_rule_property_names(self._config_mit_regel("carbon_tax_level")) == []
+
+    @pytest.mark.parametrize("prop_id", ["provider_markup", "ticket_price"])
+    def test_eine_laufzeitgebundene_wird_abgewiesen(self, prop_id):
+        from src.validation import _validate_rule_property_names
+
+        befunde = _validate_rule_property_names(self._config_mit_regel(prop_id))
+
+        assert len(befunde) == 1, befunde
+        assert prop_id in befunde[0]
+        assert "laufzeitgebunden" in befunde[0]
+        # Die Meldung sagt, was stattdessen geht — sonst weiß niemand weiter.
+        assert "metric" in befunde[0]
+
+    def test_eine_unbekannte_bleibt_unbekannt(self):
+        """Die alte Meldung darf nicht von der neuen verdeckt werden."""
+
+        from src.validation import _validate_rule_property_names
+
+        befunde = _validate_rule_property_names(self._config_mit_regel("gibt_es_nicht"))
+
+        assert len(befunde) == 1
+        assert "unbekannte Systemgröße" in befunde[0]
+        assert "laufzeitgebunden" not in befunde[0]
+
+    def test_der_ganze_lauf_weist_es_ab_nicht_nur_die_teilpruefung(self):
+        """**Die Zusage von P3.1 im Wortlaut**: abgewiesen *beim Laden*."""
+
+        from src.config_loader import build_initial_state
+
+        state = build_initial_state()
+        state.properties = self._config_mit_regel("ticket_price")
+
+        befunde = collect_state_errors(state)
+
+        assert any("laufzeitgebunden" in b for b in befunde), befunde
+        with pytest.raises(ValidationError, match="laufzeitgebunden"):
+            validate_state(state)
+
+    def test_die_quelle_der_regel_liegt_beim_mechanismus(self):
+        """Nicht in `validation.py` — dort steht nur ihre Anwendung.
+
+        Dieselbe Bauform wie `SHIFT_ZIELE` (P2.4) und `KNOWN_METRICS` (P0.4):
+        Das Vokabular wohnt bei dem Code, der es auswertet. Eine zweite Liste in
+        der Validierung liefe beim nächsten `source`-Wert auseinander.
+        """
+
+        from src.config_loader import load_properties_config
+        from src.market.property_engine import darf_in_regel_stehen
+
+        properties = load_properties_config()
+        erlaubt = {p.id for p in properties.system_properties if darf_in_regel_stehen(p)}
+        gesperrt = {p.id for p in properties.system_properties} - erlaubt
+
+        assert gesperrt == {"provider_markup", "ticket_price"}, (
+            "Die Menge der laufzeitgebundenen Systemgrößen hat sich geändert. "
+            "Wenn das gewollt ist, gehört die neue hier hinein — und ein Blick "
+            "darauf, ob `resolve_system_properties` für sie wirklich nur die "
+            "Baseline liefert."
+        )
+        assert erlaubt, "Ohne erlaubte Systemgröße wäre die Prüfung sinnlos scharf"

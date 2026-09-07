@@ -45,10 +45,32 @@ def test_every_chapter_belongs_to_a_known_part():
 
 @pytest.mark.parametrize("chapter", docs.CHAPTERS, ids=lambda c: c.slug)
 def test_every_chapter_renders(chapter):
+    """Ein Kapitel wird ganz gezeichnet — Titel, Vorspann und jeder Abschnitt.
+
+    **Hier stand bis zum 2026-09-05 `assert "Traceback" not in rendered`**, und
+    diese Zusage prüfte nichts: `docs.render` fängt keine Ausnahme, ein
+    Renderfehler *wirft* — dann meldet pytest ihn ohnehin, mit vollem Stack. Der
+    Sentinel bewachte einen Fehlerweg, den es auf diesem Pfad nicht gibt.
+
+    Verboten hat er dafür ein Wort, das ein Kapitel legitim braucht: Das
+    Fehlerbilder-Kapitel erklärt seit P3.3, dass ein **Traceback** auf der
+    Kommandozeile jetzt «Programmfehler» heißt und nicht «Eingabefehler» — wer
+    das nachschlägt, sucht nach genau diesem Wort. Ein Wächter, der auf ein Wort
+    im Inhalt anspringt statt auf einen Zustand, misst den Inhalt und nicht das
+    Zeichnen.
+
+    Geprüft wird jetzt der Zustand: Jeder Abschnitt des Kapitels kommt im
+    gezeichneten Baum an. Das findet einen abgebrochenen Aufbau, was der
+    Sentinel nie konnte.
+    """
+
     rendered = _text(docs.render(chapter))
+    abschnitte = [titel for titel, _ in docs.split_sections(chapter.source()) if titel]
 
     assert chapter.title in rendered
-    assert "Traceback" not in rendered
+    assert chapter.summary in rendered
+    fehlend = [t for t in abschnitte if t not in rendered]
+    assert not fehlend, f"«{chapter.slug}» zeichnet diese Abschnitte nicht: {fehlend}"
 
 
 @pytest.mark.parametrize("chapter", docs.CHAPTERS, ids=lambda c: c.slug)

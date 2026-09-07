@@ -305,16 +305,23 @@ def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
 
     kinder: list = [vorspann] if vorspann is not None else []
     kinder += [
-        html.P(kohaerenz.these, className="font-body text-sm af-text mb-2 max-w-prose"),
-        html.P(kohaerenz.begruendung, className=f"{ui.CAPTION} mb-3 max-w-prose"),
+        html.P(kohaerenz.these, className="font-body text-sm af-text mb-2 af-mass"),
+        html.P(kohaerenz.begruendung, className=f"{ui.CAPTION} mb-3 af-mass"),
         ui.expert(
             html.Div(
                 [
                     html.Ul(
-                        [html.Li(q, className=ui.CAPTION) for q in kohaerenz.quellen],
+                        # **Auch eine Quellenangabe ist Fließtext** (P3.17). Die
+                        # zwei Absätze darüber tragen ein Lesemaß, diese Liste
+                        # trug keines — gemessen 109 Zeichen je Zeile bei 1280 px
+                        # («docs/research/links.md — EU-ETS / Fit for 55 …»),
+                        # zugesagt sind 75. Eine Quelle ist die längste Zeile,
+                        # die eine Oberfläche zu bieten hat: Titel, Autor, Jahr,
+                        # Fundstelle in einer Zeile.
+                        [html.Li(q, className=f"{ui.CAPTION} af-mass") for q in kohaerenz.quellen],
                         className="mb-3 list-disc pl-5",
                     ),
-                    html.P(kohaerenz.vorbehalt, className=f"{ui.CAPTION} max-w-prose"),
+                    html.P(kohaerenz.vorbehalt, className=f"{ui.CAPTION} af-mass"),
                 ]
             ),
             title="Quellen und was davon nicht belegt ist",
@@ -365,7 +372,7 @@ def scenario_details(draft: dict) -> html.Div:
         # zwei Zeilen klemmt (W3.4). Er ist nicht verschwunden, er steht nur
         # dort, wo er gebraucht wird: bei dem einen Szenario, das zur Debatte
         # steht, statt zehnmal im Raster.
-        html.P(preset.description, className=f"{ui.CAPTION} mb-4 max-w-prose"),
+        html.P(preset.description, className=f"{ui.CAPTION} mb-4 af-mass"),
         ui.note(
             "Das Szenario gilt **unverändert**: Politik, Kosten und Nachfrageumfeld kommen aus "
             f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
@@ -800,8 +807,9 @@ def scope_step(draft: dict, number: int | None = 2) -> object:
     return _step(
         number,
         "Wie weit reicht der Lauf?",
-        "Ein Tick ist eine Modellrunde, kein Kalenderzeitraum. Mehr Ticks heißt mehr "
-        "Gelegenheiten für Rückkopplung zwischen Preis und Nachfrage.",
+        "Ein Tick ist ein Monat, vierzig sind gut drei Jahre — in den Zahlen steht "
+        "trotzdem kein Datum. Mehr Ticks heißt vor allem mehr Gelegenheiten für "
+        "Rückkopplung zwischen Preis und Nachfrage.",
         ui.card(
             c.number(
                 "rounds",

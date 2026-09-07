@@ -111,6 +111,33 @@ def is_exogenous_property(prop: SystemProperty) -> bool:
     return prop.source == "trajectory"
 
 
+def darf_in_regel_stehen(prop: SystemProperty) -> bool:
+    """Ob eine ``when``-Klausel diese Systemgröße als Bezugsgröße lesen darf (P3.1).
+
+    **Nur exogene Verläufe.** Für ``source in {"runtime", "computed"}`` liefert
+    :func:`resolve_system_properties` die statische Trajektorien-Baseline und
+    nicht den Laufzeitwert — eine Regel darauf prüfte also still gegen eine
+    veraltete Zahl. Bis zum 2026-09-05 war das folgenlos, weil keine
+    ausgelieferte Regel eine solche Größe nennt; die *nächste* wäre es nicht
+    gewesen, und sie hätte nichts gemeldet.
+
+    **Den Laufzeitwert durchzureichen wäre die schlechtere Antwort**, und das
+    ist eine Modellentscheidung, keine Implementierungsdetailfrage: Sie machte
+    die Regelauswertung innerhalb eines Ticks reihenfolgeabhängig.
+    ``apply_factor_rules_at_tick_start`` läuft **vor** der Preisberechnung in
+    ``environment_node``; eine Regel auf ``ticket_price`` prüfte je nach
+    Einhängepunkt gegen den Preis von vorhin oder von jetzt. Wer die
+    Laufzeitwerte wirklich braucht, führt sie mit einer bewussten Tick-Phase
+    ein — nicht über diese Hintertür.
+
+    **Diese Funktion ist die Quelle, nicht die Beschreibung.**
+    ``validation._validate_rule_property_names`` prüft dagegen; die Liste der
+    zulässigen Quellen steht nur hier.
+    """
+
+    return is_exogenous_property(prop)
+
+
 def resolve_exogenous_system_properties(
     tick: int,
     properties: PropertiesConfig,
@@ -128,7 +155,14 @@ def resolve_system_properties(
     tick: int,
     properties: PropertiesConfig,
 ) -> dict[str, float]:
-    """Resolve all system properties for one tick (runtime/computed use trajectory baseline)."""
+    """Resolve all system properties for one tick (runtime/computed use trajectory baseline).
+
+    Der Rückfall auf die Baseline ist für die Verwender dieses Dicts richtig —
+    die Preisrechnung braucht einen Startwert, bevor es einen Preis gibt. Für
+    eine ``when``-Klausel wäre er falsch, und deshalb kommt sie seit P3.1 nicht
+    mehr an diese Einträge: :func:`darf_in_regel_stehen` sperrt sie, geprüft
+    beim Laden in ``validation._validate_rule_property_names``.
+    """
 
     return {
         prop.id: resolve_property(prop.id, tick, properties)

@@ -66,6 +66,13 @@ bleibt Ihre Entscheidung: die **Länge** des Laufs. Auf wie viele Ticks ein
 Preset angelegt ist, steht neben seiner Beschreibung — seine Meilensteine sind
 auf diese Länge hin gedacht.
 
+**Seit dem 7. September 2026 lässt sich diese Länge in Zeit umrechnen:** Eine
+Runde ist ein Monat, die vier Rahmenszenarien laufen also gut vier Jahre. Das ist
+eine kurze Spanne für die Politikpfade, die sie erzählen — «Freiwillige Wende»
+bringt die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 Euro. Lesen Sie diese
+Szenarien deshalb als **dichte Wirkungsketten** und nicht als Kalenderprognose.
+Ob die Pfade gestreckt werden sollten, ist eine offene Frage (Projektplan P4.5).
+
 **Im Szenario-Vergleich gilt das nicht.** Wer alle Szenarien nacheinander
 rechnen lässt, stellt keine Länge ein: Jedes läuft so lang, wie es angelegt ist.
 Alles andere hieße, Szenarien unterschiedlicher Bauart über einen Kamm zu

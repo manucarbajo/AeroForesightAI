@@ -1,3 +1,30 @@
+"""Der CLI-Einstieg der Simulation — **und die geteilte Schnittstelle darum** (P3.6).
+
+Dieses Modul ist zwei Dinge, und bis zum 2026-09-05 gab es nur für das erste
+einen Namen: Es ist der Batch-Einstieg (`python -m src.run_simulation`), **und**
+es hält, was jeder Startpfad nach einem Lauf tut — Artefakte schreiben,
+Lauf-Argumente normalisieren, eine Mehrfachlauf-Zusammenfassung ablegen.
+
+`dashboard/run_launcher.py` braucht genau dieses zweite und importierte dafür
+drei **unterstrichs-präfixierte** Namen: `_build_run_args`, `_save_run_outputs`,
+`_write_multi_run_summary`. Ein Unterstrich sagt «privat, kann sich jederzeit
+ändern» — ein Refactor hätte den Launcher stumm gebrochen, und niemand hätte es
+vor dem nächsten Dashboard-Lauf gemerkt.
+
+**Was öffentlich ist, steht in `__all__`:**
+
+* :func:`main` — der Einstieg, den `__main__` ruft.
+* :func:`build_run_args` — die Lauf-Argumente eines Teillaufs.
+* :func:`save_run_outputs` — alle Artefakte eines fertigen Laufs.
+* :func:`write_multi_run_summary` — die Zusammenfassung über mehrere Läufe.
+* :data:`EXIT_KONFIGURATION` — der Exit-Code für eine Konfiguration, die
+  keinen Lauf zulässt (P3.3).
+
+Alles andere hier ist Innenleben des CLI-Ablaufs und trägt weiter einen
+Unterstrich. Wer aus `dashboard/` etwas davon braucht, hebt es hierher — nicht
+den Import.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -7,7 +34,6 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import requests
@@ -18,10 +44,17 @@ if __package__ in {None, ""}:
 from src.cib.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 from src.config_loader import build_initial_state
 from src.llm import STUDIO_DIR, MockLLM, OllamaClient, OllamaConfig, load_env
-from src.logging_setup import configure_logging
+from src.llm.defaults import (
+    DEFAULT_BASE_URL,
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_MODEL,
+    DEFAULT_TEMPERATURE,
+)
+from src.logging_setup import configure_logging, stdio_auf_utf8
 from src.models.llm_models import LLMIncident
-from src.models.state_models import Rahmenszenario
-from src.orchestration.checkpoint_manager import CheckpointManager
+from src.models.run_models import RunArgs, run_args_from
+from src.models.state_models import LLMConfig, Rahmenszenario
+from src.orchestration.checkpoint_manager import CheckpointManager, CheckpointVersionError
 from src.orchestration.simulation_runner import MultiRunResult, RunnerOptions, SimulationRunner
 from src.reporting.output_writer import (
     create_run_id,
@@ -51,19 +84,37 @@ from src.reporting.protocol_generator import (
     render_protocol_markdown,
 )
 from src.reporting.run_scenario_generator import generate_and_save_run_scenario
-from src.validation import ValidationError, validate_llm_settings
+from src.validation import BEFUND_KOPF, ValidationError, validate_llm_settings
+
+#: Die öffentliche Schnittstelle dieses Moduls (P3.6). Was nicht hier steht,
+#: ist Innenleben des CLI-Ablaufs — `dashboard/` importiert es nicht.
+__all__ = [
+    "main",
+    "build_run_args",
+    "save_run_outputs",
+    "write_multi_run_summary",
+    "EXIT_KONFIGURATION",
+]
 
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the AeroForesight simulation.")
-    parser.add_argument("--model", default="llama3.2", help="Ollama model name, e.g. llama3.2")
+    parser.add_argument(
+        "--model",
+        default=DEFAULT_MODEL,
+        help=f"Ollama model name, default: {DEFAULT_MODEL}",
+    )
     parser.add_argument(
         "--base-url",
-        default="http://localhost:11434",
-        help="Ollama base URL, default: http://localhost:11434",
+        default=DEFAULT_BASE_URL,
+        help=f"Ollama base URL, default: {DEFAULT_BASE_URL}",
     )
-    parser.add_argument("--temperature", type=float, default=0.7, help="LLM temperature")
-    parser.add_argument("--max-tokens", type=int, default=2048, help="Max tokens per response")
+    parser.add_argument(
+        "--temperature", type=float, default=DEFAULT_TEMPERATURE, help="LLM temperature"
+    )
+    parser.add_argument(
+        "--max-tokens", type=int, default=DEFAULT_MAX_TOKENS, help="Max tokens per response"
+    )
     parser.add_argument(
         "--rounds",
         type=int,
@@ -166,12 +217,21 @@ def _parse_args() -> argparse.Namespace:
         default=None,
         help="Path to a sweep config JSON file. Overrides simulation parameters with sweep settings.",
     )
+    # **Eine Aussage ohne Schalter** (P3.11). `llm_narrative` beschreibt den
+    # Hybridmodus: deterministisch gerechnete Ticks, aber ein Abschlusstext vom
+    # Modell. Den erzeugt **nur** der Sweep-Pfad — dieser Einstieg gibt
+    # `prefer_llm=not deterministic_only` weiter, ein rein deterministischer Lauf
+    # bekommt hier also gar kein Modell zu sehen. `False` ist damit kein
+    # Rückfall, sondern eine Eigenschaft dieses Pfades; sie steht hier, weil
+    # `RunArgs` das Feld zu Recht verlangt und ein weggelassenes von einem
+    # abgeschalteten nicht zu unterscheiden wäre.
+    parser.set_defaults(llm_narrative=False)
     return parser.parse_args()
 
 
-def _save_run_outputs(
+def save_run_outputs(
     state,
-    args: argparse.Namespace,
+    args: RunArgs,
     llm: OllamaClient,
     *,
     run_dir: Path,
@@ -226,7 +286,7 @@ def _save_run_outputs(
     if not args.no_protocol:
         protocol_payload = build_protocol_payload(
             state,
-            ProtocolOptions(include_redebedarf=bool(getattr(args, "redebedarf", False))),
+            ProtocolOptions(include_redebedarf=args.redebedarf),
         )
         protocol_path = save_protocol(protocol_payload, run_dir=run_dir)
         protocol_md_path = save_protocol_markdown(
@@ -260,12 +320,12 @@ def _save_run_outputs(
 
     run_scenario_md_path = None
     run_scenario_json_path = None
-    if not getattr(args, "no_run_scenario", False):
+    if not args.no_run_scenario:
         scenario_result = generate_and_save_run_scenario(
             run_id,
             llm,
             run_dir=run_dir,
-            prefer_llm=not bool(getattr(args, "deterministic_only", False)),
+            prefer_llm=not args.deterministic_only,
         )
         paths = scenario_result.get("paths") or {}
         run_scenario_md_path = paths.get("markdown")
@@ -360,32 +420,33 @@ def _launch_studio() -> int:
     )
 
 
-def _build_run_args(
-    base_args: argparse.Namespace, *, run_index: int, seed: int | None
-) -> SimpleNamespace:
-    return SimpleNamespace(
-        model=base_args.model,
-        base_url=base_args.base_url,
-        temperature=base_args.temperature,
-        max_tokens=base_args.max_tokens,
-        no_market=base_args.no_market,
-        redebedarf=getattr(base_args, "redebedarf", False),
-        no_protocol=getattr(base_args, "no_protocol", False),
-        no_scenarios=getattr(base_args, "no_scenarios", False),
-        no_run_scenario=getattr(base_args, "no_run_scenario", False),
-        deterministic_only=getattr(base_args, "deterministic_only", False),
-        # P0.6: Der Rechenmodus gehört ins Run-Artefakt — ohne ihn hier wäre er
-        # bei jedem Multi-Run-Teillauf verloren.
-        mock_llm=getattr(base_args, "mock_llm", False),
-        quiet=getattr(base_args, "quiet", False),
-        run_index=run_index,
-        seed=seed,
-        simulation_name=getattr(base_args, "simulation_name", None),
-        simulation_description=getattr(base_args, "simulation_description", None),
-    )
+def build_run_args(base_args: object, *, run_index: int, seed: int | None) -> RunArgs:
+    """Die Lauf-Argumente eines Teillaufs — **typisiert** seit P3.11.
+
+    Hier stand bis zum 2026-09-05 ein handgeschriebener `SimpleNamespace` mit
+    sechzehn Feldern, von denen zehn über ``getattr(..., False)`` entstanden.
+    Zwei Folgen davon sind belegt:
+
+    * Ein Feld, das der Aufrufer vergisst, war von einem abgeschalteten nicht zu
+      unterscheiden. Genau so wurde jeder Dashboard-Lauf «Ohne Sprachmodell» als
+      vollwertiger LLM-Lauf protokolliert (Gegenprobe zu P0.6).
+    * **`llm_narrative` wurde gar nicht mitkopiert.** Nachgestellt: Aus
+      ``deterministic_with_llm_narrative`` wurde beim Durchreichen
+      ``deterministic_only``. Kein Pfad erreicht den Fall heute — die nächste
+      Änderung hätte ihn erreicht, und niemand hätte es gesehen.
+
+    Beides geht mit der Typisierung weg, ohne dass hier eine Feldliste stünde:
+    :func:`~src.models.run_models.run_args_from` übernimmt, was das Modell kennt,
+    und das Modell allein hält die Vorgabewerte.
+
+    *base_args* ist bewusst `object` und nicht `argparse.Namespace`: Auch das
+    Dashboard baut hier hinein, und es hat keine CLI.
+    """
+
+    return run_args_from(base_args, run_index=run_index, seed=seed)
 
 
-def _write_multi_run_summary(
+def write_multi_run_summary(
     *,
     summary_path: Path,
     result: MultiRunResult,
@@ -412,7 +473,150 @@ def _write_multi_run_summary(
     )
 
 
+#: Exit-Code fuer eine Konfiguration, die einen Lauf nicht zulaesst (P3.3).
+#:
+#: **Nicht 1.** Ein Aufrufer soll «deine Eingabe ist falsch» von «mir ist etwas
+#: kaputtgegangen» unterscheiden koennen, ohne die Meldung zu lesen — Skripte und
+#: CI tun genau das. Die 2 ist die Konvention, die `argparse` fuer denselben Fall
+#: schon benutzt (unbekanntes Argument), und damit die einzige, die hier keinen
+#: neuen Dialekt einfuehrt.
+EXIT_KONFIGURATION = 2
+
+
+def _llm_config_from_args(args: argparse.Namespace) -> LLMConfig:
+    """Welches Sprachmodell dieser Aufruf benutzt — **die eine Ableitung** (P3.4).
+
+    Sie hat zwei Leser: den `OllamaClient` und `state.config.llm`. Vorher baute
+    jede der drei Client-Stellen ihre `OllamaConfig` selbst aus `args`, und
+    `state.config.llm` las niemand — im Zustand stand, was in der Config-Datei
+    stand, während der Lauf mit den Argumenten rechnete.
+
+    Das Gegenstück auf der Dashboard-Seite ist
+    `dashboard.config_catalog.llm_config_from_draft`. Zwei Oberflächen, zwei
+    Eingabeformen, aber je genau eine Ableitung — und `tests/test_llm_defaults.py`
+    hält beide gegen den Client, der daraus entsteht.
+    """
+
+    return LLMConfig(
+        model=args.model,
+        base_url=args.base_url,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens,
+    )
+
+
+def _ollama_client(llm_config: LLMConfig) -> OllamaClient:
+    return OllamaClient(
+        OllamaConfig(
+            base_url=llm_config.base_url,
+            model=llm_config.model,
+            temperature=llm_config.temperature,
+            max_tokens=llm_config.max_tokens,
+        )
+    )
+
+
+def _melde_befunde(kopf: str, befunde: list[str]) -> None:
+    """Eine Fehlerliste auf `stderr`, wie das Dashboard sie im roten Kasten zeigt.
+
+    **Dieselbe Liste, nicht dieselbe Ausnahme.** Seit P0.3 weist ein Lauf mit
+    kaputter Config sauber ab — im Dashboard als roter Kasten mit *allen*
+    Befunden, auf der CLI als roher Python-Traceback: zwanzig Zeilen Stack, in
+    denen die eigentliche Meldung unterging, und ein Exit-Code, der nichts sagte.
+    Die Pruefung war richtig, ihre Darstellung nicht.
+
+    **Geschrieben wird zeichensatzfest**, und der Grund ist gemessen: Die
+    Windows-Konsole dieses Projekts steht auf `cp1252`, und in `src/` stehen 46
+    Zeichenketten mit Zeichen, die dieser Zeichensatz nicht kennt (`→`, `≥`,
+    `₂`, `Δ`) — **gezaehlt ohne Docstrings**, denn ein Docstring wird nicht
+    ausgegeben. Wer alle Konstanten zaehlt, kommt auf 55; die Definition gehoert
+    deshalb neben die Zahl (C1 des Phase-3-Audits). Kein heutiger Validierungsbefund enthaelt eines davon — aber ein
+    einziges genuegte, um die Liste durch einen `UnicodeEncodeError` zu
+    ersetzen: einen Traceback an der Stelle, an der dieses Paket gerade einen
+    weggeraeumt hat. Ein Fehlerweg, der selbst scheitern kann, ist keiner.
+    Der weitere Umgang mit diesen 46 Stellen ist ein eigener Befund (P3.10).
+    """
+
+    _schreibe(kopf)
+    for befund in befunde:
+        _schreibe(f"  - {befund}")
+
+
+def _schreibe(zeile: str) -> None:
+    """Eine Zeile auf `stderr`, notfalls mit ersetzten Zeichen statt gar nicht.
+
+    `backslashreplace` und nicht `replace`: Ein `\\u2265` ist nachschlagbar, ein
+    `?` ist verloren. Wer den Befund weitermeldet, soll sagen koennen, was dort
+    stand.
+
+    **Der Ausweichpfad braucht nichts als `write`** (P3.14). Bis zum 2026-09-05
+    schrieb er die entschaerften Bytes nach ``sys.stderr.buffer`` — und ein
+    Strom **ohne** dieses Attribut machte aus dem `UnicodeEncodeError` einen
+    `AttributeError`: einen Traceback an genau der Stelle, an der P3.3 einen
+    weggeraeumt hat. Ein Fehlerweg, der selbst scheitern kann, ist keiner, und
+    dieser hier ist die Reserve fuer genau den Fall, den `stdio_auf_utf8`
+    offenlaesst (ein Strom, der die Umstellung verweigert — dafuer warnt sie,
+    statt zu scheitern).
+
+    **Der Umweg ueber die Bytes war ueberfluessig**, und das ist der Grund, warum
+    hier kein `getattr(..., "buffer", None)` steht: `backslashreplace` ersetzt
+    genau die Zeichen, die diese Kodierung *nicht* kann, durch ASCII-Escapes —
+    was uebrig bleibt, ist per Konstruktion schreibbar. Zurueckdekodiert geht es
+    deshalb durch dieselbe `print`-Zeile wie der Normalfall. Ein Zeichen, das
+    die Konsole darstellen kann (`oe`, `—`), bleibt dabei stehen; nur das
+    Unschreibbare wird zu `\\u2265`.
+    """
+
+    try:
+        print(zeile, file=sys.stderr)
+    except UnicodeEncodeError:
+        kodierung = getattr(sys.stderr, "encoding", None) or "ascii"
+        entschaerft = zeile.encode(kodierung, errors="backslashreplace").decode(
+            kodierung, errors="replace"
+        )
+        print(entschaerft, file=sys.stderr)
+
+
 def main() -> int:
+    """Der Einstieg der CLI — und die Stelle, an der ein Befund lesbar wird (P3.3).
+
+    Was hier gefangen wird, sind die **erwarteten** Fehlschläge: eine
+    Konfiguration, die keinen Lauf zulässt, und ein Zwischenstand aus einem
+    fremden Format. Beide sind Aussagen über die Eingabe und kein Programmfehler,
+    also gehören sie als Liste auf `stderr` und nicht als Traceback.
+
+    **Alles andere schlägt weiterhin durch.** Ein `KeyError` aus der Engine ist
+    keine Nachricht an den Nutzer, sondern ein Befund für die Entwicklung — der
+    Stack ist dort die nützlichere Ausgabe. Ein `except Exception` an dieser
+    Stelle wäre genau das Muster, das P3.3 an zwei anderen Stellen abräumt.
+    """
+
+    try:
+        return _main()
+    except ValidationError as fehler:
+        # `validate_state` und die CLI-Pruefung werfen beide mit dem Kopf
+        # `BEFUND_KOPF` und einer eingerueckten Liste. Hier wird sie wieder in
+        # Zeilen zerlegt, damit die Darstellung an *einer* Stelle entsteht und
+        # nicht zweimal formatiert wird. **Der Rueckfall nimmt dieselbe
+        # Konstante**: Ein zweiter Wortlaut hier waere eine zweite Quelle fuer
+        # denselben Satz -- genau die Sorte, die C2 sichtbar gemacht hat (der
+        # alte Text stand an drei Stellen woertlich).
+        zeilen = str(fehler).splitlines()
+        kopf = zeilen[0] if zeilen else BEFUND_KOPF
+        befunde = [z.strip().removeprefix("- ") for z in zeilen[1:] if z.strip()]
+        _melde_befunde(kopf, befunde or [str(fehler)])
+        return EXIT_KONFIGURATION
+    except CheckpointVersionError as fehler:
+        _melde_befunde("Der Zwischenstand passt nicht zu dieser Fassung:", [str(fehler)])
+        return EXIT_KONFIGURATION
+
+
+def _main() -> int:
+    # **Vor dem ersten Zeichen** (P3.10): Ist die Ausgabe umgeleitet, spricht
+    # `sys.stdout` unter Windows cp1252, und jede Meldung mit `→`, `≥` oder `₂`
+    # wirft einen `UnicodeEncodeError` statt zu erscheinen. Auf einer echten
+    # Konsole ändert der Aufruf nichts — sie spricht schon UTF-8.
+    stdio_auf_utf8()
     args = _parse_args()
     # Vor allem anderen: ohne diesen Aufruf hat das Projekt keinen Log-Handler,
     # und jede Warnung unterhalb von WARNING verschwindet spurlos. `--quiet`
@@ -421,21 +625,25 @@ def main() -> int:
     configure_logging(logging.WARNING if args.quiet else logging.INFO)
     load_env()
 
+    # **Einmal abgeleitet, zweimal benutzt** (P3.4): hier für den Client, unten
+    # für `state.config.llm`. Nach `load_env()`, weil die Umgebung aus
+    # `langgraph_studio/.env` sonst zu spät käme.
+    llm_config = _llm_config_from_args(args)
+
     # Diese drei gehen direkt an den `OllamaClient` und nie durch `validate_state`
     # — ohne die Prüfung hier käme ein `--temperature 99` erst beim Modell an.
     # Mit `--mock-llm` wird gar kein Client gebaut, dann wäre die Prüfung eine
     # Schranke vor einer Tür, durch die niemand geht.
     if not args.mock_llm:
         llm_errors = validate_llm_settings(
-            args.model,
-            args.temperature,
-            args.max_tokens,
+            llm_config.model,
+            llm_config.temperature,
+            llm_config.max_tokens,
             context="CLI",
+            base_url=llm_config.base_url,
         )
         if llm_errors:
-            raise ValidationError(
-                "validierungsfehler:\n" + "\n".join(f"  - {e}" for e in llm_errors)
-            )
+            raise ValidationError(BEFUND_KOPF + "\n" + "\n".join(f"  - {e}" for e in llm_errors))
 
     if args.studio:
         if args.resume is not None:
@@ -450,14 +658,7 @@ def main() -> int:
         if args.mock_llm:
             llm = MockLLM()
         else:
-            llm = OllamaClient(
-                OllamaConfig(
-                    base_url=args.base_url,
-                    model=args.model,
-                    temperature=args.temperature,
-                    max_tokens=args.max_tokens,
-                )
-            )
+            llm = _ollama_client(llm_config)
         run_dir = resolve_run_output_dir(args.run_id)
         result = generate_and_save_run_scenario(
             args.run_id,
@@ -490,14 +691,7 @@ def main() -> int:
                 f"Requested local Ollama model '{model_tag}' not found in `ollama ps` output. Start it with `ollama run {model_tag}`."
             )
 
-        llm = OllamaClient(
-            OllamaConfig(
-                base_url=args.base_url,
-                model=args.model,
-                temperature=args.temperature,
-                max_tokens=args.max_tokens,
-            )
-        )
+        llm = _ollama_client(llm_config)
         print(
             f"Waiting up to {args.ollama_wait_seconds}s for local Ollama model '{args.model}' to become ready..."
         )
@@ -528,21 +722,14 @@ def main() -> int:
                 f"Local Ollama model '{args.model}' did not become ready within {args.ollama_wait_seconds} seconds."
             )
     else:
-        llm = OllamaClient(
-            OllamaConfig(
-                base_url=args.base_url,
-                model=args.model,
-                temperature=args.temperature,
-                max_tokens=args.max_tokens,
-            )
-        )
+        llm = _ollama_client(llm_config)
 
     runner = SimulationRunner(
         llm=llm,
         options=RunnerOptions(
             enable_market=not args.no_market,
             enable_redebedarf=bool(args.redebedarf),
-            deterministic_only=bool(getattr(args, "deterministic_only", False)),
+            deterministic_only=bool(args.deterministic_only),
             checkpoint_interval=max(0, int(args.checkpoint_interval)),
             verbose_ticks=not args.quiet,
         ),
@@ -564,9 +751,9 @@ def main() -> int:
             resume_from=args.resume,
             run_id=run_id,
         )
-        artifacts = _save_run_outputs(
+        artifacts = save_run_outputs(
             final_state,
-            _build_run_args(args, run_index=1, seed=final_state.config.seed),
+            build_run_args(args, run_index=1, seed=final_state.config.seed),
             llm,
             run_dir=run_dir,
             run_id=run_id,
@@ -594,6 +781,13 @@ def main() -> int:
         base_state.clock.max_ticks = int(args.rounds)
     if args.seed is not None:
         base_state.config.seed = int(args.seed)
+    if not args.mock_llm:
+        # **Der Zustand trägt jetzt, mit welchem Modell gerechnet wird** (P3.4).
+        # Vorher stand hier weiter der Wert aus `configs/simulation_config.json`,
+        # während der Lauf mit `--model` rechnete — und weil niemand das Feld
+        # las, fiel der Widerspruch nicht auf. Bei `--mock-llm` bleibt es
+        # unberührt: Gerufen wird nichts, also beschreibt es nichts.
+        base_state.config.llm = llm_config
 
     if args.runs == 1:
         run_id, run_dir, ck_path = _resolve_run_layout(args, repo_root)
@@ -612,9 +806,9 @@ def main() -> int:
             checkpoint_store=checkpoint_manager,
             run_id=run_id,
         )
-        artifacts = _save_run_outputs(
+        artifacts = save_run_outputs(
             final_state,
-            _build_run_args(args, run_index=1, seed=args.seed),
+            build_run_args(args, run_index=1, seed=args.seed),
             llm,
             run_dir=run_dir,
             run_id=run_id,
@@ -658,8 +852,8 @@ def main() -> int:
         run_id = f"run_{index:03d}"
         run_dir = batch_dir / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
-        run_args = _build_run_args(args, run_index=index, seed=run_result.seed)
-        artifacts = _save_run_outputs(
+        run_args = build_run_args(args, run_index=index, seed=run_result.seed)
+        artifacts = save_run_outputs(
             run_result.final_state,
             run_args,
             llm,
@@ -682,7 +876,7 @@ def main() -> int:
                 print(f"Warning: failed to ensure checkpoint for {run_result.run_id}: {exc}")
 
     summary_path = batch_dir / "multi_run_summary.json"
-    _write_multi_run_summary(
+    write_multi_run_summary(
         summary_path=summary_path, result=multi_result, run_artifacts=all_artifacts
     )
 

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from src.agents.agent_dependencies import KNOWN_DEPENDENCIES
 from src.agents.agent_permissions import parse_factor_permission
+from src.market.property_engine import darf_in_regel_stehen
 from src.models.agent_models import AgentConfig
 from src.models.enums import DistributionType
 from src.models.population_models import (
@@ -30,6 +31,23 @@ from src.rule_engine import KNOWN_METRICS, UnknownRuleConditionError, check_when
 #: entgegen, liefert aber nur noch Rauschen.
 MIN_TEMPERATURE = 0.0
 MAX_TEMPERATURE = 2.0
+
+#: Die erste Zeile, die ein Nutzer liest, wenn seine Konfiguration abgewiesen
+#: wird — **an einer Stelle** (P3.17-Nachlauf, C2 des Phase-3-Audits).
+#:
+#: Hier stand bis zum 2026-09-06 `"validierungsfehler:"`: klein geschrieben,
+#: ohne Satzform, und an **drei** Stellen wörtlich wiederholt (hier, im
+#: LLM-Zweig der CLI und als Rückfall in `run_simulation._melde_befunde`). Sie
+#: ist älter als Phase 3 — aber P3.3 hat sie zur ersten Zeile befördert, die ein
+#: CLI-Nutzer überhaupt sieht, und direkt neben einen ordentlich gebauten Satz
+#: gestellt: «Der Zwischenstand passt nicht zu dieser Fassung:» meldet der
+#: Checkpoint-Zweig zwei Zeilen weiter.
+#:
+#: **Der Text sagt jetzt, was passiert ist, und nicht, wie der Fehler heißt.**
+#: «Validierungsfehler» ist ein Wort aus dem Code; was der Nutzer wissen muss,
+#: ist, dass sein Lauf nicht startet und warum — die Liste darunter nennt die
+#: Gründe, jeder mit seinem Feld.
+BEFUND_KOPF = "Die Konfiguration lässt diesen Lauf nicht zu:"
 
 
 class ValidationError(Exception):
@@ -163,15 +181,21 @@ def validate_llm_settings(
     max_tokens: int,
     *,
     context: str,
+    base_url: str,
 ) -> list[str]:
     """Die Regeln für Modellname, Temperatur und Antwortlänge — an *einer* Stelle.
 
-    Diese Werte stehen im Projekt an drei Orten: in `simulation_config.json`
-    (`config.llm`), im Dashboard-Draft und in den CLI-Argumenten. Nur die letzten
-    beiden erreichen tatsächlich den `OllamaClient` — `config.llm` liest heute
-    kein Laufpfad (siehe P3.4). Geprüft werden trotzdem alle drei, aber gegen
-    dieselbe Regel: eine zweite Regelquelle wäre genau die Doppelung, die P0.4
-    und P0.5 an anderer Stelle abräumen.
+    Diese Werte standen im Projekt an drei Orten: in `simulation_config.json`
+    (`config.llm`), im Dashboard-Draft und in den CLI-Argumenten. **Seit P3.4 ist
+    es einer**: Beide Oberflächen schreiben nach `config.llm`, und der Client
+    entsteht daraus — geprüft wird damit genau das, womit gerechnet wird. Vorher
+    war `config.llm` die einzige Stelle, die *nicht* im Lauf ankam, und das
+    Dashboard musste seine Werte eigens danebenprüfen; jeder Befund stand
+    dadurch doppelt da.
+
+    *base_url* ist mit P3.4 dazugekommen — vorher prüfte niemand ihn, und ein
+    leeres Feld ergab einen Aufruf gegen `/api/generate` ohne Host: ein
+    Verbindungsfehler, dem niemand die Ursache ansieht.
 
     *context* sagt, wo der Wert herkommt, damit die Meldung zum Ort passt.
     """
@@ -180,6 +204,18 @@ def validate_llm_settings(
 
     if not str(model).strip():
         errors.append(issue(f"{context}: Modellname darf nicht leer sein", "model"))
+
+    endpunkt = str(base_url).strip()
+    if not endpunkt:
+        errors.append(issue(f"{context}: Endpunkt darf nicht leer sein", "base_url"))
+    elif not endpunkt.startswith(("http://", "https://")):
+        errors.append(
+            issue(
+                f"{context}: Endpunkt '{base_url}' braucht ein Schema "
+                "(http:// oder https://) — sonst erreicht der Aufruf keinen Host",
+                "base_url",
+            )
+        )
 
     if not (MIN_TEMPERATURE <= temperature <= MAX_TEMPERATURE):
         errors.append(
@@ -217,7 +253,14 @@ def validate_config(config: SimulationConfig) -> list[str]:
             config.llm.model,
             config.llm.temperature,
             config.llm.max_tokens,
-            context="config.llm",
+            # **«Sprachmodell» und nicht «config.llm»** (P3.4). Der
+            # Herkunftsort steht jetzt nur noch an einer Stelle, also liest
+            # *jede* Oberfläche diese Meldung — und «config.llm» ist der Name
+            # eines Datenfelds, nicht der einer Einstellung. Bis dahin sah ein
+            # Dashboard-Nutzer «Technik: …», weil die Oberfläche eigens
+            # danebenprüfte; genau diese Doppelprüfung ist weg.
+            context="Sprachmodell",
+            base_url=config.llm.base_url,
         )
     )
 
@@ -446,6 +489,15 @@ def _validate_rule_property_names(properties: PropertiesConfig) -> list[str]:
     Tippfehler im Namen sieht davon ununterscheidbar aus — und wäre damit
     wieder genau die stille Wirkungslosigkeit, gegen die P0.4 antritt. Hier
     sind beide Vokabulare bekannt, also fällt er hier auf.
+
+    **Seit P3.1 prüft er nicht nur den Namen, sondern die Quelle** (2026-09-05).
+    Eine Systemgröße mit ``source in {"runtime", "computed"}`` — heute
+    ``provider_markup`` und ``ticket_price`` — existiert, liefert einer Regel
+    aber die statische Baseline statt des Laufzeitwerts. Der Name stimmt, die
+    Zahl ist veraltet: dieselbe stille Wirkungslosigkeit, nur eine Ebene
+    tiefer. Warum das Durchreichen des Laufzeitwerts die schlechtere Antwort
+    wäre, steht bei :func:`~src.market.property_engine.darf_in_regel_stehen` —
+    dort liegt die Regel, hier nur ihre Anwendung.
     """
 
     known_properties = set(properties.system_property_ids())
@@ -468,8 +520,21 @@ def _validate_rule_property_names(properties: PropertiesConfig) -> list[str]:
                     f"Bekannt sind: {', '.join(sorted(KNOWN_METRICS))}"
                 )
             prop = when.get("system_property")
-            if prop is not None and str(prop) not in known_properties:
+            if prop is None:
+                continue
+            if str(prop) not in known_properties:
                 errors.append(f"{prefix}: unbekannte Systemgröße '{prop}'")
+                continue
+            eintrag = properties.get_system_property(str(prop))
+            if eintrag is not None and not darf_in_regel_stehen(eintrag):
+                errors.append(
+                    f"{prefix}: Systemgröße '{prop}' ist laufzeitgebunden "
+                    f"(source '{eintrag.source}') und in einer Bedingung nicht lesbar. "
+                    "Eine Regel darauf prüfte gegen die Trajektorien-Baseline, nicht "
+                    "gegen den Wert des laufenden Ticks. Erlaubt sind Systemgrößen mit "
+                    "source 'trajectory'; für den Preis oder den Aufschlag des laufenden "
+                    "Ticks gibt es 'metric'."
+                )
     return errors
 
 
@@ -610,6 +675,6 @@ def validate_state(state: SimulationState) -> list[str]:
     errors = collect_state_errors(state)
 
     if errors:
-        raise ValidationError("validierungsfehler:\n" + "\n".join(f"  - {e}" for e in errors))
+        raise ValidationError(BEFUND_KOPF + "\n" + "\n".join(f"  - {e}" for e in errors))
 
     return errors

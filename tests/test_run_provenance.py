@@ -10,12 +10,13 @@ vorbei.
 from __future__ import annotations
 
 import json
-from types import SimpleNamespace
 
 import pytest
 
 from src.config_loader import build_initial_state
+from src.llm.defaults import DEFAULT_BASE_URL
 from src.models.llm_models import LLMIncident
+from src.models.run_models import RunArgs
 from src.reporting.output_writer.metadata import save_run_metadata
 from src.reporting.output_writer.provenance import (
     COMPUTE_MODE_LABELS,
@@ -25,21 +26,30 @@ from src.reporting.output_writer.provenance import (
 )
 
 
-def _args(**overrides) -> SimpleNamespace:
+def _args(**overrides) -> RunArgs:
+    """Die Lauf-Argumente eines Tests — seit P3.11 **typisiert**.
+
+    Vorher ein `SimpleNamespace`, und der Helfer nannte `llm_narrative` nicht:
+    Er verliess sich auf `getattr(args, "llm_narrative", False)` in
+    `provenance.py`. Genau dieser Rückfall ist der Befund von P3.11 — der Helfer
+    hat ihn mitbenutzt und damit auch mitgetestet.
+    """
+
     base = dict(
         model="llama3.2",
-        base_url="http://localhost:11434",
+        base_url=DEFAULT_BASE_URL,
         temperature=0.7,
         max_tokens=2048,
         no_market=False,
         seed=None,
         mock_llm=False,
         deterministic_only=False,
+        llm_narrative=False,
         simulation_name="Test",
         simulation_description="Test",
     )
     base.update(overrides)
-    return SimpleNamespace(**base)
+    return RunArgs(**base)
 
 
 def _write(tmp_path, state, args) -> dict:
@@ -215,7 +225,7 @@ class TestSweepSchreibtNichtMehrVorbei:
 
         from src.orchestration.scenario_sweeps import SWEEP_SEED, sweep_metadata_args
 
-        args = sweep_metadata_args("demo")
+        args = sweep_metadata_args()
         assert compute_mode(args) == "deterministic_with_llm_narrative"
         assert args.seed == SWEEP_SEED
 
@@ -227,7 +237,7 @@ class TestSweepSchreibtNichtMehrVorbei:
         from src.llm import OllamaConfig
         from src.orchestration.scenario_sweeps import sweep_metadata_args
 
-        args = sweep_metadata_args("demo")
+        args = sweep_metadata_args()
         assert args.model == OllamaConfig().model
         assert args.base_url == OllamaConfig().base_url
 
@@ -299,25 +309,25 @@ class TestDerFingerabdruckWandertNicht:
 
 
 class TestMultiRunTraegtDenRechenmodus:
-    """Gegenprobe 2026-08-27: `_build_run_args` ließ sich `mock_llm` entziehen,
+    """Gegenprobe 2026-08-27: `build_run_args` ließ sich `mock_llm` entziehen,
     ohne dass ein Test rot wurde — dann verlöre jeder Teillauf eines Multi-Runs
     seinen Rechenmodus."""
 
     def test_run_args_carry_the_compute_mode(self) -> None:
-        from src.run_simulation import _build_run_args
+        from src.run_simulation import build_run_args
 
         base = _args(mock_llm=True, deterministic_only=False)
-        built = _build_run_args(base, run_index=2, seed=77)
+        built = build_run_args(base, run_index=2, seed=77)
         assert compute_mode(built) == "mock_llm"
         assert built.seed == 77
 
     def test_metadata_of_a_sub_run_says_mock(self, tmp_path) -> None:
-        from src.run_simulation import _build_run_args
+        from src.run_simulation import build_run_args
 
         state = build_initial_state()
         state.config.seed = 78
         metadata = _write(
-            tmp_path, state, _build_run_args(_args(mock_llm=True), run_index=2, seed=78)
+            tmp_path, state, build_run_args(_args(mock_llm=True), run_index=2, seed=78)
         )
         assert metadata["compute_mode"] == "mock_llm"
         assert metadata["seed"] == 78
@@ -717,7 +727,7 @@ class TestDerHybridModusDesSweeps:
     def test_the_mode_says_both_halves(self) -> None:
         from src.orchestration.scenario_sweeps import sweep_metadata_args
 
-        modus = compute_mode(sweep_metadata_args("demo"))
+        modus = compute_mode(sweep_metadata_args())
         label = COMPUTE_MODE_LABELS[modus]
         assert "Nur Zahlen" in label
         assert "Modell" in label
@@ -732,7 +742,7 @@ class TestDerHybridModusDesSweeps:
         )
         from src.orchestration.scenario_sweeps import sweep_metadata_args
 
-        metadata = _write(tmp_path, state, sweep_metadata_args("demo"))
+        metadata = _write(tmp_path, state, sweep_metadata_args())
         assert metadata["compute_mode"] == "deterministic_with_llm_narrative"
         assert metadata["degraded"] is True
 
@@ -827,7 +837,7 @@ class TestDasArtefaktBehauptetKeinModell:
 
         assert metadata["compute_mode"] == "llm"
         assert metadata["model"] == "llama3.2"
-        assert metadata["base_url"] == "http://localhost:11434"
+        assert metadata["base_url"] == DEFAULT_BASE_URL
         assert metadata["temperature"] == 0.7
         assert metadata["max_tokens"] == 2048
 
@@ -838,7 +848,7 @@ class TestDasArtefaktBehauptetKeinModell:
         from src.orchestration.scenario_sweeps import sweep_metadata_args
 
         state = build_initial_state()
-        metadata = _write(tmp_path, state, sweep_metadata_args("demo"))
+        metadata = _write(tmp_path, state, sweep_metadata_args())
 
         assert metadata["compute_mode"] == "deterministic_with_llm_narrative"
         assert metadata["model"] is not None

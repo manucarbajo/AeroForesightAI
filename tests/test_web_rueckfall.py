@@ -42,6 +42,17 @@ WURZEL = Path("dashboard/web")
 RENDERER = {"number", "text", "textarea", "select", "slider", "check"}
 
 
+#: Der Modell-Bereich wird seit P3.12 erst beim Aufsuchen gebaut — diese
+#: Wächter meinen seinen **Rumpf**, nicht den leeren Rahmen. Ohne den Pfad
+#: lieferte `rumpf_fuer` eine leere Liste, und die Zusagen wären lautlos
+#: hohl: Der Regel-1-Test verglich dann eine leere Feldmenge mit der
+#: Schrittfolge und wäre für immer grün.
+from dashboard.web import routing
+from dashboard.web.pages.model_editor import ROUTE as _MODELL_ROUTE
+
+_MODELL_PFAD = routing.url(_MODELL_ROUTE)
+
+
 @dataclass(frozen=True)
 class Fund:
     datei: str
@@ -271,7 +282,7 @@ class TestDasZeichnenAendertNichts:
         from dashboard.web.state import initial_draft_dict
 
         entwurf = initial_draft_dict()
-        danach = self._durch_sync(model_editor.layout(entwurf), entwurf)
+        danach = self._durch_sync(model_editor.rumpf_fuer(_MODELL_PFAD, entwurf), entwurf)
 
         geaendert = [
             feld for feld in set(entwurf) | set(danach) if entwurf.get(feld) != danach.get(feld)

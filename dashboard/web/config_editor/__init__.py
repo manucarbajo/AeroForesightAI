@@ -169,6 +169,28 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def _sync(_values, _flags, _rules, draft: dict | None):
+        """Sichtbare Felder in den Store — **und nur, wenn sich etwas ändert** (P3.9).
+
+        Der zweite Halbsatz ist die ganze Arbeit von P3.9. Dieser Callback feuert
+        nicht nur beim Tippen: Sobald ein Schritt gezeichnet wird, melden seine
+        Eingabefelder ihren *unveränderten* Wert, und bis zum 2026-09-05 schrieb
+        `_sync` daraufhin einen neuen Entwurf in den Store. Ein neues Dict ist für
+        Dash eine Änderung, also zog es alles nach, was am Entwurf hängt:
+        Preflight, Feldfehler, Tor, Zusammenfassungen, Laufübersicht — **acht bis
+        elf Server-Aufrufe für einen Klick, der keine Einstellung anfasst.**
+
+        Gemessen im Browser (die einzige Messung, die hier zählt): 0,72 bis 1,49
+        Sekunden je Klick, und `config-draft-store.data` stand **dreimal** in
+        derselben Kette.
+
+        **Ein Vergleich, keine Ausnahmeliste.** Der naheliegende Weg wäre, den
+        Schritt-Wechsel als Sonderfall auszunehmen. Das wäre eine zweite Stelle,
+        die wissen muss, was ein Schritt ist — und die nächste Ursache für ein
+        folgenloses Schreiben käme von woanders. Ist der berechnete Entwurf
+        gleich dem gespeicherten, gibt es nichts mitzuziehen: Jeder Verwender
+        hat genau diese Daten schon gesehen.
+        """
+
         scalars, flags, rules = ctx.inputs_list[0], ctx.inputs_list[1], ctx.inputs_list[2]
         entries = [(entry.get("id"), entry.get("value")) for entry in list(scalars) + list(flags)]
         updated = c.apply_inputs(draft or {}, entries)
@@ -181,7 +203,10 @@ def register_callbacks(app) -> None:
             edit = edits.setdefault(prop, {"property_id": prop, "baseline": 0.0, "rules": []})
             edit["rules"] = _rules_from_entries(cells)
 
-        return _normalise(updated)
+        neu = _normalise(updated)
+        if draft is not None and neu == draft:
+            return no_update
+        return neu
 
     @app.callback(
         Output({"type": start_flow.SUMMARY, "slot": ALL}, "children"),
@@ -234,26 +259,47 @@ def register_callbacks(app) -> None:
 
     @app.callback(
         Output(model_editor.HOST, "children"),
+        Input("url", "pathname"),
         Input("cfg-editor-refresh", "data"),
         State(STORE_ID, "data"),
-        prevent_initial_call=True,
     )
-    def _model_editor(_refresh, draft: dict | None):
-        """Den Modell-Bereich neu zeichnen, wenn sich der Entwurf **strukturell** ändert.
+    def _model_editor(pathname: str | None, _refresh, draft: dict | None):
+        """Den Modell-Bereich bauen, **wenn jemand ihn aufsucht** (P3.12).
 
-        Nicht am Entwurf selbst: Der Bereich trägt 168 Eingabefelder, und sie
-        unter den Fingern auszutauschen wäre bei jedem Tastendruck ein
-        Fokusverlust. Werte fließen ohnehin über `_sync` in den Store und
-        stehen dort richtig — neu gebaut werden muss nur, wenn eine Größe
-        **dazukommt oder verschwindet**: Preset übernehmen, Property anlegen
-        oder löschen, Segment entfernen, Zurücksetzen. Genau dafür gibt es
-        `cfg-editor-refresh`, und genau daran hängt auch die Schrittfolge.
+        Zwei Auslöser, zwei Gründe:
 
-        Ohne diese Zeilen zeigte der Bereich nach «Werte übernehmen» weiterhin
-        die Zahlen von vorher — richtig im Store, falsch auf dem Schirm.
+        * **Der Pfad** — der Bereich entsteht erst beim Aufsuchen und wird beim
+          Verlassen wieder abgebaut. Bis P3.12 lag er dauernd im DOM: **1404 der
+          2882 Knoten** der ganzen Anwendung, auch während jemand in der
+          Schrittfolge arbeitete. Das kostete dort **jeden Klick rund eine
+          Sekunde**, weil Dashs `dash_renderer` bei *jeder* Callback-Antwort alle
+          angeschlossenen Komponenten benachrichtigt (`notifyNestedSubs`) — die
+          Kosten hängen an ihrer Zahl, nicht an der Größe des sichtbaren
+          Bereichs. Gemessen: 1218 ms → 246 ms in `dash_renderer`, längste
+          Browser-Aufgabe 1144 ms → 267 ms.
+        * **`cfg-editor-refresh`** — wie bisher, wenn sich der Entwurf
+          *strukturell* ändert. Nicht am Entwurf selbst: Die Felder unter den
+          Fingern auszutauschen wäre bei jedem Tastendruck ein Fokusverlust.
+          Werte fließen ohnehin über `_sync` in den Store; neu gebaut werden muss
+          nur, wenn eine Größe **dazukommt oder verschwindet** — Preset
+          übernehmen, Property anlegen oder löschen, Segment entfernen,
+          Zurücksetzen. Ohne diesen Auslöser zeigte der Bereich nach «Werte
+          übernehmen» weiterhin die Zahlen von vorher.
+
+        **Regel 6 ist hier nicht berührt, und das ist gemessen, nicht vermutet:**
+        Der Rumpf trägt **keine einzige feste ID** — alle neun Kennungen darin
+        sind Muster (`cfg`, `cfg-bool`, `cfg-rule`, …), und ein Muster-Eingang mit
+        `ALL` verträgt null Treffer von Haus aus. Wer hier eine Komponente mit
+        fester ID einbaut, an der ein Callback hängt, nimmt diesen Callback mit
+        aus dem DOM — `tests/test_web_lazy_modell.py` sagt es ihm.
+
+        **`prevent_initial_call` ist weg**, und zwar mit Absicht: Wer die Adresse
+        `/app/modell` direkt öffnet, muss den Bereich sehen. Der erste Aufruf
+        entscheidet dann anhand des Pfads, ob gebaut wird — beim Start auf einem
+        anderen Bereich kostet er nichts.
         """
 
-        return model_editor.body(draft or {})
+        return model_editor.rumpf_fuer(pathname, draft)
 
     @app.callback(
         Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),

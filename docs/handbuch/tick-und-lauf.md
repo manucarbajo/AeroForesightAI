@@ -7,55 +7,56 @@ Ein Tick ist eine Runde des Modells. In ihm entscheidet die Bevölkerung über
 Buchungen, die Airline passt den Preis an, die Akteure bringen Ereignisse ein und
 Faktoren können sich verschieben.
 
-Ein Tick hat **keine Kalenderbedeutung**. Er ist weder ein Monat noch ein Quartal
-noch ein Jahr. Das ist eine bewusste Entscheidung, keine fehlende Angabe: Sobald
-man Ticks in Jahre übersetzt, entstehen Aussagen der Form «2032 kostet das Ticket
-214 Euro», für die das Modell keine Grundlage hat. Was es liefert, sind
+**Ein Tick ist ein Monat.** Seit dem 7. September 2026 ist das festgelegt, und
+zwar für alles, was das Modell *rechnet*: Wie schnell eine Reise «vergessen» ist,
+wie schnell die Bevölkerung wächst, wie schnell Treibstoff teurer wird — all das
+läuft in Monaten. Vierzig Runden sind damit gut drei Jahre, fünfzig gut vier.
+
+**In den Zahlen, die Sie zu sehen bekommen, steht trotzdem nirgends ein Datum**,
+und das bleibt so. Der Grund ist derselbe wie vorher: Sobald aus Runde 40 der
+«Dezember 2029» wird, entstehen Aussagen der Form «2029 kostet das Ticket 214
+Euro», für die das Modell keine Grundlage hat — es ist nicht auf Jahreszahlen
+geeicht, kennt keine Saison und keine Reisebeschränkung. Was es liefert, sind
 Wirkungsrichtungen und Größenordnungen unter gegebenen Annahmen.
 
-Ein längerer Lauf bildet deshalb nicht mehr Zeit ab, sondern mehr Gelegenheiten
-für Anpassung und Rückkopplung. Vierzig Ticks zeigen, wohin sich ein System
-einpendelt; zehn zeigen die erste Reaktion.
+Die beiden Sätze widersprechen sich nicht. Der erste sagt, in welchem Takt die
+Mechanik rechnet; der zweite, dass eine Runde trotzdem kein Kalendermonat ist,
+den man auf einen Zeitstrahl legen könnte.
 
-**Eine Einschränkung dazu, seit dem 31. August 2026 gemessen und offen benannt:**
-Der Satz oben gilt für das, was das Modell *ausgibt* — dort steht nirgends ein
-Datum. Er gilt nicht durchgehend für das, was es *rechnet*.
+**Warum das überhaupt eine Frage war.** Jeder Mechanismus, der sich pro Runde
+verändert, unterstellt stillschweigend eine Zeitskala — und im Modell
+unterstellten sie bis September 2026 nicht dieselbe, sondern drei verschiedene um
+den Faktor zwölf auseinander. Die Bevölkerungskurve wuchs um acht Prozent über 29
+Runden: plausibel als Jahre, unmöglich als Monate. Die Sättigung ließ eine Reise
+nach etwa drei Runden vergessen sein: plausibel als Monate, absurd als Jahre. Der
+Backtest bildete eine Runde ausdrücklich auf einen Monat ab. Und eine vierte
+Größe widersprach sich sogar selbst: Das Nachfragewachstum war als «jährlich»
+beschrieben und wurde je Runde aufgezinst — aus drei Prozent wurden so
+zweiundvierzig im Jahr.
 
-Denn jeder Mechanismus, der sich pro Runde verändert, unterstellt stillschweigend
-eine Zeitskala. Im Modell unterstellen sie nicht dieselbe: Die hinterlegte
-Bevölkerungskurve wächst um acht Prozent über 29 Runden — plausibel, wenn eine
-Runde ein Jahr ist, und unmöglich, wenn sie ein Monat ist. Die Sättigung dagegen
-lässt eine Reise nach etwa drei Runden «vergessen» sein; als Jahre gelesen wären
-das drei Jahre zwischen zwei Familienflügen. Und der Backtest, der das Modell
-gegen die Jahre 2015 bis 2024 hält, bildet eine Runde ausdrücklich auf einen
-Monat ab.
+**Was sich dadurch an den Zahlen geändert hat:** Die Bevölkerungskurve wächst
+jetzt um 2,7 Prozent über zehn Jahre statt um acht Prozent über eine Strecke, die
+als Jahre gemeint war. Die *Jahresrate* ist dabei dieselbe geblieben — geändert
+wurde die Einheit, nicht die Aussage. Ein Standardlauf endet seither bei einer
+Buchungsrate von 0,2679 statt 0,2685. Läufe von vor diesem Datum gehören nicht
+neben spätere (siehe [Läufe vergleichen](/doku/vergleiche)).
 
-**Was Sie daraus mitnehmen sollten:** Lesen Sie einen Lauf weiterhin als
-Wirkungskette, nicht als Zeitreihe — dafür ist er gebaut. Aber übersetzen Sie
-Rundenzahlen nicht in Jahre, auch nicht im Kopf, und vergleichen Sie zwei Läufe
-nur bei gleicher Rundenzahl. Die offene Frage ist im Projektplan als P3.8
-vermerkt.
+**Was Sie daraus mitnehmen sollten:** Lesen Sie einen Lauf als Wirkungskette,
+nicht als Zeitreihe — dafür ist er gebaut. Wenn Sie die Zeitskala trotzdem
+brauchen, um eine Vorgabe einzustellen (wie schnell soll die Abgabe steigen?),
+rechnen Sie zwölf Runden auf ein Jahr. Und vergleichen Sie zwei Läufe nur bei
+gleicher Rundenzahl.
+
+**Eine Einschränkung, die offen ist und offen genannt sein will:** Die
+mitgelieferten Szenarien laufen fünfzig Runden, also gut vier Jahre, und lassen
+die CO₂-Abgabe darin von 50 auf 200 Euro steigen. Das ist ein sehr schneller
+Politikpfad. Ob diese Szenarien gestreckt werden oder ausdrücklich als kurze,
+dichte Wirkungsketten gelten sollen, ist eine offene Produktfrage; sie steht im
+Projektplan als P4.5.
 
 ## Der Lauf
 
-Ein Lauf ist eine Folge von Ticks aus einer festgelegten Ausgangslage.
-
-## Wie weit die Vorgaben reichen
-
-Manche Systemgrößen haben einen Verlauf mit Stützpunkten — die CO₂-Abgabe steigt
-etwa in zwei Stufen, die Bevölkerung wächst bis zu einer bestimmten Runde. **Hinter
-dem letzten Stützpunkt hält eine solche Kurve ihren letzten Wert.**
-
-Das ist meistens gemeint: Eine Abgabe, die ihren Endwert erreicht hat, bleibt dort.
-Bei der Bevölkerung heißt derselbe Mechanismus aber «ab hier wächst niemand mehr»,
-und das ist eine ganz andere Aussage — im Standardlauf betrifft es die letzten zehn
-von vierzig Runden.
-
-**Deshalb sagt der Lauf es seit September 2026.** Der Preflight nennt vor dem Start
-den frühesten Verlauf und wie viele Runden über ihn hinauslaufen; im Protokoll steht
-es für jeden betroffenen Verlauf. Es ist ein **Hinweis und kein Fehler**: Der Lauf
-startet, die Zahlen stimmen, Sie wissen nur, worauf sie beruhen.
- Er erzeugt
+Ein Lauf ist eine Folge von Ticks aus einer festgelegten Ausgangslage. Er erzeugt
 ein eigenes Verzeichnis unter `outputs/` mit allen Zwischenständen, Zeitreihen
 und Auswertungen. Was genau darin liegt, steht unter
 [Ausgabedateien](/doku/ref-ausgaben).
@@ -64,6 +65,29 @@ Mehrere Läufe mit identischer Konfiguration heißen Wiederholungen. Sie
 unterscheiden sich nur im Zufallsstartwert, also darin, welche Bevölkerung
 gezogen wurde. Weichen ihre Ergebnisse stark voneinander ab, trägt die Aussage
 nicht — dann hing das Ergebnis an der Stichprobe und nicht an den Annahmen.
+
+## Wie weit die Vorgaben reichen
+
+Manche Systemgrößen haben einen Verlauf mit Stützpunkten — die CO₂-Abgabe steigt
+etwa in zwei Stufen, die Bevölkerung wächst bis zu einer bestimmten Runde. **Hinter
+dem letzten Stützpunkt hält eine solche Kurve ihren letzten Wert.**
+
+Das ist meistens gemeint: Eine Abgabe, die ihren Endwert erreicht hat, bleibt dort.
+Bei der Bevölkerung hieß derselbe Mechanismus aber «ab hier wächst niemand mehr»,
+und das ist eine ganz andere Aussage — im Standardlauf betraf es die letzten zehn
+von vierzig Runden.
+
+**Diese eine Kurve reicht seit dem 7. September 2026 weiter** (P3.8): Sie läuft
+bis Runde 120, also über jeden üblichen Lauf hinaus. Der Hinweis unten gibt es
+weiterhin und er greift weiterhin — im Standardlauf nennt er jetzt **drei**
+Verläufe statt vier (SAF-Mandat, Einkommensindex, CO₂-Abgabe). Dass ausgerechnet
+die Bevölkerung ihn nicht mehr auslöst, ist dabei kein Nebeneffekt: Ein Hinweis,
+der ohnehin bei jedem Lauf erscheint, wird überlesen.
+
+**Deshalb sagt der Lauf es seit September 2026.** Der Preflight nennt vor dem Start
+den frühesten Verlauf und wie viele Runden über ihn hinauslaufen; im Protokoll steht
+es für jeden betroffenen Verlauf. Es ist ein **Hinweis und kein Fehler**: Der Lauf
+startet, die Zahlen stimmen, Sie wissen nur, worauf sie beruhen.
 
 ## Das Szenario
 

@@ -6,6 +6,7 @@ from typing import Any, Callable
 from pydantic import BaseModel
 
 from src.config_loader import build_initial_state
+from src.llm.defaults import DEFAULT_MODEL, DEFAULT_TEMPERATURE
 from src.models.state_models import SimulationState
 
 
@@ -160,13 +161,21 @@ def _make_build_options() -> dict:
                 "default": False,
                 "description": "Use C3 Redebedarf scheduler instead of parallel agents",
             },
-            "llm_model": {"type": "str", "default": "llama3", "description": "LLM model name"},
-            "llm_temperature": {"type": "float", "default": 0.7, "description": "LLM temperature"},
+            "llm_model": {
+                "type": "str",
+                "default": DEFAULT_MODEL,
+                "description": "LLM model name",
+            },
+            "llm_temperature": {
+                "type": "float",
+                "default": DEFAULT_TEMPERATURE,
+                "description": "LLM temperature",
+            },
             "presets": {
                 "type": "object",
                 "default": {
-                    "quick_test": {"max_ticks": 4, "seed": 42, "llm_model": "llama3"},
-                    "full_ap3": {"max_ticks": 40, "seed": 42, "llm_model": "llama3.2"},
+                    "quick_test": {"max_ticks": 4, "seed": 42, "llm_model": DEFAULT_MODEL},
+                    "full_ap3": {"max_ticks": 40, "seed": 42, "llm_model": DEFAULT_MODEL},
                 },
                 "description": "Helpful AP3 starter presets for Studio and playground runs",
             },

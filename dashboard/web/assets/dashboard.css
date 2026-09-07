@@ -2467,13 +2467,33 @@ html.dark .af-input[type="number"] {
    **Und deshalb mit Luft.** Ein `ch`-Deckel legt eine Breite fest, keine
    Zeichenzahl: Wie viele Buchstaben hineinpassen, haengt davon ab, welche.
    Bei 56ch standen im selben Absatzformat 71 bis 78 Zeichen -- dieselbe
-   Regel, zwei Ergebnisse. 53ch halten auch den breitesten gemessenen Satz
-   unter 75.
+   Regel, zwei Ergebnisse.
+
+   **53ch -> 48ch am 2026-09-07, und der Grund korrigiert den Absatz darueber.**
+   `ch` ist nicht nur textabhaengig, sondern auch **plattformabhaengig**: Die
+   Einheit ist der Vorschub der Null, und Chromium quantisiert den unter Linux
+   auf ganze Pixel. Gemessen an derselben Stelle, gleiche Schrift, gleiche
+   Groesse, Inter auf beiden geladen und benutzbar:
+
+     Windows   "0" = 7,78 px   ->   53ch = 401 px   ->   71 Zeichen
+     Linux     "0" = 8,00 px   ->   53ch = 424 px   ->   78 Zeichen
+
+   Dieselbe Regel, sechs Prozent mehr Breite, zehn Prozent mehr Zeichen -- und
+   damit ueber der Zusage von 75. Die 53 stammten aus einer Messung unter
+   Windows; unter Linux hat der Deckel nie gehalten, es hat nur niemand
+   gemessen (der Browser-Waechter lief bis zum 2026-09-07 nirgends automatisch,
+   siehe P3.17).
+
+   **Gewaehlt wird nach der Plattform, auf der das Produkt laeuft** -- das
+   Deployment-Ziel ist ein Linux-Server. 48ch bringen Linux auf rund 71
+   Zeichen und Windows auf rund 64; beides liegt in der Spanne 45 bis 75,
+   Windows nur konservativer. Der umgekehrte Weg -- die Zusage auf 78 heben,
+   weil Linux so rendert -- haette die Zusage der Umgebung angepasst.
 
    Der Deckel sitzt am Fliesstext, nicht am Schritt: Ein Raster aus
    Auswahlfeldern ordnet sich in der Breite, ein Satz zerfaellt darin. */
 .af-mass {
-    max-width: 53ch;
+    max-width: 48ch;
 }
 
 /* **Breite je Schritt** (P1.9-W5.4). Die Form des Inhalts entscheidet, nicht

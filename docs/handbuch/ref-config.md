@@ -59,6 +59,28 @@ Wertebereich; unter `individual_properties` die Merkmale einer Person mit ihren
 Verteilungen. `price_model`, `market_feedback` und `saturation` enthalten die
 Werte, die im Editor unter **Nachfrage & Preisbildung** stehen.
 
+### Einheiten, die eine Zeitskala tragen
+
+**Eine Runde ist ein Monat** (P3.8, seit dem 7. September 2026). Das steht in
+keiner Datei als Feld, wirkt sich aber auf jede Größe aus, deren Einheit auf
+`_per_tick` endet: Ihr Wert wird Runde für Runde aufgezinst.
+
+| Größe | Einheit | ausgeliefert | im Jahr |
+| --- | --- | ---: | ---: |
+| `demand_growth_rate` | `fraction_per_tick` | 0,0025 | 3,04 % |
+| `fuel_price_change` | `fraction_per_tick` | 0,005 | 6,17 % |
+| `erneuerungsrate` | `share_per_tick` | 0,0 | 0 % |
+
+**Wenn Sie einen dieser Werte ändern, rechnen Sie ihn zuerst aufs Jahr hoch** —
+zwölfmal aufgezinst, nicht mal zwölf. Der Unterschied ist der Grund, aus dem
+P3.8 überhaupt aufgefallen ist: `demand_growth_rate` stand auf 0,03 und war in
+der Beschreibung als *jährliche* Rate ausgewiesen. Aufgezinst waren es 42,6
+Prozent im Jahr.
+
+Dasselbe gilt für Verläufe mit Stützpunkten: `bevoelkerungsentwicklung` trägt
+Jahresstufen im Abstand von zwölf Runden und reicht bis Runde 120, also über
+zehn Jahre.
+
 ### Wie der Anbieter preist
 
 Unter `market_rules` steht die Regel `provider_yield_feedback`, und in ihr das
@@ -94,7 +116,7 @@ Eine Bedingung nennt **eine Bezugsgröße** und vergleicht sie:
 | Bezugsgröße | Bedeutung |
 |---|---|
 | `factor` + `state` | Ein Faktor steht in einem bestimmten Zustand. Beide Felder sind Pflicht. |
-| `system_property` | Eine Systemgröße aus `system_properties`, verglichen mit einem Zahlenwert. |
+| `system_property` | Eine Systemgröße aus `system_properties`, verglichen mit einem Zahlenwert. Nur **exogene** Verläufe (`source: "trajectory"`) — siehe den Hinweis unten. |
 | `metric` | Eine Laufzeitgröße: `booking_rate`, `prior_booking_rate`, `cost_pressure`, `cost_index`, `ticket_price`, `demand_level`, `carbon_tax_level`, `saf_mandate_share`, `fuel_price_change`, `oil_price_index`, `tick`. |
 | `tick` | Kurzform für „genau in dieser Runde". |
 
@@ -109,6 +131,19 @@ stehen; **zwei numerische** dürfen es nicht, weil sich ein Vergleich dann keine
 von beiden zuordnen ließe. Solche Bedingungen weist die Prüfung vor dem Start
 ab — ebenso einen Tippfehler im Namen einer Metrik oder Systemgröße, einen
 Vergleich ohne Bezugsgröße und ein `factor` ohne `state`.
+
+**Nicht jede Systemgröße ist in einer Bedingung lesbar.** `provider_markup`
+und `ticket_price` entstehen im Lauf (`source: "runtime"` bzw. `"computed"`);
+ihre `trajectory` ist nur ein Startwert. Eine Bedingung darauf käme deshalb nicht
+an den Preis des laufenden Ticks, sondern an diesen Startwert — der Name stimmte,
+die Zahl wäre veraltet. Solche Bedingungen weist die Prüfung vor dem Start ab und
+nennt die Alternative: Den Preis des laufenden Ticks gibt es als `metric`.
+
+Der Grund, warum der Laufzeitwert nicht einfach durchgereicht wird, ist eine
+Modellentscheidung und keine Bequemlichkeit: Die Faktor-Regeln laufen **vor** der
+Preisberechnung einer Runde. Eine Bedingung auf `ticket_price` prüfte je nach
+Einhängepunkt gegen den Preis von vorhin oder von jetzt — dieselbe Regel würde
+je nach Ort im Ablauf etwas anderes bedeuten.
 
 Zwei Feinheiten, die im Verlauf sichtbar werden: Eine `shift_rule`, die auf
 `booking_rate` reagiert, sieht die Rate der **vorigen** Runde — die aktuelle

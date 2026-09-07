@@ -15,21 +15,35 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-
+# **Hier stand bis P3.10 ein Import-Seiteneffekt** (2026-09-05):
+#
+#     if hasattr(sys.stdout, "reconfigure"):
+#         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+#
+# Zwei Zeilen auf Modulebene, die einen **prozessglobalen** Zustand ändern —
+# ausgelöst dadurch, dass irgendjemand irgendetwas aus `src.orchestration`
+# importiert (das Paket-`__init__` zieht dieses Modul mit). Gemessen deckte das
+# 7 von 11 Einstiegspunkten ab, ohne dass es irgendwo stand: Der CLI-Lauf, das
+# Dashboard und der State Explorer waren **zufällig** sicher, `create_graph.py`,
+# `serve_graph.py` und `cib_visualizer.py` nicht. Und `stderr` war nirgends
+# gesichert — dort landen die Logging-Fehler und die Befundliste aus P3.3.
+#
+# Die Umstellung liegt jetzt in `logging_setup.stdio_auf_utf8()`, und jeder
+# Einstieg ruft sie ausdrücklich. Ein Prozess, dessen Ausgabe von der
+# Importreihenfolge abhängt, sagt niemandem, warum er es tut.
 from src.cib.scenario_consistency import ConsistencyChecker, ScenarioDescriptor
 from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
+from src.logging_setup import stdio_auf_utf8
 from src.market.market_feedback import BOOKING_YIELD_FEEDBACK
 from src.models.llm_models import LLMIncident
+from src.models.run_models import RunArgs
 from src.models.state_models import Rahmenszenario
 from src.models.sweep_models import (
     MilestoneCheck,
@@ -214,13 +228,30 @@ def festlegung_fuer(feld: str) -> Festlegung | None:
     return vorgegebene_felder().get(feld)
 
 
-def sweep_metadata_args(sweep_id: str) -> SimpleNamespace:
+def sweep_metadata_args() -> RunArgs:
     """Die Argumente, unter denen ein Sweep sein `run_metadata.json` schreibt.
 
     Eigene Funktion, damit prüfbar ist, was dort behauptet wird. Der Sweep
     **rechnet** deterministisch, erzeugt den Szenariotext am Ende aber mit
     ``prefer_llm=True`` — er ist damit weder das eine noch das andere und
     trägt den eigenen Modus ``deterministic_with_llm_narrative``.
+
+    **Signatur und Rumpf sind seit P3.15 einer Meinung.** P3.11 hat den Rumpf von
+    einem ``SimpleNamespace`` auf :class:`~src.models.run_models.RunArgs`
+    umgestellt und die Annotation stehen lassen — sie sagte also einem Leser und
+    jedem Werkzeug das Gegenteil, und weil sie den Import ``from types import
+    SimpleNamespace`` am Leben hielt, schwieg auch `ruff`. Genau die Aussage, gegen
+    die P3.11 angetreten ist: ein formloser Namensraum an einer Grenze
+    (Invariante 4).
+
+    **Der Parameter ``sweep_id`` ist mit weggefallen**, und das ist dieselbe
+    Sorte Aufräumen: Sein einziger Verwender war das Feld ``sweep=sweep_id``, das
+    P3.11 entfernt hat, weil es niemand las. Danach ergaben zwei verschiedene
+    Kennungen gemessen identische Argumente — ein Aufrufer übergab also eine
+    Angabe in der Annahme, sie werde verwendet. Wer die Zugehörigkeit eines Laufs
+    zu seinem Sweep braucht, findet sie im Ablageort und im Rahmenszenario; wer
+    sie im Artefakt will, gibt `RunArgs` ein Feld — ``extra="forbid"`` erzwingt
+    dann die bewusste Entscheidung.
 
     Zwei Angaben waren hier vorher unwahr. ``deterministic_only=False`` machte
     aus dem Sweep im Dashboard einen Lauf «Mit Sprachmodell», obwohl an seinen
@@ -236,8 +267,11 @@ def sweep_metadata_args(sweep_id: str) -> SimpleNamespace:
     """
 
     llm_defaults = OllamaConfig()
-    return SimpleNamespace(
-        sweep=sweep_id,
+    # `sweep=sweep_id` stand hier bis P3.11 und wurde **von niemandem gelesen** —
+    # ein Feld, das der typisierte Vertrag nicht kennt und das deshalb auffällt,
+    # statt still mitzureisen. Die Zugehörigkeit eines Laufs zu seinem Sweep
+    # steht ohnehin im Ablageort und im Rahmenszenario.
+    return RunArgs(
         deterministic_only=True,
         llm_narrative=True,
         mock_llm=False,
@@ -518,7 +552,7 @@ def run_single_sweep(
     # Save artifacts like a normal run
     run_dir_path = resolve_run_output_dir(run_id_str)
 
-    dummy_args = sweep_metadata_args(sweep.id)
+    dummy_args = sweep_metadata_args()
 
     save_event_log(final_state.event_log, run_dir=run_dir_path)
     save_tick_mechanics(final_state, run_dir=run_dir_path)
@@ -549,7 +583,7 @@ def run_single_sweep(
     # wurde verworfen, und `save_llm_incidents` lief nie. Ein Sweep rechnet
     # deterministisch und hat damit genau eine Ausfallquelle: diesen Text.
     # Fiel er auf das Template zurück, stand im Sweep trotzdem
-    # `degraded: false`. Dieselbe Kette wie in `run_simulation._save_run_outputs`,
+    # `degraded: false`. Dieselbe Kette wie in `run_simulation.save_run_outputs`,
     # und in derselben Reihenfolge: erst der Vorfall, dann die Metadaten.
     scenario_llm_error = scenario_result.get("llm_error")
     if scenario_llm_error:
@@ -739,4 +773,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Der Prozess sichert seine Ausgabe, bevor er das erste Zeichen schreibt
+    # (P3.10): Umgeleitet spricht `sys.stdout` unter Windows cp1252, und dann
+    # wirft jede Meldung mit `→`, `≥` oder `₂` statt zu erscheinen.
+    stdio_auf_utf8()
     main()

@@ -48,8 +48,14 @@ from dashboard.web.pages import launch as launch_page
 from dashboard.web.pages import model_editor as model_page
 from dashboard.web.pages import runs as runs_page
 from dashboard.web.pages import setup as setup_page
+
+# `active_route` steht seit P3.12 in `shell` (dort stehen `ROUTES` und
+# `ALIASES`). Hier weiterhin unter dem alten Namen erreichbar: mehrere Tests
+# und zwei Callbacks in dieser Datei rufen `web_app.active_route`.
+from dashboard.web.shell import active_route
 from dashboard.web.state import STORE_ID, draft_from_dict
 from dashboard.web.views import scene, telemetry
+from src.logging_setup import stdio_auf_utf8
 
 TITLE = "Technology Lab · Leitstand"
 
@@ -217,22 +223,6 @@ def scene_block(
         children.append(html.Div(ui.alert(demo_run.notice(), "demo"), className="px-5 pt-5"))
     children.append(scene.render(data, tick, mode=mode, zoom_index=zoom))
     return html.Div(children)
-
-
-def active_route(pathname: str | None) -> str:
-    """Welcher Bereich zu einer Adresse gehört.
-
-    Als eigene Funktion und nicht im Callback: So ist die Entscheidung ohne
-    laufende App prüfbar, und der Callback bleibt eine Verdrahtung.
-    """
-
-    relative = routing.relative(pathname)
-    # Das Handbuch hat Unterseiten (`doku/cib`) — hier zählt der Anfang.
-    if relative.startswith("doku"):
-        return "doku"
-    if relative in shell.ALIASES:
-        return shell.ALIASES[relative]
-    return relative if relative in {route for route, _ in shell.ROUTES} else ""
 
 
 def visibility(active: str) -> tuple[dict, ...]:
@@ -672,4 +662,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Der Prozess sichert seine Ausgabe, bevor er das erste Zeichen schreibt
+    # (P3.10): Umgeleitet spricht `sys.stdout` unter Windows cp1252, und dann
+    # wirft jede Meldung mit `→`, `≥` oder `₂` statt zu erscheinen.
+    stdio_auf_utf8()
     main()

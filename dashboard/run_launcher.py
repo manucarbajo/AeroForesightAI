@@ -4,13 +4,24 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Callable
 
-from dashboard.config_catalog import ConfigDraft, PropertyEditState, prepare_simulation_state
+from dashboard.config_catalog import (
+    ConfigDraft,
+    PropertyEditState,
+    llm_config_from_draft,
+    prepare_simulation_state,
+)
 from dashboard.run_browser import generate_figures_for_run
 from src.llm import MockLLM, OllamaClient, OllamaConfig
-from src.logging_setup import configure_logging, progress_logging
+from src.llm.defaults import (
+    DEFAULT_BASE_URL,
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_MODEL,
+    DEFAULT_TEMPERATURE,
+)
+from src.logging_setup import configure_logging, progress_logging, stdio_auf_utf8
+from src.models.run_models import RunArgs
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.reporting.output_writer import create_run_id, resolve_run_output_dir
@@ -37,10 +48,10 @@ class RunLaunchConfig:
     # mehr vorgegeben, sie entsteht im Lauf aus den exogenen Systemgrößen.
     mock_llm: bool = True
     deterministic_only: bool = False
-    model: str = "llama3.2"
-    base_url: str = "http://localhost:11434"
-    temperature: float = 0.7
-    max_tokens: int = 2048
+    model: str = DEFAULT_MODEL
+    base_url: str = DEFAULT_BASE_URL
+    temperature: float = DEFAULT_TEMPERATURE
+    max_tokens: int = DEFAULT_MAX_TOKENS
     no_market: bool = False
     redebedarf: bool = False
     checkpoint_interval: int = 5
@@ -130,7 +141,21 @@ def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
         property_edits=draft.property_edits,
         mock_llm=draft.mock_llm,
         deterministic_only=draft.deterministic_only,
-        model=draft.model.strip() or "llama3.2",
+        # **Kein Rückfall auf den Vorgabewert** (P3.13). Hier stand
+        # `draft.model.strip() or DEFAULT_MODEL`, und damit lebte genau die
+        # Notlösung weiter, die P3.4 in `llm_config_from_draft` abgeschafft
+        # hat — eine Ebene darüber. Der Weg dorthin führt über
+        # `launch_config_to_draft`, und der **wäscht** den erfundenen Wert:
+        # Danach ist er von einem eingetippten nicht mehr zu unterscheiden.
+        # Gemessen sagte der Preflight «Modellname darf nicht leer sein»,
+        # während der Lauf mit `llama3.2` rechnete und diesen Namen ins
+        # Artefakt schrieb. Leer weitergegeben landet er in
+        # `state.config.llm`, und `validate_config` meldet ihn.
+        #
+        # `DEFAULT_MODEL` bleibt der Vorgabewert von `RunLaunchConfig` selbst
+        # (oben im Feld) — das ist **eine** Quelle für einen unbenannten
+        # Startwert und nicht die Übersetzung eines leeren Feldes.
+        model=draft.model.strip(),
         base_url=draft.base_url.strip(),
         temperature=float(draft.temperature),
         max_tokens=int(draft.max_tokens),
@@ -176,7 +201,7 @@ def launch_simulation(
     import sys
 
     from src.orchestration.scenario_sweeps import SWEEP_OUTPUT_DIR, run_all_sweeps
-    from src.run_simulation import _build_run_args, _save_run_outputs, _write_multi_run_summary
+    from src.run_simulation import build_run_args, save_run_outputs, write_multi_run_summary
 
     def _maybe_generate_figures(run_directory: Path) -> None:
         if not config.generate_figures:
@@ -188,17 +213,27 @@ def launch_simulation(
             print(f"Warning: figure generation failed for {run_directory.name}: {exc}")
 
     def _build_llm():
-        if config.mock_llm:
+        """Der Client aus **derselben** Ableitung, die auch den Zustand füllt (P3.4).
+
+        `llm_config_from_draft` ist die eine Regel; `prepare_simulation_state`
+        legt ihr Ergebnis in `state.config.llm` ab, hier wird der Client daraus
+        gebaut. Vorher las `state.config.llm` niemand, und dieser Client entstand
+        direkt aus `RunLaunchConfig` — im Zustand stand damit etwas anderes als
+        im Lauf.
+        """
+
+        llm_config = llm_config_from_draft(launch_config_to_draft(config))
+        if llm_config is None:
             # `MockLLM` statt `get_llm()`: letzteres liefert `LocalOllama`, sobald
             # OLLAMA_MODEL gesetzt ist. Seit P0.1 heisst «Ohne Sprachmodell
             # rechnen» genau das, unabhaengig von der Umgebung.
             return MockLLM()
         return OllamaClient(
             OllamaConfig(
-                base_url=config.base_url,
-                model=config.model,
-                temperature=config.temperature,
-                max_tokens=config.max_tokens,
+                base_url=llm_config.base_url,
+                model=llm_config.model,
+                temperature=llm_config.temperature,
+                max_tokens=llm_config.max_tokens,
             )
         )
 
@@ -292,7 +327,7 @@ def launch_simulation(
                 checkpoint_store=checkpoint_manager,
             )
 
-            args = SimpleNamespace(
+            args = RunArgs(
                 model=config.model,
                 base_url=config.base_url,
                 temperature=config.temperature,
@@ -307,6 +342,11 @@ def launch_simulation(
                 # zurück. Jeder Dashboard-Lauf «Ohne Sprachmodell» wurde damit
                 # als vollwertiger LLM-Lauf protokolliert.
                 mock_llm=config.mock_llm,
+                # `run_id` und `checkpoint_dir` standen hier bis P3.11 mit —
+                # und wurden von niemandem gelesen: `save_run_outputs` bekommt
+                # beides als eigenes Argument. Der typisierte Vertrag kennt sie
+                # deshalb nicht, und ein Feld, das niemand liest, reist nicht
+                # mehr stillschweigend mit.
                 # **Ausgeschrieben statt ausgelassen.** Dieser Pfad erzeugt nie
                 # den Hybridmodus: `generate_and_save_run_scenario` bekommt
                 # `prefer_llm=not deterministic_only`, ein reiner Zahlenlauf also
@@ -315,8 +355,6 @@ def launch_simulation(
                 # unterscheiden ist.
                 llm_narrative=False,
                 quiet=False,
-                run_id=batch_id,
-                checkpoint_dir=str(ck_path),
             )
 
             all_artifacts: list[dict[str, str | None]] = []
@@ -326,8 +364,8 @@ def launch_simulation(
                 sub_run_id = f"run_{index:03d}"
                 run_dir = batch_dir / sub_run_id
                 run_dir.mkdir(parents=True, exist_ok=True)
-                run_args = _build_run_args(args, run_index=index, seed=run_result.seed)
-                artifacts = _save_run_outputs(
+                run_args = build_run_args(args, run_index=index, seed=run_result.seed)
+                artifacts = save_run_outputs(
                     run_result.final_state,
                     run_args,
                     llm,
@@ -344,7 +382,7 @@ def launch_simulation(
                 )
 
             summary_path = batch_dir / "multi_run_summary.json"
-            _write_multi_run_summary(
+            write_multi_run_summary(
                 summary_path=summary_path,
                 result=multi_result,
                 run_artifacts=all_artifacts,
@@ -371,7 +409,7 @@ def launch_simulation(
         ck_path = run_dir / "checkpoints"
         checkpoint_manager = CheckpointManager(ck_path)
 
-        args = SimpleNamespace(
+        args = RunArgs(
             model=config.model,
             base_url=config.base_url,
             temperature=config.temperature,
@@ -387,8 +425,6 @@ def launch_simulation(
             # Siehe oben: eine Aussage statt einer Auslassung.
             llm_narrative=False,
             quiet=False,
-            run_id=run_id,
-            checkpoint_dir=str(ck_path),
             simulation_name=config.simulation_name,
             simulation_description=config.simulation_description,
         )
@@ -423,9 +459,9 @@ def launch_simulation(
             # Mutationsprüfung am 2026-08-27.
             seed = final_state.config.seed
 
-        artifacts = _save_run_outputs(
+        artifacts = save_run_outputs(
             final_state,
-            _build_run_args(args, run_index=1, seed=seed),
+            build_run_args(args, run_index=1, seed=seed),
             llm,
             run_dir=run_dir,
             run_id=run_id,
@@ -444,6 +480,11 @@ def launch_simulation(
     # der Aufruf hier bindet den Konsolen-Handler an das *echte* stdout, bevor
     # der Tee unten `sys.stdout` umbiegt. Sonst liefe jede Zeile zweimal durch
     # das Fortschrittsfenster.
+    # **Vor dem Tee** (P3.10). Er schreibt *zuerst* auf die echte Konsole und
+    # ruft erst danach den Fortschritts-Callback: Wirft der erste Schritt an
+    # einem cp1252-Strom, sieht das Fortschrittsfenster die Zeile nie, und die
+    # Ausnahme läuft in den Lauf hinein. Gemessen am 2026-09-05.
+    stdio_auf_utf8()
     configure_logging()
 
     if on_progress is None:

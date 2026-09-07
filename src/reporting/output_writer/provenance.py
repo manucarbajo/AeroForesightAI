@@ -28,6 +28,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from src.models.run_models import RunArgs
 from src.models.state_models import ConfigFingerprint
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -170,7 +171,7 @@ def code_version() -> dict[str, Any] | None:
     }
 
 
-def compute_mode(args) -> str:
+def compute_mode(args: RunArgs) -> str:
     """Wie gerechnet wurde — in derselben Sprache wie das Dashboard.
 
     Die ersten drei Modi entsprechen den Auswahlmöglichkeiten unter
@@ -185,14 +186,14 @@ def compute_mode(args) -> str:
     eigener Modus ist billiger als eine gebeugte Angabe.
     """
 
-    deterministic = bool(getattr(args, "deterministic_only", False))
-    llm_narrative = bool(getattr(args, "llm_narrative", False))
+    deterministic = args.deterministic_only
+    llm_narrative = args.llm_narrative
 
     if deterministic and llm_narrative:
         return "deterministic_with_llm_narrative"
     if deterministic:
         return "deterministic_only"
-    if bool(getattr(args, "mock_llm", False)):
+    if args.mock_llm:
         return "mock_llm"
     return "llm"
 

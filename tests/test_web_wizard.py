@@ -31,8 +31,17 @@ import dataclasses
 
 import pytest
 
+#: Der Modell-Bereich wird seit P3.12 erst beim Aufsuchen gebaut — diese
+#: Wächter meinen seinen **Rumpf**, nicht den leeren Rahmen. Ohne den Pfad
+#: lieferte `rumpf_fuer` eine leere Liste, und die Zusagen wären lautlos
+#: hohl: Der Regel-1-Test verglich dann eine leere Feldmenge mit der
+#: Schrittfolge und wäre für immer grün.
+from dashboard.web import routing
 from dashboard.web.config_editor import controls, wizard
+from dashboard.web.pages.model_editor import ROUTE as _MODELL_ROUTE
 from dashboard.web.state import initial_draft_dict
+
+_MODELL_PFAD = routing.url(_MODELL_ROUTE)
 
 
 @pytest.fixture
@@ -138,7 +147,7 @@ class TestModellUndExperimentSindZweiOrte:
 
         from dashboard.web.pages import model_editor
 
-        im_modell = _fields(model_editor.layout(draft))
+        im_modell = _fields(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
         in_schritten = set()
         for index in range(len(wizard.STEPS)):
             in_schritten |= _fields(wizard.content(draft, index))
@@ -155,7 +164,7 @@ class TestModellUndExperimentSindZweiOrte:
 
         from dashboard.web.pages import model_editor
 
-        felder = _fields(model_editor.layout(draft))
+        felder = _fields(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
 
         assert any(f.startswith("property_edits.") for f in felder), "Die Systemgrößen fehlen"
         assert any(f.startswith("population_edits.") for f in felder), "Die Bevölkerung fehlt"
@@ -181,7 +190,7 @@ class TestModellUndExperimentSindZweiOrte:
 
         from dashboard.web.pages import model_editor
 
-        ueberall = _fields(model_editor.layout(draft))
+        ueberall = _fields(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
         for index in range(len(wizard.STEPS)):
             ueberall |= _fields(wizard.content(draft, index))
 
@@ -213,7 +222,7 @@ class TestModellUndExperimentSindZweiOrte:
         kaputt = dict(draft)
         kaputt["properties_file"] = "gibt-es-nicht.json"
 
-        gerendert = str(model_editor.layout(kaputt))
+        gerendert = str(model_editor.rumpf_fuer(_MODELL_PFAD, kaputt))
 
         assert gerendert
         assert "Traceback" not in gerendert
@@ -657,7 +666,7 @@ class TestNurDasModellSchreibtInsModell:
 
         from dashboard.web.pages import model_editor
 
-        baum = model_editor.layout(draft)
+        baum = model_editor.rumpf_fuer(_MODELL_PFAD, draft)
         mit_rueckfrage = {
             str(item.id)
             for item in _walk(baum)
@@ -690,7 +699,7 @@ class TestNurDasModellSchreibtInsModell:
 
         provider = [
             item
-            for item in _walk(model_editor.layout(draft))
+            for item in _walk(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
             if isinstance(item, dcc.ConfirmDialogProvider)
         ]
 
@@ -1385,3 +1394,88 @@ def _wege(baum) -> list:
     return [
         node for node in _walk(baum) if "af-way" in (getattr(node, "className", None) or "").split()
     ]
+
+
+class TestEinUnveraenderterEntwurfWirdNichtGeschrieben:
+    """P3.9 (2026-09-05) — der Kern der gekürzten Kette, ohne Browser geprüft.
+
+    `_sync` feuert nicht nur beim Tippen: Sobald ein Schritt gezeichnet wird,
+    melden seine Eingabefelder ihren **unveränderten** Wert. Bis P3.9 schrieb
+    `_sync` daraufhin einen neuen Entwurf in den Store, und ein neues Dict ist
+    für Dash eine Änderung — ein Klick, der keine Einstellung anfasst, zog
+    Preflight, Feldfehler, Tor, Zusammenfassungen und Laufübersicht nach.
+
+    **Der Browser-Wächter (Teil 9 von `test_web_overflow.py`) misst die Wirkung**
+    — 8–11 auf 6–7 Aufrufe je Klick. Hier steht die Regel selbst, damit sie auch
+    ohne Playwright rot wird: Der Browser-Test ist opt-in, die CI läuft ohne ihn.
+    """
+
+    @staticmethod
+    def _sync_nachbau(vorher: dict, nachher: dict):
+        """Was `_sync` am Ende tut — dieselbe Entscheidung, ohne Dash-Kontext.
+
+        Nachgebaut und nicht gerufen: `_sync` liest `ctx.inputs_list`, und das
+        gibt es nur in einem laufenden Callback. Der **Vergleich** ist die
+        Zusage, nicht der Weg dorthin — und er steht hier so, wie er dort steht.
+        """
+
+        from dash import no_update
+
+        return no_update if vorher is not None and nachher == vorher else nachher
+
+    def test_gleicher_entwurf_schreibt_nicht(self):
+        from dash import no_update
+
+        entwurf = {"rounds": 20, "seed": 42, "mock_llm": True}
+
+        assert self._sync_nachbau(entwurf, dict(entwurf)) is no_update
+
+    def test_ein_geaenderter_wert_schreibt(self):
+        """Sonst käme keine Eingabe mehr an — die Zusage muss in beide Richtungen halten."""
+
+        from dash import no_update
+
+        vorher = {"rounds": 20, "seed": 42}
+        nachher = {"rounds": 21, "seed": 42}
+
+        assert self._sync_nachbau(vorher, nachher) is not no_update
+        assert self._sync_nachbau(vorher, nachher) == nachher
+
+    def test_der_erste_entwurf_schreibt(self):
+        """Ohne gespeicherten Stand gibt es nichts zu vergleichen."""
+
+        from dash import no_update
+
+        assert self._sync_nachbau(None, {"rounds": 20}) is not no_update
+
+    def test_die_regel_steht_wirklich_im_callback(self):
+        """Der Nachbau oben wäre wertlos, wenn `_sync` etwas anderes täte.
+
+        Geprüft wird der Syntaxbaum des echten Callbacks: Er muss einen Vergleich
+        gegen den gespeicherten Entwurf enthalten und daraufhin `no_update`
+        zurückgeben. Ein Test, der nur seinen eigenen Nachbau prüft, bewacht sich
+        selbst.
+        """
+
+        import ast
+        from pathlib import Path
+
+        import dashboard.web.config_editor as editor
+
+        quelle = Path(editor.__file__).read_text(encoding="utf-8")
+        sync = next(
+            k
+            for k in ast.walk(ast.parse(quelle))
+            if isinstance(k, ast.FunctionDef) and k.name == "_sync"
+        )
+        rueckgaben = [k for k in ast.walk(sync) if isinstance(k, ast.Return)]
+        namen = {k.id for r in rueckgaben for k in ast.walk(r) if isinstance(k, ast.Name)}
+        vergleiche = [k for k in ast.walk(sync) if isinstance(k, ast.Compare)]
+
+        assert "no_update" in namen, (
+            "`_sync` gibt nirgends `no_update` zurück — dann schreibt jedes "
+            "Zeichnen wieder in den Store, und die Kette ist zurück."
+        )
+        assert any(
+            isinstance(op, ast.Eq) for v in vergleiche for op in v.ops
+        ), "`_sync` vergleicht nichts auf Gleichheit"
