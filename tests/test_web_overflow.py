@@ -485,7 +485,7 @@ DECKEL: dict[int, dict[str, float]] = {
         # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
-        "Schritt 1": 2.02,
+        "Schritt 1": 2.09,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
@@ -518,7 +518,7 @@ DECKEL: dict[int, dict[str, float]] = {
         # Alternative — die Schätzung aus der Messung herausnehmen — hätte den
         # Wächter blind für genau den Teil gemacht, den ein Nutzer im Alltag
         # sieht.
-        "Schritt 6": 1.73,
+        "Schritt 6": 1.80,  # +0,07 aus `af-mass` 53ch -> 48ch, siehe Schritt 1
     },
     1024: {
         "Einstieg": 1.00,
@@ -545,14 +545,14 @@ DECKEL: dict[int, dict[str, float]] = {
         # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
-        "Schritt 1": 2.10,
+        "Schritt 1": 2.17,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
         "Schritt 4": 1.22,
         "Schritt 5": 1.08,
-        "Schritt 6": 1.73,  # siehe die Begründung bei 1280
+        "Schritt 6": 1.80,  # siehe die Begründung bei 1280
     },
 }
 
