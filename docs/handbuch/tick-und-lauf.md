@@ -56,7 +56,15 @@ Projektplan als P4.5.
 
 ## Der Lauf
 
-Ein Lauf ist eine Folge von Ticks aus einer festgelegten Ausgangslage.
+Ein Lauf ist eine Folge von Ticks aus einer festgelegten Ausgangslage. Er erzeugt
+ein eigenes Verzeichnis unter `outputs/` mit allen Zwischenständen, Zeitreihen
+und Auswertungen. Was genau darin liegt, steht unter
+[Ausgabedateien](/doku/ref-ausgaben).
+
+Mehrere Läufe mit identischer Konfiguration heißen Wiederholungen. Sie
+unterscheiden sich nur im Zufallsstartwert, also darin, welche Bevölkerung
+gezogen wurde. Weichen ihre Ergebnisse stark voneinander ab, trägt die Aussage
+nicht — dann hing das Ergebnis an der Stichprobe und nicht an den Annahmen.
 
 ## Wie weit die Vorgaben reichen
 
@@ -80,15 +88,6 @@ der ohnehin bei jedem Lauf erscheint, wird überlesen.
 den frühesten Verlauf und wie viele Runden über ihn hinauslaufen; im Protokoll steht
 es für jeden betroffenen Verlauf. Es ist ein **Hinweis und kein Fehler**: Der Lauf
 startet, die Zahlen stimmen, Sie wissen nur, worauf sie beruhen.
- Er erzeugt
-ein eigenes Verzeichnis unter `outputs/` mit allen Zwischenständen, Zeitreihen
-und Auswertungen. Was genau darin liegt, steht unter
-[Ausgabedateien](/doku/ref-ausgaben).
-
-Mehrere Läufe mit identischer Konfiguration heißen Wiederholungen. Sie
-unterscheiden sich nur im Zufallsstartwert, also darin, welche Bevölkerung
-gezogen wurde. Weichen ihre Ergebnisse stark voneinander ab, trägt die Aussage
-nicht — dann hing das Ergebnis an der Stichprobe und nicht an den Annahmen.
 
 ## Das Szenario
 
