@@ -171,8 +171,9 @@ STEPS: list[Step] = [
     Step(
         "umfang",
         "Wie weit reicht der Lauf?",
-        "Ein Tick ist eine Modellrunde, kein Kalenderzeitraum. Mehr Ticks heißt mehr "
-        "Gelegenheiten für Rückkopplung zwischen Preis und Nachfrage.",
+        "Ein Tick ist ein Monat, vierzig sind gut drei Jahre — in den Zahlen steht "
+        "trotzdem kein Datum. Mehr Ticks heißt vor allem mehr Gelegenheiten für "
+        "Rückkopplung zwischen Preis und Nachfrage.",
         lambda draft: start_flow.scope_step(draft, number=None),
         breite="lesen",
     ),

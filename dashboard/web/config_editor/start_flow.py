@@ -807,8 +807,9 @@ def scope_step(draft: dict, number: int | None = 2) -> object:
     return _step(
         number,
         "Wie weit reicht der Lauf?",
-        "Ein Tick ist eine Modellrunde, kein Kalenderzeitraum. Mehr Ticks heißt mehr "
-        "Gelegenheiten für Rückkopplung zwischen Preis und Nachfrage.",
+        "Ein Tick ist ein Monat, vierzig sind gut drei Jahre — in den Zahlen steht "
+        "trotzdem kein Datum. Mehr Ticks heißt vor allem mehr Gelegenheiten für "
+        "Rückkopplung zwischen Preis und Nachfrage.",
         ui.card(
             c.number(
                 "rounds",
