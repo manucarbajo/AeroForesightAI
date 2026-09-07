@@ -473,6 +473,18 @@ DECKEL: dict[int, dict[str, float]] = {
         # offen stehen muss oder ihre Quellen genügen, ist eine **Produktfrage**
         # und kein Messfehler — sie gehört in ein eigenes Paket, nicht in einen
         # Wächter.
+        # **+0,07 am 2026-09-07, und der Zuwachs ist gewollt.** Das Lesemaß
+        # `af-mass` ist von 53ch auf 48ch enger geworden, weil `ch` **plattform-
+        # abhängig** ist: Die Einheit ist der Vorschub der Null, und Chromium
+        # quantisiert den unter Linux auf ganze Pixel (8,00 gegen 7,78 px).
+        # Dieselbe Regel trug dort 78 Zeichen statt 71 — über der Zusage von 75.
+        # Gewählt ist die Plattform, auf der das Produkt läuft; die Begründung
+        # steht bei `.af-mass` in `dashboard/web/assets/dashboard.css`.
+        #
+        # Schmalerer Fließtext bricht früher um, dieselben Sätze brauchen mehr
+        # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
+        # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
+        # Ist-Stand hält und nicht die Absicht.
         "Schritt 1": 2.02,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
@@ -521,6 +533,18 @@ DECKEL: dict[int, dict[str, float]] = {
         # weil hier schon vorher mehr umbrach.
         # **1,42 → 2,10 mit P3.17**, dieselben drei Ursachen wie bei 1280 (siehe
         # dort); schmaler bricht mehr um, deshalb 0,08 mehr.
+        # **+0,07 am 2026-09-07, und der Zuwachs ist gewollt.** Das Lesemaß
+        # `af-mass` ist von 53ch auf 48ch enger geworden, weil `ch` **plattform-
+        # abhängig** ist: Die Einheit ist der Vorschub der Null, und Chromium
+        # quantisiert den unter Linux auf ganze Pixel (8,00 gegen 7,78 px).
+        # Dieselbe Regel trug dort 78 Zeichen statt 71 — über der Zusage von 75.
+        # Gewählt ist die Plattform, auf der das Produkt läuft; die Begründung
+        # steht bei `.af-mass` in `dashboard/web/assets/dashboard.css`.
+        #
+        # Schmalerer Fließtext bricht früher um, dieselben Sätze brauchen mehr
+        # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
+        # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
+        # Ist-Stand hält und nicht die Absicht.
         "Schritt 1": 2.10,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
@@ -883,6 +907,25 @@ _BREITE = """
         if (text.trim().length < 40) continue;      // Beschriftungen sind kein Fliesstext
         // Code bricht nicht bei 75 Zeichen um, er wird gescrollt.
         if (k.parentElement.closest("pre, code")) continue;
+        // **Zwei weitere Ausnahmen, beide am 2026-09-07 gemessen dazugekommen.**
+        // Sie sind aufgefallen, als `af-mass` von 53ch auf 48ch enger wurde:
+        // Danach war die laengste Zeile nicht mehr Fliesstext, sondern das hier.
+        //
+        // 1. **Was nicht umbrechen kann.** Tailwinds `truncate` ist
+        //    `white-space: nowrap` plus Ellipse -- der Text steht per
+        //    Konstruktion auf einer Zeile und wird beschnitten, nicht
+        //    umgebrochen. Die Zusage handelt davon, dass das Auge am
+        //    Zeilenende die Spur zum naechsten Anfang verliert; wo es keinen
+        //    naechsten Anfang gibt, gilt sie nicht. Drei Beschriftungen der
+        //    Schrittfolge meldeten so bis zu 72 Zeichen.
+        // 2. **Kennungen in der Festbreitenschrift.** `.af-delta__wert` zeigt
+        //    Commit-Kuerzel und Branch-Namen; gemessen 75 Zeichen, und die
+        //    Laenge haengt am *Branch-Namen der messenden Maschine*, nicht am
+        //    Produkt. Dieselbe Begruendung wie fuer `pre`/`code` eine Zeile
+        //    darueber -- eine Kennung liest man nicht, man vergleicht sie.
+        const stil = getComputedStyle(k.parentElement);
+        if (stil.whiteSpace === "nowrap" || stil.whiteSpace === "pre") continue;
+        if (/mono/i.test(stil.fontFamily)) continue;
         const zeilen = new Map();
         for (let i = 0; i < text.length; i++) {
             const r = document.createRange();
@@ -1062,6 +1105,10 @@ class TestJederSchrittHatSeineBreite:
                 zeile += (
                     f"\n      Schrift: {s['berechnet']} @ {s['groesse']}, "
                     f"«0» = {s['null_px']} px, Inter benutzbar: {s['inter_benutzbar']}"
+                    # **Die Breite gehört dazu.** Der erste Anlauf hat sie
+                    # gemessen und nicht berichtet; die Deutung «53ch sind hier
+                    # 424 px» blieb damit gerechnet statt gemessen.
+                    f"\n      Breite: {s['breite_px']} px bei max-width {s['deckel']}"
                     f"\n      geladen: {s['geladen']}"
                 )
             lang.append(zeile)
