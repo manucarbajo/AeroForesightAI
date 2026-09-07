@@ -2323,6 +2323,50 @@ Die gemessene «Einkommenselastizität» von **+0,69** war damit kein Verhaltens
 
 **Doku zieht mit:** `CLAUDE.md` (Glossar «Logit-Modell»), `docs/handbuch/kaufentscheidung.md`, `docs/handbuch/vergleiche.md`.
 
+### P2.13 — F6 kippte in jedem Tick ✅ erledigt 2026-09-07 (neu 2026-09-07)
+
+> **Der Anlass war eine Frage**, nicht ein Wächter: «Ergeben die Simulationen unter der Monatslesart noch Sinn?» Beim Nachmessen kam heraus, dass ein Faktor sich im Tick-Takt umentschied — und dass der Endzustand eines Laufs an der **Parität** seiner Tickzahl hing.
+
+**Befund, gemessen an einem deterministischen Lauf über 120 Ticks:** 111 Faktorwechsel, davon **105 allein F6**, ab Tick 16 in jedem einzelnen Tick, im Takt F6.1 → F6.2 → F6.1. Der gesellschaftliche Wertewandel kippte monatlich.
+
+**Der Schaden ist nicht das Flattern, sondern sein Ende.** Ein Lauf über 40 Ticks endete mit **F6.1**, einer über 41 mit **F6.2** — bei sonst identischer Konfiguration, verifiziert an zwei Läufen. Und genau diesen Endzustand lesen das Szenario-Narrativ und die CIB-Bewertung: Das Tripleset eines Laufs hing damit daran, ob seine Länge gerade oder ungerade war.
+
+**Ursache: eine fehlende Zeile in `apply_factor_rules`.** Die Schleife läuft die Regeln nach Priorität ab und merkt sich in `updated_factors`, welcher Faktor schon entschieden ist. Diese Marke wurde nur gesetzt, wenn eine Regel den Zustand **änderte**. Traf die höchstpriorisierte Regel schon zu — ihr Ziel war bereits gesetzt —, sprang die Schleife weiter und überließ den Faktor der nächsten Regel, auch einer, die das Gegenteil verlangt:
+
+| Regel | Bedingung | Ziel | Priorität |
+| --- | --- | --- | ---: |
+| `f6_flight_shaming_high_tax` | `carbon_tax_level` über 80 | F6.2 | **10** |
+| `f6_tech_breakthrough_acceptance` | F3 ist F3.2 | F6.1 | **3** |
+
+Ab Tick 16 treffen **beide dauerhaft** zu. Die Priorität hätte das entscheiden sollen; sie tat es nicht, weil die höhere Regel nach ihrem eigenen Erfolg aus dem Weg ging. **Die Priorität entscheidet also erst seit diesem Paket wirklich.**
+
+**Fundstelle:** [`src/market/factor_dynamics.py`](../src/market/factor_dynamics.py) (`apply_factor_rules`).
+
+**Warum es die Suite nicht gesehen hat:** Sie hat es nie gemessen. Nach dem Fix liefen alle 1669 Zusagen **unverändert** grün — kein einziger Test hielt das Verhalten fest, in keiner Richtung. `test_faktoren_abgeleitet.py` prüft, dass Faktoren ihre Startlage im ersten Tick vergessen, und ein Tick genügt dafür; über den ersten hinaus hat niemand geschaut.
+
+**Der Wächter misst die Zusage, nicht die Regel:** [`tests/test_faktoren_flattern_nicht.py`](../tests/test_faktoren_flattern_nicht.py), sechs Zusagen. Der tragende Teil sucht **`A → B → A` in drei aufeinanderfolgenden Ticks** — die präzise Form des Befunds und nicht «hat sich oft geändert»: Ein Faktor *darf* zurückwechseln, wenn eine exogene Größe es hergibt (ein Rahmen nimmt die CO₂-Abgabe durchaus zurück). Was keine exogene Größe hergibt, ist ein Wechsel im Tick-Takt. Daneben zwei Zusagen am Mechanismus und eine Gegenprobe gegen **Stillstand**: Ein `updated_factors.add()` an der falschen Stelle machte aus dem Flattern einen eingefrorenen Faktor — auch falsch, und von der Zusage oben nicht zu unterscheiden.
+
+**Der erste Anlauf des Wächters war selbst hohl**, und das gehört dazu: Die beiden Mechanismus-Zusagen liefen bei Tick 1, wo die ausgelieferte CO₂-Abgabe auf 50 steht — keine der gebauten Regeln traf zu, und «die niedrigere überschreibt nicht» war grün, weil überhaupt nichts geschah. Aufgefallen ist es nur, weil die Gegenprobe daneben fehlschlug, die *setzen* muss. Der Wächter prüft die Voraussetzung jetzt selbst. **Mutationsprobe:** Marke wieder entfernt, drei der sechs Zusagen rot.
+
+**Was sich an den Zahlen ändert — und das ist ein größerer Schnitt als P3.8:**
+
+| | vorher | nachher |
+| --- | ---: | ---: |
+| Standardlauf 40 Ticks, Buchungsrate | 0,267857 | **0,256944** |
+| Standardlauf 40 Ticks, Preis | 116,59 | **119,95** |
+| Faktorwechsel über 120 Ticks | 111 | **6** |
+| «CO₂-Verzögerung», Endlage F6 | F6.1 | **F6.2** |
+| «Freiwillige Wende», Endlage F6 | F6.1 | **F6.2** |
+| «Freiwillige Wende», Preis | 106,25 | **107,15** |
+
+«Business as Usual» und «Transformationskonflikt» bleiben unverändert: Bei BAU steht die Abgabe konstant auf 50 und damit unter der Schwelle von 60, dort gewinnt F6.1 zu Recht; beim Transformationskonflikt stand F6 schon auf F6.2.
+
+**Der Backtest ist unverändert** (9,82 / 36,44), und der Grund ist erklärbar statt beruhigend: Seine historischen EUA-Preise liegen 2015–2019 zwischen 5 und 25 Euro, die Schwelle von 80 wird nie erreicht, ein SAF-Mandat gibt es dort nicht. Der Widerspruch tritt in diesem Fenster also gar nicht auf.
+
+**Was ausdrücklich offen bleibt: die Modellfrage dahinter.** Die beiden Regeln sind ein echter fachlicher Widerspruch — ein Technologiedurchbruch *sollte* Flugscham plausibel dämpfen, und bei 200 EUR je Tonne sagt die Config trotzdem «Scham gewinnt». Die Priorität entscheidet das jetzt zuverlässig, aber sie **begründet** es nicht. Ob 10 gegen 3 die richtige Rangfolge ist, ist eine Frage an das Modell und nicht an die Engine; sie gehört zur Klasse der unbegründeten Matrixwerte (siehe die [Leitentscheidung zur Szenarienschicht](#leitentscheidung-die-szenarienschicht-2026-08-29)) und ist hier bewusst nicht mitentschieden.
+
+**Fertig, gemessen:** `tests/test_faktoren_flattern_nicht.py` — sechs Zusagen, drei davon rot bei zurückgenommenem Fix. Suite 1669 grün. Vier Rahmen und Backtest neu gerechnet. **Doku ist mitgezogen:** `CLAUDE.md` (Invariante 6 um den Satz, wer bei Gleichstand entscheidet; Glossar «Faktoren F1–F7»), `docs/handbuch/faktoren.md`, `docs/handbuch/vergleiche.md` (dreizehnter Schnitt), `docs/audit_findings.md` (Befund entfernt, nicht abgehakt).
+
 ---
 
 ## Phase 3 — Engine-Härtung ✅ vollständig abgeschlossen am 2026-09-07
@@ -3516,7 +3560,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Audit-Abschnitt | Pakete |
 | --- | --- |
 | Faktoren / Modellsubstanz | ~~P0.2 (F7-Drift)~~ ✅, P2.0 (Rolle der Szenarienschicht), P2.1, P2.2, P2.3 (die übrigen 120 Zellen — hängt an P2.2), P2.4 |
-| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, ~~P0.7 (Kostendruck an zwei Stellen)~~ ✅, ~~P3.1 (Property-Baseline)~~ ✅, P5.1 (toter Code, Preisfunktions-Namen), **offen ohne Paket** (F6 kippt in jedem Tick — neu 2026-09-07) |
+| Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, ~~P0.7 (Kostendruck an zwei Stellen)~~ ✅, ~~P3.1 (Property-Baseline)~~ ✅, P5.1 (toter Code, Preisfunktions-Namen), ~~P2.13 (F6 kippte in jedem Tick)~~ ✅ |
 | Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), ~~P3.5 (Klemmung, `print`)~~ ✅, P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
 | Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, ~~P0.6 (Sweep-Pfad an P0.1 vorbei)~~ ✅, P2.1 (`_seed_runtime`), ~~P3.2 (Checkpoint-Version)~~ ✅, ~~P3.3 (leerer `try`, CLI-Traceback)~~ ✅, ~~P3.11 (Lauf-Argumente ohne typisierte Form)~~ ✅, P5.1 (`--sweep` deklariert und nie gelesen), P5.1 (`round_history`-Snapshot trägt den Endzustand) |
 | LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, ~~P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`)~~ ✅ |

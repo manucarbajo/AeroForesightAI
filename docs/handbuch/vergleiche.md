@@ -320,6 +320,35 @@ gerechneten Buchung mitläuft. Am stärksten beim Transformationskonflikt, und
 dort in die Richtung, die zur Erzählung passt: Ein Krisenszenario wies vorher
 ein Nachfrageniveau **über** dem Ausgangswert aus.
 
+Am **2026-09-07** kam ein dreizehnter Schnitt dazu, und er trifft **jeden
+Lauf**: **Ein Faktor kippte in jeder Runde hin und her.** «Gesellschaftlicher
+Wertewandel» (F6) wechselte ab Runde 16 in *jeder* Runde den Zustand — über 120
+Runden 105 Mal.
+
+**Teuer war daran nicht das Kippen, sondern das Ende.** Weil der Zustand jede
+Runde wechselte, hing der **Endzustand** an der Parität der Rundenzahl: Ein Lauf
+über 40 Runden endete mit «Fliegen bleibt akzeptiert», einer über 41 mit «starkes
+Klimabewusstsein» — bei sonst identischen Einstellungen. Und der Endzustand ist
+das, woraus die Szenarien und die Konsistenzbewertung entstehen.
+
+Ursache war eine Regel, die ihren eigenen Erfolg nicht als Entscheidung zählte:
+Traf die höchstrangige Regel schon zu, überließ sie den Faktor der nächsten —
+auch einer, die das Gegenteil verlangt. Seither entscheidet der Rang wirklich.
+
+**Was sich dadurch verschiebt:**
+
+| | vorher | nachher |
+| --- | ---: | ---: |
+| Standardlauf über 40 Runden, Buchungsrate | 0,2679 | **0,2569** |
+| Standardlauf über 40 Runden, Preis | 116,59 | **119,95** |
+| «CO₂-Verzögerung», Endlage F6 | akzeptiert | **Klimabewusstsein** |
+| «Freiwillige Wende», Endlage F6 | akzeptiert | **Klimabewusstsein** |
+| «Freiwillige Wende», Preis | 106,25 | **107,15** |
+
+«Business as Usual» und «Transformationskonflikt» bleiben unverändert. Läufe von
+vor diesem Datum gehören nicht neben spätere — und ihre **Szenarien** sind mit
+Vorsicht zu lesen, weil ihr Endzustand von der Rundenzahl abhängen konnte.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

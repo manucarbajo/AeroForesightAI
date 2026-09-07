@@ -134,6 +134,23 @@ def apply_factor_rules(state: SimulationState) -> list[FactorRuleApplication]:
 
         previous_state = factor.current_state
         if previous_state == target_state:
+            # **Eine erfüllte Regel hat entschieden, nicht nichts getan** (P2.13).
+            #
+            # Bis zum 2026-09-07 fehlte hier die Marke, und `updated_factors`
+            # wuchs nur, wenn eine Regel den Zustand *änderte*. Traf die
+            # höchstpriorisierte Regel schon zu, fiel der Faktor damit an die
+            # nächste — auch an eine, die das Gegenteil verlangt.
+            #
+            # Gemessen an F6 über 120 Ticks: `f6_flight_shaming_high_tax`
+            # (`carbon_tax > 80` → F6.2, Priorität 10) und
+            # `f6_tech_breakthrough_acceptance` (F3 ist F3.2 → F6.1, Priorität
+            # 3) treffen ab Tick 16 **beide dauerhaft** zu. Der Faktor kippte
+            # daraufhin in **jedem** Tick, 105 Mal — und der Endzustand hing an
+            # der Parität der Tickzahl: 40 Ticks endeten mit F6.1, 41 mit F6.2.
+            # Genau diesen Endzustand lesen Szenario-Narrativ und CIB-Bewertung.
+            #
+            # Die Priorität entscheidet also erst seit dieser Zeile wirklich.
+            updated_factors.add(rule.factor_id)
             if rule.once and rule.id not in state.applied_factor_rule_ids:
                 state.applied_factor_rule_ids.append(rule.id)
             continue
