@@ -2269,7 +2269,7 @@ Die Buchungsrate fällt **nicht** — sie sinkt einmal zwischen 2015 und 2017 un
 
 **Zwei Zusagen statt einer:** Der alte Test sagt jetzt 0,25 samt Begründung, warum er zwei Wochen rot stand. Dazu kommt `test_was_die_regel_nicht_nennt_kommt_aus_dem_modell` — eine Regel, die **nur** ihren Typ nennt, muss exakt die Vorgaben des Modells ergeben. Ohne diese Zusage könnte jemand die Literale wieder einsetzen, ohne dass etwas rot wird; sie stimmen ja heute größtenteils mit dem Modell überein, und genau daran ist `marginal_cost_fraction` auseinandergelaufen.
 
-**Der dritte `--deselect` in der CI ist damit weg** — von drei auf zwei; die beiden verbliebenen sind die Ollama-Hänger und fallen mit [P4.2](#p42--suite-aufräumen-und-verlässlich-machen).
+**Der dritte `--deselect` in der CI ist damit weg** — von drei auf zwei; die beiden verbliebenen sind die Ollama-Hänger und fallen mit [P4.2](#p42--suite-aufräumen-und-verlässlich-machen--teilweise-erledigt-ollama-hänger-2026-09-08).
 
 **Fertig wenn** ✅: Jeder Vorgabewert steht genau einmal, nämlich im Modell; der Test ist grün, und ein zweiter hält den Rückfall offen.
 
@@ -3380,7 +3380,7 @@ Darin `notifyNestedSubs`: Redux benachrichtigt bei **jeder** Callback-Antwort al
 **Was zu tun ist:** `conftest.py` mit einem MockLLM-Fixture anlegen, Temp-Verzeichnisse auf das eingebaute `tmp_path` umstellen.
 **Fertig wenn:** Kein Test legt mehr manuell ein Temp-Verzeichnis an; MockLLM existiert einmal. **Doku:** `README.md` (Tests-Abschnitt).
 
-### P4.2 — Suite aufräumen und verlässlich machen
+### P4.2 — Suite aufräumen und verlässlich machen 🟡 teilweise erledigt (Ollama-Hänger 2026-09-08)
 
 **Befund:** Uneinheitlicher Stil (16 Dateien funktional, drei `unittest.TestCase` ohne technischen Grund), `sys.path.append` in drei Dateien seit der Paketstruktur überflüssig, und `debug_run_sequential.py` ist gar kein Test (null `test_*`-Funktionen, wird von pytest nicht eingesammelt) — täuscht Abdeckung vor.
 
@@ -3398,6 +3398,29 @@ Darin `notifyNestedSubs`: Redux benachrichtigt bei **jeder** Callback-Antwort al
 **Fallstrick (2026-08-26):** `skipif` allein reicht nicht. Die Tests hängen, weil `OllamaClient` mit Backoff wiederholt — eine Erreichbarkeitsprobe ohne kurzen expliziten Timeout hängt in einem gefilterten Netz selbst und verlagert das Problem nur von der Ausführung in die Sammlung. Die Probe braucht einen harten Timeout (etwa eine Sekunde) und muss auf Modulebene zwischengespeichert werden, damit sie nicht pro Test erneut läuft.
 
 **Fertig wenn:** `pytest` läuft ohne lokales Ollama vollständig durch und ist grün, die CI startet ohne `--deselect` — keine "bekannten Fehler" mehr in `CLAUDE.md`. **Doku:** `CLAUDE.md` (Dev-Workflow), `README.md`, `.github/workflows/tests.yml`.
+
+---
+
+**Stufe 1 erledigt am 2026-09-08 — und der Befund oben war zu grob.** Die CI läuft ohne einen einzigen `--deselect`; `tests/test_packaging.py::test_ci_skips_exactly_the_documented_failures` erwartet jetzt die **leere Menge**.
+
+**Was die Messung an Punkt 1 korrigiert:** «Die beiden Sweep-Tests hängen ohne Ollama» ist die Zusammenfassung **zweier** Fälle, die sich verschieden verhalten — und nur einer davon hängt.
+
+| Lage des Endpunkts | Ausnahme | Verhalten | wo das vorkommt |
+| --- | --- | --- | --- |
+| niemand lauscht | `ConnectionError` (ein `RequestException`) | `OllamaClient` bricht **sofort** ab, 5 s Verbindungstimeout | jeder CI-Runner |
+| nimmt an, antwortet nicht | `ReadTimeout` | dreimal wiederholt mit Verdopplung, bis zu **870 s je Aufruf** | Entwicklungsmaschine mit Ollama, Modell nicht geladen |
+
+Nachgemessen am 2026-09-08 liefen beide Tests hier in **14,47 s** durch und waren **grün**. Für die CI war der Deselect also nie nötig — er hat zwei Wochen lang eine Zusage stillgelegt, die dort funktioniert hätte. Die ursprüngliche Beobachtung («über sieben Minuten ohne Ergebnis») stammt aus dem zweiten Fall und ist echt; nur die *Bedingung* stand falsch im Plan.
+
+**Der vorgesehene Weg ist verworfen, mit Grund.** Ein `pytest.mark.skipif` auf einen erreichbaren Endpunkt hätte die einzige End-zu-Ende-Zusage über den Sweep-Pfad genau dort abgeschaltet, wo sie fast immer gebraucht wird — auf jedem Rechner und jedem Runner **ohne** Ollama, also praktisch immer. Und er hätte am Thema vorbeigezielt: Keiner der beiden Tests handelt vom Sprachmodell. Ein Sweep rechnet seine Ticks deterministisch (`dummy_llm` wird nie gerufen); befragt wird das Modell an genau **einer** Stelle, dem Abschlusstext.
+
+**Stattdessen hat der Pfad den Schalter bekommen, den er als einziger nicht hatte:** `run_single_sweep(..., llm_narrative=False)` erzeugt den Abschlusstext aus dem deterministischen Template und baut keinen Client. Gemessen **14,47 s → 6,07 s**, und der 870-s-Fall ist strukturell weg statt kürzer. **Das Artefakt zieht mit** — `sweep_metadata_args(llm_narrative=False)` liefert `compute_mode: deterministic_only` statt `deterministic_with_llm_narrative`; ein Lauf ohne Sprachmodell darf nicht wie einer mit aussehen (dieselbe Klasse wie P3.11 und P3.13).
+
+**Der Wächter misst den Griff zum Modell, nicht die Uhr.** `TestEinSweepOhneAbschlusstextFragtNiemanden` beobachtet, ob `OllamaClient` überhaupt **gebaut** wird — eine Zeitmessung ginge auf einer langsamen Maschine grundlos rot und bliebe grün, sobald irgendwo ein Ollama antwortet, also genau dann, wenn die Zusage nicht mehr geprüft wird. Die Gegenprobe daneben ist Pflicht: Ohne sie wäre die Klasse auch grün, wenn der Sweep das Modell gar nicht mehr erreichen *könnte*. **Mutationsprobe:** Schalter zurückgenommen, Wächter rot (`test_ohne_abschlusstext_wird_kein_client_gebaut`), Laufzeit der Datei 9,44 s → 17,69 s.
+
+**Ein Wächter musste dafür geschärft werden, und das war ein eigener Befund** (eigener Commit): `test_kein_parameter_ohne_wirkung` aus P3.15 prüfte «gar kein Parameter» statt «kein Parameter ohne Wirkung» und meldete deshalb einen Parameter, der wirkt. Siehe den Nachtrag an [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--erledigt-2026-09-05).
+
+**Offen bleibt an diesem Paket:** funktionaler Stil (drei `unittest.TestCase`), `sys.path.append` in drei Dateien, `debug_run_sequential.py` — und die Entscheidung, ob die Wahl «Ohne Sprachmodell» im Dashboard bis zum Abschlusstext eines **Vergleichs** durchschlagen soll. `run_all_sweeps` benutzt den neuen Schalter bewusst **nicht**: Das ist eine Produktfrage und keine Testfrage, und `scenario_sweeps.SZENARIOTEXT_NUTZT_LLM` beschreibt weiterhin, was auf diesem Pfad passiert (Invariante 7).
 
 ### P4.3 — Doku-Zahlen mechanisch halten
 

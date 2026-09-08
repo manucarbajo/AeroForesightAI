@@ -140,7 +140,18 @@ def test_deterministic_only_skips_llm():
 
 
 def test_run_single_sweep_short():
-    """Run a single sweep with a small number of ticks to verify end-to-end."""
+    """Run a single sweep with a small number of ticks to verify end-to-end.
+
+    **Dieser Test stand bis P4.2 in der Ausnahmeliste der CI** — zusammen mit
+    `test_sweep_base_price_override_raises_ticket_price` der Grund, warum ein
+    lokaler `pytest` etwas anderes war als ein CI-Lauf.
+
+    Er braucht kein Sprachmodell und hat nie eines gebraucht: Ein Sweep rechnet
+    seine Ticks deterministisch. Was ihn aufhielt, war der **Abschlusstext** am
+    Ende von `run_single_sweep` — eine Stelle, die mit dem zu tun hat, was hier
+    geprüft wird: nichts. `llm_narrative=False` sagt das jetzt, statt den ganzen
+    Test wegen ihm zu überspringen.
+    """
     sweep = SweepConfig(
         id="test_short",
         name="Short Test Sweep",
@@ -163,7 +174,7 @@ def test_run_single_sweep_short():
         ],
     )
 
-    result = run_single_sweep(sweep, verbose=False)
+    result = run_single_sweep(sweep, verbose=False, llm_narrative=False)
 
     assert result.sweep_id == "test_short"
     assert result.ticks_completed == 5
@@ -226,7 +237,12 @@ def test_sweep_co2_delayed_loads():
 
 
 def test_sweep_base_price_override_raises_ticket_price():
-    """P2.3: A sweep with base_price=200 should produce higher ticket prices than base_price=80."""
+    """P2.3: A sweep with base_price=200 should produce higher ticket prices than base_price=80.
+
+    Der zweite der beiden bis P4.2 deselektierten Tests, aus demselben Grund und
+    mit derselben Antwort — siehe `test_run_single_sweep_short`. Er startet zwei
+    Läufe und zahlte den Abschlusstext deshalb doppelt.
+    """
     from src.orchestration.scenario_sweeps import run_single_sweep
 
     sweep_low = SweepConfig(
@@ -244,8 +260,8 @@ def test_sweep_base_price_override_raises_ticket_price():
         base_price=200.0,
     )
 
-    result_low = run_single_sweep(sweep_low, verbose=False)
-    result_high = run_single_sweep(sweep_high, verbose=False)
+    result_low = run_single_sweep(sweep_low, verbose=False, llm_narrative=False)
+    result_high = run_single_sweep(sweep_high, verbose=False, llm_narrative=False)
 
     low_price = result_low.final_properties.get("ticket_price", 0.0)
     high_price = result_high.final_properties.get("ticket_price", 0.0)
@@ -260,3 +276,92 @@ def test_sweep_base_price_none_uses_default():
     sweep = SweepConfig(id="no_bp", name="No BP", description="no override", max_ticks=5)
     state = apply_sweep_overrides(state, sweep)
     assert state.properties.price_model.base_price == 100.0
+
+
+# ---------------------------------------------------------------------------
+# P4.2 -- der Abschlusstext ist abschaltbar, und das ist gemessen
+# ---------------------------------------------------------------------------
+
+
+class TestEinSweepOhneAbschlusstextFragtNiemanden:
+    """Die tragende Zusage hinter `llm_narrative=False`.
+
+    **Sie lautet nicht «der Test ist schnell», sondern «es wird kein Endpunkt
+    befragt».** Eine Zeitmessung waere hier der falsche Waechter: Sie ginge auf
+    einer langsamen Maschine grundlos rot und bliebe gruen, sobald irgendwo ein
+    Ollama antwortet -- also genau dann, wenn die Zusage nicht mehr geprueft
+    wird. Gemessen wird deshalb, ob der Client ueberhaupt **gebaut** wird.
+
+    Die Gegenprobe daneben ist Pflicht: Ohne sie waere diese Klasse auch dann
+    gruen, wenn `run_single_sweep` das Sprachmodell gar nicht mehr erreichen
+    koennte -- ein anderer Befund, von aussen nicht zu unterscheiden. Dieselbe
+    Falle wie beim ersten Anlauf des P2.13-Waechters.
+    """
+
+    def _sweep(self, sweep_id: str) -> SweepConfig:
+        return SweepConfig(
+            id=sweep_id,
+            name="LLM-Schalter",
+            description="Prueft, ob der Abschlusstext einen Endpunkt befragt",
+            max_ticks=3,
+        )
+
+    def _gebaute_clients(self, monkeypatch, *, llm_narrative: bool) -> list[object]:
+        from src.orchestration import scenario_sweeps as sweeps
+
+        gebaut: list[object] = []
+
+        class BeobachteterClient:
+            def __init__(self, config=None):
+                gebaut.append(config)
+
+            def call(self, prompt: str, **kwargs) -> str:
+                # Leere Antwort -> `generate_run_scenario` faellt aufs Template
+                # zurueck. Der Waechter misst den *Griff* zum Modell, nicht die
+                # Qualitaet seiner Antwort, und darf dafuer kein Netz brauchen.
+                return ""
+
+        monkeypatch.setattr(sweeps, "OllamaClient", BeobachteterClient)
+        suffix = "an" if llm_narrative else "aus"
+        sweeps.run_single_sweep(
+            self._sweep(f"llm_schalter_{suffix}"),
+            verbose=False,
+            llm_narrative=llm_narrative,
+        )
+        return gebaut
+
+    def test_ohne_abschlusstext_wird_kein_client_gebaut(self, monkeypatch):
+        gebaut = self._gebaute_clients(monkeypatch, llm_narrative=False)
+
+        assert not gebaut, (
+            "`llm_narrative=False` hat trotzdem einen Ollama-Client gebaut -- "
+            "der Sweep-Pfad greift also weiterhin nach einem Endpunkt, und die "
+            "beiden Tests darueber koennen wieder minutenlang haengen."
+        )
+
+    def test_mit_abschlusstext_wird_einer_gebaut(self, monkeypatch):
+        """Die Gegenprobe: Der Standardweg ist unveraendert."""
+
+        gebaut = self._gebaute_clients(monkeypatch, llm_narrative=True)
+
+        assert len(gebaut) == 1, (
+            f"{len(gebaut)} Clients statt genau einem. Der Standardweg soll den "
+            "Abschlusstext weiterhin vom Modell schreiben lassen -- sonst misst "
+            "die Zusage darueber nichts."
+        )
+
+
+def test_ein_sweep_ohne_abschlusstext_behauptet_das_auch_im_artefakt():
+    """Ein Lauf ohne Sprachmodell darf nicht wie einer mit aussehen.
+
+    Dieselbe Klasse wie P3.11 und P3.13: ein Artefakt, das ueber sich selbst
+    etwas Falsches sagt. `deterministic_with_llm_narrative` ist die Aussage
+    "die Zahlen sind deterministisch, den Text schrieb das Modell" -- und ohne
+    Abschlusstext stimmt ihre zweite Haelfte nicht mehr.
+    """
+
+    from src.orchestration.scenario_sweeps import sweep_metadata_args
+    from src.reporting.output_writer.provenance import compute_mode
+
+    assert compute_mode(sweep_metadata_args()) == "deterministic_with_llm_narrative"
+    assert compute_mode(sweep_metadata_args(llm_narrative=False)) == "deterministic_only"

@@ -85,24 +85,26 @@ def test_the_dashboard_can_actually_be_installed_from_the_lists(package):
 
 
 def test_ci_skips_exactly_the_documented_failures():
-    """Die Ausnahmeliste in der CI darf nicht heimlich wachsen.
+    """Die Ausnahmeliste in der CI ist **leer**, und sie bleibt es.
 
-    Jeder Eintrag ist ein bekannter Fehlschlag aus `CLAUDE.md`. Kommt einer
+    Jeder Eintrag wäre ein bekannter Fehlschlag aus `CLAUDE.md`. Kommt einer
     dazu, ohne dass er dort steht, verschwindet ein echter Fehler unbemerkt.
 
-    **Und die Liste schrumpft auch nicht heimlich** — genau das ist am
-    2026-09-03 passiert: P2.11 hat den dritten Deselect entfernt, und dieser
-    Wächter hat es gemeldet, bevor jemand die Liste vergessen konnte. Zwei sind
-    übrig, beide Ollama-Hänger, beide fallen mit P4.2.
+    **Die Liste schrumpft auch nicht heimlich** — genau das ist am 2026-09-03
+    passiert: P2.11 hat den dritten Deselect entfernt, und dieser Wächter hat es
+    gemeldet, bevor jemand die Liste vergessen konnte.
+
+    **Seit P4.2 (2026-09-08) ist sie leer.** Die beiden letzten waren die
+    Sweep-Tests, und sie sind nicht weggeskippt worden, sondern haben aufgehört,
+    ein Sprachmodell anzufassen: `run_single_sweep(..., llm_narrative=False)`.
+    Ein leerer Erwartungswert ist hier kein zahnloser Wächter, sondern die
+    schärfste Fassung — jeder neue Deselect wird gemeldet.
     """
 
     workflow = WORKFLOW.read_text(encoding="utf-8")
     deselected = set(re.findall(r"--deselect (\S+)", workflow))
 
-    erwartet = {
-        "tests/test_scenario_sweeps.py::test_run_single_sweep_short",
-        "tests/test_scenario_sweeps.py::test_sweep_base_price_override_raises_ticket_price",
-    }
+    erwartet: set[str] = set()
 
     assert deselected == erwartet, (
         f"zusätzlich übersprungen: {sorted(deselected - erwartet)}; "
