@@ -68,13 +68,13 @@ Der Eingang `kapazitaet_index` (Eurostat `avia_paoc`, `CAF_PAS` — Flüge) und 
 
 | Seite | Kennzahl | mit Kapazität | ohne |
 | --- | --- | ---: | ---: |
-| Preis | Abstand gesamt | 9.82 | 16.56 |
+| Preis | Abstand gesamt | 9.82 | 16.57 |
 | Preis | davon 2016–2019 | 1.15 | 1.96 |
-| Preis | davon 2022–2024 | 21.37 | 36.03 |
+| Preis | davon 2022–2024 | 21.37 | 36.04 |
 | Preis | Richtung getroffen | 5/7 | 5/7 |
 | Nachfrage | Abstand gesamt | 36.44 | 28.15 |
 | Nachfrage | davon 2016–2019 | 25.04 | 26.13 |
-| Nachfrage | davon 2022–2024 | 51.64 | 30.84 |
+| Nachfrage | davon 2022–2024 | 51.64 | 30.85 |
 | Nachfrage | Richtung getroffen | 5/7 | 3/7 |
 
 **Wie das zu lesen ist:** Würde der Eingang die Übereinstimmung nur widerhallen, müsste der **Abstand** mit ihm kleiner sein. Auf der Nachfrageseite ist er größer — das Modell folgt den *Flügen* und verfehlt damit die *Passagiere*, die stärker gewachsen sind. Was er beiträgt, zeigt sich an der **Richtung** und an der **Preisseite**, deren Zielreihe aus einer ganz anderen Quelle stammt (Eurostat `prc_hicp_midx`) und deshalb nicht zirkulär sein kann.

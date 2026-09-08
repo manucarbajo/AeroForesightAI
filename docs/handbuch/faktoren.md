@@ -50,6 +50,15 @@ nämlich die regulatorische Strenge und den gesellschaftlichen Wertewandel. Die
 übrigen fünf bleiben über den Lauf konstant, sofern sie nicht durch ein Preset
 mit einem zeitlichen Verlauf versehen wurden.
 
+**Wenn mehrere Regeln denselben Faktor betreffen, gilt die mit dem höchsten
+Rang.** Das klingt selbstverständlich und war es bis zum 7. September 2026 nicht:
+Traf die höchstrangige Regel schon zu — ihr Zustand war bereits gesetzt —, zählte
+das nicht als Entscheidung, und der Faktor fiel an die nächste Regel, auch an eine
+mit gegenteiliger Wirkung. **Der gesellschaftliche Wertewandel kippte deshalb in
+jeder Runde hin und her**, und der Zustand *am Ende* eines Laufs hing davon ab, ob
+seine Rundenzahl gerade oder ungerade war. Läufe von vor diesem Datum sind
+deshalb mit Vorsicht zu lesen — siehe [Läufe vergleichen](/doku/vergleiche).
+
 In der Ansicht **Figures** zeigt die Aussage «4 · Die Szenarien nebeneinander»
 die Faktorlage **am Ende** jedes Szenario-Laufs — daran unterscheiden sich die
 Szenarien sichtbar. Den *Verlauf* über die Ticks, also wann welcher Zustand
