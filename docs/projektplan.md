@@ -2977,6 +2977,23 @@ RunArgs`) und die Zusage über den wirkungslosen Parameter. **Vier Mutationen
 geprüft, viermal rot** — darunter eine Lüge an einem *zweiten* Erzeuger
 (`build_run_args`), also greift er nicht nur an der gemeldeten Stelle.
 
+**Nachtrag vom 2026-09-08 (aus P4.2): eine dieser vier Zusagen war selbst eine
+Aufzählung.** `test_kein_parameter_ohne_wirkung` prüfte
+`not signature().parameters` — also «gar kein Parameter». Sein eigener Docstring
+sagte etwas anderes («nicht *der Parameter ist weg*, sondern … kein Argument, das
+etwas ändern könnte»), und die Abkürzung stimmte nur, solange es keinen gab. Als
+P4.2 `sweep_metadata_args` einen Parameter gab, **der wirkt**
+(`llm_narrative` entscheidet über `compute_mode`), ging der Wächter rot — formal
+richtig, sachlich falsch. Seine eigene Fehlermeldung nannte bereits die Auflösung:
+«Wenn er wirkt, gehört ein Test daneben, der es zeigt.» Er legt jetzt jeden
+booleschen Parameter um und verlangt, dass sich das Ergebnis ändert; ein
+Parameter, für den sich keine Probe bilden lässt, macht ihn ebenfalls rot.
+**Zwei Mutationen geprüft, zweimal rot** (Parameter wirkungslos gemacht; Schalter
+im Rumpf zurückgenommen). **Dieselbe Lehre wie bei P3.8 und den
+Kontextparametern:** Ein Wächter, der den heutigen Zustand *aufzählt*, meldet den
+nächsten Fall auch dann, wenn er in Ordnung ist — und das ist teurer als es
+aussieht, weil eine falsche Meldung dazu erzieht, den Wächter zu umgehen.
+
 **Die Klasse bleibt offen und hat jetzt ein Paket:**
 [P4.4](#p44--ein-typprüfer-für-die-grenzen--offen-neu-2026-09-05-aus-p315). Dieser
 Wächter deckt **eine Familie** ab, weil genau die einen Schaden angerichtet hat;
