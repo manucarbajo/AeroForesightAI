@@ -7,8 +7,8 @@ from src.market.property_engine import resolve_exogenous_system_properties
 from src.market.simulation_functions import (
     apply_market_feedback,
     clip_price_change,
+    compute_base_cost,
     compute_cost_pressure,
-    compute_ticket_price,
     sync_demand_level,
     update_cost_index,
 )
@@ -57,7 +57,7 @@ class TestComputeCostPressure:
 class TestM413ConfigurablePrice:
     def test_coefficients_drive_cost_formula(self):
         properties = load_properties_config()
-        low = compute_ticket_price(
+        low = compute_base_cost(
             100.0,
             carbon_tax=50.0,
             fuel_price_change=0.0,
@@ -65,7 +65,7 @@ class TestM413ConfigurablePrice:
             saf_share=0.0,
             efuel_subsidy=0.0,
         )
-        high = compute_ticket_price(
+        high = compute_base_cost(
             100.0,
             carbon_tax=50.0,
             fuel_price_change=0.0,
