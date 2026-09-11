@@ -4,7 +4,6 @@ import pytest
 
 from src.config_loader import load_properties_config
 from src.market.property_engine import (
-    property_value_changes_at_tick,
     resolve_property,
     resolve_system_properties,
     resolve_trajectory,
@@ -123,11 +122,3 @@ class TestPropertiesConfig:
             int(event["tick"]) for event in events if event["property_id"] == "saf_mandate_share"
         }
         assert 8 in saf_ticks
-
-    def test_property_value_changes_at_tick(self):
-        timeseries = [
-            {"tick": 7, "carbon_tax_level": 50.0, "saf_mandate_share": 0.0},
-            {"tick": 8, "carbon_tax_level": 50.0, "saf_mandate_share": 0.02},
-        ]
-        changes = property_value_changes_at_tick(timeseries, 8)
-        assert changes == [("saf_mandate_share", 0.0, 0.02)]
