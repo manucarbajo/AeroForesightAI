@@ -12,6 +12,9 @@ haben kann.
 
 from __future__ import annotations
 
+import importlib
+import importlib.util
+import json
 import os
 import re
 import subprocess
@@ -26,6 +29,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT = ROOT / "pyproject.toml"
 REQUIREMENTS = ROOT / "requirements.txt"
 WORKFLOW = ROOT / ".github" / "workflows" / "tests.yml"
+DOCKERFILE = ROOT / "Dockerfile"
+COMPOSE = ROOT / "docker-compose.yml"
 
 
 def _pyproject() -> dict:
@@ -376,3 +381,63 @@ class TestDerTypprueferLaeuftUeberEineListeDieWaechst:
         assert (
             "mypy" in dev
         ), "mypy fehlt im Extra `dev` — `pip install -e .[dev]` brächte ihn nicht."
+
+
+# --- Container --------------------------------------------------------------
+
+
+def _dockerfile_zeile(anweisung: str) -> str:
+    zeilen = [
+        z
+        for z in DOCKERFILE.read_text(encoding="utf-8").splitlines()
+        if z.startswith(anweisung + " ")
+    ]
+    assert len(zeilen) == 1, f"Das Dockerfile hat {len(zeilen)} {anweisung}-Zeilen"
+    return zeilen[0].removeprefix(anweisung + " ")
+
+
+class TestDerContainerStartetDieAktiveOberflaeche:
+    """**Der Container startet, was heute die Oberfläche ist — und ist von außen erreichbar.**
+
+    Bis zum 2026-09-11 lautete der Startbefehl `python -m streamlit run
+    dashboard/app.py`: eine Datei, die es seit der Dash-Migration nicht mehr gab,
+    auf der abgelösten Oberfläche. Gemessen wird an der **echten CLI** der App,
+    nicht am Text des Dockerfiles: Der naheliegende Fix — nur den Modulpfad
+    tauschen — hätte eine App gestartet, die auf 127.0.0.1 lauscht und aus dem
+    Container heraus niemand erreicht.
+    """
+
+    def test_das_modul_im_startbefehl_liegt_in_diesem_repo(self):
+        befehl = json.loads(_dockerfile_zeile("CMD"))
+        assert befehl[:2] == ["python", "-m"], f"Kein `python -m`-Start: {befehl}"
+
+        spec = importlib.util.find_spec(befehl[2])
+        assert spec is not None and spec.origin, f"Das Modul `{befehl[2]}` gibt es nicht."
+        ort = Path(spec.origin).resolve()
+        assert ort.is_relative_to(ROOT) and not ort.relative_to(ROOT).parts[0].startswith("."), (
+            f"`{befehl[2]}` kommt nicht aus diesem Repo, sondern aus {ort} — "
+            "der Container startete dann fremden Code statt der Oberfläche."
+        )
+
+    def test_die_app_lauscht_nach_aussen_auf_dem_freigegebenen_port(self, monkeypatch):
+        befehl = json.loads(_dockerfile_zeile("CMD"))
+        modul = importlib.import_module(befehl[2])
+        aufrufe: list[dict] = []
+        monkeypatch.setattr(modul.app, "run", lambda **kw: aufrufe.append(kw))
+        monkeypatch.setattr(sys, "argv", [befehl[2], *befehl[3:]])
+
+        modul.main()
+
+        assert len(aufrufe) == 1, "`main()` hat die App nicht gestartet."
+        assert aufrufe[0]["host"] == "0.0.0.0", (
+            f"Die App lauscht auf {aufrufe[0]['host']!r} — aus dem Container heraus "
+            "erreicht sie dann niemand."
+        )
+        assert aufrufe[0]["port"] == int(_dockerfile_zeile("EXPOSE"))
+
+    def test_compose_gibt_denselben_port_frei(self):
+        port = int(_dockerfile_zeile("EXPOSE"))
+
+        assert f'"{port}:{port}"' in COMPOSE.read_text(
+            encoding="utf-8"
+        ), f"docker-compose.yml gibt Port {port} nicht frei."

@@ -9,6 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 8501
+EXPOSE 8511
 
-CMD ["python", "-m", "streamlit", "run", "dashboard/app.py", "--server.address=0.0.0.0"]
+# --host=0.0.0.0: Ohne Angabe lauscht die App auf 127.0.0.1 und ist aus dem
+# Container heraus nicht erreichbar. tests/test_packaging.py haelt das fest.
+CMD ["python", "-m", "dashboard.web.app", "--host=0.0.0.0", "--port=8511"]

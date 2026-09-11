@@ -203,7 +203,7 @@ python src/run_simulation.py --studio
 
 ## Deployment
 
-Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und `docker-compose.yml` sind ein Ausgangspunkt (Dashboard + Ollama als Services) — noch nicht produktionsfertig verkabelt (kein TLS/Reverse Proxy, keine Persistenzstrategie für `outputs/`).
+Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und `docker-compose.yml` sind ein Ausgangspunkt (Dashboard + Ollama als Services) — noch nicht produktionsfertig verkabelt (kein TLS/Reverse Proxy, keine Persistenzstrategie für `outputs/`). Der Container startet die Dash-App auf Port 8511 — Landingpage auf `/`, Dashboard auf `/app/`.
 
 ## Projektstruktur
 

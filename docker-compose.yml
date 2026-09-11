@@ -5,7 +5,7 @@ services:
   dashboard:
     build: .
     ports:
-      - "8501:8501"
+      - "8511:8511"
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:

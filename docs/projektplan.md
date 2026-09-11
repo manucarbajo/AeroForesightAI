@@ -3803,7 +3803,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), ~~P3.6 (private Imports)~~ ✅, ~~P3.9 (Klickkosten)~~ ✅, ~~P3.12 (Modell-Bereich dauernd im DOM)~~ ✅, P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen), P1.2 (leere Ergebnis-Ansicht ohne Lauf — neu 2026-09-07) |
 | LangGraph Studio | ~~P3.3~~ ✅ |
 | Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests, der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction` und der drei `--deselect`-Zeilen in der CI) |
-| Sonstiges | ~~P3.10 (Zeichensatz der Konsole)~~ ✅, ~~P5.3 (`src/legacy/`)~~ ✅, ~~P4.6 (die Installation macht `src` nicht importierbar)~~ ✅ |
+| Sonstiges | ~~P3.10 (Zeichensatz der Konsole)~~ ✅, ~~P5.3 (`src/legacy/`)~~ ✅, ~~P4.6 (die Installation macht `src` nicht importierbar)~~ ✅, ~~Dockerfile startete eine Datei, die es nicht gibt (neu 2026-09-05, behoben vor P5.2)~~ ✅ |
 | **Landingpage** (neu 2026-08-26) | P1.4 (Formular-Endpunkt, Rechtstexte, CDN-Abhängigkeiten) |
 | **Reproduzierbarkeit / Run-Artefakte** (neu 2026-08-26) | ~~P0.6 (Seed, Rechenmodus, Config-Hash in `run_metadata.json`)~~ ✅ |
 | **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) |
