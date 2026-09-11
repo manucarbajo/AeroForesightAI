@@ -2,9 +2,9 @@
 and evaluates end-states against the CIB consistency matrix.
 
 CLI usage:
-    python src/scenario_sweeps.py                           # all sweeps in configs/sweeps/
-    python src/scenario_sweeps.py --ticks 10000             # 10k-tick benchmark
-    python src/scenario_sweeps.py --sweep co2_delayed.json  # single sweep
+    python -m src.orchestration.scenario_sweeps                      # all frame scenarios
+    python -m src.orchestration.scenario_sweeps --ticks 10000        # 10k-tick benchmark
+    python -m src.orchestration.scenario_sweeps --sweep co2_delayed  # one scenario, by id
 """
 
 from __future__ import annotations
