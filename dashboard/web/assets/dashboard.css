@@ -1876,6 +1876,30 @@ html.dark .af-input[type="number"] {
     color: var(--text-muted);
 }
 
+/* **Markdown in der Größe des Bausteins, der es trägt** (P7.1-U1.4, vorgezogen
+   am 2026-09-11). Texte mit `**fett**` und `` `Pfad` `` standen als `html.P`
+   da, und die Zeichen waren zu sehen. Als `dcc.Markdown` bekämen sie ohne diese
+   Rollen den Fließtext von `.af-md` (15 px) — deshalb je zwei Klassen, damit
+   die Rolle ordnungsunabhängig gewinnt. Die Werte sind die der Absätze, die
+   sie ersetzen: `text-sm leading-relaxed`, `text-xs af-text-muted`,
+   `text-sm af-text`. Eine Schriftskala ist das nicht — die kommt mit U1.1. */
+.af-md.af-md--lede {
+    font-size: 0.875rem;
+    line-height: 1.625;
+}
+
+.af-md.af-md--caption {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--text-muted);
+}
+
+.af-md.af-md--betont {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--text);
+}
+
 .af-hint code {
     font-size: 0.95em;
     background: var(--surface-inset);

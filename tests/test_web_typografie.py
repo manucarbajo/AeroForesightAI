@@ -48,6 +48,33 @@ def test_a_hint_is_smaller_than_its_label():
     )
 
 
+#: Markdown in fremder Größe (P7.1-U1.4, vorgezogen am 2026-09-11): Klassen des
+#: Bausteins und die Größe des Absatzes, den er ersetzt hat. Ohne die Rolle
+#: bekäme jeder dieser Texte die 15 px von `.af-md` — der Fix gegen roh
+#: gezeigtes Markdown hätte sonst genau die Kaskade zurückgebracht, die der
+#: Feldhinweis gerade losgeworden ist.
+ROLLEN = {
+    "af-md--lede": "0.875rem",
+    "af-md--caption": "0.75rem",
+    "af-md--betont": "0.875rem",
+}
+
+
+def test_markdown_in_a_role_keeps_the_size_of_its_paragraph():
+    for rolle, erwartet in ROLLEN.items():
+        selektor, groesse = _sieger({"af-md", "af-md--tight", rolle}, "font-size")
+
+        assert (
+            groesse == erwartet
+        ), f"Markdown mit `{rolle}` bekommt {groesse} aus `{selektor}`, erwartet {erwartet}."
+
+
+def test_the_lede_uses_its_role():
+    """Vorbedingung: `ui.lede` trägt die Rolle wirklich, die oben geprüft wird."""
+
+    assert "af-md--lede" in ui.lede("Ein Satz.").className.split()
+
+
 def test_a_hint_keeps_its_muted_colour():
     """Dieselbe Kaskade nahm dem Hinweis auch seine Farbe: `.af-md` setzt den Fließtext."""
 

@@ -611,15 +611,25 @@ def doc_link(slug: str, label: str = "Im Handbuch nachlesen") -> Any:
     )
 
 
-def lede(text: str) -> html.P:
+def lede(text: str) -> dcc.Markdown:
     """Einleitungssatz über einem Block — sagt, wozu die Einstellungen dienen.
 
     **Mit Lesemaß statt `max-w-3xl`** (P1.9-W5.4): Jene 768 px ergaben gemessen
     bis zu 108 Zeichen je Zeile. Der Deckel steht jetzt in `ch` — in der
     Einheit, von der die Zusage handelt.
+
+    **Als Markdown, seit dem 2026-09-11** (P7.1-U1.4, vorgezogen). Die
+    Einleitungen sind mit `**fett**` und `` `Pfad` `` geschrieben, gerendert
+    wurden sie als `html.P` — im Browser stand «Der `**Name**` steht im letzten
+    Schritt» mit Sternchen. Die Größe bleibt die des bisherigen Absatzes:
+    `af-md--lede` setzt sie gegen `.af-md`, das sonst den größeren Fließtext
+    brächte (dieselbe Kaskade wie beim Feldhinweis).
     """
 
-    return html.P(text, className="font-body text-sm af-text-body af-mass mb-4 leading-relaxed")
+    return dcc.Markdown(
+        text,
+        className="af-md af-md--tight af-md--lede font-body af-mass mb-4",
+    )
 
 
 def code_block(text: str, *, max_height: str = "24rem") -> html.Pre:

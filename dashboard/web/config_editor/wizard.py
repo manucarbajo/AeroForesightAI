@@ -715,10 +715,12 @@ def _final_step(draft: dict) -> html.Div:
             # einzige Umkehrmechanismus war «Auf Standard zurücksetzen», das
             # alles verwirft.
             html.Div(delta.layout(draft), className="mt-4"),
-            html.P(
+            # Markdown, weil der Pfad in Backticks steht — als `html.P` waren
+            # die Zeichen zu sehen (P7.1-U1.4, vorgezogen am 2026-09-11).
+            ui.markdown(
                 "«Als Szenario speichern» legt die Einstellungen unter `configs/sweeps/` ab. "
                 "Sie stehen danach im ersten Schritt zur Auswahl.",
-                className=f"{ui.CAPTION} mt-4 af-mass",
+                class_name="af-md--tight af-md--caption mt-4 af-mass",
             ),
         ]
     )

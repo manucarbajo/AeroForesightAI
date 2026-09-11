@@ -252,7 +252,7 @@ def choice_options() -> list[dict]:
         {
             "label": _choice_label(
                 "Standard-Ausgangslage",
-                "Die hinterlegten Werte aus `configs/` — der neutrale Ausgangspunkt.",
+                "Die hinterlegten Werte des Modells — der neutrale Ausgangspunkt.",
             ),
             "value": STANDARD,
         }
@@ -305,23 +305,32 @@ def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
 
     kinder: list = [vorspann] if vorspann is not None else []
     kinder += [
-        html.P(kohaerenz.these, className="font-body text-sm af-text mb-2 af-mass"),
-        html.P(kohaerenz.begruendung, className=f"{ui.CAPTION} mb-3 af-mass"),
+        # **Markdown, nicht `html.P`** (P7.1-U1.4, vorgezogen am 2026-09-11):
+        # Die Begründungen in `configs/` sind mit `**fett**` und
+        # `` `avia_paoc` `` geschrieben, und im Browser standen die Zeichen da.
+        # Die Rollen `af-md--betont` und `af-md--caption` halten die Größen der
+        # Absätze, die hier vorher standen.
+        ui.markdown(kohaerenz.these, class_name="af-md--tight af-md--betont mb-2 af-mass"),
+        ui.markdown(kohaerenz.begruendung, class_name="af-md--tight af-md--caption mb-3 af-mass"),
         ui.expert(
             html.Div(
                 [
-                    html.Ul(
-                        # **Auch eine Quellenangabe ist Fließtext** (P3.17). Die
-                        # zwei Absätze darüber tragen ein Lesemaß, diese Liste
-                        # trug keines — gemessen 109 Zeichen je Zeile bei 1280 px
-                        # («docs/research/links.md — EU-ETS / Fit for 55 …»),
-                        # zugesagt sind 75. Eine Quelle ist die längste Zeile,
-                        # die eine Oberfläche zu bieten hat: Titel, Autor, Jahr,
-                        # Fundstelle in einer Zeile.
-                        [html.Li(q, className=f"{ui.CAPTION} af-mass") for q in kohaerenz.quellen],
-                        className="mb-3 list-disc pl-5",
+                    # **Auch eine Quellenangabe ist Fließtext** (P3.17). Die zwei
+                    # Absätze darüber tragen ein Lesemaß, diese Liste trug keines
+                    # — gemessen 109 Zeichen je Zeile bei 1280 px
+                    # («docs/research/links.md — EU-ETS / Fit for 55 …»),
+                    # zugesagt sind 75. Eine Quelle ist die längste Zeile, die
+                    # eine Oberfläche zu bieten hat: Titel, Autor, Jahr,
+                    # Fundstelle in einer Zeile. **Seit dem 2026-09-11 als
+                    # Markdown-Liste** — die Quellen nennen Tabellen in
+                    # Backticks (`` `avia_paoc` ``), die roh dastanden.
+                    ui.markdown(
+                        "\n".join(f"- {quelle}" for quelle in kohaerenz.quellen),
+                        class_name="af-md--tight af-md--caption af-mass mb-3",
                     ),
-                    html.P(kohaerenz.vorbehalt, className=f"{ui.CAPTION} af-mass"),
+                    ui.markdown(
+                        kohaerenz.vorbehalt, class_name="af-md--tight af-md--caption af-mass"
+                    ),
                 ]
             ),
             title="Quellen und was davon nicht belegt ist",
