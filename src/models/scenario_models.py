@@ -31,14 +31,16 @@ sein.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Final, Literal
 
 from pydantic import BaseModel, Field
 
 #: Was eine Sammlung von Szenarien hervorgebracht hat. Steht als Feld im
 #: Artefakt, damit die Herkunft auch ohne Kenntnis des Schlüssels lesbar ist.
-GERECHNET = "gerechnet"
-ERZAEHLT = "erzaehlt_vom_sprachmodell"
+#: `Final`, damit ein Typprüfer den Wert als `Literal` liest und nicht als `str`
+#: — die Felder `herkunft` unten sind auf genau diesen Wert festgelegt (P4.4).
+GERECHNET: Final = "gerechnet"
+ERZAEHLT: Final = "erzaehlt_vom_sprachmodell"
 
 
 class GerechnetesSzenario(BaseModel):

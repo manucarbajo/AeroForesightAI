@@ -605,9 +605,9 @@ def horizontluecken(properties: PropertiesConfig, *, max_ticks: int) -> list[Hor
     gewesen:** `bevoelkerungsentwicklung` ist eine `step_function` mit vier
     Stützpunkten, der letzte bei Tick 30. `_resolve_step_function` hält danach
     still den letzten Wert — für eine Stufenfunktion **korrektes** Verhalten,
-    und es gibt keine Meldung, weil nichts falsch ist. Der Backtest läuft 120
+    und es gibt keine Meldung, weil nichts falsch ist. Der Backtest lief 120
     Ticks, davon 90 mit eingefrorener Bevölkerung; die vier ausgelieferten
-    Rahmen laufen 50 Ticks bei einer Kurve, die bei 30 endet.
+    Rahmen liefen damals 50 Ticks bei einer Kurve, die bei 30 endete.
 
     **Deshalb ist das hier kein Fehler und steht nicht in
     `collect_state_errors`.** Über den letzten Stützpunkt hinauszulaufen ist

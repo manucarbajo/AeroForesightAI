@@ -126,15 +126,17 @@ class TestKeinTestVerbiegtDenSuchpfad:
     `tests/` ist ein Paket (`tests/__init__.py`), und im Standard-Importmodus
     `prepend` legt pytest das erste Verzeichnis darüber ohne `__init__.py` vor
     den Suchpfad: das Wurzelverzeichnis des Repos. **Gemessen am 2026-09-11:**
-    Aus `/tmp` gestartet laufen die Tests grün, und die CI installiert das
-    Projekt gar nicht (`pip install -r requirements.txt`).
+    Aus `/tmp` gestartet laufen die Tests grün, und die CI installierte das
+    Projekt bis P4.6 gar nicht (`pip install -r requirements.txt`).
 
-    **`pip install -e .` trägt dazu nichts bei — und das war die erste, falsche
-    Begründung dieses Wächters.** Die Editable-Installation legt `src/` *selbst*
-    in den Suchpfad, nicht sein Elternverzeichnis; `import src` scheitert damit
-    außerhalb von pytest und außerhalb des Repo-Wurzelverzeichnisses. Wer eine
-    Testdatei direkt als Skript startet, bekommt deshalb seit dem Wegfall der
-    Eingriffe einen `ModuleNotFoundError` — der Weg ist `pytest <datei>`.
+    **`pip install -e .` trug dazu bis P4.6 nichts bei — und das war die erste,
+    falsche Begründung dieses Wächters.** Die Editable-Installation legte `src/`
+    *selbst* in den Suchpfad, nicht sein Elternverzeichnis; `import src`
+    scheiterte damit außerhalb von pytest und außerhalb des
+    Repo-Wurzelverzeichnisses. Seit P4.6 installiert sie das Paket `src` richtig.
+    **Dieser Wächter hängt trotzdem nicht an der Installation** — getragen wird
+    der Import in den Tests von pytest, und das gilt auch ohne installiertes
+    Projekt.
 
     **Die drei Eingriffe bis zum 2026-09-11 waren funktional wirkungslos**, weil
     pytest den Pfad ohnehin anlegt — und genau deshalb irreführend: Sie

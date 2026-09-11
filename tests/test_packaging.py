@@ -12,7 +12,11 @@ haben kann.
 
 from __future__ import annotations
 
+import os
 import re
+import subprocess
+import sys
+import textwrap
 import tomllib
 from pathlib import Path
 
@@ -199,3 +203,176 @@ def test_internal_doc_anchors_point_somewhere():
                 tot.append(f"{doc.relative_to(ROOT)}: {ziel}#{anker}")
 
     assert not tot, "Verweise auf Überschriften, die es nicht gibt:\n  " + "\n  ".join(tot)
+
+
+# --- Installation (P4.6) ----------------------------------------------------
+
+
+def _installiert() -> bool:
+    from importlib.metadata import PackageNotFoundError, distribution
+
+    try:
+        distribution("aeroforesight")
+    except PackageNotFoundError:
+        return False
+    return True
+
+
+def _namen_aus_src() -> list[str]:
+    """Jeder Name, den `src/` als Modul oder Paket trägt — aus dem Verzeichnis gelesen.
+
+    **Nur, was Python überhaupt importieren könnte:** ein gültiger Bezeichner.
+    Die erste Fassung nahm jeden Verzeichnisnamen und stolperte über ein
+    `aeroforesight.egg-info` aus einer früheren Installation — `find_spec` sucht
+    dafür das Elternpaket `aeroforesight` und bricht ab, statt «nicht da» zu sagen.
+    """
+
+    namen = []
+    for pfad in sorted((ROOT / "src").iterdir()):
+        if pfad.name.startswith(("_", ".")):
+            continue
+        if pfad.is_dir() and pfad.name.isidentifier():
+            namen.append(pfad.name)
+        elif pfad.suffix == ".py" and pfad.stem.isidentifier():
+            namen.append(pfad.stem)
+    return namen
+
+
+def _in_fremdem_verzeichnis(tmp_path: Path, code: str) -> subprocess.CompletedProcess:
+    """Python in *tmp_path* starten — ohne das Repo im Suchpfad.
+
+    `-c` legt nur das Arbeitsverzeichnis in den Suchpfad, und `PYTHONPATH` wird
+    entfernt. Was dort importierbar ist, kommt also aus der Installation und
+    nirgends sonst her.
+    """
+
+    umgebung = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    umgebung["PYTHONIOENCODING"] = "utf-8"
+    return subprocess.run(
+        [sys.executable, "-c", textwrap.dedent(code)],
+        cwd=tmp_path,
+        env=umgebung,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=120,
+    )
+
+
+class TestDieInstallationLiefertDasPaketSrc:
+    """**P4.6: `pip install -e .` macht `src` importierbar — und nur `src`.**
+
+    Bis zum 2026-09-11 nannte `pyproject.toml` keine Pakete. setuptools hielt das
+    Verzeichnis `src` für das übliche src-Layout und legte es **selbst** in den
+    Suchpfad. Gemessen aus `/tmp`: `import src` scheiterte, **16** Namen wie
+    `models`, `llm` und `agents` lösten als lose Top-Level-Module nach `src/`
+    auf, und aus dem Repo importiert gab es **zwei** verschiedene
+    `SimulationState`-Klassen, je nach Importweg.
+
+    Mit `[tool.setuptools.packages.find]` installiert setuptools einen Finder,
+    der genau `src` abbildet. Nachgemessen: `import src` gelingt, kein Name aus
+    `src/` löst mehr auf, und `dashboard`, `tests`, `scripts` und
+    `langgraph_studio` sind dadurch nicht ungewollt sichtbar geworden.
+
+    **Die Messung ist dieselbe wie beim Befund**, nur in einem Test: vorher lieferte
+    sie 16 Namen, nachher keinen. Die CI installiert das Projekt dafür seit P4.6
+    selbst — vorher tat sie es gar nicht, und dieser Wächter hätte dort nichts
+    gemessen.
+    """
+
+    def test_das_projekt_ist_installiert(self):
+        assert _installiert(), (
+            "Die Distribution `aeroforesight` ist nicht installiert — dann misst diese "
+            'Klasse nichts. Im venv: `pip install -e ".[dev]"`.'
+        )
+
+    def test_import_src_gelingt_aus_einem_fremden_verzeichnis(self, tmp_path):
+        ergebnis = _in_fremdem_verzeichnis(
+            tmp_path,
+            """
+            import src
+            print(src.__file__)
+            """,
+        )
+
+        assert ergebnis.returncode == 0, ergebnis.stderr
+        assert Path(ergebnis.stdout.strip()).resolve().parent == (ROOT / "src").resolve()
+
+    def test_kein_name_aus_src_loest_als_top_level_modul_nach_src_auf(self, tmp_path):
+        """Gemeldet wird nur, was **in `src/` hineinzeigt** — ein fremdes Paket
+        gleichen Namens wäre ein anderer Fall und kein Befund dieser Klasse."""
+
+        namen = _namen_aus_src()
+        assert len(namen) > 5, f"Verdächtig wenige Namen in src/: {namen}"
+
+        ergebnis = _in_fremdem_verzeichnis(
+            tmp_path,
+            f"""
+            import importlib.util
+            from pathlib import Path
+
+            src = Path({str((ROOT / "src").resolve())!r})
+            treffer = []
+            for name in {namen!r}:
+                spec = importlib.util.find_spec(name)
+                if spec is None:
+                    continue
+                orte = [spec.origin] if spec.origin else list(spec.submodule_search_locations or [])
+                if any(o and Path(o).resolve().is_relative_to(src) for o in orte):
+                    treffer.append(name)
+            print(",".join(treffer))
+            """,
+        )
+
+        assert ergebnis.returncode == 0, ergebnis.stderr
+        aufloesend = [n for n in ergebnis.stdout.strip().split(",") if n]
+        assert not aufloesend, (
+            f"Diese Namen aus src/ lösen als Top-Level-Module nach src/ auf: {aufloesend}. "
+            "Dann gibt es zwei Wege zu demselben Modul — und zwei Klassen gleichen Namens."
+        )
+
+
+# --- Typprüfer (P4.4) -------------------------------------------------------
+
+
+class TestDerTypprueferLaeuftUeberEineListeDieWaechst:
+    """**P4.4: mypy prüft die Grenzen — und der Umfang steht im Werkzeug.**
+
+    Bis zum 2026-09-11 hatte das Projekt keinen Typprüfer. `sweep_metadata_args`
+    war mit `-> SimpleNamespace` annotiert und lieferte `RunArgs` — zwölf Tage lang
+    bei grünem `ruff` (P3.15). Invariante 4 hängt daran, dass eine Typangabe
+    stimmt, und ohne Prüfer stimmte sie nur zufällig.
+
+    **Nicht das ganze Repo:** Die Liste in `[tool.mypy] files` fängt bei den
+    Grenzen an und wächst. Diese Klasse hält fest, dass sie das tut, was sie
+    verspricht — keine tote Zeile darin (die den Umfang still verkleinerte), und
+    ein Befehl in der CI, der sie ausführt.
+    """
+
+    def _konfig(self) -> dict:
+        return _pyproject()["tool"]["mypy"]
+
+    def test_die_liste_ist_nicht_leer_und_jede_zeile_gibt_es(self):
+        dateien = self._konfig().get("files", [])
+
+        assert dateien, "Die mypy-Liste ist leer — dann prüft der Typprüfer nichts."
+        fehlend = [d for d in dateien if not (ROOT / d).exists()]
+        assert not fehlend, (
+            f"Diese Einträge der mypy-Liste gibt es nicht: {fehlend}. Eine tote Zeile "
+            "verkleinert den Umfang still."
+        )
+
+    def test_die_ci_fuehrt_mypy_aus(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        assert re.search(r"^\s+run:\s+mypy\s*$", workflow, re.M), (
+            "tests.yml führt `mypy` nicht aus — dann gilt die Liste nur lokal, und eine "
+            "Annotation, die ihrem return widerspricht, bleibt in der CI grün."
+        )
+
+    def test_mypy_steht_im_extra_dev(self):
+        dev = {_name(item) for item in _pyproject()["project"]["optional-dependencies"]["dev"]}
+
+        assert (
+            "mypy" in dev
+        ), "mypy fehlt im Extra `dev` — `pip install -e .[dev]` brächte ihn nicht."

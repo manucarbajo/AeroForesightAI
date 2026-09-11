@@ -23,6 +23,11 @@ from src.reporting.run_scenario_generator.factors import _load_factor_catalog, b
 RUN_SCENARIO_MARKER = "RUN_SCENARIO_GENERATOR"
 
 
+#: Die Vorlage für den Abschlusstext eines Laufs — **neben dem Code**, nicht im
+#: Arbeitsverzeichnis gesucht. Modulkonstante, damit ein Test sie umbiegen kann.
+VORLAGE = Path(__file__).resolve().parents[2] / "prompts" / "run_scenario.md"
+
+
 def build_scenario_prompt(context: RunScenarioContext) -> str:
     catalog = _load_factor_catalog()
     factor_profile = build_factor_profile(context, catalog)
@@ -63,12 +68,15 @@ def build_scenario_prompt(context: RunScenarioContext) -> str:
         "agent_digest": context.agent_digest,
     }
 
-    prompt_path = Path("src/prompts/run_scenario.md")
-    if prompt_path.exists():
-        prompt_template = prompt_path.read_text(encoding="utf-8")
-    else:
-        # Fallback if file is missing
-        prompt_template = "Bitte erstelle 3 Szenarien. Lese die Daten aus RUN CONTEXT.\n"
+    # **Neben dem Code gesucht, und ohne stillen Rückfall** (2026-09-11). Bis
+    # dahin stand hier `Path("src/prompts/run_scenario.md")` — relativ zum
+    # Arbeitsverzeichnis. Lief der Prozess anderswo, fand er die Vorlage nicht und
+    # nahm ohne jede Meldung einen Einzeiler: Das Sprachmodell bekam eine
+    # verkümmerte Anweisung, und niemand erfuhr es. Seit P4.6 ist `src` von überall
+    # importierbar, der Fall also erreichbar. Eine fehlende Vorlage scheitert jetzt
+    # laut — `generate_run_scenario` fängt das ab, nimmt das Template und hält den
+    # Vorfall fest (Invariante 1: ein Ausfall ist sichtbar).
+    prompt_template = VORLAGE.read_text(encoding="utf-8")
 
     return f"{RUN_SCENARIO_MARKER}\n\nRUN CONTEXT (Ground Truth):\n```json\n{json.dumps(payload, ensure_ascii=False, indent=2)}\n```\n\n{prompt_template}\n"
 

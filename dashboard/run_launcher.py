@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import IO, Callable, cast
 
 from dashboard.config_catalog import (
     ConfigDraft,
@@ -127,7 +127,10 @@ def launch_config_to_draft(config: RunLaunchConfig) -> ConfigDraft:
 def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
     return RunLaunchConfig(
         rounds=int(draft.rounds),
-        seed=int(draft.seed) if draft.use_seed else None,
+        # `validate_draft` weist «eingeschaltet, aber leer» vorher ab (P1.9-W1.6). mypy
+        # sieht diese Prüfung nicht; der `cast` sagt es ihm, ohne das Verhalten zu
+        # ändern (P4.4).
+        seed=int(cast(int, draft.seed)) if draft.use_seed else None,
         scenario_mode=draft.scenario_mode,
         sweep_id=draft.sweep_id,
         simulation_config_file=draft.simulation_config_file,
@@ -358,7 +361,7 @@ def launch_simulation(
             )
 
             all_artifacts: list[dict[str, str | None]] = []
-            child_run_ids: list[str] = []
+            child_run_ids = []
             total_events = 0
             for index, run_result in enumerate(multi_result.runs, start=1):
                 sub_run_id = f"run_{index:03d}"
@@ -490,6 +493,9 @@ def launch_simulation(
     if on_progress is None:
         return _run_body()
 
+    # Gebunden **nach** der Prüfung: In der inneren Klasse unten verliert ein
+    # Typprüfer die Einengung von `on_progress` auf «nicht None» (P4.4).
+    melde = on_progress
     stdout = sys.stdout
 
     class _StdoutTee:
@@ -498,12 +504,14 @@ def launch_simulation(
             for line in data.splitlines():
                 stripped = line.strip()
                 if stripped:
-                    on_progress(stripped)
+                    melde(stripped)
 
         def flush(self) -> None:
             stdout.flush()
 
     # Zwei Kanaele: `print` ueber den Tee, `logging` ueber den Handler. Beide
     # landen im selben Fortschrittsfenster, keiner doppelt.
-    with contextlib.redirect_stdout(_StdoutTee()), progress_logging(on_progress):
+    # `_StdoutTee` ist Duck-Typing: `write` und `flush` reichen `print`; das volle
+    # `IO[str]`, das `redirect_stdout` laut Typangabe verlangt, braucht es nicht.
+    with contextlib.redirect_stdout(cast(IO[str], _StdoutTee())), progress_logging(melde):
         return _run_body()

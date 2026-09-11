@@ -53,16 +53,21 @@ def coerce_payload(payload: Any | None) -> dict[str, Any]:
     if not payload_dict:
         return base_payload
 
-    if (
-        isinstance(payload_dict.get("max_ticks"), int)
-        or isinstance(payload_dict.get("max_rounds"), int)
-        or isinstance(payload_dict.get("rounds"), int)
-    ):
-        ticks = (
-            payload_dict.get("max_ticks")
-            or payload_dict.get("max_rounds")
-            or payload_dict.get("rounds")
-        )
+    # **Der erste Wert, der wirklich ein `int` ist** (2026-09-11, gefunden von mypy in
+    # P4.4). Bis dahin prüfte die Bedingung «ist irgendeiner ein `int`», die Auswahl
+    # nahm aber den ersten *wahrheitswerten*: `{"max_ticks": 0}` reichte `None` an
+    # `int()` und stürzte mit `TypeError` ab, und `{"max_ticks": "abc", "rounds": 5}`
+    # versuchte `int("abc")`, obwohl `rounds` gültig war. Ob null Ticks zulässig
+    # sind, entscheidet die Validierung; hier wird nur übernommen.
+    ticks = next(
+        (
+            payload_dict[schluessel]
+            for schluessel in ("max_ticks", "max_rounds", "rounds")
+            if isinstance(payload_dict.get(schluessel), int)
+        ),
+        None,
+    )
+    if ticks is not None:
         base_payload.setdefault("clock", {})
         if isinstance(base_payload.get("clock"), dict):
             base_payload["clock"]["max_ticks"] = int(ticks)

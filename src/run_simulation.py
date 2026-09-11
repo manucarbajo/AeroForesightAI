@@ -43,7 +43,7 @@ if __package__ in {None, ""}:
 
 from src.cib.scenario_agent_node import ScenarioAgentNode, render_scenarios_markdown
 from src.config_loader import build_initial_state
-from src.llm import STUDIO_DIR, MockLLM, OllamaClient, OllamaConfig, load_env
+from src.llm import STUDIO_DIR, LLMCallable, MockLLM, OllamaClient, OllamaConfig, load_env
 from src.llm.defaults import (
     DEFAULT_BASE_URL,
     DEFAULT_MAX_TOKENS,
@@ -232,7 +232,7 @@ def _parse_args() -> argparse.Namespace:
 def save_run_outputs(
     state,
     args: RunArgs,
-    llm: OllamaClient,
+    llm: LLMCallable,
     *,
     run_dir: Path,
     run_id: str,
@@ -656,7 +656,7 @@ def _main() -> int:
         if not args.run_id:
             raise ValueError("--generate-run-scenario-only requires --run-id")
         if args.mock_llm:
-            llm = MockLLM()
+            llm: LLMCallable = MockLLM()
         else:
             llm = _ollama_client(llm_config)
         run_dir = resolve_run_output_dir(args.run_id)

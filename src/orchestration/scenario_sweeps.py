@@ -15,7 +15,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
@@ -196,7 +196,7 @@ UNBEACHTET: tuple[Festlegung, ...] = (
         "rounds",
         None,
         "Jedes Szenario läuft so lang, wie es angelegt ist. Vier der hinterlegten "
-        "Szenarien sind auf 50 Ticks entworfen und prüfen ihren Schlusspunkt genau "
+        "Szenarien sind auf 120 Ticks entworfen und prüfen ihren Schlusspunkt genau "
         "dort — auf 40 Ticks gekürzt erreichen sie ihn nie. Die Länge stellen Sie "
         "für einen einzelnen Lauf ein, nicht für den Vergleich.",
     ),
@@ -488,6 +488,32 @@ def evaluate_milestones(
     return [evaluate_milestone_on_state(state, ms) for ms in milestones if ms.tick == tick]
 
 
+class KeinSprachmodell:
+    """Steht, wo der Runner ein Sprachmodell verlangt — und scheitert laut, wenn es gerufen wird.
+
+    **Ein Sweep rechnet ohne Sprachmodell** (``FESTLEGUNGEN`` erzwingt
+    ``deterministic_only``), aber :class:`SimulationRunner` verlangt eines. Bis
+    zum 2026-09-11 stand hier eine nackte Funktion ``dummy_llm(prompt)``, und
+    gefunden hat das ``mypy`` in P4.4: Verlangt ist ein Objekt mit ``.call()``.
+
+    **Gemessen, was das bedeutete:** Im deterministischen Modus nichts — die
+    Agenten laufen nicht, und die Umgebung hält das Objekt, ruft es aber nie
+    (0 Aufrufe, 0 Ausfälle über einen Lauf). Schaltet man den Modus ab, ruft
+    jeder Agent es, und der Lauf meldet jeden Aufruf als Ausfall (Invariante 1)
+    — mit der alten Funktion als ``AttributeError: 'function' object has no
+    attribute 'call'``, also mit einer Meldung, die die falsche Ursache nennt.
+    Dieser Platzhalter nennt die richtige.
+    """
+
+    def call(self, prompt: str) -> str:
+        raise RuntimeError(
+            "Der Sweep-Pfad hat kein Sprachmodell: `FESTLEGUNGEN` legt "
+            "`deterministic_only` fest, und trotzdem hat ein Knoten eines gerufen. "
+            "Wer den Rechenmodus eines Sweeps umstellt, gibt `run_single_sweep` "
+            "ein echtes Modell."
+        )
+
+
 def run_single_sweep(
     sweep: SweepConfig,
     *,
@@ -499,7 +525,7 @@ def run_single_sweep(
 
     **``llm_narrative`` ist der Schalter, den dieser Pfad als einziger nicht
     hatte** (P4.2). Die Ticks rechnet ein Sweep ohnehin deterministisch — der
-    ``dummy_llm`` unten wird nie gerufen. Ein Sprachmodell erreicht er an genau
+    :class:`KeinSprachmodell` unten wird nie gerufen. Ein Sprachmodell erreicht er an genau
     **einer** Stelle: dem Abschlusstext. Mit ``llm_narrative=False`` entsteht
     der aus dem deterministischen Template, und es wird kein Endpunkt befragt.
 
@@ -541,10 +567,6 @@ def run_single_sweep(
     if ticks_override:
         state.clock.max_ticks = ticks_override
 
-    # Create a dummy LLM (never called in deterministic mode)
-    def dummy_llm(prompt):
-        return "{}"
-
     # Die drei festgelegten Werte kommen aus `FESTLEGUNGEN` und stehen hier
     # nicht mehr als Literal (W1.1). Der Vertrag ist damit die Quelle des
     # Verhaltens: Wer ihn ändert, ändert den Lauf — und wer den Lauf ändert,
@@ -553,12 +575,12 @@ def run_single_sweep(
     festgelegt = {f.feld: f.wert for f in FESTLEGUNGEN}
 
     runner = SimulationRunner(
-        llm=dummy_llm,
+        llm=KeinSprachmodell(),
         options=RunnerOptions(
             enable_market=True,
             enable_cib=True,
             deterministic_only=bool(festgelegt["deterministic_only"]),
-            checkpoint_interval=int(festgelegt["checkpoint_interval"]),
+            checkpoint_interval=int(cast(int, festgelegt["checkpoint_interval"])),
             verbose_ticks=False,
         ),
     )
@@ -567,7 +589,7 @@ def run_single_sweep(
     run_id_str = f"sweeps/sweep_{sweep.id}"
     final_state = runner.run(
         state,
-        seed=int(festgelegt["seed"]),
+        seed=int(cast(int, festgelegt["seed"])),
         run_id=run_id_str,
     )
     elapsed = time.time() - start_time

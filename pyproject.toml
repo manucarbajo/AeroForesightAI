@@ -25,6 +25,7 @@ dev = [
     "pytest",
     "ruff",
     "black",
+    "mypy",
 ]
 # Der Ueberlauf-Waechter aus P1.7-D (`tests/test_web_overflow.py`). Bewusst ein
 # eigenes Extra und nicht Teil von `dev`: Er braucht einen echten Browser
@@ -43,6 +44,16 @@ backtest = [
     "openpyxl",
     "xlrd<3",
 ]
+
+# **Welche Pakete die Installation liefert** (P4.6). Ohne diese Angabe hielt
+# setuptools das Verzeichnis `src` für das übliche src-Layout und legte es
+# SELBST in den Suchpfad: `import src` scheiterte außerhalb des Repos, und
+# `models`, `llm`, `agents` … lösten als lose Top-Level-Module auf — mit zwei
+# verschiedenen `SimulationState`-Klassen, je nach Importweg. Das Paket heißt
+# hier aber `src`, also wird es als Paket installiert.
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]
 
 [tool.black]
 line-length = 100
@@ -66,6 +77,37 @@ ignore = ["E501", "E402"]
 # Import order here is load-bearing (breaks a state_models/event_models circular
 # import if alphabetized) — see comment in the file itself.
 "src/models/__init__.py" = ["I001"]
+
+# **Der Typprüfer für die Grenzen** (P4.4). Nicht das ganze Repo und nicht
+# `--strict`: Ein Prüfer, der hundert Meldungen wirft, wird abgeschaltet statt
+# gelesen. Angefangen wird bei den Grenzen — den Modellen und den Modulen, die
+# `RunArgs` und `SimulationState` erzeugen oder lesen. **Die Liste wächst**, und
+# jede Datei kommt erst hinein, wenn sie sauber ist.
+#
+# `python_version = 3.12`, weil numpys eigene Typdateien Syntax ab 3.12 benutzen
+# (`type`-Anweisung) — mit 3.11 bricht mypy dort ab, bevor er etwas prüft. 3.12
+# ist zugleich die Version der CI. `follow_imports = silent`: Importierte Module
+# außerhalb der Liste werden gelesen, ihre Fehler aber nicht gemeldet.
+[tool.mypy]
+python_version = "3.12"
+follow_imports = "silent"
+files = [
+    "src/models",
+    "src/config_loader.py",
+    "src/run_simulation.py",
+    "src/orchestration/langgraph_adapter.py",
+    "src/orchestration/scenario_sweeps.py",
+    "src/orchestration/simulation_runner.py",
+    "src/reporting/output_writer/metadata.py",
+    "src/reporting/output_writer/provenance.py",
+    "dashboard/run_launcher.py",
+]
+
+# `langgraph_api` liefert keine Typangaben. Importiert wird es nur, um zu prüfen,
+# ob LangGraph Studio installiert ist (`run_simulation._launch_studio`).
+[[tool.mypy.overrides]]
+module = ["langgraph_api"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

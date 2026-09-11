@@ -106,7 +106,8 @@ dem Modell vorgibt, nicht was im Modell herauskommt. Jedes trägt seine
 **Begründung mit Quellen** — die Kohaerenz wird in Prosa belegt, es gibt keinen
 Algorithmus dafür. Belegt ist dabei immer die *Geschichte*, nicht ihre
 Bezifferung: Bei welchem Tick die CO₂-Abgabe auf welchen Wert springt, ist
-gesetzt und nicht aus Daten geschätzt. Siehe [Presets](/doku/presets).
+gesetzt und nicht aus Daten geschätzt. Welche Zeitspanne es beschreibt, sagt
+jedes Rahmenszenario in seinem Vorbehalt. Siehe [Presets](/doku/presets).
 
 **Run-ID** — Eindeutige Kennung eines Laufs, zugleich der Name seines
 Ausgabeverzeichnisses.

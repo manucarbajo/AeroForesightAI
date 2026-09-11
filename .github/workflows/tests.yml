@@ -18,13 +18,26 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install ruff black pytest
+          pip install ruff black pytest mypy
+          # P4.6: the project itself, so tests/test_packaging.py can measure that
+          # `src` is importable as a package from outside the repo. --no-deps,
+          # because requirements.txt already brought the dependencies. Until P4.6
+          # CI never installed the project, and `src` was importable only because
+          # pytest puts the repository root on sys.path.
+          pip install -e . --no-deps
 
       - name: Lint (ruff)
         run: ruff check .
 
       - name: Format check (black)
         run: black --check .
+
+      - name: Type check (mypy)
+        # P4.4: the boundaries first. The file list lives in pyproject.toml
+        # ([tool.mypy] files) and grows -- a file goes in once it is clean. Until
+        # P4.4 the project had no type checker at all, and a signature that
+        # contradicted its return (P3.15) stayed green for twelve days.
+        run: mypy
 
       - name: Tests (pytest)
         # There is no deselect list any more, and there must not be a new one.

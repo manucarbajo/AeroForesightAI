@@ -1,9 +1,9 @@
 {
   "id": "co2_delayed",
   "name": "CO₂-Verzögerung",
-  "description": "Die CO₂-Bepreisung bleibt lange niedrig und steigt erst ab Tick 25 steil an. SAF-Mandat ebenfalls verzögert. Simuliert politische Trägheit.",
-  "rationale": "In der Basisversion steigt carbon_tax_level bei Tick 15 auf 120 EUR und bei Tick 30 auf 200 EUR. Dieses Szenario verzögert beide Stufen um 10 Ticks (Tick 25 und Tick 40), sodass die Regulierung viel später greift. SAF-Mandat wird ebenfalls um 8 Ticks verschoben. Damit bleiben F2 (moderate Regulierung) und F6 (Fliegen akzeptiert) länger aktiv, da die Schwellwerte (carbon_tax > 100 für F2.2, carbon_tax > 80 für F6.2) erst spät erreicht werden.",
-  "max_ticks": 50,
+  "description": "Die CO₂-Bepreisung bleibt lange niedrig und steigt erst ab Tick 60 — nach fünf Jahren — steil an. SAF-Mandat ebenfalls verzögert. Simuliert politische Trägheit.",
+  "rationale": "In der Standard-Ausgangslage steigt carbon_tax_level bei Tick 15 auf 120 EUR und bei Tick 30 auf 200 EUR. Dieses Szenario setzt beide Stufen erst bei Tick 60 und Tick 96, also nach fünf und acht Jahren; das SAF-Mandat folgt bei Tick 38 und Tick 58 (Standard: 8 und 16). Damit bleiben F2 (moderate Regulierung) und F6 (Fliegen akzeptiert) länger aktiv, da die Schwellwerte (carbon_tax > 100 für F2.2, carbon_tax > 80 für F6.2) erst spät erreicht werden.",
+  "max_ticks": 120,
   "preisstrategie": "auslastung",
   "property_overrides": [
     {
@@ -18,14 +18,14 @@
           }
         },
         {
-          "active_from_tick": 25,
+          "active_from_tick": 60,
           "effect": {
             "type": "set",
             "value": 120.0
           }
         },
         {
-          "active_from_tick": 40,
+          "active_from_tick": 96,
           "effect": {
             "type": "set",
             "value": 200.0
@@ -38,14 +38,14 @@
       "baseline": 0.0,
       "rules": [
         {
-          "active_from_tick": 16,
+          "active_from_tick": 38,
           "effect": {
             "type": "set",
             "value": 0.02
           }
         },
         {
-          "active_from_tick": 24,
+          "active_from_tick": 58,
           "effect": {
             "type": "set",
             "value": 0.05
@@ -58,28 +58,28 @@
       "baseline": 1.0,
       "rules": [
         {
-          "active_from_tick": 10,
+          "active_from_tick": 24,
           "effect": {
             "type": "set",
             "value": 1.06
           }
         },
         {
-          "active_from_tick": 20,
+          "active_from_tick": 48,
           "effect": {
             "type": "set",
             "value": 1.12
           }
         },
         {
-          "active_from_tick": 28,
+          "active_from_tick": 67,
           "effect": {
             "type": "set",
             "value": 1.13
           }
         },
         {
-          "active_from_tick": 42,
+          "active_from_tick": 101,
           "effect": {
             "type": "set",
             "value": 1.1
@@ -91,31 +91,31 @@
   "factor_overrides": [],
   "milestones": [
     {
-      "tick": 15,
+      "tick": 36,
       "description": "CO₂-Steuer sollte bei 50 EUR bleiben (verzögert, kein Anstieg wie in Basis)",
       "check_property": "carbon_tax_level",
       "expected_value": 50.0
     },
     {
-      "tick": 25,
+      "tick": 60,
       "description": "CO₂-Steuer springt auf 120 EUR — Regulierungsschwelle F2.2 wird erreicht",
       "check_property": "carbon_tax_level",
       "expected_value": 120.0
     },
     {
-      "tick": 25,
+      "tick": 60,
       "description": "Faktor F2 sollte auf F2.2 (strenge Regulierung) wechseln",
       "check_factor": "F2",
       "expected_factor_state": "F2.2"
     },
     {
-      "tick": 30,
-      "description": "Flight Shaming F6.2 sollte aktiv sein (carbon_tax > 80 seit Tick 25)",
+      "tick": 72,
+      "description": "Flight Shaming F6.2 sollte aktiv sein (carbon_tax > 80 seit Tick 60)",
       "check_factor": "F6",
       "expected_factor_state": "F6.2"
     },
     {
-      "tick": 40,
+      "tick": 96,
       "description": "CO₂-Steuer erreicht 200 EUR — maximaler Regulierungsdruck",
       "check_property": "carbon_tax_level",
       "expected_value": 200.0
@@ -124,7 +124,7 @@
   "art": "rahmen",
   "kohaerenz": {
     "these": "Die beschlossene Verschärfung kommt, aber deutlich später: Politische Trägheit verschiebt CO₂-Bepreisung und Beimischungsziel gemeinsam nach hinten, ohne sie aufzuheben.",
-    "begruendung": "Verzögerung ist ein eigener Rahmen wert, weil nicht das Ob revidiert wird, sondern das Wann — und weil das die Frage ist, die eine Fluggesellschaft wirklich umtreibt. Die beiden Verläufe sind aus einem Grund gemeinsam verschoben: Bepreisung und Beimischungspflicht stammen aus demselben Gesetzespaket und werden politisch gemeinsam verhandelt; nur eines von beiden zu verzögern wäre die unbegründetere Annahme. Auch der späte, dafür steilere Anstieg folgt daraus und ist kein Effekt um seiner selbst willen: Wer das Zieljahr beibehält und den Beginn verschiebt, muss den Rest steiler nachholen. **Der Kapazitätspfad ist die Probe auf die These.** Solange die Verschärfung ausbleibt, wächst das Angebot wie im Fortschreibungsfall — eine Airline plant ihre Flotte Jahre im Voraus und richtet sie nach dem aus, was gilt, nicht nach dem, was angekündigt ist. Erst wenn die Bepreisung ab Tick 25 wirklich greift, flacht der Ausbau ab und geht leicht zurück. Genau darin besteht die Verzögerung: nicht in einer anderen Endlage, sondern in einem Jahrzehnt weiter gebauter Kapazität, die danach teuer wird. Die Preisstrategie bleibt `auslastung` — der Wettbewerb ist in dieser Welt nicht ausgesetzt, nur die Regulierung.",
+    "begruendung": "Verzögerung ist ein eigener Rahmen wert, weil nicht das Ob revidiert wird, sondern das Wann — und weil das die Frage ist, die eine Fluggesellschaft wirklich umtreibt. Die beiden Verläufe sind aus einem Grund gemeinsam verschoben: Bepreisung und Beimischungspflicht stammen aus demselben Gesetzespaket und werden politisch gemeinsam verhandelt; nur eines von beiden zu verzögern wäre die unbegründetere Annahme. Auch der späte, dafür steilere Anstieg folgt daraus und ist kein Effekt um seiner selbst willen: Wer das Zieljahr beibehält und den Beginn verschiebt, muss den Rest steiler nachholen. **Der Kapazitätspfad ist die Probe auf die These.** Solange die Verschärfung ausbleibt, wächst das Angebot wie im Fortschreibungsfall — eine Airline plant ihre Flotte Jahre im Voraus und richtet sie nach dem aus, was gilt, nicht nach dem, was angekündigt ist. Erst wenn die Bepreisung ab Tick 60 wirklich greift, flacht der Ausbau ab und geht leicht zurück. Genau darin besteht die Verzögerung: nicht in einer anderen Endlage, sondern in fünf Jahren weiter gebauter Kapazität, die danach teuer wird. Die Preisstrategie bleibt `auslastung` — der Wettbewerb ist in dieser Welt nicht ausgesetzt, nur die Regulierung.",
     "quellen": [
       "docs/research/links.md — EU-ETS / Fit for 55 (Rat der EU, Europäische Kommission); Richtlinie (EU) 2023/958: Luftverkehr im ETS, Auslaufen der freien Zuteilung 2024–2026",
       "Verordnung (EU) 2023/2405 (ReFuelEU Aviation): SAF-Beimischung 2 % ab 2025, 6 % ab 2030",
@@ -133,6 +133,6 @@
       "docs/research/literature/WIREs Climate Change - 2010 - Rounsevell - Developing qualitative scenario storylines for environmental change assessment.pdf — die Methode, der Variante C folgt",
       "Eurostat `avia_paoc`, gewerbliche Passagierflüge EU-27, als Größenordnung für den Ausbaupfad vor einer Verschärfung"
     ],
-    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick ist seit P3.8 zwar ein **Monat**, trägt aber weiterhin **kein Datum** (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Dieser Rahmen läuft 50 Ticks, also gut vier Jahre — die «verzögerte» Stufe bei Tick 40 liegt damit gut drei Jahre nach dem Start. Ob das die Spanne ist, die diese Begründung meint, ist eine offene Produktfrage (P4.5). Der Kapazitätspfad teilt diesen Vorbehalt: Die **Reihenfolge** — erst Ausbau, dann Abflachen nach dem Kostenschub — ist die Aussage; die Höhen und die Ticks sind gesetzt."
+    "vorbehalt": "Belegt ist die Storyline, nicht ihre Bezifferung. Bei welchem Tick welcher Wert gesetzt wird, ist gesetzt und nicht geschätzt — dieselbe Trennung von Form und Wert wie bei den Buchungskoeffizienten (P2.1). Und ein Tick ist seit P3.8 zwar ein **Monat**, trägt aber weiterhin **kein Datum** (Invariante 5): Die Verläufe sind nicht auf Jahreszahlen abbildbar. Dieser Rahmen läuft 120 Ticks, also zehn Jahre — seit P4.5; bis dahin waren es 50 Ticks mit denselben Marken im selben Verhältnis, und die «verzögerte» Stufe lag nach gut drei Jahren: kürzer als der Abstand zwischen zwei Stufen von ReFuelEU. Jetzt liegt sie nach acht Jahren. Der Kapazitätspfad teilt diesen Vorbehalt: Die **Reihenfolge** — erst Ausbau, dann Abflachen nach dem Kostenschub — ist die Aussage; die Höhen und die Ticks sind gesetzt."
   }
 }
