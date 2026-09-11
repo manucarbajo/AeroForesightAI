@@ -138,7 +138,6 @@ Beim Entfernen ist aufgefallen, **warum das nicht bloß Aufräumen ist**: Das Ko
 
 | Fundstelle | Befund | Auswirkung |
 | --- | --- | --- |
-| Kein `tests/conftest.py` im gesamten Repo | ~35+ Vorkommen des Musters `tempfile.mkdtemp(...)` + `try/finally: shutil.rmtree(...)`, verteilt über `test_checkpoint_manager.py`, `test_dashboard_service.py`, `test_figure_generator.py`, `test_run_scenario_generator.py`, `test_state_explorer.py`. | Ließe sich durch das eingebaute `tmp_path`-Pytest-Fixture (kein `conftest.py` nötig) auf eine Zeile pro Test reduzieren. |
 | `class MockLLM` mehrfach unabhängig definiert | Near-identisch/identisch in `tests/test_agent_node.py`, `tests/test_parallel_round.py`, `tests/test_simulation_runner_e2e.py` (die vierte Kopie lag in `tests/debug_run_sequential.py`, gelöscht mit P4.2 am 2026-09-11). | Ein gemeinsames Fixture/Helper würde die Duplikation beseitigen. |
 
 ## Reporting / Run-Artefakte

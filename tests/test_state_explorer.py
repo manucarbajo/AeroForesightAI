@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -150,83 +148,63 @@ class TestStateExplorer:
         assert parse_tick_hint("Was passierte bei Tick 15?") == 15
         assert parse_tick_hint("Verlauf über alle ticks") is None
 
-    def test_load_run_context(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="explorer_test_"))
-        try:
-            run_id = "run_test_explorer"
-            _write_sample_run(tmpdir / run_id, run_id)
-            context = load_run_context(run_id, focus_tick=15, outputs_root=tmpdir)
-            assert context.run_id == run_id
-            assert context.focus_tick == 15
-            assert len(context.tick_mechanics["ticks"]) == 1
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_load_run_context(self, tmp_path):
+        run_id = "run_test_explorer"
+        _write_sample_run(tmp_path / run_id, run_id)
+        context = load_run_context(run_id, focus_tick=15, outputs_root=tmp_path)
+        assert context.run_id == run_id
+        assert context.focus_tick == 15
+        assert len(context.tick_mechanics["ticks"]) == 1
 
-    def test_load_factors_from_csv(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="explorer_factors_"))
-        try:
-            run_id = "run_factors_csv"
-            run_dir = tmpdir / run_id
-            _write_sample_run(run_dir, run_id)
-            ts_dir = run_dir / "timeseries"
-            ts_dir.mkdir(parents=True, exist_ok=True)
-            (ts_dir / "factors.csv").write_text(
-                "tick,F1,F2\n15,F1.1,F2.2\n",
-                encoding="utf-8",
-            )
-            context = load_run_context(run_id, focus_tick=15, outputs_root=tmpdir)
-            assert len(context.factors_timeseries) == 1
-            assert context.factors_timeseries[0]["F2"] == "F2.2"
-            block = build_grounded_context_block(context)
-            assert "factors_timeseries" in block
-            assert "F2.2" in block
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_load_factors_from_csv(self, tmp_path):
+        run_id = "run_factors_csv"
+        run_dir = tmp_path / run_id
+        _write_sample_run(run_dir, run_id)
+        ts_dir = run_dir / "timeseries"
+        ts_dir.mkdir(parents=True, exist_ok=True)
+        (ts_dir / "factors.csv").write_text(
+            "tick,F1,F2\n15,F1.1,F2.2\n",
+            encoding="utf-8",
+        )
+        context = load_run_context(run_id, focus_tick=15, outputs_root=tmp_path)
+        assert len(context.factors_timeseries) == 1
+        assert context.factors_timeseries[0]["F2"] == "F2.2"
+        block = build_grounded_context_block(context)
+        assert "factors_timeseries" in block
+        assert "F2.2" in block
 
-    def test_grounded_context_contains_tick_and_delta_events(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="explorer_ctx_"))
-        try:
-            run_id = "run_test_explorer"
-            _write_sample_run(tmpdir / run_id, run_id)
-            context = load_run_context(run_id, focus_tick=15, outputs_root=tmpdir)
-            block = build_grounded_context_block(context)
-            assert "tick_mechanics" in block
-            assert "booking_rate" in block
-            assert "[delta:property:carbon_tax_level]" in block
-            assert "[delta:price]" in block
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_grounded_context_contains_tick_and_delta_events(self, tmp_path):
+        run_id = "run_test_explorer"
+        _write_sample_run(tmp_path / run_id, run_id)
+        context = load_run_context(run_id, focus_tick=15, outputs_root=tmp_path)
+        block = build_grounded_context_block(context)
+        assert "tick_mechanics" in block
+        assert "booking_rate" in block
+        assert "[delta:property:carbon_tax_level]" in block
+        assert "[delta:price]" in block
 
-    def test_explorer_prompt_is_grounded(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="explorer_prompt_"))
-        try:
-            run_id = "run_test_explorer"
-            _write_sample_run(tmpdir / run_id, run_id)
-            context = load_run_context(run_id, focus_tick=15, outputs_root=tmpdir)
-            llm = _RecordingLLM()
-            explorer = StateExplorer(context, llm=llm)
-            explorer.ask("Warum fiel booking bei Tick 15?")
+    def test_explorer_prompt_is_grounded(self, tmp_path):
+        run_id = "run_test_explorer"
+        _write_sample_run(tmp_path / run_id, run_id)
+        context = load_run_context(run_id, focus_tick=15, outputs_root=tmp_path)
+        llm = _RecordingLLM()
+        explorer = StateExplorer(context, llm=llm)
+        explorer.ask("Warum fiel booking bei Tick 15?")
 
-            assert EXPLORER_INSTRUCTIONS in llm.last_prompt
-            assert "Never invent numbers" in llm.last_prompt
-            assert "booking_rate" in llm.last_prompt
-            assert "132.5" in llm.last_prompt
-        finally:
-            shutil.rmtree(tmpdir)
+        assert EXPLORER_INSTRUCTIONS in llm.last_prompt
+        assert "Never invent numbers" in llm.last_prompt
+        assert "booking_rate" in llm.last_prompt
+        assert "132.5" in llm.last_prompt
 
-    def test_grounded_context_contains_run_scenario(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="explorer_scenario_"))
-        try:
-            run_id = "run_test_explorer"
-            _write_sample_run(tmpdir / run_id, run_id)
-            context = load_run_context(run_id, outputs_root=tmpdir)
-            assert context.run_scenario is not None
-            block = build_grounded_context_block(context)
-            assert "run_scenario" in block
-            assert "F1" in block
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_grounded_context_contains_run_scenario(self, tmp_path):
+        run_id = "run_test_explorer"
+        _write_sample_run(tmp_path / run_id, run_id)
+        context = load_run_context(run_id, outputs_root=tmp_path)
+        assert context.run_scenario is not None
+        block = build_grounded_context_block(context)
+        assert "run_scenario" in block
+        assert "F1" in block
 
-    def test_missing_run_raises(self):
+    def test_missing_run_raises(self, tmp_path):
         with pytest.raises(FileNotFoundError):
-            load_run_context("run_does_not_exist_12345", outputs_root=tempfile.gettempdir())
+            load_run_context("run_does_not_exist_12345", outputs_root=tmp_path)

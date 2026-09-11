@@ -1,5 +1,4 @@
 import json
-import tempfile
 from pathlib import Path
 
 from src.config_loader import build_initial_state
@@ -9,7 +8,7 @@ from src.models.event_models import EventLogEntry, PriceHistoryEntry, RoundResul
 from src.reporting.output_writer import save_final_narrative, save_tick_mechanics
 
 
-def test_includes_all_agent_events_per_tick() -> None:
+def test_includes_all_agent_events_per_tick(tmp_path) -> None:
     state = build_initial_state()
     state.clock.current_tick = 1
     state.price_history.append(
@@ -136,10 +135,9 @@ def test_includes_all_agent_events_per_tick() -> None:
         ]
     )
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        run_dir = Path(tmp_dir)
-        narrative_path = save_final_narrative(state, run_dir=run_dir)
-        content = Path(narrative_path).read_text(encoding="utf-8")
+    run_dir = tmp_path
+    narrative_path = save_final_narrative(state, run_dir=run_dir)
+    content = Path(narrative_path).read_text(encoding="utf-8")
 
     # Agent reasoning is rendered as a blockquote under the reasoning block (P3.6)
     assert "> Provider invests in SAF." in content
@@ -157,7 +155,7 @@ def test_includes_all_agent_events_per_tick() -> None:
     assert "220/300 gebucht" in content
 
 
-def test_tick_mechanics_json_structure() -> None:
+def test_tick_mechanics_json_structure(tmp_path) -> None:
     state = build_initial_state()
     state.clock.current_tick = 1
     state.price_history.append(
@@ -190,10 +188,9 @@ def test_tick_mechanics_json_structure() -> None:
         }
     )
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        run_dir = Path(tmp_dir)
-        mechanics_path = save_tick_mechanics(state, run_dir=run_dir)
-        payload = json.loads(Path(mechanics_path).read_text(encoding="utf-8"))
+    run_dir = tmp_path
+    mechanics_path = save_tick_mechanics(state, run_dir=run_dir)
+    payload = json.loads(Path(mechanics_path).read_text(encoding="utf-8"))
 
     assert "reading_guide" in payload
     assert len(payload["ticks"]) == 1

@@ -391,3 +391,80 @@ def test_x(monkeypatch, tmp_path):
             "8",
             "13",
         ]
+
+
+def tempfile_importe(quelltext: str) -> list[str]:
+    """Jeder Import von `tempfile` — in jeder Form und an jeder Stelle, auch im Funktionsrumpf."""
+
+    import ast
+
+    funde: list[tuple[int, str]] = []
+    for knoten in ast.walk(ast.parse(quelltext)):
+        if isinstance(knoten, ast.Import):
+            funde += [
+                (knoten.lineno, f"import {a.name}")
+                for a in knoten.names
+                if a.name.split(".")[0] == "tempfile"
+            ]
+        elif (
+            isinstance(knoten, ast.ImportFrom) and (knoten.module or "").split(".")[0] == "tempfile"
+        ):
+            funde.append((knoten.lineno, f"from {knoten.module} import …"))
+    return [f"{zeile}: {was}" for zeile, was in sorted(funde)]
+
+
+class TestEinTestLegtKeinTempVerzeichnisVonHandAn:
+    """**Ein Temp-Verzeichnis kommt aus `tmp_path`, nicht aus `tempfile`.**
+
+    Der Befund zählte 32 `tempfile.mkdtemp` mit `try`/`finally: shutil.rmtree`.
+    Beim Anfassen waren es **39 Stellen in sechs Dateien**: 36 `mkdtemp`, zwei
+    `TemporaryDirectory` in `test_save_final_narrative.py` — einer Datei, die
+    als `unittest.TestCase` gar kein `tmp_path` bekommen konnte — und ein
+    `gettempdir`, das ein **geteiltes** Systemverzeichnis als Beleg dafür nahm,
+    dass ein Lauf *nicht* existiert. `tmp_path` ist leer, per Konstruktion.
+
+    **Gesucht wird deshalb der Import, nicht die Funktion.** Eine Liste der
+    Funktionen hätte genau die Lücke, aus der dieser Wächter kommt.
+
+    **Umgestellt per Skript mit Gegenprüfung gegen den Stand davor:** In jeder
+    Datei sind Testnamen und Zusicherungen gleich geblieben; verschwunden sind
+    ausschließlich die 36 `mkdtemp`-Präfixe, hinzugekommen ist nichts. Zeilen
+    innerhalb mehrzeiliger Literale wurden nicht umgerückt — bestimmt über die
+    Positionen im Syntaxbaum, weil Python 3.12 f-Strings anders in Tokens
+    zerlegt als gewöhnliche Strings.
+    """
+
+    def test_kein_test_importiert_tempfile(self):
+        befunde = [
+            f"{pfad.relative_to(ROOT)}:{fund}"
+            for pfad in sorted(TESTS.rglob("*.py"))
+            if "__pycache__" not in pfad.parts
+            for fund in tempfile_importe(pfad.read_text(encoding="utf-8"))
+        ]
+
+        assert not befunde, (
+            "Diese Stellen importieren tempfile:\n  "
+            + "\n  ".join(befunde)
+            + "\n\nEin Temp-Verzeichnis kommt aus dem Fixture `tmp_path` — pytest legt "
+            "es je Test leer an und räumt es selbst auf, auch nach einem Fehlschlag."
+        )
+
+    def test_der_waechter_sieht_jede_importform_und_keine_prosa(self):
+        """Ohne diese Zusage wäre grün nur die Abwesenheit einer Messung."""
+
+        quelltext = '''"""Ein Docstring, der import tempfile nur erwähnt."""
+import tempfile
+import tempfile as tf
+from tempfile import mkdtemp
+
+
+def test_x(tmp_path):
+    from tempfile import TemporaryDirectory
+'''
+
+        assert [fund.split(": ", 1)[0] for fund in tempfile_importe(quelltext)] == [
+            "2",
+            "3",
+            "4",
+            "8",
+        ]
