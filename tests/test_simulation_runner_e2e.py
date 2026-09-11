@@ -7,9 +7,10 @@ class VorschlagendeAgenten:
 
     **Nicht** `src.llm.studio_helpers.MockLLM`, und hier ist das tragend: Die
     Zusage lautet, dass ein vorgeschlagener Faktorwechsel **nicht** ungeprüft
-    durchkommt. **Gemessen am 2026-09-11** bleibt der Test mit dem Produkt-Mock
-    grün — dann aber, weil nichts vorgeschlagen wird, und nicht, weil etwas
-    abgewiesen wurde.
+    durchkommt. **Bis zum 2026-09-11 blieb der Test mit dem Produkt-Mock grün**
+    — dann aber, weil nichts vorgeschlagen wurde, und nicht, weil etwas
+    abgewiesen wurde. Seither prüft er als Vorbedingung, dass der Regulator
+    F2.2 wirklich vorgeschlagen hat.
     """
 
     def call(self, prompt: str) -> str:
@@ -57,6 +58,24 @@ def test_run_with_mock_agents_blocks_ungated_llm_factor_changes() -> None:
     runner = SimulationRunner(llm=VorschlagendeAgenten(), options=RunnerOptions(enable_market=True))
     run_graph = runner._build_sequential_runner(state.agents)
     final = run_graph(state)
+
+    # **Die Vorbedingung, ohne die die Zusicherung darunter leer wäre** (2026-09-11).
+    # Mit dem Produkt-Mock, der nichts vorschlägt, blieb F2 ebenfalls auf F2.1 —
+    # der Test war grün, ohne dass etwas abgewiesen wurde. Erst wenn der
+    # Regulator F2.2 wirklich vorgeschlagen hat, sagt «F2 bleibt F2.1», dass die
+    # Prüfung in `validate_factor_proposals` gegriffen hat. Der Vorschlag bleibt
+    # in `round_results` stehen; abgewiesen wird er erst im Environment-Node.
+    vorschlaege = [
+        (antwort.agent_id, aenderung.factor_id, aenderung.proposed_state)
+        for runde in final.round_results
+        if runde.round_number == 1
+        for antwort in runde.agent_responses
+        for aenderung in antwort.state_changes
+    ]
+    assert ("regulator", "F2", "F2.2") in vorschlaege, (
+        "Der Regulator hat F2.2 gar nicht vorgeschlagen — dann prüft die "
+        f"Zusicherung darunter nichts. Gefundene Vorschläge: {vorschlaege}"
+    )
 
     assert final.clock.current_tick == 1
     assert final.environment.factors["F1"].current_state == "F1.1"
