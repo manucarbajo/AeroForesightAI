@@ -231,12 +231,6 @@ def vorgegebene_felder() -> dict[str, Festlegung]:
 SZENARIOTEXT_NUTZT_LLM = True
 
 
-def festlegung_fuer(feld: str) -> Festlegung | None:
-    """Die Festlegung zu einem Entwurfsfeld — oder `None`, wenn es frei ist."""
-
-    return vorgegebene_felder().get(feld)
-
-
 def sweep_metadata_args(*, llm_narrative: bool = True) -> RunArgs:
     """Die Argumente, unter denen ein Sweep sein `run_metadata.json` schreibt.
 
