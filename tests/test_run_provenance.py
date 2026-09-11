@@ -712,9 +712,9 @@ class TestDerHybridModusDesSweeps:
 
         from pathlib import Path
 
-        from src.orchestration.scenario_sweeps import vorgegebene_felder
+        from src.orchestration.scenario_sweeps import festlegung_fuer
 
-        festlegung = vorgegebene_felder().get("deterministic_only")
+        festlegung = festlegung_fuer("deterministic_only")
         assert festlegung is not None, "Der Sweep-Vertrag sagt nichts mehr über den Rechenmodus"
         assert festlegung.wert is True, (
             "Der Sweep rechnet seine Ticks nicht mehr deterministisch — dann trägt "

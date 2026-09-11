@@ -150,6 +150,9 @@ class SchedulerNode:
     @staticmethod
     def route_from_scheduler(state: SimulationState) -> str:
         """Determines the next agent to run or routes to the market."""
+        speech_plan = state.speech_plan.model_dump() if state.speech_plan is not None else {}
+        if speech_plan.get("aborted"):
+            return "market"
         if not state.current_speech_order:
             return "market"
         next_agent = state.current_speech_order[0]

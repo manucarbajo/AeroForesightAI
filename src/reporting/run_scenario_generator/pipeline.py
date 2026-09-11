@@ -7,9 +7,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from src.llm import LLMCallable
 from src.reporting.run_scenario_generator.candidates import _normalize_scenarios
-from src.reporting.run_scenario_generator.context import load_run_scenario_context
+from src.reporting.run_scenario_generator.context import LLMCallable, load_run_scenario_context
 from src.reporting.run_scenario_generator.factors import _load_factor_catalog, build_factor_profile
 from src.reporting.run_scenario_generator.prompt import (
     _extract_json_object,

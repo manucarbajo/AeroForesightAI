@@ -3,6 +3,7 @@ from src.config_loader import (
     load_agents,
     load_cib_frozen,
     load_factors,
+    load_population_config,
     load_properties_config,
     load_simulation_clock,
     load_simulation_config,
@@ -43,12 +44,10 @@ def test_load_factors():
         assert factor.current_state in factor.possible_states
 
 
-def test_der_consumer_traegt_die_bevoelkerung():
-    # Gefunden wie im Lauf (`environment_node`): der Agent mit der ID `consumer`.
+def test_load_population_config():
     agents = load_agents()
-    consumer = next((agent for agent in agents if agent.id == "consumer"), None)
-    assert consumer is not None
-    pop_config = consumer.population_config
+    pop_config = load_population_config(agents)
+    # Consumer-Agent sollte eine PopulationConfig haben
     assert pop_config is not None
     assert pop_config.total_population >= 1
     assert len(pop_config.segments) > 0

@@ -3,6 +3,7 @@ from pathlib import Path
 
 from src.models.agent_models import AgentConfig
 from src.models.cib_models import CIBMatrix
+from src.models.population_models import PopulationConfig
 from src.models.property_models import PropertiesConfig
 from src.models.state_models import (
     EnvironmentState,
@@ -72,6 +73,13 @@ def load_factors(path: Path | None = None) -> dict[str, FactorState]:
     with open(path) as f:
         data = json.load(f)
     return {fid: FactorState(**fdata) for fid, fdata in data.items()}
+
+
+def load_population_config(agents: list[AgentConfig]) -> PopulationConfig | None:
+    for agent in agents:
+        if agent.agent_type.value == "consumer" and agent.population_config:
+            return agent.population_config
+    return None
 
 
 def load_cib_frozen(path: Path | None = None) -> CIBMatrix:

@@ -3,9 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.agents.agent_dependencies import resolve_parallel_agent_order
-from src.agents.agent_node import AgentNode
+from src.agents.agent_node import AgentNode, LLMCallable
 from src.agents.orchestrator_node import OrchestratorNode
-from src.llm import LLMCallable
 from src.models.agent_models import AgentConfig
 from src.models.event_models import EventLogEntry, RoundResult
 from src.models.llm_models import LLMIncident

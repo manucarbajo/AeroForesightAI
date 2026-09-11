@@ -157,6 +157,71 @@ class CIBMatrix(BaseModel):
         return len(self.cells) >= expected
 
 
+class CIBMatrixHistory(BaseModel):
+    """Tracks the CIB matrix evolution across simulation rounds."""
+
+    matrices: list[CIBMatrix] = Field(default_factory=list)
+
+    @property
+    def latest(self) -> CIBMatrix | None:
+        return self.matrices[-1] if self.matrices else None
+
+    @property
+    def num_rounds(self) -> int:
+        return len(self.matrices)
+
+    def add(self, matrix: CIBMatrix) -> None:
+        self.matrices.append(matrix)
+
+    def get_delta(self, round_a: int, round_b: int) -> np.ndarray | None:
+        """Compute the difference matrix between two rounds."""
+        mat_a = next((m for m in self.matrices if m.round_generated == round_a), None)
+        mat_b = next((m for m in self.matrices if m.round_generated == round_b), None)
+        if mat_a is None or mat_b is None:
+            return None
+        return mat_b.to_numpy() - mat_a.to_numpy()
+
+
+def apply_delta_constraint(previous: CIBMatrix, proposed: CIBMatrix) -> CIBMatrix:
+    """Enforce max ±1 change per cell per round.
+
+    Returns a new matrix where no cell differs from the previous by more than 1.
+    Cells present in previous but missing from proposed are preserved unchanged.
+    """
+    constrained_cells: dict[str, CIBCell] = {}
+
+    for key, proposed_cell in proposed.cells.items():
+        prev_cell = previous.cells.get(key)
+        if prev_cell is None:
+            constrained_cells[key] = proposed_cell
+            continue
+
+        delta = proposed_cell.influence - prev_cell.influence
+        clamped_delta = max(-1, min(1, delta))
+        new_influence = prev_cell.influence + clamped_delta
+        new_influence = max(MIN_INFLUENCE, min(MAX_INFLUENCE, new_influence))
+
+        constrained_cells[key] = CIBCell(
+            source_descriptor=proposed_cell.source_descriptor,
+            target_descriptor=proposed_cell.target_descriptor,
+            influence=new_influence,
+            reasoning=proposed_cell.reasoning,
+        )
+
+    # Preserve cells from previous that weren't re-evaluated
+    for key, prev_cell in previous.cells.items():
+        if key not in constrained_cells:
+            constrained_cells[key] = prev_cell
+
+    result = CIBMatrix(
+        cells=constrained_cells,
+        round_generated=proposed.round_generated,
+        metadata=proposed.metadata,
+    )
+    result.compute_factor_scores()
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Deprecated aliases (backward compatibility with C2 code)
 # ---------------------------------------------------------------------------

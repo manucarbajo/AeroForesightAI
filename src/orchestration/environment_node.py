@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+from typing import Any, Protocol
 
-from src.llm import LLMCallable
 from src.market.factor_dynamics import build_runtime_metrics, validate_factor_proposals
 from src.market.market_feedback import initial_provider_markup
 from src.market.property_engine import resolve_system_properties
@@ -22,6 +21,12 @@ from src.models.state_models import DEFAULT_SEED, SimulationState
 from src.population.population_sampler import run_population_tick
 
 logger = logging.getLogger(__name__)
+
+
+class LLMCallable(Protocol):
+    """Protocol for LLM clients."""
+
+    def call(self, prompt: str) -> str: ...
 
 
 class EnvironmentNode:
@@ -302,6 +307,16 @@ class EnvironmentNode:
                 )
         else:
             lines.append("Events: -")
+
+        if hasattr(state, "_population_updates") and state._population_updates:
+            last_update = state._population_updates[-1]
+            if last_update.round_number == state.clock.current_tick and last_update.shifts:
+                lines.append("Population shifts:")
+                for shift in last_update.shifts:
+                    lines.append(
+                        f"- {shift.segment_id}: {shift.old_share:.3f} -> {shift.new_share:.3f} ({shift.shift_amount:+.3f})"
+                    )
+                lines.append(f"  Reasoning: {last_update.total_reasoning}")
 
         segment_analysis = self._collect_segment_analysis(responses)
         if segment_analysis:
