@@ -211,6 +211,12 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Run simulation without LLM agent calls (pure deterministic mode for sweeps/benchmarks).",
     )
+    parser.add_argument(
+        "--sweep",
+        type=str,
+        default=None,
+        help="Path to a sweep config JSON file. Overrides simulation parameters with sweep settings.",
+    )
     # **Eine Aussage ohne Schalter** (P3.11). `llm_narrative` beschreibt den
     # Hybridmodus: deterministisch gerechnete Ticks, aber ein Abschlusstext vom
     # Modell. Den erzeugt **nur** der Sweep-Pfad — dieser Einstieg gibt

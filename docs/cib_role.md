@@ -209,9 +209,7 @@ generiert (z.B. `F2.2→F3.2: +3`: Strenge Regulierung treibt Technologiedurchbr
 Eine frühere Version (`CIBExtractorNode`, LLM + Heuristik) hatte versucht, die CIB-Matrix
 dynamisch aus dem Event-Log zu extrahieren. Dieser Ansatz war eine Exploration, ist aber
 methodisch problematisch (Matrix ändert sich je nach Lauf → kein stabiler Referenzwert).
-Der Extractor lag danach unter `src/legacy/` und ist **seit dem 2026-09-11 entfernt** (P5.3):
-Eine Matrix, die ein Sprachmodell aus dem Lauf herleitet, widerspricht der eingefrorenen
-Referenz (Invariante 3) und der Entscheidung für Variante C.
+Der Extractor liegt daher jetzt unter **`src/legacy/`** und ist nicht Teil der Pipeline.
 
 ## Weiterführende Dokumente
 

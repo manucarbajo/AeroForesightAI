@@ -218,3 +218,28 @@ def scheduled_property_events(properties: PropertiesConfig) -> list[dict[str, ob
             )
 
     return sorted(events, key=lambda entry: (int(entry["tick"]), str(entry["property_id"])))
+
+
+def property_value_changes_at_tick(
+    timeseries: list[dict[str, object]],
+    tick: int,
+) -> list[tuple[str, float, float]]:
+    """Return (property_id, old_value, new_value) for changes at ``tick``."""
+
+    current = next((row for row in timeseries if row.get("tick") == tick), None)
+    if current is None:
+        return []
+
+    previous = next((row for row in timeseries if row.get("tick") == tick - 1), None)
+    changes: list[tuple[str, float, float]] = []
+
+    for key, new_value in current.items():
+        if key == "tick":
+            continue
+        new_float = float(new_value)
+        old_float = float(previous.get(key, new_float)) if previous else new_float
+        if previous is None or old_float != new_float:
+            if previous is not None:
+                changes.append((str(key), old_float, new_float))
+
+    return changes

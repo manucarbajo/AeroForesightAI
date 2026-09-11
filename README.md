@@ -235,7 +235,8 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 │   ├── reporting/                   # output_writer/, run_scenario_generator/, figure_generator/, protocol_generator.py, state_explorer.py
 │   ├── llm/                          # LLM-Backend-Auswahl, Ollama-Client
 │   ├── models/                       # Pydantic-Datenmodelle (State, Events, Agenten, …)
-│   └── prompts/                      # Prompt-Templates pro Agent
+│   ├── prompts/                      # Prompt-Templates pro Agent
+│   └── legacy/                       # Abgelöste Komponenten (z. B. CIBExtractorNode)
 ├── tests/
 └── outputs/<run_id>/                # Laufzeit-Artefakte (gitignored)
     ├── final_narrative.md           # Lesbarer Simulationsbericht

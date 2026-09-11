@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from src.market.property_engine import scheduled_property_events
+from src.models.event_models import PriceHistoryEntry
 from src.reporting.output_writer.paths import ensure_output_dir, resolve_output_path
 
 
@@ -28,10 +29,21 @@ def format_property_event_line(event: dict[str, object]) -> str:
     return f"- **Tick {tick}:** `{prop_id}` {detail}{unit_suffix}{desc_suffix}"
 
 
+def _format_property_change_line(prop_id: str, old_value: float, new_value: float) -> str:
+    return f"- `{prop_id}`: {old_value:g} → {new_value:g}"
+
+
 def prior_population_stats(state, round_number: int) -> dict | None:
     for entry in reversed(state.population_stats):
         tick = entry.get("round_number")
         if tick is not None and tick < round_number:
+            return entry
+    return None
+
+
+def _prior_price_entry(state, round_number: int) -> PriceHistoryEntry | None:
+    for entry in reversed(state.price_history):
+        if 1 <= entry.round_number < round_number:
             return entry
     return None
 

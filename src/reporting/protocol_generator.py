@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from src.models.agent_models import AgentResponse
@@ -21,6 +23,22 @@ def _safe_first_line(text: str, fallback: str = "") -> str:
     if not cleaned:
         return fallback
     return cleaned.splitlines()[0].strip()
+
+
+def _descriptor_to_factor_id(descriptor: str | None) -> str | None:
+    """Extract the factor id (e.g. F1) from a descriptor such as F1.2."""
+
+    if not descriptor:
+        return None
+
+    candidate = str(descriptor).strip()
+    if not candidate:
+        return None
+
+    factor_id = candidate.split("→", 1)[0].split("|")[-1].strip().split(".")[0]
+    if factor_id.startswith("F") and factor_id[1:].isdigit():
+        return factor_id
+    return None
 
 
 def _group_round_results(round_results: list[RoundResult]) -> dict[int, list[RoundResult]]:
@@ -414,6 +432,26 @@ def _collect_factor_ids_from_contribution(contribution: dict[str, Any]) -> set[s
 def _deterministic_majority_state(votes: dict[str, set[str]]) -> str:
     ranked = sorted(votes.items(), key=lambda item: (-len(item[1]), item[0]))
     return ranked[0][0]
+
+
+def write_protocol_files(
+    state: SimulationState,
+    output_dir: str | Path,
+    options: ProtocolOptions | None = None,
+    json_filename: str = "protocol.json",
+    md_filename: str = "protocol.md",
+) -> tuple[Path, Path]:
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    payload = build_protocol_payload(state, options=options)
+    json_path = output_dir / json_filename
+    json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    md_path = output_dir / md_filename
+    md_path.write_text(render_protocol_markdown(payload), encoding="utf-8")
+
+    return json_path, md_path
 
 
 def render_protocol_markdown(payload: dict[str, Any]) -> str:

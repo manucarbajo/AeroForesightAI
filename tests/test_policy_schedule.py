@@ -3,9 +3,9 @@ from __future__ import annotations
 from src.config_loader import build_initial_state, load_properties_config
 from src.market.market_node import MarketNode
 from src.market.simulation_functions import (
-    compute_base_cost,
     compute_demand,
     compute_market_metrics,
+    compute_ticket_price,
 )
 from src.models.property_models import (
     BaselineTrajectory,
@@ -18,7 +18,7 @@ from src.models.property_models import (
 
 class TestComputeTicketPrice:
     def test_base_case_no_effects(self):
-        price = compute_base_cost(
+        price = compute_ticket_price(
             base_price=100.0,
             carbon_tax=0.0,
             fuel_price_change=0.0,
@@ -29,7 +29,7 @@ class TestComputeTicketPrice:
         assert price == 100.0
 
     def test_carbon_tax_increases_price(self):
-        price = compute_base_cost(
+        price = compute_ticket_price(
             base_price=100.0,
             carbon_tax=100.0,
             fuel_price_change=0.0,
@@ -40,7 +40,7 @@ class TestComputeTicketPrice:
         assert price > 100.0
 
     def test_minimum_price_floor(self):
-        price = compute_base_cost(
+        price = compute_ticket_price(
             base_price=1.0,
             carbon_tax=0.0,
             fuel_price_change=-0.99,
@@ -51,7 +51,7 @@ class TestComputeTicketPrice:
         assert price >= 1.0
 
     def test_subsidy_reduces_price(self):
-        price_no_subsidy = compute_base_cost(
+        price_no_subsidy = compute_ticket_price(
             base_price=100.0,
             carbon_tax=0.0,
             fuel_price_change=0.0,
@@ -59,7 +59,7 @@ class TestComputeTicketPrice:
             saf_share=0.1,
             efuel_subsidy=0.0,
         )
-        price_with_subsidy = compute_base_cost(
+        price_with_subsidy = compute_ticket_price(
             base_price=100.0,
             carbon_tax=0.0,
             fuel_price_change=0.0,

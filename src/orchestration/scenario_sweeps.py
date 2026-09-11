@@ -2,9 +2,9 @@
 and evaluates end-states against the CIB consistency matrix.
 
 CLI usage:
-    python -m src.orchestration.scenario_sweeps                      # all frame scenarios
-    python -m src.orchestration.scenario_sweeps --ticks 10000        # 10k-tick benchmark
-    python -m src.orchestration.scenario_sweeps --sweep co2_delayed  # one scenario, by id
+    python src/scenario_sweeps.py                           # all sweeps in configs/sweeps/
+    python src/scenario_sweeps.py --ticks 10000             # 10k-tick benchmark
+    python src/scenario_sweeps.py --sweep co2_delayed.json  # single sweep
 """
 
 from __future__ import annotations
@@ -229,6 +229,12 @@ def vorgegebene_felder() -> dict[str, Festlegung]:
 #: P4.2 ausdrücklich nicht mitentschieden. Diese Konstante beschreibt deshalb
 #: weiterhin, was auf dem Vergleichspfad passiert.
 SZENARIOTEXT_NUTZT_LLM = True
+
+
+def festlegung_fuer(feld: str) -> Festlegung | None:
+    """Die Festlegung zu einem Entwurfsfeld — oder `None`, wenn es frei ist."""
+
+    return vorgegebene_felder().get(feld)
 
 
 def sweep_metadata_args(*, llm_narrative: bool = True) -> RunArgs:
@@ -471,6 +477,15 @@ def evaluate_milestone_on_state(state: Any, ms: MilestoneCheck) -> dict[str, Any
                 result["passed"] = True
 
     return result
+
+
+def evaluate_milestones(
+    state: Any,
+    milestones: list[MilestoneCheck],
+    tick: int,
+) -> list[dict[str, Any]]:
+    """Evaluate milestones that are due at this tick."""
+    return [evaluate_milestone_on_state(state, ms) for ms in milestones if ms.tick == tick]
 
 
 class KeinSprachmodell:
