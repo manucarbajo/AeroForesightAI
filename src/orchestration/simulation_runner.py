@@ -509,7 +509,12 @@ class SimulationRunner:
             if checkpoint_store is not None and hasattr(checkpoint_store, "checkpoint_dir"):
                 # Prefer the checkpoint_store's parent dir if available (keeps paths consistent)
                 run_dir = checkpoint_store.checkpoint_dir.parent
-            append_individuals_history(tick, state.population_individuals, run_dir=run_dir)
+            append_individuals_history(
+                tick,
+                state.population_individuals,
+                koeffizienten=state.resolved_properties().booking_model,
+                run_dir=run_dir,
+            )
 
             if self.options.verbose_ticks:
                 self._print_tick_progress(state, tick=tick, max_ticks=max_ticks)

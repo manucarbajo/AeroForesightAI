@@ -140,6 +140,13 @@ Merkmalen und Buchungsentscheidung. Das ist die Grundlage des Tabs «Animation»
 und die größte Datei eines Laufs. `population.csv` im Hauptverzeichnis enthält
 die gezogene Ausgangsbevölkerung.
 
+**Seit dem 11. September 2026** steht je Person und Runde auch
+`erschwinglichkeitsgrenze_eur`: der höchste Ticketpreis, den sie überhaupt
+bezahlen kann — Zahlungsbereitschaft mal Einkommen, erhöht um den Aufschlag, den
+Umweltbewusste für einen grüneren Flug zahlen. Das ist dieselbe Grenze, mit der
+das Modell rechnet: Liegt der Preis darüber, bucht diese Person nicht. Läufe von
+vor diesem Datum haben die Spalte nicht.
+
 Unter `checkpoints/` liegen Zwischenstände, sofern das unter **Technik**
 eingeschaltet war. Sie werden gebraucht, um einen Lauf fortzusetzen und um im Tab
 **Abfrage** einzelne Runden im Detail nachzuschlagen. Ohne sie funktioniert die
