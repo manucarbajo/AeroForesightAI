@@ -9,7 +9,7 @@ from src.models.population_models import (
     PopulationConfig,
 )
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
-from src.models.cib_models import CIBCell, CIBEntry, CIBMatrix, CIBMatrixHistory, FactorScore
+from src.models.cib_models import CIBCell, CIBEntry, CIBMatrix, FactorScore
 from src.models.llm_models import LLMDegradation, LLMIncident
 from src.models.scenario_models import (
     ERZAEHLT,
@@ -57,7 +57,6 @@ __all__ = [
     "CIBCell",
     "CIBEntry",
     "CIBMatrix",
-    "CIBMatrixHistory",
     "FactorScore",
     "LLMDegradation",
     "LLMIncident",

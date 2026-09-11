@@ -137,3 +137,24 @@ class TestDieVersionWirdWirklichGeprueft:
         geschrieben = json.loads(pfad.read_text(encoding="utf-8"))
 
         assert geschrieben["metadata"]["checkpoint_version"] == CHECKPOINT_VERSION
+
+
+def test_ein_checkpoint_mit_cib_history_laedt_weiter(tmp_path):
+    """P5.3 (2026-09-11): `cib_history` ist aus `SimulationState` entfernt.
+
+    Checkpoints von davor tragen das Feld noch. Sie laden weiter, weil
+    `SimulationState` unbekannte Felder ignoriert — **geprüft wird das hier**,
+    statt es im Commit zu behaupten. Die Checkpoint-Version bleibt deshalb
+    gleich: Das Schema hat nichts verloren, was ein Lauf braucht.
+    """
+
+    manager = CheckpointManager(checkpoint_dir=tmp_path)
+    pfad = manager.save(build_initial_state(), run_id="run-vor-p53", round_number=1)
+    nutzlast = json.loads(pfad.read_text(encoding="utf-8"))
+    nutzlast["state"]["cib_history"] = {"matrices": [], "max_history": 10}
+    pfad.write_text(json.dumps(nutzlast, ensure_ascii=False), encoding="utf-8")
+
+    geladen = manager.load(pfad)
+
+    assert geladen.clock.max_ticks > 0
+    assert "cib_history" not in geladen.model_dump()
