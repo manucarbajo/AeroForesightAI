@@ -47,12 +47,12 @@ brauchen, um eine Vorgabe einzustellen (wie schnell soll die Abgabe steigen?),
 rechnen Sie zwölf Runden auf ein Jahr. Und vergleichen Sie zwei Läufe nur bei
 gleicher Rundenzahl.
 
-**Eine Einschränkung, die offen ist und offen genannt sein will:** Die
-mitgelieferten Szenarien laufen fünfzig Runden, also gut vier Jahre, und lassen
-die CO₂-Abgabe darin von 50 auf 200 Euro steigen. Das ist ein sehr schneller
-Politikpfad. Ob diese Szenarien gestreckt werden oder ausdrücklich als kurze,
-dichte Wirkungsketten gelten sollen, ist eine offene Produktfrage; sie steht im
-Projektplan als P4.5.
+**Die mitgelieferten Rahmenszenarien laufen seit dem 11. September 2026
+hundertzwanzig Runden, also zehn Jahre.** Vorher waren es fünfzig — gut vier
+Jahre, in denen die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 Euro stieg.
+Gestreckt wurde jede Marke im selben Verhältnis, nicht nur die Länge. Ein
+Standardlauf über 40 Runden bleibt dagegen, was er war: ein Ausschnitt von gut
+drei Jahren.
 
 ## Der Lauf
 

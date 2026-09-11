@@ -67,16 +67,19 @@ Preset angelegt ist, steht neben seiner Beschreibung — seine Meilensteine sind
 auf diese Länge hin gedacht.
 
 **Seit dem 7. September 2026 lässt sich diese Länge in Zeit umrechnen:** Eine
-Runde ist ein Monat, die vier Rahmenszenarien laufen also gut vier Jahre. Das ist
-eine kurze Spanne für die Politikpfade, die sie erzählen — «Freiwillige Wende»
-bringt die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 Euro. Lesen Sie diese
-Szenarien deshalb als **dichte Wirkungsketten** und nicht als Kalenderprognose.
-Ob die Pfade gestreckt werden sollten, ist eine offene Frage (Projektplan P4.5).
+Runde ist ein Monat. **Seit dem 11. September 2026 laufen die vier
+Rahmenszenarien 120 Runden, also zehn Jahre.** Vorher waren es 50, und
+«Freiwillige Wende» brachte die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 Euro —
+zu schnell für Politikpfade, deren Quellen in Fünfjahresstufen denken. Gestreckt
+wurde jede Marke im selben Verhältnis: Die Geschichte ist dieselbe, nur ihr Tempo
+passt jetzt. Welche Spanne ein Rahmen meint, steht in seinem Vorbehalt.
+**Eine Kalenderprognose sind sie trotzdem nicht** — eine Runde trägt kein Datum,
+und Runde 60 ist nicht «2030».
 
 **Im Szenario-Vergleich gilt das nicht.** Wer alle Szenarien nacheinander
 rechnen lässt, stellt keine Länge ein: Jedes läuft so lang, wie es angelegt ist.
 Alles andere hieße, Szenarien unterschiedlicher Bauart über einen Kamm zu
-scheren — ein auf 50 Ticks entworfenes Szenario erreicht seinen Schlusspunkt
+scheren — ein auf 120 Ticks entworfenes Szenario erreicht seinen Schlusspunkt
 nach 40 Ticks schlicht nicht.
 
 > **Bis August 2026 war das anders**, ohne dass es jemand sehen konnte: Das

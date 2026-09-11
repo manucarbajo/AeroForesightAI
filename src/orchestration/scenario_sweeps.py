@@ -196,7 +196,7 @@ UNBEACHTET: tuple[Festlegung, ...] = (
         "rounds",
         None,
         "Jedes Szenario läuft so lang, wie es angelegt ist. Vier der hinterlegten "
-        "Szenarien sind auf 50 Ticks entworfen und prüfen ihren Schlusspunkt genau "
+        "Szenarien sind auf 120 Ticks entworfen und prüfen ihren Schlusspunkt genau "
         "dort — auf 40 Ticks gekürzt erreichen sie ihn nie. Die Länge stellen Sie "
         "für einen einzelnen Lauf ein, nicht für den Vergleich.",
     ),

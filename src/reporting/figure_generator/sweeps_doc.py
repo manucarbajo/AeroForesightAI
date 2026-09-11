@@ -36,7 +36,7 @@ def write_scenario_runs_doc(
         "",
         "Automatisch erzeugte Visualisierungen für Strategic Foresight.",
         "",
-        "## Foresight-Szenarien (deterministisch, 50 Ticks)",
+        "## Foresight-Szenarien (deterministisch, in ihrer angelegten Länge)",
         "",
         "| Szenario | ID | Consistency |",
         "| --- | --- | --- |",

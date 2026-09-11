@@ -224,8 +224,9 @@ def test_sweep_co2_delayed_loads():
     config = load_sweep_config(path)
     assert config.id == "co2_delayed"
     assert len(config.milestones) >= 3
-    assert any(m.tick == 15 for m in config.milestones), "CO2 Tick 15 milestone missing"
-    assert any(m.tick == 25 for m in config.milestones), "CO2 Tick 25 milestone missing"
+    # Seit P4.5 auf 120 Ticks gestreckt (vorher Tick 15 und 25, x2,4).
+    assert any(m.tick == 36 for m in config.milestones), "CO2 Tick 36 milestone missing"
+    assert any(m.tick == 60 for m in config.milestones), "CO2 Tick 60 milestone missing"
 
 
 # ---------------------------------------------------------------------------

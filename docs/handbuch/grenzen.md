@@ -17,9 +17,10 @@ dürfen «zwölf Runden sind ein Jahr» rechnen, wenn Sie eine Vorgabe einstelle
 Sie dürfen nicht «Runde 40 ist der Dezember 2029» rechnen.
 
 **Und eine Einschränkung, die daraus folgt:** Ein Standardlauf über 40 Runden
-deckt gut drei Jahre ab, die mitgelieferten Szenarien gut vier. Für eine Frage
-über 2040 ist das der falsche Ausschnitt. Ob die Szenarien gestreckt werden,
-steht als offene Frage im Projektplan (P4.5).
+deckt gut drei Jahre ab, die mitgelieferten Rahmenszenarien seit dem
+11. September 2026 zehn Jahre (vorher gut vier). Für eine Frage über 2040 ist
+auch das der falsche Ausschnitt — und weil eine Runde kein Datum trägt, beginnen
+die zehn Jahre nicht «heute», sondern bei Runde 1.
 
 ## Ein Anbieter statt eines Marktes
 

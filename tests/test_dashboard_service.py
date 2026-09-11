@@ -175,7 +175,8 @@ class TestConfigCatalog:
         draft = apply_sweep_to_draft(draft, sweep)
         assert draft.sweep_id == "co2_delayed"
         carbon = draft.property_edits["carbon_tax_level"]
-        assert any(rule.get("active_from_tick") == 25 for rule in carbon.rules)
+        # Seit P4.5 auf 120 Ticks gestreckt: die verzögerte Stufe kommt bei Tick 60 (vorher 25).
+        assert any(rule.get("active_from_tick") == 60 for rule in carbon.rules)
 
     def test_taking_over_a_preset_switches_to_own_settings(self):
         """Sonst liefen die eben übernommenen Werte ins Leere.

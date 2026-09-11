@@ -381,7 +381,7 @@ class TestEinLaufSagtWieWeitSeineVorgabenReichen:
         """**Er darf keinen Lauf verhindern.**
 
         Stünde er in `collect_state_errors`, wäre jeder ausgelieferte Rahmen ab
-        sofort ungültig — alle vier laufen 50 Ticks bei Kurven, die früher
+        sofort ungültig — alle vier laufen 120 Ticks bei Kurven, die früher
         enden. Ein Wächter, der den Normalfall abweist, wird binnen einer Woche
         entnervt gelockert.
         """

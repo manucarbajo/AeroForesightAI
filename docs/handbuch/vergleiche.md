@@ -349,6 +349,29 @@ auch einer, die das Gegenteil verlangt. Seither entscheidet der Rang wirklich.
 vor diesem Datum gehören nicht neben spätere — und ihre **Szenarien** sind mit
 Vorsicht zu lesen, weil ihr Endzustand von der Rundenzahl abhängen konnte.
 
+Am **2026-09-11** kam ein vierzehnter Schnitt dazu, und er trifft **nur die vier
+mitgelieferten Rahmenszenarien**: Sie laufen seither **120 statt 50 Runden**,
+und jede Marke darin ist im selben Verhältnis mitgewandert — die CO₂-Abgabe der
+«Freiwilligen Wende» erreicht 200 Euro nach 48 Runden statt nach 20. Anlass war,
+dass fünfzig Runden, seit eine Runde ein Monat ist, gut vier Jahre bedeuten — zu
+kurz für die Politikpfade, die diese Szenarien erzählen.
+
+**Was gleich bleibt:** Jeder Meilenstein wird erreicht, und die Endlage der sieben
+Faktoren ist in allen vier dieselbe. **Was sich verschiebt**, gemessen mit festem
+Zufallsstartwert als mittlere Buchungsrate im letzten Viertel und als Endpreis:
+
+| Szenario | Buchungsrate vorher | nachher | Preis vorher | nachher |
+| --- | ---: | ---: | ---: | ---: |
+| Business as Usual | 0,387 | 0,376 | 137 | 132 |
+| CO₂-Verzögerung | 0,275 | 0,316 | 113 | 97 |
+| Freiwillige Wende | 0,271 | 0,298 | 107 | 100 |
+| Transformationskonflikt | 0,037 | **0,004** | 239 | **437** |
+
+Der Transformationskonflikt fällt am weitesten, weil er seine drei ungünstigen
+Annahmen jetzt zehn Jahre lang hält statt vier. Ein Szenario-Vergleich von vor
+diesem Datum gehört **nicht** neben einen späteren — auch dort nicht, wo die
+Zahlen nah beieinanderliegen: Die Läufe beschreiben verschiedene Zeitspannen.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

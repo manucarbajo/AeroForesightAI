@@ -259,7 +259,8 @@ class TestDieAngebotsseiteKommtImLaufAn:
     Simulation erreichte.
 
     Ein Rahmen genügt dafür, und es ist bewusst der klarste: Zwei Läufe über
-    50 Ticks kosten Sekunden, acht kosteten eine Minute für dieselbe Aussage.
+    120 Ticks kosten Sekunden; alle vier Rahmen doppelt zu rechnen kostete das
+    Vierfache für dieselbe Aussage.
     """
 
     @staticmethod
@@ -478,3 +479,111 @@ class TestEineQuelleLaesstSichAuchOeffnen:
 
         vorhanden = self._vorhandene()
         assert "gibt-es-nicht.pdf" not in vorhanden
+
+
+# ---------------------------------------------------------------------------
+# P4.5: Ein Rahmen sagt, welche Kalenderspanne er beschreibt
+# ---------------------------------------------------------------------------
+
+#: Jahre als Wort, so wie sie im Vorbehalt stehen («120 Ticks, also zehn Jahre»).
+JAHRE_ALS_WORT = {
+    1: "ein",
+    2: "zwei",
+    3: "drei",
+    4: "vier",
+    5: "fünf",
+    6: "sechs",
+    7: "sieben",
+    8: "acht",
+    9: "neun",
+    10: "zehn",
+    11: "elf",
+    12: "zwölf",
+}
+
+
+def befunde_zur_spanne(sweep: SweepConfig) -> list[str]:
+    """Was an der Zeitspanne eines Rahmens nicht stimmt — leer, wenn alles passt.
+
+    **Drei Wege, auf denen P4.5 scheitern kann**, und jeder ist hier eine
+    Prüfung: Die Spanne steht nirgends — dann liest jemand 120 Ticks als «bis
+    2040». Sie steht da, passt aber nicht zu ``max_ticks`` — dann wurde die
+    Länge geändert und der Satz nicht. Oder die Länge wurde gestreckt und die
+    Marken nicht. **Der dritte ist der, vor dem das Paket ausdrücklich warnt:**
+    Wer nur ``max_ticks`` hochsetzt, verschiebt den Widerspruch, statt ihn
+    aufzulösen — die Erzählung spielte dann im ersten Drittel des Laufs.
+    """
+
+    befunde: list[str] = []
+    jahre, rest = divmod(sweep.max_ticks, 12)
+    if rest or jahre not in JAHRE_ALS_WORT:
+        befunde.append(f"{sweep.max_ticks} Ticks sind keine ganze Zahl von Jahren bis zwölf")
+    else:
+        satz = f"{sweep.max_ticks} Ticks, also {JAHRE_ALS_WORT[jahre]} Jahre"
+        if satz not in sweep.kohaerenz.vorbehalt:
+            befunde.append(f"der Vorbehalt nennt die Spanne nicht: «{satz}» fehlt")
+
+    marken = [
+        int(regel["active_from_tick"])
+        for override in sweep.property_overrides
+        for regel in override.rules or []
+    ]
+    if marken and max(marken) < sweep.max_ticks / 2:
+        befunde.append(
+            f"die letzte Marke liegt bei Tick {max(marken)} von {sweep.max_ticks} — "
+            "die Länge ist gestreckt, die Erzählung nicht"
+        )
+    hinter_dem_ende = sorted(
+        {t for t in marken + [m.tick for m in sweep.milestones] if t > sweep.max_ticks}
+    )
+    if hinter_dem_ende:
+        befunde.append(f"Marken oder Meilensteine hinter dem Ende: {hinter_dem_ende}")
+    return befunde
+
+
+class TestJederRahmenSagtSeineSpanne:
+    """**Das Abnahmekriterium von P4.5** (2026-09-11).
+
+    Seit P3.8 ist ein Tick ein Monat. Die vier Rahmen liefen danach weiter 50
+    Ticks — gut vier Jahre — und ließen die CO₂-Abgabe binnen 20 Monaten von 50
+    auf 200 EUR steigen, während ihre Quellen in Fünfjahresstufen denken
+    (ReFuelEU: 2 % ab 2025, 6 % ab 2030). Gestreckt ist auf 120 Ticks, jede
+    Marke im selben Verhältnis; gemessen halten alle Meilensteine, und die
+    Endlagen der Faktoren bleiben gleich.
+
+    **Gemessen wird die Datei, nicht eine Absichtserklärung** — und die beiden
+    Gegenproben zeigen, dass die Prüfung die zwei naheliegenden Rückfälle
+    überhaupt bemerken würde.
+    """
+
+    @pytest.mark.parametrize("sweep", RAHMEN, ids=lambda s: s.id)
+    def test_er_nennt_seine_spanne_und_erzaehlt_ueber_sie(self, sweep: SweepConfig) -> None:
+        befunde = befunde_zur_spanne(sweep)
+
+        assert befunde == [], f"`{sweep.id}`: " + "; ".join(befunde)
+
+    def test_gegenprobe_nur_die_laenge_gestreckt(self) -> None:
+        """Der Fehler, vor dem P4.5 warnt: ``max_ticks`` hoch, Marken wie vorher."""
+
+        sweep = next(s for s in RAHMEN if s.id == "freiwillige_wende")
+        daten = sweep.model_dump()
+        for override in daten["property_overrides"]:
+            for regel in override["rules"] or []:
+                regel["active_from_tick"] = max(1, round(regel["active_from_tick"] / 2.4))
+        for meilenstein in daten["milestones"]:
+            meilenstein["tick"] = max(1, round(meilenstein["tick"] / 2.4))
+
+        befunde = befunde_zur_spanne(SweepConfig.model_validate(daten))
+
+        assert any("gestreckt, die Erzählung nicht" in b for b in befunde), befunde
+
+    def test_gegenprobe_die_spanne_passt_nicht_zur_laenge(self) -> None:
+        """Länge geändert, Satz nicht: 48 Ticks, aber der Vorbehalt sagt zehn Jahre."""
+
+        sweep = next(s for s in RAHMEN if s.id == "business_as_usual")
+        daten = sweep.model_dump()
+        daten["max_ticks"] = 48
+
+        befunde = befunde_zur_spanne(SweepConfig.model_validate(daten))
+
+        assert any("nennt die Spanne nicht" in b for b in befunde), befunde
