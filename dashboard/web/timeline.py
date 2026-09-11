@@ -49,15 +49,35 @@ SPEEDS = [
 DEFAULT_SPEED = 500
 
 
+#: Wie nah die letzte reguläre Marke der Endmarke kommen darf, als Anteil eines
+#: Schritts. Näher, und sie weicht.
+ENDABSTAND = 0.6
+
+
 def _marks(max_tick: int) -> dict:
-    """Beschriftungen der Leiste — höchstens sieben, sonst überlagern sie sich."""
+    """Beschriftungen der Leiste — höchstens sieben, und keine zwei zu dicht.
+
+    **Die Endmarke steht immer, und darin lag der Befund** (P7.5-U5.4, vorgezogen
+    am 2026-09-11): Bei 50 Ticks setzte die Leiste alle acht Ticks eine Marke ab
+    1 — …, 41, 49 — und die Endmarke 50 direkt daneben. Im Browser überlagerten
+    sich beide zu «490». Die letzte reguläre Marke weicht jetzt, wenn sie der
+    Endmarke näher kommt als `ENDABSTAND` Schritte.
+
+    **0,6 und nicht die Hälfte**, und das ist gerechnet: Der Schritt ist gerundet,
+    und bei 27 Ticks (Schritt 4, Marken bis 25) hätte eine halbe Schrittweite die
+    Marke 25 stehen lassen, zwei Ticks vor dem Ende. `tests/test_web_shell.py`
+    prüft jede Länge von 2 bis 500.
+    """
 
     if max_tick <= 1:
         return {1: "1"}
     schritt = max(1, round(max_tick / 6))
-    marks = {tick: str(tick) for tick in range(1, max_tick + 1, schritt)}
-    marks[max_tick] = str(max_tick)
-    return marks
+    ticks = list(range(1, max_tick + 1, schritt))
+    if len(ticks) > 1 and ticks[-1] != max_tick and max_tick - ticks[-1] < schritt * ENDABSTAND:
+        ticks.pop()
+    if ticks[-1] != max_tick:
+        ticks.append(max_tick)
+    return {tick: str(tick) for tick in ticks}
 
 
 def event_strip(data: RunData) -> html.Div:

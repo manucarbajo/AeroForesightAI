@@ -226,6 +226,23 @@ class TestEineZeitachse:
         assert len(timeline._marks(500)) <= 8
         assert timeline._marks(1) == {1: "1"}
 
+    @pytest.mark.parametrize("max_tick", range(2, 501))
+    def test_no_two_marks_crowd_each_other(self, max_tick):
+        """Keine zwei Marken näher als ein Zwölftel der Leiste (P7.5-U5.4).
+
+        Bei 50 Ticks standen die Marken 49 und 50 nebeneinander und überlagerten
+        sich im Browser zu «490». Ein Zwölftel ist gut die Hälfte eines regulären
+        Schritts; bei einer rund 600 px breiten Leiste sind das 50 px — Platz für
+        eine dreistellige Zahl. Geprüft wird **jede** Länge, weil der Schritt
+        gerundet ist und der Fehler an einzelnen Längen hängt.
+        """
+
+        ticks = sorted(timeline._marks(max_tick))
+
+        assert ticks[0] == 1 and ticks[-1] == max_tick
+        abstaende = [b - a for a, b in zip(ticks, ticks[1:])]
+        assert min(abstaende) >= max(1, (max_tick - 1) / 12), (max_tick, ticks)
+
     def test_the_tick_never_leaves_its_range(self):
         """Tick 41 in einem Lauf ueber 40 gibt es nicht — auch nicht kurz."""
 

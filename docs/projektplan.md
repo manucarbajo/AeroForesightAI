@@ -3863,6 +3863,8 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 **Fundstelle:** `pages/launch.py`, `assets/dashboard.css` (`.af-rail-row`), `views/scene.py`, `timeline.py` (`_marks`, `event_strip`), `views/telemetry.py`.
 **Was zu tun ist:** U5.1 Bedienfeld · U5.2 Lauf-Kopf · U5.3 Szene · U5.4 Zeitleiste (vorziehbar) · U5.5 Telemetrie.
 **Fertig wenn:** Keine gekürzte Stand-Zeile und kein gekürzter Faktorname bei 1280 px; Bedienfeld ≤ 1,0 Bildschirm; keine zwei Zeitleistenmarken näher als ein Mindestabstand, für 1 bis 500 Ticks getestet.
+
+**Vorab erledigt am 2026-09-11 — aus U5.4 die Zeitleistenmarken.** Bei 50 Ticks standen die Marken 49 und 50 nebeneinander und überlagerten sich zu «490». Die letzte reguläre Marke weicht jetzt, wenn sie der Endmarke näher kommt als 0,6 Schritte (`timeline.ENDABSTAND`). **Die naheliegende halbe Schrittweite reichte nicht:** Der Schritt ist gerundet, und bei 27 Ticks hätte sie die Marke 25 zwei Ticks vor dem Ende stehen lassen. `tests/test_web_shell.py` prüft deshalb **jede** Länge von 2 bis 500 — keine zwei Marken näher als ein Zwölftel der Leiste. **Offen bleibt aus U5.4** der Ereignisstreifen ohne Legende.
 **Doku zieht mit:** `docs/handbuch/erste-simulation.md`, `docs/handbuch/ergebnisse-lesen.md`, `CLAUDE.md` (Regel 3 zur linken Spalte).
 
 ### P7.6 — Ergebnisse 🟡 offen
