@@ -3376,7 +3376,7 @@ Darin `notifyNestedSubs`: Redux benachrichtigt bei **jeder** Callback-Antwort al
 ### P4.1 — Gemeinsame Fixtures
 
 **Befund:** Kein `tests/conftest.py`; stattdessen 32 Vorkommen von `tempfile.mkdtemp(...)` mit `try/finally: shutil.rmtree(...)` über fünf Dateien, und `class MockLLM` vierfach near-identisch definiert.
-**Fundstelle:** `tests/test_checkpoint_manager.py` (2), `test_dashboard_service.py` (9), `test_figure_generator.py` (4), `test_run_scenario_generator.py` (12), `test_state_explorer.py` (5); MockLLM in `test_agent_node.py`, `test_parallel_round.py`, `test_simulation_runner_e2e.py`, `debug_run_sequential.py`.
+**Fundstelle:** `tests/test_checkpoint_manager.py` (2), `test_dashboard_service.py` (9), `test_figure_generator.py` (4), `test_run_scenario_generator.py` (12), `test_state_explorer.py` (5); MockLLM in `test_agent_node.py`, `test_parallel_round.py`, `test_simulation_runner_e2e.py` (die vierte Kopie lag in `debug_run_sequential.py`, gelöscht mit P4.2).
 **Was zu tun ist:** `conftest.py` mit einem MockLLM-Fixture anlegen, Temp-Verzeichnisse auf das eingebaute `tmp_path` umstellen.
 **Fertig wenn:** Kein Test legt mehr manuell ein Temp-Verzeichnis an; MockLLM existiert einmal. **Doku:** `README.md` (Tests-Abschnitt).
 
@@ -3420,7 +3420,9 @@ Nachgemessen am 2026-09-08 liefen beide Tests hier in **14,47 s** durch und ware
 
 **Ein Wächter musste dafür geschärft werden, und das war ein eigener Befund** (eigener Commit): `test_kein_parameter_ohne_wirkung` aus P3.15 prüfte «gar kein Parameter» statt «kein Parameter ohne Wirkung» und meldete deshalb einen Parameter, der wirkt. Siehe den Nachtrag an [P3.15](#p315--eine-signatur-die-ihrem-rumpf-widerspricht--erledigt-2026-09-05).
 
-**Offen bleibt an diesem Paket:** funktionaler Stil (drei `unittest.TestCase`), `sys.path.append` in drei Dateien, `debug_run_sequential.py` — und die Entscheidung, ob die Wahl «Ohne Sprachmodell» im Dashboard bis zum Abschlusstext eines **Vergleichs** durchschlagen soll. `run_all_sweeps` benutzt den neuen Schalter bewusst **nicht**: Das ist eine Produktfrage und keine Testfrage, und `scenario_sweeps.SZENARIOTEXT_NUTZT_LLM` beschreibt weiterhin, was auf diesem Pfad passiert (Invariante 7).
+**`debug_run_sequential.py` ist gelöscht** (2026-09-11), nicht in ein Werkzeug umgewandelt — und die Entscheidung stützt sich auf eine Messung, nicht auf den Befund: **Das Skript lief noch** (4,3 s). Kaputt war es also nicht. Gelöscht ist es, weil es nichts trug, was nicht schon geprüft wird: Aufbau und Mock sind eine **zeichengleiche Kopie** aus `test_simulation_runner_e2e.py`, dessen Zusage «ungeprüfte Faktorwechsel eines Sprachmodells kommen nicht durch» es nur ausdruckte statt zu prüfen; es rief die private Methode `_build_sequential_runner`; und außer Plan und Audit verwies nichts darauf. Ein Werkzeug gehört nach `scripts/`, und für den Blick auf einen Lauf gibt es den Smoke-Test aus dem Dev-Workflow. **Der Wächter dazu sucht das Merkmal statt der Datei** (`tests/test_testfundament.py::TestJedeDateiInTestsWirdAuchAusgefuehrt`): jede `.py` in `tests/`, die pytest nicht einsammelt — das Einsammelmuster liest er aus der Konfiguration, statt `test_` anzunehmen.
+
+**Offen bleibt an diesem Paket:** funktionaler Stil (drei `unittest.TestCase`) und `sys.path`-Eingriffe in drei Dateien — zwei `append` und ein `insert` in `test_scenario_sweeps.py`, den der Befund nicht nannte — und die Entscheidung, ob die Wahl «Ohne Sprachmodell» im Dashboard bis zum Abschlusstext eines **Vergleichs** durchschlagen soll. `run_all_sweeps` benutzt den neuen Schalter bewusst **nicht**: Das ist eine Produktfrage und keine Testfrage, und `scenario_sweeps.SZENARIOTEXT_NUTZT_LLM` beschreibt weiterhin, was auf diesem Pfad passiert (Invariante 7).
 
 ### P4.3 — Doku-Zahlen mechanisch halten
 
