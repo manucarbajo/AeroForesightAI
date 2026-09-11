@@ -195,8 +195,8 @@ Wer nur die drei Entscheidungen anfasst, bekommt einen sinnvollen Lauf.
 ## Die drei Entscheidungen
 
 **1. Was soll gerechnet werden?** Die Annahmenwelt: die Standard-Ausgangslage
-aus `configs/`, eines der vorbereiteten Szenarien, oder das, was Sie sich in den
-Schritten vier bis sieben selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
+aus `configs/`, eines der vorbereiteten Szenarien, oder das, was Sie sich im
+Bereich **Modell** selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
 steht; aufklappbar dazu die Begründung, warum es so aufgebaut ist.
 
 **2. Wie weit reicht der Lauf?** Die Länge in Ticks. Hinter «Feinabstimmung»

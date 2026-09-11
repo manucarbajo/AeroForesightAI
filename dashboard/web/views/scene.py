@@ -246,8 +246,8 @@ def render(
                 factor_strip(data.factors_at(tick)),
                 _empty(
                     "Keine Agenten-History in diesem Lauf.",
-                    "`individuals_history.csv` fehlt. Starten Sie links einen Lauf — "
-                    "dann zeichnet die Simulation die Population je Tick auf.",
+                    "Neue Läufe zeichnen die Population je Tick auf — einen Lauf "
+                    "richten Sie unter «Einrichten» ein.",
                 ),
             ],
             className="p-5",

@@ -188,7 +188,7 @@ def layout(selection: dict | None = None) -> html.Div:
 
     empty = ui.empty_state(
         "Noch keine Runs vorhanden.",
-        hint="Starten Sie links einen Lauf — danach erscheint er hier.",
+        hint="Richten Sie unter «Einrichten» einen Lauf ein — nach dem Start erscheint er hier.",
         icon_name="science",
     )
 

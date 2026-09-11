@@ -207,7 +207,7 @@ STEPS: list[Step] = [
     Step(
         "ablage",
         "Lauf & Ablage",
-        "Name, Beschreibung und was am Ende geschrieben wird.",
+        "Fragestellung, Ablage als Szenario und die Dateien, aus denen der Lauf liest.",
         experiment.layout,
         required=False,
         breite="lesen",

@@ -48,11 +48,11 @@ jedem steht, wofür es steht. Ein Szenario legt Politik, Kosten und Nachfrage in
 einem Zug fest und ist deutlich schneller, als jede Größe einzeln einzustellen.
 
 Ein gewähltes Szenario gilt **unverändert**: Die Werte kommen aus seiner Datei
-unter `configs/sweeps/`, und was Sie in den Schritten vier bis sieben
-eingestellt haben, bleibt dafür außen vor. Wollen Sie von einem Szenario
-ausgehen und einzelne Annahmen ändern, klicken Sie auf «Werte übernehmen und
-selbst anpassen» — dann wandern seine Werte in die folgenden Schritte, und die
-Auswahl springt auf «Eigene Einstellungen».
+unter `configs/sweeps/`, und was Sie im Bereich **Modell** eingestellt haben,
+bleibt dafür außen vor. Wollen Sie von einem Szenario ausgehen und einzelne
+Annahmen ändern, klicken Sie auf «Werte übernehmen und selbst anpassen» — dann
+wandern seine Werte in Ihren Entwurf, wo Sie sie im Bereich **Modell** ändern
+können, und die Auswahl springt auf «Eigene Einstellungen».
 
 ## Schritt 2: Wie weit reicht der Lauf?
 

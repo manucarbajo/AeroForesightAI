@@ -268,7 +268,7 @@ def choice_options() -> list[dict]:
         {
             "label": _choice_label(
                 "Eigene Einstellungen",
-                "Was Sie in den Schritten 4 bis 7 selbst eingestellt haben.",
+                "Die Werte, die Sie im Bereich «Modell» selbst eingestellt haben.",
             ),
             "value": CUSTOM,
         }
@@ -425,6 +425,23 @@ def scenario_details(draft: dict) -> html.Div:
 # --- Preflight -------------------------------------------------------------
 
 
+def schritttitel(key: str) -> str:
+    """Der Titel eines Schritts — aus `wizard.STEPS`, nie hingeschrieben (P7.2-U2.2).
+
+    Zwei Texte verwiesen auf Schritte, die es so nicht mehr gab: «Schritten 4
+    bis 7» (die Schrittfolge hat seit P2.0-C sechs) und Schritt «Ausgangslage»
+    (mit P2.0-C entfallen). Beide waren beim Schreiben richtig. Eine Nummer oder
+    ein Titel als Literal weiß nichts davon, dass die Schrittfolge sich ändert —
+    `tests/test_web_schrittverweise.py` meldet jedes.
+
+    Der Import steht in der Funktion, weil `wizard` dieses Modul importiert.
+    """
+
+    from dashboard.web.config_editor import wizard
+
+    return next(step.title for step in wizard.STEPS if step.key == key)
+
+
 def _vergleich_tiles() -> list:
     """Kacheln, die den Vergleich beschreiben — nicht den Entwurf.
 
@@ -448,7 +465,10 @@ def _vergleich_tiles() -> list:
         ui.metric_tile(
             "Länge",
             laenge,
-            hint="Je Szenario so, wie es angelegt ist — nicht die Länge aus Schritt 2.",
+            hint=(
+                "Je Szenario so, wie es angelegt ist — nicht die Länge aus "
+                f"«{schritttitel('umfang')}»."
+            ),
             prose=True,
         ),
         ui.metric_tile(

@@ -24,7 +24,7 @@ from dashboard.config_catalog import (
 )
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
-from dashboard.web.config_editor import glossary
+from dashboard.web.config_editor import glossary, start_flow
 
 RULE = "cfg-rule"
 RULE_COUNT = "cfg-rule-count"
@@ -316,17 +316,21 @@ def layout(draft: dict) -> html.Div:
                     "Startwert und kann sich über Regeln im Lauf verändern."
                 ),
                 (
-                    # Der Schalter dazu steht seit W3.3 im Schritt «Ausgangslage»
-                    # des Einrichtens: Ob eigene Werte gelten, ist eine
-                    # Entscheidung über den Lauf und nicht über das Modell. Hier
-                    # bleibt der Hinweis, damit niemand Zahlen pflegt, die im
-                    # nächsten Lauf nicht ankommen.
+                    # Der Schalter dazu steht seit P2.0-C im ersten Schritt des
+                    # Einrichtens, hinter «Feinabstimmung»: Ob eigene Werte
+                    # gelten, ist eine Entscheidung über den Lauf und nicht über
+                    # das Modell. Hier bleibt der Hinweis, damit niemand Zahlen
+                    # pflegt, die im nächsten Lauf nicht ankommen. **Der Titel
+                    # kommt aus der Schrittfolge** (P7.2-U2.2) — bis zum
+                    # 2026-09-11 schickte der Hinweis in den entfallenen Schritt
+                    # «Ausgangslage».
                     None
                     if overrides_on
                     else ui.alert(
                         "«Eigene Werte anwenden» ist ausgeschaltet — was Sie hier einstellen, "
-                        "wirkt im nächsten Lauf nicht. Einschalten im Einrichten, Schritt "
-                        "«Ausgangslage».",
+                        "wirkt im nächsten Lauf nicht. Einschalten unter «Einrichten», "
+                        f"Schritt «{start_flow.schritttitel('szenario')}», hinter "
+                        "«Feinabstimmung».",
                         "warning",
                         class_name="mb-4",
                     )

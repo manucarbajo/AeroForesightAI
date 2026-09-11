@@ -33,7 +33,7 @@ python -m dashboard.web.app --port 8511
 | `http://localhost:8511/app/` | Einrichten (die Schrittfolge, sechs Schritte) |
 | `http://localhost:8511/app/lauf` | Leitstand (Szene + Zeitleiste) |
 | `http://localhost:8511/app/runs` | Ergebnisse (die sieben Ansichten) |
-| `http://localhost:8511/app/modell` | Modell (Faktorlage, Systemgrößen, Bevölkerung, Preisbildung) |
+| `http://localhost:8511/app/modell` | Modell (Systemgrößen, Preisbildung, Sättigung, Bevölkerung) |
 | `http://localhost:8511/app/doku` | Handbuch |
 
 Die Reihenfolge ist seit P1.7 der Arbeitsablauf: Man richtet ein, sieht dann zu,
