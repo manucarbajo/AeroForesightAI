@@ -72,7 +72,7 @@ def compose_ticket_price(
     return base * (1.0 + total_tax_rate) + total_fees
 
 
-def compute_ticket_price(
+def compute_base_cost(
     base_price: float,
     carbon_tax: float,
     fuel_price_change: float,
@@ -82,7 +82,14 @@ def compute_ticket_price(
     *,
     coefficients: PriceCoefficientsConfig | None = None,
 ) -> float:
-    """Compute ticket cost from base price and policy parameters (coefficients from config)."""
+    """Die **Kostenschicht** eines Tickets aus Basispreis und Politikparametern.
+
+    **Nicht der Kundenpreis** — den setzt :func:`compose_ticket_price` aus dieser
+    Kostenschicht, dem Aufschlag des Anbieters sowie Steuern und Gebühren
+    zusammen. Bis zum 2026-09-11 hieß diese Funktion ``compute_ticket_price``,
+    und das Paar ``compute_ticket_price`` / ``compose_ticket_price`` legte
+    nahe, beide lieferten einen Preis (P5.1).
+    """
     coeffs = coefficients or PriceCoefficientsConfig()
 
     fuel_factor = 1.0 + fuel_price_change
@@ -132,7 +139,7 @@ def compute_cost_pressure(
 
     fuel_change = 0.0 if model.compound_fuel_on_cost else params.get("fuel_price_change", 0.0)
 
-    base_cost = compute_ticket_price(
+    base_cost = compute_base_cost(
         base_price=effective_base,
         carbon_tax=params.get("carbon_tax_level", 0.0),
         fuel_price_change=fuel_change,
