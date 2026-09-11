@@ -3553,10 +3553,12 @@ und `black`; Invariante 4 um den Satz, wer sie durchsetzt).
 | `int(draft.seed)` mit `seed: int \| None` | Angabe — `validate_draft` fängt den Fall vorher ab (P1.9-W1.6); `cast` mit Verweis |
 | `on_progress` in der inneren Klasse, `redirect_stdout(_StdoutTee())`, eine doppelte Annotation | Angaben |
 | `int(festgelegt[…])` auf `object` | Angabe — `cast` |
-| **`coerce_payload`: `int(ticks)`, wobei `ticks` `None` sein kann** | **Verhalten** — `{"max_ticks": 0}` stürzt mit `TypeError` ab, nachgestellt |
+| **`coerce_payload`: `int(ticks)`, wobei `ticks` `None` sein kann** | **Verhalten** — `{"max_ticks": 0}` stürzte mit `TypeError` ab, `{"max_ticks": "abc", "rounds": 5}` mit `ValueError`, nachgestellt. ✅ **Behoben:** Genommen wird der erste Wert, der wirklich ein `int` ist (`tests/test_langgraph_adapter.py`) |
 | **`dummy_llm` in `run_single_sweep` statt eines Objekts mit `.call()`** | **Verhalten** — schläft, weil `FESTLEGUNGEN` den deterministischen Modus erzwingt |
 
 **Die beiden Verhaltensbefunde bekommen je einen eigenen Commit**, und ihre Datei kommt erst dann in die Liste — die Liste, die wächst, wie das Paket es verlangt. **Stand nach Stufe 1:** 7 Einträge, 18 Quelldateien, `mypy` grün.
+
+**Der erste Verhaltensbefund ist behoben** (`coerce_payload`). Die Bedingung prüfte «ist irgendeiner der drei Werte ein `int`», die Auswahl nahm aber den ersten *wahrheitswerten* — mit `0` fiel sie auf `None`, mit einem ungültigen ersten Wert verdeckte er den gültigen. Einen Test, der die Funktion aufruft, gab es nicht. **Mutationsprobe:** Der alte Rumpf gegen die neuen Tests → genau die beiden Befundtests rot (`TypeError`, `ValueError`), die übrigen sechs grün, und `mypy` meldet `arg-type` an derselben Zeile. **Stand:** 8 Einträge, 19 Quelldateien, `mypy` grün.
 
 **Zwei Messungen haben die Konfiguration bestimmt.** `python_version = "3.12"`, weil numpys eigene Typdateien Syntax ab 3.12 benutzen und mypy mit 3.11 dort abbrach, *bevor* er etwas prüfte. Und **kein Pydantic-Plugin**: Mit und ohne kamen dieselben 23 Meldungen heraus — was nichts beiträgt, kommt nicht ins Werkzeug.
 

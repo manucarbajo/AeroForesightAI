@@ -95,6 +95,7 @@ files = [
     "src/models",
     "src/config_loader.py",
     "src/run_simulation.py",
+    "src/orchestration/langgraph_adapter.py",
     "src/orchestration/simulation_runner.py",
     "src/reporting/output_writer/metadata.py",
     "src/reporting/output_writer/provenance.py",
