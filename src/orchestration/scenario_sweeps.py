@@ -479,15 +479,6 @@ def evaluate_milestone_on_state(state: Any, ms: MilestoneCheck) -> dict[str, Any
     return result
 
 
-def evaluate_milestones(
-    state: Any,
-    milestones: list[MilestoneCheck],
-    tick: int,
-) -> list[dict[str, Any]]:
-    """Evaluate milestones that are due at this tick."""
-    return [evaluate_milestone_on_state(state, ms) for ms in milestones if ms.tick == tick]
-
-
 class KeinSprachmodell:
     """Steht, wo der Runner ein Sprachmodell verlangt — und scheitert laut, wenn es gerufen wird.
 
