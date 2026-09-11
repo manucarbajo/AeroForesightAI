@@ -542,7 +542,13 @@ def property_overrides_from_edits(edits: dict[str, PropertyEditState]) -> list[P
 
 def build_custom_sweep_from_draft(draft: ConfigDraft, filename: str = "") -> SweepConfig:
     sweep_name = draft.simulation_name
-    if not sweep_name or sweep_name == "Flugverkehr Szenarioplanung MVP":
+    # **Der Vorgabename kommt aus der Datei, nicht aus einem Literal** (P7.2-U2.7).
+    # Hier stand bis zum 2026-09-11 «Flugverkehr Szenarioplanung MVP» ein zweites
+    # Mal — wer den Namen in `simulation_config.json` änderte, hätte jedes
+    # gesicherte Szenario unter dem Vorgabenamen statt unter dem Dateinamen
+    # abgelegt.
+    vorgabe = str(load_config_file("simulation_config.json").get("name", ""))
+    if not sweep_name or sweep_name == vorgabe:
         sweep_name = filename or "Dashboard Custom"
 
     return SweepConfig(

@@ -108,6 +108,13 @@ NAV_HOST = "shell-nav"
 #: Schrittfolge (P1.9-W5.3).
 BEREICH_ANSAGE = "shell-bereich-ansage"
 
+#: Der Name, unter dem das Produkt im Browser-Tab steht (P7.2-U2.7).
+MARKE = "AeroForesight AI"
+
+#: Träger des Seitentitels je Bereich. Unsichtbar; ein clientseitiger Callback
+#: schreibt seinen Text nach `document.title`.
+SEITENTITEL = "shell-seitentitel"
+
 #: Das Sprungziel des «Zum Inhalt springen»-Links (WCAG 2.4.1).
 MAIN_ID = "shell-main"
 RUN_SELECT = "shell-run-select"
@@ -174,6 +181,19 @@ def bereich_ansage(active: str) -> str:
         if route == active:
             return f"Bereich gewechselt: {label}"
     return ""
+
+
+def seitentitel(active: str) -> str:
+    """Was im Browser-Tab steht — Marke und Bereich (P7.2-U2.7).
+
+    Bis zum 2026-09-11 stand dort auf **jedem** Bereich «Technology Lab ·
+    Leitstand»: ein Name, den das Produkt nirgends sonst trägt, und ein Bereich,
+    in dem man meistens gar nicht war. Wer mehrere Tabs offen hat, findet den
+    richtigen am Titel — und nur, wenn er sagt, was darin offen ist.
+    """
+
+    bereich = dict(ROUTES).get(active)
+    return f"{MARKE} · {bereich}" if bereich else MARKE
 
 
 def navbar(active: str) -> html.Div:
@@ -348,6 +368,9 @@ def layout(
                 className="af-nur-vorlesen",
                 **{"aria-live": "polite", "aria-atomic": "true"},
             ),
+            # Der Seitentitel. `hidden` und nicht `af-nur-vorlesen`: Die Ansage
+            # darüber sagt den Wechsel schon, ein zweiter Text wäre Doppelung.
+            html.Div(seitentitel(active), id=SEITENTITEL, hidden=True),
             header(active, state=state, run_options=run_options, run_value=run_value),
             html.Aside(left, className="af-shell__left", id="shell-left"),
             _gutter("left", "Breite des Bedienfelds ändern"),
@@ -392,6 +415,20 @@ def register_callbacks(app) -> None:
         Output(THEME_STORE, "data"),
         Input(THEME_TOGGLE, "n_clicks"),
         State(THEME_STORE, "data"),
+    )
+
+    # Der Browser-Tab folgt dem Bereich (P7.2-U2.7). Clientseitig, weil
+    # `document.title` nur im Browser existiert; der Text selbst entsteht auf
+    # dem Server in `seitentitel`, damit er ohne Browser prüfbar bleibt.
+    app.clientside_callback(
+        """
+        function(titel) {
+            if (titel) { document.title = titel; }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output(SEITENTITEL, "title"),
+        Input(SEITENTITEL, "children"),
     )
 
     app.clientside_callback(

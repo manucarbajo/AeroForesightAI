@@ -372,6 +372,15 @@ Annahmen jetzt zehn Jahre lang hält statt vier. Ein Szenario-Vergleich von vor
 diesem Datum gehört **nicht** neben einen späteren — auch dort nicht, wo die
 Zahlen nah beieinanderliegen: Die Läufe beschreiben verschiedene Zeitspannen.
 
+Ebenfalls am **2026-09-11** kam ein fünfzehnter Schnitt dazu, und er verschiebt
+**keine einzige Zahl**: Der Vorgabename eines Laufs heißt jetzt
+«Flugverkehr-Szenarioplanung» statt «Flugverkehr Szenarioplanung MVP», die
+Beschreibung ist mitgezogen. Beides steht in `configs/simulation_config.json`, und
+deshalb hat diese Datei seither einen **anderen Fingerabdruck**. Ein Lauf von
+davor und einer von danach tragen damit verschiedene Fingerabdrücke, obwohl sie —
+dieses einen Schnitts wegen — dieselben Zahlen liefern. Hier, und nur hier, dürfen
+sie trotzdem nebeneinander.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich

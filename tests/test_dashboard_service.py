@@ -6,6 +6,7 @@ from pathlib import Path
 
 from dashboard.config_catalog import (
     apply_sweep_to_draft,
+    build_custom_sweep_from_draft,
     default_config_draft,
     effective_config_summary,
     extract_market_feedback_from_file,
@@ -118,6 +119,21 @@ class TestConfigCatalog:
         )
         assert draft.saturation_edit.booking_increase == 0.6
         assert draft.market_feedback_edit.target_booking_rate == 0.37
+
+    def test_a_scenario_saved_under_the_default_name_takes_the_file_name(self):
+        """Der Vorgabename zählt als «kein eigener Name» — gelesen aus der Datei (P7.2-U2.7).
+
+        Bis zum 2026-09-11 stand der Vorgabename hier ein zweites Mal als
+        Literal. Mit dem neuen Namen in `simulation_config.json` hätte jedes
+        gesicherte Szenario ohne eigenen Namen «Flugverkehr-Szenarioplanung»
+        geheißen statt wie seine Datei.
+        """
+
+        draft = default_config_draft()
+        assert build_custom_sweep_from_draft(draft, "meine_datei").name == "meine_datei"
+
+        draft.simulation_name = "Mein Lauf"
+        assert build_custom_sweep_from_draft(draft, "meine_datei").name == "Mein Lauf"
 
     def test_save_saturation_and_market_feedback_to_properties_json(self, monkeypatch, tmp_path):
         import dashboard.config_catalog as catalog

@@ -15,8 +15,8 @@
 		"llm_max_tokens": 2048,
 		"ollama_base_url": "http://127.0.0.1:11434",
 	"config": {
-		"name": "Flugverkehr Szenarioplanung MVP",
-		"description": "Prototypische Multi-Agenten-Simulation fuer Szenarioplanung im Flugverkehr",
+		"name": "Flugverkehr-Szenarioplanung",
+		"description": "Multi-Agenten-Simulation für die Szenarioplanung im europäischen Luftverkehr",
 		"llm": { "model": "llama3", "temperature": 0.7, "max_tokens": 2048 },
 		"seed": null
 	},

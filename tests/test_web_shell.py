@@ -195,6 +195,30 @@ class TestGenauEinBereichIstSichtbar:
 
         assert web_app.active_route("/app/doku/cib") == "doku"
 
+    def test_the_browser_tab_names_the_brand_and_the_area(self):
+        """P7.2-U2.7: «Technology Lab · Leitstand» stand auf jedem Bereich im Tab."""
+
+        from dashboard.web import shell
+
+        assert web_app.TITLE == shell.MARKE == "AeroForesight AI"
+        for route, label in shell.ROUTES:
+            assert shell.seitentitel(route) == f"AeroForesight AI · {label}"
+        assert "AeroForesight AI · Einrichten" in str(web_app.serve_layout())
+
+    def test_the_shipped_defaults_carry_no_prototype_wording(self):
+        """Der Vorgabename landet im Bericht und in der Lauf-Auswahl (P7.2-U2.7)."""
+
+        import json
+        from pathlib import Path
+
+        pfad = Path(__file__).resolve().parents[1] / "configs" / "simulation_config.json"
+        vorgabe = json.loads(pfad.read_text(encoding="utf-8"))
+
+        for feld in ("name", "description"):
+            text = vorgabe[feld]
+            assert "MVP" not in text and "Prototyp" not in text, (feld, text)
+            assert " fuer " not in f" {text} ", (feld, text)
+
 
 # --- Die eine Zeitachse ----------------------------------------------------
 

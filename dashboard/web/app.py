@@ -61,7 +61,11 @@ from dashboard.web.state import STORE_ID, draft_from_dict
 from dashboard.web.views import scene, telemetry
 from src.logging_setup import stdio_auf_utf8
 
-TITLE = "Technology Lab · Leitstand"
+#: Der Titel beim ersten Laden. Danach setzt ihn der Bereichswechsel
+#: (`shell.seitentitel`); bis zum 2026-09-11 stand hier «Technology Lab ·
+#: Leitstand» — auf jedem Bereich und unter einem Namen, den das Produkt sonst
+#: nirgends trägt (P7.2-U2.7).
+TITLE = shell.MARKE
 
 _HIDDEN = {"display": "none"}
 
@@ -366,6 +370,7 @@ def create_app() -> Dash:
         Output("page-modell", "style"),
         Output("page-docs", "style"),
         Output(shell.BEREICH_ANSAGE, "children"),
+        Output(shell.SEITENTITEL, "children"),
         Input("url", "pathname"),
     )
     def _route(pathname: str | None):
@@ -378,6 +383,7 @@ def create_app() -> Dash:
             # lautlos: Der Bildschirm zeigt etwas anderes, und wer nicht
             # hinsieht, erfährt es nicht.
             shell.bereich_ansage(active),
+            shell.seitentitel(active),
         )
 
     # **Der Fokus wandert auf die Überschrift des neuen Bereichs** (P1.5).
