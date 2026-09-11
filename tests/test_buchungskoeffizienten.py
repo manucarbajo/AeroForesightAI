@@ -174,7 +174,7 @@ class TestDateiUndModellLaufenNichtAuseinander:
         assert set(daten["booking_model"]) == set(NAMEN)
 
 
-def test_ein_schreibzugriff_des_modell_editors_verliert_den_block_nicht(tmp_path):
+def test_ein_schreibzugriff_des_modell_editors_verliert_den_block_nicht(tmp_path, monkeypatch):
     """Der Editor kennt `booking_model` nicht — und darf es trotzdem nicht löschen.
 
     Seine Schreiber lesen die ganze Datei, setzen einen Schlüssel und schreiben
@@ -188,16 +188,12 @@ def test_ein_schreibzugriff_des_modell_editors_verliert_den_block_nicht(tmp_path
     import dashboard.config_catalog as catalog
 
     shutil.copy(PROPERTIES_JSON, tmp_path / "properties.json")
-    original = catalog.CONFIGS_DIR
-    catalog.CONFIGS_DIR = tmp_path
-    try:
-        catalog.save_saturation_to_file(
-            catalog.SaturationEditState(booking_increase=0.45, utility_penalty_factor=0.8),
-            "properties.json",
-        )
-        danach = json.loads((tmp_path / "properties.json").read_text(encoding="utf-8"))
-    finally:
-        catalog.CONFIGS_DIR = original
+    monkeypatch.setattr(catalog, "CONFIGS_DIR", tmp_path)
+    catalog.save_saturation_to_file(
+        catalog.SaturationEditState(booking_increase=0.45, utility_penalty_factor=0.8),
+        "properties.json",
+    )
+    danach = json.loads((tmp_path / "properties.json").read_text(encoding="utf-8"))
 
     assert "booking_model" in danach, (
         "Ein Schreibzugriff des Modell-Editors hat die Buchungskoeffizienten "

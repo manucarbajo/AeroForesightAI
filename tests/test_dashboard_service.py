@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import shutil
-import tempfile
 from pathlib import Path
 
 from dashboard.config_catalog import (
@@ -82,32 +81,24 @@ def _write_minimal_run(run_dir: Path) -> None:
 
 
 class TestDashboardService:
-    def test_list_runs_and_files(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="dash_test_"))
-        try:
-            run_dir = tmpdir / "run_20260101T120000Z"
-            _write_minimal_run(run_dir)
-            runs = list_runs(tmpdir)
-            assert len(runs) == 1
-            assert runs[0].run_id == "run_20260101T120000Z"
-            assert runs[0].has_run_scenario is False
-            files = list_run_files(run_dir)
-            assert any(entry.relative_path == "tick_mechanics.json" for entry in files)
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_list_runs_and_files(self, tmp_path):
+        run_dir = tmp_path / "run_20260101T120000Z"
+        _write_minimal_run(run_dir)
+        runs = list_runs(tmp_path)
+        assert len(runs) == 1
+        assert runs[0].run_id == "run_20260101T120000Z"
+        assert runs[0].has_run_scenario is False
+        files = list_run_files(run_dir)
+        assert any(entry.relative_path == "tick_mechanics.json" for entry in files)
 
-    def test_consistency_checks_pass_for_aligned_run(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="dash_check_"))
-        try:
-            run_dir = tmpdir / "run_20260101T120000Z"
-            _write_minimal_run(run_dir)
-            checks = run_consistency_checks(run_dir)
-            statuses = {check.check_id: check.status for check in checks}
-            assert statuses["required_files"] == "ok"
-            assert statuses["price_alignment"] == "ok"
-            assert statuses["delta_events"] == "ok"
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_consistency_checks_pass_for_aligned_run(self, tmp_path):
+        run_dir = tmp_path / "run_20260101T120000Z"
+        _write_minimal_run(run_dir)
+        checks = run_consistency_checks(run_dir)
+        statuses = {check.check_id: check.status for check in checks}
+        assert statuses["required_files"] == "ok"
+        assert statuses["price_alignment"] == "ok"
+        assert statuses["delta_events"] == "ok"
 
 
 class TestConfigCatalog:
@@ -128,48 +119,41 @@ class TestConfigCatalog:
         assert draft.saturation_edit.booking_increase == 0.6
         assert draft.market_feedback_edit.target_booking_rate == 0.37
 
-    def test_save_saturation_and_market_feedback_to_properties_json(self):
+    def test_save_saturation_and_market_feedback_to_properties_json(self, monkeypatch, tmp_path):
         import dashboard.config_catalog as catalog
 
-        tmpdir = Path(tempfile.mkdtemp(prefix="dash_props_"))
-        try:
-            src = catalog.CONFIGS_DIR / "properties.json"
-            dst = tmpdir / "properties.json"
-            shutil.copy(src, dst)
-            original = catalog.CONFIGS_DIR
-            catalog.CONFIGS_DIR = tmpdir
+        src = catalog.CONFIGS_DIR / "properties.json"
+        dst = tmp_path / "properties.json"
+        shutil.copy(src, dst)
+        monkeypatch.setattr(catalog, "CONFIGS_DIR", tmp_path)
 
-            save_saturation_to_file(
-                catalog.SaturationEditState(booking_increase=0.45, utility_penalty_factor=0.8),
-                "properties.json",
-            )
-            save_market_feedback_to_file(
-                catalog.MarketFeedbackEditState(
-                    target_booking_rate=0.42,
-                    marginal_cost_fraction=0.4,
-                ),
-                "properties.json",
-            )
+        save_saturation_to_file(
+            catalog.SaturationEditState(booking_increase=0.45, utility_penalty_factor=0.8),
+            "properties.json",
+        )
+        save_market_feedback_to_file(
+            catalog.MarketFeedbackEditState(
+                target_booking_rate=0.42,
+                marginal_cost_fraction=0.4,
+            ),
+            "properties.json",
+        )
 
-            sat = extract_saturation_from_file("properties.json")
-            mf = extract_market_feedback_from_file("properties.json")
-            assert sat.booking_increase == 0.45
-            assert sat.utility_penalty_factor == 0.8
-            assert mf.target_booking_rate == 0.42
-            assert mf.marginal_cost_fraction == 0.4
+        sat = extract_saturation_from_file("properties.json")
+        mf = extract_market_feedback_from_file("properties.json")
+        assert sat.booking_increase == 0.45
+        assert sat.utility_penalty_factor == 0.8
+        assert mf.target_booking_rate == 0.42
+        assert mf.marginal_cost_fraction == 0.4
 
-            payload = json.loads(dst.read_text(encoding="utf-8"))
-            rule_effect = next(
-                r["effect"]
-                for r in payload["market_rules"]
-                if r.get("effect", {}).get("type") == "booking_yield_feedback"
-            )
-            assert rule_effect["target_booking_rate"] == 0.42
-            assert rule_effect["marginal_cost_fraction"] == 0.4
-
-            catalog.CONFIGS_DIR = original
-        finally:
-            shutil.rmtree(tmpdir)
+        payload = json.loads(dst.read_text(encoding="utf-8"))
+        rule_effect = next(
+            r["effect"]
+            for r in payload["market_rules"]
+            if r.get("effect", {}).get("type") == "booking_yield_feedback"
+        )
+        assert rule_effect["target_booking_rate"] == 0.42
+        assert rule_effect["marginal_cost_fraction"] == 0.4
 
     def test_effective_config_summary_includes_mechanics(self):
         draft = default_config_draft()
@@ -232,127 +216,101 @@ class TestConfigCatalog:
         assert "property_overrides" in summary
         assert summary["config_files"]["properties"] == "properties.json"
 
-    def test_save_custom_sweep_preset(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="sweep_save_"))
-        try:
-            from dashboard import config_catalog
+    def test_save_custom_sweep_preset(self, monkeypatch, tmp_path):
+        from dashboard import config_catalog
 
-            original = config_catalog.SWEEPS_DIR
-            config_catalog.SWEEPS_DIR = tmpdir
-            draft = default_config_draft()
-            draft.scenario_mode = "custom"
-            draft.apply_custom_overrides = True
-            draft.simulation_name = "Test Sweep"
-            path = save_custom_sweep_preset(draft, "test_preset")
-            assert path.is_file()
-            payload = json.loads(path.read_text(encoding="utf-8"))
-            assert payload["id"] == "test_preset"
-            config_catalog.SWEEPS_DIR = original
-        finally:
-            shutil.rmtree(tmpdir)
+        monkeypatch.setattr(config_catalog, "SWEEPS_DIR", tmp_path)
+        draft = default_config_draft()
+        draft.scenario_mode = "custom"
+        draft.apply_custom_overrides = True
+        draft.simulation_name = "Test Sweep"
+        path = save_custom_sweep_preset(draft, "test_preset")
+        assert path.is_file()
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        assert payload["id"] == "test_preset"
 
-    def test_list_runs_scenario_preview(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="dash_scenario_"))
-        try:
-            run_dir = tmpdir / "run_20260101T120000Z"
-            _write_minimal_run(run_dir)
-            (run_dir / "run_scenario.json").write_text(
-                json.dumps(
-                    {
-                        "title": "Drei Zukunftspfade",
-                        "summary": "Drei explorative Pfade.",
-                        "scenarios": [
-                            {
-                                "rank": 1,
-                                "title": "Wende im Mobilitätsmix",
-                                "archetype": "Wende",
-                                "what_could_happen": "Policy und Verhalten kippen.",
-                            },
-                            {
-                                "rank": 2,
-                                "title": "BAU",
-                                "archetype": "BAU",
-                                "what_could_happen": "Weiter wie bisher.",
-                            },
-                            {
-                                "rank": 3,
-                                "title": "Konflikt",
-                                "archetype": "Konflikt",
-                                "what_could_happen": "Nachfrage bricht.",
-                            },
-                        ],
-                    }
-                ),
-                encoding="utf-8",
-            )
-            runs = list_runs(tmpdir)
-            assert runs[0].has_run_scenario is True
-            assert runs[0].scenario_title == "Wende im Mobilitätsmix"
-            assert "Top-3:" in (runs[0].scenario_summary or "")
-            loaded = load_run_scenario(run_dir)
-            assert loaded is not None
-            assert loaded["scenarios"][0]["title"] == "Wende im Mobilitätsmix"
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_list_runs_scenario_preview(self, tmp_path):
+        run_dir = tmp_path / "run_20260101T120000Z"
+        _write_minimal_run(run_dir)
+        (run_dir / "run_scenario.json").write_text(
+            json.dumps(
+                {
+                    "title": "Drei Zukunftspfade",
+                    "summary": "Drei explorative Pfade.",
+                    "scenarios": [
+                        {
+                            "rank": 1,
+                            "title": "Wende im Mobilitätsmix",
+                            "archetype": "Wende",
+                            "what_could_happen": "Policy und Verhalten kippen.",
+                        },
+                        {
+                            "rank": 2,
+                            "title": "BAU",
+                            "archetype": "BAU",
+                            "what_could_happen": "Weiter wie bisher.",
+                        },
+                        {
+                            "rank": 3,
+                            "title": "Konflikt",
+                            "archetype": "Konflikt",
+                            "what_could_happen": "Nachfrage bricht.",
+                        },
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        runs = list_runs(tmp_path)
+        assert runs[0].has_run_scenario is True
+        assert runs[0].scenario_title == "Wende im Mobilitätsmix"
+        assert "Top-3:" in (runs[0].scenario_summary or "")
+        loaded = load_run_scenario(run_dir)
+        assert loaded is not None
+        assert loaded["scenarios"][0]["title"] == "Wende im Mobilitätsmix"
 
-    def test_regenerate_run_scenario(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="dash_regen_"))
-        try:
-            run_dir = tmpdir / "run_20260101T120000Z"
-            _write_minimal_run(run_dir)
-            result = regenerate_run_scenario(
-                "run_20260101T120000Z",
-                run_dir=run_dir,
-                mock_llm=True,
-                deterministic_only=True,
-            )
-            assert Path(result["paths"]["json"]).is_file()
-            assert Path(result["paths"]["markdown"]).is_file()
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_regenerate_run_scenario(self, tmp_path):
+        run_dir = tmp_path / "run_20260101T120000Z"
+        _write_minimal_run(run_dir)
+        result = regenerate_run_scenario(
+            "run_20260101T120000Z",
+            run_dir=run_dir,
+            mock_llm=True,
+            deterministic_only=True,
+        )
+        assert Path(result["paths"]["json"]).is_file()
+        assert Path(result["paths"]["markdown"]).is_file()
 
-    def test_list_runs_includes_batch_children(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="dash_batch_"))
-        try:
-            batch_dir = tmpdir / "batch_20260101T120000Z"
-            for sub_id in ("run_001", "run_002"):
-                _write_minimal_run(batch_dir / sub_id)
-            runs = list_runs(tmpdir)
-            run_ids = {run.run_id for run in runs}
-            assert "batch_20260101T120000Z/run_001" in run_ids
-            assert "batch_20260101T120000Z/run_002" in run_ids
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_list_runs_includes_batch_children(self, tmp_path):
+        batch_dir = tmp_path / "batch_20260101T120000Z"
+        for sub_id in ("run_001", "run_002"):
+            _write_minimal_run(batch_dir / sub_id)
+        runs = list_runs(tmp_path)
+        run_ids = {run.run_id for run in runs}
+        assert "batch_20260101T120000Z/run_001" in run_ids
+        assert "batch_20260101T120000Z/run_002" in run_ids
 
-    def test_list_runs_includes_sweep_runs(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="dash_sweep_"))
-        try:
-            sweep_dir = tmpdir / "sweeps" / "sweep_business_as_usual"
-            _write_minimal_run(sweep_dir)
-            runs = list_runs(tmpdir)
-            run_ids = {run.run_id for run in runs}
-            assert "sweeps/sweep_business_as_usual" in run_ids
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_list_runs_includes_sweep_runs(self, tmp_path):
+        sweep_dir = tmp_path / "sweeps" / "sweep_business_as_usual"
+        _write_minimal_run(sweep_dir)
+        runs = list_runs(tmp_path)
+        run_ids = {run.run_id for run in runs}
+        assert "sweeps/sweep_business_as_usual" in run_ids
 
-    def test_list_run_figures_and_generate(self):
-        tmpdir = Path(tempfile.mkdtemp(prefix="dash_fig_"))
-        try:
-            run_dir = tmpdir / "run_20260101T120000Z"
-            _write_minimal_run(run_dir)
-            assert not list_run_figures(run_dir)
-            entries = generate_figures_for_run(run_dir)
-            assert any("preis_und_nachfrage.png" in e.relative_path for e in entries)
-            listed = list_run_figures(run_dir)
-            assert len(listed) == len(entries)
-            # **Jeder Titel nennt die Aussage, zu der das Bild gehört** (P1.2).
-            assert all(
-                entry.title[0].isdigit() and " · " in entry.title for entry in listed
-            ), f"Ein Bild ohne Zuordnung zu einer Aussage: {[e.title for e in listed]}"
-            assert {t.split(" · ")[0] for t in (e.title for e in listed)} == {"1", "2", "3", "4"}
-            assert listed.vollstaendig, "Ein frisch erzeugter Satz gilt als unvollständig"
-        finally:
-            shutil.rmtree(tmpdir)
+    def test_list_run_figures_and_generate(self, tmp_path):
+        run_dir = tmp_path / "run_20260101T120000Z"
+        _write_minimal_run(run_dir)
+        assert not list_run_figures(run_dir)
+        entries = generate_figures_for_run(run_dir)
+        assert any("preis_und_nachfrage.png" in e.relative_path for e in entries)
+        listed = list_run_figures(run_dir)
+        assert len(listed) == len(entries)
+        # **Jeder Titel nennt die Aussage, zu der das Bild gehört** (P1.2).
+        assert all(
+            entry.title[0].isdigit() and " · " in entry.title for entry in listed
+        ), f"Ein Bild ohne Zuordnung zu einer Aussage: {[e.title for e in listed]}"
+        assert {t.split(" · ")[0] for t in (e.title for e in listed)} == {"1", "2", "3", "4"}
+        assert listed.vollstaendig, "Ein frisch erzeugter Satz gilt als unvollständig"
 
     def test_draft_to_launch_config_multi_run(self):
         draft = default_config_draft()

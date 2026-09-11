@@ -27,18 +27,35 @@ jobs:
         run: black --check .
 
       - name: Tests (pytest)
-        # Deselects two tests documented in CLAUDE.md and scheduled as P4.2 in
-        # docs/projektplan.md:
-        #   - the two sweep tests need a local Ollama server (never available on the
-        #     CI runner) and *hang* rather than fail without one; they need a skipif
-        #     with a hard timeout, not a deselect.
+        # There is no deselect list any more, and there must not be a new one.
+        #
+        # P4.2 removed the last two (2026-09-08). They were the two sweep tests,
+        # carried since 2026-08-25 as "need a local Ollama server and *hang*
+        # rather than fail without one". Measured, that diagnosis was too coarse:
+        # an endpoint where nobody listens fails fast (ConnectionError is a
+        # RequestException, and OllamaClient gives up on those immediately) --
+        # what hangs is an endpoint that accepts the connection and does not
+        # answer, because ReadTimeout is retried three times with doubling, up to
+        # 870 s per call. A CI runner is the first case, a developer machine with
+        # Ollama installed but no model loaded is the second.
+        #
+        # The fix is not a skipif. Neither test is about the language model: a
+        # sweep computes its ticks deterministically, and the only LLM call is the
+        # closing narrative. run_single_sweep now takes llm_narrative=False, so
+        # the tests say they do not need it instead of switching themselves off
+        # when it is missing -- a skipif would have dropped the only end-to-end
+        # assertion about the sweep path on every machine without Ollama, which is
+        # nearly all of them.
+        #
         # The third deselect (test_market_rules_resolve_marginal_cost_fraction) is gone
         # since 2026-09-03: it was never a code bug but a stale expectation, and behind
         # it sat the real finding -- two sources for the same value. P2.11 removed the
         # literal fallbacks in resolve_market_feedback_config; the shipped 0.25 wins,
         # and the test says so.
-        # Both remaining deselects go away with P4.2. Do not add a third: a deselect
-        # here hides the problem from CI, which is exactly how these survived so long.
+        #
+        # Do not add a deselect here. It hides the problem from CI, which is
+        # exactly how these two survived for two weeks. If a test cannot run in
+        # CI, it skips itself with a reason (see the browser guard below).
         #
         # tests/test_web_overflow.py (the P1.7-D overflow guard) is NOT deselected --
         # it skips itself, because playwright lives in the optional `ui` extra and no
@@ -53,7 +70,4 @@ jobs:
         # three times in six days, and each time the regression sat unseen for days
         # (P2.0-C, then A1 and P2.8-Rest -- all three touched dashboard/web/**, which is
         # exactly what the new paths filter watches).
-        run: |
-          pytest -q \
-            --deselect tests/test_scenario_sweeps.py::test_run_single_sweep_short \
-            --deselect tests/test_scenario_sweeps.py::test_sweep_base_price_override_raises_ticket_price
+        run: pytest -q

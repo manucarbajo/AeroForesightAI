@@ -175,7 +175,7 @@ class TestKeinFeldErfindetEinenWert:
             "gutem Grund bleibt, gehört er mit Begründung in `AUSNAHMEN`."
         )
 
-    def test_the_guard_would_notice_a_relapse(self, tmp_path):
+    def test_the_guard_would_notice_a_relapse(self, tmp_path, monkeypatch):
         """Ein Wächter, der aus dem falschen Grund grün ist, ist schlechter als keiner."""
 
         probe = tmp_path / "probe.py"
@@ -189,12 +189,8 @@ class TestKeinFeldErfindetEinenWert:
 
         import tests.test_web_rueckfall as modul
 
-        alt = modul.WURZEL
-        try:
-            modul.WURZEL = tmp_path
-            gefunden = {f.feld: f.quelle for f in modul.funde()}
-        finally:
-            modul.WURZEL = alt
+        monkeypatch.setattr(modul, "WURZEL", tmp_path)
+        gefunden = {f.feld: f.quelle for f in modul.funde()}
 
         assert "probe_a" in gefunden, "Der zweite `get`-Parameter wird übersehen"
         assert "probe_b" in gefunden, "Die rechte Seite eines `or` wird übersehen"

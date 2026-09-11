@@ -1,16 +1,23 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
 from src.config_loader import build_initial_state
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.reporting.protocol_generator import ProtocolOptions, build_protocol_payload
 
 
-class MockLLM:
+class SprechendeAgenten:
+    """Antwortet je Rolle mit Inhalt, damit jeder Agent im Tick etwas sagt.
+
+    **Nicht** `src.llm.studio_helpers.MockLLM` — aber nicht, weil die Tests hier
+    daran hingen. **Gemessen am 2026-09-11:** Alle drei bleiben mit dem
+    Produkt-Mock grün; sie zählen, wer spricht, und prüfen das Protokoll, nicht
+    den Inhalt. Getrennt ist die Klasse, damit ein Name ein Ding bleibt. Mit
+    `VorschlagendeAgenten` aus `test_simulation_runner_e2e.py` ist sie bewusst
+    nicht zusammengelegt: Inhalt und Rollenabgleich unterscheiden sich (hier
+    zählt auch der Rollenname in den ersten 200 Zeichen), und ein Umbau ändert
+    keine Testeingaben.
+    """
+
     def call(self, prompt: str) -> str:
         prompt_lower = prompt.lower()
         if "`consumer`" in prompt_lower or "consumer" in prompt_lower[:200]:
@@ -44,7 +51,7 @@ def test_parallel_round_runs_each_agent_once_per_tick():
     state = build_initial_state()
     state.clock.max_ticks = 1
 
-    runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=False))
+    runner = SimulationRunner(llm=SprechendeAgenten(), options=RunnerOptions(enable_market=False))
     final = runner._build_sequential_runner(state.agents)(state)
 
     tick_one = [rr for rr in final.round_results if rr.round_number == 1]
@@ -59,7 +66,7 @@ def test_parallel_protocol_has_no_redebedarf_scores():
     state = build_initial_state()
     state.clock.max_ticks = 1
 
-    runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=False))
+    runner = SimulationRunner(llm=SprechendeAgenten(), options=RunnerOptions(enable_market=False))
     final = runner._build_sequential_runner(state.agents)(state)
 
     payload = build_protocol_payload(final, ProtocolOptions(include_redebedarf=False))
@@ -74,7 +81,7 @@ def test_redebedarf_mode_can_include_scores_in_protocol():
     state.clock.max_ticks = 1
 
     runner = SimulationRunner(
-        llm=MockLLM(),
+        llm=SprechendeAgenten(),
         options=RunnerOptions(enable_market=False, enable_redebedarf=True),
     )
     final = runner._build_sequential_runner(state.agents)(state)

@@ -1,15 +1,18 @@
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
-import unittest
-
 from src.config_loader import build_initial_state
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 
 
-class MockLLM:
+class VorschlagendeAgenten:
+    """Antwortet je Rolle mit Inhalt — der Regulator schlägt einen Faktorwechsel vor.
+
+    **Nicht** `src.llm.studio_helpers.MockLLM`, und hier ist das tragend: Die
+    Zusage lautet, dass ein vorgeschlagener Faktorwechsel **nicht** ungeprüft
+    durchkommt. **Bis zum 2026-09-11 blieb der Test mit dem Produkt-Mock grün**
+    — dann aber, weil nichts vorgeschlagen wurde, und nicht, weil etwas
+    abgewiesen wurde. Seither prüft er als Vorbedingung, dass der Regulator
+    F2.2 wirklich vorgeschlagen hat.
+    """
+
     def call(self, prompt: str) -> str:
         p = prompt.lower()
         if "`consumer`" in p:
@@ -48,37 +51,51 @@ class MockLLM:
         return '{\n  "reasoning": "noop",\n  "actions": [],\n  "state_changes": [],\n  "events": [],\n  "segment_analysis": {}\n}'
 
 
-class SimulationRunnerE2ETest(unittest.TestCase):
-    def test_run_with_mock_agents_blocks_ungated_llm_factor_changes(self) -> None:
-        state = build_initial_state()
-        state.clock.max_ticks = 1
+def test_run_with_mock_agents_blocks_ungated_llm_factor_changes() -> None:
+    state = build_initial_state()
+    state.clock.max_ticks = 1
 
-        runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
-        run_graph = runner._build_sequential_runner(state.agents)
-        final = run_graph(state)
+    runner = SimulationRunner(llm=VorschlagendeAgenten(), options=RunnerOptions(enable_market=True))
+    run_graph = runner._build_sequential_runner(state.agents)
+    final = run_graph(state)
 
-        self.assertEqual(final.clock.current_tick, 1)
-        self.assertEqual(final.environment.factors["F1"].current_state, "F1.1")
-        self.assertEqual(final.environment.factors["F2"].current_state, "F2.1")
-        self.assertEqual(len(final.factor_timeseries), 1)
+    # **Die Vorbedingung, ohne die die Zusicherung darunter leer wäre** (2026-09-11).
+    # Mit dem Produkt-Mock, der nichts vorschlägt, blieb F2 ebenfalls auf F2.1 —
+    # der Test war grün, ohne dass etwas abgewiesen wurde. Erst wenn der
+    # Regulator F2.2 wirklich vorgeschlagen hat, sagt «F2 bleibt F2.1», dass die
+    # Prüfung in `validate_factor_proposals` gegriffen hat. Der Vorschlag bleibt
+    # in `round_results` stehen; abgewiesen wird er erst im Environment-Node.
+    vorschlaege = [
+        (antwort.agent_id, aenderung.factor_id, aenderung.proposed_state)
+        for runde in final.round_results
+        if runde.round_number == 1
+        for antwort in runde.agent_responses
+        for aenderung in antwort.state_changes
+    ]
+    assert ("regulator", "F2", "F2.2") in vorschlaege, (
+        "Der Regulator hat F2.2 gar nicht vorgeschlagen — dann prüft die "
+        f"Zusicherung darunter nichts. Gefundene Vorschläge: {vorschlaege}"
+    )
 
-        rounds = [rr for rr in final.round_results if rr.round_number == 1]
-        self.assertTrue(len(rounds) >= 1)
-        self.assertTrue(len(final.price_history) >= 1)
+    assert final.clock.current_tick == 1
+    assert final.environment.factors["F1"].current_state == "F1.1"
+    assert final.environment.factors["F2"].current_state == "F2.1"
+    assert len(final.factor_timeseries) == 1
 
-    def test_factor_rules_apply_at_carbon_shock_tick(self) -> None:
-        state = build_initial_state()
-        state.clock.max_ticks = 15
-
-        runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
-        run_graph = runner._build_sequential_runner(state.agents)
-        final = run_graph(state)
-
-        self.assertEqual(final.clock.current_tick, 15)
-        self.assertEqual(final.environment.factors["F2"].current_state, "F2.2")
-        self.assertEqual(final.environment.factors["F6"].current_state, "F6.2")
-        self.assertEqual(len(final.factor_timeseries), 15)
+    rounds = [rr for rr in final.round_results if rr.round_number == 1]
+    assert len(rounds) >= 1
+    assert len(final.price_history) >= 1
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_factor_rules_apply_at_carbon_shock_tick() -> None:
+    state = build_initial_state()
+    state.clock.max_ticks = 15
+
+    runner = SimulationRunner(llm=VorschlagendeAgenten(), options=RunnerOptions(enable_market=True))
+    run_graph = runner._build_sequential_runner(state.agents)
+    final = run_graph(state)
+
+    assert final.clock.current_tick == 15
+    assert final.environment.factors["F2"].current_state == "F2.2"
+    assert final.environment.factors["F6"].current_state == "F6.2"
+    assert len(final.factor_timeseries) == 15

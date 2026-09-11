@@ -40,7 +40,7 @@ class DummyAgentNode:
         return state
 
 
-def test_multi_speak_triggers_provider():
+def test_multi_speak_triggers_provider(monkeypatch):
     # Prepare state and agents
     state = build_initial_state()
     state.clock.current_tick = 1
@@ -51,46 +51,44 @@ def test_multi_speak_triggers_provider():
     scheduler = RedebedarfScheduler(agent_ids, factor_relevance_map={"F1": {"provider": 3}})
 
     # Monkeypatch the classmethod used by the node to return our prepared scheduler
-    original_from_state = RedebedarfScheduler.from_simulation_state
-    RedebedarfScheduler.from_simulation_state = classmethod(
-        lambda cls, state, apply_score_deltas=True: scheduler
+    monkeypatch.setattr(
+        RedebedarfScheduler,
+        "from_simulation_state",
+        classmethod(lambda cls, state, apply_score_deltas=True: scheduler),
     )
 
-    try:
-        node = RoundExecutionNode(agents, llm=None)
+    node = RoundExecutionNode(agents, llm=None)
 
-        # Consumer will propose a change affecting F1 -> this should give provider points
-        consumer_response = AgentResponse(
-            agent_id="consumer",
-            round_number=1,
-            reasoning="trigger",
-            actions=["SPEAK"],
-            state_changes=[StateChange(factor_id="F1", proposed_state="F1.2", reasoning="test")],
-            raw_output="",
-        )
-        provider_response = AgentResponse(
-            agent_id="provider",
-            round_number=1,
-            reasoning="reply",
-            actions=["SPEAK"],
-            state_changes=[],
-            raw_output="",
-        )
+    # Consumer will propose a change affecting F1 -> this should give provider points
+    consumer_response = AgentResponse(
+        agent_id="consumer",
+        round_number=1,
+        reasoning="trigger",
+        actions=["SPEAK"],
+        state_changes=[StateChange(factor_id="F1", proposed_state="F1.2", reasoning="test")],
+        raw_output="",
+    )
+    provider_response = AgentResponse(
+        agent_id="provider",
+        round_number=1,
+        reasoning="reply",
+        actions=["SPEAK"],
+        state_changes=[],
+        raw_output="",
+    )
 
-        node._agent_nodes = {
-            "consumer": DummyAgentNode("consumer", consumer_response),
-            "provider": DummyAgentNode("provider", provider_response),
-            "regulator": DummyAgentNode("regulator", None),
-        }
+    node._agent_nodes = {
+        "consumer": DummyAgentNode("consumer", consumer_response),
+        "provider": DummyAgentNode("provider", provider_response),
+        "regulator": DummyAgentNode("regulator", None),
+    }
 
-        out_state = node.invoke(state)
+    out_state = node.invoke(state)
 
-        # Expect that provider also spoke in same round after consumer triggered F1
-        assert "consumer" in out_state.current_speech_order
-        assert "provider" in out_state.current_speech_order
-        # consumer should precede provider
-        assert out_state.current_speech_order.index(
-            "consumer"
-        ) < out_state.current_speech_order.index("provider")
-    finally:
-        RedebedarfScheduler.from_simulation_state = original_from_state
+    # Expect that provider also spoke in same round after consumer triggered F1
+    assert "consumer" in out_state.current_speech_order
+    assert "provider" in out_state.current_speech_order
+    # consumer should precede provider
+    assert out_state.current_speech_order.index("consumer") < out_state.current_speech_order.index(
+        "provider"
+    )

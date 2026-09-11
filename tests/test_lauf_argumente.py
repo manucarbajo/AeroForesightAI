@@ -308,17 +308,51 @@ class TestJedeSignaturSagtWasSieLiefert:
         Zwei verschiedene Kennungen ergaben gemessen identische Argumente — ein
         Aufrufer übergab also eine Angabe in der Annahme, sie werde verwendet.
         Geprüft wird nicht «der Parameter ist weg», sondern die Eigenschaft, die
-        ihn wertlos machte: Der Aufruf trägt kein Argument mehr, das etwas
-        ändern könnte.
+        ihn wertlos machte: **Der Aufruf trägt kein Argument, das nichts ändert.**
+
+        **Bis P4.2 stand hier die Abkürzung dafür** — ``not signature().parameters``,
+        also «gar kein Parameter». Das war dieselbe Zusage nur, solange es
+        keinen gab, und es war die falsche Sorte Wächter: eine **Aufzählung**
+        des heutigen Zustands statt der Eigenschaft dahinter. Am 2026-09-08 hat
+        er deshalb einen Parameter gemeldet, der wirkt (``llm_narrative``
+        entscheidet über ``compute_mode``) — die Meldung war formal richtig und
+        sachlich falsch, und die eigene Fehlermeldung sagte bereits, was
+        stattdessen gilt: «Wenn er wirkt, gehört ein Test daneben, der es
+        zeigt.»
+
+        **Jetzt wird gemessen.** Jeder boolesche Parameter wird umgelegt, und
+        das Ergebnis muss sich ändern. Ein Parameter, für den sich keine Probe
+        bilden lässt, lässt den Wächter ebenfalls rot werden — unmessbar ist
+        hier kein Freibrief, sondern genau die Lage, aus der P3.15 kam.
         """
 
         import inspect
 
         from src.orchestration.scenario_sweeps import sweep_metadata_args
 
-        assert not inspect.signature(sweep_metadata_args).parameters, (
-            "Dieser Erzeuger hat wieder einen Parameter. Wenn er wirkt, gehört ein "
-            "Test daneben, der es zeigt; wenn nicht, gehört er weg."
+        signatur = inspect.signature(sweep_metadata_args)
+        standard = sweep_metadata_args()
+        wirkungslos: list[str] = []
+        unmessbar: list[str] = []
+
+        for name, parameter in signatur.parameters.items():
+            if parameter.default is inspect.Parameter.empty or not isinstance(
+                parameter.default, bool
+            ):
+                unmessbar.append(name)
+                continue
+            if sweep_metadata_args(**{name: not parameter.default}) == standard:
+                wirkungslos.append(name)
+
+        assert not unmessbar, (
+            f"Für {unmessbar} lässt sich hier keine Probe bilden — der Wächter kann "
+            "nicht sagen, ob der Parameter wirkt. Entweder er bekommt hier eine "
+            "Probe, oder er gehört weg (P3.15)."
+        )
+        assert not wirkungslos, (
+            f"{wirkungslos} ändert an den Lauf-Argumenten nichts. Ein Aufrufer "
+            "übergibt das in der Annahme, es werde verwendet — genau der Zustand, "
+            "aus dem P3.15 kam."
         )
 
 

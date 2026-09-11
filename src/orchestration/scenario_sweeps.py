@@ -219,6 +219,15 @@ def vorgegebene_felder() -> dict[str, Festlegung]:
 #: `run_metadata.json` den eigenen Modus `deterministic_with_llm_narrative`.
 #: Wer «ohne Sprachmodell» wählt und einen Vergleich startet, erreicht Ollama
 #: also trotzdem. Steht hier, weil es sonst nirgends stünde.
+#:
+#: **Seit P4.2 ist das der Standard und keine Unausweichlichkeit mehr:**
+#: :func:`run_single_sweep` nimmt ``llm_narrative`` entgegen, und wer ``False``
+#: übergibt, bekommt das deterministische Template, ohne dass ein Endpunkt
+#: befragt wird. Der Vergleich (:func:`run_all_sweeps`) benutzt den Schalter
+#: **nicht** — ob die Wahl «Ohne Sprachmodell» im Dashboard bis hierher
+#: durchschlagen soll, ist eine Produktfrage und keine Testfrage; sie ist in
+#: P4.2 ausdrücklich nicht mitentschieden. Diese Konstante beschreibt deshalb
+#: weiterhin, was auf dem Vergleichspfad passiert.
 SZENARIOTEXT_NUTZT_LLM = True
 
 
@@ -228,7 +237,7 @@ def festlegung_fuer(feld: str) -> Festlegung | None:
     return vorgegebene_felder().get(feld)
 
 
-def sweep_metadata_args() -> RunArgs:
+def sweep_metadata_args(*, llm_narrative: bool = True) -> RunArgs:
     """Die Argumente, unter denen ein Sweep sein `run_metadata.json` schreibt.
 
     Eigene Funktion, damit prüfbar ist, was dort behauptet wird. Der Sweep
@@ -264,6 +273,15 @@ def sweep_metadata_args() -> RunArgs:
     leitet ``degraded`` allein aus den Vorfällen ab. Ein Ausfall des
     Abschlusstextes bleibt also sichtbar, ohne dass der Rechenmodus dafür
     gebeugt werden müsste.
+
+    **``llm_narrative`` ist seit P4.2 ein Parameter und keine Konstante.** Ein
+    Sweep ohne Abschlusstext ist ein reiner Zahlenlauf, und dann trägt
+    ``deterministic_with_llm_narrative`` genau die Unwahrheit, gegen die P3.11
+    und P3.13 angetreten sind: ein Artefakt, das über sich selbst etwas
+    Falsches behauptet. Mit ``llm_narrative=False`` liefert
+    :func:`~src.reporting.output_writer.provenance.compute_mode` von sich aus
+    ``deterministic_only`` — es braucht dafür keinen neuen Modus, nur eine
+    Angabe, die stimmt.
     """
 
     llm_defaults = OllamaConfig()
@@ -273,7 +291,7 @@ def sweep_metadata_args() -> RunArgs:
     # steht ohnehin im Ablageort und im Rahmenszenario.
     return RunArgs(
         deterministic_only=True,
-        llm_narrative=True,
+        llm_narrative=llm_narrative,
         mock_llm=False,
         seed=SWEEP_SEED,
         model=llm_defaults.model,
@@ -475,8 +493,34 @@ def run_single_sweep(
     *,
     ticks_override: int | None = None,
     verbose: bool = True,
+    llm_narrative: bool = True,
 ) -> SweepResult:
-    """Execute a single sweep in deterministic-only mode."""
+    """Execute a single sweep in deterministic-only mode.
+
+    **``llm_narrative`` ist der Schalter, den dieser Pfad als einziger nicht
+    hatte** (P4.2). Die Ticks rechnet ein Sweep ohnehin deterministisch — der
+    ``dummy_llm`` unten wird nie gerufen. Ein Sprachmodell erreicht er an genau
+    **einer** Stelle: dem Abschlusstext. Mit ``llm_narrative=False`` entsteht
+    der aus dem deterministischen Template, und es wird kein Endpunkt befragt.
+
+    **Der Anlass war gemessen, nicht ausgedacht.** Die beiden Sweep-Tests
+    standen seit dem 2026-08-25 als «hängen ohne Ollama» in der CI-Ausnahmeliste.
+    Nachgemessen am 2026-09-08 ist die Diagnose schärfer: Ein Endpunkt, an dem
+    **niemand lauscht**, scheitert schnell — ``ConnectionError`` ist ein
+    ``RequestException``, und :class:`~src.llm.llm_client.OllamaClient` bricht
+    dort sofort ab. Was hängt, ist der Fall daneben: Ein Endpunkt, der die
+    Verbindung **annimmt und nicht antwortet**, läuft in ``ReadTimeout`` — und
+    der wird dreimal mit Verdopplung wiederholt, in Summe bis zu **870 s je
+    Aufruf**. Das ist der Normalzustand einer Entwicklungsmaschine, auf der
+    Ollama läuft, aber das Modell nicht geladen ist.
+
+    **Daraus folgt, warum hier kein ``skipif`` steht.** Ein Wächter, der sich
+    bei unerreichbarem Ollama überspringt, nimmt die einzige End-zu-Ende-Zusage
+    über den Sweep-Pfad genau dort weg, wo sie fast immer gebraucht wird — auf
+    jedem Rechner und jedem Runner ohne Ollama, also praktisch immer. Der Test
+    prüft den Mechanismus und nicht den Abschlusstext; er soll deshalb sagen,
+    dass er ihn nicht braucht, statt sich wegen ihm abzuschalten.
+    """
 
     if verbose:
         print(f"\n{'='*60}")
@@ -552,7 +596,7 @@ def run_single_sweep(
     # Save artifacts like a normal run
     run_dir_path = resolve_run_output_dir(run_id_str)
 
-    dummy_args = sweep_metadata_args()
+    dummy_args = sweep_metadata_args(llm_narrative=llm_narrative)
 
     save_event_log(final_state.event_log, run_dir=run_dir_path)
     save_tick_mechanics(final_state, run_dir=run_dir_path)
@@ -571,12 +615,17 @@ def run_single_sweep(
     save_cib_matrix(final_state, run_dir=run_dir_path)
 
     # Generate LLM Scenario
-    llm = OllamaClient(OllamaConfig())
+    #
+    # `llm=None` **und** `prefer_llm=False`: Der erste Wert allein genügte
+    # (`generate_run_scenario` prüft `prefer_llm and llm is not None`), aber
+    # dann hinge das Verhalten an einer Bedingung in einem anderen Modul. Beide
+    # zu setzen sagt hier, was gemeint ist.
+    llm = OllamaClient(OllamaConfig()) if llm_narrative else None
     scenario_result = generate_and_save_run_scenario(
         run_id_str,
         llm,
         run_dir=run_dir_path,
-        prefer_llm=True,  # Always prefer LLM for the final scenario text
+        prefer_llm=llm_narrative,
     )
     # P0.6: Bis hierher schrieb der Sweep an P0.1 vorbei — die Metadaten
     # entstanden *vor* der Szenario-Erzeugung, der zurückgegebene `llm_error`

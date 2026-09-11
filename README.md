@@ -388,4 +388,15 @@ Eigene Shocks: `configs/properties.json` → `rules` anpassen (z. B. CO₂ ab Ti
 pytest
 ```
 
+Die CI führt dieselbe Suite aus, **ohne Ausnahmeliste** — ein lokaler Lauf ohne Ollama ist derselbe Lauf wie dort. Der Browser-Wächter (`tests/test_web_overflow.py`) überspringt sich ohne Playwright und läuft in einem eigenen Workflow.
+
+**Wer einen Test schreibt, hält sechs Regeln ein.** `tests/test_testfundament.py` meldet jede Abweichung mit Datei und Zeile:
+
+- Jede `.py`-Datei in `tests/` wird von pytest ausgeführt — ein Helfer gehört als Fixture in `conftest.py`, ein Werkzeug nach `scripts/`.
+- Kein Eingriff in `sys.path`: `src` macht pytest selbst importierbar. Eine Testdatei startet man mit `pytest <datei>`, nicht als Skript.
+- Kein `unittest.TestCase` — Funktionen oder Klassen ohne Basisklasse, Zusicherungen mit `assert`.
+- Wer für einen Test ein Modul umbiegt, nimmt `monkeypatch.setattr`, nie eine Zuweisung von Hand.
+- Ein Temp-Verzeichnis kommt aus `tmp_path`, nie aus `tempfile`.
+- Keine Testklasse heißt wie eine Klasse aus `src/` — ein Testdoppel trägt den Namen dessen, wofür es im Test da ist.
+
 Relevante Suites u. a. `test_state_explorer.py`, `test_dashboard_service.py`, `test_income_dynamics.py`, `test_market_feedback.py`.
