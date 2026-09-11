@@ -138,7 +138,6 @@ Beim Entfernen ist aufgefallen, **warum das nicht bloß Aufräumen ist**: Das Ko
 
 | Fundstelle | Befund | Auswirkung |
 | --- | --- | --- |
-| `class MockLLM` mehrfach unabhängig definiert | Near-identisch/identisch in `tests/test_agent_node.py`, `tests/test_parallel_round.py`, `tests/test_simulation_runner_e2e.py` (die vierte Kopie lag in `tests/debug_run_sequential.py`, gelöscht mit P4.2 am 2026-09-11). | Ein gemeinsames Fixture/Helper würde die Duplikation beseitigen. |
 
 ## Reporting / Run-Artefakte
 

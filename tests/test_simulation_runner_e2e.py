@@ -2,7 +2,16 @@ from src.config_loader import build_initial_state
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 
 
-class MockLLM:
+class VorschlagendeAgenten:
+    """Antwortet je Rolle mit Inhalt — der Regulator schlägt einen Faktorwechsel vor.
+
+    **Nicht** `src.llm.studio_helpers.MockLLM`, und hier ist das tragend: Die
+    Zusage lautet, dass ein vorgeschlagener Faktorwechsel **nicht** ungeprüft
+    durchkommt. **Gemessen am 2026-09-11** bleibt der Test mit dem Produkt-Mock
+    grün — dann aber, weil nichts vorgeschlagen wird, und nicht, weil etwas
+    abgewiesen wurde.
+    """
+
     def call(self, prompt: str) -> str:
         p = prompt.lower()
         if "`consumer`" in p:
@@ -45,7 +54,7 @@ def test_run_with_mock_agents_blocks_ungated_llm_factor_changes() -> None:
     state = build_initial_state()
     state.clock.max_ticks = 1
 
-    runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
+    runner = SimulationRunner(llm=VorschlagendeAgenten(), options=RunnerOptions(enable_market=True))
     run_graph = runner._build_sequential_runner(state.agents)
     final = run_graph(state)
 
@@ -63,7 +72,7 @@ def test_factor_rules_apply_at_carbon_shock_tick() -> None:
     state = build_initial_state()
     state.clock.max_ticks = 15
 
-    runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
+    runner = SimulationRunner(llm=VorschlagendeAgenten(), options=RunnerOptions(enable_market=True))
     run_graph = runner._build_sequential_runner(state.agents)
     final = run_graph(state)
 

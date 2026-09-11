@@ -468,3 +468,85 @@ def test_x(tmp_path):
             "4",
             "8",
         ]
+
+
+def klassennamen(wurzel: Path) -> dict[str, list[str]]:
+    """Jeder Klassenname unter `wurzel`, mit Datei und Zeile jeder Definition."""
+
+    import ast
+
+    namen: dict[str, list[str]] = {}
+    for pfad in sorted(wurzel.rglob("*.py")):
+        if "__pycache__" in pfad.parts:
+            continue
+        for knoten in ast.walk(ast.parse(pfad.read_text(encoding="utf-8"))):
+            if isinstance(knoten, ast.ClassDef):
+                ort = f"{pfad.relative_to(wurzel.parent)}:{knoten.lineno}"
+                namen.setdefault(knoten.name, []).append(ort)
+    return namen
+
+
+def verschattungen(produkt: Path, tests: Path) -> list[str]:
+    """Jede Klasse unter `tests`, die so heißt wie eine Klasse unter `produkt`."""
+
+    im_produkt = klassennamen(produkt)
+    return [
+        f"{ort} — gleichnamig mit {', '.join(im_produkt[name])}"
+        for name, orte in sorted(klassennamen(tests).items())
+        if name in im_produkt
+        for ort in orte
+    ]
+
+
+class TestKeineTestklasseVerschattetEinenProduktnamen:
+    """**Ein Testdoppel trägt den Namen dessen, wofür es im Test da ist.**
+
+    Bis zum 2026-09-11 hieß `MockLLM` in `tests/` dreimal und in `src/` einmal
+    — vier verschiedene Dinge unter einem Namen. Der Produkt-Mock
+    (`src.llm.studio_helpers.MockLLM`) antwortet absichtlich mit `NO_OP`; die
+    drei Testdoppel antworten mit Inhalt. Wer in einer Testdatei `MockLLM`
+    las, konnte nicht wissen, welches davon gemeint war. Der Befund sah
+    «vierfach near-identisch» und schlug ein gemeinsames Fixture vor.
+
+    **Umbenannt nach Zweck, nicht zusammengelegt:** `FesteAntwort`,
+    `VorschlagendeAgenten`, `SprechendeAgenten`. Beim Einführen traf diese Regel
+    genau `MockLLM` von 126 Klassennamen aus `src/` — und sonst nichts.
+
+    **Nicht erfasst, und das ist gewollt:** Namen, die nur *innerhalb* von
+    `tests/` mehrfach vorkommen (`_App`, `_MitschreibendeApp`, `_StummesLLM`).
+    Sie sind privat und verschatten nichts aus dem Produkt.
+    """
+
+    def test_keine_testklasse_heisst_wie_eine_klasse_aus_src(self):
+        assert klassennamen(
+            ROOT / "src"
+        ), "In src/ wurde keine einzige Klasse gefunden — dann misst dieser Wächter nichts."
+
+        befunde = verschattungen(ROOT / "src", TESTS)
+
+        assert not befunde, (
+            "Diese Testklassen heißen wie eine Klasse aus src/:\n  "
+            + "\n  ".join(befunde)
+            + "\n\nEin Testdoppel trägt den Namen dessen, wofür es im Test da ist — "
+            "sonst ist beim Lesen nicht zu erkennen, ob das Produkt oder ein Nachbau "
+            "gemeint ist."
+        )
+
+    def test_der_waechter_sieht_eine_verschattung(self, tmp_path):
+        """Ohne diese Zusage wäre grün nur die Abwesenheit einer Messung."""
+
+        (tmp_path / "src").mkdir()
+        (tmp_path / "tests").mkdir()
+        (tmp_path / "src" / "a.py").write_text("class MockLLM:\n    pass\n", encoding="utf-8")
+        (tmp_path / "tests" / "test_b.py").write_text(
+            "class MockLLM:\n    pass\n\n\nclass FesteAntwort:\n    pass\n", encoding="utf-8"
+        )
+
+        befunde = verschattungen(tmp_path / "src", tmp_path / "tests")
+
+        assert len(befunde) == 1, befunde
+        assert "test_b.py:1 — gleichnamig mit" in befunde[0], (
+            "Der Fund zeigt nicht auf die MockLLM-Klasse in Zeile 1 — FesteAntwort in "
+            f"Zeile 5 darf nicht gemeldet werden: {befunde}"
+        )
+        assert befunde[0].endswith("a.py:1"), befunde

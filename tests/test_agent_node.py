@@ -4,7 +4,15 @@ from src.models.agent_models import AgentResponse
 from src.models.event_models import RoundResult
 
 
-class MockLLM:
+class FesteAntwort:
+    """Liefert immer dieselbe Antwort und merkt sich den letzten Prompt.
+
+    **Nicht** `src.llm.studio_helpers.MockLLM`: Der antwortet absichtlich mit
+    `NO_OP` und ohne Ereignisse. Jeder Test hier gibt dem Agenten eine
+    bestimmte Antwort vor und prüft, was der Parser daraus macht — und
+    einige prüfen den Prompt, der dafür gebaut wurde.
+    """
+
     def __init__(self, output: str):
         self.output = output
         self.last_prompt: str | None = None
@@ -17,7 +25,7 @@ class MockLLM:
 def test_parse_valid_json_output() -> None:
     state = build_initial_state()
     consumer = next(agent for agent in state.agents if agent.id == "consumer")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Nachfrage sinkt durch hohe Preise.",
               "actions": ["Weniger Freizeitfluege buchen"],
@@ -47,7 +55,7 @@ def test_parse_valid_json_output() -> None:
 def test_extract_json_from_markdown_codeblock() -> None:
     state = build_initial_state()
     consumer = next(agent for agent in state.agents if agent.id == "consumer")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             ```json
             {
               "reasoning": "Nachfrage verschiebt sich.",
@@ -71,7 +79,7 @@ def test_extract_json_from_markdown_codeblock() -> None:
 def test_extract_json_from_freetext_embedded_object() -> None:
     state = build_initial_state()
     consumer = next(agent for agent in state.agents if agent.id == "consumer")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             Hier ist das Ergebnis: {"reasoning":"Freitext Test","actions":["X"],"state_changes":[],"events":[], "segment_analysis":{"business":"OK"}} Danke!
             """)
     node = AgentNode(config=consumer, llm=llm)
@@ -85,7 +93,7 @@ def test_extract_json_from_freetext_embedded_object() -> None:
 def test_actions_missing_normalized_to_no_op() -> None:
     state = build_initial_state()
     consumer = next(agent for agent in state.agents if agent.id == "consumer")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Aktion nicht angegeben",
               "state_changes": [],
@@ -102,7 +110,7 @@ def test_actions_missing_normalized_to_no_op() -> None:
 def test_parse_segment_analysis() -> None:
     state = build_initial_state()
     consumer = next(agent for agent in state.agents if agent.id == "consumer")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Unterschiedliche Preissensitivitaet verschiebt Nachfrage je Segment.",
               "actions": ["Segmentiert buchen"],
@@ -124,7 +132,7 @@ def test_parse_segment_analysis() -> None:
 def test_consumer_segment_analysis_unknown_keys_filtered() -> None:
     state = build_initial_state()
     consumer = next(agent for agent in state.agents if agent.id == "consumer")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Analyse mit unbekanntem Segment",
               "actions": ["X"],
@@ -147,7 +155,7 @@ def test_consumer_segment_analysis_unknown_keys_filtered() -> None:
 def test_provider_segment_analysis_forced_empty() -> None:
     state = build_initial_state()
     provider = next(agent for agent in state.agents if agent.id == "provider")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Provider liefert irrtuemlich segment_analysis",
               "actions": ["A"],
@@ -169,7 +177,7 @@ def test_consumer_prompt_and_output_segment_analysis() -> None:
     state = build_initial_state()
     consumer = next(agent for agent in state.agents if agent.id == "consumer")
 
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Unterschiedliche Segmente reagieren verschieden auf Preis aenderungen.",
               "actions": ["Segmentiert buchen"],
@@ -219,7 +227,7 @@ def test_provider_uses_consumer_segment_analysis_in_prompt() -> None:
         )
     )
 
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Provider reagiert auf segmentierte Nachfragereaktion.",
               "actions": ["Preise anpassen"],
@@ -246,7 +254,7 @@ def test_state_change_validation_filters_unknown_factor_and_invalid_state() -> N
     state = build_initial_state()
     regulator = next(agent for agent in state.agents if agent.id == "regulator")
 
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Gemischte state_changes",
               "actions": ["X"],
@@ -269,7 +277,7 @@ def test_state_change_validation_filters_unknown_factor_and_invalid_state() -> N
 def test_event_type_invalid_defaults_by_agent() -> None:
     state = build_initial_state()
     provider = next(agent for agent in state.agents if agent.id == "provider")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Events enthalten einen falschen event_type",
               "actions": ["A"],
@@ -291,7 +299,7 @@ def test_event_type_invalid_defaults_by_agent() -> None:
 def test_parse_fallback_on_invalid_json() -> None:
     state = build_initial_state()
     provider = next(agent for agent in state.agents if agent.id == "provider")
-    llm = MockLLM("Kein JSON sondern Freitext.")
+    llm = FesteAntwort("Kein JSON sondern Freitext.")
     node = AgentNode(config=provider, llm=llm)
 
     updated = node.invoke(state)
@@ -334,7 +342,7 @@ def test_provider_prior_booking_block_in_prompt() -> None:
         },
     ]
     provider = next(agent for agent in state.agents if agent.id == "provider")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Stable demand",
               "actions": ["NO_OP"],
@@ -357,7 +365,7 @@ def test_explicit_no_op_skips_event_fallback() -> None:
     state = build_initial_state()
     provider = next(agent for agent in state.agents if agent.id == "provider")
     events_before = len(state.event_log)
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "Stable demand, no new developments.",
               "actions": ["NO_OP"],
@@ -377,7 +385,7 @@ def test_regulator_prior_booking_block_first_tick() -> None:
     state = build_initial_state()
     state.clock.current_tick = 1
     regulator = next(agent for agent in state.agents if agent.id == "regulator")
-    llm = MockLLM("""
+    llm = FesteAntwort("""
             {
               "reasoning": "First tick policy",
               "actions": ["NO_OP"],
