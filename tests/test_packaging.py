@@ -330,3 +330,49 @@ class TestDieInstallationLiefertDasPaketSrc:
             f"Diese Namen aus src/ lösen als Top-Level-Module nach src/ auf: {aufloesend}. "
             "Dann gibt es zwei Wege zu demselben Modul — und zwei Klassen gleichen Namens."
         )
+
+
+# --- Typprüfer (P4.4) -------------------------------------------------------
+
+
+class TestDerTypprueferLaeuftUeberEineListeDieWaechst:
+    """**P4.4: mypy prüft die Grenzen — und der Umfang steht im Werkzeug.**
+
+    Bis zum 2026-09-11 hatte das Projekt keinen Typprüfer. `sweep_metadata_args`
+    war mit `-> SimpleNamespace` annotiert und lieferte `RunArgs` — zwölf Tage lang
+    bei grünem `ruff` (P3.15). Invariante 4 hängt daran, dass eine Typangabe
+    stimmt, und ohne Prüfer stimmte sie nur zufällig.
+
+    **Nicht das ganze Repo:** Die Liste in `[tool.mypy] files` fängt bei den
+    Grenzen an und wächst. Diese Klasse hält fest, dass sie das tut, was sie
+    verspricht — keine tote Zeile darin (die den Umfang still verkleinerte), und
+    ein Befehl in der CI, der sie ausführt.
+    """
+
+    def _konfig(self) -> dict:
+        return _pyproject()["tool"]["mypy"]
+
+    def test_die_liste_ist_nicht_leer_und_jede_zeile_gibt_es(self):
+        dateien = self._konfig().get("files", [])
+
+        assert dateien, "Die mypy-Liste ist leer — dann prüft der Typprüfer nichts."
+        fehlend = [d for d in dateien if not (ROOT / d).exists()]
+        assert not fehlend, (
+            f"Diese Einträge der mypy-Liste gibt es nicht: {fehlend}. Eine tote Zeile "
+            "verkleinert den Umfang still."
+        )
+
+    def test_die_ci_fuehrt_mypy_aus(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+
+        assert re.search(r"^\s+run:\s+mypy\s*$", workflow, re.M), (
+            "tests.yml führt `mypy` nicht aus — dann gilt die Liste nur lokal, und eine "
+            "Annotation, die ihrem return widerspricht, bleibt in der CI grün."
+        )
+
+    def test_mypy_steht_im_extra_dev(self):
+        dev = {_name(item) for item in _pyproject()["project"]["optional-dependencies"]["dev"]}
+
+        assert (
+            "mypy" in dev
+        ), "mypy fehlt im Extra `dev` — `pip install -e .[dev]` brächte ihn nicht."

@@ -386,6 +386,7 @@ Eigene Shocks: `configs/properties.json` → `rules` anpassen (z. B. CO₂ ab Ti
 
 ```powershell
 pytest
+mypy          # Typprüfung der Grenzen, Dateiliste in pyproject.toml
 ```
 
 Die CI führt dieselbe Suite aus, **ohne Ausnahmeliste** — ein lokaler Lauf ohne Ollama ist derselbe Lauf wie dort. Der Browser-Wächter (`tests/test_web_overflow.py`) überspringt sich ohne Playwright und läuft in einem eigenen Workflow.

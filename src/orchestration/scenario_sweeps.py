@@ -15,7 +15,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
@@ -558,7 +558,7 @@ def run_single_sweep(
             enable_market=True,
             enable_cib=True,
             deterministic_only=bool(festgelegt["deterministic_only"]),
-            checkpoint_interval=int(festgelegt["checkpoint_interval"]),
+            checkpoint_interval=int(cast(int, festgelegt["checkpoint_interval"])),
             verbose_ticks=False,
         ),
     )
@@ -567,7 +567,7 @@ def run_single_sweep(
     run_id_str = f"sweeps/sweep_{sweep.id}"
     final_state = runner.run(
         state,
-        seed=int(festgelegt["seed"]),
+        seed=int(cast(int, festgelegt["seed"])),
         run_id=run_id_str,
     )
     elapsed = time.time() - start_time

@@ -1143,7 +1143,7 @@ Gilt für jede Änderung an diesem Projekt — für alle im Team und für jede C
 
 1. **Ein Commit = ein Befund oder ein Feature.** Kein Sammelcommit. Wer zwei Dinge behoben hat, macht zwei Commits — auch wenn sie dieselbe Datei berühren.
 2. **Der Titel benennt Paket und sichtbares Ergebnis**, nicht die Datei: `fix(wizard): kein Haken für einen übersprungenen Schritt (W2.1)`, nicht `update wizard.py`.
-3. **Jeder Commit ist für sich lauffähig und grün.** `pytest`, `ruff check .` und `black --check .` laufen vor jedem **Commit**, nicht erst vor dem Push.
+3. **Jeder Commit ist für sich lauffähig und grün.** `pytest`, `ruff check .`, `black --check .` und seit P4.4 `mypy` laufen vor jedem **Commit**, nicht erst vor dem Push.
 4. **Jeder Verhaltens-Commit bringt seinen Test mit** — im selben Commit, nicht im nächsten. Ein nachgereichter Test prüft, was gebaut wurde, statt was zugesagt war.
 5. **Doku im selben Commit** ([Doku-Pflicht](../CLAUDE.md#doku-pflicht)). Bleibt sie bewusst unverändert, steht der Grund in der Commit-Message.
 6. **Refactoring und Verhaltensänderung nie im selben Commit.** W3.1 ist deshalb ein reiner Umzug; alles, was danach am Umgezogenen geändert wird, ist ein eigener Commit.
@@ -3538,6 +3538,32 @@ ein Typprüfer nicht weiß.
 **Doku zieht mit:** `CLAUDE.md` (Dev-Workflow — der Befehl gehört neben `ruff`
 und `black`; Invariante 4 um den Satz, wer sie durchsetzt).
 
+---
+
+**Stufe 1 erledigt am 2026-09-11 — der Prüfer läuft, und die Liste ist angelegt.** Gewählt ist **mypy** (entschieden, Haiko): reines Python, keine zweite Werkzeugkette. Konfiguration in `pyproject.toml` (`[tool.mypy]`), Befehl `mypy`, in der CI ein eigener Schritt.
+
+**Der erste Lauf über die Grenzen fand 23 Meldungen in 6 Dateien.** `config_loader.py`, `metadata.py` und `provenance.py` waren sauber. **Zwei Meldungen betreffen Verhalten**, der Rest waren Angaben, die nicht sagten, was der Code tut:
+
+| Meldung | Einordnung |
+| --- | --- |
+| `save_run_outputs(llm: OllamaClient)` bekommt `MockLLM` | Angabe — dieselbe Klasse wie P3.15: Die Signatur behauptete mehr, als sie braucht; jetzt `LLMCallable` |
+| `herkunft: Literal[…] = GERECHNET`, die Konstante ist `str` | Angabe — `Final` |
+| `reihen` und `werte` als `float` statt `float \| None` | Angabe — die fehlende Messung reist bis zum Band mit und wird erst dort gefiltert; die schon vorhandene Angabe an `reihen` war zu eng |
+| `StateGraph(dict)` gegen LangGraphs eigene Typen | gewollt — **eine** begründete Ausnahme statt einer je `add_node` |
+| `int(draft.seed)` mit `seed: int \| None` | Angabe — `validate_draft` fängt den Fall vorher ab (P1.9-W1.6); `cast` mit Verweis |
+| `on_progress` in der inneren Klasse, `redirect_stdout(_StdoutTee())`, eine doppelte Annotation | Angaben |
+| `int(festgelegt[…])` auf `object` | Angabe — `cast` |
+| **`coerce_payload`: `int(ticks)`, wobei `ticks` `None` sein kann** | **Verhalten** — `{"max_ticks": 0}` stürzt mit `TypeError` ab, nachgestellt |
+| **`dummy_llm` in `run_single_sweep` statt eines Objekts mit `.call()`** | **Verhalten** — schläft, weil `FESTLEGUNGEN` den deterministischen Modus erzwingt |
+
+**Die beiden Verhaltensbefunde bekommen je einen eigenen Commit**, und ihre Datei kommt erst dann in die Liste — die Liste, die wächst, wie das Paket es verlangt. **Stand nach Stufe 1:** 7 Einträge, 18 Quelldateien, `mypy` grün.
+
+**Zwei Messungen haben die Konfiguration bestimmt.** `python_version = "3.12"`, weil numpys eigene Typdateien Syntax ab 3.12 benutzen und mypy mit 3.11 dort abbrach, *bevor* er etwas prüfte. Und **kein Pydantic-Plugin**: Mit und ohne kamen dieselben 23 Meldungen heraus — was nichts beiträgt, kommt nicht ins Werkzeug.
+
+**Mutationsprobe — die Lüge aus P3.15, an einem zweiten Erzeuger:** `build_run_args(...) -> RunArgs` auf `-> dict[str, object]` gesetzt → rot mit `return-value` an der Signatur und fünf Folgefehlern bis in `dashboard/run_launcher.py`. **Der AST-Wächter aus P3.15 bleibt daneben:** Er weiß, *welche* Funktionen `RunArgs` erzeugen; mypy weiß, ob ihre Angaben stimmen.
+
+**Dabei aufgefallen, eigener Befund:** `LLMCallable` ist in `src/` **siebenmal** definiert, jedes Mal dasselbe Protokoll. Kein Laufzeitfehler, aber dieselbe Klasse wie `MockLLM` in P4.1 — eingeplant unter P5.1.
+
 ### P4.5 — Was ein Rahmenszenario über die Zeit behauptet 🟡 offen (neu 2026-09-07)
 
 > **Aus [P3.8](#p38--ein-tick-ist-ein-monat--erledigt-2026-09-07-neu-2026-08-31).**
@@ -3696,7 +3722,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Markt / Preisbildung | ~~P0.4 (Rule-Evaluatoren, `market_rules`)~~ ✅, ~~P0.5 (Berechtigungen)~~ ✅, ~~P0.7 (Kostendruck an zwei Stellen)~~ ✅, ~~P3.1 (Property-Baseline)~~ ✅, P5.1 (toter Code, Preisfunktions-Namen), ~~P2.13 (F6 kippte in jedem Tick)~~ ✅ |
 | Agenten / Scheduling | ~~P0.1 (Silent-Fallback)~~ ✅, P1.3 (Szenario-Schlüssel), ~~P3.5 (Klemmung, `print`)~~ ✅, P5.1 (`aborted`, `_format_factors`, `_population_updates`) |
 | Validierung / Checkpointing / Orchestrierung | ~~P0.3 (`validate_config`, `factor_ids`)~~ ✅, ~~P0.6 (Sweep-Pfad an P0.1 vorbei)~~ ✅, P2.1 (`_seed_runtime`), ~~P3.2 (Checkpoint-Version)~~ ✅, ~~P3.3 (leerer `try`, CLI-Traceback)~~ ✅, ~~P3.11 (Lauf-Argumente ohne typisierte Form)~~ ✅, P5.1 (`--sweep` deklariert und nie gelesen), P5.1 (`round_history`-Snapshot trägt den Endzustand) |
-| LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, ~~P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`)~~ ✅ |
+| LLM-Anbindung | ~~P0.1 (zwei Clients)~~ ✅, ~~P3.4 (hartcodierte Defaults, stille Mock-Auswahl in `get_llm()`)~~ ✅, P5.1 (`LLMCallable` siebenmal definiert — neu 2026-09-11) |
 | Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), ~~P3.6 (private Imports)~~ ✅, ~~P3.9 (Klickkosten)~~ ✅, ~~P3.12 (Modell-Bereich dauernd im DOM)~~ ✅, P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen), P1.2 (leere Ergebnis-Ansicht ohne Lauf — neu 2026-09-07) |
 | LangGraph Studio | ~~P3.3~~ ✅ |
 | Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests, der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction` und der drei `--deselect`-Zeilen in der CI) |

@@ -35,6 +35,9 @@ Thumbs.db
 langgraph_studio/.env
 langgraph_studio/.langgraph_api/
 
+# Type checker cache (P4.4)
+.mypy_cache/
+
 # Simulation run artifacts (reproducible, not source)
 outputs/*
 !outputs/.gitkeep

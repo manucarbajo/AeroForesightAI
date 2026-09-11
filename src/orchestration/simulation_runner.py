@@ -111,9 +111,11 @@ def ensemble_baender(run_results: Sequence[SingleRunResult]) -> dict[str, Any]:
     if not run_results:
         return {}
 
-    reihen: dict[str, list[list[float]]] = {name: [] for name in ENSEMBLE_REIHEN}
+    # `float | None`: `booking_rate` ist optional, und eine fehlende Messung reist
+    # bis zum Band mit — herausgefiltert wird erst dort, nicht hier (P4.4).
+    reihen: dict[str, list[list[float | None]]] = {name: [] for name in ENSEMBLE_REIHEN}
     for ergebnis in run_results:
-        werte = {name: [] for name in ENSEMBLE_REIHEN}
+        werte: dict[str, list[float | None]] = {name: [] for name in ENSEMBLE_REIHEN}
         for eintrag in ergebnis.final_state.price_history:
             werte["booking_rate"].append(eintrag.booking_rate)
             werte["ticket_price"].append(eintrag.price)
@@ -193,7 +195,11 @@ class SimulationRunner:
 
             return _inner
 
-        graph = StateGraph(dict)
+        # LangGraphs eigene Typen erlauben als Zustand nur TypedDict, Dataclass oder
+        # BaseModel. Der Graph arbeitet hier **bewusst** über `dict` (siehe `_wrap`
+        # oben), und die Suite prüft es zur Laufzeit. `Any` statt einer Ausnahme je
+        # `add_node`, damit die Begründung an **einer** Stelle steht (P4.4).
+        graph: Any = StateGraph(dict)  # type: ignore[type-var]
         graph.add_node("orchestrator", _wrap(orchestrator.invoke))
         graph.add_node("round_execution", _wrap(round_execution.invoke))
         if self.options.enable_market:
