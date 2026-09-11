@@ -362,3 +362,83 @@ def test_ein_sweep_ohne_abschlusstext_behauptet_das_auch_im_artefakt():
 
     assert compute_mode(sweep_metadata_args()) == "deterministic_with_llm_narrative"
     assert compute_mode(sweep_metadata_args(llm_narrative=False)) == "deterministic_only"
+
+
+# ---------------------------------------------------------------------------
+# P4.4: Der Sweep-Pfad hat kein Sprachmodell, und er sagt es
+# ---------------------------------------------------------------------------
+
+
+class TestDerSweepHatKeinSprachmodell:
+    """Der Platzhalter an der Stelle des Sprachmodells (P4.4, 2026-09-11).
+
+    Bis dahin stand dort eine nackte Funktion, wo der Runner ein Objekt mit
+    ``.call()`` verlangt — gefunden von ``mypy``. **Die tragende Zusage ist
+    nicht «der Platzhalter wirft»**, sondern «ein Sweep ruft ihn nie»: Sonst
+    wäre ein Sweep, der still Ausfälle sammelt, von einem sauberen nicht zu
+    unterscheiden. Die Gegenprobe zeigt, dass die Messung darüber einen Aufruf
+    überhaupt bemerken würde.
+    """
+
+    def _sweep(self) -> SweepConfig:
+        return SweepConfig(
+            id="kein_sprachmodell",
+            name="Kein Sprachmodell",
+            description="Prueft, dass ein Sweep sein Sprachmodell nie ruft",
+            max_ticks=3,
+        )
+
+    def test_der_platzhalter_nennt_die_ursache(self):
+        from src.orchestration.scenario_sweeps import KeinSprachmodell
+
+        with pytest.raises(RuntimeError, match="kein Sprachmodell"):
+            KeinSprachmodell().call("egal")
+
+    def test_ein_sweep_ruft_ihn_nie(self, monkeypatch):
+        from src.orchestration import scenario_sweeps as sweeps
+
+        gesehen: list[tuple[object, RunnerOptions, object]] = []
+        echter_runner = sweeps.SimulationRunner
+
+        class BeobachteterRunner(echter_runner):
+            def run(self, *args, **kwargs):
+                ende = super().run(*args, **kwargs)
+                gesehen.append((self.llm, self.options, ende))
+                return ende
+
+        monkeypatch.setattr(sweeps, "SimulationRunner", BeobachteterRunner)
+        sweeps.run_single_sweep(self._sweep(), verbose=False, llm_narrative=False)
+
+        assert len(gesehen) == 1, f"{len(gesehen)} Läufe statt genau einem"
+        llm, optionen, ende = gesehen[0]
+        assert isinstance(llm, sweeps.KeinSprachmodell), (
+            f"Der Sweep übergibt {type(llm).__name__} statt des Platzhalters -- "
+            "wer hier ein Objekt einsetzt, das still antwortet, macht einen "
+            "Aufruf wieder unsichtbar."
+        )
+        assert optionen.deterministic_only
+        assert not ende.llm_incidents, (
+            f"{len(ende.llm_incidents)} Ausfälle in einem Sweep: Ein Knoten hat "
+            "das Sprachmodell gerufen, obwohl `FESTLEGUNGEN` den deterministischen "
+            "Modus festlegt."
+        )
+
+    def test_gegenprobe_ein_aufruf_waere_sichtbar(self):
+        """Ohne deterministischen Modus rufen die Agenten ihn — und der Lauf meldet es."""
+
+        from src.orchestration.scenario_sweeps import KeinSprachmodell
+
+        state = build_initial_state(load_cib=True)
+        state.clock.max_ticks = 1
+        ende = SimulationRunner(
+            llm=KeinSprachmodell(),
+            options=RunnerOptions(
+                deterministic_only=False, checkpoint_interval=0, verbose_ticks=False
+            ),
+        ).run(state, seed=42)
+
+        assert ende.llm_incidents, (
+            "Kein Ausfall, obwohl die Agenten laufen -- dann misst "
+            "`test_ein_sweep_ruft_ihn_nie` nichts."
+        )
+        assert all("kein Sprachmodell" in i.error for i in ende.llm_incidents)

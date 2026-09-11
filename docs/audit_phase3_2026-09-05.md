@@ -288,7 +288,7 @@ ist dies der erste von vielen.
 > Erzeuger — er greift also nicht nur an der gemeldeten Stelle.
 >
 > **Die Klasse bleibt offen und hat ein Paket:**
-> [P4.4](projektplan.md#p44--ein-typprüfer-für-die-grenzen--offen-neu-2026-09-05-aus-p315).
+> [P4.4](projektplan.md#p44--ein-typprüfer-für-die-grenzen--erledigt-2026-09-11-neu-2026-09-05-aus-p315).
 > Dieser Wächter deckt eine Familie ab, weil genau die einen Schaden angerichtet
 > hat. Die Zahl, die das Ausmaß der Lücke beschreibt: **zwölf Tage** stand die
 > Lüge in einer Datei, die zweimal angefasst wurde, und `ruff check .` war die
