@@ -3558,6 +3558,32 @@ beschreibt, und seine Kohärenzbegründung deckt sie — nachgewiesen an
 `docs/handbuch/grenzen.md`, bei Weg 1 zusätzlich `docs/handbuch/vergleiche.md`
 (neuer Schnitt) und `CLAUDE.md` (Glossar «Rahmenszenario»).
 
+### P4.6 — Die Installation macht `src` nicht importierbar 🟡 offen (neu 2026-09-11, aus P4.2)
+
+> **Aus [P4.2](#p42--suite-aufräumen-und-verlässlich-machen--erledigt-2026-09-11).** Beim Entfernen der `sys.path`-Eingriffe stand als Begründung zuerst «`src` ist über `pip install -e .` importierbar». Nachgemessen stimmte das nicht — und CLAUDE.md behauptete es an anderer Stelle schon länger.
+
+**Befund:** `pip install -e .` legt über `__editable__.aeroforesight-0.1.0.pth` das Verzeichnis `src/` **selbst** in den Suchpfad, nicht sein Elternverzeichnis. `pyproject.toml` nennt keine Pakete; setuptools erkennt ein Verzeichnis namens `src` als übliches *src-Layout* und nimmt dessen **Inhalt** als Paketwurzel. Das Paket dieses Projekts heißt aber `src`.
+
+| Messung (2026-09-11) | Ergebnis |
+| --- | --- |
+| `import src` aus `/tmp` mit dem venv-Python | scheitert |
+| Namen, die aus `/tmp` als Top-Level-Modul nach `src/` auflösen | **16**, darunter `models`, `llm`, `agents`, `market` |
+| davon wirklich importierbar | **5**: `reporting`, `prompts`, `legacy`, `run_simulation`, `logging_setup` |
+| `src.models.state_models` gegen `models.state_models`, aus dem Repo importiert | **zwei Modulobjekte, zwei `SimulationState`-Klassen** |
+| Installationsschritt der CI | keiner — `pip install -r requirements.txt` |
+
+**Warum es heute trotzdem läuft:** `src` wird nur aus dem Repo-Wurzelverzeichnis importiert — `python -m src.…` legt das Arbeitsverzeichnis in den Suchpfad — oder unter pytest, das das Wurzelverzeichnis selbst davorlegt. Die Installation trägt nichts bei.
+
+**Warum es trotzdem ein Befund ist:** Zwei Wege zu demselben Modul erzeugen zwei Klassen gleichen Namens, und `isinstance` schlägt über diese Grenze fehl. Heute importiert niemand über den zweiten Weg; verhindert wird es von nichts. Und die Distribution `aeroforesight` beansprucht generische Namen wie `models` und `llm` im ganzen venv — jede künftige Abhängigkeit mit einem solchen Top-Level-Paket kollidiert.
+
+**Fundstellen:** [`pyproject.toml`](../pyproject.toml) (keine `[tool.setuptools]`-Angabe), die `.pth`-Datei im venv, [`Dockerfile`](../Dockerfile), [`.claude/launch.json`](../.claude/launch.json), [`.github/workflows/tests.yml`](../.github/workflows/tests.yml) und `browser.yml`.
+
+**Was zu tun ist — und was vorher zu messen ist:** Die naheliegende Korrektur ist eine ausdrückliche Paketangabe, sodass `src` als Paket installiert wird. **Nicht nebenbei:** Sie ändert, was in jedem venv, im Docker-Image und in der CI importierbar ist, und die fünf heute als Top-Level-Modul importierbaren Namen verschwinden damit. Zuerst messen, ob irgendein Pfad sie so benutzt.
+
+**Fertig wenn:** Aus einem fremden Arbeitsverzeichnis gelingt `import src` mit dem venv-Python, und **kein** Name aus `src/` löst mehr als Top-Level-Modul auf — nachgewiesen an einem Test, der beides misst, nicht an der Paketangabe.
+
+**Doku zieht mit:** `CLAUDE.md` (Dev-Workflow), `README.md` (Quickstart), `Dockerfile`.
+
 ---
 
 ## Phase 5 — Altlasten entfernen
@@ -3613,7 +3639,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Dashboard | P1.2 (Teilstand über den Glob-Fallback, Phantom-Runs in der Auswahl), ~~P3.6 (private Imports)~~ ✅, ~~P3.9 (Klickkosten)~~ ✅, ~~P3.12 (Modell-Bereich dauernd im DOM)~~ ✅, P5.2 (Legacy-Duplikate — erledigen sich mit dem Löschen), P1.2 (leere Ergebnis-Ansicht ohne Lauf — neu 2026-09-07) |
 | LangGraph Studio | ~~P3.3~~ ✅ |
 | Tests | P4.1, P4.2 (inkl. der hängenden Sweep-Tests, der veralteten Erwartung in `test_market_rules_resolve_marginal_cost_fraction` und der drei `--deselect`-Zeilen in der CI) |
-| Sonstiges | ~~P3.10 (Zeichensatz der Konsole)~~ ✅, P5.3 |
+| Sonstiges | ~~P3.10 (Zeichensatz der Konsole)~~ ✅, P5.3, P4.6 (die Installation macht `src` nicht importierbar — neu 2026-09-11) |
 | **Landingpage** (neu 2026-08-26) | P1.4 (Formular-Endpunkt, Rechtstexte, CDN-Abhängigkeiten) |
 | **Reproduzierbarkeit / Run-Artefakte** (neu 2026-08-26) | ~~P0.6 (Seed, Rechenmodus, Config-Hash in `run_metadata.json`)~~ ✅ |
 | **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) |
