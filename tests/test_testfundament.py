@@ -293,3 +293,101 @@ class TestF:
             "C",
             "D",
         ]
+
+
+def handgemachte_umbiegungen(quelltext: str) -> list[str]:
+    """Jede Stelle, an der ein Test ein Attribut eines **importierten** Namens von Hand setzt.
+
+    Gemeint ist das Muster `alt = modul.X` · `modul.X = neu` · … · `modul.X = alt`,
+    und `setattr(modul, "X", neu)` als zweite Schreibweise derselben Sache. Ein
+    **lokales** Objekt (`draft.feld = …`, `setattr(draft, …)`) ist kein Fund: Es
+    entsteht im Test und verschwindet mit ihm. `monkeypatch.setattr` ist ein
+    Methodenaufruf und damit ebenfalls keiner.
+    """
+
+    import ast
+
+    baum = ast.parse(quelltext)
+    importiert: set[str] = set()
+    for knoten in ast.walk(baum):
+        if isinstance(knoten, ast.Import):
+            importiert.update((a.asname or a.name).split(".")[0] for a in knoten.names)
+        elif isinstance(knoten, ast.ImportFrom):
+            importiert.update(a.asname or a.name for a in knoten.names)
+
+    def ist_importiert(ausdruck: ast.expr) -> bool:
+        return isinstance(ausdruck, ast.Name) and ausdruck.id in importiert
+
+    funde: list[tuple[int, str]] = []
+    for knoten in ast.walk(baum):
+        if isinstance(knoten, (ast.Assign, ast.AugAssign)):
+            ziele = knoten.targets if isinstance(knoten, ast.Assign) else [knoten.target]
+            for ziel in ziele:
+                if isinstance(ziel, ast.Attribute) and ist_importiert(ziel.value):
+                    funde.append((knoten.lineno, ast.unparse(ziel)))
+        elif (
+            isinstance(knoten, ast.Call)
+            and isinstance(knoten.func, ast.Name)
+            and knoten.func.id in {"setattr", "delattr"}
+            and knoten.args
+            and ist_importiert(knoten.args[0])
+        ):
+            funde.append((knoten.lineno, f"{knoten.func.id}({ast.unparse(knoten.args[0])}, …)"))
+    return [f"{zeile}: {was}" for zeile, was in sorted(funde)]
+
+
+class TestKeinTestBiegtEinModulVonHandUm:
+    """**Wer für einen Test ein Modul umbiegt, nimmt `monkeypatch`.**
+
+    Bis zum 2026-09-11 gab es fünf handgemachte Stellen in vier Dateien. **Drei
+    stellten im `finally` zurück** und waren korrekt. **Zwei nicht** — beide in
+    `test_dashboard_service.py`, und beide lagen im selben Muster: Ein Attribut
+    (`CONFIGS_DIR`, `SWEEPS_DIR`) wurde auf ein `mkdtemp`-Verzeichnis gesetzt und
+    **am Ende des `try`-Blocks** zurückgestellt, dessen `finally` das Verzeichnis
+    löschte. Scheiterte eine Zusicherung dazwischen, zeigte das Attribut für
+    **jeden folgenden Test der Sitzung** auf ein gelöschtes Verzeichnis — ein
+    Fehlschlag, der seine Ursache weit weg von sich meldet.
+
+    Gefunden wurden sie nicht über eine Liste, sondern beim Lesen der
+    `mkdtemp`-Blöcke für P4.1 — und dann über **dieses** Merkmal gesucht: Eine
+    Stelle war gesehen, fünf gab es.
+    """
+
+    def test_keine_handgemachte_umbiegung(self):
+        befunde = [
+            f"{pfad.relative_to(ROOT)}:{fund}"
+            for pfad in sorted(TESTS.rglob("*.py"))
+            if "__pycache__" not in pfad.parts
+            for fund in handgemachte_umbiegungen(pfad.read_text(encoding="utf-8"))
+        ]
+
+        assert not befunde, (
+            "Diese Stellen setzen ein Attribut eines importierten Namens von Hand:\n  "
+            + "\n  ".join(befunde)
+            + '\n\n`monkeypatch.setattr(modul, "NAME", wert)` stellt nach dem Test '
+            "zurück — auch dann, wenn eine Zusicherung dazwischen scheitert."
+        )
+
+    def test_der_waechter_sieht_beide_schreibweisen_und_keine_lokalen_objekte(self):
+        """Ohne diese Zusage wäre grün nur die Abwesenheit einer Messung."""
+
+        quelltext = """import dashboard.config_catalog as catalog
+from pathlib import Path
+
+
+def test_x(monkeypatch, tmp_path):
+    alt = catalog.CONFIGS_DIR
+    catalog.CONFIGS_DIR = tmp_path
+    setattr(catalog, "SWEEPS_DIR", tmp_path)
+    monkeypatch.setattr(catalog, "CONFIGS_DIR", tmp_path)
+    draft = object()
+    draft.feld = 1
+    setattr(draft, "feld", 2)
+    Path.home = None
+"""
+
+        assert [fund.split(": ", 1)[0] for fund in handgemachte_umbiegungen(quelltext)] == [
+            "7",
+            "8",
+            "13",
+        ]

@@ -128,7 +128,7 @@ class TestConfigCatalog:
         assert draft.saturation_edit.booking_increase == 0.6
         assert draft.market_feedback_edit.target_booking_rate == 0.37
 
-    def test_save_saturation_and_market_feedback_to_properties_json(self):
+    def test_save_saturation_and_market_feedback_to_properties_json(self, monkeypatch):
         import dashboard.config_catalog as catalog
 
         tmpdir = Path(tempfile.mkdtemp(prefix="dash_props_"))
@@ -136,8 +136,7 @@ class TestConfigCatalog:
             src = catalog.CONFIGS_DIR / "properties.json"
             dst = tmpdir / "properties.json"
             shutil.copy(src, dst)
-            original = catalog.CONFIGS_DIR
-            catalog.CONFIGS_DIR = tmpdir
+            monkeypatch.setattr(catalog, "CONFIGS_DIR", tmpdir)
 
             save_saturation_to_file(
                 catalog.SaturationEditState(booking_increase=0.45, utility_penalty_factor=0.8),
@@ -167,7 +166,6 @@ class TestConfigCatalog:
             assert rule_effect["target_booking_rate"] == 0.42
             assert rule_effect["marginal_cost_fraction"] == 0.4
 
-            catalog.CONFIGS_DIR = original
         finally:
             shutil.rmtree(tmpdir)
 
@@ -232,13 +230,12 @@ class TestConfigCatalog:
         assert "property_overrides" in summary
         assert summary["config_files"]["properties"] == "properties.json"
 
-    def test_save_custom_sweep_preset(self):
+    def test_save_custom_sweep_preset(self, monkeypatch):
         tmpdir = Path(tempfile.mkdtemp(prefix="sweep_save_"))
         try:
             from dashboard import config_catalog
 
-            original = config_catalog.SWEEPS_DIR
-            config_catalog.SWEEPS_DIR = tmpdir
+            monkeypatch.setattr(config_catalog, "SWEEPS_DIR", tmpdir)
             draft = default_config_draft()
             draft.scenario_mode = "custom"
             draft.apply_custom_overrides = True
@@ -247,7 +244,6 @@ class TestConfigCatalog:
             assert path.is_file()
             payload = json.loads(path.read_text(encoding="utf-8"))
             assert payload["id"] == "test_preset"
-            config_catalog.SWEEPS_DIR = original
         finally:
             shutil.rmtree(tmpdir)
 
