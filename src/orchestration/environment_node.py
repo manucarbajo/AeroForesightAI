@@ -308,16 +308,6 @@ class EnvironmentNode:
         else:
             lines.append("Events: -")
 
-        if hasattr(state, "_population_updates") and state._population_updates:
-            last_update = state._population_updates[-1]
-            if last_update.round_number == state.clock.current_tick and last_update.shifts:
-                lines.append("Population shifts:")
-                for shift in last_update.shifts:
-                    lines.append(
-                        f"- {shift.segment_id}: {shift.old_share:.3f} -> {shift.new_share:.3f} ({shift.shift_amount:+.3f})"
-                    )
-                lines.append(f"  Reasoning: {last_update.total_reasoning}")
-
         segment_analysis = self._collect_segment_analysis(responses)
         if segment_analysis:
             lines.append("Consumer segment_analysis:")

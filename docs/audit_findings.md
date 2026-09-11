@@ -96,7 +96,6 @@ Beim Entfernen ist aufgefallen, **warum das nicht bloß Aufräumen ist**: Das Ko
 
 | Fundstelle | Befund | Auswirkung |
 | --- | --- | --- |
-| `src/orchestration/environment_node.py:282-283` + `PopulationShift`/`PopulationUpdateResult` (gleiche Datei) | Prüft `state._population_updates`, ein privates Attribut, das nirgends im Code gesetzt wird (`SimulationState` hat kein solches Feld). Die zugehörigen Modelle sind isoliert unit-getestet (`tests/test_environment_node.py`), werden aber vom echten Pipeline-Pfad nie erzeugt. | Ein ganzes "Population-Shift-Narrativ"-Feature sieht implementiert aus (Modelle + Tests vorhanden), ist im Laufzeitpfad aber tot. |
 
 ## Validierung / Checkpointing / Orchestrierung
 
