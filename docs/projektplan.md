@@ -3762,7 +3762,7 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 | Diagramm | Stand |
 | --- | --- |
 | Surplus Pulse | ✅ übernommen — **mit korrigierter Grenze**: Die Legacy-Ansicht rechnete WTP × Einkommen und vergaß den Grün-Aufschlag; die Grenze schreibt jetzt der Lauf mit (`erschwinglichkeitsgrenze_eur`) |
-| Saturation Swarm | offen |
+| Saturation Swarm | ✅ übernommen — **mit korrigierter Lesehilfe**: Die Legacy-Ansicht behauptete, die Sättigung springe bei einer Buchung «sofort auf 1.0»; gerechnet wird `+ booking_increase`, gedeckelt bei 1,0, und abgebaut je Tick um die Abklingrate des Segments |
 | Behavioral Split | offen |
 | Demographischer Cluster (Alter vs. Umwelt) | offen |
 | Income vs WTP | offen |

@@ -634,3 +634,30 @@ class TestSurplusPulse:
 
         assert "erschwinglichkeitsgrenze_eur" in gerendert
         assert "Surplus Pulse:" not in gerendert
+
+
+class TestSaturationSwarm:
+    """P5.2 (2026-09-11): Sättigung und Wiederkehr aus der Researcher-Variante."""
+
+    def test_der_block_erscheint(self, history_run):
+        assert "Saturation Swarm" in _text(animation.render(history_run, "run_minimal"))
+
+    def test_reisebedarf_ist_eins_minus_saettigung(self, history_run):
+        frame = animation.load_history(history_run)
+        frame.loc[frame["id"] == 7, "saturation_level"] = 0.6
+
+        bedarf = animation.bedarf_frame(frame)
+
+        assert bedarf.loc[bedarf["id"] == 7, "reisebedarf"].tolist() == pytest.approx([0.4, 0.4])
+        assert bedarf.loc[bedarf["id"] == 8, "reisebedarf"].tolist() == pytest.approx([1.0, 1.0])
+
+    def test_ohne_saettigung_ein_hinweis(self, history_run):
+        import pandas as pd
+
+        pfad = history_run / "individuals_history.csv"
+        pd.read_csv(pfad).drop(columns=["saturation_level"]).to_csv(pfad, index=False)
+
+        gerendert = _text(animation.render(history_run, "run_minimal"))
+
+        assert "saturation_level" in gerendert
+        assert "Saturation Swarm:" not in gerendert

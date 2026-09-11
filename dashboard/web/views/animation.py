@@ -39,6 +39,7 @@ _BASE_COLUMNS = {
     "booked_num",
     "erschwinglichkeitsgrenze_eur",
     "spielraum_eur",
+    "reisebedarf",
 }
 
 #: Wie viele Personen die Einzelsichten zeigen. Die Aggregationen rechnen mit
@@ -167,6 +168,50 @@ def _surplus_figure(frame, mode: str = theme.LIGHT):
         line_color=tone["text-faint"],
         annotation_text="Grenze: darunter bucht niemand",
     )
+    return fig
+
+
+def bedarf_frame(frame):
+    """Der Reisebedarf je Person und Tick: eins minus die Sättigung — oder `None`.
+
+    Die Sättigung steigt bei einer Buchung um `booking_increase` (gedeckelt bei
+    1,0) und sinkt danach je Tick um die Abklingrate des Segments. Die Zahl kommt
+    aus der Historie; hier wird nur umgedreht, damit «oben» «will reisen» heißt.
+    """
+
+    if "saturation_level" not in frame.columns:
+        return None
+    frame = frame.copy()
+    frame["reisebedarf"] = 1.0 - frame["saturation_level"]
+    return frame
+
+
+def _swarm_figure(frame, mode: str = theme.LIGHT):
+    tone = theme.palette(mode)
+    import plotly.express as px
+
+    fig = px.scatter(
+        frame,
+        x="wtp_eur",
+        y="reisebedarf",
+        animation_frame="tick",
+        animation_group="id",
+        color="Gebucht",
+        symbol="Segment",
+        hover_name="id",
+        hover_data=["saturation_level"],
+        title="Saturation Swarm",
+        labels={
+            "wtp_eur": "Zahlungsbereitschaft (WTP) in €",
+            "reisebedarf": "Reisebedarf (1 − Sättigung)",
+            "saturation_level": "Sättigung",
+            "tick": "Tick",
+        },
+        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        range_x=[0, frame["wtp_eur"].max() * 1.1],
+        range_y=[-0.05, 1.05],
+    )
+    fig.update_traces(marker=dict(size=6, opacity=0.6, line=dict(width=0)))
     return fig
 
 
@@ -413,6 +458,29 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                 "der Runde. Unter der gestrichelten Linie bucht sie nicht; darüber entscheidet "
                 "die Wahrscheinlichkeit.",
                 _graph(_surplus_figure(stichprobe(surplus), mode), mode=mode),
+            )
+        )
+
+    bedarf = bedarf_frame(frame)
+    if bedarf is None:
+        blocks.append(
+            ui.alert(
+                "Der Saturation Swarm braucht die Spalte `saturation_level` — dieser Lauf "
+                "schreibt sie nicht.",
+                "info",
+                class_name="mb-6",
+            )
+        )
+    else:
+        blocks.append(
+            _block(
+                "Saturation Swarm: Sättigung und Wiederkehr",
+                f"Dieselbe Stichprobe von {STICHPROBE} Personen. Waagrecht die "
+                "Zahlungsbereitschaft, senkrecht der Reisebedarf: eins minus die Sättigung. "
+                "Wer bucht, wird gesättigt und fällt nach unten; danach klingt die Sättigung "
+                "Runde für Runde ab, und der Punkt steigt wieder — je nach Segment "
+                "verschieden schnell.",
+                _graph(_swarm_figure(stichprobe(bedarf), mode), mode=mode),
             )
         )
 

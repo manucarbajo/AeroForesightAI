@@ -78,6 +78,11 @@ Wahrscheinlichkeit — ein Punkt knapp darüber bucht oft trotzdem nicht. Läufe
 dem 11. September 2026 zeigen an seiner Stelle einen Hinweis, weil ihnen die
 nötige Spalte fehlt.
 
+**Der Saturation Swarm** zeigt dieselben Personen mit ihrer Zahlungsbereitschaft
+gegen den Reisebedarf, also eins minus die Sättigung. Wer bucht, ist danach
+gesättigt, und sein Punkt fällt nach unten. Runde für Runde klingt die Sättigung
+ab, und der Punkt steigt wieder — wie schnell, hängt am Segment.
+
 Die übrigen Sichten fassen nach Altersgruppen und Segmenten zusammen. Die Sicht
 «Marktanteil vs. Populationsanteil» ist die aufschlussreichste: Es stellt den Anteil eines Segments an der
 Bevölkerung seinem Anteil an den Buchungen gegenüber. Liegt ein Punkt über der
