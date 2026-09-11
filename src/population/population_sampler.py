@@ -1052,36 +1052,3 @@ def run_population_tick(
         system_properties=system_properties,
         rng=buchungsstrom(seed, current_tick),
     )
-
-
-def run_population_sampling(
-    config: PopulationConfig,
-    ticket_price: float,
-    carbon_tax: float,
-    *,
-    properties: PropertiesConfig | None = None,
-    seed: int = 42,
-) -> PopulationStats:
-    """Backward-compatible entry point (non-persistent single-tick sample)."""
-
-    from src.config_loader import load_properties_config
-
-    resolved_properties = properties or load_properties_config()
-    individuals, stats = run_population_tick(
-        resolved_properties,
-        config,
-        None,
-        ticket_price=ticket_price,
-        carbon_tax=carbon_tax,
-        factors={},
-        system_properties={},
-        seed=seed,
-        # Eine einzelne Stichprobe ohne Lauf: Es gibt keinen Tick und keine
-        # Laufzeitmetriken. Das steht jetzt da, statt aus Defaults zu folgen —
-        # eine `shift_rule` mit `tick`- oder `metric`-Bedingung greift hier
-        # nicht, und das ist eine Aussage, kein Versehen.
-        current_tick=0,
-        metrics=None,
-    )
-    _ = individuals
-    return stats

@@ -10,7 +10,7 @@ weiterhin ``market_rules``; umbenannt wurde nur das Modul (M4.13).
 from __future__ import annotations
 
 from src.market.property_engine import resolve_trajectory
-from src.models.property_models import MarketFeedbackConfig, MarketRule, PropertiesConfig
+from src.models.property_models import MarketFeedbackConfig, PropertiesConfig
 
 BOOKING_YIELD_FEEDBACK = "booking_yield_feedback"
 
@@ -30,15 +30,6 @@ def initial_provider_markup(properties: PropertiesConfig, *, tick: int) -> float
     if prop is not None:
         return resolve_trajectory(prop.trajectory, tick)
     return properties.price_model.initial_markup
-
-
-def initial_ticket_price(properties: PropertiesConfig, *, tick: int) -> float:
-    """Baseline for computed ``ticket_price`` from system_properties."""
-
-    prop = properties.get_system_property("ticket_price")
-    if prop is not None:
-        return resolve_trajectory(prop.trajectory, tick)
-    return properties.price_model.base_price + initial_provider_markup(properties, tick=tick)
 
 
 def zielauslastung(
@@ -138,10 +129,3 @@ def resolve_market_feedback_config(properties: PropertiesConfig) -> MarketFeedba
         }
         return MarketFeedbackConfig(enabled=bool(rule.when.get("enabled", True)), **gesetzt)
     return properties.market_feedback
-
-
-def active_market_rule(properties: PropertiesConfig) -> MarketRule | None:
-    for rule in properties.market_rules:
-        if rule.effect.get("type") == BOOKING_YIELD_FEEDBACK:
-            return rule
-    return None
