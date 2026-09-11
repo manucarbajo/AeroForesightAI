@@ -434,12 +434,17 @@ def _vergleich_tiles() -> list:
     Zahlen zu nennen, mit denen nicht gerechnet wird.
     """
 
-    presets = list_sweep_presets()
-    laengen = sorted({p.max_ticks for p in presets})
+    # **Die Rahmen, nicht der ganze Ordner** (P7.2-U2.1). Bis zum 2026-09-11
+    # zählte diese Kachel `list_sweep_presets()` — acht, samt der Stresstests —,
+    # während der Satz darüber «alle vier Rahmenszenarien» sagte. Auch die
+    # Längenspanne kam aus den Stresstests: «40–120 Ticks» für einen Vergleich,
+    # dessen Szenarien alle 120 Ticks lang sind.
+    rahmen = rahmenszenarien()
+    laengen = sorted({p.max_ticks for p in rahmen}) or [0]
     laenge = f"{laengen[0]} Ticks" if len(laengen) == 1 else f"{min(laengen)}–{max(laengen)} Ticks"
 
     return [
-        ui.metric_tile("Szenarien", len(presets)),
+        ui.metric_tile("Rahmenszenarien", len(rahmen)),
         ui.metric_tile(
             "Länge",
             laenge,

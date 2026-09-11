@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from dash import Input, Output, State, dcc, html, no_update
 
-from dashboard.config_catalog import list_sweep_presets, validate_draft
+from dashboard.config_catalog import list_sweep_presets, rahmenszenarien, validate_draft
 from dashboard.web import components as ui
 from dashboard.web import config_editor, routing, runner
 from dashboard.web.config_editor import compute_mode, start_flow, wizard
@@ -66,7 +66,10 @@ SUMMARY_HOST = "rail-summary"
 
 def _summary(draft: dict) -> str:
     if start_flow.ist_vergleich(draft):
-        return f"Szenario-Vergleich · {len(list_sweep_presets())} Szenarien · je eigene Länge"
+        # **`rahmenszenarien()`, nicht `list_sweep_presets()`** (P7.2-U2.1): Ein
+        # Vergleich rechnet seit P2.2 nur die Rahmen. Hier stand bis zum
+        # 2026-09-11 die Zahl des ganzen Ordners — acht statt vier.
+        return f"Szenario-Vergleich · {len(rahmenszenarien())} Rahmenszenarien · je eigene Länge"
     runs = int(draft.get("run_count") or 1)
     run_label = f"{runs} Läufe" if runs > 1 else "1 Lauf"
     return (
@@ -131,7 +134,7 @@ def summary_rows(draft: dict) -> html.Div:
     if start_flow.ist_vergleich(draft):
         return html.Div(
             [
-                _row("Lauf", f"Vergleich · {len(list_sweep_presets())} Szenarien"),
+                _row("Lauf", f"Vergleich · {len(rahmenszenarien())} Rahmenszenarien"),
                 _row("Länge", "je Szenario"),
                 _row("Rechenmodus", "Nur Zahlen (vorgegeben)"),
             ],

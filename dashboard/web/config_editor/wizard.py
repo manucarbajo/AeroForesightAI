@@ -34,7 +34,7 @@ from typing import Callable
 
 from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
-from dashboard.config_catalog import list_sweep_presets
+from dashboard.config_catalog import rahmenszenarien
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
 from dashboard.web.config_editor import delta, experiment, llm_pipeline, start_flow
@@ -469,7 +469,10 @@ def entry(draft: dict | None = None) -> html.Div:
     """
 
     weiter = touched(draft)
-    presets = len(list_sweep_presets())
+    # **Gezählt wird, was der Vergleich rechnet** (P7.2-U2.1): die Rahmen, nicht
+    # der ganze Ordner. Bis zum 2026-09-11 stand hier «Alle 8 hinterlegten
+    # Szenarien», während der Prüfschritt «alle 4 Rahmenszenarien» sagte.
+    rahmen = len(rahmenszenarien())
     haupt = _hauptweg(weiter)
 
     def _gewicht(ident: str) -> str:
@@ -492,12 +495,12 @@ def entry(draft: dict | None = None) -> html.Div:
                         "compare_arrows",
                         "Szenario-Vergleich starten",
                         (
-                            f"Alle {presets} hinterlegten Szenarien nacheinander rechnen "
+                            f"Alle {rahmen} Rahmenszenarien nacheinander rechnen "
                             "und am Ende nebeneinanderlegen."
-                            if presets
-                            else "Zurzeit liegt kein Szenario unter `configs/sweeps/`."
+                            if rahmen
+                            else "Zurzeit ist kein Rahmenszenario hinterlegt."
                         ),
-                        disabled=not presets,
+                        disabled=not rahmen,
                         gewicht=_gewicht(WAY_SWEEP),
                     ),
                     _way(

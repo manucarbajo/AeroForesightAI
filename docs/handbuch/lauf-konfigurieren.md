@@ -4,10 +4,11 @@ anfangen? Drei Wege stehen zur Wahl.
 **Neuen Lauf einrichten** führt in die Schrittfolge unten — die Fragen der Reihe
 nach. Das ist der Weg, wenn Sie den Lauf zusammenstellen wollen.
 
-**Szenario-Vergleich starten** rechnet alle hinterlegten Szenarien nacheinander
-und legt sie am Ende nebeneinander. Sie landen unmittelbar bei **Prüfen &
-Starten**; wie viele Ticks gerechnet werden, steht dort und lässt sich vorher
-noch ändern.
+**Szenario-Vergleich starten** rechnet alle **Rahmenszenarien** nacheinander
+und legt sie am Ende nebeneinander; die Stresstests der Engine sind nicht dabei.
+Sie landen unmittelbar bei **Prüfen & Starten**. Jedes Szenario läuft in der
+Länge, auf die es angelegt ist — die Länge aus dem zweiten Schritt gilt für den
+Vergleich nicht.
 
 **Letzte Einstellungen weiterverwenden** springt ebenfalls ans Ende, mit dem, was
 zuletzt eingestellt war — ohne die Fragen erneut durchzugehen. Dieser Weg ist
