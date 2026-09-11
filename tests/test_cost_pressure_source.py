@@ -221,7 +221,6 @@ class TestKeinKontextparameterHatEinenDefault:
         ("src.market.simulation_functions", "compose_ticket_price", ("properties", "tick")),
         ("src.market.simulation_functions", "apply_market_feedback", ("properties", "tick")),
         ("src.market.market_feedback", "initial_provider_markup", ("tick",)),
-        ("src.market.market_feedback", "initial_ticket_price", ("tick",)),
         # `rng` seit P2.1: Ein selbst besorgter Generator waere in jedem Tick
         # derselbe -- es buchten immer dieselben Individuen.
         # `system_properties` seit dem 2026-09-03: Die Kapazitaetsschranke gehoert
@@ -328,11 +327,6 @@ class TestKeinKontextparameterEntgehtDemSweep:
             "Faellt auf `state.resolved_properties()` zurueck, also auf denselben "
             "State, den die Funktion als erstes Argument bekommt. Sie kann damit "
             "nicht anders rechnen als ihr Aufrufer."
-        ),
-        ("run_population_sampling", "properties"): (
-            "Faellt auf `load_properties_config()` zurueck, also auf die "
-            "ausgelieferte Konfiguration statt auf eine Konstante. Ausserdem "
-            "toter Code — siehe docs/audit_findings.md."
         ),
     }
 
