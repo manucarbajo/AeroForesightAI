@@ -19,6 +19,14 @@ logger = logging.getLogger(__name__)
 
 
 class LLMCallable(Protocol):
+    """Was ein Sprachmodell für diese Engine können muss: einen Prompt beantworten.
+
+    **Die eine Definition** (P5.1, 2026-09-11). Bis dahin stand dasselbe Protokoll
+    in sieben Modulen — strukturell gleich und deshalb ohne Laufzeitfehler, aber
+    eine Signatur, die an einer Stelle geändert wird, wäre an sechs anderen still
+    stehen geblieben. Gehalten von `tests/test_ein_name_eine_klasse.py`.
+    """
+
     def call(self, prompt: str) -> str: ...
 
 

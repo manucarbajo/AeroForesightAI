@@ -6,11 +6,7 @@ import csv
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
-
-
-class LLMCallable(Protocol):
-    def call(self, prompt: str) -> str: ...
+from typing import Any
 
 
 @dataclass(frozen=True)

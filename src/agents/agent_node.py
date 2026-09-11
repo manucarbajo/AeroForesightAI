@@ -4,13 +4,14 @@ import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 from uuid import uuid4
 
 from pydantic import ValidationError
 
 from src.agents.agent_dependencies import format_depends_on_block
 from src.agents.agent_permissions import may_propose_factor
+from src.llm import LLMCallable
 from src.market.property_engine import scheduled_property_events
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
 from src.models.enums import AgentType, EventType
@@ -33,10 +34,6 @@ DEFAULT_EVENT_TYPE_BY_AGENT: dict[AgentType, EventType] = {
     AgentType.PROVIDER: EventType.PRICE_CHANGE,
     AgentType.REGULATOR: EventType.POLICY_CHANGE,
 }
-
-
-class LLMCallable(Protocol):
-    def call(self, prompt: str) -> str: ...
 
 
 class AgentNode:

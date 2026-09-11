@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
 from src.cib.scenario_consistency import ScenarioDeriver, scenarios_to_dict
+from src.llm import LLMCallable
 from src.models.cib_models import DESCRIPTOR_IDS, MAX_INFLUENCE, MIN_INFLUENCE, CIBMatrix
 from src.models.llm_models import LLMIncident
 from src.models.scenario_models import (
@@ -17,10 +18,6 @@ from src.models.scenario_models import (
 from src.models.state_models import SimulationState
 
 logger = logging.getLogger(__name__)
-
-
-class LLMCallable(Protocol):
-    def call(self, prompt: str) -> str: ...
 
 
 SCENARIO_SYSTEM_PROMPT = """Du bist ein Szenario-Analyst für Cross-Impact Balance (CIB) im Kontext Luftfahrt/Mobilität.
