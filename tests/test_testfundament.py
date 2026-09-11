@@ -178,3 +178,118 @@ sys.path[:0] = ["d"]
 '''
 
         assert eingriffe_in_sys_path(quelltext) == [4, 5, 6, 7]
+
+
+def erbende_testcases(quelltext: str) -> list[str]:
+    """Jede Klasse, die von einem `TestCase` aus `unittest` erbt — über den Syntaxbaum.
+
+    **Gesucht wird das Erben, nicht der Import.** `from unittest.mock import patch`
+    ist ein gewöhnliches Werkzeug und darf nicht anschlagen; `mock.Mock` als
+    Basisklasse ebenso wenig. Gemeldet wird eine Basis, die ein `…TestCase` aus
+    dem Modul `unittest` ist — gleich, unter welchem Namen es importiert wurde.
+    """
+
+    import ast
+
+    baum = ast.parse(quelltext)
+    modul_aliase: set[str] = set()
+    klassen_aliase: set[str] = set()
+    for knoten in ast.walk(baum):
+        if isinstance(knoten, ast.Import):
+            for alias in knoten.names:
+                if alias.name == "unittest":
+                    modul_aliase.add(alias.asname or alias.name)
+        elif isinstance(knoten, ast.ImportFrom) and knoten.module == "unittest":
+            for alias in knoten.names:
+                if alias.name.endswith("TestCase"):
+                    klassen_aliase.add(alias.asname or alias.name)
+
+    def ist_testcase(basis: ast.expr) -> bool:
+        if isinstance(basis, ast.Attribute) and isinstance(basis.value, ast.Name):
+            return basis.value.id in modul_aliase and basis.attr.endswith("TestCase")
+        return isinstance(basis, ast.Name) and basis.id in klassen_aliase
+
+    return [
+        f"{knoten.lineno}: {knoten.name}"
+        for knoten in ast.walk(baum)
+        if isinstance(knoten, ast.ClassDef) and any(ist_testcase(b) for b in knoten.bases)
+    ]
+
+
+class TestEinTestIstEineFunktionOderEineKlasseOhneUnittest:
+    """**Die Suite spricht einen Stil: pytest.**
+
+    Bis zum 2026-09-11 erbten drei Dateien von `unittest.TestCase` —
+    `test_agent_node.py`, `test_save_final_narrative.py` und
+    `test_simulation_runner_e2e.py` —, ohne technischen Grund. Das war nicht nur
+    uneinheitlich: Einer `TestCase`-Methode reicht pytest **keine Fixtures**
+    herein. Wer dort `tmp_path` oder `monkeypatch` brauchte, griff zu
+    `tempfile` und Handarbeit — genau die Muster, gegen die P4.1 antritt.
+
+    **Umgestellt mit einer Prüfung, nicht per Augenmaß:** Vor und nach jeder
+    Datei wurden die Menge der Testnamen, die Zahl der Zusicherungen und die
+    Multimenge **aller** String-Konstanten verglichen. Einziger Unterschied
+    war `'__main__'` aus der entfernten `unittest.main()`-Zeile; jede
+    JSON-Antwort der Mocks und jede Prompt-Erwartung ist byte-gleich
+    geblieben. Zeilen im Inneren mehrzeiliger Strings wurden dafür bewusst
+    nicht umgerückt — sonst hätte sich der Wortlaut der Mock-Antworten
+    geändert.
+    """
+
+    def test_keine_klasse_erbt_von_unittest_testcase(self):
+        befunde = [
+            f"{pfad.relative_to(ROOT)}:{fund}"
+            for pfad in sorted(TESTS.rglob("*.py"))
+            if "__pycache__" not in pfad.parts
+            for fund in erbende_testcases(pfad.read_text(encoding="utf-8"))
+        ]
+
+        assert not befunde, (
+            "Diese Klassen erben von unittest.TestCase:\n  "
+            + "\n  ".join(befunde)
+            + "\n\nIn einer TestCase-Methode gibt es keine pytest-Fixtures. Ein Test "
+            "ist eine Funktion `def test_…()` oder eine Klasse `class Test…:` ohne "
+            "Basisklasse; Zusicherungen sind `assert`."
+        )
+
+    def test_der_waechter_sieht_jede_form_und_nicht_mock(self):
+        """Ohne diese Zusage wäre grün nur die Abwesenheit einer Messung."""
+
+        quelltext = """import unittest
+import unittest as ut
+from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase as Asynchron
+from unittest import mock
+from unittest.mock import patch
+
+
+class A(unittest.TestCase):
+    pass
+
+
+class B(ut.TestCase):
+    pass
+
+
+class C(TestCase):
+    pass
+
+
+class D(Asynchron):
+    pass
+
+
+class E(mock.Mock):
+    pass
+
+
+class TestF:
+    pass
+"""
+
+        assert [fund.split(": ")[1] for fund in erbende_testcases(quelltext)] == [
+            "A",
+            "B",
+            "C",
+            "D",
+        ]

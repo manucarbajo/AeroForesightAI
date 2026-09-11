@@ -1,5 +1,3 @@
-import unittest
-
 from src.config_loader import build_initial_state
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 
@@ -43,37 +41,33 @@ class MockLLM:
         return '{\n  "reasoning": "noop",\n  "actions": [],\n  "state_changes": [],\n  "events": [],\n  "segment_analysis": {}\n}'
 
 
-class SimulationRunnerE2ETest(unittest.TestCase):
-    def test_run_with_mock_agents_blocks_ungated_llm_factor_changes(self) -> None:
-        state = build_initial_state()
-        state.clock.max_ticks = 1
+def test_run_with_mock_agents_blocks_ungated_llm_factor_changes() -> None:
+    state = build_initial_state()
+    state.clock.max_ticks = 1
 
-        runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
-        run_graph = runner._build_sequential_runner(state.agents)
-        final = run_graph(state)
+    runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
+    run_graph = runner._build_sequential_runner(state.agents)
+    final = run_graph(state)
 
-        self.assertEqual(final.clock.current_tick, 1)
-        self.assertEqual(final.environment.factors["F1"].current_state, "F1.1")
-        self.assertEqual(final.environment.factors["F2"].current_state, "F2.1")
-        self.assertEqual(len(final.factor_timeseries), 1)
+    assert final.clock.current_tick == 1
+    assert final.environment.factors["F1"].current_state == "F1.1"
+    assert final.environment.factors["F2"].current_state == "F2.1"
+    assert len(final.factor_timeseries) == 1
 
-        rounds = [rr for rr in final.round_results if rr.round_number == 1]
-        self.assertTrue(len(rounds) >= 1)
-        self.assertTrue(len(final.price_history) >= 1)
-
-    def test_factor_rules_apply_at_carbon_shock_tick(self) -> None:
-        state = build_initial_state()
-        state.clock.max_ticks = 15
-
-        runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
-        run_graph = runner._build_sequential_runner(state.agents)
-        final = run_graph(state)
-
-        self.assertEqual(final.clock.current_tick, 15)
-        self.assertEqual(final.environment.factors["F2"].current_state, "F2.2")
-        self.assertEqual(final.environment.factors["F6"].current_state, "F6.2")
-        self.assertEqual(len(final.factor_timeseries), 15)
+    rounds = [rr for rr in final.round_results if rr.round_number == 1]
+    assert len(rounds) >= 1
+    assert len(final.price_history) >= 1
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_factor_rules_apply_at_carbon_shock_tick() -> None:
+    state = build_initial_state()
+    state.clock.max_ticks = 15
+
+    runner = SimulationRunner(llm=MockLLM(), options=RunnerOptions(enable_market=True))
+    run_graph = runner._build_sequential_runner(state.agents)
+    final = run_graph(state)
+
+    assert final.clock.current_tick == 15
+    assert final.environment.factors["F2"].current_state == "F2.2"
+    assert final.environment.factors["F6"].current_state == "F6.2"
+    assert len(final.factor_timeseries) == 15
