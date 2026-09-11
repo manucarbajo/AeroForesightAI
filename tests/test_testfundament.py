@@ -81,3 +81,100 @@ class TestJedeDateiInTestsWirdAuchAusgefuehrt:
         (tmp_path / "debug_lauf.py").write_text("", encoding="utf-8")
 
         assert nicht_eingesammelt(tmp_path, ["test_*.py", "*_test.py"]) == ["debug_lauf.py"]
+
+
+def eingriffe_in_sys_path(quelltext: str) -> list[int]:
+    """Jede Zeile, in der `sys.path` **dauerhaft** verändert wird — über den Syntaxbaum.
+
+    **Eine Textsuche wäre hier falsch**, und das ist gemessen: Beim Anlegen
+    dieses Wächters standen drei der sieben Treffer für `sys.path` in `tests/`
+    in Docstrings und Kommentaren — einer davon in dieser Datei.
+
+    **`monkeypatch.syspath_prepend` zählt nicht**: pytest nimmt es nach dem Test
+    zurück. Gemeldet wird, was den Prozess für alle folgenden Tests verändert.
+    """
+
+    import ast
+
+    def ist_sys_path(knoten: ast.AST) -> bool:
+        return (
+            isinstance(knoten, ast.Attribute)
+            and knoten.attr == "path"
+            and isinstance(knoten.value, ast.Name)
+            and knoten.value.id == "sys"
+        )
+
+    veraendernd = {"append", "insert", "extend", "remove", "pop", "clear"}
+    zeilen: list[int] = []
+    for knoten in ast.walk(ast.parse(quelltext)):
+        if isinstance(knoten, ast.Call) and isinstance(knoten.func, ast.Attribute):
+            if ist_sys_path(knoten.func.value) and knoten.func.attr in veraendernd:
+                zeilen.append(knoten.lineno)
+        elif isinstance(knoten, (ast.Assign, ast.AugAssign)):
+            ziele = knoten.targets if isinstance(knoten, ast.Assign) else [knoten.target]
+            for ziel in ziele:
+                if ist_sys_path(ziel) or (
+                    isinstance(ziel, ast.Subscript) and ist_sys_path(ziel.value)
+                ):
+                    zeilen.append(knoten.lineno)
+    return sorted(zeilen)
+
+
+class TestKeinTestVerbiegtDenSuchpfad:
+    """**Kein Test verbiegt den Suchpfad — `src` macht pytest selbst importierbar.**
+
+    `tests/` ist ein Paket (`tests/__init__.py`), und im Standard-Importmodus
+    `prepend` legt pytest das erste Verzeichnis darüber ohne `__init__.py` vor
+    den Suchpfad: das Wurzelverzeichnis des Repos. **Gemessen am 2026-09-11:**
+    Aus `/tmp` gestartet laufen die Tests grün, und die CI installiert das
+    Projekt gar nicht (`pip install -r requirements.txt`).
+
+    **`pip install -e .` trägt dazu nichts bei — und das war die erste, falsche
+    Begründung dieses Wächters.** Die Editable-Installation legt `src/` *selbst*
+    in den Suchpfad, nicht sein Elternverzeichnis; `import src` scheitert damit
+    außerhalb von pytest und außerhalb des Repo-Wurzelverzeichnisses. Wer eine
+    Testdatei direkt als Skript startet, bekommt deshalb seit dem Wegfall der
+    Eingriffe einen `ModuleNotFoundError` — der Weg ist `pytest <datei>`.
+
+    **Die drei Eingriffe bis zum 2026-09-11 waren funktional wirkungslos**, weil
+    pytest den Pfad ohnehin anlegt — und genau deshalb irreführend: Sie
+    behaupteten eine Abhängigkeit, die es nicht gab, und verdeckten, woher `src`
+    wirklich kommt. Der Befund nannte drei Stellen mit `append`; es waren zwei
+    `append` und ein `insert` in `test_scenario_sweeps.py`, der in keiner Liste
+    stand.
+    """
+
+    def test_kein_dauerhafter_eingriff_in_sys_path(self):
+        befunde = [
+            f"{pfad.relative_to(ROOT)}:{zeile}"
+            for pfad in sorted(TESTS.rglob("*.py"))
+            if "__pycache__" not in pfad.parts
+            for zeile in eingriffe_in_sys_path(pfad.read_text(encoding="utf-8"))
+        ]
+
+        assert not befunde, (
+            "Diese Stellen verändern sys.path für den ganzen Testprozess:\n  "
+            + "\n  ".join(befunde)
+            + "\n\nFür die Tests macht pytest `src` selbst importierbar (tests/ ist "
+            "ein Paket, Importmodus prepend). Wer für einen einzelnen Test einen Pfad "
+            "braucht, nimmt `monkeypatch.syspath_prepend` — das nimmt pytest danach "
+            "zurück."
+        )
+
+    def test_der_waechter_sieht_jede_form_und_keine_prosa(self):
+        """Ohne diese Zusage wäre grün nur die Abwesenheit einer Messung.
+
+        Die ersten drei Zeilen des Beispiels **erwähnen** `sys.path` nur — die
+        Falle, in die eine Textsuche liefe. Die vier danach verändern ihn.
+        """
+
+        quelltext = '''"""Ein Docstring, der sys.path.append(...) nur erwähnt."""
+import sys
+# sys.path.insert(0, "nur ein Kommentar")
+sys.path.append("a")
+sys.path.insert(0, "b")
+sys.path += ["c"]
+sys.path[:0] = ["d"]
+'''
+
+        assert eingriffe_in_sys_path(quelltext) == [4, 5, 6, 7]

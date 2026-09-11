@@ -1,8 +1,3 @@
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
 import unittest
 
 from src.config_loader import build_initial_state

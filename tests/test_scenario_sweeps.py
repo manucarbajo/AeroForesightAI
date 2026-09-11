@@ -2,14 +2,9 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import pytest
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 from src.config_loader import build_initial_state
 from src.models.sweep_models import FactorOverride, MilestoneCheck, PropertyOverride, SweepConfig
@@ -19,6 +14,8 @@ from src.orchestration.scenario_sweeps import (
     run_single_sweep,
 )
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # ---------------------------------------------------------------------------
 # Unit Tests
