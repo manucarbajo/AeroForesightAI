@@ -273,9 +273,6 @@ class AgentNode:
         return rendered
 
     def _format_factors(self, state: SimulationState) -> str:
-        if self.config.profile and "factors F1,F5,F6" not in self.config.profile.observes:
-            pass  # We should dynamically check observed_factors
-
         allowed_factors = None
         if self.config.profile:
             allowed_factors = self.config.profile.observed_factors
