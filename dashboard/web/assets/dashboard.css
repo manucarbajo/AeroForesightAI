@@ -1859,6 +1859,23 @@ html.dark .af-input[type="number"] {
     max-width: 46rem;
 }
 
+/* **Der Hinweis schlägt `.af-md`** (P7.1-U1.1, vorgezogen am 2026-09-11).
+   `ui.hint_text` rendert als `dcc.Markdown` mit `af-hint af-md`. Beide Regeln
+   tragen eine Klasse, und `.af-md` steht weiter unten — bei gleicher
+   Spezifität gewinnt die spätere. Gemessen war der Kurzhinweis damit **15 px**
+   in der Fließtextfarbe, die Beschriftung darüber **14 px**: das lauteste
+   Element eines Feldes war der Satz, der es erklärt.
+
+   **Zwei Klassen statt Umsortieren** — dieselbe Lösung wie beim
+   Schubladen-Knopf (Gegenprobe zu P1.5): ordnungsunabhängig, während ein
+   verschobener Block nur bis zur nächsten Umsortierung hält.
+   `tests/test_web_typografie.py` rechnet die Kaskade nach. */
+.af-md.af-hint {
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+}
+
 .af-hint code {
     font-size: 0.95em;
     background: var(--surface-inset);
