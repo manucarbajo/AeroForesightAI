@@ -105,7 +105,6 @@ Beim Entfernen ist aufgefallen, **warum das nicht bloß Aufräumen ist**: Das Ko
 
 | Fundstelle | Befund | Auswirkung |
 | --- | --- | --- |
-| `LLMCallable` in `src/agents/agent_node.py` und sechs weiteren Modulen — **neu am 2026-09-11** | Dasselbe Protokoll (`call(prompt) -> str`) ist in `src/` **siebenmal** definiert: `agents/agent_node.py`, `cib/scenario_agent_node.py`, `llm/studio_helpers.py` (von `src.llm` exportiert), `orchestration/environment_node.py`, `reporting/state_explorer.py`, `reporting/run_scenario_generator/context.py`, `legacy/cib_extractor_node.py`. Aufgefallen beim Einführen von mypy (P4.4). | Kein Laufzeitfehler, weil Protokolle strukturell verglichen werden. Aber dieselbe Klasse wie `MockLLM` in P4.1: Ändert jemand die Signatur an einer Stelle, laufen die Kopien auseinander — und ein Typprüfer sieht es nur, wo die Datei in seiner Liste steht. Eingeplant als P5.1. |
 
 ## Dashboard
 

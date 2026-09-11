@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Protocol
+from typing import Any
 
+from src.llm import LLMCallable
 from src.market.factor_dynamics import build_runtime_metrics, validate_factor_proposals
 from src.market.market_feedback import initial_provider_markup
 from src.market.property_engine import resolve_system_properties
@@ -21,12 +22,6 @@ from src.models.state_models import DEFAULT_SEED, SimulationState
 from src.population.population_sampler import run_population_tick
 
 logger = logging.getLogger(__name__)
-
-
-class LLMCallable(Protocol):
-    """Protocol for LLM clients."""
-
-    def call(self, prompt: str) -> str: ...
 
 
 class EnvironmentNode:

@@ -7,9 +7,9 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
-from src.llm import OllamaClient, OllamaConfig
+from src.llm import LLMCallable, OllamaClient, OllamaConfig
 from src.logging_setup import stdio_auf_utf8
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.reporting.output_writer import OUTPUT_DIR
@@ -34,10 +34,6 @@ def parse_tick_hint(text: str) -> int | None:
     if not match:
         return None
     return int(match.group(1))
-
-
-class LLMCallable(Protocol):
-    def call(self, prompt: str) -> str: ...
 
 
 @dataclass(frozen=True)
