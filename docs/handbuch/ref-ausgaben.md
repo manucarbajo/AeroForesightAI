@@ -42,7 +42,7 @@ gegeneinander», nicht «das passiert eher nicht».
 | `tick_mechanics.json` | Die maßgeblichen Kennzahlen je Runde: Preis, Buchungsrate, Kostendruck, Marge |
 | `price_history.json` | Preisverlauf mit Nachfrageniveau und Buchungsrate |
 | `event_log.json` | Alle Ereignisse, einschließlich der als `[delta:…]` markierten Python-Änderungen |
-| `round_history.json` | Der Zustand je Runde |
+| `round_history.json` | Der Zustand je Runde — erst seit dem 11. September 2026 wirklich der dieser Runde; ältere Läufe tragen in jeder Runde den Endzustand |
 | `run_metadata.json` | Ticks, Modell, Zeitstempel, **Rechendauer**, ob das Marktmodell aktiv war, ob der Lauf beeinträchtigt war — und woraus er entstanden ist (Seed, Rechenmodus, Konfigurations-Fingerabdruck, Codestand) |
 | `llm_incidents.json` | Nur vorhanden, wenn Aufrufe an das Sprachmodell ins Leere gingen: welcher Tick, welcher Aufrufer, welcher Fehler |
 | `segment_analysis.json` | Auswertung nach Segmenten |

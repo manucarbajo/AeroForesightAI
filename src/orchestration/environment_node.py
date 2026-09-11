@@ -50,7 +50,9 @@ class EnvironmentNode:
                 round_number=round_number,
                 agent_responses=[],
                 events=round_events,
-                environment_snapshot=state.environment,
+                # Eine Kopie: Pydantic übernimmt die Instanz, und ohne Kopie trüge
+                # jede Runde am Ende den Endzustand des Laufs (P5.1).
+                environment_snapshot=state.environment.model_copy(deep=True),
                 summary=summary,
             )
         )

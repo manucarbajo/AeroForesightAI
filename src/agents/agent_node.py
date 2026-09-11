@@ -72,7 +72,7 @@ class AgentNode:
                 round_number=state.clock.current_tick,
                 agent_responses=[response],
                 events=events,
-                environment_snapshot=state.environment,
+                environment_snapshot=state.environment.model_copy(deep=True),
                 summary=f"Agent run: {self.config.id}",
             )
         )
