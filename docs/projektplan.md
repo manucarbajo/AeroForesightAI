@@ -3756,6 +3756,16 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 **Was zu tun ist:** Nach Abschluss von Phase 1 prüfen, ob die Dash-App alles abdeckt, was der Researcher-Modus konnte — insbesondere die zusätzlichen Plotly-Charts der Legacy-Animation. Dann das Paket löschen, samt Streamlit-Abhängigkeit und `.streamlit/`.
 
 **Tor benannt (2026-08-26):** "Nach Abschluss von Phase 1" war bisher nicht entscheidbar, weil Phase 1 nur qualitative Kriterien hatte — und solange niemand sagen kann, wann das Tor aufgeht, bleibt `streamlit>=1.32` in `pyproject.toml`, in `requirements.txt` und in jeder CI-Installation. Konkret aufzuschreiben ist deshalb **vor** dem Löschen: welche Charts aus `_render_animation` der Researcher-Variante in der Dash-App vorhanden sein müssen. Diese Liste ist das Abnahmekriterium; ist sie abgehakt, fällt das Paket, unabhängig davon, ob P1.1 und P1.2 im Übrigen schon final sind.
+
+**Abnahmeliste, entschieden am 2026-09-11 (Haiko): alle fünf Diagramme der Researcher-Animation.** Gemessen davor: Der Dash-Tab «Animation» enthielt die vier Sichten der **Ops**-Variante (`app.py`) — keines der fünf hier. Übernommen wird, *was* ein Diagramm zeigt, nicht *wie* die Legacy-Ansicht rechnete: Farben aus den Tokens (Regel 4), Zahlen aus dem Lauf.
+
+| Diagramm | Stand |
+| --- | --- |
+| Surplus Pulse | ✅ übernommen — **mit korrigierter Grenze**: Die Legacy-Ansicht rechnete WTP × Einkommen und vergaß den Grün-Aufschlag; die Grenze schreibt jetzt der Lauf mit (`erschwinglichkeitsgrenze_eur`) |
+| Saturation Swarm | offen |
+| Behavioral Split | offen |
+| Demographischer Cluster (Alter vs. Umwelt) | offen |
+| Income vs WTP | offen |
 **Fertig wenn:** Kein Streamlit mehr im Repo und in den Abhängigkeiten. **Doku:** `CLAUDE.md`, `README.md`, `dashboard/README.md`.
 
 ### P5.3 — `src/legacy/` entscheiden ✅ erledigt 2026-09-11

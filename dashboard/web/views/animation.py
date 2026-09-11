@@ -1,10 +1,14 @@
 """Tab «Animation»: die Population über die Ticks hinweg.
 
-Vier aufeinander aufbauende Sichten auf dieselbe `individuals_history.csv` —
-erst jeder einzelne Agent, dann nach Altersgruppen, nach Segmenten und
-schließlich Buchungs- gegen Populationsanteil. Die Aggregationen sind
-unverändert aus der Streamlit-Variante übernommen; neu sind nur Farbgebung
-und Rahmen.
+Sichten auf dieselbe `individuals_history.csv`: jeder einzelne Agent, nach
+Altersgruppen, nach Segmenten und Buchungs- gegen Populationsanteil — diese
+vier stammen aus der Ops-Variante der abgelösten Streamlit-UI.
+
+**Seit P5.2 (2026-09-11) dazu die Einzelsichten der Researcher-Variante**, auf
+eine feste Stichprobe von Personen. Übernommen ist, *was* sie zeigen, nicht
+*wie* sie rechneten: Die Erschwinglichkeitsgrenze des Surplus Pulse schreibt
+der Lauf mit, statt dass sie hier ein zweites Mal entsteht — die Legacy-Ansicht
+hatte dabei den Grün-Aufschlag vergessen.
 """
 
 from __future__ import annotations
@@ -33,7 +37,16 @@ _BASE_COLUMNS = {
     "Gebucht",
     "Altersgruppe",
     "booked_num",
+    "erschwinglichkeitsgrenze_eur",
+    "spielraum_eur",
 }
+
+#: Wie viele Personen die Einzelsichten zeigen. Die Aggregationen rechnen mit
+#: allen; eine Punktwolke aus tausend Personen über hundert Ticks wäre unlesbar
+#: und bremst den Browser. Fest gezogen, damit von Tick zu Tick dieselben
+#: Personen zu sehen sind — so hielt es die Researcher-Variante (P5.2).
+STICHPROBE = 150
+_STICHPROBEN_SEED = 42
 
 _AGE_BINS = [0, 18, 26, 36, 51, 66, 120]
 _AGE_LABELS = ["<18", "18-25", "26-35", "36-50", "51-65", ">65"]
@@ -86,6 +99,75 @@ def load_history(run_dir: Path):
     frame["booked_num"] = frame["booked"].astype(bool).astype(int)
     frame["Altersgruppe"] = pd.cut(frame["age"], bins=_AGE_BINS, labels=_AGE_LABELS, right=False)
     return frame
+
+
+def stichprobe(frame, anzahl: int = STICHPROBE):
+    """Dieselben höchstens *anzahl* Personen in jedem Tick — fest gezogen."""
+
+    import numpy as np
+
+    ids = frame["id"].unique()
+    if len(ids) <= anzahl:
+        return frame
+    gewaehlt = np.random.default_rng(_STICHPROBEN_SEED).choice(ids, size=anzahl, replace=False)
+    return frame[frame["id"].isin(gewaehlt)]
+
+
+def surplus_frame(frame):
+    """Der Spielraum je Person und Tick: Erschwinglichkeitsgrenze minus Ticketpreis.
+
+    `None`, wenn der Lauf die Grenze nicht mitschreibt (vor P5.2) oder kein
+    Preisverlauf vorliegt — dann gäbe es nur eine Zahl, die aussieht wie ein
+    Spielraum. Die Grenze kommt aus der Historie und nicht aus einer Formel hier.
+    """
+
+    if "erschwinglichkeitsgrenze_eur" not in frame.columns or "ticket_price" not in frame.columns:
+        return None
+    if (frame["ticket_price"] == 0).all():
+        return None
+    frame = frame.copy()
+    frame["spielraum_eur"] = frame["erschwinglichkeitsgrenze_eur"] - frame["ticket_price"]
+    return frame
+
+
+def _surplus_figure(frame, mode: str = theme.LIGHT):
+    tone = theme.palette(mode)
+    import plotly.express as px
+
+    hover = [
+        spalte
+        for spalte in ("ticket_price", "wtp_eur", "income_factor", "environmental_awareness")
+        if spalte in frame.columns
+    ]
+    fig = px.scatter(
+        frame,
+        x="erschwinglichkeitsgrenze_eur",
+        y="spielraum_eur",
+        animation_frame="tick",
+        animation_group="id",
+        color="Gebucht",
+        symbol="Segment",
+        hover_name="id",
+        hover_data=hover,
+        title="Surplus Pulse",
+        labels={
+            "erschwinglichkeitsgrenze_eur": "Höchster bezahlbarer Preis (EUR)",
+            "spielraum_eur": "Spielraum bis zur Grenze (EUR)",
+            "ticket_price": "Ticketpreis (EUR)",
+            "tick": "Tick",
+        },
+        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        range_x=[0, frame["erschwinglichkeitsgrenze_eur"].max() * 1.1],
+        range_y=[frame["spielraum_eur"].min() - 10, frame["spielraum_eur"].max() + 10],
+    )
+    fig.update_traces(marker=dict(size=6, opacity=0.6, line=dict(width=0)))
+    fig.add_hline(
+        y=0,
+        line_dash="dash",
+        line_color=tone["text-faint"],
+        annotation_text="Grenze: darunter bucht niemand",
+    )
+    return fig
 
 
 def _population_figure(frame, mode: str = theme.LIGHT):
@@ -310,6 +392,29 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
             _graph(_population_figure(frame, mode), mode=mode),
         )
     ]
+
+    surplus = surplus_frame(frame)
+    if surplus is None:
+        blocks.append(
+            ui.alert(
+                "Der Surplus Pulse braucht die Spalte `erschwinglichkeitsgrenze_eur` und den "
+                "Preisverlauf. Läufe vor dem 11. September 2026 schreiben die Spalte nicht — "
+                "ein neuer Lauf zeigt ihn.",
+                "info",
+                class_name="mb-6",
+            )
+        )
+    else:
+        blocks.append(
+            _block(
+                "Surplus Pulse: Spielraum bis zur Erschwinglichkeitsgrenze",
+                f"Eine feste Stichprobe von {STICHPROBE} Personen. Waagrecht der höchste Preis, "
+                "den eine Person überhaupt bezahlen kann, senkrecht der Abstand zum Ticketpreis "
+                "der Runde. Unter der gestrichelten Linie bucht sie nicht; darüber entscheidet "
+                "die Wahrscheinlichkeit.",
+                _graph(_surplus_figure(stichprobe(surplus), mode), mode=mode),
+            )
+        )
 
     age_figure = _age_figure(frame)
     if age_figure is not None:

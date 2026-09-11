@@ -61,16 +61,25 @@ im Lauf überhaupt etwas passiert ist.
 
 ## Animation
 
-Vier Streudiagramme, die sich über die Ticks abspielen lassen. Sie bringen ihre
+Streudiagramme, die sich über die Ticks abspielen lassen. Sie bringen ihre
 eigenen Abspielknöpfe mit und folgen **nicht** der Zeitleiste unten — anders als
 die Szene im Bereich «Leitstand», die genau das tut. Wer beides nebeneinander
 braucht, nimmt die Szene; wer eine Aggregation über Alters- oder Segmentgruppen
 sucht, ist hier richtig. Das erste zeigt
 jede einzelne Person nach Zahlungsbereitschaft und Umweltbewusstsein, eingefärbt
-danach, ob sie gebucht hat. Die übrigen drei fassen nach Altersgruppen und
-Segmenten zusammen.
+danach, ob sie gebucht hat.
 
-Das vierte ist das aufschlussreichste: Es stellt den Anteil eines Segments an der
+**Der Surplus Pulse** zeigt eine feste Stichprobe von 150 Personen, in jeder
+Runde dieselben. Waagrecht steht der höchste Ticketpreis, den eine Person
+überhaupt bezahlen kann, senkrecht ihr Abstand zum Ticketpreis der Runde. Steigt
+der Preis, sinkt die ganze Wolke. Wer unter die gestrichelte Linie fällt, kann
+sich das Ticket nicht leisten und bucht nicht. Oberhalb der Linie entscheidet die
+Wahrscheinlichkeit — ein Punkt knapp darüber bucht oft trotzdem nicht. Läufe vor
+dem 11. September 2026 zeigen an seiner Stelle einen Hinweis, weil ihnen die
+nötige Spalte fehlt.
+
+Die übrigen Sichten fassen nach Altersgruppen und Segmenten zusammen. Die Sicht
+«Marktanteil vs. Populationsanteil» ist die aufschlussreichste: Es stellt den Anteil eines Segments an der
 Bevölkerung seinem Anteil an den Buchungen gegenüber. Liegt ein Punkt über der
 Diagonalen, bucht dieses Segment überdurchschnittlich oft, gemessen an seiner
 Größe.

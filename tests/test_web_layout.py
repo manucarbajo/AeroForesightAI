@@ -550,3 +550,87 @@ class TestDieErgebnisseBeantwortenVierFragen:
         geschwister = figures.sweep_geschwister(sweeps / "sweep_a")
 
         assert [p.name for p in geschwister] == ["sweep_a", "sweep_b"]
+
+
+# --- P5.2: Einzelsichten der Researcher-Variante ------------------------------------
+
+
+def _schreibe_historie(run_dir, *, mit_grenze: bool = True, personen: int = 200) -> None:
+    """Eine Personen-Historie über zwei Ticks; die Grenze bewusst ≠ WTP × Einkommen."""
+
+    spalten = [
+        "tick",
+        "id",
+        "age",
+        "wtp_eur",
+        "environmental_awareness",
+        "substitution_readiness",
+        "price_sensitivity",
+        "income_factor",
+        "saturation_level",
+        "booked",
+    ]
+    if mit_grenze:
+        spalten.append("erschwinglichkeitsgrenze_eur")
+    spalten.append("business")
+    zeilen = [",".join(spalten)]
+    for tick in (1, 2):
+        for i in range(personen):
+            wtp = 100.0 + i
+            werte = [
+                tick,
+                i,
+                20 + i % 60,
+                wtp,
+                round((i % 10) / 10, 2),
+                0.5,
+                round((i % 7) / 7, 3),
+                1.0,
+                0.0,
+                i % 3 == 0,
+            ]
+            if mit_grenze:
+                werte.append(round(wtp * 1.2, 2))
+            werte.append(i % 4 == 0)
+            zeilen.append(",".join(str(w) for w in werte))
+    (run_dir / "individuals_history.csv").write_text("\n".join(zeilen) + "\n", encoding="utf-8")
+
+
+@pytest.fixture
+def history_run(minimal_run):
+    _schreibe_historie(minimal_run)
+    return minimal_run
+
+
+class TestSurplusPulse:
+    """P5.2 (2026-09-11): der erste übernommene Block der Researcher-Variante."""
+
+    def test_der_block_erscheint(self, history_run):
+        assert "Surplus Pulse" in _text(animation.render(history_run, "run_minimal"))
+
+    def test_spielraum_ist_grenze_aus_der_historie_minus_ticketpreis(self, history_run):
+        frame = animation.surplus_frame(animation.load_history(history_run))
+
+        zeile = frame[(frame["tick"] == 1) & (frame["id"] == 5)].iloc[0]
+
+        # Ticketpreis der Runde 1 im Fixture: 101.0; Grenze im Fixture: WTP x 1,2.
+        assert zeile["spielraum_eur"] == pytest.approx(105.0 * 1.2 - 101.0)
+
+    def test_die_stichprobe_ist_fest_und_begrenzt(self, history_run):
+        frame = animation.load_history(history_run)
+
+        erste = animation.stichprobe(frame)
+        zweite = animation.stichprobe(frame)
+
+        ids = set(erste["id"].unique())
+        assert ids == set(zweite["id"].unique())
+        assert len(ids) == animation.STICHPROBE
+        assert all(set(erste[erste["tick"] == t]["id"]) == ids for t in (1, 2))
+
+    def test_ohne_spalte_ein_hinweis(self, minimal_run):
+        _schreibe_historie(minimal_run, mit_grenze=False)
+
+        gerendert = _text(animation.render(minimal_run, "run_minimal"))
+
+        assert "erschwinglichkeitsgrenze_eur" in gerendert
+        assert "Surplus Pulse:" not in gerendert
