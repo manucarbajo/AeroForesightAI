@@ -3930,6 +3930,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | **Einrichten-Assistent** (neu 2026-08-28) | P1.9 (Sweep-Pfad verwirft den Entwurf, Schreibzugriff auf `configs/` aus optionalen Schritten, Schritthöhe, Fortschritts- und Validierungslücken, Barrierefreiheit) |
 | **Nachfrageseite** (neu 2026-08-31) | P2.8 (kein Nachfragetreiber nach oben; Trajektorien-Horizont endet vor dem Lauf) |
 | **Szenarienschicht** (neu 2026-08-29) | P2.0 (Rolle umdrehen), P2.2 (Einachsigkeit, Tripleset aus zwei Polen), P2.3 (die vier Zellen mit falschem Vorzeichen), P2.6 (keine Bandbreite), P2.7 (an nichts geeicht) |
+| **Oberfläche (UI/UX)** (neu 2026-09-11) | P7.0 (Messfundament), P7.1 (Lesemaß, Schriftskala, Roh-Markdown, Diagrammstandard), P7.2 (Vergleichszählung, Entwicklersprache, veraltete Texte), P7.3 (drei Kontexte, Lauf-Auswahl, Ladeanzeige), P7.4 (Schritt 1, Prüfschritt), P7.5 (Bedienfeld), P7.6 (Animation, Diagramme), P7.7 (Modell-Bereich), P7.9 (Navigation auf schmalen Breiten) — dreizehn Zeilen im Abschnitt Dashboard, die übrigen Befunde in der [Vollfassung](audit_ui_ux_2026-09-11.md) |
 Die vier Zeilen von 2026-08-26 stammen nicht aus `audit_findings.md`, sondern aus der
 Gegenprobe jenes Tages — sie sind dort nachgetragen, damit die Detailliste vollständig
 bleibt. Für die Zeile von 2026-08-29 gilt dasselbe: Der Befund kam aus der
