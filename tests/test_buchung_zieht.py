@@ -39,6 +39,7 @@ from src.models.population_models import PopulationConfig
 from src.population.population_sampler import (
     booking_probability,
     buchungsstrom,
+    erschwinglichkeitsgrenze,
     evaluate_booking,
     initialize_population,
 )
@@ -408,4 +409,45 @@ class TestEinkommenWirktNichtNurAlsSchwelle:
         assert arm_delta == pytest.approx(reich_delta, rel=1e-9), (
             f"Substitutionsabstand {arm_delta:.4f} gegen {reich_delta:.4f} — der Term "
             "haengt am Einkommen, und damit zaehlt es zweimal."
+        )
+
+
+class TestDieErschwinglichkeitsgrenzeIstDieSchranke:
+    """P5.2 (2026-09-11): Die Grenze hat eine Quelle, und die ist wirklich die Schranke.
+
+    Gebraucht wird sie außerhalb des Nutzenmodells, weil die Dash-App den
+    «Surplus Pulse» zeigt. Die abgelöste Streamlit-Ansicht hatte die Formel ein
+    zweites Mal geschrieben und den Grün-Aufschlag vergessen. Geprüft wird
+    deshalb nicht die Formel, sondern die **Wirkung**: Knapp über der Grenze ist
+    die Buchungswahrscheinlichkeit null, knapp darunter nicht.
+    """
+
+    @staticmethod
+    def _umweltbewusst(leute):
+        person = max(leute, key=lambda p: p.environmental_awareness)
+        assert person.environmental_awareness > 0.3, "Keine umweltbewusste Person gezogen"
+        return person
+
+    def test_knapp_darueber_null_knapp_darunter_nicht(self, leute, koeffizienten):
+        person = self._umweltbewusst(leute)
+        grenze = erschwinglichkeitsgrenze(person, koeffizienten=koeffizienten)
+
+        def p(preis: float) -> float:
+            return booking_probability(
+                person,
+                ticket_price=preis,
+                carbon_tax=50.0,
+                koeffizienten=koeffizienten,
+                verfuegbarkeit=1.0,
+            )
+
+        assert p(grenze + 0.01) == 0.0
+        assert p(grenze - 0.01) > 0.0
+
+    def test_der_gruen_aufschlag_zaehlt_mit(self, leute, koeffizienten):
+        person = self._umweltbewusst(leute)
+        assert koeffizienten.green_premium.wert > 0, "Ohne Grün-Aufschlag prüft der Test nichts"
+
+        assert erschwinglichkeitsgrenze(person, koeffizienten=koeffizienten) > (
+            person.wtp_eur * person.income_factor
         )
