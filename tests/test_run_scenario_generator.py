@@ -367,3 +367,51 @@ class TestRunScenarioGenerator:
         assert Path(result["paths"]["json"]).is_file()
         assert result["source"] == "template"
         assert len(result["scenarios"]) == 3
+
+
+class TestDieVorlageKommtVonNebenDemCode:
+    """Die Vorlage für den Abschlusstext hing am Arbeitsverzeichnis (2026-09-11).
+
+    `build_scenario_prompt` las `Path("src/prompts/run_scenario.md")` und fiel ohne
+    Meldung auf einen Einzeiler zurück, wenn der Prozess nicht im
+    Repo-Wurzelverzeichnis stand. Aufgefallen bei P4.6: Seit dort `src` von überall
+    importierbar ist, ist der Fall erreichbar.
+    """
+
+    #: Der erste Satz der echten Vorlage — daran ist zu erkennen, dass sie ankam.
+    ERSTER_SATZ = "Du schreibst **sachliche** explorative Szenarien"
+
+    def _kontext(self, tmp_path):
+        run_dir = tmp_path / "run_vorlage"
+        _write_scenario_fixture(run_dir, booking_start=0.6, booking_end=0.4)
+        return load_run_scenario_context("run_vorlage", run_dir=run_dir)
+
+    def test_aus_einem_fremden_arbeitsverzeichnis_kommt_die_echte_vorlage(
+        self, tmp_path, monkeypatch
+    ):
+        from src.reporting.run_scenario_generator import prompt as prompt_modul
+
+        kontext = self._kontext(tmp_path)
+        anderswo = tmp_path / "anderswo"
+        anderswo.mkdir()
+        monkeypatch.chdir(anderswo)
+
+        text = prompt_modul.build_scenario_prompt(kontext)
+
+        assert self.ERSTER_SATZ in text, (
+            "Aus einem anderen Arbeitsverzeichnis kam die Vorlage nicht an — der "
+            "Prompt beginnt mit etwas anderem als ihrem ersten Satz."
+        )
+
+    def test_eine_fehlende_vorlage_scheitert_laut(self, tmp_path, monkeypatch):
+        """Kein Einzeiler an ihrer Stelle: Ein Ausfall ist sichtbar (Invariante 1)."""
+
+        import pytest
+
+        from src.reporting.run_scenario_generator import prompt as prompt_modul
+
+        kontext = self._kontext(tmp_path)
+        monkeypatch.setattr(prompt_modul, "VORLAGE", tmp_path / "gibt_es_nicht.md")
+
+        with pytest.raises(FileNotFoundError):
+            prompt_modul.build_scenario_prompt(kontext)
