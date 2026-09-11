@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
 
 from src.agents._scheduling_helpers import (
     initial_score_ledger as _initial_score_ledger,
@@ -20,10 +19,6 @@ from src.agents.redebedarf_scheduler import FactorChangeObservation, RedebedarfS
 from src.llm import LLMCallable
 from src.models.agent_models import AgentConfig
 from src.models.state_models import SimulationState, SpeechCandidateState, SpeechPlanState
-
-
-class _AgentNodeMap(Protocol):
-    def __getitem__(self, key: str) -> AgentNode: ...
 
 
 def _attach_redebedarf_metadata(

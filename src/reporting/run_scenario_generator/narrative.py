@@ -92,7 +92,3 @@ def build_scenario_tick_grounding(
         lines.append("Entspricht der Faktor-Endlage des Laufs.")
 
     return "\n".join(lines)
-
-
-def _observed_run_brief(context: RunScenarioContext, factor_profile: dict[str, Any]) -> str:
-    return build_run_narrative(context, factor_profile)
