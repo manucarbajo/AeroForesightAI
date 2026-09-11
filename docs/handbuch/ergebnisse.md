@@ -83,7 +83,14 @@ gegen den Reisebedarf, also eins minus die Sättigung. Wer bucht, ist danach
 gesättigt, und sein Punkt fällt nach unten. Runde für Runde klingt die Sättigung
 ab, und der Punkt steigt wieder — wie schnell, hängt am Segment.
 
-Die übrigen Sichten fassen nach Altersgruppen und Segmenten zusammen. Die Sicht
+**Drei Merkmals-Streuungen** zeigen dieselben Personen nach je zwei Merkmalen:
+Preisempfindlichkeit gegen Bahnbereitschaft, Alter gegen Umweltbewusstsein und
+Einkommensfaktor gegen Zahlungsbereitschaft. Diese Merkmale entstehen beim Ziehen
+einer Person und bewegen sich im Lauf wenig: Einmalige Regeln können
+Preisempfindlichkeit und Umweltbewusstsein anheben, der Einkommensfaktor folgt dem
+Einkommensindex. Zu sehen ist vor allem, an welchen Stellen der Wolke gebucht wird.
+
+Die Aggregations-Sichten darunter fassen nach Altersgruppen und Segmenten zusammen. Die Sicht
 «Marktanteil vs. Populationsanteil» ist die aufschlussreichste: Es stellt den Anteil eines Segments an der
 Bevölkerung seinem Anteil an den Buchungen gegenüber. Liegt ein Punkt über der
 Diagonalen, bucht dieses Segment überdurchschnittlich oft, gemessen an seiner

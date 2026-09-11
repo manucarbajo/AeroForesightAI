@@ -3763,9 +3763,9 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 | --- | --- |
 | Surplus Pulse | ✅ übernommen — **mit korrigierter Grenze**: Die Legacy-Ansicht rechnete WTP × Einkommen und vergaß den Grün-Aufschlag; die Grenze schreibt jetzt der Lauf mit (`erschwinglichkeitsgrenze_eur`) |
 | Saturation Swarm | ✅ übernommen — **mit korrigierter Lesehilfe**: Die Legacy-Ansicht behauptete, die Sättigung springe bei einer Buchung «sofort auf 1.0»; gerechnet wird `+ booking_increase`, gedeckelt bei 1,0, und abgebaut je Tick um die Abklingrate des Segments |
-| Behavioral Split | offen |
-| Demographischer Cluster (Alter vs. Umwelt) | offen |
-| Income vs WTP | offen |
+| Behavioral Split | ✅ übernommen |
+| Demographischer Cluster (Alter vs. Umwelt) | ✅ übernommen |
+| Income vs WTP | ✅ übernommen — **alle fünf abgehakt**; die Legacy-Lesehilfen (etwa ein «Kondratieff-Zyklus», den das Modell nicht kennt) sind durch Texte ersetzt, die sagen, was im Modell passiert |
 **Fertig wenn:** Kein Streamlit mehr im Repo und in den Abhängigkeiten. **Doku:** `CLAUDE.md`, `README.md`, `dashboard/README.md`.
 
 ### P5.3 — `src/legacy/` entscheiden ✅ erledigt 2026-09-11

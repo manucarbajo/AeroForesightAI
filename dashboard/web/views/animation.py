@@ -14,6 +14,7 @@ hatte dabei den Grün-Aufschlag vergessen.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from dash import dcc, html
@@ -48,6 +49,60 @@ _BASE_COLUMNS = {
 #: Personen zu sehen sind — so hielt es die Researcher-Variante (P5.2).
 STICHPROBE = 150
 _STICHPROBEN_SEED = 42
+
+
+@dataclass(frozen=True)
+class Merkmalsicht:
+    """Eine Streuung zweier Personenmerkmale über die Ticks."""
+
+    titel: str
+    x: str
+    y: str
+    x_achse: str
+    y_achse: str
+    x_bereich: tuple[float, float] | None
+    y_bereich: tuple[float, float] | None
+    lesehilfe: str
+
+
+#: Die drei Merkmals-Streuungen der Researcher-Variante (P5.2). Die Lesehilfen
+#: sagen, was im Modell passiert — nicht, was die Legacy-Texte versprachen.
+MERKMALSICHTEN = (
+    Merkmalsicht(
+        titel="Behavioral Split: Preisempfindlichkeit gegen Bahnbereitschaft",
+        x="price_sensitivity",
+        y="substitution_readiness",
+        x_achse="Preisempfindlichkeit",
+        y_achse="Bahnbereitschaft",
+        x_bereich=(-0.05, 1.05),
+        y_bereich=(-0.05, 1.05),
+        lesehilfe="Beide Merkmale entstehen beim Ziehen einer Person. Die "
+        "Preisempfindlichkeit kann eine einmalige Regel später anheben, die "
+        "Bahnbereitschaft nicht.",
+    ),
+    Merkmalsicht(
+        titel="Demographischer Cluster: Alter gegen Umweltbewusstsein",
+        x="age",
+        y="environmental_awareness",
+        x_achse="Alter",
+        y_achse="Umweltbewusstsein",
+        x_bereich=(15.0, 95.0),
+        y_bereich=(-0.05, 1.05),
+        lesehilfe="Das Alter prägt beim Ziehen, wie umweltbewusst eine Person ist; "
+        "eine einmalige Regel kann das Umweltbewusstsein später anheben.",
+    ),
+    Merkmalsicht(
+        titel="Income vs WTP: Einkommensfaktor gegen Zahlungsbereitschaft",
+        x="income_factor",
+        y="wtp_eur",
+        x_achse="Einkommensfaktor",
+        y_achse="Zahlungsbereitschaft (WTP) in €",
+        x_bereich=None,
+        y_bereich=None,
+        lesehilfe="Der Einkommensfaktor folgt dem Einkommensindex des Laufs; wandert "
+        "er, verschiebt sich die Wolke waagrecht.",
+    ),
+)
 
 _AGE_BINS = [0, 18, 26, 36, 51, 66, 120]
 _AGE_LABELS = ["<18", "18-25", "26-35", "36-50", "51-65", ">65"]
@@ -210,6 +265,29 @@ def _swarm_figure(frame, mode: str = theme.LIGHT):
         color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
         range_x=[0, frame["wtp_eur"].max() * 1.1],
         range_y=[-0.05, 1.05],
+    )
+    fig.update_traces(marker=dict(size=6, opacity=0.6, line=dict(width=0)))
+    return fig
+
+
+def _merkmal_figure(frame, sicht: Merkmalsicht, mode: str = theme.LIGHT):
+    tone = theme.palette(mode)
+    import plotly.express as px
+
+    fig = px.scatter(
+        frame,
+        x=sicht.x,
+        y=sicht.y,
+        animation_frame="tick",
+        animation_group="id",
+        color="Gebucht",
+        symbol="Segment",
+        hover_name="id",
+        title=sicht.titel.split(":")[0],
+        labels={sicht.x: sicht.x_achse, sicht.y: sicht.y_achse, "tick": "Tick"},
+        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        range_x=list(sicht.x_bereich) if sicht.x_bereich else None,
+        range_y=list(sicht.y_bereich) if sicht.y_bereich else None,
     )
     fig.update_traces(marker=dict(size=6, opacity=0.6, line=dict(width=0)))
     return fig
@@ -481,6 +559,25 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                 "Runde für Runde ab, und der Punkt steigt wieder — je nach Segment "
                 "verschieden schnell.",
                 _graph(_swarm_figure(stichprobe(bedarf), mode), mode=mode),
+            )
+        )
+
+    for sicht in MERKMALSICHTEN:
+        if sicht.x not in frame.columns or sicht.y not in frame.columns:
+            blocks.append(
+                ui.alert(
+                    f"«{sicht.titel}» braucht die Spalten `{sicht.x}` und `{sicht.y}` — "
+                    "dieser Lauf schreibt sie nicht.",
+                    "info",
+                    class_name="mb-6",
+                )
+            )
+            continue
+        blocks.append(
+            _block(
+                sicht.titel,
+                f"Dieselbe Stichprobe von {STICHPROBE} Personen. {sicht.lesehilfe}",
+                _graph(_merkmal_figure(stichprobe(frame), sicht, mode), mode=mode),
             )
         )
 

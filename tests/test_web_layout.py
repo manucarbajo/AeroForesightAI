@@ -661,3 +661,51 @@ class TestSaturationSwarm:
 
         assert "saturation_level" in gerendert
         assert "Saturation Swarm:" not in gerendert
+
+
+class TestMerkmalsSichten:
+    """P5.2 (2026-09-11): die drei Merkmals-Streuungen der Researcher-Variante."""
+
+    def test_alle_drei_bloecke_erscheinen(self, history_run):
+        gerendert = _text(animation.render(history_run, "run_minimal"))
+
+        for sicht in animation.MERKMALSICHTEN:
+            assert sicht.titel in gerendert
+
+    def test_jede_spalte_schreibt_der_lauf_wirklich(self, tmp_path):
+        """Gemessen am echten Schreiber, nicht an einer Liste von Spaltennamen."""
+
+        import csv
+        import io
+
+        from src.config_loader import load_properties_config
+        from src.models.population_models import PopulationConfig
+        from src.population.population_sampler import initialize_population
+        from src.reporting.output_writer import append_individuals_history
+
+        properties = load_properties_config()
+        leute = initialize_population(
+            properties, PopulationConfig(segments=[], total_population=5), seed=3
+        )
+        append_individuals_history(
+            1, leute, koeffizienten=properties.booking_model, run_dir=tmp_path
+        )
+        kopf = next(
+            csv.reader(
+                io.StringIO((tmp_path / "individuals_history.csv").read_text(encoding="utf-8"))
+            )
+        )
+
+        gelesen = {spalte for sicht in animation.MERKMALSICHTEN for spalte in (sicht.x, sicht.y)}
+        gelesen |= {"saturation_level", "erschwinglichkeitsgrenze_eur", "wtp_eur", "booked"}
+        assert gelesen <= set(kopf), f"Nicht geschrieben: {sorted(gelesen - set(kopf))}"
+
+    def test_fehlt_eine_spalte_erscheint_ein_hinweis(self, history_run):
+        import pandas as pd
+
+        pfad = history_run / "individuals_history.csv"
+        pd.read_csv(pfad).drop(columns=["income_factor"]).to_csv(pfad, index=False)
+
+        gerendert = _text(animation.render(history_run, "run_minimal"))
+
+        assert "`income_factor`" in gerendert
