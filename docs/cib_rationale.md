@@ -9,7 +9,7 @@
 - **Score:** `scenario_consistency.py` bewertet Endzustand F1–F7 pro Lauf/Sweep (M8)
 
 Eine frühere Version nutzte `CIBExtractorNode` (LLM/heuristisch aus Event-Log). Der
-Extractor liegt jetzt unter **`src/legacy/`** — nicht Teil der Tick-Pipeline.
+Extractor ist seit dem 2026-09-11 entfernt (P5.3).
 
 ---
 
