@@ -3897,6 +3897,8 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 **Fundstelle:** `assets/dashboard.css` (`.af-step__tag`, `.af-nav__links`, Fokusregeln), `dashboard/web/shell.py`.
 **Was zu tun ist:** U9.1 Kontraste beider Designs · U9.2 ein Fokusring-Token und ein protokollierter Tastaturdurchgang · U9.3 Navigation auf jeder unterstützten Breite (D4) · U9.4 automatisierte WCAG-Prüfung, **lokal eingebunden** (P1.4: kein CDN).
 **Fertig wenn:** U0.4 grün in beiden Designs; bei 1024 und 375 px sind alle fünf Bereiche mit höchstens einem Klick erreichbar; keine Verstöße der Stufen «serious» und «critical».
+
+**Vorab erledigt am 2026-09-11 — aus U9.1 der Kontrast von «optional».** Der Zusatz in der Schrittliste stand in 11 px auf `--text-faint`: gemessen 3,77 auf dem Grund und 2,87 auf der markierten Zeile (dunkel), verlangt sind 4,5. Er steht jetzt auf `--text-muted`, auf der markierten Zeile auf `--accent-text` — `--text-muted` hätte dort im hellen Design nur 4,31 erreicht. **Gerechnet, nicht gemessen:** `tests/test_web_kontrast.py` liest die Farbregel aus dem Stylesheet und den Tokenwert aus `theme.PALETTE` und prüft beide Designs auf allen drei Gründen, auf denen das Wort steht; damit läuft die Prüfung in jeder CI statt nur im Browser-Wächter. Vor dem Fix rot in allen sechs Fällen. **Offen bleiben** die Symbole mit 2,80 und der Kontrastwächter über alle Textknoten (U0.4).
 **Doku zieht mit:** `CLAUDE.md` (Barrierefreiheits-Zusagen in der Testliste), `tests/test_web_a11y.py` (Docstring).
 
 ### P7.10 — Gegenprobe 🟡 offen

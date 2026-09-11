@@ -2736,9 +2736,20 @@ html.dark .af-input[type="number"] {
     overflow-wrap: anywhere;
 }
 
+/* **`--text-muted`, nicht `--text-faint`** (P7.9-U9.1, vorgezogen am
+   2026-09-11). Das Wort «optional» steht in 11 px; gemessen im dunklen Design
+   kam es auf dem Grund auf **3,77**, auf der markierten Zeile auf **2,87** —
+   WCAG 2.2 AA verlangt 4,5. `tests/test_web_kontrast.py` rechnet es aus den
+   Tokens nach, in beiden Designs und auf allen drei Gründen. */
 .af-step__tag {
     font-size: 0.6875rem;
-    color: var(--text-faint);
+    color: var(--text-muted);
+}
+
+/* Auf der markierten Zeile trägt die Zeile ihre eigene Textfarbe; der Zusatz
+   folgt ihr. `--text-muted` käme hell auf `--accent-soft` nur auf 4,31. */
+.af-step--current .af-step__tag {
+    color: var(--accent-text);
 }
 
 .af-step--done {
