@@ -6,14 +6,18 @@ Start:
 
 Die Anwendung ist **ein** Bildschirm, kein Stapel Seiten: links die Parameter,
 in der Mitte der Viewport, rechts die Telemetrie, unten die Zeitleiste, oben die
-Kopfzeile. Der Bereichswechsel (`Leitstand` / `Ergebnisse` / `Handbuch`)
-tauscht nur den Inhalt des Viewports — die anderen vier Zonen bleiben stehen.
+Kopfzeile. Der Bereichswechsel (`Einrichten` / `Leitstand` / `Ergebnisse` /
+`Modell` / `Handbuch`) tauscht nur den Inhalt des Viewports — die anderen vier
+Zonen bleiben stehen; «Einrichten» und «Modell» bekommen den Bildschirm allein
+(`shell.FOCUS_ROUTES`).
 Das Raster steht in `assets/dashboard.css`, der Aufbau in `shell.py`.
 
-Alle drei Viewport-Bereiche liegen dauerhaft im Layout und werden nur ein- und
+Alle fünf Viewport-Bereiche liegen dauerhaft im Layout und werden nur ein- und
 ausgeblendet: So existiert jede Komponente, auf die ein Callback zeigt, von
 Anfang an, der Wechsel ist ohne Nachladen sofort sichtbar, und der Browser
-meldet keine fehlenden Inputs.
+meldet keine fehlenden Inputs. **Eine Ausnahme seit P3.12:** Der Rumpf des
+Modell-Bereichs entsteht erst beim Aufsuchen — er trägt keine feste ID; sein
+Wirt liegt trotzdem von Anfang an da.
 
 **Zum Theme:** Die Klasse `dark` muss auf `<html>` stehen, **bevor** der Browser
 zum ersten Mal zeichnet — sonst blitzt bei jedem Laden das helle Design auf. Ein
@@ -226,9 +230,9 @@ def scene_block(
 
 
 def visibility(active: str) -> tuple[dict, ...]:
-    """Welcher der vier Viewport-Bereiche sichtbar ist — genau einer.
+    """Welcher der fünf Viewport-Bereiche sichtbar ist — genau einer.
 
-    Alle vier bleiben im DOM (sonst zeigten Callbacks auf Komponenten, die es
+    Alle fünf bleiben im DOM (sonst zeigten Callbacks auf Komponenten, die es
     nicht gibt); umgeschaltet wird nur die Sichtbarkeit.
 
     Die Reihenfolge ist die von `shell.ROUTES` — und zwar **abgeleitet**, nicht
