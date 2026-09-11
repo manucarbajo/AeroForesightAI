@@ -83,7 +83,6 @@ def save_population_individuals(
             "income_factor": data.get("income_factor", 1.0),
             "saturation_level": data.get("saturation_level", 0.0),
             "booked": data.get("booked"),
-            "last_booked_tick": data.get("last_booked_tick"),
         }
         for label_id, active in (data.get("labels") or {}).items():
             row[label_id] = active
@@ -138,7 +137,6 @@ def append_individuals_history(
             ),
             "saturation_level": data.get("saturation_level", 0.0),
             "booked": data.get("booked"),
-            "last_booked_tick": data.get("last_booked_tick"),
         }
         for label_id, active in (data.get("labels") or {}).items():
             row[label_id] = active

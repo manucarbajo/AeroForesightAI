@@ -22,7 +22,7 @@ from src.population.population_sampler import (
     erschwinglichkeitsgrenze,
     initialize_population,
 )
-from src.reporting.output_writer import append_individuals_history
+from src.reporting.output_writer import append_individuals_history, save_population_individuals
 
 SPALTE = "erschwinglichkeitsgrenze_eur"
 
@@ -95,3 +95,26 @@ def test_ein_lauf_schreibt_die_spalte(tmp_path, monkeypatch):
     assert zeilen, "Der Lauf hat keine Personen-Historie geschrieben"
     assert SPALTE in zeilen[0]
     assert all(float(z[SPALTE]) > 0 for z in zeilen)
+
+
+@pytest.mark.parametrize("datei", ["individuals_history.csv", "population.csv"])
+def test_keine_spalte_bleibt_fuer_jede_person_leer(tmp_path, leute, properties, datei):
+    """Eine Spalte ohne einen einzigen Wert behauptet ein Merkmal, das es nicht gibt.
+
+    Bis zum 2026-09-11 schrieben beide Schreiber `last_booked_tick` — ein Feld, das
+    `Individual` nicht hat; die Spalte stand in jeder Zeile leer, und gelesen hat
+    sie nur die abgelöste Streamlit-Ansicht. **Gesucht wird die leere Spalte, nicht
+    dieser Name** — die nächste fällt ebenso auf.
+    """
+
+    if datei == "individuals_history.csv":
+        append_individuals_history(
+            1, leute, koeffizienten=properties.booking_model, run_dir=tmp_path
+        )
+    else:
+        save_population_individuals(leute, run_dir=tmp_path)
+
+    zeilen = _zeilen(tmp_path / datei)
+    assert len(zeilen) == len(leute)
+    leer = [s for s in zeilen[0] if all(z[s].strip() in ("", "None") for z in zeilen)]
+    assert not leer, f"In {datei} trägt keine Person einen Wert in: {leer}"

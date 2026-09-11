@@ -147,6 +147,11 @@ Umweltbewusste für einen grüneren Flug zahlen. Das ist dieselbe Grenze, mit de
 das Modell rechnet: Liegt der Preis darüber, bucht diese Person nicht. Läufe von
 vor diesem Datum haben die Spalte nicht.
 
+**Ebenfalls seit dem 11. September 2026 fehlt `last_booked_tick`**, in
+`individuals_history.csv` und in `population.csv`. Eine simulierte Person trägt
+kein solches Merkmal; die Spalte stand deshalb in jeder Zeile leer. Ältere Läufe
+haben sie noch.
+
 Unter `checkpoints/` liegen Zwischenstände, sofern das unter **Technik**
 eingeschaltet war. Sie werden gebraucht, um einen Lauf fortzusetzen und um im Tab
 **Abfrage** einzelne Runden im Detail nachzuschlagen. Ohne sie funktioniert die
