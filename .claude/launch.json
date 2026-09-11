@@ -10,32 +10,6 @@
         "--port=8511"
       ],
       "port": 8511
-    },
-    {
-      "name": "dashboard-legacy-researcher",
-      "runtimeExecutable": ".venv/Scripts/python.exe",
-      "runtimeArgs": [
-        "-m",
-        "streamlit",
-        "run",
-        "dashboard/legacy_streamlit/app_researcher.py",
-        "--server.headless=true",
-        "--server.port=8512"
-      ],
-      "port": 8512
-    },
-    {
-      "name": "dashboard-legacy-ops",
-      "runtimeExecutable": ".venv/Scripts/python.exe",
-      "runtimeArgs": [
-        "-m",
-        "streamlit",
-        "run",
-        "dashboard/legacy_streamlit/app.py",
-        "--server.headless=true",
-        "--server.port=8513"
-      ],
-      "port": 8513
     }
   ]
 }

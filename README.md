@@ -80,8 +80,7 @@ solchen markierten **Beispieldatensatz**, damit die Ansicht nicht leer bleibt. E
 wird nirgends gespeichert und verschwindet mit dem ersten echten Lauf.
 
 Gebaut mit Plotly Dash. Landingpage und Dashboard teilen sich Server und
-Design-Tokens. Die abgelöste Streamlit-Oberfläche liegt zum Vergleich unter
-`dashboard/legacy_streamlit/` und wird nach der Abnahme entfernt.
+Design-Tokens.
 
 Details: [`dashboard/README.md`](dashboard/README.md)
 
@@ -219,7 +218,6 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 │   ├── web/                         # Plotly-Dash-Leitstand (aktiv): shell, theme,
 │   │                                #   timeline, status, run_data, views/,
 │   │                                #   pages/ (launch=Bedienfeld, setup, runs, docs)
-│   ├── legacy_streamlit/            # abgelöste Streamlit-UI (nur Vergleich)
 │   └── README.md
 ├── docs/                            # Technische Doku (CIB-Methodik, Agent-Profile, Workflow)
 │   └── research/                    # Fachliteratur, Studien

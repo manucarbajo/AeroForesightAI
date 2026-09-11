@@ -15,9 +15,6 @@ dependencies = [
     "networkx>=3.0",
     "plotly",
     "dash>=2.18",
-    # Legacy: nur noch fuer dashboard/legacy_streamlit/ (Vergleichsreferenz).
-    # Faellt zusammen mit dem Paket weg, sobald die Dash-App abgenommen ist.
-    "streamlit>=1.32",
 ]
 
 [project.optional-dependencies]

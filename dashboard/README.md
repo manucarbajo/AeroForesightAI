@@ -53,13 +53,12 @@ dashboard/
 ├── run_browser.py          # Runs, Dateien, Figures, Zeitreihen lesen
 ├── run_launcher.py         # Lauf ausführen (inkl. Fortschritts-Callback)
 ├── consistency_report.py   # Artefakt-Checks gegen die Ground Truth
-├── web/                    # Plotly-Dash-Oberfläche  ← aktiv
-└── legacy_streamlit/       # abgelöste Streamlit-UI  ← nur noch zum Vergleich
+└── web/                    # Plotly-Dash-Oberfläche
 ```
 
 Die vier Module oben sind **oberflächenfrei** — sie enthalten keine Zeile
-Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
-`tests/test_dashboard_service.py` testet sie unabhängig von der UI.
+Dash. Die Oberfläche setzt darauf auf, und
+`tests/test_dashboard_service.py` testet sie unabhängig von ihr.
 
 ### `web/`
 
@@ -171,12 +170,5 @@ bei jedem Laden kurz auf.
 Tailwind und die Schriften kommen wie auf der Landingpage über CDN. Für das
 Deployment auf den eigenen Server müssen beide lokal ausgeliefert werden;
 siehe [`../aeroforesight-ai-landing-page/DEPLOY.md`](../aeroforesight-ai-landing-page/DEPLOY.md).
-
-## Legacy
-
-`legacy_streamlit/` ist die abgelöste Streamlit-Oberfläche. Sie bleibt bis auf
-Weiteres lauffähig, damit sich alt und neu direkt vergleichen lassen — siehe
-[`legacy_streamlit/README.md`](legacy_streamlit/README.md). Neue Funktionen
-gehören ausschließlich nach `web/`.
 
 Projekt-README: [`../README.md`](../README.md)

@@ -77,13 +77,11 @@ def _quelle(pfad: Path) -> str:
 
 
 def _einstiegspunkte() -> list[Path]:
-    """Jede Datei mit einem `__main__`-Block — ohne die abgelöste Streamlit-UI."""
+    """Jede Datei mit einem `__main__`-Block."""
 
     gefunden: list[Path] = []
     for baum in ("src", "dashboard", "scripts", "langgraph_studio"):
         for pfad in sorted((ROOT / baum).rglob("*.py")):
-            if "legacy_streamlit" in pfad.relative_to(ROOT).parts:
-                continue
             if '__name__ == "__main__"' in _quelle(pfad):
                 gefunden.append(pfad)
     return gefunden
@@ -338,7 +336,7 @@ class TestKeinImportStelltDieAusgabeHeimlichUm:
         for baum in ("src", "dashboard", "langgraph_studio", "scripts"):
             for pfad in sorted((ROOT / baum).rglob("*.py")):
                 relativ = pfad.relative_to(ROOT).as_posix()
-                if relativ == erlaubt or "legacy_streamlit" in pfad.relative_to(ROOT).parts:
+                if relativ == erlaubt:
                     continue
                 knoten = ast.parse(_quelle(pfad))
                 for k in ast.walk(knoten):

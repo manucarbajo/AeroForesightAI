@@ -12,6 +12,7 @@ haben kann.
 
 from __future__ import annotations
 
+import ast
 import importlib
 import importlib.util
 import json
@@ -441,3 +442,55 @@ class TestDerContainerStartetDieAktiveOberflaeche:
         assert f'"{port}:{port}"' in COMPOSE.read_text(
             encoding="utf-8"
         ), f"docker-compose.yml gibt Port {port} nicht frei."
+
+
+# --- Streamlit (P5.2) -------------------------------------------------------
+
+
+class TestKeinStreamlitMehr:
+    """**P5.2: Die abgelöste Oberfläche ist weg — und kommt nicht still zurück.**
+
+    Bis zum 2026-09-11 lag sie unter `dashboard/legacy_streamlit/`, und
+    `streamlit>=1.32` zog in jede CI-Installation und jeden Container. Gelöscht
+    wurde erst, als die fünf Diagramme ihrer Researcher-Animation in der Dash-App
+    standen. Gesucht wird der **Import** per Syntaxbaum, nicht das Wort:
+    Erklärtexte wie «der Ersatz für Streamlits `session_state`» sind Geschichte
+    und bleiben stehen.
+    """
+
+    def test_keine_abhaengigkeitsliste_nennt_streamlit(self):
+        projekt = _pyproject()["project"]
+        listen = {
+            "pyproject.toml": projekt["dependencies"],
+            "requirements.txt": _requirements(),
+            **{
+                f"pyproject.toml [{extra}]": e
+                for extra, e in projekt["optional-dependencies"].items()
+            },
+        }
+
+        treffer = [ort for ort, eintraege in listen.items() if "streamlit" in map(_name, eintraege)]
+        assert not treffer, f"`streamlit` steht wieder in: {treffer}"
+
+    def test_keine_python_datei_importiert_streamlit(self):
+        dateien = subprocess.run(
+            ["git", "ls-files", "*.py"], cwd=ROOT, capture_output=True, text=True, check=True
+        ).stdout.splitlines()
+        assert len(dateien) > 100, f"Verdächtig wenige Python-Dateien: {len(dateien)}"
+
+        befunde: list[str] = []
+        for relativ in dateien:
+            pfad = ROOT / relativ
+            if not pfad.is_file():
+                continue
+            for knoten in ast.walk(ast.parse(pfad.read_text(encoding="utf-8-sig"))):
+                if isinstance(knoten, ast.Import):
+                    module = [alias.name for alias in knoten.names]
+                elif isinstance(knoten, ast.ImportFrom):
+                    module = [knoten.module or ""]
+                else:
+                    continue
+                if any(m.split(".")[0] == "streamlit" for m in module):
+                    befunde.append(f"{relativ}:{knoten.lineno}")
+
+        assert not befunde, "Diese Stellen importieren Streamlit:\n  " + "\n  ".join(befunde)
