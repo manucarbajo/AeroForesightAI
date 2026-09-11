@@ -19,6 +19,12 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install ruff black pytest
+          # P4.6: the project itself, so tests/test_packaging.py can measure that
+          # `src` is importable as a package from outside the repo. --no-deps,
+          # because requirements.txt already brought the dependencies. Until P4.6
+          # CI never installed the project, and `src` was importable only because
+          # pytest puts the repository root on sys.path.
+          pip install -e . --no-deps
 
       - name: Lint (ruff)
         run: ruff check .

@@ -393,7 +393,7 @@ Die CI führt dieselbe Suite aus, **ohne Ausnahmeliste** — ein lokaler Lauf oh
 **Wer einen Test schreibt, hält sechs Regeln ein.** `tests/test_testfundament.py` meldet jede Abweichung mit Datei und Zeile:
 
 - Jede `.py`-Datei in `tests/` wird von pytest ausgeführt — ein Helfer gehört als Fixture in `conftest.py`, ein Werkzeug nach `scripts/`.
-- Kein Eingriff in `sys.path`: `src` macht pytest selbst importierbar. Eine Testdatei startet man mit `pytest <datei>`, nicht als Skript.
+- Kein Eingriff in `sys.path`: `src` machen pytest und die Installation (`pip install -e .`) importierbar. Eine Testdatei startet man mit `pytest <datei>`.
 - Kein `unittest.TestCase` — Funktionen oder Klassen ohne Basisklasse, Zusicherungen mit `assert`.
 - Wer für einen Test ein Modul umbiegt, nimmt `monkeypatch.setattr`, nie eine Zuweisung von Hand.
 - Ein Temp-Verzeichnis kommt aus `tmp_path`, nie aus `tempfile`.

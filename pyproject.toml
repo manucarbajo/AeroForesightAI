@@ -44,6 +44,16 @@ backtest = [
     "xlrd<3",
 ]
 
+# **Welche Pakete die Installation liefert** (P4.6). Ohne diese Angabe hielt
+# setuptools das Verzeichnis `src` für das übliche src-Layout und legte es
+# SELBST in den Suchpfad: `import src` scheiterte außerhalb des Repos, und
+# `models`, `llm`, `agents` … lösten als lose Top-Level-Module auf — mit zwei
+# verschiedenen `SimulationState`-Klassen, je nach Importweg. Das Paket heißt
+# hier aber `src`, also wird es als Paket installiert.
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]
+
 [tool.black]
 line-length = 100
 target-version = ["py311", "py312"]
