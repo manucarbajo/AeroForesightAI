@@ -35,14 +35,33 @@ Ansichtsarbeit.
 | **E3** | Lesemaß | **38 rem = 608 px** (≈ 66 Zeichen bei 15 px), gesetzt am Container. Karten und Raster behalten `--breite-inhalt`. |
 | **E4** | Abstände | **4-px-Raster mit acht Stufen** (4, 8, 12, 16, 24, 32, 48, 64). Werte unter 4 px bleiben für Rahmen erlaubt, mit Begründung. |
 | **E5** | Bausteine | **Vollständig, einschließlich des gestalteten Bestätigungsdialogs.** Damit ist **D7 mitentschieden**. |
+| **D3** | Begründungen | **These und zwei Sätze sichtbar, in Fließtextgröße; der Rest hinter einer Klappe «Begründung und Quellen».** Am selben Tag nachentschieden, weil E3 ohne D3 nicht baubar war — siehe den Nachtrag unten. |
 
 **Was daraus folgt, und zwar sofort:** Die Zusage aus P1.9-W5.4 wird künftig **am
 Container gemessen** statt am Element, der Höhenwächter bekommt neue Deckel, und
 `dcc.ConfirmDialogProvider` verschwindet aus `dashboard/web/` — das ist das
 Abnahmekriterium von P7.1.
 
-**Was offen bleibt:** D2 bis D6 des Audits. Sie hängen an Produktfragen, nicht
-an den Tokens.
+**Nachtrag vom selben Tag: D3 ist mitentschieden, und E3 musste dafür warten.**
+Der erste Anlauf von U1.2 ist an einer Zusage gescheitert, die diese Vorlage
+nicht geprüft hatte: **608 px tragen bei 15 px rund 66 Zeichen, bei 14 px aber
+88 und bei 12 px 106** — die Zusage aus P1.9-W5.4 (höchstens 75 Zeichen je
+Zeile) bricht also, sobald ein Block mit festem Pixeldeckel Text in mehreren
+Größen enthält. Genau deshalb stand das Lesemaß bis dahin in `ch`. Der Wert 38
+rem in E3 ist für Fließtext gerechnet und war für die kleineren Rollen nicht
+geprüft; das ist ein Fehler dieser Vorlage.
+
+**Die Regel, die daraus folgt:** Ein Leseblock hat **eine** Textgröße. Der
+Kohärenzblock verletzte sie (These 14 px, Begründung 12 px) — und das ist
+derselbe Block, den das Audit unter Q6 ohnehin beanstandet. **D3 ist deshalb
+vorgezogen und entschieden:** Sichtbar sind These und die ersten zwei Sätze der
+Begründung, beide in Fließtextgröße; Restbegründung, Quellen und Vorbehalt
+liegen hinter einer Klappe «Begründung und Quellen». Sichtbar sind damit 513 bis
+787 Zeichen je Szenario statt 1163 bis 2429. **E3 bleibt wie entschieden** — es
+ist jetzt baubar, weil der Block eine Größe hat.
+
+**Was offen bleibt:** D2, D4, D5 und D6 des Audits. Sie hängen an
+Produktfragen, nicht an den Tokens.
 
 ---
 

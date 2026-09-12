@@ -431,6 +431,24 @@ ZIEL = 1.0
 #: verbliebenen Schritte tragen Inhalt, der sich nur durch **Weglassen** kürzen
 #: ließe — zehn Szenarien mit Kennzahl, sieben Faktoren mit ihrer Leitfrage, der
 #: Name des Laufs. Ob das den Tausch wert ist, ist eine Produktentscheidung.
+#: **Nachgezogen am 2026-09-12 (U1.1 und D3).** Drei Zahlen haben sich bewegt,
+#: und jede ist gemessen zugeordnet:
+#:
+#: * **Schritt 1: 2,09 -> 1,99 (1280) und 2,17 -> 2,06 (1024).** D3 legt die
+#:   Kohaerenzbegruendung eine Ebene tiefer -- sichtbar sind These und zwei
+#:   Saetze, je Szenario 513 bis 787 Zeichen statt 1163 bis 2429. Der Gewinn ist
+#:   mit 0,10 Schirmen **kleiner, als die versteckte Textmenge vermuten laesst**:
+#:   Was offen bleibt, steht seither in Fliesstextgroesse (15 px) statt in 12
+#:   und 14 -- das musste es, weil ein Leseblock nur EINE Textgroesse haben darf
+#:   (siehe `test_web_start_flow.py`, Klasse
+#:   `TestDieBegruendungStoertDieEntscheidungNicht`).
+#:   Verstecken spart, Vergroessern kostet; netto bleiben 0,10.
+#: * **Schritt 6: 1,80 -> 1,78.** Derselbe Block, dieselbe Ursache.
+#: * **Schritt 4: 1,22 -> 1,23.** Gewachsen, nicht geschrumpft: U1.1 hat die
+#:   Beschriftungen der Oberflaeche von 13 auf 14 px gehoben. Der Zuwachs liegt
+#:   innerhalb von :data:`TOLERANZ` und war damit nicht rot -- eingetragen ist er
+#:   trotzdem, weil ein Deckel, der neben dem Ist-Stand liegt, in beide
+#:   Richtungen unbrauchbar wird.
 DECKEL: dict[int, dict[str, float]] = {
     1280: {
         "Einstieg": 1.00,
@@ -485,14 +503,14 @@ DECKEL: dict[int, dict[str, float]] = {
         # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
-        "Schritt 1": 2.09,
+        "Schritt 1": 1.99,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
         # weiter**: P2.0-C hat den vierten entfernt. Der alte Schritt 5 (1,31)
         # ist der neue 4 und misst 1,22, der alte 6 (1,00) ist der neue 5 und
         # misst 1,02. Nicht gewachsen, nur umnummeriert.
-        "Schritt 4": 1.22,
+        "Schritt 4": 1.23,
         "Schritt 5": 1.02,
         # **1,29 → 1,45 mit W5.4, und das ist bezahlt, nicht verrutscht.** Das
         # Lesemaß bricht den Preflight-Text bei 75 statt bei 124 Zeichen um;
@@ -518,7 +536,7 @@ DECKEL: dict[int, dict[str, float]] = {
         # Alternative — die Schätzung aus der Messung herausnehmen — hätte den
         # Wächter blind für genau den Teil gemacht, den ein Nutzer im Alltag
         # sieht.
-        "Schritt 6": 1.80,  # +0,07 aus `af-mass` 53ch -> 48ch, siehe Schritt 1
+        "Schritt 6": 1.78,  # +0,07 aus `af-mass` 53ch -> 48ch, siehe Schritt 1
     },
     1024: {
         "Einstieg": 1.00,
@@ -545,14 +563,14 @@ DECKEL: dict[int, dict[str, float]] = {
         # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
-        "Schritt 1": 2.17,
+        "Schritt 1": 2.06,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
-        "Schritt 4": 1.22,
+        "Schritt 4": 1.23,
         "Schritt 5": 1.08,
-        "Schritt 6": 1.80,  # siehe die Begründung bei 1280
+        "Schritt 6": 1.78,  # siehe die Begründung bei 1280
     },
 }
 

@@ -26,6 +26,8 @@ Zwei Dinge zur Mechanik:
 
 from __future__ import annotations
 
+import re
+
 from dash import html
 
 from dashboard.config_catalog import (
@@ -285,6 +287,39 @@ def _eigene_werte_wirken(draft: dict) -> bool:
     return bool(draft.get("apply_custom_overrides")) or of(draft) == CUSTOM
 
 
+#: Wie viele Sätze der Begründung offen stehen (D3, entschieden am 2026-09-12).
+#:
+#: **Zwei**, und die Zahl ist die Entscheidung: Vorher stand die ganze
+#: Begründung da — je Szenario 1163 bis 2429 Zeichen zusammen mit der These,
+#: und beim Standardrahmen 2261 Zeichen allein aus Begründung und Vorbehalt. Das
+#: ist die Tonlage eines Projektplans, nicht die eines Produkts. **Die
+#: Ehrlichkeit bleibt vollständig erreichbar**, sie stört nur nicht mehr die
+#: Entscheidung: Der Rest steht einen Klick tiefer.
+SAETZE_OFFEN = 2
+
+#: Satzende: Punkt, Frage- oder Ausrufezeichen, gefolgt von Weißraum.
+#:
+#: **Nachgemessen tragfähig, nicht angenommen** (2026-09-12): In keiner der
+#: fünf Kohärenzbegründungen steht eine Abkürzung («z. B.», «bzw.», «ca.»,
+#: «vgl.», «Nr.») oder eine Dezimalzahl, an der dieses Muster falsch schneiden
+#: würde. `test_web_start_flow.py` misst das an den ausgelieferten Dateien —
+#: wer eine Begründung mit einer Abkürzung schreibt, bekommt Bescheid, bevor
+#: ein Leser einen halben Satz sieht.
+_SATZENDE = re.compile(r"(?<=[.!?])\s+")
+
+
+def satzanfang(text: str, saetze: int = SAETZE_OFFEN) -> tuple[str, str]:
+    """Die ersten `saetze` Sätze und der Rest — beide bereits beschnitten.
+
+    Öffentlich, weil der Wächter dieselbe Trennung nachrechnet, die die
+    Oberfläche zeigt. Zwei Implementierungen wären die zweite Quelle, an der
+    sie auseinanderlaufen.
+    """
+
+    teile = _SATZENDE.split(text.strip())
+    return " ".join(teile[:saetze]).strip(), " ".join(teile[saetze:]).strip()
+
+
 def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
     """Die Kohärenzbegründung eines Rahmens — **eine Stelle für alle Rahmen**.
 
@@ -303,27 +338,37 @@ def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
     if kohaerenz is None:
         return html.Div()
 
+    offen, rest = satzanfang(kohaerenz.begruendung)
     kinder: list = [vorspann] if vorspann is not None else []
     kinder += [
-        # **Markdown, nicht `html.P`** (P7.1-U1.4, vorgezogen am 2026-09-11):
-        # Die Begründungen in `configs/` sind mit `**fett**` und
-        # `` `avia_paoc` `` geschrieben, und im Browser standen die Zeichen da.
-        # Die Rollen `af-md--betont` und `af-md--caption` halten die Größen der
-        # Absätze, die hier vorher standen.
-        ui.markdown(kohaerenz.these, class_name="af-md--tight af-md--betont mb-2 af-mass"),
-        ui.markdown(kohaerenz.begruendung, class_name="af-md--tight af-md--caption mb-3 af-mass"),
+        # **These und zwei Sätze in Fließtextgröße** (D3). Vorher trug die These
+        # `af-md--betont` (14 px) und die Begründung `af-md--caption` (12 px) —
+        # zwei Größen in einem Leseblock, und genau daran ist U1.2 beim ersten
+        # Anlauf gescheitert: Ein Deckel in Pixeln kann die Zusage «höchstens 75
+        # Zeichen je Zeile» nicht für zwei Schriftgrößen halten (608 px tragen
+        # bei 15 px 66 Zeichen, bei 12 px 106). **Ein Leseblock hat eine
+        # Textgröße** — das ist die Regel, die aus dem Fehlschlag folgt.
+        #
+        # **Markdown, nicht `html.P`** (P7.1-U1.4): Die Begründungen in
+        # `configs/` sind mit `**fett**` und `` `avia_paoc` `` geschrieben, und
+        # im Browser standen die Zeichen roh da.
+        ui.markdown(kohaerenz.these, class_name="af-md--tight af-md--these mb-2 af-mass"),
+        ui.markdown(offen, class_name="af-md--tight af-mass"),
         ui.expert(
             html.Div(
                 [
-                    # **Auch eine Quellenangabe ist Fließtext** (P3.17). Die zwei
-                    # Absätze darüber tragen ein Lesemaß, diese Liste trug keines
-                    # — gemessen 109 Zeichen je Zeile bei 1280 px
-                    # («docs/research/links.md — EU-ETS / Fit for 55 …»),
-                    # zugesagt sind 75. Eine Quelle ist die längste Zeile, die
-                    # eine Oberfläche zu bieten hat: Titel, Autor, Jahr,
-                    # Fundstelle in einer Zeile. **Seit dem 2026-09-11 als
-                    # Markdown-Liste** — die Quellen nennen Tabellen in
-                    # Backticks (`` `avia_paoc` ``), die roh dastanden.
+                    # Der Rest der Begründung — er stand bis D3 offen da.
+                    (
+                        ui.markdown(rest, class_name="af-md--tight af-md--caption mb-3 af-mass")
+                        if rest
+                        else None
+                    ),
+                    # **Auch eine Quellenangabe ist Fließtext** (P3.17). Sie trug
+                    # bis dahin kein Lesemaß — gemessen 109 Zeichen je Zeile bei
+                    # 1280 px, zugesagt sind 75. Eine Quelle ist die längste
+                    # Zeile, die eine Oberfläche zu bieten hat: Titel, Autor,
+                    # Jahr, Fundstelle in einer Zeile. **Als Markdown-Liste**,
+                    # weil die Quellen Tabellen in Backticks nennen.
                     ui.markdown(
                         "\n".join(f"- {quelle}" for quelle in kohaerenz.quellen),
                         class_name="af-md--tight af-md--caption af-mass mb-3",
@@ -333,7 +378,10 @@ def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
                     ),
                 ]
             ),
-            title="Quellen und was davon nicht belegt ist",
+            # **Eine Klappe für alles, was belegt** (D3). Vorher hieß sie
+            # «Quellen und was davon nicht belegt ist» und trug nur zwei der
+            # vier Texte; die Begründung stand darüber offen.
+            title="Begründung und Quellen",
         ),
     ]
     return html.Div(kinder, className="mb-4")

@@ -197,7 +197,8 @@ Wer nur die drei Entscheidungen anfasst, bekommt einen sinnvollen Lauf.
 **1. Was soll gerechnet werden?** Die Annahmenwelt: die Standard-Ausgangslage
 des Modells, eines der vorbereiteten Szenarien, oder das, was Sie sich im
 Bereich **Modell** selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
-steht; aufklappbar dazu die Begründung, warum es so aufgebaut ist.
+steht, dazu seine These und die ersten zwei Sätze der Begründung; der Rest liegt
+hinter «Begründung und Quellen».
 
 **2. Wie weit reicht der Lauf?** Die Länge in Ticks. Hinter «Feinabstimmung»
 die Wiederholungen und der Schalter «Alle Szenarien vergleichen» — denselben

@@ -1975,6 +1975,17 @@ html.dark .af-input[type="number"] {
     color: var(--text);
 }
 
+/* **Betonung ohne eigene Groesse** (D3, 2026-09-12). Die These eines Rahmens
+   hob sich vorher durch `af-md--betont` ab -- also durch eine andere GROESSE
+   (14 gegen 12 px). Genau daran ist U1.2 gescheitert: Ein Leseblock mit zwei
+   Groessen laesst keinen Pixeldeckel zu, der die Zusage «hoechstens 75 Zeichen
+   je Zeile» haelt. Die These traegt ihre Betonung deshalb in Farbe und
+   Gewicht und bleibt auf der Groesse des Blocks. */
+.af-md.af-md--these {
+    color: var(--text);
+    font-weight: 500;
+}
+
 .af-hint code {
     font-size: var(--schrift-klein);
     background: var(--surface-inset);

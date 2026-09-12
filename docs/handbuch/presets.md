@@ -56,8 +56,12 @@ Szenario-Vergleich lässt ihn aus.
 ## Ein Preset verwenden
 
 Unter **Simulation starten** ist die Auswahl die erste der drei Entscheidungen.
-Jedes Preset steht dort mit seiner Beschreibung; aufklappbar daneben die
-Begründung, warum es so aufgebaut ist.
+Jedes Preset steht dort mit seiner Beschreibung. Darunter die **These** des
+Szenarios und die ersten zwei Sätze der Begründung; der Rest — Begründung,
+Quellen und Vorbehalt — liegt hinter **«Begründung und Quellen»**. Bis zum
+2026-09-12 stand die ganze Begründung offen da, je Szenario 1163 bis 2429
+Zeichen. Verborgen ist nichts weggelassen: Ein Klick führt zu allem, was die
+Stimmigkeit belegt.
 
 **Das gewählte Preset gilt unverändert.** Politik, Kosten und Nachfrageumfeld kommen
 aus seiner Datei unter `configs/sweeps/`; was Sie unten unter «Alle
