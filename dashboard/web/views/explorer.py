@@ -87,8 +87,14 @@ def _checks_panel(run_dir) -> html.Div:
                 ),
                 html.Div(
                     [
-                        html.Span(check.title, className="font-body text-sm font-medium af-text"),
-                        html.Span(f" — {check.detail}", className="font-body text-sm af-text-body"),
+                        html.Span(
+                            check.title,
+                            className=f"font-body {ui.BESCHRIFTUNG} font-medium af-text",
+                        ),
+                        html.Span(
+                            f" — {check.detail}",
+                            className=f"font-body {ui.BESCHRIFTUNG} af-text-body",
+                        ),
                     ]
                 ),
             ],
@@ -108,7 +114,7 @@ def render(
                 "Fragen Sie den gesamten Lauf ab — z. B. Verlauf über alle Ticks, Vergleiche "
                 "oder einzelne Perioden. Optional: Tick-Nummer eingeben oder in der Frage "
                 "nennen (z. B. «Was passierte bei Tick 15?»).",
-                className="font-body text-sm af-text-body mb-5 max-w-3xl",
+                className=f"font-body {ui.BESCHRIFTUNG} af-text-body mb-5 max-w-3xl",
             ),
             ui.card(
                 ui.grid(

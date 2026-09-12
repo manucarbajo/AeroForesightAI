@@ -24,7 +24,22 @@ from dashboard.web import routing
 
 CARD = "af-card"
 CARD_PAD = f"{CARD} p-5 sm:p-6"
-LABEL = "block font-body text-sm font-medium af-text-body mb-1.5"
+#: Die sechs Rollen der Schriftskala (P7.1-U1.1, entschieden am 2026-09-12).
+#: Größe, Gewicht und Zeilenhöhe stehen in `assets/dashboard.css` als
+#: `.af-schrift-*`; hier stehen nur die Namen. **Vorher kamen die Größen aus
+#: drei Quellen** — dem Stylesheet, Tailwinds `text-*`-Klassen im Python-Code
+#: und diesen Konstanten, die selbst wieder Tailwind zusammensetzten —, und
+#: gerendert waren es dreizehn Größen in 23 Kombinationen aus Größe und
+#: Gewicht. Wer eine siebte Rolle braucht, ändert die Skala und nicht den
+#: Aufruf; `tests/test_web_schriftskala.py` meldet jede Größe daneben.
+TITEL = "af-schrift-titel"
+UEBERSCHRIFT = "af-schrift-ueberschrift"
+ABSCHNITT = "af-schrift-abschnitt"
+TEXT = "af-schrift-text"
+BESCHRIFTUNG = "af-schrift-beschriftung"
+KLEIN = "af-schrift-klein"
+
+LABEL = f"block font-body {BESCHRIFTUNG} font-medium af-text-body mb-1.5"
 #: Der kleine Erklaertext unter einem Feld oder einer Zustandsanzeige.
 #:
 #: **Mit Lesemass seit P3.17.** Ohne lief er so weit wie seine Zone; gemessen
@@ -33,15 +48,15 @@ LABEL = "block font-body text-sm font-medium af-text-body mb-1.5"
 #: zugesagt sind 75. Eine Fehlermeldung eines fremden Dienstes ist die
 #: laengste Zeichenkette, die hier ankommen kann — und niemand schreibt sie
 #: kuerzer.
-HINT = "font-body text-xs af-text-muted mt-1.5 leading-relaxed af-mass"
-CAPTION = "font-body text-xs af-text-muted"
-H1 = "font-headline text-2xl sm:text-3xl font-bold af-text tracking-tight"
-H2 = "font-headline text-xl font-semibold af-text tracking-tight"
-H3 = "font-headline text-base font-semibold af-text"
+HINT = f"font-body {KLEIN} af-text-muted mt-1.5 af-mass"
+CAPTION = f"font-body {KLEIN} af-text-muted"
+H1 = f"font-headline {TITEL} font-bold af-text tracking-tight"
+H2 = f"font-headline {UEBERSCHRIFT} font-semibold af-text tracking-tight"
+H3 = f"font-headline {ABSCHNITT} font-semibold af-text"
 
 _BUTTON_BASE = (
-    "af-btn inline-flex items-center justify-center gap-2 px-5 py-2.5 font-body text-sm "
-    "font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+    "af-btn inline-flex items-center justify-center gap-2 px-5 py-2.5 font-body "
+    f"{BESCHRIFTUNG} font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 )
 _BUTTON_VARIANTS = {
     "primary": "af-btn--primary",
@@ -210,7 +225,7 @@ def field_errors(messages: list[str]) -> Any:
             )
             for text in messages
         ],
-        className="font-body text-xs af-text-negative mt-1.5 leading-relaxed space-y-1",
+        className=f"font-body {KLEIN} af-text-negative mt-1.5 space-y-1",
     )
 
 
@@ -339,7 +354,7 @@ def status_dot(ok: bool, text: str, *, hint: str | None = None) -> html.Div:
             html.Span(className=f"af-status__dot mt-1.5 {tone}"),
             html.Div(
                 [
-                    html.Span(text, className="font-body text-sm af-text-body"),
+                    html.Span(text, className=f"font-body {BESCHRIFTUNG} af-text-body"),
                     html.P(hint, className=HINT) if hint else None,
                 ]
             ),
@@ -390,14 +405,14 @@ def metric_tile(
     """
 
     wert = (
-        "font-headline text-base font-semibold af-text-accent mt-1 af-tile__value"
+        f"font-headline {ABSCHNITT} font-semibold af-text-accent mt-1 af-tile__value"
         if prose
-        else "font-headline text-2xl font-bold af-text-accent mt-1 "
+        else f"font-headline {TITEL} font-bold af-text-accent mt-1 "
         "tracking-tight af-num af-tile__value"
     )
     return html.Div(
         [
-            html.Div(label.upper(), className="font-body text-xs tracking-wider af-text-muted"),
+            html.Div(label.upper(), className=f"font-body {KLEIN} tracking-wider af-text-muted"),
             html.Div(str(value), className=wert),
             html.Div(hint, className=f"{CAPTION} mt-1") if hint else None,
         ],
@@ -478,7 +493,7 @@ def alert(text: Any, kind: str = "info", *, class_name: str = "") -> html.Div:
     return html.Div(
         [
             icon(icon_name, "text-lg shrink-0 mt-0.5"),
-            html.Div(body, className="font-body text-sm leading-relaxed min-w-0 af-mass"),
+            html.Div(body, className=f"font-body {BESCHRIFTUNG} min-w-0 af-mass"),
         ],
         className=f"af-alert {tone} flex items-start gap-3 px-4 py-3 {class_name}".strip(),
     )
@@ -488,7 +503,7 @@ def empty_state(text: str, *, hint: str | None = None, icon_name: str = "inbox")
     return html.Div(
         [
             icon(icon_name, "text-3xl af-text-faint"),
-            html.P(text, className="font-body text-sm af-text-body mt-3"),
+            html.P(text, className=f"font-body {BESCHRIFTUNG} af-text-body mt-3"),
             html.P(hint, className=f"{CAPTION} mt-1 max-w-md") if hint else None,
         ],
         className=f"{CARD} flex flex-col items-center justify-center text-center px-6 py-12",
@@ -501,7 +516,7 @@ def accordion(title: Any, *children: Any, open: bool = False, badge: str | None 
     summary = html.Summary(
         [
             icon("chevron_right", "af-acc__chevron text-lg af-text-faint"),
-            html.Span(title, className="font-body text-sm font-medium af-text flex-1"),
+            html.Span(title, className=f"font-body {BESCHRIFTUNG} font-medium af-text flex-1"),
             (html.Span(badge, className="af-badge") if badge else None),
         ],
         className="af-acc__summary flex items-center gap-2 cursor-pointer select-none px-4 py-3",
@@ -532,7 +547,7 @@ def expert(
             html.Summary(
                 [
                     icon("chevron_right", "af-acc__chevron text-base af-text-faint"),
-                    html.Span(heading, className="font-body text-sm af-text-muted"),
+                    html.Span(heading, className=f"font-body {BESCHRIFTUNG} af-text-muted"),
                     (
                         html.Span(names, className=f"{CAPTION} truncate hidden sm:inline")
                         if names
@@ -592,7 +607,7 @@ def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
             icon(icon_name, "text-base af-text-faint shrink-0 mt-0.5"),
             dcc.Markdown(text, className="af-md af-md--tight af-mass"),
         ],
-        className="flex items-start gap-2.5 font-body text-sm af-text-body "
+        className=f"flex items-start gap-2.5 font-body {BESCHRIFTUNG} af-text-body "
         "af-surface-inset af-bordered rounded px-4 py-3",
     )
 
@@ -607,7 +622,7 @@ def doc_link(slug: str, label: str = "Im Handbuch nachlesen") -> Any:
     return dcc.Link(
         [label, icon("arrow_forward", "text-xs")],
         href=routing.url(f"doku/{slug}"),
-        className="af-link inline-flex items-center gap-1 font-body text-xs",
+        className=f"af-link inline-flex items-center gap-1 font-body {KLEIN}",
     )
 
 
@@ -635,7 +650,7 @@ def lede(text: str) -> dcc.Markdown:
 def code_block(text: str, *, max_height: str = "24rem") -> html.Pre:
     return html.Pre(
         text,
-        className="af-code text-xs p-4 overflow-auto whitespace-pre",
+        className=f"af-code {KLEIN} p-4 overflow-auto whitespace-pre",
         style={"maxHeight": max_height},
     )
 

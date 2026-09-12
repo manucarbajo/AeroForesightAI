@@ -216,7 +216,7 @@ def navbar(active: str) -> html.Div:
             html.A(
                 "AeroForesight AI",
                 href=LANDING_URL,
-                className="font-headline text-base font-bold af-text-accent tracking-tight "
+                className=f"font-headline {ui.ABSCHNITT} font-bold af-text-accent tracking-tight "
                 "whitespace-nowrap",
             ),
             html.Nav(

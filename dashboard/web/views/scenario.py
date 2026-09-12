@@ -34,13 +34,13 @@ def _scenario_items(scenario: dict) -> list:
                 f"{rank}. {item.get('title', 'Szenario')}",
                 html.P(
                     "Anhaltspunkte aus dem Lauf (Ticks)",
-                    className="font-body text-xs font-semibold tracking-wide af-text-muted uppercase mb-1",
+                    className=f"font-body {ui.KLEIN} font-semibold tracking-wide af-text-muted uppercase mb-1",
                 ),
                 ui.markdown(str(item.get("tick_grounding", ""))),
                 ui.divider("my-4"),
                 html.P(
                     "Szenario-Beschreibung",
-                    className="font-body text-xs font-semibold tracking-wide af-text-muted uppercase mb-1",
+                    className=f"font-body {ui.KLEIN} font-semibold tracking-wide af-text-muted uppercase mb-1",
                 ),
                 ui.markdown(str(item.get("story") or item.get("what_could_happen", ""))),
                 open=expanded,
@@ -74,7 +74,7 @@ def body(run_dir: Path, run_id: str) -> html.Div:
                 ui.card(
                     html.P(
                         "Lauf-Narrativ — was im Lauf passiert ist",
-                        className="font-body text-xs font-semibold tracking-wide af-text-muted uppercase mb-2",
+                        className=f"font-body {ui.KLEIN} font-semibold tracking-wide af-text-muted uppercase mb-2",
                     ),
                     ui.markdown(str(run_story)),
                     class_name="mb-6",

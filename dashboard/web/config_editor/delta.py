@@ -136,7 +136,7 @@ def _zeile(abweichung: Abweichung) -> html.Div:
                 "Zurücknehmen",
                 id=revert_id(abweichung.feld),
                 variant="ghost",
-                className="!px-2 !py-1 text-xs shrink-0",
+                className=f"!px-2 !py-1 {ui.KLEIN} shrink-0",
             ),
         ],
         className="af-delta__zeile",

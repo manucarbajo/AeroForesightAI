@@ -88,6 +88,22 @@ FONT_HEADLINE = "Plus Jakarta Sans, sans-serif"
 FONT_BODY = "Inter, sans-serif"
 FONT_MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
 
+#: Die Schriftskala als Zahlen — für die wenigen Stellen, die keine Klasse
+#: annehmen können (P7.1-U1.1). Dashs `DataTable` bekommt seine Zellenstile als
+#: Python-Dict; `assets/dashboard.css` erreicht sie nicht. Bis zum 2026-09-12
+#: standen dort `"13px"` und `"12px"` als Literale, also zwei Größen neben der
+#: Skala — genau die Sorte zweite Quelle, gegen die diese Skala angetreten ist.
+#: **Die Namen sind dieselben wie die Tokens**, damit `tests/test_web_theme.py`
+#: beide Seiten deckungsgleich halten kann.
+SCHRIFT_PX = {
+    "titel": 24,
+    "ueberschrift": 20,
+    "abschnitt": 16,
+    "text": 15,
+    "beschriftung": 14,
+    "klein": 12,
+}
+
 LIGHT = "light"
 DARK = "dark"
 MODES = (LIGHT, DARK)

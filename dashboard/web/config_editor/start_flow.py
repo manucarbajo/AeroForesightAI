@@ -237,7 +237,7 @@ def _choice_label(title: str, description: str, kennzahl: str | None = None) -> 
 
     return html.Div(
         [
-            html.Span(title, className="font-body text-sm font-medium af-text block"),
+            html.Span(title, className=f"font-body {ui.BESCHRIFTUNG} font-medium af-text block"),
             (html.Span(kennzahl, className="af-choice__meta") if kennzahl else None),
             html.Span(description, className=f"{ui.CAPTION} af-choice__text"),
         ],

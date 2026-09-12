@@ -297,7 +297,7 @@ def finished_link() -> html.Div:
             [ui.icon("arrow_forward", "text-sm"), "Ergebnisse ansehen"],
             href=routing.url(ziel),
             className="af-btn af-btn--primary inline-flex items-center gap-1.5 "
-            "px-3 py-1.5 font-body text-xs font-medium",
+            f"px-3 py-1.5 font-body {ui.KLEIN} font-medium",
         ),
         className="mt-3",
     )

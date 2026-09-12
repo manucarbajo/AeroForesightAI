@@ -16,14 +16,31 @@ deshalb derselbe Nachrechner (`tests/test_web_drawers._sieger`).
 from __future__ import annotations
 
 from dashboard.web import components as ui
+from dashboard.web import theme
 from tests.test_web_drawers import _sieger
 
-#: Tailwinds Schriftgrößen, wie `components.LABEL` sie benutzt.
-TAILWIND_TEXT = {"text-xs": 0.75, "text-sm": 0.875, "text-base": 1.0, "text-lg": 1.125}
+#: Die Rollen der Skala als rem — seit P7.1-U1.1 stehen die Größen als Tokens
+#: im Stylesheet, und eine Regel sagt `var(--schrift-klein)` statt `0.75rem`.
+#: **Die Zusage hier ist dieselbe geblieben**, nur die Auflösung ist neu: Wer
+#: eine Größe vergleichen will, muss den Token erst nachschlagen. Die Zahlen
+#: kommen aus `theme.SCHRIFT_PX`, damit sie nicht ein zweites Mal hier stehen.
+ROLLEN_REM = {f"--schrift-{name}": px / 16 for name, px in theme.SCHRIFT_PX.items()}
 
 
 def _rem(wert: str) -> float:
-    assert wert.endswith("rem"), f"Erwartet eine Angabe in rem, gefunden {wert!r}."
+    """Eine Größenangabe des Stylesheets in rem — Token oder Literal.
+
+    Vor P7.1-U1.1 stand in jeder Regel ein Literal; seither ein Token. Beides
+    aufzulösen ist kein Zugeständnis, sondern nötig: Tailwind liefert weiterhin
+    Literale (`text-sm`), und `components.LABEL` benutzt eine Rolle.
+    """
+
+    wert = wert.strip()
+    if wert.startswith("var(--schrift-"):
+        token = wert[len("var(") : wert.index(")")]
+        assert token in ROLLEN_REM, f"Unbekanntes Schrift-Token {token!r}."
+        return ROLLEN_REM[token]
+    assert wert.endswith("rem"), f"Erwartet rem oder ein Schrift-Token, gefunden {wert!r}."
     return float(wert.removesuffix("rem"))
 
 
@@ -39,8 +56,15 @@ def test_the_hint_class_set_is_what_the_component_renders():
 
 
 def test_a_hint_is_smaller_than_its_label():
+    """Die Zusage von 2026-09-11, jetzt gegen die Skala gerechnet.
+
+    Die Beschriftung trägt seit P7.1-U1.1 eine **Rolle** statt einer
+    Tailwind-Klasse; nachgeschlagen wird sie deshalb genauso wie der Hinweis.
+    """
+
     selektor, groesse = _sieger(_klassen_des_hinweises(), "font-size")
-    beschriftung = next(rem for klasse, rem in TAILWIND_TEXT.items() if klasse in ui.LABEL.split())
+    rolle = next(k for k in ui.LABEL.split() if k.startswith("af-schrift-"))
+    beschriftung = ROLLEN_REM["--schrift-" + rolle.removeprefix("af-schrift-")]
 
     assert _rem(groesse) < beschriftung, (
         f"Der Feldhinweis bekommt {groesse} aus `{selektor}` — die Beschriftung "
@@ -54,19 +78,20 @@ def test_a_hint_is_smaller_than_its_label():
 #: gezeigtes Markdown hätte sonst genau die Kaskade zurückgebracht, die der
 #: Feldhinweis gerade losgeworden ist.
 ROLLEN = {
-    "af-md--lede": "0.875rem",
-    "af-md--caption": "0.75rem",
-    "af-md--betont": "0.875rem",
+    "af-md--lede": 14,
+    "af-md--caption": 12,
+    "af-md--betont": 14,
 }
 
 
 def test_markdown_in_a_role_keeps_the_size_of_its_paragraph():
-    for rolle, erwartet in ROLLEN.items():
+    for rolle, erwartet_px in ROLLEN.items():
         selektor, groesse = _sieger({"af-md", "af-md--tight", rolle}, "font-size")
 
-        assert (
-            groesse == erwartet
-        ), f"Markdown mit `{rolle}` bekommt {groesse} aus `{selektor}`, erwartet {erwartet}."
+        assert _rem(groesse) * 16 == erwartet_px, (
+            f"Markdown mit `{rolle}` bekommt {groesse} aus `{selektor}`, erwartet "
+            f"{erwartet_px} px."
+        )
 
 
 def test_the_lede_uses_its_role():

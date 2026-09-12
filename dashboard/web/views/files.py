@@ -55,7 +55,7 @@ def _table(path: Path, mode: str = theme.LIGHT) -> html.Div:
             style_table={"overflowX": "auto"},
             style_cell={
                 "fontFamily": theme.FONT_BODY,
-                "fontSize": "13px",
+                "fontSize": f"{theme.SCHRIFT_PX['beschriftung']}px",
                 "padding": "8px 12px",
                 "color": tone["text-body"],
                 "border": "none",
@@ -68,7 +68,7 @@ def _table(path: Path, mode: str = theme.LIGHT) -> html.Div:
             style_header={
                 "fontFamily": theme.FONT_HEADLINE,
                 "fontWeight": "600",
-                "fontSize": "12px",
+                "fontSize": f"{theme.SCHRIFT_PX['klein']}px",
                 "color": tone["text"],
                 "backgroundColor": tone["surface-inset"],
                 "borderBottom": f"1px solid {tone['border']}",
@@ -122,7 +122,7 @@ def _download_link(path: Path):
         [ui.icon("download", "text-sm"), "Herunterladen"],
         href=url,
         className="af-btn af-btn--secondary inline-flex items-center gap-2 px-4 py-2 "
-        "font-body text-sm font-medium",
+        f"font-body {ui.BESCHRIFTUNG} font-medium",
     )
 
 

@@ -87,13 +87,20 @@ class TestKeineAusrichtungGehtMehrAnDash:
 
 class TestKeinWertTrittAusSeinerKachel:
     def test_a_prose_value_gets_the_smaller_setting(self):
-        """Der Zahlensatz ist für «Standard-Ausgangslage» zu groß."""
+        """Der Zahlensatz ist für «Standard-Ausgangslage» zu groß.
+
+        Geprüft wird seit P7.1-U1.1 die **Rolle** statt der Tailwind-Klasse:
+        Eine Zahl bekommt «Titel» (24 px), ein Satz «Abschnitt» (16 px). Die
+        Zusage ist dieselbe geblieben — nur heißt die große Größe nicht mehr
+        `text-2xl`, sondern `ui.TITEL`.
+        """
 
         zahl = str(ui.metric_tile("Länge", "40 Ticks"))
         text = str(ui.metric_tile("Szenario", "Standard-Ausgangslage", prose=True))
 
-        assert "text-2xl" in zahl
-        assert "text-2xl" not in text
+        assert ui.TITEL in zahl
+        assert ui.TITEL not in text
+        assert ui.ABSCHNITT in text
 
     def test_every_tile_value_can_be_capped(self):
         """`af-tile__value` trägt den Umbruch — ohne die Klasse greift er nicht."""

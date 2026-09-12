@@ -507,7 +507,9 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
                             "Faktorlage am Ende dieses Laufs",
                             className=f"{ui.CAPTION} mb-1",
                         ),
-                        html.P(_endlage(run_dir), className="font-body text-sm af-text-body"),
+                        html.P(
+                            _endlage(run_dir), className=f"font-body {ui.BESCHRIFTUNG} af-text-body"
+                        ),
                     ]
                 ),
                 class_name="mt-4",
@@ -538,12 +540,12 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
                                         [
                                             html.Td(
                                                 _szenario_name(p),
-                                                className="pr-4 py-1 font-body text-sm "
+                                                className=f"pr-4 py-1 font-body {ui.BESCHRIFTUNG} "
                                                 "af-text font-semibold align-top",
                                             ),
                                             html.Td(
                                                 _endlage(p),
-                                                className="py-1 font-body text-sm af-text-body",
+                                                className=f"py-1 font-body {ui.BESCHRIFTUNG} af-text-body",
                                             ),
                                         ]
                                     )
