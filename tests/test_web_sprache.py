@@ -8,17 +8,30 @@ Begründung sagt, dass es kein begründetes Weltbild ist. Beides ist die Tonlage
 des Projektplans, nicht die eines Produkts: Wer «P5.7» liest, sucht danach und
 findet nichts, weil die Kennung nur intern etwas bedeutet.
 
+**Der zweite Befund: Pfade des Servers.** Die Ansicht «Dateien» stellte über
+jede Datei deren absoluten Pfad («F:\\AeroForesight\\…\\cib_matrix.json»), fünf
+Sätze im Assistenten nannten `configs/` oder `outputs/sweeps/` als Ort, an dem
+etwas landet, und in der Begründung dreier Rahmenszenarien stand
+«configs/backtest/quellen.json» dort, wo ein **Werk** hingehört. Ein Pfad
+beantwortet die Frage «wo finde ich das» mit der Sprache des Servers; das
+Produkt kann sie besser beantworten — «danach im ersten Schritt zur Auswahl».
+
 **Was dieser Wächter heute hält, und was noch nicht.** U0.6 verspricht drei
 Dinge über den sichtbaren Text: keine Paketkennungen, keine Pfade unter
 `configs/` und `outputs/`, keine `snake_case`-Bezeichner außerhalb von
-Code-Elementen. **Hier stehen die Paketkennungen.** Die beiden anderen fehlen
-noch, und das ist Absicht statt Vergessen: Beide brauchen eigene Ausnahmen, die
-erst zu begründen sind — `snake_case` kollidiert mit den Namen der
+Code-Elementen. **Hier stehen die ersten beiden.** Der dritte fehlt, und das
+ist Absicht statt Vergessen: `snake_case` kollidiert mit den Namen der
 Symbolschrift, die als Text im Baum stehen (`chevron_right`; siehe
 `tests/test_symbolschrift.py`), und mit den Feldnamen des Modells, die erst mit
 P7.2-U2.3 Glossarnamen bekommen. Ein Wächter, der diese Fälle pauschal
 ausnimmt, wäre eine Aufgabenliste in Testform. **U0.6 ist also nicht fertig,
 solange dieser Docstring diesen Absatz trägt.**
+
+**Das Handbuch ist nicht dabei, und zwar begründet.** Dort *ist* die Datei der
+Gegenstand: Das Referenzkapitel sagt, welches Feld in welcher Datei unter
+`configs/` steht, und genau das braucht jemand, der eine Konfiguration von Hand
+schreibt. Eine Regel, die den Ort verbietet, wo er die Information ist, wäre
+keine Produktsprache, sondern eine Lücke in der Dokumentation.
 
 **Gemessen wird der gerenderte Baum, nicht der Quelltext.** Eine Kennung kommt
 auch aus `configs/` — genau dort saß «P5.7» —, und das sieht kein Syntaxbaum.
@@ -53,6 +66,23 @@ from dashboard.web.views import animation, explorer, figures, files, narrative, 
 #: `F` fehlt bewusst, das sind die Faktorzustände des Modells.
 KENNUNG = re.compile(r"\bP\d+(?:\.\d+)?\b|\b[UWQ]\d+\.\d+\b")
 
+#: Pfade, die dem Leser nichts sagen: die Verzeichnisse der Installation und
+#: jeder absolute Pfad der Maschine, auf der der Server läuft.
+#:
+#: **`docs/` fehlt bewusst.** Die Quellenangaben der Rahmenszenarien nennen
+#: heute Dateien unter `docs/research/` statt der Werke, die darin liegen — ein
+#: echter Befund, aber ein anderer: Dort ist die **Zitierweise** falsch, nicht
+#: der Ort. Er gehört zu P7.2-U2.3 und braucht für jede Quelle die
+#: bibliografische Angabe, die aus einem Dateinamen nicht zu erfinden ist.
+#: **Der Laufwerksbuchstabe braucht seine Wortgrenze.** Ohne `\b` traf das
+#: Muster das «p:» in «http://127.0.0.1:11434» und meldete jede
+#: Adresszeile — gefunden beim ersten scharfen Durchlauf.
+PFAD = re.compile(
+    r"\b(?:configs|outputs)[/\\][\w/\\.-]*"  # die Verzeichnisse der Installation
+    r"|\b[A-Za-z]:[\\/][^\s`'\"]+"  # C:\… und F:\…
+    r"|/(?:home|Users|var|tmp)/[^\s`'\"]+"  # /home/…, /Users/…
+)
+
 #: Sichtbarer Text, der eine Kennung tragen darf — je Eintrag der Grund.
 #:
 #: **Leer, und das ist die Aussage.** Eine Ausnahme hier wäre ein Text, in dem
@@ -69,49 +99,76 @@ AUSNAHMEN: dict[str, str] = {}
 CODE = (html.Code, html.Pre)
 
 
-def sichtbarer_text(knoten, in_code: bool = False) -> list[str]:
+def sichtbarer_text(knoten, *, ohne_code: bool = True) -> list[str]:
     """Jede Zeichenkette, die im Browser zu lesen ist.
 
     Mitgenommen werden auch `options` (Auswahlkarten tragen ihren Text dort,
     nicht in den Kindern) sowie `placeholder` und `title` — ein Platzhalter
     steht im Feld, ein `title` im Tooltip, beides liest jemand.
+
+    `ohne_code=False` nimmt auch den Inhalt von `html.Code` und `html.Pre` mit.
+    Gebraucht wird das bei den Pfaden: Eine Kennung in Code-Auszeichnung ist
+    der Gegenstand, ein Pfad in Code-Auszeichnung ist derselbe Pfad.
     """
 
-    if knoten is None:
-        return []
-    if isinstance(knoten, str):
-        return [] if in_code else [knoten]
-    if isinstance(knoten, (list, tuple)):
-        return [text for kind in knoten for text in sichtbarer_text(kind, in_code)]
+    def gehe(teil, in_code: bool) -> list[str]:
+        if teil is None:
+            return []
+        if isinstance(teil, str):
+            return [] if in_code else [teil]
+        if isinstance(teil, (list, tuple)):
+            return [text for kind in teil for text in gehe(kind, in_code)]
 
-    in_code = in_code or isinstance(knoten, CODE)
-    texte = sichtbarer_text(getattr(knoten, "children", None), in_code)
-    for option in getattr(knoten, "options", None) or []:
-        if isinstance(option, dict):
-            texte += sichtbarer_text(option.get("label"), in_code)
-    if not in_code:
-        for feld in ("placeholder", "title"):
-            wert = getattr(knoten, feld, None)
-            if isinstance(wert, str):
-                texte.append(wert)
-    return texte
+        in_code = in_code or (ohne_code and isinstance(teil, CODE))
+        texte = gehe(getattr(teil, "children", None), in_code)
+        for option in getattr(teil, "options", None) or []:
+            if isinstance(option, dict):
+                texte += gehe(option.get("label"), in_code)
+        if not in_code:
+            for feld in ("placeholder", "title"):
+                wert = getattr(teil, feld, None)
+                if isinstance(wert, str):
+                    texte.append(wert)
+        return texte
+
+    return gehe(knoten, False)
+
+
+def _funde(knoten, muster: re.Pattern[str], *, ohne_code: bool = True) -> list[str]:
+    """Wo das Muster im sichtbaren Text zutrifft — je Text mit seinem Satz."""
+
+    funde: list[str] = []
+    for text in sichtbarer_text(knoten, ohne_code=ohne_code):
+        if text.strip() in AUSNAHMEN:
+            continue
+        treffer = muster.search(text)
+        if treffer:
+            funde.append(f"«{treffer.group(0)}» in: {' '.join(text.split())[:100]}")
+    return funde
 
 
 def _kennungen(knoten) -> list[str]:
     """Welche Paketkennungen im sichtbaren Text stehen — mit ihrem Satz."""
 
-    funde: list[str] = []
-    for text in sichtbarer_text(knoten):
-        if text.strip() in AUSNAHMEN:
-            continue
-        for treffer in KENNUNG.findall(text):
-            # `findall` liefert bei einer Gruppe deren Inhalt — gebraucht ist
-            # der ganze Treffer, also noch einmal gezielt suchen.
-            gefunden = KENNUNG.search(text)
-            marke = gefunden.group(0) if gefunden else treffer
-            funde.append(f"«{marke}» in: {' '.join(text.split())[:100]}")
-            break
-    return funde
+    return _funde(knoten, KENNUNG)
+
+
+def _pfade(knoten) -> list[str]:
+    """Welche Pfade im sichtbaren Text stehen — mit ihrem Satz.
+
+    **Ein Codeblock schützt, Backticks in einem Satz nicht**, und die Grenze
+    ist gemessen statt gesetzt: Schritt «Lauf & Ablage» zeigt die *effektive
+    Konfiguration* als rohes JSON in einem `html.Pre` — dort sind Pfade der
+    **Inhalt der Datei** und nicht die Sprache der Oberfläche. «Legt den Stand
+    unter `configs/sweeps/` ab» ist der umgekehrte Fall: Die Backticks machen
+    aus einem Serverpfad einen ordentlich gesetzten Serverpfad.
+
+    Beim ersten Anlauf stand hier `ohne_code=False` mit der Begründung,
+    Backticks dürften nicht schützen. Die Messung hat das widerlegt — sie
+    meldete die beiden JSON-Vorschauen mit.
+    """
+
+    return _funde(knoten, PFAD)
 
 
 # --- Die Bereiche ------------------------------------------------------------
@@ -209,6 +266,18 @@ def test_no_package_id_is_visible_while_setting_up(bauen):
     )
 
 
+@pytest.mark.parametrize("bauen", EINRICHTEN)
+def test_no_server_path_is_visible_while_setting_up(bauen):
+    funde = _pfade(bauen())
+
+    assert not funde, (
+        "Ein Pfad des Servers steht im sichtbaren Text:\n  "
+        + "\n  ".join(funde)
+        + "\n\nWo etwas landet, sagt man im Produkt («danach im ersten Schritt zur "
+        "Auswahl»), nicht im Dateisystem."
+    )
+
+
 @pytest.mark.parametrize("ansicht", ANSICHTEN, ids=lambda v: v.__name__.rsplit(".", 1)[-1])
 def test_no_package_id_is_visible_in_the_results(ansicht, lauf):
     funde = _kennungen(ansicht.render(lauf, lauf.name))
@@ -216,6 +285,21 @@ def test_no_package_id_is_visible_in_the_results(ansicht, lauf):
     assert (
         not funde
     ), "Eine Paketkennung dieses Projektplans steht im sichtbaren Text:\n  " + "\n  ".join(funde)
+
+
+@pytest.mark.parametrize("ansicht", ANSICHTEN, ids=lambda v: v.__name__.rsplit(".", 1)[-1])
+def test_no_server_path_is_visible_in_the_results(ansicht, lauf):
+    """**Die Ansicht «Dateien» ist der Anlass**, und sie ist kein Sonderfall.
+
+    Sie zeigte über jeder Datei deren absoluten Pfad. Daran ist für den Leser
+    genau ein Teil brauchbar, der Name der Datei; der Rest beschreibt die
+    Maschine, auf der der Server läuft, und gehört in einem Mehrbenutzerbetrieb
+    ohnehin niemandem außer ihr.
+    """
+
+    funde = _pfade(ansicht.render(lauf, lauf.name))
+
+    assert not funde, "Ein Pfad des Servers steht im sichtbaren Text:\n  " + "\n  ".join(funde)
 
 
 # --- Der Wächter über sich selbst --------------------------------------------
@@ -235,6 +319,55 @@ def test_the_guard_would_notice_a_relapse():
 
     assert _kennungen(aus_dem_quelltext) == ["«P3» in: P3 — Szenarien aus dem Lauf."]
     assert _kennungen(aus_einer_datei) == ["«P5.7» in: P5.7"]
+
+
+def test_the_path_guard_would_notice_a_relapse():
+    """Nachgestellt sind die drei Formen, die vorkamen.
+
+    Der absolute Pfad über einer Datei («Dateien»), das Verzeichnis in einem
+    erklärenden Satz (fünf Stellen im Assistenten) und der Pfad als
+    Quellenangabe — «configs/backtest/quellen.json» stand in der Begründung
+    dreier Rahmenszenarien dort, wo ein Werk hingehört.
+    """
+
+    absolut = html.P(r"F:\AeroForesight\outputs\run_20260907\cib_matrix.json")
+    im_satz = html.P("Legt den aktuellen Stand unter `configs/sweeps/` ab.")
+    als_quelle = html.Li("configs/backtest/quellen.json — EEX-Auktionspreise und Brent")
+
+    assert _pfade(absolut), "der absolute Pfad fällt nicht auf"
+    assert _pfade(im_satz), "das Verzeichnis im Satz fällt nicht auf"
+    assert _pfade(als_quelle), "der Pfad als Quellenangabe fällt nicht auf"
+
+
+def test_a_file_preview_may_contain_paths():
+    """**Die eine bewusste Ausnahme, und sie ist gemessen.**
+
+    Schritt «Lauf & Ablage» zeigt die effektive Konfiguration als rohes JSON.
+    Was dort an Pfaden steht, ist der **Inhalt der Datei** — ihn zu melden
+    hieße, dem Wächter beizubringen, dass eine Dateivorschau keine Dateien
+    zeigen darf. Der erste Anlauf dieses Wächters tat genau das und meldete
+    zwei JSON-Vorschauen.
+
+    Die Grenze verläuft zwischen Codeblock und Satz: `html.Pre` und `html.Code`
+    sind geschützt, Backticks in einem Satz nicht.
+    """
+
+    vorschau = html.Pre('{ "sweeps": "configs/sweeps/business_as_usual.json" }')
+    satz = html.P("Der Lauf liest die Dateien unter `configs/`.")
+
+    assert _pfade(vorschau) == []
+    assert _pfade(satz), "ein Satz mit Backticks ist kein Codeblock"
+
+
+def test_a_url_is_not_a_windows_path():
+    """`http://127.0.0.1:11434` hat kein Laufwerk — der erste Anlauf sah eines.
+
+    Ohne Wortgrenze traf das Muster für «C:\\…» das «p:» in «http:» und meldete
+    jede Adresszeile der Technik-Einstellungen.
+    """
+
+    assert _pfade(html.P("Adresse: http://127.0.0.1:11434")) == []
+    assert _pfade(html.P(r"Datei: C:\Users\Haiko\run.json")), "ein echtes Laufwerk fehlt"
 
 
 def test_a_factor_state_is_not_a_package_id():

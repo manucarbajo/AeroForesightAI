@@ -135,7 +135,14 @@ def _view(run_dir: Path, relative_path: str, mode: str = theme.LIGHT):
     )
     if entry is None:
         return ui.alert("Datei nicht mehr vorhanden.", "warning"), None
-    header = html.P(str(entry.absolute_path), className=f"{ui.CAPTION} mb-3 break-all")
+    # **Der Pfad im Lauf, nicht der auf der Platte** (P7.0-U0.6): Hier stand
+    # `entry.absolute_path`, also etwas wie
+    # «F:\AeroForesight\AeroForesightAI\outputs\run_…\cib_matrix.json». Brauchbar
+    # daran ist genau der hintere Teil — welche Datei des Laufs man ansieht; der
+    # vordere beschreibt die Maschine, auf der der Server läuft, und gehört im
+    # Mehrbenutzerbetrieb niemandem außer ihr. Der Download-Link unten benutzt
+    # weiterhin den absoluten Pfad, nur zeigt er ihn nicht.
+    header = html.P(entry.relative_path, className=f"{ui.CAPTION} mb-3 break-all")
 
     if entry.kind != "png" and entry.size_bytes > LAZY_THRESHOLD_BYTES:
         # Nicht bloß ausblenden — gar nicht erst übertragen. Ein geschlossenes

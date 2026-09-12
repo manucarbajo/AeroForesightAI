@@ -195,7 +195,7 @@ Wer nur die drei Entscheidungen anfasst, bekommt einen sinnvollen Lauf.
 ## Die drei Entscheidungen
 
 **1. Was soll gerechnet werden?** Die Annahmenwelt: die Standard-Ausgangslage
-aus `configs/`, eines der vorbereiteten Szenarien, oder das, was Sie sich im
+des Modells, eines der vorbereiteten Szenarien, oder das, was Sie sich im
 Bereich **Modell** selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
 steht; aufklappbar dazu die Begründung, warum es so aufgebaut ist.
 
@@ -295,7 +295,8 @@ für den nächsten Start.
 Name und Fragestellung des Laufs — sie erscheinen im Bericht und in der
 Lauf-Auswahl; ohne sie sind mehrere Läufe später schwer auseinanderzuhalten.
 Darunter «Als Szenario sichern», mit dem der aktuelle Stand als eigenes Preset
-unter `configs/sweeps/` landet, die Auswahl der Konfigurationsdateien, und ganz
+abgelegt wird (auf der Platte unter `configs/sweeps/`), die Auswahl der
+Konfigurationsdateien, und ganz
 unten die Rohdaten: was tatsächlich an die Simulation übergeben wird.
 
 ### Technik

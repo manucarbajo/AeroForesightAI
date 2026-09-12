@@ -91,8 +91,8 @@ def layout(draft: dict) -> html.Div:
             # für die Benennung, um die es in diesem Schritt geht.
             ui.expert(
                 ui.lede(
-                    "Legt den aktuellen Stand unter `configs/sweeps/` ab. Danach lässt er "
-                    "sich im ersten Schritt als Szenario wieder auswählen."
+                    "Legt den aktuellen Stand als Szenario ab. Danach lässt er sich im "
+                    "ersten Schritt wieder auswählen."
                 ),
                 ui.card(
                     html.Div(
@@ -126,8 +126,8 @@ def layout(draft: dict) -> html.Div:
             ),
             ui.expert(
                 ui.lede(
-                    "Welche Dateien unter `configs/` gelesen werden. Für den Normalfall "
-                    "bleibt hier alles auf Standard."
+                    "Welche hinterlegten Dateien der Lauf liest. Für den Normalfall bleibt "
+                    "hier alles auf Standard."
                 ),
                 html.Div(
                     ui.grid(

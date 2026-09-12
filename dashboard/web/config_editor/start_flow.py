@@ -120,7 +120,7 @@ def normalise(draft: dict) -> dict:
 # --- Der Satz in Klartext --------------------------------------------------
 
 _MODE_PLAIN = {
-    "basis": "der Standard-Ausgangslage aus `configs/`",
+    "basis": "der Standard-Ausgangslage des Modells",
     "sweep": "einem vorbereiteten Szenario",
     CUSTOM: "Ihren eigenen Einstellungen",
 }
@@ -364,7 +364,7 @@ def scenario_details(draft: dict) -> html.Div:
         return _kohaerenz_block(
             load_properties_config().kohaerenz,
             vorspann=ui.note(
-                "Der Lauf rechnet mit den Verläufen aus `configs/`. **Auch das ist "
+                "Der Lauf rechnet mit den hinterlegten Verläufen des Modells. **Auch das ist "
                 "ein Rahmenszenario** — es trägt eigene Annahmen über Politik, "
                 "Kosten und Konjunktur und heißt nur nicht so."
             ),
@@ -372,9 +372,7 @@ def scenario_details(draft: dict) -> html.Div:
 
     preset = next((s for s in list_sweep_presets() if s.id == choice), None)
     if preset is None:
-        return html.Div(
-            ui.alert(f"Preset `{choice}` liegt nicht unter `configs/sweeps/`.", "warning")
-        )
+        return html.Div(ui.alert(f"Das Szenario «{choice}» ist nicht hinterlegt.", "warning"))
 
     children: list = [
         # **Der volle Beschreibungstext steht hier**, seit die Kachel ihn auf

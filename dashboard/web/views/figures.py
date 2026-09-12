@@ -560,7 +560,7 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
     blocks.append(
         html.P(
             f"Verglichen werden alle {len(geschwister)} Szenario-Läufe unter "
-            "«outputs/sweeps/» — auch solche aus früheren Durchläufen.",
+            "aus einem Szenario-Vergleich — auch aus früheren Durchläufen.",
             className=f"{ui.CAPTION} mt-3",
         )
     )

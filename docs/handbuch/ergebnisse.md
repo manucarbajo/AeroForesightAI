@@ -125,7 +125,8 @@ Szenario endet.
 **Aussage 4 braucht mehr als einen Lauf.** Steht Ihr Lauf allein, sagt die
 Ansicht das und zeigt seine Faktorlage am Ende; ein Vergleich entsteht über
 **Einrichten → Szenario-Vergleich starten**. Verglichen werden dann alle
-Szenario-Läufe unter `outputs/sweeps/` — auch solche aus früheren Durchläufen.
+Szenario-Läufe aus einem Vergleich — auch solche aus früheren Durchläufen; auf
+der Platte liegen sie unter `outputs/sweeps/`.
 
 Unter **PNG-Export** kann eine Warnung über den Bildern stehen; sie sagt, dass
 dem Satz nicht zu trauen ist. Zwei Fälle gibt es:

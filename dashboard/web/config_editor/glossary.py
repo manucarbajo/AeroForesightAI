@@ -40,7 +40,7 @@ PARAMS: dict[str, Param] = {
     "scenario_mode": Param(
         label="Womit starten?",
         short="Standard, ein fertiges Szenario oder Ihre eigenen Einstellungen.",
-        detail="«Standard» rechnet mit den Dateien unter `configs/`. «Szenario-Preset» lädt "
+        detail="«Standard» rechnet mit den hinterlegten Werten des Modells. «Szenario-Preset» lädt "
         "eine vorbereitete Annahmenwelt, die Sie danach anpassen können. «Eigene Parameter» "
         "geht von dem aus, was in den übrigen Tabs eingestellt ist.",
     ),
@@ -67,8 +67,8 @@ PARAMS: dict[str, Param] = {
     "run_all_sweeps": Param(
         label="Alle Szenarien vergleichen",
         short="Rechnet jedes Preset einmal durch.",
-        detail="Läuft ohne Agenten-Dialog und damit deutlich schneller. Das Ergebnis landet "
-        "unter `outputs/sweeps/`.",
+        detail="Läuft ohne Agenten-Dialog und damit deutlich schneller. Die Ergebnisse stehen "
+        "danach unter «Ergebnisse», eines je Szenario.",
     ),
     "simulation_name": Param(
         label="Name des Laufs",
@@ -92,7 +92,7 @@ PARAMS: dict[str, Param] = {
     ),
     "apply_custom_overrides": Param(
         label="Eigene Werte anwenden",
-        short="Aus: Der Lauf nutzt nur die Dateien unter `configs/`.",
+        short="Aus: Der Lauf nutzt nur die hinterlegten Werte des Modells.",
         detail="Ist der Schalter aus, bleiben alle Anpassungen an Faktoren und Systemgrößen "
         "wirkungslos. Das ist die häufigste Ursache dafür, dass eine Änderung im Ergebnis "
         "nicht auftaucht.",
