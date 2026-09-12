@@ -21,6 +21,7 @@ eine Zahl, die für keinen von beiden stimmt.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from dashboard.web import components as ui
@@ -49,6 +50,38 @@ def _entwurfsmodus(draft: dict) -> str:
     return "mock" if draft.get("mock_llm", True) else "llm"
 
 
+def _jungste_laeufe(basis: Path, anzahl: int) -> list[Path]:
+    """Die `anzahl` jüngsten Laufordner mit Metadaten — ohne den Rest anzusehen.
+
+    **Gelesen wird der Ordner, nicht der Baum** (P7.11-U11.2, 2026-09-12). Bis
+    dahin stand hier `sorted(basis.glob("*/run_metadata.json"), reverse=True)`,
+    und das ist ein Unterschied, den man erst unter Last merkt: `glob` sieht
+    **jeden** Laufordner an, bevor `[:FENSTER]` zwanzig davon behält. Gemessen
+    am 2026-09-12 bei 698 Ordnern (137 davon mit Metadaten): 6950 `lstat`-
+    Aufrufe und **44 ms**, und weil `live_state` je Klick zweimal läuft, hing
+    fast ein Fünftel der Klickdauer an der Zahl vergangener Läufe — eine Größe,
+    die mit jedem Lauf wächst und auf einem frischen Checkout null ist. Der
+    Wächter aus P3.16 maß damit die Vorgeschichte der Maschine mit.
+
+    `os.scandir` liefert die Ordnereigenschaft aus dem Verzeichniseintrag, ohne
+    je Eintrag nachzufragen; abgebrochen wird, sobald `anzahl` Läufe mit
+    Metadaten zusammen sind. Die Auswahl bleibt dieselbe: die
+    lexikografisch größten Ordnernamen, also die jüngsten Zeitstempel.
+    """
+
+    with os.scandir(basis) as eintraege:
+        namen = sorted((e.name for e in eintraege if e.is_dir()), reverse=True)
+
+    gefunden: list[Path] = []
+    for name in namen:
+        pfad = basis / name / "run_metadata.json"
+        if pfad.is_file():
+            gefunden.append(pfad)
+            if len(gefunden) >= anzahl:
+                break
+    return gefunden
+
+
 def messwerte(modus: str, *, wurzel: Path | None = None) -> list[float]:
     """Sekunden je Tick aus vergangenen Läufen desselben Rechenmodus.
 
@@ -61,7 +94,7 @@ def messwerte(modus: str, *, wurzel: Path | None = None) -> list[float]:
         return []
 
     werte: list[float] = []
-    for pfad in sorted(basis.glob("*/run_metadata.json"), reverse=True)[:FENSTER]:
+    for pfad in _jungste_laeufe(basis, FENSTER):
         try:
             daten = json.loads(pfad.read_text(encoding="utf-8"))
         except Exception:  # noqa: BLE001 - ein kaputtes Artefakt ist kein Grund zu scheitern

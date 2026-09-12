@@ -473,6 +473,50 @@ class TestDieDauerWirdGemessenNichtGeraten:
             dauer.schaetzung(draft, wurzel=tmp_path) is None
         ), "Der Lauf mit Sprachmodell wurde mitgezählt"
 
+    def test_only_the_youngest_runs_count(self, draft, tmp_path):
+        """Das Fenster ist `FENSTER` Läufe breit — und es sind die jüngsten.
+
+        «Mehr macht die Schätzung nicht besser, aber das Einlesen langsamer»,
+        sagt der Docstring von `FENSTER`, «und ältere Läufe stammen eher von
+        einem anderen Codestand». Ohne einen Wächter ist das eine Absicht: Wer
+        die Auswahl anfasst, merkt nicht, wenn sie plötzlich alles einliest
+        oder die ältesten nimmt.
+        """
+
+        from dashboard.web.config_editor import dauer
+
+        # Ein einzelner uralter Ausreißer, der die Spanne sprengen würde.
+        self._lauf(tmp_path, "0000_uralt", sekunden=9000.0, ticks=40)
+        for nummer in range(dauer.FENSTER):
+            self._lauf(tmp_path, f"9{nummer:03d}_jung", sekunden=12.0, ticks=40)
+
+        satz = dauer.schaetzung(draft, wurzel=tmp_path)
+
+        assert satz and "9000" not in satz, satz
+        assert f"{dauer.FENSTER} vergleichbaren Läufen" in satz, satz
+
+    def test_a_folder_without_metadata_does_not_use_up_the_window(self, draft, tmp_path):
+        """Ein Ordner ohne Artefakt zählt nicht mit — sonst wäre das Fenster leer.
+
+        **Der Fall ist der Normalfall und nicht der Rand:** Ein abgebrochener
+        Lauf, ein Ordner aus einem Sichtprüfungslauf, ein halb geschriebenes
+        Verzeichnis — von 698 Ordnern unter `outputs/` trugen am 2026-09-12
+        genau 137 Metadaten. Würde die Auswahl die jüngsten `FENSTER`
+        **Ordner** nehmen statt der jüngsten `FENSTER` **Läufe**, verschwände
+        die Schätzung, sobald oben etwas Leeres liegt.
+        """
+
+        from dashboard.web.config_editor import dauer
+
+        for nummer in range(dauer.FENSTER + 5):
+            (tmp_path / f"z{nummer:03d}_leer").mkdir()
+        self._lauf(tmp_path, "a", sekunden=12.0, ticks=40)
+        self._lauf(tmp_path, "b", sekunden=20.0, ticks=40)
+
+        satz = dauer.schaetzung(draft, wurzel=tmp_path)
+
+        assert satz and "2 vergleichbaren Läufen" in satz, satz
+
     def test_the_runner_records_the_duration(self):
         """Ohne diese Zeile gäbe es nie Messwerte."""
 
