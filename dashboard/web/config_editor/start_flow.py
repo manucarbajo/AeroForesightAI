@@ -359,23 +359,20 @@ def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
                 [
                     # Der Rest der Begründung — er stand bis D3 offen da.
                     (
-                        ui.markdown(rest, class_name="af-md--tight af-md--caption mb-3 af-mass")
+                        ui.markdown(rest, class_name="af-md--tight af-md--caption mb-3")
                         if rest
                         else None
                     ),
-                    # **Auch eine Quellenangabe ist Fließtext** (P3.17). Sie trug
-                    # bis dahin kein Lesemaß — gemessen 109 Zeichen je Zeile bei
-                    # 1280 px, zugesagt sind 75. Eine Quelle ist die längste
-                    # Zeile, die eine Oberfläche zu bieten hat: Titel, Autor,
-                    # Jahr, Fundstelle in einer Zeile. **Als Markdown-Liste**,
-                    # weil die Quellen Tabellen in Backticks nennen.
+                    # **Als Markdown-Liste**, weil die Quellen Tabellen in
+                    # Backticks nennen. Eine Quelle ist die längste Zeile, die
+                    # eine Oberfläche zu bieten hat — Titel, Autor, Jahr,
+                    # Fundstelle in einer Zeile —, und sie läuft seit der
+                    # Rücknahme von E3 über die volle Breite.
                     ui.markdown(
                         "\n".join(f"- {quelle}" for quelle in kohaerenz.quellen),
-                        class_name="af-md--tight af-md--caption af-mass mb-3",
+                        class_name="af-md--tight af-md--caption mb-3",
                     ),
-                    ui.markdown(
-                        kohaerenz.vorbehalt, class_name="af-md--tight af-md--caption af-mass"
-                    ),
+                    ui.markdown(kohaerenz.vorbehalt, class_name="af-md--tight af-md--caption"),
                 ]
             ),
             # **Eine Klappe für alles, was belegt** (D3). Vorher hieß sie
@@ -384,17 +381,18 @@ def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
             title="Begründung und Quellen",
         ),
     ]
-    # **Der Deckel sitzt am Block, nicht an den Texten darin** (P7.1-U1.2).
-    # Vorher trug jeder Text sein eigenes `af-mass`, und weil das in `ch`
-    # rechnete, bekam jeder eine andere Breite: These 424 px, Begründung 363,
-    # die Quellenliste verschachtelt 341. Vier Breiten in einem Block — der
-    # Befund, mit dem das UI/UX-Audit angefangen hat. Am Block gilt eine
-    # Breite, und die Texte enden an derselben Kante.
+    # **Gar kein Deckel mehr** (Rücknahme von E3 am 2026-09-12). Der Weg
+    # hierher in drei Stufen, und jede war eine Messung: Zuerst trug jeder Text
+    # sein eigenes `af-mass` in `ch`, also bekam jeder eine andere Breite
+    # (These 424 px, Begründung 363, Quellenliste verschachtelt 341) — vier
+    # Breiten in einem Block, der Befund, mit dem das UI/UX-Audit angefangen
+    # hat. Dann saß mit U1.2 ein Deckel in `rem` am Block, und die Texte
+    # endeten an einer Kante — bei 512 px von 760. Jetzt endet die Kante dort,
+    # wo der Block endet.
     #
-    # **Möglich ist das erst seit D3**: Bis dahin mischte der Block drei
-    # Textgrößen, und ein Deckel in Pixeln kann die Zusage «höchstens 75
-    # Zeichen je Zeile» nicht für zwei Größen halten.
-    return html.Div(kinder, className="af-breite-lesen mb-4")
+    # **Was von D3 bleibt, ist die Regel dahinter:** Ein Leseblock hat eine
+    # Textgröße. Sie galt unabhängig vom Deckel.
+    return html.Div(kinder, className="mb-4")
 
 
 def scenario_details(draft: dict) -> html.Div:
@@ -437,7 +435,7 @@ def scenario_details(draft: dict) -> html.Div:
         # zwei Zeilen klemmt (W3.4). Er ist nicht verschwunden, er steht nur
         # dort, wo er gebraucht wird: bei dem einen Szenario, das zur Debatte
         # steht, statt zehnmal im Raster.
-        html.P(preset.description, className=f"{ui.CAPTION} mb-4 af-mass"),
+        html.P(preset.description, className=f"{ui.CAPTION} mb-4"),
         ui.note(
             "Das Szenario gilt **unverändert**: Politik, Kosten und Nachfrageumfeld kommen aus "
             f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
@@ -806,13 +804,10 @@ def preflight(
     tiles = _tiles(draft)
     return html.Div(
         [
-            # Der Satz ist Fliesstext und bekommt das Lesemass (W5.4):
-            # bei 1024 px lief er sonst auf 76 Zeichen je Zeile.
             ui.card(
                 html.Div(
                     ui.markdown(summary_sentence(draft)),
                     id=summary_id(slot),
-                    className="af-mass",
                 )
             ),
             html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),

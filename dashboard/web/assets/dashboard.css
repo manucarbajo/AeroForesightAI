@@ -239,54 +239,59 @@ html.dark {
     line-height: 1.55;
 }
 
-/* --- Die Breiten (P7.1-U1.2, entschieden am 2026-09-12) -------------------- */
-/* Vorher standen hier vier Deckel in drei Einheiten -- `48ch`, `34rem`, `46rem`,
-   `68rem` -- und der erste war der Befund, mit dem das UI/UX-Audit angefangen
-   hat: In Schritt 1 standen bei 1440 px SECHS Textbreiten und ELF verschiedene
-   rechte Kanten, waehrend die Zusage aus P1.9-W5.4 (hoechstens 75 Zeichen je
-   Zeile) an jeder einzelnen Stelle erfuellt war (42 bis 59).
+/* --- Die Breiten (P7.1-U1.2, E3 zurueckgenommen am 2026-09-12) ------------- */
+/* **Es gibt kein Lesemass mehr, und das ist eine Entscheidung mit Preis.**
+   Fliesstext bekommt keinen Deckel; er fuellt den Rahmen, in dem er steht.
+   Gedeckelt werden nur noch Bedienelemente (`--breite-formular`) und die Seite
+   selbst (`--breite-inhalt`) -- Kaesten und Spalten, keine Saetze.
 
-   **Warum `ch` das Problem war:** Es ist der Ziffernvorschub der Schrift des
-   jeweiligen ELEMENTS. Dieselbe Regel `max-width: 48ch` ergab deshalb 454 px an
-   einem 15-px-Absatz, 424 px an einem 14-px-Text und 363 px an einer
-   12-px-Bildunterschrift; verschachtelt kamen 341 px dazu. Dazu kommt eine
-   Fragilitaet, die P3.17 auf Linux gemessen hat: Chromium quantisiert den
-   Ziffernvorschub auf ganze Pixel, und `53ch` hat dort **nie** gehalten, was es
-   unter Windows zusagte.
+   **Der Weg dorthin in drei Schritten, weil jeder eine Messung ist.**
 
-   **Und warum ein einziger rem-Wert es auch nicht war** -- gemessen beim ersten
-   Anlauf am 2026-09-12: 608 px tragen bei 14 px **88** und bei 12 px **106**
-   Zeichen. Ein Deckel in Pixeln und eine Zusage ueber Zeichen sind nur
-   vereinbar, wenn er zur Textgroesse passt. Es gibt deshalb einen Deckel je
-   Prosagroesse -- nicht weil zwei besser klingen als einer, sondern weil die
-   Zusage es verlangt.
+   1. Bis U1.2 stand der Deckel in `ch`, dem Ziffernvorschub der Schrift des
+      jeweiligen ELEMENTS. Dieselbe Regel `max-width: 48ch` ergab 454 px an
+      einem 15-px-Absatz, 424 px an einem 14-px-Text und 363 px an einer
+      12-px-Bildunterschrift -- in Schritt 1 standen SECHS Textbreiten und ELF
+      rechte Kanten uebereinander, waehrend die Zusage aus P1.9-W5.4
+      (hoechstens 75 Zeichen je Zeile) an jeder Stelle erfuellt war.
+   2. U1.2 machte daraus zwei Tokens in `rem`, am Block statt am Element:
+      512 px fuer Fliesstext, 416 px fuer kleine Prosa. Zwei Breiten statt
+      sechs, eine Einheit statt drei -- und die Texte eines Blocks endeten an
+      einer Kante.
+   3. **Und der Befund blieb trotzdem stehen.** Nachgemessen bei 1440 px in
+      einer 760 px breiten Spalte: der breiteste Fliesstext 509 px (67,0 %),
+      die Lede 409 px (53,8 %). Der Deckel war dabei nicht zu eng, sondern
+      AUSGEREIZT -- die Lede trug auf ihren 409 px schon 72 der 75 erlaubten
+      Zeichen.
 
-   **Die Zahlen sind GEZAEHLT, nicht zurueckgerechnet**, und der zweite Anlauf
-   ist daran gescheitert: Aus 454 px und 49 Zeichen ergaben sich scheinbar
-   9,27 px je Zeichen, also 66 Zeichen fuer 608 px. Der Waechter zaehlt dagegen
-   die laengste wirklich gesetzte Zeile und kommt auf **82** -- 7,42 px je
-   Zeichen. Vor exakt diesem Fehler warnt Teil 7 von `test_web_overflow.py` in
-   seinem Docstring, und ich bin trotzdem hineingelaufen. Und die Beziehung ist
-   nicht linear, weil der Umbruch an Wortgrenzen haengt: 34 rem ergaben gemessen
-   **76** Zeichen, also eins zu viel. Gewaehlt sind deshalb **32 rem** mit
-   Abstand statt einer Punktlandung -- gemessen 72 Zeichen. Fuer 12-px-Prosa
-   ergeben 26 rem dieselben rund 72.
+   **Die Rechnung, die die Entscheidung erzwingt:** gemessen 7,17 px je Zeichen
+   bei 15 px Schrift. Um 760 px mit hoechstens 75 Zeichen zu fuellen, muesste
+   der Fliesstext rund 21 px gross sein. «Text fuellt seine Spalte» und
+   «hoechstens 75 Zeichen je Zeile» sind bei dieser Spaltenbreite nicht
+   gleichzeitig erfuellbar; E1 hat die Schriftgroesse entschieden, also fiel die
+   andere Zusage.
 
-   **Die Regel dazu steht seit D3 als Zusage im Code:** Ein Leseblock hat EINE
-   Textgroesse (`test_web_start_flow.py`). Damit gilt je Block genau einer dieser
-   Deckel, und die Texte darin enden an derselben Kante.
+   **Das Argument dafuer ist gemessen, nicht aesthetisch:** Die 75-Zeichen-Regel
+   schuetzt den Ruecksprung des Auges ueber VIELE Zeilen. Fast jeder Text hier
+   ist 150 bis 300 Zeichen lang und steht bei voller Breite auf einer bis zwei
+   Zeilen -- dieser Ruecksprung kommt kaum vor. Dreissig Prozent der Breite fuer
+   einen Zweizeiler zu opfern ist der falsche Tausch.
 
-   Herleitung und Preis: `docs/entscheidung_gestaltungssystem_2026-09-12.md`. */
+   **Der Preis, benannt:** Ein langer Text laeuft jetzt ueber rund 106 Zeichen
+   je Zeile (15 px in 760 px), im Handbuch ueber rund 150. Das liegt ueber jeder
+   typografischen Empfehlung und ist eine Entscheidung fuer diese Oberflaeche,
+   keine Erkenntnis ueber Lesbarkeit.
+
+   **Die Zusage ist umgedreht, nicht geloescht:** Kein Prosablock wird schmaler
+   gesetzt als der Platz, den er hat. Gemessen im Browser je Block, am
+   Verhaeltnis seiner Breite zur verfuegbaren Breite seines Elternelements --
+   Teil 7 von `tests/test_web_overflow.py`.
+
+   Herleitung und Preis: `docs/entscheidung_gestaltungssystem_2026-09-12.md`
+   (zweiter Nachtrag). */
 
 :root {
-    --breite-lesen: 32rem; /* 512 px, ~72 Zeichen bei 15 px -- Fliesstext */
-    --breite-lesen-klein: 26rem; /* 416 px, ~72 Zeichen bei 12 px -- Hinweis, Bildunterschrift */
     --breite-formular: 30rem; /* 480 px -- ein kurzes Formular aus drei Feldern */
     --breite-inhalt: 68rem; /* 1088 px -- Karten, Raster, Tabellen, Fokusbereich */
-}
-
-.af-breite-lesen {
-    max-width: var(--breite-lesen);
 }
 
 .af-breite-formular {
@@ -295,15 +300,6 @@ html.dark {
 
 .af-breite-inhalt {
     max-width: var(--breite-inhalt);
-}
-
-/* **Nicht verschachteln.** Ein Lesemass in einem Lesemass verengte den inneren
-   Text ein zweites Mal: Die Quellenliste der Kohaerenzbegruendung stand deshalb
-   bei 341 px statt bei 363. Der aeussere Deckel gilt, der innere gibt auf. */
-.af-breite-lesen .af-breite-lesen,
-.af-breite-lesen .af-mass,
-.af-mass .af-mass {
-    max-width: none;
 }
 
 /* --- Dashs eigene Design-Tokens --------------------------------------------- */
@@ -1998,7 +1994,6 @@ html.dark .af-input[type="number"] {
     line-height: 1.55;
     color: var(--text-muted);
     margin-top: 0.375rem;
-    max-width: var(--breite-lesen-klein);
 }
 
 /* **Der Hinweis schlägt `.af-md`** (P7.1-U1.1, vorgezogen am 2026-09-11).
@@ -2040,9 +2035,14 @@ html.dark .af-input[type="number"] {
 /* **Betonung ohne eigene Groesse** (D3, 2026-09-12). Die These eines Rahmens
    hob sich vorher durch `af-md--betont` ab -- also durch eine andere GROESSE
    (14 gegen 12 px). Genau daran ist U1.2 gescheitert: Ein Leseblock mit zwei
-   Groessen laesst keinen Pixeldeckel zu, der die Zusage «hoechstens 75 Zeichen
-   je Zeile» haelt. Die These traegt ihre Betonung deshalb in Farbe und
-   Gewicht und bleibt auf der Groesse des Blocks. */
+   Groessen laesst keinen Pixeldeckel zu, der die damalige Zusage «hoechstens
+   75 Zeichen je Zeile» haelt. Die These traegt ihre Betonung deshalb in Farbe
+   und Gewicht und bleibt auf der Groesse des Blocks.
+
+   **Die Zusage ist seither zurueckgenommen, die Regel bleibt** (zweiter
+   Nachtrag der Entscheidungsvorlage): Ein Leseblock mit zwei Groessen liest
+   sich schlechter als einer mit einer -- das galt unabhaengig vom Deckel und
+   ist der Grund, aus dem D3 hier stehen bleibt. */
 .af-md.af-md--these {
     color: var(--text);
     font-weight: 500;
@@ -2661,87 +2661,30 @@ html.dark .af-input[type="number"] {
     grid-template-columns: minmax(0, 1fr);
 }
 
-/* **Das Lesemass** (P1.9-W5.4). Gemessen wurden bis zu **124** Zeichen je
-   Zeile; die typografische Spanne ist 45 bis 75. Ueber etwa 75 verliert das
-   Auge am Zeilenende die Spur zum naechsten Anfang.
+/* **Was von `ch` bleibt, weil es beim naechsten Mal wieder lockt.** Bis zum
+   2026-09-12 stand hier das Lesemass, und zwar in `ch` -- mit dem Argument,
+   die Zusage handle von Zeichen. Das Argument war richtig, der Preis war eine
+   Breite je Schriftgroesse. Zwei Messungen gehoeren aufgehoben:
 
-   **In `ch`, nicht in `rem`.** Die Zusage handelt von Zeichen, also steht sie
-   in der Einheit, die Zeichen misst -- ein `rem`-Deckel haengt an der
-   Schriftgroesse, und genau daran ist der erste Anlauf gescheitert: 34rem
-   ergaben im grossen Fliesstext 84, in der kleineren Bildunterschrift aber 90
-   Zeichen. `ch` ist die Breite der Null; Ziffern sind breiter als der
-   Durchschnittsbuchstabe, deshalb steht hier weniger als 75.
+   1. **`ch` ist textabhaengig.** Es legt eine Breite fest, keine Zeichenzahl:
+      Bei 56ch standen im selben Absatzformat 71 bis 78 Zeichen.
+   2. **`ch` ist plattformabhaengig.** Chromium quantisiert den Vorschub der
+      Null unter Linux auf ganze Pixel -- gemessen an derselben Stelle, gleiche
+      Schrift, Inter auf beiden geladen:
 
-   **Und deshalb mit Luft.** Ein `ch`-Deckel legt eine Breite fest, keine
-   Zeichenzahl: Wie viele Buchstaben hineinpassen, haengt davon ab, welche.
-   Bei 56ch standen im selben Absatzformat 71 bis 78 Zeichen -- dieselbe
-   Regel, zwei Ergebnisse.
+        Windows   "0" = 7,78 px   ->   53ch = 401 px   ->   71 Zeichen
+        Linux     "0" = 8,00 px   ->   53ch = 424 px   ->   78 Zeichen
 
-   **53ch -> 48ch am 2026-09-07, und der Grund korrigiert den Absatz darueber.**
-   `ch` ist nicht nur textabhaengig, sondern auch **plattformabhaengig**: Die
-   Einheit ist der Vorschub der Null, und Chromium quantisiert den unter Linux
-   auf ganze Pixel. Gemessen an derselben Stelle, gleiche Schrift, gleiche
-   Groesse, Inter auf beiden geladen und benutzbar:
-
-     Windows   "0" = 7,78 px   ->   53ch = 401 px   ->   71 Zeichen
-     Linux     "0" = 8,00 px   ->   53ch = 424 px   ->   78 Zeichen
-
-   Dieselbe Regel, sechs Prozent mehr Breite, zehn Prozent mehr Zeichen -- und
-   damit ueber der Zusage von 75. Die 53 stammten aus einer Messung unter
-   Windows; unter Linux hat der Deckel nie gehalten, es hat nur niemand
-   gemessen (der Browser-Waechter lief bis zum 2026-09-07 nirgends automatisch,
-   siehe P3.17).
-
-   **Gewaehlt wird nach der Plattform, auf der das Produkt laeuft** -- das
-   Deployment-Ziel ist ein Linux-Server. 48ch bringen Linux auf rund 71
-   Zeichen und Windows auf rund 64; beides liegt in der Spanne 45 bis 75,
-   Windows nur konservativer. Der umgekehrte Weg -- die Zusage auf 78 heben,
-   weil Linux so rendert -- haette die Zusage der Umgebung angepasst.
-
-   Der Deckel sitzt am Fliesstext, nicht am Schritt: Ein Raster aus
-   Auswahlfeldern ordnet sich in der Breite, ein Satz zerfaellt darin. */
-/* `af-mass` hiess nach seiner Einheit; die Einheit ist weg, der Name bleibt an
-   dreizehn Aufrufstellen. Wer eine neue baut, nimmt `af-breite-lesen` am
-   Container -- oder gar keinen Deckel, wenn der Block schon einen hat.
-
-   **Zwei Werte, ausgewaehlt nach der Textrolle des Elements.** Die Regel mit
-   zwei Klassen gewinnt ordnungsunabhaengig gegen die mit einer; dasselbe
-   Muster, mit dem P7.1-U1.1 die Kollision von `.af-md` gegen `.af-hint`
-   aufgeraeumt hat. Ohne diese Unterscheidung trueg ein 12-px-Hinweis 106
-   Zeichen je Zeile. */
-.af-mass {
-    max-width: var(--breite-lesen);
-}
-
-/* **Drei Regeln statt einer Gruppe**, und der Grund ist ein Werkzeug: Der
-   Kaskaden-Nachrechner in `tests/test_web_drawers.py` ueberspringt jeden
-   Selektor mit Komma -- eine Gruppe waere fuer ihn unsichtbar, und die Zusage
-   «kleine Prosa bekommt den engeren Deckel» liefe ins Leere. */
-.af-md--caption.af-mass {
-    max-width: var(--breite-lesen-klein);
-}
-
-.af-hint.af-mass {
-    max-width: var(--breite-lesen-klein);
-}
-
-.af-schrift-klein.af-mass {
-    max-width: var(--breite-lesen-klein);
-}
-
+      Dieselbe Regel, sechs Prozent mehr Breite, zehn Prozent mehr Zeichen --
+      und damit ueber der damaligen Zusage von 75. Die 53 stammten aus einer
+      Messung unter Windows; auf dem Deployment-Ziel hat der Deckel nie
+      gehalten, es hat nur bis P3.17 niemand gemessen. */
 /* **Breite je Schritt** (P1.9-W5.4). Die Form des Inhalts entscheidet, nicht
    seine Menge: Karten und Raster nehmen die Spalte, ein kurzes Formular aus
    drei Feldern bekommt sie geschenkt und wird davon nicht besser. Gemessen
    stand ein 245 px breites Feld in einer 760 px breiten Spalte. */
 .af-body--lesen {
     max-width: var(--breite-formular);
-}
-
-/* Code ist kein Fliesstext: Eine JSON-Vorschau bricht nicht bei 75 Zeichen um,
-   sie wird gescrollt. Das Lesemass gilt dort nicht. */
-.af-mass pre,
-.af-mass code {
-    max-width: none;
 }
 
 .af-wizard__rail {

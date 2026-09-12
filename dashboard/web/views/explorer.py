@@ -114,7 +114,7 @@ def render(
                 "Fragen Sie den gesamten Lauf ab — z. B. Verlauf über alle Ticks, Vergleiche "
                 "oder einzelne Perioden. Optional: Tick-Nummer eingeben oder in der Frage "
                 "nennen (z. B. «Was passierte bei Tick 15?»).",
-                className=f"font-body {ui.BESCHRIFTUNG} af-text-body mb-5 max-w-3xl",
+                className=f"font-body {ui.BESCHRIFTUNG} af-text-body mb-5",
             ),
             ui.card(
                 ui.grid(

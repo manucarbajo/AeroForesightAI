@@ -155,7 +155,7 @@ def render(progress: Progress, draft: dict) -> html.Div:
                         "Die Zahlen entstehen jetzt in Python. Sie können in der Zwischenzeit "
                         "unter «Ergebnisse» einen früheren Lauf ansehen — der Fortschritt "
                         "bleibt dann unten rechts sichtbar.",
-                        className=f"{ui.CAPTION} mt-2 max-w-2xl",
+                        className=f"{ui.CAPTION} mt-2",
                     ),
                 ],
                 className="mb-6",
@@ -208,7 +208,7 @@ def render(progress: Progress, draft: dict) -> html.Div:
                             "seinen Rechenlauf selbst und fragt zwischen den Ticks nicht "
                             "nach. Er läuft bis zum Ende durch."
                         ),
-                        className=f"{ui.CAPTION} mt-2 max-w-2xl",
+                        className=f"{ui.CAPTION} mt-2",
                     ),
                     html.Div(
                         id=CANCEL_STATUS,

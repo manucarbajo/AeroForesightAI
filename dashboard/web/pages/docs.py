@@ -348,11 +348,11 @@ def render(chapter: Chapter) -> html.Div:
                 chapter.part.upper(), className=f"font-body {ui.KLEIN} tracking-wider af-text-muted"
             ),
             html.H1(chapter.title, className=f"{ui.H1} mt-1"),
-            html.P(chapter.summary, className="font-body af-text-body mt-2 mb-8 max-w-3xl"),
+            html.P(chapter.summary, className="font-body af-text-body mt-2 mb-8"),
             *blocks,
             _chapter_footer(chapter),
         ],
-        className="max-w-3xl",
+        className="af-breite-inhalt",
     )
 
 

@@ -42,13 +42,15 @@ KLEIN = "af-schrift-klein"
 LABEL = f"block font-body {BESCHRIFTUNG} font-medium af-text-body mb-1.5"
 #: Der kleine Erklaertext unter einem Feld oder einer Zustandsanzeige.
 #:
-#: **Mit Lesemass seit P3.17.** Ohne lief er so weit wie seine Zone; gemessen
-#: hat es der Browser-Waechter an `status_dot` in der Verfuegbarkeitsanzeige:
-#: 106 Zeichen je Zeile bei 1024 px («Nicht erreichbar: [WinError 10061] …»),
-#: zugesagt sind 75. Eine Fehlermeldung eines fremden Dienstes ist die
-#: laengste Zeichenkette, die hier ankommen kann — und niemand schreibt sie
-#: kuerzer.
-HINT = f"font-body {KLEIN} af-text-muted mt-1.5 af-mass"
+#: **Ohne Deckel seit dem 2026-09-12** (Ruecknahme von E3): Er laeuft so weit
+#: wie der Rahmen, in dem er steht. P3.17 hatte ihm ein Lesemass gegeben, weil
+#: der Browser-Waechter an `status_dot` 106 Zeichen je Zeile gemessen hatte;
+#: zugesagt waren 75. **Die Beobachtung von damals bleibt wahr und ist
+#: aufschlussreich:** Die laengste Zeichenkette, die hier ankommen kann, ist
+#: die Fehlermeldung eines fremden Dienstes («Nicht erreichbar: [WinError
+#: 10061] …») — die schreibt niemand kuerzer, und ein Deckel hat sie nicht
+#: gekuerzt, sondern nur umgebrochen.
+HINT = f"font-body {KLEIN} af-text-muted mt-1.5"
 CAPTION = f"font-body {KLEIN} af-text-muted"
 #: Der Einleitungssatz eines Schritts oder eines Blocks — **Fliesstext**.
 #:
@@ -484,19 +486,19 @@ def console(lines: Iterable[Any], *, empty: str = "Noch keine Meldungen.") -> ht
 
 
 def alert(text: Any, kind: str = "info", *, class_name: str = "") -> html.Div:
-    """Ein Hinweis mit Symbol — **und mit Lesemaß** (P3.17).
+    """Ein Hinweis mit Symbol.
 
-    Der Rumpf trug bis zum 2026-09-05 kein `af-mass`, und damit lief **jeder**
-    Hinweis dieser Anwendung so weit, wie seine Zone breit ist. Gemessen hat es
-    der Browser-Wächter an der längsten Stelle: Der Hinweis auf Verläufe, die vor
-    dem Laufende aufhören, brauchte **98 Zeichen** je Zeile — zugesagt sind 75
-    (P1.9-W5.4).
+    **Ohne Lesemaß seit dem 2026-09-12**, und der Weg dorthin ist eine Lehre
+    über Zusagen. P3.17 hat dem Rumpf ein `af-mass` gegeben, weil der
+    Browser-Wächter hier 98 Zeichen je Zeile gemessen hatte; zugesagt waren 75.
+    Die Zusage selbst ist mit der Rücknahme von E3 gefallen — nachgemessen war
+    der Deckel nicht zu eng, sondern ausgereizt: Um eine 760 px breite Spalte
+    mit höchstens 75 Zeichen zu füllen, müsste Fließtext rund 21 px groß sein.
+    Ein Hinweis füllt jetzt den Rahmen, in dem er steht.
 
-    **Das Maß gehört an die Komponente und nicht an die Aufrufstelle**, aus
-    demselben Grund wie bei `explainer` am 2026-09-03: Sonst ist es eine Frage
-    der Sorgfalt an jedem einzelnen Aufruf, und der nächste vergisst es. Es ist
-    eine Obergrenze — ein Hinweis in einer engen Zone bleibt so breit, wie er
-    war.
+    **Was von P3.17 bleibt, ist die Stelle:** Breite gehört an die Komponente
+    und nicht an die Aufrufstelle — sonst ist sie eine Frage der Sorgfalt an
+    jedem einzelnen Aufruf, und der nächste vergisst sie.
     """
 
     tone, icon_name = _ALERT_VARIANTS.get(kind, _ALERT_VARIANTS["info"])
@@ -504,7 +506,7 @@ def alert(text: Any, kind: str = "info", *, class_name: str = "") -> html.Div:
     return html.Div(
         [
             icon(icon_name, "text-lg shrink-0 mt-0.5"),
-            html.Div(body, className=f"font-body {BESCHRIFTUNG} min-w-0 af-mass"),
+            html.Div(body, className=f"font-body {BESCHRIFTUNG} min-w-0"),
         ],
         className=f"af-alert {tone} flex items-start gap-3 px-4 py-3 {class_name}".strip(),
     )
@@ -515,7 +517,7 @@ def empty_state(text: str, *, hint: str | None = None, icon_name: str = "inbox")
         [
             icon(icon_name, "text-3xl af-text-faint"),
             html.P(text, className=f"font-body {BESCHRIFTUNG} af-text-body mt-3"),
-            html.P(hint, className=f"{CAPTION} mt-1 max-w-md") if hint else None,
+            html.P(hint, className=f"{CAPTION} mt-1") if hint else None,
         ],
         className=f"{CARD} flex flex-col items-center justify-center text-center px-6 py-12",
     )
@@ -581,13 +583,13 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
     meisten reicht; wer mehr will, klappt an Ort und Stelle auf, statt die Seite
     zu verlassen.
 
-    **`af-mass` seit dem 2026-09-03, und es ist eine Struktur- und keine
-    Textkorrektur.** Der Körper einer Erklärung ist Fließtext und lief bis dahin
-    ohne Lesemaß über die ganze Spalte — gemessen 89 Zeichen je Zeile bei 1280 px
-    (zugesagt sind höchstens 75, P1.9-W5.4). Aufgefallen ist es an **einer**
-    Erklärung, weil P2.0-C den Schalter «Eigene Werte anwenden» nach Schritt 1
-    verschoben hat; betroffen war aber **jede** Erklärung an jedem Feld. Den Text
-    zu kürzen hätte den einen Fall behoben und den Mechanismus stehen lassen.
+    **Das Lesemaß, das hier vom 2026-09-03 bis zum 2026-09-12 stand, ist weg**
+    (Rücknahme von E3): Der Körper einer Erklärung füllt den Rahmen, in dem er
+    steht. Die Beobachtung von damals bleibt trotzdem richtig und gehört
+    aufgehoben — aufgefallen war das fehlende Maß an **einer** Erklärung, weil
+    P2.0-C den Schalter «Eigene Werte anwenden» nach Schritt 1 verschoben hatte;
+    betroffen war aber **jede** Erklärung an jedem Feld. Den Text zu kürzen
+    hätte den einen Fall behoben und den Mechanismus stehen lassen.
     """
 
     return html.Details(
@@ -599,7 +601,7 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
                 ],
                 className="af-acc__summary flex items-center gap-1 cursor-pointer select-none py-1",
             ),
-            markdown(text, class_name="af-md--tight af-text-body af-mass pl-5 pb-1"),
+            markdown(text, class_name="af-md--tight af-text-body pl-5 pb-1"),
         ],
         className="af-acc mt-1.5",
     )
@@ -608,15 +610,14 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
 def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
     """Erklärender Fließtext ohne Alarmcharakter — Kontext, keine Meldung.
 
-    **Mit Lesemaß** (P1.9-W5.4): Der Text bricht spätestens bei rund 68 Zeichen
-    um, auch wenn die Spalte breiter ist. `max-width` streckt nichts — in einer
-    engen Zelle bleibt der Hinweis so schmal, wie die Zelle ist.
+    **Ohne Lesemaß seit dem 2026-09-12** (Rücknahme von E3): Der Text füllt den
+    Rahmen, in dem er steht.
     """
 
     return html.Div(
         [
             icon(icon_name, "text-base af-text-faint shrink-0 mt-0.5"),
-            dcc.Markdown(text, className="af-md af-md--tight af-mass"),
+            dcc.Markdown(text, className="af-md af-md--tight"),
         ],
         className=f"flex items-start gap-2.5 font-body {BESCHRIFTUNG} af-text-body "
         "af-surface-inset af-bordered rounded px-4 py-3",
@@ -654,7 +655,7 @@ def lede(text: str) -> dcc.Markdown:
     Stelle zu viel, an der sie auseinanderlaufen kann.
     """
 
-    return dcc.Markdown(text, className="af-md af-md--tight font-body af-mass mb-4")
+    return dcc.Markdown(text, className="af-md af-md--tight font-body mb-4")
 
 
 def code_block(text: str, *, max_height: str = "24rem") -> html.Pre:

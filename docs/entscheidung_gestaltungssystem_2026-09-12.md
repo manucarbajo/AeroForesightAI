@@ -32,15 +32,17 @@ Ansichtsarbeit.
 | --- | --- | --- |
 | **E1** | Schriftrollen | **Sieben Rollen, kleinste 12 px.** 11 px entfällt; 30, 22 und 17 px verschwinden ersatzlos. Die Konsole wird dadurch höher, und die Deckel des Höhenwächters wandern bewusst mit. |
 | **E2** | Textfarbstufen | **Zwei lesbare, eine gedämpfte, eine für Abgeschaltetes.** `--text-muted` wird 1,5 % dunkler (`#64748b` → `#617087`), `--text-faint` verliert seine Rolle als Textfarbe. |
-| **E3** | Lesemaß | **38 rem = 608 px** (≈ 66 Zeichen bei 15 px), gesetzt am Container. Karten und Raster behalten `--breite-inhalt`. |
+| **E3** | Lesemaß | ~~38 rem = 608 px, gesetzt am Container.~~ **Am selben Tag zurückgenommen: das Lesemaß fällt ganz** — Fließtext füllt seinen Rahmen, `--breite-formular` und `--breite-inhalt` bleiben. Siehe den zweiten Nachtrag. |
 | **E4** | Abstände | **4-px-Raster mit acht Stufen** (4, 8, 12, 16, 24, 32, 48, 64). Werte unter 4 px bleiben für Rahmen erlaubt, mit Begründung. |
 | **E5** | Bausteine | **Vollständig, einschließlich des gestalteten Bestätigungsdialogs.** Damit ist **D7 mitentschieden**. |
 | **D3** | Begründungen | **These und zwei Sätze sichtbar, in Fließtextgröße; der Rest hinter einer Klappe «Begründung und Quellen».** Am selben Tag nachentschieden, weil E3 ohne D3 nicht baubar war — siehe den Nachtrag unten. |
 
-**Was daraus folgt, und zwar sofort:** Die Zusage aus P1.9-W5.4 wird künftig **am
-Container gemessen** statt am Element, der Höhenwächter bekommt neue Deckel, und
+**Was daraus folgt, und zwar sofort:** Der Höhenwächter bekommt neue Deckel, und
 `dcc.ConfirmDialogProvider` verschwindet aus `dashboard/web/` — das ist das
-Abnahmekriterium von P7.1.
+Abnahmekriterium von P7.1. **Die Zusage aus P1.9-W5.4** sollte dabei zunächst nur
+vom Element an den Container wandern; sie ist am selben Tag ganz
+zurückgenommen und durch ihr Gegenteil ersetzt worden — siehe den zweiten
+Nachtrag.
 
 **Nachtrag vom selben Tag: D3 ist mitentschieden, und E3 musste dafür warten.**
 Der erste Anlauf von U1.2 ist an einer Zusage gescheitert, die diese Vorlage
@@ -58,10 +60,99 @@ vorgezogen und entschieden:** Sichtbar sind These und die ersten zwei Sätze der
 Begründung, beide in Fließtextgröße; Restbegründung, Quellen und Vorbehalt
 liegen hinter einer Klappe «Begründung und Quellen». Sichtbar sind damit 513 bis
 787 Zeichen je Szenario statt 1163 bis 2429. **E3 bleibt wie entschieden** — es
-ist jetzt baubar, weil der Block eine Größe hat.
+ist jetzt baubar, weil der Block eine Größe hat. *(Dieser letzte Satz hat noch
+am selben Tag aufgehört zu gelten; siehe den zweiten Nachtrag.)*
 
 **Was offen bleibt:** D2, D4, D5 und D6 des Audits. Sie hängen an
 Produktfragen, nicht an den Tokens.
+
+**Zweiter Nachtrag vom selben Tag: E3 ist zurückgenommen — das Lesemaß fällt
+ganz.** Anlass war der Blick auf den fertigen Schritt 1: Text und Überschrift
+füllten die Spalte nur zur Hälfte. Nachgemessen im Browser bei 1440 px, Spalte
+760 px:
+
+| Text in Schritt 1 | Breite | Anteil | Schrift | Zeichen/Zeile |
+| --- | ---: | ---: | ---: | ---: |
+| Lede unter der Überschrift | 409 px | **53,8 %** | 12 px | **72** |
+| These des Kohärenzblocks | 495 px | 65,1 % | 15 px | 69 |
+| Begründungsabsatz | 509 px | **67,0 %** | 15 px | **72** |
+| Quellenzeile | 343 px | 45,1 % | 12 px | 57 |
+
+**Der Deckel war nicht zu eng, er war ausgereizt.** Die Lede trug auf ihren
+409 px schon 72 der 75 erlaubten Zeichen. Gemessen sind es 7,17 px je Zeichen
+bei 15 px Schrift — **um 760 px mit höchstens 75 Zeichen zu füllen, müsste der
+Fließtext rund 21 px groß sein.** «Text füllt seine Spalte» und «höchstens 75
+Zeichen je Zeile» sind bei dieser Spaltenbreite nicht gleichzeitig erfüllbar;
+E1 hat die Schriftgröße schon entschieden, also fällt die andere Zusage.
+
+**Entschieden:** Alle Deckel für Fließtext fallen. `--breite-formular` (die
+Breite eines kurzen Formulars) und `--breite-inhalt` (der Rahmen der Seite)
+bleiben — sie deckeln Bedienelemente und Seiten, keine Sätze.
+
+**Das Argument dafür ist gemessen, nicht ästhetisch:** Die 75-Zeichen-Zusage
+schützt den Rücksprung des Auges über *viele* Zeilen. Fast jeder Text im
+Assistenten ist 150 bis 300 Zeichen lang und steht bei voller Breite auf einer
+bis zwei Zeilen — der Rücksprung, um den es geht, kommt dort kaum vor. Dreißig
+Prozent der Breite für einen Zweizeiler zu opfern ist der falsche Tausch.
+
+**Der Preis, gemessen statt geschätzt.** Nach dem Umbau zählt der
+Browser-Wächter als längste gesetzte Zeile:
+
+| Ort | längste Zeile |
+| --- | ---: |
+| Bereich «Modell» | **168 Zeichen** |
+| Ergebnisse / Übersicht | 135 |
+| Leitstand | 128 |
+| Schritt 1 | 119 |
+| Handbuch | 76 |
+
+Die 106 Zeichen, mit denen die Entscheidung gerechnet wurde, gelten für eine
+760 px breite Spalte; wo der Rahmen bis `--breite-inhalt` (1088 px) reicht, sind
+es mehr. **168 Zeichen liegen weit über jeder typografischen Empfehlung.** Das
+ist eine bewusste Entscheidung für diese Oberfläche und keine Erkenntnis über
+Lesbarkeit — und es ist die Zahl, an der man sie später bestreiten kann.
+
+**Die Zusage wird nicht gelöscht, sondern umgedreht.** An die Stelle von
+«höchstens 75 Zeichen je Zeile» tritt: **Kein Prosablock wird schmaler gesetzt
+als der Platz, den er hat.** Gemessen wird je Block im Browser, am Verhältnis
+seiner Breite zur verfügbaren Breite seines Elternelements — nicht an einer
+Klassenliste, und mit Mutationsprobe.
+
+**Dabei ist eine Zuschreibung von mir falsch gewesen, und das gehört dazu.**
+Zuerst hieß es hier, der bisherige Wächter (`FUELLUNG_MIN = 60`) messe nur
+`input, select, textarea, button, img, svg` und damit keinen Text.
+Nachgelesen stimmt das nicht: Die Zeichenschleife speist dieselbe Messung mit
+den Textrechtecken. **Blind war er aus einem anderen Grund** — er misst *eine
+Hüllbreite* für den ganzen Schritt, von der linkesten bis zur rechtesten Tinte.
+Schritt 1 ist voll von Auswahlkarten, deren Raster die Spalte füllt; die
+Füllung stand bei ~100 %, während die Lede daneben auf 53,8 % lag. Eine
+Hüllbreite kann nicht sehen, dass *innerhalb* von ihr ein Absatz die Hälfte
+leer lässt. Die Konsequenz ist dieselbe, die Lehre eine andere: nicht «Text
+zählt nicht mit», sondern **eine Summe über eine Fläche findet keinen Befund an
+einem einzelnen Block**.
+
+**Und der neue Wächter musste gegen seine eigene Blindheit geprüft werden**, weil
+er beim ersten scharfen Durchlauf sofort grün war. Gezählt: 52 Prosablöcke über
+die sechs Schritte, 2 bis 194 je Ansicht, alle bei 99,8 bis 100,2 %. Eine
+Auswahl, die Bedienelemente, Code, Tabellen, Navigationsmarken und jedes Kind
+eines Flex- oder Grid-Containers überspringt, könnte am Ende nichts übriglassen
+und wäre dann trivial erfüllt; `PROSA_BLOECKE_MIN = 30` hält das fest.
+
+**Und U1.2 ist damit zum größeren Teil wieder abgeräumt**, am Tag seiner
+Fertigstellung. Was bleibt, ist die Arbeit, die trägt: dass es überhaupt Tokens
+gibt, dass Deckel am Block statt am Element sitzen, und die drei gemessenen
+Fehlschläge, die jetzt als Zusagen dastehen. Was fällt, ist der Wert — und der
+war die Entscheidung dieser Vorlage, nicht die des Pakets.
+
+**Ein zweiter Befund über U1.2 kam beim Abräumen heraus:** Es hat die
+`af-*`-Deckel vereinheitlicht und die **Tailwind-Deckel übersehen**. `max-w-md`,
+`max-w-2xl` (3×), `max-w-3xl` (4×) und `max-w-4xl` standen weiter an Prosa,
+während das Paket «zwei Textbreiten» meldete — darunter der Kapitelrumpf des
+Handbuchs und die Erzählung eines Laufs. Sie sind jetzt weg, und was an
+Bedienelementen bleibt, steht als Sperrklinke mit Grund in
+`tests/test_web_breiten.py`. **Von den gefallenen Prosa-Deckeln lag kein
+einziger in der Schrittfolge** — ein Wächter, der nur die Schritte abgeht, hätte
+alle durchgelassen; deshalb messen die neuen Zusagen über alle Bereiche.
 
 **Nachtrag vom selben Tag: eine Lede ist Fließtext.** Sie war zweierlei — die
 eines Schritts stand in der Rolle einer Bildunterschrift (12 px), die eines

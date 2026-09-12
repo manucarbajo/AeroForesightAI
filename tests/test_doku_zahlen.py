@@ -412,7 +412,7 @@ REGISTER: tuple[Zahl, ...] = (
     Zahl(
         "hoechster_deckel_1280",
         "CLAUDE.md",
-        r"seit P3\.17 sind es sechs Schritte, der höchste \*\*(\d+,\d+)\*\*",
+        r"sechs Schritte, \*\*drei davon auf 1,00\*\*, der höchste \*\*(\d+,\d+)\*\*",
         lambda: _hoechster_deckel(1280),
         "Größter Wert in DECKEL[1280] von tests/test_web_overflow.py, gelesen über den "
         "Syntaxbaum (ohne Playwright zu importieren).",
@@ -420,7 +420,7 @@ REGISTER: tuple[Zahl, ...] = (
     Zahl(
         "hoechster_deckel_1024",
         "CLAUDE.md",
-        r"der höchste \*\*\d+,\d+\*\* \(1024 px: (\d+,\d+);",
+        r"der höchste \*\*\d+,\d+\*\* \(1024 px: (\d+,\d+)\)",
         lambda: _hoechster_deckel(1024),
         "Größter Wert in DECKEL[1024] von tests/test_web_overflow.py.",
     ),

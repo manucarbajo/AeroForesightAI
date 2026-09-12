@@ -149,7 +149,11 @@ class Step:
     #: `False` heißt: darf übersprungen werden, ohne dass etwas fehlt.
     required: bool = True
     #: Wie breit der Rumpf werden darf (P1.9-W5.4). `"lesen"` deckelt ihn auf
-    #: das Lesemaß, `"voll"` lässt ihn die Spalte nehmen. **Der Unterschied ist
+    #: die Breite eines kurzen Formulars, `"voll"` lässt ihn die Spalte nehmen.
+    #: **Der Name `"lesen"` stammt aus der Zeit des Lesemaßes und passt nicht
+    #: mehr** — gedeckelt wird hier ein Formular und kein Satz; umbenannt wird
+    #: er nicht in diesem Commit, weil Umbenennen und Verhaltensänderung nicht
+    #: zusammengehören. **Der Unterschied ist
     #: die Form des Inhalts, nicht seine Menge:** Ein Raster aus Auswahlfeldern
     #: (Ausgangslage) und eine Reihe Karten (Szenario, Rechenmodus) brauchen
     #: Breite und ordnen sich darin; ein kurzes Formular aus drei Feldern
@@ -219,11 +223,8 @@ STEPS: list[Step] = [
         llm_pipeline.layout,
         required=False,
         # **Bewusst «voll», obwohl es ein kurzes Formular ist.** Mit dem
-        # Lesemaß wuchs der Schritt von 1,00 auf 1,08 Bildschirme — bezahlt
-        # für ein Schmälern der Eingabefelder, das niemandem hilft: Sein
-        # Fließtext ist über `af-mass` ohnehin gedeckelt, und seine Spalte
-        # füllt er auch so. Wo Lesbarkeit und Höhe sich widersprechen und die
-        # Lesbarkeit schon anderweitig gesichert ist, gewinnt die Höhe.
+        # engeren Rumpf wuchs der Schritt von 1,00 auf 1,08 Bildschirme —
+        # bezahlt für ein Schmälern der Eingabefelder, das niemandem hilft.
     ),
     Step(
         "start",
@@ -720,7 +721,7 @@ def _final_step(draft: dict) -> html.Div:
             ui.markdown(
                 "«Als Szenario speichern» legt die Einstellungen unter einem Namen ab. "
                 "Sie stehen danach im ersten Schritt zur Auswahl.",
-                class_name="af-md--tight af-md--caption mt-4 af-mass",
+                class_name="af-md--tight af-md--caption mt-4",
             ),
         ]
     )
@@ -809,7 +810,7 @@ def content(draft: dict, current: int) -> html.Div:
                     # schmalste Text des Bildschirms: 409 px von 760, weil
                     # 12-px-Prosa fuer 75 Zeichen nur 416 px braucht. Sie
                     # teilt jetzt die Groesse des Textes, den sie einleitet.
-                    html.P(step.lede, className=f"{ui.LEDE} mt-1 af-mass"),
+                    html.P(step.lede, className=f"{ui.LEDE} mt-1"),
                 ],
                 className="mb-6",
             ),

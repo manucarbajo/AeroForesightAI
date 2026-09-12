@@ -510,15 +510,28 @@ DECKEL: dict[int, dict[str, float]] = {
         # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
-        "Schritt 1": 1.93,
+        # **1,93 → 1,85 (1024: 2,00 → 1,92) am 2026-09-12, und es ist ein
+        # Gewinn.** Mit der Rücknahme von E3 gibt es keinen Deckel für
+        # Fließtext mehr; er füllt seinen Rahmen. Breiterer Text braucht
+        # weniger Zeilen — genau die Umkehrung des Zuwachses, den die beiden
+        # Absätze darüber beschreiben. **Eingetragen, weil ein Deckel, der über
+        # dem Ist-Stand schwebt, wieder aus dem falschen Grund grün ist**; die
+        # Sperrklinke hätte ihn hier allerdings nicht gemeldet, denn 0,08 liegen
+        # unter ihrem Schlupf von 0,25.
+        #
+        # **Der Tag hat diesen Schritt insgesamt von 2,09 auf 1,85 gebracht**
+        # (1024: 2,17 → 1,92), in drei Stufen: D3 legte die Begründung hinter
+        # eine Klappe (−0,10), U1.2 gab dem Block eine Breite statt sechs
+        # (−0,06), und die Rücknahme von E3 nahm den Deckel ganz (−0,08).
+        "Schritt 1": 1.85,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
         # weiter**: P2.0-C hat den vierten entfernt. Der alte Schritt 5 (1,31)
         # ist der neue 4 und misst 1,22, der alte 6 (1,00) ist der neue 5 und
         # misst 1,02. Nicht gewachsen, nur umnummeriert.
-        "Schritt 4": 1.23,
-        "Schritt 5": 1.02,
+        "Schritt 4": 1.22,  # 1,23 -> 1,22 mit der Ruecknahme von E3
+        "Schritt 5": 1.00,  # 1,02 -> 1,00: der Schritt passt jetzt auf einen Schirm
         # **1,29 → 1,45 mit W5.4, und das ist bezahlt, nicht verrutscht.** Das
         # Lesemaß bricht den Preflight-Text bei 75 statt bei 124 Zeichen um;
         # dieselben Sätze brauchen dadurch mehr Zeilen. Der Handel: 0,16
@@ -543,7 +556,12 @@ DECKEL: dict[int, dict[str, float]] = {
         # Alternative — die Schätzung aus der Messung herausnehmen — hätte den
         # Wächter blind für genau den Teil gemacht, den ein Nutzer im Alltag
         # sieht.
-        "Schritt 6": 1.71,  # +0,07 aus `af-mass` 53ch -> 48ch, siehe Schritt 1
+        # **1,71 → 1,59 am 2026-09-12.** Derselbe Grund wie bei Schritt 1, und
+        # hier ist er am deutlichsten: Der Preflight-Text ist der längste
+        # Fließtext der Schrittfolge. W5.4 hatte ihn von 124 auf 75 Zeichen
+        # umgebrochen und dafür 0,16 Schirme bezahlt; ohne Deckel läuft er
+        # wieder weit und holt 0,12 davon zurück.
+        "Schritt 6": 1.59,
     },
     1024: {
         "Einstieg": 1.00,
@@ -570,14 +588,14 @@ DECKEL: dict[int, dict[str, float]] = {
         # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
-        "Schritt 1": 2.00,
+        "Schritt 1": 1.92,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
-        "Schritt 4": 1.23,
-        "Schritt 5": 1.03,
-        "Schritt 6": 1.71,  # siehe die Begründung bei 1280
+        "Schritt 4": 1.22,
+        "Schritt 5": 1.01,
+        "Schritt 6": 1.59,  # siehe die Begründung bei 1280
     },
 }
 
@@ -864,25 +882,68 @@ def test_the_detector_would_notice_a_relapse(page):
 # minmax(0, 1fr)`, gemessen `240px 760px` bei 1040 px Zone. Dieselben 760 px
 # trugen einen Schritt mit drei Feldern und ein Raster aus sieben Auswahlen.
 #
-# Zwei Dinge werden hier gemessen, und ein drittes am Einstieg:
+# Drei Dinge werden hier gemessen:
 #
 # 1. **Wie viel seiner Spalte ein Schritt füllt.** Nicht das breiteste
 #    Einzelfeld: Ein Raster aus sieben schmalen Auswahlen füllt seine Spalte
 #    vollständig und meldet trotzdem 32 %. Gemessen wird die Ausdehnung aller
-#    Tinte im Rumpf, bezogen auf die Breite des Rumpfes.
-# 2. **Wie lang die Zeilen werden** — in Zeichen, gezählt, nicht aus der
-#    Pixelbreite geschätzt. Der Schätzer lag um rund 10 % daneben, genug, um
-#    einen Deckel für wirkungslos zu halten, der wirkt. Gemessen wurden vorher
-#    bis zu **124** Zeichen; die typografische Spanne ist 45 bis 75.
+#    Tinte im Rumpf — Bedienelemente **und** Text —, bezogen auf die Breite des
+#    Rumpfes.
+# 2. **Ob ein Prosablock schmaler gesetzt wird als sein Platz** (seit dem
+#    2026-09-12, siehe unten).
 # 3. **Ob der Einstieg eine Spalte für eine Liste vorhält, die er nicht hat.**
-
-#: Was eine Zeile höchstens tragen darf. Über 75 Zeichen verliert das Auge am
-#: Zeilenende die Spur zum nächsten Anfang.
-ZEILE_MAX = 75
+#
+# **Was hier bis zum 2026-09-12 stand, und warum es weg ist.** Punkt 2 lautete
+# «wie lang die Zeilen werden» mit `ZEILE_MAX = 75`. Diese Zusage ist mit der
+# Rücknahme von E3 gefallen, und zwar an einer Rechnung: gemessen 7,17 px je
+# Zeichen bei 15 px Schrift — um eine 760 px breite Spalte mit höchstens 75
+# Zeichen zu füllen, müsste Fließtext rund 21 px groß sein. «Text füllt seine
+# Spalte» und «höchstens 75 Zeichen» sind bei dieser Spaltenbreite nicht
+# gleichzeitig erfüllbar; E1 hat die Schriftgröße entschieden. Die Herleitung
+# steht im zweiten Nachtrag von
+# `docs/entscheidung_gestaltungssystem_2026-09-12.md`.
+#
+# **Mitgenommen ist die Messung, nicht nur die Zahl:** Die Zeichen je Zeile
+# werden weiterhin **gezählt** — sie stehen jetzt in der Meldung von Punkt 2,
+# wo sie die Diagnose tragen. Aus der Pixelbreite zurückzurechnen lag beim
+# Versuch um 24 % daneben, und der Umbruch hängt an Wortgrenzen: Dieselbe
+# Regel liefert je Text ein anderes Ergebnis. Wer hier wieder schätzt, misst
+# nichts.
 
 #: Wie viel seiner Spalte ein Schritt mindestens füllen muss. Darunter steht
 #: der Inhalt in einer Spalte, die für ihn zu breit ist.
+#:
+#: **Diese Zahl allein hat den Befund Q1 nicht gefunden, und das ist der Grund
+#: für Punkt 2.** Sie misst **eine** Hüllbreite für den ganzen Schritt — von der
+#: linkesten bis zur rechtesten Tinte. Schritt 1 ist voll von Auswahlkarten,
+#: deren Raster die Spalte füllt; die Füllung stand damit bei ~100 %, während
+#: der Text daneben auf 53,8 % lag. Eine Hüllbreite kann nicht sehen, dass
+#: *innerhalb* von ihr ein Absatz die Hälfte leer lässt.
 FUELLUNG_MIN = 60.0
+
+#: Wie viel des verfügbaren Platzes ein **einzelner Prosablock** mindestens
+#: einnehmen muss (seit dem 2026-09-12).
+#:
+#: **99 und nicht 100**, weil subpixelgenaue Layouts sonst rauschen: Ein Absatz
+#: in einem Elternelement mit gebrochener Breite liegt regelmäßig Bruchteile
+#: eines Pixels darunter. Was wirklich deckelt, liegt weit tiefer — die Werte,
+#: die diese Zusage ausgelöst haben, lagen bei 45 bis 67 %.
+PROSA_FUELLUNG_MIN = 99.0
+
+#: Wie viele Prosablöcke die Messung über die sechs Schritte mindestens
+#: finden muss. **Gegen die eigene Blindheit**, nicht gegen die Oberfläche:
+#: Gemessen sind 52 (21, 4, 3, 9, 9, 6), der Boden liegt bei 30.
+PROSA_BLOECKE_MIN = 30
+
+#: Blöcke, deren Breite **Bedeutung tragen darf** — je mit Grund, weil eine
+#: Ausnahme ohne Grund in sechs Monaten eine Regel ist.
+PROSA_AUSNAHMEN = {
+    ".af-chat-user": (
+        "Sprechblase der Frage im Explorer: Die Breite unterscheidet zusammen "
+        "mit `ml-auto`, wer spricht. Füllte sie den Rahmen, wäre die "
+        "Ausrichtung sinnlos."
+    ),
+}
 
 _BREITE = """
 () => {
@@ -915,44 +976,110 @@ _BREITE = """
     rumpf.querySelectorAll("input, select, textarea, button, img, svg").forEach(
         (el) => { if (sichtbar(el)) nimm(el.getBoundingClientRect()); });
 
-    // (2) Zeichen je Zeile: jedes Zeichen bekommt sein eigenes Rechteck,
-    //     Zeichen mit derselben Oberkante stehen auf derselben Zeile.
-    let zeile = 0, probe = null, wo = null, traeger = null;
+    // (2) Text zaehlt in die Huellbreite mit. **Das war schon immer so**, und
+    //     es ist der Grund, warum `FUELLUNG_MIN` den Befund Q1 trotzdem nicht
+    //     gefunden hat: Gemessen wird die Huelle von der linkesten bis zur
+    //     rechtesten Tinte, nicht jeder Block einzeln. Ein Kartenraster ueber
+    //     die ganze Spalte setzt sie auf 100 %, und ein halbbreiter Absatz
+    //     darin bleibt unsichtbar. Dafuer gibt es `_PROSA`.
     const lauf = document.createTreeWalker(spalte, NodeFilter.SHOW_TEXT);
     let k;
     while ((k = lauf.nextNode())) {
         const text = k.textContent || "";
         if (!text.trim()) continue;
         if (!sichtbar(k.parentElement)) continue;
-        if (rumpf.contains(k)) {
-            const rr = document.createRange();
-            rr.selectNodeContents(k);
-            Array.from(rr.getClientRects()).forEach(nimm);
+        if (!rumpf.contains(k)) continue;
+        const rr = document.createRange();
+        rr.selectNodeContents(k);
+        Array.from(rr.getClientRects()).forEach(nimm);
+    }
+
+    return {
+        rumpf: Math.round(rb.width),
+        fuellung: rechts > 0 ? +(((rechts - links) / rb.width) * 100).toFixed(1) : null,
+    };
+}
+"""
+
+
+#: Je Prosablock: seine Breite, der Platz, den er hatte, und die Zeichen, die
+#: seine laengste Zeile wirklich traegt.
+#:
+#: **Gemessen wird der naechste blockartige Vorfahr des Textes**, nicht der
+#: Textknoten: Ein `<strong>` mitten im Satz ist inline und so breit wie sein
+#: Wort. Und der Platz kommt vom **Elternelement**, nicht von der Zone -- ein
+#: Absatz in einer schmalen Karte soll die Karte fuellen, nicht den Bildschirm.
+_PROSA = ("""
+() => {
+    const AUSNAHMEN = __AUSNAHMEN__;
+    const wurzel = document.querySelector(".af-shell__main") || document.body;
+    const AUSSEN = ".af-wizard__nav, .af-wizard__navhost, .af-wizard__counter";
+    const sichtbar = (el) => {
+        if (!el || (el.closest && el.closest(AUSSEN))) return false;
+        for (let n = el; n && n !== document.body; n = n.parentElement) {
+            const st = getComputedStyle(n);
+            if (st.display === "none" || st.visibility === "hidden") return false;
+            if (n.classList && n.classList.contains("af-nur-vorlesen")) return false;
         }
-        if (text.trim().length < 40) continue;      // Beschriftungen sind kein Fliesstext
-        // Code bricht nicht bei 75 Zeichen um, er wird gescrollt.
-        if (k.parentElement.closest("pre, code")) continue;
-        // **Zwei weitere Ausnahmen, beide am 2026-09-07 gemessen dazugekommen.**
-        // Sie sind aufgefallen, als `af-mass` von 53ch auf 48ch enger wurde:
-        // Danach war die laengste Zeile nicht mehr Fliesstext, sondern das hier.
-        //
-        // 1. **Was nicht umbrechen kann.** Tailwinds `truncate` ist
-        //    `white-space: nowrap` plus Ellipse -- der Text steht per
-        //    Konstruktion auf einer Zeile und wird beschnitten, nicht
-        //    umgebrochen. Die Zusage handelt davon, dass das Auge am
-        //    Zeilenende die Spur zum naechsten Anfang verliert; wo es keinen
-        //    naechsten Anfang gibt, gilt sie nicht. Drei Beschriftungen der
-        //    Schrittfolge meldeten so bis zu 72 Zeichen.
-        // 2. **Kennungen in der Festbreitenschrift.** `.af-delta__wert` zeigt
-        //    Commit-Kuerzel und Branch-Namen; gemessen 75 Zeichen, und die
-        //    Laenge haengt am *Branch-Namen der messenden Maschine*, nicht am
-        //    Produkt. Dieselbe Begruendung wie fuer `pre`/`code` eine Zeile
-        //    darueber -- eine Kennung liest man nicht, man vergleicht sie.
-        const stil = getComputedStyle(k.parentElement);
-        if (stil.whiteSpace === "nowrap" || stil.whiteSpace === "pre") continue;
-        if (/mono/i.test(stil.fontFamily)) continue;
+        return true;
+    };
+    // Was seine Breite nicht aus dem Textfluss bekommt: Bedienelemente, Code
+    // (wird gescrollt statt umgebrochen) und die Marken der Navigationen.
+    const KEIN_FLIESSTEXT = "pre, code, textarea, select, option, button, summary,"
+        + " .af-step, .af-viewbar__item, .af-tab, table";
+    const blockartig = (el) => {
+        const d = getComputedStyle(el).display;
+        return d === "block" || d === "flow-root" || d === "list-item";
+    };
+
+    const befunde = [];
+    const gesehen = new Set();
+    const lauf = document.createTreeWalker(wurzel, NodeFilter.SHOW_TEXT);
+    let k;
+    while ((k = lauf.nextNode())) {
+        const text = (k.textContent || "").trim();
+        // Unter 40 Zeichen ist es eine Beschriftung und kein Fliesstext. Eine
+        // Beschriftung fuellt ihren Rahmen per Wortlaenge nicht -- und soll es
+        // auch nicht.
+        if (text.length < 40) continue;
+        if (!sichtbar(k.parentElement)) continue;
+        if (k.parentElement.closest(KEIN_FLIESSTEXT)) continue;
+
+        let blk = k.parentElement;
+        while (blk && blk !== wurzel && !blockartig(blk)) blk = blk.parentElement;
+        if (!blk || blk === wurzel) continue;
+        if (gesehen.has(blk)) continue;
+        gesehen.add(blk);
+
+        const eltern = blk.parentElement;
+        if (!eltern) continue;
+        const st = getComputedStyle(eltern);
+        // **Ein Flex- oder Grid-Container bemisst seine Kinder selbst.** Dort
+        // ist «schmaler als der Platz» keine Aussage ueber den Text, sondern
+        // ueber die Spur: Eine Kartenbeschreibung in einem dreispaltigen
+        // Raster SOLL ein Drittel breit sein.
+        if (/flex|grid/.test(st.display)) continue;
+
+        const platz = eltern.clientWidth
+            - parseFloat(st.paddingLeft || 0) - parseFloat(st.paddingRight || 0);
+        if (!(platz > 1)) continue;
+        const breit = blk.getBoundingClientRect().width;
+
+        // Welcher Vorfahr deckelt, und auf welchen Wert? Ohne diese Angabe ist
+        // ein Prozentwert nur eine Beschwerde.
+        let deckel = null;
+        for (let n = blk; n && n !== document.body; n = n.parentElement) {
+            const mw = getComputedStyle(n).maxWidth;
+            if (mw && mw !== "none") {
+                deckel = mw + " an " + n.tagName + "." + String(n.className).slice(0, 40);
+                break;
+            }
+        }
+
+        // Zeichen je Zeile -- gezaehlt, nicht geschaetzt.
         const zeilen = new Map();
-        for (let i = 0; i < text.length; i++) {
+        const roh = k.textContent || "";
+        for (let i = 0; i < roh.length; i++) {
             const r = document.createRange();
             r.setStart(k, i);
             r.setEnd(k, i + 1);
@@ -961,88 +1088,29 @@ _BREITE = """
             const oben = Math.round(rect.top);
             zeilen.set(oben, (zeilen.get(oben) || 0) + 1);
         }
-        zeilen.forEach((anzahl) => {
-            if (anzahl > zeile) {
-                zeile = anzahl;
-                probe = text.trim().slice(0, 40);
-                // **Ungekuerzt.** Bis zum 2026-09-07 stand hier `.slice(0, 40)`,
-                // und die Meldung endete regelmaessig auf "... mt-1 af-" --
-                // abgeschnitten genau vor `af-mass`, also vor der Klasse, nach
-                // der die Meldung darunter fragt. Ein Befund, der die eigene
-                // Frage nicht beantwortet, kostet einen Durchlauf.
-                wo = k.parentElement.tagName + "." + String(k.parentElement.className);
-                traeger = k.parentElement;
-            }
+        let laengste = 0;
+        zeilen.forEach((n) => { if (n > laengste) laengste = n; });
+
+        let ausnahme = null;
+        for (const sel of AUSNAHMEN) {
+            if (blk.closest(sel)) { ausnahme = sel; break; }
+        }
+
+        befunde.push({
+            anteil: +((100 * breit / platz).toFixed(1)),
+            breite: Math.round(breit),
+            platz: Math.round(platz),
+            zeichen: laengste,
+            schrift: getComputedStyle(blk).fontSize,
+            deckel: deckel,
+            wo: blk.tagName + "." + String(blk.className).slice(0, 60),
+            probe: text.slice(0, 50),
+            ausnahme: ausnahme,
         });
     }
-
-    // **Womit gemessen wurde, nicht nur was gemessen wurde** (2026-09-07).
-    //
-    // Die Zeichenzahl haengt an der Schrift: `af-mass` deckelt auf `53ch`, und
-    // `ch` ist die Breite der "0" in der gerade gesetzten Schrift. Wie viele
-    // Kleinbuchstaben in dieselbe Breite passen, entscheidet das Verhaeltnis von
-    // Ziffern- zu Buchstabenbreite -- und das ist je Schrift verschieden.
-    //
-    // Gemessen: lokal (Windows) <= 75 Zeichen, auf ubuntu-latest 78. Beide Male
-    // mit `af-mass` am Element und beide Male nach `document.fonts.ready`.
-    // Dessen Versprechen loest allerdings auch auf, wenn eine Schrift **nicht**
-    // geladen werden konnte -- es heisst "Laden abgeschlossen", nicht "Laden
-    // erfolgreich". Ohne die Angaben hier laesst sich nicht unterscheiden, ob
-    // Inter fehlt oder ob 53ch fuer Inter zu weit ist. Das sind zwei ganz
-    // verschiedene Reparaturen, und eine davon trifft das Deployment-Ziel.
-    let schrift = null;
-    if (traeger) {
-        const st = getComputedStyle(traeger);
-        // **Die Eigenschaften einzeln setzen, nicht die Kurzschreibweise.**
-        // `getComputedStyle(el).font` kam in Chromium leer zurueck, die Sonde
-        // erbte damit die Standardgroesse und meldete 10,38 px fuer eine Ziffer
-        // bei 12 px Schrift — 0,87 em, was fuer keine Schrift stimmt. Der erste
-        // Anlauf dieser Diagnose war damit selbst die Fehlmessung, die er
-        // aufklaeren sollte.
-        const probe0 = document.createElement("span");
-        probe0.textContent = "0";
-        probe0.style.position = "absolute";
-        probe0.style.visibility = "hidden";
-        probe0.style.whiteSpace = "pre";
-        probe0.style.fontFamily = st.fontFamily;
-        probe0.style.fontSize = st.fontSize;
-        probe0.style.fontWeight = st.fontWeight;
-        probe0.style.fontStyle = st.fontStyle;
-        // **Ohne `letter-spacing`**, weil `1ch` den reinen Vorschub der «0»
-        // meint. Ein Hinweis zum Deuten der Zahl: Unter Windows misst diese
-        // Sonde 7,78 px, waehrend der Deckel 401,227 px / 53 = **7,57 px** je
-        // `ch` unterstellt — 2,7 % Abstand. An der Laufweite liegt es nicht,
-        // das ist nachgeprueft (ohne sie kommt derselbe Wert heraus); woran
-        // dann, ist offen. Fuer die Diagnose reicht es: Verglichen wird
-        // Plattform gegen Plattform, nicht diese Sonde gegen `ch`.
-        document.body.appendChild(probe0);
-        const nullBreite = probe0.getBoundingClientRect().width;
-        probe0.remove();
-        const familien = new Set();
-        document.fonts.forEach((f) => {
-            if (f.status === "loaded") familien.add(f.family);
-        });
-        schrift = {
-            berechnet: st.fontFamily,
-            groesse: st.fontSize,
-            inter_benutzbar: document.fonts.check(st.fontSize + " Inter"),
-            null_px: +nullBreite.toFixed(2),
-            // Zum Gegenrechnen: `af-mass` deckelt auf 53ch, also muss
-            // `breite_px` ungefaehr 53 * null_px sein. Weicht das ab, misst die
-            // Sonde etwas anderes als der Browser umbricht.
-            breite_px: +traeger.getBoundingClientRect().width.toFixed(1),
-            deckel: st.maxWidth,
-            geladen: Array.from(familien).sort().join(", ") || "(keine)",
-        };
-    }
-
-    return {
-        rumpf: Math.round(rb.width),
-        fuellung: rechts > 0 ? +(((rechts - links) / rb.width) * 100).toFixed(1) : null,
-        zeichen: zeile, probe: probe, wo: wo, schrift: schrift,
-    };
+    return befunde;
 }
-"""
+""").replace("__AUSNAHMEN__", repr(sorted(PROSA_AUSNAHMEN)).replace("'", '"'))
 
 _EINSTIEG_RASTER = """
 () => {
@@ -1107,45 +1175,6 @@ class TestJederSchrittHatSeineBreite:
             f"{FUELLUNG_MIN:.0f} % ihrer Spalte:\n  " + "\n  ".join(schmal)
         )
 
-    def test_no_line_runs_longer_than_the_eye_can_follow(self, page):
-        """Keine Zeile über 75 Zeichen — gezählt, nicht geschätzt.
-
-        Aus der Pixelbreite mit einer angenommenen halben Geviertbreite
-        zurückzurechnen lag um rund 10 % daneben. Das genügte, um einen Deckel
-        für wirkungslos zu halten, der wirkte.
-        """
-
-        lang = []
-        for titel, mass in _durch_die_schritte(page):
-            if not mass or mass["zeichen"] <= ZEILE_MAX:
-                continue
-            zeile = f"{titel}: {mass['zeichen']} Zeichen in {mass['wo']} — {mass['probe']!r}"
-            # **Womit gemessen wurde, gehört in die Meldung.** Ohne die Schrift
-            # ist «78 Zeichen» nicht zu deuten: Es kann heißen, dass `af-mass`
-            # zu weit ist, oder dass Inter fehlt und die Ersatzschrift gemessen
-            # wurde. Der erste Anlauf am 2026-09-07 hat genau daran einen
-            # CI-Durchlauf verloren.
-            if mass.get("schrift"):
-                s = mass["schrift"]
-                zeile += (
-                    f"\n      Schrift: {s['berechnet']} @ {s['groesse']}, "
-                    f"«0» = {s['null_px']} px, Inter benutzbar: {s['inter_benutzbar']}"
-                    # **Die Breite gehört dazu.** Der erste Anlauf hat sie
-                    # gemessen und nicht berichtet; die Deutung «53ch sind hier
-                    # 424 px» blieb damit gerechnet statt gemessen.
-                    f"\n      Breite: {s['breite_px']} px bei max-width {s['deckel']}"
-                    f"\n      geladen: {s['geladen']}"
-                )
-            lang.append(zeile)
-
-        assert not lang, (
-            f"Diese Zeilen laufen bei {page.breite} px über {ZEILE_MAX} Zeichen:\n  "
-            + "\n  ".join(lang)
-            + "\n\nDas Lesemaß (`af-mass`) fehlt dort — oder es ist zu weit. "
-            "Sagt «Inter benutzbar: False», ist keins von beidem der Befund, "
-            "sondern die Auslieferung der Schriften."
-        )
-
     def test_the_entry_reserves_no_column_for_a_list_it_does_not_have(self, page):
         """Am Einstieg gibt es keine Schrittliste — und keine Spalte dafür.
 
@@ -1166,11 +1195,174 @@ class TestJederSchrittHatSeineBreite:
         )
 
 
+def _prosa_befunde(page) -> list[dict]:
+    """Jeder Prosablock, der schmaler steht als sein Platz — Ausnahmen heraus."""
+
+    return [
+        b for b in page.evaluate(_PROSA) if b["anteil"] < PROSA_FUELLUNG_MIN and not b["ausnahme"]
+    ]
+
+
+#: Steht kein `max-width` daneben, verengt etwas anderes — und das gehört in die
+#: Meldung, sonst sucht der Nächste an der falschen Stelle.
+_OHNE_DECKEL = "(keiner — dann verengt eine Breite, ein Rand oder ein `width`)"
+
+
+def _melde_prosa(wo: str, breite: int, befunde: list[dict]) -> str:
+    zeilen = [
+        f"{b['breite']} von {b['platz']} px ({b['anteil']} %), "
+        f"{b['zeichen']} Zeichen bei {b['schrift']}\n"
+        f"      in {b['wo']}\n"
+        f"      Deckel: {b['deckel'] or _OHNE_DECKEL}\n"
+        f"      Text: {b['probe']!r}"
+        for b in befunde
+    ]
+    return (
+        f"{wo} bei {breite} px: {len(befunde)} Prosablock/-blöcke stehen "
+        f"schmaler als ihr Platz (Mindestfüllung {PROSA_FUELLUNG_MIN} %):\n  "
+        + "\n  ".join(zeilen)
+        + "\n\nFließtext füllt seinen Rahmen (Rücknahme von E3 am 2026-09-12). "
+        "Ein Deckel gehört an einen Kasten oder ein Bedienelement, nicht an "
+        "einen Satz. Trägt die Breite hier wirklich Bedeutung, gehört ein "
+        "Selektor mit Grund in `PROSA_AUSNAHMEN`."
+    )
+
+
+class TestKeinProsablockIstSchmalerAlsSeinPlatz:
+    """**Die umgedrehte Zusage** (2026-09-12, Rücknahme von E3).
+
+    An die Stelle von «höchstens 75 Zeichen je Zeile» tritt ihr Gegenteil:
+    *Kein Prosablock wird schmaler gesetzt als der Platz, den er hat.* Gemessen
+    wird je Block das Verhältnis seiner Breite zur verfügbaren Breite seines
+    Elternelements — nicht an einer Klassenliste, sondern am Layout.
+
+    **Warum es diese Messung braucht, obwohl `FUELLUNG_MIN` daneben steht:**
+    Jene misst **eine** Hüllbreite für den ganzen Schritt. Schritt 1 ist voll
+    von Auswahlkarten, deren Raster die Spalte füllt — die Füllung stand bei
+    ~100 %, während die Lede daneben auf 53,8 % lag. **Der Befund, mit dem das
+    ganze UI/UX-Audit angefangen hat, war für jeden Wächter grün**, und das war
+    keine Nachlässigkeit, sondern die Grenze einer Hüllbreite.
+
+    **Gemessen wird über alle Bereiche, nicht nur über die Schrittfolge** — und
+    das ist der Teil, der beim Bauen aufgefallen ist: Von den Prosa-Deckeln, die
+    an diesem Tag gefallen sind, lag **kein einziger** in der Schrittfolge. Sie
+    standen im Handbuch (`max-w-3xl` am Kapitelrumpf), im Explorer, in der
+    Lauf-Erzählung und im Ladebildschirm. Ein Wächter, der nur die Schritte
+    abgeht, hätte alle fünf durchgelassen.
+    """
+
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_the_area_lets_its_prose_fill_the_frame(self, page, name):
+        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
+        _warte_auf_schriften(page)
+        befunde = _prosa_befunde(page)
+
+        assert not befunde, _melde_prosa(name, page.breite, befunde)
+
+    def test_every_step_lets_its_prose_fill_the_frame(self, page):
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+        page.click("#wizard-way-new")
+        page.wait_for_timeout(RUHE_MS)
+
+        from dashboard.web.config_editor import wizard
+
+        for index in range(len(wizard.STEPS)):
+            if index:
+                page.click("#wizard-next")
+                page.wait_for_timeout(RUHE_MS)
+            page.wait_for_function(
+                "() => { const e = document.getElementById('wizard-content');"
+                " return e && e.getBoundingClientRect().height > 50; }",
+                timeout=10_000,
+            )
+            _warte_auf_schriften(page)
+            befunde = _prosa_befunde(page)
+            titel = wizard.STEPS[index].title
+
+            assert not befunde, _melde_prosa(f"Einrichten / {titel}", page.breite, befunde)
+
+    def test_every_result_view_lets_its_prose_fill_the_frame(self, page):
+        page.goto(page.basis + "runs", wait_until="networkidle")
+        page.wait_for_selector(".af-viewbar__item")
+
+        reiter = page.locator(".af-viewbar__item").count()
+        for index in range(reiter):
+            beschriftung = page.locator(".af-viewbar__item").nth(index).inner_text()
+            page.locator(".af-viewbar__item").nth(index).click()
+            page.wait_for_timeout(RUHE_MS)
+            _warte_auf_schriften(page)
+            befunde = _prosa_befunde(page)
+
+            assert not befunde, _melde_prosa(f"Ergebnisse / {beschriftung}", page.breite, befunde)
+
+    def test_every_exception_carries_a_reason(self):
+        """Eine Ausnahme ohne Grund ist in sechs Monaten eine Regel."""
+
+        ohne = [sel for sel, grund in PROSA_AUSNAHMEN.items() if len(grund.strip()) < 30]
+
+        assert not ohne, f"Diese Ausnahmen nennen keinen Grund: {ohne}"
+
+    def test_the_guard_actually_measures_something(self, page):
+        """**Ein Wächter, der nichts sieht, ist blind und nicht grün.**
+
+        Diese Zusage war beim ersten scharfen Durchlauf sofort gruen, und das
+        ist genau die Lage, in der man nachsehen muss: Die Auswahl oben
+        überspringt Bedienelemente, Code, Tabellen, Navigationsmarken und
+        jedes Kind eines Flex- oder Grid-Containers. Eine Auswahl, die am Ende
+        nichts übriglässt, erfüllt jede Zusage.
+
+        **Gemessen am 2026-09-12 bei 1440 px** über die sechs Schritte: 21, 4,
+        3, 9, 9 und 6 Blöcke, zusammen **52**. Der Boden steht bei 30 —
+        deutlich darunter, weil die Zahl an den Texten hängt und nicht an der
+        Zusage; ein Sturz auf die Hälfte heißt dagegen, dass die Auswahl etwas
+        ausschließt, was sie nicht ausschließen soll.
+        """
+
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+        page.click("#wizard-way-new")
+        page.wait_for_timeout(RUHE_MS)
+
+        from dashboard.web.config_editor import wizard
+
+        gezaehlt = 0
+        je_schritt = []
+        for index in range(len(wizard.STEPS)):
+            if index:
+                page.click("#wizard-next")
+                page.wait_for_timeout(RUHE_MS)
+            page.wait_for_function(
+                "() => { const e = document.getElementById('wizard-content');"
+                " return e && e.getBoundingClientRect().height > 50; }",
+                timeout=10_000,
+            )
+            anzahl = len(page.evaluate(_PROSA))
+            je_schritt.append(f"{wizard.STEPS[index].title}: {anzahl}")
+            gezaehlt += anzahl
+
+        assert gezaehlt >= PROSA_BLOECKE_MIN, (
+            f"Der Wächter vermisst bei {page.breite} px nur {gezaehlt} "
+            f"Prosablöcke, erwartet sind mindestens {PROSA_BLOECKE_MIN}:\n  "
+            + "\n  ".join(je_schritt)
+            + "\n\nDas ist kein Befund über die Oberfläche, sondern einer über "
+            "diese Messung: Ihre Auswahl schließt etwas aus, was sie nicht "
+            "ausschließen soll."
+        )
+
+
 def test_the_width_guard_would_notice_a_relapse(page):
     """Beide Maße müssen anschlagen, sonst sind sie Zierde.
 
     Erzeugt wird je ein echter Rückfall: ein Rumpf, der nur ein Viertel seiner
-    Spalte füllt, und ein Satz ohne Lesemaß.
+    Spalte füllt, und ein Absatz mit Deckel neben etwas, das die Spalte füllt.
+
+    **Der zweite ist die Lehre dieses Tages.** Bis zum 2026-09-12 stand hier
+    ein Satz *ohne* Lesemaß, denn die Zusage lautete «höchstens 75 Zeichen». Sie
+    ist zurückgenommen, und die Probe steht auf dem Kopf — mit dem Zusatz, der
+    sie scharf macht: Der gedeckelte Absatz bekommt einen vollbreiten Nachbarn.
+    Ohne ihn fiele er auch der Hüllbreite auf, und die Probe bewiese nicht, was
+    sie beweisen soll.
     """
 
     page.goto(page.basis, wait_until="networkidle")
@@ -1187,7 +1379,11 @@ def test_the_width_guard_would_notice_a_relapse(page):
     page.wait_for_timeout(RUHE_MS)
 
     vorher = page.evaluate(_BREITE)
-    assert vorher["fuellung"] >= FUELLUNG_MIN and vorher["zeichen"] <= ZEILE_MAX
+    assert vorher["fuellung"] >= FUELLUNG_MIN
+    assert not _prosa_befunde(page), (
+        "Vorbedingung verletzt: Schritt 1 hat schon vor der Mutation einen zu "
+        "schmalen Prosablock."
+    )
 
     page.evaluate("""
         () => {
@@ -1204,19 +1400,31 @@ def test_the_width_guard_would_notice_a_relapse(page):
         schmal["fuellung"] < FUELLUNG_MIN
     ), f"Der Wächter übersieht eine viertelvolle Spalte ({schmal['fuellung']} %)"
 
+    # **Und die umgedrehte Zusage**: ein Absatz, der gedeckelt ist. Genau die
+    # Form, die der Befund Q1 hatte — ein Deckel an einem Satz, in einem Rahmen,
+    # der breiter ist. `FUELLUNG_MIN` kann das nicht sehen, solange irgendetwas
+    # daneben die Spalte füllt; deshalb steht diese Probe hier.
     page.evaluate("""
         () => {
+          const rumpf = document.getElementById('wizard-body');
+          const breit = document.createElement('div');
+          breit.style.width = '100%';
+          breit.style.height = '4px';
+          rumpf.appendChild(breit);
           const p = document.createElement('p');
-          p.style.maxWidth = 'none';
-          p.style.fontSize = '10px';
-          p.textContent = 'A'.repeat(400);
-          document.getElementById('wizard-body').appendChild(p);
+          p.style.maxWidth = '200px';
+          p.textContent = 'Ein Satz, der lang genug ist, um als Fliesstext zu gelten.';
+          rumpf.appendChild(p);
         }
         """)
-    lang = page.evaluate(_BREITE)
-    assert (
-        lang["zeichen"] > ZEILE_MAX
-    ), f"Der Wächter übersieht eine Zeile ohne Lesemaß ({lang['zeichen']} Zeichen)"
+    eng = _prosa_befunde(page)
+    assert eng, (
+        "Der Wächter übersieht einen gedeckelten Absatz — genau die Form des " "Befundes Q1."
+    )
+    assert any(b["deckel"] and "200px" in b["deckel"] for b in eng), (
+        "Der Deckel wird nicht benannt; ein Prozentwert ohne Fundstelle ist "
+        f"nur eine Beschwerde: {eng}"
+    )
 
 
 # --- Teil 4: Die schmale Breite (P1.9-W5.5) ---------------------------------
