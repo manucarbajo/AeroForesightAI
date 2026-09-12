@@ -2025,11 +2025,6 @@ html.dark .af-input[type="number"] {
    die Rolle ordnungsunabhängig gewinnt. Die Werte sind die der Absätze, die
    sie ersetzen: `text-sm leading-relaxed`, `text-xs af-text-muted`,
    `text-sm af-text`. Eine Schriftskala ist das nicht — die kommt mit U1.1. */
-.af-md.af-md--lede {
-    font-size: var(--schrift-beschriftung);
-    line-height: 1.625;
-}
-
 .af-md.af-md--caption {
     font-size: var(--schrift-klein);
     line-height: 1rem;

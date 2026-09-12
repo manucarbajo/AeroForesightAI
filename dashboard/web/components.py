@@ -50,6 +50,17 @@ LABEL = f"block font-body {BESCHRIFTUNG} font-medium af-text-body mb-1.5"
 #: kuerzer.
 HINT = f"font-body {KLEIN} af-text-muted mt-1.5 af-mass"
 CAPTION = f"font-body {KLEIN} af-text-muted"
+#: Der Einleitungssatz eines Schritts oder eines Blocks — **Fliesstext**.
+#:
+#: **Seit dem 2026-09-12 eine eigene Rolle, und zwar in Fliesstextgroesse.**
+#: Vorher war eine Lede zweierlei: die eines Schritts stand in `CAPTION`
+#: (12 px), die eines Blocks in `af-md--lede` (14 px) — beide kleiner als der
+#: Fliesstext, den sie einleiten. Gemessen war die Schritt-Lede damit der
+#: schmalste Text des Bildschirms (409 px von 760, 53,8 %), weil 12-px-Prosa
+#: fuer 75 Zeichen nur 416 px braucht. **Eine Lede ist kein Beiwerk zum Text,
+#: sie ist der erste Satz davon** — und eine Bildunterschrift ist sie schon
+#: deshalb nicht, weil kein Bild darueber steht.
+LEDE = f"font-body {TEXT} af-text-muted"
 H1 = f"font-headline {TITEL} font-bold af-text tracking-tight"
 H2 = f"font-headline {UEBERSCHRIFT} font-semibold af-text tracking-tight"
 H3 = f"font-headline {ABSCHNITT} font-semibold af-text"
@@ -629,22 +640,21 @@ def doc_link(slug: str, label: str = "Im Handbuch nachlesen") -> Any:
 def lede(text: str) -> dcc.Markdown:
     """Einleitungssatz über einem Block — sagt, wozu die Einstellungen dienen.
 
-    **Mit Lesemaß statt `max-w-3xl`** (P1.9-W5.4): Jene 768 px ergaben gemessen
-    bis zu 108 Zeichen je Zeile. Der Deckel steht jetzt in `ch` — in der
-    Einheit, von der die Zusage handelt.
-
     **Als Markdown, seit dem 2026-09-11** (P7.1-U1.4, vorgezogen). Die
     Einleitungen sind mit `**fett**` und `` `Pfad` `` geschrieben, gerendert
     wurden sie als `html.P` — im Browser stand «Der `**Name**` steht im letzten
-    Schritt» mit Sternchen. Die Größe bleibt die des bisherigen Absatzes:
-    `af-md--lede` setzt sie gegen `.af-md`, das sonst den größeren Fließtext
-    brächte (dieselbe Kaskade wie beim Feldhinweis).
+    Schritt» mit Sternchen.
+
+    **Und seit dem 2026-09-12 in Fließtextgröße.** Bis dahin hielt die Rolle
+    `af-md--lede` die 14 px des Absatzes, den sie ersetzt hatte — das war beim
+    Umstieg auf Markdown richtig (nichts sollte sich optisch ändern) und ist
+    als Dauerzustand falsch: Eine Lede leitet Fließtext ein und ist selbst
+    welcher. Die Rolle ist damit **weg** statt umgestellt; `.af-md` setzt die
+    15 px ohnehin, und eine Regel, die nur eine Größe wiederholt, ist eine
+    Stelle zu viel, an der sie auseinanderlaufen kann.
     """
 
-    return dcc.Markdown(
-        text,
-        className="af-md af-md--tight af-md--lede font-body af-mass mb-4",
-    )
+    return dcc.Markdown(text, className="af-md af-md--tight font-body af-mass mb-4")
 
 
 def code_block(text: str, *, max_height: str = "24rem") -> html.Pre:

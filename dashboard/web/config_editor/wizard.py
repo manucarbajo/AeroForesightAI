@@ -803,12 +803,13 @@ def content(draft: dict, current: int) -> html.Div:
                         # — sie soll nicht in die Tabreihenfolge geraten.
                         tabIndex=-1,
                     ),
-                    # **Fliesstext bekommt ein Lesemass** (W5.4). Bei 1280
-                    # lief der Vorspann ueber bis zu 123 Zeichen je Zeile; die
-                    # Typografie nennt 45 bis 75. Der Deckel sitzt am Text und
-                    # nicht am Schritt: Ein Raster darf die Spalte nehmen, ein
-                    # Satz soll es nicht.
-                    html.P(step.lede, className=f"{ui.CAPTION} mt-1 af-mass"),
+                    # **Die Lede ist Fliesstext** (2026-09-12). Bis dahin
+                    # stand sie in `ui.CAPTION`, also in der Rolle einer
+                    # Bildunterschrift bei 12 px -- und war damit gemessen der
+                    # schmalste Text des Bildschirms: 409 px von 760, weil
+                    # 12-px-Prosa fuer 75 Zeichen nur 416 px braucht. Sie
+                    # teilt jetzt die Groesse des Textes, den sie einleitet.
+                    html.P(step.lede, className=f"{ui.LEDE} mt-1 af-mass"),
                 ],
                 className="mb-6",
             ),

@@ -78,7 +78,6 @@ def test_a_hint_is_smaller_than_its_label():
 #: gezeigtes Markdown hätte sonst genau die Kaskade zurückgebracht, die der
 #: Feldhinweis gerade losgeworden ist.
 ROLLEN = {
-    "af-md--lede": 14,
     "af-md--caption": 12,
     "af-md--betont": 14,
 }
@@ -94,10 +93,54 @@ def test_markdown_in_a_role_keeps_the_size_of_its_paragraph():
         )
 
 
-def test_the_lede_uses_its_role():
-    """Vorbedingung: `ui.lede` trägt die Rolle wirklich, die oben geprüft wird."""
+class TestEineLedeIstFliesstext:
+    """Die Einleitung eines Schritts ist der erste Satz, nicht die Fußnote.
 
-    assert "af-md--lede" in ui.lede("Ein Satz.").className.split()
+    **Der Befund vom 2026-09-12, gemessen im Browser:** Die Lede unter jeder
+    Schritt-Überschrift stand in `ui.CAPTION` — der Rolle einer
+    Bildunterschrift, 12 px. Sie war damit der schmalste Fließtext des
+    Bildschirms: 409 px von 760, also 53,8 %, und zwar **nicht** wegen eines zu
+    engen Deckels, sondern weil 12-px-Prosa für 75 Zeichen nur 416 px braucht.
+    Auf ihren 409 px trug sie schon 72 Zeichen.
+
+    **Zwei Lede-Begriffe gab es außerdem**, die eines Schritts (12 px) und die
+    eines Blocks (`af-md--lede`, 14 px) — beide kleiner als der Text, den sie
+    einleiten. Es ist jetzt eine Rolle in einer Größe.
+
+    Gemessen wird die **Kaskade**, nicht die Klasse: `ui.LEDE` könnte jederzeit
+    von einer späteren Regel überschrieben werden, und genau diese Falle hat
+    den Feldhinweis im Kopf dieser Datei erwischt.
+    """
+
+    def test_the_step_lede_is_set_in_body_size(self):
+        selektor, groesse = _sieger(set(ui.LEDE.split()), "font-size")
+
+        assert _rem(groesse) == ROLLEN_REM["--schrift-text"], (
+            f"Die Lede eines Schritts bekommt {groesse} aus `{selektor}`, "
+            f"erwartet {ROLLEN_REM['--schrift-text']}rem — die Größe des "
+            "Fließtextes, den sie einleitet."
+        )
+
+    def test_the_block_lede_is_set_in_body_size(self):
+        selektor, groesse = _sieger(set(ui.lede("Ein Satz.").className.split()), "font-size")
+
+        assert _rem(groesse) == ROLLEN_REM["--schrift-text"], (
+            f"Die Lede eines Blocks bekommt {groesse} aus `{selektor}`, erwartet "
+            f"{ROLLEN_REM['--schrift-text']}rem."
+        )
+
+    def test_the_promise_could_fail_at_all(self):
+        """Vorbedingung: Fließtext und Bildunterschrift sind zwei Größen.
+
+        Wären sie gleich, wären die beiden Zusagen darüber auch für eine Lede
+        in `ui.CAPTION` grün — und diese Datei hätte den Befund nicht gefunden,
+        sondern nur eine Tautologie gehalten.
+        """
+
+        assert ROLLEN_REM["--schrift-text"] > ROLLEN_REM["--schrift-klein"]
+        assert _rem(_sieger(set(ui.CAPTION.split()), "font-size")[1]) == (
+            ROLLEN_REM["--schrift-klein"]
+        )
 
 
 def test_a_hint_keeps_its_muted_colour():

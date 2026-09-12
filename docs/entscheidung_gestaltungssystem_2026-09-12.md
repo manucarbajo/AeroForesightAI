@@ -63,6 +63,18 @@ ist jetzt baubar, weil der Block eine Größe hat.
 **Was offen bleibt:** D2, D4, D5 und D6 des Audits. Sie hängen an
 Produktfragen, nicht an den Tokens.
 
+**Nachtrag vom selben Tag: eine Lede ist Fließtext.** Sie war zweierlei — die
+eines Schritts stand in der Rolle einer Bildunterschrift (12 px), die eines
+Blocks in `af-md--lede` (14 px) —, und beide waren damit kleiner als der
+Fließtext, den sie einleiten. Gemessen war die Schritt-Lede der **schmalste
+Text des Bildschirms**: 409 px von 760, weil 12-px-Prosa für 75 Zeichen nur
+416 px braucht; auf diesen 409 px trug sie schon 72 der 75 erlaubten Zeichen.
+Es ist jetzt **eine** Rolle in **einer** Größe (`components.LEDE`), und die
+Regel `af-md--lede` ist weg statt umgestellt: `.af-md` setzt die 15 px ohnehin,
+und eine Regel, die nur eine Größe wiederholt, ist eine Stelle zu viel, an der
+sie auseinanderlaufen kann. Die Rollenfrage war für U1.4 vorgemerkt und ist
+vorgezogen, weil sie an keiner anderen Entscheidung hängt.
+
 ---
 
 ## Wie gemessen wurde
