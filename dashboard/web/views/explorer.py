@@ -54,11 +54,11 @@ def _message_bubble(role: str, content: str) -> html.Div:
     if role == "user":
         return html.Div(
             ui.markdown(content),
-            className="af-chat-user rounded-lg px-4 py-3 max-w-3xl ml-auto mb-3",
+            className="af-chat-user rounded-lg px-4 py-3 af-breite-sprechblase ml-auto mb-3",
         )
     return html.Div(
         ui.markdown(content),
-        className="af-surface af-bordered rounded-lg px-4 py-3 max-w-3xl mb-3",
+        className="af-surface af-bordered rounded-lg px-4 py-3 af-breite-sprechblase mb-3",
     )
 
 

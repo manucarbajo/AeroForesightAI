@@ -255,6 +255,7 @@ def number(
     max: float | None = None,
     step: float | None = None,
     class_name: str = "",
+    breite: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -272,6 +273,7 @@ def number(
         hint=text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 
@@ -285,6 +287,7 @@ def text(
     detail: bool = False,
     placeholder: str = "",
     class_name: str = "",
+    breite: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -300,6 +303,7 @@ def text(
         hint=text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 
@@ -312,6 +316,7 @@ def textarea(
     key: str | None = None,
     detail: bool = False,
     class_name: str = "",
+    breite: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -322,6 +327,7 @@ def textarea(
         hint=text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 
@@ -336,6 +342,7 @@ def select(
     detail: bool = False,
     clearable: bool = False,
     class_name: str = "",
+    breite: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -350,6 +357,7 @@ def select(
         hint=text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 
@@ -365,6 +373,7 @@ def slider(
     max: float = 1.0,
     step: float = 0.05,
     class_name: str = "",
+    breite: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     marks = {min: f"{min:g}", max: f"{max:g}"}
@@ -386,6 +395,7 @@ def slider(
         hint=text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 

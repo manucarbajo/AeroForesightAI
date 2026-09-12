@@ -80,7 +80,7 @@ def layout(draft: dict) -> html.Div:
                     c.textarea(
                         "simulation_description",
                         draft.get("simulation_description", ""),
-                        class_name="max-w-2xl",
+                        breite="feld-weit",
                     ),
                 ),
             ),

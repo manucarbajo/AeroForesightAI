@@ -195,6 +195,11 @@ def hint_text(hint: str | None, *, class_name: str = "") -> Any:
     return dcc.Markdown(hint, className=f"af-hint af-md af-md--tight {class_name}".strip())
 
 
+#: Die Breiten, die eine Eingabe haben darf — als Stufe, nicht als Wert. Die
+#: Werte stehen als `--breite-feld-*` in `assets/dashboard.css`.
+FELDBREITEN = ("feld-klein", "feld", "feld-weit")
+
+
 def field(
     label: str,
     control: Any,
@@ -202,18 +207,34 @@ def field(
     hint: str | None = None,
     below: Any = None,
     class_name: str = "",
+    breite: str | None = None,
 ) -> html.Div:
     """Beschriftetes Eingabefeld.
 
     *below* nimmt auf, was unter Feld und Kurzhinweis gehört — heute der
     Platzhalter für Fehlermeldungen aus der Konfigurationsprüfung und die
     aufklappbare Langerklärung aus dem Glossar.
+
+    **`breite` begrenzt die Eingabe, nicht das Feld** (2026-09-12). Bis dahin
+    kam die Breite über `class_name` — und `class_name` sitzt auf dem Rahmen um
+    Beschriftung, Eingabe, Hinweis *und* Erklärung. Ein `max-w-xs` für ein
+    Zahlenfeld stellte damit die Glossar-Erklärung zu «Ticks» in einen 320 px
+    breiten Streifen, mitten in einer 760 px breiten Karte. Das war ein
+    Lesemaß unter anderem Namen, und es hat die Rücknahme von E3 überlebt, weil
+    der Breitenwächter zunächst nur eine Ebene über dem Text nachsah.
+
+    Jetzt steckt nur die Eingabe in einem begrenzten Träger; alles darunter
+    füllt den Rahmen. `class_name` bleibt für Abstände (`mb-5`). Ein
+    unbekannter Wert scheitert laut, statt still keine Breite zu setzen.
     """
 
+    if breite is not None and breite not in FELDBREITEN:
+        raise ValueError(f"Unbekannte Feldbreite {breite!r}; erlaubt sind {FELDBREITEN}.")
+    eingabe = html.Div(control, className=f"af-breite-{breite}") if breite else control
     return html.Div(
         [
             html.Label(label, className=LABEL),
-            control,
+            eingabe,
             hint_text(hint),
             below,
         ],

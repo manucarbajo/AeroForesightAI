@@ -3920,7 +3920,7 @@ Erst nach Phase 1, damit beim UI-Umbau nichts wegfällt, das noch als Referenz d
 
 **Der Deckel war nicht zu eng, er war ausgereizt** — die Lede trug auf ihren 409 px schon 72 der 75 erlaubten Zeichen. Gemessen 7,17 px je Zeichen bei 15 px Schrift: **Um 760 px mit höchstens 75 Zeichen zu füllen, müsste Fließtext rund 21 px groß sein.** «Text füllt seine Spalte» und «höchstens 75 Zeichen je Zeile» sind bei dieser Spaltenbreite nicht gleichzeitig erfüllbar. E1 hatte die Schriftgröße schon entschieden, also fiel die andere Zusage — entschieden von Haiko am 2026-09-12.
 
-**Was gilt:** Kein Deckel für Fließtext. Geblieben sind `--breite-formular` (ein kurzes Formular) und `--breite-inhalt` (der Rahmen der Seite) — Kästen und Seiten, keine Sätze.
+**Was gilt:** Kein Deckel für Fließtext. Geblieben ist `--breite-inhalt` (der Rahmen der Seite); `--breite-formular` ist in der Notiz darunter noch am selben Tag gefallen.
 
 **Die Zusage ist umgedreht, nicht gelöscht:** *Kein Prosablock wird schmaler gesetzt als der Platz, den er hat.* Gemessen je Block im Browser, am Verhältnis seiner Breite zur verfügbaren Breite seines Elternelements — Teil 7 von `tests/test_web_overflow.py`, über **alle** Bereiche.
 
@@ -3951,6 +3951,21 @@ Bei Schritt 6 ist der Gewinn am größten, und das ist folgerichtig: Sein Prefli
 
 **Offen bleibt, was schon offen war:** Die Kanten streuen weiter, weil Blöcke unterschiedlich eingerückt sind (gemessen in Schritt 1 bei x = 0, 25, 49, 71, 76). Das ist U1.3s Abnahme und U0.1s Wächter — und es ist jetzt die einzige Restposition von Q1, in `docs/audit_findings.md` entsprechend neu gefasst.
 **Doku zieht mit:** zweiter Nachtrag in der Entscheidungsvorlage, `CLAUDE.md` (Regel 4, Architektur-Map, Höhenwächter, Testliste, Dev-Workflow, Backlog), `docs/audit_findings.md`, Kopfkommentar von `assets/dashboard.css`.
+
+**Am selben Tag nachgeschärft — die Breite gehört an die Eingabe, und das Lesemaß hatte sich in den Feldern versteckt.** Beim Umbau der 13 Tailwind-Deckel, die als Sperrklinke «an Bedienelementen» übrig geblieben waren, zu Tokens kam heraus, dass **keine ihrer Begründungen stimmte**. `ui.field` legte die Breitenklasse auf den **Rahmen** um Beschriftung, Eingabe, Hinweis und Glossar-Erklärung; «Zahlenfeld Ticks» hieß in Wahrheit: die Erklärung zu Ticks in einem 320 px breiten Streifen. Elf Felder standen so da. **Eine Begründung, die niemand am gezeichneten Baum nachgeprüft hat, ist eine Behauptung.**
+
+**Der Wächter hat es zunächst nicht gesehen**, weil er einen Absatz nur mit seinem direkten Elternelement verglich. Er prüft jetzt jede Ebene bis zum ersten Flex- oder Grid-Container und meldete die Feldrahmen gegen den alten Code sofort. **Dreimal nachgeschärft, jede Korrektur aus einem Fehlalarm:**
+
+1. **Der Aufstieg endet am Seitenrahmen** — erkannt am Token `--breite-inhalt`, nicht am Klassennamen. Sonst meldete er jeden Text im Einstieg und im Modell mit 85 % (1088 in 1280 px).
+2. **Ein Rand ist Platz, ein `max-width` nicht.** Sonst meldete er die Einrückung unter einem Kästchen (94,7 %) — Ausrichtung, ein Fall für den Kantenwächter. Ein zentrierter Deckel bleibt sichtbar, weil ein Block genau dann als gedeckelt gilt, wenn er so breit ist wie sein `max-width`.
+3. **SVG ist ausgenommen**, wie im Überlauf-Detektor: Text in einem Plotly-`<g>` hat kein Box-Layout.
+
+Jede Grenze hat eine Probe im Selbsttest — gedeckelter Rahmen gemeldet, derselbe Rahmen über das Seitenrahmen-Token nicht, Einrückung nicht, zentrierter Deckel schon.
+
+**Was gilt:** `ui.field(breite=…)` mit drei Stufen (`--breite-feld-klein`/`-feld`/`-feld-weit`, 160/320/512 px) steckt nur die Eingabe in einen begrenzten Träger; eine unbekannte Stufe scheitert laut. Fünf Tailwind-Werte sind drei Stufen — sichtbar schmaler werden drei Zahlenfelder des Buchungs- und Sättigungsmodells (384 → 320 px) und die Textfläche für die Fragestellung (672 → 512 px). Die Sprechblase im Explorer trägt als einzige Breite Bedeutung und hat ihr eigenes Token. `KASTENBREITEN` ist von 13 Einträgen auf **einen** geschrumpft (die ausgenommene Landingpage), ein Suchlauf hat die Liste ersetzt, und `TestDieBreiteGehoertAnDieEingabe` hält den Mechanismus ohne Browser. **Zwei Mutationsproben, beide rot:** Hinweis im Breitenträger, Feldbreite wieder über `class_name` am Rahmen.
+
+**Und der Rumpf-Deckel ist gefallen, gemessen statt vermutet:** Nach dem Umbau meldete der Wächter in «Wie weit reicht der Lauf?» genau einen Block unter `af-body--lesen` (480 px). Das Anliegen aus W5.4 — ein einsames Feld nicht in einer breiten Spalte — ist an der Eingabe gelöst; übrig war nur der Satz-Deckel. Mit ihm fiel `--breite-formular`, dessen einziger Nutzer er war. **Offen und bewusst getrennt:** `Step.breite` und die Klasse `af-body--*` sind seither ohne Wirkung; sie zu entfernen ist reines Refactoring und bekommt einen eigenen Commit. **Gemessen:** «Lauf & Ablage» fällt ohne den Rumpf-Deckel von 1,22 auf **1,16** Schirme (beide Breiten, eingetragen); «Wie weit reicht der Lauf?» stand schon auf 1,00, und keine andere Höhe bewegt sich. Der volle Browser-Wächter: 133 bestanden, 0 gescheitert.
+**Doku zieht mit:** `CLAUDE.md` (Regel 4, Architektur-Map), dritter Nachtrag der Entscheidungsvorlage, Kopfkommentar von `assets/dashboard.css`.
 
 **Vorab erledigt am 2026-09-12 — aus U1.4 die Rolle der Lede.** Eine Lede war zweierlei: die eines Schritts stand in `ui.CAPTION` (12 px), die eines Blocks in `af-md--lede` (14 px). **Beide waren kleiner als der Fließtext, den sie einleiten**, und die Schritt-Lede war dadurch gemessen der schmalste Text des Bildschirms — 409 px von 760 (53,8 %), weil 12-px-Prosa für 75 Zeichen nur 416 px braucht. Sie trug auf diesen 409 px schon **72 der 75 erlaubten Zeichen**: Der Deckel war nicht zu eng, die Schrift war zu klein.
 

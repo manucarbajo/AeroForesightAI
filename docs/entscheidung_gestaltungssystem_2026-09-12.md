@@ -32,7 +32,7 @@ Ansichtsarbeit.
 | --- | --- | --- |
 | **E1** | Schriftrollen | **Sieben Rollen, kleinste 12 px.** 11 px entfällt; 30, 22 und 17 px verschwinden ersatzlos. Die Konsole wird dadurch höher, und die Deckel des Höhenwächters wandern bewusst mit. |
 | **E2** | Textfarbstufen | **Zwei lesbare, eine gedämpfte, eine für Abgeschaltetes.** `--text-muted` wird 1,5 % dunkler (`#64748b` → `#617087`), `--text-faint` verliert seine Rolle als Textfarbe. |
-| **E3** | Lesemaß | ~~38 rem = 608 px, gesetzt am Container.~~ **Am selben Tag zurückgenommen: das Lesemaß fällt ganz** — Fließtext füllt seinen Rahmen, `--breite-formular` und `--breite-inhalt` bleiben. Siehe den zweiten Nachtrag. |
+| **E3** | Lesemaß | ~~38 rem = 608 px, gesetzt am Container.~~ **Am selben Tag zurückgenommen: das Lesemaß fällt ganz** — Fließtext füllt seinen Rahmen. Gedeckelt werden nur Eingaben (`--breite-feld-*`, an der Eingabe statt am Feld) und die Seite (`--breite-inhalt`); `--breite-formular` ist ebenfalls gefallen. Siehe den zweiten und dritten Nachtrag. |
 | **E4** | Abstände | **4-px-Raster mit acht Stufen** (4, 8, 12, 16, 24, 32, 48, 64). Werte unter 4 px bleiben für Rahmen erlaubt, mit Begründung. |
 | **E5** | Bausteine | **Vollständig, einschließlich des gestalteten Bestätigungsdialogs.** Damit ist **D7 mitentschieden**. |
 | **D3** | Begründungen | **These und zwei Sätze sichtbar, in Fließtextgröße; der Rest hinter einer Klappe «Begründung und Quellen».** Am selben Tag nachentschieden, weil E3 ohne D3 nicht baubar war — siehe den Nachtrag unten. |
@@ -87,7 +87,9 @@ E1 hat die Schriftgröße schon entschieden, also fällt die andere Zusage.
 
 **Entschieden:** Alle Deckel für Fließtext fallen. `--breite-formular` (die
 Breite eines kurzen Formulars) und `--breite-inhalt` (der Rahmen der Seite)
-bleiben — sie deckeln Bedienelemente und Seiten, keine Sätze.
+bleiben — sie deckeln Bedienelemente und Seiten, keine Sätze. *(Für
+`--breite-formular` hat das noch am selben Tag aufgehört zu gelten: Sein
+einziger Nutzer deckelte gemessen Prosa. Siehe den dritten Nachtrag.)*
 
 **Das Argument dafür ist gemessen, nicht ästhetisch:** Die 75-Zeichen-Zusage
 schützt den Rücksprung des Auges über *viele* Zeilen. Fast jeder Text im
@@ -153,6 +155,48 @@ Bedienelementen bleibt, steht als Sperrklinke mit Grund in
 `tests/test_web_breiten.py`. **Von den gefallenen Prosa-Deckeln lag kein
 einziger in der Schrittfolge** — ein Wächter, der nur die Schritte abgeht, hätte
 alle durchgelassen; deshalb messen die neuen Zusagen über alle Bereiche.
+
+**Dritter Nachtrag vom selben Tag: Das Lesemaß hatte sich in den Eingabefeldern
+versteckt.** Beim Umbau der 13 übrig gebliebenen Tailwind-Deckel zu Tokens kam
+heraus, dass ihre Begründungen nicht stimmten. Die Sperrklinke nannte sie
+«Zahlenfeld Ticks», «Zahlenfeld Checkpoint-Intervall» — gemeint war eine
+Eingabe. `ui.field` legte die Breitenklasse aber auf den **Rahmen** um
+Beschriftung, Eingabe, Hinweis und Glossar-Erklärung. «Zahlenfeld Ticks» hieß
+in Wahrheit: die Erklärung zu Ticks in einem 320 px breiten Streifen mitten in
+einer 760 px breiten Karte. Elf Felder standen so da. **Eine Begründung, die
+niemand am gezeichneten Baum nachgeprüft hat, ist eine Behauptung** — und genau
+davor sollte die Liste schützen.
+
+**Der Wächter aus dem zweiten Nachtrag hat es nicht gesehen, und der Grund ist
+benennbar:** Er verglich einen Absatz nur mit seinem direkten Elternelement.
+Der Hinweis füllte seinen Rahmen, der Rahmen stand auf 320 px, die Messung sah
+100 %. Er prüft jetzt jede Ebene bis zum ersten Flex- oder Grid-Container, und
+gegen den alten Code gemessen meldete er die Feldrahmen sofort (etwa der Hinweis
+unter dem Startwert einer Systemgröße: 320 von 1006 px, 31,8 %).
+
+**Dabei hat er zwei Klassen Fehlalarme geliefert, und beide sind jetzt Regeln:**
+den **Seitenrahmen** (`.af-pane--focus`, 1088 px in 1280 px — jeder Text im
+Einstieg und im Modell mit 85 %), deshalb endet der Aufstieg am Token
+`--breite-inhalt`; und die **Einrückung** unter einem Kästchen (94,7 %), die
+Ausrichtung ist und dem Kantenwächter gehört, deshalb zählt ein Rand als Platz,
+ein `max-width` nicht. Ein dritter kam aus einem Plotly-Diagramm (Text in einem
+SVG-`<g>`); SVG ist ausgenommen wie im Überlauf-Detektor.
+
+**Was jetzt gilt:** Die Breite einer Eingabe gehört an die Eingabe
+(`ui.field(breite=…)`, drei Stufen `--breite-feld-klein`/`-feld`/`-feld-weit`
+mit 160/320/512 px); Beschriftung, Hinweis und Erklärung füllen den Rahmen. Fünf
+Tailwind-Werte sind drei Stufen geworden — sichtbar schmaler werden drei
+Zahlenfelder des Buchungs- und Sättigungsmodells (384 → 320 px) und die
+Textfläche für die Fragestellung (672 → 512 px). Die eine Breite, die Bedeutung
+trägt, hat ein eigenes Token: die Sprechblase im Explorer.
+
+**Und der Rumpf-Deckel ist gefallen, gemessen statt vermutet.** Nach dem Umbau
+blieb in «Wie weit reicht der Lauf?» genau ein Befund: `af-body--lesen`, 480 px
+— der Schrittrumpf aus W5.4, der ein einsames Feld nicht in einer breiten
+Spalte stehen lassen wollte. Dieses Anliegen ist jetzt an der Eingabe gelöst;
+übrig blieb nur der Satz-Deckel. Mit ihm ist `--breite-formular` gefallen, dessen
+einziger Nutzer er war — der zweite Nachtrag hatte das Token noch als bleibend
+genannt. «Lauf & Ablage» ist ohne ihn von 1,22 auf 1,16 Schirme gefallen.
 
 **Nachtrag vom selben Tag: eine Lede ist Fließtext.** Sie war zweierlei — die
 eines Schritts stand in der Rolle einer Bildunterschrift (12 px), die eines

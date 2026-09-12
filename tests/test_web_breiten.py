@@ -47,64 +47,46 @@ from collections import Counter
 from pathlib import Path
 
 import pytest
+from dash import dcc, html
+
+from dashboard.web import components as ui
 
 WEB_ROOT = Path(__file__).resolve().parents[1] / "dashboard" / "web"
 CSS = WEB_ROOT / "assets" / "dashboard.css"
 
-#: Die Breiten der Skala, in px. **Beide deckeln keinen Satz:** `formular` ist
-#: die Breite eines kurzen Formulars, `inhalt` der Rahmen der Seite.
+#: Die Breiten der Skala, in px. **Keine davon deckelt einen Satz:** `inhalt`
+#: ist der Rahmen der Seite, die
+#: drei `feld-*` die Breite einer **Eingabe** — nicht des Feldes um sie herum —,
+#: und `sprechblase` die eine Breite, die Bedeutung trägt.
 BREITEN = {
-    "formular": 480,  # 30 rem
     "inhalt": 1088,  # 68 rem
+    "feld-klein": 160,  # 10 rem — eine kleine Zahl, etwa eine Anzahl
+    "feld": 320,  # 20 rem — eine Zahl mit Nachkommastellen, eine Auswahl
+    "feld-weit": 512,  # 32 rem — eine Kennung, ein Pfad, ein Freitext
+    "sprechblase": 768,  # 48 rem — wer spricht, sieht man an der Breite
 }
 
 #: Namen, unter denen das Lesemaß gelebt hat. Sie dürfen nicht zurückkommen —
 #: nicht als Token, nicht als Klasse, nicht an einer Aufrufstelle.
 ABGESCHAFFT = ("--breite-lesen", "af-mass", "af-breite-lesen")
 
-#: **Sperrklinke über Tailwinds Deckel** (`max-w-*`), je Datei und Klasse mit
-#: Grund. Sie hält den Ist-Stand und schlägt in **beide** Richtungen an: Ein
-#: neuer Deckel fällt auf, ein weggeräumter auch.
+#: **Wo `max-w-*` noch stehen darf — und das ist fast nirgends.**
 #:
-#: **Warum es diese Liste überhaupt gibt.** U1.2 hat die `af-*`-Deckel
-#: vereinheitlicht und die Tailwind-Deckel **übersehen** — `max-w-md`,
-#: `max-w-2xl` (3×), `max-w-3xl` (4×) und `max-w-4xl` standen weiter an Prosa,
-#: während das Paket «zwei Textbreiten» meldete. Sie sind mit der Rücknahme von
-#: E3 gefallen; was bleibt, steht hier, und jede Zeile sagt, warum sie kein
-#: Fließtext ist.
+#: Bis zum 2026-09-12 stand hier eine Sperrklinke über 13 Tailwind-Deckel «an
+#: Bedienelementen», je mit Grund. **Beim Umbau kam heraus, dass die Gründe
+#: nicht stimmten:** Die Deckel saßen nicht an den Eingaben, sondern am Rahmen,
+#: den `ui.field` um Beschriftung, Eingabe, Hinweis und Glossar-Erklärung legt.
+#: «Zahlenfeld Ticks» hieß in Wahrheit: die Erklärung zu Ticks in einem 320 px
+#: breiten Streifen. Eine Begründung, die niemand am gezeichneten Baum
+#: nachgeprüft hat, ist eine Behauptung — genau das, wovor die Liste schützen
+#: sollte.
 #:
-#: **Dass sie eine Liste ist, ist ihr Mangel.** Eine Breite gehört wie Farbe und
-#: Schrift in ein Token (Regel 4) — dann ersetzt ein Suchlauf diese Aufzählung.
-#: Das ist der nächste Schritt und ausdrücklich nicht dieser Commit.
+#: Die Breite einer Eingabe kommt jetzt über `breite=` aus `--breite-feld-*`
+#: (`TestDieBreiteGehoertAnDieEingabe`), und ein Suchlauf hat die Aufzählung
+#: ersetzt. Übrig ist die Landingpage, die das UI/UX-Audit ausnimmt.
 KASTENBREITEN: dict[str, dict[str, tuple[int, str]]] = {
-    "config_editor/experiment.py": {
-        "max-w-2xl": (1, "Textfeld für die Fragestellung — ein Bedienelement"),
-    },
-    "config_editor/llm_pipeline.py": {
-        "max-w-xs": (1, "Zahlenfeld «Checkpoint-Intervall»"),
-        "max-w-lg": (1, "Textfeld «Lauf fortsetzen» — nimmt eine Run-ID auf"),
-    },
-    "config_editor/macro.py": {
-        "max-w-[10rem]": (1, "Zahlenfeld für die Anzahl der Regelzeilen"),
-        "max-w-xs": (1, "Zahlenfeld «Startwert» einer Systemgröße"),
-    },
-    "config_editor/micro.py": {
-        "max-w-sm": (3, "Zahlenfelder des Buchungs- und Sättigungsmodells"),
-        "max-w-xs": (1, "Auswahlfeld «Verteilung»"),
-    },
-    "config_editor/start_flow.py": {
-        "max-w-xs": (1, "Zahlenfeld «Ticks» — die Lauflänge ist eine dreistellige Zahl"),
-    },
     "landing_route.py": {
         "max-w-xl": (1, "Die Landingpage ist vom UI/UX-Audit ausdrücklich ausgenommen"),
-    },
-    "views/explorer.py": {
-        "max-w-3xl": (
-            2,
-            "Sprechblasen: Die Breite trägt hier Bedeutung — wer spricht. "
-            "Zusammen mit `ml-auto` unterscheidet sie Frage von Antwort; "
-            "füllten beide den Rahmen, wäre die Ausrichtung sinnlos",
-        ),
     },
 }
 
@@ -277,7 +259,7 @@ class TestFliesstextHatKeinenDeckel:
 
 
 class TestJederKastendeckelSagtWarum:
-    """Sperrklinke über `max-w-*`: Was bleibt, ist ein Bedienelement.
+    """Sperrklinke über `max-w-*`: Übrig ist nur, was das Audit ausnimmt.
 
     **Sie schlägt in beide Richtungen an.** Ein neuer Deckel ist zu begründen;
     ein weggeräumter gehört ausgetragen, sonst schwebt die Liste über dem
@@ -322,6 +304,127 @@ class TestJederKastendeckelSagtWarum:
             + ", ".join(ohne)
             + "\n\nEine Ausnahme ohne Grund ist in sechs Monaten eine Regel."
         )
+
+
+#: Die Steuerelemente, die eine Feldbreite entgegennehmen — `ui.field` selbst
+#: und die fünf aus `config_editor/controls.py`, die ihn bauen.
+_FELDBAUER = {"field", "number", "text", "textarea", "select", "slider"}
+
+
+def _feldbreiten_im_code(baum: ast.AST) -> set[str]:
+    """Jede Stufe, die ein Aufruf eines Feldbauers als `breite=` übergibt.
+
+    **Nur an Feldbauern**, nicht an jedem Aufruf mit einem Schlüssel `breite`:
+    `wizard.Step` trägt ebenfalls einen (`breite="lesen"`), und der meint den
+    Rumpf eines Schritts. Ein Suchlauf, der beides verwechselt, meldete eine
+    unbekannte Feldbreite, die es nicht gibt.
+    """
+
+    gefunden: set[str] = set()
+    for knoten in ast.walk(baum):
+        if not isinstance(knoten, ast.Call):
+            continue
+        name = getattr(knoten.func, "attr", None) or getattr(knoten.func, "id", None)
+        if name not in _FELDBAUER:
+            continue
+        for kw in knoten.keywords:
+            if kw.arg == "breite" and isinstance(kw.value, ast.Constant):
+                gefunden.add(kw.value.value)
+    return gefunden
+
+
+class TestDieBreiteGehoertAnDieEingabe:
+    """**Die Form, die die Rücknahme von E3 überlebt hatte** (2026-09-12).
+
+    `ui.field` legte eine Breite über `class_name` auf den **Rahmen** um
+    Beschriftung, Eingabe, Hinweis und Glossar-Erklärung. Elf Felder trugen so
+    einen Deckel, zwei davon mit der langen Erklärung darunter — die zu
+    «Ticks» stand in Schritt 2 in einem 320 px breiten Streifen. Das war ein
+    Lesemaß unter anderem Namen, und der Breitenwächter hat es zunächst nicht
+    gesehen, weil er nur eine Ebene über dem Text nachsah.
+
+    Diese Klasse hält den Mechanismus ohne Browser; ob Prosa ihren Rahmen
+    wirklich füllt, misst Teil 7 von `tests/test_web_overflow.py`.
+    """
+
+    def test_only_the_input_sits_in_the_width(self):
+        eingabe = dcc.Input(id="probe")
+        feld = ui.field(
+            "Beschriftung", eingabe, hint="Ein Hinweis.", below=html.Div(), breite="feld"
+        )
+        _beschriftung, traeger, hinweis, darunter = feld.children
+
+        assert "af-breite" not in (feld.className or ""), (
+            "Der Rahmen des Feldes trägt eine Breite — dann steht der Hinweis "
+            "wieder in einem Streifen."
+        )
+        assert (
+            traeger.className == "af-breite-feld" and traeger.children is eingabe
+        ), f"Im Breitenträger steckt nicht genau die Eingabe: {traeger!r}"
+        assert (
+            hinweis is not None and darunter is not None
+        ), "Hinweis und Erklärung stehen nicht mehr neben der Eingabe."
+
+    def test_without_a_width_nothing_is_wrapped(self):
+        eingabe = dcc.Input(id="probe")
+
+        assert ui.field("Beschriftung", eingabe).children[1] is eingabe
+
+    def test_an_unknown_width_fails_loudly(self):
+        """Still keine Breite zu setzen wäre die leiseste Art, sich zu vertun."""
+
+        with pytest.raises(ValueError, match="Feldbreite"):
+            ui.field("Beschriftung", dcc.Input(id="probe"), breite="mittel")
+
+    def test_the_stages_and_the_tokens_are_one_list(self):
+        """`FELDBREITEN` und `--breite-feld-*` — in beide Richtungen dieselbe Menge."""
+
+        tokens = set()
+        for zeile in _css().splitlines():
+            zeile = zeile.strip()
+            if zeile.startswith("--breite-feld"):
+                tokens.add(zeile.split(":", 1)[0].removeprefix("--breite-"))
+
+        assert tokens == set(ui.FELDBREITEN), (
+            f"Stylesheet: {sorted(tokens)}, `components.FELDBREITEN`: "
+            f"{sorted(ui.FELDBREITEN)}. Eine Stufe ohne Token setzt eine Klasse "
+            "ohne Regel; ein Token ohne Stufe ist nicht erreichbar."
+        )
+
+    def test_no_module_puts_a_field_width_on_the_frame(self):
+        """Der Rückweg ist `class_name="af-breite-feld"` — genau der alte Fehler."""
+
+        befunde = [
+            f"{pfad.relative_to(WEB_ROOT)}: {text[:60]!r}"
+            for pfad in _python_dateien()
+            if pfad.name != "components.py"
+            for text in _literale(pfad)
+            if "af-breite-feld" in text
+        ]
+
+        assert not befunde, (
+            "Eine Feldbreite als Klasse an einer Aufrufstelle — sie landet auf "
+            "dem Rahmen und damit auf Hinweis und Erklärung:\n  " + "\n  ".join(befunde)
+        )
+
+    def test_every_stage_is_used_and_none_is_invented(self):
+        benutzt: set[str] = set()
+        for pfad in _python_dateien():
+            benutzt |= _feldbreiten_im_code(ast.parse(pfad.read_text(encoding="utf-8")))
+
+        erlaubt = set(ui.FELDBREITEN)
+        assert benutzt <= erlaubt, f"Unbekannte Feldbreiten im Code: {sorted(benutzt - erlaubt)}"
+        assert erlaubt <= benutzt, (
+            f"Nie benutzte Stufen: {sorted(erlaubt - benutzt)} — eine Stufe, die "
+            "niemand wählt, gehört aus der Skala."
+        )
+
+    def test_the_search_tells_a_field_from_a_step(self):
+        """Selbsttest: `Step(breite=...)` ist kein Feld und darf nicht zählen."""
+
+        baum = ast.parse('a = c.number("x", 1, breite="feld-weit")\nb = Step("k", breite="lesen")')
+
+        assert _feldbreiten_im_code(baum) == {"feld-weit"}
 
 
 # --- Der Wächter über sich selbst --------------------------------------------

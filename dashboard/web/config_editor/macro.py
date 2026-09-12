@@ -150,7 +150,7 @@ def _rule_count_input(prop_id: str, count: int):
             className="af-input",
             debounce=True,
         ),
-        class_name="max-w-[10rem]",
+        breite="feld-klein",
     )
 
 
@@ -177,7 +177,7 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
                     baseline,
                     key="property.baseline",
                     step=0.0001,
-                    class_name="max-w-xs",
+                    breite="feld",
                 ),
                 className="mt-5",
             )

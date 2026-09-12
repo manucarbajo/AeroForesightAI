@@ -242,8 +242,11 @@ html.dark {
 /* --- Die Breiten (P7.1-U1.2, E3 zurueckgenommen am 2026-09-12) ------------- */
 /* **Es gibt kein Lesemass mehr, und das ist eine Entscheidung mit Preis.**
    Fliesstext bekommt keinen Deckel; er fuellt den Rahmen, in dem er steht.
-   Gedeckelt werden nur noch Bedienelemente (`--breite-formular`) und die Seite
-   selbst (`--breite-inhalt`) -- Kaesten und Spalten, keine Saetze.
+   Gedeckelt werden nur noch Eingaben (`--breite-feld-*`, an der Eingabe und
+   nicht am Feld) und die Seite selbst (`--breite-inhalt`) -- Kaesten und
+   Spalten, keine Saetze. **`--breite-formular` ist am selben Tag gefallen:**
+   Sein einziger Nutzer war der Rumpf-Deckel `af-body--lesen`, und der hat
+   gemessen Prosa gedeckelt.
 
    **Der Weg dorthin in drei Schritten, weil jeder eine Messung ist.**
 
@@ -290,16 +293,38 @@ html.dark {
    (zweiter Nachtrag). */
 
 :root {
-    --breite-formular: 30rem; /* 480 px -- ein kurzes Formular aus drei Feldern */
     --breite-inhalt: 68rem; /* 1088 px -- Karten, Raster, Tabellen, Fokusbereich */
-}
-
-.af-breite-formular {
-    max-width: var(--breite-formular);
+    /* **Feldbreiten: die Breite einer EINGABE, nicht eines Feldes.** Bis zum
+       2026-09-12 standen hier fuenf Tailwind-Werte (160, 320, 384, 512 und
+       672 px), und sie sassen am Rahmen von `ui.field` -- also auch an
+       Hinweis und Glossar-Erklaerung darunter. Drei Stufen, nach dem, was
+       hineingeschrieben wird: */
+    --breite-feld-klein: 10rem; /* 160 px -- eine kleine Zahl, etwa eine Anzahl */
+    --breite-feld: 20rem; /* 320 px -- eine Zahl mit Nachkommastellen, eine Auswahl */
+    --breite-feld-weit: 32rem; /* 512 px -- eine Kennung, ein Pfad, ein Freitext */
+    /* Die einzige Breite hier, die BEDEUTUNG traegt: Eine Sprechblase ist
+       schmaler als ihr Rahmen, damit man sieht, wer spricht. */
+    --breite-sprechblase: 48rem; /* 768 px */
 }
 
 .af-breite-inhalt {
     max-width: var(--breite-inhalt);
+}
+
+.af-breite-feld-klein {
+    max-width: var(--breite-feld-klein);
+}
+
+.af-breite-feld {
+    max-width: var(--breite-feld);
+}
+
+.af-breite-feld-weit {
+    max-width: var(--breite-feld-weit);
+}
+
+.af-breite-sprechblase {
+    max-width: var(--breite-sprechblase);
 }
 
 /* --- Dashs eigene Design-Tokens --------------------------------------------- */
@@ -2679,14 +2704,6 @@ html.dark .af-input[type="number"] {
       und damit ueber der damaligen Zusage von 75. Die 53 stammten aus einer
       Messung unter Windows; auf dem Deployment-Ziel hat der Deckel nie
       gehalten, es hat nur bis P3.17 niemand gemessen. */
-/* **Breite je Schritt** (P1.9-W5.4). Die Form des Inhalts entscheidet, nicht
-   seine Menge: Karten und Raster nehmen die Spalte, ein kurzes Formular aus
-   drei Feldern bekommt sie geschenkt und wird davon nicht besser. Gemessen
-   stand ein 245 px breites Feld in einer 760 px breiten Spalte. */
-.af-body--lesen {
-    max-width: var(--breite-formular);
-}
-
 .af-wizard__rail {
     position: sticky;
     top: 0;

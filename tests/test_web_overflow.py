@@ -530,7 +530,10 @@ DECKEL: dict[int, dict[str, float]] = {
         # weiter**: P2.0-C hat den vierten entfernt. Der alte Schritt 5 (1,31)
         # ist der neue 4 und misst 1,22, der alte 6 (1,00) ist der neue 5 und
         # misst 1,02. Nicht gewachsen, nur umnummeriert.
-        "Schritt 4": 1.22,  # 1,23 -> 1,22 mit der Ruecknahme von E3
+        # 1,23 -> 1,22 mit der Ruecknahme von E3; 1,22 -> 1,16 noch am selben
+        # Tag, als der Rumpf-Deckel `af-body--lesen` (480 px) fiel -- er hatte
+        # gemessen Prosa gedeckelt, und ohne ihn laeuft der Text breiter.
+        "Schritt 4": 1.16,
         "Schritt 5": 1.00,  # 1,02 -> 1,00: der Schritt passt jetzt auf einen Schirm
         # **1,29 → 1,45 mit W5.4, und das ist bezahlt, nicht verrutscht.** Das
         # Lesemaß bricht den Preflight-Text bei 75 statt bei 124 Zeichen um;
@@ -593,7 +596,7 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
-        "Schritt 4": 1.22,
+        "Schritt 4": 1.16,  # siehe 1280
         "Schritt 5": 1.01,
         "Schritt 6": 1.59,  # siehe die Begründung bei 1280
     },
@@ -1025,8 +1028,14 @@ _PROSA = ("""
     };
     // Was seine Breite nicht aus dem Textfluss bekommt: Bedienelemente, Code
     // (wird gescrollt statt umgebrochen) und die Marken der Navigationen.
+    //
+    // **Und SVG** (2026-09-12, aus einem Fehlalarm unter «Ergebnisse /
+    // Figures»): Die Achsenbeschriftung eines Plotly-Diagramms ist Text in
+    // einem `<g>`, und dort gibt es kein Box-Layout, an dem «schmaler als der
+    // Platz» etwas bedeutet -- gemeldet wurde ein `g` ohne jeden Deckel. Der
+    // Ueberlauf-Detektor in Teil 1 nimmt SVG aus demselben Grund aus.
     const KEIN_FLIESSTEXT = "pre, code, textarea, select, option, button, summary,"
-        + " .af-step, .af-viewbar__item, .af-tab, table";
+        + " .af-step, .af-viewbar__item, .af-tab, table, svg";
     const blockartig = (el) => {
         const d = getComputedStyle(el).display;
         return d === "block" || d === "flow-root" || d === "list-item";
@@ -1051,24 +1060,69 @@ _PROSA = ("""
         if (gesehen.has(blk)) continue;
         gesehen.add(blk);
 
-        const eltern = blk.parentElement;
-        if (!eltern) continue;
-        const st = getComputedStyle(eltern);
-        // **Ein Flex- oder Grid-Container bemisst seine Kinder selbst.** Dort
-        // ist «schmaler als der Platz» keine Aussage ueber den Text, sondern
-        // ueber die Spur: Eine Kartenbeschreibung in einem dreispaltigen
-        // Raster SOLL ein Drittel breit sein.
-        if (/flex|grid/.test(st.display)) continue;
+        // **Jede Ebene zwischen Text und Layout-Container wird geprueft, nicht
+        // nur die erste** (2026-09-12, zweiter Anlauf). Der erste verglich den
+        // Absatz nur mit seinem direkten Elternelement -- und war damit blind
+        // fuer die haeufigste Form: `ui.field` legt eine Breitenklasse auf den
+        // RAHMEN um Beschriftung, Eingabe, Hinweis und Glossar-Erklaerung. Der
+        // Hinweis fuellt diesen Rahmen, der Rahmen steht auf 320 px in einer
+        // 760 px breiten Karte, und die Messung sah 100 %.
+        //
+        // Gesucht wird die ENGSTE Stelle auf dem Weg nach oben. Der Weg endet
+        // am ersten Flex- oder Grid-Container: **Der bemisst seine Kinder
+        // selbst**, und dort ist «schmaler als der Platz» keine Aussage ueber
+        // den Text, sondern ueber die Spur -- eine Kartenbeschreibung in einem
+        // dreispaltigen Raster SOLL ein Drittel breit sein.
+        //
+        // **Zwei Grenzen, beide aus Fehlalarmen des zweiten Anlaufs:**
+        //
+        // 1. **Der Aufstieg endet am Seitenrahmen.** Er lief sonst ueber
+        //    `.af-pane--focus` (1088 px) bis zur Shell und meldete jeden Text im
+        //    Einstieg und im Modell mit 85 % bei 1280 px. Den Seitenrahmen
+        //    behaelt die Entscheidung ausdruecklich. Erkannt wird er am TOKEN
+        //    (`--breite-inhalt`, zur Laufzeit aufgeloest), nicht an einem
+        //    Klassennamen -- sonst waere die naechste Seite mit eigenem Rahmen
+        //    wieder ein Fehlalarm, und ein Satz-Deckel mit zufaellig derselben
+        //    Klasse waere unsichtbar.
+        // 2. **Ein Rand ist Platz, ein `max-width` nicht.** Der Hinweis unter
+        //    einem Kaestchen ist per `margin-left` unter die Beschriftung
+        //    geschoben (gemessen 94,7 %) -- das ist Ausrichtung, ein Fall fuer
+        //    den Kantenwaechter. Ein Block gilt deshalb als GEDECKELT, wenn er
+        //    genau so breit ist wie sein `max-width` und dieser enger als der
+        //    Inhalt des Elternelements; dann zaehlt sein Rand nicht als Platz,
+        //    und auch ein zentrierter Deckel (`mx-auto`) bleibt sichtbar. Sonst
+        //    gehoeren seine Raender zum Platz.
+        const wurzelStil = getComputedStyle(document.documentElement);
+        const seitenrahmen = parseFloat(wurzelStil.getPropertyValue("--breite-inhalt"))
+            * parseFloat(wurzelStil.fontSize);
+        let eng = null;
+        for (let el = blk; el && el !== wurzel; el = el.parentElement) {
+            const eltern = el.parentElement;
+            if (!eltern) break;
+            const stEl = getComputedStyle(el);
+            const mw = parseFloat(stEl.maxWidth);
+            if (Math.abs(mw - seitenrahmen) < 0.5) break;
+            const st = getComputedStyle(eltern);
+            if (/flex|grid/.test(st.display)) break;
+            const inhalt = eltern.clientWidth
+                - parseFloat(st.paddingLeft || 0) - parseFloat(st.paddingRight || 0);
+            if (!(inhalt > 1)) continue;
+            const breit = el.getBoundingClientRect().width;
+            const gedeckelt = !isNaN(mw) && Math.abs(breit - mw) < 0.5 && mw < inhalt - 0.5;
+            const raender = parseFloat(stEl.marginLeft || 0) + parseFloat(stEl.marginRight || 0);
+            const platz = gedeckelt ? inhalt : inhalt - raender;
+            if (!(platz > 1)) continue;
+            const anteil = 100 * breit / platz;
+            if (!eng || anteil < eng.anteil) eng = { el, anteil, breit, platz };
+        }
+        if (!eng) continue;
+        const breit = eng.breit;
+        const platz = eng.platz;
 
-        const platz = eltern.clientWidth
-            - parseFloat(st.paddingLeft || 0) - parseFloat(st.paddingRight || 0);
-        if (!(platz > 1)) continue;
-        const breit = blk.getBoundingClientRect().width;
-
-        // Welcher Vorfahr deckelt, und auf welchen Wert? Ohne diese Angabe ist
-        // ein Prozentwert nur eine Beschwerde.
+        // Welcher Vorfahr deckelt, und auf welchen Wert? Gesucht ab der engsten
+        // Stelle -- ein Prozentwert ohne Fundstelle ist nur eine Beschwerde.
         let deckel = null;
-        for (let n = blk; n && n !== document.body; n = n.parentElement) {
+        for (let n = eng.el; n && n !== document.body; n = n.parentElement) {
             const mw = getComputedStyle(n).maxWidth;
             if (mw && mw !== "none") {
                 deckel = mw + " an " + n.tagName + "." + String(n.className).slice(0, 40);
@@ -1104,6 +1158,10 @@ _PROSA = ("""
             schrift: getComputedStyle(blk).fontSize,
             deckel: deckel,
             wo: blk.tagName + "." + String(blk.className).slice(0, 60),
+            // Wo es eng wird -- oft NICHT der Absatz selbst, sondern ein Rahmen
+            // zwei Ebenen darueber. Genau das hat der erste Anlauf uebersehen.
+            enge: eng.el === blk ? "(der Block selbst)"
+                : eng.el.tagName + "." + String(eng.el.className).slice(0, 60),
             probe: text.slice(0, 50),
             ausnahme: ausnahme,
         });
@@ -1213,6 +1271,7 @@ def _melde_prosa(wo: str, breite: int, befunde: list[dict]) -> str:
         f"{b['breite']} von {b['platz']} px ({b['anteil']} %), "
         f"{b['zeichen']} Zeichen bei {b['schrift']}\n"
         f"      in {b['wo']}\n"
+        f"      eng wird es an: {b['enge']}\n"
         f"      Deckel: {b['deckel'] or _OHNE_DECKEL}\n"
         f"      Text: {b['probe']!r}"
         for b in befunde
@@ -1424,6 +1483,108 @@ def test_the_width_guard_would_notice_a_relapse(page):
     assert any(b["deckel"] and "200px" in b["deckel"] for b in eng), (
         "Der Deckel wird nicht benannt; ein Prozentwert ohne Fundstelle ist "
         f"nur eine Beschwerde: {eng}"
+    )
+
+    # **Und die Form, an der der erste Anlauf blind war**: Der Absatz selbst
+    # ist frei und füllt seinen Rahmen — gedeckelt ist der Rahmen darüber.
+    # So sieht jedes Eingabefeld aus, das `ui.field` mit einer Breitenklasse
+    # baut: Beschriftung, Eingabe, Hinweis und Erklärung stecken gemeinsam in
+    # einem Div, und die Breite trifft alle vier.
+    page.evaluate("""
+        () => {
+          const rumpf = document.getElementById('wizard-body');
+          rumpf.innerHTML = '';
+          const breit = document.createElement('div');
+          breit.style.width = '100%';
+          breit.style.height = '4px';
+          rumpf.appendChild(breit);
+          const rahmen = document.createElement('div');
+          rahmen.id = 'probe-rahmen';
+          rahmen.className = 'probe-rahmen';
+          rahmen.style.maxWidth = '240px';
+          const p = document.createElement('p');
+          p.textContent = 'Ein Hinweis unter einem Feld, lang genug fuer Fliesstext.';
+          rahmen.appendChild(p);
+          rumpf.appendChild(rahmen);
+        }
+        """)
+    im_rahmen = _prosa_befunde(page)
+    assert im_rahmen, (
+        "Der Wächter übersieht einen Absatz in einem gedeckelten Rahmen — die "
+        "Form jedes Feldes, das `ui.field` mit einer Breitenklasse baut."
+    )
+    assert any("probe-rahmen" in b["enge"] for b in im_rahmen), (
+        "Die engste Stelle wird nicht dem Rahmen zugeordnet, sondern dem " f"Absatz: {im_rahmen}"
+    )
+
+    # **Drei Grenzen, jede aus einem Fehlalarm oder einer Luecke des Aufstiegs.**
+    #
+    # (1) Derselbe 240-px-Rahmen wie oben, aber über das Token des
+    #     Seitenrahmens: Er darf NICHT gemeldet werden. Die Probe setzt das
+    #     Token vorübergehend auf 15 rem — sonst wäre der Seitenrahmen hier
+    #     breiter als der Rumpf und bände gar nicht. Zusammen mit der Probe oben
+    #     beweist sie, dass die Grenze am Token hängt und nicht an der Breite.
+    # (2) Eine Einrückung per Rand ist Ausrichtung und kein Deckel.
+    # (3) Ein zentrierter Deckel (`max-width` mit `margin: auto`) IST einer —
+    #     die Ränder dürfen ihn nicht als Platz verrechnen.
+    page.evaluate("""
+        () => {
+          document.documentElement.style.setProperty('--breite-inhalt', '15rem');
+          const rumpf = document.getElementById('wizard-body');
+          rumpf.innerHTML = '';
+          const breit = document.createElement('div');
+          breit.style.width = '100%';
+          breit.style.height = '4px';
+          rumpf.appendChild(breit);
+          const rahmen = document.createElement('div');
+          rahmen.className = 'probe-seitenrahmen';
+          rahmen.style.maxWidth = 'var(--breite-inhalt)';
+          const p = document.createElement('p');
+          p.textContent = 'Text im Seitenrahmen, lang genug fuer Fliesstext hier.';
+          rahmen.appendChild(p);
+          rumpf.appendChild(rahmen);
+        }
+        """)
+    try:
+        im_seitenrahmen = _prosa_befunde(page)
+    finally:
+        page.evaluate("() => document.documentElement.style.removeProperty('--breite-inhalt')")
+    assert not im_seitenrahmen, (
+        "Der Seitenrahmen wird als Satz-Deckel gemeldet — ihn behält die "
+        f"Entscheidung ausdrücklich: {im_seitenrahmen}"
+    )
+
+    page.evaluate("""
+        () => {
+          const rumpf = document.getElementById('wizard-body');
+          rumpf.innerHTML = '';
+          const p = document.createElement('p');
+          p.style.marginLeft = '26px';
+          p.textContent = 'Ein eingerueckter Hinweis unter einem Kaestchen, lang genug.';
+          rumpf.appendChild(p);
+        }
+        """)
+    eingerueckt = _prosa_befunde(page)
+    assert not eingerueckt, (
+        "Eine Einrückung per Rand wird als Deckel gemeldet — sie ist "
+        f"Ausrichtung, ein Fall für den Kantenwächter: {eingerueckt}"
+    )
+
+    page.evaluate("""
+        () => {
+          const rumpf = document.getElementById('wizard-body');
+          rumpf.innerHTML = '';
+          const p = document.createElement('p');
+          p.style.maxWidth = '200px';
+          p.style.margin = '0 auto';
+          p.textContent = 'Ein zentrierter Absatz mit Deckel, lang genug fuer Fliesstext.';
+          rumpf.appendChild(p);
+        }
+        """)
+    zentriert = _prosa_befunde(page)
+    assert zentriert, (
+        "Ein zentrierter Deckel bleibt unsichtbar — seine automatischen Ränder "
+        "wurden als Platz verrechnet."
     )
 
 

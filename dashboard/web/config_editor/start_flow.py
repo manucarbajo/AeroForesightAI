@@ -903,7 +903,7 @@ def scope_step(draft: dict, number: int | None = 2) -> object:
                 max=500,
                 step=1,
                 detail=True,
-                class_name="max-w-xs",
+                breite="feld",
             ),
             ui.expert(
                 ui.grid(

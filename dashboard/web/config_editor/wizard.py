@@ -148,12 +148,15 @@ class Step:
     body: Callable[[dict], object] | None = None
     #: `False` heißt: darf übersprungen werden, ohne dass etwas fehlt.
     required: bool = True
-    #: Wie breit der Rumpf werden darf (P1.9-W5.4). `"lesen"` deckelt ihn auf
-    #: die Breite eines kurzen Formulars, `"voll"` lässt ihn die Spalte nehmen.
-    #: **Der Name `"lesen"` stammt aus der Zeit des Lesemaßes und passt nicht
-    #: mehr** — gedeckelt wird hier ein Formular und kein Satz; umbenannt wird
-    #: er nicht in diesem Commit, weil Umbenennen und Verhaltensänderung nicht
-    #: zusammengehören. **Der Unterschied ist
+    #: Wie breit der Rumpf werden darf (P1.9-W5.4). **Seit dem 2026-09-12
+    #: benutzt kein Schritt mehr etwas anderes als `"voll"`**: `"lesen"`
+    #: deckelte den Rumpf auf 480 px, und der verschärfte Breitenwächter hat
+    #: gemessen, dass damit Prosa gedeckelt war — die Erklärung zu «Ticks» in
+    #: «Wie weit reicht der Lauf?». Der Grund aus W5.4 (unten) ist erledigt,
+    #: und zwar an der richtigen Stelle: Eine Eingabe bekommt ihre Breite jetzt
+    #: selbst (`ui.field(breite=…)`). Das Feld hier und die Klasse
+    #: `af-body--*` sind damit ohne Wirkung; sie zu entfernen ist reines
+    #: Refactoring und gehört in einen eigenen Commit. **Der Unterschied war
     #: die Form des Inhalts, nicht seine Menge:** Ein Raster aus Auswahlfeldern
     #: (Ausgangslage) und eine Reihe Karten (Szenario, Rechenmodus) brauchen
     #: Breite und ordnen sich darin; ein kurzes Formular aus drei Feldern
@@ -179,7 +182,6 @@ STEPS: list[Step] = [
         "trotzdem kein Datum. Mehr Ticks heißt vor allem mehr Gelegenheiten für "
         "Rückkopplung zwischen Preis und Nachfrage.",
         lambda draft: start_flow.scope_step(draft, number=None),
-        breite="lesen",
     ),
     Step(
         "modus",
@@ -214,7 +216,6 @@ STEPS: list[Step] = [
         "Fragestellung, Ablage als Szenario und die Dateien, aus denen der Lauf liest.",
         experiment.layout,
         required=False,
-        breite="lesen",
     ),
     Step(
         "technik",

@@ -67,7 +67,7 @@ def layout(draft: dict) -> html.Div:
                     min=0,
                     step=1,
                     detail=True,
-                    class_name="max-w-xs",
+                    breite="feld",
                 ),
                 html.Div(
                     c.check("generate_figures", draft.get("generate_figures")),
@@ -78,7 +78,7 @@ def layout(draft: dict) -> html.Div:
                     className="space-y-3 mt-3",
                 ),
                 html.Div(
-                    c.text("resume_from", draft.get("resume_from"), class_name="max-w-lg"),
+                    c.text("resume_from", draft.get("resume_from"), breite="feld-weit"),
                     className="mt-5",
                 ),
                 count=len(_PIPELINE_SWITCHES) + 3,
