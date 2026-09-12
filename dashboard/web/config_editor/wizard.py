@@ -148,22 +148,6 @@ class Step:
     body: Callable[[dict], object] | None = None
     #: `False` heißt: darf übersprungen werden, ohne dass etwas fehlt.
     required: bool = True
-    #: Wie breit der Rumpf werden darf (P1.9-W5.4). **Seit dem 2026-09-12
-    #: benutzt kein Schritt mehr etwas anderes als `"voll"`**: `"lesen"`
-    #: deckelte den Rumpf auf 480 px, und der verschärfte Breitenwächter hat
-    #: gemessen, dass damit Prosa gedeckelt war — die Erklärung zu «Ticks» in
-    #: «Wie weit reicht der Lauf?». Der Grund aus W5.4 (unten) ist erledigt,
-    #: und zwar an der richtigen Stelle: Eine Eingabe bekommt ihre Breite jetzt
-    #: selbst (`ui.field(breite=…)`). Das Feld hier und die Klasse
-    #: `af-body--*` sind damit ohne Wirkung; sie zu entfernen ist reines
-    #: Refactoring und gehört in einen eigenen Commit. **Der Unterschied war
-    #: die Form des Inhalts, nicht seine Menge:** Ein Raster aus Auswahlfeldern
-    #: (Ausgangslage) und eine Reihe Karten (Szenario, Rechenmodus) brauchen
-    #: Breite und ordnen sich darin; ein kurzes Formular aus drei Feldern
-    #: bekommt sie geschenkt und wird davon nicht besser. Gemessen bei 1280:
-    #: «Wie weit reicht der Lauf?» stellte ein 245 px breites Feld in eine
-    #: 760 px breite Spalte — 32 %, der Rest war Leere neben einer Zahl.
-    breite: str = "voll"
 
 
 STEPS: list[Step] = [
@@ -223,9 +207,6 @@ STEPS: list[Step] = [
         "Sprachmodell, Adresse, Zeitgrenzen.",
         llm_pipeline.layout,
         required=False,
-        # **Bewusst «voll», obwohl es ein kurzes Formular ist.** Mit dem
-        # engeren Rumpf wuchs der Schritt von 1,00 auf 1,08 Bildschirme —
-        # bezahlt für ein Schmälern der Eingabefelder, das niemandem hilft.
     ),
     Step(
         "start",
@@ -815,7 +796,7 @@ def content(draft: dict, current: int) -> html.Div:
                 ],
                 className="mb-6",
             ),
-            html.Div(koerper, id="wizard-body", className=f"af-body--{step.breite}"),
+            html.Div(koerper, id="wizard-body"),
         ],
         id=CONTENT,
         className="af-wizard__content",
