@@ -1,6 +1,6 @@
 # Entscheidung: das Gestaltungssystem (D1)
 
-**Stand 2026-09-12 · offen, Entscheidung von Haiko · Grundlage für [P7.1](projektplan.md#p71--ein-gestaltungssystem-statt-einzelregeln--offen) und die beiden letzten Wächter aus [P7.0](projektplan.md#p70--messfundament-für-die-gestaltung--offen)**
+**Stand 2026-09-12 · entschieden (Haiko, siehe «Die Entscheidung» unten) · Grundlage für [P7.1](projektplan.md#p71--ein-gestaltungssystem-statt-einzelregeln--offen) und die beiden letzten Wächter aus [P7.0](projektplan.md#p70--messfundament-für-die-gestaltung--offen)**
 
 Das UI/UX-Audit vom 2026-09-11 stellt D1 als Ja/Nein-Frage: «Ein Gestaltungssystem
 in Tokens vor jeder Ansichtsarbeit?», mit der Empfehlung «Ja». Das Ja/Nein ist
@@ -19,6 +19,30 @@ Entscheidung nicht bauen: U0.1 misst, ob Texte an einer gemeinsamen Kante enden
 — die Kante entsteht erst mit E3; U0.2 misst, ob Schriftgrößen einer Skala
 folgen — die Skala entsteht erst mit E1. Und der Befund, mit dem das Audit
 angefangen hat (ein Text auf der halben Spalte), hängt an E3.
+
+---
+
+## Die Entscheidung
+
+**Am 2026-09-12 von Haiko getroffen — alle fünf Fragen wie vorgeschlagen.** D1
+selbst ist damit «Ja»: Das Gestaltungssystem kommt in Tokens, vor jeder
+Ansichtsarbeit.
+
+| # | Frage | Entschieden |
+| --- | --- | --- |
+| **E1** | Schriftrollen | **Sieben Rollen, kleinste 12 px.** 11 px entfällt; 30, 22 und 17 px verschwinden ersatzlos. Die Konsole wird dadurch höher, und die Deckel des Höhenwächters wandern bewusst mit. |
+| **E2** | Textfarbstufen | **Zwei lesbare, eine gedämpfte, eine für Abgeschaltetes.** `--text-muted` wird 1,5 % dunkler (`#64748b` → `#617087`), `--text-faint` verliert seine Rolle als Textfarbe. |
+| **E3** | Lesemaß | **38 rem = 608 px** (≈ 66 Zeichen bei 15 px), gesetzt am Container. Karten und Raster behalten `--breite-inhalt`. |
+| **E4** | Abstände | **4-px-Raster mit acht Stufen** (4, 8, 12, 16, 24, 32, 48, 64). Werte unter 4 px bleiben für Rahmen erlaubt, mit Begründung. |
+| **E5** | Bausteine | **Vollständig, einschließlich des gestalteten Bestätigungsdialogs.** Damit ist **D7 mitentschieden**. |
+
+**Was daraus folgt, und zwar sofort:** Die Zusage aus P1.9-W5.4 wird künftig **am
+Container gemessen** statt am Element, der Höhenwächter bekommt neue Deckel, und
+`dcc.ConfirmDialogProvider` verschwindet aus `dashboard/web/` — das ist das
+Abnahmekriterium von P7.1.
+
+**Was offen bleibt:** D2 bis D6 des Audits. Sie hängen an Produktfragen, nicht
+an den Tokens.
 
 ---
 
