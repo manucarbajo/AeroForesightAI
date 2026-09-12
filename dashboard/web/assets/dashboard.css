@@ -2199,8 +2199,27 @@ html.dark .af-input[type="number"] {
 
 /* --- Ladeanzeige --------------------------------------------------------- */
 
+/* `._dash-loading` ist **nicht** die Anzeige eines Callbacks, sondern der
+   Platzhalter, den Dash vor dem ersten Rendern ins HTML schreibt: das Wort
+   «Loading...» ungestaltet im Dokumentfluss. Ihn zu verstecken ist eine
+   bewusste Entscheidung und hat mit `dcc.Loading` nichts zu tun -- das Audit
+   vom 2026-09-11 hat beides verwechselt und daraus geschlossen, die Ladeanzeige
+   sei global abgeschaltet. Nachgelesen in `dash/dash.py::_app_entry`. */
 ._dash-loading {
     display: none;
+}
+
+/* Die Anzeige beim Wechsel einer Ergebnis-Ansicht (P7.0-U0.5). Der Punkt bekommt
+   seine Farbe **hier** und nicht am Aufruf: `runs.layout()` laeuft einmal beim
+   Start, ein `color=` von dort waere fuer immer die Farbe des Startdesigns --
+   im dunklen Modus das dunkle Navy auf dunklem Grund. Ueber das Token traegt
+   er in beiden Modi die richtige. */
+.af-ladeanzeige [class*="dash-spinner"],
+.af-ladeanzeige [class*="dash-spinner"]::before,
+.af-ladeanzeige [class*="dash-spinner"]::after,
+.af-ladeanzeige [class*="dash-loading"] {
+    color: var(--accent);
+    background-color: currentColor;
 }
 
 .af-spinner-host {

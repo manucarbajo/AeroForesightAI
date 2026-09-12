@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dash import ALL, Input, Output, State, ctx, html, no_update
+from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
 from dashboard.run_browser import RunSummary, list_runs
 from dashboard.web import components as ui
@@ -198,9 +198,37 @@ def layout(selection: dict | None = None) -> html.Div:
             html.Div(
                 [
                     html.Div(_meta(summary) if summary else None, id="runs-meta", className="mb-5"),
-                    html.Div(
-                        render_tab(DEFAULT_TAB, selection) if selection else empty,
-                        id="runs-tab-content",
+                    # **Der Wirt liegt in einer Ladeanzeige** (P7.0-U0.5).
+                    # Ohne sie stand beim Wechsel der Ansicht bis zu acht
+                    # Sekunden der Inhalt der *vorigen* unter dem bereits
+                    # markierten Reiter — gemessen an «Animation», die auf einem
+                    # echten Lauf 8,5 s braucht und 9,1 MiB schickt, während
+                    # jede andere Ansicht unter 90 ms bleibt.
+                    #
+                    # **Sie muss hier stehen und nicht in der Ansicht.**
+                    # `dcc.Loading` zeigt sich, solange ein Callback etwas
+                    # *innerhalb* von ihm füllt; der Wirt bleibt beim Wechsel
+                    # im Baum, die Ansicht darin wird ausgetauscht. In eine
+                    # Ansicht gelegt käme die Anzeige erst mit der Antwort, auf
+                    # die sie warten soll. Drei Ansichten haben zusätzlich eine
+                    # eigene für ihre inneren Callbacks (Szenario, Abfrage,
+                    # PNG-Galerie) — die bleiben, sie beantworten eine andere
+                    # Frage.
+                    # **Ohne `color=`, anders als die drei Ansichten mit
+                    # eigener Anzeige.** Die färben ihren Punkt über
+                    # `theme.palette(mode)["accent"]` und werden bei jedem
+                    # Themenwechsel neu gezeichnet; `layout()` läuft einmal beim
+                    # Start. Ein Farbwert von hier wäre für immer der des
+                    # Startdesigns — im dunklen Modus das dunkle Navy auf
+                    # dunklem Grund. Die Farbe kommt deshalb aus dem
+                    # Stylesheet (`.af-ladeanzeige`, Regel 4).
+                    dcc.Loading(
+                        html.Div(
+                            render_tab(DEFAULT_TAB, selection) if selection else empty,
+                            id="runs-tab-content",
+                        ),
+                        type="dot",
+                        className="af-ladeanzeige",
                     ),
                 ],
                 className="af-pane",

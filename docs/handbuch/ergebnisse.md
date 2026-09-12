@@ -151,6 +151,12 @@ gesagt haben. Der richtige Ort, um einer einzelnen Runde nachzugehen.
 Ein Chat, der ausschließlich über die Daten dieses Laufs antwortet. Ausführlich
 unter [Läufe abfragen](/doku/abfrage).
 
+Beim Wechsel zwischen den Ansichten erscheint ein Ladepunkt, solange die neue
+Ansicht gebaut wird. **«Animation» braucht dafür am längsten** — sie überträgt
+die simulierten Personen selbst, nicht nur die Ergebnisdaten, und bei einigen
+Tausend Personen über viele Ticks sind das mehrere Megabyte und einige Sekunden.
+Die übrigen Ansichten sind in Bruchteilen einer Sekunde da.
+
 ## Dateien
 
 Alle Rohdaten des Laufs. JSON eingerückt, Tabellen sortier- und filterbar,
