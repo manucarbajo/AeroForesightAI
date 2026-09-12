@@ -259,7 +259,7 @@ class TestEsGibtEinLesemassUndNichtZwei:
 
     **Der Befund ist gemessen, nicht stilistisch.** Die Zusage aus P1.9-W5.4
     lautet «keine Zeile über 75 Zeichen», und das Projekt hat dafür ein eigenes,
-    daran geeichtes Maß: `.af-mass { max-width: 53ch }`. Tailwinds `max-w-prose`
+    daran geeichtes Maß: `.af-mass`, seit U1.2 in `rem` je Prosagröße (bis dahin 53ch, dann 48ch). Tailwinds `max-w-prose`
     ist **65ch** — im Browser gemessen lief ein Absatz damit auf **88 Zeichen**,
     also 17 über der Zusage. Fünf Stellen trugen es, und weil sie *aussahen* wie
     ein Lesemaß, hat niemand sie nachgemessen.
@@ -296,14 +296,37 @@ class TestEsGibtEinLesemassUndNichtZwei:
         )
 
     def test_das_lesemass_ist_ueberhaupt_definiert(self):
-        """Ein Verbot ohne Alternative wäre nur eine Einschränkung."""
+        """Ein Verbot ohne Alternative wäre nur eine Einschränkung.
+
+        **Diese Zusage hat am 2026-09-12 ihre Einheit gewechselt, und der Grund
+        gehört mitgeschrieben.** Bis U1.2 verlangte sie `ch` — mit dem
+        Argument, die Zusage handle von Zeichen und ein `rem`-Deckel hänge an
+        der Schriftgröße. Das Argument ist **richtig**, und es hat mich beim
+        Umbau dreimal aufgehalten: Ein einziger rem-Wert riss die Zusage (608 px
+        tragen bei 12 px 106 Zeichen statt 75).
+
+        Beantwortet ist es jetzt anders, nicht weggelassen: Es gibt **einen
+        Deckel je Prosagröße** (`--breite-lesen` für 15 px, `--breite-lesen-klein`
+        für 12 px), die Zuordnung hält `tests/test_web_breiten.py`, und die
+        Zusage über **Zeichen** hält weiterhin der Browser-Wächter, der zählt.
+        Gewonnen ist damit, was `ch` nicht konnte: Der Wert ist plattformgleich
+        — P3.17 hat auf Linux gemessen, dass Chromium den Ziffernvorschub auf
+        ganze Pixel quantisiert und `53ch` dort **nie** hielt, was es unter
+        Windows zusagte.
+        """
 
         css = (WEB_ROOT / "assets" / "dashboard.css").read_text(encoding="utf-8")
 
         assert ".af-mass {" in css, "Das Lesemaß fehlt im Stylesheet"
-        assert "ch;" in css.split(".af-mass {", 1)[1].split("}", 1)[0], (
-            "Das Lesemaß steht nicht in `ch` — die Zusage handelt von Zeichen, und "
-            "ein `rem`-Deckel hängt an der Schriftgröße (P1.9-W5.4)."
+        assert "--breite-lesen:" in css, (
+            "Das Lesemaß hat kein Token — dann gibt es keine Alternative zum "
+            "verbotenen zweiten Maß."
+        )
+        rumpf = css.split("\n.af-mass {", 1)[1].split("}", 1)[0]
+        assert "var(--breite-lesen)" in rumpf, (
+            "`af-mass` nimmt nicht das Token des Lesemaßes, sondern "
+            f"{rumpf.strip()!r}. Ein zweiter Wert daneben ist genau die Klasse "
+            "Fehler, gegen die dieser Test angetreten ist."
         )
 
     def test_der_sweep_wuerde_einen_rueckfall_bemerken(self):

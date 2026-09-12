@@ -239,6 +239,73 @@ html.dark {
     line-height: 1.55;
 }
 
+/* --- Die Breiten (P7.1-U1.2, entschieden am 2026-09-12) -------------------- */
+/* Vorher standen hier vier Deckel in drei Einheiten -- `48ch`, `34rem`, `46rem`,
+   `68rem` -- und der erste war der Befund, mit dem das UI/UX-Audit angefangen
+   hat: In Schritt 1 standen bei 1440 px SECHS Textbreiten und ELF verschiedene
+   rechte Kanten, waehrend die Zusage aus P1.9-W5.4 (hoechstens 75 Zeichen je
+   Zeile) an jeder einzelnen Stelle erfuellt war (42 bis 59).
+
+   **Warum `ch` das Problem war:** Es ist der Ziffernvorschub der Schrift des
+   jeweiligen ELEMENTS. Dieselbe Regel `max-width: 48ch` ergab deshalb 454 px an
+   einem 15-px-Absatz, 424 px an einem 14-px-Text und 363 px an einer
+   12-px-Bildunterschrift; verschachtelt kamen 341 px dazu. Dazu kommt eine
+   Fragilitaet, die P3.17 auf Linux gemessen hat: Chromium quantisiert den
+   Ziffernvorschub auf ganze Pixel, und `53ch` hat dort **nie** gehalten, was es
+   unter Windows zusagte.
+
+   **Und warum ein einziger rem-Wert es auch nicht war** -- gemessen beim ersten
+   Anlauf am 2026-09-12: 608 px tragen bei 14 px **88** und bei 12 px **106**
+   Zeichen. Ein Deckel in Pixeln und eine Zusage ueber Zeichen sind nur
+   vereinbar, wenn er zur Textgroesse passt. Es gibt deshalb einen Deckel je
+   Prosagroesse -- nicht weil zwei besser klingen als einer, sondern weil die
+   Zusage es verlangt.
+
+   **Die Zahlen sind GEZAEHLT, nicht zurueckgerechnet**, und der zweite Anlauf
+   ist daran gescheitert: Aus 454 px und 49 Zeichen ergaben sich scheinbar
+   9,27 px je Zeichen, also 66 Zeichen fuer 608 px. Der Waechter zaehlt dagegen
+   die laengste wirklich gesetzte Zeile und kommt auf **82** -- 7,42 px je
+   Zeichen. Vor exakt diesem Fehler warnt Teil 7 von `test_web_overflow.py` in
+   seinem Docstring, und ich bin trotzdem hineingelaufen. Und die Beziehung ist
+   nicht linear, weil der Umbruch an Wortgrenzen haengt: 34 rem ergaben gemessen
+   **76** Zeichen, also eins zu viel. Gewaehlt sind deshalb **32 rem** mit
+   Abstand statt einer Punktlandung -- gemessen 72 Zeichen. Fuer 12-px-Prosa
+   ergeben 26 rem dieselben rund 72.
+
+   **Die Regel dazu steht seit D3 als Zusage im Code:** Ein Leseblock hat EINE
+   Textgroesse (`test_web_start_flow.py`). Damit gilt je Block genau einer dieser
+   Deckel, und die Texte darin enden an derselben Kante.
+
+   Herleitung und Preis: `docs/entscheidung_gestaltungssystem_2026-09-12.md`. */
+
+:root {
+    --breite-lesen: 32rem; /* 512 px, ~72 Zeichen bei 15 px -- Fliesstext */
+    --breite-lesen-klein: 26rem; /* 416 px, ~72 Zeichen bei 12 px -- Hinweis, Bildunterschrift */
+    --breite-formular: 30rem; /* 480 px -- ein kurzes Formular aus drei Feldern */
+    --breite-inhalt: 68rem; /* 1088 px -- Karten, Raster, Tabellen, Fokusbereich */
+}
+
+.af-breite-lesen {
+    max-width: var(--breite-lesen);
+}
+
+.af-breite-formular {
+    max-width: var(--breite-formular);
+}
+
+.af-breite-inhalt {
+    max-width: var(--breite-inhalt);
+}
+
+/* **Nicht verschachteln.** Ein Lesemass in einem Lesemass verengte den inneren
+   Text ein zweites Mal: Die Quellenliste der Kohaerenzbegruendung stand deshalb
+   bei 341 px statt bei 363. Der aeussere Deckel gilt, der innere gibt auf. */
+.af-breite-lesen .af-breite-lesen,
+.af-breite-lesen .af-mass,
+.af-mass .af-mass {
+    max-width: none;
+}
+
 /* --- Dashs eigene Design-Tokens --------------------------------------------- */
 /* Dash 3/4 faerbt seine mitgelieferten Komponenten (Slider, Eingaben, Menues)
    ueber eine eigene Token-Ebene `--Dash-*` und spritzt deren Definitionen zur
@@ -1931,7 +1998,7 @@ html.dark .af-input[type="number"] {
     line-height: 1.55;
     color: var(--text-muted);
     margin-top: 0.375rem;
-    max-width: 46rem;
+    max-width: var(--breite-lesen-klein);
 }
 
 /* **Der Hinweis schlägt `.af-md`** (P7.1-U1.1, vorgezogen am 2026-09-11).
@@ -2570,7 +2637,7 @@ html.dark .af-input[type="number"] {
 /* Der Inhalt bekommt eine Lesebreite statt der vollen Flaeche: Eine Frage, die
    ueber 1900 px laeuft, ist schwerer zu lesen als eine, die es nicht tut. */
 .af-pane--focus {
-    max-width: 68rem;
+    max-width: var(--breite-inhalt);
     margin: 0 auto;
     padding: 2rem 1.5rem 4rem;
 }
@@ -2638,8 +2705,33 @@ html.dark .af-input[type="number"] {
 
    Der Deckel sitzt am Fliesstext, nicht am Schritt: Ein Raster aus
    Auswahlfeldern ordnet sich in der Breite, ein Satz zerfaellt darin. */
+/* `af-mass` hiess nach seiner Einheit; die Einheit ist weg, der Name bleibt an
+   dreizehn Aufrufstellen. Wer eine neue baut, nimmt `af-breite-lesen` am
+   Container -- oder gar keinen Deckel, wenn der Block schon einen hat.
+
+   **Zwei Werte, ausgewaehlt nach der Textrolle des Elements.** Die Regel mit
+   zwei Klassen gewinnt ordnungsunabhaengig gegen die mit einer; dasselbe
+   Muster, mit dem P7.1-U1.1 die Kollision von `.af-md` gegen `.af-hint`
+   aufgeraeumt hat. Ohne diese Unterscheidung trueg ein 12-px-Hinweis 106
+   Zeichen je Zeile. */
 .af-mass {
-    max-width: 48ch;
+    max-width: var(--breite-lesen);
+}
+
+/* **Drei Regeln statt einer Gruppe**, und der Grund ist ein Werkzeug: Der
+   Kaskaden-Nachrechner in `tests/test_web_drawers.py` ueberspringt jeden
+   Selektor mit Komma -- eine Gruppe waere fuer ihn unsichtbar, und die Zusage
+   «kleine Prosa bekommt den engeren Deckel» liefe ins Leere. */
+.af-md--caption.af-mass {
+    max-width: var(--breite-lesen-klein);
+}
+
+.af-hint.af-mass {
+    max-width: var(--breite-lesen-klein);
+}
+
+.af-schrift-klein.af-mass {
+    max-width: var(--breite-lesen-klein);
 }
 
 /* **Breite je Schritt** (P1.9-W5.4). Die Form des Inhalts entscheidet, nicht
@@ -2647,7 +2739,7 @@ html.dark .af-input[type="number"] {
    drei Feldern bekommt sie geschenkt und wird davon nicht besser. Gemessen
    stand ein 245 px breites Feld in einer 760 px breiten Spalte. */
 .af-body--lesen {
-    max-width: 34rem;
+    max-width: var(--breite-formular);
 }
 
 /* Code ist kein Fliesstext: Eine JSON-Vorschau bricht nicht bei 75 Zeichen um,

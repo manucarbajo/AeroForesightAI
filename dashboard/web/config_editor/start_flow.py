@@ -352,8 +352,8 @@ def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
         # **Markdown, nicht `html.P`** (P7.1-U1.4): Die Begründungen in
         # `configs/` sind mit `**fett**` und `` `avia_paoc` `` geschrieben, und
         # im Browser standen die Zeichen roh da.
-        ui.markdown(kohaerenz.these, class_name="af-md--tight af-md--these mb-2 af-mass"),
-        ui.markdown(offen, class_name="af-md--tight af-mass"),
+        ui.markdown(kohaerenz.these, class_name="af-md--tight af-md--these mb-2"),
+        ui.markdown(offen, class_name="af-md--tight"),
         ui.expert(
             html.Div(
                 [
@@ -384,7 +384,17 @@ def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
             title="Begründung und Quellen",
         ),
     ]
-    return html.Div(kinder, className="mb-4")
+    # **Der Deckel sitzt am Block, nicht an den Texten darin** (P7.1-U1.2).
+    # Vorher trug jeder Text sein eigenes `af-mass`, und weil das in `ch`
+    # rechnete, bekam jeder eine andere Breite: These 424 px, Begründung 363,
+    # die Quellenliste verschachtelt 341. Vier Breiten in einem Block — der
+    # Befund, mit dem das UI/UX-Audit angefangen hat. Am Block gilt eine
+    # Breite, und die Texte enden an derselben Kante.
+    #
+    # **Möglich ist das erst seit D3**: Bis dahin mischte der Block drei
+    # Textgrößen, und ein Deckel in Pixeln kann die Zusage «höchstens 75
+    # Zeichen je Zeile» nicht für zwei Größen halten.
+    return html.Div(kinder, className="af-breite-lesen mb-4")
 
 
 def scenario_details(draft: dict) -> html.Div:

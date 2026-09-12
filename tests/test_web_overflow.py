@@ -444,6 +444,13 @@ ZIEL = 1.0
 #:   `TestDieBegruendungStoertDieEntscheidungNicht`).
 #:   Verstecken spart, Vergroessern kostet; netto bleiben 0,10.
 #: * **Schritt 6: 1,80 -> 1,78.** Derselbe Block, dieselbe Ursache.
+#:
+#: **Und noch einmal am selben Tag, mit U1.2:** Schritt 1 auf **1,93** (1024 px:
+#: 2,00), Schritt 6 auf **1,71**, Schritt 5 bei 1024 px auf 1,03. Das Lesemass
+#: ist jetzt breiter als vorher -- 512 px fuer Fliesstext gegen die 454, die
+#: `48ch` bei 15 px ergaben, und 416 gegen 363 bei 12 px --, und breiterer Text
+#: braucht weniger Zeilen. Von den 2,09 Schirmen, mit denen dieser Tag anfing,
+#: sind damit 1,93 uebrig; Schritt 6 ist von 1,80 auf 1,71 gegangen.
 #: * **Schritt 4: 1,22 -> 1,23.** Gewachsen, nicht geschrumpft: U1.1 hat die
 #:   Beschriftungen der Oberflaeche von 13 auf 14 px gehoben. Der Zuwachs liegt
 #:   innerhalb von :data:`TOLERANZ` und war damit nicht rot -- eingetragen ist er
@@ -503,7 +510,7 @@ DECKEL: dict[int, dict[str, float]] = {
         # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
-        "Schritt 1": 1.99,
+        "Schritt 1": 1.93,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
@@ -536,7 +543,7 @@ DECKEL: dict[int, dict[str, float]] = {
         # Alternative — die Schätzung aus der Messung herausnehmen — hätte den
         # Wächter blind für genau den Teil gemacht, den ein Nutzer im Alltag
         # sieht.
-        "Schritt 6": 1.78,  # +0,07 aus `af-mass` 53ch -> 48ch, siehe Schritt 1
+        "Schritt 6": 1.71,  # +0,07 aus `af-mass` 53ch -> 48ch, siehe Schritt 1
     },
     1024: {
         "Einstieg": 1.00,
@@ -563,14 +570,14 @@ DECKEL: dict[int, dict[str, float]] = {
         # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
-        "Schritt 1": 2.06,
+        "Schritt 1": 2.00,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
         "Schritt 4": 1.23,
-        "Schritt 5": 1.08,
-        "Schritt 6": 1.78,  # siehe die Begründung bei 1280
+        "Schritt 5": 1.03,
+        "Schritt 6": 1.71,  # siehe die Begründung bei 1280
     },
 }
 
