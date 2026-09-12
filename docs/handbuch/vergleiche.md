@@ -118,7 +118,7 @@ allen vier betroffenen Szenarien alle sieben Faktoren auf denselben Zuständen w
 zuvor. Was sich ändert, sind die **ersten Runden**, in denen die Vorgabe noch
 stand, bevor die Regeln sie überschrieben — und über die Rückkopplung auch die
 Preise am Ende: bei «Totaler Wahnsinn» 588,47 statt 574,47 Euro (2,4 %), bei
-«P5.7» 121,27 statt 120,59 (0,6 %). Für die anderen beiden ist kein Unterschied
+«Prüflauf Abfrage-Ansicht» 121,27 statt 120,59 (0,6 %). Für die anderen beiden ist kein Unterschied
 messbar. Läufe dieser vier Szenarien von vor diesem Datum sind mit späteren also
 nur eingeschränkt vergleichbar.
 
@@ -191,7 +191,7 @@ Am **2026-08-31** kam ein fünfter Schnitt dazu, und er betrifft, **was ein
 Szenario-Vergleich überhaupt vergleicht**: Bis dahin rechnete er *alle acht*
 hinterlegten Dateien durch. Vier davon sind aber keine Zukünfte, sondern
 Stresstests der Engine — «Achterbahn der Extreme», «Action-Szenario», «Totaler
-Wahnsinn (Alle Parameter)» und ein gesichertes Experiment namens «P5.7». Ihre
+Wahnsinn (Alle Parameter)» und ein gesichertes Experiment, heute «Prüflauf Abfrage-Ansicht». Ihre
 Verläufe sind auf Sichtbarkeit und Belastung gebaut, nicht auf Plausibilität.
 
 Ein Vergleich stellt seither **vier Rahmenszenarien** nebeneinander statt acht

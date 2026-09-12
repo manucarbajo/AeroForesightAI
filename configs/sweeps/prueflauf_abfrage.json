@@ -1,8 +1,8 @@
 {
-  "id": "p5.7",
-  "name": "P5.7",
-  "description": "Explorer-Prüfung (P5.7 — vor Abgabe ausführlich durchtesten)\n",
-  "rationale": "Im Dashboard gesichertes Experiment aus P5.7. Kein begründetes Weltbild; es liegt hier, weil das Sichern eines Experiments in denselben Ordner schreibt.",
+  "id": "prueflauf_abfrage",
+  "name": "Prüflauf Abfrage-Ansicht",
+  "description": "Gesicherter Prüflauf für die Ansicht «Abfrage» — kein begründetes Weltbild.",
+  "rationale": "Im Dashboard gesichertes Experiment, mit dem die Ansicht «Abfrage» geprüft wurde. Kein begründetes Weltbild; es liegt hier, weil das Sichern eines Experiments in denselben Ordner schreibt wie die Rahmenszenarien.",
   "max_ticks": 40,
   "base_price": null,
   "property_overrides": [

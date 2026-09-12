@@ -140,7 +140,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
             html.Div(
                 [
                     html.P(
-                        "P3 — Szenarien aus dem Lauf: Tick-Anhaltspunkte und sachliche Beschreibung.",
+                        "Szenarien aus dem Lauf: Tick-Anhaltspunkte und sachliche Beschreibung.",
                         className=ui.CAPTION,
                     ),
                     ui.button(
