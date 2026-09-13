@@ -89,6 +89,7 @@ und der Wächter wäre wieder aus dem falschen Grund grün. Das Ziel steht als
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 import socket
@@ -321,9 +322,15 @@ BEREICHE = {
 
 @pytest.fixture(params=BREITEN, ids=[f"{b}px" for b in BREITEN])
 def page(request, browser, basis_url):
+    """Eine frische Seite für die Tests, die selbst in die Seite eingreifen.
+
+    **Sie lädt nichts**, und das ist eine Korrektur vom 2026-09-13: Bis dahin
+    öffnete dieses Fixture die App, und fast jeder Test öffnete sie danach
+    selbst noch einmal — jeder zahlte zwei Seitenaufrufe für einen.
+    """
+
     kontext = browser.new_context(viewport={"width": request.param, "height": HOEHE})
     seite = kontext.new_page()
-    seite.goto(basis_url, wait_until="networkidle")
     seite.breite = request.param  # für die Meldung
     seite.basis = basis_url
     try:
@@ -332,51 +339,287 @@ def page(request, browser, basis_url):
         kontext.close()
 
 
-class TestKeineAnsichtTrittAusIhrerBox:
-    @pytest.mark.parametrize("name", list(BEREICHE))
-    def test_the_area_keeps_its_content_inside(self, page, name):
-        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
-        befunde = _befunde(page)
+#: Für Tests, die aus einem Messgang lesen: dieselben Breiten als Parameter.
+JE_BREITE = pytest.mark.parametrize("breite", BREITEN, ids=[f"{b}px" for b in BREITEN])
 
-        assert not befunde, _melde(name, page.breite, befunde)
 
-    def test_every_step_of_the_setup_keeps_its_content_inside(self, page):
-        """Acht Schritte, acht Ansichten.
+class _Gescheitert:
+    """Ein Messgang, der nicht durchkam — damit nicht jeder Test ihn neu versucht."""
 
-        Die vier optionalen tragen die dichtesten Formulare der ganzen App —
-        Regelzeilen, Segmenttabellen, Faktorraster. Wenn irgendwo etwas
-        herausragt, dann hier.
-        """
+    def __init__(self, grund: str) -> None:
+        self.grund = grund
 
-        page.goto(page.basis, wait_until="networkidle")
-        page.wait_for_selector(".af-way")
 
-        page.click("#wizard-way-new")
-        page.wait_for_timeout(RUHE_MS)
+class _Messgang:
+    """Messen einmal, prüfen einzeln (2026-09-13).
 
+    **Warum es das gibt:** Bis dahin öffnete jeder Wächter seine Ansicht selbst.
+    Sieben öffneten die fünf Bereiche je für sich — Überlauf, seitliches
+    Schieben, Prosa, Klassen, Netzwerk, Symbole, Legende —, und die
+    Schrittfolge wurde je Breite rund zehnmal durchgeklickt, jedes Mal mit
+    900 ms Ruhe je Schritt. Gemessen wurde dabei **dieselbe gezeichnete Seite**;
+    der volle Lauf brauchte am 2026-09-13 36:28.
+
+    **Was gilt:** Ein Messgang öffnet eine Ansicht einmal je Breite und nimmt
+    alles, was die Wächter dort messen. Die Tests prüfen auf diesen Daten; jede
+    Zusage bleibt ein eigener Test mit eigener Meldung. **Gemessen wird erst,
+    wenn ein Test danach fragt** — wer nur einen Teil laufen lässt, zahlt nur
+    dessen Gänge.
+
+    **Was nicht hierher gehört:** die Selbsttests. Sie greifen in die Seite ein
+    — hängen Klötze ein, leeren den Rumpf, verschieben Legenden —, und ein Gang,
+    in den eingegriffen wurde, misst danach etwas anderes. Sie behalten ihre
+    eigene Seite (`page`). Dasselbe gilt für die Klickmessung, die ihre Zeit
+    selbst nimmt.
+
+    **Eine Reihenfolge ist Pflicht:** `_EINZUG` öffnet alle Klappen und läuft
+    deshalb je Schritt als Letztes. Davor gemessen, hätten Höhe, Überlauf und
+    Prosa geöffnete Klappen gesehen, die ein Nutzer geschlossen vorfindet.
+    """
+
+    def __init__(self, browser, basis: str) -> None:
+        self._browser = browser
+        self._basis = basis
+        self._gemessen: dict[tuple, object] = {}
+
+    def _einmal(self, schluessel: tuple, messen):
+        if schluessel not in self._gemessen:
+            try:
+                self._gemessen[schluessel] = messen()
+            except (AssertionError, PlaywrightError) as exc:
+                self._gemessen[schluessel] = _Gescheitert(f"{type(exc).__name__}: {exc}")
+        wert = self._gemessen[schluessel]
+        if isinstance(wert, _Gescheitert):
+            pytest.fail(f"Der Messgang {schluessel} ist gescheitert — {wert.grund}")
+        return wert
+
+    @contextlib.contextmanager
+    def _seite(self, breite: int):
+        kontext = self._browser.new_context(viewport={"width": breite, "height": HOEHE})
+        seite = kontext.new_page()
+        seite.breite = breite
+        seite.basis = self._basis
+        try:
+            yield seite
+        finally:
+            kontext.close()
+
+    # --- ein Bereich ----------------------------------------------------------
+
+    def bereich(self, breite: int, name: str) -> dict:
+        return self._einmal(("bereich", breite, name), lambda: self._miss_bereich(breite, name))
+
+    def _miss_bereich(self, breite: int, name: str) -> dict:
+        with self._seite(breite) as seite:
+            fremd, _ = _mithoeren(seite)
+            seite.goto(self._basis + BEREICHE[name], wait_until="networkidle")
+            if name == "Modell":
+                _warte_auf_modell(seite)
+            _warte_auf_schriften(seite)
+            return {
+                "ueberlauf": seite.evaluate(_DETEKTOR),
+                "schieben": seite.evaluate(_SEITE_SCHIEBT),
+                "prosa": seite.evaluate(_PROSA),
+                "klassen": _klassen_ohne_regel(seite),
+                "symbole": set(seite.evaluate(_SYMBOLE_IM_DOM)),
+                "legende": _legenden_befunde(seite),
+                "wirt": seite.evaluate(_WIRT),
+                "eingaben_im_modell": seite.locator("#model-editor-host input").count(),
+                "fremd": list(fremd),
+            }
+
+    # --- die Landingpage ------------------------------------------------------
+
+    def landingpage(self, breite: int) -> dict:
+        return self._einmal(("landingpage", breite), lambda: self._miss_landingpage(breite))
+
+    def _miss_landingpage(self, breite: int) -> dict:
+        basis = self._basis.replace("/app/", "/")
+        ergebnis: dict = {"fremd": {}}
+        with self._seite(breite) as seite:
+            for pfad in LANDINGPAGE_SEITEN:
+                fremd = _fremde_anfragen(seite, basis + pfad)
+                if fremd:
+                    ergebnis["fremd"][pfad or "index.html"] = sorted(set(fremd))
+                if not pfad:
+                    ergebnis["klassen"] = _klassen_ohne_regel(seite)
+                    ergebnis["symbole"] = set(seite.evaluate(_SYMBOLE_IM_DOM))
+        return ergebnis
+
+    # --- die Schrittfolge -----------------------------------------------------
+
+    def schritte(self, breite: int) -> dict:
+        return self._einmal(("schritte", breite), lambda: self._miss_schritte(breite))
+
+    def _miss_schritte(self, breite: int) -> dict:
         from dashboard.web.config_editor import wizard
 
-        schritte = page.locator(".af-step").count()
-        assert schritte == len(
-            wizard.STEPS
-        ), f"Gezählt {schritte} Schritte, die Schrittfolge nennt {len(wizard.STEPS)}"
+        with self._seite(breite) as seite:
+            seite.goto(self._basis, wait_until="networkidle")
+            seite.wait_for_selector(".af-way")
+            einstieg_schirme = _schirme(seite)
+            einstieg_raster = seite.evaluate(_EINSTIEG_RASTER)
 
-        for index in range(schritte):
-            page.locator(".af-step").nth(index).click()
-            befunde = _befunde(page)
-            titel = page.locator(".af-wizard__counter").inner_text()
-            assert not befunde, _melde(f"Einrichten / {titel}", page.breite, befunde)
+            seite.click("#wizard-way-new")
+            seite.wait_for_timeout(RUHE_MS * 2)
+            baum = seite.evaluate(_WIRT)["gesamt"]
 
-    def test_every_result_view_keeps_its_content_inside(self, page):
-        page.goto(page.basis + "runs", wait_until="networkidle")
-        page.wait_for_selector(".af-viewbar__item")
+            anzahl = seite.locator(".af-step").count()
+            assert anzahl == len(
+                wizard.STEPS
+            ), f"Gezählt {anzahl} Schritte, die Schrittfolge nennt {len(wizard.STEPS)}"
 
-        reiter = page.locator(".af-viewbar__item").count()
-        for index in range(reiter):
-            beschriftung = page.locator(".af-viewbar__item").nth(index).inner_text()
-            page.locator(".af-viewbar__item").nth(index).click()
-            befunde = _befunde(page)
-            assert not befunde, _melde(f"Ergebnisse / {beschriftung}", page.breite, befunde)
+            je_schritt = []
+            for index in range(anzahl):
+                seite.locator(".af-step").nth(index).click()
+                _warte_bis_gezeichnet(seite)
+                _warte_auf_schriften(seite)
+                # Erst prüfen, ob wirklich der angeklickte Schritt offen ist.
+                # Ohne das trüge eine verschluckte Navigation die Maße des
+                # vorigen Schritts unter fremdem Namen in jede Zusage.
+                gezeigt = _gezeigter_schritt(seite)
+                assert gezeigt == index + 1, (
+                    f"Klick auf Schritt {index + 1} zeigt Schritt {gezeigt}. "
+                    "Gemessen würde der falsche Schritt."
+                )
+                je_schritt.append(
+                    {
+                        "titel": wizard.STEPS[index].title,
+                        "zaehler": seite.locator(".af-wizard__counter").inner_text(),
+                        "schirme": _schirme_jetzt(seite),
+                        "ueberlauf": seite.evaluate(_DETEKTOR),
+                        "breite": seite.evaluate(_BREITE),
+                        "prosa": seite.evaluate(_PROSA),
+                        "symbole": set(seite.evaluate(_SYMBOLE_IM_DOM)),
+                        # Als Letztes: `_EINZUG` öffnet alle Klappen.
+                        "einzug": seite.evaluate(_EINZUG),
+                    }
+                )
+        return {
+            "einstieg_schirme": einstieg_schirme,
+            "einstieg_raster": einstieg_raster,
+            "baum": baum,
+            "schritte": je_schritt,
+        }
+
+    # --- die Ergebnis-Ansichten -----------------------------------------------
+
+    def ergebnisse(self, breite: int) -> list[dict]:
+        return self._einmal(("ergebnisse", breite), lambda: self._miss_ergebnisse(breite))
+
+    def _miss_ergebnisse(self, breite: int) -> list[dict]:
+        with self._seite(breite) as seite:
+            seite.goto(self._basis + "runs", wait_until="networkidle")
+            seite.wait_for_selector(".af-viewbar__item")
+            leiste = seite.locator(".af-viewbar__item")
+            ansichten = []
+            for index in range(leiste.count()):
+                beschriftung = leiste.nth(index).inner_text()
+                leiste.nth(index).click()
+                seite.wait_for_timeout(RUHE_MS)
+                _warte_auf_schriften(seite)
+                ansichten.append(
+                    {
+                        "beschriftung": beschriftung,
+                        "ueberlauf": seite.evaluate(_DETEKTOR),
+                        "prosa": seite.evaluate(_PROSA),
+                    }
+                )
+        return ansichten
+
+    # --- die vier Aussagen ----------------------------------------------------
+
+    def figures(self, breite: int, modus: str) -> dict:
+        return self._einmal(("figures", breite, modus), lambda: self._miss_figures(breite, modus))
+
+    def _miss_figures(self, breite: int, modus: str) -> dict:
+        with self._seite(breite) as seite:
+            _oeffne_figures(seite)
+            if modus == "dunkel":
+                _auf_dunkel(seite)
+                _oeffne_figures(seite)
+            reiter = seite.locator("#figures-tabs .af-tab")
+            anzahl = reiter.count()
+            aussagen = []
+            for index, name in enumerate(AUSSAGEN[:anzahl]):
+                reiter.nth(index).click()
+                aussagen.append((name, _legendenkonflikte(seite)))
+        return {"reiter": anzahl, "aussagen": aussagen}
+
+    # --- die schmale Breite ---------------------------------------------------
+
+    def schmal(self) -> list[tuple[str, dict]]:
+        return self._einmal(("schmal", SCHMAL), self._miss_schmal)
+
+    def _miss_schmal(self) -> list[tuple[str, dict]]:
+        from dashboard.web.config_editor import wizard
+
+        with self._seite(SCHMAL) as seite:
+            seite.goto(self._basis, wait_until="networkidle")
+            seite.wait_for_selector(".af-way")
+            seite.click("#wizard-way-new")
+            seite.wait_for_timeout(RUHE_MS)
+            werte = []
+            for index in range(len(wizard.STEPS)):
+                if index:
+                    seite.click("#wizard-next")
+                    seite.wait_for_timeout(RUHE_MS)
+                seite.wait_for_function(
+                    "() => { const e = document.getElementById('wizard-content');"
+                    " return e && e.getBoundingClientRect().height > 50; }",
+                    timeout=10_000,
+                )
+                werte.append((wizard.STEPS[index].title, seite.evaluate(_MOBIL)))
+        return werte
+
+
+@pytest.fixture(scope="module")
+def messung(browser, basis_url):
+    return _Messgang(browser, basis_url)
+
+
+def _warte_auf_modell(page) -> None:
+    """Der Modell-Bereich wird erst beim Aufsuchen gebaut (P3.12) — darauf warten.
+
+    Kommt er nicht, wird nicht hier abgebrochen: Die Zusage in Teil 10 meldet
+    es mit ihrer eigenen, lesbaren Meldung.
+    """
+
+    try:
+        page.wait_for_function(
+            "() => { const w = document.getElementById('model-editor-host');"
+            " return w && w.querySelectorAll('*').length > 500; }",
+            timeout=10_000,
+        )
+    except PlaywrightError:
+        pass
+
+
+class TestKeineAnsichtTrittAusIhrerBox:
+    @JE_BREITE
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_the_area_keeps_its_content_inside(self, messung, breite, name):
+        befunde = messung.bereich(breite, name)["ueberlauf"]
+
+        assert not befunde, _melde(name, breite, befunde)
+
+    @JE_BREITE
+    def test_every_step_of_the_setup_keeps_its_content_inside(self, messung, breite):
+        """Jeder Schritt ist eine eigene Ansicht.
+
+        Die dichtesten Formulare der Schrittfolge — Regelzeilen, Auswahlraster,
+        Feinabstimmung. Wenn irgendwo etwas herausragt, dann hier.
+        """
+
+        for schritt in messung.schritte(breite)["schritte"]:
+            befunde = schritt["ueberlauf"]
+            assert not befunde, _melde(f"Einrichten / {schritt['zaehler']}", breite, befunde)
+
+    @JE_BREITE
+    def test_every_result_view_keeps_its_content_inside(self, messung, breite):
+        for ansicht in messung.ergebnisse(breite):
+            befunde = ansicht["ueberlauf"]
+            assert not befunde, _melde(f"Ergebnisse / {ansicht['beschriftung']}", breite, befunde)
 
 
 # --- Teil 2: die Höhe (W0.1) -----------------------------------------------
@@ -627,6 +870,33 @@ _HOEHE = """
 """
 
 
+def _warte_bis_gezeichnet(page) -> None:
+    """Bis der offene Schritt — oder der Einstieg — wirklich gezeichnet ist.
+
+    **Der Einstieg zählt mit.** Dort ist der Inhalt bewusst ausgeblendet und
+    bleibt es; auf ihn zu warten hieße, in einen Timeout zu laufen. Gewartet
+    wird deshalb darauf, dass *einer* von beiden gezeichnet ist.
+    """
+
+    page.wait_for_function(
+        "() => { const hoehe = (id) => { const e = document.getElementById(id);"
+        " return e ? e.getBoundingClientRect().height : 0; };"
+        " return hoehe('wizard-content') > 50 || hoehe('wizard-entry-host') > 50; }",
+        timeout=10_000,
+    )
+
+
+def _schirme_jetzt(page) -> float:
+    """Die Messung selbst — ohne zu warten. Wer sie ruft, hat gewartet."""
+
+    masse = page.evaluate(_HOEHE)
+    assert (
+        masse is not None
+    ), "`.af-shell__main` nicht gefunden — misst der Wächter noch das Richtige?"
+    assert masse["sicht"] > 0, "Sichtbare Höhe 0 — der Bereich ist nicht gezeichnet"
+    return masse["scroll"] / masse["sicht"]
+
+
 def _schirme(page) -> float:
     """Wie viele Bildschirme der offene Bereich hoch ist.
 
@@ -640,22 +910,9 @@ def _schirme(page) -> float:
     einen Gewinn von 275 px, den es nicht gab.
     """
 
-    # **Der Einstieg zählt mit.** Dort ist der Inhalt bewusst ausgeblendet und
-    # bleibt es; auf ihn zu warten hieße, in einen Timeout zu laufen. Gewartet
-    # wird deshalb darauf, dass *einer* von beiden gezeichnet ist.
-    page.wait_for_function(
-        "() => { const hoehe = (id) => { const e = document.getElementById(id);"
-        " return e ? e.getBoundingClientRect().height : 0; };"
-        " return hoehe('wizard-content') > 50 || hoehe('wizard-entry-host') > 50; }",
-        timeout=10_000,
-    )
+    _warte_bis_gezeichnet(page)
     page.wait_for_timeout(RUHE_MS)
-    masse = page.evaluate(_HOEHE)
-    assert (
-        masse is not None
-    ), "`.af-shell__main` nicht gefunden — misst der Wächter noch das Richtige?"
-    assert masse["sicht"] > 0, "Sichtbare Höhe 0 — der Bereich ist nicht gezeichnet"
-    return masse["scroll"] / masse["sicht"]
+    return _schirme_jetzt(page)
 
 
 def _gezeigter_schritt(page) -> int | None:
@@ -676,49 +933,24 @@ def _gezeigter_schritt(page) -> int | None:
 class TestJederSchrittPasstAufEinenSchirm:
     """Die Zusage von P1.7, zum ersten Mal gemessen statt gezählt."""
 
-    def test_no_step_grew_beyond_its_ratchet(self, page):
+    @JE_BREITE
+    def test_no_step_grew_beyond_its_ratchet(self, messung, breite):
         """Kein Schritt wächst über seinen Deckel — und keiner schrumpft unbemerkt.
 
-        Beide Richtungen in **einem** Durchlauf: Der Bildschirmwechsel kostet
-        eine knappe Sekunde Ruhezeit je Schritt, und zweimal durch acht Schritte
-        zu laufen wäre eine Minute für dieselbe Messung.
-
-        Gemeldet werden **alle** Abweichungen auf einmal, nicht die erste. Wer
-        den Assistenten umbaut, verschiebt selten genau eine Zahl.
+        Beide Richtungen aus **einer** Messung. Gemeldet werden **alle**
+        Abweichungen auf einmal, nicht die erste: Wer den Assistenten umbaut,
+        verschiebt selten genau eine Zahl.
         """
 
-        deckel = DECKEL[page.breite]
-        page.goto(page.basis, wait_until="networkidle")
-        page.wait_for_selector(".af-way")
-
-        gemessen: dict[str, float] = {"Einstieg": _schirme(page)}
-
-        page.click("#wizard-way-new")
-        page.wait_for_timeout(RUHE_MS)
-        from dashboard.web.config_editor import wizard
-
-        anzahl = page.locator(".af-step").count()
-        assert anzahl == len(
-            wizard.STEPS
-        ), f"Gezählt {anzahl} Schritte, die Schrittfolge nennt {len(wizard.STEPS)}"
-
-        for index in range(anzahl):
-            page.locator(".af-step").nth(index).click()
-            wert = _schirme(page)
-            # Erst prüfen, ob wirklich der angeklickte Schritt offen ist. Ohne
-            # das trüge eine verschluckte Navigation die Höhe des vorigen
-            # Schritts unter fremdem Namen in den Deckel — und der Wächter wäre
-            # ab dann grün für den falschen Schritt.
-            gezeigt = _gezeigter_schritt(page)
-            assert gezeigt == index + 1, (
-                f"Klick auf Schritt {index + 1} zeigt Schritt {gezeigt}. "
-                "Gemessen würde die Höhe des falschen Schritts."
-            )
-            gemessen[f"Schritt {index + 1}"] = wert
+        deckel = DECKEL[breite]
+        gang = messung.schritte(breite)
+        gemessen: dict[str, float] = {"Einstieg": gang["einstieg_schirme"]}
+        for index, schritt in enumerate(gang["schritte"]):
+            gemessen[f"Schritt {index + 1}"] = schritt["schirme"]
 
         fehlend = sorted(set(deckel) - set(gemessen))
         assert not fehlend, (
-            f"Bei {page.breite} px nicht gemessen: {fehlend}. "
+            f"Bei {breite} px nicht gemessen: {fehlend}. "
             "Steht der Zähler noch in `.af-wizard__counter`?"
         )
 
@@ -728,7 +960,7 @@ class TestJederSchrittPasstAufEinenSchirm:
             if name in deckel and wert > deckel[name] + TOLERANZ
         ]
         assert not gewachsen, (
-            f"Bei {page.breite} px sind Schritte gewachsen:\n"
+            f"Bei {breite} px sind Schritte gewachsen:\n"
             + "\n".join(gewachsen)
             + "\n\nEin Schritt darf nicht länger werden, solange keiner auf einen "
             "Schirm passt. Wenn der Zuwachs gewollt ist, gehört die Begründung in "
@@ -741,7 +973,7 @@ class TestJederSchrittPasstAufEinenSchirm:
             if name in deckel and wert < deckel[name] - SCHLUPF
         ]
         assert not geschrumpft, (
-            f"Bei {page.breite} px ist der Deckel veraltet:\n"
+            f"Bei {breite} px ist der Deckel veraltet:\n"
             + "\n".join(geschrumpft)
             + f"\n\nDas ist ein Erfolg, kein Fehler — aber ein Deckel, der über dem "
             f"Ist-Stand schwebt, ist wieder aus dem falschen Grund grün. Neue Zahlen "
@@ -757,14 +989,13 @@ class TestDieSeiteSchiebtSichNichtWaagerecht:
     als Ganzes waagerecht scrollt, ist etwas zu breit — gleich was.
     """
 
+    @JE_BREITE
     @pytest.mark.parametrize("name", list(BEREICHE))
-    def test_the_page_itself_does_not_scroll_sideways(self, page, name):
-        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
-        page.wait_for_timeout(RUHE_MS)
-        masse = page.evaluate(_SEITE_SCHIEBT)
+    def test_the_page_itself_does_not_scroll_sideways(self, messung, breite, name):
+        masse = messung.bereich(breite, name)["schieben"]
 
         assert masse["scroll"] <= masse["sicht"] + 1, (
-            f"{name} bei {page.breite} px schiebt sich waagerecht: "
+            f"{name} bei {breite} px schiebt sich waagerecht: "
             f"{masse['scroll']} px Inhalt in {masse['sicht']} px Fenster"
         )
 
@@ -1189,36 +1420,11 @@ _EINSTIEG_RASTER = """
 """
 
 
-def _durch_die_schritte(page):
-    """Jeden Schritt öffnen und vermessen — als `(titel, maße)` je Schritt."""
-
-    from dashboard.web.config_editor import wizard
-
-    page.goto(page.basis, wait_until="networkidle")
-    page.wait_for_selector(".af-way")
-    page.click("#wizard-way-new")
-    page.wait_for_timeout(RUHE_MS)
-
-    for index in range(len(wizard.STEPS)):
-        if index:
-            page.click("#wizard-next")
-            page.wait_for_timeout(RUHE_MS)
-        page.wait_for_function(
-            "() => { const e = document.getElementById('wizard-content');"
-            " return e && e.getBoundingClientRect().height > 50; }",
-            timeout=10_000,
-        )
-        # **Vor jeder Messung**, nicht einmal am Anfang: Jeder Schritt kann eine
-        # weitere Schnittvariante anfordern, und `_BREITE` zählt Zeichen — die
-        # Zahl hängt an der Schrift, die in diesem Moment gesetzt ist.
-        _warte_auf_schriften(page)
-        yield wizard.STEPS[index].title, page.evaluate(_BREITE)
-
-
 class TestJederSchrittHatSeineBreite:
     """Eine Breite für alles war für jeden Schritt die falsche."""
 
-    def test_no_step_sits_in_a_column_too_wide_for_it(self, page):
+    @JE_BREITE
+    def test_no_step_sits_in_a_column_too_wide_for_it(self, messung, breite):
         """Kein Schritt lässt seine Spalte zur Hälfte leer.
 
         **Gemessen an der Tinte, nicht am breitesten Feld.** Die erste Fassung
@@ -1229,17 +1435,20 @@ class TestJederSchrittHatSeineBreite:
         """
 
         schmal = [
-            f"{titel}: {mass['fuellung']} % von {mass['rumpf']} px"
-            for titel, mass in _durch_die_schritte(page)
-            if mass and mass["fuellung"] is not None and mass["fuellung"] < FUELLUNG_MIN
+            f"{schritt['titel']}: {mass['fuellung']} % von {mass['rumpf']} px"
+            for schritt in messung.schritte(breite)["schritte"]
+            if (mass := schritt["breite"])
+            and mass["fuellung"] is not None
+            and mass["fuellung"] < FUELLUNG_MIN
         ]
 
         assert not schmal, (
-            f"Diese Schritte füllen bei {page.breite} px weniger als "
+            f"Diese Schritte füllen bei {breite} px weniger als "
             f"{FUELLUNG_MIN:.0f} % ihrer Spalte:\n  " + "\n  ".join(schmal)
         )
 
-    def test_the_entry_reserves_no_column_for_a_list_it_does_not_have(self, page):
+    @JE_BREITE
+    def test_the_entry_reserves_no_column_for_a_list_it_does_not_have(self, messung, breite):
         """Am Einstieg gibt es keine Schrittliste — und keine Spalte dafür.
 
         Gemessen wurden 240 px Leere links neben der Frage, mit der alles
@@ -1247,24 +1456,24 @@ class TestJederSchrittHatSeineBreite:
         selbst `display: none` war.
         """
 
-        page.goto(page.basis, wait_until="networkidle")
-        page.wait_for_selector(".af-way")
-        raster = page.evaluate(_EINSTIEG_RASTER)
+        raster = messung.schritte(breite)["einstieg_raster"]
 
         assert raster, ".af-wizard nicht gefunden — misst der Wächter noch das Richtige?"
         assert not raster["railBreite"], "Die Schrittliste ist am Einstieg doch sichtbar"
         assert len(raster["spalten"].split()) == 1, (
-            f"Der Einstieg hält bei {page.breite} px eine zweite Spalte vor "
+            f"Der Einstieg hält bei {breite} px eine zweite Spalte vor "
             f"({raster['spalten']}) — für eine Liste, die dort nicht steht."
         )
 
 
-def _prosa_befunde(page) -> list[dict]:
+def _zu_schmal(bloecke: list[dict]) -> list[dict]:
     """Jeder Prosablock, der schmaler steht als sein Platz — Ausnahmen heraus."""
 
-    return [
-        b for b in page.evaluate(_PROSA) if b["anteil"] < PROSA_FUELLUNG_MIN and not b["ausnahme"]
-    ]
+    return [b for b in bloecke if b["anteil"] < PROSA_FUELLUNG_MIN and not b["ausnahme"]]
+
+
+def _prosa_befunde(page) -> list[dict]:
+    return _zu_schmal(page.evaluate(_PROSA))
 
 
 #: Steht kein `max-width` daneben, verengt etwas anderes — und das gehört in die
@@ -1316,50 +1525,28 @@ class TestKeinProsablockIstSchmalerAlsSeinPlatz:
     abgeht, hätte alle fünf durchgelassen.
     """
 
+    @JE_BREITE
     @pytest.mark.parametrize("name", list(BEREICHE))
-    def test_the_area_lets_its_prose_fill_the_frame(self, page, name):
-        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
-        _warte_auf_schriften(page)
-        befunde = _prosa_befunde(page)
+    def test_the_area_lets_its_prose_fill_the_frame(self, messung, breite, name):
+        befunde = _zu_schmal(messung.bereich(breite, name)["prosa"])
 
-        assert not befunde, _melde_prosa(name, page.breite, befunde)
+        assert not befunde, _melde_prosa(name, breite, befunde)
 
-    def test_every_step_lets_its_prose_fill_the_frame(self, page):
-        page.goto(page.basis, wait_until="networkidle")
-        page.wait_for_selector(".af-way")
-        page.click("#wizard-way-new")
-        page.wait_for_timeout(RUHE_MS)
+    @JE_BREITE
+    def test_every_step_lets_its_prose_fill_the_frame(self, messung, breite):
+        for schritt in messung.schritte(breite)["schritte"]:
+            befunde = _zu_schmal(schritt["prosa"])
 
-        from dashboard.web.config_editor import wizard
+            assert not befunde, _melde_prosa(f"Einrichten / {schritt['titel']}", breite, befunde)
 
-        for index in range(len(wizard.STEPS)):
-            if index:
-                page.click("#wizard-next")
-                page.wait_for_timeout(RUHE_MS)
-            page.wait_for_function(
-                "() => { const e = document.getElementById('wizard-content');"
-                " return e && e.getBoundingClientRect().height > 50; }",
-                timeout=10_000,
+    @JE_BREITE
+    def test_every_result_view_lets_its_prose_fill_the_frame(self, messung, breite):
+        for ansicht in messung.ergebnisse(breite):
+            befunde = _zu_schmal(ansicht["prosa"])
+
+            assert not befunde, _melde_prosa(
+                f"Ergebnisse / {ansicht['beschriftung']}", breite, befunde
             )
-            _warte_auf_schriften(page)
-            befunde = _prosa_befunde(page)
-            titel = wizard.STEPS[index].title
-
-            assert not befunde, _melde_prosa(f"Einrichten / {titel}", page.breite, befunde)
-
-    def test_every_result_view_lets_its_prose_fill_the_frame(self, page):
-        page.goto(page.basis + "runs", wait_until="networkidle")
-        page.wait_for_selector(".af-viewbar__item")
-
-        reiter = page.locator(".af-viewbar__item").count()
-        for index in range(reiter):
-            beschriftung = page.locator(".af-viewbar__item").nth(index).inner_text()
-            page.locator(".af-viewbar__item").nth(index).click()
-            page.wait_for_timeout(RUHE_MS)
-            _warte_auf_schriften(page)
-            befunde = _prosa_befunde(page)
-
-            assert not befunde, _melde_prosa(f"Ergebnisse / {beschriftung}", page.breite, befunde)
 
     def test_every_exception_carries_a_reason(self):
         """Eine Ausnahme ohne Grund ist in sechs Monaten eine Regel."""
@@ -1368,7 +1555,8 @@ class TestKeinProsablockIstSchmalerAlsSeinPlatz:
 
         assert not ohne, f"Diese Ausnahmen nennen keinen Grund: {ohne}"
 
-    def test_the_guard_actually_measures_something(self, page):
+    @JE_BREITE
+    def test_the_guard_actually_measures_something(self, messung, breite):
         """**Ein Wächter, der nichts sieht, ist blind und nicht grün.**
 
         Diese Zusage war beim ersten scharfen Durchlauf sofort gruen, und das
@@ -1384,30 +1572,12 @@ class TestKeinProsablockIstSchmalerAlsSeinPlatz:
         ausschließt, was sie nicht ausschließen soll.
         """
 
-        page.goto(page.basis, wait_until="networkidle")
-        page.wait_for_selector(".af-way")
-        page.click("#wizard-way-new")
-        page.wait_for_timeout(RUHE_MS)
-
-        from dashboard.web.config_editor import wizard
-
-        gezaehlt = 0
-        je_schritt = []
-        for index in range(len(wizard.STEPS)):
-            if index:
-                page.click("#wizard-next")
-                page.wait_for_timeout(RUHE_MS)
-            page.wait_for_function(
-                "() => { const e = document.getElementById('wizard-content');"
-                " return e && e.getBoundingClientRect().height > 50; }",
-                timeout=10_000,
-            )
-            anzahl = len(page.evaluate(_PROSA))
-            je_schritt.append(f"{wizard.STEPS[index].title}: {anzahl}")
-            gezaehlt += anzahl
+        schritte = messung.schritte(breite)["schritte"]
+        je_schritt = [f"{s['titel']}: {len(s['prosa'])}" for s in schritte]
+        gezaehlt = sum(len(s["prosa"]) for s in schritte)
 
         assert gezaehlt >= PROSA_BLOECKE_MIN, (
-            f"Der Wächter vermisst bei {page.breite} px nur {gezaehlt} "
+            f"Der Wächter vermisst bei {breite} px nur {gezaehlt} "
             f"Prosablöcke, erwartet sind mindestens {PROSA_BLOECKE_MIN}:\n  "
             + "\n  ".join(je_schritt)
             + "\n\nDas ist kein Befund über die Oberfläche, sondern einer über "
@@ -1740,33 +1910,18 @@ def _neben_dem_raster(befunde: list[dict]) -> list[dict]:
 class TestJedeTextspalteLiegtAufDemEinzugsraster:
     """Jede Textspalte einer Schrittfolge beginnt auf dem 24-px-Einzugsraster."""
 
-    def test_every_step_indents_on_the_grid(self, page):
-        page.goto(page.basis, wait_until="networkidle")
-        page.wait_for_selector(".af-way")
-        page.click("#wizard-way-new")
-        page.wait_for_timeout(RUHE_MS)
-
-        from dashboard.web.config_editor import wizard
-
+    @JE_BREITE
+    def test_every_step_indents_on_the_grid(self, messung, breite):
         befunde: list[str] = []
-        for index in range(len(wizard.STEPS)):
-            if index:
-                page.click("#wizard-next")
-                page.wait_for_timeout(RUHE_MS)
-            page.wait_for_function(
-                "() => { const e = document.getElementById('wizard-content');"
-                " return e && e.getBoundingClientRect().height > 50; }",
-                timeout=10_000,
-            )
-            _warte_auf_schriften(page)
-            for b in _neben_dem_raster(page.evaluate(_EINZUG)):
+        for schritt in messung.schritte(breite)["schritte"]:
+            for b in _neben_dem_raster(schritt["einzug"]):
                 befunde.append(
-                    f"{wizard.STEPS[index].title}: Einzug {b['einzug']:g} px — {b['probe']!r}"
+                    f"{schritt['titel']}: Einzug {b['einzug']:g} px — {b['probe']!r}"
                     f"\n      {b['kette']}"
                 )
 
         assert not befunde, (
-            f"Bei {page.breite} px beginnen diese Textspalten neben dem "
+            f"Bei {breite} px beginnen diese Textspalten neben dem "
             f"{EINZUG_PX}-px-Raster:\n  "
             + "\n  ".join(befunde)
             + f"\n\nEine Stufe tiefer ist `--einzug` ({EINZUG_PX} px). Ein eigener "
@@ -1774,27 +1929,11 @@ class TestJedeTextspalteLiegtAufDemEinzugsraster:
             "abgeräumt hat."
         )
 
-    def test_the_guard_actually_measures_something(self, page):
+    @JE_BREITE
+    def test_the_guard_actually_measures_something(self, messung, breite):
         """Ein Wächter, der nichts sieht, ist blind und nicht grün."""
 
-        page.goto(page.basis, wait_until="networkidle")
-        page.wait_for_selector(".af-way")
-        page.click("#wizard-way-new")
-        page.wait_for_timeout(RUHE_MS)
-
-        from dashboard.web.config_editor import wizard
-
-        gezaehlt = 0
-        for index in range(len(wizard.STEPS)):
-            if index:
-                page.click("#wizard-next")
-                page.wait_for_timeout(RUHE_MS)
-            page.wait_for_function(
-                "() => { const e = document.getElementById('wizard-content');"
-                " return e && e.getBoundingClientRect().height > 50; }",
-                timeout=10_000,
-            )
-            gezaehlt += len(page.evaluate(_EINZUG))
+        gezaehlt = sum(len(s["einzug"]) for s in messung.schritte(breite)["schritte"])
 
         assert gezaehlt >= EINZUG_SPALTEN_MIN, (
             f"Nur {gezaehlt} Textspalten vermessen, erwartet mindestens "
@@ -1925,7 +2064,7 @@ def schmale_seite(browser, basis_url):
 class TestAufDemTelefonBleibtPlatzFuerDieFrage:
     """Navigation ist der Weg zum Inhalt, nicht der Inhalt."""
 
-    def test_the_footer_stays_one_row_on_every_step(self, schmale_seite):
+    def test_the_footer_stays_one_row_on_every_step(self, messung):
         """Kein Schritt bricht die Fußleiste um.
 
         **Je Schritt gemessen**, nicht einmal: Die Höhe hing daran, wie viele
@@ -1936,7 +2075,7 @@ class TestAufDemTelefonBleibtPlatzFuerDieFrage:
 
         zu_hoch = [
             f"{titel}: {mass['fussleiste']} px"
-            for titel, mass in _schmal_durch_die_schritte(schmale_seite)
+            for titel, mass in messung.schmal()
             if mass["fussleiste"] > FUSS_MAX
         ]
 
@@ -1946,12 +2085,12 @@ class TestAufDemTelefonBleibtPlatzFuerDieFrage:
             zu_hoch
         )
 
-    def test_the_step_list_is_a_bar_not_a_stack(self, schmale_seite):
+    def test_the_step_list_is_a_bar_not_a_stack(self, messung):
         """Sieben Marken nebeneinander statt sieben Knöpfe untereinander."""
 
         hoch = [
             f"{titel}: {mass['liste']} px"
-            for titel, mass in _schmal_durch_die_schritte(schmale_seite)
+            for titel, mass in messung.schmal()
             if mass["liste"] > LISTE_MAX
         ]
 
@@ -1960,38 +2099,14 @@ class TestAufDemTelefonBleibtPlatzFuerDieFrage:
             f"{LISTE_MAX} px):\n  " + "\n  ".join(hoch)
         )
 
-    def test_nothing_forces_the_page_sideways(self, schmale_seite):
+    def test_nothing_forces_the_page_sideways(self, messung):
         """Ein Balken, der breiter ist als das Telefon, ist kein Gewinn."""
 
-        seitlich = [
-            titel for titel, mass in _schmal_durch_die_schritte(schmale_seite) if mass["seitlich"]
-        ]
+        seitlich = [titel for titel, mass in messung.schmal() if mass["seitlich"]]
 
         assert (
             not seitlich
         ), f"Diese Schritte schieben die Seite bei {SCHMAL} px zur Seite: {seitlich}"
-
-
-def _schmal_durch_die_schritte(page):
-    """Jeden Schritt öffnen und die beiden Höhen nehmen."""
-
-    from dashboard.web.config_editor import wizard
-
-    page.goto(page.basis, wait_until="networkidle")
-    page.wait_for_selector(".af-way")
-    page.click("#wizard-way-new")
-    page.wait_for_timeout(RUHE_MS)
-
-    for index in range(len(wizard.STEPS)):
-        if index:
-            page.click("#wizard-next")
-            page.wait_for_timeout(RUHE_MS)
-        page.wait_for_function(
-            "() => { const e = document.getElementById('wizard-content');"
-            " return e && e.getBoundingClientRect().height > 50; }",
-            timeout=10_000,
-        )
-        yield wizard.STEPS[index].title, page.evaluate(_MOBIL)
 
 
 def test_the_narrow_guard_would_notice_a_relapse(schmale_seite):
@@ -2132,12 +2247,10 @@ def _klassen_ohne_regel(page) -> list[str]:
 class TestJedeBenutzteKlasseHatEineRegel:
     """Der Build darf nichts übersehen, was das CDN noch gefunden hätte."""
 
+    @JE_BREITE
     @pytest.mark.parametrize("name", list(BEREICHE))
-    def test_no_class_lost_its_rule(self, page, name):
-        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
-        page.wait_for_timeout(RUHE_MS)
-
-        ohne = _klassen_ohne_regel(page)
+    def test_no_class_lost_its_rule(self, messung, breite, name):
+        ohne = messung.bereich(breite, name)["klassen"]
 
         assert not ohne, (
             f"Diese Klassen werden in «{name}» benutzt, haben aber keine Regel:\n  "
@@ -2147,13 +2260,11 @@ class TestJedeBenutzteKlasseHatEineRegel:
             "Laufzeit zusammengesetzte Klasse findet er nicht."
         )
 
-    def test_the_landing_page_too(self, page):
+    @JE_BREITE
+    def test_the_landing_page_too(self, messung, breite):
         """Sie teilt sich das Stylesheet mit dem Dashboard."""
 
-        page.goto(page.basis.replace("/app/", "/"), wait_until="networkidle")
-        page.wait_for_timeout(RUHE_MS)
-
-        assert not _klassen_ohne_regel(page)
+        assert not messung.landingpage(breite)["klassen"]
 
 
 def test_the_class_guard_would_notice_a_relapse(page):
@@ -2195,8 +2306,16 @@ def test_the_class_guard_would_notice_a_relapse(page):
 # hingeschrieben hat. Dieser hört zu, **was der Browser wirklich tut**.
 
 
-def _fremde_anfragen(page, url: str) -> list[str]:
-    """Jede Anfrage, die nicht an den eigenen Server geht."""
+#: Die Seiten der Landingpage, die ein Besucher erreicht.
+LANDINGPAGE_SEITEN = ("", "demo-anfragen.html", "impressum.html", "datenschutz.html", "agb.html")
+
+
+def _mithoeren(page):
+    """Hängt einen Zuhörer an die Seite, der jede Anfrage an einen fremden Host sammelt.
+
+    Gibt die (wachsende) Liste und den Zuhörer zurück — wer ihn wieder
+    abnehmen will, braucht ihn.
+    """
 
     from urllib.parse import urlparse
 
@@ -2209,34 +2328,38 @@ def _fremde_anfragen(page, url: str) -> list[str]:
             fremd.append(anfrage.url)
 
     page.on("request", mithoeren)
+    return fremd, mithoeren
+
+
+def _fremde_anfragen(page, url: str) -> list[str]:
+    """Jede Anfrage, die nicht an den eigenen Server geht."""
+
+    fremd, zuhoerer = _mithoeren(page)
     try:
         page.goto(url, wait_until="networkidle")
         # Schriften werden erst angefordert, wenn ein Zeichen sie braucht.
         page.evaluate("() => document.fonts.ready.then(() => true)")
         page.wait_for_timeout(RUHE_MS)
     finally:
-        page.remove_listener("request", mithoeren)
+        page.remove_listener("request", zuhoerer)
     return fremd
 
 
 class TestKeinAufrufVerlaesstDenServer:
     """Datenhoheit ist kein Vorsatz, sondern eine messbare Eigenschaft."""
 
+    @JE_BREITE
     @pytest.mark.parametrize("name", list(BEREICHE))
-    def test_no_area_of_the_dashboard_phones_home(self, page, name):
-        fremd = _fremde_anfragen(page, page.basis + BEREICHE[name])
+    def test_no_area_of_the_dashboard_phones_home(self, messung, breite, name):
+        fremd = messung.bereich(breite, name)["fremd"]
 
         assert not fremd, f"«{name}» lädt von fremden Hosts:\n  " + "\n  ".join(sorted(set(fremd)))
 
-    def test_no_page_of_the_landing_site_phones_home(self, page):
+    @JE_BREITE
+    def test_no_page_of_the_landing_site_phones_home(self, messung, breite):
         """Sie ist die einzige öffentlich sichtbare Oberfläche."""
 
-        basis = page.basis.replace("/app/", "/")
-        befunde: dict[str, list[str]] = {}
-        for seite in ("", "demo-anfragen.html", "impressum.html", "datenschutz.html", "agb.html"):
-            fremd = _fremde_anfragen(page, basis + seite)
-            if fremd:
-                befunde[seite or "index.html"] = sorted(set(fremd))
+        befunde = messung.landingpage(breite)["fremd"]
 
         assert not befunde, f"Diese Seiten laden von fremden Hosts: {befunde}"
 
@@ -2314,12 +2437,12 @@ def _symbole_der_ansicht(page) -> set[str]:
 class TestKeinSymbolStehtAlsWortDa:
     """Der Teilsatz deckt, was gezeichnet wird — nicht, was jemand aufgeschrieben hat."""
 
+    @JE_BREITE
     @pytest.mark.parametrize("name", list(BEREICHE))
-    def test_every_rendered_icon_is_in_the_subset(self, page, name):
+    def test_every_rendered_icon_is_in_the_subset(self, messung, breite, name):
         from scripts.schriften_holen import SYMBOLE
 
-        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
-        fehlend = sorted(_symbole_der_ansicht(page) - set(SYMBOLE))
+        fehlend = sorted(messung.bereich(breite, name)["symbole"] - set(SYMBOLE))
 
         assert not fehlend, (
             f"«{name}» zeichnet Symbole, die nicht im Teilsatz stecken:\n  "
@@ -2328,27 +2451,22 @@ class TestKeinSymbolStehtAlsWortDa:
             "(scripts/schriften_holen.py), dann das Skript laufen lassen."
         )
 
-    def test_the_steps_of_the_wizard_too(self, page):
+    @JE_BREITE
+    def test_the_steps_of_the_wizard_too(self, messung, breite):
         """Genau hier ist es passiert: vier Namen aus einem Modul-Dict."""
 
         from scripts.schriften_holen import SYMBOLE
 
-        page.goto(page.basis, wait_until="networkidle")
-        page.wait_for_selector(".af-way")
-        page.click("#wizard-way-new")
-        page.wait_for_timeout(RUHE_MS)
-
-        gezeichnet = _symbole_der_ansicht(page)
+        gezeichnet = messung.schritte(breite)["schritte"][0]["symbole"]
 
         assert "radio_button_checked" in gezeichnet, "Die Schrittliste wird nicht gezeichnet"
         assert not gezeichnet - set(SYMBOLE)
 
-    def test_the_landing_page_too(self, page):
+    @JE_BREITE
+    def test_the_landing_page_too(self, messung, breite):
         from scripts.schriften_holen import SYMBOLE
 
-        page.goto(page.basis.replace("/app/", "/"), wait_until="networkidle")
-
-        assert not _symbole_der_ansicht(page) - set(SYMBOLE)
+        assert not messung.landingpage(breite)["symbole"] - set(SYMBOLE)
 
 
 def test_the_symbol_guard_would_notice_a_relapse(page):
@@ -2435,10 +2553,9 @@ _BESCHRIFTUNGEN = """
 """
 
 
-def _legendenkonflikte(page) -> list[str]:
+def _legenden_befunde(page) -> list[str]:
     """Jede Beschriftung, die in die Legende hineinragt — als lesbare Zeile."""
 
-    page.wait_for_timeout(RUHE_MS)
     befunde: list[str] = []
     for figur in page.evaluate(_BESCHRIFTUNGEN):
         for wer, ueber in figur["abstaende"].items():
@@ -2449,6 +2566,13 @@ def _legendenkonflikte(page) -> list[str]:
                     f"y {figur['legende']['top']}–{figur['legende']['bottom']})"
                 )
     return befunde
+
+
+def _legendenkonflikte(page) -> list[str]:
+    """Dasselbe, nachdem das Diagramm Zeit zum Zeichnen hatte."""
+
+    page.wait_for_timeout(RUHE_MS)
+    return _legenden_befunde(page)
 
 
 #: Die vier Aussagen aus `views/figures.py`. Sie stehen hier als Namen und nicht
@@ -2507,30 +2631,25 @@ def _auf_dunkel(page) -> None:
 class TestTitelUndLegendeTeilenSichKeinenRand:
     """Die Zusage von P3.7: **alle** vier Aussagen, **beide** Modi."""
 
+    @JE_BREITE
     @pytest.mark.parametrize("modus", ["hell", "dunkel"])
-    def test_no_statement_overlaps_its_own_labels(self, page, modus):
-        _oeffne_figures(page)
-        if modus == "dunkel":
-            _auf_dunkel(page)
-            _oeffne_figures(page)
+    def test_no_statement_overlaps_its_own_labels(self, messung, breite, modus):
+        figures = messung.figures(breite, modus)
 
-        reiter = page.locator("#figures-tabs .af-tab")
-        assert reiter.count() >= len(
+        assert figures["reiter"] >= len(
             AUSSAGEN
-        ), f"Gezählt {reiter.count()} Aussagen, erwartet mindestens {len(AUSSAGEN)}"
-        for index, name in enumerate(AUSSAGEN):
-            reiter.nth(index).click()
-            befunde = _legendenkonflikte(page)
-            assert not befunde, f"{name} bei {page.breite} px, {modus}:\n  " + "\n  ".join(befunde)
+        ), f"Gezählt {figures['reiter']} Aussagen, erwartet mindestens {len(AUSSAGEN)}"
+        for name, befunde in figures["aussagen"]:
+            assert not befunde, f"{name} bei {breite} px, {modus}:\n  " + "\n  ".join(befunde)
 
+    @JE_BREITE
     @pytest.mark.parametrize("name", list(BEREICHE))
-    def test_no_other_area_overlaps_either(self, page, name):
+    def test_no_other_area_overlaps_either(self, messung, breite, name):
         """Die Zusage gilt fürs ganze Dashboard, nicht nur für die vier Aussagen."""
 
-        page.goto(page.basis + BEREICHE[name], wait_until="networkidle")
-        befunde = _legendenkonflikte(page)
+        befunde = messung.bereich(breite, name)["legende"]
 
-        assert not befunde, f"«{name}» bei {page.breite} px:\n  " + "\n  ".join(befunde)
+        assert not befunde, f"«{name}» bei {breite} px:\n  " + "\n  ".join(befunde)
 
 
 def test_the_legend_guard_would_notice_a_relapse(page):
@@ -2912,38 +3031,36 @@ _WIRT = """
 
 
 class TestDerModellBereichLiegtNurImDomWennErOffenIst:
-    def test_er_ist_leer_solange_niemand_ihn_aufsucht(self, page):
-        for name, pfad in (("Einstieg", ""), ("Leitstand", "lauf"), ("Ergebnisse", "runs")):
-            page.goto(page.basis + pfad, wait_until="networkidle")
-            page.wait_for_timeout(RUHE_MS)
-            gemessen = page.evaluate(_WIRT)
+    @JE_BREITE
+    def test_er_ist_leer_solange_niemand_ihn_aufsucht(self, messung, breite):
+        for name in ("Einstieg", "Leitstand", "Ergebnisse"):
+            gemessen = messung.bereich(breite, name)["wirt"]
 
             assert gemessen["wirt"] <= LEER_MAX, (
-                f"«{name}» bei {page.breite} px trägt {gemessen['wirt']} Knoten im "
+                f"«{name}» bei {breite} px trägt {gemessen['wirt']} Knoten im "
                 "Wirt des Modell-Bereichs — dann liegen die 146 Bedienelemente "
                 "wieder dauernd im DOM, und jeder Klick zahlt dafür."
             )
 
-    def test_beim_aufsuchen_wird_er_gebaut(self, page):
-        page.goto(page.basis + "modell", wait_until="networkidle")
-        page.wait_for_timeout(RUHE_MS * 2)
-        gemessen = page.evaluate(_WIRT)
+    @JE_BREITE
+    def test_beim_aufsuchen_wird_er_gebaut(self, messung, breite):
+        gemessen = messung.bereich(breite, "Modell")["wirt"]
 
         assert gemessen["wirt"] > 500, (
             f"Der Modell-Bereich bleibt leer ({gemessen['wirt']} Knoten) — dann "
             "ist er unbenutzbar. Der Callback muss auf den Pfad hören."
         )
 
-    def test_ein_tieflink_zeigt_ihn_auch(self, page):
+    @JE_BREITE
+    def test_ein_tieflink_zeigt_ihn_auch(self, messung, breite):
         """**`prevent_initial_call` ist weg, und das ist der Grund.** Wer die
         Adresse direkt öffnet, muss den Bereich sehen — mit unterdrücktem
         Erstaufruf hätte er einen leeren Bildschirm."""
 
-        page.goto(page.basis + "modell", wait_until="networkidle")
-        page.wait_for_timeout(RUHE_MS * 2)
+        modell = messung.bereich(breite, "Modell")
 
-        assert page.evaluate(_WIRT)["wirt"] > 500
-        assert page.locator("#model-editor-host input").count() > 50
+        assert modell["wirt"]["wirt"] > 500
+        assert modell["eingaben_im_modell"] > 50
 
     def test_beim_verlassen_wird_er_wieder_abgebaut(self, page):
         """Sonst hätte der erste Besuch die Ersparnis für immer aufgebraucht."""
@@ -2960,7 +3077,8 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
             "gilt dann nur bis zum ersten Besuch."
         )
 
-    def test_der_baum_ist_wirklich_kleiner_geworden(self, page):
+    @JE_BREITE
+    def test_der_baum_ist_wirklich_kleiner_geworden(self, messung, breite):
         """Die Zahl, an der der Gewinn hängt — als Sperrklinke.
 
         Gemessen: 3364 Knoten vor P3.12, 1477 danach. Der Deckel steht auf 2000,
@@ -2969,15 +3087,10 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
         oder ein neuer Bereich hat dasselbe Muster.
         """
 
-        page.goto(page.basis, wait_until="networkidle")
-        page.wait_for_selector(".af-way")
-        page.click("#wizard-way-new")
-        page.wait_for_timeout(RUHE_MS * 2)
+        gesamt = messung.schritte(breite)["baum"]
 
-        gemessen = page.evaluate(_WIRT)
-
-        assert gemessen["gesamt"] < 2000, (
-            f"Die Schrittfolge trägt {gemessen['gesamt']} DOM-Knoten (gemessen "
+        assert gesamt < 2000, (
+            f"Die Schrittfolge trägt {gesamt} DOM-Knoten (gemessen "
             "waren es 1477 nach P3.12, 3364 davor). Jeder Klick zahlt dafür in "
             "`dash_renderer`."
         )
