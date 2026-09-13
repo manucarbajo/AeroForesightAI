@@ -317,6 +317,10 @@ BEREICHE = {
     # beiden Schritte vor dem Umzug). Wenn irgendwo etwas herausragt, dann hier.
     "Modell": "modell",
     "Handbuch": "doku",
+    # Seit P7.1-U1.6: die Musterseite, jeder Baustein in jedem Zustand. Sie hat
+    # keinen Link, aber eine Adresse -- und sie ist die Stelle, an der ein Ton
+    # oder eine Variante gemessen wird, die heute kein anderer Bereich zeigt.
+    "Musterseite": "muster",
 }
 
 
@@ -425,11 +429,15 @@ class _Messgang:
         return self._einmal(("bereich", breite, name), lambda: self._miss_bereich(breite, name))
 
     def _miss_bereich(self, breite: int, name: str) -> dict:
+        from dashboard.web.pages import muster as muster_page
+
         with self._seite(breite) as seite:
             fremd, _ = _mithoeren(seite)
             seite.goto(self._basis + BEREICHE[name], wait_until="networkidle")
             if name == "Modell":
                 _warte_auf_modell(seite)
+            if name == "Musterseite":
+                _warte_auf_musterseite(seite)
             _warte_auf_schriften(seite)
             return {
                 "ueberlauf": seite.evaluate(_DETEKTOR),
@@ -442,6 +450,13 @@ class _Messgang:
                 "wirt": seite.evaluate(_WIRT),
                 "eingaben_im_modell": seite.locator("#model-editor-host input").count(),
                 "fremd": list(fremd),
+                # Als Letztes: `_EINZUG` öffnet alle Klappen. Gemessen nur auf der
+                # Musterseite — die übrigen Bereiche hält Teil 7b über die
+                # Schrittfolge, und ihre Klappen blieben sonst für die übrigen
+                # Messungen dieses Gangs offen.
+                "einzug": (
+                    seite.evaluate(_EINZUG, muster_page.HOST) if name == "Musterseite" else None
+                ),
             }
 
     # --- die Landingpage ------------------------------------------------------
@@ -594,6 +609,18 @@ class _Messgang:
 @pytest.fixture(scope="module")
 def messung(browser, basis_url):
     return _Messgang(browser, basis_url)
+
+
+def _warte_auf_musterseite(page) -> None:
+    """Die Musterseite wird wie das Modell erst beim Aufsuchen gebaut (P7.1-U1.6)."""
+
+    try:
+        page.wait_for_function(
+            "() => document.querySelectorAll('#muster-host [data-baustein]').length > 30",
+            timeout=10_000,
+        )
+    except PlaywrightError:
+        pass
 
 
 def _warte_auf_modell(page) -> None:
@@ -1836,9 +1863,14 @@ EINZUG_PX = 24
 #: nicht an der Zusage.
 EINZUG_SPALTEN_MIN = 50
 
+#: Dasselbe für die Musterseite (P7.1-U1.6). Gemessen am 2026-09-13: 104
+#: Textspalten bei 1024 und 1280 px; der Boden liegt darunter, weil die Zahl an
+#: den Proben hängt und nicht an der Zusage.
+MUSTER_SPALTEN_MIN = 80
+
 _EINZUG = """
-() => {
-    const spalte = document.getElementById("wizard-content");
+(kennung) => {
+    const spalte = document.getElementById(kennung || "wizard-content");
     if (!spalte) return null;
     spalte.querySelectorAll("details").forEach((d) => { d.open = true; });
     const AUSSEN = ".af-wizard__nav, .af-wizard__navhost, .af-wizard__counter";
@@ -1856,6 +1888,10 @@ _EINZUG = """
         ".material-symbols-outlined",
         "[class*='dash-input']", "[class*='dash-slider']", "[class*='dash-dropdown']",
         ".af-doc-link", "a.af-link",
+        // Die Konsole ist Protokollausgabe in Monospace wie `pre`: Ihre
+        // Polsterung setzt Text neben den Randstrich der Zeile, sie rückt
+        // keine Textspalte ein (P7.1-U1.6, zuerst auf der Musterseite).
+        ".af-console",
     ].join(", ");
     const name = (el) => el.tagName + "." + String(el.className || "").slice(0, 48);
     const d = (el) => getComputedStyle(el).display;
@@ -1969,6 +2005,26 @@ class TestJedeTextspalteLiegtAufDemEinzugsraster:
             f"Nur {gezaehlt} Textspalten vermessen, erwartet mindestens "
             f"{EINZUG_SPALTEN_MIN} — die Auswahl schließt etwas aus, was sie "
             "nicht ausschließen soll."
+        )
+
+    @JE_BREITE
+    def test_the_pattern_page_indents_on_the_grid(self, messung, breite):
+        """Dieselbe Zusage auf der Musterseite (P7.1-U1.6) — jeder Baustein, jeder Zustand."""
+
+        einzug = messung.bereich(breite, "Musterseite")["einzug"]
+
+        assert einzug, "Auf der Musterseite keine Textspalte vermessen — steht sie noch?"
+        assert len(einzug) >= MUSTER_SPALTEN_MIN, (
+            f"Nur {len(einzug)} Textspalten auf der Musterseite, erwartet mindestens "
+            f"{MUSTER_SPALTEN_MIN}."
+        )
+        daneben = [
+            f"Einzug {b['einzug']:g} px — {b['probe']!r}\n      {b['kette']}"
+            for b in _neben_dem_raster(einzug)
+        ]
+        assert not daneben, (
+            f"Bei {breite} px beginnen diese Textspalten der Musterseite neben dem "
+            f"{EINZUG_PX}-px-Raster:\n  " + "\n  ".join(daneben)
         )
 
 
@@ -2226,6 +2282,11 @@ FREMDE_KLASSEN = {
     "active",
     "selected",
     "_dash-loading-callback",
+    # Dashs Reiterinhalt (`dcc.Tabs`) markiert sich selbst so; gestaltet wird
+    # er über `af-tabs__content`. Zuerst gemessen auf der Musterseite
+    # (P7.1-U1.6) — im Betrieb steht er unter «Figures», die der Gang durch
+    # die Ergebnisse nicht nach Klassen abfragt.
+    "tab-content",
 }
 
 #: Präfixe derselben Art. Plotly bringt allein für seine Zeichenfläche ein
