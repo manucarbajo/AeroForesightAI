@@ -99,13 +99,20 @@ def test_the_review_length_is_the_length_of_the_frameworks():
     """Die Längenspanne darf nicht aus den Stresstests kommen."""
 
     laengen = sorted({p.max_ticks for p in rahmenszenarien()})
-    erwartet = f"{laengen[0]} Ticks" if len(laengen) == 1 else f"{laengen[0]}–{laengen[-1]} Ticks"
+    from dashboard.web import formate
+
+    erwartet = (
+        formate.ticks_mit_modellzeit(laengen[0])
+        if len(laengen) == 1
+        else f"{laengen[0]}–{laengen[-1]} Ticks"
+    )
     # **Der ganze Wert, nicht ein Teil davon.** «120 Ticks» steckt auch in
     # «40–120 Ticks» — die erste Fassung dieses Tests war deshalb vor dem Fix
     # grün, obwohl die Spanne aus den Stresstests kam.
-    treffer = re.search(r"LÄNGE ([\d–]+ Ticks)", _text(start_flow._vergleich_tiles()))
+    kacheln = start_flow._vergleich_tiles()
+    laenge = next(_text(k.children[1]) for k in kacheln if _text(k.children[0]) == "LÄNGE")
 
-    assert treffer and treffer.group(1) == erwartet
+    assert laenge == erwartet
 
 
 def test_the_sentence_counts_the_frameworks(rahmen):

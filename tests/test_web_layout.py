@@ -397,7 +397,7 @@ def test_launch_summary_describes_the_draft():
     draft["rounds"] = 12
     draft["run_count"] = 3
 
-    assert "Ticks: 12" in launch_page._summary(draft)
+    assert "12 Ticks · 1 Jahr" in launch_page._summary(draft)
     assert "3 Läufe" in launch_page._summary(draft)
 
     # Beim Vergleich beschreibt die Zeile **nicht** mehr den Entwurf, sondern
@@ -407,7 +407,7 @@ def test_launch_summary_describes_the_draft():
     zeile = launch_page._summary(draft)
     assert "Szenario-Vergleich" in zeile
     assert "je eigene Länge" in zeile
-    assert "Ticks: 12" not in zeile, (
+    assert "12 Ticks" not in zeile, (
         "Die Zeile nennt wieder die Länge aus dem Entwurf — die verwendet der "
         "Vergleich seit W1.2 nicht."
     )

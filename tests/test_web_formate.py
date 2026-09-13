@@ -90,3 +90,160 @@ class TestKeinRoherZeitstempelImGezeichnetenText:
     def test_the_search_would_notice_a_raw_timestamp(self):
         assert _ISO.search(f"erstellt {MOMENT.isoformat()}")
         assert not _ISO.search(f"erstellt {_ortszeit(MOMENT)}")
+
+
+# --- Die Modellzeit (U2.6 Teil 3) ----------------------------------------------------------
+
+#: (Datei unter `dashboard/web/`, Funktion) → Grund, warum dort eine Tick-Zahl
+#: ohne Modellzeit steht.
+OHNE_MODELLZEIT = {
+    ("config_editor/__init__.py", "_namensvorschlag"): (
+        "Ein Name soll kurz bleiben; die Modellzeit steht im Prüfschritt direkt daneben."
+    ),
+    ("config_editor/start_flow.py", "_vergleich_tiles"): (
+        "Die Spanne zweier Längen tritt nur auf, wenn Rahmenszenarien verschieden lang "
+        "sind; heute sind alle 120 Ticks lang."
+    ),
+    ("config_editor/start_flow.py", "_horizont_hinweis"): (
+        "Zählt einen Abstand im Satz («die letzten N Ticks»), keine Lauflänge."
+    ),
+}
+
+
+def _tick_zahlen(quelle: str) -> set[tuple[str, int]]:
+    """(Funktion, Zeile) jeder f-Zeichenkette, die eine Tick-Zahl ohne `formate` baut."""
+
+    import ast
+
+    baum = ast.parse(quelle)
+    funde: set[tuple[str, int]] = set()
+    for funktion in ast.walk(baum):
+        if not isinstance(funktion, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for knoten in ast.walk(funktion):
+            if not isinstance(knoten, ast.JoinedStr):
+                continue
+            teile = knoten.values
+            for i, teil in enumerate(teile):
+                if not isinstance(teil, ast.FormattedValue):
+                    continue
+                aufruf = teil.value
+                if (
+                    isinstance(aufruf, ast.Call)
+                    and isinstance(aufruf.func, ast.Attribute)
+                    and isinstance(aufruf.func.value, ast.Name)
+                    and aufruf.func.value.id == "formate"
+                ):
+                    continue
+                danach = teile[i + 1] if i + 1 < len(teile) else None
+                davor = teile[i - 1] if i > 0 else None
+                zahl_davor = isinstance(danach, ast.Constant) and re.match(
+                    r"\**\s*Ticks\b", str(danach.value)
+                )
+                beschriftung_davor = isinstance(davor, ast.Constant) and re.search(
+                    r"Ticks:\s*$", str(davor.value)
+                )
+                if zahl_davor or beschriftung_davor:
+                    funde.add((funktion.name, knoten.lineno))
+    return funde
+
+
+def _alle_tick_zahlen() -> dict[tuple[str, int], set[str]]:
+    from pathlib import Path
+
+    wurzel = Path(formate.__file__).resolve().parent
+    orte: dict[tuple[str, int], set[str]] = {}
+    for pfad in sorted(wurzel.rglob("*.py")):
+        datei = pfad.relative_to(wurzel).as_posix()
+        if datei == "formate.py":
+            # Die Quelle selbst: Hier entsteht die Form, die alle anderen nehmen.
+            continue
+        for name, zeile in _tick_zahlen(pfad.read_text(encoding="utf-8")):
+            orte.setdefault((datei, zeile), set()).add(name)
+    return orte
+
+
+class TestModellzeit:
+    @pytest.mark.parametrize(
+        ("ticks", "erwartet"),
+        [
+            (1, "1 Monat"),
+            (6, "6 Monate"),
+            (11, "11 Monate"),
+            (12, "1 Jahr"),
+            (18, "rund 2 Jahre"),
+            (40, "rund 3 Jahre"),
+            (50, "rund 4 Jahre"),
+            (120, "10 Jahre"),
+            ("40", "rund 3 Jahre"),
+        ],
+    )
+    def test_a_tick_count_reads_as_model_time(self, ticks, erwartet):
+        assert formate.modellzeit(ticks) == erwartet
+
+    @pytest.mark.parametrize("ticks", ["?", None, 0, -3, "vierzig"])
+    def test_an_unknown_length_has_no_model_time(self, ticks):
+        assert formate.modellzeit(ticks) == ""
+
+    def test_the_short_form_carries_both(self):
+        assert formate.ticks_mit_modellzeit(40) == "40 Ticks · rund 3 Jahre"
+        assert formate.ticks_mit_modellzeit("?") == "? Ticks"
+
+    def test_it_follows_the_mechanics(self):
+        """Gemessen an der einen Kalenderzuordnung, die es gibt (P3.8) — nicht gesetzt."""
+
+        from src.backtest.reihen import tick_je_monat
+
+        zuordnung = tick_je_monat()
+
+        assert zuordnung["2016-01"] - zuordnung["2015-01"] == formate.TICKS_JE_JAHR
+
+
+class TestJedeLauflaengeSagtIhreModellzeit:
+    """**Gesucht, nicht aufgezählt:** jede f-Zeichenkette unter `dashboard/web/`,
+    die eine Zahl vor «Ticks» oder hinter «Ticks:» setzt, ohne `formate` zu fragen."""
+
+    def test_no_tick_count_is_built_without_model_time(self):
+        befunde = [
+            f"{datei}:{zeile} in {sorted(namen)}"
+            for (datei, zeile), namen in sorted(_alle_tick_zahlen().items())
+            if not any((datei, name) in OHNE_MODELLZEIT for name in namen)
+        ]
+
+        assert not befunde, "\n  ".join(
+            [
+                "Diese Stellen nennen eine Tick-Zahl ohne Modellzeit:",
+                *befunde,
+                "`formate.ticks_mit_modellzeit(ticks)` — oder mit Grund in `OHNE_MODELLZEIT`.",
+            ]
+        )
+
+    def test_every_exception_still_has_its_place_and_a_reason(self):
+        orte = _alle_tick_zahlen()
+
+        for (datei, funktion), grund in OHNE_MODELLZEIT.items():
+            assert any(
+                d == datei and funktion in namen for (d, _), namen in orte.items()
+            ), f"Ausnahme ohne Stelle dahinter: {datei} · {funktion}"
+            assert len(grund) >= 30, f"Ausnahme ohne Grund: {datei} · {funktion}"
+
+    def test_the_search_would_notice_a_bare_tick_count(self):
+        probe = (
+            'def a(t):\n    return f"{t} Ticks"\n'
+            'def b(t):\n    return f"Ticks: {t}"\n'
+            'def c(t):\n    return f"über **{t} Ticks**"\n'
+            'def d(t):\n    return f"{formate.ticks_mit_modellzeit(t)}"\n'
+            'def e(t):\n    return f"bei Tick {t}"\n'
+        )
+
+        assert sorted(name for name, _ in _tick_zahlen(probe)) == ["a", "b", "c"]
+
+    def test_the_setup_and_the_rail_name_the_model_time(self):
+        from dashboard.web.config_editor import start_flow
+        from dashboard.web.pages import launch
+        from dashboard.web.state import initial_draft_dict
+
+        entwurf = {**initial_draft_dict(), "rounds": 40, "run_all_sweeps": False}
+
+        assert "40 Ticks · rund 3 Jahre" in start_flow.summary_sentence(entwurf)
+        assert "40 Ticks · rund 3 Jahre" in launch._summary(entwurf)

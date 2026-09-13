@@ -47,6 +47,10 @@ brauchen, um eine Vorgabe einzustellen (wie schnell soll die Abgabe steigen?),
 rechnen Sie zwölf Ticks auf ein Jahr. Und vergleichen Sie zwei Läufe nur bei
 gleicher Tickzahl.
 
+**Die Oberfläche rechnet es Ihnen vor:** Neben jeder Lauflänge steht die
+Modellzeit, gerundet — «40 Ticks · rund 3 Jahre», «120 Ticks · 10 Jahre». Ein
+Datum ist das nicht; es sagt nur, wie lang der Ausschnitt ist.
+
 **Die mitgelieferten Rahmenszenarien laufen seit dem 11. September 2026
 hundertzwanzig Ticks, also zehn Jahre.** Vorher waren es fünfzig — gut vier
 Jahre, in denen die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 Euro stieg.

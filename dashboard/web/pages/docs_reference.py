@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from dashboard.config_catalog import EINHEITEN, configs_dir, list_sweep_presets, load_config_file
+from dashboard.web import formate
 from dashboard.web.config_editor import glossary
 
 #: Rollenbezeichnungen für `agent_profiles.json`.
@@ -178,7 +179,7 @@ def presets() -> str:
         lines += [
             f"## {_escape(sweep.name)}",
             "",
-            f"`{_escape(sweep.id)}` · {sweep.max_ticks} Ticks",
+            f"`{_escape(sweep.id)}` · {formate.ticks_mit_modellzeit(sweep.max_ticks)}",
             "",
             _escape(sweep.description),
             "",

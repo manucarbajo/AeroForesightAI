@@ -38,6 +38,7 @@ from dashboard.config_catalog import (
     validate_draft,
 )
 from dashboard.web import components as ui
+from dashboard.web import formate
 from dashboard.web.config_editor import compute_mode, dauer
 from dashboard.web.config_editor import controls as c
 from dashboard.web.state import draft_from_dict
@@ -191,7 +192,10 @@ def summary_sentence(draft: dict) -> str:
     else:
         mode = f"mit dem Sprachmodell «{draft.get('model', '?')}» für die Agenten-Narrative"
 
-    return f"Sie starten {scope} über **{ticks} Ticks**, ausgehend von {basis}, {mode}."
+    return (
+        f"Sie starten {scope} über **{formate.ticks_mit_modellzeit(ticks)}**, "
+        f"ausgehend von {basis}, {mode}."
+    )
 
 
 # --- Schritt 1: Was soll gerechnet werden? ---------------------------------
@@ -208,7 +212,7 @@ def _kennzahl(preset) -> str:
 
     eingriffe = len(preset.property_overrides) + len(preset.factor_overrides)
     wort = "Änderung" if eingriffe == 1 else "Änderungen"
-    kennzahl = f"{preset.max_ticks} Ticks · {eingriffe} {wort}"
+    kennzahl = f"{formate.ticks_mit_modellzeit(preset.max_ticks)} · {eingriffe} {wort}"
 
     # **Seit P2.2 steht die Art vorneweg**, und zwar nur bei den Stresstests:
     # Ein Rahmen ist der Normalfall und braucht keine Marke, ein Belastungstest
@@ -441,7 +445,7 @@ def scenario_details(draft: dict) -> html.Div:
         ui.hinweis(
             "Das Szenario gilt **unverändert**: Politik, Kosten und Nachfrageumfeld kommen aus "
             f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
-            f"Angelegt ist es auf **{preset.max_ticks} Ticks** — die Länge stellen Sie im "
+            f"Angelegt ist es auf **{formate.ticks_mit_modellzeit(preset.max_ticks)}** — die Länge stellen Sie im "
             "nächsten Schritt selbst ein.",
             "kontext",
         ),
@@ -524,7 +528,11 @@ def _vergleich_tiles() -> list:
     # dessen Szenarien alle 120 Ticks lang sind.
     rahmen = rahmenszenarien()
     laengen = sorted({p.max_ticks for p in rahmen}) or [0]
-    laenge = f"{laengen[0]} Ticks" if len(laengen) == 1 else f"{min(laengen)}–{max(laengen)} Ticks"
+    laenge = (
+        formate.ticks_mit_modellzeit(laengen[0])
+        if len(laengen) == 1
+        else f"{min(laengen)}–{max(laengen)} Ticks"
+    )
 
     return [
         ui.kachel("Rahmenszenarien", len(rahmen)),
@@ -599,7 +607,7 @@ def _tiles(draft: dict) -> list:
     ]
 
     return [
-        ui.kachel("Länge", f"{draft.get('rounds', '?')} Ticks"),
+        ui.kachel("Länge", formate.ticks_mit_modellzeit(draft.get("rounds", "?"))),
         ui.kachel(
             "Wiederholungen",
             "alle Szenarien" if draft.get("run_all_sweeps") else draft.get("run_count", 1),

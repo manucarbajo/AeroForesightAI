@@ -183,6 +183,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                 ui.kachel(
                     "Ticks",
                     f"{metadata.get('ticks_completed', '?')} / {metadata.get('ticks_max', '?')}",
+                    formate.modellzeit(metadata.get("ticks_completed")) or None,
                 ),
                 ui.kachel("Ereignisse", metadata.get("total_events", "?")),
                 ui.kachel("Modell", _model_label(metadata)),

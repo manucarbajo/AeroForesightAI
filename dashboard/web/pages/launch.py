@@ -30,7 +30,7 @@ from dash import Input, Output, State, dcc, html, no_update
 
 from dashboard.config_catalog import list_sweep_presets, rahmenszenarien, validate_draft
 from dashboard.web import components as ui
-from dashboard.web import config_editor, routing, runner
+from dashboard.web import config_editor, formate, routing, runner
 from dashboard.web.config_editor import compute_mode, start_flow, wizard
 from dashboard.web.state import STORE_ID, draft_from_dict, initial_draft_dict
 from dashboard.web.views import running
@@ -74,7 +74,7 @@ def _summary(draft: dict) -> str:
     run_label = f"{runs} Läufe" if runs > 1 else "1 Lauf"
     return (
         f"Szenario: {draft.get('scenario_mode', 'basis')} · "
-        f"Ticks: {draft.get('rounds', '?')} · {run_label}"
+        f"{formate.ticks_mit_modellzeit(draft.get('rounds', '?'))} · {run_label}"
     )
 
 
@@ -100,7 +100,8 @@ def _length(draft: dict) -> str:
     # verwendet.
     ticks = draft.get("rounds", "?")
     runs = int(draft.get("run_count") or 1)
-    return f"{ticks} Ticks" if runs == 1 else f"{ticks} Ticks · {runs}×"
+    dauer = formate.ticks_mit_modellzeit(ticks)
+    return dauer if runs == 1 else f"{dauer} · {runs}×"
 
 
 def _row(label: str, value: str) -> dcc.Link:
@@ -276,7 +277,8 @@ def _result_message(result) -> html.Div:
             [
                 ui.hinweis(
                     f"Mehrfachlauf `{result.batch_id}` — {len(result.child_run_ids)} Läufe, "
-                    f"je {result.ticks_completed} Ticks, {result.total_events} Ereignisse gesamt.",
+                    f"je {formate.ticks_mit_modellzeit(result.ticks_completed)}, "
+                    f"{result.total_events} Ereignisse gesamt.",
                     "erfolg",
                 ),
                 html.P(
@@ -292,7 +294,7 @@ def _result_message(result) -> html.Div:
     return html.Div(
         [
             ui.hinweis(
-                f"Lauf `{result.run_id}` — {result.ticks_completed} Ticks, "
+                f"Lauf `{result.run_id}` — {formate.ticks_mit_modellzeit(result.ticks_completed)}, "
                 f"{result.total_events} Ereignisse.",
                 "erfolg",
             ),

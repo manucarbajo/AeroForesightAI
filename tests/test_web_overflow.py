@@ -886,14 +886,21 @@ DECKEL: dict[int, dict[str, float]] = {
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
         # 1,92 → 1,90 mit U1.3 Teil B (2026-09-13), siehe 1280.
-        "Schritt 1": 1.90,
+        # **1,90 -> 1,97 am 2026-09-13 mit U2.6, und der Zuwachs ist gewollt.**
+        # Neben jeder Lauflaenge steht seither die Modellzeit («120 Ticks · 10
+        # Jahre»). Dieser Schritt nennt sie dreimal: im Satz, in der
+        # Kennzahl jeder Szenariokarte und im Hinweis zum gewaehlten Szenario.
+        # Bei 1280 px bleibt der Zuwachs unter :data:`TOLERANZ`, hier nicht.
+        "Schritt 1": 1.97,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
         "Schritt 4": 1.15,  # siehe 1280
         "Schritt 5": 1.00,  # 1,01 -> 1,00 mit U1.3 Teil B: passt auf einen Schirm
-        "Schritt 6": 1.57,  # siehe die Begründung bei 1280
+        # 1,57 -> 1,65 am 2026-09-13 mit U2.6: Satz und Laengenkachel des
+        # Pruefschritts tragen die Modellzeit (siehe Schritt 1).
+        "Schritt 6": 1.65,
     },
 }
 

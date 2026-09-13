@@ -119,7 +119,7 @@ def _meta(summary: RunSummary) -> html.Div:
         [
             html.P(
                 f"{formate.zeitpunkt(summary.timestamp)} · "
-                f"{summary.ticks_completed or '?'} Ticks · "
+                f"{formate.ticks_mit_modellzeit(summary.ticks_completed or '?')} · "
                 f"Modell {summary.model or '—'}",
                 className=f"{ui.CAPTION} mb-2",
             ),
