@@ -606,7 +606,9 @@ class TestSurplusPulse:
     """P5.2 (2026-09-11): der erste übernommene Block der Researcher-Variante."""
 
     def test_der_block_erscheint(self, history_run):
-        assert "Surplus Pulse" in _text(animation.render(history_run, "run_minimal"))
+        assert "Wer sich den Flug leisten kann" in _text(
+            animation.render(history_run, "run_minimal")
+        )
 
     def test_spielraum_ist_grenze_aus_der_historie_minus_ticketpreis(self, history_run):
         frame = animation.surplus_frame(animation.load_history(history_run))
@@ -633,14 +635,14 @@ class TestSurplusPulse:
         gerendert = _text(animation.render(minimal_run, "run_minimal"))
 
         assert "erschwinglichkeitsgrenze_eur" in gerendert
-        assert "Surplus Pulse:" not in gerendert
+        assert "Wer sich den Flug leisten kann:" not in gerendert
 
 
 class TestSaturationSwarm:
     """P5.2 (2026-09-11): Sättigung und Wiederkehr aus der Researcher-Variante."""
 
     def test_der_block_erscheint(self, history_run):
-        assert "Saturation Swarm" in _text(animation.render(history_run, "run_minimal"))
+        assert "Sättigung: Reisebedarf" in _text(animation.render(history_run, "run_minimal"))
 
     def test_reisebedarf_ist_eins_minus_saettigung(self, history_run):
         frame = animation.load_history(history_run)
@@ -660,7 +662,7 @@ class TestSaturationSwarm:
         gerendert = _text(animation.render(history_run, "run_minimal"))
 
         assert "saturation_level" in gerendert
-        assert "Saturation Swarm:" not in gerendert
+        assert "Sättigung: Reisebedarf" not in gerendert
 
 
 class TestMerkmalsSichten:

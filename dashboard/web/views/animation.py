@@ -6,7 +6,7 @@ vier stammen aus der Ops-Variante der abgelösten Streamlit-UI.
 
 **Seit P5.2 (2026-09-11) dazu die Einzelsichten der Researcher-Variante**, auf
 eine feste Stichprobe von Personen. Übernommen ist, *was* sie zeigen, nicht
-*wie* sie rechneten: Die Erschwinglichkeitsgrenze des Surplus Pulse schreibt
+*wie* sie rechneten: Die Erschwinglichkeitsgrenze im Diagramm «Wer sich den Flug leisten kann» schreibt
 der Lauf mit, statt dass sie hier ein zweites Mal entsteht — die Legacy-Ansicht
 hatte dabei den Grün-Aufschlag vergessen.
 """
@@ -69,7 +69,7 @@ class Merkmalsicht:
 #: sagen, was im Modell passiert — nicht, was die Legacy-Texte versprachen.
 MERKMALSICHTEN = (
     Merkmalsicht(
-        titel="Behavioral Split: Preisempfindlichkeit gegen Bahnbereitschaft",
+        titel="Verhalten nach Gruppe: Preisempfindlichkeit gegen Bahnbereitschaft",
         x="price_sensitivity",
         y="substitution_readiness",
         x_achse="Preisempfindlichkeit",
@@ -81,7 +81,7 @@ MERKMALSICHTEN = (
         "Bahnbereitschaft nicht.",
     ),
     Merkmalsicht(
-        titel="Demographischer Cluster: Alter gegen Umweltbewusstsein",
+        titel="Alter und Umweltbewusstsein: wie das Alter die Person prägt",
         x="age",
         y="environmental_awareness",
         x_achse="Alter",
@@ -92,11 +92,11 @@ MERKMALSICHTEN = (
         "eine einmalige Regel kann das Umweltbewusstsein später anheben.",
     ),
     Merkmalsicht(
-        titel="Income vs WTP: Einkommensfaktor gegen Zahlungsbereitschaft",
+        titel="Einkommen und Zahlungsbereitschaft: Einkommensfaktor gegen Zahlungsbereitschaft",
         x="income_factor",
         y="wtp_eur",
         x_achse="Einkommensfaktor",
-        y_achse="Zahlungsbereitschaft (WTP) in €",
+        y_achse="Zahlungsbereitschaft in €",
         x_bereich=None,
         y_bereich=None,
         lesehilfe="Der Einkommensfaktor folgt dem Einkommensindex des Laufs; wandert "
@@ -207,7 +207,7 @@ def _surplus_figure(frame, mode: str = theme.LIGHT):
         symbol="Segment",
         hover_name="id",
         hover_data=hover,
-        title="Surplus Pulse",
+        title="Wer sich den Flug leisten kann",
         labels={
             "erschwinglichkeitsgrenze_eur": "Höchster bezahlbarer Preis (EUR)",
             "spielraum_eur": "Spielraum bis zur Grenze (EUR)",
@@ -257,9 +257,9 @@ def _swarm_figure(frame, mode: str = theme.LIGHT):
         symbol="Segment",
         hover_name="id",
         hover_data=["saturation_level"],
-        title="Saturation Swarm",
+        title="Sättigung",
         labels={
-            "wtp_eur": "Zahlungsbereitschaft (WTP) in €",
+            "wtp_eur": "Zahlungsbereitschaft in €",
             "reisebedarf": "Reisebedarf (1 − Sättigung)",
             "saturation_level": "Sättigung",
             "tick": "Tick",
@@ -311,7 +311,7 @@ def _population_figure(frame, mode: str = theme.LIGHT):
         hover_data=["age", "substitution_readiness", "price_sensitivity"],
         title="Population über Zeit",
         labels={
-            "wtp_eur": "Zahlungsbereitschaft (WTP) in €",
+            "wtp_eur": "Zahlungsbereitschaft in €",
             "environmental_awareness": "Umweltbewusstsein (Awareness)",
             "tick": "Tick",
         },
@@ -366,7 +366,7 @@ def _age_figure(frame):
         title="Buchungsverhalten nach Altersgruppen",
         labels={
             "Buchungsrate": "Buchungsrate (0–1)",
-            "avg_wtp": "Ø Zahlungsbereitschaft (WTP) in €",
+            "avg_wtp": "Ø Zahlungsbereitschaft in €",
             "gebucht": "Anzahl Buchungen",
         },
         size_max=50,
@@ -433,7 +433,7 @@ def _segment_figure(segments):
         title="Buchungsverhalten nach Segmenten",
         labels={
             "Buchungsrate": "Buchungsrate (0–1)",
-            "avg_wtp": "Ø Zahlungsbereitschaft (WTP) in €",
+            "avg_wtp": "Ø Zahlungsbereitschaft in €",
             "gebucht": "Anzahl Buchungen",
         },
         size_max=50,
@@ -498,22 +498,22 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
         return ui.empty_state(
             "Kein Personenverlauf in diesem Lauf.",
             hint="`individuals_history.csv` fehlt. Starten Sie eine neue Simulation, "
-            "um die Agenten-History aufzuzeichnen.",
+            "um den Personenverlauf aufzuzeichnen.",
             icon_name="animation",
         )
 
     try:
         frame = load_history(run_dir)
     except Exception as exc:  # noqa: BLE001 - defekte History soll die Seite nicht sprengen
-        return ui.hinweis(f"Fehler beim Lesen der History: {exc}", "fehler")
+        return ui.hinweis(f"Der Personenverlauf ließ sich nicht lesen: {exc}", "fehler")
 
     if frame.empty:
-        return ui.hinweis("History-Datei ist leer.", "warnung")
+        return ui.hinweis("Der Personenverlauf ist leer.", "warnung")
 
     blocks: list = [
         _block(
-            "Animierter Population-Scatter-Plot",
-            "Verfolgen Sie die Agenten über die Ticks hinweg.",
+            "Die Bevölkerung über die Ticks",
+            "Jede Person nach Zahlungsbereitschaft und Umweltbewusstsein, über die Ticks.",
             _graph(_population_figure(frame, mode), mode=mode),
         )
     ]
@@ -522,7 +522,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     if surplus is None:
         blocks.append(
             ui.hinweis(
-                "Der Surplus Pulse braucht die Spalte `erschwinglichkeitsgrenze_eur` und den "
+                "Das Diagramm «Wer sich den Flug leisten kann» braucht die Spalte `erschwinglichkeitsgrenze_eur` und den "
                 "Preisverlauf. Läufe vor dem 11. September 2026 schreiben die Spalte nicht — "
                 "ein neuer Lauf zeigt ihn.",
                 "info",
@@ -532,7 +532,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     else:
         blocks.append(
             _block(
-                "Surplus Pulse: Spielraum bis zur Erschwinglichkeitsgrenze",
+                "Wer sich den Flug leisten kann: Spielraum bis zur Erschwinglichkeitsgrenze",
                 f"Eine feste Stichprobe von {STICHPROBE} Personen. Waagrecht der höchste Preis, "
                 "den eine Person überhaupt bezahlen kann, senkrecht der Abstand zum Ticketpreis "
                 "des Ticks. Unter der gestrichelten Linie bucht sie nicht; darüber entscheidet "
@@ -545,7 +545,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     if bedarf is None:
         blocks.append(
             ui.hinweis(
-                "Der Saturation Swarm braucht die Spalte `saturation_level` — dieser Lauf "
+                "Das Diagramm «Sättigung» braucht die Spalte `saturation_level` — dieser Lauf "
                 "schreibt sie nicht.",
                 "info",
                 class_name="mb-6",
@@ -554,7 +554,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     else:
         blocks.append(
             _block(
-                "Saturation Swarm: Sättigung und Wiederkehr",
+                "Sättigung: Reisebedarf und Wiederkehr",
                 f"Dieselbe Stichprobe von {STICHPROBE} Personen. Waagrecht die "
                 "Zahlungsbereitschaft, senkrecht der Reisebedarf: eins minus die Sättigung. "
                 "Wer bucht, wird gesättigt und fällt nach unten; danach klingt die Sättigung "

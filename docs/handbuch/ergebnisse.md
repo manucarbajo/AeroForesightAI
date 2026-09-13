@@ -69,7 +69,7 @@ sucht, ist hier richtig. Das erste zeigt
 jede einzelne Person nach Zahlungsbereitschaft und Umweltbewusstsein, eingefärbt
 danach, ob sie gebucht hat.
 
-**Der Surplus Pulse** zeigt eine feste Stichprobe von 150 Personen, in jeder
+**«Wer sich den Flug leisten kann»** zeigt eine feste Stichprobe von 150 Personen, in jeder
 Runde dieselben. Waagrecht steht der höchste Ticketpreis, den eine Person
 überhaupt bezahlen kann, senkrecht ihr Abstand zum Ticketpreis der Runde. Steigt
 der Preis, sinkt die ganze Wolke. Wer unter die gestrichelte Linie fällt, kann
@@ -78,7 +78,7 @@ Wahrscheinlichkeit — ein Punkt knapp darüber bucht oft trotzdem nicht. Läufe
 dem 11. September 2026 zeigen an seiner Stelle einen Hinweis, weil ihnen die
 nötige Spalte fehlt.
 
-**Der Saturation Swarm** zeigt dieselben Personen mit ihrer Zahlungsbereitschaft
+**«Sättigung»** zeigt dieselben Personen mit ihrer Zahlungsbereitschaft
 gegen den Reisebedarf, also eins minus die Sättigung. Wer bucht, ist danach
 gesättigt, und sein Punkt fällt nach unten. Runde für Runde klingt die Sättigung
 ab, und der Punkt steigt wieder — wie schnell, hängt am Segment.

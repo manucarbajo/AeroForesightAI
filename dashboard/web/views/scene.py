@@ -161,7 +161,7 @@ def _figure(frame, tick: int, zoom: float, mode: str) -> go.Figure:
         hovermode="closest",
         height=None,
         margin=dict(l=64, r=24, t=16, b=52),
-        xaxis_title="Zahlungsbereitschaft (WTP) in €",
+        xaxis_title="Zahlungsbereitschaft in €",
         yaxis_title="Umweltbewusstsein",
         legend=dict(orientation="h", y=1.04, x=0),
         uirevision="scene",
@@ -245,7 +245,7 @@ def render(
                 kopf,
                 factor_strip(data.factors_at(tick)),
                 _empty(
-                    "Keine Agenten-History in diesem Lauf.",
+                    "Kein Personenverlauf in diesem Lauf.",
                     "Neue Läufe zeichnen die Population je Tick auf — einen Lauf "
                     "richten Sie unter «Einrichten» ein.",
                 ),

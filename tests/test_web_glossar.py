@@ -37,6 +37,12 @@ VARIANTEN = {
     r"\bEvents?\b": "Ereignisse",
     r"\bGround Truth\b": "Kennzahlen aus der Rechnung",
     r"\bMock\b": "ohne Sprachmodell",
+    # Die Diagramme der Animation (U2.4 Teil 2): deutsche Titel, Fachbegriffe
+    # nur mit deutscher Erklärung.
+    r"\bSurplus\b|\bSwarm\b|\bPulse\b|\bBehavioral\b|\bIncome\b": "deutscher Diagrammtitel",
+    r"\bWTP\b": "Zahlungsbereitschaft",
+    r"\bScatter": "Streudiagramm",
+    r"\bHistory\b": "Personenverlauf",
 }
 
 #: Wie viele sichtbare Zeichenketten die Suche mindestens liest — gegen die
@@ -112,7 +118,8 @@ class TestDieOberflaecheSprichtIhrGlossar:
             'C = "`run_scenario.md` fehlt, Option `--mock-llm`"\n'
             'D = "figures-tabs"\n'
             'E = "ab Runde"\n'
+            'F = "Surplus Pulse: Zahlungsbereitschaft (WTP) in €"\n'
         )
         befunde = _befunde([(f"probe:{z}", t) for z, t in _texte(quelle)])
 
-        assert [b.split(":")[1] for b in befunde] == ["2", "3", "3", "6"], befunde
+        assert [b.split(":")[1] for b in befunde] == ["2", "3", "3", "6", "7", "7"], befunde
