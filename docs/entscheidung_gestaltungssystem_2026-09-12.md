@@ -504,6 +504,12 @@ unterscheiden, tragen aber verschiedene Bedeutung: Kontext gegen Meldung.
    (`explainer`) nur direkt an einem Feld. Mit einem Aufruf ist `explainer`
    heute der Kandidat zum Streichen — das wäre zu entscheiden, nicht
    vorzuschlagen.
+   **Nachtrag vom 2026-09-13 (U1.4 Teil 4):** `explainer` bleibt — im Code
+   ein Aufruf, gezeichnet aber an jedem Feld mit Glossar-Erklärung (sechsmal
+   in der Schrittfolge); die Zählung der Aufrufstellen hatte ihn kleiner
+   aussehen lassen, als er ist. Und **in etwas Aufgeklapptem steht nur
+   Niedrigeres**: «Rohdaten ansehen» trug drei Klappen in einer Klappe. Von
+   Haiko entschieden: Die drei Vorschauen stehen offen in der einen Klappe.
 4. **`ui.expert` zählt nur, wenn es Parameter sind.** Heute steht «Rohdaten
    ansehen (3 Parameter)» an einem Block, der drei **Dateivorschauen** enthält
    (`experiment.py:156`, `count=3`) — der Baustein zählt, was man ihm gibt, und

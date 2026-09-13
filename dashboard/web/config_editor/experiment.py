@@ -48,11 +48,28 @@ def _raw_data(draft: dict) -> html.Div:
     ) as exc:  # noqa: BLE001 - eine kaputte Config soll erklärt, nicht verschluckt werden
         summary = {"Fehler": str(exc)}
 
+    # **Offen untereinander, nicht als Klappen in der Klappe** (P7.1-U1.4,
+    # von Haiko entschieden am 2026-09-13). Die drei Vorschauen standen je in
+    # einer eigenen Klappe innerhalb von «Rohdaten ansehen» — man klappte
+    # zweimal auf, um an Gleichrangiges zu kommen. In etwas Aufgeklapptem
+    # steht nur Niedrigeres; `tests/test_web_klappen.py` hält die Regel.
+    vorschauen = [
+        ("Effektive Konfiguration", summary),
+        ("simulation_config.json", simulation),
+        ("properties.json (Auszug)", excerpt),
+    ]
     return html.Div(
         [
-            ui.expert(ui.json_view(summary, max_height="30rem"), title="Effektive Konfiguration"),
-            ui.expert(ui.json_view(simulation, max_height="30rem"), title="simulation_config.json"),
-            ui.expert(ui.json_view(excerpt, max_height="30rem"), title="properties.json (Auszug)"),
+            html.Div(
+                [
+                    html.H4(
+                        titel, className=f"font-body {ui.BESCHRIFTUNG} font-medium af-text mb-1"
+                    ),
+                    ui.json_view(inhalt, max_height="30rem"),
+                ],
+                className="mt-4" if index else None,
+            )
+            for index, (titel, inhalt) in enumerate(vorschauen)
         ]
     )
 
