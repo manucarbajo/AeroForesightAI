@@ -406,7 +406,7 @@ def _namensvorschlag(draft: dict) -> str:
     else:
         woher = "Standard-Ausgangslage"
 
-    stempel = datetime.now().strftime("%Y-%m-%d %H:%M")
+    stempel = datetime.now().strftime("%d.%m.%Y, %H:%M")
     if draft.get("run_all_sweeps"):
         return f"{woher} · {stempel}"
     return f"{woher} · {draft.get('rounds', '?')} Ticks · {stempel}"

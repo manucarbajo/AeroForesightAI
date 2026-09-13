@@ -14,7 +14,7 @@ from dash import dcc, html
 
 from dashboard.run_browser import load_price_series, load_tick_mechanics
 from dashboard.web import components as ui
-from dashboard.web import theme
+from dashboard.web import formate, theme
 from src.reporting.output_writer.provenance import (
     COMPUTE_MODE_LABELS,
     MODES_WITHOUT_ANY_LLM,
@@ -196,7 +196,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                 [
                     "Kennung: ",
                     html.Code(run_id, className="af-text-muted"),
-                    f" · erstellt {metadata.get('timestamp', '—')}",
+                    f" · erstellt {formate.zeitpunkt(metadata.get('timestamp'))}",
                 ],
                 className=f"{ui.CAPTION} mt-3",
             )

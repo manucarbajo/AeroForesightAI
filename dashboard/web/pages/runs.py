@@ -19,7 +19,7 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
 from dashboard.run_browser import RunSummary, list_runs
 from dashboard.web import components as ui
-from dashboard.web import theme
+from dashboard.web import formate, theme
 from dashboard.web.views import (
     animation,
     explorer,
@@ -118,7 +118,7 @@ def _meta(summary: RunSummary) -> html.Div:
     return html.Div(
         [
             html.P(
-                f"{summary.timestamp or '—'} · "
+                f"{formate.zeitpunkt(summary.timestamp)} · "
                 f"{summary.ticks_completed or '?'} Ticks · "
                 f"Modell {summary.model or '—'}",
                 className=f"{ui.CAPTION} mb-2",
