@@ -327,6 +327,32 @@ html.dark {
     max-width: var(--breite-sprechblase);
 }
 
+/* --- Der Einzug (P7.1-U1.3, Teil A) ----------------------------------------- */
+/* **Eine Stufe tiefer ist 24 px, und zwar ueberall.** Gemessen am 2026-09-12
+   standen dafuer fuenf Werte im Stylesheet und in den Bausteinen: 16 px
+   (Hinweis- und Meldungskasten `px-4`), 20 px (Glossar-Erklaerung `pl-5`),
+   22 px (Markdown-Liste), 24 px (Karte, «Feinabstimmung») und 26 px (Hinweis
+   unter einem Kaestchen). In Schritt 1 begannen Texte dadurch an x = 0, 25,
+   42, 49, 69, 71 und 75 -- die Treppe, die der erste Screenshot des UI/UX-Audits
+   zeigte, als die Breiten schon stimmten.
+
+   **Der Hinweis unter einem Kaestchen wird nicht gerundet, sondern abgeleitet:**
+   Er steht buendig unter der Beschriftung, also Kaestchen plus Abstand. Mit
+   16 + 8 ergibt das genau eine Stufe; gehalten von
+   `tests/test_web_abstaende.py`, damit niemand eine der drei Zahlen allein
+   aendert. Der Umschalter ist 36 px breit und traegt dieselbe Hinweisklasse --
+   sein Hinweis stand schon bisher nicht unter der Beschriftung und steht jetzt
+   auf dem Raster.
+
+   **Randlinien zaehlen nicht mit.** Eine Karte in einer Karte verschiebt ihren
+   Text um zwei 1-px-Raender; der Kantenwaechter (Teil 7b von
+   `tests/test_web_overflow.py`) rechnet deshalb nur Polsterung und Abstand. */
+:root {
+    --einzug: 1.5rem; /* 24 px -- eine Stufe tiefer */
+    --kaestchen: 1rem; /* 16 px -- Kaestchen und Optionspunkt */
+    --kaestchen-abstand: 0.5rem; /* 8 px -- zwischen Kaestchen und Beschriftung */
+}
+
 /* --- Dashs eigene Design-Tokens --------------------------------------------- */
 /* Dash 3/4 faerbt seine mitgelieferten Komponenten (Slider, Eingaben, Menues)
    ueber eine eigene Token-Ebene `--Dash-*` und spritzt deren Definitionen zur
@@ -1290,7 +1316,7 @@ html.dark .af-input[type="number"] {
        gerade Spalte von Haken neben den Beschriftungen. Auf einer Auswahlkarte
        gilt das Gegenteil, siehe `.af-radio--cards label`. */
     align-items: flex-start;
-    gap: 0.625rem;
+    gap: var(--kaestchen-abstand);
     line-height: 1.5;
     cursor: pointer;
     padding: 0.3125rem 0;
@@ -1312,8 +1338,8 @@ html.dark .af-input[type="number"] {
 .af-check input[type="checkbox"],
 .af-radio input[type="radio"] {
     appearance: none;
-    width: 1rem;
-    height: 1rem;
+    width: var(--kaestchen);
+    height: var(--kaestchen);
     /* An der Grundlinie der ersten Textzeile ausrichten. */
     margin-top: 0.1875rem;
     flex: none;
@@ -1452,7 +1478,7 @@ html.dark .af-input[type="number"] {
 .af-switch label {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: var(--kaestchen-abstand);
     font-family: var(--font-body);
     font-size: var(--schrift-beschriftung);
     color: var(--text-body);
@@ -2007,10 +2033,18 @@ html.dark .af-input[type="number"] {
 /* Erklärung unter einem Eingabefeld: leise, aber lesbar. Der technische
    Feldname am Ende steht bewusst als Code — er ist Nachschlagehilfe, nicht
    Teil des Satzes. */
-.af-check__hint,
+/* **Zwei Regeln statt einer Gruppe**, aus demselben Grund wie bei den Breiten:
+   Der Kaskaden-Nachrechner in `tests/test_web_drawers.py` ueberspringt jeden
+   Selektor mit Komma, und die Zusage «der Hinweis steht auf dem Raster» liefe
+   ins Leere. Kaestchen plus Abstand -- buendig zum Beschriftungstext, und nach
+   Konstruktion genau ein `--einzug`. */
+.af-check__hint {
+    margin-left: calc(var(--kaestchen) + var(--kaestchen-abstand));
+    margin-top: 0.125rem;
+}
+
 .af-radio + .af-hint {
-    /* Kaestchen (1rem) plus Abstand (0.625rem) — buendig zum Beschriftungstext. */
-    margin-left: 1.625rem;
+    margin-left: calc(var(--kaestchen) + var(--kaestchen-abstand));
     margin-top: 0.125rem;
 }
 
@@ -2128,7 +2162,7 @@ html.dark .af-input[type="number"] {
 
 .af-md ul,
 .af-md ol {
-    padding-left: 1.375rem;
+    padding-left: var(--einzug);
 }
 
 .af-md ul {

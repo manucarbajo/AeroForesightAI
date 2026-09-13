@@ -529,7 +529,7 @@ def alert(text: Any, kind: str = "info", *, class_name: str = "") -> html.Div:
             icon(icon_name, "text-lg shrink-0 mt-0.5"),
             html.Div(body, className=f"font-body {BESCHRIFTUNG} min-w-0"),
         ],
-        className=f"af-alert {tone} flex items-start gap-3 px-4 py-3 {class_name}".strip(),
+        className=f"af-alert {tone} flex items-start gap-3 px-6 py-3 {class_name}".strip(),
     )
 
 
@@ -553,10 +553,10 @@ def accordion(title: Any, *children: Any, open: bool = False, badge: str | None 
             html.Span(title, className=f"font-body {BESCHRIFTUNG} font-medium af-text flex-1"),
             (html.Span(badge, className="af-badge") if badge else None),
         ],
-        className="af-acc__summary flex items-center gap-2 cursor-pointer select-none px-4 py-3",
+        className="af-acc__summary flex items-center gap-2 cursor-pointer select-none px-6 py-3",
     )
     return html.Details(
-        [summary, html.Div(list(children), className="px-4 pb-4 pt-1")],
+        [summary, html.Div(list(children), className="px-6 pb-4 pt-1")],
         open=open,
         className=f"af-acc {CARD} mb-2",
     )
@@ -622,7 +622,7 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
                 ],
                 className="af-acc__summary flex items-center gap-1 cursor-pointer select-none py-1",
             ),
-            markdown(text, class_name="af-md--tight af-text-body pl-5 pb-1"),
+            markdown(text, class_name="af-md--tight af-text-body pl-6 pb-1"),
         ],
         className="af-acc mt-1.5",
     )
@@ -641,7 +641,7 @@ def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
             dcc.Markdown(text, className="af-md af-md--tight"),
         ],
         className=f"flex items-start gap-2.5 font-body {BESCHRIFTUNG} af-text-body "
-        "af-surface-inset af-bordered rounded px-4 py-3",
+        "af-surface-inset af-bordered rounded px-6 py-3",
     )
 
 

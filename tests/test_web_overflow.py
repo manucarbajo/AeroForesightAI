@@ -1588,6 +1588,280 @@ def test_the_width_guard_would_notice_a_relapse(page):
     )
 
 
+# --- Teil 7b: Die Kanten (P7.0-U0.1, P7.1-U1.3 Teil A) ------------------------
+#
+# **Der Befund, der nach den Breiten übrig war.** Als Fließtext seinen Rahmen
+# füllte, stand die Treppe aus dem ersten Screenshot des UI/UX-Audits immer
+# noch da — in den Einrückungen. Für «eine Stufe tiefer» gab es fünf Werte
+# (16, 20, 22, 24, 26 px), und in Schritt 1 begannen Texte an x = 0, 25, 42,
+# 49, 69, 71 und 75. Jetzt ist eine Stufe 24 px.
+#
+# **Die Zusage ist eine Suche, keine Zählung:** Jede Textspalte ist um ein
+# Vielfaches von `EINZUG_PX` eingerückt. «Höchstens N Kanten» hätte eine Zahl
+# gehalten, die mit jedem neuen Bauteil verfällt; ein Raster gilt für das
+# nächste Bauteil genauso.
+#
+# **Wie gemessen wird, ist dreimal korrigiert worden, bevor es ein Wächter
+# wurde** — jede Korrektur aus einem Messfehler am echten Bildschirm:
+#
+# 1. Nicht der Textknoten, sondern der **Block**, der ihn trägt: Ein Stück
+#    Text hinter `<strong>` beginnt mitten in der Zeile und ist keine Kante.
+#    Der erste Anlauf zählte so 26 «Kanten» in Schritt 1.
+# 2. Liegt über dem Text eine **Flex-Zeile**, ist die äußerste der Träger —
+#    das Bauteil fluchtet als Ganzes, nicht die Beschriftung hinter seinem
+#    Symbol. Dash 4 legt Optionstext in einen blockartigen `span`, an dem der
+#    zweite Anlauf hängen blieb.
+# 3. **Rasterzellen** (mindestens zwei Spalten) sind Struktur und zählen
+#    nicht; ebenso Steuerelemente und ihr Innenleben.
+#
+# **Randlinien zählen nicht mit**, nur Polsterung und Abstand: Eine Karte in
+# einer Karte verschiebt ihren Text um zwei 1-px-Ränder. **Und alle Klappen
+# werden vor dem Messen geöffnet** — Inhalt in einer geschlossenen `<details>`
+# hat keine Boxen, und seine Einrückung wäre unsichtbar.
+
+#: Eine Stufe tiefer, in px — dieselbe Zahl wie `--einzug` im Stylesheet;
+#: `tests/test_web_abstaende.py` hält beide zusammen.
+EINZUG_PX = 24
+
+#: Wie viele Textspalten die Messung über die sechs Schritte mindestens finden
+#: muss — **gegen die eigene Blindheit**. Die Auswahl oben schließt viel aus;
+#: schlösse sie alles aus, wäre die Zusage trivial erfüllt. **Gemessen am
+#: 2026-09-12: 78 je Breite** (16, 7, 7, 16, 21, 11) mit allen Klappen offen;
+#: der Boden liegt deutlich darunter, weil die Zahl an den Texten hängt und
+#: nicht an der Zusage.
+EINZUG_SPALTEN_MIN = 50
+
+_EINZUG = """
+() => {
+    const spalte = document.getElementById("wizard-content");
+    if (!spalte) return null;
+    spalte.querySelectorAll("details").forEach((d) => { d.open = true; });
+    const AUSSEN = ".af-wizard__nav, .af-wizard__navhost, .af-wizard__counter";
+    const sichtbar = (el) => {
+        if (!el || (el.closest && el.closest(AUSSEN))) return false;
+        for (let n = el; n && n !== document.body; n = n.parentElement) {
+            const st = getComputedStyle(n);
+            if (st.display === "none" || st.visibility === "hidden") return false;
+            if (n.classList && n.classList.contains("af-nur-vorlesen")) return false;
+        }
+        return true;
+    };
+    const AUSGESCHLOSSEN = [
+        "svg", "pre", "code", "option", "button", "input", "textarea", "select",
+        ".material-symbols-outlined",
+        "[class*='dash-input']", "[class*='dash-slider']", "[class*='dash-dropdown']",
+        ".af-doc-link", "a.af-link",
+    ].join(", ");
+    const name = (el) => el.tagName + "." + String(el.className || "").slice(0, 48);
+    const d = (el) => getComputedStyle(el).display;
+    const istRaster = (el) => /grid/.test(d(el));
+    const istFlexZeile = (el) => /flex/.test(d(el))
+        && !String(getComputedStyle(el).flexDirection).startsWith("column");
+    const istBlock = (el) => ["block", "flow-root", "list-item"].includes(d(el));
+
+    const traeger = (el) => {
+        let aussen = null;
+        for (let n = el; n && n !== spalte; n = n.parentElement) {
+            if (istFlexZeile(n)) aussen = n;
+        }
+        if (aussen) return aussen;
+        let n = el;
+        while (n && n !== spalte && !istBlock(n)) n = n.parentElement;
+        return n && n !== spalte ? n : el;
+    };
+    const rasterZelle = (el) => {
+        for (let n = el; n && n !== spalte; n = n.parentElement) {
+            const e = n.parentElement;
+            if (e && e !== spalte && istRaster(e)) {
+                const kinder = Array.from(e.children).filter((c) => c.getBoundingClientRect().width > 0);
+                const lefts = new Set(kinder.map((c) => Math.round(c.getBoundingClientRect().left)));
+                if (lefts.size >= 2) return true;
+            }
+        }
+        return false;
+    };
+
+    const befunde = [];
+    const gesehen = new Set();
+    const lauf = document.createTreeWalker(spalte, NodeFilter.SHOW_TEXT);
+    let k;
+    while ((k = lauf.nextNode())) {
+        const text = (k.textContent || "").trim();
+        if (!text) continue;
+        const eltern = k.parentElement;
+        if (!sichtbar(eltern) || eltern.closest(AUSGESCHLOSSEN)) continue;
+        const r = document.createRange();
+        r.selectNodeContents(k);
+        if (!Array.from(r.getClientRects()).some((q) => q.width >= 1 && q.height >= 1)) continue;
+        if (rasterZelle(eltern)) continue;
+        const t = traeger(eltern);
+        if (gesehen.has(t)) continue;
+        gesehen.add(t);
+
+        let summe = 0;
+        const kette = [];
+        for (let n = t; n && n !== spalte; n = n.parentElement) {
+            const st = getComputedStyle(n);
+            const pad = parseFloat(st.paddingLeft) || 0;
+            const mar = parseFloat(st.marginLeft) || 0;
+            if (pad || mar) {
+                kette.push(name(n) + " (pad " + Math.round(pad) + ", margin " + Math.round(mar) + ")");
+            }
+            summe += pad + mar;
+        }
+        befunde.push({
+            einzug: Math.round(summe * 10) / 10,
+            probe: text.slice(0, 50),
+            kette: kette.reverse().join(" > ") || "(keine Einrückung)",
+        });
+    }
+    return befunde;
+}
+"""
+
+
+def _neben_dem_raster(befunde: list[dict]) -> list[dict]:
+    """Jede Textspalte, deren Einzug kein Vielfaches von `EINZUG_PX` ist."""
+
+    daneben = []
+    for b in befunde:
+        rest = b["einzug"] % EINZUG_PX
+        if min(rest, EINZUG_PX - rest) > 0.5:
+            daneben.append(b)
+    return daneben
+
+
+class TestJedeTextspalteLiegtAufDemEinzugsraster:
+    """Jede Textspalte einer Schrittfolge beginnt auf dem 24-px-Einzugsraster."""
+
+    def test_every_step_indents_on_the_grid(self, page):
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+        page.click("#wizard-way-new")
+        page.wait_for_timeout(RUHE_MS)
+
+        from dashboard.web.config_editor import wizard
+
+        befunde: list[str] = []
+        for index in range(len(wizard.STEPS)):
+            if index:
+                page.click("#wizard-next")
+                page.wait_for_timeout(RUHE_MS)
+            page.wait_for_function(
+                "() => { const e = document.getElementById('wizard-content');"
+                " return e && e.getBoundingClientRect().height > 50; }",
+                timeout=10_000,
+            )
+            _warte_auf_schriften(page)
+            for b in _neben_dem_raster(page.evaluate(_EINZUG)):
+                befunde.append(
+                    f"{wizard.STEPS[index].title}: Einzug {b['einzug']:g} px — {b['probe']!r}"
+                    f"\n      {b['kette']}"
+                )
+
+        assert not befunde, (
+            f"Bei {page.breite} px beginnen diese Textspalten neben dem "
+            f"{EINZUG_PX}-px-Raster:\n  "
+            + "\n  ".join(befunde)
+            + f"\n\nEine Stufe tiefer ist `--einzug` ({EINZUG_PX} px). Ein eigener "
+            "Wert in einem Bauteil baut die Treppe wieder auf, die P7.1-U1.3 "
+            "abgeräumt hat."
+        )
+
+    def test_the_guard_actually_measures_something(self, page):
+        """Ein Wächter, der nichts sieht, ist blind und nicht grün."""
+
+        page.goto(page.basis, wait_until="networkidle")
+        page.wait_for_selector(".af-way")
+        page.click("#wizard-way-new")
+        page.wait_for_timeout(RUHE_MS)
+
+        from dashboard.web.config_editor import wizard
+
+        gezaehlt = 0
+        for index in range(len(wizard.STEPS)):
+            if index:
+                page.click("#wizard-next")
+                page.wait_for_timeout(RUHE_MS)
+            page.wait_for_function(
+                "() => { const e = document.getElementById('wizard-content');"
+                " return e && e.getBoundingClientRect().height > 50; }",
+                timeout=10_000,
+            )
+            gezaehlt += len(page.evaluate(_EINZUG))
+
+        assert gezaehlt >= EINZUG_SPALTEN_MIN, (
+            f"Nur {gezaehlt} Textspalten vermessen, erwartet mindestens "
+            f"{EINZUG_SPALTEN_MIN} — die Auswahl schließt etwas aus, was sie "
+            "nicht ausschließen soll."
+        )
+
+
+def test_the_edge_guard_would_notice_a_relapse(page):
+    """Selbsttest: ein 20-px-Einzug fällt auf; Beschriftung hinter Symbol nicht.
+
+    Die erste Probe ist der alte Wert der Glossar-Erklärung. Die zweite ist die
+    Form, an der der zweite Messanlauf hängen blieb: eine Flex-Zeile aus Symbol
+    und blockartiger Beschriftung — gemessen wird die Zeile, nicht der Text
+    hinter dem Symbol. Die dritte hält die Grenze in die andere Richtung: Eine
+    Stufe von 24 px ist auf dem Raster.
+    """
+
+    page.goto(page.basis, wait_until="networkidle")
+    page.wait_for_selector(".af-way")
+    page.click("#wizard-way-new")
+    page.wait_for_function(
+        "() => { const e = document.getElementById('wizard-body');"
+        " return e && e.getBoundingClientRect().height > 50; }",
+        timeout=10_000,
+    )
+    page.wait_for_timeout(RUHE_MS)
+
+    page.evaluate("""
+        () => {
+          const rumpf = document.getElementById('wizard-body');
+          rumpf.innerHTML = '';
+          const alt = document.createElement('div');
+          alt.style.paddingLeft = '20px';
+          alt.id = 'probe-einzug-20';
+          alt.appendChild(document.createTextNode('Eine Erklaerung mit dem alten Einzug.'));
+          rumpf.appendChild(alt);
+        }
+        """)
+    daneben = _neben_dem_raster(page.evaluate(_EINZUG))
+    assert any(
+        b["einzug"] == 20 for b in daneben
+    ), f"Der Wächter übersieht einen 20-px-Einzug: {daneben}"
+
+    page.evaluate("""
+        () => {
+          const rumpf = document.getElementById('wizard-body');
+          rumpf.innerHTML = '';
+          const zeile = document.createElement('div');
+          zeile.style.display = 'flex';
+          zeile.style.gap = '10px';
+          const symbol = document.createElement('span');
+          symbol.style.width = '18px';
+          symbol.style.display = 'inline-block';
+          const beschriftung = document.createElement('span');
+          beschriftung.style.display = 'block';
+          beschriftung.textContent = 'Beschriftung hinter einem Symbol';
+          zeile.appendChild(symbol);
+          zeile.appendChild(beschriftung);
+          rumpf.appendChild(zeile);
+          const stufe = document.createElement('div');
+          stufe.style.paddingLeft = '24px';
+          stufe.textContent = 'Eine Stufe tiefer, auf dem Raster.';
+          rumpf.appendChild(stufe);
+        }
+        """)
+    daneben = _neben_dem_raster(page.evaluate(_EINZUG))
+    assert not daneben, (
+        "Eine Beschriftung hinter einem Symbol oder eine 24-px-Stufe wird als "
+        f"Kante neben dem Raster gemeldet: {daneben}"
+    )
+
+
 # --- Teil 4: Die schmale Breite (P1.9-W5.5) ---------------------------------
 #
 # Gemessen bei 375 px: Die Schrittliste stand als **358 px hoher** Stapel aus
