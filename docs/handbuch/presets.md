@@ -17,6 +17,12 @@ Unter den hinterlegten Szenarien liegen zwei verschiedene Dinge, und seit dem
 unter «Quellen und was davon nicht belegt ist» finden Sie die Belege und —
 ebenso wichtig — den Vorbehalt.
 
+**Eine Quellenangabe nennt ein Werk** — einen Rechtsakt, eine Studie, eine
+Datenreihe. Bis zum 2026-09-13 nannten fünfzehn von ihnen stattdessen die
+Datei, in der der Beleg im Projekt liegt; das beantwortet die Frage nicht,
+die jemand an dieser Stelle stellt. Die Belege selbst bleiben, wo sie sind:
+unter `docs/research/` im Projekt.
+
 Denn belegt ist immer die Geschichte, **nicht ihre Bezifferung**: Dass strenge
 Regulierung ohne verfügbaren Ausweichpfad zur reinen Verteuerung wird, ist
 begründbar. Bei welchem Tick die CO₂-Abgabe dann auf welchen Wert springt, ist
