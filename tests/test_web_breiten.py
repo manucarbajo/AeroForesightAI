@@ -64,6 +64,7 @@ BREITEN = {
     "feld": 320,  # 20 rem — eine Zahl mit Nachkommastellen, eine Auswahl
     "feld-weit": 512,  # 32 rem — eine Kennung, ein Pfad, ein Freitext
     "sprechblase": 768,  # 48 rem — wer spricht, sieht man an der Breite
+    "rueckfrage": 512,  # 32 rem — eine Frage, auf die man antwortet (P7.1-U1.4)
 }
 
 #: Namen, unter denen das Lesemaß gelebt hat. Sie dürfen nicht zurückkommen —

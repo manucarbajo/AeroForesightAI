@@ -159,6 +159,7 @@ def register_callbacks(app) -> None:
     # Editor-Bereiche, die vorher Reiter waren. Ein eigener Callback dafür gibt
     # es nicht mehr; er hinge an `cfg-tabs`, und die Reiter sind weg.
     wizard.register_callbacks(app)
+    c.register_callbacks(app)
 
     @app.callback(
         Output(STORE_ID, "data"),
@@ -345,15 +346,14 @@ def register_callbacks(app) -> None:
         # war zwischen W3.1 und W3.2 der Fall.
         Output(model_editor.STATUS, "children"),
         Input({"type": c.ACTION, "action": ALL}, "n_clicks"),
-        # **Die schreibenden Aktionen liefern `submit_n_clicks`** (P1.9-W3.2):
-        # Sie stecken in einer `ConfirmDialogProvider`, und die meldet erst,
-        # wenn jemand die Rückfrage bejaht hat. Ein Callback kann nicht beide
-        # Eigenschaften derselben ID-Menge abhören — deshalb tragen sie einen
-        # eigenen Typ.
-        Input({"type": c.WRITE, "action": ALL}, "submit_n_clicks"),
+        # **Die schreibenden Aktionen melden sich erst mit der Bestätigung**
+        # (P1.9-W3.2, seit P7.1-U1.4 im gestalteten Dialog): Ihre ID trägt der
+        # Knopf **im** Dialog, nicht der, der ihn öffnet (`c.ASK`). Der Klick auf
+        # der Seite erreicht den Server also gar nicht.
+        Input({"type": c.WRITE, "action": ALL}, "n_clicks"),
         Input({"type": delta.REVERT, "feld": ALL}, "n_clicks"),
-        Input({"type": macro.PROP_DELETE, "prop": ALL}, "submit_n_clicks"),
-        Input({"type": micro.SEGMENT_DELETE, "segment": ALL}, "submit_n_clicks"),
+        Input({"type": macro.PROP_DELETE, "prop": ALL}, "n_clicks"),
+        Input({"type": micro.SEGMENT_DELETE, "segment": ALL}, "n_clicks"),
         State(STORE_ID, "data"),
         State({"type": c.FREE, "name": ALL}, "value"),
         State("cfg-editor-refresh", "data"),

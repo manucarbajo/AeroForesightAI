@@ -517,6 +517,11 @@ unterscheiden, tragen aber verschiedene Bedeutung: Kontext gegen Meldung.
 5. **Ein gestalteter Bestätigungsdialog** statt des Browser-Dialogs — das ist
    zugleich **D7**, und die folgenreichste Handlung der Oberfläche (ein
    Schreibzugriff ins Modell) hängt daran.
+   **Nachtrag vom 2026-09-13 (U1.4 Teil 7):** Von Haiko entschieden — gestaltet,
+   **gleicher Inhalt, keine Änderungsvorschau**. Der teure Teil aus «Was es
+   kostet» ist dadurch klein geworden: Fokusführung und Escape liefert der
+   Browser selbst, sobald der Dialog ein `<dialog>` mit `showModal()` ist.
+   Die Änderungsvorschau bleibt eine Frage von U7.2.
 
 ### Was es kostet
 

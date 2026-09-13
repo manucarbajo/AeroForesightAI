@@ -702,20 +702,22 @@ class TestNurDasModellSchreibtInsModell:
 
         Auch das über die Wirkung: Erst wird ermittelt, welche Aktionen des
         Bereichs schreiben, dann wird geprüft, dass genau diese in einer
-        `ConfirmDialogProvider` stecken. Eine neue schreibende Aktion ohne
+        Rückfrage stecken — als Bestätigung im Dialog von `controls.write_action`.
+        Eine neue schreibende Aktion ohne
         Rückfrage fällt damit auf, ohne dass jemand eine Liste pflegt.
         """
 
-        from dash import dcc
+        from dash import html
 
         from dashboard.web.pages import model_editor
 
         baum = model_editor.rumpf_fuer(_MODELL_PFAD, draft)
         mit_rueckfrage = {
-            str(item.id)
-            for item in _walk(baum)
-            if isinstance(item, dcc.ConfirmDialogProvider)
-            and isinstance(getattr(item, "id", None), dict)
+            str(knopf.id)
+            for dialog in _walk(baum)
+            if isinstance(dialog, html.Dialog)
+            for knopf in _walk(dialog)
+            if isinstance(getattr(knopf, "id", None), dict)
         }
 
         ohne = [
@@ -736,22 +738,21 @@ class TestNurDasModellSchreibtInsModell:
         sagen, wie weit die Änderung reicht.
         """
 
-        from dash import dcc
+        from dash import html
 
         from dashboard.web.config_editor import controls as c
         from dashboard.web.pages import model_editor
 
-        provider = [
+        dialoge = [
             item
             for item in _walk(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
-            if isinstance(item, dcc.ConfirmDialogProvider)
+            if isinstance(item, html.Dialog)
         ]
 
-        assert provider, "Keine einzige Rückfrage im Modell-Bereich"
-        for eintrag in provider:
-            assert c.REICHWEITE in (
-                eintrag.message or ""
-            ), f"Die Rückfrage zu {eintrag.id} nennt die Reichweite nicht: {eintrag.message!r}"
+        assert dialoge, "Keine einzige Rückfrage im Modell-Bereich"
+        for dialog in dialoge:
+            text = " ".join(k for k in _walk(dialog) if isinstance(k, str))
+            assert c.REICHWEITE in text, f"Eine Rückfrage nennt die Reichweite nicht: {text[:80]!r}"
 
     def test_the_reach_is_worded_once(self):
         """Ein Satz, eine Quelle — sonst laufen Hinweis und Rückfrage auseinander."""

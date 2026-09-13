@@ -3158,3 +3158,65 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
             "waren es 1477 nach P3.12, 3364 davor). Jeder Klick zahlt dafür in "
             "`dash_renderer`."
         )
+
+
+# --- Teil 11: Die Rückfrage ist ein Dialog (P7.1-U1.4, D7) -----------------------
+#
+# **Was nur ein Browser zeigen kann:** ob der Dialog modal aufgeht, wohin der
+# Fokus fällt, ob Escape ihn schließt und ob der Fokus danach zurückkommt. Der
+# Aufbau selbst — Formular, «Abbrechen» zuerst, Reichweite — steht ohne Browser
+# in `tests/test_web_rueckfrage.py`.
+#
+# **Bestätigt wird hier nie.** Die Bestätigung schriebe in `configs/`; gemessen
+# wird nur der Weg hinein und hinaus.
+
+#: Die Rückfrage, an der gemessen wird: «Als Standard speichern» im
+#: Preisverhalten — sichtbar, ohne eine Klappe zu öffnen.
+RUECKFRAGE = "action=save-market-feedback|type=cfg-write"
+
+
+@EINE_SEITE
+@pytest.mark.rueckfrage
+def test_the_confirmation_is_a_modal_dialog(page):
+    dialog = f'dialog[data-rueckfrage="{RUECKFRAGE}"]'
+    oeffner = f'[data-rueckfrage-oeffnet="{RUECKFRAGE}"]'
+
+    page.goto(page.basis + BEREICHE["Modell"], wait_until="networkidle")
+    _warte_auf_modell(page)
+    page.locator(oeffner).click()
+    page.wait_for_function(
+        "(s) => document.querySelector(s)?.open === true", arg=dialog, timeout=5_000
+    )
+
+    zustand = page.evaluate(
+        """(s) => {
+            const d = document.querySelector(s);
+            return {
+                modal: d.matches(":modal"),
+                fokus: (document.activeElement && document.activeElement.textContent) || "",
+                imDialog: d.contains(document.activeElement),
+            };
+        }""",
+        dialog,
+    )
+    assert zustand["modal"], "Die Rückfrage geht nicht modal auf — `showModal()` fehlt"
+    assert (
+        zustand["imDialog"] and "Abbrechen" in zustand["fokus"]
+    ), f"Beim Öffnen liegt der Fokus nicht auf «Abbrechen»: {zustand['fokus']!r}"
+
+    page.keyboard.press("Escape")
+    page.wait_for_function(
+        "(s) => document.querySelector(s).open === false", arg=dialog, timeout=5_000
+    )
+    assert page.evaluate(
+        "(s) => document.activeElement === document.querySelector(s)", oeffner
+    ), "Nach Escape kehrt der Fokus nicht zum Knopf zurück"
+
+    page.locator(oeffner).click()
+    page.wait_for_function(
+        "(s) => document.querySelector(s)?.open === true", arg=dialog, timeout=5_000
+    )
+    page.locator(f"{dialog} button").first.click()
+    page.wait_for_function(
+        "(s) => document.querySelector(s).open === false", arg=dialog, timeout=5_000
+    )

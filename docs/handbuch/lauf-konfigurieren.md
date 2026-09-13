@@ -125,6 +125,10 @@ geschieht, und wie weit es reicht — «für alle künftigen Läufe und für all
 dieses Dashboard benutzen». Derselbe Satz steht als Hinweis unter der
 Schaltfläche, damit man ihn schon vor dem Klick liest. Rückgängig machen lässt
 sich so eine Änderung nur über die Versionsverwaltung; ein Undo gibt es nicht.
+Die Rückfrage öffnet sich als Fenster über dem Modell. Vorausgewählt ist
+«Abbrechen»; mit der Escape-Taste schließen Sie sie, ohne dass etwas
+geschrieben wird. Bestätigt wird mit der Beschriftung der Handlung selbst —
+«Größe anlegen» statt eines «OK».
 
 > **Bis August 2026 fragte keine von ihnen nach.** Sie lagen in als *optional*
 > gekennzeichneten Schritten des Einrichtens, schrieben sofort, und ein Klick auf

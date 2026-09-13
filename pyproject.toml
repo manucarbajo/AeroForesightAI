@@ -124,5 +124,6 @@ markers = [
     "legende: Browser-Wächter — Titel, Achsen und Legende überlappen nicht",
     "rundlaeufe: Browser-Wächter — Server-Aufrufe je Klick in der Schrittfolge",
     "modellbereich: Browser-Wächter — der Modell-Bereich wird aus- und eingehängt",
+    "rueckfrage: Browser-Wächter — die Rückfrage öffnet, fokussiert und schließt sich",
     "leistung: Leistungsmessung (Klickdauer, P7.11) — läuft nur mit -m leistung",
 ]

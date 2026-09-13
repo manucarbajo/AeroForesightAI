@@ -305,6 +305,7 @@ html.dark {
     /* Die einzige Breite hier, die BEDEUTUNG traegt: Eine Sprechblase ist
        schmaler als ihr Rahmen, damit man sieht, wer spricht. */
     --breite-sprechblase: 48rem; /* 768 px */
+    --breite-rueckfrage: 32rem; /* 512 px -- eine Frage, auf die man antwortet */
 }
 
 .af-breite-inhalt {
@@ -1181,6 +1182,27 @@ html.dark .af-theme-toggle__to-light {
 .af-alert .af-md strong,
 .af-alert .af-md p {
     color: inherit;
+}
+
+/* --- Die Rückfrage (P7.1-U1.4, D7) -----------------------------------------
+
+   Ein `<dialog>`, geöffnet mit `showModal()`: Der Browser hält den Fokus darin,
+   schließt ihn mit Escape und gibt den Fokus danach an den Knopf zurück. Bis zum
+   2026-09-13 stand hier der Dialog des Browsers -- nicht aus den Tokens, im
+   dunklen Design ein heller Kasten. */
+.af-rueckfrage {
+    width: calc(100% - 2rem);
+    max-width: var(--breite-rueckfrage);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-raised);
+    color: var(--text-body);
+    box-shadow: 0 12px 28px -14px var(--scrim);
+}
+
+.af-rueckfrage::backdrop {
+    background: var(--scrim);
 }
 
 .af-badge {
