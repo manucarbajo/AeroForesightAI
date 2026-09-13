@@ -110,7 +110,9 @@ _AGE_LABELS = ["<18", "18-25", "26-35", "36-50", "51-65", ">65"]
 
 def _graph(fig, *, mode: str = theme.LIGHT) -> dcc.Graph:
     theme.slow_animation(fig)
-    fig.update_layout(template=theme.template_for(mode), height=520, margin=dict(t=64, b=64))
+    fig.update_layout(
+        template=theme.template_for(mode), height=theme.HOEHE_AUSSAGE, margin=dict(t=64, b=64)
+    )
     return dcc.Graph(figure=fig, config=theme.GRAPH_CONFIG)
 
 

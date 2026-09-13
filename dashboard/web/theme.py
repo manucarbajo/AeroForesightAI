@@ -334,6 +334,16 @@ COLORWAYS = {
 #: Wie viele Reihen eine Figur höchstens in eigenen Tönen zeigt.
 KATEGORIE_TOENE = len(COLORWAYS[LIGHT])
 
+#: **Zwei Höhenstufen für Diagramme** (P7.1-U1.5, von Haiko entschieden am
+#: 2026-09-13). «Aussage» für Diagramme, die eine Frage beantworten, «Kompakt»
+#: für Übersichten. Bis dahin standen 420, 320 und 520 px als Zahlen an den
+#: Aufrufstellen — die Animation war höher als jede Aussage, ohne dass es dafür
+#: einen Grund gab. **Zwei Formen sind keine Stufe und stehen mit Grund in
+#: `tests/test_web_diagrammhoehen.py`:** die Kennlinie der Telemetrie und die
+#: Szene, die den Viewport füllt.
+HOEHE_AUSSAGE = 420
+HOEHE_KOMPAKT = 320
+
 #: Die Legendengruppe, in der die Reihen ab der achten gemeinsam stehen.
 WEITERE = "_weitere"
 COLORWAY = COLORWAYS[LIGHT]

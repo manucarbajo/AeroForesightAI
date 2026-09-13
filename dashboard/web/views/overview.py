@@ -72,7 +72,7 @@ def _line_chart(
         mode=mode,
         title=title,
         showlegend=False,
-        height=320,
+        height=theme.HOEHE_KOMPAKT,
         xaxis_title="Tick",
         yaxis_title=y_title,
     )

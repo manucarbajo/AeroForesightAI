@@ -105,7 +105,7 @@ def _read_ticks(run_dir: Path):
     return pd.DataFrame(rows) if rows else None
 
 
-def _graph(fig, height: int = 420, *, mode: str = theme.LIGHT) -> dcc.Graph:
+def _graph(fig, height: int = theme.HOEHE_AUSSAGE, *, mode: str = theme.LIGHT) -> dcc.Graph:
     theme.style_figure(fig, height=height, mode=mode)
     return dcc.Graph(figure=fig, config=theme.GRAPH_CONFIG)
 
