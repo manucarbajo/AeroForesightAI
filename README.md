@@ -303,9 +303,9 @@ einer Konsole trat das nie auf, weshalb es lange niemandem aufgefallen ist.
 
 **Pro Run** (Hauptweg): `outputs/<run_id>/figures/` — 6 PNGs + `manifest.json`
 
-- Automatisch im Dashboard (Checkbox «Figures nach Lauf erzeugen», Standard: an)
+- Automatisch im Dashboard (Schalter «Auswertungsgrafiken erzeugen», Standard: an)
 - Oder manuell: `python -m src.reporting.figure_generator.cli --run-only <run_id>`
-- Im Dashboard: Ansicht **Figures** unter «Ergebnisse»
+- Im Dashboard: Ansicht **Diagramme** unter «Ergebnisse»
 
 Workflow und Sweep-Läufe: [`docs/scenario_runs.md`](docs/scenario_runs.md)
 

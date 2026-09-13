@@ -28,7 +28,7 @@ sich die Wirkungen addieren oder gegenseitig aufheben.
 ## Namen vergeben
 
 Tragen Sie unter **Lauf & Ablage** einen Namen und die Fragestellung ein. In der
-Lauf-Auswahl erscheint der Name neben der Run-ID; ohne ihn stehen dort nur
+Lauf-Auswahl erscheint der Name neben der Kennung des Laufs; ohne ihn stehen dort nur
 Zeitstempel, die sich nach dem dritten Lauf nicht mehr unterscheiden lassen.
 
 Ein brauchbares Schema ist der Bezug auf den Vergleich, etwa «CO₂ 200 ab Runde 5»
@@ -59,7 +59,7 @@ mehreren Läufen abgelesen werden zu müssen.
 
 **Und Sie sehen es.** Wählen Sie einen der Läufe aus einem Durchgang mit
 Wiederholungen aus — in der Lauf-Auswahl steht er als
-`batch_…/run_003` — und öffnen Sie unter **Ergebnisse** die Ansicht **Figures**,
+`batch_…/run_003` — und öffnen Sie unter **Ergebnisse** die Ansicht **Diagramme**,
 Aussage 1 «Preis und Nachfrage». Die Linien zeigen weiterhin **diesen einen**
 Lauf; hinter ihnen liegen getönte Flächen, und die zeigen, wo 80 Prozent aller
 Wiederholungen lagen.
@@ -384,7 +384,7 @@ sie trotzdem nebeneinander.
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich
-**Figures** unter «1 · Preis und Nachfrage», weil dort Preis und Buchungsrate gemeinsam
+**Diagramme** unter «1 · Preis und Nachfrage», weil dort Preis und Buchungsrate gemeinsam
 dargestellt sind.
 
 Wollen Sie die Zahlen nebeneinanderlegen, laden Sie aus dem Ansicht **Dateien** die

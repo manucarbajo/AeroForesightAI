@@ -1,5 +1,5 @@
 Jeder Lauf legt ein eigenes Verzeichnis unter `outputs/` an, benannt nach seiner
-Run-ID. Läufe eines Szenario-Vergleichs liegen unter `outputs/sweeps/`.
+Kennung. Läufe eines Szenario-Vergleichs liegen unter `outputs/sweeps/`.
 
 Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 
@@ -169,7 +169,7 @@ Archiv; was von einem Lauf bleiben soll, steht in den übrigen Dateien.
 
 Unter `figures/` liegen sechs Diagramme im PNG-Format plus eine
 `manifest.json` mit ihren Titeln. Sie entstehen, wenn beim Start
-«Auswertungsgrafiken erzeugen» aktiv war, und lassen sich in der Ansicht **Figures**
+«Auswertungsgrafiken erzeugen» aktiv war, und lassen sich in der Ansicht **Diagramme**
 unter «PNG-Export» jederzeit neu erzeugen.
 
 **Der Ordner enthält immer einen vollständigen Satz oder gar keinen.** Die Bilder
@@ -182,7 +182,7 @@ Erzeugung abgebrochen. Das ist kein Ergebnis, sondern ein Rest: In der Ansicht
 darin liegt, ist unvollständig — verwenden Sie es nicht.
 
 Seit August 2026 sind es **fünf Dateien zu vier Aussagen** — dieselben vier, die
-auch die Ansicht **Figures** gliedert. Der Titel im Manifest nennt die Aussage,
+auch die Ansicht **Diagramme** gliedert. Der Titel im Manifest nennt die Aussage,
 damit man beim Einbau in einen Bericht nicht raten muss, welche Frage ein Bild
 beantwortet.
 

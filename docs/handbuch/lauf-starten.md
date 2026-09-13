@@ -63,8 +63,8 @@ keine Tick-Zählung — so ist es beim Szenario-Vergleich, der je Szenario nur
 dessen Abschluss meldet. Die Prozentangabe erscheint, sobald eine Tick-Zählung
 vorliegt.
 
-Ist der Lauf fertig, meldet das Bedienfeld links die Run-ID mit der Zahl der
-Ticks und Events — und daneben steht der Weg weiter: **Ergebnisse ansehen**.
+Ist der Lauf fertig, meldet das Bedienfeld links die Kennung des Laufs mit der Zahl der
+Ticks und Ereignisse — und daneben steht der Weg weiter: **Ergebnisse ansehen**.
 
 Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit auf **Einrichten**,
 **Ergebnisse** oder ins **Handbuch** wechseln, ohne ihn abzubrechen — die Kopfzeile bleibt
@@ -100,7 +100,7 @@ Bevölkerung in Standardgröße:
 | Modus | Zehn Ticks |
 |---|---|
 | Nur Zahlen (ohne Agenten-Dialog) | unter einer Sekunde |
-| Ohne Sprachmodell (Mock) | wenige Sekunden |
+| Ohne Sprachmodell | wenige Sekunden |
 | Mit Sprachmodell | Minuten, je nach Modell und Rechner |
 
 Der Unterschied liegt allein bei den Agenten-Narrativen. Die Kennzahlen sind in
@@ -110,7 +110,7 @@ allen drei Fällen dieselben.
 
 Was am Ende erscheint, hängt davon ab, was Sie konfiguriert haben.
 
-Bei einem **Einzellauf** meldet das Bedienfeld die Run-ID, die Zahl der
+Bei einem **Einzellauf** meldet das Bedienfeld die Kennung des Laufs, die Zahl der
 gerechneten Ticks und die Zahl der Ereignisse. Der Lauf ist danach in der
 Auswahl oben in der Kopfzeile bereits gesetzt, und Szene, Kennzahlen und
 Zeitleiste zeigen ihn.

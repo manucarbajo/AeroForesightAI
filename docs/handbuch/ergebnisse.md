@@ -98,7 +98,7 @@ Größe.
 
 Die Ansicht setzt voraus, dass der Lauf die Personen-Historie mitgeschrieben hat.
 
-## Figures
+## Diagramme
 
 **Vier Fragen, die ein Lauf beantwortet** — und daneben der Bildexport.
 
@@ -133,7 +133,7 @@ dem Satz nicht zu trauen ist. Zwei Fälle gibt es:
 
 **«Kein Manifest»** — die Bilder liegen da, aber die Liste ihrer Titel fehlt.
 Das betrifft ältere Läufe: Ihre Titel sind aus den Dateinamen abgeleitet, und ob
-der Satz vollständig ist, lässt sich nicht sagen. «Figures neu erzeugen» stellt
+der Satz vollständig ist, lässt sich nicht sagen. «Diagramme neu erzeugen» stellt
 einen benannten Satz her.
 
 **«Das Manifest nennt Bilder, die nicht vorliegen»** — der Satz ist

@@ -68,7 +68,7 @@ def _history(messages: list) -> html.Div:
             ui.empty_state(
                 "Noch keine Fragen zu diesem Lauf.",
                 hint="Stellen Sie unten eine Frage — die Antwort stützt sich ausschließlich "
-                "auf die Artefakte dieses Runs.",
+                "auf die Artefakte dieses Laufs.",
                 icon_name="forum",
             ),
             className="mb-4",
@@ -102,7 +102,9 @@ def _checks_panel(run_dir) -> html.Div:
         )
         for check in checks
     ]
-    return ui.accordion("Konsistenz-Checks (Ground Truth)", html.Div(rows), open=True)
+    return ui.accordion(
+        "Konsistenz-Checks (Kennzahlen aus der Rechnung)", html.Div(rows), open=True
+    )
 
 
 def render(
@@ -133,7 +135,7 @@ def render(
                     html.Div(
                         [
                             ui.checkbox(
-                                "Demo ohne Ollama (Mock)",
+                                "Beispielantworten ohne Sprachmodell",
                                 value=False,
                                 id="explorer-mock",
                                 hint="Deaktivieren für echte Antworten via Ollama (Modell in .env).",

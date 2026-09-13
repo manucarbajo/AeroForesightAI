@@ -261,7 +261,7 @@ def _result_message(result) -> html.Div:
         if result.child_run_ids:
             children.append(
                 ui.hinweis(
-                    "Einzelne Sweep-Runs oben in der Lauf-Auswahl wählen: "
+                    "Einzelne Szenario-Läufe oben in der Lauf-Auswahl wählen: "
                     + ", ".join(f"`{run_id}`" for run_id in result.child_run_ids),
                     "info",
                     class_name="mt-2",
@@ -275,8 +275,8 @@ def _result_message(result) -> html.Div:
         return html.Div(
             [
                 ui.hinweis(
-                    f"Multi-Run `{result.batch_id}` — {len(result.child_run_ids)} Läufe, "
-                    f"je {result.ticks_completed} Ticks, {result.total_events} Events gesamt.",
+                    f"Mehrfachlauf `{result.batch_id}` — {len(result.child_run_ids)} Läufe, "
+                    f"je {result.ticks_completed} Ticks, {result.total_events} Ereignisse gesamt.",
                     "erfolg",
                 ),
                 html.P(
@@ -292,8 +292,8 @@ def _result_message(result) -> html.Div:
     return html.Div(
         [
             ui.hinweis(
-                f"Run `{result.run_id}` — {result.ticks_completed} Ticks, "
-                f"{result.total_events} Events.",
+                f"Lauf `{result.run_id}` — {result.ticks_completed} Ticks, "
+                f"{result.total_events} Ereignisse.",
                 "erfolg",
             ),
             html.P(

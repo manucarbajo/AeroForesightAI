@@ -76,7 +76,7 @@ Kurve.
 Weil jede Person einzeln entscheidet, wirken Änderungen ungleich. Eine
 Preiserhöhung trifft zuerst die preisempfindlichen Segmente, während Vielflieger
 mit hoher Zahlungsbereitschaft lange unbeeindruckt bleiben. Die aggregierte
-Buchungsrate verdeckt das; in der Ansicht **Figures** unter «Segmente & Alter» wird es
+Buchungsrate verdeckt das; in der Ansicht **Diagramme** unter «Segmente & Alter» wird es
 sichtbar.
 
 Ebenso wirkt eine CO₂-Abgabe erst oberhalb von 50 EUR je Tonne überhaupt auf die

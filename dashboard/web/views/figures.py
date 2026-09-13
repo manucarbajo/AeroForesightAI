@@ -632,7 +632,7 @@ def _satz_hinweis(figures) -> object:
         return ui.hinweis(
             "Zu diesen Bildern gibt es kein Manifest. Die Titel sind aus den "
             "Dateinamen abgeleitet, und ob der Satz vollständig ist, lässt sich "
-            "nicht sagen. «Figures neu erzeugen» stellt einen benannten Satz her.",
+            "nicht sagen. «Diagramme neu erzeugen» stellt einen benannten Satz her.",
             "warnung",
         )
     if figures.fehlend:
@@ -649,9 +649,9 @@ def png_gallery(run_dir: Path) -> html.Div:
     figures = list_run_figures(run_dir)
     if not figures:
         return ui.empty_state(
-            "Noch keine PNG-Figures für diesen Run.",
-            hint="Aktivieren Sie «Figures nach Lauf erzeugen» beim Start oder klicken Sie "
-            "oben auf «Figures neu erzeugen».",
+            "Noch keine PNG-Diagramme für diesen Lauf.",
+            hint="Aktivieren Sie «Auswertungsgrafiken erzeugen» beim Start oder klicken Sie "
+            "oben auf «Diagramme neu erzeugen».",
             icon_name="image",
         )
 
@@ -684,7 +684,7 @@ def _view_png(run_dir: Path, mode: str = theme.LIGHT):
                     className=f"{ui.CAPTION} break-all",
                 ),
                 ui.button(
-                    "Figures neu erzeugen",
+                    "Diagramme neu erzeugen",
                     id="figures-regenerate-btn",
                     variant="secondary",
                     icon_name="refresh",
@@ -758,5 +758,7 @@ def register_callbacks(app) -> None:
         try:
             figures = generate_figures_for_run(run_dir)
         except Exception as exc:  # noqa: BLE001 - matplotlib-Fehler gehören in die UI
-            return no_update, ui.hinweis(f"Figure-Erzeugung fehlgeschlagen: {exc}", "fehler")
-        return png_gallery(run_dir), ui.hinweis(f"{len(figures)} Figures erzeugt.", "erfolg")
+            return no_update, ui.hinweis(
+                f"Die Diagramme ließen sich nicht erzeugen: {exc}", "fehler"
+            )
+        return png_gallery(run_dir), ui.hinweis(f"{len(figures)} Diagramme erzeugt.", "erfolg")

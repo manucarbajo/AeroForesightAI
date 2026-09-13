@@ -73,8 +73,8 @@ PARAMS: dict[str, Param] = {
     ),
     "simulation_name": Param(
         label="Name des Laufs",
-        short="Erscheint in der Run-Liste und im Bericht.",
-        detail="Ohne Namen wird die Run-ID verwendet. Bei mehreren Läufen ist die Liste dann "
+        short="Erscheint in der Lauf-Auswahl und im Bericht.",
+        detail="Ohne Namen steht dort die Kennung des Laufs. Bei mehreren Läufen ist die Liste dann "
         "kaum noch zu lesen.",
     ),
     "simulation_description": Param(
@@ -85,7 +85,7 @@ PARAMS: dict[str, Param] = {
     # --- Rahmenbedingungen -----------------------------------------------
     "base_price": Param(
         label="Startpreis eines Tickets",
-        short="Preis in der ersten Runde.",
+        short="Preis im ersten Tick.",
         unit="EUR",
         technical="price_model.base_price",
         detail="Setzt den Maßstab für den gesamten Preisverlauf, bevor Kosten und "
@@ -127,7 +127,7 @@ PARAMS: dict[str, Param] = {
     "market_feedback_edit.markup_adjustment_per_tick": Param(
         label="Reaktionsstärke",
         short="Höher heißt nervösere Preisbewegungen.",
-        unit="je Runde",
+        unit="je Tick",
         technical="market_feedback.markup_adjustment_per_tick",
         detail="Wie kräftig die Airline nachsteuert, wenn die Auslastung vom Ziel abweicht.",
     ),
@@ -140,7 +140,7 @@ PARAMS: dict[str, Param] = {
     ),
     "market_feedback_edit.max_price_change_fraction": Param(
         label="Preisdeckel",
-        short="So weit darf sich der Preis je Runde bewegen.",
+        short="So weit darf sich der Preis je Tick bewegen.",
         unit="0–1",
         technical="market_feedback.max_price_change_fraction",
         detail="Harte Obergrenze nach oben wie nach unten. Verhindert Sprünge, die kein "
@@ -151,7 +151,7 @@ PARAMS: dict[str, Param] = {
         short="0 folgt dem Trend, 1 den tatsächlichen Buchungen.",
         unit="0–1",
         technical="market_feedback.booking_weight",
-        detail="Woran sich die Nachfrage der nächsten Runde orientiert. Höhere Werte machen "
+        detail="Woran sich die Nachfrage des nächsten Ticks orientiert. Höhere Werte machen "
         "das Modell reaktiver, aber auch schwankungsanfälliger.",
     ),
     # --- Sättigung -------------------------------------------------------
@@ -179,8 +179,8 @@ PARAMS: dict[str, Param] = {
         "Segmenten angehören, sofern sie nicht in derselben exklusiven Gruppe liegen.",
     ),
     "segment.saturation_decay": Param(
-        label="Erholung je Runde",
-        short="0 kommt nie zurück, 1 schon in der nächsten Runde.",
+        label="Erholung je Tick",
+        short="0 kommt nie zurück, 1 schon im nächsten Tick.",
         unit="0–1",
         detail="Wie schnell die Sättigung dieses Segments wieder abgebaut wird.",
     ),
@@ -248,14 +248,14 @@ PARAMS: dict[str, Param] = {
     ),
     "checkpoint_interval": Param(
         label="Zwischenstand sichern",
-        short="Nötig zum Fortsetzen und für die Abfrage einzelner Runden.",
+        short="Nötig zum Fortsetzen und für die Abfrage einzelner Ticks.",
         unit="Ticks",
         detail="0 schaltet die Zwischenstände ab. Ohne sie lässt sich ein Lauf später weder "
-        "fortsetzen noch im Tab «Abfrage» auf einzelne Runden hin befragen.",
+        "fortsetzen noch im Tab «Abfrage» auf einzelne Ticks hin befragen.",
     ),
     "resume_from": Param(
         label="Lauf fortsetzen",
-        short="Run-ID eines früheren Laufs, sonst leer lassen.",
+        short="Kennung eines früheren Laufs, sonst leer lassen.",
     ),
     "use_seed": Param(
         label="Eigenen Zufallsstartwert festlegen",
@@ -273,7 +273,7 @@ PARAMS: dict[str, Param] = {
     "generate_figures": Param(
         label="Auswertungsgrafiken erzeugen",
         short="Sechs Diagramme als PNG für Berichte.",
-        detail="Zu finden unter «Ergebnisse ansehen», Tab «Figures», Abschnitt «PNG-Export».",
+        detail="Zu finden unter «Ergebnisse ansehen», Tab «Diagramme», Abschnitt «PNG-Export».",
     ),
     "no_market": Param(
         label="Marktmodell abschalten",
@@ -282,7 +282,7 @@ PARAMS: dict[str, Param] = {
     "redebedarf": Param(
         label="Redebedarf-Modus",
         short="Agenten melden sich nur bei wesentlichen Änderungen.",
-        detail="Führt zu kürzeren, dichteren Protokollen als der Dialog in jeder Runde.",
+        detail="Führt zu kürzeren, dichteren Protokollen als der Dialog in jedem Tick.",
     ),
     "no_protocol": Param(
         label="Kein Protokoll",

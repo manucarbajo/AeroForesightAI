@@ -496,7 +496,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     history_file = run_dir / "individuals_history.csv"
     if not history_file.is_file():
         return ui.empty_state(
-            "Keine Agenten-History in diesem Run.",
+            "Kein Personenverlauf in diesem Lauf.",
             hint="`individuals_history.csv` fehlt. Starten Sie eine neue Simulation, "
             "um die Agenten-History aufzuzeichnen.",
             icon_name="animation",
@@ -535,7 +535,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                 "Surplus Pulse: Spielraum bis zur Erschwinglichkeitsgrenze",
                 f"Eine feste Stichprobe von {STICHPROBE} Personen. Waagrecht der höchste Preis, "
                 "den eine Person überhaupt bezahlen kann, senkrecht der Abstand zum Ticketpreis "
-                "der Runde. Unter der gestrichelten Linie bucht sie nicht; darüber entscheidet "
+                "des Ticks. Unter der gestrichelten Linie bucht sie nicht; darüber entscheidet "
                 "die Wahrscheinlichkeit.",
                 _graph(_surplus_figure(stichprobe(surplus), mode), mode=mode),
             )
@@ -558,7 +558,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                 f"Dieselbe Stichprobe von {STICHPROBE} Personen. Waagrecht die "
                 "Zahlungsbereitschaft, senkrecht der Reisebedarf: eins minus die Sättigung. "
                 "Wer bucht, wird gesättigt und fällt nach unten; danach klingt die Sättigung "
-                "Runde für Runde ab, und der Punkt steigt wieder — je nach Segment "
+                "Tick für Tick ab, und der Punkt steigt wieder — je nach Segment "
                 "verschieden schnell.",
                 _graph(_swarm_figure(stichprobe(bedarf), mode), mode=mode),
             )

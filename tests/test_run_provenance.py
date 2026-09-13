@@ -360,7 +360,7 @@ class TestDasDashboardZeigtDieHerkunft:
         rendered = self._render(
             tmp_path, {"compute_mode": "mock_llm", "seed": 1, "model": "llama3.2"}
         )
-        assert "Ohne Sprachmodell (Mock)" in rendered
+        assert "Ohne Sprachmodell" in rendered
         assert "ohne Sprachmodell entstanden" in rendered
 
     def test_mock_run_does_not_claim_a_model(self, tmp_path) -> None:

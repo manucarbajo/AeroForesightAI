@@ -59,7 +59,7 @@ jeder Runde hin und her**, und der Zustand *am Ende* eines Laufs hing davon ab, 
 seine Rundenzahl gerade oder ungerade war. Läufe von vor diesem Datum sind
 deshalb mit Vorsicht zu lesen — siehe [Läufe vergleichen](/doku/vergleiche).
 
-In der Ansicht **Figures** zeigt die Aussage «4 · Die Szenarien nebeneinander»
+In der Ansicht **Diagramme** zeigt die Aussage «4 · Die Szenarien nebeneinander»
 die Faktorlage **am Ende** jedes Szenario-Laufs — daran unterscheiden sich die
 Szenarien sichtbar. Den *Verlauf* über die Ticks, also wann welcher Zustand
 gewechselt hat, finden Sie im Bild `factor_states.png` unter «PNG-Export» und in

@@ -90,7 +90,7 @@ betroffene Wert ist zusätzlich am Feld selbst markiert. Sonst klicken Sie auf
 Der Zustand in der Kopfzeile wechselt auf «Simulation läuft» und der Punkt
 daneben pulsiert. Der Fortschritt läuft Runde für Runde in die **Konsole** rechts
 — klappen Sie sie auf, um Preis und Buchungsrate je Tick zu sehen. Ist der Lauf
-fertig, meldet das Bedienfeld die Run-ID, die Zahl der Ticks und die Zahl der
+fertig, meldet das Bedienfeld die Kennung des Laufs, die Zahl der Ticks und die Zahl der
 Ereignisse, und der neue Lauf ist in der Auswahl oben bereits gesetzt.
 
 ## Schritt 5: Ergebnis lesen
@@ -109,7 +109,7 @@ im Lauf etwas passiert ist; die gelben sind politische Eingriffe.
 Für die ausführlichen Auswertungen wechseln Sie oben auf **Ergebnisse**. Die
 erste Ansicht **Szenario** zeigt das Lauf-Narrativ und darunter die drei
 Szenarien, jeweils mit den Tick-Werten, auf die sie sich stützen. Danach lohnt
-sich **Übersicht** für den Verlauf von Buchungsrate und Preis, und **Figures**
+sich **Übersicht** für den Verlauf von Buchungsrate und Preis, und **Diagramme**
 für die Detailauswertungen. Die empfohlene Lesereihenfolge steht unter
 [Ergebnisse lesen](/doku/ergebnisse-lesen).
 

@@ -90,8 +90,9 @@ Buchungsentscheidung wird. Siehe
 **Marge** — Der Aufschlag der Airline auf die Kosten. Zusammen mit dem
 Kostenanteil ergibt er den Ticketpreis.
 
-**Mock** — Betrieb ohne Sprachmodell. Die Kennzahlen sind unverändert, die
-Agenten-Texte sind Platzhalter.
+**Ohne Sprachmodell** — Rechenmodus, in dem kein Sprachmodell befragt wird (in der
+Kommandozeile `--mock-llm`). Die Kennzahlen sind unverändert, die Agenten-Texte
+sind Platzhalter.
 
 **Preset** — Eine gespeicherte Annahmenwelt unter `configs/sweeps/`. Siehe
 [Szenario-Presets](/doku/ref-presets).
@@ -109,8 +110,8 @@ Bezifferung: Bei welchem Tick die CO₂-Abgabe auf welchen Wert springt, ist
 gesetzt und nicht aus Daten geschätzt. Welche Zeitspanne es beschreibt, sagt
 jedes Rahmenszenario in seinem Vorbehalt. Siehe [Presets](/doku/presets).
 
-**Run-ID** — Eindeutige Kennung eines Laufs, zugleich der Name seines
-Ausgabeverzeichnisses.
+**Kennung** (eines Laufs) — Eindeutiger Name eines Laufs, zugleich der Name
+seines Ausgabeverzeichnisses, etwa `run_20260913_142530`.
 
 **SAF** — Sustainable Aviation Fuel, nachhaltiger Flugtreibstoff. Als Quote eine
 Systemgröße, die die Kosten der Airline erhöht.

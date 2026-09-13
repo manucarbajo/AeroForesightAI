@@ -191,7 +191,7 @@ def presets() -> str:
             lines += [
                 "Erwarteter Verlauf:",
                 "",
-                "| Ab Runde | Was gelten sollte |",
+                "| Ab Tick | Was gelten sollte |",
                 "|---|---|",
             ]
             for tick, description in milestones:

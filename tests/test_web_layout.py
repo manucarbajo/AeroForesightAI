@@ -135,7 +135,7 @@ def test_every_figures_subtab_renders(tab, minimal_run):
 def test_runs_page_render_tab_survives_a_missing_directory(tmp_path):
     selection = {"run_id": "weg", "run_dir": str(tmp_path / "gibt-es-nicht")}
 
-    assert "Run-Verzeichnis fehlt" in _text(runs_page.render_tab("overview", selection))
+    assert "Laufverzeichnis fehlt" in _text(runs_page.render_tab("overview", selection))
 
 
 def _summary(tmp_path, **overrides) -> RunSummary:
@@ -438,7 +438,7 @@ def test_result_message_covers_all_three_outcomes():
     multi = _Result()
     multi.multi_run_batch = True
     multi.child_run_ids = ("run_1", "run_2")
-    assert "Multi-Run" in _text(launch_page._result_message(multi))
+    assert "Mehrfachlauf" in _text(launch_page._result_message(multi))
 
     sweep = _Result()
     sweep.sweep_batch = True

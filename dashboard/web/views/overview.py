@@ -184,7 +184,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                     "Ticks",
                     f"{metadata.get('ticks_completed', '?')} / {metadata.get('ticks_max', '?')}",
                 ),
-                ui.kachel("Events", metadata.get("total_events", "?")),
+                ui.kachel("Ereignisse", metadata.get("total_events", "?")),
                 ui.kachel("Modell", _model_label(metadata)),
                 ui.kachel("Markt", "an" if metadata.get("market_enabled", True) else "aus"),
                 cols="sm:grid-cols-2 lg:grid-cols-4",
@@ -194,7 +194,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
         children.append(
             html.P(
                 [
-                    "Run-ID: ",
+                    "Kennung: ",
                     html.Code(run_id, className="af-text-muted"),
                     f" · erstellt {metadata.get('timestamp', '—')}",
                 ],

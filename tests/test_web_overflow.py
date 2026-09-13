@@ -2284,7 +2284,7 @@ FREMDE_KLASSEN = {
     "_dash-loading-callback",
     # Dashs Reiterinhalt (`dcc.Tabs`) markiert sich selbst so; gestaltet wird
     # er über `af-tabs__content`. Zuerst gemessen auf der Musterseite
-    # (P7.1-U1.6) — im Betrieb steht er unter «Figures», die der Gang durch
+    # (P7.1-U1.6) — im Betrieb steht er unter «Diagramme», die der Gang durch
     # die Ergebnisse nicht nach Klassen abfragt.
     "tab-content",
 }
@@ -2759,7 +2759,7 @@ AUSSAGEN = [
 
 
 def _oeffne_figures(page) -> None:
-    """Zum Reiter «Figures» der Ergebnisse — dort wohnen die vier Aussagen.
+    """Zum Reiter «Diagramme» der Ergebnisse — dort wohnen die vier Aussagen.
 
     **Erst prüfen, ob es überhaupt einen Lauf gibt.** Ohne einen zeigt die
     Ergebnis-Ansicht keine Reiter, und der Wächter lief bis zum 2026-09-07 in
@@ -2788,11 +2788,11 @@ def _oeffne_figures(page) -> None:
     page.wait_for_selector(".af-viewbar__item")
     leiste = page.locator(".af-viewbar__item")
     for index in range(leiste.count()):
-        if "Figures" in leiste.nth(index).inner_text():
+        if "Diagramme" in leiste.nth(index).inner_text():
             leiste.nth(index).click()
             break
-    else:  # pragma: no cover - die Leiste ohne «Figures» wäre ein anderer Befund
-        pytest.fail("Der Reiter «Figures» fehlt in der Ergebnisleiste")
+    else:  # pragma: no cover - die Leiste ohne «Diagramme» wäre ein anderer Befund
+        pytest.fail("Der Reiter «Diagramme» fehlt in der Ergebnisleiste")
     page.wait_for_selector("#figures-tabs", timeout=15_000)
 
 

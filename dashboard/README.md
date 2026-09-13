@@ -128,12 +128,12 @@ Dateien unter `configs/`; sie können dadurch nicht veralten.
 Systemgröße oder ein neues Preset ohne Eintrag im Handbuch lässt die Suite
 fehlschlagen.
 
-**Demo-Ablauf:** Run wählen → **Szenario** lesen → **Figures** → **Abfrage**
+**Demo-Ablauf:** Run wählen → **Szenario** lesen → **Diagramme** → **Abfrage**
 (Chat). Details: [`../docs/scenario_runs.md`](../docs/scenario_runs.md)
 
 Run-Figures liegen unter `outputs/<run_id>/figures/` (6 PNGs + `manifest.json`),
-sofern «Figures nach Lauf erzeugen» aktiv ist (Standard). Sie erscheinen in der
-Ansicht **Figures** unter **PNG-Export**; im Dark Mode stehen sie auf einer
+sofern «Auswertungsgrafiken erzeugen» aktiv ist (Standard). Sie erscheinen in der
+Ansicht **Diagramme** unter **PNG-Export**; im Dark Mode stehen sie auf einer
 weißen Fläche wie ein aufgelegtes Blatt — matplotlib rendert sie hell, und
 ehrlich dargestellt schlägt falsch eingefärbt (offen in P1.2). die sechs Live-Auswertungen daneben entstehen
 direkt aus `outputs/<run_id>/timeseries/`. Sweep-Runs: `outputs/sweeps/sweep_<preset>/`.

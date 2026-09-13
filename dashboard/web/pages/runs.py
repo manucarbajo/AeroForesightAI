@@ -34,7 +34,7 @@ TABS = [
     ("Szenario", "scenario"),
     ("Übersicht", "overview"),
     ("Animation", "animation"),
-    ("Figures", "figures"),
+    ("Diagramme", "figures"),
     ("Bericht", "narrative"),
     ("Abfrage", "explorer"),
     ("Dateien", "files"),
@@ -111,7 +111,10 @@ _degraded_banner = degraded_banner
 
 
 def _meta(summary: RunSummary) -> html.Div:
-    preview = summary.scenario_summary or "Kein Szenario-Preview — Run ohne `run_scenario.json`."
+    preview = (
+        summary.scenario_summary
+        or "Keine Szenario-Vorschau — der Lauf hat keine `run_scenario.json`."
+    )
     return html.Div(
         [
             html.P(
@@ -159,7 +162,7 @@ def render_tab(tab: str, selected: dict, messages: dict | None = None, mode: str
     run_dir = Path(selected["run_dir"])
     run_id = selected["run_id"]
     if not run_dir.is_dir():
-        return ui.hinweis(f"Run-Verzeichnis fehlt: {run_dir}", "fehler")
+        return ui.hinweis(f"Laufverzeichnis fehlt: {run_dir}", "fehler")
     try:
         if tab == "explorer":
             history = (messages or {}).get(run_id) or []
@@ -187,7 +190,7 @@ def layout(selection: dict | None = None) -> html.Div:
     summary = by_id.get(run_id) if run_id else None
 
     empty = ui.empty_state(
-        "Noch keine Runs vorhanden.",
+        "Noch keine Läufe vorhanden.",
         hint="Richten Sie unter «Einrichten» einen Lauf ein — nach dem Start erscheint er hier.",
         icon_name="science",
     )
@@ -253,7 +256,7 @@ def register_callbacks(app) -> None:
         _, by_id = run_options()
         summary = by_id.get(selected.get("run_id"))
         if summary is None:
-            return ui.hinweis("Run nicht mehr vorhanden.", "warnung")
+            return ui.hinweis("Lauf nicht mehr vorhanden.", "warnung")
         return _meta(summary)
 
     @app.callback(

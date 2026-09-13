@@ -238,7 +238,7 @@ def compute_mode(args: RunArgs) -> str:
 
 COMPUTE_MODE_LABELS = {
     "llm": "Mit Sprachmodell",
-    "mock_llm": "Ohne Sprachmodell (Mock)",
+    "mock_llm": "Ohne Sprachmodell",
     "deterministic_only": "Nur Zahlen (deterministisch)",
     "deterministic_with_llm_narrative": "Nur Zahlen, Abschlusstext vom Modell",
 }

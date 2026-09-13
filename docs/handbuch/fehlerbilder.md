@@ -29,7 +29,7 @@ kann der Preis nicht weiter fallen, obwohl die Nachfrage schwach ist. Oder der
 Preisdeckel je Runde ist so eng gesetzt, dass sich der Preis nur in winzigen
 Schritten bewegen darf.
 
-In der Ansicht **Figures** zeigt die Aussage «1 · Preis und Nachfrage» die Zusammensetzung aus
+In der Ansicht **Diagramme** zeigt die Aussage «1 · Preis und Nachfrage» die Zusammensetzung aus
 Kosten und Marge. Ist die Marge nahe null, liegt der Preis an der Untergrenze.
 
 ## Der Preis schwingt hin und her
@@ -130,7 +130,7 @@ Ordner ist ihr Rest, kein Ergebnis — was darin liegt, ist unvollständig.
 vom letzten geglückten Durchlauf und ist vollständig; die Bilder entstehen
 bewusst erst nebenan und ziehen nur als ganzer Satz um.
 
-**Was zu tun ist:** In der Ansicht **Figures** unter «PNG-Export» neu erzeugen.
+**Was zu tun ist:** In der Ansicht **Diagramme** unter «PNG-Export» neu erzeugen.
 Gelingt es, verschwindet der Rest von selbst. Gelingt es wieder nicht, steht der
 Grund im Protokoll des Laufs.
 

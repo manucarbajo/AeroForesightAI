@@ -106,7 +106,7 @@ def body(run_dir: Path, run_id: str) -> html.Div:
         if isinstance(ground_truth, dict) and ground_truth:
             children.append(
                 ui.accordion(
-                    "Ground Truth (Python-Kennzahlen)",
+                    "Kennzahlen aus der Rechnung",
                     ui.json_view(ground_truth),
                     open=False,
                 )
@@ -125,7 +125,7 @@ def body(run_dir: Path, run_id: str) -> html.Div:
     elif not scenario:
         children.append(
             ui.hinweis(
-                "`run_scenario.md` fehlt in diesem Run. Starten Sie eine neue Simulation "
+                "`run_scenario.md` fehlt in diesem Lauf. Starten Sie eine neue Simulation "
                 "oder klicken Sie auf «Szenarien neu erzeugen».",
                 "warnung",
             )

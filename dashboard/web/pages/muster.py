@@ -292,7 +292,7 @@ def _eingaben() -> html.Section:
             value=False,
         ),
         _probe("toggle", ui.toggle("Sprachmodell", value=True), value=True),
-        _probe("toggle", ui.toggle("Figures nach Lauf", value=False), value=False),
+        _probe("toggle", ui.toggle("Diagramme nach Lauf", value=False), value=False),
         _probe(
             "radio",
             ui.radio(_optionen(), value="standard", legend="Ausgangslage"),

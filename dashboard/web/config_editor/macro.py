@@ -46,11 +46,11 @@ _PROPERTY_EFFECTS = {
     "verteuert das Fliegen gegenüber der Bahn.",
     "saf_mandate_share": "Vorgeschriebener Anteil nachhaltigen Treibstoffs. Höher = höhere "
     "Kosten für die Airline, solange SAF teurer ist als Kerosin.",
-    "demand_growth_rate": "Wachstum der Grundnachfrage je Runde, unabhängig vom Preis.",
+    "demand_growth_rate": "Wachstum der Grundnachfrage je Tick, unabhängig vom Preis.",
     "income_index": "Kaufkraft der Bevölkerung. Höher = die Menschen halten steigende "
     "Preise länger aus.",
     "oil_price_index": "Ölpreis als Index. Treibt die Treibstoffkosten der Airline.",
-    "fuel_price_change": "Trend der Treibstoffkosten je Runde.",
+    "fuel_price_change": "Trend der Treibstoffkosten je Tick.",
     "efuel_subsidy": "Förderung synthetischer Kraftstoffe. Dämpft die Mehrkosten aus der "
     "SAF-Quote.",
     "bevoelkerungsentwicklung": "Größe der Bevölkerung, aus der die Nachfrage entsteht.",
@@ -74,7 +74,7 @@ def rule_rows(prop_id: str, rules: list, count: int, baseline: float) -> list:
         kind = effect.get("type", "set")
         cells = [
             ui.field(
-                "ab Runde",
+                "ab Tick",
                 _rule_input(
                     prop_id, index, "tick", int(existing.get("active_from_tick", 1)), 1, 500, 1
                 ),
@@ -96,7 +96,7 @@ def rule_rows(prop_id: str, rules: list, count: int, baseline: float) -> list:
         if kind == "ramp":
             cells.append(
                 ui.field(
-                    "über … Runden",
+                    "über … Ticks",
                     _rule_input(
                         prop_id, index, "duration", int(effect.get("duration_ticks", 5)), 1, 100, 1
                     ),
