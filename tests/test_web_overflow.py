@@ -342,6 +342,21 @@ def page(request, browser, basis_url):
 #: Für Tests, die aus einem Messgang lesen: dieselben Breiten als Parameter.
 JE_BREITE = pytest.mark.parametrize("breite", BREITEN, ids=[f"{b}px" for b in BREITEN])
 
+#: **Was nicht von der Breite abhängt, läuft einmal** (2026-09-13). Bis dahin
+#: lief jede Zusage bei beiden Breiten, auch die, deren Antwort keine Breite
+#: kennt: ob eine Anfrage den Server verlässt, ob ein Symbol im Teilsatz steckt,
+#: ob eine Klasse eine Regel hat, ob der Modell-Bereich aus- und eingehängt wird,
+#: wie viele Rundläufe ein Klick auslöst — und jeder Selbsttest, der nur prüft,
+#: ob ein Detektor anschlägt. Das waren 34 von 139 Tests, doppelt gezahlt.
+#:
+#: **Genommen ist 1280**, die Breite, bei der P1.6 und P1.7 ihre Befunde erhoben
+#: haben. Wer eine dieser Zusagen von der Breite abhängig macht (eine Klasse nur
+#: unter `lg:`, ein Symbol nur in der Schublade), holt sie zurück auf `JE_BREITE`.
+EINE_BREITE = pytest.mark.parametrize("breite", [1280], ids=["1280px"])
+
+#: Dasselbe für Tests mit eigener Seite (`page`): die Breite über das Fixture.
+EINE_SEITE = pytest.mark.parametrize("page", [1280], indirect=True, ids=["1280px"])
+
 
 class _Gescheitert:
     """Ein Messgang, der nicht durchkam — damit nicht jeder Test ihn neu versucht."""
@@ -1000,6 +1015,7 @@ class TestDieSeiteSchiebtSichNichtWaagerecht:
         )
 
 
+@EINE_SEITE
 def test_the_height_guard_would_notice_a_relapse(page):
     """Der Höhenwächter hat genau eine Art, still blind zu werden.
 
@@ -1042,6 +1058,7 @@ def test_the_height_guard_would_notice_a_relapse(page):
     )
 
 
+@EINE_SEITE
 def test_the_detector_would_notice_a_relapse(page):
     """Ein Wächter, der aus dem falschen Grund grün ist, ist schlechter als keiner.
 
@@ -1586,6 +1603,7 @@ class TestKeinProsablockIstSchmalerAlsSeinPlatz:
         )
 
 
+@EINE_SEITE
 def test_the_width_guard_would_notice_a_relapse(page):
     """Beide Maße müssen anschlagen, sonst sind sie Zierde.
 
@@ -1942,6 +1960,7 @@ class TestJedeTextspalteLiegtAufDemEinzugsraster:
         )
 
 
+@EINE_SEITE
 def test_the_edge_guard_would_notice_a_relapse(page):
     """Selbsttest: ein 20-px-Einzug fällt auf; Beschriftung hinter Symbol nicht.
 
@@ -2247,7 +2266,7 @@ def _klassen_ohne_regel(page) -> list[str]:
 class TestJedeBenutzteKlasseHatEineRegel:
     """Der Build darf nichts übersehen, was das CDN noch gefunden hätte."""
 
-    @JE_BREITE
+    @EINE_BREITE
     @pytest.mark.parametrize("name", list(BEREICHE))
     def test_no_class_lost_its_rule(self, messung, breite, name):
         ohne = messung.bereich(breite, name)["klassen"]
@@ -2260,13 +2279,14 @@ class TestJedeBenutzteKlasseHatEineRegel:
             "Laufzeit zusammengesetzte Klasse findet er nicht."
         )
 
-    @JE_BREITE
+    @EINE_BREITE
     def test_the_landing_page_too(self, messung, breite):
         """Sie teilt sich das Stylesheet mit dem Dashboard."""
 
         assert not messung.landingpage(breite)["klassen"]
 
 
+@EINE_SEITE
 def test_the_class_guard_would_notice_a_relapse(page):
     """Eine Klasse, die der Build nicht kennt, muss auffallen.
 
@@ -2348,14 +2368,14 @@ def _fremde_anfragen(page, url: str) -> list[str]:
 class TestKeinAufrufVerlaesstDenServer:
     """Datenhoheit ist kein Vorsatz, sondern eine messbare Eigenschaft."""
 
-    @JE_BREITE
+    @EINE_BREITE
     @pytest.mark.parametrize("name", list(BEREICHE))
     def test_no_area_of_the_dashboard_phones_home(self, messung, breite, name):
         fremd = messung.bereich(breite, name)["fremd"]
 
         assert not fremd, f"«{name}» lädt von fremden Hosts:\n  " + "\n  ".join(sorted(set(fremd)))
 
-    @JE_BREITE
+    @EINE_BREITE
     def test_no_page_of_the_landing_site_phones_home(self, messung, breite):
         """Sie ist die einzige öffentlich sichtbare Oberfläche."""
 
@@ -2364,6 +2384,7 @@ class TestKeinAufrufVerlaesstDenServer:
         assert not befunde, f"Diese Seiten laden von fremden Hosts: {befunde}"
 
 
+@EINE_SEITE
 def test_the_network_guard_would_notice_a_relapse(page):
     """Ein Wächter, der nie etwas sieht, könnte auch blind sein.
 
@@ -2437,7 +2458,7 @@ def _symbole_der_ansicht(page) -> set[str]:
 class TestKeinSymbolStehtAlsWortDa:
     """Der Teilsatz deckt, was gezeichnet wird — nicht, was jemand aufgeschrieben hat."""
 
-    @JE_BREITE
+    @EINE_BREITE
     @pytest.mark.parametrize("name", list(BEREICHE))
     def test_every_rendered_icon_is_in_the_subset(self, messung, breite, name):
         from scripts.schriften_holen import SYMBOLE
@@ -2451,7 +2472,7 @@ class TestKeinSymbolStehtAlsWortDa:
             "(scripts/schriften_holen.py), dann das Skript laufen lassen."
         )
 
-    @JE_BREITE
+    @EINE_BREITE
     def test_the_steps_of_the_wizard_too(self, messung, breite):
         """Genau hier ist es passiert: vier Namen aus einem Modul-Dict."""
 
@@ -2462,13 +2483,14 @@ class TestKeinSymbolStehtAlsWortDa:
         assert "radio_button_checked" in gezeichnet, "Die Schrittliste wird nicht gezeichnet"
         assert not gezeichnet - set(SYMBOLE)
 
-    @JE_BREITE
+    @EINE_BREITE
     def test_the_landing_page_too(self, messung, breite):
         from scripts.schriften_holen import SYMBOLE
 
         assert not messung.landingpage(breite)["symbole"] - set(SYMBOLE)
 
 
+@EINE_SEITE
 def test_the_symbol_guard_would_notice_a_relapse(page):
     """Ein Name, den der Teilsatz nicht kennt, muss auffallen."""
 
@@ -2652,6 +2674,7 @@ class TestTitelUndLegendeTeilenSichKeinenRand:
         assert not befunde, f"«{name}» bei {breite} px:\n  " + "\n  ".join(befunde)
 
 
+@EINE_SEITE
 def test_the_legend_guard_would_notice_a_relapse(page):
     """Ein Wächter, der nie etwas sieht, könnte auch blind sein.
 
@@ -2894,6 +2917,7 @@ def _in_die_schrittfolge(page) -> int:
 class TestEinKlickInDerSchrittfolgeKostetWenigRundlaeufe:
     """Die Sperrklinke von P3.9 — als Zahl, nicht als Dauer."""
 
+    @EINE_SEITE
     def test_no_step_click_triggers_more_calls_than_agreed(self, page):
         schritte = _in_die_schrittfolge(page)
         befunde: list[str] = []
@@ -2971,6 +2995,7 @@ class TestEinKlickInDerSchrittfolgeKostetWenigRundlaeufe:
             "Messungen, Maschinenlast erklärt das also nicht."
         )
 
+    @EINE_SEITE
     def test_the_cost_guard_would_notice_a_relapse(self, page):
         """Ein Wächter, der nie etwas sieht, könnte auch blind sein.
 
@@ -3031,7 +3056,7 @@ _WIRT = """
 
 
 class TestDerModellBereichLiegtNurImDomWennErOffenIst:
-    @JE_BREITE
+    @EINE_BREITE
     def test_er_ist_leer_solange_niemand_ihn_aufsucht(self, messung, breite):
         for name in ("Einstieg", "Leitstand", "Ergebnisse"):
             gemessen = messung.bereich(breite, name)["wirt"]
@@ -3042,7 +3067,7 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
                 "wieder dauernd im DOM, und jeder Klick zahlt dafür."
             )
 
-    @JE_BREITE
+    @EINE_BREITE
     def test_beim_aufsuchen_wird_er_gebaut(self, messung, breite):
         gemessen = messung.bereich(breite, "Modell")["wirt"]
 
@@ -3051,7 +3076,7 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
             "ist er unbenutzbar. Der Callback muss auf den Pfad hören."
         )
 
-    @JE_BREITE
+    @EINE_BREITE
     def test_ein_tieflink_zeigt_ihn_auch(self, messung, breite):
         """**`prevent_initial_call` ist weg, und das ist der Grund.** Wer die
         Adresse direkt öffnet, muss den Bereich sehen — mit unterdrücktem
@@ -3062,6 +3087,7 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
         assert modell["wirt"]["wirt"] > 500
         assert modell["eingaben_im_modell"] > 50
 
+    @EINE_SEITE
     def test_beim_verlassen_wird_er_wieder_abgebaut(self, page):
         """Sonst hätte der erste Besuch die Ersparnis für immer aufgebraucht."""
 
@@ -3077,7 +3103,7 @@ class TestDerModellBereichLiegtNurImDomWennErOffenIst:
             "gilt dann nur bis zum ersten Besuch."
         )
 
-    @JE_BREITE
+    @EINE_BREITE
     def test_der_baum_ist_wirklich_kleiner_geworden(self, messung, breite):
         """Die Zahl, an der der Gewinn hängt — als Sperrklinke.
 
