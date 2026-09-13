@@ -120,7 +120,7 @@ def systemgroessen() -> str:
     lines = [
         "Systemgrößen sind die Zahlen hinter den Faktoren: Politik, Kosten, Konjunktur. "
         "Jede hat einen Startwert und kann sich über Regeln im Lauf verändern. "
-        "Zu bearbeiten unter «Simulation starten» im Tab «Rahmenbedingungen».",
+        "Zu bearbeiten im Bereich «Modell», Abschnitt «Rahmenbedingungen».",
         "",
         "## Größen des Systems",
         "",
@@ -143,8 +143,8 @@ def systemgroessen() -> str:
         "## Eigenschaften einer Person",
         "",
         "Diese Merkmale trägt jede simulierte Person. Aus ihnen entsteht die "
-        "Kaufentscheidung. Anteile und Verteilungen legen Sie im Tab "
-        "«Nachfrage & Preisbildung» fest.",
+        "Kaufentscheidung. Anteile und Verteilungen legen Sie im Bereich "
+        "«Modell» fest, Abschnitt «Nachfrage & Preisbildung».",
         "",
         "| Merkmal | Art | Bedeutung |",
         "|---|---|---|",
@@ -166,10 +166,11 @@ def systemgroessen() -> str:
 def presets() -> str:
     sweeps = list_sweep_presets()
     lines = [
-        "Fertige Annahmenwelten. Ein Preset legt Faktorlage, Politik und Kosten in einem "
-        "Zug fest und ist der schnellste Einstieg in einen Lauf. Auswahl unter "
-        "«Simulation starten» im Tab «Überblick»; über «Werte übernehmen» wandern die "
-        "Einstellungen in Ihren Entwurf und lassen sich einzeln verändern.",
+        "Fertige Annahmenwelten. Ein Preset legt Politik, Kosten und Konjunktur in einem "
+        "Zug fest und ist der schnellste Einstieg in einen Lauf; die Faktorlage "
+        "entsteht daraus im Lauf. Auswahl im Bereich «Einrichten», erster Schritt; "
+        "über «Werte übernehmen und selbst anpassen» wandern die Einstellungen in "
+        "Ihren Entwurf und lassen sich einzeln verändern.",
         "",
     ]
     if not sweeps:

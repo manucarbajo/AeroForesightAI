@@ -25,6 +25,9 @@ import ast
 import re
 from pathlib import Path
 
+from dashboard.web import shell
+from dashboard.web.config_editor import wizard
+from dashboard.web.pages import runs
 from src.reporting.output_writer.provenance import COMPUTE_MODE_LABELS
 
 WURZEL = Path(__file__).resolve().parents[1]
@@ -237,3 +240,112 @@ class TestDasHandbuchSprichtDasselbeGlossar:
         befunde = _befunde([(f"probe.md:{z}", t) for z, t in _zeilen(kapitel)])
 
         assert [b.split(":")[1] for b in befunde] == ["5", "6"], befunde
+
+
+# --- Ein Ortsverweis nennt einen Ort, den es gibt (P7.2-U2.2) -----------------
+
+#: Wo ein Verweis hinführen kann, aus der Quelle des jeweiligen Ortes gelesen
+#: statt aufgezählt. **«Tab» ist seit P1.7 nur noch eines**: ein Reiter der
+#: Ergebnisse. Die vier Abschnitte des Modell-Bereichs waren bis dahin Reiter
+#: und heißen im Code weiterhin `TABS` (der Kommentar dort sagt, warum) —
+#: sichtbar sind sie Abschnitte eines **Bereichs**.
+#:
+#: **«Abschnitt» steht bewusst nicht hier:** So heißt jede Überschrift, auch
+#: «PNG-Export» innerhalb eines Reiters — eine Menge gültiger Namen dafür
+#: gäbe es nur als Liste, und eine Liste verfällt.
+ORTE = {
+    "Tab": {name for name, _ in runs.TABS},
+    "Reiter": {name for name, _ in runs.TABS},
+    "Bereich": {name for _, name in shell.BEREICHE},
+    "Schritt": {schritt.title for schritt in wizard.STEPS},
+}
+
+#: Wie viele Ortsverweise die Suche mindestens liest — gegen die eigene
+#: Blindheit. Gemessen am 2026-09-13: **15** über Oberfläche und Handbuch.
+VERWEISE_MIN = 10
+
+#: Ein Text, der einen entfallenen Ort nennen **darf** — je Eintrag der Grund.
+#:
+#: **Eine Geschichtsnotiz ist kein Verweis.** Wer sagt, dass es einen Schritt
+#: nicht mehr gibt, muss ihn benennen dürfen; ohne diese Ausnahme wäre die
+#: Antwort, die Erklärung zu streichen — und damit den Leser mit einer
+#: Erinnerung allein zu lassen, die er sich nicht erklären kann.
+ORTE_AUSNAHMEN = {
+    (
+        "docs/handbuch/lauf-konfigurieren.md",
+        "Schritt «Ausgangslage» ist im August 2026 entfallen",
+    ): ("Sagt selbst, dass es den Schritt nicht mehr gibt, und erklärt warum."),
+}
+
+#: Ein Verweis in sichtbarem Text: das Wort, dann der Name in Guillemets.
+_ORTSVERWEIS = re.compile("(Tab|Reiter|Bereich|Schritt) [«]([^»]+)[»]")
+
+
+def _orte_ausgenommen(ort: str, text: str) -> bool:
+    datei = ort.rsplit(":", 1)[0]
+    return any(datei == a_datei and teil in text for a_datei, teil in ORTE_AUSNAHMEN)
+
+
+def _ortsbefunde(texte: list[tuple[str, str]]) -> list[str]:
+    befunde: list[str] = []
+    for ort, text in texte:
+        if _orte_ausgenommen(ort, text):
+            continue
+        for wort, name in _ORTSVERWEIS.findall(_CODE.sub("", text)):
+            if name not in ORTE[wort]:
+                befunde.append(f"{ort}: {wort} «{name}» — den gibt es nicht")
+    return befunde
+
+
+class TestEinOrtsverweisNenntEinenOrt:
+    """«Zu bearbeiten unter ‹Simulation starten› im Tab ‹Rahmenbedingungen›».
+
+    Der Befund von U2.2, eine Ebene tiefer als die Schrittverweise: Das
+    Referenzkapitel schickte zu Reitern, die es seit dem Leitstand (P1.5) und
+    dem Umzug des Modells (P1.9-W3.1) nicht mehr gibt. Ein Verweis, der ins
+    Leere führt, ist teurer als keiner — wer ihm folgt, sucht den Fehler bei
+    sich.
+
+    **Gesucht statt aufgezählt:** Die gültigen Namen kommen aus derselben
+    Quelle, aus der die Oberfläche sie zeichnet. Wird ein Reiter umbenannt,
+    meldet sich jeder Text, der ihn noch alt nennt.
+
+    **Was er nicht kann:** Ein Name, den es *nirgends mehr* gibt («Simulation
+    starten»), fällt nur auf, wenn er hinter einem dieser vier Wörter steht.
+    Frei stehende Beschriftungen in Guillemets sind Knopfnamen und keine
+    Ortsangaben; sie mechanisch zu prüfen bräuchte eine Liste, und eine Liste
+    verfällt.
+    """
+
+    def test_no_reference_names_a_place_that_is_gone(self) -> None:
+        befunde = _ortsbefunde(_oberflaeche() + _handbuch())
+
+        assert not befunde, "\n  ".join(["Diese Verweise führen ins Leere:", *befunde])
+
+    def test_the_search_reads_the_references(self) -> None:
+        gefunden = [
+            (wort, name)
+            for _, text in _oberflaeche() + _handbuch()
+            for wort, name in _ORTSVERWEIS.findall(text)
+        ]
+
+        assert len(gefunden) >= VERWEISE_MIN, f"Nur {len(gefunden)} Ortsverweise gelesen"
+
+    def test_no_exception_outlives_its_reason(self) -> None:
+        """Eine Ausnahmeliste, die niemand aufräumt, wächst zur Freigabe für alles."""
+
+        texte = _oberflaeche() + _handbuch()
+        verfallen = [
+            f"{datei}: {teil}"
+            for datei, teil in ORTE_AUSNAHMEN
+            if not any(ort.rsplit(":", 1)[0] == datei and teil in text for ort, text in texte)
+        ]
+
+        assert not verfallen, "Diese Ausnahmen haben keine Stelle mehr: " + str(verfallen)
+
+    def test_the_search_would_notice_a_relapse(self) -> None:
+        befunde = _ortsbefunde([("probe.py:1", "Zu finden im Tab «Rahmenbedingungen».")])
+
+        assert befunde, "Ein Reiter, den es nicht gibt, muss auffallen"
+        assert not _ortsbefunde([("probe.py:1", "Zu finden im Tab «Übersicht».")])
+        assert not _ortsbefunde([("probe.py:1", "Im Bereich «Modell», Schritt «Technik».")])

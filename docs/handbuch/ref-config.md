@@ -1,7 +1,7 @@
 Die Ausgangslage jedes Laufs steht in sechs Dateien unter `configs/`. Im
 Normalbetrieb müssen Sie sie nicht anfassen — alles Nötige lässt sich im Editor
-einstellen. Wer mit alternativen Konfigurationen arbeiten will, wählt sie im Tab
-**Lauf & Ablage** unter «Datengrundlage».
+einstellen. Wer mit alternativen Konfigurationen arbeiten will, wählt sie im
+Schritt **Lauf & Ablage** unter «Datengrundlage».
 
 | Datei | Inhalt |
 |---|---|

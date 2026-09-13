@@ -264,7 +264,7 @@ PARAMS: dict[str, Param] = {
         "Angabe, dann mit dem Standardwert. Einen eigenen Startwert brauchen Sie, "
         "wenn Sie denselben Aufbau mehrfach mit unterschiedlicher Ziehung sehen "
         "wollen. Welcher Wert tatsächlich gerechnet wurde, steht nach dem Lauf "
-        "unter «Ergebnisse ansehen» im Tab «Übersicht».",
+        "im Bereich «Ergebnisse», Reiter «Übersicht».",
     ),
     "seed": Param(
         label="Startwert",
@@ -273,7 +273,7 @@ PARAMS: dict[str, Param] = {
     "generate_figures": Param(
         label="Auswertungsgrafiken erzeugen",
         short="Sechs Diagramme als PNG für Berichte.",
-        detail="Zu finden unter «Ergebnisse ansehen», Tab «Diagramme», Abschnitt «PNG-Export».",
+        detail="Zu finden im Bereich «Ergebnisse», Reiter «Diagramme», Abschnitt «PNG-Export».",
     ),
     "no_market": Param(
         label="Marktmodell abschalten",

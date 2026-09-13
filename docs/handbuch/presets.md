@@ -61,7 +61,7 @@ Szenario-Vergleich lässt ihn aus.
 
 ## Ein Preset verwenden
 
-Unter **Simulation starten** ist die Auswahl die erste der drei Entscheidungen.
+Im Bereich **Einrichten** ist die Auswahl die erste der drei Entscheidungen.
 Jedes Preset steht dort mit seiner Beschreibung. Darunter die **These** des
 Szenarios und die ersten zwei Sätze der Begründung; der Rest — Begründung,
 Quellen und Vorbehalt — liegt hinter **«Begründung und Quellen»**. Bis zum
