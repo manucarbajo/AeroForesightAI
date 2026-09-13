@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from dash import dcc, html
 
+from dashboard.config_catalog import segment_name
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
 
@@ -123,7 +124,7 @@ def _exclusive_hint(segment: dict) -> str | None:
 
 def _segment_card(index: int, segment: dict) -> html.Div:
     segment_id = segment.get("id", "")
-    label = segment_id.replace("_", " ").title()
+    label = segment_name(segment_id)
     path = f"population_edits.{index}"
     modifiers = segment.get("modifiers") or {}
     decay = segment.get("saturation_decay")

@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from dashboard.config_catalog import configs_dir, list_sweep_presets, load_config_file
+from dashboard.config_catalog import EINHEITEN, configs_dir, list_sweep_presets, load_config_file
 from dashboard.web.config_editor import glossary
 
 #: Rollenbezeichnungen für `agent_profiles.json`.
@@ -26,16 +26,9 @@ AGENT_LABELS = {
     "regulator": "Regulator — die Politik",
 }
 
-#: Einheiten aus `properties.json` in lesbare Form.
-UNIT_LABELS = {
-    "fraction_per_tick": "Anteil je Runde",
-    "eur_per_tonne": "EUR je Tonne",
-    "fraction": "Anteil (0–1)",
-    "index": "Index (1.0 = Basis)",
-    "persons": "Personen",
-    "eur": "EUR",
-    "EUR": "EUR",
-}
+#: Einheiten aus `properties.json` in lesbare Form — die Langform aus
+#: `config_catalog.EINHEITEN`, der einen Quelle (P7.1-U1.5).
+UNIT_LABELS = {kennung: lang for kennung, (_, lang) in EINHEITEN.items()}
 
 
 def _escape(text: Any) -> str:

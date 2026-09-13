@@ -51,6 +51,32 @@ ABSOLUTE_POLICY_COLUMNS = {"carbon_tax_level", "airport_fee"}
 COST_COLUMNS = ["maintenance_cost_index", "staff_cost_index", "fuel_price_change"]
 
 
+def _reihenname(spalte: str) -> str:
+    """Der Name einer Systemgröße für Legende und Hover — nie die Kennung (P7.1-U1.5)."""
+
+    from dashboard.config_catalog import PROPERTY_LABELS
+
+    return PROPERTY_LABELS.get(spalte, spalte.replace("_", " "))
+
+
+def _achse(wort: str, spalten: list[str]) -> str:
+    """Ein Achsentitel mit den Einheiten der Reihen, **die wirklich auf ihr liegen**.
+
+    Bis zum 2026-09-13 stand an der linken Achse von «Die Instrumente»
+    «Betrag (EUR/t o. ä.)» — eine geratene Einheit für zwei verschiedene Größen
+    (CO₂-Steuer in EUR/t, Flughafengebühr in EUR). Jetzt steht dort, was es ist.
+    """
+
+    from dashboard.config_catalog import property_einheit
+
+    einheiten: list[str] = []
+    for spalte in spalten:
+        einheit = property_einheit(spalte)
+        if einheit and einheit not in einheiten:
+            einheiten.append(einheit)
+    return f"{wort} ({' · '.join(einheiten)})" if einheiten else wort
+
+
 # --- Datenzugriff ----------------------------------------------------------
 
 
@@ -256,7 +282,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
             go.Bar(
                 x=ticks["tick"],
                 y=ticks["cost_pressure"],
-                name="Kostendruck (Base)",
+                name="Kostendruck",
                 marker_color=theme.NAVY[800],
             )
         )
@@ -264,7 +290,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
             go.Bar(
                 x=ticks["tick"],
                 y=ticks["provider_markup"],
-                name="Airline-Marge (Markup)",
+                name="Anbieter-Marge",
                 marker_color=theme.NAVY[300],
             )
         )
@@ -277,6 +303,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
                         mode=mode,
                         barmode="stack",
                         title="Woraus der Preis sich zusammensetzt",
+                        yaxis_title="Betrag (EUR)",
                     ),
                     mode=mode,
                 ),
@@ -288,6 +315,8 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
 
 
 def _booking_rate_lines(frame, group_column: str, title: str, mode: str = theme.LIGHT):
+    from dashboard.config_catalog import segment_name
+
     fig = go.Figure()
     for value in frame[group_column].unique():
         subset = frame[frame[group_column] == value]
@@ -296,7 +325,9 @@ def _booking_rate_lines(frame, group_column: str, title: str, mode: str = theme.
                 x=subset["tick"],
                 y=subset["booking_rate"],
                 mode="lines+markers",
-                name=str(value).replace("_", " ").title(),
+                # Segmente heißen nach ihrem Namen (P7.1-U1.5), Altersgruppen
+                # sind schon eine Spanne und bleiben, wie sie sind.
+                name=segment_name(str(value)) if group_column == "segment_id" else str(value),
             )
         )
     theme.style_figure(
@@ -304,7 +335,7 @@ def _booking_rate_lines(frame, group_column: str, title: str, mode: str = theme.
         mode=mode,
         title=title,
         xaxis_title="Tick",
-        yaxis_title="Buchungsrate",
+        yaxis_title="Buchungsrate (0–1)",
         yaxis_range=[0, 1.05],
     )
     return fig
@@ -331,11 +362,13 @@ def _view_politik(run_dir: Path, mode: str = theme.LIGHT):
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         for column in instrumente:
             fig.add_trace(
-                go.Scatter(x=properties["tick"], y=properties[column], name=column),
+                go.Scatter(x=properties["tick"], y=properties[column], name=_reihenname(column)),
                 secondary_y=column not in ABSOLUTE_POLICY_COLUMNS,
             )
-        fig.update_yaxes(title_text="Betrag (EUR/t o. ä.)", secondary_y=False)
-        fig.update_yaxes(title_text="Anteil (0–1)", secondary_y=True)
+        betraege = [c for c in instrumente if c in ABSOLUTE_POLICY_COLUMNS]
+        anteile = [c for c in instrumente if c not in ABSOLUTE_POLICY_COLUMNS]
+        fig.update_yaxes(title_text=_achse("Betrag", betraege), secondary_y=False)
+        fig.update_yaxes(title_text=_achse("Anteil", anteile), secondary_y=True)
         fig.update_xaxes(title_text="Tick")
         blocks.append(
             ui.card(
@@ -354,8 +387,11 @@ def _view_politik(run_dir: Path, mode: str = theme.LIGHT):
     if kosten:
         fig = go.Figure()
         for column in kosten:
-            fig.add_trace(go.Scatter(x=properties["tick"], y=properties[column], name=column))
+            fig.add_trace(
+                go.Scatter(x=properties["tick"], y=properties[column], name=_reihenname(column))
+            )
         fig.update_xaxes(title_text="Tick")
+        fig.update_yaxes(title_text=_achse("Wert", kosten))
         blocks.append(
             ui.card(
                 _graph(
@@ -438,7 +474,20 @@ def sweep_geschwister(run_dir: Path) -> list[Path]:
 
 
 def _szenario_name(run_dir: Path) -> str:
-    return run_dir.name.removeprefix("sweep_").replace("_", " ").title()
+    """Der Name des Rahmens, unter dem ein Lauf stand — nicht der seines Ordners.
+
+    **Der Lauf nennt ihn selbst** (`run_metadata.json` → `rahmen.name`, seit
+    P2.0-B). Bis zum 2026-09-13 entstand der Name aus dem Verzeichnis: «Co2
+    Delayed» statt «CO₂-Verzögerung». Nur ein Lauf ohne diese Angabe fällt auf
+    den Ordner zurück.
+    """
+
+    try:
+        metadaten = json.loads((run_dir / "run_metadata.json").read_text(encoding="utf-8"))
+        name = (metadaten.get("rahmen") or {}).get("name")
+    except (OSError, ValueError, AttributeError):
+        name = None
+    return str(name) if name else run_dir.name.removeprefix("sweep_").replace("_", " ")
 
 
 def _endlage(run_dir: Path) -> str:

@@ -55,6 +55,12 @@ STANDARD_PROPERTY_IDS: tuple[str, ...] = (
     "staff_cost_index",
 )
 
+#: **Die Namen der Systemgrößen — die eine Quelle** für Diagramme, Modell-Bereich
+#: und Handbuch (P7.1-U1.5). Bis zum 2026-09-13 standen hier acht von sechzehn;
+#: die übrigen erschienen als Kennung (`maintenance_cost_index`), und das
+#: Diagramm «Was die Politik bewirkt» benannte **alle** seine Reihen so, weil es
+#: die Liste gar nicht benutzte. `tests/test_web_diagrammnamen.py` hält jede
+#: Größe aus `configs/properties.json` gegen diese Liste.
 PROPERTY_LABELS: dict[str, str] = {
     "carbon_tax_level": "CO₂-Steuer (EUR/t)",
     "saf_mandate_share": "SAF-Mandat (0–1)",
@@ -64,7 +70,65 @@ PROPERTY_LABELS: dict[str, str] = {
     "fuel_price_change": "Treibstoff-Trend / Tick",
     "efuel_subsidy": "E-Fuel-Subvention",
     "bevoelkerungsentwicklung": "Bevölkerung (Personen)",
+    "provider_markup": "Anbieter-Marge (EUR)",
+    "ticket_price": "Ticketpreis (EUR)",
+    "kapazitaet_index": "Kapazitätsindex",
+    "altersmittel_jahre": "Altersmittel (Jahre)",
+    "erneuerungsrate": "Erneuerungsrate / Tick",
+    "maintenance_cost_index": "Wartungskostenindex",
+    "staff_cost_index": "Personalkostenindex",
+    "airport_fee": "Flughafengebühr (EUR)",
 }
+
+#: Einheiten aus `properties.json` — (kurz für Achsentitel, lang für Tabellen).
+#: Bis zum 2026-09-13 lebte eine zweite, halbe Fassung im Handbuch
+#: (`docs_reference.UNIT_LABELS`), und sie sprach noch von «Runde» statt Tick.
+EINHEITEN: dict[str, tuple[str, str]] = {
+    "eur_per_tonne": ("EUR/t", "EUR je Tonne"),
+    "fraction": ("0–1", "Anteil (0–1)"),
+    "fraction_per_tick": ("Anteil je Tick", "Anteil je Tick"),
+    "share_per_tick": ("Anteil je Tick", "Anteil je Tick"),
+    "index": ("Index", "Index (1.0 = Basis)"),
+    "eur": ("EUR", "EUR"),
+    "EUR": ("EUR", "EUR"),
+    "persons": ("Personen", "Personen"),
+    "years": ("Jahre", "Jahre"),
+    "%": ("%", "Prozent"),
+}
+
+#: Die Namen der Bevölkerungssegmente — dieselbe Quelle für die Karten im
+#: Modell-Bereich und die Linien in «Wer noch fliegt». Vorher entstand der Name
+#: an beiden Stellen aus der Kennung («Eco Conscious»).
+SEGMENT_NAMEN: dict[str, str] = {
+    "business": "Geschäftsreisende",
+    "family": "Familien",
+    "price_sensitive": "Preisbewusste",
+    "eco_conscious": "Umweltbewusste",
+    "frequent_flyer": "Vielflieger",
+}
+
+
+def segment_name(segment_id: str) -> str:
+    """Der Name eines Segments — für ein unbekanntes die Kennung in Lesbarform."""
+
+    return SEGMENT_NAMEN.get(segment_id, segment_id.replace("_", " "))
+
+
+def property_einheit(property_id: str, properties_file: str = "properties.json") -> str:
+    """Die kurze Einheit einer Systemgröße, gelesen aus der Konfiguration.
+
+    **Nicht zwischengespeichert:** Eine eigene Systemgröße kann zur Laufzeit dazukommen.
+    """
+
+    path = CONFIGS_DIR / properties_file
+    if not path.is_file():
+        return ""
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    for eintrag in data.get("system_properties", []):
+        if isinstance(eintrag, dict) and eintrag.get("id") == property_id:
+            return EINHEITEN.get(str(eintrag.get("unit") or ""), ("", ""))[0]
+    return ""
 
 
 def get_editable_property_ids(properties_file: str = "properties.json") -> list[str]:
