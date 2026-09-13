@@ -88,8 +88,8 @@ nicht, geht daran vorbei.
 
 > **Der Schritt «Ausgangslage» ist im August 2026 entfallen.** Er fragte die
 > sieben Faktorzustände ab, mit denen der Lauf startet. Nachgemessen war die
-> Antwort folgenlos: Vier der sieben Faktoren werden schon in der **ersten**
-> Runde von den Regeln überschrieben, die sie an CO₂-Abgabe, SAF-Quote und
+> Antwort folgenlos: Vier der sieben Faktoren werden schon im **ersten**
+> Tick von den Regeln überschrieben, die sie an CO₂-Abgabe, SAF-Quote und
 > Ölpreis binden; und in allen vier Szenarien, die eine Faktorvorgabe trugen,
 > endete der Lauf auf denselben Zuständen wie ohne sie. Die Faktorlage ist heute
 > ein **Ergebnis**: Sie entsteht im Lauf aus den Annahmen, die Sie im ersten
@@ -145,7 +145,7 @@ Frage, die man am Ende hat: *Habe ich etwas übersehen?*
 > **Bis August 2026 hieß jeder Lauf gleich.** Der Name lag im optionalen Schritt
 > «Lauf & Ablage», und drei von vier Wegen führen daran vorbei — wer den
 > Szenario-Vergleich, «Weiterverwenden» oder «Direkt zum Start» nimmt, landet
-> unmittelbar auf «Prüfen & Starten». Die Run-Liste füllte sich mit
+> unmittelbar auf «Prüfen & Starten». Die Liste der Läufe füllte sich mit
 > gleichnamigen Einträgen.
 
 > **Bis August 2026 log die Liste.** Sie richtete sich allein danach, wo Sie
@@ -275,8 +275,8 @@ Befunde hängen an keinem Eingabefeld und stehen deshalb nur im roten Kasten.
 Die Systemgrößen für Politik, Kosten und Konjunktur.
 
 Jede Systemgröße hat einen Startwert und kann über Regeln einen zeitlichen
-Verlauf bekommen: «ab Runde 10 springt die CO₂-Abgabe auf 120» oder «ab Runde 5
-über acht Runden hochfahren auf 200». Aufklappen, Anzahl der Regeln setzen,
+Verlauf bekommen: «ab Tick 10 springt die CO₂-Abgabe auf 120» oder «ab Tick 5
+über acht Ticks hochfahren auf 200». Aufklappen, Anzahl der Regeln setzen,
 Werte eintragen.
 
 Der Schalter **Eigene Werte anwenden** ist hier der wichtigste. Steht er auf

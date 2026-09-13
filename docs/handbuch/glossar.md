@@ -23,7 +23,7 @@ bleibt. Er ist überall als solcher markiert — Abzeichen in der Kopfzeile, Ban
 über dem Viewport, eigene Farbe — und verschwindet mit dem ersten echten Lauf.
 Er wird nirgends gespeichert.
 
-**Buchungsrate** — Anteil der simulierten Bevölkerung, der sich in einer Runde
+**Buchungsrate** — Anteil der simulierten Bevölkerung, der sich in einem Tick
 für eine Reise entscheidet. Ergebnis vieler Einzelentscheidungen, kein
 Parameter.
 
@@ -141,7 +141,7 @@ Bild eine Bewegung der Bevölkerung ist und nicht eine nachgeführte Achse.
 **Szenario** — Eine mögliche Fortsetzung nach dem Lauf, nicht der Lauf selbst.
 Jeder Lauf erzeugt drei davon.
 
-**Tick** — Eine Modellrunde. **In der Mechanik ein Monat** (seit dem 7. September 2026): Alles, was sich pro Runde verändert, rechnet in Monaten, vierzig Runden sind gut drei Jahre. **Ein Datum ist eine Runde trotzdem nicht** — sie lässt sich auf keine Jahreszahl abbilden. Siehe
+**Tick** — Ein Rechenschritt des Modells. **In der Mechanik ein Monat** (seit dem 7. September 2026): Alles, was sich pro Tick verändert, rechnet in Monaten, vierzig Ticks sind gut drei Jahre. **Ein Datum ist ein Tick trotzdem nicht** — er lässt sich auf keine Jahreszahl abbilden. Siehe
 [Tick, Lauf und Szenario](/doku/tick-und-lauf).
 
 **Telemetrie** — Der rechte Bereich des Leitstands: Kennzahlen des gewählten

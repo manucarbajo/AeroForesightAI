@@ -39,10 +39,10 @@ gegeneinander», nicht «das passiert eher nicht».
 
 | Datei | Inhalt |
 |---|---|
-| `tick_mechanics.json` | Die maßgeblichen Kennzahlen je Runde: Preis, Buchungsrate, Kostendruck, Marge |
+| `tick_mechanics.json` | Die maßgeblichen Kennzahlen je Tick: Preis, Buchungsrate, Kostendruck, Marge |
 | `price_history.json` | Preisverlauf mit Nachfrageniveau und Buchungsrate |
 | `event_log.json` | Alle Ereignisse, einschließlich der als `[delta:…]` markierten Python-Änderungen |
-| `round_history.json` | Der Zustand je Runde — erst seit dem 11. September 2026 wirklich der dieser Runde; ältere Läufe tragen in jeder Runde den Endzustand |
+| `round_history.json` | Der Zustand je Tick — erst seit dem 11. September 2026 wirklich der dieses Ticks; ältere Läufe tragen in jedem Tick den Endzustand |
 | `run_metadata.json` | Ticks, Modell, Zeitstempel, **Rechendauer**, ob das Marktmodell aktiv war, ob der Lauf beeinträchtigt war — und woraus er entstanden ist (Seed, Rechenmodus, Konfigurations-Fingerabdruck, Codestand) |
 | `llm_incidents.json` | Nur vorhanden, wenn Aufrufe an das Sprachmodell ins Leere gingen: welcher Tick, welcher Aufrufer, welcher Fehler |
 | `segment_analysis.json` | Auswertung nach Segmenten |
@@ -51,7 +51,7 @@ gegeneinander», nicht «das passiert eher nicht».
 Drei Felder in `run_metadata.json` betreffen die Verlässlichkeit eines Laufs:
 `degraded` sagt, ob mindestens ein Aufruf an das Sprachmodell unbeantwortet
 blieb, `llm_incident_count` zählt sie, und `llm_degraded_ticks` nennt die
-betroffenen Runden. Die drei stehen **immer** in der Datei, auch bei einem
+betroffenen Ticks. Die drei stehen **immer** in der Datei, auch bei einem
 sauberen Lauf mit `false` und `0` — fehlen sie ganz, stammt der Lauf aus der
 Zeit vor dieser Aufzeichnung. `llm_incidents.json` entsteht dagegen nur, wenn es
 etwas zu berichten gibt.
@@ -107,14 +107,14 @@ Ein Lauf mit mehreren Wiederholungen legt sie unter `outputs/batch_…/` ab, je
 Wiederholung ein eigenes Verzeichnis plus eine `multi_run_summary.json`.
 
 Deren `aggregate` enthält neben der Buchhaltung (Zahl der Läufe, Startwerte,
-erreichte Runden) das Feld **`baender`**:
+erreichte Ticks) das Feld **`baender`**:
 
 | Feld | Inhalt |
 |---|---|
 | `laeufe` | Wie viele Wiederholungen in das Band eingegangen sind |
 | `ticks` | Wie weit es trägt — so lang wie der **kürzeste** Lauf |
 | `perzentile` | Welche Perzentile berechnet wurden (`10`, `50`, `90`) |
-| `reihen` | Je Reihe (`booking_rate`, `ticket_price`) und Perzentil eine Liste mit einem Wert je Runde |
+| `reihen` | Je Reihe (`booking_rate`, `ticket_price`) und Perzentil eine Liste mit einem Wert je Tick |
 
 Das Band ist die Antwort auf «wie sicher ist diese Zahl». Ein einzelner Lauf
 liefert einen Punktwert; erst mehrere zeigen, wie weit er wandern kann. Bei
@@ -128,19 +128,19 @@ Weiterverarbeitung in einer Tabellenkalkulation.
 
 | Datei | Inhalt |
 |---|---|
-| `properties.csv` | Alle Systemgrößen je Runde |
-| `factors.csv` | Die Zustände von F1 bis F7 je Runde |
+| `properties.csv` | Alle Systemgrößen je Tick |
+| `factors.csv` | Die Zustände von F1 bis F7 je Tick |
 | `population.csv` | Buchungsraten je Profil-Segment |
 | `age_property.csv` | Buchungsraten je Altersgruppe |
 
 ## Personen und Zwischenstände
 
-`individuals_history.csv` enthält jede simulierte Person in jeder Runde, mit
+`individuals_history.csv` enthält jede simulierte Person in jedem Tick, mit
 Merkmalen und Buchungsentscheidung. Das ist die Grundlage des Tabs «Animation»
 und die größte Datei eines Laufs. `population.csv` im Hauptverzeichnis enthält
 die gezogene Ausgangsbevölkerung.
 
-**Seit dem 11. September 2026** steht je Person und Runde auch
+**Seit dem 11. September 2026** steht je Person und Tick auch
 `erschwinglichkeitsgrenze_eur`: der höchste Ticketpreis, den sie überhaupt
 bezahlen kann — Zahlungsbereitschaft mal Einkommen, erhöht um den Aufschlag, den
 Umweltbewusste für einen grüneren Flug zahlen. Das ist dieselbe Grenze, mit der
@@ -154,11 +154,11 @@ haben sie noch.
 
 Unter `checkpoints/` liegen Zwischenstände, sofern das unter **Technik**
 eingeschaltet war. Sie werden gebraucht, um einen Lauf fortzusetzen und um im Tab
-**Abfrage** einzelne Runden im Detail nachzuschlagen. Ohne sie funktioniert die
+**Abfrage** einzelne Ticks im Detail nachzuschlagen. Ohne sie funktioniert die
 Abfrage weiterhin, aber gröber.
 
 Jeder Zwischenstand trägt neben dem Zustand einen Metadatenblock mit `run_id`,
-Rundennummer, Zeitstempel und **Formatversion**. Die Version wird beim Fortsetzen
+Ticknummer, Zeitstempel und **Formatversion**. Die Version wird beim Fortsetzen
 geprüft: Ein Zwischenstand aus einer anderen Fassung des Programms wird mit einer
 Meldung abgewiesen, statt mit stillen Vorgabewerten geladen zu werden. Es gibt
 bewusst keine Umwandlung alter Zwischenstände — ein Lauf, dessen Format nicht mehr

@@ -4,7 +4,7 @@ Grenzen sind bekannt und bewusst in Kauf genommen.
 ## Kein Datum, aber ein Takt
 
 **Ein Tick ist ein Monat** — seit dem 7. September 2026 festgelegt, und zwar für
-alles, was sich im Lauf pro Runde verändert. Vierzig Runden sind gut drei Jahre.
+alles, was sich im Lauf pro Tick verändert. Vierzig Ticks sind gut drei Jahre.
 
 **Ein Datum ist er trotzdem nicht.** Aussagen der Form «im Jahr 2032 kostet das
 Ticket 214 Euro» lassen sich aus einem Lauf nicht ableiten, auch nicht durch
@@ -13,14 +13,14 @@ keinen Startzeitpunkt. Was es liefert, sind Wirkungsrichtungen und
 Größenordnungen unter gegebenen Annahmen.
 
 **Die Grenze liegt also nicht mehr beim Takt, sondern beim Bezugspunkt.** Sie
-dürfen «zwölf Runden sind ein Jahr» rechnen, wenn Sie eine Vorgabe einstellen.
-Sie dürfen nicht «Runde 40 ist der Dezember 2029» rechnen.
+dürfen «zwölf Ticks sind ein Jahr» rechnen, wenn Sie eine Vorgabe einstellen.
+Sie dürfen nicht «Tick 40 ist der Dezember 2029» rechnen.
 
-**Und eine Einschränkung, die daraus folgt:** Ein Standardlauf über 40 Runden
+**Und eine Einschränkung, die daraus folgt:** Ein Standardlauf über 40 Ticks
 deckt gut drei Jahre ab, die mitgelieferten Rahmenszenarien seit dem
 11. September 2026 zehn Jahre (vorher gut vier). Für eine Frage über 2040 ist
-auch das der falsche Ausschnitt — und weil eine Runde kein Datum trägt, beginnen
-die zehn Jahre nicht «heute», sondern bei Runde 1.
+auch das der falsche Ausschnitt — und weil ein Tick kein Datum trägt, beginnen
+die zehn Jahre nicht «heute», sondern bei Tick 1.
 
 ## Ein Anbieter statt eines Marktes
 
@@ -30,7 +30,7 @@ Kapazitätsgrenzen. Fragen nach Marktanteilen zwischen Anbietern oder nach der
 Wirkung einer Fusion kann das Modell nicht beantworten.
 
 Die Buchungsrate ist entsprechend keine Auslastung eines Flugzeugs, sondern der
-Anteil der Bevölkerung, der sich in einer Runde für eine Reise entscheidet.
+Anteil der Bevölkerung, der sich in einem Tick für eine Reise entscheidet.
 
 ## Eine Alternative statt vieler
 
@@ -72,16 +72,16 @@ das Alter beeinflusste die Buchungsentscheidung überhaupt nicht. Läufe von vor
 diesem Datum sind mit späteren nicht vergleichbar.
 
 **Was weiterhin gilt: Niemand wird im Lauf älter.** Das Alter wirkt beim Ziehen
-einer Person, nicht über die Zeit. Wer dieselbe Person zehn Runden später
+einer Person, nicht über die Zeit. Wer dieselbe Person zehn Ticks später
 ansieht, findet sie unverändert alt — und mit unverändertem Einkommen.
 
 Das ist eine Entscheidung, keine Lücke — und ihre Begründung hat sich am 7.
 September 2026 verschoben, ohne dass sie schwächer geworden wäre. Bis dahin
-lautete sie: Eine Runde hat keine Kalenderbedeutung, jemanden je Runde altern zu
-lassen hieße erst festzulegen, wie viele Jahre eine Runde ist. Seit P3.8 ist das
-festgelegt — eine Runde ist ein Monat. **Der zweite Teil der Begründung trägt
+lautete sie: Ein Tick hat keine Kalenderbedeutung, jemanden je Tick altern zu
+lassen hieße erst festzulegen, wie viele Jahre ein Tick ist. Seit P3.8 ist das
+festgelegt — ein Tick ist ein Monat. **Der zweite Teil der Begründung trägt
 allein weiter, und er ist der stärkere:** Altern hieße, alle abgeleiteten
-Merkmale in jeder Runde neu zu bestimmen — Einkommen, Zahlungsbereitschaft,
+Merkmale in jedem Tick neu zu bestimmen — Einkommen, Zahlungsbereitschaft,
 Preisempfindlichkeit —, und aus einer Person würde damit eine andere. Über einen
 Lauf von 40 Monaten wäre der Effekt ohnehin klein; über die 40 *Jahre*, als die
 man dieselbe Zahl früher lesen konnte, fiele die Buchungsrate um fast die Hälfte
@@ -96,7 +96,7 @@ eine stehende Gesellschaft, kein alternder Jahrgang.
 **Dafür braucht es aber Nachwuchs.** Ein Rahmenszenario, das nur das mittlere
 Alter steigen lässt, bewirkt nichts: Solange die Bevölkerung nicht wächst,
 kommt niemand hinzu, und dieselben Personen bleiben. Erst eine
-**Erneuerungsrate** tauscht je Runde einen Teil der Bevölkerung aus — dann
+**Erneuerungsrate** tauscht je Tick einen Teil der Bevölkerung aus — dann
 nähert sich die Altersstruktur der Vorgabe an. Beides gehört zusammen
 eingestellt.
 
@@ -104,7 +104,7 @@ eingestellt.
 *Gesellschaft*. Neu hinzukommende Personen werden dann aus der verschobenen
 Verteilung gezogen. Die Wirkung ist moderat und das ist richtig so: Neun Jahre
 höheres Durchschnittsalter senken die Buchungsneigung um rund fünf Prozent.
-Zum Vergleich: Ließe man stattdessen dieselben Menschen vierzig Runden lang
+Zum Vergleich: Ließe man stattdessen dieselben Menschen vierzig Ticks lang
 altern, ohne dass junge nachkommen, wären es fast fünfzig Prozent — und die
 Bevölkerung wäre am Ende im Schnitt 83 Jahre alt.
 

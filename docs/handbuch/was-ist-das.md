@@ -13,12 +13,12 @@ der Gegenstand.
 
 Am Anfang steht eine Annahmenwelt: sieben Faktoren beschreiben in groben Zügen,
 wie die Welt beschaffen ist, und dahinter liegen konkrete Zahlen für Politik,
-Kosten und Konjunktur. Aus dieser Ausgangslage rechnet das Modell Runde für Runde.
+Kosten und Konjunktur. Aus dieser Ausgangslage rechnet das Modell Tick für Tick.
 
-In jeder Runde entscheidet jede simulierte Person einzeln über eine Buchung. Aus
+In jedem Tick entscheidet jede simulierte Person einzeln über eine Buchung. Aus
 diesen Entscheidungen entsteht eine Buchungsrate. Die Airline sieht diese Rate,
 vergleicht sie mit ihrer Zielauslastung und passt den Preis an. Der veränderte
-Preis wirkt in der nächsten Runde auf die Entscheidungen zurück. Parallel können
+Preis wirkt im nächsten Tick auf die Entscheidungen zurück. Parallel können
 die drei Akteure Ereignisse einbringen, und der Regulator kann Faktoren
 verschieben.
 
@@ -38,8 +38,8 @@ ausschließen.
 
 ## Wofür sie nicht gedacht ist
 
-Sie liefert keine Punktprognose für ein bestimmtes Jahr. Ein Tick ist eine
-Modellrunde und kein Kalenderzeitraum, deshalb gibt es keine Aussage der Form
+Sie liefert keine Punktprognose für ein bestimmtes Jahr. Ein Tick ist ein
+Monat Modellzeit ohne Kalenderdatum, deshalb gibt es keine Aussage der Form
 «2031 kostet das Ticket 214 Euro». Sie bildet auch keinen konkreten Markt mit
 benannten Fluggesellschaften, Strecken und Slots ab, sondern einen Anbieter, der
 stellvertretend für die Angebotsseite steht.

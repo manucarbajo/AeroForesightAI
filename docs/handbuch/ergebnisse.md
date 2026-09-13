@@ -69,9 +69,9 @@ sucht, ist hier richtig. Das erste zeigt
 jede einzelne Person nach Zahlungsbereitschaft und Umweltbewusstsein, eingefärbt
 danach, ob sie gebucht hat.
 
-**«Wer sich den Flug leisten kann»** zeigt eine feste Stichprobe von 150 Personen, in jeder
-Runde dieselben. Waagrecht steht der höchste Ticketpreis, den eine Person
-überhaupt bezahlen kann, senkrecht ihr Abstand zum Ticketpreis der Runde. Steigt
+**«Wer sich den Flug leisten kann»** zeigt eine feste Stichprobe von 150 Personen, in jedem
+Tick dieselben. Waagrecht steht der höchste Ticketpreis, den eine Person
+überhaupt bezahlen kann, senkrecht ihr Abstand zum Ticketpreis des Ticks. Steigt
 der Preis, sinkt die ganze Wolke. Wer unter die gestrichelte Linie fällt, kann
 sich das Ticket nicht leisten und bucht nicht. Oberhalb der Linie entscheidet die
 Wahrscheinlichkeit — ein Punkt knapp darüber bucht oft trotzdem nicht. Läufe vor
@@ -80,7 +80,7 @@ nötige Spalte fehlt.
 
 **«Sättigung»** zeigt dieselben Personen mit ihrer Zahlungsbereitschaft
 gegen den Reisebedarf, also eins minus die Sättigung. Wer bucht, ist danach
-gesättigt, und sein Punkt fällt nach unten. Runde für Runde klingt die Sättigung
+gesättigt, und sein Punkt fällt nach unten. Tick für Tick klingt die Sättigung
 ab, und der Punkt steigt wieder — wie schnell, hängt am Segment.
 
 **Drei Merkmals-Streuungen** zeigen dieselben Personen nach je zwei Merkmalen:
@@ -144,7 +144,7 @@ Steht keine Warnung da, ist der Satz vollständig und benannt.
 ## Bericht
 
 Der Tick-für-Tick-Bericht des Laufs, mit Kennzahlen und dem, was die Akteure
-gesagt haben. Der richtige Ort, um einer einzelnen Runde nachzugehen.
+gesagt haben. Der richtige Ort, um einem einzelnen Tick nachzugehen.
 
 ## Abfrage
 

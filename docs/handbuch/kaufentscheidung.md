@@ -1,5 +1,5 @@
 Die Buchungsrate ist kein Parameter, den man einstellt. Sie ist das Ergebnis
-vieler Einzelentscheidungen: In jeder Runde wird für jede simulierte Person
+vieler Einzelentscheidungen: In jedem Tick wird für jede simulierte Person
 gerechnet, ob sie bucht oder nicht.
 
 ## Zwei Stufen
@@ -62,13 +62,13 @@ sicher eine Zahl ist. Die Größenordnung der Verzerrung steht in
 [Vergleiche](/doku/vergleiche).
 
 **Reproduzierbar bleibt der Lauf trotzdem.** Der Zufallsstartwert bestimmt beides:
-das Ziehen der Bevölkerung zu Beginn und die Buchungsentscheidungen in jeder
-Runde. Zwei Läufe mit demselben Startwert liefern exakt dasselbe Ergebnis — auch
+das Ziehen der Bevölkerung zu Beginn und die Buchungsentscheidungen in jedem
+Tick. Zwei Läufe mit demselben Startwert liefern exakt dasselbe Ergebnis — auch
 dann, wenn Sie unter **Technik** keinen eigenen setzen: Dann rechnet der Lauf mit
 einem Standardwert.
 
-Jede Runde bekommt dabei ihren eigenen Zufallsstrom. Ohne das buchten in jeder
-Runde dieselben Personen, und die Buchungsrate würde zur Treppe statt zu einer
+Jeder Tick bekommt dabei seinen eigenen Zufallsstrom. Ohne das buchten in jedem
+Tick dieselben Personen, und die Buchungsrate würde zur Treppe statt zu einer
 Kurve.
 
 ## Was daraus folgt

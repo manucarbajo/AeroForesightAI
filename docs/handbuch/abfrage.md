@@ -4,9 +4,9 @@ nichts wissen.
 
 ## Was er sieht
 
-Die Antwort stützt sich auf die Kennzahlen je Runde, den Preisverlauf und das
+Die Antwort stützt sich auf die Kennzahlen je Tick, den Preisverlauf und das
 Ereignisprotokoll. Sind Zwischenstände geschrieben worden, kommen einzelne
-Runden im Detail dazu.
+Ticks im Detail dazu.
 
 Über den Schalter «Datenkontext anzeigen» sehen Sie genau die Daten, die einer
 Frage mitgegeben werden.
@@ -49,12 +49,12 @@ darunter.
 
 ## Fragen stellen
 
-Sie können den ganzen Lauf abfragen oder eine einzelne Runde. Für eine Runde
+Sie können den ganzen Lauf abfragen oder einen einzelnen Tick. Für einen Tick
 tragen Sie entweder die Nummer in das Feld ein oder nennen sie in der Frage —
 «Was passierte bei Tick 15?» erkennt das Modell selbst. Steht das Feld auf 0,
 gilt die Frage dem gesamten Lauf.
 
-Gut funktionieren Fragen nach Verläufen, Vergleichen zwischen Runden und nach
+Gut funktionieren Fragen nach Verläufen, Vergleichen zwischen Ticks und nach
 dem Zusammenhang zwischen einer Änderung und ihrer Wirkung. Schlecht funktionieren
 Fragen, die Wissen von außen brauchen, etwa nach realen Marktdaten oder nach
 einem anderen Lauf.

@@ -59,7 +59,7 @@ können, und die Auswahl springt auf «Eigene Einstellungen».
 Setzen Sie die Länge auf **10 Ticks**. Das reicht, um Rückkopplungen zu sehen,
 und ist in Sekunden gerechnet.
 
-Ein Tick ist eine Modellrunde, kein Quartal und kein Jahr. Mehr dazu unter
+Ein Tick ist ein Monat Modellzeit, ohne Kalenderdatum. Mehr dazu unter
 [Tick, Lauf und Szenario](/doku/tick-und-lauf).
 
 Jedes Szenario nennt daneben, auf wie viele Ticks es angelegt ist — seine
@@ -88,7 +88,7 @@ betroffene Wert ist zusätzlich am Feld selbst markiert. Sonst klicken Sie auf
 **Start**.
 
 Der Zustand in der Kopfzeile wechselt auf «Simulation läuft» und der Punkt
-daneben pulsiert. Der Fortschritt läuft Runde für Runde in die **Konsole** rechts
+daneben pulsiert. Der Fortschritt läuft Tick für Tick in die **Konsole** rechts
 — klappen Sie sie auf, um Preis und Buchungsrate je Tick zu sehen. Ist der Lauf
 fertig, meldet das Bedienfeld die Kennung des Laufs, die Zahl der Ticks und die Zahl der
 Ereignisse, und der neue Lauf ist in der Auswahl oben bereits gesetzt.

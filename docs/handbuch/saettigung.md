@@ -1,5 +1,5 @@
 Ohne Sättigung hinge die Nachfrage allein am Preis. Wer sich ein Ticket leisten
-kann, würde in jeder Runde erneut buchen, und die Buchungsrate wäre eine reine
+kann, würde in jedem Tick erneut buchen, und die Buchungsrate wäre eine reine
 Preisfunktion. Das trifft die Wirklichkeit nicht: Wer gerade geflogen ist, fliegt
 so schnell nicht wieder.
 
@@ -15,7 +15,7 @@ Drei Größen steuern das Zusammenspiel.
 |---|---|
 | Sättigung nach einer Buchung | Wie stark der Grad je Buchung steigt. Bei 1 fällt die Person vorerst ganz als Nachfrager aus. |
 | Wirkung der Sättigung | Wie schwer der aufgebaute Grad in der Entscheidung wiegt. |
-| Erholung je Runde | Wie schnell der Grad wieder abgebaut wird — je Segment einstellbar. |
+| Erholung je Tick | Wie schnell der Grad wieder abgebaut wird — je Segment einstellbar. |
 
 Die ersten beiden gelten für die gesamte Bevölkerung und stehen unter
 **Nachfrage & Preisbildung** im Abschnitt «Sättigung». Die Erholung ist eine
@@ -25,7 +25,7 @@ jeweiligen Karte.
 ## Was sich damit einstellen lässt
 
 Über die Erholung unterscheiden sich Segmente in ihrem Reiseverhalten. Ein
-Vielflieger-Segment mit hoher Erholung ist schon in der nächsten Runde wieder
+Vielflieger-Segment mit hoher Erholung ist schon im nächsten Tick wieder
 buchbereit; ein Urlaubssegment mit niedriger Erholung bucht einmal und fällt für
 längere Zeit aus.
 
@@ -35,7 +35,7 @@ führt sonst dazu, dass die Buchungsrate über den Lauf stetig fällt.
 
 ## Warum die Buchungsrate typischerweise sinkt
 
-In den ersten Runden bucht, wer buchen will. Danach ist ein wachsender Teil der
+In den ersten Ticks bucht, wer buchen will. Danach ist ein wachsender Teil der
 Bevölkerung gesättigt, und die Rate fällt — auch dann, wenn der Preis
 unverändert bleibt.
 

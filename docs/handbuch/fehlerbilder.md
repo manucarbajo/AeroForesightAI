@@ -4,12 +4,12 @@ die häufigsten Beobachtungen ein.
 
 ## Die Buchungsrate fällt stetig
 
-Das ist der Normalfall, kein Fehler. In den ersten Runden bucht, wer buchen will;
+Das ist der Normalfall, kein Fehler. In den ersten Ticks bucht, wer buchen will;
 danach ist ein wachsender Teil der Bevölkerung gesättigt. Siehe
 [Sättigung](/doku/saettigung).
 
 Auffällig wird es erst, wenn die Rate gegen null geht und dort bleibt. Dann ist
-entweder die Erholung je Runde zu niedrig eingestellt oder der Preis über die
+entweder die Erholung je Tick zu niedrig eingestellt oder der Preis über die
 Zahlungsbereitschaft fast aller Personen gestiegen.
 
 ## Die Buchungsrate bleibt konstant
@@ -26,7 +26,7 @@ mit der Standard-Ausgangslage und ignoriert Ihre Änderungen.
 
 Zwei Grenzen kommen infrage. Entweder ist die Preisuntergrenze erreicht, dann
 kann der Preis nicht weiter fallen, obwohl die Nachfrage schwach ist. Oder der
-Preisdeckel je Runde ist so eng gesetzt, dass sich der Preis nur in winzigen
+Preisdeckel je Tick ist so eng gesetzt, dass sich der Preis nur in winzigen
 Schritten bewegen darf.
 
 In der Ansicht **Diagramme** zeigt die Aussage «1 · Preis und Nachfrage» die Zusammensetzung aus
@@ -54,7 +54,7 @@ Werten des Presets, nicht mit Ihren.
 Drittens: Die Größe wirkt erst ab einer Schwelle. Die CO₂-Abgabe etwa geht erst
 oberhalb von 50 EUR je Tonne in die Kaufentscheidung ein.
 
-Viertens: Der Lauf war zu kurz. Rückkopplungen brauchen Runden; bei fünf Ticks
+Viertens: Der Lauf war zu kurz. Rückkopplungen brauchen Ticks; bei fünf Ticks
 ist oft noch nichts zu sehen.
 
 ## Die Ansicht «Szenario» ist leer
@@ -108,7 +108,7 @@ Buchungsraten und Faktorzustände rechnet Python, unabhängig vom Sprachmodell.
 Fehlen können die Beiträge der Akteure und Teile der Deutung — an den
 betroffenen Stellen hat der jeweilige Akteur ausgesetzt.
 
-Welche Runden es traf und woran es lag, steht in `llm_incidents.json`; im Tab
+Welche Ticks es traf und woran es lag, steht in `llm_incidents.json`; im Tab
 **Dateien** lässt sie sich öffnen. Die häufigste Ursache ist ein nicht laufendes
 Ollama. Prüfen Sie im Tab **Technik**, ob der angegebene Endpunkt erreichbar
 ist, und starten Sie das Modell gegebenenfalls mit `ollama run llama3.2`.

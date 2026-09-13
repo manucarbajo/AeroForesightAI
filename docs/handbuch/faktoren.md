@@ -55,8 +55,8 @@ Rang.** Das klingt selbstverständlich und war es bis zum 7. September 2026 nich
 Traf die höchstrangige Regel schon zu — ihr Zustand war bereits gesetzt —, zählte
 das nicht als Entscheidung, und der Faktor fiel an die nächste Regel, auch an eine
 mit gegenteiliger Wirkung. **Der gesellschaftliche Wertewandel kippte deshalb in
-jeder Runde hin und her**, und der Zustand *am Ende* eines Laufs hing davon ab, ob
-seine Rundenzahl gerade oder ungerade war. Läufe von vor diesem Datum sind
+jedem Tick hin und her**, und der Zustand *am Ende* eines Laufs hing davon ab, ob
+seine Tickzahl gerade oder ungerade war. Läufe von vor diesem Datum sind
 deshalb mit Vorsicht zu lesen — siehe [Läufe vergleichen](/doku/vergleiche).
 
 In der Ansicht **Diagramme** zeigt die Aussage «4 · Die Szenarien nebeneinander»
@@ -78,7 +78,7 @@ Der Grund ist gemessen, nicht gefühlt. Vorher gab es einen Schritt, der die
 sieben Zustände abfragte, und die Antwort trug nicht weit:
 
 - **Vier der sieben** (Regulierung, Technologie, Gesellschaft, Geopolitik)
-  werden schon in der **ersten Runde** überschrieben. Ihre Regeln binden sie an
+  werden schon im **ersten Tick** überschrieben. Ihre Regeln binden sie an
   CO₂-Abgabe, SAF-Quote und Ölpreis — was Sie vorher eingestellt hatten, war
   danach weg.
 - In allen vier mitgelieferten Szenarien, die eine Faktorvorgabe trugen, endete
@@ -94,6 +94,6 @@ vorwegnehmen.
 Am Ende eines Laufs in der Ansicht **Szenario** und, über die Ticks aufgelöst, in
 `timeseries/factors.csv` sowie im Bild `factor_states.png`.
 
-Ein Beispiel aus einem Lauf über 40 Runden: In Runde 1 stehen alle sieben
-Faktoren auf ihrem ersten Zustand, in Runde 40 auf `F1.2, F2.2, F3.2, F4.2,
+Ein Beispiel aus einem Lauf über 40 Ticks: In Tick 1 stehen alle sieben
+Faktoren auf ihrem ersten Zustand, in Tick 40 auf `F1.2, F2.2, F3.2, F4.2,
 F5.2, F6.1, F7.1` — eine **gemischte** Lage, die so niemand eingestellt hat.

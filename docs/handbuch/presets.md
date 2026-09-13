@@ -70,15 +70,15 @@ bleibt Ihre Entscheidung: die **Länge** des Laufs. Auf wie viele Ticks ein
 Preset angelegt ist, steht neben seiner Beschreibung — seine Meilensteine sind
 auf diese Länge hin gedacht.
 
-**Seit dem 7. September 2026 lässt sich diese Länge in Zeit umrechnen:** Eine
-Runde ist ein Monat. **Seit dem 11. September 2026 laufen die vier
-Rahmenszenarien 120 Runden, also zehn Jahre.** Vorher waren es 50, und
+**Seit dem 7. September 2026 lässt sich diese Länge in Zeit umrechnen:** Ein
+Tick ist ein Monat. **Seit dem 11. September 2026 laufen die vier
+Rahmenszenarien 120 Ticks, also zehn Jahre.** Vorher waren es 50, und
 «Freiwillige Wende» brachte die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 Euro —
 zu schnell für Politikpfade, deren Quellen in Fünfjahresstufen denken. Gestreckt
 wurde jede Marke im selben Verhältnis: Die Geschichte ist dieselbe, nur ihr Tempo
 passt jetzt. Welche Spanne ein Rahmen meint, steht in seinem Vorbehalt.
-**Eine Kalenderprognose sind sie trotzdem nicht** — eine Runde trägt kein Datum,
-und Runde 60 ist nicht «2030».
+**Eine Kalenderprognose sind sie trotzdem nicht** — ein Tick trägt kein Datum,
+und Tick 60 ist nicht «2030».
 
 **Im Szenario-Vergleich gilt das nicht.** Wer alle Szenarien nacheinander
 rechnen lässt, stellt keine Länge ein: Jedes läuft so lang, wie es angelegt ist.
@@ -142,7 +142,7 @@ der Auswahl steht «Stresstest» an seiner Kachel.
 
 ## Meilensteine
 
-Manche Presets bringen Meilensteine mit: Erwartungen der Form «ab Runde 10 sollte
+Manche Presets bringen Meilensteine mit: Erwartungen der Form «ab Tick 10 sollte
 die CO₂-Abgabe bei 50 liegen». Sie beschreiben, wie das Szenario gemeint ist, und
 helfen beim Gegenlesen eines Laufs. In der Referenz sind sie je Preset
 aufgeführt.

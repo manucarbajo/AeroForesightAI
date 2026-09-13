@@ -16,7 +16,7 @@ deshalb eindeutig.
 
 Der Fortschritt läuft in die **Konsole** in der rechten Spalte. Sie ist
 zugeklappt — die Zahl daneben sagt, wie viele Meldungen anliegen. Aufgeklappt
-zeigt sie je Runde die vergangene Zeit, die Geschwindigkeit, den Ticketpreis und
+zeigt sie je Tick die vergangene Zeit, die Geschwindigkeit, den Ticketpreis und
 die Buchungsrate — dieselben Zeilen, die auch im Terminal stehen —, und darüber,
 was sonst noch zu melden ist: ausgefallene Modellaufrufe in Gelb, ein Lauffehler
 in Rot. Der Start-Knopf ist gesperrt, solange gerechnet wird.

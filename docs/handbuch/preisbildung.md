@@ -1,13 +1,13 @@
-Der Ticketpreis wird nicht vorgegeben. Er entsteht in jeder Runde neu, aus den
+Der Ticketpreis wird nicht vorgegeben. Er entsteht in jedem Tick neu, aus den
 Kosten der Airline und ihrer Reaktion auf die beobachtete Auslastung — dem, was
 in der Branche Yield Management heißt.
 
 ## Der Regelkreis
 
-Die Airline hat eine Zielauslastung. Am Ende jeder Runde vergleicht sie die
+Die Airline hat eine Zielauslastung. Am Ende jedes Ticks vergleicht sie die
 tatsächliche Buchungsrate damit. Liegt die Buchungsrate über dem Ziel, ist die
 Nachfrage stärker als erwartet und der Preis steigt. Liegt sie darunter, fällt
-er. Der veränderte Preis wirkt in der nächsten Runde auf die
+er. Der veränderte Preis wirkt im nächsten Tick auf die
 Kaufentscheidungen — und verändert damit die Buchungsrate, die die nächste
 Preisanpassung auslöst.
 
@@ -19,9 +19,9 @@ Preisen führt: Die Airline zieht dann schon bei schwächerer Nachfrage an.
 Drei Größen bestimmen die Heftigkeit der Reaktion. Die **Reaktionsstärke** legt
 fest, wie kräftig auf eine Abweichung reagiert wird. Die **Dämpfung** bremst das
 zusätzlich ab. Und der **Preisdeckel** begrenzt hart, wie weit sich der Preis in
-einer einzelnen Runde bewegen darf, nach oben wie nach unten.
+einem einzelnen Tick bewegen darf, nach oben wie nach unten.
 
-Der Deckel ist der Grund, warum ein Preis manchmal über mehrere Runden
+Der Deckel ist der Grund, warum ein Preis manchmal über mehrere Ticks
 gleichmäßig steigt, obwohl die Nachfrage längst eingebrochen ist: Das Modell
 lässt ihn nicht schneller fallen, als ein realer Anbieter es durchsetzen könnte.
 
@@ -34,7 +34,7 @@ kommen darauf noch obendrauf.
 Damit sind Verkäufe unterhalb der Vollkosten möglich — die Airline kann
 Marktanteil verteidigen und Fixkosten nur teilweise decken — aber Dumping unter
 die tatsächlichen Grenzkosten ist ausgeschlossen. Klebt der Preis im Verlauf über
-viele Runden an einem Wert, ist meist diese Grenze erreicht.
+viele Ticks an einem Wert, ist meist diese Grenze erreicht.
 
 ## Woraus sich der Preis zusammensetzt
 
@@ -63,7 +63,7 @@ Faktorzustand und schalten sich zu, wenn er eintritt.
 
 Bis August 2026 rechnete eine der beiden Stellen, die den Kostendruck bilden,
 ohne die Faktoren — dort konnte kein bedingter Treiber greifen. Sichtbar war das
-vor allem am Preis der ersten Runde, der ohne die Regulierungskosten zu niedrig
+vor allem am Preis des ersten Ticks, der ohne die Regulierungskosten zu niedrig
 begann und über die Preisrückkopplung den ganzen Verlauf mitzog. Das ist
 behoben; beide Stellen rechnen mit demselben Zustand.
 
