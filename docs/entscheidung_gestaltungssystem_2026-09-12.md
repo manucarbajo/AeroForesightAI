@@ -1,6 +1,6 @@
 # Entscheidung: das Gestaltungssystem (D1)
 
-**Stand 2026-09-12 · entschieden (Haiko, siehe «Die Entscheidung» unten) · Grundlage für [P7.1](projektplan.md#p71--ein-gestaltungssystem-statt-einzelregeln--offen) und die beiden letzten Wächter aus [P7.0](projektplan.md#p70--messfundament-für-die-gestaltung--offen)**
+**Stand 2026-09-12 · entschieden (Haiko, siehe «Die Entscheidung» unten) · Grundlage für [P7.1](projektplan.md#p71--ein-gestaltungssystem-statt-einzelregeln--erledigt-2026-09-13) und die beiden letzten Wächter aus [P7.0](projektplan.md#p70--messfundament-für-die-gestaltung--offen)**
 
 Das UI/UX-Audit vom 2026-09-11 stellt D1 als Ja/Nein-Frage: «Ein Gestaltungssystem
 in Tokens vor jeder Ansichtsarbeit?», mit der Empfehlung «Ja». Das Ja/Nein ist
