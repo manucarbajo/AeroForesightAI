@@ -85,7 +85,7 @@ CHAPTERS: list[Chapter] = [
         "tick-und-lauf",
         "Tick, Lauf und Szenario",
         "Konzepte",
-        "Warum ein Tick kein Zeitraum ist.",
+        "Was ein Tick ist: ein Monat Modellzeit, ohne Datum.",
         markdown="tick-und-lauf.md",
     ),
     Chapter(

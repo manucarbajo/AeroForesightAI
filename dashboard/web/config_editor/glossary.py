@@ -52,10 +52,11 @@ PARAMS: dict[str, Param] = {
     ),
     "rounds": Param(
         label="Länge des Laufs",
-        short="Modellrunden, kein Kalenderzeitraum.",
+        short="Ein Tick ist ein Monat Modellzeit, ohne Kalenderdatum.",
         unit="Ticks",
-        detail="Ein Tick ist eine Runde des Modells und steht bewusst für keinen Zeitraum. "
-        "Mehr Ticks heißt nicht «mehr Jahre», sondern mehr Gelegenheiten für Anpassung und "
+        detail="Ein Tick ist ein Monat Modellzeit: 40 Ticks sind gut drei Jahre, 120 sind "
+        "zehn. Ein Datum trägt er trotzdem nicht — das Modell rechnet in Monaten, legt sie "
+        "aber auf keinen Kalender. Mehr Ticks heißt mehr Gelegenheiten für Anpassung und "
         "Rückkopplung zwischen Preis und Nachfrage.",
     ),
     "run_count": Param(
