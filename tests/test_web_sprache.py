@@ -418,3 +418,51 @@ def test_the_staleness_check_would_notice_a_dead_exception(monkeypatch):
 
     with pytest.raises(AssertionError, match="Text, den es nicht mehr gibt"):
         test_no_exception_outlives_its_reason()
+
+
+# --- Kein Feldname im Horizont-Hinweis (P7.2-U2.3) ----------------------------
+
+#: Wie ein Feldname aussieht: Kleinbuchstaben mit Unterstrich, etwa
+#: «saf_mandate_share». Er ist der Schlüssel in `configs/properties.json` und
+#: gehört dorthin — in einem Satz der Oberfläche sucht ein Leser ihn vergeblich.
+_FELDNAME = re.compile(r"\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b")
+
+
+def _sichtbarer_text(knoten) -> str:
+    if knoten is None:
+        return ""
+    if isinstance(knoten, str):
+        return knoten
+    if isinstance(knoten, (list, tuple)):
+        return " ".join(_sichtbarer_text(k) for k in knoten)
+    return _sichtbarer_text(getattr(knoten, "children", None))
+
+
+class TestDerHorizontHinweisNenntDenNamen:
+    """Q6: «… der früheste ist `saf_mandate_share` bei Tick 16».
+
+    Der Hinweis vor dem Start nannte die Systemgröße mit ihrem Feldnamen. Den
+    Namen kennt `config_catalog.PROPERTY_LABELS` — dieselbe Quelle, aus der die
+    Felder im Modell-Bereich und die Achsen der Diagramme ihre Beschriftung
+    nehmen.
+    """
+
+    def _text(self, ticks: int) -> str:
+        entwurf = {**initial_draft_dict(), "rounds": ticks}
+        return _sichtbarer_text(start_flow._horizont_hinweis(entwurf))
+
+    def test_a_long_run_really_reports_a_gap(self):
+        """Vorbedingung: Ohne Hinweis misst die Zusage darunter nichts."""
+
+        assert self._text(200).strip(), "Kein Horizont-Hinweis bei 200 Ticks"
+
+    def test_it_names_the_property_and_no_field_name(self):
+        from dashboard.config_catalog import PROPERTY_LABELS
+
+        text = self._text(200)
+
+        treffer = _FELDNAME.search(text)
+        assert not treffer, f"Feldname «{treffer.group(0) if treffer else ''}» im Hinweis: {text}"
+        assert any(
+            name in text for name in PROPERTY_LABELS.values()
+        ), f"Kein Name aus dem Katalog im Hinweis: {text}"

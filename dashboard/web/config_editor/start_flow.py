@@ -31,6 +31,7 @@ import re
 from dash import html
 
 from dashboard.config_catalog import (
+    PROPERTY_LABELS,
     issues_by_field,
     list_sweep_presets,
     rahmenszenarien,
@@ -783,7 +784,8 @@ def _horizont_hinweis(draft: dict) -> list:
     return [
         ui.hinweis(
             f"{wie_viele} vor dem Ende des Laufs — der früheste ist "
-            f"`{frueheste.property_id}` bei Tick {frueheste.letzter_stuetzpunkt}. "
+            f"«{PROPERTY_LABELS.get(frueheste.property_id, frueheste.property_id)}» "
+            f"bei Tick {frueheste.letzter_stuetzpunkt}. "
             f"Danach hält er seinen letzten Wert; die letzten "
             f"{frueheste.ticks_darueber} Ticks rechnen also mit einer "
             "fortgeschriebenen Vorgabe. Das ist zulässig — gemeint ist es nicht "
