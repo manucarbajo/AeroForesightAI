@@ -269,7 +269,6 @@ def _add_segment_block() -> html.Div:
                     "Segment anlegen",
                     frage="Das neue Segment wird in die Konfigurationsdatei geschrieben.",
                     icon_name="add",
-                    variant="primary",
                     class_name="af-neben-feld",
                 ),
             ],
@@ -339,7 +338,6 @@ def layout(draft: dict) -> html.Div:
                 frage="Bevölkerung und Sättigung werden als neuer Standard in die "
                 "Konfigurationsdatei geschrieben.",
                 icon_name="save",
-                variant="primary",
                 class_name="mt-2",
             ),
         ]

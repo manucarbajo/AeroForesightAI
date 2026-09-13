@@ -259,7 +259,6 @@ def _add_property_block() -> html.Details:
             "Größe anlegen",
             frage="Die neue Systemgröße wird in die Konfigurationsdatei geschrieben.",
             icon_name="add",
-            variant="primary",
             class_name="mt-4",
         ),
         title="Eigene Systemgröße anlegen",

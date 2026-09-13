@@ -96,6 +96,13 @@ def write_action(
     zweite Klickstufe aus, die man aus Versehen mitnimmt. Für eine Handlung, die
     sich nur über die Versionsverwaltung zurückholen lässt, ist das der richtige
     Tausch. Ein gestalteter Dialog wäre Politur und änderte nichts an der Zusage.
+
+    **Die Vorgabe ist `secondary`, und im Modell-Bereich bleibt sie es** (P7.1-U1.4,
+    von Haiko entschieden am 2026-09-13). Dort standen drei Schreibaktionen als
+    Primärknopf auf einer Fläche. Das Modell ist ein Ort zum Pflegen, kein Ablauf
+    mit einem nächsten Schritt — und eine Handlung, die sich nur über die
+    Versionsverwaltung zurückholen lässt, soll nicht zum Klicken einladen.
+    `tests/test_web_primaeraktion.py` hält höchstens eine Primäraktion je Fläche.
     """
 
     return html.Div(
