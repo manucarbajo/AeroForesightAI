@@ -438,6 +438,7 @@ class _Messgang:
                 "klassen": _klassen_ohne_regel(seite),
                 "symbole": set(seite.evaluate(_SYMBOLE_IM_DOM)),
                 "legende": _legenden_befunde(seite),
+                "achsentitel": seite.evaluate(_ACHSENTITEL),
                 "wirt": seite.evaluate(_WIRT),
                 "eingaben_im_modell": seite.locator("#model-editor-host input").count(),
                 "fremd": list(fremd),
@@ -556,10 +557,12 @@ class _Messgang:
             reiter = seite.locator("#figures-tabs .af-tab")
             anzahl = reiter.count()
             aussagen = []
+            achsentitel = []
             for index, name in enumerate(AUSSAGEN[:anzahl]):
                 reiter.nth(index).click()
                 aussagen.append((name, _legendenkonflikte(seite)))
-        return {"reiter": anzahl, "aussagen": aussagen}
+                achsentitel.append((name, seite.evaluate(_ACHSENTITEL)))
+        return {"reiter": anzahl, "aussagen": aussagen, "achsentitel": achsentitel}
 
     # --- die schmale Breite ---------------------------------------------------
 
@@ -2615,6 +2618,75 @@ def _legendenkonflikte(page) -> list[str]:
     return _legenden_befunde(page)
 
 
+#: Läuft im Browser. Gibt **jeden Achsentitel zurück, den eine Figur verlangt**
+#: — gelesen aus ihrem Layout, nicht aus dem DOM —, und wie weit sein Kasten
+#: über die Zeichenfläche (`.main-svg`) hinausragt. Aus dem Layout, weil ein
+#: Titel, der gar nicht gezeichnet wird, im DOM nicht auffällt.
+_ACHSENTITEL = r"""
+() => {
+  const out = [];
+  for (const plot of document.querySelectorAll('.js-plotly-plot')) {
+    if (!plot.checkVisibility || !plot.checkVisibility({ checkVisibilityCSS: true })) continue;
+    const svg = plot.querySelector('.main-svg');
+    if (!svg) continue;
+    const r = svg.getBoundingClientRect();
+    const figur = (plot.querySelector('.gtitle')?.textContent || '(ohne Titel)').trim().slice(0, 52);
+    for (const [schluessel, achse] of Object.entries(plot.layout || {})) {
+      const m = /^([xy])axis(\d*)$/.exec(schluessel);
+      if (!m || !achse || !achse.title) continue;
+      const verlangt = typeof achse.title === 'string' ? achse.title : achse.title.text;
+      if (!verlangt) continue;
+      const el = plot.querySelector('.' + m[1] + (m[2] || '') + 'title');
+      const b = el ? el.getBoundingClientRect() : null;
+      const gezeichnet = !!b && (b.width > 0 || b.height > 0);
+      out.push({
+        figur: figur, achse: schluessel, text: verlangt, gezeichnet: gezeichnet,
+        links: gezeichnet ? Math.round(r.left - b.left) : 0,
+        rechts: gezeichnet ? Math.round(b.right - r.right) : 0,
+        oben: gezeichnet ? Math.round(r.top - b.top) : 0,
+        unten: gezeichnet ? Math.round(b.bottom - r.bottom) : 0,
+      });
+    }
+  }
+  return out;
+}
+"""
+
+#: Wie viele Achsentitel die vier Aussagen je Breite und Modus mindestens
+#: tragen — **gegen die eigene Blindheit**. Gemessen am 2026-09-13: 13 bei
+#: 1280 px.
+ACHSENTITEL_MIN = 8
+
+#: Wie viel Luft ein Achsentitel mindestens zur Kante seiner Figur hat, in px.
+#:
+#: **Luft, nicht nur «ragt nicht heraus» — und das ist gemessen.** Nimmt man
+#: einer Figur per `Plotly.relayout` den Rand, schiebt Plotly den Titel nicht
+#: aus dem Bild, sondern **klemmt ihn bündig an die Kante**: 0 px, auch mit
+#: 150 px `standoff`. Eine Zusage «höchstens 1 px heraus» war für diesen Fall
+#: blind und im ersten Anlauf rot am eigenen Selbsttest. Genau so dürfte der
+#: Beschnitt aus dem Audit ausgesehen haben — der Kasten an der Kante, die
+#: Glyphen angeschnitten. Heute liegt jeder Titel mindestens 8 px innerhalb.
+ACHSENTITEL_LUFT = 2
+
+
+def _achsentitel_befunde(messungen: list[dict]) -> list[str]:
+    """Jeder verlangte Achsentitel, der fehlt, an der Kante klebt oder herausragt."""
+
+    befunde: list[str] = []
+    for m in messungen:
+        wo = f"«{m['figur']}», {m['achse']} «{m['text']}»"
+        if not m["gezeichnet"]:
+            befunde.append(f"{wo}: verlangt, aber nicht gezeichnet")
+            continue
+        luft = {k: -m[k] for k in ("links", "rechts", "oben", "unten") if m[k] > -ACHSENTITEL_LUFT}
+        if luft:
+            befunde.append(
+                f"{wo}: weniger als {ACHSENTITEL_LUFT} px Luft zur Kante (negativ: ragt heraus) — "
+                + ", ".join(f"{k} {v} px" for k, v in luft.items())
+            )
+    return befunde
+
+
 #: Die vier Aussagen aus `views/figures.py`. Sie stehen hier als Namen und nicht
 #: als Zählung, damit die Meldung sagt, *welche* Aussage bricht.
 AUSSAGEN = [
@@ -2722,6 +2794,83 @@ def test_the_legend_guard_would_notice_a_relapse(page):
         "Der Wächter übersieht eine Legende, die im Rand des Titels sitzt — "
         "dann ist seine Zusage keine."
     )
+
+
+@pytest.mark.legende
+class TestKeinAchsentitelVerlaesstSeineFigur:
+    """**Achsentitel nie beschnitten** (P7.1-U1.5) — gemessen statt angenommen.
+
+    Das UI/UX-Audit vom 2026-09-11 sah bei 1440 px «etpreis (EUR)» und
+    «ungsrate (0–1)»: zwei Achsentitel, die aus der Zeichenfläche ragten (Q11).
+    **Beim Nachmessen am 2026-09-13 war das nicht mehr nachzustellen** — bei
+    1024, 1280, 1440 und 1600 px lag jeder Titel mindestens 8 px innerhalb
+    seiner Figur, vermutlich seit P3.7 die Legende unter die Zeichenfläche
+    gezogen hat. Diese Zusage hält den Stand, statt eine Reparatur zu
+    behaupten; dass sie etwas sieht, zeigt der Selbsttest daneben.
+
+    **Zwei Befundarten:** ein Titel mit weniger als `ACHSENTITEL_LUFT` zur
+    Kante der Zeichenfläche — Plotly klemmt ihn dort an, statt ihn
+    hinauszuschieben —, und einer, den die Figur verlangt, der aber gar nicht
+    gezeichnet ist. Das ist dieselbe Frage bis zum Ende gedacht.
+    """
+
+    @JE_BREITE
+    @pytest.mark.parametrize("modus", ["hell", "dunkel"])
+    def test_no_statement_clips_an_axis_title(self, messung, breite, modus):
+        figures = messung.figures(breite, modus)
+        befunde = [
+            f"{name}: {befund}"
+            for name, gemessen in figures["achsentitel"]
+            for befund in _achsentitel_befunde(gemessen)
+        ]
+        gesehen = sum(len(gemessen) for _, gemessen in figures["achsentitel"])
+
+        assert not befunde, f"Bei {breite} px, {modus}:\n  " + "\n  ".join(befunde)
+        assert gesehen >= ACHSENTITEL_MIN, (
+            f"Nur {gesehen} Achsentitel gemessen, erwartet mindestens {ACHSENTITEL_MIN} — "
+            "liest die Messung das Layout der Figuren noch?"
+        )
+
+    @JE_BREITE
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_no_other_area_clips_one_either(self, messung, breite, name):
+        befunde = _achsentitel_befunde(messung.bereich(breite, name)["achsentitel"])
+
+        assert not befunde, f"«{name}» bei {breite} px:\n  " + "\n  ".join(befunde)
+
+
+@EINE_SEITE
+@pytest.mark.legende
+def test_the_axis_title_guard_would_notice_a_relapse(page):
+    """Die Nachstellung: eine Figur ohne linken Rand, der Titel davor.
+
+    `Plotly.relayout` nimmt den Rand und das Automargin der linken Achse — am
+    laufenden Diagramm, ohne das Template anzufassen.
+    """
+
+    _oeffne_figures(page)
+    page.locator("#figures-tabs .af-tab").nth(0).click()
+    page.wait_for_timeout(RUHE_MS)
+    vorher = page.evaluate(_ACHSENTITEL)
+    assert vorher, "Keine Achsentitel gemessen — die Nachstellung hätte nichts, woran sie zeigt"
+    assert not _achsentitel_befunde(
+        vorher
+    ), f"Vor der Nachstellung ist schon etwas kaputt: {_achsentitel_befunde(vorher)}"
+
+    page.evaluate("""
+        () => {
+          for (const plot of document.querySelectorAll('.js-plotly-plot')) {
+            if (!plot.querySelector('.ytitle')) continue;
+            window.Plotly.relayout(plot, {'margin.l': 0, 'yaxis.automargin': false});
+          }
+        }
+        """)
+    page.wait_for_timeout(RUHE_MS)
+    nachher = _achsentitel_befunde(page.evaluate(_ACHSENTITEL))
+
+    assert any(
+        "yaxis" in b and "links" in b for b in nachher
+    ), f"Der Wächter übersieht einen links abgeschnittenen Achsentitel: {nachher}"
 
 
 # --- Teil 9: Was ein Klick in der Schrittfolge kostet (P3.9) ------------------
