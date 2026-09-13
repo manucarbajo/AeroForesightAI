@@ -57,6 +57,17 @@ ROUTES = [
 #: Alte Adressen, die weiterhin funktionieren sollen — Pfad → Bereich.
 ALIASES = {"setup": ""}
 
+#: Bereiche, die es gibt, die die Navigation aber nicht zeigt (P7.1-U1.6). Heute
+#: einer: die **Musterseite**, jeder Baustein in jedem Zustand — die Referenz,
+#: gegen die die Gestaltungswächter laufen. Wer sie braucht, ruft ihre Adresse
+#: auf; in den Arbeitsablauf gehört sie nicht.
+INTERNE_ROUTES = [("muster", "Musterseite")]
+
+#: Jeder Bereich mit eigenem Wirt im Layout, verlinkt oder nicht. **Daraus**
+#: leiten `app.visibility`, der Seitentitel und die Ansage ab; die Navigation
+#: liest nur `ROUTES`.
+BEREICHE = ROUTES + INTERNE_ROUTES
+
 
 def active_route(pathname: str | None) -> str:
     """Welcher Bereich zu einer Adresse gehört.
@@ -78,7 +89,7 @@ def active_route(pathname: str | None) -> str:
         return "doku"
     if relative in ALIASES:
         return ALIASES[relative]
-    return relative if relative in {route for route, _ in ROUTES} else ""
+    return relative if relative in {route for route, _ in BEREICHE} else ""
 
 
 LANDING_URL = routing.LANDING_PATH
@@ -135,7 +146,9 @@ ACTION_EXPORT = "shell-action-export"
 #: in diesem Moment einer Sache.
 #: «Modell» kommt seit P1.9-W3.1 dazu: Facharbeit an vielen Zahlen, bei der eine
 #: Szene daneben genauso ablenkt wie beim Einrichten.
-FOCUS_ROUTES = {"", "modell"}
+#: Die Musterseite ebenso (P7.1-U1.6): Sie misst Bausteine in der Breite, in
+#: der sie auf einer Arbeitsfläche stehen, nicht zwischen zwei Seitenzonen.
+FOCUS_ROUTES = {"", "modell", "muster"}
 
 
 def shell_class(active: str) -> str:
@@ -177,7 +190,7 @@ def bereich_ansage(active: str) -> str:
     **gewechselt** hat.
     """
 
-    for route, label in ROUTES:
+    for route, label in BEREICHE:
         if route == active:
             return f"Bereich gewechselt: {label}"
     return ""
@@ -192,7 +205,7 @@ def seitentitel(active: str) -> str:
     richtigen am Titel — und nur, wenn er sagt, was darin offen ist.
     """
 
-    bereich = dict(ROUTES).get(active)
+    bereich = dict(BEREICHE).get(active)
     return f"{MARKE} · {bereich}" if bereich else MARKE
 
 

@@ -133,7 +133,7 @@ class TestGenauEinBereichIstSichtbar:
     def test_every_route_has_its_own_area(self):
         """Die Sichtbarkeiten und die Bereichsliste dürfen nicht auseinanderlaufen."""
 
-        assert len(web_app.visibility("")) == len(shell.ROUTES)
+        assert len(web_app.visibility("")) == len(shell.BEREICHE)
 
     #: Reihenfolge wie in `shell.ROUTES` — seit P1.7 der Arbeitsablauf:
     #: Einrichten, Leitstand, Ergebnisse, Handbuch.
@@ -146,6 +146,8 @@ class TestGenauEinBereichIstSichtbar:
             ("/app/modell", 3),
             ("/app/doku", 4),
             ("/app/doku/cib", 4),
+            # Die Musterseite hat eine Adresse, aber keinen Link (P7.1-U1.6).
+            ("/app/muster", 5),
             ("/app", 0),
             # Der Aliaspfad aus P1.6: gespeicherte Verweise dürfen nicht ins
             # Leere zeigen, nur weil das Einrichten umgezogen ist.

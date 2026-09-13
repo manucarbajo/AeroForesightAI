@@ -9,15 +9,16 @@ in der Mitte der Viewport, rechts die Telemetrie, unten die Zeitleiste, oben die
 Kopfzeile. Der Bereichswechsel (`Einrichten` / `Leitstand` / `Ergebnisse` /
 `Modell` / `Handbuch`) tauscht nur den Inhalt des Viewports — die anderen vier
 Zonen bleiben stehen; «Einrichten» und «Modell» bekommen den Bildschirm allein
-(`shell.FOCUS_ROUTES`).
+(`shell.FOCUS_ROUTES`). Dazu kommt die **Musterseite** unter `/app/muster`, ein
+Bereich ohne Link (`shell.INTERNE_ROUTES`, P7.1-U1.6).
 Das Raster steht in `assets/dashboard.css`, der Aufbau in `shell.py`.
 
-Alle fünf Viewport-Bereiche liegen dauerhaft im Layout und werden nur ein- und
+Alle sechs Viewport-Bereiche liegen dauerhaft im Layout und werden nur ein- und
 ausgeblendet: So existiert jede Komponente, auf die ein Callback zeigt, von
 Anfang an, der Wechsel ist ohne Nachladen sofort sichtbar, und der Browser
 meldet keine fehlenden Inputs. **Eine Ausnahme seit P3.12:** Der Rumpf des
 Modell-Bereichs entsteht erst beim Aufsuchen — er trägt keine feste ID; sein
-Wirt liegt trotzdem von Anfang an da.
+Wirt liegt trotzdem von Anfang an da. Die Musterseite folgt demselben Muster.
 
 **Zum Theme:** Die Klasse `dark` muss auf `<html>` stehen, **bevor** der Browser
 zum ersten Mal zeichnet — sonst blitzt bei jedem Laden das helle Design auf. Ein
@@ -50,6 +51,7 @@ from dashboard.web.config_editor import wizard
 from dashboard.web.pages import docs as docs_page
 from dashboard.web.pages import launch as launch_page
 from dashboard.web.pages import model_editor as model_page
+from dashboard.web.pages import muster as muster_page
 from dashboard.web.pages import runs as runs_page
 from dashboard.web.pages import setup as setup_page
 
@@ -234,18 +236,19 @@ def scene_block(
 
 
 def visibility(active: str) -> tuple[dict, ...]:
-    """Welcher der fünf Viewport-Bereiche sichtbar ist — genau einer.
+    """Welcher der sechs Viewport-Bereiche sichtbar ist — genau einer.
 
-    Alle fünf bleiben im DOM (sonst zeigten Callbacks auf Komponenten, die es
+    Alle sechs bleiben im DOM (sonst zeigten Callbacks auf Komponenten, die es
     nicht gibt); umgeschaltet wird nur die Sichtbarkeit.
 
-    Die Reihenfolge ist die von `shell.ROUTES` — und zwar **abgeleitet**, nicht
+    Die Reihenfolge ist die von `shell.BEREICHE` — erst die Navigation, dann die
+    Bereiche ohne Link — und zwar **abgeleitet**, nicht
     abgeschrieben: Seit P1.7 ist diese Reihenfolge der Arbeitsablauf und hat
     sich einmal geändert. Eine zweite handgepflegte Liste hätte an dem Tag
     stillschweigend den falschen Bereich eingeblendet.
     """
 
-    return tuple(_VISIBLE if active == route else _HIDDEN for route, _ in shell.ROUTES)
+    return tuple(_VISIBLE if active == route else _HIDDEN for route, _ in shell.BEREICHE)
 
 
 def _status_for(data: run_data.RunData, *, running: bool = False) -> status.Status:
@@ -333,6 +336,7 @@ def serve_layout() -> html.Div:
                         ),
                         html.Div(model_page.layout(draft), id="page-modell", style=start[3]),
                         html.Div(docs_page.layout(), id="page-docs", style=start[4]),
+                        html.Div(muster_page.layout(), id="page-muster", style=start[5]),
                     ],
                     id="page-scene-wrap",
                 ),
@@ -359,8 +363,8 @@ def create_app() -> Dash:
     landing_route.register(app.server)
     app.layout = serve_layout
 
-    # Die vier Sichtbarkeiten stehen in der Reihenfolge von `shell.ROUTES`:
-    # Einrichten, Leitstand, Ergebnisse, Handbuch.
+    # Die Sichtbarkeiten stehen in der Reihenfolge von `shell.BEREICHE`:
+    # Einrichten, Leitstand, Ergebnisse, Modell, Handbuch, Musterseite.
     @app.callback(
         Output(shell.NAV_HOST, "children"),
         Output(shell.SHELL_ID, "className"),
@@ -369,6 +373,7 @@ def create_app() -> Dash:
         Output("page-runs", "style"),
         Output("page-modell", "style"),
         Output("page-docs", "style"),
+        Output("page-muster", "style"),
         Output(shell.BEREICH_ANSAGE, "children"),
         Output(shell.SEITENTITEL, "children"),
         Input("url", "pathname"),
@@ -385,6 +390,17 @@ def create_app() -> Dash:
             shell.bereich_ansage(active),
             shell.seitentitel(active),
         )
+
+    @app.callback(Output(muster_page.HOST, "children"), Input("url", "pathname"))
+    def _musterseite(pathname: str | None):
+        """Die Musterseite bauen, **wenn jemand sie aufsucht** (P7.1-U1.6).
+
+        Aus demselben Grund wie der Modell-Bereich (P3.12): Jede eingehängte
+        Komponente kostet jeden Klick in der Schrittfolge etwas, und diese Seite
+        sieht fast nie jemand. Ihr Rumpf trägt keine feste Kennung.
+        """
+
+        return muster_page.rumpf_fuer(pathname)
 
     # **Der Fokus wandert auf die Überschrift des neuen Bereichs** (P1.5).
     #

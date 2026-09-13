@@ -58,7 +58,7 @@ from dashboard.config_catalog import list_sweep_presets
 from dashboard.web import theme
 from dashboard.web.config_editor import start_flow, wizard
 from dashboard.web.pages import launch as launch_page
-from dashboard.web.pages import model_editor
+from dashboard.web.pages import model_editor, muster
 from dashboard.web.state import initial_draft_dict
 from dashboard.web.views import animation, explorer, figures, files, narrative, overview, scenario
 
@@ -249,6 +249,7 @@ EINRICHTEN = [
         for preset in list_sweep_presets()
     ],
     pytest.param(lambda: model_editor.body(initial_draft_dict()), id="modell"),
+    pytest.param(muster.body, id="musterseite"),
     pytest.param(lambda: launch_page.rail(initial_draft_dict()), id="bedienfeld"),
 ]
 

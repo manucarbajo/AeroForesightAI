@@ -27,7 +27,7 @@ from dash import dcc, html
 from dashboard.web import components as ui
 from dashboard.web.config_editor import delta, start_flow, wizard
 from dashboard.web.pages import launch as launch_page
-from dashboard.web.pages import model_editor
+from dashboard.web.pages import model_editor, muster
 from dashboard.web.state import initial_draft_dict
 
 #: Was als Eingabe zählt. Knöpfe nicht — «Szenario sichern» neben einem
@@ -117,6 +117,7 @@ BAEUME = [
         id="standard",
     ),
     pytest.param(lambda: model_editor.body(initial_draft_dict()), id="modell"),
+    pytest.param(muster.body, id="musterseite"),
     pytest.param(lambda: launch_page.rail(initial_draft_dict()), id="bedienfeld"),
     pytest.param(lambda: delta.layout(_mit_abweichung()), id="abweichungen"),
 ]

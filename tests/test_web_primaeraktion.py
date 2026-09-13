@@ -27,7 +27,7 @@ from dash import html
 
 from dashboard.web.config_editor import wizard
 from dashboard.web.pages import launch as launch_page
-from dashboard.web.pages import model_editor
+from dashboard.web.pages import model_editor, muster
 from dashboard.web.state import initial_draft_dict
 
 WEB_ROOT = Path(__file__).resolve().parents[1] / "dashboard" / "web"
@@ -78,6 +78,7 @@ def _flaechen() -> list[tuple[str, object]]:
     ]
     flaechen += [
         ("Modell", model_editor.body(entwurf)),
+        ("Musterseite", muster.body()),
         ("Bedienfeld", launch_page.rail(entwurf)),
     ]
     return flaechen
