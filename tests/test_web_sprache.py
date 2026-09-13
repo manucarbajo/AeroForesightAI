@@ -466,3 +466,78 @@ class TestDerHorizontHinweisNenntDenNamen:
         assert any(
             name in text for name in PROPERTY_LABELS.values()
         ), f"Kein Name aus dem Katalog im Hinweis: {text}"
+
+
+# --- Die Oberfläche erklärt nicht ihre eigene Bauart (P7.2-U2.5) ---------------
+
+#: Wendungen, mit denen ein Text über seine eigene **Benennung** spricht statt
+#: über die Sache. Die erste stand im Vorspann der Standard-Ausgangslage: «Auch
+#: das ist ein Rahmenszenario — … und heißt nur nicht so.» Das ist die Tonlage
+#: des Projektplans, nicht die eines Produkts (Q6).
+#:
+#: **Eine kurze Liste mit Grund, keine Sprachprüfung:** Gehalten wird der
+#: Rückfall an den Formulierungen, die wirklich dastanden; einen Wächter, der
+#: «Metakommentar» allgemein erkennt, gibt es nicht.
+_UEBER_SICH_SELBST = [
+    r"heißt (nur )?nicht so",
+    r"Auch das ist ein Rahmenszenario",
+]
+
+
+def _literale_der_oberflaeche() -> list[tuple[str, str]]:
+    """Jede Zeichenkette unter `dashboard/web/`, die kein Docstring ist."""
+
+    import ast
+
+    wurzel = Path(__file__).resolve().parents[1] / "dashboard" / "web"
+    texte: list[tuple[str, str]] = []
+    for pfad in sorted(wurzel.rglob("*.py")):
+        baum = ast.parse(pfad.read_text(encoding="utf-8"))
+        docstrings = {
+            id(k.body[0].value)
+            for k in ast.walk(baum)
+            if isinstance(k, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and k.body
+            and isinstance(k.body[0], ast.Expr)
+            and isinstance(k.body[0].value, ast.Constant)
+        }
+        for k in ast.walk(baum):
+            if isinstance(k, ast.Constant) and isinstance(k.value, str) and id(k) not in docstrings:
+                texte.append((f"{pfad.relative_to(wurzel).as_posix()}:{k.lineno}", k.value))
+    return texte
+
+
+class TestDieOberflaecheErklaertNichtIhreBauart:
+    def test_no_text_talks_about_its_own_naming(self):
+        befunde = [
+            f"{ort}: {text[:80]!r}"
+            for ort, text in _literale_der_oberflaeche()
+            for muster in _UEBER_SICH_SELBST
+            if re.search(muster, text)
+        ]
+
+        assert not befunde, "\n  ".join(
+            [
+                "Diese Texte sprechen über ihre eigene Benennung statt über die Sache:",
+                *befunde,
+                "Was der Lauf annimmt, gehört in den Satz — wie das Modell es nennt, nicht.",
+            ]
+        )
+
+    def test_the_standard_frame_still_names_its_assumptions(self):
+        """Der Inhalt bleibt: Ohne ihn wäre der Satz gekürzt statt umgeschrieben."""
+
+        entwurf = start_flow.apply(initial_draft_dict(), start_flow.STANDARD)
+        text = _sichtbarer_text(start_flow.scenario_details(entwurf))
+
+        for wort in ("Politik", "Kosten", "Konjunktur"):
+            assert wort in text, f"«{wort}» fehlt im Vorspann der Standard-Ausgangslage"
+
+    def test_the_search_would_notice_a_relapse(self):
+        probe = [("probe.py:1", "Auch das ist ein Rahmenszenario und heißt nur nicht so.")]
+
+        treffer = [
+            ort for ort, text in probe for muster in _UEBER_SICH_SELBST if re.search(muster, text)
+        ]
+
+        assert treffer == ["probe.py:1", "probe.py:1"]

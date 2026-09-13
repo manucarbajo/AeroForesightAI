@@ -426,9 +426,8 @@ def scenario_details(draft: dict) -> html.Div:
         return _kohaerenz_block(
             load_properties_config().kohaerenz,
             vorspann=ui.hinweis(
-                "Der Lauf rechnet mit den hinterlegten Verläufen des Modells. **Auch das ist "
-                "ein Rahmenszenario** — es trägt eigene Annahmen über Politik, "
-                "Kosten und Konjunktur und heißt nur nicht so.",
+                "Der Lauf rechnet mit den **hinterlegten Verläufen des Modells** — eigenen "
+                "Annahmen über Politik, Kosten und Konjunktur, begründet wie jedes Szenario.",
                 "kontext",
             ),
         )
