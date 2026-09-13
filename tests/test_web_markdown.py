@@ -23,6 +23,7 @@ laufen die Bereiche, die ohne Lauf und ohne Browser zu bauen sind.
 from __future__ import annotations
 
 import ast
+import inspect
 import re
 from pathlib import Path
 
@@ -164,3 +165,115 @@ def test_the_tree_guard_would_notice_a_relapse():
     roh = html.Div([html.P("Der **Name** steht unten."), dcc.Markdown("Hier **darf** es.")])
 
     assert _roher_text(roh) == ["Der **Name** steht unten."]
+
+
+# --- Jeder Textbaustein entscheidet selbst (P7.1-U1.4) -----------------------
+
+from dashboard.web import components as ui  # noqa: E402
+
+#: Parameter, die Text tragen. Gesucht wird über ihren Namen in jeder
+#: öffentlichen Funktion von `components.py` — ein neuer Baustein mit einem
+#: Parameter `hint` fällt auf, ohne dass ihn jemand einträgt.
+TEXTPARAMETER = {"text", "hint", "subtitle"}
+
+_PROBE = "Ein **fetter** Satz mit `Code`."
+
+#: Jeder Textparameter, der selbst entscheidet — mit einem Aufruf, der ihn füllt.
+ENTSCHEIDET_SELBST = {
+    ("section", "subtitle"): lambda t: ui.section("Titel", subtitle=t),
+    ("page_heading", "subtitle"): lambda t: ui.page_heading("Titel", t),
+    ("empty_state", "text"): lambda t: ui.empty_state(t),
+    ("empty_state", "hint"): lambda t: ui.empty_state("Leer", hint=t),
+    ("kachel", "hint"): lambda t: html.Div(
+        [
+            ui.kachel("Länge", 40, t),
+            ui.kachel("Szenario", "Standard", t, variante="text"),
+            ui.kachel("Rate", "0,26", t, variante="kompakt"),
+        ]
+    ),
+    ("status_dot", "hint"): lambda t: ui.status_dot(True, "Bereit", hint=t),
+    ("hinweis", "text"): lambda t: ui.hinweis(t, "info"),
+    ("lede", "text"): lambda t: ui.lede(t),
+    ("explainer", "text"): lambda t: ui.explainer(t),
+    ("hint_text", "hint"): lambda t: ui.hint_text(t),
+    ("field", "hint"): lambda t: ui.field("Feld", html.Div(), hint=t),
+    ("checkbox", "hint"): lambda t: ui.checkbox("Kästchen", value=False, hint=t),
+    ("toggle", "hint"): lambda t: ui.toggle("Schalter", value=False, hint=t),
+    ("markdown", "text"): lambda t: ui.markdown(t),
+    ("satz", "text"): lambda t: ui.satz(t),
+}
+
+#: Textparameter, die bewusst **wörtlich** bleiben — je mit Grund.
+WOERTLICH = {
+    ("log_line", "text"): "Eine Protokollzeile zeigt, was der Lauf geschrieben hat — wörtlich.",
+    ("code_block", "text"): "Code wird gezeigt, wie er ist; ein Stern darin ist ein Stern.",
+    ("badge", "text"): "Eine Marke aus wenigen Wörtern; Auszeichnung hat darin keinen Platz.",
+    ("status_indicator", "text"): "Der Zustand der Anlage kommt aus `status.py`, nie aus Daten.",
+    ("status_indicator", "hint"): "Steht im `title`-Attribut, das kein Markdown darstellen kann.",
+    ("status_dot", "text"): "Kurzbeschriftung neben einem Zustandspunkt, aus festen Wörtern.",
+}
+
+#: Bausteine, die ihren Text bis zum 2026-09-13 wörtlich setzten — für sie gilt
+#: zusätzlich: Schlichter Text bleibt das Element, das dort immer stand.
+BIS_DAHIN_WOERTLICH = [
+    ("section", "subtitle"),
+    ("page_heading", "subtitle"),
+    ("empty_state", "text"),
+    ("empty_state", "hint"),
+    ("kachel", "hint"),
+    ("status_dot", "hint"),
+]
+
+
+def _textparameter() -> set[tuple[str, str]]:
+    gefunden = set()
+    for name, funktion in inspect.getmembers(ui, inspect.isfunction):
+        if name.startswith("_") or funktion.__module__ != ui.__name__:
+            continue
+        for parameter in inspect.signature(funktion).parameters:
+            if parameter in TEXTPARAMETER:
+                gefunden.add((name, parameter))
+    return gefunden
+
+
+class TestJederTextbausteinEntscheidetSelbst:
+    """Markdown ist eine Eigenschaft des Textes, nicht die Wahl des Aufrufers (P7.1-U1.4)."""
+
+    def test_every_text_parameter_is_accounted_for(self):
+        gefunden = _textparameter()
+        eingetragen = set(ENTSCHEIDET_SELBST) | set(WOERTLICH)
+
+        fehlt = sorted(gefunden - eingetragen)
+        verwaist = sorted(eingetragen - gefunden)
+        assert not fehlt, (
+            f"Diese Textparameter sind nirgends eingetragen: {fehlt}. Ein Text entscheidet "
+            "selbst (`ui.satz`) — oder bleibt mit Grund in `WOERTLICH`."
+        )
+        assert not verwaist, f"Eingetragen, aber nicht mehr vorhanden: {verwaist}"
+
+    @pytest.mark.parametrize("ort", sorted(ENTSCHEIDET_SELBST), ids=lambda o: ".".join(o))
+    def test_marked_up_text_is_rendered_not_shown(self, ort):
+        funde = _roher_text(ENTSCHEIDET_SELBST[ort](_PROBE))
+
+        assert not funde, f"`ui.{ort[0]}({ort[1]}=…)` zeigt Markdown roh: {funde}"
+
+    @pytest.mark.parametrize("ort", BIS_DAHIN_WOERTLICH, ids=lambda o: ".".join(o))
+    def test_plain_text_stays_the_element_it_was(self, ort):
+        gerendert = str(ENTSCHEIDET_SELBST[ort]("Ein schlichter Satz."))
+
+        assert "Markdown(" not in gerendert, (
+            f"`ui.{ort[0]}` macht aus schlichtem Text Markdown — der Baum soll sich "
+            "nur ändern, wo der Text es verlangt."
+        )
+
+    def test_every_literal_exception_carries_a_reason(self):
+        ohne = [ort for ort, grund in WOERTLICH.items() if len(grund.strip()) < 30]
+
+        assert not ohne, f"Ohne Grund: {ohne}"
+
+    def test_the_decision_would_notice_a_relapse(self):
+        assert isinstance(ui.satz(_PROBE), dcc.Markdown)
+        assert isinstance(ui.satz("Ein [Verweis](https://example.org)."), dcc.Markdown)
+        assert isinstance(ui.satz("- Punkt eins\n- Punkt zwei"), dcc.Markdown)
+        assert isinstance(ui.satz("Kosten * Menge, ohne Auszeichnung."), html.P)
+        assert _roher_text(html.Div(html.P(_PROBE)))

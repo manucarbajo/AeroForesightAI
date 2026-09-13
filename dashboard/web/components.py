@@ -14,6 +14,7 @@ eine gepflegte Liste finge nur den Rückfall an bekannter Stelle.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Iterable
 
 from dash import dcc, html
@@ -128,7 +129,11 @@ def section(
                     html.Div(
                         [
                             html.H2(title, className=H2) if title else None,
-                            html.P(subtitle, className=f"{CAPTION} mt-1") if subtitle else None,
+                            (
+                                satz(subtitle, class_name=f"{CAPTION} mt-1", klein=True)
+                                if subtitle
+                                else None
+                            ),
                         ]
                     ),
                     (
@@ -147,7 +152,7 @@ def page_heading(title: str, subtitle: str | None = None) -> html.Div:
     return html.Div(
         [
             html.H1(title, className=H1),
-            html.P(subtitle, className="font-body af-text-body mt-2") if subtitle else None,
+            satz(subtitle, class_name="font-body af-text-body mt-2") if subtitle else None,
         ],
         className="mb-6",
     )
@@ -201,6 +206,37 @@ def hint_text(hint: str | None, *, class_name: str = "") -> Any:
     if not hint:
         return None
     return dcc.Markdown(hint, className=f"af-hint af-md af-md--tight {class_name}".strip())
+
+
+#: Was einen Text als Markdown kennzeichnet: Fettung, Code, ein Verweis oder eine
+#: Aufzählung. Ohne das bleibt ein Satz ein Satz — und der Baum genau so, wie er
+#: war.
+_AUSZEICHNUNG = re.compile(r"\*\*|`[^`\n]+`|\[[^\]\n]+\]\([^)\s]+\)|^\s*[-*] \S", re.M)
+
+
+def satz(text: Any, *, class_name: str = "", element: Any = html.P, klein: bool = False) -> Any:
+    """Ein Text, der selbst entscheidet, ob er Markdown ist (P7.1-U1.4).
+
+    **Markdown ist eine Eigenschaft des Textes, nicht die Wahl des Aufrufers.**
+    Bis zum 2026-09-11 stand in der Oberfläche `**Name**` mit Sternchen, weil ein
+    Aufrufer `html.P` gewählt hatte, wo der Text Markdown war (Q3). Die ersten
+    Korrekturen stellten die betroffenen Aufrufe um — und ließen den Mechanismus
+    stehen: `section`, `page_heading`, `empty_state`, `kachel` und `status_dot`
+    setzten ihren Text weiter wörtlich, gleich was man ihnen gab.
+
+    Ohne Auszeichnung entsteht das Element, das dort immer stand, mit derselben
+    Klasse; mit Auszeichnung ein `dcc.Markdown`. *klein* nimmt die Satzgröße
+    einer Bildunterschrift (`af-md--caption`), damit ein ausgezeichneter Hinweis
+    nicht größer wird als sein schlichter Nachbar. Was kein Text ist, bleibt,
+    wie es ist.
+    """
+
+    if not isinstance(text, str):
+        return text
+    if _AUSZEICHNUNG.search(text):
+        rolle = "af-md af-md--tight af-md--caption" if klein else "af-md af-md--tight"
+        return dcc.Markdown(text, className=f"{rolle} {class_name}".strip())
+    return element(text, className=class_name)
 
 
 #: Die Breiten, die eine Eingabe haben darf — als Stufe, nicht als Wert. Die
@@ -397,7 +433,7 @@ def status_dot(ok: bool, text: str, *, hint: str | None = None) -> html.Div:
             html.Div(
                 [
                     html.Span(text, className=f"font-body {BESCHRIFTUNG} af-text-body"),
-                    html.P(hint, className=HINT) if hint else None,
+                    satz(hint, class_name=HINT, klein=True) if hint else None,
                 ]
             ),
         ],
@@ -488,7 +524,11 @@ def kachel(
                 html.Div(label, className="af-kpi__label"),
                 html.Div(str(value), className="af-kpi__value"),
                 html.Div(delta, className=f"af-kpi__delta{tone}") if delta else None,
-                html.Div(hint, className="af-kpi__hint") if hint else None,
+                (
+                    satz(hint, class_name="af-kpi__hint", element=html.Div, klein=True)
+                    if hint
+                    else None
+                ),
             ],
             className="af-kpi",
         )
@@ -503,7 +543,11 @@ def kachel(
         [
             html.Div(label.upper(), className=f"font-body {KLEIN} tracking-wider af-text-muted"),
             html.Div(str(value), className=wert),
-            html.Div(hint, className=f"{CAPTION} mt-1") if hint else None,
+            (
+                satz(hint, class_name=f"{CAPTION} mt-1", element=html.Div, klein=True)
+                if hint
+                else None
+            ),
         ],
         className=f"{CARD} p-4 min-w-0",
     )
@@ -587,8 +631,8 @@ def empty_state(text: str, *, hint: str | None = None, icon_name: str = "inbox")
     return html.Div(
         [
             icon(icon_name, "text-3xl af-text-faint"),
-            html.P(text, className=f"font-body {BESCHRIFTUNG} af-text-body mt-3"),
-            html.P(hint, className=f"{CAPTION} mt-1") if hint else None,
+            satz(text, class_name=f"font-body {BESCHRIFTUNG} af-text-body mt-3"),
+            satz(hint, class_name=f"{CAPTION} mt-1", klein=True) if hint else None,
         ],
         className=f"{CARD} flex flex-col items-center justify-center text-center px-6 py-12",
     )
