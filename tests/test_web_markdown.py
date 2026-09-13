@@ -182,8 +182,8 @@ _PROBE = "Ein **fetter** Satz mit `Code`."
 ENTSCHEIDET_SELBST = {
     ("section", "subtitle"): lambda t: ui.section("Titel", subtitle=t),
     ("page_heading", "subtitle"): lambda t: ui.page_heading("Titel", t),
-    ("empty_state", "text"): lambda t: ui.empty_state(t),
-    ("empty_state", "hint"): lambda t: ui.empty_state("Leer", hint=t),
+    ("empty_state", "text"): lambda t: ui.empty_state(t, icon_name="science"),
+    ("empty_state", "hint"): lambda t: ui.empty_state("Leer", hint=t, icon_name="science"),
     ("kachel", "hint"): lambda t: html.Div(
         [
             ui.kachel("Länge", 40, t),

@@ -627,7 +627,16 @@ def hinweis(
     )
 
 
-def empty_state(text: str, *, hint: str | None = None, icon_name: str = "inbox") -> html.Div:
+def empty_state(text: str, *, hint: str | None = None, icon_name: str) -> html.Div:
+    """Ein leerer Zustand: Symbol, Satz und ein Hinweis, wie er sich füllt.
+
+    **Das Symbol ist Pflicht, ohne Vorgabe** (2026-09-13). Die Vorgabe lautete
+    «inbox», und dieser Name steckt nicht im Symbol-Teilsatz — gesetzt worden
+    wäre er als Wort. Jeder Aufrufer gab ein eigenes Symbol mit, deshalb fiel es
+    nicht auf. Eine Vorgabe, die niemand benutzt, ist eine Falle für den
+    Ersten, der es tut.
+    """
+
     return html.Div(
         [
             icon(icon_name, "text-3xl af-text-faint"),
