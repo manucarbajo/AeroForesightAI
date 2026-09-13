@@ -166,7 +166,7 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
 
     body: list = []
     if effect_text:
-        body.append(html.Div(ui.note(effect_text), className="mb-4"))
+        body.append(html.Div(ui.hinweis(effect_text, "kontext"), className="mb-4"))
     body.append(c.check(f"property_edits.{prop_id}.is_active", is_active, key="property.is_active"))
 
     if is_active:
@@ -202,7 +202,7 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
         )
     else:
         body.append(
-            ui.alert(
+            ui.hinweis(
                 "Deaktiviert — wird in diesem Lauf nicht angewendet.", "info", class_name="mt-4"
             )
         )
@@ -326,12 +326,12 @@ def layout(draft: dict) -> html.Div:
                     # «Ausgangslage».
                     None
                     if overrides_on
-                    else ui.alert(
+                    else ui.hinweis(
                         "«Eigene Werte anwenden» ist ausgeschaltet — was Sie hier einstellen, "
                         "wirkt im nächsten Lauf nicht. Einschalten unter «Einrichten», "
                         f"Schritt «{start_flow.schritttitel('szenario')}», hinter "
                         "«Feinabstimmung».",
-                        "warning",
+                        "warnung",
                         class_name="mb-4",
                     )
                 ),

@@ -310,7 +310,7 @@ def test_reset_action_returns_the_default_draft():
     data, message, kind = _handle_action({"type": "cfg-action", "action": "reset"}, draft, [])
 
     assert data["rounds"] != 999
-    assert kind == "success"
+    assert kind == "erfolg"
     assert message
 
 
@@ -326,7 +326,7 @@ def test_apply_sweep_action_takes_over_the_preset():
 
     data, message, kind = _handle_action({"type": "cfg-action", "action": "apply-sweep"}, draft, [])
 
-    assert kind == "success"
+    assert kind == "erfolg"
     assert presets[0].name in message
     assert data["rounds"] == presets[0].max_ticks
 
@@ -338,7 +338,7 @@ def test_add_property_rejects_an_invalid_identifier():
         {"type": "cfg-action", "action": "add-property"}, initial_draft_dict(), free
     )
 
-    assert kind == "warning"
+    assert kind == "warnung"
     assert "Python-Bezeichner" in message
 
 
@@ -349,7 +349,7 @@ def test_add_segment_rejects_a_duplicate():
 
     _, message, kind = _handle_action({"type": "cfg-action", "action": "add-segment"}, draft, free)
 
-    assert kind == "warning"
+    assert kind == "warnung"
     assert "existiert bereits" in message
 
 
@@ -474,9 +474,9 @@ def test_run_file_url_builds_a_relative_route():
 # --- Bausteine -------------------------------------------------------------
 
 
-def test_alert_renders_markdown_and_plain_children():
-    assert _text(ui.alert("**fett**", "warning"))
-    assert _text(ui.alert(ui.markdown("x"), "info"))
+def test_hinweis_renders_markdown_and_plain_children():
+    assert _text(ui.hinweis("**fett**", "warnung"))
+    assert _text(ui.hinweis(ui.markdown("x"), "info"))
 
 
 def test_draft_to_dict_is_json_serialisable():

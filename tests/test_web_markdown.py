@@ -99,7 +99,7 @@ def test_no_text_block_is_handed_markdown_in_the_source():
         "Markdown in einem Baustein, der seinen Text wörtlich zeigt — die Zeichen "
         "stehen dann sichtbar da:\n  "
         + "\n  ".join(funde)
-        + "\n\nText mit Auszeichnung gehört in `ui.markdown`, `ui.lede` oder `ui.note`."
+        + "\n\nText mit Auszeichnung gehört in `ui.markdown`, `ui.lede` oder `ui.hinweis`."
     )
 
 

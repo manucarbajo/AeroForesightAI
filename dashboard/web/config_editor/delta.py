@@ -153,9 +153,10 @@ def layout(draft: dict) -> object:
 
     abweichungen = unterschiede(draft)
     if not abweichungen:
-        return ui.note(
+        return ui.hinweis(
             "Der Lauf verwendet durchgehend die ausgelieferten Werte — es gibt nichts, "
             "was Sie beim Vergleich mit einem anderen Lauf berücksichtigen müssten.",
+            "kontext",
             icon_name="check_circle",
         )
 

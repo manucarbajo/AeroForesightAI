@@ -154,4 +154,4 @@ def hinweis(draft: dict, *, wurzel: Path | None = None) -> object:
     satz = schaetzung(draft, wurzel=wurzel)
     if satz is None:
         return None
-    return ui.note(satz, icon_name="schedule")
+    return ui.hinweis(satz, "kontext", icon_name="schedule")

@@ -311,7 +311,7 @@ def gate(draft: dict, step) -> tuple[bool, bool, object]:
         wohin = ", ".join(f"Schritt {s + 1} ({STEPS[s].title})" for s in anderswo)
         text = f"**Der Lauf kann so nicht starten.** Zu beheben in: {wohin}."
 
-    return bool(hier), True, ui.alert(text, "error")
+    return bool(hier), True, ui.hinweis(text, "fehler")
 
 
 def clamp(step) -> int:

@@ -72,7 +72,7 @@ def factor_strip(states: dict[str, str]) -> html.Div:
 
     if not states:
         return html.Div(
-            ui.alert(
+            ui.hinweis(
                 "Keine Faktor-Zeitreihe in diesem Lauf (`timeseries/factors.csv` fehlt).",
                 "info",
             ),

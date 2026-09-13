@@ -125,8 +125,8 @@ def _literale(pfad: Path) -> list[str]:
 
     **Docstrings fallen heraus, und das ist beim ersten Durchlauf gemessen
     worden.** Der erste Anlauf nahm sie mit — mit dem Argument, ein Fehlalarm
-    koste nur eine Formulierung. Er kostete mehr: Die Docstrings von `alert`,
-    `explainer` und `note` *erzählen* vom abgeschafften Lesemaß, weil genau
+    koste nur eine Formulierung. Er kostete mehr: Die Docstrings von `hinweis`
+    (vormals `alert` und `note`) und `explainer` *erzählen* vom abgeschafften Lesemaß, weil genau
     diese Geschichte der Grund ist, aus dem es niemand wieder einbaut. Ein
     Wächter, der die Begründung seiner eigenen Zusage verbietet, erzwingt, dass
     sie gelöscht wird. Zeilenkommentare (`#`) stehen ohnehin nicht im

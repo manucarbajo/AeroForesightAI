@@ -317,7 +317,7 @@ def layout(draft: dict) -> html.Div:
                         cols="lg:grid-cols-2 2xl:grid-cols-3",
                     )
                     if booleans
-                    else ui.alert("Keine Segmente definiert.", "info")
+                    else ui.hinweis("Keine Segmente definiert.", "info")
                 ),
                 actions=ui.doc_link("kaufentscheidung"),
             ),
@@ -330,7 +330,7 @@ def layout(draft: dict) -> html.Div:
                 (
                     html.Div([_distribution_card(i, s) for i, s in distributions])
                     if distributions
-                    else ui.alert("Keine Verteilungen definiert.", "info")
+                    else ui.hinweis("Keine Verteilungen definiert.", "info")
                 ),
             ),
             c.write_action(

@@ -103,7 +103,7 @@ def body(draft: dict) -> html.Div:
     try:
         return html.Div([macro.layout(draft), micro.layout(draft)])
     except Exception as exc:  # noqa: BLE001 - eine kaputte Config soll den Bereich nicht sprengen
-        return ui.alert(f"Modell konnte nicht aufgebaut werden: {exc}", "error")
+        return ui.hinweis(f"Modell konnte nicht aufgebaut werden: {exc}", "fehler")
 
 
 def rumpf_fuer(pathname: str | None, draft: dict | None) -> object:

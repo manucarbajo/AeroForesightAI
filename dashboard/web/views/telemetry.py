@@ -74,7 +74,7 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
 
     row = data.tick_row(tick)
     if not row:
-        return ui.alert(
+        return ui.hinweis(
             "Für diesen Tick liegen keine Kennzahlen vor (`tick_mechanics.json` fehlt "
             "oder reicht nicht so weit).",
             "info",
@@ -223,7 +223,7 @@ def charts(data: RunData, tick: int, *, mode: str = theme.LIGHT) -> html.Div:
         )
 
     if not blocks:
-        return ui.alert("Keine Zeitreihen in diesem Lauf.", "info")
+        return ui.hinweis("Keine Zeitreihen in diesem Lauf.", "info")
     return html.Div(blocks, className="space-y-1")
 
 

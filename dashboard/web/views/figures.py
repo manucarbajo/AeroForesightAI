@@ -183,7 +183,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
 
     ticks = _read_ticks(run_dir)
     if ticks is None:
-        return ui.alert("Keine Marktdaten verfügbar.", "info")
+        return ui.hinweis("Keine Marktdaten verfügbar.", "info")
 
     price = ticks.get("market_price_after_feedback_eur")
     if price is None:
@@ -237,7 +237,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
     if hat_band:
         blocks.insert(
             1,
-            ui.note(
+            ui.hinweis(
                 f"Die Linien zeigen **diesen einen** Lauf. Die getönten Flächen zeigen, "
                 f"wo **80 Prozent der {int(baender['laeufe'])} Wiederholungen** dieses "
                 "Szenarios lagen — zwischen dem 10. und dem 90. Perzentil je Tick. "
@@ -245,7 +245,8 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
                 "Wiederholung nach außen, ein solches Band sähe bei fünfzig Läufen "
                 "breiter aus als bei zehn, ohne dass sich am Modell etwas geändert "
                 f"hätte. Das Band reicht so weit wie der kürzeste Lauf (Tick "
-                f"{int(baender.get('ticks') or 0)})."
+                f"{int(baender.get('ticks') or 0)}).",
+                "kontext",
             ),
         )
 
@@ -321,7 +322,7 @@ def _view_politik(run_dir: Path, mode: str = theme.LIGHT):
 
     properties = _read_csv(run_dir / "timeseries" / "properties.csv")
     if properties is None:
-        return ui.alert("Keine Property-Zeitreihen vorhanden.", "info")
+        return ui.hinweis("Keine Property-Zeitreihen vorhanden.", "info")
 
     blocks: list = [html.H3("Was die Politik bewirkt", className=f"{ui.H3} mb-3")]
 
@@ -347,7 +348,7 @@ def _view_politik(run_dir: Path, mode: str = theme.LIGHT):
             )
         )
     else:
-        blocks.append(ui.alert("Keine Policy-Properties gefunden.", "info"))
+        blocks.append(ui.hinweis("Keine Policy-Properties gefunden.", "info"))
 
     kosten = [c for c in properties.columns if c in COST_COLUMNS]
     if kosten:
@@ -390,7 +391,7 @@ def _view_wer(run_dir: Path, mode: str = theme.LIGHT):
             class_name="p-2",
         )
         if population is not None and not population.empty
-        else ui.alert("Keine Profil-Segment-Daten.", "info")
+        else ui.hinweis("Keine Profil-Segment-Daten.", "info")
     )
     right = (
         ui.card(
@@ -402,7 +403,7 @@ def _view_wer(run_dir: Path, mode: str = theme.LIGHT):
             class_name="p-2",
         )
         if ages is not None and not ages.empty
-        else ui.alert("Keine Altersgruppen-Daten.", "info")
+        else ui.hinweis("Keine Altersgruppen-Daten.", "info")
     )
     return _panel(
         html.H3("Wer noch fliegt", className=f"{ui.H3} mb-3"),
@@ -493,7 +494,7 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
     if len(geschwister) < 2:
         return _panel(
             html.H3("Die Szenarien nebeneinander", className=f"{ui.H3} mb-3"),
-            ui.alert(
+            ui.hinweis(
                 "Dieser Lauf steht allein — ein Vergleich braucht mehr als einen. "
                 "Über «Einrichten → Szenario-Vergleich starten» werden alle "
                 "hinterlegten Szenarien nacheinander gerechnet und landen hier "
@@ -579,18 +580,18 @@ def _satz_hinweis(figures) -> object:
     """
 
     if figures.herkunft == run_browser.GERATEN:
-        return ui.alert(
+        return ui.hinweis(
             "Zu diesen Bildern gibt es kein Manifest. Die Titel sind aus den "
             "Dateinamen abgeleitet, und ob der Satz vollständig ist, lässt sich "
             "nicht sagen. «Figures neu erzeugen» stellt einen benannten Satz her.",
-            "warning",
+            "warnung",
         )
     if figures.fehlend:
         fehlt = ", ".join(figures.fehlend)
-        return ui.alert(
+        return ui.hinweis(
             f"Das Manifest nennt {len(figures.fehlend)} Bild(er), die nicht "
             f"vorliegen: {fehlt}. Der Satz ist unvollständig.",
-            "warning",
+            "warnung",
         )
     return None
 
@@ -617,7 +618,7 @@ def png_gallery(run_dir: Path) -> html.Div:
                 (
                     html.Div(html.Img(src=url, className="w-full rounded"), className="af-paper")
                     if url
-                    else ui.alert("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warning")
+                    else ui.hinweis("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warnung")
                 ),
                 class_name="mb-4",
             )
@@ -668,7 +669,7 @@ def _render_view(tab: str | None, run_dir: Path, mode: str = theme.LIGHT):
     try:
         return view(run_dir, mode)
     except Exception as exc:  # noqa: BLE001 - unvollständige Runs kommen vor
-        return ui.alert(f"Auswertung fehlgeschlagen: {exc}", "error")
+        return ui.hinweis(f"Auswertung fehlgeschlagen: {exc}", "fehler")
 
 
 def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
@@ -708,5 +709,5 @@ def register_callbacks(app) -> None:
         try:
             figures = generate_figures_for_run(run_dir)
         except Exception as exc:  # noqa: BLE001 - matplotlib-Fehler gehören in die UI
-            return no_update, ui.alert(f"Figure-Erzeugung fehlgeschlagen: {exc}", "error")
-        return png_gallery(run_dir), ui.alert(f"{len(figures)} Figures erzeugt.", "success")
+            return no_update, ui.hinweis(f"Figure-Erzeugung fehlgeschlagen: {exc}", "fehler")
+        return png_gallery(run_dir), ui.hinweis(f"{len(figures)} Figures erzeugt.", "erfolg")

@@ -228,7 +228,7 @@ def scene_block(
     if data.is_demo:
         from dashboard.web import demo_run
 
-        children.append(html.Div(ui.alert(demo_run.notice(), "demo"), className="px-4 pt-4"))
+        children.append(html.Div(ui.hinweis(demo_run.notice(), "demo"), className="px-4 pt-4"))
     children.append(scene.render(data, tick, mode=mode, zoom_index=zoom))
     return html.Div(children)
 
@@ -628,8 +628,8 @@ def create_app() -> Dash:
         try:
             path = save_custom_sweep_preset(draft, name)
         except Exception as exc:  # noqa: BLE001 - Dateifehler gehören in die UI
-            return ui.alert(f"Konnte nicht gespeichert werden: {exc}", "error")
-        return ui.alert(f"Gespeichert: `{path}`", "success")
+            return ui.hinweis(f"Konnte nicht gespeichert werden: {exc}", "fehler")
+        return ui.hinweis(f"Gespeichert: `{path}`", "erfolg")
 
     @app.callback(
         Output("url", "pathname"),

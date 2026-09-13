@@ -78,11 +78,19 @@ _BUTTON_VARIANTS = {
     "danger": "af-btn--danger",
 }
 
-_ALERT_VARIANTS = {
+#: Die Töne des Hinweisbausteins — Ton → (Klasse, Symbol) (P7.1-U1.4, E5).
+#:
+#: **`kontext` ist keine Meldung**, sondern erklärender Text neben einer
+#: Entscheidung. Die übrigen fünf melden etwas: dass etwas gilt (`info`),
+#: gelungen ist (`erfolg`), Aufmerksamkeit braucht (`warnung`), gescheitert ist
+#: (`fehler`) oder nur ein Beispiel zeigt (`demo`). Die Klassen tragen weiter
+#: ihre alten Namen; umbenannt sind die Töne, nicht das Stylesheet.
+HINWEIS_TOENE: dict[str, tuple[str, str]] = {
+    "kontext": ("", "lightbulb"),
     "info": ("af-alert--info", "info"),
-    "success": ("af-alert--success", "check_circle"),
-    "warning": ("af-alert--warning", "warning"),
-    "error": ("af-alert--error", "error"),
+    "erfolg": ("af-alert--success", "check_circle"),
+    "warnung": ("af-alert--warning", "warning"),
+    "fehler": ("af-alert--error", "error"),
     "demo": ("af-alert--demo", "science"),
 }
 
@@ -484,7 +492,7 @@ def kpi_card(
 def log_line(level: str, text: str, *, tick: int | str | None = None) -> html.Div:
     """Eine Zeile der Konsole, nach Stufe gefärbt.
 
-    Info blau, Warnung gelb, Fehler rot — dieselben Rollen wie in `alert`, nur
+    Info blau, Warnung gelb, Fehler rot — dieselben Rollen wie in `hinweis`, nur
     zeilenweise. `muted` trägt, was nur Kontext ist (Fortschrittszeilen).
     """
 
@@ -506,30 +514,52 @@ def console(lines: Iterable[Any], *, empty: str = "Noch keine Meldungen.") -> ht
     return html.Div(entries, className="af-console")
 
 
-def alert(text: Any, kind: str = "info", *, class_name: str = "") -> html.Div:
-    """Ein Hinweis mit Symbol.
+def hinweis(
+    text: Any, ton: str = "info", *, icon_name: str | None = None, class_name: str = ""
+) -> html.Div:
+    """Ein Hinweis mit Symbol — **der eine** Baustein für Kontext und Meldung (P7.1-U1.4).
 
-    **Ohne Lesemaß seit dem 2026-09-12**, und der Weg dorthin ist eine Lehre
-    über Zusagen. P3.17 hat dem Rumpf ein `af-mass` gegeben, weil der
-    Browser-Wächter hier 98 Zeichen je Zeile gemessen hatte; zugesagt waren 75.
-    Die Zusage selbst ist mit der Rücknahme von E3 gefallen — nachgemessen war
-    der Deckel nicht zu eng, sondern ausgereizt: Um eine 760 px breite Spalte
-    mit höchstens 75 Zeichen zu füllen, müsste Fließtext rund 21 px groß sein.
-    Ein Hinweis füllt jetzt den Rahmen, in dem er steht.
+    Bis zum 2026-09-13 waren das zwei: `note` für erklärenden Text neben einer
+    Entscheidung, `alert` mit fünf Tönen für Meldungen. Welcher gemeint war,
+    entschied der Name des Aufrufs; jetzt entscheidet es der **Ton**
+    (:data:`HINWEIS_TOENE`). **Ein unbekannter Ton scheitert laut** — `alert`
+    fiel still auf «info» zurück, und ein Tippfehler machte aus einer Warnung
+    eine Auskunft.
 
-    **Was von P3.17 bleibt, ist die Stelle:** Breite gehört an die Komponente
-    und nicht an die Aufrufstelle — sonst ist sie eine Frage der Sorgfalt an
-    jedem einzelnen Aufruf, und der nächste vergisst sie.
+    **Das Aussehen ist unverändert:** `kontext` trägt die Gestalt des alten
+    `note`, die übrigen Töne die des alten `alert`. Dass sich Kontext und Info im
+    dunklen Design kaum unterscheiden (Audit vom 2026-09-11), ist damit nicht
+    behoben, sondern an **eine** Stelle gebracht, an der es sich beheben lässt.
+
+    **Ohne Lesemaß seit dem 2026-09-12** (Rücknahme von E3): Ein Hinweis füllt
+    den Rahmen, in dem er steht. Was von P3.17 bleibt, ist die Stelle — Breite
+    gehört an den Baustein und nicht an die Aufrufstelle, sonst ist sie eine
+    Frage der Sorgfalt an jedem einzelnen Aufruf.
+
+    *text* wird als Markdown gesetzt, wenn es eine Zeichenkette ist; ein
+    fertiger Baustein steht, wie er ist.
     """
 
-    tone, icon_name = _ALERT_VARIANTS.get(kind, _ALERT_VARIANTS["info"])
-    body = dcc.Markdown(text, className="af-md") if isinstance(text, str) else text
+    if ton not in HINWEIS_TOENE:
+        raise ValueError(f"Unbekannter Ton {ton!r}; erlaubt sind {tuple(HINWEIS_TOENE)}.")
+    klasse, symbol = HINWEIS_TOENE[ton]
+    symbol = icon_name or symbol
+    if ton == "kontext":
+        rumpf = (
+            dcc.Markdown(text, className="af-md af-md--tight") if isinstance(text, str) else text
+        )
+        return html.Div(
+            [icon(symbol, "text-base af-text-faint shrink-0 mt-0.5"), rumpf],
+            className=f"flex items-start gap-2 font-body {BESCHRIFTUNG} af-text-body "
+            f"af-surface-inset af-bordered rounded px-6 py-3 {class_name}".strip(),
+        )
+    rumpf = dcc.Markdown(text, className="af-md") if isinstance(text, str) else text
     return html.Div(
         [
-            icon(icon_name, "text-lg shrink-0 mt-0.5"),
-            html.Div(body, className=f"font-body {BESCHRIFTUNG} min-w-0"),
+            icon(symbol, "text-lg shrink-0 mt-0.5"),
+            html.Div(rumpf, className=f"font-body {BESCHRIFTUNG} min-w-0"),
         ],
-        className=f"af-alert {tone} flex items-start gap-3 px-6 py-3 {class_name}".strip(),
+        className=f"af-alert {klasse} flex items-start gap-3 px-6 py-3 {class_name}".strip(),
     )
 
 
@@ -625,23 +655,6 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
             markdown(text, class_name="af-md--tight af-text-body pl-6 pb-1"),
         ],
         className="af-acc mt-1",
-    )
-
-
-def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
-    """Erklärender Fließtext ohne Alarmcharakter — Kontext, keine Meldung.
-
-    **Ohne Lesemaß seit dem 2026-09-12** (Rücknahme von E3): Der Text füllt den
-    Rahmen, in dem er steht.
-    """
-
-    return html.Div(
-        [
-            icon(icon_name, "text-base af-text-faint shrink-0 mt-0.5"),
-            dcc.Markdown(text, className="af-md af-md--tight"),
-        ],
-        className=f"flex items-start gap-2 font-body {BESCHRIFTUNG} af-text-body "
-        "af-surface-inset af-bordered rounded px-6 py-3",
     )
 
 

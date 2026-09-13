@@ -140,7 +140,7 @@ def _provenance(metadata: dict) -> html.Div:
 
     if mode in MODES_WITHOUT_ANY_LLM:
         children.append(
-            ui.alert(
+            ui.hinweis(
                 "Dieser Lauf ist ohne Sprachmodell entstanden. Die Zahlen sind vollwertig — "
                 "die Texte der Akteure stammen aus Platzhaltern, nicht aus einem Modell.",
                 "info",
@@ -149,7 +149,7 @@ def _provenance(metadata: dict) -> html.Div:
         )
     elif mode in MODES_WITHOUT_LLM_TICKS:
         children.append(
-            ui.alert(
+            ui.hinweis(
                 "Die Zahlen dieses Laufs sind rein deterministisch entstanden, ohne Agenten-"
                 "Dialog. Ein Sprachmodell war nur am Abschlusstext beteiligt.",
                 "info",
@@ -205,7 +205,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     ticks = load_tick_mechanics(run_dir)
     prices = load_price_series(run_dir)
     if not ticks and not prices:
-        children.append(ui.alert("Keine Zeitreihen-Daten vorhanden.", "info", class_name="mt-6"))
+        children.append(ui.hinweis("Keine Zeitreihen-Daten vorhanden.", "info", class_name="mt-6"))
         return html.Div(children)
 
     charts: list = []

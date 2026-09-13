@@ -78,7 +78,7 @@ def tab_layout(tab: str, draft: dict):
     try:
         return _LAYOUTS.get(tab or DEFAULT_TAB, experiment.layout)(draft)
     except Exception as exc:  # noqa: BLE001 - eine kaputte Config soll den Editor nicht sprengen
-        return ui.alert(f"Editor konnte nicht aufgebaut werden: {exc}", "error")
+        return ui.hinweis(f"Editor konnte nicht aufgebaut werden: {exc}", "fehler")
 
 
 def reset_button() -> html.Div:
@@ -373,12 +373,12 @@ def register_callbacks(app) -> None:
         try:
             data, message, kind = _handle_action(trigger, data, free)
         except Exception as exc:  # noqa: BLE001 - Datei- und Validierungsfehler gehören in die UI
-            fehler = ui.alert(str(exc), "error")
+            fehler = ui.hinweis(str(exc), "fehler")
             return no_update, no_update, fehler, fehler
 
         if message is None:
             return no_update, no_update, no_update, no_update
-        meldung = ui.alert(message, kind)
+        meldung = ui.hinweis(message, kind)
         return data, version, meldung, meldung
 
 
@@ -413,21 +413,25 @@ def _namensvorschlag(draft: dict) -> str:
 
 
 def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | None, str]:
-    """Eine Aktion ausführen und (neuer Draft, Meldung, Meldungsart) zurückgeben."""
+    """Eine Aktion ausführen und (neuer Draft, Meldung, Ton des Hinweises) zurückgeben.
+
+    Der Ton ist einer aus `ui.HINWEIS_TOENE`; `tests/test_web_hinweis.py` liest
+    jede Rückgabe hier und hält sie dagegen.
+    """
 
     kind = trigger.get("type")
 
     if kind == delta.REVERT:
         feld = trigger["feld"]
         data = delta.zuruecknehmen(data, feld)
-        return data, f"«{delta._name(feld)}» auf den Auslieferungswert zurückgesetzt.", "success"
+        return data, f"«{delta._name(feld)}» auf den Auslieferungswert zurückgesetzt.", "erfolg"
 
     if kind == macro.PROP_DELETE:
         prop = trigger["prop"]
         delete_custom_property(prop, data.get("properties_file", "properties.json"))
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))
         data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
-        return data, f"Property «{prop}» gelöscht.", "success"
+        return data, f"Property «{prop}» gelöscht.", "erfolg"
 
     if kind == micro.SEGMENT_DELETE:
         segment = trigger["segment"]
@@ -436,7 +440,7 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         ]
         draft = draft_from_dict(data)
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
-        return data, f"Segment «{segment}» gelöscht.", "success"
+        return data, f"Segment «{segment}» gelöscht.", "erfolg"
 
     # `WRITE` und `ACTION` tragen denselben Schlüssel `action`; welcher Typ eine
     # Aktion trägt, sagt nur, ob eine Rückfrage davorsteht.
@@ -449,32 +453,32 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         # `touched()` meldete danach Einstellungen, die niemand vorgenommen hat.
         # Hier drückt jemand auf einen Knopf — das ist eine Entscheidung.
         data["simulation_name"] = _namensvorschlag(data)
-        return data, f"Name gesetzt: «{data['simulation_name']}»", "success"
+        return data, f"Name gesetzt: «{data['simulation_name']}»", "erfolg"
 
     if action == "reset":
         return (
             draft_to_dict(default_config_draft()),
             "Auf Standard-Config zurückgesetzt.",
-            "success",
+            "erfolg",
         )
 
     if action == "apply-sweep":
         sweeps = list_sweep_presets()
         sweep = next((s for s in sweeps if s.id == data.get("sweep_id")), None)
         if sweep is None:
-            return data, "Kein Szenario-Preset ausgewählt.", "warning"
+            return data, "Kein Szenario-Preset ausgewählt.", "warnung"
         applied = apply_sweep_to_draft(draft_from_dict(data), sweep)
-        return draft_to_dict(applied), f"Parameter von «{sweep.name}» übernommen.", "success"
+        return draft_to_dict(applied), f"Parameter von «{sweep.name}» übernommen.", "erfolg"
 
     if action == "reload-properties":
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))
         data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
-        return data, "Properties neu geladen.", "success"
+        return data, "Properties neu geladen.", "erfolg"
 
     if action == "add-property":
         prop_id = c.free_value(free, "new-prop-id").strip()
         if not prop_id or not prop_id.isidentifier():
-            return data, "Bitte eine gültige Property-ID angeben (Python-Bezeichner).", "warning"
+            return data, "Bitte eine gültige Property-ID angeben (Python-Bezeichner).", "warnung"
         add_custom_property(
             prop_id,
             c.free_value(free, "new-prop-label").strip() or prop_id,
@@ -483,20 +487,20 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         )
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))
         data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
-        return data, f"Property «{prop_id}» angelegt.", "success"
+        return data, f"Property «{prop_id}» angelegt.", "erfolg"
 
     if action == "save-market-feedback":
         draft = draft_from_dict(data)
         save_market_feedback_to_file(draft.market_feedback_edit, draft.properties_file)
-        return data, "Markt-Feedback gespeichert.", "success"
+        return data, "Markt-Feedback gespeichert.", "erfolg"
 
     if action == "add-segment":
         segment_id = c.free_value(free, "new-segment-id").strip()
         if not segment_id or not segment_id.isidentifier():
-            return data, "Bitte eine gültige Segment-ID angeben (Python-Bezeichner).", "warning"
+            return data, "Bitte eine gültige Segment-ID angeben (Python-Bezeichner).", "warnung"
         segments = data.get("population_edits") or []
         if any(item.get("id") == segment_id for item in segments):
-            return data, f"Ein Segment «{segment_id}» existiert bereits.", "warning"
+            return data, f"Ein Segment «{segment_id}» existiert bereits.", "warnung"
         if not segments:
             draft = draft_from_dict(data)
             segments = [
@@ -513,13 +517,13 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         data["population_edits"] = segments
         draft = draft_from_dict(data)
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
-        return data, f"Segment «{segment_id}» angelegt.", "success"
+        return data, f"Segment «{segment_id}» angelegt.", "erfolg"
 
     if action == "save-population":
         draft = draft_from_dict(data)
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
         save_saturation_to_file(draft.saturation_edit, draft.properties_file)
-        return data, "Population und Sättigung gespeichert.", "success"
+        return data, "Population und Sättigung gespeichert.", "erfolg"
 
     if action == "save-preset":
         name = c.free_value(free, "preset-name", "mein_szenario").strip()
@@ -527,6 +531,6 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         draft.simulation_name = name
         path = save_custom_sweep_preset(draft, name)
         data = draft_to_dict(draft)
-        return data, f"Gespeichert: `{path}`", "success"
+        return data, f"Gespeichert: `{path}`", "erfolg"
 
     return data, None, "info"

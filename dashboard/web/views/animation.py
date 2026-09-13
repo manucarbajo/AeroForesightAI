@@ -503,10 +503,10 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     try:
         frame = load_history(run_dir)
     except Exception as exc:  # noqa: BLE001 - defekte History soll die Seite nicht sprengen
-        return ui.alert(f"Fehler beim Lesen der History: {exc}", "error")
+        return ui.hinweis(f"Fehler beim Lesen der History: {exc}", "fehler")
 
     if frame.empty:
-        return ui.alert("History-Datei ist leer.", "warning")
+        return ui.hinweis("History-Datei ist leer.", "warnung")
 
     blocks: list = [
         _block(
@@ -519,7 +519,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     surplus = surplus_frame(frame)
     if surplus is None:
         blocks.append(
-            ui.alert(
+            ui.hinweis(
                 "Der Surplus Pulse braucht die Spalte `erschwinglichkeitsgrenze_eur` und den "
                 "Preisverlauf. Läufe vor dem 11. September 2026 schreiben die Spalte nicht — "
                 "ein neuer Lauf zeigt ihn.",
@@ -542,7 +542,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     bedarf = bedarf_frame(frame)
     if bedarf is None:
         blocks.append(
-            ui.alert(
+            ui.hinweis(
                 "Der Saturation Swarm braucht die Spalte `saturation_level` — dieser Lauf "
                 "schreibt sie nicht.",
                 "info",
@@ -565,7 +565,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     for sicht in MERKMALSICHTEN:
         if sicht.x not in frame.columns or sicht.y not in frame.columns:
             blocks.append(
-                ui.alert(
+                ui.hinweis(
                     f"«{sicht.titel}» braucht die Spalten `{sicht.x}` und `{sicht.y}` — "
                     "dieser Lauf schreibt sie nicht.",
                     "info",
@@ -594,7 +594,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     segments = _segment_frame(frame)
     if segments is None:
         blocks.append(
-            ui.alert(
+            ui.hinweis(
                 "Keine Segmente (Labels) in der Population definiert.", "info", class_name="mb-6"
             )
         )

@@ -95,9 +95,9 @@ def body(run_dir: Path, run_id: str) -> html.Div:
         warnings = scenario.get("grounding_warnings") or []
         if warnings:
             children.append(
-                ui.alert(
+                ui.hinweis(
                     "Grounding-Hinweise: " + "; ".join(str(item) for item in warnings[:5]),
-                    "warning",
+                    "warnung",
                     class_name="mt-4",
                 )
             )
@@ -124,10 +124,10 @@ def body(run_dir: Path, run_id: str) -> html.Div:
         )
     elif not scenario:
         children.append(
-            ui.alert(
+            ui.hinweis(
                 "`run_scenario.md` fehlt in diesem Run. Starten Sie eine neue Simulation "
                 "oder klicken Sie auf «Szenarien neu erzeugen».",
-                "warning",
+                "warnung",
             )
         )
 
@@ -178,5 +178,5 @@ def register_callbacks(app) -> None:
         try:
             regenerate_run_scenario(run_id, run_dir=run_dir, mock_llm=True, deterministic_only=True)
         except Exception as exc:  # noqa: BLE001 - Fehler gehört in die UI, nicht in die Konsole
-            return no_update, ui.alert(f"Szenario-Erzeugung fehlgeschlagen: {exc}", "error")
-        return body(run_dir, run_id), ui.alert("Szenarien aktualisiert.", "success")
+            return no_update, ui.hinweis(f"Szenario-Erzeugung fehlgeschlagen: {exc}", "fehler")
+        return body(run_dir, run_id), ui.hinweis("Szenarien aktualisiert.", "erfolg")

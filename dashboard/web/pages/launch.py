@@ -250,7 +250,7 @@ def _result_message(result) -> html.Div:
     """Die drei Ausgänge eines Laufs: Sweep-Batch, Multi-Run, Einzellauf."""
 
     if result.sweep_batch:
-        children = [ui.alert("Szenario-Vergleich abgeschlossen.", "success")]
+        children = [ui.hinweis("Szenario-Vergleich abgeschlossen.", "erfolg")]
         if result.sweep_summary_path:
             children.append(
                 html.P(
@@ -260,7 +260,7 @@ def _result_message(result) -> html.Div:
             )
         if result.child_run_ids:
             children.append(
-                ui.alert(
+                ui.hinweis(
                     "Einzelne Sweep-Runs oben in der Lauf-Auswahl wählen: "
                     + ", ".join(f"`{run_id}`" for run_id in result.child_run_ids),
                     "info",
@@ -274,10 +274,10 @@ def _result_message(result) -> html.Div:
     if result.multi_run_batch:
         return html.Div(
             [
-                ui.alert(
+                ui.hinweis(
                     f"Multi-Run `{result.batch_id}` — {len(result.child_run_ids)} Läufe, "
                     f"je {result.ticks_completed} Ticks, {result.total_events} Events gesamt.",
-                    "success",
+                    "erfolg",
                 ),
                 html.P(
                     "Einzelne Läufe oben in der Lauf-Auswahl: "
@@ -291,10 +291,10 @@ def _result_message(result) -> html.Div:
 
     return html.Div(
         [
-            ui.alert(
+            ui.hinweis(
                 f"Run `{result.run_id}` — {result.ticks_completed} Ticks, "
                 f"{result.total_events} Events.",
-                "success",
+                "erfolg",
             ),
             html.P(
                 "Die Szene und die Telemetrie zeigen ihn ab jetzt.",
@@ -329,8 +329,10 @@ def register_callbacks(app) -> None:
         if not n_clicks:
             return no_update
         if runner.cancel():
-            return ui.alert("Abbruch angefordert — der Lauf endet nach dem laufenden Tick.", "info")
-        return ui.alert("Es läuft gerade nichts, was sich abbrechen ließe.", "warning")
+            return ui.hinweis(
+                "Abbruch angefordert — der Lauf endet nach dem laufenden Tick.", "info"
+            )
+        return ui.hinweis("Es läuft gerade nichts, was sich abbrechen ließe.", "warnung")
 
     @app.callback(
         Output("run-summary", "children"),
@@ -386,10 +388,10 @@ def register_callbacks(app) -> None:
             return (
                 no_update,
                 no_update,
-                ui.alert(
+                ui.hinweis(
                     "**Lauf nicht gestartet — die Konfiguration hat Fehler:**\n\n"
                     + "\n".join(f"- {error}" for error in config_errors),
-                    "error",
+                    "fehler",
                 ),
                 no_update,
                 False,
@@ -399,7 +401,14 @@ def register_callbacks(app) -> None:
         try:
             job_id = runner.start(draft or {})
         except Exception as exc:  # noqa: BLE001 - «läuft schon» ist ein normaler Fall
-            return no_update, no_update, ui.alert(str(exc), "warning"), no_update, False, no_update
+            return (
+                no_update,
+                no_update,
+                ui.hinweis(str(exc), "warnung"),
+                no_update,
+                False,
+                no_update,
+            )
         # Der Fortschritt wird geleert, nicht stehen gelassen: Sonst zeigte der
         # Ladebildschirm eine Sekunde lang den Stand des vorigen Laufs, bis der
         # Takt ihn ersetzt. Die Zieladresse kommt aus der Bereichsliste und
@@ -407,7 +416,7 @@ def register_callbacks(app) -> None:
         return (
             job_id,
             False,
-            ui.alert("Lauf aktiv …", "info"),
+            ui.hinweis("Lauf aktiv …", "info"),
             None,
             True,
             routing.url(running.leitstand_route()),
@@ -441,7 +450,7 @@ def register_callbacks(app) -> None:
 
         runner.forget(job_id)
         if job.error:
-            return ui.alert(f"Lauf fehlgeschlagen: {job.error}", "error"), True, False, no_update
+            return ui.hinweis(f"Lauf fehlgeschlagen: {job.error}", "fehler"), True, False, no_update
 
         result = job.result
         selected = (

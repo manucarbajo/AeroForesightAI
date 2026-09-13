@@ -95,13 +95,13 @@ def degraded_banner(summary: RunSummary) -> html.Div | None:
 
     count = summary.llm_incident_count
     calls = "ein Aufruf" if count == 1 else f"{count} Aufrufe"
-    return ui.alert(
+    return ui.hinweis(
         f"**Dieser Lauf ist beeinträchtigt.** {calls} an das Sprachmodell blieben "
         "unbeantwortet. Die gerechneten Zahlen sind davon unberührt — Preise, "
         "Buchungsraten und Faktorzustände kommen aus Python. Fehlen können "
         "Beiträge der Akteure und Teile der Deutung. Einzelheiten in "
         "`llm_incidents.json` unter «Dateien».",
-        "warning",
+        "warnung",
         class_name="mb-3",
     )
 
@@ -121,7 +121,7 @@ def _meta(summary: RunSummary) -> html.Div:
                 className=f"{ui.CAPTION} mb-2",
             ),
             degraded_banner(summary),
-            ui.alert(preview, "info"),
+            ui.hinweis(preview, "info"),
         ]
     )
 
@@ -159,7 +159,7 @@ def render_tab(tab: str, selected: dict, messages: dict | None = None, mode: str
     run_dir = Path(selected["run_dir"])
     run_id = selected["run_id"]
     if not run_dir.is_dir():
-        return ui.alert(f"Run-Verzeichnis fehlt: {run_dir}", "error")
+        return ui.hinweis(f"Run-Verzeichnis fehlt: {run_dir}", "fehler")
     try:
         if tab == "explorer":
             history = (messages or {}).get(run_id) or []
@@ -169,7 +169,7 @@ def render_tab(tab: str, selected: dict, messages: dict | None = None, mode: str
             return renderer(run_dir, run_id, mode=mode)
         return renderer(run_dir, run_id)
     except Exception as exc:  # noqa: BLE001 - unvollständige Runs dürfen die Seite nicht killen
-        return ui.alert(f"Ansicht konnte nicht gerendert werden: {exc}", "error")
+        return ui.hinweis(f"Ansicht konnte nicht gerendert werden: {exc}", "fehler")
 
 
 def layout(selection: dict | None = None) -> html.Div:
@@ -253,7 +253,7 @@ def register_callbacks(app) -> None:
         _, by_id = run_options()
         summary = by_id.get(selected.get("run_id"))
         if summary is None:
-            return ui.alert("Run nicht mehr vorhanden.", "warning")
+            return ui.hinweis("Run nicht mehr vorhanden.", "warnung")
         return _meta(summary)
 
     @app.callback(

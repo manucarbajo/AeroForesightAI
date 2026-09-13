@@ -405,11 +405,12 @@ def scenario_details(draft: dict) -> html.Div:
         # Nutzer ihn macht; ihm eine Kohärenzbehauptung unterzuschieben wäre eine
         # Aussage, die niemand getroffen hat.
         return html.Div(
-            ui.note(
+            ui.hinweis(
                 "Für eine eigene Zusammenstellung gibt es **keine hinterlegte "
                 "Begründung** — die Rahmenszenarien tragen je eine, weil jemand sie "
                 "aufgeschrieben und belegt hat. Wer eigene Verläufe nach außen "
-                "zitiert, begründet ihre Stimmigkeit selbst."
+                "zitiert, begründet ihre Stimmigkeit selbst.",
+                "kontext",
             )
         )
     if choice == STANDARD:
@@ -419,16 +420,17 @@ def scenario_details(draft: dict) -> html.Div:
         # Preset-Wahl benutzt.
         return _kohaerenz_block(
             load_properties_config().kohaerenz,
-            vorspann=ui.note(
+            vorspann=ui.hinweis(
                 "Der Lauf rechnet mit den hinterlegten Verläufen des Modells. **Auch das ist "
                 "ein Rahmenszenario** — es trägt eigene Annahmen über Politik, "
-                "Kosten und Konjunktur und heißt nur nicht so."
+                "Kosten und Konjunktur und heißt nur nicht so.",
+                "kontext",
             ),
         )
 
     preset = next((s for s in list_sweep_presets() if s.id == choice), None)
     if preset is None:
-        return html.Div(ui.alert(f"Das Szenario «{choice}» ist nicht hinterlegt.", "warning"))
+        return html.Div(ui.hinweis(f"Das Szenario «{choice}» ist nicht hinterlegt.", "warnung"))
 
     children: list = [
         # **Der volle Beschreibungstext steht hier**, seit die Kachel ihn auf
@@ -436,11 +438,12 @@ def scenario_details(draft: dict) -> html.Div:
         # dort, wo er gebraucht wird: bei dem einen Szenario, das zur Debatte
         # steht, statt zehnmal im Raster.
         html.P(preset.description, className=f"{ui.CAPTION} mb-4"),
-        ui.note(
+        ui.hinweis(
             "Das Szenario gilt **unverändert**: Politik, Kosten und Nachfrageumfeld kommen aus "
             f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
             f"Angelegt ist es auf **{preset.max_ticks} Ticks** — die Länge stellen Sie im "
-            "nächsten Schritt selbst ein."
+            "nächsten Schritt selbst ein.",
+            "kontext",
         ),
     ]
     # **Die Kohärenzbegründung (P2.2, Variante C).** Sie steht offen da und
@@ -451,12 +454,12 @@ def scenario_details(draft: dict) -> html.Div:
         children.append(_kohaerenz_block(preset.kohaerenz))
     elif preset.art != "rahmen":
         children.append(
-            ui.alert(
+            ui.hinweis(
                 "Dies ist ein **Stresstest der Engine**, kein begründetes Weltbild. Die "
                 "Verläufe sind auf Sichtbarkeit und Belastung gebaut, nicht auf "
                 "Plausibilität — die Zahlen taugen zum Prüfen der Mechanik, nicht als "
                 "Aussage über die Zukunft. Ein Szenario-Vergleich lässt ihn deshalb aus.",
-                "warning",
+                "warnung",
             )
         )
 
@@ -704,7 +707,7 @@ def _warnings(draft: dict, errors: list[str]) -> list:
         if am_feld:
             steht = "steht ein Hinweis" if am_feld == 1 else f"stehen {am_feld} Hinweise"
             text += f" Dazu {steht} direkt am betroffenen Feld."
-        warnings.append(ui.alert(text, "error"))
+        warnings.append(ui.hinweis(text, "fehler"))
 
     # Zwei der Hinweise unten gelten nur für einen Lauf: Der Vergleich hat einen
     # vorgegebenen Startwert und wendet eigene Werte ohnehin nicht an. Sie dort
@@ -713,7 +716,7 @@ def _warnings(draft: dict, errors: list[str]) -> list:
 
     if not vergleich and not draft.get("use_seed") and int(draft.get("run_count") or 1) > 1:
         warnings.append(
-            ui.alert(
+            ui.hinweis(
                 "Mehrere Wiederholungen ohne festen Zufallsstartwert: Die Läufe werden sich "
                 "unterscheiden. Das ist gewollt, wenn Sie die Streuung sehen wollen — für "
                 "einen sauberen A/B-Vergleich setzen Sie den Startwert unter «Feinabstimmung».",
@@ -722,10 +725,10 @@ def _warnings(draft: dict, errors: list[str]) -> list:
         )
     if draft.get("no_scenarios"):
         warnings.append(
-            ui.alert(
+            ui.hinweis(
                 "«Keine Szenarien erzeugen» ist aktiv — der Tab «Szenario» bleibt nach dem "
                 "Lauf leer, obwohl er die Hauptansicht ist.",
-                "warning",
+                "warnung",
             )
         )
     if (
@@ -734,10 +737,10 @@ def _warnings(draft: dict, errors: list[str]) -> list:
         and not draft.get("apply_custom_overrides")
     ):
         warnings.append(
-            ui.alert(
+            ui.hinweis(
                 "«Eigene Werte anwenden» ist aus — Änderungen an den Systemgrößen "
                 "wirken in diesem Lauf nicht.",
-                "warning",
+                "warnung",
             )
         )
 
@@ -769,7 +772,7 @@ def _horizont_hinweis(draft: dict) -> list:
     frueheste = luecken[0]
     wie_viele = "Ein Verlauf endet" if len(luecken) == 1 else f"{len(luecken)} Verläufe enden"
     return [
-        ui.alert(
+        ui.hinweis(
             f"{wie_viele} vor dem Ende des Laufs — der früheste ist "
             f"`{frueheste.property_id}` bei Tick {frueheste.letzter_stuetzpunkt}. "
             f"Danach hält er seinen letzten Wert; die letzten "

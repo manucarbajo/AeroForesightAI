@@ -37,7 +37,7 @@ def _table(path: Path, mode: str = theme.LIGHT) -> html.Div:
     except Exception as exc:  # noqa: BLE001 - kaputte CSV soll lesbar bleiben
         return html.Div(
             [
-                ui.alert(f"CSV konnte nicht gelesen werden: {exc}", "warning", class_name="mb-3"),
+                ui.hinweis(f"CSV konnte nicht gelesen werden: {exc}", "warnung", class_name="mb-3"),
                 ui.code_block(read_run_file(path, max_chars=120_000)),
             ]
         )
@@ -99,7 +99,7 @@ def _content(path: Path, kind: str, mode: str = theme.LIGHT) -> html.Div:
     if kind == "png":
         url = run_file_url(path)
         if not url:
-            return ui.alert("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warning")
+            return ui.hinweis("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warnung")
         return html.Div(html.Img(src=url, className="w-full rounded"), className="af-paper")
     return ui.code_block(read_run_file(path), max_height="40rem")
 
@@ -134,7 +134,7 @@ def _view(run_dir: Path, relative_path: str, mode: str = theme.LIGHT):
         None,
     )
     if entry is None:
-        return ui.alert("Datei nicht mehr vorhanden.", "warning"), None
+        return ui.hinweis("Datei nicht mehr vorhanden.", "warnung"), None
     # **Der Pfad im Lauf, nicht der auf der Platte** (P7.0-U0.6): Hier stand
     # `entry.absolute_path`, also etwas wie
     # «F:\AeroForesight\AeroForesightAI\outputs\run_…\cib_matrix.json». Brauchbar
@@ -149,7 +149,7 @@ def _view(run_dir: Path, relative_path: str, mode: str = theme.LIGHT):
         # <details> läge trotzdem vollständig im DOM.
         content = html.Div(
             [
-                ui.alert(
+                ui.hinweis(
                     f"Große Datei ({entry.size_bytes // 1024} KB). Der Inhalt wird erst "
                     "auf Klick geladen.",
                     "info",
@@ -175,7 +175,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
 
     options = _options(run_dir)
     if not options:
-        return ui.alert("Keine Dateien gefunden.", "warning")
+        return ui.hinweis("Keine Dateien gefunden.", "warnung")
 
     first = options[0]["value"]
     content, download = _view(run_dir, first, mode)
@@ -232,5 +232,5 @@ def register_callbacks(app) -> None:
             None,
         )
         if entry is None:
-            return ui.alert("Datei nicht mehr vorhanden.", "warning")
+            return ui.hinweis("Datei nicht mehr vorhanden.", "warnung")
         return _content(entry.absolute_path, entry.kind)
