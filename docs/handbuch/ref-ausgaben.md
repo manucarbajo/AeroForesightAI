@@ -12,6 +12,8 @@ Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 | `scenarios.md` / `.json` | Die CIB-Kandidaten mit ihren Konsistenzwerten. **Sie stammen aus der Einflussmatrix, nicht aus dem Lauf** — es sind die bestbewerteten aller Kombinationen von F1–F7 und fallen deshalb für jeden Lauf gleich aus. Das Szenario-Tripleset *dieses* Laufs steht in `run_scenario.md`. |
 | `protocol.md` / `.json` | Das Gesprächsprotokoll der Akteure |
 
+**Die Überschrift nennt den Lauf beim Namen.** Sie nimmt den Namen, den Sie unter «Lauf & Ablage» vergeben haben; ohne ihn den Rahmen, unter dem der Lauf stand, und erst zuletzt seine Kennung. Läufe eines Szenario-Vergleichs trugen dort bis zum 13. September 2026 ihren Ablageort — «Szenarien zum Lauf sweeps/sweep_transformation_conflict». Ältere Artefakte behalten ihren Titel; er entsteht beim Schreiben.
+
 ### Der Konsistenzwert in `run_scenario.json`
 
 Jedes der drei Szenarien trägt dort drei zusammengehörige Felder:

@@ -6,7 +6,7 @@ from typing import Any
 
 from src.reporting.run_scenario_generator.agent_digest import render_agent_perspectives_markdown
 from src.reporting.run_scenario_generator.candidates import build_explorative_scenarios
-from src.reporting.run_scenario_generator.context import RunScenarioContext
+from src.reporting.run_scenario_generator.context import RunScenarioContext, lauf_name
 from src.reporting.run_scenario_generator.factors import (
     _format_factor_compact,
     _load_factor_catalog,
@@ -22,7 +22,7 @@ def build_run_summary(
 ) -> str:
     """Kurze sachliche Einordnung — ohne Wiederholung des Lauf-Narrativs."""
     metrics = context.summary_metrics
-    sim_name = metrics.get("simulation_name") or context.run_id
+    sim_name = lauf_name(context)
     ticks = metrics.get("ticks_completed") or metrics.get("ticks_max") or "?"
     catalog = _load_factor_catalog()
     end_by_id = factor_profile.get("end_by_id") or {}
@@ -40,8 +40,7 @@ def build_template_scenario(context: RunScenarioContext) -> dict[str, Any]:
     factor_profile = build_factor_profile(context, catalog)
     run_narrative = build_run_narrative(context, factor_profile)
     scenarios = build_explorative_scenarios(context, factor_profile, catalog)
-    metrics = context.summary_metrics
-    sim_name = metrics.get("simulation_name") or context.run_id
+    sim_name = lauf_name(context)
 
     title = f"Szenarien zum Lauf {sim_name}"
     summary = build_run_summary(

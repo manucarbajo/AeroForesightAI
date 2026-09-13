@@ -228,3 +228,31 @@ def _price_trend(metrics: dict[str, Any]) -> str:
 # Präsentationsrang eine Aussage über die Welt — Rang 1 hieß «hoch plausibel»,
 # Rang 3 «niedrig» —, und zwar auch dann, wenn gar kein CIB-Score vorlag. Ohne
 # Score gibt es heute **kein** Band (`candidates._konsistenz_band`).
+
+
+def lauf_name(context: RunScenarioContext) -> str:
+    """Wie ein Lauf in seinen Artefakten heißt — **ein Name, kein Pfad** (P7.2-U2.3).
+
+    Die Überschrift von `run_scenario.md` lautete «Szenarien zum Lauf
+    sweeps/sweep_transformation_conflict»: Sie nahm den eingegebenen Namen und
+    fiel sonst auf die **Kennung** zurück — und die Kennung eines Laufs aus
+    einem Szenario-Vergleich ist sein Ablageort.
+
+    Drei Quellen in dieser Reihenfolge, und jede ist eine Aussage:
+
+    * der **Name**, den jemand dem Lauf gegeben hat;
+    * sonst der **Rahmen**, unter dem er stand (`rahmen.name`, seit P2.0-B im
+      Artefakt) — genau das, was einen Vergleichslauf unterscheidbar macht;
+    * sonst die **Kennung ohne ihren Ordner**: ein Name bleibt sie auch dann.
+    """
+
+    name = (context.summary_metrics or {}).get("simulation_name")
+    if isinstance(name, str) and name.strip():
+        return name.strip()
+
+    rahmen = (context.metadata or {}).get("rahmen") or {}
+    aus_rahmen = rahmen.get("name") if isinstance(rahmen, dict) else None
+    if isinstance(aus_rahmen, str) and aus_rahmen.strip():
+        return aus_rahmen.strip()
+
+    return str(context.run_id).replace("\\", "/").rsplit("/", 1)[-1]

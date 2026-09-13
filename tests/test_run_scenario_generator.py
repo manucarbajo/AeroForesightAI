@@ -415,3 +415,106 @@ class TestDieVorlageKommtVonNebenDemCode:
 
         with pytest.raises(FileNotFoundError):
             prompt_modul.build_scenario_prompt(kontext)
+
+
+# --- Ein Lauf heisst mit Namen (P7.2-U2.3) -----------------------------------
+
+
+def _mit_metadaten(run_dir, metadaten: dict) -> None:
+    """Die Metadaten der Fixture ersetzen — sie setzt sonst immer denselben Namen."""
+
+    (run_dir / "run_metadata.json").write_text(json.dumps(metadaten), encoding="utf-8")
+
+
+class TestEinLaufHeisstMitNamen:
+    """Q6: «Szenarien zum Lauf sweeps/sweep_transformation_conflict».
+
+    Die Überschrift des Artefakts nahm die **Kennung**, wenn kein Name gesetzt
+    war — und die Kennung eines Vergleichslaufs ist sein Ablageort.
+    """
+
+    def _kontext(self, tmp_path, run_id: str, metadaten: dict):
+        from src.reporting.run_scenario_generator.context import load_run_scenario_context
+
+        run_dir = tmp_path / "lauf"
+        _write_scenario_fixture(run_dir, booking_start=0.6, booking_end=0.4)
+        _mit_metadaten(run_dir, {"ticks_completed": 3, "ticks_max": 3, **metadaten})
+        return load_run_scenario_context(run_id, run_dir=run_dir)
+
+    def test_the_given_name_wins(self, tmp_path):
+        from src.reporting.run_scenario_generator.context import lauf_name
+
+        context = self._kontext(
+            tmp_path,
+            "sweeps/sweep_x",
+            {"simulation_name": "Meine Frage", "rahmen": {"name": "Business as Usual"}},
+        )
+
+        assert lauf_name(context) == "Meine Frage"
+
+    def test_without_a_name_the_frame_names_it(self, tmp_path):
+        from src.reporting.run_scenario_generator.context import lauf_name
+
+        context = self._kontext(
+            tmp_path, "sweeps/sweep_x", {"rahmen": {"name": "Transformationskonflikt (B2 vs A1)"}}
+        )
+
+        assert lauf_name(context) == "Transformationskonflikt (B2 vs A1)"
+
+    def test_without_both_the_identifier_loses_its_folder(self, tmp_path):
+        from src.reporting.run_scenario_generator.context import lauf_name
+
+        context = self._kontext(tmp_path, "sweeps/sweep_transformation_conflict", {})
+
+        assert lauf_name(context) == "sweep_transformation_conflict"
+
+    def test_no_artifact_title_shows_a_path(self, tmp_path):
+        """Die Stelle, an der der Befund lag — gemessen am gerenderten Titel."""
+
+        context = self._kontext(
+            tmp_path, "sweeps/sweep_x", {"rahmen": {"name": "Business as Usual (A1+B1)"}}
+        )
+
+        payload = build_template_scenario(context)
+
+        assert payload["title"] == "Szenarien zum Lauf Business as Usual (A1+B1)"
+        assert "/" not in payload["title"]
+        assert "sweeps" not in payload["summary"]
+
+    def test_no_text_of_the_generator_writes_the_identifier(self):
+        """**Gesucht, nicht aufgezählt:** jede Zeichenkette, die `run_id` einsetzt.
+
+        `lauf_name` ist die eine Stelle, die sie noch lesen darf — und auch dort
+        nur als Rückfall, ohne ihren Ordner.
+        """
+
+        import ast
+        from pathlib import Path
+
+        from src.reporting.run_scenario_generator import context as kontext_modul
+
+        wurzel = Path(kontext_modul.__file__).resolve().parent
+        befunde = []
+        for pfad in sorted(wurzel.glob("*.py")):
+            baum = ast.parse(pfad.read_text(encoding="utf-8"))
+            for funktion in ast.walk(baum):
+                if not isinstance(funktion, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    continue
+                if funktion.name == "lauf_name":
+                    continue
+                for knoten in ast.walk(funktion):
+                    if not isinstance(knoten, ast.JoinedStr):
+                        continue
+                    for teil in knoten.values:
+                        if isinstance(teil, ast.FormattedValue) and "run_id" in ast.unparse(
+                            teil.value
+                        ):
+                            befunde.append(f"{pfad.name}:{knoten.lineno} in {funktion.name}")
+
+        assert not befunde, "\n  ".join(
+            [
+                "Diese Texte setzen die Kennung ein statt des Namens:",
+                *befunde,
+                "`lauf_name(context)` liefert den Namen — die Kennung ist ein Ablageort.",
+            ]
+        )
