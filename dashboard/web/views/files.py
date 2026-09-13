@@ -194,9 +194,9 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                         ),
                         class_name="flex-1 min-w-[18rem]",
                     ),
-                    html.Div(download, id="files-download", className="pt-7"),
+                    html.Div(download, id="files-download", className="af-neben-feld"),
                 ],
-                className="flex items-start gap-4 flex-wrap mb-5",
+                className="flex items-start gap-4 flex-wrap mb-4",
             ),
             html.Div(content, id="files-content"),
         ]

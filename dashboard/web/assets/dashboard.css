@@ -231,7 +231,7 @@ html.dark {
 
 .af-schrift-beschriftung {
     font-size: var(--schrift-beschriftung);
-    line-height: 1.45;
+    line-height: var(--zeilenhoehe-beschriftung);
 }
 
 .af-schrift-klein {
@@ -351,6 +351,43 @@ html.dark {
     --einzug: 1.5rem; /* 24 px -- eine Stufe tiefer */
     --kaestchen: 1rem; /* 16 px -- Kaestchen und Optionspunkt */
     --kaestchen-abstand: 0.5rem; /* 8 px -- zwischen Kaestchen und Beschriftung */
+}
+
+/* --- Die Abstaende, Teil B (P7.1-U1.3, entschieden am 2026-09-13) ----------- */
+/* **Jeder Abstand liegt auf der Skala aus E4** -- 4, 8, 12, 16, 24, 32, 48,
+   64 px --, und zwar nach zwei Regeln, die Haiko am 2026-09-13 entschieden hat:
+   Ein Wert zwischen zwei Stufen geht auf die NAECHSTE (22 -> 24), ein
+   Gleichstand wird ABGERUNDET (6 -> 4, 10 -> 8, 14 -> 12, 20 -> 16, 28 -> 24,
+   40 -> 32, 56 -> 48), weil die Oberflaeche dicht ist und die Schritthoehe eine
+   ausdrueckliche Zusage traegt. **Knoepfe weichen ab**: senkrecht 12 px
+   (`py-3`), also rund 44 px hoch -- die uebliche Mindestgroesse einer
+   Trefferflaeche; waagerecht folgen sie der Regel.
+
+   Gemessen standen vorher 47 Deklarationen und 48 Tailwind-Klassen neben der
+   Skala, mit neun verschiedenen Werten ab 4 px.
+
+   **Drei Arten Werte sind keine Abstaende und folgen deshalb nicht der
+   Rundung** -- `tests/test_web_abstaende.py` fuehrt sie je mit Grund:
+   Geometrie, die aus einem anderen Mass folgt (die negative Polsterung von
+   `.af-pane__sticky`, die Hoehe neben einem Feld); Zeichnung und optische
+   Ausrichtung eines Glyphs (der Haken, die Grundlinie des Kaestchens, der
+   Innenabstand von Inline-Code in `em`); und die `-1px`, mit denen eine Linie
+   ueberdeckt oder ein Text fuer Vorlesesoftware beschnitten wird. **Unter 4 px
+   bleibt genau ein Wert erlaubt**, der Haarabstand, und nur ueber sein Token. */
+:root {
+    --haarabstand: 0.125rem; /* 2 px -- zwischen dicht gestapelten Zeilen */
+    --pane-polster: 1rem; /* 16 px -- die Seitenzonen; `.af-pane__sticky` hebt es auf */
+    --zeilenhoehe-beschriftung: 1.45;
+}
+
+/* **Neben einem Feld auf Hoehe der Eingabe.** Ein Knopf oder Kaestchen neben
+   einem beschrifteten Feld steht nicht oben buendig, sondern auf der Hoehe der
+   Eingabe -- also Beschriftung (Schriftgroesse mal Zeilenhoehe) plus ihr
+   Abstand (`mb-1` in `components.LABEL`). Bis zum 2026-09-13 stand dafuer
+   fuenfmal `pt-7` (28 px): gerundet aus 20,3 + 6. Mit dem Beschriftungsabstand
+   von 4 px stimmt keine Rasterstufe mehr -- deshalb gerechnet statt gerundet. */
+.af-neben-feld {
+    padding-top: calc(var(--schrift-beschriftung) * var(--zeilenhoehe-beschriftung) + 0.25rem);
 }
 
 /* --- Dashs eigene Design-Tokens --------------------------------------------- */
@@ -535,7 +572,7 @@ body {
     grid-area: timeline;
     background: var(--surface);
     border-top: 1px solid var(--border);
-    padding: 0.75rem 1.25rem;
+    padding: 0.75rem 1rem;
 }
 
 .af-shell__right {
@@ -558,7 +595,7 @@ body {
 }
 
 .af-pane {
-    padding: 1.25rem;
+    padding: var(--pane-polster);
 }
 
 /* Ein Abschnittskopf, der beim Scrollen in der Seitenleiste stehen bleibt. */
@@ -568,8 +605,8 @@ body {
     z-index: 10;
     background: var(--surface);
     border-bottom: 1px solid var(--border-subtle);
-    padding: 0.75rem 1.25rem;
-    margin: -1.25rem -1.25rem 1rem;
+    padding: 0.75rem var(--pane-polster);
+    margin: calc(-1 * var(--pane-polster)) calc(-1 * var(--pane-polster)) 1rem;
 }
 
 /* --- Das Bedienfeld ------------------------------------------------------- */
@@ -590,7 +627,7 @@ body {
     position: sticky;
     bottom: 0;
     margin-top: auto;
-    padding: 0.875rem 0 0.25rem;
+    padding: 0.75rem 0 0.25rem;
     background: linear-gradient(to bottom, transparent, var(--surface) 35%);
 }
 
@@ -610,7 +647,7 @@ body {
     grid-template-columns: 6.5rem minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.625rem 0.75rem;
+    padding: 0.5rem 0.75rem;
     background: var(--surface);
     transition: background-color 0.15s ease;
 }
@@ -805,7 +842,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.25rem 0.75rem 0.25rem 0.625rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.5rem;
     border: 1px solid var(--border);
     border-radius: 9999px;
     background: var(--surface-inset);
@@ -1150,7 +1187,7 @@ html.dark .af-theme-toggle__to-light {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.125rem 0.5rem;
+    padding: var(--haarabstand) 0.5rem;
     border-radius: 9999px;
     border: 1px solid var(--accent-border);
     background: var(--accent-soft);
@@ -1319,7 +1356,7 @@ html.dark .af-input[type="number"] {
     gap: var(--kaestchen-abstand);
     line-height: 1.5;
     cursor: pointer;
-    padding: 0.3125rem 0;
+    padding: 0.25rem 0;
 }
 
 /* Der Umschalter richtet mittig aus: Seine Bahn ist hoeher als ein Kaestchen
@@ -1332,7 +1369,7 @@ html.dark .af-input[type="number"] {
 
 .af-check label + label,
 .af-radio label + label {
-    margin-top: 0.125rem;
+    margin-top: var(--haarabstand);
 }
 
 .af-check input[type="checkbox"],
@@ -1406,7 +1443,7 @@ html.dark .af-input[type="number"] {
    Ziffern gleicher Breite. */
 .af-choice__meta {
     display: block;
-    margin-top: 0.125rem;
+    margin-top: var(--haarabstand);
     font-family: var(--font-body);
     font-size: var(--schrift-klein);
     font-weight: 600;
@@ -1629,9 +1666,9 @@ html.dark .af-input[type="number"] {
     flex-wrap: wrap;
     /* Abstand ueber gap statt ueber Innenabstand: die Trefferflaeche bleibt
        gross, die Leiste wirkt trotzdem leicht. */
-    gap: 1.75rem;
+    gap: 1.5rem;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 1.75rem;
+    margin-bottom: 1.5rem;
 }
 
 /* dcc.Tabs bringt eigene Stile per styled-jsx mit und spritzt sein <style>
@@ -1708,7 +1745,7 @@ html.dark .af-input[type="number"] {
 
 .af-viewbar__item {
     flex: 0 0 auto;
-    padding: 0.375rem 0.75rem;
+    padding: 0.25rem 0.75rem;
     border-radius: var(--radius);
     border: 1px solid transparent;
     background: transparent;
@@ -1747,8 +1784,8 @@ html.dark .af-input[type="number"] {
     bottom: 1.25rem;
     z-index: 15;
     display: flex;
-    gap: 1.25rem;
-    padding: 0.5rem 0.875rem;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--overlay);
@@ -1766,7 +1803,7 @@ html.dark .af-input[type="number"] {
 }
 
 .af-scene__overlay dd {
-    margin: 0.125rem 0 0;
+    margin: var(--haarabstand) 0 0;
     font-family: var(--font-mono);
     font-size: var(--schrift-klein);
     color: var(--text);
@@ -1776,8 +1813,8 @@ html.dark .af-input[type="number"] {
 .af-factor {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
-    padding: 0.375rem 0.625rem;
+    gap: var(--haarabstand);
+    padding: 0.25rem 0.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
@@ -1811,8 +1848,8 @@ html.dark .af-input[type="number"] {
 .af-kpi {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
-    padding: 0.75rem 0.875rem;
+    gap: var(--haarabstand);
+    padding: 0.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
@@ -1864,7 +1901,7 @@ html.dark .af-input[type="number"] {
 .af-timeline__controls {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.25rem;
     flex: none;
 }
 
@@ -1944,7 +1981,7 @@ html.dark .af-input[type="number"] {
 .af-console__line {
     display: flex;
     gap: 0.5rem;
-    padding: 0.125rem 0.25rem;
+    padding: var(--haarabstand) 0.25rem;
     border-left: 2px solid transparent;
     color: var(--console-text);
     word-break: break-word;
@@ -2040,19 +2077,19 @@ html.dark .af-input[type="number"] {
    Konstruktion genau ein `--einzug`. */
 .af-check__hint {
     margin-left: calc(var(--kaestchen) + var(--kaestchen-abstand));
-    margin-top: 0.125rem;
+    margin-top: var(--haarabstand);
 }
 
 .af-radio + .af-hint {
     margin-left: calc(var(--kaestchen) + var(--kaestchen-abstand));
-    margin-top: 0.125rem;
+    margin-top: var(--haarabstand);
 }
 
 .af-hint {
     font-size: var(--schrift-klein);
     line-height: 1.55;
     color: var(--text-muted);
-    margin-top: 0.375rem;
+    margin-top: 0.25rem;
 }
 
 /* **Der Hinweis schlägt `.af-md`** (P7.1-U1.1, vorgezogen am 2026-09-11).
@@ -2139,7 +2176,7 @@ html.dark .af-input[type="number"] {
     font-weight: 600;
     color: var(--text);
     line-height: 1.3;
-    margin: 1.75rem 0 0.75rem;
+    margin: 1.5rem 0 0.75rem;
 }
 
 .af-md h1 {
@@ -2174,7 +2211,7 @@ html.dark .af-input[type="number"] {
 }
 
 .af-md li {
-    margin-bottom: 0.375rem;
+    margin-bottom: 0.25rem;
 }
 
 .af-md strong {
@@ -2268,7 +2305,7 @@ html.dark .af-input[type="number"] {
 .af-nav__links > a {
     flex: 0 0 auto;
     white-space: nowrap;
-    padding: 0.375rem 0.75rem;
+    padding: 0.25rem 0.75rem;
     border-radius: var(--radius);
     font-family: var(--font-body);
     font-size: var(--schrift-beschriftung);
@@ -2304,7 +2341,7 @@ html.dark .af-input[type="number"] {
 @media (min-width: 1024px) {
     .af-docs {
         grid-template-columns: 16rem minmax(0, 1fr);
-        gap: 3.5rem;
+        gap: 3rem;
     }
 
     .af-docs__nav {
@@ -2334,7 +2371,7 @@ html.dark .af-input[type="number"] {
 
 .af-docs__link {
     display: block;
-    padding: 0.375rem 0 0.375rem 0.75rem;
+    padding: 0.25rem 0 0.25rem 0.75rem;
     margin-left: -1px;
     border-left: 2px solid transparent;
     font-family: var(--font-body);
@@ -2562,7 +2599,7 @@ html.dark .af-input[type="number"] {
     bottom: calc(var(--shell-timeline) + 1rem);
     z-index: 60;
     width: min(20rem, calc(100vw - 2rem));
-    padding: 0.75rem 0.875rem;
+    padding: 0.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface-raised);
@@ -2701,7 +2738,7 @@ html.dark .af-input[type="number"] {
 .af-wizard {
     display: grid;
     grid-template-columns: 15rem minmax(0, 1fr);
-    gap: 2.5rem;
+    gap: 2rem;
     align-items: start;
 }
 
@@ -2761,7 +2798,7 @@ html.dark .af-input[type="number"] {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-top: 2.5rem;
+    margin-top: 2rem;
     padding: 1rem 0;
     border-top: 1px solid var(--border);
     flex-wrap: wrap;
@@ -2801,7 +2838,7 @@ html.dark .af-input[type="number"] {
        Beschreibung die Karte auf, statt umzubrechen. Genau das Muster aus
        Stufe D. */
     min-width: 0;
-    padding: 1.25rem 1.375rem;
+    padding: 1rem 1.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
@@ -2887,15 +2924,15 @@ html.dark .af-input[type="number"] {
 .af-steps {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
+    gap: var(--haarabstand);
 }
 
 .af-step {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: 0.5rem;
     width: 100%;
-    padding: 0.5rem 0.625rem;
+    padding: 0.5rem;
     border: none;
     border-radius: var(--radius);
     background: transparent;
@@ -3078,8 +3115,8 @@ html.dark .af-input[type="number"] {
     font-family: var(--font-body);
     font-size: var(--schrift-klein);
     color: var(--text-muted);
-    margin-top: 0.625rem;
-    padding-left: 0.625rem;
+    margin-top: 0.5rem;
+    padding-left: 0.5rem;
 }
 
 /* --- Schmale Breite: Fortschrittsbalken und einzeilige Fußleiste (P1.9-W5.5)
@@ -3117,7 +3154,7 @@ html.dark .af-input[type="number"] {
         width: auto;
         flex: 1 1 0;
         justify-content: center;
-        padding: 0.375rem 0.25rem;
+        padding: 0.25rem;
         min-width: 2rem;
     }
 
@@ -3180,7 +3217,7 @@ html.dark .af-input[type="number"] {
 
 .af-way--haupt {
     border-color: var(--accent);
-    padding: 1.5rem 1.375rem;
+    padding: 1.5rem;
 }
 
 .af-way--haupt .af-way__title {
@@ -3194,7 +3231,7 @@ html.dark .af-input[type="number"] {
 /* Die zweitrangigen Wege treten zurück -- ohne zu verschwinden: Sie sind
    erreichbar, nur nicht das Naheliegende. */
 .af-way--neben {
-    padding: 1rem 1.375rem;
+    padding: 1rem 1.5rem;
 }
 
 .af-way--neben .af-way__title {
@@ -3228,7 +3265,7 @@ html.dark .af-input[type="number"] {
     left: 0;
     z-index: 100;
     transform: translateY(-120%);
-    padding: 0.625rem 1rem;
+    padding: 0.5rem 1rem;
     background: var(--accent);
     color: var(--text-inverted);
     font-family: var(--font-body);

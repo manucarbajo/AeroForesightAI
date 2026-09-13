@@ -121,7 +121,7 @@ def _block(title: str, caption: str, graph) -> html.Div:
             html.P(caption, className=f"{ui.CAPTION} mt-1 mb-3"),
             ui.card(graph, pad=False, class_name="p-2"),
         ],
-        className="mb-10",
+        className="mb-8",
     )
 
 

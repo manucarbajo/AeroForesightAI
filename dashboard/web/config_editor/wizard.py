@@ -665,7 +665,7 @@ def _final_step(draft: dict) -> html.Div:
             ui.card(
                 # Knopf **neben** dem Feld, nicht darunter: Eine eigene Zeile
                 # kostete 0,07 Bildschirme auf dem einen Schritt, den jeder Weg
-                # passiert. `pt-7` setzt ihn auf die Höhe des Eingabefelds —
+                # passiert. `af-neben-feld` setzt ihn auf die Höhe des Eingabefelds —
                 # dasselbe Muster wie bei «Segment anlegen».
                 html.Div(
                     [
@@ -683,12 +683,12 @@ def _final_step(draft: dict) -> html.Div:
                                 variant="secondary",
                                 icon_name="auto_awesome",
                             ),
-                            className="pt-7",
+                            className="af-neben-feld",
                         ),
                     ],
                     className="flex items-start gap-4 flex-wrap",
                 ),
-                class_name="mb-5",
+                class_name="mb-4",
             ),
             start_flow.preflight(draft, start_flow.errors_for(draft), slot="wizard"),
             # **Was weicht vom Standard ab** (P1.9-W4.2). Der Preflight sagt,

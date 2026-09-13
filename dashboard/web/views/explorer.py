@@ -98,7 +98,7 @@ def _checks_panel(run_dir) -> html.Div:
                     ]
                 ),
             ],
-            className="flex items-start gap-2 py-1.5",
+            className="flex items-start gap-2 py-1",
         )
         for check in checks
     ]
@@ -114,7 +114,7 @@ def render(
                 "Fragen Sie den gesamten Lauf ab — z. B. Verlauf über alle Ticks, Vergleiche "
                 "oder einzelne Perioden. Optional: Tick-Nummer eingeben oder in der Frage "
                 "nennen (z. B. «Was passierte bei Tick 15?»).",
-                className=f"font-body {ui.BESCHRIFTUNG} af-text-body mb-5",
+                className=f"font-body {ui.BESCHRIFTUNG} af-text-body mb-4",
             ),
             ui.card(
                 ui.grid(
@@ -149,9 +149,9 @@ def render(
                     ),
                     cols="md:grid-cols-2",
                 ),
-                class_name="mb-5",
+                class_name="mb-4",
             ),
-            html.Div(id="explorer-panels", className="mb-5"),
+            html.Div(id="explorer-panels", className="mb-4"),
             dcc.Loading(
                 html.Div(_history(messages or []), id="explorer-history"),
                 type="dot",

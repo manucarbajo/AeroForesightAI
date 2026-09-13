@@ -207,7 +207,7 @@ def rail(draft: dict | None = None) -> html.Div:
             dcc.Store(id=RUNNING_STORE, data=laeuft),
             dcc.Interval(id="run-poll", interval=POLL_INTERVAL_MS, disabled=True),
             dcc.Interval(id=HEARTBEAT, interval=HEARTBEAT_INTERVAL_MS),
-            html.Div(summary_rows(draft), id=SUMMARY_HOST, className="mb-5"),
+            html.Div(summary_rows(draft), id=SUMMARY_HOST, className="mb-4"),
             # Der Preflight wird von `_live` nachgefüllt — er haengt an der
             # Konfigurationspruefung, die bei jeder Aenderung einmal laeuft.
             html.Div(

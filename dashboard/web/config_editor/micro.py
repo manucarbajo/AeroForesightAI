@@ -58,7 +58,7 @@ def _market_feedback(draft: dict) -> html.Div:
                 step=0.01,
                 breite="feld",
             ),
-            className="mt-5",
+            className="mt-4",
         ),
         ui.expert(
             ui.grid(
@@ -83,7 +83,7 @@ def _market_feedback(draft: dict) -> html.Div:
             frage="Das Preisverhalten wird als neuer Standard in die "
             "Konfigurationsdatei geschrieben.",
             icon_name="save",
-            class_name="mt-5",
+            class_name="mt-4",
         ),
     )
 
@@ -173,7 +173,7 @@ def _segment_card(index: int, segment: dict) -> html.Div:
                     ],
                     cols="sm:grid-cols-2",
                 ),
-                className="mt-5",
+                className="mt-4",
             ),
             count=1 + len(_MODIFIERS),
             title="Verhalten dieses Segments",
@@ -234,7 +234,7 @@ def _distribution_card(index: int, segment: dict) -> html.Details:
             kind,
             [{"label": name, "value": name} for name in DISTRIBUTIONS],
             key="distribution.kind",
-            class_name="mb-5",
+            class_name="mb-4",
             breite="feld",
         ),
         ui.grid(*shape, *bounds, cols="sm:grid-cols-2 lg:grid-cols-4"),
@@ -270,7 +270,7 @@ def _add_segment_block() -> html.Div:
                     frage="Das neue Segment wird in die Konfigurationsdatei geschrieben.",
                     icon_name="add",
                     variant="primary",
-                    class_name="pt-7",
+                    class_name="af-neben-feld",
                 ),
             ],
             className="flex items-start gap-4 flex-wrap",

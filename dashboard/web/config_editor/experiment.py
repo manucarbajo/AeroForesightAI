@@ -114,7 +114,7 @@ def layout(draft: dict) -> html.Div:
                                     variant="secondary",
                                     icon_name="save",
                                 ),
-                                className="pt-7",
+                                className="af-neben-feld",
                             ),
                         ],
                         className="flex items-start gap-4 flex-wrap",

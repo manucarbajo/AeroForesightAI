@@ -33,7 +33,7 @@ Ansichtsarbeit.
 | **E1** | Schriftrollen | **Sieben Rollen, kleinste 12 px.** 11 px entfällt; 30, 22 und 17 px verschwinden ersatzlos. Die Konsole wird dadurch höher, und die Deckel des Höhenwächters wandern bewusst mit. |
 | **E2** | Textfarbstufen | **Zwei lesbare, eine gedämpfte, eine für Abgeschaltetes.** `--text-muted` wird 1,5 % dunkler (`#64748b` → `#617087`), `--text-faint` verliert seine Rolle als Textfarbe. |
 | **E3** | Lesemaß | ~~38 rem = 608 px, gesetzt am Container.~~ **Am selben Tag zurückgenommen: das Lesemaß fällt ganz** — Fließtext füllt seinen Rahmen. Gedeckelt werden nur Eingaben (`--breite-feld-*`, an der Eingabe statt am Feld) und die Seite (`--breite-inhalt`); `--breite-formular` ist ebenfalls gefallen. Siehe den zweiten und dritten Nachtrag. |
-| **E4** | Abstände | **4-px-Raster mit acht Stufen** (4, 8, 12, 16, 24, 32, 48, 64). Werte unter 4 px bleiben für Rahmen erlaubt, mit Begründung. |
+| **E4** | Abstände | **4-px-Raster mit acht Stufen** (4, 8, 12, 16, 24, 32, 48, 64). Werte unter 4 px bleiben für Rahmen erlaubt, mit Begründung. **Am 2026-09-13 ergänzt:** Gleichstand wird abgerundet, Knöpfe bekommen 44 px — siehe den Nachtrag vom 2026-09-13. |
 | **E5** | Bausteine | **Vollständig, einschließlich des gestalteten Bestätigungsdialogs.** Damit ist **D7 mitentschieden**. |
 | **D3** | Begründungen | **These und zwei Sätze sichtbar, in Fließtextgröße; der Rest hinter einer Klappe «Begründung und Quellen».** Am selben Tag nachentschieden, weil E3 ohne D3 nicht baubar war — siehe den Nachtrag unten. |
 
@@ -197,6 +197,26 @@ Spalte stehen lassen wollte. Dieses Anliegen ist jetzt an der Eingabe gelöst;
 übrig blieb nur der Satz-Deckel. Mit ihm ist `--breite-formular` gefallen, dessen
 einziger Nutzer er war — der zweite Nachtrag hatte das Token noch als bleibend
 genannt. «Lauf & Ablage» ist ohne ihn von 1,22 auf 1,16 Schirme gefallen.
+
+**Nachtrag vom 2026-09-13: Wohin ein Wert zwischen zwei Stufen geht (E4).**
+Die Skala hatte beantwortet, *welche* Abstände es gibt, nicht, wohin einer
+fällt, der genau dazwischen liegt — und das war die Mehrheit: 6, 10, 14, 20, 28
+und 40 px. Zwei Entscheidungen, beide von Haiko:
+
+1. **Ein Gleichstand wird abgerundet** (6 → 4, 10 → 8, 20 → 16, 28 → 24,
+   40 → 32). Abgewogen gegen Aufrunden (luftiger, aber fast jeder Schritt wächst
+   und «Was soll gerechnet werden?» rückt von einem Schirm weg) und gegen eine
+   Regel nach Rolle (innen ab, außen auf — feiner, aber eine Regel mehr, die ein
+   Wächter halten muss). Der Grund: Die Oberfläche ist dicht, und die
+   Schritthöhe trägt eine Zusage.
+2. **Knöpfe weichen ab und bekommen 44 px.** Rund 40 px hoch, wären sie
+   abgerundet 36 px geworden; aufgerundet sind sie so hoch wie die übliche
+   Mindestgröße einer Trefferfläche. Die Ausnahme gilt senkrecht; waagerecht
+   folgen sie der Regel.
+
+Umgesetzt mit U1.3 Teil B: 45 Deklarationen im Stylesheet und 50
+Tailwind-Klassen in 17 Dateien. Werte, die keine Abstände sind, sondern
+Geometrie, folgen der Rundung nicht und stehen mit Grund im Wächter.
 
 **Nachtrag vom selben Tag: eine Lede ist Fließtext.** Sie war zweierlei — die
 eines Schritts stand in der Rolle einer Bildunterschrift (12 px), die eines

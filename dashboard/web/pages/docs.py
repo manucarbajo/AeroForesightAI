@@ -340,7 +340,7 @@ def render(chapter: Chapter) -> html.Div:
         # `id` nur setzen, wenn es eine Überschrift gibt — Dash lehnt `id=None`
         # ab, und der Vorspann eines Kapitels braucht kein Sprungziel.
         extra = {"id": anchor(title)} if title else {}
-        blocks.append(html.Section(children, className="mb-10", **extra))
+        blocks.append(html.Section(children, className="mb-8", **extra))
 
     return html.Div(
         [
@@ -427,7 +427,7 @@ def navigation(active_slug: str, query: str = "") -> html.Div:
                             chapter.title,
                             href=chapter.href,
                             className=(
-                                f"block py-1.5 font-body {ui.BESCHRIFTUNG} border-l-2 pl-3 -ml-px "
+                                f"block py-1 font-body {ui.BESCHRIFTUNG} border-l-2 pl-3 -ml-px "
                                 + (
                                     "af-docs__link af-docs__link--active"
                                     if chapter.slug == active_slug

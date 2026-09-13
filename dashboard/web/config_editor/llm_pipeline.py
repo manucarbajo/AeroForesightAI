@@ -71,7 +71,7 @@ def layout(draft: dict) -> html.Div:
                 ),
                 html.Div(
                     c.check("generate_figures", draft.get("generate_figures")),
-                    className="mt-5",
+                    className="mt-4",
                 ),
                 html.Div(
                     [c.check(name, draft.get(name)) for name in _PIPELINE_SWITCHES],
@@ -79,7 +79,7 @@ def layout(draft: dict) -> html.Div:
                 ),
                 html.Div(
                     c.text("resume_from", draft.get("resume_from"), breite="feld-weit"),
-                    className="mt-5",
+                    className="mt-4",
                 ),
                 count=len(_PIPELINE_SWITCHES) + 3,
                 title="Zwischenstände und Ausgaben",

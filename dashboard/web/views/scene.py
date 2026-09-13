@@ -250,7 +250,7 @@ def render(
                     "richten Sie unter «Einrichten» ein.",
                 ),
             ],
-            className="p-5",
+            className="p-4",
         )
 
     ausschnitt = frame[frame["tick"] == tick]
@@ -272,7 +272,7 @@ def render(
                 className="af-scene af-card p-2",
             ),
         ],
-        className="p-5",
+        className="p-4",
     )
 
 

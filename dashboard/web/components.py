@@ -23,7 +23,7 @@ from dashboard.web import routing
 # --- Klassenbausteine ------------------------------------------------------
 
 CARD = "af-card"
-CARD_PAD = f"{CARD} p-5 sm:p-6"
+CARD_PAD = f"{CARD} p-4 sm:p-6"
 #: Die sechs Rollen der Schriftskala (P7.1-U1.1, entschieden am 2026-09-12).
 #: Größe, Gewicht und Zeilenhöhe stehen in `assets/dashboard.css` als
 #: `.af-schrift-*`; hier stehen nur die Namen. **Vorher kamen die Größen aus
@@ -39,7 +39,7 @@ TEXT = "af-schrift-text"
 BESCHRIFTUNG = "af-schrift-beschriftung"
 KLEIN = "af-schrift-klein"
 
-LABEL = f"block font-body {BESCHRIFTUNG} font-medium af-text-body mb-1.5"
+LABEL = f"block font-body {BESCHRIFTUNG} font-medium af-text-body mb-1"
 #: Der kleine Erklaertext unter einem Feld oder einer Zustandsanzeige.
 #:
 #: **Ohne Deckel seit dem 2026-09-12** (Ruecknahme von E3): Er laeuft so weit
@@ -50,7 +50,7 @@ LABEL = f"block font-body {BESCHRIFTUNG} font-medium af-text-body mb-1.5"
 #: die Fehlermeldung eines fremden Dienstes («Nicht erreichbar: [WinError
 #: 10061] …») — die schreibt niemand kuerzer, und ein Deckel hat sie nicht
 #: gekuerzt, sondern nur umgebrochen.
-HINT = f"font-body {KLEIN} af-text-muted mt-1.5"
+HINT = f"font-body {KLEIN} af-text-muted mt-1"
 CAPTION = f"font-body {KLEIN} af-text-muted"
 #: Der Einleitungssatz eines Schritts oder eines Blocks — **Fliesstext**.
 #:
@@ -68,7 +68,7 @@ H2 = f"font-headline {UEBERSCHRIFT} font-semibold af-text tracking-tight"
 H3 = f"font-headline {ABSCHNITT} font-semibold af-text"
 
 _BUTTON_BASE = (
-    "af-btn inline-flex items-center justify-center gap-2 px-5 py-2.5 font-body "
+    "af-btn inline-flex items-center justify-center gap-2 px-4 py-3 font-body "
     f"{BESCHRIFTUNG} font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 )
 _BUTTON_VARIANTS = {
@@ -224,7 +224,7 @@ def field(
     der Breitenwächter zunächst nur eine Ebene über dem Text nachsah.
 
     Jetzt steckt nur die Eingabe in einem begrenzten Träger; alles darunter
-    füllt den Rahmen. `class_name` bleibt für Abstände (`mb-5`). Ein
+    füllt den Rahmen. `class_name` bleibt für Abstände (`mb-4`). Ein
     unbekannter Wert scheitert laut, statt still keine Breite zu setzen.
     """
 
@@ -255,11 +255,11 @@ def field_errors(messages: list[str]) -> Any:
         [
             html.Div(
                 [icon("error", "text-sm shrink-0 mt-0.5"), html.Span(text)],
-                className="flex items-start gap-1.5",
+                className="flex items-start gap-1",
             )
             for text in messages
         ],
-        className=f"font-body {KLEIN} af-text-negative mt-1.5 space-y-1",
+        className=f"font-body {KLEIN} af-text-negative mt-1 space-y-1",
     )
 
 
@@ -385,7 +385,7 @@ def status_dot(ok: bool, text: str, *, hint: str | None = None) -> html.Div:
     tone = "af-status__dot--ok" if ok else "af-status__dot--off"
     return html.Div(
         [
-            html.Span(className=f"af-status__dot mt-1.5 {tone}"),
+            html.Span(className=f"af-status__dot mt-1 {tone}"),
             html.Div(
                 [
                     html.Span(text, className=f"font-body {BESCHRIFTUNG} af-text-body"),
@@ -393,7 +393,7 @@ def status_dot(ok: bool, text: str, *, hint: str | None = None) -> html.Div:
                 ]
             ),
         ],
-        className="flex items-start gap-2.5",
+        className="flex items-start gap-2",
     )
 
 
@@ -592,7 +592,7 @@ def expert(
             ),
             html.Div(list(children), className="pt-3 pb-1 pl-6"),
         ],
-        className="af-acc af-expert af-border-t af-border-subtle mt-5",
+        className="af-acc af-expert af-border-t af-border-subtle mt-4",
     )
 
 
@@ -624,7 +624,7 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
             ),
             markdown(text, class_name="af-md--tight af-text-body pl-6 pb-1"),
         ],
-        className="af-acc mt-1.5",
+        className="af-acc mt-1",
     )
 
 
@@ -640,7 +640,7 @@ def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
             icon(icon_name, "text-base af-text-faint shrink-0 mt-0.5"),
             dcc.Markdown(text, className="af-md af-md--tight"),
         ],
-        className=f"flex items-start gap-2.5 font-body {BESCHRIFTUNG} af-text-body "
+        className=f"flex items-start gap-2 font-body {BESCHRIFTUNG} af-text-body "
         "af-surface-inset af-bordered rounded px-6 py-3",
     )
 

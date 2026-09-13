@@ -523,7 +523,10 @@ DECKEL: dict[int, dict[str, float]] = {
         # (1024: 2,17 → 1,92), in drei Stufen: D3 legte die Begründung hinter
         # eine Klappe (−0,10), U1.2 gab dem Block eine Breite statt sechs
         # (−0,06), und die Rücknahme von E3 nahm den Deckel ganz (−0,08).
-        "Schritt 1": 1.85,
+        # **1,85 → 1,83 am 2026-09-13** mit U1.3 Teil B: Die Abstände liegen
+        # auf der Skala, ein Gleichstand ist abgerundet — die Knöpfe sind dafür
+        # um 4 px höher geworden, der Saldo bleibt ein Gewinn.
+        "Schritt 1": 1.83,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
@@ -533,7 +536,8 @@ DECKEL: dict[int, dict[str, float]] = {
         # 1,23 -> 1,22 mit der Ruecknahme von E3; 1,22 -> 1,16 noch am selben
         # Tag, als der Rumpf-Deckel `af-body--lesen` (480 px) fiel -- er hatte
         # gemessen Prosa gedeckelt, und ohne ihn laeuft der Text breiter.
-        "Schritt 4": 1.16,
+        # 1,16 -> 1,15 mit U1.3 Teil B (Abstaende auf der Skala, 2026-09-13).
+        "Schritt 4": 1.15,
         "Schritt 5": 1.00,  # 1,02 -> 1,00: der Schritt passt jetzt auf einen Schirm
         # **1,29 → 1,45 mit W5.4, und das ist bezahlt, nicht verrutscht.** Das
         # Lesemaß bricht den Preflight-Text bei 75 statt bei 124 Zeichen um;
@@ -564,7 +568,8 @@ DECKEL: dict[int, dict[str, float]] = {
         # Fließtext der Schrittfolge. W5.4 hatte ihn von 124 auf 75 Zeichen
         # umgebrochen und dafür 0,16 Schirme bezahlt; ohne Deckel läuft er
         # wieder weit und holt 0,12 davon zurück.
-        "Schritt 6": 1.59,
+        # **1,59 → 1,57 am 2026-09-13** mit U1.3 Teil B, wie bei Schritt 1.
+        "Schritt 6": 1.57,
     },
     1024: {
         "Einstieg": 1.00,
@@ -591,14 +596,15 @@ DECKEL: dict[int, dict[str, float]] = {
         # Zeilen. Das ist der Preis der Entscheidung und keine Verschlechterung
         # der Oberfläche — er gehört trotzdem hierher, weil ein Deckel den
         # Ist-Stand hält und nicht die Absicht.
-        "Schritt 1": 1.92,
+        # 1,92 → 1,90 mit U1.3 Teil B (2026-09-13), siehe 1280.
+        "Schritt 1": 1.90,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
-        "Schritt 4": 1.16,  # siehe 1280
-        "Schritt 5": 1.01,
-        "Schritt 6": 1.59,  # siehe die Begründung bei 1280
+        "Schritt 4": 1.15,  # siehe 1280
+        "Schritt 5": 1.00,  # 1,01 -> 1,00 mit U1.3 Teil B: passt auf einen Schirm
+        "Schritt 6": 1.57,  # siehe die Begründung bei 1280
     },
 }
 

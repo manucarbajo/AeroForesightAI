@@ -479,7 +479,7 @@ def scenario_details(draft: dict) -> html.Div:
                     className=f"{ui.CAPTION} mt-2",
                 ),
             ],
-            className="mt-5",
+            className="mt-4",
         )
     )
     return html.Div(children)
@@ -866,7 +866,7 @@ def scenario_step(draft: dict, number: int | None = 1) -> object:
                 cards=True,
                 legend="Was soll gerechnet werden? Die Annahmenwelt des Laufs.",
             ),
-            html.Div(scenario_details(draft), id=slot_id("scenario"), className="mt-5"),
+            html.Div(scenario_details(draft), id=slot_id("scenario"), className="mt-4"),
             # **Der Schalter stand bis P2.0-C im Schritt «Ausgangslage».** Mit
             # dem Wegfall der Faktorlage hat er dort nichts mehr zu steuern; was
             # bleibt, sind die Systemgrößen aus dem Modell-Editor. Er gehört
@@ -917,7 +917,7 @@ def scope_step(draft: dict, number: int | None = 2) -> object:
                     ),
                     html.Div(
                         c.check("run_all_sweeps", bool(draft.get("run_all_sweeps")), detail=True),
-                        className="pt-7",
+                        className="af-neben-feld",
                     ),
                     cols="md:grid-cols-2",
                 ),
@@ -945,7 +945,7 @@ def mode_step(draft: dict, number: int | None = 3) -> object:
             ),
             html.Div(
                 compute_mode.placeholder("start"),
-                className="mt-5 pt-4 af-border-t af-border-subtle",
+                className="mt-4 pt-4 af-border-t af-border-subtle",
             ),
             ui.expert(
                 ui.grid(

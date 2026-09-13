@@ -166,7 +166,7 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
 
     body: list = []
     if effect_text:
-        body.append(html.Div(ui.note(effect_text), className="mb-5"))
+        body.append(html.Div(ui.note(effect_text), className="mb-4"))
     body.append(c.check(f"property_edits.{prop_id}.is_active", is_active, key="property.is_active"))
 
     if is_active:
@@ -179,7 +179,7 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
                     step=0.0001,
                     breite="feld",
                 ),
-                className="mt-5",
+                className="mt-4",
             )
         )
         rule_param = glossary.get("property.rules")

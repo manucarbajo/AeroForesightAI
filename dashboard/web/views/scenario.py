@@ -150,7 +150,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                         icon_name="refresh",
                     ),
                 ],
-                className="flex items-center justify-between gap-4 flex-wrap mb-5",
+                className="flex items-center justify-between gap-4 flex-wrap mb-4",
             ),
             html.Div(id="scenario-status"),
             dcc.Loading(

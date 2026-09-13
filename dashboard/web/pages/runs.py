@@ -197,7 +197,7 @@ def layout(selection: dict | None = None) -> html.Div:
             viewbar(DEFAULT_TAB),
             html.Div(
                 [
-                    html.Div(_meta(summary) if summary else None, id="runs-meta", className="mb-5"),
+                    html.Div(_meta(summary) if summary else None, id="runs-meta", className="mb-4"),
                     # **Der Wirt liegt in einer Ladeanzeige** (P7.0-U0.5).
                     # Ohne sie stand beim Wechsel der Ansicht bis zu acht
                     # Sekunden der Inhalt der *vorigen* unter dem bereits

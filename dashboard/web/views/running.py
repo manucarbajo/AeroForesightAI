@@ -179,7 +179,7 @@ def render(progress: Progress, draft: dict) -> html.Div:
                 ),
                 html.P(progress.line or "…", className=f"{ui.CAPTION} mt-3 font-mono truncate"),
             ),
-            html.Div(_what(draft), className="mt-5"),
+            html.Div(_what(draft), className="mt-4"),
             # **Abbrechen** (P1.9-W4.5). Bis dahin lief ein Lauf bis zum Ende
             # oder bis der Prozess starb: Wer versehentlich 500 Ticks mit
             # Sprachmodell startete, konnte nur warten oder den Server neu
@@ -226,7 +226,7 @@ def render(progress: Progress, draft: dict) -> html.Div:
                 className="mt-6",
             ),
         ],
-        className="af-pane p-5",
+        className="af-pane p-4",
     )
 
 
@@ -296,8 +296,8 @@ def finished_link() -> html.Div:
         dcc.Link(
             [ui.icon("arrow_forward", "text-sm"), "Ergebnisse ansehen"],
             href=routing.url(ziel),
-            className="af-btn af-btn--primary inline-flex items-center gap-1.5 "
-            f"px-3 py-1.5 font-body {ui.KLEIN} font-medium",
+            className="af-btn af-btn--primary inline-flex items-center gap-1 "
+            f"px-3 py-1 font-body {ui.KLEIN} font-medium",
         ),
         className="mt-3",
     )

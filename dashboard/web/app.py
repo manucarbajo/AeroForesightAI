@@ -228,7 +228,7 @@ def scene_block(
     if data.is_demo:
         from dashboard.web import demo_run
 
-        children.append(html.Div(ui.alert(demo_run.notice(), "demo"), className="px-5 pt-5"))
+        children.append(html.Div(ui.alert(demo_run.notice(), "demo"), className="px-4 pt-4"))
     children.append(scene.render(data, tick, mode=mode, zoom_index=zoom))
     return html.Div(children)
 
