@@ -132,9 +132,9 @@ def _what(draft: dict) -> html.Div:
     # `prose=True`, weil hier **Text** steht und keine Zahl: Im Zahlensatz
     # sprengten «Standard-Ausgangslage» und «Ohne Sprachmodell» ihre Karten.
     return ui.grid(
-        ui.metric_tile("Szenario", _scenario_name(draft), prose=True),
-        ui.metric_tile("Umfang", _length(draft), prose=True),
-        ui.metric_tile("Rechenmodus", compute_mode.short_label(draft), prose=True),
+        ui.kachel("Szenario", _scenario_name(draft), variante="text"),
+        ui.kachel("Umfang", _length(draft), variante="text"),
+        ui.kachel("Rechenmodus", compute_mode.short_label(draft), variante="text"),
         cols="sm:grid-cols-3",
         gap="gap-3",
     )

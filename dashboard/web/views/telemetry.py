@@ -89,31 +89,35 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
     preis_delta, preis_richtung = _delta(row.get("market_price_delta_eur"), suffix=" €")
 
     return ui.grid(
-        ui.kpi_card(
+        ui.kachel(
             "Buchungsrate",
             "—" if rate is None else f"{rate:.1%}",
+            variante="kompakt",
             delta=raten_delta,
             direction=raten_richtung,
             hint=None if row.get("booked") is None else f"{row['booked']} Buchungen",
         ),
-        ui.kpi_card(
+        ui.kachel(
             "Ticketpreis",
             "—" if preis is None else f"{preis:.2f} €",
+            variante="kompakt",
             delta=preis_delta,
             direction=preis_richtung,
         ),
-        ui.kpi_card(
+        ui.kachel(
             "Kostendruck",
             "—" if kosten is None else f"{kosten:.2f} €",
+            variante="kompakt",
             hint=(
                 None
                 if row.get("carbon_tax_level") is None
                 else f"CO₂-Abgabe {float(row['carbon_tax_level']):.0f} €/t"
             ),
         ),
-        ui.kpi_card(
+        ui.kachel(
             "Nachfrageniveau",
             "—" if nachfrage is None else f"{nachfrage:.2f}",
+            variante="kompakt",
             hint=None if row.get("population") is None else f"{row['population']} Personen",
         ),
         # Einspaltig: In einer rund 20 rem breiten Zone blieben je Karte 146 px,

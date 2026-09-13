@@ -126,14 +126,14 @@ def _provenance(metadata: dict) -> html.Div:
     rahmen_label = str(rahmen.get("name") or "") or "nicht festgehalten"
 
     tiles = [
-        ui.metric_tile(
+        ui.kachel(
             "Rahmenszenario",
             rahmen_label,
             hint="Die Außenwelt, aus der die Zahlen entstanden sind",
         ),
-        ui.metric_tile("Rechenmodus", mode_label),
-        ui.metric_tile("Seed", seed_label, hint="Gleicher Seed, gleiche Ziehung"),
-        ui.metric_tile("Codestand", code_label),
+        ui.kachel("Rechenmodus", mode_label),
+        ui.kachel("Seed", seed_label, hint="Gleicher Seed, gleiche Ziehung"),
+        ui.kachel("Codestand", code_label),
     ]
 
     children: list = [html.Div(ui.grid(*tiles, cols="sm:grid-cols-2"), className="mt-4")]
@@ -180,13 +180,13 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     if metadata:
         children.append(
             ui.grid(
-                ui.metric_tile(
+                ui.kachel(
                     "Ticks",
                     f"{metadata.get('ticks_completed', '?')} / {metadata.get('ticks_max', '?')}",
                 ),
-                ui.metric_tile("Events", metadata.get("total_events", "?")),
-                ui.metric_tile("Modell", _model_label(metadata)),
-                ui.metric_tile("Markt", "an" if metadata.get("market_enabled", True) else "aus"),
+                ui.kachel("Events", metadata.get("total_events", "?")),
+                ui.kachel("Modell", _model_label(metadata)),
+                ui.kachel("Markt", "an" if metadata.get("market_enabled", True) else "aus"),
                 cols="sm:grid-cols-2 lg:grid-cols-4",
             )
         )

@@ -527,28 +527,28 @@ def _vergleich_tiles() -> list:
     laenge = f"{laengen[0]} Ticks" if len(laengen) == 1 else f"{min(laengen)}–{max(laengen)} Ticks"
 
     return [
-        ui.metric_tile("Rahmenszenarien", len(rahmen)),
-        ui.metric_tile(
+        ui.kachel("Rahmenszenarien", len(rahmen)),
+        ui.kachel(
             "Länge",
             laenge,
             hint=(
                 "Je Szenario so, wie es angelegt ist — nicht die Länge aus "
                 f"«{schritttitel('umfang')}»."
             ),
-            prose=True,
+            variante="text",
         ),
-        ui.metric_tile(
+        ui.kachel(
             "Rechenmodus",
             "Nur Zahlen",
             hint="Vom Vergleich vorgegeben, damit die Szenarien vergleichbar bleiben.",
-            prose=True,
+            variante="text",
         ),
-        ui.metric_tile(
+        ui.kachel(
             "Zufallsstartwert",
             f"{SWEEP_SEED} (vorgegeben)",
             hint="Für alle Szenarien derselbe — sonst zeigte ein Unterschied die "
             "Ziehung statt des Szenarios.",
-            prose=True,
+            variante="text",
         ),
     ]
 
@@ -599,12 +599,12 @@ def _tiles(draft: dict) -> list:
     ]
 
     return [
-        ui.metric_tile("Länge", f"{draft.get('rounds', '?')} Ticks"),
-        ui.metric_tile(
+        ui.kachel("Länge", f"{draft.get('rounds', '?')} Ticks"),
+        ui.kachel(
             "Wiederholungen",
             "alle Szenarien" if draft.get("run_all_sweeps") else draft.get("run_count", 1),
         ),
-        ui.metric_tile(
+        ui.kachel(
             "Ziel-Auslastung",
             (
                 f"{float(feedback.get('target_booking_rate', 0.37)):.0%}"
@@ -612,9 +612,9 @@ def _tiles(draft: dict) -> list:
                 else "Preis fix"
             ),
         ),
-        ui.metric_tile("Segmente", len(segments)),
-        ui.metric_tile("Aktive Systemgrößen", len(active_properties)),
-        ui.metric_tile(
+        ui.kachel("Segmente", len(segments)),
+        ui.kachel("Aktive Systemgrößen", len(active_properties)),
+        ui.kachel(
             "Zufallsstartwert",
             draft.get("seed", "—") if draft.get("use_seed") else f"{DEFAULT_SEED} (Standard)",
             hint="Ohne eigenen Startwert rechnet der Lauf mit dem Standardwert.",

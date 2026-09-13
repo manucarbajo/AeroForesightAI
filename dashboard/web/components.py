@@ -430,25 +430,72 @@ def badge(text: str, *, variant: str = "default", icon_name: str | None = None) 
     return html.Span(children, className=f"af-badge{suffix}")
 
 
-def metric_tile(
-    label: str, value: Any, hint: str | None = None, *, prose: bool = False
-) -> html.Div:
-    """Beschriftung über einem Wert, in einer Karte.
+#: Die Varianten der Kachel (P7.1-U1.4, Entscheidung E5): eine **Zahl** im
+#: großen Satz, ein **Text** im kleineren, und **kompakt** für die Telemetrie,
+#: dort mit einer Veränderung daneben.
+KACHEL_VARIANTEN = ("zahl", "text", "kompakt")
 
-    *prose* ist die Fassung für Werte, die **Text** sind statt einer Zahl —
-    «Standard-Ausgangslage», «Ohne Sprachmodell». Der große Zahlensatz (2xl,
+
+def kachel(
+    label: str,
+    value: Any,
+    hint: str | None = None,
+    *,
+    variante: str = "zahl",
+    delta: str | None = None,
+    direction: str | None = None,
+) -> html.Div:
+    """Beschriftung über einem Wert — **eine** Kachel in drei Varianten (P7.1-U1.4).
+
+    Bis zum 2026-09-13 waren das zwei Bausteine: `metric_tile` (mit einem
+    Schalter `prose` für Text) und `kpi_card` für die Telemetrie. Welche
+    Gestalt eine Kennzahl bekam, hing daran, welcher Baustein an der Stelle
+    gerade importiert wurde. Jetzt ist es eine Variante aus
+    :data:`KACHEL_VARIANTEN`, und ein unbekannter Name scheitert laut.
+
+    **`text` ist die Fassung für Werte, die Text sind statt einer Zahl** —
+    «Standard-Ausgangslage», «Ohne Sprachmodell». Der große Zahlensatz (Titel,
     fett, Ziffern gleicher Breite) ist für sie zu groß: In einer dreispaltigen
     Reihe trat er aus der Karte heraus und lief in die Nachbarkachel. Die
     Textfassung setzt kleiner, erlaubt den Umbruch **innerhalb** eines Wortes
     und schaltet die Ziffernbreite ab, die bei Buchstaben nur Lücken erzeugt.
-
     `af-tile__value` deckelt in beiden Fällen den Überlauf — eine Karte, aus der
     Text heraussteht, ist keine Karte.
+
+    **`kompakt` trägt als einzige eine Veränderung** (*delta*, *direction*).
+    *direction* ist `up`, `down` oder `None` und färbt nur die Veränderung,
+    nicht den Wert: Ob ein steigender Preis gut oder schlecht ist, entscheidet
+    die Fragestellung, nicht die Oberfläche. An einer anderen Variante scheitert
+    eine Veränderung laut, statt still zu verschwinden.
+
+    **Das Aussehen ist unverändert**; die drei Varianten tragen die Gestalt der
+    Bausteine, aus denen sie entstanden sind.
     """
+
+    if variante not in KACHEL_VARIANTEN:
+        raise ValueError(
+            f"Unbekannte Kachel-Variante {variante!r}; erlaubt sind {KACHEL_VARIANTEN}."
+        )
+    if variante != "kompakt" and (delta is not None or direction is not None):
+        raise ValueError(
+            "Eine Veränderung (`delta`, `direction`) trägt nur die Variante «kompakt»."
+        )
+
+    if variante == "kompakt":
+        tone = f" af-kpi__delta--{direction}" if direction in {"up", "down"} else ""
+        return html.Div(
+            [
+                html.Div(label, className="af-kpi__label"),
+                html.Div(str(value), className="af-kpi__value"),
+                html.Div(delta, className=f"af-kpi__delta{tone}") if delta else None,
+                html.Div(hint, className="af-kpi__hint") if hint else None,
+            ],
+            className="af-kpi",
+        )
 
     wert = (
         f"font-headline {ABSCHNITT} font-semibold af-text-accent mt-1 af-tile__value"
-        if prose
+        if variante == "text"
         else f"font-headline {TITEL} font-bold af-text-accent mt-1 "
         "tracking-tight af-num af-tile__value"
     )
@@ -459,33 +506,6 @@ def metric_tile(
             html.Div(hint, className=f"{CAPTION} mt-1") if hint else None,
         ],
         className=f"{CARD} p-4 min-w-0",
-    )
-
-
-def kpi_card(
-    label: str,
-    value: Any,
-    *,
-    delta: str | None = None,
-    direction: str | None = None,
-    hint: str | None = None,
-) -> html.Div:
-    """Kennzahl der Telemetrie — kompakter als `metric_tile`, mit Veränderung.
-
-    *direction* ist `up`, `down` oder `None`. Es färbt nur die Veränderung,
-    nicht den Wert: Ob ein steigender Preis gut oder schlecht ist, entscheidet
-    die Fragestellung, nicht die Oberfläche.
-    """
-
-    tone = f" af-kpi__delta--{direction}" if direction in {"up", "down"} else ""
-    return html.Div(
-        [
-            html.Div(label, className="af-kpi__label"),
-            html.Div(str(value), className="af-kpi__value"),
-            html.Div(delta, className=f"af-kpi__delta{tone}") if delta else None,
-            html.Div(hint, className="af-kpi__hint") if hint else None,
-        ],
-        className="af-kpi",
     )
 
 

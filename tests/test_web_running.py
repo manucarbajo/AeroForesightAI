@@ -148,7 +148,7 @@ class TestDerLaufBekommtDenBildschirm:
     def test_the_loading_screen_names_what_is_computed(self):
         """Ohne das wäre es ein Balken ohne Gegenstand.
 
-        Ohne Rücksicht auf Groß- und Kleinschreibung: `ui.metric_tile` setzt
+        Ohne Rücksicht auf Groß- und Kleinschreibung: `ui.kachel` setzt
         seine Beschriftung in Versalien, und das ist eine Gestaltungsfrage —
         ein Test, der sie festnagelt, bräche beim nächsten Feinschliff.
         """
