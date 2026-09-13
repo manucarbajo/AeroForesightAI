@@ -126,7 +126,9 @@ jobs:
       # `--with-deps` oben, startete Chromium nicht, und ohne diesen Schritt
       # wüsste es niemand.
       #
-      # Geprüft wird deshalb die **Zahl**: Am 2026-09-06 liefen 118 Zusagen. Die
+      # Geprüft wird deshalb die **Zahl**: Am 2026-09-06 liefen 118 Zusagen, seit
+      # dem 2026-09-13 sind es 103 — Breitenunabhängiges läuft einmal statt je
+      # Breite, die Klickdauer nur nachts. Die
       # Untergrenze liegt bewusst darunter, damit ein einzelner neuer Test die
       # Schwelle nicht sprengt — aber weit über null, denn genau null ist der
       # Fall, den es zu erkennen gilt.
@@ -137,7 +139,7 @@ jobs:
           import sys
           import xml.etree.ElementTree as ET
 
-          MINDESTENS = 100
+          MINDESTENS = 90
 
           wurzel = ET.parse("browser-guard.xml").getroot()
           suite = wurzel if wurzel.tag == "testsuite" else wurzel.find("testsuite")
@@ -153,6 +155,16 @@ jobs:
                   "seiner Systembibliotheken. Ein gruener Job waere hier eine Luege."
               )
           PY
+
+      # **Die Klickdauer läuft nachts und von Hand, nicht bei jedem Pull Request**
+      # (2026-09-13). Sie ist eine Leistungsmessung, streut je Schritt um rund
+      # 150 ms und prüft keine Darstellung — im Lauf je Änderung war sie der
+      # einzige rote Test, ohne dass die Änderung sie berührt hätte (P7.11). Der
+      # Test überspringt sich ohne `-m leistung`; hier wird er ausdrücklich gewählt.
+      - name: Leistung (Klickdauer)
+        if: always() && github.event_name != 'pull_request'
+        run: |
+          pytest tests/test_web_overflow.py -q -ra --strict-markers -p no:randomly -m leistung
 
       # Erst wenn der Wächter durch ist, sagen wir, was er gemessen hat: Die
       # Deckel in `DECKEL` und die Klickdauern sind auf **Windows** erhoben

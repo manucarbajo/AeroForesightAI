@@ -108,3 +108,21 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Die Teile des Browser-Wächters (`tests/test_web_overflow.py`), einzeln wählbar:
+# `pytest tests/test_web_overflow.py -m hoehe` läuft nur, was die Schritthöhe
+# misst, und zahlt nur den einen Gang durch die Schrittfolge. `leistung` ist die
+# Ausnahme: Die Klickdauer läuft nur, wenn sie ausdrücklich gewählt ist.
+markers = [
+    "ueberlauf: Browser-Wächter — nichts tritt aus seinem Kasten, die Seite schiebt nicht",
+    "hoehe: Browser-Wächter — wie viele Bildschirme ein Schritt hoch ist (DECKEL)",
+    "breite: Browser-Wächter — Spaltenfüllung und Prosabreite",
+    "kanten: Browser-Wächter — jede Textspalte auf dem Einzugsraster",
+    "schmal: Browser-Wächter — Fußleiste und Schrittliste bei 375 px",
+    "klassen: Browser-Wächter — jede benutzte Klasse hat eine Regel",
+    "netz: Browser-Wächter — kein Aufruf verlässt den eigenen Server",
+    "symbole: Browser-Wächter — jedes gezeichnete Symbol steckt im Teilsatz",
+    "legende: Browser-Wächter — Titel, Achsen und Legende überlappen nicht",
+    "rundlaeufe: Browser-Wächter — Server-Aufrufe je Klick in der Schrittfolge",
+    "modellbereich: Browser-Wächter — der Modell-Bereich wird aus- und eingehängt",
+    "leistung: Leistungsmessung (Klickdauer, P7.11) — läuft nur mit -m leistung",
+]
