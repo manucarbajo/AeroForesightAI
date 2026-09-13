@@ -154,6 +154,7 @@ def layout(draft: dict) -> html.Div:
                 ),
                 _raw_data(draft),
                 count=3,
+                einheit=("Ansicht", "Ansichten"),
                 title="Rohdaten ansehen",
                 names="Effektive Konfiguration, simulation_config.json, properties.json",
             ),

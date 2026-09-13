@@ -675,6 +675,7 @@ def herkunft(draft: dict) -> object:
             className="af-delta",
         ),
         count=len(zeilen),
+        einheit=("Angabe", "Angaben"),
         title="Woran dieser Lauf später wiederzuerkennen ist",
         names="Codestand, Fingerabdruck der Konfiguration",
     )

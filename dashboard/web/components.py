@@ -617,15 +617,26 @@ def expert(
     count: int | None = None,
     title: str = "Feinabstimmung",
     names: str | None = None,
+    einheit: tuple[str, str] = ("Parameter", "Parameter"),
 ) -> html.Details:
     """Aufklappbarer Block für Parameter, die selten angefasst werden.
 
     Bewusst schlichter als `accordion`: keine Karte, kleinere Schrift. Der
     Block soll erkennbar zweitrangig sein — die Standardwerte tragen einen
     sinnvollen Lauf, wer hier aufklappt, weiß in der Regel warum.
+
+    **Die Zahl nennt, was sie zählt** (P7.1-U1.4, E5 Punkt 4). Bis zum
+    2026-09-13 hing der Baustein an jede Zahl das Wort «Parameter» — auch an
+    «Rohdaten ansehen», eine Klappe mit drei Vorschauen und keiner einzigen
+    Eingabe. Wer etwas anderes zählt, sagt es mit *einheit* (Einzahl, Mehrzahl).
+    **«N Parameter» heißt N Eingaben**, und `tests/test_web_klappen.py` misst das
+    im gerenderten Baum.
     """
 
-    heading = title if count is None else f"{title} ({count} Parameter)"
+    if count is None:
+        heading = title
+    else:
+        heading = f"{title} ({count} {einheit[0] if count == 1 else einheit[1]})"
     return html.Details(
         [
             html.Summary(

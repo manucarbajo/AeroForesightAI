@@ -163,6 +163,7 @@ def layout(draft: dict) -> object:
     return ui.expert(
         html.Div([_zeile(a) for a in abweichungen], className="af-delta"),
         count=len(abweichungen),
+        einheit=("Abweichung", "Abweichungen"),
         title="Was von der Auslieferung abweicht",
         names=", ".join(a.was for a in abweichungen[:4]) + (" …" if len(abweichungen) > 4 else ""),
     )
