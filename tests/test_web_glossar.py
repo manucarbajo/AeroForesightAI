@@ -47,6 +47,10 @@ VARIANTEN = {
     r"\bWTP\b": "Zahlungsbereitschaft",
     r"\bScatter": "Streudiagramm",
     r"\bHistory\b": "Personenverlauf",
+    # Geld heißt «€» (U2.6, von Haiko entschieden am 2026-09-13). Der
+    # Einheitsschlüssel `EUR` in `configs/` ist ein Datenwert und steht in
+    # Backticks, wo das Handbuch ihn nennt.
+    r"\bEUR\b": "€",
 }
 
 #: (Ort ohne Zeile, Ausschnitt des Textes) → Grund. Eine Variante, die hier
@@ -160,6 +164,38 @@ class TestDieOberflaecheSprichtIhrGlossar:
         befunde = _befunde([(f"probe:{z}", t) for z, t in _texte(quelle)])
 
         assert [b.split(":")[1] for b in befunde] == ["2", "3", "3", "6", "7", "7"], befunde
+
+
+class TestNamenUndEinheitenAusDemKatalog:
+    """U2.6: Die Namen und Einheiten der Systemgrößen kommen aus `config_catalog`.
+
+    Dieser Wächter liest sonst nur `dashboard/web/` — die Achsentitel der
+    Diagramme und die Felder des Modell-Bereichs nehmen ihre Beschriftung aber
+    aus `PROPERTY_LABELS` und `EINHEITEN`. **Geprüft werden die angezeigten
+    Werte, nicht die Schlüssel:** `"EUR"` als Schlüssel ist die Einheit, die in
+    `configs/properties.json` steht.
+    """
+
+    def test_every_label_and_unit_speaks_the_glossary(self):
+        from dashboard import config_catalog
+
+        texte = [(f"PROPERTY_LABELS[{k!r}]", v) for k, v in config_catalog.PROPERTY_LABELS.items()]
+        texte += [
+            (f"EINHEITEN[{k!r}]", text)
+            for k, (kurz, lang) in config_catalog.EINHEITEN.items()
+            for text in (kurz, lang)
+        ]
+
+        befunde = _befunde(texte)
+
+        assert not befunde, "\n  ".join(["Namen und Einheiten im Katalog:", *befunde])
+
+    def test_the_catalog_really_names_money(self):
+        """Gegen die eigene Blindheit: Mindestens ein Name trägt eine Geldeinheit."""
+
+        from dashboard import config_catalog
+
+        assert any("€" in name for name in config_catalog.PROPERTY_LABELS.values())
 
 
 class TestDasHandbuchSprichtDasselbeGlossar:

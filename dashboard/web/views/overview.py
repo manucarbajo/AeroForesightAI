@@ -235,7 +235,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                     price_x,
                     price_y,
                     title="Ticketpreis",
-                    y_title="Preis (EUR)",
+                    y_title="Preis (€)",
                     color=tone["price"],
                     mode=mode,
                 ),

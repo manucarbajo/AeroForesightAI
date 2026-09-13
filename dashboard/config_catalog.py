@@ -62,7 +62,7 @@ STANDARD_PROPERTY_IDS: tuple[str, ...] = (
 #: die Liste gar nicht benutzte. `tests/test_web_diagrammnamen.py` hält jede
 #: Größe aus `configs/properties.json` gegen diese Liste.
 PROPERTY_LABELS: dict[str, str] = {
-    "carbon_tax_level": "CO₂-Steuer (EUR/t)",
+    "carbon_tax_level": "CO₂-Steuer (€/t)",
     "saf_mandate_share": "SAF-Mandat (0–1)",
     "demand_growth_rate": "Nachfragewachstum / Tick",
     "income_index": "Einkommensindex",
@@ -70,27 +70,27 @@ PROPERTY_LABELS: dict[str, str] = {
     "fuel_price_change": "Treibstoff-Trend / Tick",
     "efuel_subsidy": "E-Fuel-Subvention",
     "bevoelkerungsentwicklung": "Bevölkerung (Personen)",
-    "provider_markup": "Anbieter-Marge (EUR)",
-    "ticket_price": "Ticketpreis (EUR)",
+    "provider_markup": "Anbieter-Marge (€)",
+    "ticket_price": "Ticketpreis (€)",
     "kapazitaet_index": "Kapazitätsindex",
     "altersmittel_jahre": "Altersmittel (Jahre)",
     "erneuerungsrate": "Erneuerungsrate / Tick",
     "maintenance_cost_index": "Wartungskostenindex",
     "staff_cost_index": "Personalkostenindex",
-    "airport_fee": "Flughafengebühr (EUR)",
+    "airport_fee": "Flughafengebühr (€)",
 }
 
 #: Einheiten aus `properties.json` — (kurz für Achsentitel, lang für Tabellen).
 #: Bis zum 2026-09-13 lebte eine zweite, halbe Fassung im Handbuch
 #: (`docs_reference.UNIT_LABELS`), und sie sprach noch von «Runde» statt Tick.
 EINHEITEN: dict[str, tuple[str, str]] = {
-    "eur_per_tonne": ("EUR/t", "EUR je Tonne"),
+    "eur_per_tonne": ("€/t", "€ je Tonne"),
     "fraction": ("0–1", "Anteil (0–1)"),
     "fraction_per_tick": ("Anteil je Tick", "Anteil je Tick"),
     "share_per_tick": ("Anteil je Tick", "Anteil je Tick"),
     "index": ("Index", "Index (1.0 = Basis)"),
-    "eur": ("EUR", "EUR"),
-    "EUR": ("EUR", "EUR"),
+    "eur": ("€", "Euro"),
+    "EUR": ("€", "Euro"),
     "persons": ("Personen", "Personen"),
     "years": ("Jahre", "Jahre"),
     "%": ("%", "Prozent"),

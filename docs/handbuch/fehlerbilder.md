@@ -52,7 +52,7 @@ Zweitens: Der Modus steht auf «Szenario-Preset». Dann rechnet der Lauf mit den
 Werten des Presets, nicht mit Ihren.
 
 Drittens: Die Größe wirkt erst ab einer Schwelle. Die CO₂-Abgabe etwa geht erst
-oberhalb von 50 EUR je Tonne in die Kaufentscheidung ein.
+oberhalb von 50 € je Tonne in die Kaufentscheidung ein.
 
 Viertens: Der Lauf war zu kurz. Rückkopplungen brauchen Ticks; bei fünf Ticks
 ist oft noch nichts zu sehen.

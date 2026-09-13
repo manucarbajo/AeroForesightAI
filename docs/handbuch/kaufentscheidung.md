@@ -21,7 +21,7 @@ gemindert.
 | Was mindert | Wodurch |
 |---|---|
 | Preis | Preisempfindlichkeit der Person, multipliziert mit dem Ticketpreis **im Verhältnis zu ihrem Einkommen** |
-| CO₂-Abgabe | Umweltbewusstsein, multipliziert mit dem Teil der Abgabe, der über dem Referenzwert von 50 EUR je Tonne liegt |
+| CO₂-Abgabe | Umweltbewusstsein, multipliziert mit dem Teil der Abgabe, der über dem Referenzwert von 50 € je Tonne liegt |
 | Bahn als Alternative | Wechselbereitschaft der Person, multipliziert mit dem Preis, mit anderthalbfachem Gewicht |
 | Sättigung | Wie viel diese Person zuletzt schon geflogen ist |
 
@@ -79,6 +79,6 @@ mit hoher Zahlungsbereitschaft lange unbeeindruckt bleiben. Die aggregierte
 Buchungsrate verdeckt das; in der Ansicht **Diagramme** unter «Segmente & Alter» wird es
 sichtbar.
 
-Ebenso wirkt eine CO₂-Abgabe erst oberhalb von 50 EUR je Tonne überhaupt auf die
+Ebenso wirkt eine CO₂-Abgabe erst oberhalb von 50 € je Tonne überhaupt auf die
 Entscheidung ein. Wer den Wert von 30 auf 45 anhebt und keine Reaktion sieht, hat
 nichts falsch gemacht — der Referenzwert war schlicht noch nicht überschritten.

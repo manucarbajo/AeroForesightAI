@@ -86,7 +86,7 @@ PARAMS: dict[str, Param] = {
     "base_price": Param(
         label="Startpreis eines Tickets",
         short="Preis im ersten Tick.",
-        unit="EUR",
+        unit="€",
         technical="price_model.base_price",
         detail="Setzt den Maßstab für den gesamten Preisverlauf, bevor Kosten und "
         "Marktreaktion darauf wirken.",

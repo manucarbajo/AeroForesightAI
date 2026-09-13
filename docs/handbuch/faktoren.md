@@ -1,5 +1,5 @@
 Sieben Faktoren beschreiben die Welt, in der ein Lauf stattfindet. Sie sind die
-grobe Ebene über den konkreten Zahlen: Nicht «CO₂-Abgabe 120 EUR», sondern
+grobe Ebene über den konkreten Zahlen: Nicht «CO₂-Abgabe 120 €», sondern
 «radikale Dekarbonisierung» oder «moderater Klimaschutz».
 
 Die vollständige Liste mit beiden Zuständen je Faktor steht unter

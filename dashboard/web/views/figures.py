@@ -226,7 +226,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
         go.Scatter(
             x=ticks["tick"],
             y=price,
-            name="Ticketpreis (EUR)",
+            name="Ticketpreis (€)",
             line=dict(color=theme.PRICE, width=2.5),
         ),
         secondary_y=False,
@@ -240,7 +240,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
         ),
         secondary_y=True,
     )
-    fig.update_yaxes(title_text="Ticketpreis (EUR)", secondary_y=False)
+    fig.update_yaxes(title_text="Ticketpreis (€)", secondary_y=False)
     fig.update_yaxes(title_text="Buchungsrate (0–1)", range=[0, 1.05], secondary_y=True)
     fig.update_xaxes(title_text="Tick")
     # Der Titel bleibt kurz, **auch mit Band**: Die Zahl der Läufe steht in der
@@ -303,7 +303,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
                         mode=mode,
                         barmode="stack",
                         title="Woraus der Preis sich zusammensetzt",
-                        yaxis_title="Betrag (EUR)",
+                        yaxis_title="Betrag (€)",
                     ),
                     mode=mode,
                 ),
@@ -569,7 +569,7 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
     blocks: list = [html.H3("Die Szenarien nebeneinander", className=f"{ui.H3} mb-3")]
     for spalte, titel, achse in (
         ("booking_rate", "Buchungsrate je Szenario", "Buchungsrate (0–1)"),
-        ("market_price_after_feedback_eur", "Ticketpreis je Szenario", "Ticketpreis (EUR)"),
+        ("market_price_after_feedback_eur", "Ticketpreis je Szenario", "Ticketpreis (€)"),
     ):
         fig = _vergleichskurven(geschwister, spalte, titel, achse, mode)
         if fig is not None:

@@ -209,7 +209,7 @@ def _kacheln() -> html.Section:
                     "kachel",
                     ui.kachel(
                         "Ticketpreis",
-                        "118,85 EUR",
+                        "118,85 €",
                         variante="kompakt",
                         delta=delta,
                         direction=richtung,

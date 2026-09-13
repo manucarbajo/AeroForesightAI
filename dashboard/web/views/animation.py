@@ -209,9 +209,9 @@ def _surplus_figure(frame, mode: str = theme.LIGHT):
         hover_data=hover,
         title="Wer sich den Flug leisten kann",
         labels={
-            "erschwinglichkeitsgrenze_eur": "Höchster bezahlbarer Preis (EUR)",
-            "spielraum_eur": "Spielraum bis zur Grenze (EUR)",
-            "ticket_price": "Ticketpreis (EUR)",
+            "erschwinglichkeitsgrenze_eur": "Höchster bezahlbarer Preis (€)",
+            "spielraum_eur": "Spielraum bis zur Grenze (€)",
+            "ticket_price": "Ticketpreis (€)",
             "tick": "Tick",
         },
         color_discrete_map={"True": tone["positive"], "False": tone["negative"]},

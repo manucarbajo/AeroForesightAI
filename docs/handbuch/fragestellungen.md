@@ -4,7 +4,7 @@ Bedienschritte kombinieren lassen.
 ## Was passiert bei einer hohen CO₂-Abgabe?
 
 Gehen Sie in **Rahmenbedingungen** und öffnen Sie die Systemgröße
-«CO₂-Steuer (EUR/t)». Setzen Sie eine Regel: ab Tick 5, Art «fährt hoch auf den
+«CO₂-Steuer (€/t)». Setzen Sie eine Regel: ab Tick 5, Art «fährt hoch auf den
 Wert», Zielwert 200, über zehn Ticks. Ein Sprung wäre unrealistisch, ein
 Hochfahren bildet eine angekündigte Verschärfung ab.
 
@@ -14,7 +14,7 @@ Ticks, damit die Rückkopplung Zeit hat zu wirken.
 
 Im Ergebnis schauen Sie zuerst in **Übersicht** auf Preis und Buchungsrate, dann
 in **Diagramme** unter «Segmente & Alter», welche Gruppen zuerst aussteigen. Wichtig
-zu wissen: Die Abgabe wirkt auf die Kaufentscheidung erst oberhalb von 50 EUR je
+zu wissen: Die Abgabe wirkt auf die Kaufentscheidung erst oberhalb von 50 € je
 Tonne, siehe [Wie eine Buchung entsteht](/doku/kaufentscheidung).
 
 ## Wie stark hängt das Ergebnis an der Airline-Strategie?
