@@ -264,14 +264,11 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
         blocks.insert(
             1,
             ui.hinweis(
-                f"Die Linien zeigen **diesen einen** Lauf. Die getönten Flächen zeigen, "
-                f"wo **80 Prozent der {int(baender['laeufe'])} Wiederholungen** dieses "
-                "Szenarios lagen — zwischen dem 10. und dem 90. Perzentil je Tick. "
-                "**Nicht Minimum und Maximum:** Deren Ränder wandern mit jeder weiteren "
-                "Wiederholung nach außen, ein solches Band sähe bei fünfzig Läufen "
-                "breiter aus als bei zehn, ohne dass sich am Modell etwas geändert "
-                f"hätte. Das Band reicht so weit wie der kürzeste Lauf (Tick "
-                f"{int(baender.get('ticks') or 0)}).",
+                f"Die Linien zeigen **diesen einen** Lauf. Die Flächen zeigen, wo "
+                f"**80 Prozent der {int(baender['laeufe'])} Wiederholungen** lagen — das "
+                "10. bis 90. Perzentil je Tick, **nicht Minimum und Maximum**: deren "
+                "Ränder wandern mit jeder Wiederholung. Das Band endet bei Tick "
+                f"{int(baender.get('ticks') or 0)}, beim kürzesten Lauf.",
                 "kontext",
             ),
         )

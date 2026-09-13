@@ -554,8 +554,7 @@ def _vergleich_tiles() -> list:
         ui.kachel(
             "Zufallsstartwert",
             f"{SWEEP_SEED} (vorgegeben)",
-            hint="Für alle Szenarien derselbe — sonst zeigte ein Unterschied die "
-            "Ziehung statt des Szenarios.",
+            hint="Für alle Szenarien derselbe — sonst zeigt ein Unterschied die Ziehung.",
             variante="text",
         ),
     ]

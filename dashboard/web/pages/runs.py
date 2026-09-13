@@ -97,9 +97,8 @@ def degraded_banner(summary: RunSummary) -> html.Div | None:
     calls = "ein Aufruf" if count == 1 else f"{count} Aufrufe"
     return ui.hinweis(
         f"**Dieser Lauf ist beeinträchtigt.** {calls} an das Sprachmodell blieben "
-        "unbeantwortet. Die gerechneten Zahlen sind davon unberührt — Preise, "
-        "Buchungsraten und Faktorzustände kommen aus Python. Fehlen können "
-        "Beiträge der Akteure und Teile der Deutung. Einzelheiten in "
+        "unbeantwortet. Die Zahlen sind unberührt — sie kommen aus Python. Fehlen "
+        "können Beiträge der Akteure und Teile der Deutung; Einzelheiten in "
         "`llm_incidents.json` unter «Dateien».",
         "warnung",
         class_name="mb-3",
