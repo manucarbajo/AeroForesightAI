@@ -711,3 +711,98 @@ class TestMerkmalsSichten:
         gerendert = _text(animation.render(history_run, "run_minimal"))
 
         assert "`income_factor`" in gerendert
+
+
+# --- Hashes hinter einer Klappe (P7.2-U2.3) -----------------------------------
+
+from dash import html  # noqa: E402
+
+
+def _text_ohne_klappen(knoten) -> str:
+    """Sichtbarer Text, aber ohne alles, was in einer `html.Details` steckt.
+
+    `_text` oben ist `str(...)` und zeigt den **ganzen** Baum — mit ihm wäre die
+    Zusage «steht hinter einer Klappe» nicht messbar, weil der Inhalt der Klappe
+    in der Zeichenkette ebenso auftaucht wie alles andere.
+    """
+
+    if knoten is None or isinstance(knoten, html.Details):
+        return ""
+    if isinstance(knoten, str):
+        return knoten
+    if isinstance(knoten, (list, tuple)):
+        return " ".join(_text_ohne_klappen(k) for k in knoten)
+    return _text_ohne_klappen(getattr(knoten, "children", None))
+
+
+def _text_der_klappen(knoten) -> str:
+    """Nur das, was in einer `html.Details` steht — Zusammenfassung eingeschlossen."""
+
+    if knoten is None or isinstance(knoten, str):
+        return ""
+    if isinstance(knoten, (list, tuple)):
+        return " ".join(_text_der_klappen(k) for k in knoten)
+    if isinstance(knoten, html.Details):
+        return _text(knoten)
+    return _text_der_klappen(getattr(knoten, "children", None))
+
+
+def _uebersicht_mit_herkunft(tmp_path):
+    from dashboard.web.views import overview
+
+    (tmp_path / "run_metadata.json").write_text(
+        json.dumps(
+            {
+                "ticks_completed": 3,
+                "ticks_max": 3,
+                "compute_mode": "mock_llm",
+                "seed": 42,
+                "code_version": {"commit": "abcdef1234567890", "dirty": True},
+                "config_fingerprint": {"properties": "0f1e2d", "agents": "9a8b7c"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    return overview.render(tmp_path, "run_probe")
+
+
+class TestTechnischeDetails:
+    """Q6: Codestand und Konfigurations-Fingerabdruck standen offen in der Übersicht.
+
+    Beides sind Hashes. Sie beantworten «ist das derselbe Lauf wie damals» und
+    keine Frage, die man beim Lesen der Ergebnisse stellt — **weg dürfen sie
+    trotzdem nicht**: Ein Lauf ohne nachvollziehbare Herkunft ist genau der
+    Befund, den P0.6 abgeräumt hat.
+    """
+
+    def test_the_hashes_stand_behind_a_disclosure(self, tmp_path):
+        gerendert = _uebersicht_mit_herkunft(tmp_path)
+
+        offen = _text_ohne_klappen(gerendert)
+        verborgen = _text_der_klappen(gerendert)
+
+        assert "Technische Details" in verborgen
+        assert "0f1e2d" in verborgen, "Der Fingerabdruck steht nicht in der Klappe"
+        assert "abcdef12" in verborgen, "Der Codestand steht nicht in der Klappe"
+        assert "0f1e2d" not in offen, "Der Fingerabdruck steht weiterhin offen"
+        assert "abcdef12" not in offen, "Der Codestand steht weiterhin offen"
+
+    def test_the_overview_still_answers_its_own_questions(self, tmp_path):
+        """Rahmen, Rechenmodus und Seed bleiben offen — sie sind die Lesehilfe."""
+
+        offen = _text_ohne_klappen(_uebersicht_mit_herkunft(tmp_path)).lower()
+
+        # Die Kachel setzt ihre Beschriftung in Grossbuchstaben — geprueft wird,
+        # was dasteht, nicht wie es gesetzt ist.
+        assert "rechenmodus" in offen
+        assert "seed" in offen
+        assert "42" in offen
+
+    def test_the_measurement_separates_inside_from_outside(self, tmp_path):
+        """Gegen die eigene Blindheit: Die beiden Texte sind wirklich verschieden."""
+
+        probe = html.Div(["draussen", html.Details([html.Summary("Titel"), "drinnen"])])
+
+        assert "drinnen" not in _text_ohne_klappen(probe)
+        assert "draussen" in _text_ohne_klappen(probe)
+        assert "drinnen" in _text_der_klappen(probe)

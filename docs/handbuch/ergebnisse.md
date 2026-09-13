@@ -48,9 +48,12 @@ aber über den ganzen Lauf statt zu einem Tick. Die Kacheln nennen erreichte und
 die Zahl der Ereignisse, das verwendete Modell und ob das Marktmodell aktiv war.
 
 Darunter steht, **woraus der Lauf entstanden ist**: das Rahmenszenario, der
-Rechenmodus, der Zufallsstartwert und der Codestand.
+Rechenmodus und der Zufallsstartwert. Codestand und der Fingerabdruck der
+gelesenen Konfigurationsdateien stehen hinter «Technische Details» — sie
+beantworten, ob zwei Läufe vergleichbar sind, und nicht, was herausgekommen
+ist.
 
-Das **Rahmenszenario** ist dabei die wichtigste der vier Angaben — es ist die
+Das **Rahmenszenario** ist dabei die wichtigste der drei Angaben — es ist die
 Außenwelt, aus der alle Zahlen des Laufs entstanden sind. Es steht seit August
 2026 dort; davor ließ sich einem fertigen Lauf nicht ansehen, unter welchen
 Annahmen er gerechnet hatte. Läufe von davor zeigen «nicht festgehalten».

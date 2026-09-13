@@ -96,8 +96,9 @@ beantwortete genau die Frage nicht mehr, für die er da ist. Ein Lauf, den Sie
 aus einem Checkpoint fortsetzen, behält den Fingerabdruck des ursprünglichen
 Laufs: Er setzt dieselbe Konfiguration fort.
 
-Im Dashboard zeigt der Ansicht **Übersicht** Rechenmodus, Seed und Codestand direkt
-unter den Kennzahlen. Ein Lauf ohne Sprachmodell trägt dort einen Hinweis: Die
+Im Dashboard zeigt die Ansicht **Übersicht** Rechenmodus und Seed direkt unter
+den Kennzahlen; Codestand und Fingerabdruck stehen dort hinter «Technische
+Details». Ein Lauf ohne Sprachmodell trägt dort einen Hinweis: Die
 Zahlen sind vollwertig, die Texte der Akteure stammen aus Platzhaltern.
 
 Ältere Läufe kennen diese Felder nicht. Dann steht in der Oberfläche «nicht

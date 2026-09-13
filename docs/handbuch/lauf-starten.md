@@ -144,7 +144,9 @@ rein rechnerisch; betroffen ist nur der Text am Ende.
 
 Jeder Lauf schreibt mit, unter welchen Bedingungen er entstanden ist: Seed,
 Rechenmodus und Codestand. Sie finden das nach dem Lauf unter **Ergebnisse** in
-der Ansicht **Übersicht**, direkt unter den Kennzahlen.
+der Ansicht **Übersicht**: Rechenmodus und Startwert direkt unter den
+Kennzahlen, Codestand und Fingerabdruck hinter «Technische Details» — so wie im
+Prüfschritt vor dem Start.
 
 **Vor dem Start steht dasselbe im Prüfschritt.** Startwert und Rechenmodus als
 Kacheln, dazu aufklappbar «Woran dieser Lauf später wiederzuerkennen ist»:

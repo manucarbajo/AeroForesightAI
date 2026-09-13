@@ -133,7 +133,6 @@ def _provenance(metadata: dict) -> html.Div:
         ),
         ui.kachel("Rechenmodus", mode_label),
         ui.kachel("Seed", seed_label, hint="Gleicher Seed, gleiche Ziehung"),
-        ui.kachel("Codestand", code_label),
     ]
 
     children: list = [html.Div(ui.grid(*tiles, cols="sm:grid-cols-2"), className="mt-4")]
@@ -157,17 +156,31 @@ def _provenance(metadata: dict) -> html.Div:
             )
         )
 
+    # **Codestand und Fingerabdruck stehen hinter einer Klappe** (P7.2-U2.3).
+    # Beides sind Hashes: Sie beantworten «ist das derselbe Lauf wie damals»
+    # und keine Frage, die man beim Lesen der Ergebnisse stellt. Weg sind sie
+    # damit nicht — ein Lauf ohne nachvollziehbare Herkunft wäre der Befund,
+    # den P0.6 abgeräumt hat.
     fingerprint = metadata.get("config_fingerprint") or {}
+    angaben = [html.P(["Codestand: ", html.Code(code_label)], className=ui.CAPTION)]
     if fingerprint:
         parts = ", ".join(
             f"{name}: {value}" for name, value in sorted(fingerprint.items()) if value
         )
-        children.append(
+        angaben.append(
             html.P(
                 f"Konfigurations-Fingerabdruck — {parts}",
-                className=f"{ui.CAPTION} mt-3 break-all",
+                className=f"{ui.CAPTION} break-all",
             )
         )
+    children.append(
+        ui.expert(
+            *angaben,
+            count=len(angaben),
+            title="Technische Details",
+            einheit=("Angabe", "Angaben"),
+        )
+    )
 
     return html.Div(children)
 
