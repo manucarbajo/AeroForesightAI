@@ -31,15 +31,6 @@ from src.validation import collect_state_errors, field_of, issue
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-CONFIG_FILE_OPTIONS: dict[str, str] = {
-    "simulation_config.json": "Simulation (Name, Clock, LLM-Defaults)",
-    "properties.json": "System-Properties & Marktregeln",
-    "agents.json": "Agenten (Provider, Regulator, Consumer)",
-    "agent_profiles.json": "Agent-Profile (observes, depends_on)",
-    "factors.json": "Faktor-Landschaft F1–F7",
-    "cib_frozen.json": "Fixe CIB-Matrix",
-}
-
 STANDARD_PROPERTY_IDS: tuple[str, ...] = (
     "carbon_tax_level",
     "saf_mandate_share",

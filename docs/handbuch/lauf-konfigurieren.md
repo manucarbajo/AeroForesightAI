@@ -321,9 +321,9 @@ nur eintragen, ohne zu speichern, rechnet kein Lauf mit.
 ### Lauf & Ablage
 
 Die Fragestellung des Laufs — wozu er gerechnet wird. Sie erscheint im Bericht;
-den Namen vergeben Sie im letzten Schritt. Darunter die Auswahl der
-Konfigurationsdateien, die Rohdaten — was tatsächlich an die Simulation
-übergeben wird — und **Alle Einstellungen zurücksetzen**. Das setzt jede
+den Namen vergeben Sie im letzten Schritt. Darunter die Rohdaten — was
+tatsächlich an die Simulation übergeben wird — und **Alle Einstellungen
+zurücksetzen**. Das setzt jede
 Einstellung auf den Auslieferungszustand; die Meldung danach trägt
 «Rückgängig», das den Stand davor mit einem Klick zurückholt.
 

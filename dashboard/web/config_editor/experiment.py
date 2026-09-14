@@ -1,10 +1,15 @@
-"""Tab «Lauf & Ablage»: Fragestellung, Datengrundlage, Rohdaten.
+"""Schritt «Lauf & Ablage»: Fragestellung, Rohdaten, Zurücksetzen.
 
 Die drei Entscheidungen, die einen Lauf prägen — Annahmenwelt, Umfang,
 Rechenmodus —, stehen seit P1.1 im geführten Ablauf oben auf der Seite und
-nicht mehr hier. Übrig bleibt, was zur Organisation eines Laufs gehört: wie er
-heißt, aus welchen Dateien er
-liest, und was am Ende tatsächlich an die Simulation übergeben wird.
+nicht mehr hier. Übrig bleibt, was zur Organisation eines Laufs gehört: wozu er
+gerechnet wird und was am Ende tatsächlich an die Simulation übergeben wird.
+
+**Aus welchen Dateien der Lauf liest, fragt dieser Schritt nicht mehr**
+(P7.13-U13.4). Fünf Auswahlfelder boten je dieselben sechs Dateien an — die
+Einflussmatrix ließ sich als «Systemgrößen» wählen —, und je Art gibt es nur
+eine. Die Felder im Entwurf bleiben: Die Rundreise zum Start, die Validierung
+und der Wirkungstest lesen sie.
 """
 
 from __future__ import annotations
@@ -12,25 +17,12 @@ from __future__ import annotations
 from dash import html
 
 from dashboard.config_catalog import (
-    CONFIG_FILE_OPTIONS,
     effective_config_summary,
     load_config_file,
 )
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
 from dashboard.web.state import draft_from_dict
-
-_FILE_FIELDS = [
-    ("Simulation", "simulation_config_file", "Uhr, Name und LLM-Voreinstellungen."),
-    ("Systemgrößen", "properties_file", "Politik, Kosten, Bevölkerung, Marktregeln."),
-    ("Agenten", "agents_file", "Rollen und Rechte von Consumer, Provider, Regulator."),
-    ("Faktoren", "factors_file", "Die sieben Faktoren und ihre möglichen Zustände."),
-    ("Einflussmatrix", "cib_file", "Die eingefrorene CIB-Matrix zur Konsistenzprüfung."),
-]
-
-
-def _file_options() -> list[dict]:
-    return [{"label": label, "value": name} for name, label in CONFIG_FILE_OPTIONS.items()]
 
 
 def _raw_data(draft: dict) -> html.Div:
@@ -101,30 +93,8 @@ def layout(draft: dict) -> html.Div:
             # zusammen 604 px für Dinge, die man selten braucht, neben 411 px
             # für die Benennung, um die es in diesem Schritt geht. **Das Sichern
             # ist seit P7.4-U4.5 ganz fort**: Es war einer von vier Speicherwegen
-            # und hat jetzt einen einzigen, den Dialog aus der Kopfzeile.
-            ui.expert(
-                ui.lede(
-                    "Welche hinterlegten Dateien der Lauf liest. Für den Normalfall bleibt "
-                    "hier alles auf Standard."
-                ),
-                html.Div(
-                    ui.grid(
-                        *[
-                            c.select(
-                                field,
-                                draft.get(field),
-                                _file_options(),
-                                label=label,
-                                hint=hint,
-                            )
-                            for label, field, hint in _FILE_FIELDS
-                        ],
-                        cols="lg:grid-cols-2",
-                    ),
-                ),
-                count=len(_FILE_FIELDS),
-                title="Konfigurationsdateien wechseln",
-            ),
+            # und hat jetzt einen einzigen, den Dialog aus der Kopfzeile. **Die
+            # Dateiauswahl ist seit P7.13-U13.4 fort**, siehe Modul-Docstring.
             ui.expert(
                 ui.lede(
                     "Für den Fall, dass Sie genau nachsehen wollen, was an die Simulation "
