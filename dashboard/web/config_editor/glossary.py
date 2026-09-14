@@ -98,6 +98,13 @@ PARAMS: dict[str, Param] = {
         "wirkungslos. Das ist die häufigste Ursache dafür, dass eine Änderung im Ergebnis "
         "nicht auftaucht.",
     ),
+    "preisstrategie": Param(
+        label="Preisstrategie",
+        short="Wie der Anbieter in diesem Szenario preist.",
+        detail="«auslastung» senkt den Preis, bis die Plätze gefüllt sind; «marge» hält den "
+        "Aufschlag und lässt die Auslastung schwanken. Ohne eigene Wahl gilt die Strategie "
+        "des Szenarios.",
+    ),
     # --- Preisbildung ----------------------------------------------------
     "market_feedback_edit.enabled": Param(
         label="Airline passt den Preis an",
@@ -333,6 +340,7 @@ GROUPS: list[Group] = [
         [
             "base_price",
             "apply_custom_overrides",
+            "preisstrategie",
             "property.baseline",
             "property.rules",
             "property.is_active",

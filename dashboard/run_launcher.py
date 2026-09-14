@@ -44,6 +44,10 @@ class RunLaunchConfig:
     simulation_description: str | None = None
     apply_custom_overrides: bool = False
     property_edits: dict[str, PropertyEditState] | None = None
+    #: Abweichungen vom gewählten Szenario (P7.13-U13.2). **In beiden Richtungen
+    #: verdrahtet** — an dieser Rundreise ist der Startpreis still verloren gegangen.
+    abweichungen: dict[str, PropertyEditState] | None = None
+    preisstrategie: str | None = None
     # `factor_states` ist mit P2.0-C entfallen: Die Faktorlage wird nicht
     # mehr vorgegeben, sie entsteht im Lauf aus den exogenen Systemgrößen.
     mock_llm: bool = True
@@ -105,6 +109,8 @@ def launch_config_to_draft(config: RunLaunchConfig) -> ConfigDraft:
     draft.apply_custom_overrides = config.apply_custom_overrides
     if config.property_edits:
         draft.property_edits = dict(config.property_edits)
+    draft.abweichungen = dict(config.abweichungen or {})
+    draft.preisstrategie = config.preisstrategie
     draft.mock_llm = config.mock_llm
     draft.deterministic_only = config.deterministic_only
     draft.model = config.model
@@ -142,6 +148,8 @@ def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
         simulation_description=draft.simulation_description or None,
         apply_custom_overrides=draft.apply_custom_overrides or draft.scenario_mode == "custom",
         property_edits=draft.property_edits,
+        abweichungen=draft.abweichungen,
+        preisstrategie=draft.preisstrategie,
         mock_llm=draft.mock_llm,
         deterministic_only=draft.deterministic_only,
         # **Kein Rückfall auf den Vorgabewert** (P3.13). Hier stand

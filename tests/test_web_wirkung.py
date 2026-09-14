@@ -48,7 +48,7 @@ from pathlib import Path
 import pytest
 
 from dashboard import run_launcher
-from dashboard.config_catalog import ConfigDraft, default_config_draft
+from dashboard.config_catalog import ConfigDraft, PropertyEditState, default_config_draft
 from src.orchestration.scenario_sweeps import vorgegebene_felder
 
 # --- Die drei Startpfade ---------------------------------------------------
@@ -110,6 +110,7 @@ ANDERER_WERT: dict[str, object] = {
     "no_scenarios": True,
     "generate_figures": False,
     "base_price": 123.0,
+    "preisstrategie": "marge",
 }
 
 #: Felder, die den Startpfad **auswählen**, statt ihn zu parametrisieren. Sie
@@ -137,6 +138,7 @@ NUR_MIT_SPRACHMODELL = {"model", "base_url", "temperature", "max_tokens"}
 #: unsichtbar zu sein.
 NICHT_GEMESSEN = {
     "property_edits": "verschachtelt; wirkt über `apply_custom_overrides` mit",
+    "abweichungen": "verschachtelt; gemessen in TestAbweichungenLiegenAufDemSzenario",
     # **Bis zum 2026-09-14 stand bei den drei folgenden «wirkt über
     # `apply_custom_overrides` mit» — und das stimmte nicht** (P7.13-U13.5): Aus dem
     # Entwurf erreichen sie keinen Lauf, nur gespeichert. Gemessen in
@@ -197,6 +199,7 @@ ERWARTET: dict[str, set[str]] = {
         "no_market",
         "redebedarf",
         "checkpoint_interval",
+        "preisstrategie",
     },
     WIEDERHOLUNGEN: {
         "base_price",
@@ -210,6 +213,7 @@ ERWARTET: dict[str, set[str]] = {
         "no_market",
         "redebedarf",
         "checkpoint_interval",
+        "preisstrategie",
     },
     #: **Leer, und das ist das Ergebnis von W1.1 und W1.2.** Ein
     #: Szenario-Vergleich nimmt vom Entwurf nichts entgegen: Er rechnet alle
@@ -594,6 +598,11 @@ class TestDieRundreiseVerliertNichts:
                 "agents_file": "andere_agents.json",
                 "factors_file": "andere_factors.json",
                 "cib_file": "andere_cib.json",
+                "abweichungen": {
+                    "carbon_tax_level": PropertyEditState(
+                        property_id="carbon_tax_level", baseline=77.0
+                    )
+                },
             }
         )
 
@@ -954,3 +963,72 @@ class TestModellwerteWirkenNurGespeichert:
         assert len(hinweise) == 4, hinweise
         assert sum("«Als Standard speichern»" in t for t in hinweise) == 1, hinweise
         assert sum("«Bevölkerung als Standard speichern»" in t for t in hinweise) == 3, hinweise
+
+
+class TestAbweichungenLiegenAufDemSzenario:
+    """Ein Szenario plus das, was davon abweicht (P7.13-U13.2).
+
+    Vier Zusagen, jede gegen einen früheren oder möglichen Fehler. Eine
+    Abweichung kommt auf «Business as Usual» an. **Ohne** Abweichung bleibt das
+    Szenario unvermischt, auch mit eingeschaltetem «Eigene Werte anwenden» — vor
+    P1.1 drehte der Entwurf mit seiner vollen Kopie aller Größen die Verläufe des
+    Szenarios still zurück. Mit ausgeschaltetem Schalter gilt sie nicht, und der
+    Szenario-Vergleich ignoriert sie (sein Vertrag sagt es).
+    """
+
+    SZENARIO = "business_as_usual"
+    ABWEICHUNG = {
+        "carbon_tax_level": PropertyEditState(property_id="carbon_tax_level", baseline=77.0)
+    }
+
+    def _szenario(self, *, abweichung: bool, schalter: bool = True) -> ConfigDraft:
+        draft = _entwurf(EINZELLAUF)
+        draft.scenario_mode = "sweep"
+        draft.sweep_id = self.SZENARIO
+        draft.apply_custom_overrides = schalter
+        if abweichung:
+            draft.abweichungen = dict(self.ABWEICHUNG)
+        return draft
+
+    def test_a_deviation_reaches_the_run(self, abdruck_von):
+        """Gemessen am **Wert** im Zustand, nicht am Unterschied des Abdrucks.
+
+        Die erste Fassung verglich nur die Abdrücke — und blieb in der Gegenprobe
+        grün, als die Abweichungen gar nicht mehr gelegt wurden: Der Rahmen hieß
+        trotzdem «abgeleitet», und das allein änderte den Abdruck.
+        """
+
+        import json
+
+        abdruck = abdruck_von(self._szenario(abweichung=True))
+        zustand = json.loads(abdruck.zustand.split(" ", 1)[1])
+        startwert = next(
+            groesse["trajectory"]["baseline"]
+            for groesse in zustand["properties"]["system_properties"]
+            if groesse["id"] == "carbon_tax_level"
+        )
+
+        assert (
+            startwert == 77.0
+        ), f"Die Abweichung kommt nicht an: CO₂-Abgabe startet bei {startwert}, erwartet 77."
+
+    def test_without_deviation_the_scenario_stays_unmixed(self, abdruck_von):
+        an = str(abdruck_von(self._szenario(abweichung=False, schalter=True)))
+        aus = str(abdruck_von(self._szenario(abweichung=False, schalter=False)))
+
+        assert an == aus, (
+            "Mit eingeschaltetem «Eigene Werte anwenden» verändert der Entwurf das Szenario, "
+            "obwohl nichts abweicht — der Fehler vor P1.1."
+        )
+
+    def test_the_switch_turns_it_off(self, abdruck_von):
+        ohne = str(abdruck_von(self._szenario(abweichung=False, schalter=False)))
+
+        assert str(abdruck_von(self._szenario(abweichung=True, schalter=False))) == ohne
+
+    def test_the_comparison_ignores_it(self, abdruck_von):
+        ohne = str(abdruck_von(_entwurf(SWEEP)))
+        draft = _entwurf(SWEEP)
+        draft.abweichungen = dict(self.ABWEICHUNG)
+
+        assert str(abdruck_von(draft)) == ohne

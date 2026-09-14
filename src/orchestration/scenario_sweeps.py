@@ -138,6 +138,17 @@ FESTLEGUNGEN: tuple[Festlegung, ...] = (
 #: einstellt und dann einen Vergleich startet, sieht davon nichts wieder.
 UNBEACHTET: tuple[Festlegung, ...] = (
     Festlegung(
+        "abweichungen",
+        None,
+        "Abweichungen von einem Szenario gelten im Vergleich nicht: Er rechnet jedes "
+        "Rahmenszenario unverändert — sonst verglichen Sie Ihre Änderung mit sich selbst.",
+    ),
+    Festlegung(
+        "preisstrategie",
+        None,
+        "Jedes Szenario rechnet im Vergleich mit seiner eigenen Preisstrategie.",
+    ),
+    Festlegung(
         "apply_custom_overrides",
         None,
         "Jedes Szenario gilt unvermischt aus seiner eigenen Datei. Eigene "

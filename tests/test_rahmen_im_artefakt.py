@@ -88,6 +88,50 @@ class TestJederStartpfadSetztIhn:
 
         assert not ohne_namen, f"Diese Szenarien tragen keinen lesbaren Rahmen: {ohne_namen}"
 
+    def test_ein_abgeleiteter_lauf_nennt_szenario_und_abweichungen(self):
+        """P7.13-U13.2 — ein geändertes Szenario steht nicht als unverändertes da."""
+
+        from dashboard.config_catalog import PropertyEditState
+
+        draft = default_config_draft()
+        draft.scenario_mode = "sweep"
+        draft.sweep_id = "business_as_usual"
+        draft.abweichungen = {
+            "carbon_tax_level": PropertyEditState(property_id="carbon_tax_level", baseline=77.0)
+        }
+        draft.preisstrategie = "marge"
+
+        state = prepare_simulation_state(draft)
+
+        assert state.rahmen is not None
+        assert state.rahmen.id == "business_as_usual"
+        assert state.rahmen.quelle == "abgeleitet"
+        assert state.rahmen.abweichungen == ["carbon_tax_level", "preisstrategie"]
+        # **Und der Wert selbst**, nicht nur das Etikett: Ein Rahmen, der
+        # «abgeleitet» heißt, ohne dass die Abweichung gelegt wurde, wäre die
+        # nächste stille Falschaussage.
+        co2 = next(p for p in state.properties.system_properties if p.id == "carbon_tax_level")
+        assert co2.trajectory.baseline == 77.0
+        feedback = next(
+            r
+            for r in state.properties.market_rules
+            if r.effect.get("type") == "booking_yield_feedback"
+        )
+        assert feedback.effect.get("strategie") == "marge"
+
+    def test_eine_unbekannte_abweichung_scheitert_laut(self):
+        """Still übersprungen wäre sie eine Abweichung, die nicht ankommt."""
+
+        from dashboard.config_catalog import PropertyEditState
+
+        draft = default_config_draft()
+        draft.abweichungen = {
+            "gibt_es_nicht": PropertyEditState(property_id="gibt_es_nicht", baseline=1.0)
+        }
+
+        with pytest.raises(ValueError, match="gibt_es_nicht"):
+            prepare_simulation_state(draft)
+
     def test_die_kennung_stimmt_mit_der_datei_ueberein(self):
         """Sonst zeigte das Artefakt auf ein Szenario, das es nicht gibt."""
 

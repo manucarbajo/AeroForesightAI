@@ -58,7 +58,13 @@ def draft_from_dict(payload: dict[str, Any] | None) -> ConfigDraft:
         return default_config_draft()
 
     draft = default_config_draft()
-    nested = {"property_edits", "population_edits", "saturation_edit", "market_feedback_edit"}
+    nested = {
+        "property_edits",
+        "abweichungen",
+        "population_edits",
+        "saturation_edit",
+        "market_feedback_edit",
+    }
     known = {f.name for f in fields(ConfigDraft)}
 
     for key, value in payload.items():
@@ -68,6 +74,10 @@ def draft_from_dict(payload: dict[str, Any] | None) -> ConfigDraft:
     draft.property_edits = {
         str(pid): _build(PropertyEditState, item)
         for pid, item in (payload.get("property_edits") or {}).items()
+    }
+    draft.abweichungen = {
+        str(pid): _build(PropertyEditState, item)
+        for pid, item in (payload.get("abweichungen") or {}).items()
     }
     draft.population_edits = [
         _build(PopulationEditState, item) for item in (payload.get("population_edits") or [])

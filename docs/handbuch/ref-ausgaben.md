@@ -65,7 +65,7 @@ welchen Bedingungen er lief.
 
 | Feld | Bedeutung |
 |---|---|
-| `rahmen` | **Unter welchem Rahmenszenario der Lauf stand** — `id`, `name` und `quelle`. `quelle` ist `preset` (eine Datei unter `configs/sweeps/`), `eigen` (im Assistenten zusammengestellt) oder `standard` (die ausgelieferten Konfigurationsdateien — auch das ist ein Rahmen, nur ein unbenannter). Läufe von vor dem 2026-08-30 haben das Feld nicht; dann steht in der Oberfläche «nicht festgehalten». |
+| `rahmen` | **Unter welchem Rahmenszenario der Lauf stand** — `id`, `name` und `quelle`. `quelle` ist `preset` (eine Datei unter `configs/sweeps/`), `eigen` (im Assistenten zusammengestellt), `standard` (die ausgelieferten Konfigurationsdateien — auch das ist ein Rahmen, nur ein unbenannter) oder `abgeleitet` (ein Szenario mit Abweichungen: `id` und `name` nennen das Szenario, `abweichungen` die geänderten Systemgrößen, dazu `preisstrategie`, falls sie geändert wurde). Seit P7.13 steht ein geändertes Szenario damit nicht mehr als unverändertes da. Läufe von vor dem 2026-08-30 haben das Feld nicht; dann steht in der Oberfläche «nicht festgehalten». |
 | `seed` | Der tatsächlich benutzte Startwert der Zufallsziehung — auch dann, wenn Sie keinen angegeben haben: Dann steht hier der Standardwert, mit dem gerechnet wurde. Gleicher Seed und gleiche Konfiguration ergeben denselben Lauf. |
 | `compute_mode` | `llm` (mit Sprachmodell), `mock_llm` (ohne, mit Platzhaltertexten), `deterministic_only` (nur Zahlen) oder `deterministic_with_llm_narrative` (Zahlen deterministisch, Abschlusstext vom Modell — so laufen die Sweeps). |
 | `mock_llm`, `deterministic_only` | Die beiden Schalter einzeln, für die maschinelle Auswertung. |

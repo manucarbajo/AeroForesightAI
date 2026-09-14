@@ -249,6 +249,13 @@ class ConfigDraft:
     apply_custom_overrides: bool = True
 
     property_edits: dict[str, PropertyEditState] = field(default_factory=dict)
+    #: **Was vom gewählten Szenario abweicht** (P7.13-U13.2) — je Größe nur, was
+    #: jemand geändert hat, keine volle Kopie wie `property_edits`. Beim Start liegt
+    #: es **auf** dem Szenario; eine volle Kopie drehte dessen Verläufe still zurück
+    #: (so rechnete «Business as Usual» vor P1.1 mit dem Sprung auf 120).
+    abweichungen: dict[str, PropertyEditState] = field(default_factory=dict)
+    #: Die Preisstrategie, wenn sie vom Szenario abweicht; `None` heißt «wie das Szenario».
+    preisstrategie: str | None = None
     # `factor_states` ist mit P2.0-C entfallen. Die Faktorlage war eine
     # **Eingabe** des Entwurfs und wurde als `factor_overrides` in den Lauf
     # gereicht; heute entsteht sie im Lauf aus den exogenen Systemgrößen.
@@ -595,6 +602,28 @@ def property_overrides_from_edits(edits: dict[str, PropertyEditState]) -> list[P
 # exogenen Systemgrößen des Rahmenszenarios.
 
 
+def abweichungen_als_sweep(draft: ConfigDraft, state: Any) -> SweepConfig:
+    """Die Abweichungen des Entwurfs als Szenario, das auf den Zustand gelegt wird.
+
+    **Eine unbekannte Größe scheitert laut** (P7.13-U13.2): `apply_sweep_overrides`
+    überspringt sie still, und eine Abweichung, die nicht ankommt, wäre genau der
+    Fehler, gegen den das Paket angetreten ist.
+    """
+
+    bekannt = {prop.id for prop in state.properties.system_properties}
+    unbekannt = sorted(set(draft.abweichungen) - bekannt)
+    if unbekannt:
+        raise ValueError(f"Abweichungen für unbekannte Systemgrößen: {unbekannt}")
+    return SweepConfig(
+        id="abweichungen",
+        name="Abweichungen vom gewählten Szenario",
+        description="Abweichungen aus dem Assistenten",
+        max_ticks=int(draft.rounds),
+        preisstrategie=draft.preisstrategie,
+        property_overrides=property_overrides_from_edits(draft.abweichungen),
+    )
+
+
 def build_custom_sweep_from_draft(draft: ConfigDraft, filename: str = "") -> SweepConfig:
     sweep_name = draft.simulation_name
     # **Der Vorgabename kommt aus der Datei, nicht aus einem Literal** (P7.2-U2.7).
@@ -720,6 +749,23 @@ def prepare_simulation_state(draft: ConfigDraft):
     ):
         custom = build_custom_sweep_from_draft(draft)
         state = apply_sweep_overrides(state, custom)
+
+    # **Abweichungen liegen auf dem Szenario** (P7.13-U13.2), unter demselben
+    # Schalter wie die eigenen Werte — und anders als diese auch auf einem
+    # Rahmenszenario. Ohne Abweichung bleibt ein Szenario unvermischt. Der Rahmen
+    # sagt es: Ein geändertes Szenario steht nicht als unverändertes im Artefakt.
+    if (draft.apply_custom_overrides or draft.scenario_mode == "custom") and (
+        draft.abweichungen or draft.preisstrategie
+    ):
+        state = apply_sweep_overrides(state, abweichungen_als_sweep(draft, state))
+        basis = state.rahmen
+        state.rahmen = Rahmenszenario(
+            id=basis.id if basis else "standard",
+            name=basis.name if basis else "Standard-Ausgangslage",
+            quelle="abgeleitet",
+            abweichungen=sorted(draft.abweichungen)
+            + (["preisstrategie"] if draft.preisstrategie else []),
+        )
 
     state.clock.max_ticks = int(draft.rounds)
     if draft.use_seed and draft.seed is not None:

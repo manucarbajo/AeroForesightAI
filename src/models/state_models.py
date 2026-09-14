@@ -159,11 +159,17 @@ class Rahmenszenario(BaseModel):
     `"preset"` (eine Datei unter `configs/sweeps/`), `"eigen"` (im Assistenten
     zusammengestellt) und `"standard"` (die ausgelieferten Konfigurationsdateien
     — auch das ist ein Rahmen, nur ein unbenannter).
+
+    **Seit P7.13-U13.2 dazu `"abgeleitet"`:** ein Szenario, auf das Abweichungen
+    gelegt wurden. `id` und `name` nennen das Szenario, `abweichungen` die
+    geänderten Systemgrößen, dazu `"preisstrategie"`, falls sie geändert wurde.
+    Ein geändertes Szenario stünde sonst als unverändertes im Artefakt.
     """
 
     id: str
     name: str
     quelle: str = "preset"
+    abweichungen: list[str] = []
 
 
 class SimulationState(BaseModel):

@@ -116,6 +116,10 @@ Bezifferung: Bei welchem Tick die CO₂-Abgabe auf welchen Wert springt, ist
 gesetzt und nicht aus Daten geschätzt. Welche Zeitspanne es beschreibt, sagt
 jedes Rahmenszenario in seinem Vorbehalt. Siehe [Presets](/doku/presets).
 
+**Abgeleitet** (Lauf) — Ein Lauf unter einem Szenario, dessen Verläufe oder
+Preisstrategie geändert wurden. Das Szenario selbst bleibt unverändert; der Lauf
+nennt es in seinen Dateien zusammen mit jeder Abweichung.
+
 **Kennung** (eines Laufs) — Eindeutiger Name eines Laufs, zugleich der Name
 seines Ausgabeverzeichnisses, etwa `run_20260913_142530`.
 
