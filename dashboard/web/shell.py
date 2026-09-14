@@ -135,10 +135,10 @@ MAIN_ID = "shell-main"
 #: jedem Lauf darin; der Dialog steht in `lauf_wahl`.
 LAUF_WAHL = "shell-lauf-wahl"
 
-#: Aktionen der Kopfzeile. Alle drei gibt es bereits als Funktion — sie
-#: standen nur an drei verschiedenen Stellen tief in der Seite.
+#: Aktionen der Kopfzeile. «Als Szenario sichern» öffnet seit P7.4-U4.5 den
+#: Dialog in `config_editor.sichern` — den einen Speicherweg. Der Knopf daneben,
+#: der dieselben Werte mit Zeitstempel ablegte, ist dort eine Option.
 ACTION_SAVE = "shell-action-save"
-ACTION_SNAPSHOT = "shell-action-snapshot"
 ACTION_EXPORT = "shell-action-export"
 
 #: Die Bereiche, die einen Lauf zeigen (P7.3-U3.4).
@@ -156,7 +156,6 @@ LAUF_BEREICHE = frozenset({LEITSTAND, "runs"})
 KONTEXT = {
     LAUF_WAHL: LAUF_BEREICHE,
     ACTION_SAVE: frozenset({""}),
-    ACTION_SNAPSHOT: frozenset({""}),
     ACTION_EXPORT: LAUF_BEREICHE,
 }
 
@@ -325,11 +324,9 @@ def kontext_stile(active: str, *, lauf: bool) -> dict[str, dict | None]:
 def actions(active: str = "", *, lauf: bool = False) -> html.Div:
     """Die Aktionen der Kopfzeile — beschriftet, und nur dort, wo sie passen.
 
-    «Als Szenario sichern» legt die Einstellungen als Szenario unter
-    `configs/sweeps/` ab, «Zwischenstand sichern» dieselben Werte unter einem
-    Namen mit Zeitstempel, damit ein Zwischenstand den benannten Stand nicht
-    überschreibt — beide gehören zum Einrichten. «Dateien des Laufs» führt in
-    die Dateiablage des gewählten Laufs.
+    «Als Szenario sichern» öffnet den Dialog, der die Einstellungen als
+    Szenario ablegt — den einen Speicherweg (P7.4-U4.5), im Einrichten.
+    «Dateien des Laufs» führt in die Dateiablage des gewählten Laufs.
 
     **Bis P7.3-U3.4 waren es drei Symbolknöpfe**, deren Name nur im `title`
     stand. Unter 1280 px wird die Beschriftung beschnitten und nicht entfernt
@@ -339,7 +336,6 @@ def actions(active: str = "", *, lauf: bool = False) -> html.Div:
     stile = kontext_stile(active, lauf=lauf)
     knoepfe = [
         (ACTION_SAVE, "Als Szenario sichern", "save"),
-        (ACTION_SNAPSHOT, "Zwischenstand sichern", "photo_camera"),
         (ACTION_EXPORT, "Dateien des Laufs", "download"),
     ]
     return html.Div(

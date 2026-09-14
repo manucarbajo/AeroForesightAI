@@ -34,7 +34,6 @@ import argparse
 
 from dash import Dash, Input, Output, State, ctx, dcc, html, no_update
 
-from dashboard.config_catalog import save_custom_sweep_preset
 from dashboard.web import components as ui
 from dashboard.web import (
     files_route,
@@ -49,7 +48,7 @@ from dashboard.web import (
     theme,
     timeline,
 )
-from dashboard.web.config_editor import wizard
+from dashboard.web.config_editor import sichern, wizard
 from dashboard.web.pages import docs as docs_page
 from dashboard.web.pages import launch as launch_page
 from dashboard.web.pages import model_editor as model_page
@@ -61,7 +60,7 @@ from dashboard.web.pages import setup as setup_page
 # `ALIASES`). Hier weiterhin unter dem alten Namen erreichbar: mehrere Tests
 # und zwei Callbacks in dieser Datei rufen `web_app.active_route`.
 from dashboard.web.shell import active_route
-from dashboard.web.state import STORE_ID, draft_from_dict
+from dashboard.web.state import STORE_ID
 from dashboard.web.views import scene, telemetry
 from src.logging_setup import stdio_auf_utf8
 
@@ -304,6 +303,8 @@ def serve_layout() -> html.Div:
             # Der Lauf-Browser (P7.3-U3.3). Ein modaler Dialog liegt über allem und
             # gehört deshalb in keine der fünf Zonen; sein Öffner steht in der Kopfzeile.
             lauf_wahl.dialog(),
+            # Der eine Speicherweg für Szenarien (P7.4-U4.5), geöffnet aus der Kopfzeile.
+            sichern.dialog(),
             shell.layout(
                 active="",
                 # Auch beim ersten Zeichnen gilt der Serverzustand: Ein Lauf,
@@ -614,40 +615,8 @@ def create_app() -> Dash:
 
     # --- Globale Aktionen der Kopfzeile ------------------------------------
 
-    @app.callback(
-        Output("cfg-status", "children", allow_duplicate=True),
-        Input(shell.ACTION_SAVE, "n_clicks"),
-        Input(shell.ACTION_SNAPSHOT, "n_clicks"),
-        # Zweiter Ausloeser aus dem letzten Schritt des Einrichtens -- **kein**
-        # zweiter Speicherpfad: derselbe Callback, dieselbe Funktion dahinter.
-        Input(wizard.SAVE, "n_clicks"),
-        State(STORE_ID, "data"),
-        prevent_initial_call=True,
-    )
-    def _save(save_clicks, snapshot_clicks, wizard_clicks, data: dict | None):
-        """Entwurf als Szenario sichern — benannt oder als Zwischenstand.
-
-        Der Unterschied ist der Name: «Als Szenario sichern» schreibt unter dem
-        Namen der Simulation und überschreibt damit denselben Stand wieder,
-        «Zwischenstand sichern» hängt einen Zeitstempel an. Beide landen in `configs/sweeps/` und stehen
-        danach im ersten Schritt des geführten Ablaufs zur Auswahl.
-        """
-
-        if not (save_clicks or snapshot_clicks or wizard_clicks):
-            return no_update
-
-        draft = draft_from_dict(data or {})
-        name = (draft.simulation_name or "mein_szenario").strip() or "mein_szenario"
-        if ctx.triggered_id == shell.ACTION_SNAPSHOT:
-            from datetime import datetime, timezone
-
-            name = f"{name}_{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}"
-
-        try:
-            path = save_custom_sweep_preset(draft, name)
-        except Exception as exc:  # noqa: BLE001 - Dateifehler gehören in die UI
-            return ui.hinweis(f"Konnte nicht gespeichert werden: {exc}", "fehler")
-        return ui.hinweis(f"Gespeichert: `{path}`", "erfolg")
+    # «Als Szenario sichern» öffnet seit P7.4-U4.5 den Dialog in
+    # `config_editor.sichern`; Öffnen und Sichern stehen dort.
 
     @app.callback(
         Output("url", "pathname"),

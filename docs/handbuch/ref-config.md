@@ -175,8 +175,8 @@ Die meisten Einstellungen im Editor gelten nur für den nächsten Lauf und
 verändern keine Datei. Drei Aktionen schreiben dauerhaft.
 
 Unter **Nachfrage & Preisbildung** schreiben «Als Standard speichern» und
-«Bevölkerung als Standard speichern» in `properties.json`. Unter **Lauf & Ablage**
-legt «Szenario sichern» eine neue Datei unter `configs/sweeps/` an.
+«Bevölkerung als Standard speichern» in `properties.json`. «Als Szenario sichern» in der
+Kopfzeile des Einrichtens legt eine Datei unter `configs/sweeps/` an.
 
 ## Die eingefrorene Matrix
 

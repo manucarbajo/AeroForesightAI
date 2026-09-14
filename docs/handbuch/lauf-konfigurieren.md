@@ -50,10 +50,9 @@ müssen, um zum Inhalt zu kommen. Welcher Schritt offen ist, sagt die Marke;
 welcher es ist, sagt die Überschrift darunter, und der Name jedes Schritts
 erscheint, wenn Sie auf seiner Marke verweilen.
 
-Die Leiste am unteren Rand bleibt dabei eine Zeile. Zweitrangige Knöpfe zeigen
-dort nur ihr Symbol — «Direkt zum Start» und «Als Szenario speichern». Ihre
-Namen sind nicht verschwunden: Vorlesesoftware liest sie weiterhin, und ein
-Verweilen auf dem Knopf zeigt sie an.
+Die Leiste am unteren Rand bleibt dabei eine Zeile. Der zweitrangige Knopf
+«Direkt zum Start» zeigt dort nur sein Symbol. Sein Name ist nicht verschwunden:
+Vorlesesoftware liest ihn weiterhin, und ein Verweilen auf dem Knopf zeigt ihn an.
 
 ## Ohne Maus, ohne Bildschirm
 
@@ -175,9 +174,8 @@ Vorbehalt möglich ist.
 Der letzte Schritt heißt **Prüfen & Starten**: Dort steht zuoberst der **Name
 dieses Laufs** — so, wie er später in der Auswahl der Kopfzeile erscheint. Ein
 Klick auf «Vorschlag» setzt einen sprechenden Namen aus Ausgangspunkt, Länge und
-Zeitpunkt. Darunter steht, was gleich passiert,
-und daneben die beiden Wege hinaus — den Lauf starten, oder die Einstellungen als
-Szenario speichern und später wieder aufrufen.
+Zeitpunkt. Darunter steht, was gleich passiert, und daneben der Knopf, der den
+Lauf startet.
 
 Solange Sie einrichten, gehört Ihnen der ganze Bildschirm: Bedienfeld, Telemetrie
 und Zeitleiste treten zurück. Einrichten ist eine Sache für sich, und eine Szene
@@ -299,14 +297,15 @@ für den nächsten Start.
 
 Name und Fragestellung des Laufs — sie erscheinen im Bericht und in der
 Lauf-Auswahl; ohne sie sind mehrere Läufe später schwer auseinanderzuhalten.
-Darunter «Als Szenario sichern», mit dem der aktuelle Stand als eigenes Preset
-abgelegt wird (auf der Platte unter `configs/sweeps/`), die Auswahl der
-Konfigurationsdateien, und ganz
+Darunter die Auswahl der Konfigurationsdateien, und ganz
 unten die Rohdaten: was tatsächlich an die Simulation übergeben wird.
 
-Oben in der Kopfzeile steht dieselbe Aktion, solange Sie einrichten, und daneben
-«Zwischenstand sichern»: Es legt denselben Stand mit angehängtem Zeitstempel ab
-und überschreibt so den benannten nicht.
+**Als Szenario sichern** steht oben in der Kopfzeile, solange Sie einrichten, und
+ist der einzige Weg dafür. Ein Klick öffnet ein Fenster mit einem Namen —
+vorgeschlagen ist der Name des Laufs —, der Option «Mit Zeitstempel im Namen
+sichern», die so kein vorhandenes Szenario ersetzt, und einer
+Warnung, wenn es ein Szenario unter diesem Namen schon gibt. Gesichert wird unter
+`configs/sweeps/`; danach steht das Szenario im ersten Schritt zur Auswahl.
 
 ### Technik
 

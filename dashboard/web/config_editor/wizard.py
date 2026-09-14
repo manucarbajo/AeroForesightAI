@@ -85,8 +85,6 @@ SKIP = "wizard-skip"
 #: selben Callback wie der Knopf im Bedienfeld, mit derselben Prüfung und
 #: demselben `runner.start`.
 START = "wizard-start"
-#: Ebenso für das Sichern als Szenario.
-SAVE = "wizard-save"
 
 #: Sprungziel je Schritt der Schrittliste.
 JUMP = "wizard-jump"
@@ -197,7 +195,7 @@ STEPS: list[Step] = [
     Step(
         "ablage",
         "Lauf & Ablage",
-        "Fragestellung, Ablage als Szenario und die Dateien, aus denen der Lauf liest.",
+        "Fragestellung und die Dateien, aus denen der Lauf liest.",
         experiment.layout,
         required=False,
     ),
@@ -701,8 +699,8 @@ def _final_step(draft: dict) -> html.Div:
             # Markdown, weil der Pfad in Backticks steht — als `html.P` waren
             # die Zeichen zu sehen (P7.1-U1.4, vorgezogen am 2026-09-11).
             ui.markdown(
-                "«Als Szenario speichern» legt die Einstellungen unter einem Namen ab. "
-                "Sie stehen danach im ersten Schritt zur Auswahl.",
+                "«Als Szenario sichern» oben in der Kopfzeile legt die Einstellungen unter "
+                "einem Namen ab. Sie stehen danach im ersten Schritt zur Auswahl.",
                 class_name="af-md--tight af-md--caption mt-4",
             ),
         ]
@@ -863,15 +861,6 @@ def navigation(current: int | None) -> html.Div:
                         id=NEXT,
                         icon_name="arrow_forward",
                         style=None if not letzter else {"display": "none"},
-                    ),
-                    ui.button(
-                        "Als Szenario speichern",
-                        id=SAVE,
-                        variant="secondary",
-                        icon_name="save",
-                        className="af-btn--symbol-schmal",
-                        title="Als Szenario speichern",
-                        style=None if letzter else {"display": "none"},
                     ),
                     ui.button(
                         "Lauf starten",

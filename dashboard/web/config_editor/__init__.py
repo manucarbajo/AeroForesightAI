@@ -33,7 +33,6 @@ from dashboard.config_catalog import (
     extract_population_edits_from_file,
     extract_property_edits_from_file,
     list_sweep_presets,
-    save_custom_sweep_preset,
     save_market_feedback_to_file,
     save_population_edits_to_file,
     save_saturation_to_file,
@@ -46,6 +45,7 @@ from dashboard.web.config_editor import (
     llm_pipeline,
     macro,
     micro,
+    sichern,
     start_flow,
     wizard,
 )
@@ -160,6 +160,7 @@ def register_callbacks(app) -> None:
     # es nicht mehr; er hinge an `cfg-tabs`, und die Reiter sind weg.
     wizard.register_callbacks(app)
     c.register_callbacks(app)
+    sichern.register_callbacks(app)
 
     @app.callback(
         Output(STORE_ID, "data"),
@@ -524,13 +525,5 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
         save_saturation_to_file(draft.saturation_edit, draft.properties_file)
         return data, "Population und Sättigung gespeichert.", "erfolg"
-
-    if action == "save-preset":
-        name = c.free_value(free, "preset-name", "mein_szenario").strip()
-        draft = draft_from_dict(data)
-        draft.simulation_name = name
-        path = save_custom_sweep_preset(draft, name)
-        data = draft_to_dict(draft)
-        return data, f"Gespeichert: `{path}`", "erfolg"
 
     return data, None, "info"

@@ -1,15 +1,15 @@
-"""Tab «Lauf & Ablage»: Benennung, Sichern, Datengrundlage, Rohdaten.
+"""Tab «Lauf & Ablage»: Fragestellung, Datengrundlage, Rohdaten.
 
 Die drei Entscheidungen, die einen Lauf prägen — Annahmenwelt, Umfang,
 Rechenmodus —, stehen seit P1.1 im geführten Ablauf oben auf der Seite und
 nicht mehr hier. Übrig bleibt, was zur Organisation eines Laufs gehört: wie er
-heißt, wie er sich als eigenes Szenario sichern lässt, aus welchen Dateien er
+heißt, aus welchen Dateien er
 liest, und was am Ende tatsächlich an die Simulation übergeben wird.
 """
 
 from __future__ import annotations
 
-from dash import dcc, html
+from dash import html
 
 from dashboard.config_catalog import (
     CONFIG_FILE_OPTIONS,
@@ -101,46 +101,13 @@ def layout(draft: dict) -> html.Div:
                     ),
                 ),
             ),
-            # **Drei Abschnitte werden zu Klappen** (P1.9-W3.5). «Als Szenario
+            # **Drei Abschnitte wurden zu Klappen** (P1.9-W3.5). «Als Szenario
             # sichern» (226 px), «Datengrundlage» (128 px) und «Rohdaten»
             # (250 px) trugen je Überschrift, Einleitung und Doku-Verweis —
             # zusammen 604 px für Dinge, die man selten braucht, neben 411 px
-            # für die Benennung, um die es in diesem Schritt geht.
-            ui.expert(
-                ui.lede(
-                    "Legt den aktuellen Stand als Szenario ab. Danach lässt er sich im "
-                    "ersten Schritt wieder auswählen."
-                ),
-                ui.card(
-                    html.Div(
-                        [
-                            ui.field(
-                                "Dateiname",
-                                dcc.Input(
-                                    id=c.free_id("preset-name"),
-                                    type="text",
-                                    value="mein_szenario",
-                                    className="af-input",
-                                ),
-                                class_name="flex-1 min-w-[16rem]",
-                            ),
-                            html.Div(
-                                ui.button(
-                                    "Szenario sichern",
-                                    id=c.action_id("save-preset"),
-                                    variant="secondary",
-                                    icon_name="save",
-                                ),
-                                className="af-neben-feld",
-                            ),
-                        ],
-                        className="flex items-start gap-4 flex-wrap",
-                    )
-                ),
-                count=1,
-                title="Als Szenario sichern",
-                names="Dateiname",
-            ),
+            # für die Benennung, um die es in diesem Schritt geht. **Das Sichern
+            # ist seit P7.4-U4.5 ganz fort**: Es war einer von vier Speicherwegen
+            # und hat jetzt einen einzigen, den Dialog aus der Kopfzeile.
             ui.expert(
                 ui.lede(
                     "Welche hinterlegten Dateien der Lauf liest. Für den Normalfall bleibt "

@@ -570,10 +570,10 @@ MODELL_SCHREIBER = (
 )
 
 #: `save_custom_sweep_preset` steht **nicht** darin, und das ist eine
-#: Entscheidung: «Als Szenario speichern» legt unter `configs/sweeps/` ab, und
-#: das ist die Ablage des Experiments, nicht das Modell. Es darf deshalb in der
-#: Schrittfolge stehen — mit ausdrücklichem Namen und einer Schaltfläche, die
-#: nichts anderes tut.
+#: Entscheidung: «Als Szenario sichern» legt unter `configs/sweeps/` ab, und
+#: das ist die Ablage des Experiments, nicht das Modell. Es darf deshalb zum
+#: Einrichten gehören — seit P7.4-U4.5 als der eine Dialog aus der Kopfzeile
+#: (`config_editor.sichern`), nicht mehr als Knopf in einem Schritt.
 EXPERIMENT_SCHREIBER = ("save_custom_sweep_preset",)
 
 
@@ -592,7 +592,6 @@ def _freie_werte():
         {"id": {"type": c.FREE, "name": "new-prop-label"}, "value": "Probe"},
         {"id": {"type": c.FREE, "name": "new-prop-category"}, "value": "none"},
         {"id": {"type": c.FREE, "name": "new-segment-id"}, "value": "probe_segment"},
-        {"id": {"type": c.FREE, "name": "preset-name"}, "value": "probe_preset"},
     ]
 
 
@@ -629,12 +628,18 @@ def _schreibt(monkeypatch, trigger: dict, draft: dict) -> bool:
         monkeypatch.setattr(config_editor, name, _versuch)
 
     # **Auch die erlaubten Schreiber werden stillgelegt.** Sie sind hier nicht
-    # der Gegenstand, aber `save-preset` steht in Schritt 4 und würde beim
-    # Durchgehen aller Aktionen wirklich eine Datei unter `configs/sweeps/`
-    # anlegen. Beim ersten Lauf ist genau das passiert — ein Test, der das Repo
-    # verändert, ist ein Fehler im Test.
+    # der Gegenstand, und bis P7.4-U4.5 stand `save-preset` in Schritt 4 und
+    # legte beim Durchgehen aller Aktionen wirklich eine Datei unter
+    # `configs/sweeps/` an. Beim ersten Lauf ist genau das passiert — ein Test,
+    # der das Repo verändert, ist ein Fehler im Test. Die Sperre bleibt, falls
+    # ein Schritt je wieder sichert.
+    from dashboard.web.config_editor import sichern
+
     for name in EXPERIMENT_SCHREIBER:
-        monkeypatch.setattr(config_editor, name, lambda *_a, **_k: "pfad")
+        # Seit P7.4-U4.5 ruft nur `sichern` den Schreiber; auf `config_editor` bleibt
+        # die Sperre für den Fall, dass ein Schritt je wieder sichert.
+        for modul in (config_editor, sichern):
+            monkeypatch.setattr(modul, name, lambda *_a, **_k: "pfad", raising=False)
 
     try:
         config_editor._handle_action(trigger, dict(draft), _freie_werte())
@@ -676,24 +681,46 @@ class TestNurDasModellSchreibtInsModell:
         )
 
     def test_the_experiment_may_still_save_itself(self, monkeypatch, draft):
-        """«Als Szenario speichern» bleibt — es legt kein Modell an, sondern ein Experiment.
+        """«Als Szenario sichern» bleibt — es legt kein Modell an, sondern ein Experiment.
 
         Die Zusage lautet «kein Schreibpfad **ins Modell**», nicht «kein
         Schreibpfad». Ein Szenario unter `configs/sweeps/` abzulegen ist die
-        Ablage des Experiments und gehört genau dorthin, wo man über den Lauf
-        als Ganzes nachdenkt.
+        Ablage des Experiments. Seit P7.4-U4.5 geschieht es im Dialog aus der
+        Kopfzeile; der Test ruft dessen Callback und prüft, dass er das Experiment
+        schreibt und sonst nichts.
         """
 
-        from dashboard.web import config_editor
-        from dashboard.web.config_editor import controls as c
+        from pathlib import Path
+
+        from dashboard.web.config_editor import sichern
+
+        class _Mitschrift:
+            def __init__(self):
+                self.callbacks = {}
+
+            def callback(self, *_a, **_k):
+                def _dekorator(funktion):
+                    self.callbacks[funktion.__name__] = funktion
+                    return funktion
+
+                return _dekorator
+
+            def clientside_callback(self, *_a, **_k):
+                return None
 
         gerufen = []
         for name in EXPERIMENT_SCHREIBER:
             monkeypatch.setattr(
-                config_editor, name, lambda *a, __n=name, **k: gerufen.append(__n) or "pfad"
+                sichern, name, lambda *a, __n=name, **k: gerufen.append(__n) or Path("probe.json")
             )
+        for name in MODELL_SCHREIBER:
+            monkeypatch.setattr(
+                sichern, name, lambda *a, __n=name, **k: gerufen.append(__n), raising=False
+            )
+        mitschrift = _Mitschrift()
+        sichern.register_callbacks(mitschrift)
 
-        config_editor._handle_action(c.action_id("save-preset"), dict(draft), _freie_werte())
+        mitschrift.callbacks["_sichern"](1, "probe", None, dict(draft))
 
         assert gerufen == list(EXPERIMENT_SCHREIBER)
 
@@ -811,9 +838,7 @@ class TestJederKnopfBleibtImDom:
     Muster wie bei den vier Viewport-Bereichen in `app.py`.
     """
 
-    @pytest.mark.parametrize(
-        "kennung", [wizard.BACK, wizard.NEXT, wizard.SKIP, wizard.START, wizard.SAVE]
-    )
+    @pytest.mark.parametrize("kennung", [wizard.BACK, wizard.NEXT, wizard.SKIP, wizard.START])
     def test_it_exists_on_every_step(self, kennung):
         for schritt in range(len(wizard.STEPS)):
             _knopf(wizard.navigation(schritt), kennung)

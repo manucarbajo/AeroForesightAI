@@ -3652,7 +3652,7 @@ class TestDieKopfzeileSagtWasSieTut:
         kopf = messung.bereich(breite, "Einstieg")["kopf"]
         beschriftet = {k["id"] for k in kopf["knoepfe"] if k["text"]}
 
-        assert {shell.ACTION_SAVE, shell.ACTION_SNAPSHOT} <= beschriftet, beschriftet
+        assert shell.ACTION_SAVE in beschriftet, beschriftet
         assert shell.ACTION_EXPORT not in beschriftet
         assert not kopf["auswahl"], "Das Einrichten zeigt eine Laufauswahl"
 
@@ -3706,6 +3706,47 @@ def test_the_run_browser_finds_and_selects_with_two_inputs(page):
     )
 
     page.locator(".af-laufwahl__eintrag").first.click()
+    page.wait_for_function(
+        "(s) => document.querySelector(s).open === false", arg=dialog, timeout=5_000
+    )
+
+
+# --- Als Szenario sichern (P7.4-U4.5) -------------------------------------------
+
+
+@EINE_SEITE
+@pytest.mark.rueckfrage
+def test_saving_opens_a_modal_dialog_with_a_suggestion(page):
+    """Der eine Speicherweg: modal, der Name fokussiert und vorbelegt, Escape schließt.
+
+    **Gesichert wird hier nicht:** Das schriebe unter `configs/`, und ein Test,
+    der das Repo verändert, ist ein Fehler im Test.
+    """
+
+    from dashboard.web import shell
+    from dashboard.web.config_editor import sichern
+
+    dialog = f"#{sichern.DIALOG}"
+    page.goto(page.basis + BEREICHE["Einstieg"], wait_until="networkidle")
+
+    page.locator(f"#{shell.ACTION_SAVE}").click()
+    page.wait_for_function(
+        "(s) => document.querySelector(s)?.open === true", arg=dialog, timeout=5_000
+    )
+    page.wait_for_function(
+        "(id) => (document.getElementById(id)?.value || '').length > 0",
+        arg=sichern.NAME,
+        timeout=5_000,
+    )
+    zustand = page.evaluate(
+        "(s) => ({ modal: document.querySelector(s).matches(':modal'), "
+        "fokus: document.activeElement ? document.activeElement.id : '' })",
+        dialog,
+    )
+    assert zustand["modal"], "Der Dialog geht nicht modal auf — `showModal()` fehlt"
+    assert zustand["fokus"] == sichern.NAME, f"Fokus beim Öffnen: {zustand['fokus']!r}"
+
+    page.keyboard.press("Escape")
     page.wait_for_function(
         "(s) => document.querySelector(s).open === false", arg=dialog, timeout=5_000
     )

@@ -116,9 +116,11 @@ aufsetzen zu müssen.
 
 ## Einen eigenen Stand sichern
 
-Im Schritt **Lauf & Ablage** geben Sie einen
-Dateinamen ein und klicken auf «Szenario sichern». Der aktuelle Entwurf landet
-als Datei unter `configs/sweeps/` und erscheint danach oben in der Auswahl.
+Solange Sie einrichten, steht oben in der Kopfzeile «Als Szenario sichern». Im
+Fenster geben Sie einen Namen ein — vorgeschlagen ist der Name des Laufs — und
+sichern. Der aktuelle Entwurf landet als Datei unter `configs/sweeps/` und
+erscheint danach oben in der Auswahl. Gibt es ein Szenario unter diesem Namen
+schon, sagt das Fenster es, bevor Sie es ersetzen.
 
 Nützlich, sobald Sie eine Konstellation gefunden haben, auf die Sie mehrfach
 zurückkommen wollen — etwa eine Referenzwelt, gegen die alle weiteren Läufe

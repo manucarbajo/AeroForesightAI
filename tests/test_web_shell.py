@@ -112,7 +112,6 @@ class TestFuenfZonen:
 
         assert shell.LAUF_WAHL in gerendert
         assert shell.ACTION_SAVE in gerendert
-        assert shell.ACTION_SNAPSHOT in gerendert
         assert shell.ACTION_EXPORT in gerendert
         assert shell.THEME_TOGGLE in gerendert
         assert "af-status--running" in gerendert
@@ -211,7 +210,6 @@ class TestDieKopfzeileZeigtNurWasZumBereichPasst:
 
                 erwartet = route == ""
                 assert self._sichtbar(stile[shell.ACTION_SAVE]) is erwartet, route
-                assert self._sichtbar(stile[shell.ACTION_SNAPSHOT]) is erwartet, route
 
     def test_the_run_and_its_files_belong_to_the_run_areas(self):
         for route, _ in shell.BEREICHE:
@@ -223,7 +221,7 @@ class TestDieKopfzeileZeigtNurWasZumBereichPasst:
                 assert self._sichtbar(stile[shell.ACTION_EXPORT]) is (bei_laeufen and lauf)
 
     def test_hidden_controls_stay_in_the_tree(self):
-        """Regel 6: `app._save` und `app._export` hängen an diesen Kennungen."""
+        """Regel 6: `config_editor.sichern` und `app._export` hängen an diesen Kennungen."""
 
         gerendert = _text(_kopf("doku"))
 
