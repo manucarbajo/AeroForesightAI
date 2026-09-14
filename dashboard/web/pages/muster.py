@@ -382,7 +382,15 @@ def layout() -> html.Div:
                 "Hell und dunkel über den Umschalter in der Kopfzeile. Die Seite ist nicht "
                 "verlinkt; gegen sie laufen die Wächter des Gestaltungssystems.",
             ),
-            html.Div([], id=HOST),
+            # **In einer Ladeanzeige** (P7.3-U3.5): Der Rumpf entsteht erst beim Aufsuchen.
+            # Braucht das länger als `LADEANZEIGE_NACH_MS`, sieht man, dass etwas kommt;
+            # sonst sieht man nichts davon.
+            dcc.Loading(
+                html.Div([], id=HOST),
+                type="dot",
+                className="af-ladeanzeige",
+                delay_show=ui.LADEANZEIGE_NACH_MS,
+            ),
         ],
         className="af-pane af-pane--focus",
     )

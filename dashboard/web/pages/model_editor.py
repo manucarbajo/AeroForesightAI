@@ -30,7 +30,7 @@ lenkt von einer Arbeit ab, bei der es auf Zahlen ankommt.
 
 from __future__ import annotations
 
-from dash import html
+from dash import dcc, html
 
 from dashboard.web import components as ui
 from dashboard.web.config_editor import macro, micro
@@ -158,7 +158,15 @@ def layout(draft: dict | None = None) -> html.Div:
             # **Leer** — gefüllt wird beim Aufsuchen des Bereichs (P3.12). Der
             # Callback `_model_editor` hört dafür auf den Pfad; `entwurf` steht
             # hier nur noch für die Überschriften darüber.
-            html.Div([], id=HOST),
+            # **In einer Ladeanzeige** (P7.3-U3.5): Der Rumpf entsteht erst beim Aufsuchen.
+            # Braucht das länger als `LADEANZEIGE_NACH_MS`, sieht man, dass etwas kommt;
+            # sonst sieht man nichts davon.
+            dcc.Loading(
+                html.Div([], id=HOST),
+                type="dot",
+                className="af-ladeanzeige",
+                delay_show=ui.LADEANZEIGE_NACH_MS,
+            ),
         ],
         className="af-pane af-pane--focus",
     )

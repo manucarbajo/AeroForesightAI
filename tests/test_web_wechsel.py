@@ -38,7 +38,9 @@ sie auflöst.
 
 from __future__ import annotations
 
+import importlib
 import json
+import pkgutil
 import random
 from pathlib import Path
 
@@ -46,7 +48,8 @@ import pytest
 from dash import dcc, html
 from dash._utils import to_json
 
-from dashboard.web import theme
+from dashboard.web import components as ui
+from dashboard.web import pages, theme
 from dashboard.web.pages import runs as runs_page
 from dashboard.web.views import animation, explorer, figures, files, narrative, overview, scenario
 
@@ -231,6 +234,57 @@ class TestDerWechselHatEineLadeanzeige:
 
         assert not any(isinstance(k, dcc.Loading) for k in _finde(ohne, WIRT))
         assert any(isinstance(k, dcc.Loading) for k in _finde(mit, WIRT))
+
+
+def _neu_gebaute_bereiche() -> list:
+    """Jedes Seitenmodul, dessen Rumpf erst beim Aufsuchen entsteht: `HOST` und `rumpf_fuer`.
+
+    Gesucht statt aufgezählt — ein Bereich, der morgen dasselbe Muster bekommt,
+    fällt ohne Eintrag unter die Zusage (P7.3-U3.5).
+    """
+
+    gefunden = []
+    for eintrag in pkgutil.iter_modules(pages.__path__):
+        modul = importlib.import_module(f"{pages.__name__}.{eintrag.name}")
+        if hasattr(modul, "HOST") and hasattr(modul, "rumpf_fuer"):
+            gefunden.append(modul)
+    return gefunden
+
+
+#: Wie viele neu gebaute Bereiche die Suche mindestens findet — gegen die eigene
+#: Blindheit. Gemessen am 2026-09-14: zwei (Modell, Musterseite).
+NEU_GEBAUT_MIN = 2
+
+
+class TestJederNeuGebauteBereichWartetMitDerAnzeige:
+    """P7.3-U3.5: Eine Ladeanzeige erscheint nach 300 ms für jeden Bereich, der neu gebaut wird.
+
+    Das Audit schloss aus `._dash-loading { display: none }`, die Ladeanzeige sei
+    global abgeschaltet; das war der Platzhalter vor dem ersten Rendern (U0.5). Offen
+    blieb, was das Paket wirklich verlangt: **jeder** Bereich, der beim Aufsuchen neu
+    entsteht, nicht nur die Ergebnis-Ansicht — und die zeigte ihre Anzeige sofort,
+    auch bei Ansichten, die in 90 ms stehen.
+    """
+
+    def test_the_search_finds_the_rebuilt_areas(self):
+        assert len(_neu_gebaute_bereiche()) >= NEU_GEBAUT_MIN
+
+    @pytest.mark.parametrize("modul", _neu_gebaute_bereiche(), ids=lambda m: m.__name__)
+    def test_every_rebuilt_area_sits_in_a_delayed_indicator(self, modul):
+        pfad = _finde(modul.layout(), modul.HOST)
+
+        assert pfad is not None, f"«{modul.HOST}» ist nicht im Baum von {modul.__name__}"
+        anzeige = next((k for k in pfad if isinstance(k, dcc.Loading)), None)
+        assert anzeige is not None, f"«{modul.HOST}» liegt in keiner `dcc.Loading`"
+        assert getattr(anzeige, "delay_show", None) == ui.LADEANZEIGE_NACH_MS
+        assert "af-ladeanzeige" in (getattr(anzeige, "className", "") or "")
+        assert getattr(anzeige, "color", None) is None
+
+    def test_the_result_views_wait_as_well(self):
+        pfad = _finde(runs_page.layout(), WIRT)
+        anzeige = next(k for k in pfad if isinstance(k, dcc.Loading))
+
+        assert getattr(anzeige, "delay_show", None) == ui.LADEANZEIGE_NACH_MS
 
 
 # --- Die Nutzlast ------------------------------------------------------------

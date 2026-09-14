@@ -279,6 +279,7 @@ def layout(selection: dict | None = None) -> html.Div:
                         ),
                         type="dot",
                         className="af-ladeanzeige",
+                        delay_show=ui.LADEANZEIGE_NACH_MS,
                     ),
                 ],
                 className="af-pane",

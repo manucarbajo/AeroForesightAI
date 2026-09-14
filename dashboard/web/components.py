@@ -40,6 +40,11 @@ TEXT = "af-schrift-text"
 BESCHRIFTUNG = "af-schrift-beschriftung"
 KLEIN = "af-schrift-klein"
 
+#: Nach wie vielen Millisekunden eine Ladeanzeige erscheint (P7.3-U3.5). Was
+#: schneller fertig ist, zeigt keine — sonst blitzte sie bei jeder Ansicht auf,
+#: die in 90 ms steht. Eine Zahl für jeden Bereich, der neu gebaut wird.
+LADEANZEIGE_NACH_MS = 300
+
 LABEL = f"block font-body {BESCHRIFTUNG} font-medium af-text-body mb-1"
 #: Der kleine Erklaertext unter einem Feld oder einer Zustandsanzeige.
 #:
