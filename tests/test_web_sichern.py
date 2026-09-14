@@ -179,3 +179,92 @@ class TestEinWortEineBedeutung:
 
         assert "Zwischenstand" in glossary.get("checkpoint_interval").label
         assert "Zwischenstand" not in str(sichern.dialog())
+
+
+def _verlaeufe(sweep) -> dict:
+    return {o.property_id: (o.baseline, o.rules) for o in sweep.property_overrides}
+
+
+class TestGesichertWirdDasGewaehlteSzenario:
+    """P7.13-U13.2 Teil 3 — was «Als Szenario sichern» ablegt.
+
+    **Gemessen vorher:** Mit «Business as Usual» gewählt legte der Knopf die
+    Standard-Ausgangslage unter neuem Namen ab — CO₂-Abgabe mit Sprung auf 120 und
+    200 statt konstant 50, 40 statt 120 Ticks, keine Preisstrategie, 16 statt 6
+    Systemgrößen. Kein Test prüfte den Inhalt, nur dass eine Datei entstand.
+    """
+
+    SZENARIO = "business_as_usual"
+
+    def _entwurf(self, **felder):
+        from dashboard.config_catalog import default_config_draft
+
+        draft = default_config_draft()
+        draft.scenario_mode = "sweep"
+        draft.sweep_id = self.SZENARIO
+        for feld, wert in felder.items():
+            setattr(draft, feld, wert)
+        return draft
+
+    def _abweichung(self):
+        from dashboard.config_catalog import PropertyEditState
+
+        return {
+            "carbon_tax_level": PropertyEditState(property_id="carbon_tax_level", baseline=77.0)
+        }
+
+    def _basis(self):
+        from src.orchestration.scenario_sweeps import SWEEPS_DIR, load_sweep_config
+
+        return load_sweep_config(SWEEPS_DIR / f"{self.SZENARIO}.json")
+
+    def test_the_scenario_is_kept(self):
+        from dashboard.config_catalog import szenario_zum_sichern
+
+        basis = self._basis()
+        gesichert = szenario_zum_sichern(self._entwurf(), "probe")
+
+        assert _verlaeufe(gesichert) == _verlaeufe(basis)
+        assert gesichert.max_ticks == basis.max_ticks
+        assert gesichert.preisstrategie == basis.preisstrategie
+
+    def test_a_deviation_lies_on_top(self):
+        from dashboard.config_catalog import szenario_zum_sichern
+
+        erwartet = _verlaeufe(self._basis())
+        erwartet["carbon_tax_level"] = (77.0, [])
+        gesichert = szenario_zum_sichern(
+            self._entwurf(abweichungen=self._abweichung(), preisstrategie="marge"), "probe"
+        )
+
+        assert _verlaeufe(gesichert) == erwartet
+        assert gesichert.preisstrategie == "marge"
+
+    def test_it_is_marked_as_own_and_stays_a_stress_test(self):
+        """Ein gesichertes Experiment ist kein begründetes Weltbild (P2.2), aber ein eigenes."""
+
+        from dashboard.config_catalog import szenario_zum_sichern
+
+        gesichert = szenario_zum_sichern(self._entwurf(), "probe")
+
+        assert gesichert.herkunft == "eigen"
+        assert gesichert.art == "stresstest"
+        assert gesichert.kohaerenz is None
+
+    def test_the_saved_file_computes_what_the_draft_computes(self, monkeypatch, tmp_path):
+        """Die tragende Zusage: neu geladen rechnet das Szenario denselben Zustand wie der Entwurf."""
+
+        import shutil
+
+        from dashboard import config_catalog
+
+        shutil.copy(config_catalog.SWEEPS_DIR / f"{self.SZENARIO}.json", tmp_path)
+        monkeypatch.setattr(config_catalog, "SWEEPS_DIR", tmp_path)
+        entwurf = self._entwurf(abweichungen=self._abweichung(), preisstrategie="marge")
+        pfad = config_catalog.save_custom_sweep_preset(entwurf, "probe")
+
+        wieder = self._entwurf(sweep_id=pfad.stem, rounds=entwurf.rounds)
+
+        gerechnet = config_catalog.prepare_simulation_state(entwurf).properties.model_dump()
+        gesichert = config_catalog.prepare_simulation_state(wieder).properties.model_dump()
+        assert gesichert == gerechnet

@@ -119,9 +119,11 @@ aufsetzen zu müssen.
 
 Solange Sie einrichten, steht oben in der Kopfzeile «Als Szenario sichern». Im
 Fenster geben Sie einen Namen ein — vorgeschlagen ist der Name des Laufs — und
-sichern. Der aktuelle Entwurf landet als Datei unter `configs/sweeps/` und
-erscheint danach oben in der Auswahl. Gibt es ein Szenario unter diesem Namen
-schon, sagt das Fenster es, bevor Sie es ersetzen.
+sichern. Abgelegt wird das gewählte Szenario samt Ihren Abweichungen als Datei
+unter `configs/sweeps/`. In der Auswahl steht es vorerst unter «Stresstests
+zeigen»: Ein gesichertes Experiment gilt nicht als begründetes Weltbild. Gibt es
+ein Szenario unter diesem Namen schon, sagt das Fenster es, bevor Sie es
+ersetzen.
 
 Nützlich, sobald Sie eine Konstellation gefunden haben, auf die Sie mehrfach
 zurückkommen wollen — etwa eine Referenzwelt, gegen die alle weiteren Läufe

@@ -106,6 +106,11 @@ class SweepConfig(BaseModel):
     art: str = "stresstest"
     #: Pflicht für `art == "rahmen"`, sonst leer. Siehe `Kohaerenz`.
     kohaerenz: Kohaerenz | None = None
+    #: **Woher die Datei kommt** (P7.13-U13.2): `"eigen"` für ein mit «Als Szenario
+    #: sichern» abgelegtes Szenario, `None` für ein ausgeliefertes. Unabhängig von
+    #: `art`: Ein gesichertes Experiment bleibt ein Stresstest (P2.2), ist aber ein
+    #: eigenes — daran erkennt Schritt 1 die Gruppe «Eigene Einstellungen».
+    herkunft: str | None = None
 
     @model_validator(mode="after")
     def _rahmen_traegt_seine_begruendung(self) -> "SweepConfig":

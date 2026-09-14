@@ -14,6 +14,11 @@ der einzige
 Aufrufer von `save_custom_sweep_preset`; `tests/test_web_sichern.py` sucht jeden
 Aufruf im Quelltext.
 
+**Was gesichert wird, entscheidet `config_catalog.szenario_zum_sichern`**
+(P7.13-U13.2 Teil 3): das gewählte Szenario samt seinen Abweichungen, nach
+derselben Regel wie beim Rechnen. Bis zum 2026-09-14 legte der Knopf mit einem
+gewählten Rahmen die Standard-Ausgangslage unter neuem Namen ab.
+
 Ein Szenario zu sichern ist die Ablage des **Experiments**, nicht des Modells
 (Regel 7). Deshalb kein Hinweis auf eine Reichweite wie bei der Rückfrage im
 Modell-Bereich — nur die Warnung, wenn ein vorhandenes Szenario ersetzt wird.

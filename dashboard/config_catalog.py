@@ -933,14 +933,67 @@ def sweep_ziel(filename: str) -> Path:
     return SWEEPS_DIR / safe_name
 
 
+def szenario_zum_sichern(draft: ConfigDraft, filename: str) -> SweepConfig:
+    """Was «Als Szenario sichern» ablegt: das gewählte Szenario samt seinen Abweichungen.
+
+    **Bis zum 2026-09-14 war es die Standard-Ausgangslage** (P7.13-U13.2 Teil 3):
+    Gebaut wurde aus `property_edits`, der vollen Kopie der Dateiwerte, und aus der
+    Länge des Entwurfs. Mit «Business as Usual» gewählt entstand ein Szenario mit
+    dem CO₂-Sprung auf 120 und 200 statt konstant 50, 40 statt 120 Ticks, ohne
+    Preisstrategie und mit 16 statt 6 Systemgrößen.
+
+    **Die Regel ist dieselbe wie beim Rechnen** in `prepare_simulation_state`: das
+    Szenario, darauf die Abweichungen, sofern «Eigene Werte anwenden» an ist.
+    Meilensteine und Kohärenzbegründung eines Rahmens gehen nicht mit — sie
+    beschreiben das unveränderte Szenario. Gesichert wird immer als Stresstest mit
+    der Herkunft «eigen» (P2.2).
+    """
+
+    eigene = draft.apply_custom_overrides or draft.scenario_mode == "custom"
+    name = build_custom_sweep_from_draft(draft, filename=filename).name
+    if draft.scenario_mode == "sweep" and draft.sweep_id:
+        pfad = SWEEPS_DIR / f"{draft.sweep_id}.json"
+        basis = load_sweep_config(pfad if pfad.is_file() else Path(draft.sweep_id))
+        verlaeufe = {o.property_id: o for o in basis.property_overrides}
+        strategie = basis.preisstrategie
+        beschreibung = f"Abgeleitet von «{basis.name}»."
+        grundlage = basis
+    else:
+        grundlage = build_custom_sweep_from_draft(draft, filename=filename)
+        edits = (
+            draft.property_edits
+            if eigene
+            else extract_property_edits_from_file(draft.properties_file)
+        )
+        verlaeufe = {o.property_id: o for o in property_overrides_from_edits(edits)}
+        strategie = None
+        beschreibung = grundlage.description
+    if eigene:
+        for override in property_overrides_from_edits(draft.abweichungen):
+            verlaeufe[override.property_id] = override
+        strategie = draft.preisstrategie or strategie
+    return grundlage.model_copy(
+        update={
+            "id": filename,
+            "name": name,
+            "description": draft.simulation_description or beschreibung,
+            "rationale": "Erstellt im Dashboard als eigenes Szenario.",
+            "art": "stresstest",
+            "kohaerenz": None,
+            "herkunft": "eigen",
+            "preisstrategie": strategie,
+            "property_overrides": list(verlaeufe.values()),
+            "milestones": [],
+        }
+    )
+
+
 def save_custom_sweep_preset(draft: ConfigDraft, filename: str) -> Path:
     """Persistiert den aktuellen Entwurf als Sweep unter configs/sweeps/."""
 
     SWEEPS_DIR.mkdir(parents=True, exist_ok=True)
     target = sweep_ziel(filename)
-    sweep = build_custom_sweep_from_draft(draft, filename=target.stem)
+    sweep = szenario_zum_sichern(draft, filename=target.stem)
     payload = sweep.model_dump(mode="json")
-    payload["id"] = target.stem
-    payload["rationale"] = "Erstellt im Dashboard als benutzerdefiniertes Szenario."
     target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return target

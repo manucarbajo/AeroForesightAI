@@ -334,6 +334,9 @@ vorgeschlagen ist der Name des Laufs —, der Option «Mit Zeitstempel im Namen
 sichern», die so kein vorhandenes Szenario ersetzt, und einer
 Warnung, wenn es ein Szenario unter diesem Namen schon gibt. Gesichert wird unter
 `configs/sweeps/`; danach steht das Szenario im ersten Schritt zur Auswahl.
+Gesichert wird **das gewählte Szenario** in seiner eigenen Länge und mit seiner
+Preisstrategie, und darauf Ihre Abweichungen, sofern «Eigene Werte anwenden» an
+ist — also genau das, was ein Lauf mit diesen Einstellungen rechnen würde.
 
 ### Technik
 
