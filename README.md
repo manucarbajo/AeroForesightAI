@@ -62,7 +62,9 @@ Seit P1.5 ist das Dashboard ein **Leitstand**: ein Bildschirm mit fünf Bereiche
 statt eines Stapels Seiten — links das Bedienfeld (was eingestellt ist, der
 Preflight, der Start), in der Mitte die Population zum gewählten Tick, rechts
 Kennzahlen, Verläufe und Konsole, unten die Zeitleiste mit Abspielsteuerung,
-oben Zustand, Lauf-Auswahl und die globalen Aktionen. Eingestellt wird seit P1.6
+oben der Zustand und, wo sie passen, Laufwahl und Aktionen: Den Lauf wählt man im
+Leitstand und unter «Ergebnisse» über einen Dialog mit Suche und Filter, gesichert
+wird im Einrichten. Seit September 2026 hat nur der Leitstand diese Seitenzonen. Eingestellt wird seit P1.6
 im eigenen Bereich **Einrichten**, der die volle Breite bekommt — dort steht der
 geführte Ablauf aus P1.1 mit den Presets als Kartenraster. Kopfzeile und Zeitleiste bleiben stehen, die drei
 Bereiche dazwischen rollen jeder für sich; auf schmalen Fenstern weichen die
@@ -216,7 +218,7 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 │   ├── run_browser.py               # Lauf-Auswahl, Artefakte laden
 │   ├── consistency_report.py        # Konsistenz-Checks
 │   ├── web/                         # Plotly-Dash-Leitstand (aktiv): shell, theme,
-│   │                                #   timeline, status, run_data, views/,
+│   │                                #   timeline, status, run_data, lauf_wahl, views/,
 │   │                                #   pages/ (launch=Bedienfeld, setup, runs, docs)
 │   └── README.md
 ├── docs/                            # Technische Doku (CIB-Methodik, Agent-Profile, Workflow)
