@@ -45,7 +45,7 @@ python src/run_simulation.py --mock-llm --rounds 10 --quiet
 python src/run_simulation.py --rounds 30 --model llama3.2 --temperature 0.7
 ```
 
-Outputs landen unter `outputs/<run_id>/` (z. B. `outputs/run_20260614T112808Z/`). Checkpoints: `outputs/<run_id>/checkpoints/<run_id>/tick_0005.json`, …
+Outputs landen unter `outputs/<run_id>/` (z. B. `outputs/run_20260614T112808Z/`). **Die Umgebungsvariable `AF_AUSGABE` verlegt dieses Verzeichnis** — für CLI, Dashboard und jeden Unterprozess; die Test-Suite setzt sie auf ein Temp-Verzeichnis, damit kein Testlauf in `outputs/` landet. Checkpoints: `outputs/<run_id>/checkpoints/<run_id>/tick_0005.json`, …
 
 ### Dashboard (Leitstand)
 

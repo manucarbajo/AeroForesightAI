@@ -93,7 +93,10 @@ import contextlib
 import json
 import re
 import socket
+import subprocess
+import sys
 import threading
+from pathlib import Path
 
 import pytest
 
@@ -127,8 +130,66 @@ def _freier_port() -> int:
         return int(s.getsockname()[1])
 
 
+#: Der Lauf, den die Ergebnis-Ansicht zeigt, solange der Wächter misst.
+#:
+#: **`--mock-llm` und nicht `--deterministic-only`:** Beide rechnen ohne
+#: Sprachmodell, aber der deterministische Weg *versucht* den Aufruf und läuft
+#: gegen ein nicht vorhandenes Ollama in Retry und Backoff. Der Mock ist die
+#: Ansage «ohne Sprachmodell» (P0.1) und braucht kein Netz. **Der Name beginnt
+#: mit `run_`**, weil `run_browser.list_runs` nur solche Verzeichnisse nimmt.
+#: **20 Ticks**, damit die vier Aussagen eine Legende mit mehreren Einträgen
+#: haben; gemessen 3,4 s in der CI.
+REFERENZLAUF = [
+    "--mock-llm",
+    "--rounds",
+    "20",
+    "--seed",
+    "42",
+    "--quiet",
+    "--run-id",
+    "run_ci_referenz",
+]
+
+
 @pytest.fixture(scope="module")
-def basis_url():
+def referenzlauf():
+    """Ein Lauf in der Ausgabe dieser Sitzung — gerechnet, bevor der Server startet.
+
+    **Ohne Lauf misst der Wächter eine leere Fläche:** Die Ergebnis-Ansicht hat
+    dann keine Auswahl (`runs.default_selection` gibt `None`), keine Daten und
+    keine Reiter, und die Zusagen über Legende und Achsentitel liefen in einen
+    Timeout. Aufgefallen ist das beim ersten CI-Lauf am 2026-09-07 — auf der
+    Entwicklungsmaschine lagen damals 389 Läufe, und er war grün, weil sie da
+    waren. Die CI legte deshalb vor dem Lauf selbst einen an.
+
+    **Seit dem 2026-09-14 rechnet der Wächter ihn selbst** (P7.3-U3.3): Die Suite
+    schreibt nicht mehr nach `outputs/` und liest auch nicht mehr von dort
+    (`tests/conftest.py`), ein vorab angelegter Lauf wäre also unsichtbar — gemessen:
+    «Kein Lauf» beim ersten Test, der die Ergebnis-Ansicht öffnet. Als Unterprozess
+    der CLI erbt er `AF_AUSGABE` und schreibt genau in das Verzeichnis, das der
+    Server in diesem Prozess liest. **Und der Wächter misst damit auf jeder
+    Maschine denselben Lauf** statt der Vorgeschichte der Maschine.
+    """
+
+    from dashboard.run_browser import list_runs
+
+    ergebnis = subprocess.run(
+        [sys.executable, "-m", "src.run_simulation", *REFERENZLAUF],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=Path(__file__).resolve().parents[1],
+        timeout=600,
+    )
+    assert ergebnis.returncode == 0, ergebnis.stderr[-2000:]
+    kennungen = [lauf.run_id for lauf in list_runs()]
+    assert "run_ci_referenz" in kennungen, kennungen
+    return "run_ci_referenz"
+
+
+@pytest.fixture(scope="module")
+def basis_url(referenzlauf):
     """Die Dash-App in einem Thread — dieselbe, die `python -m dashboard.web.app` startet.
 
     Bewusst der echte Server und keine Attrappe: Ein Überlauf entsteht aus
@@ -2783,12 +2844,8 @@ def _oeffne_figures(page) -> None:
 
     if not list_runs():
         pytest.fail(
-            "Kein Lauf in `outputs/` — diese Zusagen messen die Ergebnis-Ansicht und "
-            "brauchen Daten. Einen erzeugen:\n"
-            "  python -m src.run_simulation --mock-llm --rounds 20 --seed 42 --quiet "
-            "--run-id run_ci_referenz\n"
-            "Der Name muss mit `run_` beginnen, sonst findet `list_runs` ihn nicht. "
-            "In der CI erledigt das der Schritt «Ein Lauf zum Messen» in browser.yml."
+            "Kein Lauf in der Ausgabe dieser Sitzung — die Fixture `referenzlauf` hätte "
+            "einen rechnen sollen. Hängt `basis_url` noch an ihr?"
         )
 
     page.goto(page.basis + "runs", wait_until="networkidle")

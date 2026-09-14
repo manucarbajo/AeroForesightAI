@@ -16,8 +16,11 @@ from __future__ import annotations
 
 import ast
 import fnmatch
+import os
 import tomllib
 from pathlib import Path
+
+from tests import conftest
 
 ROOT = Path(__file__).resolve().parent.parent
 TESTS = ROOT / "tests"
@@ -608,3 +611,62 @@ class TestKeineTestklasseVerschattetEinenProduktnamen:
             f"Zeile 5 darf nicht gemeldet werden: {befunde}"
         )
         assert befunde[0].endswith("a.py:1"), befunde
+
+
+# --- Die siebte Regel: Die Suite schreibt nicht nach outputs/ (P7.3-U3.3) ------
+
+
+class TestDieSuiteSchreibtNichtNachOutputs:
+    """**Kein Test schreibt in das echte `outputs/`.**
+
+    Bis zum 2026-09-14 legte jeder Durchlauf dort Laufordner an — am
+    2026-09-13 96 Stück, fast alle nur mit `checkpoints/` —, und
+    `test_scenario_sweeps.py` überschrieb die Zusammenfassung des letzten echten
+    Szenario-Vergleichs. Die Lauf-Auswahl listete danach 630 Einträge, 440 davon
+    ohne jede Laufdatei.
+
+    Durchgesetzt wird es an zwei Stellen in `conftest.py`: Eine Umleitung
+    **sucht** jede Modulvariable, die dorthin zeigt, und ein Vergleich am Ende
+    der Sitzung macht den Lauf rot, wenn trotzdem etwas geschrieben wurde. Diese
+    Klasse prüft, dass beide Hälften greifen.
+    """
+
+    def test_the_redirect_leaves_no_root_pointing_into_outputs(self) -> None:
+        """Während der Sitzung zeigt keine Modulvariable mehr in das echte `outputs/`."""
+
+        assert not conftest.schreibwurzeln(), conftest.schreibwurzeln()
+
+    def test_the_search_would_find_a_new_root(self, monkeypatch) -> None:
+        """Eine morgen angelegte Konstante fiele auf, ohne dass jemand sie einträgt."""
+
+        from dashboard import run_browser
+
+        monkeypatch.setattr(
+            run_browser, "NEUE_WURZEL", conftest.ECHTE_AUSGABE / "neu", raising=False
+        )
+
+        funde = {(modul, name) for modul, name, _ in conftest.schreibwurzeln()}
+
+        assert ("dashboard.run_browser", "NEUE_WURZEL") in funde
+
+    def test_a_relative_root_counts_as_well(self, monkeypatch) -> None:
+        """`Path("outputs") / "x"` zeigt aus dem Repo heraus gestartet ebenso dorthin."""
+
+        monkeypatch.chdir(conftest.WURZEL)
+
+        assert conftest._zeigt_in_die_ausgabe("outputs/demo.jsonl") is not None
+        assert conftest._zeigt_in_die_ausgabe("configs/sweeps") is None
+
+    def test_the_comparison_would_notice_a_write(self, tmp_path) -> None:
+        """Der Bestandsvergleich sieht eine neue und eine geänderte Datei."""
+
+        (tmp_path / "alt.txt").write_text("a", encoding="utf-8")
+        vorher = conftest._bestand(tmp_path)
+        (tmp_path / "neu.txt").write_text("b", encoding="utf-8")
+
+        os.utime(tmp_path / "alt.txt", ns=(1, 1))
+
+        nachher = conftest._bestand(tmp_path)
+
+        assert set(nachher) - set(vorher) == {"neu.txt"}
+        assert nachher["alt.txt"] != vorher["alt.txt"]

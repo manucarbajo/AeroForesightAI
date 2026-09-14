@@ -5,7 +5,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-OUTPUT_DIR = str(_REPO_ROOT / "outputs")
+#: Wohin Läufe schreiben. **`AF_AUSGABE` verlegt das Verzeichnis**, und zwar in
+#: jedem Prozess, der dieses Modul lädt — auch in einem Unterprozess, den keine
+#: Umleitung einer Modulvariable erreicht. Die Test-Suite setzt sie, damit kein
+#: Testlauf im echten `outputs/` landet (P7.3-U3.3); dieselbe Form wie
+#: `AF_DEMO_ANFRAGEN` für die Demo-Anfragen der Landingpage.
+OUTPUT_DIR = os.environ.get("AF_AUSGABE") or str(_REPO_ROOT / "outputs")
 
 
 def create_run_id(prefix: str = "run") -> str:
