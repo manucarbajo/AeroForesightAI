@@ -14,6 +14,7 @@ unten hält deshalb eine Eigenschaft der ganzen Suite fest, keinen Dateinamen.
 
 from __future__ import annotations
 
+import ast
 import fnmatch
 import tomllib
 from pathlib import Path
@@ -81,6 +82,61 @@ class TestJedeDateiInTestsWirdAuchAusgefuehrt:
         (tmp_path / "debug_lauf.py").write_text("", encoding="utf-8")
 
         assert nicht_eingesammelt(tmp_path, ["test_*.py", "*_test.py"]) == ["debug_lauf.py"]
+
+
+def ohne_test(verzeichnis: Path, muster: list[str]) -> list[str]:
+    """Jede eingesammelte Datei, in der pytest **keinen einzigen Test** findet.
+
+    Gesucht wird über den Syntaxbaum: eine Funktion `test…` oder eine Klasse
+    `Test…` auf Modulebene. Ein Name allein genügt nicht — gezählt wird, was
+    pytest wirklich ausführt.
+    """
+
+    befunde = []
+    for pfad in sorted(verzeichnis.rglob("*.py")):
+        if "__pycache__" in pfad.parts or not any(fnmatch.fnmatch(pfad.name, m) for m in muster):
+            continue
+        baum = ast.parse(pfad.read_text(encoding="utf-8"))
+        hat_test = any(
+            (isinstance(k, (ast.FunctionDef, ast.AsyncFunctionDef)) and k.name.startswith("test"))
+            or (isinstance(k, ast.ClassDef) and k.name.startswith("Test"))
+            for k in baum.body
+        )
+        if not hat_test:
+            befunde.append(str(pfad.relative_to(verzeichnis)))
+    return befunde
+
+
+class TestJedeTestdateiEnthaeltEinenTest:
+    """**Ein Dateiname ist kein Test.** Die Zusage darüber hat nur den Namen geprüft.
+
+    Der Anlass war `test_output_writer.py`, seit dem ersten Commit
+    (2026-08-18): 30 Anweisungen auf Modulebene, keine Funktion, keine
+    Zusicherung. Es lief bei jedem Einsammeln — also *vor* jeder Fixture —,
+    schrieb dabei nach `outputs/` und meldete einen Fehler mit
+    `print("[ERROR] …")`, den niemand las. Die Regel darüber war erfüllt, weil
+    die Datei `test_…` hieß.
+    """
+
+    def test_jede_eingesammelte_datei_enthaelt_einen_test(self):
+        befunde = ohne_test(TESTS, _einsammelmuster())
+
+        assert not befunde, (
+            "Diese Dateien sammelt pytest ein, finden aber keinen Test darin:\n  "
+            + "\n  ".join(befunde)
+            + "\n\nCode auf Modulebene läuft beim Einsammeln, vor jeder Fixture, "
+            "und kann nicht scheitern — er kann nur etwas ausgeben."
+        )
+
+    def test_der_waechter_saehe_eine_solche_datei(self, tmp_path):
+        (tmp_path / "test_echt.py").write_text("def test_x():\n    assert True\n", encoding="utf-8")
+        (tmp_path / "test_klasse.py").write_text("class TestX:\n    pass\n", encoding="utf-8")
+        (tmp_path / "test_skript.py").write_text("print('laeuft')\n", encoding="utf-8")
+        (tmp_path / "test_nur_helfer.py").write_text("def hilf():\n    pass\n", encoding="utf-8")
+
+        befunde = ohne_test(tmp_path, ["test_*.py"])
+
+        assert befunde == ["test_nur_helfer.py", "test_skript.py"]
 
 
 def eingriffe_in_sys_path(quelltext: str) -> list[int]:
