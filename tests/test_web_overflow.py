@@ -590,6 +590,7 @@ class _Messgang:
             seite.wait_for_selector(".af-way")
             einstieg_schirme = _schirme(seite)
             einstieg_raster = seite.evaluate(_EINSTIEG_RASTER)
+            einstieg_flaeche = seite.evaluate(_EINSTIEG_FLAECHE)
 
             seite.click("#wizard-way-new")
             seite.wait_for_timeout(RUHE_MS * 2)
@@ -629,6 +630,7 @@ class _Messgang:
         return {
             "einstieg_schirme": einstieg_schirme,
             "einstieg_raster": einstieg_raster,
+            "einstieg_flaeche": einstieg_flaeche,
             "baum": baum,
             "schritte": je_schritt,
         }
@@ -1605,6 +1607,46 @@ _PROSA = ("""
 }
 """).replace("__AUSNAHMEN__", repr(sorted(PROSA_AUSNAHMEN)).replace("'", '"'))
 
+#: Wie hoch der Einstieg ist und wie viel jeder Weg leer lässt (P7.4-U4.6).
+#: **Die Höhe am Inhalt, nicht am Scrollmaß**: `scrollHeight / clientHeight` fällt
+#: nie unter 1,0, eine Zusage «≤ 0,6 Bildschirme» ließe sich damit nicht prüfen.
+#: **Der Leerraum an der Tinte**: gemessen wird die rechte Kante des Textes je Karte,
+#: ohne die Symbole — ein Pfeil am rechten Rand wäre sonst Text bis zur Kante.
+_EINSTIEG_FLAECHE = r"""
+() => {
+  const main = document.querySelector('.af-shell__main');
+  const wirt = document.getElementById('wizard-entry-host');
+  if (!main || !wirt) return null;
+  const karten = [...document.querySelectorAll('.af-way')].map((w) => {
+    const b = w.getBoundingClientRect();
+    const gang = document.createTreeWalker(w, NodeFilter.SHOW_TEXT);
+    let rechts = b.left;
+    let knoten;
+    while ((knoten = gang.nextNode())) {
+      if (!knoten.textContent.trim()) continue;
+      if (knoten.parentElement.closest('.material-symbols-outlined')) continue;
+      const bereich = document.createRange();
+      bereich.selectNodeContents(knoten);
+      for (const r of bereich.getClientRects()) rechts = Math.max(rechts, r.right);
+    }
+    return {
+      titel: (w.querySelector('.af-way__title') || {}).textContent || '',
+      leer: 1 - (rechts - b.left) / b.width,
+    };
+  });
+  return { anteil: wirt.getBoundingClientRect().height / main.clientHeight, karten };
+}
+"""
+
+#: Was P7.4-U4.6 zusagt, bei 1440 × 900.
+EINSTIEG_ANTEIL_MAX = 0.6
+EINSTIEG_LEER_MAX = 0.5
+#: **Und eine Sperrklinke darunter**, weil die Zusage allein den Umbau nicht hält:
+#: Untereinander lag der größte Leerraum schon bei 0,49, die alte Anordnung
+#: bestünde sie. Gemessen am 2026-09-14 nebeneinander 0,25, geprüft mit
+#: `TOLERANZ` darüber.
+EINSTIEG_LEER_STAND = 0.25
+
 _EINSTIEG_RASTER = """
 () => {
     const w = document.querySelector(".af-wizard");
@@ -1662,6 +1704,47 @@ class TestJederSchrittHatSeineBreite:
         assert len(raster["spalten"].split()) == 1, (
             f"Der Einstieg hält bei {breite} px eine zweite Spalte vor "
             f"({raster['spalten']}) — für eine Liste, die dort nicht steht."
+        )
+
+
+@pytest.mark.breite
+class TestDerEinstiegIstKompakt:
+    """P7.4-U4.6: höchstens 0,6 Bildschirme und kein Weg zur Hälfte leer, bei 1440 × 900.
+
+    Das Audit (E11) sah drei vollbreite Karten mit je einer Zeile. Gemessen am
+    2026-09-14 vor dem Umbau: 0,39 Bildschirme — die Höhe hielt schon —, aber jede
+    Karte 1040 px breit und ihr Text bei 51 bis 70 % davon zu Ende. Die Zusage über
+    den Leerraum stand damit bei 0,49, und ein kürzerer Satz hätte sie gekippt.
+    """
+
+    @pytest.mark.parametrize("breite", [1440], ids=["1440x900"])
+    def test_the_entry_is_low_and_every_way_fills_its_card(self, messung, breite):
+        flaeche = messung.schritte(breite)["einstieg_flaeche"]
+
+        assert flaeche, "Einstieg nicht gefunden — misst der Wächter noch das Richtige?"
+        assert len(flaeche["karten"]) >= 3, flaeche["karten"]
+        assert flaeche["anteil"] <= EINSTIEG_ANTEIL_MAX, flaeche["anteil"]
+        leer = [
+            f"  {k['titel']}: {k['leer']:.0%} leer"
+            for k in flaeche["karten"]
+            if k["leer"] > EINSTIEG_LEER_MAX
+        ]
+        assert not leer, "Diese Wege lassen ihre Karte mehr als zur Hälfte leer:\n" + "\n".join(
+            leer
+        )
+
+    @pytest.mark.parametrize("breite", [1440], ids=["1440x900"])
+    def test_the_ways_stay_side_by_side(self, messung, breite):
+        """Die Sperrklinke: Wieder untereinander wären es 0,49 — unter der Zusage."""
+
+        flaeche = messung.schritte(breite)["einstieg_flaeche"]
+        grenze = EINSTIEG_LEER_STAND + TOLERANZ
+
+        assert flaeche and flaeche["karten"], "Einstieg nicht gefunden"
+        leer = [f"  {k['titel']}: {k['leer']:.2f}" for k in flaeche["karten"] if k["leer"] > grenze]
+        assert not leer, (
+            f"Mehr Leerraum als nebeneinander gemessen (Stand {EINSTIEG_LEER_STAND}, "
+            f"Grenze {grenze:.2f}) — stehen die Wege wieder untereinander?\n" + "\n".join(leer)
         )
 
 

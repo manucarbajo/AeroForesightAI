@@ -2964,6 +2964,18 @@ html.dark .af-input[type="number"] {
     margin-top: 0.5rem;
 }
 
+/* **Ab 1280 px nebeneinander** (P7.4-U4.6). Untereinander standen bei 1440 px
+   drei Karten von je 1040 px Breite, und ihr Text endete bei 51 bis 70 % davon
+   (E11). Gleich hoch, damit die Reihenfolge ein Raster bleibt und keine Treppe
+   wird; die Reihenfolge selbst aendert sich nicht (W5.6: Ort fest, Gewicht
+   veraenderlich). */
+@media (min-width: 1280px) {
+    .af-ways {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: stretch;
+    }
+}
+
 .af-way {
     display: flex;
     align-items: flex-start;

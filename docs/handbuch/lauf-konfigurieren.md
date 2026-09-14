@@ -22,7 +22,8 @@ bekommt ihn also, ohne ein Kästchen suchen zu müssen.
 
 Einer der drei Wege ist hervorgehoben — der, der in Ihrer Lage der naheliegende
 ist: beim ersten Mal «Neuen Lauf einrichten», und sobald etwas eingestellt war,
-«Letzte Einstellungen weiterverwenden». Die Karten wechseln dabei nicht ihren
+«Letzte Einstellungen weiterverwenden». Auf breiten Bildschirmen stehen die drei
+Wege nebeneinander. Die Karten wechseln dabei nicht ihren
 Platz, nur ihr Gewicht; wo ein Weg beim letzten Mal lag, liegt er auch beim
 nächsten.
 
