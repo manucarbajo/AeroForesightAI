@@ -887,12 +887,19 @@ body {
 
 /* Der Punkt kommt auch allein vor — in der Erreichbarkeitszeile des
    Rechenmodus, ohne die Kapsel drumherum. */
-.af-status__dot--ok {
+.af-status__dot--bereit {
     background: var(--positive);
 }
 
-.af-status__dot--off {
+.af-status__dot--aus {
     background: var(--text-faint);
+}
+
+/* Solange geprueft wird (P7.4-U4.2): der Akzent und der Puls des laufenden
+   Laufs. Bis dahin sah das Pruefen aus wie die Absage. */
+.af-status__dot--pruefen {
+    background: var(--accent);
+    animation: af-pulse 1.6s ease-in-out infinite;
 }
 
 .af-status--running {

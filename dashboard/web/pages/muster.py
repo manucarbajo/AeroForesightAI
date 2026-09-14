@@ -150,11 +150,12 @@ def _meldungen() -> html.Section:
             ton="demo",
         ),
         _reihe(
-            _probe("status_dot", ui.status_dot(True, "Erreichbar"), ok=True),
+            _probe("status_dot", ui.status_dot("bereit", "Erreichbar"), zustand="bereit"),
+            _probe("status_dot", ui.status_dot("pruefen", "Wird geprüft …"), zustand="pruefen"),
             _probe(
                 "status_dot",
-                ui.status_dot(False, "Nicht erreichbar", hint="Der Dienst antwortet nicht."),
-                ok=False,
+                ui.status_dot("aus", "Nicht erreichbar", hint="Der Dienst antwortet nicht."),
+                zustand="aus",
             ),
         ),
         _reihe(

@@ -192,7 +192,7 @@ ENTSCHEIDET_SELBST = {
             ui.kachel("Rate", "0,26", t, variante="kompakt"),
         ]
     ),
-    ("status_dot", "hint"): lambda t: ui.status_dot(True, "Bereit", hint=t),
+    ("status_dot", "hint"): lambda t: ui.status_dot("bereit", "Bereit", hint=t),
     ("hinweis", "text"): lambda t: ui.hinweis(t, "info"),
     ("lede", "text"): lambda t: ui.lede(t),
     ("explainer", "text"): lambda t: ui.explainer(t),

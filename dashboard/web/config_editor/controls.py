@@ -338,6 +338,7 @@ def number(
     step: float | None = None,
     class_name: str = "",
     breite: str | None = None,
+    gesperrt: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -351,8 +352,9 @@ def number(
             step=step,
             className="af-input",
             debounce=True,
+            disabled=bool(gesperrt),
         ),
-        hint=text_hint,
+        hint=gesperrt or text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
         breite=breite,
@@ -370,6 +372,7 @@ def text(
     placeholder: str = "",
     class_name: str = "",
     breite: str | None = None,
+    gesperrt: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -381,8 +384,9 @@ def text(
             placeholder=placeholder,
             className="af-input",
             debounce=True,
+            disabled=bool(gesperrt),
         ),
-        hint=text_hint,
+        hint=gesperrt or text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
         breite=breite,
@@ -456,6 +460,7 @@ def slider(
     step: float = 0.05,
     class_name: str = "",
     breite: str | None = None,
+    gesperrt: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     marks = {min: f"{min:g}", max: f"{max:g}"}
@@ -469,12 +474,15 @@ def slider(
                 step=step,
                 value=value,
                 marks=marks,
-                tooltip={"placement": "bottom", "always_visible": True},
+                # **Nur beim Bedienen** (P7.4-U4.2, E8): Dauerhaft eingeblendet stand
+                # der Wert als Kasten über dem Feld darunter.
+                tooltip={"placement": "bottom", "always_visible": False},
                 className="af-slider",
+                disabled=bool(gesperrt),
             ),
             className="pt-1",
         ),
-        hint=text_hint,
+        hint=gesperrt or text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
         breite=breite,

@@ -208,7 +208,9 @@ Schalter legt der Einstieg um, wenn Sie dort «Szenario-Vergleich starten»
 wählen.
 
 **3. Womit wird gerechnet?** Der Rechenmodus, dazu die Auskunft, ob Ollama
-gerade erreichbar ist. Hinter «Feinabstimmung» der Zufallsstartwert.
+gerade erreichbar ist. Solange noch gefragt wird, pulsiert der Punkt davor —
+erst dann steht fest, ob «Mit Sprachmodell» möglich ist. Hinter «Feinabstimmung»
+der Zufallsstartwert.
 
 Diese Auskunft beantwortet genau, was eingestellt ist — und sagt es auch, wenn
 nichts eingestellt ist. Ist das Feld für den Modellnamen leer, steht dort
@@ -314,6 +316,11 @@ Warnung, wenn es ein Szenario unter diesem Namen schon gibt. Gesichert wird unte
 Welches Sprachmodell unter welcher Adresse, wie oft ein Zwischenstand
 geschrieben wird, und was am Ende ausgegeben wird. Nichts davon verändert die
 berechneten Zahlen.
+
+Modellname, Adresse, Kreativität und Antwortlänge sind **gesperrt**, wenn sie
+nichts bewirken würden — unter «Ohne Sprachmodell» und «Nur Zahlen», und bei
+einem Szenario-Vergleich, der diese Einstellungen nicht übernimmt. Unter jedem
+Feld steht dann, warum.
 
 Was Sie hier einstellen, **steht im Lauf und nicht nur im Formular**: Modellname,
 Adresse, Kreativität und Antwortlänge gehen in die Konfiguration des Laufs, und

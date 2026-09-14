@@ -428,13 +428,20 @@ def radio(
     )
 
 
-def status_dot(ok: bool, text: str, *, hint: str | None = None) -> html.Div:
-    """Zustandsanzeige für etwas, das erreichbar sein kann oder nicht."""
+def status_dot(zustand: str, text: str, *, hint: str | None = None) -> html.Div:
+    """Zustandsanzeige für etwas, das erreichbar sein kann — **in drei Zuständen**.
 
-    tone = "af-status__dot--ok" if ok else "af-status__dot--off"
+    `bereit`, `pruefen` (der Punkt pulsiert) und `aus`. **Bis P7.4-U4.2 waren es
+    zwei**, ein Wahrheitswert: «Ollama wird geprüft …» stand mit demselben
+    grauen Punkt da wie «Ollama ist nicht erreichbar», und wer nicht las, sah
+    eine Absage, wo noch gefragt wurde. Ein unbekannter Zustand scheitert laut.
+    """
+
+    if zustand not in ("bereit", "pruefen", "aus"):
+        raise ValueError(f"Unbekannter Zustand {zustand!r} für status_dot.")
     return html.Div(
         [
-            html.Span(className=f"af-status__dot mt-1 {tone}"),
+            html.Span(className=f"af-status__dot mt-1 af-status__dot--{zustand}"),
             html.Div(
                 [
                     html.Span(text, className=f"font-body {BESCHRIFTUNG} af-text-body"),
