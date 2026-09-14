@@ -175,7 +175,11 @@ Der letzte Schritt heißt **Prüfen & Starten**: Dort steht zuoberst der **Name
 dieses Laufs** — so, wie er später in der Auswahl der Kopfzeile erscheint. Ein
 Klick auf «Vorschlag» setzt einen sprechenden Namen aus Ausgangspunkt, Länge und
 Zeitpunkt. Darunter steht, was gleich passiert, und daneben der Knopf, der den
-Lauf startet.
+Lauf startet. Die Reihenfolge ist fest: was läuft und wie lange es dauert, die
+drei Werte Länge, Wiederholungen und Zufallsstartwert, was von der Auslieferung
+abweicht, was zu beachten ist — ein Hinweis, der sich in einem Schritt beheben
+lässt, trägt einen Knopf dorthin —, und zuletzt «Technische Details» mit
+Codestand, Konfiguration und den Kennzahlen des Modells.
 
 Solange Sie einrichten, gehört Ihnen der ganze Bildschirm: Bedienfeld, Telemetrie
 und Zeitleiste treten zurück. Einrichten ist eine Sache für sich, und eine Szene
@@ -230,8 +234,10 @@ Einstellungen mit Einheit und Config-Feld steht unter
 
 ## Preflight: der letzte Blick vor dem Start
 
-Unter den drei Schritten steht in Klartext, was gleich passiert, darunter sechs
-Kacheln mit den Werten, die einen zweiten Blick lohnen.
+Unter den drei Schritten steht in Klartext, was gleich passiert, darunter die
+Werte, die einen zweiten Blick lohnen — Länge, Wiederholungen und
+Zufallsstartwert. Die Kennzahlen des Modells stehen im Prüfschritt hinter
+«Technische Details».
 
 Daneben erscheinen Warnungen für die Fälle, die später enttäuschen:
 Wiederholungen ohne festen Zufallsstartwert, abgeschaltete Szenario-Erzeugung,

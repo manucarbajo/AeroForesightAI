@@ -616,6 +616,27 @@ def _tiles(draft: dict) -> list:
     if ist_vergleich(draft):
         return _vergleich_tiles()
 
+    # **Drei Werte, die vor dem Start zählen** (P7.4-U4.4). Ziel-Auslastung,
+    # Segmente und aktive Systemgrößen sind Modellinterna; sie stehen seither
+    # hinter «Technische Details» (`_modell_kacheln`). Das Bedienfeld zeigt die
+    # ersten drei — und damit jetzt, was «Die erste Simulation» schon lange sagt.
+    return [
+        ui.kachel("Länge", formate.ticks_mit_modellzeit(draft.get("rounds", "?"))),
+        ui.kachel(
+            "Wiederholungen",
+            "alle Szenarien" if draft.get("run_all_sweeps") else draft.get("run_count", 1),
+        ),
+        ui.kachel(
+            "Zufallsstartwert",
+            draft.get("seed", "—") if draft.get("use_seed") else f"{DEFAULT_SEED} (Standard)",
+            hint="Ohne eigenen Startwert rechnet der Lauf mit dem Standardwert.",
+        ),
+    ]
+
+
+def _modell_kacheln(draft: dict) -> list:
+    """Kennzahlen des Modells — für wen nachsehen will, nicht für die Entscheidung."""
+
     feedback = draft.get("market_feedback_edit") or {}
     segments = [s for s in (draft.get("population_edits") or []) if s.get("type") == "boolean"]
     active_properties = [
@@ -623,13 +644,7 @@ def _tiles(draft: dict) -> list:
         for key, edit in (draft.get("property_edits") or {}).items()
         if isinstance(edit, dict) and edit.get("is_active", True)
     ]
-
     return [
-        ui.kachel("Länge", formate.ticks_mit_modellzeit(draft.get("rounds", "?"))),
-        ui.kachel(
-            "Wiederholungen",
-            "alle Szenarien" if draft.get("run_all_sweeps") else draft.get("run_count", 1),
-        ),
         ui.kachel(
             "Ziel-Auslastung",
             (
@@ -640,11 +655,6 @@ def _tiles(draft: dict) -> list:
         ),
         ui.kachel("Segmente", len(segments)),
         ui.kachel("Aktive Systemgrößen", len(active_properties)),
-        ui.kachel(
-            "Zufallsstartwert",
-            draft.get("seed", "—") if draft.get("use_seed") else f"{DEFAULT_SEED} (Standard)",
-            hint="Ohne eigenen Startwert rechnet der Lauf mit dem Standardwert.",
-        ),
     ]
 
 
@@ -686,24 +696,47 @@ def herkunft(draft: dict) -> object:
     if not zeilen:
         return None
 
+    # **Zeilen, keine eigene Klappe** (P7.4-U4.4): Sie stehen in «Technische
+    # Details», und eine Klappe in der Klappe verbietet die Regel zum Aufklappen.
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Span(name, className="af-delta__was"),
+                    html.Span(wert, className="af-delta__wert"),
+                ],
+                className="af-delta__zeile",
+            )
+            for name, wert in zeilen
+        ],
+        className="af-delta",
+    )
+
+
+def technische_details(draft: dict) -> object:
+    """Woran der Lauf später wiederzuerkennen ist, und die Kennzahlen des Modells (P7.4-U4.4).
+
+    **Eine Klappe am Ende des Prüfschritts.** Bis dahin stand die Herkunft als
+    eigene Klappe mitten im Preflight und daneben sechs Kacheln, drei davon
+    Modellinterna — gemessen bei 1440 × 900 zusammen fast 300 px für Angaben, die
+    man zum Nachsehen braucht und nicht zum Starten (E9).
+    """
+
+    teile: list = [herkunft(draft)]
+    if not ist_vergleich(draft):
+        teile.append(
+            html.Div(
+                ui.grid(*_modell_kacheln(draft), cols="sm:grid-cols-2 lg:grid-cols-3", gap="gap-4"),
+                className="mt-4",
+            )
+        )
+    teile = [teil for teil in teile if teil is not None]
+    if not teile:
+        return None
     return ui.expert(
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Span(name, className="af-delta__was"),
-                        html.Span(wert, className="af-delta__wert"),
-                    ],
-                    className="af-delta__zeile",
-                )
-                for name, wert in zeilen
-            ],
-            className="af-delta",
-        ),
-        count=len(zeilen),
-        einheit=("Angabe", "Angaben"),
-        title="Woran dieser Lauf später wiederzuerkennen ist",
-        names="Codestand, Fingerabdruck der Konfiguration",
+        *teile,
+        title="Technische Details",
+        names="Codestand, Konfiguration, Kennzahlen des Modells",
     )
 
 
@@ -715,7 +748,39 @@ def _zustand(draft: dict):
     return prepare_simulation_state(draft_from_dict(draft))
 
 
-def _warnings(draft: dict, errors: list[str]) -> list:
+#: Der Knopf unter einem Hinweis, der zum Schritt führt, in dem er sich beheben
+#: lässt (P7.4-U4.4). **Eigene Kennung**, nicht die der Schrittliste: Dieselbe
+#: Kennung zweimal im DOM wäre für Dash ein Laufzeitfehler.
+SPRUNG = "wizard-hinweis-sprung"
+
+
+def sprung_id(schritt: str) -> dict:
+    return {"type": SPRUNG, "schritt": schritt}
+
+
+def _mit_sprung(hinweis: object, schritt: str, sprung: bool) -> object:
+    """Ein Hinweis mit Knopf zum Schritt — **nur im Prüfschritt** (*sprung*).
+
+    Im Bedienfeld steht man im Leitstand; ein Sprung schaltete dort einen
+    Schritt des Einrichtens um, den niemand sieht.
+    """
+
+    if not sprung:
+        return hinweis
+    return html.Div(
+        [
+            hinweis,
+            ui.button(
+                f"Zu «{schritttitel(schritt)}»",
+                id=sprung_id(schritt),
+                variant="ghost",
+                className="mt-1",
+            ),
+        ]
+    )
+
+
+def _warnings(draft: dict, errors: list[str], *, sprung: bool = False) -> list:
     """Was den Start verhindert, und was später enttäuscht — getrennt gehalten.
 
     Fehler zuerst und sichtbar abgesetzt: Die Hinweise darunter sind Ratschläge,
@@ -743,19 +808,27 @@ def _warnings(draft: dict, errors: list[str]) -> list:
 
     if not vergleich and not draft.get("use_seed") and int(draft.get("run_count") or 1) > 1:
         warnings.append(
-            ui.hinweis(
-                "Mehrere Wiederholungen ohne festen Zufallsstartwert: Die Läufe werden sich "
-                "unterscheiden. Das ist gewollt, wenn Sie die Streuung sehen wollen — für "
-                "einen sauberen A/B-Vergleich setzen Sie den Startwert unter «Feinabstimmung».",
-                "info",
+            _mit_sprung(
+                ui.hinweis(
+                    "Mehrere Wiederholungen ohne festen Zufallsstartwert: Die Läufe werden sich "
+                    "unterscheiden. Das ist gewollt, wenn Sie die Streuung sehen wollen — für "
+                    "einen sauberen A/B-Vergleich setzen Sie den Startwert unter «Feinabstimmung».",
+                    "info",
+                ),
+                "modus",
+                sprung,
             )
         )
     if draft.get("no_scenarios"):
         warnings.append(
-            ui.hinweis(
-                "«Keine Szenarien erzeugen» ist aktiv — der Tab «Szenario» bleibt nach dem "
-                "Lauf leer, obwohl er die Hauptansicht ist.",
-                "warnung",
+            _mit_sprung(
+                ui.hinweis(
+                    "«Keine Szenarien erzeugen» ist aktiv — der Tab «Szenario» bleibt nach dem "
+                    "Lauf leer, obwohl er die Hauptansicht ist.",
+                    "warnung",
+                ),
+                "technik",
+                sprung,
             )
         )
     if (
@@ -764,10 +837,14 @@ def _warnings(draft: dict, errors: list[str]) -> list:
         and not draft.get("apply_custom_overrides")
     ):
         warnings.append(
-            ui.hinweis(
-                "«Eigene Werte anwenden» ist aus — Änderungen an den Systemgrößen "
-                "wirken in diesem Lauf nicht.",
-                "warnung",
+            _mit_sprung(
+                ui.hinweis(
+                    "«Eigene Werte anwenden» ist aus — Änderungen an den Systemgrößen "
+                    "wirken in diesem Lauf nicht.",
+                    "warnung",
+                ),
+                "szenario",
+                sprung,
             )
         )
 
@@ -819,7 +896,12 @@ _COMPACT_TILES = 3
 
 
 def preflight(
-    draft: dict, errors: list[str], *, slot: str = "setup", compact: bool = False
+    draft: dict,
+    errors: list[str],
+    *,
+    slot: str = "setup",
+    compact: bool = False,
+    abweichungen: object = None,
 ) -> html.Div:
     """Der letzte Blick vor dem Start.
 
@@ -833,28 +915,48 @@ def preflight(
     """
 
     tiles = _tiles(draft)
-    return html.Div(
-        [
-            ui.card(
+    if compact:
+        return html.Div(
+            [
+                ui.card(html.Div(ui.markdown(summary_sentence(draft)), id=summary_id(slot))),
+                html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),
+                html.Div(vorgaben_hinweis(draft), className="mt-4"),
+                html.Div(dauer.hinweis(draft), className="mt-4"),
                 html.Div(
-                    ui.markdown(summary_sentence(draft)),
-                    id=summary_id(slot),
-                )
-            ),
-            html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),
-            html.Div(vorgaben_hinweis(draft), className="mt-4"),
-            html.Div(dauer.hinweis(draft), className="mt-4"),
-            html.Div(herkunft(draft) if not compact else None, className="mt-4"),
-            html.Div(
-                ui.grid(
-                    *(tiles[:_COMPACT_TILES] if compact else tiles),
-                    cols="grid-cols-1" if compact else "sm:grid-cols-2 lg:grid-cols-3",
-                    gap="gap-2" if compact else "gap-4",
+                    ui.grid(*tiles[:_COMPACT_TILES], cols="grid-cols-1", gap="gap-2"),
+                    className="mt-4",
                 ),
-                className="mt-4",
-            ),
-        ]
-    )
+            ]
+        )
+
+    # **Die feste Reihenfolge des Prüfschritts** (P7.4-U4.4): was läuft und wie
+    # lange, die Werte, was abweicht, was zu beachten ist, zuletzt die Details.
+    # Bis dahin standen die Abweichungen ganz unten und zwischen Satz und Kacheln
+    # Hinweise, Dauer und Herkunft (E9) — gemessen 1,42 Schirme bei 1440 × 900.
+    satz = dauer.schaetzung(draft)
+    teile: list = [
+        ui.card(
+            html.Div(
+                [
+                    html.Div(ui.markdown(summary_sentence(draft)), id=summary_id(slot)),
+                    ui.satz(satz, class_name=f"{ui.CAPTION} mt-2") if satz else None,
+                ]
+            )
+        ),
+        html.Div(
+            ui.grid(*tiles, cols="sm:grid-cols-2 lg:grid-cols-3", gap="gap-4"),
+            className="mt-4",
+        ),
+    ]
+    if abweichungen is not None:
+        teile.append(html.Div(abweichungen, className="mt-4"))
+    hinweise = _warnings(draft, errors, sprung=True)
+    if hinweise:
+        teile.append(html.Div(hinweise, className="space-y-2 mt-4"))
+    for teil in (vorgaben_hinweis(draft), technische_details(draft)):
+        if teil is not None:
+            teile.append(html.Div(teil, className="mt-4"))
+    return html.Div(teile)
 
 
 # --- Aufbau ----------------------------------------------------------------

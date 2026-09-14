@@ -961,7 +961,9 @@ DECKEL: dict[int, dict[str, float]] = {
         # umgebrochen und dafür 0,16 Schirme bezahlt; ohne Deckel läuft er
         # wieder weit und holt 0,12 davon zurück.
         # **1,59 → 1,57 am 2026-09-13** mit U1.3 Teil B, wie bei Schritt 1.
-        "Schritt 6": 1.57,
+        # **1,57 -> 1,28 am 2026-09-14 mit P7.4-U4.4**: Zusammenfassung in fester
+        # Reihenfolge; Modellinterna und Herkunft hinter «Technische Details».
+        "Schritt 6": 1.28,
     },
     1024: {
         "Einstieg": 1.00,
@@ -1006,7 +1008,9 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 5": 1.00,  # 1,01 -> 1,00 mit U1.3 Teil B: passt auf einen Schirm
         # 1,57 -> 1,65 am 2026-09-13 mit U2.6: Satz und Laengenkachel des
         # Pruefschritts tragen die Modellzeit (siehe Schritt 1).
-        "Schritt 6": 1.65,
+        # **1,65 -> 1,31 am 2026-09-14 mit P7.4-U4.4**: Zusammenfassung in fester
+        # Reihenfolge; Modellinterna und Herkunft hinter «Technische Details».
+        "Schritt 6": 1.31,
     },
     # **1440 × 900, die Größe der Kriterien von P7.4** (von Haiko entschieden am
     # 2026-09-14). Gemessen am selben Tag vor U4.1 und U4.4: Nur Schritt 1 und
@@ -1022,7 +1026,9 @@ DECKEL: dict[int, dict[str, float]] = {
         "Schritt 3": 1.00,
         "Schritt 4": 1.00,
         "Schritt 5": 1.00,
-        "Schritt 6": 1.42,
+        # **1,42 -> 1,13 am 2026-09-14 mit P7.4-U4.4**: Zusammenfassung in fester
+        # Reihenfolge; Modellinterna und Herkunft hinter «Technische Details».
+        "Schritt 6": 1.13,
     },
 }
 

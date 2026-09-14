@@ -1338,7 +1338,7 @@ class TestZurueckFuehrtDorthinWoManWar:
         navigate = self._navigate(monkeypatch, wizard.BACK)
 
         schritt, _e, _b, verlauf = navigate(
-            *[None] * 6, None, wizard.FINAL, draft, [], [wizard.ENTRY]
+            *[None] * 6, None, None, wizard.FINAL, draft, [], [wizard.ENTRY]
         )
 
         assert schritt is wizard.ENTRY, "«Zurück» führt in einen Schritt, in dem man nie war"
@@ -1349,7 +1349,9 @@ class TestZurueckFuehrtDorthinWoManWar:
 
         navigate = self._navigate(monkeypatch, wizard.BACK)
 
-        schritt, _e, _b, verlauf = navigate(*[None] * 6, None, 6, draft, [], [wizard.ENTRY, 0])
+        schritt, _e, _b, verlauf = navigate(
+            *[None] * 6, None, None, 6, draft, [], [wizard.ENTRY, 0]
+        )
 
         assert schritt == 0
         assert verlauf == [wizard.ENTRY]
@@ -1362,11 +1364,11 @@ class TestZurueckFuehrtDorthinWoManWar:
         """
 
         weiter = self._navigate(monkeypatch, wizard.NEXT)
-        schritt, _e, _b, verlauf = weiter(*[None] * 6, None, 1, draft, [], [wizard.ENTRY, 0])
+        schritt, _e, _b, verlauf = weiter(*[None] * 6, None, None, 1, draft, [], [wizard.ENTRY, 0])
         assert (schritt, verlauf) == (2, [wizard.ENTRY, 0, 1])
 
         zurueck = self._navigate(monkeypatch, wizard.BACK)
-        schritt, _e, _b, verlauf = zurueck(*[None] * 6, None, 2, draft, [], verlauf)
+        schritt, _e, _b, verlauf = zurueck(*[None] * 6, None, None, 2, draft, [], verlauf)
         assert schritt == 1
         assert verlauf == [wizard.ENTRY, 0]
 
@@ -1380,7 +1382,7 @@ class TestZurueckFuehrtDorthinWoManWar:
 
         navigate = self._navigate(monkeypatch, wizard.BACK)
 
-        schritt, _e, _b, verlauf = navigate(*[None] * 6, None, 4, draft, [], [])
+        schritt, _e, _b, verlauf = navigate(*[None] * 6, None, None, 4, draft, [], [])
 
         assert schritt is wizard.ENTRY
         assert verlauf == []
@@ -1391,7 +1393,7 @@ class TestZurueckFuehrtDorthinWoManWar:
         for weg in (wizard.WAY_NEW, wizard.WAY_SWEEP, wizard.WAY_RESUME):
             navigate = self._navigate(monkeypatch, weg)
             _s, _e, besucht, verlauf = navigate(
-                *[None] * 6, None, 5, draft, [1, 2, 3], [wizard.ENTRY, 1, 2]
+                *[None] * 6, None, None, 5, draft, [1, 2, 3], [wizard.ENTRY, 1, 2]
             )
             assert verlauf == [wizard.ENTRY], f"{weg} erbt einen alten Verlauf"
             assert besucht == [], f"{weg} erbt alte Häkchen"
@@ -1402,7 +1404,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.WAY_NEW)
 
         schritt, entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, wizard.ENTRY, {**draft, "run_all_sweeps": True}, [], []
+            *[None] * 6, None, None, wizard.ENTRY, {**draft, "run_all_sweeps": True}, [], []
         )
 
         assert schritt == 0
@@ -1412,7 +1414,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.WAY_SWEEP)
 
         schritt, entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, wizard.ENTRY, draft, [], []
+            *[None] * 6, None, None, wizard.ENTRY, draft, [], []
         )
 
         assert schritt == wizard.FINAL, "Der Vergleich führt direkt zu «Prüfen & Starten»"
@@ -1430,7 +1432,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.WAY_RESUME)
 
         schritt, entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, wizard.ENTRY, draft, [], []
+            *[None] * 6, None, None, wizard.ENTRY, draft, [], []
         )
 
         assert schritt == wizard.FINAL
@@ -1446,7 +1448,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.BACK)
 
         schritt, _entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, 0, draft, [], [wizard.ENTRY]
+            *[None] * 6, None, None, 0, draft, [], [wizard.ENTRY]
         )
 
         assert schritt is wizard.ENTRY

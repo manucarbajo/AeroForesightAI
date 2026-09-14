@@ -148,9 +148,9 @@ der Ansicht **Übersicht**: Rechenmodus und Startwert direkt unter den
 Kennzahlen, Codestand und Fingerabdruck hinter «Technische Details» — so wie im
 Prüfschritt vor dem Start.
 
-**Vor dem Start steht dasselbe im Prüfschritt.** Startwert und Rechenmodus als
-Kacheln, dazu aufklappbar «Woran dieser Lauf später wiederzuerkennen ist»:
-Codestand und der Fingerabdruck der gelesenen Konfigurationsdateien. Das ist
+**Vor dem Start steht dasselbe im Prüfschritt.** Der Startwert als Kachel, der
+Rechenmodus im Satz darüber, und hinter «Technische Details» Codestand und der
+Fingerabdruck der gelesenen Konfigurationsdateien. Das ist
 nicht Buchhaltung, sondern die Vorbedingung fürs Vergleichen — ein Lauf mit
 anderem Codestand oder anderem Fingerabdruck gehört nicht neben einen anderen,
 und das merkt man besser vorher als nach einer halben Stunde Rechenzeit.

@@ -642,8 +642,9 @@ def rail(current: int | None, besucht: set[int] | None = None) -> html.Div:
 def _final_step(draft: dict) -> html.Div:
     """Der letzte Blick vor dem Start.
 
-    Die beiden Ausgänge — starten und sichern — stehen **nicht** hier, sondern
-    in der Navigationsleiste: Dort sitzt auf jedem Schritt der nächste Griff,
+    Der Ausgang — starten — steht **nicht** hier, sondern in der
+    Navigationsleiste (gesichert wird seit P7.4-U4.5 oben rechts):
+    Dort sitzt auf jedem Schritt der nächste Griff,
     und der letzte Schritt soll keine Ausnahme sein. Technisch kommt dazu, dass
     die Leiste immer im DOM liegt; ein Knopf, den es nur auf einem Schritt gibt,
     legte jeden Callback lahm, der ihn als Eingang führt.
@@ -660,50 +661,38 @@ def _final_step(draft: dict) -> html.Div:
             #
             # Dieser Schritt ist der einzige, den **jeder** Weg passiert — der
             # Name gehört deshalb hierher und nirgendwo anders hin.
-            ui.card(
-                # Knopf **neben** dem Feld, nicht darunter: Eine eigene Zeile
-                # kostete 0,07 Bildschirme auf dem einen Schritt, den jeder Weg
-                # passiert. `af-neben-feld` setzt ihn auf die Höhe des Eingabefelds —
-                # dasselbe Muster wie bei «Segment anlegen».
-                html.Div(
-                    [
-                        c.text(
-                            "simulation_name",
-                            draft.get("simulation_name", ""),
-                            label="Name dieses Laufs",
-                            hint="So erscheint er später in der Auswahl der Kopfzeile.",
-                            class_name="flex-1 min-w-[16rem]",
+            # Knopf **neben** dem Feld, nicht darunter: Eine eigene Zeile kostete
+            # 0,07 Bildschirme auf dem einen Schritt, den jeder Weg passiert.
+            # **Ohne Kartenrahmen seit P7.4-U4.4**: Er kostete 48 px Polsterung um
+            # ein einziges Feld.
+            html.Div(
+                [
+                    c.text(
+                        "simulation_name",
+                        draft.get("simulation_name", ""),
+                        label="Name dieses Laufs",
+                        hint="So erscheint er später in der Auswahl der Kopfzeile.",
+                        class_name="flex-1 min-w-[16rem]",
+                    ),
+                    html.Div(
+                        ui.button(
+                            "Vorschlag",
+                            id=c.action_id("suggest-name"),
+                            variant="secondary",
+                            icon_name="auto_awesome",
                         ),
-                        html.Div(
-                            ui.button(
-                                "Vorschlag",
-                                id=c.action_id("suggest-name"),
-                                variant="secondary",
-                                icon_name="auto_awesome",
-                            ),
-                            className="af-neben-feld",
-                        ),
-                    ],
-                    className="flex items-start gap-4 flex-wrap",
-                ),
-                class_name="mb-4",
+                        className="af-neben-feld",
+                    ),
+                ],
+                className="flex items-start gap-4 flex-wrap mb-4",
             ),
-            start_flow.preflight(draft, start_flow.errors_for(draft), slot="wizard"),
-            # **Was weicht vom Standard ab** (P1.9-W4.2). Der Preflight sagt,
-            # was gleich passiert; das hier sagt, was **Sie** daran geändert
-            # haben. Bei über hundert Feldern über sieben Schritte und einen
-            # Modell-Bereich war das die einzige Frage ohne Antwort — und der
-            # einzige Umkehrmechanismus war «Auf Standard zurücksetzen», das
-            # alles verwirft.
-            html.Div(delta.layout(draft), className="mt-4"),
-            # Markdown, weil der Pfad in Backticks steht — als `html.P` waren
-            # die Zeichen zu sehen (P7.1-U1.4, vorgezogen am 2026-09-11).
-            ui.markdown(
-                # **Eine Zeile** (P7.4-U4.5): Die längere Fassung brach bei 1280 px um
-                # und hob den Schritt um 0,022 Schirme über seinen Deckel.
-                "«Als Szenario sichern» oben rechts legt die Einstellungen ab. Danach stehen "
-                "sie im ersten Schritt zur Auswahl.",
-                class_name="af-md--tight af-md--caption mt-4",
+            # **Was abweicht, steht im Preflight an seiner Stelle** (P7.4-U4.4): nach
+            # den Werten und vor den Hinweisen, statt ganz unten.
+            start_flow.preflight(
+                draft,
+                start_flow.errors_for(draft),
+                slot="wizard",
+                abweichungen=delta.layout(draft),
             ),
         ]
     )
@@ -963,6 +952,8 @@ def register_callbacks(app) -> None:
         Input(WAY_SWEEP, "n_clicks"),
         Input(WAY_RESUME, "n_clicks"),
         Input({"type": JUMP, "index": ALL}, "n_clicks"),
+        # Ein Hinweis im Prüfschritt führt zu seinem Schritt (P7.4-U4.4).
+        Input({"type": start_flow.SPRUNG, "schritt": ALL}, "n_clicks"),
         State(STEP_STORE, "data"),
         State(STORE_ID, "data"),
         State(VISITED_STORE, "data"),
@@ -970,7 +961,7 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def _navigate(
-        _back, _next, _skip, _new, _sweep, _resume, _jump, current, draft, besucht, verlauf
+        _back, _next, _skip, _new, _sweep, _resume, _jump, _sprung, current, draft, besucht, verlauf
     ):
         """Alle Wege durch die Schrittfolge in einem Callback.
 
@@ -1016,6 +1007,16 @@ def register_callbacks(app) -> None:
             if not stapel:
                 return ENTRY, no_update, sorted(gesehen), []
             return resolve(stapel[-1]), no_update, sorted(gesehen), stapel[:-1]
+
+        if isinstance(ausgeloest, dict) and ausgeloest.get("type") == start_flow.SPRUNG:
+            if not any(eintrag["value"] for eintrag in ctx.triggered if eintrag["value"]):
+                return no_update, no_update, no_update, no_update
+            ziel = next(
+                (i for i, step in enumerate(STEPS) if step.key == ausgeloest.get("schritt")), None
+            )
+            if ziel is None:
+                return no_update, no_update, no_update, no_update
+            return gehe(ziel)
 
         if isinstance(ausgeloest, dict) and ausgeloest.get("type") == JUMP:
             # Nur ein wirklich gedrückter Knopf zählt: Beim Neuaufbau der Liste
