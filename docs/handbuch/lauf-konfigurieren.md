@@ -114,7 +114,9 @@ Folge von Entscheidungen und braucht Führung; die andere ist Facharbeit an
 vielen Zahlen und braucht Fläche und Überblick. Beides in dieselbe Schrittfolge
 zu legen ging nur zulasten einer von beiden.
 
-Was Sie im Modell ändern, gilt für den nächsten Lauf — genau wie vorher. Einige
+Was Sie im Modell ändern, gilt für den nächsten Lauf, den Sie starten — also nur,
+wenn Sie es **vor** «Lauf starten» einstellen, und nur unter den Bedingungen, die
+unter «Alle Einstellungen» stehen. Einige
 Schaltflächen dort schreiben allerdings **dauerhaft** in die
 Konfigurationsdateien und wirken damit über Ihren Lauf hinaus: «Als Standard
 speichern», «Bevölkerung als Standard speichern», «Größe anlegen», «Größe
@@ -279,30 +281,39 @@ Befunde hängen an keinem Eingabefeld und stehen deshalb nur im roten Kasten.
 
 ## Alle Einstellungen
 
-### Rahmenbedingungen
+### Systemgrößen, Verläufe und Preisbildung
 
-Die Systemgrößen für Politik, Kosten und Konjunktur.
+Die Systemgrößen für Politik, Kosten und Konjunktur, dazu Bevölkerung und
+Preisbildung, stellen Sie im Bereich **Modell** in der Kopfzeile ein — nicht in
+dieser Schrittfolge.
 
 Jede Systemgröße hat einen Startwert und kann über Regeln einen zeitlichen
 Verlauf bekommen: «ab Tick 10 springt die CO₂-Abgabe auf 120» oder «ab Tick 5
 über acht Ticks hochfahren auf 200». Aufklappen, Anzahl der Regeln setzen,
-Werte eintragen.
+Werte eintragen. Unter «Nachfrage & Preisbildung» folgen zwei Regelkreise: oben
+das Preisverhalten der Airline, bei dem die Zielauslastung die entscheidende
+Größe ist, darunter die Sättigung, dann die Segmente der Bevölkerung und die
+Verteilungen für Zahlungsbereitschaft und Umweltbewusstsein.
 
-Der Schalter **Eigene Werte anwenden** ist hier der wichtigste. Steht er auf
-aus, rechnet der Lauf mit den Konfigurationsdateien und ignoriert alles, was Sie
-auf diesem Tab eingestellt haben. Ist oben ein Szenario gewählt, greifen diese
-Werte ohnehin nicht — dann gilt allein das Szenario.
+**Stellen Sie das vor «Lauf starten» ein.** Die Schrittfolge führt nicht in den
+Bereich Modell. Wechseln Sie mitten im Einrichten über die Kopfzeile dorthin und
+danach zurück — Ihr Entwurf und der Schritt, in dem Sie waren, bleiben erhalten.
+Was Sie nach dem Start ändern, gilt erst für den nächsten Lauf.
 
-### Nachfrage & Preisbildung
+**Und die Werte kommen nur unter zwei Bedingungen im Lauf an:**
 
-Zwei Regelkreise. Oben das Preisverhalten der Airline, bei dem die Zielauslastung
-die entscheidende Größe ist. Darunter die Sättigung. Dann die Segmente der
-Bevölkerung mit ihren Anteilen, und zuletzt die Verteilungen für
-Zahlungsbereitschaft und Umweltbewusstsein.
+- Im ersten Schritt ist die **Standard-Ausgangslage** gewählt und hinter
+  «Feinabstimmung» **Eigene Werte anwenden** eingeschaltet — oder **Eigene
+  Einstellungen**.
+- Ist ein vorbereitetes **Szenario** gewählt, gilt allein das Szenario, und Ihre
+  Werte aus dem Modell greifen nicht. Wer von einem Szenario ausgehen und selbst
+  anpassen will, klickt dort **Werte übernehmen und selbst anpassen**: Das
+  schreibt die Verläufe des Szenarios in den Editor und schaltet auf «Eigene
+  Einstellungen» um.
 
-Die beiden Speichern-Knöpfe auf diesem Tab schreiben in `configs/properties.json`
-und wirken damit über den einzelnen Lauf hinaus. Alles andere im Editor gilt nur
-für den nächsten Start.
+Zwei Speichern-Knöpfe im Modell schreiben in `configs/properties.json` und wirken
+damit über den einzelnen Lauf hinaus. Alles andere dort gilt nur für den
+nächsten Start.
 
 ### Lauf & Ablage
 
