@@ -252,13 +252,11 @@ def visibility(active: str) -> tuple[dict, ...]:
     return tuple(_VISIBLE if active == route else _HIDDEN for route, _ in shell.BEREICHE)
 
 
-def _status_for(data: run_data.RunData, *, running: bool = False) -> status.Status:
-    return status.derive(
-        running=running,
-        demo=data.is_demo,
-        degraded=bool(data.metadata.get("degraded")),
-        incidents=int(data.metadata.get("llm_incident_count") or 0),
-    )
+def _status_for(selected: dict | None, *, running: bool = False) -> status.Status:
+    # **Ohne den gewählten Lauf zu laden** (P7.3-U3.2): Die Kopfzeile fragt nur,
+    # ob gerechnet wird und ob es überhaupt einen Lauf gibt. Bis dahin lud sie
+    # bei jedem Laufwechsel dessen komplette Daten, um ein Feld zu lesen.
+    return status.derive(running=running, demo=run_data.zeigt_demo(selected))
 
 
 def serve_layout() -> html.Div:
@@ -305,7 +303,7 @@ def serve_layout() -> html.Div:
                 active="",
                 # Auch beim ersten Zeichnen gilt der Serverzustand: Ein Lauf,
                 # den eine andere Sitzung gestartet hat, ist einer.
-                state=_status_for(data, running=runner.is_running()),
+                state=_status_for(selection, running=runner.is_running()),
                 run_options=options,
                 run_value=run_value,
                 left=launch_page.rail(draft),
@@ -583,8 +581,7 @@ def create_app() -> Dash:
         Input("selected-run-store", "data"),
     )
     def _status(running: bool | None, selected: dict | None):
-        data = run_data.load(selected)
-        return shell.status_view(_status_for(data, running=bool(running)))
+        return shell.status_view(_status_for(selected, running=bool(running)))
 
     @app.callback(
         Output(shell.DOCK_HOST, "children"),

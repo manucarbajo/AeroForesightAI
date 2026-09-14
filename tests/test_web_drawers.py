@@ -179,7 +179,7 @@ class TestJederKnopfPasstZuSeinerZone:
         gerendert = str(shell.navbar("")) + str(
             shell.header(
                 "",
-                state=shell.status.derive(running=False, demo=False, degraded=False),
+                state=shell.status.derive(running=False, demo=False),
                 run_options=[],
                 run_value=None,
             )
@@ -223,7 +223,7 @@ class TestDieGriffeGehoerenZuIhrenSpalten:
         gerendert = str(
             shell.layout(
                 active="",
-                state=shell.status.derive(running=False, demo=False, degraded=False),
+                state=shell.status.derive(running=False, demo=False),
                 run_options=[],
                 run_value=None,
                 left="l",

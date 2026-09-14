@@ -150,7 +150,7 @@ class TestErIstUeberallMarkiert:
             assert row[demo_run.MARKER] is True
 
     def test_the_status_says_demo(self):
-        zustand = status.derive(running=False, demo=True, degraded=False)
+        zustand = status.derive(running=False, demo=True)
 
         assert zustand.tone == status.DEMO
         assert zustand.is_demo
@@ -160,7 +160,7 @@ class TestErIstUeberallMarkiert:
     def test_a_running_simulation_outranks_the_demo_state(self):
         """Was sich von selbst ändert, schlägt alles andere."""
 
-        assert status.derive(running=True, demo=True, degraded=True).tone == status.RUNNING
+        assert status.derive(running=True, demo=True).tone == status.RUNNING
 
     def test_the_viewport_carries_the_notice_above_the_scene(self):
         gerendert = _text(scene_block(run_data.demo(), 1))

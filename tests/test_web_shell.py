@@ -14,6 +14,8 @@ Geprüft wird, dass die Aussagen des Rahmens stimmen:
 
 from __future__ import annotations
 
+import inspect
+
 import pytest
 from dash import html
 
@@ -79,7 +81,7 @@ class TestFuenfZonen:
         gerendert = _text(
             shell.layout(
                 active="",
-                state=status.derive(running=False, demo=True, degraded=False),
+                state=status.derive(running=False, demo=True),
                 run_options=[],
                 run_value=None,
                 left=html.Div("links"),
@@ -104,7 +106,7 @@ class TestFuenfZonen:
         gerendert = _text(
             shell.header(
                 "",
-                state=status.derive(running=True, demo=False, degraded=False),
+                state=status.derive(running=True, demo=False),
                 run_options=[{"label": "run_1", "value": "run_1"}],
                 run_value="run_1",
             )
@@ -382,28 +384,36 @@ class TestSzeneUndTelemetrieFolgenDemselbenTick:
 
 
 class TestDerZustandKommtAusEinerQuelle:
-    """Kopfzeile, Banner und Konsole dürfen sich nicht widersprechen."""
+    """Die Kopfzeile kennt drei Zustände der Anlage — keinen des gewählten Laufs."""
 
     @pytest.mark.parametrize(
-        ("running", "demo_flag", "degraded", "erwartet"),
+        ("running", "demo_flag", "erwartet"),
         [
-            (True, True, True, status.RUNNING),
-            (False, True, True, status.DEMO),
-            (False, False, True, status.DEGRADED),
-            (False, False, False, status.READY),
+            (True, True, status.RUNNING),
+            (False, True, status.DEMO),
+            (False, False, status.READY),
         ],
     )
-    def test_the_ranking_holds(self, running, demo_flag, degraded, erwartet):
-        zustand = status.derive(running=running, demo=demo_flag, degraded=degraded)
+    def test_the_ranking_holds(self, running, demo_flag, erwartet):
+        zustand = status.derive(running=running, demo=demo_flag)
 
         assert zustand.tone == erwartet
 
-    def test_the_incident_count_is_phrased_in_the_singular(self):
-        einer = status.derive(running=False, demo=False, degraded=True, incidents=1)
-        mehrere = status.derive(running=False, demo=False, degraded=True, incidents=3)
+    def test_the_header_says_nothing_about_the_selected_run(self, tmp_path):
+        """K2, P7.3-U3.2: «Lauf beeinträchtigt» stand als Anlagenzustand auf jedem Bereich.
 
-        assert "ein Aufruf" in einer.detail
-        assert "3 Aufrufe" in mehrere.detail
+        Die Warnung gehört dem gewählten Lauf und steht in dessen Kopf; die Singular-
+        Zusage zu «ein Aufruf» hält `tests/test_web_layout.py` dort.
+        """
+
+        assert "degraded" not in inspect.signature(status.derive).parameters
+
+        lauf = tmp_path / "run_kaputt"
+        lauf.mkdir()
+        (lauf / "run_metadata.json").write_text('{"degraded": true}', encoding="utf-8")
+        auswahl = {"run_id": "run_kaputt", "run_dir": str(lauf)}
+
+        assert web_app._status_for(auswahl).tone == status.READY
 
     def test_the_header_renders_every_tone(self):
         for tone in (status.RUNNING, status.DEMO, status.DEGRADED, status.READY):

@@ -104,7 +104,9 @@ neu gestartet. Zwischenstände sind Fortsetzungspunkte, kein Archiv.
 
 Im Kopf des Laufs — im Leitstand über der Szene, unter «Ergebnisse» über den
 sieben Ansichten — steht ein gelber Hinweis, dass Aufrufe an das Sprachmodell
-unbeantwortet blieben; «Was das heißt» klappt die Erklärung auf. Das heißt nicht, dass die Zahlen falsch sind: Preise,
+unbeantwortet blieben; «Was das heißt» klappt die Erklärung auf. In der Kopfzeile
+erscheint der Hinweis nicht: Sie sagt seit September 2026 nur, ob gerade gerechnet
+wird — ein beeinträchtigter Lauf ist eine Eigenschaft dieses Laufs, nicht der Anlage. Das heißt nicht, dass die Zahlen falsch sind: Preise,
 Buchungsraten und Faktorzustände rechnet Python, unabhängig vom Sprachmodell.
 Fehlen können die Beiträge der Akteure und Teile der Deutung — an den
 betroffenen Stellen hat der jeweilige Akteur ausgesetzt.
