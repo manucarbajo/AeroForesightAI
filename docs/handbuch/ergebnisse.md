@@ -10,6 +10,16 @@ Neben der Auswahl führt «Dateien des Laufs» zu den Dateien des gewählten Lau
 Beides erscheint nur hier und im Leitstand: Beim Einrichten, im Modell und im
 Handbuch geht es nicht um einen Lauf, der schon gerechnet ist.
 
+Ein Klick auf den Namen des Laufs öffnet **Lauf wählen**: die Läufe, der jüngste
+zuerst, mit Art, Rechenmodus und — wenn ein Sprachmodell ausgefallen ist — dem
+Vermerk «beeinträchtigt». Die Suche geht über Name, Rahmen, Datum und
+Rechenmodus; jedes Wort muss passen. Darunter wählen Sie, welche Art Sie sehen
+wollen: Einzelläufe, Wiederholungen, Szenario-Vergleiche oder Prüfläufe.
+**Prüfläufe sind ausgeblendet, bis Sie sie wählen** — Läufe unter einem
+Szenario, das heute kein Rahmenszenario ist, etwa einem Stresstest. Die Liste
+zeigt höchstens 30 Läufe; die Suche grenzt ein. Ein Klick auf eine Zeile wählt
+den Lauf und schließt das Fenster, Escape schließt es ohne Wahl.
+
 ## Der Leitstand selbst
 
 Bevor Sie in die sieben Ansichten gehen: Der Bereich **Leitstand** beantwortet

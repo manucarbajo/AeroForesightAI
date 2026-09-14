@@ -39,6 +39,10 @@ class RunSummary:
     rahmen_name: str | None = None
     #: Womit gerechnet wurde (`compute_mode`, seit P0.6) — für den Lauf-Kopf (P7.3-U3.2).
     compute_mode: str | None = None
+    #: Welches Rahmenszenario (`rahmen.id`) und woher es kam (`rahmen.quelle`:
+    #: `preset`, `eigen`, `standard`) — für die Art im Lauf-Browser (P7.3-U3.3).
+    rahmen_id: str | None = None
+    rahmen_quelle: str | None = None
 
 
 @dataclass(frozen=True)
@@ -253,6 +257,8 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
                 simulation_name=sim_name or None,
                 rahmen_name=str((meta_dict.get("rahmen") or {}).get("name") or "") or None,
                 compute_mode=meta_dict.get("compute_mode"),
+                rahmen_id=str((meta_dict.get("rahmen") or {}).get("id") or "") or None,
+                rahmen_quelle=str((meta_dict.get("rahmen") or {}).get("quelle") or "") or None,
             )
         )
 

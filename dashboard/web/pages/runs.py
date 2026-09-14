@@ -6,8 +6,8 @@ gerendert — dadurch braucht kein Callback beim ersten Laden zu feuern, und
 keiner zeigt auf eine Komponente, die es noch nicht gibt.
 
 **Was der Leitstand geändert hat:** Die Lauf-Auswahl steht nicht mehr hier,
-sondern in der Kopfzeile (`shell.RUN_SELECT`) — sie gilt für alle drei Zonen,
-nicht nur für diesen Bereich. Aus der Tab-Leiste ist eine Werkzeugleiste
+sondern in der Kopfzeile (`shell.LAUF_WAHL`, seit P7.3-U3.3 der Lauf-Browser in
+`lauf_wahl`) — sie gilt für Leitstand und Ergebnisse, nicht nur für diesen Bereich. Aus der Tab-Leiste ist eine Werkzeugleiste
 geworden, die beim Scrollen des Viewports stehen bleibt.
 """
 

@@ -82,8 +82,7 @@ class TestFuenfZonen:
             shell.layout(
                 active="",
                 state=status.derive(running=False, demo=True),
-                run_options=[],
-                run_value=None,
+                lauf_bezeichnung=None,
                 left=html.Div("links"),
                 main=html.Div("mitte"),
                 timeline=html.Div("unten"),
@@ -107,12 +106,11 @@ class TestFuenfZonen:
             shell.header(
                 "",
                 state=status.derive(running=True, demo=False),
-                run_options=[{"label": "run_1", "value": "run_1"}],
-                run_value="run_1",
+                lauf_bezeichnung="Standard-Ausgangslage · 14.09.2026, 08:56",
             )
         )
 
-        assert shell.RUN_SELECT in gerendert
+        assert shell.LAUF_WAHL in gerendert
         assert shell.ACTION_SAVE in gerendert
         assert shell.ACTION_SNAPSHOT in gerendert
         assert shell.ACTION_EXPORT in gerendert
@@ -155,8 +153,7 @@ def _kopf(active: str = "") -> html.Header:
     return shell.header(
         active,
         state=status.derive(running=False, demo=False),
-        run_options=[{"label": "run_1", "value": "run_1"}],
-        run_value="run_1",
+        lauf_bezeichnung="Standard-Ausgangslage · 14.09.2026, 08:56",
     )
 
 
@@ -222,7 +219,7 @@ class TestDieKopfzeileZeigtNurWasZumBereichPasst:
                 stile = shell.kontext_stile(route, lauf=lauf)
 
                 bei_laeufen = route in shell.LAUF_BEREICHE
-                assert self._sichtbar(stile[shell.RUN_SELECT]) is bei_laeufen, route
+                assert self._sichtbar(stile[shell.LAUF_WAHL]) is bei_laeufen, route
                 assert self._sichtbar(stile[shell.ACTION_EXPORT]) is (bei_laeufen and lauf)
 
     def test_hidden_controls_stay_in_the_tree(self):

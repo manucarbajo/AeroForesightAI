@@ -98,6 +98,11 @@ sind Platzhalter.
 **Preset** — Eine gespeicherte Annahmenwelt unter `configs/sweeps/`. Siehe
 [Szenario-Presets](/doku/ref-presets).
 
+**Prüflauf** — Ein Lauf unter einem hinterlegten Szenario, das heute kein
+**Rahmenszenario** ist: ein Stresstest oder ein früherer Prüflauf, dessen Datei es
+nicht mehr gibt. Er behauptet keine Zukunft. Die Laufauswahl blendet ihn aus, bis
+man ihn ausdrücklich wählt.
+
 ## R bis Z
 
 **Redebedarf** — Betriebsart, in der sich Akteure nur äußern, wenn sich für sie

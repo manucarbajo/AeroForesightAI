@@ -131,7 +131,9 @@ SEITENTITEL = "shell-seitentitel"
 
 #: Das Sprungziel des «Zum Inhalt springen»-Links (WCAG 2.4.1).
 MAIN_ID = "shell-main"
-RUN_SELECT = "shell-run-select"
+#: Der Öffner des Lauf-Browsers (P7.3-U3.3). Bis dahin ein Auswahlfeld mit
+#: jedem Lauf darin; der Dialog steht in `lauf_wahl`.
+LAUF_WAHL = "shell-lauf-wahl"
 
 #: Aktionen der Kopfzeile. Alle drei gibt es bereits als Funktion — sie
 #: standen nur an drei verschiedenen Stellen tief in der Seite.
@@ -152,7 +154,7 @@ LAUF_BEREICHE = frozenset({LEITSTAND, "runs"})
 #: solange die Laufauswahl daneben stand. **Die Laufauswahl gehört deshalb zu den
 #: Bereichen mit einem Lauf**, das Sichern zum Einrichten.
 KONTEXT = {
-    RUN_SELECT: LAUF_BEREICHE,
+    LAUF_WAHL: LAUF_BEREICHE,
     ACTION_SAVE: frozenset({""}),
     ACTION_SNAPSHOT: frozenset({""}),
     ACTION_EXPORT: LAUF_BEREICHE,
@@ -357,6 +359,19 @@ def actions(active: str = "", *, lauf: bool = False) -> html.Div:
     )
 
 
+def lauf_wahl_inhalt(bezeichnung: str | None) -> list:
+    """Was auf dem Öffner des Lauf-Browsers steht — der gewählte Lauf (P7.3-U3.3).
+
+    Vorgelesen wird davor, was der Knopf tut; zu sehen ist nur der Lauf, weil
+    die Breite der Kopfzeile genau für ihn reicht (gemessen in P7.3-U3.4).
+    """
+
+    return [
+        html.Span("Lauf wählen: ", className="af-nur-vorlesen"),
+        html.Span(bezeichnung or "Kein Lauf vorhanden", className="af-btn__label"),
+    ]
+
+
 def status_view(state: status.Status) -> html.Div:
     return ui.status_indicator(state.tone, state.label, hint=state.detail)
 
@@ -365,26 +380,32 @@ def header(
     active: str,
     *,
     state: status.Status,
-    run_options: list[dict],
-    run_value: str | None,
+    lauf_bezeichnung: str | None,
 ) -> html.Header:
-    stile = kontext_stile(active, lauf=run_value is not None)
+    stile = kontext_stile(active, lauf=lauf_bezeichnung is not None)
     return html.Header(
         [
             navbar(active),
             html.Div(
                 [
                     html.Div(status_view(state), id=STATUS_HOST),
-                    dcc.Dropdown(
-                        id=RUN_SELECT,
-                        options=run_options,
-                        value=run_value,
-                        clearable=False,
-                        placeholder="Kein Lauf vorhanden",
-                        className="af-dropdown w-64 hidden lg:block",
-                        style=stile[RUN_SELECT],
+                    # **Ein Knopf, der den Lauf-Browser öffnet** (P7.3-U3.3), in der
+                    # Breite des früheren Auswahlfelds (`w-64`): Mehr trägt die
+                    # Kopfzeile im Leitstand nicht. Unter 1024 px steht er nicht da,
+                    # wie vorher das Auswahlfeld (`.af-laufwahl-oeffner`).
+                    html.Button(
+                        lauf_wahl_inhalt(lauf_bezeichnung),
+                        id=LAUF_WAHL,
+                        n_clicks=0,
+                        title="Lauf wählen",
+                        className=(
+                            "af-btn af-btn--secondary af-laufwahl-oeffner inline-flex items-center "
+                            f"px-4 py-3 font-body {ui.BESCHRIFTUNG} font-medium w-64"
+                        ),
+                        style=stile[LAUF_WAHL],
+                        **{"aria-haspopup": "dialog"},
                     ),
-                    actions(active, lauf=run_value is not None),
+                    actions(active, lauf=lauf_bezeichnung is not None),
                     theme_toggle(),
                     ui.icon_button(
                         "insights",
@@ -428,8 +449,7 @@ def layout(
     *,
     active: str,
     state: status.Status,
-    run_options: list[dict],
-    run_value: str | None,
+    lauf_bezeichnung: str | None,
     left: Any,
     main: Any,
     timeline: Any,
@@ -459,7 +479,7 @@ def layout(
             # Der Seitentitel. `hidden` und nicht `af-nur-vorlesen`: Die Ansage
             # darüber sagt den Wechsel schon, ein zweiter Text wäre Doppelung.
             html.Div(seitentitel(active), id=SEITENTITEL, hidden=True),
-            header(active, state=state, run_options=run_options, run_value=run_value),
+            header(active, state=state, lauf_bezeichnung=lauf_bezeichnung),
             html.Aside(left, className="af-shell__left", id="shell-left"),
             _gutter("left", "Breite des Bedienfelds ändern"),
             html.Main(main, className="af-shell__main", id=MAIN_ID),

@@ -297,17 +297,16 @@ _SEITE_SCHIEBT = """
 """
 
 #: Was die Kopfzeile zeigt (P7.3-U3.4): jeder sichtbare Knopf mit seiner sichtbaren
-#: Beschriftung, und ob die Laufauswahl steht. Knöpfe **in** der Laufauswahl gehören
-#: Dashs Auswahlfeld und nicht der Kopfzeile.
+#: Beschriftung, und ob der Öffner des Lauf-Browsers steht.
 _KOPF = """
 () => {
   const kopf = document.querySelector('.af-shell__header');
   const sichtbar = (el) => el.getClientRects().length > 0;
-  const auswahl = document.getElementById('shell-run-select');
+  const auswahl = document.getElementById('shell-lauf-wahl');
   return {
     auswahl: !!auswahl && sichtbar(auswahl),
     knoepfe: [...kopf.querySelectorAll('button')]
-      .filter((k) => sichtbar(k) && !k.closest('#shell-run-select'))
+      .filter((k) => sichtbar(k))
       .map((k) => ({
         id: k.id,
         text: [...k.querySelectorAll('.af-btn__label')]
@@ -3667,3 +3666,46 @@ class TestDieKopfzeileSagtWasSieTut:
         assert shell.ACTION_EXPORT in {k["id"] for k in kopf["knoepfe"] if k["text"]}
         assert shell.ACTION_SAVE not in sichtbar, sichtbar
         assert kopf["auswahl"], "Der Leitstand zeigt keine Laufauswahl"
+
+
+# --- Der Lauf-Browser (P7.3-U3.3) --------------------------------------------
+
+
+@EINE_SEITE
+@pytest.mark.laufwahl
+def test_the_run_browser_finds_and_selects_with_two_inputs(page):
+    """D6: Klick auf den Öffner, Tippen — und der gesuchte Lauf steht oben.
+
+    Gemessen wird, was ohne Browser nicht geht: Der Dialog öffnet **modal**, der
+    Fokus liegt im Suchfeld (sonst wäre Tippen eine dritte Eingabe), die Liste
+    füllt sich, und eine gewählte Zeile schließt den Dialog.
+    """
+
+    from dashboard.web import lauf_wahl, shell
+
+    dialog = f"#{lauf_wahl.DIALOG}"
+    page.goto(page.basis + BEREICHE["Leitstand"], wait_until="networkidle")
+
+    page.locator(f"#{shell.LAUF_WAHL}").click()  # Eingabe 1
+    page.wait_for_function(
+        "(s) => document.querySelector(s)?.open === true", arg=dialog, timeout=5_000
+    )
+    zustand = page.evaluate(
+        "(s) => ({ modal: document.querySelector(s).matches(':modal'), "
+        "fokus: document.activeElement ? document.activeElement.id : '' })",
+        dialog,
+    )
+    assert zustand["modal"], "Der Lauf-Browser geht nicht modal auf — `showModal()` fehlt"
+    assert zustand["fokus"] == lauf_wahl.SUCHE, f"Fokus beim Öffnen: {zustand['fokus']!r}"
+
+    page.keyboard.type("Standard")  # Eingabe 2
+    page.wait_for_function(
+        "() => { const e = document.querySelector('.af-laufwahl__eintrag .af-laufwahl__name'); "
+        "return !!e && e.textContent.includes('Standard-Ausgangslage'); }",
+        timeout=10_000,
+    )
+
+    page.locator(".af-laufwahl__eintrag").first.click()
+    page.wait_for_function(
+        "(s) => document.querySelector(s).open === false", arg=dialog, timeout=5_000
+    )

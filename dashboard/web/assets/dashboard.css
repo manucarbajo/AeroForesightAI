@@ -1225,6 +1225,60 @@ html.dark .af-theme-toggle__to-light {
     background: var(--scrim);
 }
 
+/* --- Der Lauf-Browser (P7.3-U3.3) -----------------------------------------
+
+   Derselbe Dialog wie die Rueckfrage, darin eine Liste. Der Oeffner in der
+   Kopfzeile hat die Breite des frueheren Auswahlfelds (`w-64`) und kuerzt den
+   Namen mit Auslassung; der volle steht im Dialog. */
+.af-laufwahl-oeffner {
+    justify-content: flex-start;
+}
+
+.af-laufwahl-oeffner .af-btn__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Unter 1024 px stand schon das Auswahlfeld nicht da (`hidden lg:block`). Zwei
+   Klassen, damit die Regel `inline-flex` aus Tailwind schlaegt. */
+@media (max-width: 1023px) {
+    .af-btn.af-laufwahl-oeffner {
+        display: none;
+    }
+}
+
+.af-laufwahl__liste {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.af-laufwahl__eintrag {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    border-radius: var(--radius);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.af-laufwahl__eintrag:hover {
+    background: var(--surface-hover);
+}
+
+.af-laufwahl__eintrag:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
 .af-badge {
     display: inline-flex;
     align-items: center;

@@ -287,8 +287,7 @@ class TestDerBereichswechselIstAnsagbar:
         return shell.layout(
             active="runs",
             state=status.Status(tone="idle", label="bereit", detail=""),
-            run_options=[],
-            run_value=None,
+            lauf_bezeichnung=None,
             left="links",
             main="mitte",
             timeline="zeit",

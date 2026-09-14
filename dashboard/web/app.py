@@ -39,6 +39,7 @@ from dashboard.web import components as ui
 from dashboard.web import (
     files_route,
     landing_route,
+    lauf_wahl,
     routing,
     run_data,
     runner,
@@ -273,6 +274,7 @@ def serve_layout() -> html.Div:
     options, by_id = runs_page.run_options()
     run_value = (selection or {}).get("run_id")
     summary = by_id.get(run_value) if run_value else None
+    bezeichnung = next((o["label"] for o in options if o["value"] == run_value), None)
     start = visibility("")
 
     return html.Div(
@@ -299,13 +301,15 @@ def serve_layout() -> html.Div:
             dcc.Store(id=wizard.STEP_STORE, data=wizard.ENTRY),
             dcc.Store(id=wizard.VISITED_STORE, data=[]),
             dcc.Store(id=wizard.HISTORY_STORE, data=[]),
+            # Der Lauf-Browser (P7.3-U3.3). Ein modaler Dialog liegt über allem und
+            # gehört deshalb in keine der fünf Zonen; sein Öffner steht in der Kopfzeile.
+            lauf_wahl.dialog(),
             shell.layout(
                 active="",
                 # Auch beim ersten Zeichnen gilt der Serverzustand: Ein Lauf,
                 # den eine andere Sitzung gestartet hat, ist einer.
                 state=_status_for(selection, running=runner.is_running()),
-                run_options=options,
-                run_value=run_value,
+                lauf_bezeichnung=bezeichnung,
                 left=launch_page.rail(draft),
                 # Die Anfangssichtbarkeiten kommen aus derselben Funktion wie die
                 # späteren — sonst zeigte der erste Aufbau einen anderen Bereich
@@ -485,36 +489,27 @@ def create_app() -> Dash:
         prevent_initial_call=True,
     )
 
-    # --- Die Lauf-Auswahl der Kopfzeile ------------------------------------
-
-    @app.callback(
-        Output(shell.RUN_SELECT, "options"),
-        Output(shell.RUN_SELECT, "value"),
-        Input("last-launched-run-store", "data"),
-        State(shell.RUN_SELECT, "value"),
-    )
-    def _refresh_runs(last_launched: str | None, current: str | None):
-        """Die Liste nachziehen, sobald ein Lauf fertig geworden ist."""
-
-        options, _ = runs_page.run_options()
-        values = [option["value"] for option in options]
-        if last_launched in values:
-            return options, last_launched
-        return options, (current if current in values else (values[0] if values else None))
+    # --- Der gewählte Lauf --------------------------------------------------
 
     @app.callback(
         Output("selected-run-store", "data"),
-        Input(shell.RUN_SELECT, "value"),
-        prevent_initial_call=True,
+        Input("last-launched-run-store", "data"),
     )
-    def _select_run(run_id: str | None):
-        if not run_id:
+    def _nach_lauf(last_launched: str | None):
+        """Ein fertiger Lauf ist danach gewählt — auch nach einem Neuladen der Sitzung.
+
+        Gewählt wird sonst im Lauf-Browser (`lauf_wahl`). Bis P7.3-U3.3 zog dieser
+        Callback die Einträge eines Auswahlfelds nach; einen Dialog füllt erst das
+        Öffnen.
+        """
+
+        if not last_launched:
             return no_update
         _, by_id = runs_page.run_options()
-        summary = by_id.get(run_id)
+        summary = by_id.get(last_launched)
         if summary is None:
             return no_update
-        return {"run_id": run_id, "run_dir": str(summary.run_dir)}
+        return {"run_id": last_launched, "run_dir": str(summary.run_dir)}
 
     # --- Die vier Zonen, die dem Lauf und dem Tick folgen -------------------
 
@@ -693,6 +688,7 @@ def create_app() -> Dash:
     timeline.register_callbacks(app)
     launch_page.register_callbacks(app)
     runs_page.register_callbacks(app)
+    lauf_wahl.register_callbacks(app)
     docs_page.register_callbacks(app)
     return app
 
