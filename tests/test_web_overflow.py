@@ -115,6 +115,11 @@ BREITEN = [1280, 1024]
 
 HOEHE = 800
 
+#: **Wo die Höhe eines Fensters von 800 abweicht** (P7.4, von Haiko entschieden am
+#: 2026-09-14). Die Kriterien von P7.4 nennen 1440 × 900; gemessen wurde bis dahin
+#: nur bei 1280 × 800 und 1024 × 800 — eine Größe, die niemand misst, hält niemand.
+HOEHE_JE_BREITE = {1440: 900}
+
 #: Wie lange auf einen Callback gewartet wird, bevor gemessen wird. Dash
 #: zeichnet einen Bereich nach dem Laden nach; ohne die Wartezeit misst man den
 #: leeren Wirt.
@@ -505,7 +510,9 @@ class _Messgang:
 
     @contextlib.contextmanager
     def _seite(self, breite: int):
-        kontext = self._browser.new_context(viewport={"width": breite, "height": HOEHE})
+        kontext = self._browser.new_context(
+            viewport={"width": breite, "height": HOEHE_JE_BREITE.get(breite, HOEHE)}
+        )
         seite = kontext.new_page()
         seite.breite = breite
         seite.basis = self._basis
@@ -995,6 +1002,19 @@ DECKEL: dict[int, dict[str, float]] = {
         # Pruefschritts tragen die Modellzeit (siehe Schritt 1).
         "Schritt 6": 1.65,
     },
+    # **1440 × 900, die Größe der Kriterien von P7.4** (von Haiko entschieden am
+    # 2026-09-14). Gemessen am selben Tag vor U4.1 und U4.4: Nur Schritt 1 und
+    # «Prüfen & Starten» verfehlen das Ziel. Die Sperrklinken bei 1280 und 1024
+    # bleiben daneben, damit kein Schritt auf kleineren Schirmen unbemerkt wächst.
+    1440: {
+        "Einstieg": 1.00,
+        "Schritt 1": 1.60,
+        "Schritt 2": 1.00,
+        "Schritt 3": 1.00,
+        "Schritt 4": 1.00,
+        "Schritt 5": 1.00,
+        "Schritt 6": 1.42,
+    },
 }
 
 #: Spielraum nach oben. Schriftmetrik und Chromium-Version schwanken zwischen
@@ -1126,6 +1146,17 @@ class TestJederSchrittPasstAufEinenSchirm:
             f"Ist-Stand schwebt, ist wieder aus dem falschen Grund grün. Neue Zahlen "
             f"in `DECKEL` eintragen. Ziel ist {ZIEL:.2f}."
         )
+
+    @pytest.mark.parametrize("breite", [1440], ids=["1440x900"])
+    def test_the_criterion_size_holds_its_ratchet(self, messung, breite):
+        """Dieselbe Sperrklinke bei 1440 × 900 — der Größe, die P7.4 zusagt.
+
+        Bis zum 2026-09-14 nannte das Kriterium «≤ 1,0 Bildschirm bei 1440 × 900»,
+        und der Wächter maß bei 1280 × 800 und 1024 × 800. Die Fensterhöhe kommt
+        aus `HOEHE_JE_BREITE`.
+        """
+
+        self.test_no_step_grew_beyond_its_ratchet(messung, breite)
 
 
 @pytest.mark.ueberlauf
