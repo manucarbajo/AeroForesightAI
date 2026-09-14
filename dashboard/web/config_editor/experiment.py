@@ -62,7 +62,10 @@ def _raw_data(draft: dict) -> html.Div:
         [
             html.Div(
                 [
-                    html.H4(
+                    # **Eine Beschriftung, keine Überschrift** (P7.4-U4.3): Die drei
+                    # Titel benennen je eine Vorschau in der Klappe «Rohdaten ansehen»;
+                    # als `h4` waren sie eine zweite Überschriftebene unter dem Schritt.
+                    html.P(
                         titel, className=f"font-body {ui.BESCHRIFTUNG} font-medium af-text mb-1"
                     ),
                     ui.json_view(inhalt, max_height="30rem"),
@@ -77,28 +80,19 @@ def _raw_data(draft: dict) -> html.Div:
 def layout(draft: dict) -> html.Div:
     return html.Div(
         [
-            ui.section(
-                "Fragestellung",
-                ui.lede(
-                    "Wozu dieser Lauf gerechnet wird. Erscheint im Bericht und macht später "
-                    "nachvollziehbar, was Sie wissen wollten. Der **Name** steht im letzten "
-                    "Schritt, direkt vor dem Start."
-                ),
-                # **Der Name steht seit P1.9-W4.1 im letzten Schritt.** Dieser
-                # hier ist optional, und drei von vier Wegen kommen nie an ihm
-                # vorbei: «Szenario-Vergleich», «Weiterverwenden» und «Direkt
-                # zum Start» führen unmittelbar auf «Prüfen & Starten». Alle
-                # Läufe hießen deshalb gleich, und die Run-Liste war nach
-                # kurzer Zeit unbrauchbar — genau das, was der Text daneben
-                # vorhersagt. Die **Fragestellung** bleibt hier: Sie ist
-                # ausführlich, gehört zur Dokumentation des Laufs und nicht auf
-                # den Bildschirm, auf dem gestartet wird.
-                ui.card(
-                    c.textarea(
-                        "simulation_description",
-                        draft.get("simulation_description", ""),
-                        breite="feld-weit",
-                    ),
+            # **Eine Überschriftebene** (P7.4-U4.3). Hier stand ein Abschnitt
+            # «Fragestellung» mit eigener Einleitung über einem Feld, das ebenfalls
+            # «Fragestellung» heißt und dessen Hinweis dasselbe sagte — dreimal
+            # dasselbe Wort unter dem Schritttitel, der schon die Überschrift ist.
+            # **Der Name steht seit P1.9-W4.1 im letzten Schritt**: Drei von vier
+            # Wegen kommen nie hierher, und alle Läufe hießen sonst gleich. Die
+            # Fragestellung bleibt hier; sie gehört zur Dokumentation des Laufs.
+            ui.card(
+                c.textarea(
+                    "simulation_description",
+                    draft.get("simulation_description", ""),
+                    breite="feld-weit",
+                    detail=True,
                 ),
             ),
             # **Drei Abschnitte wurden zu Klappen** (P1.9-W3.5). «Als Szenario

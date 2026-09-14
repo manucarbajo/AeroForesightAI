@@ -295,10 +295,12 @@ für den nächsten Start.
 
 ### Lauf & Ablage
 
-Name und Fragestellung des Laufs — sie erscheinen im Bericht und in der
-Lauf-Auswahl; ohne sie sind mehrere Läufe später schwer auseinanderzuhalten.
-Darunter die Auswahl der Konfigurationsdateien, und ganz
-unten die Rohdaten: was tatsächlich an die Simulation übergeben wird.
+Die Fragestellung des Laufs — wozu er gerechnet wird. Sie erscheint im Bericht;
+den Namen vergeben Sie im letzten Schritt. Darunter die Auswahl der
+Konfigurationsdateien, die Rohdaten — was tatsächlich an die Simulation
+übergeben wird — und **Alle Einstellungen zurücksetzen**. Das setzt jede
+Einstellung auf den Auslieferungszustand; die Meldung danach trägt
+«Rückgängig», das den Stand davor mit einem Klick zurückholt.
 
 **Als Szenario sichern** steht oben in der Kopfzeile, solange Sie einrichten, und
 ist der einzige Weg dafür. Ein Klick öffnet ein Fenster mit einem Namen —

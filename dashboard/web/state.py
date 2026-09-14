@@ -26,6 +26,10 @@ from dashboard.config_catalog import (
 
 STORE_ID = "config-draft-store"
 
+#: Der Entwurf vor «Alle Einstellungen zurücksetzen» — für «Rückgängig» (P7.4-U4.3).
+#: Im Grundlayout, weil der Aktions-Callback auch aus dem Modell-Bereich feuert.
+RUECKNAHME_ID = "config-draft-ruecknahme"
+
 
 def draft_to_dict(draft: ConfigDraft) -> dict[str, Any]:
     """Draft in eine JSON-fähige Struktur überführen."""

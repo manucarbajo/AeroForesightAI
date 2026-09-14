@@ -60,7 +60,7 @@ from dashboard.web.pages import setup as setup_page
 # `ALIASES`). Hier weiterhin unter dem alten Namen erreichbar: mehrere Tests
 # und zwei Callbacks in dieser Datei rufen `web_app.active_route`.
 from dashboard.web.shell import active_route
-from dashboard.web.state import STORE_ID
+from dashboard.web.state import RUECKNAHME_ID, STORE_ID
 from dashboard.web.views import scene, telemetry
 from src.logging_setup import stdio_auf_utf8
 
@@ -280,6 +280,7 @@ def serve_layout() -> html.Div:
         [
             dcc.Location(id="url", refresh=False),
             dcc.Store(id=STORE_ID, storage_type="session", data=draft),
+            dcc.Store(id=RUECKNAHME_ID, storage_type="session"),
             dcc.Store(id="selected-run-store", data=selection),
             dcc.Store(id="last-launched-run-store", storage_type="session"),
             dcc.Store(id="explorer-messages-store", storage_type="session", data={}),

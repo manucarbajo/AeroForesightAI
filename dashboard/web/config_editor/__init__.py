@@ -51,7 +51,7 @@ from dashboard.web.config_editor import (
 )
 from dashboard.web.config_editor import controls as c
 from dashboard.web.pages import model_editor
-from dashboard.web.state import STORE_ID, draft_from_dict, draft_to_dict
+from dashboard.web.state import RUECKNAHME_ID, STORE_ID, draft_from_dict, draft_to_dict
 
 # Die vier Bereiche, die bis P1.7 Reiter waren und jetzt die Schritte vier bis
 # sieben sind. Reihenfolge ist die Lesereihenfolge: die Annahmen von grob nach
@@ -82,20 +82,32 @@ def tab_layout(tab: str, draft: dict):
 
 
 def reset_button() -> html.Div:
-    """«Auf Standard zurücksetzen» — seit P1.7 im Schritt «Lauf & Ablage».
+    """«Alle Einstellungen zurücksetzen» — im Schritt «Lauf & Ablage», **rücknehmbar**.
 
-    Vorher stand er über den Reitern und damit über *allen* Einstellungen. In
-    einer Schrittfolge gibt es diesen Ort nicht mehr; er gehört dorthin, wo man
-    ohnehin über den Lauf als Ganzes nachdenkt.
+    Seit P1.7 steht er hier statt über den Reitern. Bis P7.4-U4.3 hieß er «Auf
+    Standard-Config zurücksetzen» und verwarf den ganzen Entwurf ohne Rückfrage
+    und ohne Weg zurück — in einem als optional markierten Schritt. Jetzt hält
+    `state.RUECKNAHME_ID` den Stand davor, und die Meldung trägt «Rückgängig».
+
+    **Eine Rückfrage davor gibt es bewusst nicht.** Das Paket nannte beides; das
+    Kriterium verlangt die Rücknahme mit einem Klick, und vor einer Handlung,
+    die sich so zurücknehmen lässt, wäre eine Rückfrage nur ein Hindernis.
     """
 
     return html.Div(
-        ui.button(
-            "Auf Standard-Config zurücksetzen",
-            id=c.action_id("reset"),
-            variant="secondary",
-            icon_name="restart_alt",
-        ),
+        [
+            ui.button(
+                "Alle Einstellungen zurücksetzen",
+                id=c.action_id("reset"),
+                variant="secondary",
+                icon_name="restart_alt",
+            ),
+            ui.hint_text(
+                "Setzt jede Einstellung auf den Auslieferungszustand. Lässt sich danach "
+                "mit einem Klick rückgängig machen.",
+                class_name="mt-2",
+            ),
+        ],
         className="mt-6",
     )
 
@@ -346,6 +358,8 @@ def register_callbacks(app) -> None:
         # die Haelfte aller Rueckmeldungen ins Nichts zu schicken -- genau das
         # war zwischen W3.1 und W3.2 der Fall.
         Output(model_editor.STATUS, "children"),
+        # Der Stand vor dem Zurücksetzen (P7.4-U4.3), siehe `_ruecknahme_nach`.
+        Output(RUECKNAHME_ID, "data"),
         Input({"type": c.ACTION, "action": ALL}, "n_clicks"),
         # **Die schreibenden Aktionen melden sich erst mit der Bestätigung**
         # (P1.9-W3.2, seit P7.1-U1.4 im gestalteten Dialog): Ihre ID trägt der
@@ -358,29 +372,75 @@ def register_callbacks(app) -> None:
         State(STORE_ID, "data"),
         State({"type": c.FREE, "name": ALL}, "value"),
         State("cfg-editor-refresh", "data"),
+        State(RUECKNAHME_ID, "data"),
         prevent_initial_call=True,
     )
-    def _actions(_a, _w, _r, _p, _s, draft: dict | None, _free, refresh):
+    def _actions(_a, _w, _r, _p, _s, draft: dict | None, _free, refresh, gemerkt):
         trigger = ctx.triggered_id
         if not isinstance(trigger, dict) or not any(
             entry["value"] for entry in ctx.triggered if entry["value"]
         ):
-            return no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update
 
         free = ctx.states_list[1]
-        data = dict(draft or {})
+        vorher = dict(draft or {})
+        data = dict(vorher)
         version = int(refresh or 0) + 1
 
         try:
-            data, message, kind = _handle_action(trigger, data, free)
+            data, message, kind = _handle_action(trigger, data, free, ruecknahme=gemerkt)
         except Exception as exc:  # noqa: BLE001 - Datei- und Validierungsfehler gehören in die UI
             fehler = ui.hinweis(str(exc), "fehler")
-            return no_update, no_update, fehler, fehler
+            return no_update, no_update, fehler, fehler, no_update
 
         if message is None:
-            return no_update, no_update, no_update, no_update
-        meldung = ui.hinweis(message, kind)
-        return data, version, meldung, meldung
+            return no_update, no_update, no_update, no_update, no_update
+        return (
+            data,
+            version,
+            _meldung(trigger, message, kind, knopf=True),
+            _meldung(trigger, message, kind, knopf=False),
+            _ruecknahme_nach(trigger, vorher, gemerkt),
+        )
+
+
+def _ruecknahme_nach(trigger: dict, vorher: dict, gemerkt: dict | None):
+    """Was der Rücknahme-Store nach einer Aktion hält (P7.4-U4.3).
+
+    Nach «zurücksetzen» den Stand davor; nach «Rückgängig» nichts mehr — eine
+    Rücknahme wirkt einmal, sonst setzte ein zweiter Klick wieder zurück. Jede
+    andere Aktion lässt stehen, was gemerkt ist.
+    """
+
+    aktion = trigger.get("action")
+    if aktion == "reset":
+        return vorher
+    if aktion == "reset-undo":
+        return None
+    return no_update
+
+
+def _meldung(trigger: dict, message: str, kind: str, *, knopf: bool) -> object:
+    """Die Meldung einer Aktion — nach dem Zurücksetzen mit «Rückgängig».
+
+    **Der Knopf steht nur in einer der beiden Meldungen** (*knopf*): Dieselbe
+    Meldung geht an die Schrittfolge und an den Modell-Bereich, und zweimal
+    dieselbe Kennung ist für Dash ein Laufzeitfehler. Zurückgesetzt wird nur im
+    Einrichten, also steht er dort.
+    """
+
+    hinweis = ui.hinweis(message, kind)
+    if not knopf or trigger.get("action") != "reset":
+        return hinweis
+    return html.Div(
+        [
+            hinweis,
+            html.Div(
+                ui.button("Rückgängig", id=c.action_id("reset-undo"), variant="ghost"),
+                className="mt-2",
+            ),
+        ]
+    )
 
 
 def _namensvorschlag(draft: dict) -> str:
@@ -413,7 +473,9 @@ def _namensvorschlag(draft: dict) -> str:
     return f"{woher} · {draft.get('rounds', '?')} Ticks · {stempel}"
 
 
-def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | None, str]:
+def _handle_action(
+    trigger: dict, data: dict, free: list, *, ruecknahme: dict | None = None
+) -> tuple[dict, str | None, str]:
     """Eine Aktion ausführen und (neuer Draft, Meldung, Ton des Hinweises) zurückgeben.
 
     Der Ton ist einer aus `ui.HINWEIS_TOENE`; `tests/test_web_hinweis.py` liest
@@ -459,9 +521,15 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
     if action == "reset":
         return (
             draft_to_dict(default_config_draft()),
-            "Auf Standard-Config zurückgesetzt.",
+            "Alle Einstellungen stehen wieder auf dem Auslieferungszustand.",
             "erfolg",
         )
+
+    if action == "reset-undo":
+        # *ruecknahme* kommt aus `state.RUECKNAHME_ID` (P7.4-U4.3).
+        if not ruecknahme:
+            return data, "Es gibt nichts zurückzunehmen.", "info"
+        return dict(ruecknahme), "Die Einstellungen von vorher sind wiederhergestellt.", "erfolg"
 
     if action == "apply-sweep":
         sweeps = list_sweep_presets()
