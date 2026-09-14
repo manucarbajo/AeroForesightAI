@@ -37,6 +37,8 @@ class RunSummary:
     simulation_name: str | None = None
     #: Unter welchem Rahmenszenario der Lauf stand (`rahmen.name`, seit P2.0-B).
     rahmen_name: str | None = None
+    #: Womit gerechnet wurde (`compute_mode`, seit P0.6) — für den Lauf-Kopf (P7.3-U3.2).
+    compute_mode: str | None = None
 
 
 @dataclass(frozen=True)
@@ -250,6 +252,7 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
                 llm_incident_count=int(meta_dict.get("llm_incident_count") or 0),
                 simulation_name=sim_name or None,
                 rahmen_name=str((meta_dict.get("rahmen") or {}).get("name") or "") or None,
+                compute_mode=meta_dict.get("compute_mode"),
             )
         )
 

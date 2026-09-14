@@ -102,15 +102,16 @@ neu gestartet. Zwischenstände sind Fortsetzungspunkte, kein Archiv.
 
 ## Der Lauf ist als beeinträchtigt markiert
 
-Über den Tabs steht ein gelber Hinweis, dass Aufrufe an das Sprachmodell
-unbeantwortet blieben. Das heißt nicht, dass die Zahlen falsch sind: Preise,
+Im Kopf des Laufs — im Leitstand über der Szene, unter «Ergebnisse» über den
+sieben Ansichten — steht ein gelber Hinweis, dass Aufrufe an das Sprachmodell
+unbeantwortet blieben; «Was das heißt» klappt die Erklärung auf. Das heißt nicht, dass die Zahlen falsch sind: Preise,
 Buchungsraten und Faktorzustände rechnet Python, unabhängig vom Sprachmodell.
 Fehlen können die Beiträge der Akteure und Teile der Deutung — an den
 betroffenen Stellen hat der jeweilige Akteur ausgesetzt.
 
 Welche Ticks es traf und woran es lag, steht in `llm_incidents.json`; im Tab
 **Dateien** lässt sie sich öffnen. Die häufigste Ursache ist ein nicht laufendes
-Ollama. Prüfen Sie im Tab **Technik**, ob der angegebene Endpunkt erreichbar
+Ollama. Prüfen Sie im Schritt **Technik**, ob der angegebene Endpunkt erreichbar
 ist, und starten Sie das Modell gegebenenfalls mit `ollama run llama3.2`.
 
 Ein Lauf, der bewusst ohne Sprachmodell gerechnet wurde, ist **nicht**

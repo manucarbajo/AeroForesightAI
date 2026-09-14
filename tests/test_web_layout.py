@@ -160,7 +160,7 @@ def _summary(tmp_path, **overrides) -> RunSummary:
 def test_degraded_run_is_flagged_above_every_tab(tmp_path):
     """P0.1: Der Banner sitzt im Kopf der Seite, nicht in einer einzelnen Ansicht."""
 
-    rendered = _text(runs_page._meta(_summary(tmp_path, degraded=True, llm_incident_count=3)))
+    rendered = _text(runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=3)))
 
     assert "beeinträchtigt" in rendered
     assert "3 Aufrufe" in rendered
@@ -168,13 +168,13 @@ def test_degraded_run_is_flagged_above_every_tab(tmp_path):
 
 
 def test_a_single_incident_is_phrased_in_the_singular(tmp_path):
-    rendered = _text(runs_page._meta(_summary(tmp_path, degraded=True, llm_incident_count=1)))
+    rendered = _text(runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=1)))
 
     assert "ein Aufruf" in rendered
 
 
 def test_a_clean_run_gets_no_warning(tmp_path):
-    rendered = _text(runs_page._meta(_summary(tmp_path)))
+    rendered = _text(runs_page.lauf_kopf(_summary(tmp_path)))
 
     assert "beeinträchtigt" not in rendered
 
@@ -814,3 +814,47 @@ class TestTechnischeDetails:
         assert "drinnen" not in _text_ohne_klappen(probe)
         assert "draussen" in _text_ohne_klappen(probe)
         assert "drinnen" in _text_der_klappen(probe)
+
+
+class TestDerLaufKopf:
+    """P7.3-U3.2: einmal, kompakt, im Leitstand und in «Ergebnisse».
+
+    Unter «Ergebnisse» standen Datum, Ticks, Modell, Warnbanner und die
+    Zusammenfassung des Szenarios über jeder der sieben Ansichten (R1), und die
+    Zusammenfassung stand in «Szenario» ein zweites Mal. Im Leitstand stand der
+    Name des gezeigten Laufs nirgends (Q5).
+    """
+
+    def test_one_line_names_the_run_and_how_it_was_computed(self, tmp_path):
+        summary = _summary(tmp_path, rahmen_name="Business as Usual", compute_mode="mock_llm")
+
+        text = _text(runs_page.lauf_kopf(summary))
+
+        assert "Business as Usual" in text
+        assert "Ohne Sprachmodell" in text
+        assert "run_test" not in text, "Die Kennung gehört unter «Technische Details»"
+
+    def test_the_warning_is_visible_and_only_its_explanation_folds(self, tmp_path):
+        kopf = runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=2))
+
+        assert "beeinträchtigt" in _text_ohne_klappen(kopf)
+        assert "llm_incidents.json" in _text_der_klappen(kopf)
+        assert "llm_incidents.json" not in _text_ohne_klappen(kopf)
+
+    def test_the_scenario_summary_is_not_repeated(self, tmp_path):
+        """R1: Sie steht in «Szenario» — über jeder Ansicht stand sie ein zweites Mal."""
+
+        summary = _summary(tmp_path, scenario_summary="Drei explorative Pfade.")
+
+        assert "Drei explorative Pfade" not in _text(runs_page.lauf_kopf(summary))
+
+    def test_the_control_room_carries_the_run_header(self):
+        assert runs_page.LAUF_KOPF_LEITSTAND in str(web_app.serve_layout())
+
+    def test_one_callback_fills_both_headers(self):
+        """Derselbe Auslöser, dieselbe Rechnung — kein zweiter Rundlauf je Laufwechsel."""
+
+        schluessel = [k for k in web_app.app.callback_map if "runs-meta.children" in k]
+
+        assert len(schluessel) == 1, schluessel
+        assert f"{runs_page.LAUF_KOPF_LEITSTAND}.children" in schluessel[0]

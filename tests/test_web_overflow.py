@@ -3533,3 +3533,65 @@ class TestNurDerLeitstandTeiltDenBildschirm:
         flaeche = messung.bereich(breite, "Leitstand")["flaeche"]
 
         assert flaeche is not None and flaeche < FLAECHE_MIN, flaeche
+
+
+# --- R1: das erste Diagramm steht oben (P7.3-U3.2) ----------------------------
+
+#: Wo das erste Diagramm in «Diagramme» spätestens beginnt, bei 1440 × 900 (R1).
+#: Gemessen am 2026-09-14 auf y = 264, vor dem Lauf-Kopf auf y = 347.
+R1_OBEN_MAX = 300
+
+#: Die Oberkante des ersten Diagramms im Wirt der Ergebnis-Ansicht.
+_ERSTES_DIAGRAMM = """
+() => {
+  const g = document.querySelector('#runs-tab-content .js-plotly-plot');
+  return g ? Math.round(g.getBoundingClientRect().top) : null;
+}
+"""
+
+
+@pytest.fixture
+def seite_1440(browser, basis_url):
+    """Eine eigene Seite bei 1440 × 900 — die Größe, an der das Audit R1 gemessen hat."""
+
+    kontext = browser.new_context(viewport={"width": 1440, "height": 900})
+    seite = kontext.new_page()
+    seite.goto(basis_url, wait_until="networkidle")
+    seite.basis = basis_url
+    try:
+        yield seite
+    finally:
+        kontext.close()
+
+
+@pytest.mark.ueberlauf
+class TestDasErsteDiagrammStehtOben:
+    """R1: Über jeder Ansicht stand ein Kopfblock von rund 350 px.
+
+    Das Audit maß das erste Diagramm in «Diagramme» bei 1440 × 900 auf y ≈ 560;
+    vor dem Lauf-Kopf stand es auf 347, danach auf 264. **Gemessen auf dem
+    Referenzlauf, der nicht beeinträchtigt ist** — bei einem beeinträchtigten
+    kommen Warnzeile und Klappe dazu, und das ist gewollt.
+    """
+
+    def test_the_first_statement_begins_above_the_fold_line(self, seite_1440):
+        _oeffne_figures(seite_1440)
+        seite_1440.wait_for_timeout(RUHE_MS)
+
+        oben = seite_1440.evaluate(_ERSTES_DIAGRAMM)
+
+        assert oben is not None and oben <= R1_OBEN_MAX, oben
+
+    def test_the_measurement_would_notice_a_relapse(self, seite_1440):
+        """Ein Kopfblock von 400 px darüber muss die Messung über die Schwelle treiben."""
+
+        _oeffne_figures(seite_1440)
+        seite_1440.wait_for_timeout(RUHE_MS)
+        seite_1440.evaluate(
+            "() => { const k = document.getElementById('runs-meta'); "
+            "const d = document.createElement('div'); d.style.height = '400px'; k.prepend(d); }"
+        )
+
+        oben = seite_1440.evaluate(_ERSTES_DIAGRAMM)
+
+        assert oben is not None and oben > R1_OBEN_MAX, oben

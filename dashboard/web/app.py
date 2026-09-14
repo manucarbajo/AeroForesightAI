@@ -272,8 +272,9 @@ def serve_layout() -> html.Div:
     selection = runs_page.default_selection()
     draft = state.initial_draft_dict()
     data = run_data.load(selection)
-    options, _ = runs_page.run_options()
+    options, by_id = runs_page.run_options()
     run_value = (selection or {}).get("run_id")
+    summary = by_id.get(run_value) if run_value else None
     start = visibility("")
 
     return html.Div(
@@ -317,6 +318,14 @@ def serve_layout() -> html.Div:
                         html.Div(
                             [
                                 _bereichstitel("Leitstand"),
+                                # **Der Kopf des Laufs steht hier und nicht in der Szene** (P7.3-U3.2):
+                                # Die Szene wird bei jedem Tick neu gezeichnet, der Kopf nur, wenn ein
+                                # anderer Lauf gewählt wird — gefüllt vom selben Callback wie unter «Ergebnisse».
+                                html.Div(
+                                    runs_page.lauf_kopf(summary) if summary else None,
+                                    id=runs_page.LAUF_KOPF_LEITSTAND,
+                                    className="mb-4",
+                                ),
                                 html.Div(
                                     scene_block(
                                         data,

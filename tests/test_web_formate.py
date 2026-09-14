@@ -69,7 +69,7 @@ class TestKeinRoherZeitstempelImGezeichnetenText:
             scenario_summary=None,
         )
 
-        text = _text(runs._meta(summary))
+        text = _text(runs.lauf_kopf(summary))
 
         assert not _ISO.search(text), text
         assert _ortszeit(MOMENT) in text

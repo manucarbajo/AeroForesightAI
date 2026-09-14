@@ -31,6 +31,7 @@ from dashboard.web.views import (
     overview,
     scenario,
 )
+from src.reporting.output_writer.provenance import COMPUTE_MODE_LABELS
 
 TABS = [
     ("Szenario", "scenario"),
@@ -121,50 +122,56 @@ def default_selection() -> dict | None:
     return {"run_id": runs[0].run_id, "run_dir": str(runs[0].run_dir)}
 
 
-def degraded_banner(summary: RunSummary) -> html.Div | None:
-    """Warnung über allen Ansichten, wenn das Sprachmodell während des Laufs ausfiel.
+#: Der Wirt des Lauf-Kopfs im Leitstand. Er steht in `app.py`, gefüllt wird er
+#: hier — vom selben Callback wie der Kopf unter «Ergebnisse».
+LAUF_KOPF_LEITSTAND = "leitstand-lauf-kopf"
 
-    Steht bewusst hier und nicht in einer der sieben Ansichten: Die Einschränkung
-    betrifft jede von ihnen, und wer direkt in «Figures» einsteigt, soll sie
-    genauso sehen wie jemand, der bei «Szenario» anfängt.
+
+def lauf_kopf(summary: RunSummary) -> html.Div:
+    """Der Kopf eines Laufs — **einmal, kompakt**, im Leitstand und in «Ergebnisse» (P7.3-U3.2).
+
+    Eine Zeile sagt, welcher Lauf das ist und womit er gerechnet wurde: Name ·
+    Rahmen · Datum, dann Rechenmodus und Ticks. Bis dahin standen unter
+    «Ergebnisse» Datum, Ticks und Modell über einem Warnbanner und der
+    Zusammenfassung des Szenarios — über jeder der sieben Ansichten, und die
+    Zusammenfassung stand in «Szenario» ein zweites Mal (R1). Im Leitstand stand
+    der Name des gezeigten Laufs nirgends (Q5).
+
+    **Ein beeinträchtigter Lauf bleibt auf den ersten Blick einer** (Invariante 1):
+    Die Warnung steht sichtbar darunter; nur die Erklärung, was sie heißt, liegt in
+    einer Klappe — zweitrangig ist die Erklärung, nicht die Warnung. Das Banner
+    stand bewusst über allen Ansichten und nicht in einer: Wer direkt in
+    «Diagramme» einsteigt, soll es genauso sehen wie jemand, der bei «Szenario»
+    anfängt. Das gilt für den Kopf weiter.
     """
 
-    if not summary.degraded:
-        return None
-
-    count = summary.llm_incident_count
-    calls = "ein Aufruf" if count == 1 else f"{count} Aufrufe"
-    return ui.hinweis(
-        f"**Dieser Lauf ist beeinträchtigt.** {calls} an das Sprachmodell blieben "
-        "unbeantwortet. Die Zahlen sind unberührt — sie kommen aus Python. Fehlen "
-        "können Beiträge der Akteure und Teile der Deutung; Einzelheiten in "
-        "`llm_incidents.json` unter «Dateien».",
-        "warnung",
-        class_name="mb-3",
-    )
-
-
-#: Alter Name, von `test_web_layout.py` benutzt.
-_degraded_banner = degraded_banner
-
-
-def _meta(summary: RunSummary) -> html.Div:
-    preview = (
-        summary.scenario_summary
-        or "Keine Szenario-Vorschau — der Lauf hat keine `run_scenario.json`."
-    )
-    return html.Div(
-        [
-            html.P(
-                f"{formate.zeitpunkt(summary.timestamp)} · "
-                f"{formate.ticks_mit_modellzeit(summary.ticks_completed or '?')} · "
-                f"Modell {summary.model or '—'}",
-                className=f"{ui.CAPTION} mb-2",
-            ),
-            degraded_banner(summary),
-            ui.hinweis(preview, "info"),
-        ]
-    )
+    modus = COMPUTE_MODE_LABELS.get(summary.compute_mode or "", "Rechenmodus nicht festgehalten")
+    teile = [lauf_bezeichnung(summary), modus]
+    if summary.ticks_completed is not None:
+        teile.append(formate.ticks_mit_modellzeit(summary.ticks_completed))
+    kinder: list = [html.P(" · ".join(teile), className=f"{ui.BESCHRIFTUNG} af-text-muted")]
+    if summary.degraded:
+        count = summary.llm_incident_count
+        calls = "ein Aufruf" if count == 1 else f"{count} Aufrufe"
+        kinder.append(
+            ui.hinweis(
+                f"**Dieser Lauf ist beeinträchtigt:** {calls} an das Sprachmodell blieben "
+                "unbeantwortet.",
+                "warnung",
+                class_name="mt-2",
+            )
+        )
+        kinder.append(
+            ui.expert(
+                ui.satz(
+                    "Die Zahlen sind unberührt — sie kommen aus Python. Fehlen können "
+                    "Beiträge der Akteure und Teile der Deutung; Einzelheiten in "
+                    "`llm_incidents.json` unter «Dateien»."
+                ),
+                title="Was das heißt",
+            )
+        )
+    return html.Div(kinder)
 
 
 def viewbar(active: str) -> html.Div:
@@ -238,7 +245,9 @@ def layout(selection: dict | None = None) -> html.Div:
             viewbar(DEFAULT_TAB),
             html.Div(
                 [
-                    html.Div(_meta(summary) if summary else None, id="runs-meta", className="mb-4"),
+                    html.Div(
+                        lauf_kopf(summary) if summary else None, id="runs-meta", className="mb-4"
+                    ),
                     # **Der Wirt liegt in einer Ladeanzeige** (P7.0-U0.5).
                     # Ohne sie stand beim Wechsel der Ansicht bis zu acht
                     # Sekunden der Inhalt der *vorigen* unter dem bereits
@@ -286,16 +295,19 @@ def register_callbacks(app) -> None:
 
     @app.callback(
         Output("runs-meta", "children"),
+        Output(LAUF_KOPF_LEITSTAND, "children"),
         Input("selected-run-store", "data"),
     )
-    def _meta_for(selected: dict | None):
+    def _lauf_kopf_fuer(selected: dict | None):
+        # **Ein Callback für beide Köpfe** (P7.3-U3.2): derselbe Auslöser, dieselbe
+        # Rechnung — ein zweiter Callback wäre ein zweiter Rundlauf je Laufwechsel (P7.11).
         if not selected:
-            return None
+            return None, None
         _, by_id = run_options()
         summary = by_id.get(selected.get("run_id"))
         if summary is None:
-            return ui.hinweis("Lauf nicht mehr vorhanden.", "warnung")
-        return _meta(summary)
+            return (ui.hinweis("Lauf nicht mehr vorhanden.", "warnung"),) * 2
+        return lauf_kopf(summary), lauf_kopf(summary)
 
     @app.callback(
         Output(TAB_STORE, "data"),
