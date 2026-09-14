@@ -27,6 +27,7 @@ Zwei Dinge zur Mechanik:
 from __future__ import annotations
 
 import re
+from dataclasses import asdict
 
 from dash import html
 
@@ -635,10 +636,23 @@ def _tiles(draft: dict) -> list:
 
 
 def _modell_kacheln(draft: dict) -> list:
-    """Kennzahlen des Modells — für wen nachsehen will, nicht für die Entscheidung."""
+    """Kennzahlen des Modells — für wen nachsehen will, nicht für die Entscheidung.
 
-    feedback = draft.get("market_feedback_edit") or {}
-    segments = [s for s in (draft.get("population_edits") or []) if s.get("type") == "boolean"]
+    **Ziel-Auslastung und Segmente kommen aus der Datei, nicht aus dem Entwurf**
+    (P7.13-U13.5). Preisbildung und Bevölkerung aus dem Bereich «Modell» wirken
+    nur gespeichert; gemessen erreichte eine eingetragene Ziel-Auslastung von 0,61
+    keinen Lauf, und diese Kachel zeigte sie trotzdem an. Die aktiven Systemgrößen
+    stammen weiter aus dem Entwurf, weil sie mit «Eigene Werte anwenden» ankommen.
+    """
+
+    from dashboard.config_catalog import (
+        extract_market_feedback_from_file,
+        extract_population_edits_from_file,
+    )
+
+    datei = draft.get("properties_file") or "properties.json"
+    feedback = asdict(extract_market_feedback_from_file(datei))
+    segments = [s for s in extract_population_edits_from_file(datei) if s.type == "boolean"]
     active_properties = [
         key
         for key, edit in (draft.get("property_edits") or {}).items()

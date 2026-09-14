@@ -145,8 +145,9 @@ def layout(draft: dict | None = None) -> html.Div:
             ui.page_heading(
                 "Modell",
                 "Die Annahmen, aus denen jeder Lauf rechnet — Systemgrößen, Preisbildung, "
-                "Sättigung und Bevölkerung. Was Sie hier ändern, gilt für den nächsten "
-                "Lauf; was Sie ausdrücklich speichern, für alle künftigen.",
+                "Sättigung und Bevölkerung. Systemgrößen und ihre Verläufe gelten für den "
+                "nächsten Lauf; Preisbildung, Sättigung und Bevölkerung erst, wenn Sie sie "
+                "speichern — dann für alle künftigen.",
             ),
             html.Div(
                 id=STATUS,

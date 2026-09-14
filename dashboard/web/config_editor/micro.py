@@ -9,6 +9,15 @@ wirken also über den einzelnen Lauf hinaus. Seit P1.9-W3.2 stehen sie deshalb
 hinter einer Rückfrage (`controls.write_action`), und ihre Reichweite steht als
 Hinweis darunter. Dieses Modul wird seit W3.1 im Bereich «Modell» gerendert,
 nicht mehr in der Schrittfolge.
+
+**Was hier eingetragen wird, wirkt erst gespeichert** (P7.13-U13.5). Gemessen am
+2026-09-14 erreichte eine eingetragene Ziel-Auslastung keinen Lauf:
+`prepare_simulation_state` liest Preisbildung, Sättigung und Bevölkerung nicht
+aus dem Entwurf. Von Haiko entschieden, dass es so bleibt und die Oberfläche es
+sagt — je Abschnitt ein fester Hinweis. Welche Werte ungespeichert sind, zeigt
+erst der Änderungszähler aus P7.7-U7.1; eine Anzeige beim Tippen bräuchte einen
+Callback bei jeder Änderung am Entwurf, und die Klickdauer liegt schon über
+ihrem Deckel (P7.11).
 """
 
 from __future__ import annotations
@@ -42,6 +51,23 @@ _FEEDBACK_FINE = [
     ("max_price_change_fraction", 0.08, 0.01, 0.5, 0.01),
     ("booking_weight", 0.6, 0.0, 1.0, 0.05),
 ]
+
+
+#: Der Satz, den jeder Abschnitt mit Preisbildung, Sättigung oder Bevölkerung trägt
+#: (P7.13-U13.5). **Die Reichweite nennt er nicht** — sie steht unter jedem
+#: Speicher-Knopf aus `controls.REICHWEITE`, und zwei Fassungen desselben Satzes
+#: liefen auseinander.
+NUR_GESPEICHERT = "Was Sie hier nur eintragen, rechnet kein Lauf mit."
+
+
+def _wirkt_erst_gespeichert(knopf: str) -> object:
+    """Der feste Hinweis je Abschnitt, mit dem Knopf, der speichert."""
+
+    return ui.hinweis(
+        f"Wirkt erst, wenn Sie «{knopf}» klicken. {NUR_GESPEICHERT}",
+        "info",
+        class_name="mb-4",
+    )
 
 
 def _market_feedback(draft: dict) -> html.Div:
@@ -292,6 +318,7 @@ def layout(draft: dict) -> html.Div:
                     "Wie der Anbieter auf die beobachtete Auslastung reagiert. Das ist der "
                     "Regelkreis, der Preis und Nachfrage im Lauf aneinander koppelt."
                 ),
+                _wirkt_erst_gespeichert("Als Standard speichern"),
                 _market_feedback(draft),
                 actions=ui.doc_link("preisbildung"),
             ),
@@ -301,6 +328,7 @@ def layout(draft: dict) -> html.Div:
                     "Wer gerade geflogen ist, bucht so schnell nicht wieder. Diese beiden "
                     "Werte bestimmen, wie stark dieser Effekt die Nachfrage bremst."
                 ),
+                _wirkt_erst_gespeichert("Bevölkerung als Standard speichern"),
                 _saturation(draft),
                 actions=ui.doc_link("saettigung"),
             ),
@@ -310,6 +338,7 @@ def layout(draft: dict) -> html.Div:
                     "Die Bevölkerung besteht aus Segmenten mit eigenem Verhalten. Der Anteil "
                     "bestimmt, wie stark ein Segment das Gesamtergebnis prägt."
                 ),
+                _wirkt_erst_gespeichert("Bevölkerung als Standard speichern"),
                 _add_segment_block(),
                 (
                     ui.grid(
@@ -327,6 +356,7 @@ def layout(draft: dict) -> html.Div:
                     "Zahlungsbereitschaft und Umweltbewusstsein sind nicht bei allen gleich. "
                     "Hier legen Sie fest, wie breit sie über die Bevölkerung streuen."
                 ),
+                _wirkt_erst_gespeichert("Bevölkerung als Standard speichern"),
                 (
                     html.Div([_distribution_card(i, s) for i, s in distributions])
                     if distributions

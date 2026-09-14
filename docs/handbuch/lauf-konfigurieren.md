@@ -183,7 +183,8 @@ Lauf startet. Die Reihenfolge ist fest: was läuft und wie lange es dauert, die
 drei Werte Länge, Wiederholungen und Zufallsstartwert, was von der Auslieferung
 abweicht, was zu beachten ist — ein Hinweis, der sich in einem Schritt beheben
 lässt, trägt einen Knopf dorthin —, und zuletzt «Technische Details» mit
-Codestand, Konfiguration und den Kennzahlen des Modells.
+Codestand, Konfiguration und den Kennzahlen des Modells, so wie sie gespeichert
+sind.
 
 Solange Sie einrichten, gehört Ihnen der ganze Bildschirm: Bedienfeld, Telemetrie
 und Zeitleiste treten zurück. Einrichten ist eine Sache für sich, und eine Szene

@@ -171,8 +171,10 @@ Datei.
 
 ## Was die Oberfläche schreibt
 
-Die meisten Einstellungen im Editor gelten nur für den nächsten Lauf und
-verändern keine Datei. Drei Aktionen schreiben dauerhaft.
+Die Systemgrößen und ihre Verläufe gelten nur für den nächsten Lauf und
+verändern keine Datei. Preisbildung, Sättigung und Bevölkerung wirken dagegen
+erst, wenn sie gespeichert sind — dann für alle künftigen Läufe. Drei Aktionen
+schreiben dauerhaft.
 
 Unter **Nachfrage & Preisbildung** schreiben «Als Standard speichern» und
 «Bevölkerung als Standard speichern» in `properties.json`. «Als Szenario sichern» in der

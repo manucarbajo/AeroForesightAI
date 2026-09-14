@@ -137,9 +137,13 @@ NUR_MIT_SPRACHMODELL = {"model", "base_url", "temperature", "max_tokens"}
 #: unsichtbar zu sein.
 NICHT_GEMESSEN = {
     "property_edits": "verschachtelt; wirkt über `apply_custom_overrides` mit",
-    "population_edits": "verschachtelt; wirkt über `apply_custom_overrides` mit",
-    "saturation_edit": "verschachtelt; wirkt über `apply_custom_overrides` mit",
-    "market_feedback_edit": "verschachtelt; wirkt über `apply_custom_overrides` mit",
+    # **Bis zum 2026-09-14 stand bei den drei folgenden «wirkt über
+    # `apply_custom_overrides` mit» — und das stimmte nicht** (P7.13-U13.5): Aus dem
+    # Entwurf erreichen sie keinen Lauf, nur gespeichert. Gemessen in
+    # `TestModellwerteWirkenNurGespeichert`.
+    "population_edits": "wirkt nur gespeichert, siehe TestModellwerteWirkenNurGespeichert",
+    "saturation_edit": "wirkt nur gespeichert, siehe TestModellwerteWirkenNurGespeichert",
+    "market_feedback_edit": "wirkt nur gespeichert, siehe TestModellwerteWirkenNurGespeichert",
     "simulation_config_file": "verlangt eine zweite Konfigurationsdatei im Repo",
     "properties_file": "verlangt eine zweite Konfigurationsdatei im Repo",
     "agents_file": "verlangt eine zweite Konfigurationsdatei im Repo",
@@ -873,3 +877,80 @@ class TestDieMessungIstVollstaendig:
         assert str(abdruck_von(draft)) != str(
             grund
         ), "Selbst die Lauflänge bewegt den Abdruck nicht — die Messung misst nichts."
+
+
+class TestModellwerteWirkenNurGespeichert:
+    """Bevölkerung, Preisbildung und Sättigung aus dem Bereich «Modell» (P7.13-U13.5).
+
+    **Gemessen am 2026-09-14, bevor dieser Test existierte:** Eine im Entwurf
+    eingetragene Ziel-Auslastung von 0,61 kam im Zustand als 0,37 an, ein
+    Segmentanteil von 0,90 als 0,10 — mit und ohne «Eigene Einstellungen».
+    `prepare_simulation_state` liest die drei Felder nicht, und `RunLaunchConfig`
+    führt sie nicht. Von Haiko entschieden, dass sie **nur gespeichert** wirken;
+    beide Richtungen stehen hier, damit weder die eine noch die andere still kippt.
+
+    Gespeichert wird in eine **Kopie** von `configs/`: Der Test darf die
+    ausgelieferten Dateien nicht anfassen.
+    """
+
+    def test_an_unsaved_change_reaches_no_run(self, abdruck_von):
+        grund = str(abdruck_von(_entwurf(EINZELLAUF)))
+        draft = _entwurf(EINZELLAUF)
+        draft.market_feedback_edit.target_booking_rate = 0.61
+        draft.saturation_edit.booking_increase = 0.11
+        segment = next(s for s in draft.population_edits if s.type == "boolean")
+        segment.prevalence = 0.9
+
+        assert str(abdruck_von(draft)) == grund, (
+            "Preisbildung, Sättigung oder Bevölkerung erreichen jetzt ungespeichert einen "
+            "Lauf. Wenn das gewollt ist: den Hinweis im Bereich «Modell» und diesen Test "
+            "mitziehen (P7.13-U13.5)."
+        )
+
+    def test_a_saved_change_reaches_the_run(self, abdruck_von, monkeypatch, tmp_path):
+        """Die Gegenrichtung: ohne sie wäre der Test oben auch grün, wenn gar nichts wirkte."""
+
+        import shutil
+
+        from dashboard import config_catalog
+
+        kopie = tmp_path / "configs"
+        shutil.copytree(
+            config_catalog.CONFIGS_DIR, kopie, ignore=shutil.ignore_patterns("backtest")
+        )
+        monkeypatch.setattr(config_catalog, "CONFIGS_DIR", kopie)
+        grund = str(abdruck_von(_entwurf(EINZELLAUF)))
+
+        gespeichert = config_catalog.extract_market_feedback_from_file()
+        gespeichert.target_booking_rate = 0.61
+        config_catalog.save_market_feedback_to_file(gespeichert)
+
+        assert str(abdruck_von(_entwurf(EINZELLAUF))) != grund
+
+    def test_the_model_area_says_so_in_every_section(self):
+        """Die andere Hälfte des Kriteriums: keine solche Eingabe, ohne dass die Oberfläche es sagt.
+
+        Vier Abschnitte tragen diese Werte — Preisverhalten, Sättigung, «Wer
+        fliegt?» und «Streuung der Eigenschaften». Gezählt wird im gezeichneten
+        Bereich, nicht im Quelltext.
+        """
+
+        from dashboard.web.config_editor import micro
+        from dashboard.web.pages import model_editor
+        from dashboard.web.state import initial_draft_dict
+
+        def texte(knoten):
+            if isinstance(knoten, str):
+                yield knoten
+                return
+            kinder = getattr(knoten, "children", None)
+            for kind in kinder if isinstance(kinder, (list, tuple)) else [kinder]:
+                if kind is not None:
+                    yield from texte(kind)
+
+        rumpf = model_editor.rumpf_fuer("/app/modell", initial_draft_dict())
+        hinweise = [t for t in texte(rumpf) if micro.NUR_GESPEICHERT in t]
+
+        assert len(hinweise) == 4, hinweise
+        assert sum("«Als Standard speichern»" in t for t in hinweise) == 1, hinweise
+        assert sum("«Bevölkerung als Standard speichern»" in t for t in hinweise) == 3, hinweise
