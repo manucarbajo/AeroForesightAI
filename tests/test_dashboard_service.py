@@ -445,3 +445,62 @@ class TestEinGeratenerSatzSagtDassErGeratenIst:
         assert (
             _satz_hinweis(list_run_figures(run_dir)) is None
         ), "Ein vollständiger Satz wird mit einer Warnung versehen"
+
+
+class TestDieAuswahlListetLaeufeUndSortiertNachZeit:
+    """P7.3-U3.3: nur Ordner mit Laufdaten, der jüngste zuerst.
+
+    Am 2026-09-14 listete die Auswahl 646 Einträge, 452 davon Ordner mit nichts
+    als einem leeren `checkpoints/` — die CLI legt sie an, bevor sie eine
+    Konfiguration prüft. Und vorausgewählt war ein Sweep vom 2026-09-07, weil
+    die Reihenfolge alphabetisch war und `sweeps` vor `run_*` verarbeitet wurde.
+    """
+
+    @staticmethod
+    def _lauf(wurzel: Path, name: str, zeitstempel: str | None = None) -> None:
+        _write_minimal_run(wurzel / name)
+        if zeitstempel:
+            pfad = wurzel / name / "run_metadata.json"
+            daten = json.loads(pfad.read_text(encoding="utf-8"))
+            daten["timestamp"] = zeitstempel
+            pfad.write_text(json.dumps(daten), encoding="utf-8")
+
+    def test_a_folder_with_only_an_empty_checkpoints_dir_is_no_run(self, tmp_path):
+        (tmp_path / "run_20260914T065629Z" / "checkpoints").mkdir(parents=True)
+        self._lauf(tmp_path, "run_20260101T120000Z")
+
+        assert [lauf.run_id for lauf in list_runs(tmp_path)] == ["run_20260101T120000Z"]
+
+    def test_the_newest_run_comes_first_across_all_kinds(self, tmp_path):
+        self._lauf(tmp_path, "run_20260901T100000Z", "2026-09-01T10:00:00+00:00")
+        self._lauf(tmp_path / "sweeps", "sweep_business_as_usual", "2026-08-01T10:00:00+00:00")
+        self._lauf(tmp_path / "batch_20260910T100000Z", "run_001", "2026-09-10T10:00:00+00:00")
+        self._lauf(tmp_path, "run_test", "2026-07-01T10:00:00+00:00")
+
+        assert [lauf.run_id for lauf in list_runs(tmp_path)] == [
+            "batch_20260910T100000Z/run_001",
+            "run_20260901T100000Z",
+            "sweeps/sweep_business_as_usual",
+            "run_test",
+        ]
+
+    def test_without_a_timestamp_the_identifier_decides(self, tmp_path):
+        self._lauf(tmp_path, "run_20260101T120000Z")
+        self._lauf(tmp_path, "run_20260301T120000Z")
+        self._lauf(tmp_path, "run_ohne_zeit")
+
+        assert [lauf.run_id for lauf in list_runs(tmp_path)] == [
+            "run_20260301T120000Z",
+            "run_20260101T120000Z",
+            "run_ohne_zeit",
+        ]
+
+    def test_the_preselection_is_the_newest_run(self, tmp_path, monkeypatch):
+        from dashboard import run_browser
+        from dashboard.web.pages import runs
+
+        self._lauf(tmp_path / "sweeps", "sweep_test_short", "2026-09-13T20:44:00+00:00")
+        self._lauf(tmp_path, "run_20260914T065633Z", "2026-09-14T06:56:33+00:00")
+        monkeypatch.setattr(run_browser, "OUTPUT_DIR", str(tmp_path))
+
+        assert runs.default_selection()["run_id"] == "run_20260914T065633Z"

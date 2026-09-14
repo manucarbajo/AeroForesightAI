@@ -178,9 +178,11 @@ bleibt stehen. Die häufigsten Ursachen: Ollama läuft nicht, obwohl
 «Ohne Ollama rechnen» ausgeschaltet ist, oder eine Kombination aus
 Wiederholungen und «Lauf fortsetzen», die sich gegenseitig ausschließt.
 
-Ein abgebrochener Lauf hinterlässt trotzdem ein Verzeichnis unter `outputs/`,
-allerdings ohne die Auswertungen am Ende. In der Lauf-Auswahl erkennen Sie ihn
-daran, dass die Zahl der Ticks unter dem Maximum liegt und die Ansicht
-«Szenario» leer bleibt. Die Zeitleiste reicht dann nur bis zum letzten
-gerechneten Tick — sie richtet sich nach dem, was da ist, nicht nach dem, was
-geplant war.
+Ein Lauf, der mit einem Fehler abbricht, hinterlässt zwar ein Verzeichnis unter
+`outputs/`, aber keine Auswertung — und erscheint deshalb **nicht** in der
+Lauf-Auswahl. Bis September 2026 stand er dort als leerer Eintrag, der beim
+Anklicken nur Fehlermeldungen zeigte. Anders ein Lauf, den Sie selbst mit
+**Lauf abbrechen** beenden: Er wird gespeichert und steht in der Auswahl,
+erkennbar an einer Tickzahl unter dem Maximum (siehe oben). Die Zeitleiste
+reicht dann nur bis zum letzten gerechneten Tick — sie richtet sich nach dem,
+was da ist, nicht nach dem, was geplant war.

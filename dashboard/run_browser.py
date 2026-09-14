@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -183,6 +185,27 @@ def regenerate_run_scenario(
     )
 
 
+#: Die Zeit in einer Kennung wie `run_20260914T065633Z` — der Rückfall für einen
+#: Lauf, dessen Metadaten keinen Zeitstempel tragen.
+_KENNUNG_ZEIT = re.compile("([0-9]{8}T[0-9]{6}Z)")
+
+
+def _zeitpunkt(summary: RunSummary) -> datetime:
+    """Wann ein Lauf entstand: der Zeitstempel, sonst die Kennung, sonst ganz früh."""
+
+    if summary.timestamp:
+        try:
+            zeit = datetime.fromisoformat(summary.timestamp)
+        except ValueError:
+            pass
+        else:
+            return zeit if zeit.tzinfo else zeit.replace(tzinfo=UTC)
+    treffer = _KENNUNG_ZEIT.search(summary.run_id)
+    if treffer:
+        return datetime.strptime(treffer.group(1), "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
+    return datetime.min.replace(tzinfo=UTC)
+
+
 def list_runs(root: Path | str | None = None) -> list[RunSummary]:
     base = outputs_root(root)
     if not base.is_dir():
@@ -227,7 +250,12 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
         if not entry.is_dir():
             continue
         if entry.name.startswith("run_"):
-            _append_run(entry, entry.name)
+            # **Nur ein Ordner mit Laufdaten ist ein Lauf** (P7.3-U3.3), wie in den
+            # beiden Zweigen darunter. Die CLI legt Laufverzeichnis und `checkpoints/`
+            # an, bevor sie die Konfiguration prüft; am 2026-09-14 waren 452 der 646
+            # Einträge solche leeren Ordner.
+            if (entry / "run_metadata.json").is_file():
+                _append_run(entry, entry.name)
             continue
         if entry.name.startswith("batch_"):
             child_dirs = sorted(
@@ -254,6 +282,12 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
                 if (sweep_dir / "run_metadata.json").is_file():
                     _append_run(sweep_dir, f"sweeps/{sweep_dir.name}")
 
+    # **Der jüngste zuerst, über alle drei Zweige** (P7.3-U3.3). Bis dahin kam
+    # die Reihenfolge aus `sorted(base.iterdir(), reverse=True)` — alphabetisch,
+    # und weil `sweeps` vor `run_*` verarbeitet wurde, stand ein Sweep vorn:
+    # Vorausgewählt war `sweeps/sweep_transformation_conflict` vom 2026-09-07,
+    # während der jüngste Lauf vom 2026-09-14 stammte.
+    summaries.sort(key=_zeitpunkt, reverse=True)
     return summaries
 
 
