@@ -296,6 +296,14 @@ _SEITE_SCHIEBT = """
 })
 """
 
+#: Welchen Anteil der Fensterbreite die Mittelzone bekommt (P7.3-U3.1).
+_FLAECHE = """
+() => {
+  const mitte = document.querySelector('.af-shell__main');
+  return mitte ? mitte.getBoundingClientRect().width / window.innerWidth : null;
+}
+"""
+
 
 def _warte_auf_schriften(page) -> None:
     """Warten, bis die Webschriften wirklich gesetzt sind.
@@ -503,6 +511,7 @@ class _Messgang:
             return {
                 "ueberlauf": seite.evaluate(_DETEKTOR),
                 "schieben": seite.evaluate(_SEITE_SCHIEBT),
+                "flaeche": seite.evaluate(_FLAECHE),
                 "prosa": seite.evaluate(_PROSA),
                 "klassen": _klassen_ohne_regel(seite),
                 "symbole": set(seite.evaluate(_SYMBOLE_IM_DOM)),
@@ -3494,3 +3503,33 @@ def test_the_confirmation_is_a_modal_dialog(page):
     page.wait_for_function(
         "(s) => document.querySelector(s).open === false", arg=dialog, timeout=5_000
     )
+
+
+# --- Seitenzonen nur im Leitstand (P7.3-U3.1) --------------------------------
+
+#: Wie viel der Fensterbreite ein Fokusbereich mindestens nutzt.
+FLAECHE_MIN = 0.9
+
+
+@pytest.mark.breite
+class TestNurDerLeitstandTeiltDenBildschirm:
+    """D2: Jeder Bereich außer dem Leitstand hat die volle Breite.
+
+    «Ergebnisse» las sich zwischen Bedienfeld und Telemetrie, das Handbuch
+    ebenso (H1 des Audits: 868 px Fläche). **Der Leitstand ist die Gegenprobe:**
+    Bleibt er unter der Schwelle, sieht die Messung Seitenzonen überhaupt — eine
+    Messung, die überall 1,0 meldet, wäre sonst aus dem falschen Grund grün.
+    """
+
+    @EINE_BREITE
+    @pytest.mark.parametrize("name", [n for n in BEREICHE if n != "Leitstand"])
+    def test_a_focus_area_uses_the_width(self, messung, breite, name):
+        flaeche = messung.bereich(breite, name)["flaeche"]
+
+        assert flaeche is not None and flaeche >= FLAECHE_MIN, (name, flaeche)
+
+    @EINE_BREITE
+    def test_the_control_room_still_shares_it(self, messung, breite):
+        flaeche = messung.bereich(breite, "Leitstand")["flaeche"]
+
+        assert flaeche is not None and flaeche < FLAECHE_MIN, flaeche

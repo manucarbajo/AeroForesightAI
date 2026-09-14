@@ -46,9 +46,12 @@ from dashboard.web import routing, status
 #: Einrichten → Leitstand → Ergebnisse ist der Arbeitsablauf eines Laufs; das
 #: Modell zu pflegen gehört nicht hinein, sondern daneben. Es steht deshalb bei
 #: dem anderen Bereich, den man aufsucht statt durchläuft: dem Handbuch.
+#: Der eine Bereich mit Seitenzonen und Zeitleiste (D2, P7.3-U3.1).
+LEITSTAND = "lauf"
+
 ROUTES = [
     ("", "Einrichten"),
-    ("lauf", "Leitstand"),
+    (LEITSTAND, "Leitstand"),
     ("runs", "Ergebnisse"),
     ("modell", "Modell"),
     ("doku", "Handbuch"),
@@ -140,15 +143,16 @@ ACTION_EXPORT = "shell-action-export"
 #: Bereiche, die den Bildschirm **allein** bekommen. Seitenzonen und Zeitleiste
 #: verschwinden dort.
 #:
-#: Einrichten ist eine überlegte, lineare Arbeit; daneben eine Szene laufen zu
-#: lassen, die einen *anderen* Lauf zeigt, lenkt nur ab — und die Stand-Zeilen
-#: links wiederholen genau das, was man gerade einstellt. Der Bildschirm gehört
-#: in diesem Moment einer Sache.
-#: «Modell» kommt seit P1.9-W3.1 dazu: Facharbeit an vielen Zahlen, bei der eine
-#: Szene daneben genauso ablenkt wie beim Einrichten.
-#: Die Musterseite ebenso (P7.1-U1.6): Sie misst Bausteine in der Breite, in
-#: der sie auf einer Arbeitsfläche stehen, nicht zwischen zwei Seitenzonen.
-FOCUS_ROUTES = {"", "modell", "muster"}
+#: **Seit P7.3-U3.1 ist das jeder Bereich außer dem Leitstand** (D2, von Haiko
+#: entschieden am 2026-09-14), und die Menge wird abgeleitet statt aufgezählt —
+#: ein neuer Bereich ist ohne weiteren Eintrag einer. Bis dahin standen hier
+#: Einrichten, Modell und Musterseite; «Ergebnisse» und «Handbuch» teilten den
+#: Bildschirm mit Bedienfeld, Telemetrie und Zeitleiste und zeigten damit drei
+#: Zusammenhänge zugleich: den Entwurf des nächsten Laufs links, einen
+#: vergangenen Lauf in der Mitte, dessen Kennzahlen bei Tick 1 rechts. **Die
+#: Zeitleiste bewegte gemessen keine der sieben Ergebnis-Ansichten** — es geht
+#: nichts verloren, was dort wirkte.
+FOCUS_ROUTES = {route for route, _ in BEREICHE} - {LEITSTAND}
 
 
 def shell_class(active: str) -> str:

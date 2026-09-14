@@ -8,8 +8,9 @@ Die Anwendung ist **ein** Bildschirm, kein Stapel Seiten: links die Parameter,
 in der Mitte der Viewport, rechts die Telemetrie, unten die Zeitleiste, oben die
 Kopfzeile. Der Bereichswechsel (`Einrichten` / `Leitstand` / `Ergebnisse` /
 `Modell` / `Handbuch`) tauscht nur den Inhalt des Viewports — die anderen vier
-Zonen bleiben stehen; «Einrichten» und «Modell» bekommen den Bildschirm allein
-(`shell.FOCUS_ROUTES`). Dazu kommt die **Musterseite** unter `/app/muster`, ein
+Zonen bleiben stehen — **aber nur im Leitstand**: Jeder andere Bereich bekommt
+den Bildschirm allein (`shell.FOCUS_ROUTES`, seit P7.3-U3.1). Dazu kommt die
+**Musterseite** unter `/app/muster`, ein
 Bereich ohne Link (`shell.INTERNE_ROUTES`, P7.1-U1.6).
 Das Raster steht in `assets/dashboard.css`, der Aufbau in `shell.py`.
 

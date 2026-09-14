@@ -3,10 +3,12 @@ Anleitung führt einmal durch, vom leeren Leitstand bis zum fertigen Szenario.
 
 ## Der Bildschirm in einem Absatz
 
-Das Dashboard ist ein Leitstand: **eine** Ansicht, fünf Bereiche, kein Blättern.
-Links das Bedienfeld, in der Mitte die Simulation, rechts die Kennzahlen und die
-Konsole, unten die Zeitleiste, oben der Zustand der Anlage. Kopfzeile und
-Zeitleiste bleiben stehen; die drei Bereiche dazwischen rollen jeder für sich.
+Das Dashboard hat fünf Bereiche, zwischen denen Sie oben in der Kopfzeile wechseln.
+Der **Leitstand** ist der eine mit Seitenzonen: links das Bedienfeld, in der Mitte
+die Simulation, rechts die Kennzahlen und die Konsole, unten die Zeitleiste.
+Einrichten, Ergebnisse, Modell und Handbuch bekommen den Bildschirm allein. Im
+Leitstand bleiben Kopfzeile und Zeitleiste stehen; die drei Bereiche dazwischen
+rollen jeder für sich.
 Ist Ihr Fenster schmal, weichen die beiden Seitenspalten in Schubladen aus — die
 Knöpfe dafür sitzen links und rechts in der Kopfzeile. Sie erscheinen jeweils
 erst dann, wenn ihre Spalte wirklich zur Schublade geworden ist: die Telemetrie

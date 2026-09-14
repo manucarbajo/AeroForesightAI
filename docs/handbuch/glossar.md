@@ -78,10 +78,11 @@ führt zum Ladebildschirm; abbrechen kann man von dort nicht.
 **Lauf** — Eine Folge von Ticks aus einer festgelegten Ausgangslage. Erzeugt ein
 eigenes Verzeichnis unter `outputs/`.
 
-**Leitstand** — Die Form der Oberfläche: ein Bildschirm mit fünf Bereichen —
-Kopfzeile, Parameter links, Viewport in der Mitte, Telemetrie rechts, Zeitleiste
-unten — statt mehrerer Seiten hintereinander. Gedacht für den Fall, dass
-Einstellung und Wirkung gleichzeitig im Blick bleiben sollen.
+**Leitstand** — Der Bereich, in dem ein Lauf läuft und sich beobachten lässt:
+Kopfzeile, Bedienfeld links, Szene in der Mitte, Kennzahlen rechts, Zeitleiste
+unten. Gedacht für den Fall, dass Einstellung und Wirkung gleichzeitig im Blick
+bleiben sollen. **Seit September 2026 der einzige Bereich mit diesen Seitenzonen** —
+Einrichten, Ergebnisse, Modell und Handbuch bekommen den Bildschirm allein.
 
 **Logit-Modell** — Das Verfahren, mit dem aus den Merkmalen einer Person eine
 Buchungsentscheidung wird. Siehe

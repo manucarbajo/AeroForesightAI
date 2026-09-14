@@ -409,3 +409,23 @@ class TestDerZustandKommtAusEinerQuelle:
         for tone in (status.RUNNING, status.DEMO, status.DEGRADED, status.READY):
             gerendert = _text(shell.status_view(status.Status(tone, "Text", "Detail")))
             assert f"af-status--{tone}" in gerendert
+
+
+class TestNurDerLeitstandHatSeitenzonen:
+    """D2, P7.3-U3.1: Bedienfeld, Telemetrie und Zeitleiste gibt es nur im Leitstand.
+
+    Die Menge wird aus den Bereichen abgeleitet; diese Klasse hält, dass sie
+    wirklich alles außer dem Leitstand umfasst — und dass der Leitstand selbst
+    seine Zonen behält.
+    """
+
+    def test_every_area_but_the_control_room_is_a_focus_area(self):
+        alle = {route for route, _ in shell.BEREICHE}
+
+        assert shell.FOCUS_ROUTES == alle - {shell.LEITSTAND}
+
+    def test_the_control_room_keeps_its_zones(self):
+        assert shell.shell_class(shell.LEITSTAND) == "af-shell"
+        for route, _ in shell.BEREICHE:
+            if route != shell.LEITSTAND:
+                assert "af-shell--focus" in shell.shell_class(route), route

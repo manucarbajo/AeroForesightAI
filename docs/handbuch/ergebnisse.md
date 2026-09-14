@@ -1,6 +1,8 @@
-Den Lauf wählen Sie oben in der Kopfzeile — die Wahl gilt für den ganzen
-Leitstand, also auch für Szene, Kennzahlen und Zeitleiste. Unter **Ergebnisse**
-liegen sieben Ansichten auf dieselben Daten. Welche wann sinnvoll ist, steht
+Den Lauf wählen Sie oben in der Kopfzeile — die Wahl gilt für den Leitstand mit
+Szene, Kennzahlen und Zeitleiste und für die sieben Ansichten unter **Ergebnisse**,
+die auf dieselben Daten schauen. «Ergebnisse» bekommt den Bildschirm allein:
+Bedienfeld, Kennzahlen und Zeitleiste gibt es nur im Leitstand. Welche Ansicht
+wann sinnvoll ist, steht
 unter [Ergebnisse lesen](/doku/ergebnisse-lesen).
 
 ## Der Leitstand selbst
@@ -43,7 +45,7 @@ Szenario-Erzeugung gerechnet wurde.
 
 ## Übersicht
 
-Vier Kacheln und zwei Diagramme — dieselben Größen wie in der Telemetrie rechts,
+Vier Kacheln und zwei Diagramme — dieselben Größen wie in den Kennzahlen des Leitstands,
 aber über den ganzen Lauf statt zu einem Tick. Die Kacheln nennen erreichte und geplante Ticks,
 die Zahl der Ereignisse, das verwendete Modell und ob das Marktmodell aktiv war.
 
@@ -65,7 +67,7 @@ im Lauf überhaupt etwas passiert ist.
 ## Animation
 
 Streudiagramme, die sich über die Ticks abspielen lassen. Sie bringen ihre
-eigenen Abspielknöpfe mit und folgen **nicht** der Zeitleiste unten — anders als
+eigenen Abspielknöpfe mit; eine Zeitleiste gibt es unter «Ergebnisse» nicht — anders als
 die Szene im Bereich «Leitstand», die genau das tut. Wer beides nebeneinander
 braucht, nimmt die Szene; wer eine Aggregation über Alters- oder Segmentgruppen
 sucht, ist hier richtig. Das erste zeigt
