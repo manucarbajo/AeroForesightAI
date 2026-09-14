@@ -881,17 +881,29 @@ def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:
     return summary
 
 
+def sweep_ziel(filename: str) -> Path:
+    """Wohin ein Szenario unter diesem Namen gesichert wird — ohne etwas zu schreiben.
+
+    Eine eigene Funktion, damit sich **vor** dem Sichern fragen lässt, ob es
+    die Datei schon gibt. Die Regel ist dieselbe wie beim Schreiben, weil
+    `save_custom_sweep_preset` sie hier holt: Leerzeichen werden Unterstriche,
+    alles klein, `.json` angehängt, wenn es fehlt.
+    """
+
+    safe_name = filename.strip().replace(" ", "_").lower()
+    if not safe_name.endswith(".json"):
+        safe_name = f"{safe_name}.json"
+    return SWEEPS_DIR / safe_name
+
+
 def save_custom_sweep_preset(draft: ConfigDraft, filename: str) -> Path:
     """Persistiert den aktuellen Entwurf als Sweep unter configs/sweeps/."""
 
     SWEEPS_DIR.mkdir(parents=True, exist_ok=True)
-    safe_name = filename.strip().replace(" ", "_").lower()
-    if not safe_name.endswith(".json"):
-        safe_name = f"{safe_name}.json"
-    sweep = build_custom_sweep_from_draft(draft, filename=Path(safe_name).stem)
+    target = sweep_ziel(filename)
+    sweep = build_custom_sweep_from_draft(draft, filename=target.stem)
     payload = sweep.model_dump(mode="json")
-    payload["id"] = Path(safe_name).stem
+    payload["id"] = target.stem
     payload["rationale"] = "Erstellt im Dashboard als benutzerdefiniertes Szenario."
-    target = SWEEPS_DIR / safe_name
     target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return target

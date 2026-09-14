@@ -246,6 +246,21 @@ class TestConfigCatalog:
         payload = json.loads(path.read_text(encoding="utf-8"))
         assert payload["id"] == "test_preset"
 
+    def test_the_target_is_known_before_saving(self, monkeypatch, tmp_path):
+        """Wer vor dem Sichern fragt, bekommt denselben Pfad, der danach geschrieben wird."""
+
+        from dashboard import config_catalog
+
+        monkeypatch.setattr(config_catalog, "SWEEPS_DIR", tmp_path)
+
+        for name in ("Mein Szenario", "zweites_szenario.json", "  Probe  "):
+            ziel = config_catalog.sweep_ziel(name)
+            assert not ziel.exists()
+            assert save_custom_sweep_preset(default_config_draft(), name) == ziel
+            assert ziel.is_file()
+
+        assert config_catalog.sweep_ziel("Mein Szenario").name == "mein_szenario.json"
+
     def test_list_runs_scenario_preview(self, tmp_path):
         run_dir = tmp_path / "run_20260101T120000Z"
         _write_minimal_run(run_dir)
