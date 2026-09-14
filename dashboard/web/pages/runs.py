@@ -13,10 +13,12 @@ geworden, die beim Scrollen des Viewports stehen bleibt.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
+from dashboard.config_catalog import load_config_file
 from dashboard.run_browser import RunSummary, list_runs
 from dashboard.web import components as ui
 from dashboard.web import formate, theme
@@ -59,16 +61,53 @@ _RENDERERS = {
 _THEMED = {"overview", "figures", "animation", "files", "scenario"}
 
 
+#: Wie ein Lauf ohne festgehaltenen Rahmen heißt — derselbe Wortlaut wie in der
+#: Übersicht, damit Auswahl und Ansicht dasselbe sagen.
+OHNE_RAHMEN = "Rahmen nicht festgehalten"
+
+#: Eine Wiederholung eines Mehrfach-Laufs: `batch_…/run_002`.
+_WIEDERHOLUNG = re.compile("^batch_[^/]+/run_0*([0-9]+)$")
+
+
+def _vorgabename() -> str:
+    """Der Name, mit dem der Assistent jeden Entwurf vorbelegt — kein vergebener."""
+
+    return str(load_config_file("simulation_config.json").get("name", ""))
+
+
+def lauf_bezeichnung(summary: RunSummary, *, vorgabe: str | None = None) -> str:
+    """Wie ein Lauf in der Auswahl heißt: **Name · Rahmen · Datum** (D6, P7.3-U3.3).
+
+    **Die Kennung steht nicht darin** — sie ist ein Ablageort und steht unter
+    «Technische Details» der Übersicht. Bis dahin hieß ein Lauf «Kennung — Titel»,
+    und 179 von 190 Läufen trugen denselben Titel «Trend-Fortsetzung».
+
+    **Der Vorgabename zählt nicht als Name:** Der Assistent belegt jeden Entwurf
+    damit vor, und `run_metadata.json` hält ihn fest — vorn stünde sonst bei
+    jedem Lauf dasselbe Wort. Dieselbe Regel wie in
+    `config_catalog.build_custom_sweep_from_draft`. **Wiederholungen eines
+    Mehrfach-Laufs** entstehen zur selben Minute und tragen deshalb ihre Nummer.
+    """
+
+    vorgabe = _vorgabename() if vorgabe is None else vorgabe
+    teile = []
+    if summary.simulation_name and summary.simulation_name != vorgabe:
+        teile.append(summary.simulation_name)
+    teile.append(summary.rahmen_name or OHNE_RAHMEN)
+    teile.append(formate.zeitpunkt(summary.timestamp))
+    wiederholung = _WIEDERHOLUNG.match(summary.run_id)
+    if wiederholung:
+        teile.append(f"Wiederholung {int(wiederholung.group(1))}")
+    return " · ".join(teile)
+
+
 def run_options() -> tuple[list[dict], dict[str, RunSummary]]:
     """Einträge der Lauf-Auswahl plus Nachschlagetabelle `run_id → RunSummary`."""
 
     runs = list_runs()
+    vorgabe = _vorgabename()
     options = [
-        {
-            "label": f"{run.run_id} — {run.scenario_title}" if run.scenario_title else run.run_id,
-            "value": run.run_id,
-        }
-        for run in runs
+        {"label": lauf_bezeichnung(run, vorgabe=vorgabe), "value": run.run_id} for run in runs
     ]
     return options, {run.run_id: run for run in runs}
 

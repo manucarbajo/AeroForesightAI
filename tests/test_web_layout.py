@@ -798,6 +798,14 @@ class TestTechnischeDetails:
         assert "seed" in offen
         assert "42" in offen
 
+    def test_the_identifier_stands_behind_the_disclosure(self, tmp_path):
+        """D6: Die Kennung ist ein Ablageort und steht bei den Hashes, nicht offen."""
+
+        gerendert = _uebersicht_mit_herkunft(tmp_path)
+
+        assert "run_probe" in _text_der_klappen(gerendert)
+        assert "run_probe" not in _text_ohne_klappen(gerendert)
+
     def test_the_measurement_separates_inside_from_outside(self, tmp_path):
         """Gegen die eigene Blindheit: Die beiden Texte sind wirklich verschieden."""
 

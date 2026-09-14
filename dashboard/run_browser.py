@@ -32,6 +32,11 @@ class RunSummary:
     #: Aeltere Laeufe kennen das Feld nicht — dort bleibt es False.
     degraded: bool = False
     llm_incident_count: int = 0
+    #: Der Name aus `run_metadata.json`, **unverändert** — ob es ein vergebener oder
+    #: der Vorgabename ist, entscheidet die Oberfläche (D6, P7.3-U3.3).
+    simulation_name: str | None = None
+    #: Unter welchem Rahmenszenario der Lauf stand (`rahmen.name`, seit P2.0-B).
+    rahmen_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -243,6 +248,8 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
                 scenario_summary=scenario_summary,
                 degraded=bool(meta_dict.get("degraded", False)),
                 llm_incident_count=int(meta_dict.get("llm_incident_count") or 0),
+                simulation_name=sim_name or None,
+                rahmen_name=str((meta_dict.get("rahmen") or {}).get("name") or "") or None,
             )
         )
 

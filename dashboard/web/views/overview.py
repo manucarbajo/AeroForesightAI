@@ -95,7 +95,7 @@ def _model_label(metadata: dict) -> str:
     return metadata.get("model") or "—"
 
 
-def _provenance(metadata: dict) -> html.Div:
+def _provenance(metadata: dict, *, run_id: str | None = None) -> html.Div:
     """Seed und Rechenmodus (P0.6).
 
     Ein Lauf ohne Sprachmodell darf nicht wie ein vollwertiger aussehen. Vor
@@ -163,6 +163,10 @@ def _provenance(metadata: dict) -> html.Div:
     # den P0.6 abgeräumt hat.
     fingerprint = metadata.get("config_fingerprint") or {}
     angaben = [html.P(["Codestand: ", html.Code(code_label)], className=ui.CAPTION)]
+    # **Die Kennung steht bei den Hashes** (D6, P7.3-U3.3): Sie ist ein Ablageort
+    # und keine Bezeichnung — die Auswahl nennt den Lauf nach Name, Rahmen und Datum.
+    if run_id:
+        angaben.insert(0, html.P(["Kennung: ", html.Code(run_id)], className=ui.CAPTION))
     if fingerprint:
         parts = ", ".join(
             f"{name}: {value}" for name, value in sorted(fingerprint.items()) if value
@@ -204,14 +208,10 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                 cols="sm:grid-cols-2 lg:grid-cols-4",
             )
         )
-        children.append(_provenance(metadata))
+        children.append(_provenance(metadata, run_id=run_id))
         children.append(
             html.P(
-                [
-                    "Kennung: ",
-                    html.Code(run_id, className="af-text-muted"),
-                    f" · erstellt {formate.zeitpunkt(metadata.get('timestamp'))}",
-                ],
+                f"Erstellt {formate.zeitpunkt(metadata.get('timestamp'))}",
                 className=f"{ui.CAPTION} mt-3",
             )
         )

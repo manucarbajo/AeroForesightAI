@@ -27,9 +27,13 @@ sich die Wirkungen addieren oder gegenseitig aufheben.
 
 ## Namen vergeben
 
-Tragen Sie unter **Lauf & Ablage** einen Namen und die Fragestellung ein. In der
-Lauf-Auswahl erscheint der Name neben der Kennung des Laufs; ohne ihn stehen dort nur
-Zeitstempel, die sich nach dem dritten Lauf nicht mehr unterscheiden lassen.
+Tragen Sie im Schritt **Prüfen & Starten** einen Namen ein und unter **Lauf &
+Ablage** die Fragestellung. In der Lauf-Auswahl heißt ein Lauf **Name · Rahmen ·
+Datum**, etwa «CO₂ 200 ab Tick 5 · Business as Usual · 14.09.2026, 08:56». Ohne
+eigenen Namen stehen dort nur Rahmen und Datum — zwei Läufe unter demselben
+Rahmen unterscheiden sich dann allein durch die Uhrzeit. Der vorbelegte Name
+«Flugverkehr-Szenarioplanung» zählt dabei nicht als Name. Die Kennung, unter der
+ein Lauf in `outputs/` liegt, steht in der Übersicht unter «Technische Details».
 
 Ein brauchbares Schema ist der Bezug auf den Vergleich, etwa «CO₂ 200 ab Tick 5»
 gegen «CO₂ konstant 50».
