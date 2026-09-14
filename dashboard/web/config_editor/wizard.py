@@ -699,8 +699,10 @@ def _final_step(draft: dict) -> html.Div:
             # Markdown, weil der Pfad in Backticks steht — als `html.P` waren
             # die Zeichen zu sehen (P7.1-U1.4, vorgezogen am 2026-09-11).
             ui.markdown(
-                "«Als Szenario sichern» oben in der Kopfzeile legt die Einstellungen unter "
-                "einem Namen ab. Sie stehen danach im ersten Schritt zur Auswahl.",
+                # **Eine Zeile** (P7.4-U4.5): Die längere Fassung brach bei 1280 px um
+                # und hob den Schritt um 0,022 Schirme über seinen Deckel.
+                "«Als Szenario sichern» oben rechts legt die Einstellungen ab. Danach stehen "
+                "sie im ersten Schritt zur Auswahl.",
                 class_name="af-md--tight af-md--caption mt-4",
             ),
         ]
