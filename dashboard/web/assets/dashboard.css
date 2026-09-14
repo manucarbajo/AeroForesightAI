@@ -739,6 +739,26 @@ body {
     }
 }
 
+/* Die Aktionen der Kopfzeile sind beschriftet (P7.3-U3.4). Unter 1280 px wird
+   die Beschriftung beschnitten und nicht entfernt, wie in der Fußleiste der
+   Schrittfolge: Der Name bleibt für die Vorlesesoftware und im `title`, und
+   die Kopfzeile passt weiter auf 1024 px. */
+.af-kopfaktion {
+    white-space: nowrap;
+}
+
+@media (max-width: 1279px) {
+    .af-kopfaktion .af-btn__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+    }
+}
+
 @media (max-width: 1279px) {
     /* Die Telemetrie ist hier eine Schublade und keine Spalte — ihr Griff hat
        nichts mehr zu ziehen und verschwindet mit ihr. Bliebe er stehen, waere

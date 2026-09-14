@@ -304,6 +304,10 @@ abgelegt wird (auf der Platte unter `configs/sweeps/`), die Auswahl der
 Konfigurationsdateien, und ganz
 unten die Rohdaten: was tatsächlich an die Simulation übergeben wird.
 
+Oben in der Kopfzeile steht dieselbe Aktion, solange Sie einrichten, und daneben
+«Zwischenstand sichern»: Es legt denselben Stand mit angehängtem Zeitstempel ab
+und überschreibt so den benannten nicht.
+
 ### Technik
 
 Welches Sprachmodell unter welcher Adresse, wie oft ein Zwischenstand

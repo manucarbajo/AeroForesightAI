@@ -296,6 +296,29 @@ _SEITE_SCHIEBT = """
 })
 """
 
+#: Was die Kopfzeile zeigt (P7.3-U3.4): jeder sichtbare Knopf mit seiner sichtbaren
+#: Beschriftung, und ob die Laufauswahl steht. Knöpfe **in** der Laufauswahl gehören
+#: Dashs Auswahlfeld und nicht der Kopfzeile.
+_KOPF = """
+() => {
+  const kopf = document.querySelector('.af-shell__header');
+  const sichtbar = (el) => el.getClientRects().length > 0;
+  const auswahl = document.getElementById('shell-run-select');
+  return {
+    auswahl: !!auswahl && sichtbar(auswahl),
+    knoepfe: [...kopf.querySelectorAll('button')]
+      .filter((k) => sichtbar(k) && !k.closest('#shell-run-select'))
+      .map((k) => ({
+        id: k.id,
+        text: [...k.querySelectorAll('.af-btn__label')]
+          .filter((s) => s.getBoundingClientRect().width > 1)
+          .map((s) => s.textContent.trim())
+          .join(' '),
+      })),
+  };
+}
+"""
+
 #: Welchen Anteil der Fensterbreite die Mittelzone bekommt (P7.3-U3.1).
 _FLAECHE = """
 () => {
@@ -512,6 +535,7 @@ class _Messgang:
                 "ueberlauf": seite.evaluate(_DETEKTOR),
                 "schieben": seite.evaluate(_SEITE_SCHIEBT),
                 "flaeche": seite.evaluate(_FLAECHE),
+                "kopf": seite.evaluate(_KOPF),
                 "prosa": seite.evaluate(_PROSA),
                 "klassen": _klassen_ohne_regel(seite),
                 "symbole": set(seite.evaluate(_SYMBOLE_IM_DOM)),
@@ -3595,3 +3619,51 @@ class TestDasErsteDiagrammStehtOben:
         oben = seite_1440.evaluate(_ERSTES_DIAGRAMM)
 
         assert oben is not None and oben > R1_OBEN_MAX, oben
+
+
+# --- Die Kopfzeile sagt, was sie tut (P7.3-U3.4) ------------------------------
+
+
+@pytest.mark.breite
+class TestDieKopfzeileSagtWasSieTut:
+    """Kein Symbolknopf ohne sichtbare Beschriftung ab 1280 px — und nur, was passt.
+
+    Der statische Wächter in `tests/test_web_shell.py` sieht den Namen im Baum; ob
+    er **sichtbar** ist, entscheidet das Stylesheet, das ihn unter 1280 px beschneidet.
+    **Einrichten und Leitstand sind die Gegenprobe:** Zeigen sie ihre Aktionen
+    nicht beschriftet, misst die Suche über alle Bereiche nichts.
+    """
+
+    @EINE_BREITE
+    @pytest.mark.parametrize("name", list(BEREICHE))
+    def test_no_visible_header_button_is_mute(self, messung, breite, name):
+        from dashboard.web import shell
+
+        knoepfe = messung.bereich(breite, name)["kopf"]["knoepfe"]
+        stumm = [
+            k["id"] for k in knoepfe if not k["text"] and k["id"] not in shell.OHNE_BESCHRIFTUNG
+        ]
+
+        assert not stumm, f"{name} bei {breite} px: Knöpfe ohne sichtbare Beschriftung {stumm}"
+
+    @EINE_BREITE
+    def test_setup_offers_saving_and_no_run(self, messung, breite):
+        from dashboard.web import shell
+
+        kopf = messung.bereich(breite, "Einstieg")["kopf"]
+        beschriftet = {k["id"] for k in kopf["knoepfe"] if k["text"]}
+
+        assert {shell.ACTION_SAVE, shell.ACTION_SNAPSHOT} <= beschriftet, beschriftet
+        assert shell.ACTION_EXPORT not in beschriftet
+        assert not kopf["auswahl"], "Das Einrichten zeigt eine Laufauswahl"
+
+    @EINE_BREITE
+    def test_the_control_room_offers_the_run_and_its_files(self, messung, breite):
+        from dashboard.web import shell
+
+        kopf = messung.bereich(breite, "Leitstand")["kopf"]
+        sichtbar = {k["id"] for k in kopf["knoepfe"]}
+
+        assert shell.ACTION_EXPORT in {k["id"] for k in kopf["knoepfe"] if k["text"]}
+        assert shell.ACTION_SAVE not in sichtbar, sichtbar
+        assert kopf["auswahl"], "Der Leitstand zeigt keine Laufauswahl"

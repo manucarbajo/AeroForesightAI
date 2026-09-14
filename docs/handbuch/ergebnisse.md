@@ -1,9 +1,14 @@
-Den Lauf wählen Sie oben in der Kopfzeile — die Wahl gilt für den Leitstand mit
+Den Lauf wählen Sie oben in der Kopfzeile, solange Sie im Leitstand oder hier sind —
+die Wahl gilt für den Leitstand mit
 Szene, Kennzahlen und Zeitleiste und für die sieben Ansichten unter **Ergebnisse**,
 die auf dieselben Daten schauen. «Ergebnisse» bekommt den Bildschirm allein:
 Bedienfeld, Kennzahlen und Zeitleiste gibt es nur im Leitstand. Welche Ansicht
 wann sinnvoll ist, steht
 unter [Ergebnisse lesen](/doku/ergebnisse-lesen).
+
+Neben der Auswahl führt «Dateien des Laufs» zu den Dateien des gewählten Laufs.
+Beides erscheint nur hier und im Leitstand: Beim Einrichten, im Modell und im
+Handbuch geht es nicht um einen Lauf, der schon gerechnet ist.
 
 ## Der Leitstand selbst
 

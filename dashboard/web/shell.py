@@ -133,11 +133,45 @@ SEITENTITEL = "shell-seitentitel"
 MAIN_ID = "shell-main"
 RUN_SELECT = "shell-run-select"
 
-#: Globale Aktionen der Kopfzeile. Alle drei gibt es bereits als Funktion — sie
+#: Aktionen der Kopfzeile. Alle drei gibt es bereits als Funktion — sie
 #: standen nur an drei verschiedenen Stellen tief in der Seite.
 ACTION_SAVE = "shell-action-save"
 ACTION_SNAPSHOT = "shell-action-snapshot"
 ACTION_EXPORT = "shell-action-export"
+
+#: Die Bereiche, die einen Lauf zeigen (P7.3-U3.4).
+LAUF_BEREICHE = frozenset({LEITSTAND, "runs"})
+
+#: **Was in der Kopfzeile nur zu bestimmten Bereichen gehört** — Kennung → Bereiche
+#: (P7.3-U3.4, von Haiko entschieden am 2026-09-14).
+#:
+#: Bis dahin stand alles auf jedem Bereich: Auf dem Handbuch bot die Kopfzeile
+#: an, Einstellungen zu sichern, im Einrichten die Dateien eines Laufs. Und
+#: beschriftet passte es nicht mehr — gemessen drückten die beiden
+#: Speicher-Aktionen die Bereichsnavigation bei 1280 px um 224 px zusammen,
+#: solange die Laufauswahl daneben stand. **Die Laufauswahl gehört deshalb zu den
+#: Bereichen mit einem Lauf**, das Sichern zum Einrichten.
+KONTEXT = {
+    RUN_SELECT: LAUF_BEREICHE,
+    ACTION_SAVE: frozenset({""}),
+    ACTION_SNAPSHOT: frozenset({""}),
+    ACTION_EXPORT: LAUF_BEREICHE,
+}
+
+#: Was zusätzlich einen gewählten Lauf braucht — ohne ihn gibt es keine Dateien.
+BRAUCHT_LAUF = frozenset({ACTION_EXPORT})
+
+#: **Knöpfe der Kopfzeile, die ohne sichtbare Beschriftung bleiben** — mit Grund
+#: (P7.3-U3.4). Jeder andere trägt seinen Namen sichtbar; ein Name, der nur im
+#: `title` steht, erscheint erst, wenn jemand mit der Maus darauf verweilt.
+OHNE_BESCHRIFTUNG = {
+    THEME_TOGGLE: (
+        "ein Zustandsschalter und keine Aktion: Sonne und Mond sagen, wohin er "
+        "schaltet, und eine Beschriftung nähme der Navigation die Breite"
+    ),
+    LEFT_TOGGLE: "erscheint erst unter 1024 px, wo die Beschriftungen beschnitten sind",
+    RIGHT_TOGGLE: "erscheint erst unter 1280 px, wo die Beschriftungen beschnitten sind",
+}
 
 
 #: Bereiche, die den Bildschirm **allein** bekommen. Seitenzonen und Zeitleiste
@@ -268,21 +302,56 @@ def theme_toggle() -> html.Button:
     )
 
 
-def actions() -> html.Div:
-    """Speichern, Snapshot, Exportieren — die drei Aktionen der Kopfzeile.
+def kontext_stile(active: str, *, lauf: bool) -> dict[str, dict | None]:
+    """Welche Teile der Kopfzeile in diesem Bereich stehen (P7.3-U3.4).
 
-    «Speichern» sichert die Einstellungen als Szenario-Preset unter
-    `configs/sweeps/`, «Snapshot» legt dieselben Werte unter einem Namen mit
-    Zeitstempel ab, damit ein Zwischenstand den benannten Entwurf nicht
-    überschreibt, und «Exportieren» führt in die Dateiablage des gewählten
-    Laufs.
+    Als eigene Funktion und nicht im Callback, damit die Entscheidung ohne
+    laufende App prüfbar ist. **Ausgeblendet, nicht weggelassen** (Regel 6):
+    `app._save`, `app._export` und die Laufauswahl hängen an diesen Kennungen.
     """
 
+    return {
+        kennung: (
+            None
+            if active in bereiche and (lauf or kennung not in BRAUCHT_LAUF)
+            else {"display": "none"}
+        )
+        for kennung, bereiche in KONTEXT.items()
+    }
+
+
+def actions(active: str = "", *, lauf: bool = False) -> html.Div:
+    """Die Aktionen der Kopfzeile — beschriftet, und nur dort, wo sie passen.
+
+    «Als Szenario sichern» legt die Einstellungen als Szenario unter
+    `configs/sweeps/` ab, «Zwischenstand sichern» dieselben Werte unter einem
+    Namen mit Zeitstempel, damit ein Zwischenstand den benannten Stand nicht
+    überschreibt — beide gehören zum Einrichten. «Dateien des Laufs» führt in
+    die Dateiablage des gewählten Laufs.
+
+    **Bis P7.3-U3.4 waren es drei Symbolknöpfe**, deren Name nur im `title`
+    stand. Unter 1280 px wird die Beschriftung beschnitten und nicht entfernt
+    (`af-kopfaktion` im Stylesheet): Der Name bleibt im Baum und im `title`.
+    """
+
+    stile = kontext_stile(active, lauf=lauf)
+    knoepfe = [
+        (ACTION_SAVE, "Als Szenario sichern", "save"),
+        (ACTION_SNAPSHOT, "Zwischenstand sichern", "photo_camera"),
+        (ACTION_EXPORT, "Dateien des Laufs", "download"),
+    ]
     return html.Div(
         [
-            ui.icon_button("save", "Einstellungen als Szenario sichern", id=ACTION_SAVE),
-            ui.icon_button("photo_camera", "Snapshot des Entwurfs anlegen", id=ACTION_SNAPSHOT),
-            ui.icon_button("download", "Dateien dieses Laufs ansehen", id=ACTION_EXPORT),
+            ui.button(
+                beschriftung,
+                variant="ghost",
+                icon_name=symbol,
+                id=kennung,
+                title=beschriftung,
+                className="af-kopfaktion",
+                style=stile[kennung],
+            )
+            for kennung, beschriftung, symbol in knoepfe
         ],
         className="flex items-center gap-1",
     )
@@ -299,6 +368,7 @@ def header(
     run_options: list[dict],
     run_value: str | None,
 ) -> html.Header:
+    stile = kontext_stile(active, lauf=run_value is not None)
     return html.Header(
         [
             navbar(active),
@@ -312,8 +382,9 @@ def header(
                         clearable=False,
                         placeholder="Kein Lauf vorhanden",
                         className="af-dropdown w-64 hidden lg:block",
+                        style=stile[RUN_SELECT],
                     ),
-                    actions(),
+                    actions(active, lauf=run_value is not None),
                     theme_toggle(),
                     ui.icon_button(
                         "insights",

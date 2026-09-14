@@ -126,6 +126,125 @@ class TestFuenfZonen:
         assert "af-drawer-toggle" in gerendert
 
 
+def _knoepfe(knoten) -> list:
+    """Jeder Knopf im Baum — gesucht, nicht aufgezählt."""
+
+    eigen = [knoten] if isinstance(knoten, html.Button) else []
+    kinder = getattr(knoten, "children", None)
+    if kinder is None or isinstance(kinder, str):
+        return eigen
+    kinder = kinder if isinstance(kinder, (list, tuple)) else [kinder]
+    return eigen + [k for kind in kinder for k in _knoepfe(kind)]
+
+
+def _beschriftung(knoten) -> str:
+    """Der Text eines Knopfs ohne seine Symbole."""
+
+    if isinstance(knoten, str):
+        return knoten
+    if "material-symbols" in (getattr(knoten, "className", "") or ""):
+        return ""
+    kinder = getattr(knoten, "children", None)
+    if kinder is None:
+        return ""
+    kinder = kinder if isinstance(kinder, (list, tuple)) else [kinder]
+    return "".join(_beschriftung(k) for k in kinder)
+
+
+def _kopf(active: str = "") -> html.Header:
+    return shell.header(
+        active,
+        state=status.derive(running=False, demo=False),
+        run_options=[{"label": "run_1", "value": "run_1"}],
+        run_value="run_1",
+    )
+
+
+class TestJederKopfknopfSagtWasErTut:
+    """P7.3-U3.4: Kein Symbolknopf ohne Beschriftung in der Kopfzeile.
+
+    Bis dahin trugen die drei Aktionen ihren Namen nur im `title` — sichtbar erst,
+    wenn jemand mit der Maus darauf verweilt. Gesucht wird jeder Knopf im Baum
+    der Kopfzeile, nicht die drei heutigen; wer keinen Namen trägt, steht mit
+    Grund in `shell.OHNE_BESCHRIFTUNG`. Dass die Beschriftung ab 1280 px auch
+    **sichtbar** ist, misst der Browser-Wächter.
+    """
+
+    #: Gegen die eigene Blindheit: zwei Umschalter, drei Aktionen, das Design.
+    KOPFKNOEPFE_MIN = 6
+
+    def test_every_header_button_carries_its_name(self):
+        knoepfe = _knoepfe(_kopf())
+        stumm = [
+            k.id
+            for k in knoepfe
+            if not _beschriftung(k).strip() and k.id not in shell.OHNE_BESCHRIFTUNG
+        ]
+
+        assert len(knoepfe) >= self.KOPFKNOEPFE_MIN, len(knoepfe)
+        assert not stumm, f"Knöpfe ohne Beschriftung in der Kopfzeile: {stumm}"
+
+    def test_every_exception_names_a_button_that_exists(self):
+        kennungen = {k.id for k in _knoepfe(_kopf())}
+
+        assert set(shell.OHNE_BESCHRIFTUNG) <= kennungen
+
+    def test_the_guard_would_notice_a_mute_action(self):
+        stumm = html.Div([shell.ui.icon_button("save", "Sichern", id="probe")])
+
+        assert not _beschriftung(_knoepfe(stumm)[0]).strip()
+
+
+class TestDieKopfzeileZeigtNurWasZumBereichPasst:
+    """P7.3-U3.4: Laufauswahl und Dateien bei den Läufen, das Sichern beim Einrichten.
+
+    Von Haiko entschieden am 2026-09-14, nachdem gemessen beschriftete
+    Speicher-Aktionen neben der Laufauswahl die Navigation um 224 px
+    zusammendrückten. Geprüft über **jeden** Bereich aus `shell.BEREICHE`.
+    """
+
+    @staticmethod
+    def _sichtbar(stil) -> bool:
+        return stil is None
+
+    def test_saving_belongs_to_setup_alone(self):
+        for route, _ in shell.BEREICHE:
+            for lauf in (True, False):
+                stile = shell.kontext_stile(route, lauf=lauf)
+
+                erwartet = route == ""
+                assert self._sichtbar(stile[shell.ACTION_SAVE]) is erwartet, route
+                assert self._sichtbar(stile[shell.ACTION_SNAPSHOT]) is erwartet, route
+
+    def test_the_run_and_its_files_belong_to_the_run_areas(self):
+        for route, _ in shell.BEREICHE:
+            for lauf in (True, False):
+                stile = shell.kontext_stile(route, lauf=lauf)
+
+                bei_laeufen = route in shell.LAUF_BEREICHE
+                assert self._sichtbar(stile[shell.RUN_SELECT]) is bei_laeufen, route
+                assert self._sichtbar(stile[shell.ACTION_EXPORT]) is (bei_laeufen and lauf)
+
+    def test_hidden_controls_stay_in_the_tree(self):
+        """Regel 6: `app._save` und `app._export` hängen an diesen Kennungen."""
+
+        gerendert = _text(_kopf("doku"))
+
+        for kennung in shell.KONTEXT:
+            assert kennung in gerendert, kennung
+
+    def test_every_action_of_the_header_has_a_place(self):
+        aktionen = {k.id for k in _knoepfe(_kopf()) if str(k.id).startswith("shell-action-")}
+
+        assert aktionen and aktionen <= set(shell.KONTEXT), aktionen
+
+    def test_the_app_switches_them_with_the_area(self):
+        schluessel = " ".join(web_app.app.callback_map)
+
+        for kennung in shell.KONTEXT:
+            assert f"{kennung}.style" in schluessel, kennung
+
+
 # --- Routing ---------------------------------------------------------------
 
 

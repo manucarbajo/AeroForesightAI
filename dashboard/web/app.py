@@ -632,9 +632,9 @@ def create_app() -> Dash:
     def _save(save_clicks, snapshot_clicks, wizard_clicks, data: dict | None):
         """Entwurf als Szenario sichern — benannt oder als Zwischenstand.
 
-        Der Unterschied ist der Name: «Speichern» schreibt unter dem Namen der
-        Simulation und überschreibt damit denselben Stand wieder, «Snapshot»
-        hängt einen Zeitstempel an. Beide landen in `configs/sweeps/` und stehen
+        Der Unterschied ist der Name: «Als Szenario sichern» schreibt unter dem
+        Namen der Simulation und überschreibt damit denselben Stand wieder,
+        «Zwischenstand sichern» hängt einen Zeitstempel an. Beide landen in `configs/sweeps/` und stehen
         danach im ersten Schritt des geführten Ablaufs zur Auswahl.
         """
 
@@ -672,6 +672,22 @@ def create_app() -> Dash:
         if not n_clicks:
             return no_update, no_update, no_update
         return routing.url("runs"), "files", runs_page.viewbar("files").children
+
+    @app.callback(
+        *(Output(kennung, "style") for kennung in shell.KONTEXT),
+        Input("url", "pathname"),
+        Input("selected-run-store", "data"),
+    )
+    def _kontext(pathname: str | None, selected: dict | None):
+        """Die Kopfzeile zeigt, was zum Bereich passt (P7.3-U3.4).
+
+        Am Pfad **und** an der Auswahl: «Dateien des Laufs» braucht einen Lauf,
+        und den gibt es erst, wenn einer fertig ist — der Bereich ändert sich
+        dabei nicht.
+        """
+
+        stile = shell.kontext_stile(active_route(pathname), lauf=not run_data.zeigt_demo(selected))
+        return tuple(stile[kennung] for kennung in shell.KONTEXT)
 
     shell.register_callbacks(app)
     timeline.register_callbacks(app)

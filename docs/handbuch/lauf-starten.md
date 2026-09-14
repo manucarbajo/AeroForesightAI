@@ -118,7 +118,7 @@ Zeitleiste zeigen ihn.
 Bei **Wiederholungen** entsteht ein Bündel unter einer gemeinsamen Batch-ID. Die
 Meldung nennt, wie viele Läufe entstanden sind und wie viele Ereignisse
 insgesamt. Die einzelnen Läufe wählen Sie danach über die Auswahl in der
-Kopfzeile.
+Kopfzeile des Leitstands oder der Ergebnisse.
 
 Beim **Szenario-Vergleich** — also wenn Sie ihn auf dem Einstieg von
 «Einrichten» gewählt oder «Alle Szenarien vergleichen» hinter der
