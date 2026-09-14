@@ -114,9 +114,10 @@ Folge von Entscheidungen und braucht Führung; die andere ist Facharbeit an
 vielen Zahlen und braucht Fläche und Überblick. Beides in dieselbe Schrittfolge
 zu legen ging nur zulasten einer von beiden.
 
-Was Sie im Modell ändern, gilt für den nächsten Lauf, den Sie starten — also nur,
-wenn Sie es **vor** «Lauf starten» einstellen, und nur unter den Bedingungen, die
-unter «Alle Einstellungen» stehen. Einige
+Die Systemgrößen und ihre Verläufe gelten für den nächsten Lauf, den Sie starten
+— also nur, wenn Sie sie **vor** «Lauf starten» einstellen, und nur unter den
+Bedingungen, die unter «Alle Einstellungen» stehen. **Bevölkerung, Preisbildung
+und Sättigung dagegen erreichen einen Lauf nur, wenn Sie sie speichern.** Einige
 Schaltflächen dort schreiben allerdings **dauerhaft** in die
 Konfigurationsdateien und wirken damit über Ihren Lauf hinaus: «Als Standard
 speichern», «Bevölkerung als Standard speichern», «Größe anlegen», «Größe
@@ -311,9 +312,11 @@ Was Sie nach dem Start ändern, gilt erst für den nächsten Lauf.
   schreibt die Verläufe des Szenarios in den Editor und schaltet auf «Eigene
   Einstellungen» um.
 
-Zwei Speichern-Knöpfe im Modell schreiben in `configs/properties.json` und wirken
-damit über den einzelnen Lauf hinaus. Alles andere dort gilt nur für den
-nächsten Start.
+**Bevölkerung, Preisbildung und Sättigung wirken nur, wenn Sie sie speichern** —
+«Als Standard speichern» für das Preisverhalten, «Bevölkerung als Standard
+speichern» für Bevölkerung und Sättigung. Beide schreiben in
+`configs/properties.json` und gelten damit für alle künftigen Läufe. Was Sie dort
+nur eintragen, ohne zu speichern, rechnet kein Lauf mit.
 
 ### Lauf & Ablage
 
