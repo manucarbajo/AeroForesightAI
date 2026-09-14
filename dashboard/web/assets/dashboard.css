@@ -1555,21 +1555,6 @@ html.dark .af-input[type="number"] {
     font-variant-numeric: tabular-nums;
 }
 
-/* **Zwei Zeilen, dann Schluss.** Vorher war jede Kachel so hoch wie ihre
-   laengste Beschreibung -- gemessen zwischen 88 und 264 px. Ein Raster mit
-   ungleich hohen Zeilen laesst sich nicht ueberfliegen: Man liest zehn
-   Absaetze, statt zehn Moeglichkeiten zu vergleichen. Der volle Text steht
-   unter dem Raster, sobald ein Szenario gewaehlt ist. */
-.af-choice__text {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-top: 0.25rem;
-    line-height: 1.45;
-}
-
 .af-radio--cards label {
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -1608,6 +1593,53 @@ html.dark .af-input[type="number"] {
    Mitte. */
 .af-radio--cards input[type="radio"] {
     margin-top: 0;
+}
+
+/* --- Die Szenariowahl in Schritt 1 (P7.4-U4.1) ------------------------------
+
+   Links die Liste, rechts die Einzelheiten. Bis dahin stand ein Raster aus
+   zehn Karten mit je zwei abgeschnittenen Zeilen Beschreibung, und die
+   Einzelheiten darunter -- gemessen 1,60 Bildschirme bei 1440 x 900. Unter
+   1280 px ist die Spalte zu schmal fuer beides nebeneinander. */
+.af-szenariowahl {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.af-szenariowahl .af-radio--cards {
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+
+/* **Zeilen, keine Karten.** Als Karten in der Karte lag der Text der Eintraege
+   bei 36 px, neben dem Einzugsraster (Kantenwaechter, 1024 px), und die Liste
+   war mit Rahmen und Polsterung die hoehere Spalte -- 1,21 Schirme bei
+   1440 x 900. Im Browser ausprobiert, bevor der Code geaendert wurde. */
+.af-szenariowahl .af-radio--cards label {
+    border: 0;
+    background: transparent;
+    padding: 0.5rem 0.75rem 0.5rem 0;
+}
+
+.af-szenariowahl .af-radio--cards label:hover {
+    background: var(--surface-hover);
+}
+
+.af-szenariowahl .af-radio--cards label:has(input:checked) {
+    background: var(--accent-soft);
+}
+
+/* Die Feinabstimmung steht unter der Liste; ihr Abstand ist hier eine Stufe
+   kleiner, die letzten Pixel bis zu einem Bildschirm bei 1440 x 900. */
+.af-szenariowahl .af-expert {
+    margin-top: 0.5rem;
+}
+
+@media (min-width: 1280px) {
+    .af-szenariowahl {
+        grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr);
+        align-items: start;
+    }
 }
 
 /* --- Umschalter ----------------------------------------------------------- */

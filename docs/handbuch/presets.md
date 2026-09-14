@@ -56,7 +56,8 @@ wie der Rest: **Die Richtung ist argumentiert, die Zahlen sind gesetzt.**
 
 **Ein Stresstest** ist ein Belastungs- oder Sichtprüfungslauf der Engine. Seine
 Verläufe fahren durch Extreme, damit man sieht, ob etwas bricht — sie behaupten
-nichts über die Zukunft. Die Kachel schreibt «Stresstest» davor, und ein
+nichts über die Zukunft. In der Auswahl ist er ausgeblendet, bis Sie «Stresstests
+zeigen» wählen, und trägt dann «Stresstest» vor seiner Kennzahl; ein
 Szenario-Vergleich lässt ihn aus.
 
 ## Ein Preset verwenden
@@ -146,7 +147,7 @@ Unter den hinterlegten Dateien liegen zwei verschiedene Dinge: begründete
 Weltbilder und Belastungstests der Engine. Ein Vergleich stellt Weltbilder
 gegeneinander — ein Stresstest, dessen Verläufe auf Sichtbarkeit gebaut sind,
 gehört nicht als Zukunft daneben. Starten lässt er sich weiterhin einzeln; in
-der Auswahl steht «Stresstest» an seiner Kachel.
+der Auswahl erscheint er nach «Stresstests zeigen».
 
 ## Meilensteine
 

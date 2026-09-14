@@ -185,7 +185,9 @@ class TestDieSzenarioAuswahl:
         assert start_flow.of(result) == start_flow.CUSTOM
 
     def test_every_preset_is_offered(self):
-        values = {option["value"] for option in start_flow.choice_options()}
+        """Jedes Preset ist erreichbar — die Stresstests seit P7.4-U4.1 über «Stresstests zeigen»."""
+
+        values = {option["value"] for option in start_flow.choice_options(stresstests=True)}
 
         assert {preset.id for preset in list_sweep_presets()} <= values
         assert {start_flow.STANDARD, start_flow.CUSTOM} <= values

@@ -77,6 +77,23 @@ def summary_id(slot: str) -> dict:
     return {"type": SUMMARY, "slot": slot}
 
 
+#: Der Wirt des Auswahlfelds in Schritt 1 — neu gezeichnet, wenn jemand die
+#: Stresstests ein- oder ausblendet (P7.4-U4.1).
+LISTE = "start-szenarioliste"
+
+#: Der Knopf «Stresstests zeigen». **Keine Konfigurationskennung**: Er schreibt
+#: nichts in den Entwurf und ist damit keine vierte Entscheidung (P1.1).
+STRESS_TOGGLE = "start-stresstests"
+
+
+def liste_id(slot: str) -> dict:
+    return {"type": LISTE, "slot": slot}
+
+
+def stress_toggle_id(slot: str) -> dict:
+    return {"type": STRESS_TOGGLE, "slot": slot}
+
+
 # --- Auswahl ⇄ Entwurf -----------------------------------------------------
 
 
@@ -224,63 +241,63 @@ def _kennzahl(preset) -> str:
     return kennzahl
 
 
-def _choice_label(title: str, description: str, kennzahl: str | None = None) -> html.Div:
-    """Eine Kachel im Raster: Name, Kennzahl, zwei Zeilen Beschreibung (P1.9-W3.4).
+def _choice_label(title: str, kennzahl: str | None = None) -> html.Div:
+    """Ein Eintrag der Liste: **Name und Kennzahl, kein Satz** (P7.4-U4.1).
 
-    Vorher trug jede Kachel ihre **vollständige** Beschreibung — zwischen einer
-    und sechs Zeilen, je nach Szenario. Gemessen waren die zehn Kacheln damit
-    zwischen 88 und 264 px hoch, das Raster 5 Reihen, und Schritt 1 brauchte
-    1,92 Bildschirme: der zweithöchste Wert der ganzen Schrittfolge.
-
-    Ein Raster, dessen Zeilen unterschiedlich hoch sind, lässt sich außerdem
-    nicht überfliegen — man liest zehn Absätze, statt zehn Möglichkeiten zu
-    vergleichen. Die Beschreibung ist deshalb auf zwei Zeilen geklemmt, und die
-    **Kennzahl** darüber macht die Kacheln erst vergleichbar.
-
-    Der vollständige Text geht dabei nicht verloren: Er steht unter dem Raster,
-    sobald ein Szenario gewählt ist (`scenario_details`) — dort, wo man ihn
-    braucht, und nur für das eine, das zur Debatte steht.
+    Seit P1.9-W3.4 trug jede Kachel zwei Zeilen Beschreibung, abgeschnitten mit
+    Auslassung — gemessen stand der Satz meist mitten im Gedanken still (E2).
+    **Jetzt steht die Beschreibung nur noch in den Einzelheiten daneben**, voll,
+    und nur für das eine Szenario, das zur Debatte steht. Die Kennzahl macht die
+    Einträge vergleichbar.
     """
 
     return html.Div(
         [
             html.Span(title, className=f"font-body {ui.BESCHRIFTUNG} font-medium af-text block"),
             (html.Span(kennzahl, className="af-choice__meta") if kennzahl else None),
-            html.Span(description, className=f"{ui.CAPTION} af-choice__text"),
         ],
         className="min-w-0",
     )
 
 
-def choice_options() -> list[dict]:
-    """Standard, jedes Preset, und der Weg zu den eigenen Einstellungen."""
+def choice_options(*, stresstests: bool = False, gewaehlt: str | None = None) -> list[dict]:
+    """Standard, die Rahmen, auf Wunsch die Stresstests, und die eigenen Einstellungen.
 
-    options: list[dict] = [
-        {
-            "label": _choice_label(
-                "Standard-Ausgangslage",
-                "Die hinterlegten Werte des Modells — der neutrale Ausgangspunkt.",
-            ),
-            "value": STANDARD,
-        }
-    ]
+    **Stresstests sind ausgeblendet** (P7.4-U4.1, von Haiko entschieden am
+    2026-09-14): Sie standen alphabetisch zwischen den Rahmen und waren nur an
+    einem kleinen Zusatz zu erkennen (E2). **Ein gewählter Stresstest bleibt
+    sichtbar** — sonst stünde eine Auswahl da, die niemand sieht.
+    """
+
+    options: list[dict] = [{"label": _choice_label("Standard-Ausgangslage"), "value": STANDARD}]
     for preset in list_sweep_presets():
-        options.append(
-            {
-                "label": _choice_label(preset.name, preset.description, _kennzahl(preset)),
-                "value": preset.id,
-            }
-        )
-    options.append(
-        {
-            "label": _choice_label(
-                "Eigene Einstellungen",
-                "Die Werte, die Sie im Bereich «Modell» selbst eingestellt haben.",
-            ),
-            "value": CUSTOM,
-        }
-    )
+        if preset.art != "rahmen" and not stresstests and preset.id != gewaehlt:
+            continue
+        options.append({"label": _choice_label(preset.name, _kennzahl(preset)), "value": preset.id})
+    options.append({"label": _choice_label("Eigene Einstellungen"), "value": CUSTOM})
     return options
+
+
+def stresstest_anzahl() -> int:
+    return sum(1 for preset in list_sweep_presets() if preset.art != "rahmen")
+
+
+def stresstest_knopftext(gezeigt: bool) -> str:
+    """Was der Knopf sagt — was ein Klick als Nächstes tut."""
+
+    return "Stresstests verbergen" if gezeigt else f"Stresstests zeigen ({stresstest_anzahl()})"
+
+
+def szenario_radio(draft: dict, *, stresstests: bool) -> object:
+    """Das eine Auswahlfeld des Schritts — mit oder ohne Stresstests."""
+
+    return ui.radio(
+        choice_options(stresstests=stresstests, gewaehlt=of(draft)),
+        value=of(draft),
+        id=FIELD_ID,
+        cards=True,
+        legend="Was soll gerechnet werden? Die Annahmenwelt des Laufs.",
+    )
 
 
 def _eigene_werte_wirken(draft: dict) -> bool:
@@ -425,10 +442,12 @@ def scenario_details(draft: dict) -> html.Div:
         # Preset-Wahl benutzt.
         return _kohaerenz_block(
             load_properties_config().kohaerenz,
-            vorspann=ui.hinweis(
+            # **Eine Zeile, kein Kasten** (P7.4-U4.1): Als Kasten kostete sie bei
+            # 1440 × 900 128 px in der schmalen rechten Spalte.
+            vorspann=ui.satz(
                 "Der Lauf rechnet mit den **hinterlegten Verläufen des Modells** — eigenen "
                 "Annahmen über Politik, Kosten und Konjunktur, begründet wie jedes Szenario.",
-                "kontext",
+                class_name=f"{ui.CAPTION} mb-2",
             ),
         )
 
@@ -871,29 +890,51 @@ def scenario_step(draft: dict, number: int | None = 1) -> object:
         "Die Annahmenwelt, von der der Lauf ausgeht. Ein vorbereitetes Szenario ist der "
         "schnellste Einstieg — es legt Politik, Kosten und Nachfrageumfeld in einem Zug fest.",
         ui.card(
-            ui.radio(
-                choice_options(),
-                value=of(draft),
-                id=FIELD_ID,
-                cards=True,
-                legend="Was soll gerechnet werden? Die Annahmenwelt des Laufs.",
-            ),
-            html.Div(scenario_details(draft), id=slot_id("scenario"), className="mt-4"),
-            # **Der Schalter stand bis P2.0-C im Schritt «Ausgangslage».** Mit
-            # dem Wegfall der Faktorlage hat er dort nichts mehr zu steuern; was
-            # bleibt, sind die Systemgrößen aus dem Modell-Editor. Er gehört
-            # damit hierher: Die Frage, ob *meine* Werte gelten, ist Teil der
-            # Wahl des Ausgangspunkts.
-            #
-            # **Hinter «Feinabstimmung» und mit `detail=True`**, nicht auf der
-            # Entscheidungsfläche. Der erste Anlauf legte ihn daneben, und der
-            # Wächter aus P1.1 hat das sofort gemeldet: vier Felder statt drei.
-            # Er hatte recht — «gelten meine Werte» ist kein vierter Schritt zum
-            # Lauf, sondern eine Einstellung für den, der schon etwas geändert
-            # hat.
-            ui.expert(
-                c.check("apply_custom_overrides", _eigene_werte_wirken(draft), detail=True),
-                title="Feinabstimmung",
+            # **Links die Liste, rechts die Einzelheiten** (P7.4-U4.1, von Haiko
+            # entschieden am 2026-09-14). Gemessen bei 1440 × 900 standen zehn
+            # Karten 539 px hoch und die Einzelheiten 317 px darunter. Unter
+            # 1280 px stehen beide untereinander (`.af-szenariowahl`).
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(
+                                szenario_radio(draft, stresstests=False),
+                                id=liste_id("scenario"),
+                            ),
+                            # **Außerhalb des Wirts**: Neu gezeichnet setzte er seinen
+                            # Klickzähler zurück, und der Knopf wüsste nicht mehr, was er
+                            # zeigt.
+                            (
+                                ui.button(
+                                    stresstest_knopftext(False),
+                                    id=stress_toggle_id("scenario"),
+                                    variant="ghost",
+                                    className="mt-2",
+                                )
+                                if stresstest_anzahl()
+                                else None
+                            ),
+                            # **Hinter «Feinabstimmung» und mit `detail=True`**, nicht auf
+                            # der Entscheidungsfläche: «gelten meine Werte» ist kein vierter
+                            # Schritt zum Lauf (der Wächter aus P1.1 hat den ersten Anlauf
+                            # gemeldet). Der Schalter stand bis P2.0-C im Schritt
+                            # «Ausgangslage». **Links unter der Liste seit P7.4-U4.1**:
+                            # Unter beiden Spalten kostete er die letzte Zeile über einem
+                            # Bildschirm bei 1440 × 900.
+                            ui.expert(
+                                c.check(
+                                    "apply_custom_overrides",
+                                    _eigene_werte_wirken(draft),
+                                    detail=True,
+                                ),
+                                title="Feinabstimmung",
+                            ),
+                        ]
+                    ),
+                    html.Div(scenario_details(draft), id=slot_id("scenario")),
+                ],
+                className="af-szenariowahl",
             ),
         ),
         actions=ui.doc_link("presets"),

@@ -915,7 +915,10 @@ DECKEL: dict[int, dict[str, float]] = {
         # **1,85 → 1,83 am 2026-09-13** mit U1.3 Teil B: Die Abstände liegen
         # auf der Skala, ein Gleichstand ist abgerundet — die Knöpfe sind dafür
         # um 4 px höher geworden, der Saldo bleibt ein Gewinn.
-        "Schritt 1": 1.83,
+        # **1,83 -> 1,13 am 2026-09-14 mit P7.4-U4.1** (von Haiko entschieden): eine
+        # Liste mit den Einzelheiten daneben statt eines Rasters aus zehn Karten
+        # und der Einzelheiten darunter; Stresstests hinter «Stresstests zeigen».
+        "Schritt 1": 1.13,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
@@ -991,7 +994,10 @@ DECKEL: dict[int, dict[str, float]] = {
         # Jahre»). Dieser Schritt nennt sie dreimal: im Satz, in der
         # Kennzahl jeder Szenariokarte und im Hinweis zum gewaehlten Szenario.
         # Bei 1280 px bleibt der Zuwachs unter :data:`TOLERANZ`, hier nicht.
-        "Schritt 1": 1.97,
+        # **1,97 -> 1,55 am 2026-09-14 mit P7.4-U4.1** (von Haiko entschieden): eine
+        # Liste mit den Einzelheiten daneben statt eines Rasters aus zehn Karten
+        # und der Einzelheiten darunter; Stresstests hinter «Stresstests zeigen».
+        "Schritt 1": 1.55,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
@@ -1008,7 +1014,10 @@ DECKEL: dict[int, dict[str, float]] = {
     # bleiben daneben, damit kein Schritt auf kleineren Schirmen unbemerkt wächst.
     1440: {
         "Einstieg": 1.00,
-        "Schritt 1": 1.60,
+        # **1,60 -> 1,00 am 2026-09-14 mit P7.4-U4.1** (von Haiko entschieden): eine
+        # Liste mit den Einzelheiten daneben statt eines Rasters aus zehn Karten
+        # und der Einzelheiten darunter; Stresstests hinter «Stresstests zeigen».
+        "Schritt 1": 1.00,
         "Schritt 2": 1.00,
         "Schritt 3": 1.00,
         "Schritt 4": 1.00,

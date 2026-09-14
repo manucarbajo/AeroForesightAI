@@ -316,6 +316,30 @@ def register_callbacks(app) -> None:
         return model_editor.rumpf_fuer(pathname, draft)
 
     @app.callback(
+        Output({"type": start_flow.LISTE, "slot": ALL}, "children"),
+        Output({"type": start_flow.STRESS_TOGGLE, "slot": ALL}, "children"),
+        Input({"type": start_flow.STRESS_TOGGLE, "slot": ALL}, "n_clicks"),
+        State(STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def _stresstests(klicks, draft: dict | None):
+        """«Stresstests zeigen» — ein Knopf, kein Feld (P7.4-U4.1).
+
+        Jeder zweite Klick blendet wieder aus. Neu gezeichnet wird nur das
+        Auswahlfeld; sein Wert kommt aus dem Entwurf, `_sync` schreibt deshalb
+        nichts zurück.
+        """
+
+        gezeigt = [bool((anzahl or 0) % 2) for anzahl in klicks]
+        return (
+            [start_flow.szenario_radio(draft or {}, stresstests=z) for z in gezeigt],
+            [
+                [html.Span(start_flow.stresstest_knopftext(z), className="af-btn__label")]
+                for z in gezeigt
+            ],
+        )
+
+    @app.callback(
         Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),
         Input(compute_mode.FIELD_ID, "value"),
         Input("wizard-content-host", "children"),

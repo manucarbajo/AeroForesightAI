@@ -131,8 +131,9 @@ Segmenten angehören.
 
 **Stresstest** — Ein hinterlegtes Szenario, das die Engine belastet oder die
 Darstellung prüft, statt eine Zukunft zu behaupten. Seine Verläufe fahren durch
-Extreme, damit man sieht, ob etwas bricht. In der Auswahl steht das Wort an der
-Kachel; ein Szenario-Vergleich lässt ihn aus. Gegenstück zum
+Extreme, damit man sieht, ob etwas bricht. In der Auswahl ist er ausgeblendet, bis
+man «Stresstests zeigen» wählt, und trägt dann das Wort vor seiner Kennzahl; ein
+Szenario-Vergleich lässt ihn aus. Gegenstück zum
 **Rahmenszenario**.
 
 **Systemgröße** — Eine der Zahlen hinter den Faktoren: CO₂-Abgabe, SAF-Quote,
