@@ -49,13 +49,11 @@ Nehmen Sie eines der vorbereiteten Szenarien, etwa *Business as Usual*. Unter
 jedem steht, wofür es steht. Ein Szenario legt Politik, Kosten und Nachfrage in
 einem Zug fest und ist deutlich schneller, als jede Größe einzeln einzustellen.
 
-Ein gewähltes Szenario gilt **unverändert**: Die Werte kommen aus seiner Datei
-unter `configs/sweeps/`, und was Sie im Bereich **Modell** eingestellt haben,
-bleibt dafür außen vor. Wollen Sie von einem Szenario ausgehen und einzelne
-Annahmen ändern, klicken Sie auf «Werte übernehmen und selbst anpassen» — dann
-wandern seine Werte in Ihren Entwurf, wo Sie sie im Bereich **Modell** ändern
-können; die Auswahl springt auf die «Standard-Ausgangslage», und «Eigene Werte
-anwenden» ist eingeschaltet.
+Ein gewähltes Szenario gilt, wie seine Datei unter `configs/sweeps/` es
+beschreibt. Wollen Sie davon ausgehen und einzelne Annahmen ändern, tun Sie das
+in den nächsten beiden Schritten, **Verläufe** und **Modellannahmen** — der Lauf
+legt Ihre Änderungen auf das Szenario. Der Bereich **Modell** ist dafür nicht der
+Ort: Was dort steht, wirkt erst gespeichert, und dann für alle Läufe.
 
 Nach dieser Wahl folgt der Schritt **Verläufe**. Er zeigt, wie sich die Größen,
 die das Szenario vorgibt — etwa die CO₂-Abgabe —, über den Lauf entwickeln: links

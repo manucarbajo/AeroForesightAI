@@ -24,7 +24,7 @@ from dashboard.config_catalog import (
 )
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
-from dashboard.web.config_editor import glossary, start_flow
+from dashboard.web.config_editor import glossary, micro
 
 RULE = "cfg-rule"
 RULE_COUNT = "cfg-rule-count"
@@ -38,6 +38,10 @@ PRICE_CATEGORY_OPTIONS = [
 ]
 
 _BADGES = {"tax": "wirkt als Steuer", "fee": "wirkt als Gebühr"}
+
+#: Der Knopf, der Startwerte und Verläufe schreibt (P7.13-U13.3) — eine Quelle für
+#: Knopf und Hinweis.
+SPEICHERN = "Verläufe als Standard speichern"
 
 #: Kurzbeschreibungen der Standardgrößen. PROPERTY_LABELS liefert nur den
 #: Namen; hier steht, wozu die Größe im Modell dient.
@@ -203,7 +207,9 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
     else:
         body.append(
             ui.hinweis(
-                "Deaktiviert — wird in diesem Lauf nicht angewendet.", "info", class_name="mt-4"
+                "Ausgeschaltet — gespeichert steht die Größe auf 0 und ohne Regeln.",
+                "info",
+                class_name="mt-4",
             )
         )
         body.append(
@@ -281,9 +287,6 @@ def layout(draft: dict) -> html.Div:
     }
 
     edits = draft.get("property_edits") or {}
-    overrides_on = (
-        bool(draft.get("apply_custom_overrides")) or draft.get("scenario_mode") == "custom"
-    )
     base_price = draft.get("base_price")
 
     cards = [
@@ -314,25 +317,16 @@ def layout(draft: dict) -> html.Div:
                     "Politik, Kosten und Konjunktur als Zahlen. Jede Größe hat einen "
                     "Startwert und kann sich über Regeln im Lauf verändern."
                 ),
-                (
-                    # Der Schalter dazu steht seit P2.0-C im ersten Schritt des
-                    # Einrichtens, hinter «Feinabstimmung»: Ob eigene Werte
-                    # gelten, ist eine Entscheidung über den Lauf und nicht über
-                    # das Modell. Hier bleibt der Hinweis, damit niemand Zahlen
-                    # pflegt, die im nächsten Lauf nicht ankommen. **Der Titel
-                    # kommt aus der Schrittfolge** (P7.2-U2.2) — bis zum
-                    # 2026-09-11 schickte der Hinweis in den entfallenen Schritt
-                    # «Ausgangslage».
-                    None
-                    if overrides_on
-                    else ui.hinweis(
-                        "«Eigene Werte anwenden» ist ausgeschaltet — was Sie hier einstellen, "
-                        "wirkt im nächsten Lauf nicht. Einschalten unter «Einrichten», "
-                        f"Schritt «{start_flow.schritttitel('szenario')}», hinter "
-                        "«Feinabstimmung».",
-                        "warnung",
-                        class_name="mb-4",
-                    )
+                # **Startwerte und Verläufe wirken nur gespeichert** (P7.13-U13.3, von
+                # Haiko entschieden am 2026-09-15). Bis dahin stand hier ein Hinweis
+                # auf «Eigene Werte anwenden» — unter einem Rahmenszenario griffen die
+                # Werte trotzdem nicht. Für einen einzelnen Lauf ist der Schritt
+                # «Verläufe» der Ort.
+                ui.hinweis(
+                    f"Wirkt erst, wenn Sie «{SPEICHERN}» klicken. {micro.NUR_GESPEICHERT} "
+                    "Für einen einzelnen Lauf ändern Sie Verläufe im Schritt «Verläufe».",
+                    "info",
+                    class_name="mb-4",
                 ),
                 ui.card(
                     html.Div(
@@ -341,7 +335,12 @@ def layout(draft: dict) -> html.Div:
                                 "base_price_enabled",
                                 base_price is not None,
                                 label="Startpreis selbst festlegen",
-                                hint="Aus: Der Startpreis kommt aus der Konfigurationsdatei.",
+                                # Die eine Ausnahme (von Haiko entschieden am
+                                # 2026-09-15, eigenes Paket): Der Startpreis wirkt
+                                # ungespeichert, und es gibt keinen Speicherweg.
+                                hint="Aus: Der Startpreis kommt aus der Konfigurationsdatei. "
+                                "An: Er gilt ohne Speichern für den nächsten Lauf unter der "
+                                "Standard-Ausgangslage, solange «Eigene Werte anwenden» an ist.",
                             ),
                             (
                                 c.number(
@@ -362,6 +361,15 @@ def layout(draft: dict) -> html.Div:
                 reload_button,
                 _add_property_block(),
                 html.Div(cards),
+                c.write_action(
+                    "save-properties",
+                    SPEICHERN,
+                    frage="Startwerte und Verläufe aller Systemgrößen werden als neuer "
+                    "Standard in die Konfigurationsdatei geschrieben. Eine ausgeschaltete "
+                    "Größe wird mit Startwert 0 und ohne Regeln gespeichert.",
+                    icon_name="save",
+                    class_name="mt-4",
+                ),
                 actions=ui.doc_link("ref-systemgroessen"),
             ),
         ]

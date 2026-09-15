@@ -137,7 +137,8 @@ NUR_MIT_SPRACHMODELL = {"model", "base_url", "temperature", "max_tokens"}
 #: hier ausgenommen und **benannt**, damit die Lücke sichtbar bleibt statt
 #: unsichtbar zu sein.
 NICHT_GEMESSEN = {
-    "property_edits": "verschachtelt; wirkt über `apply_custom_overrides` mit",
+    # Bis P7.13-U13.3 «wirkt über `apply_custom_overrides` mit» — seither nur gespeichert.
+    "property_edits": "wirkt nur gespeichert, siehe TestModellwerteWirkenNurGespeichert",
     "abweichungen": "verschachtelt; gemessen in TestAbweichungenLiegenAufDemSzenario",
     "modellannahmen": "verschachtelt; gemessen in TestModellannahmenLiegenAufDemSzenario",
     # **Bis zum 2026-09-14 stand bei den drei folgenden «wirkt über
@@ -899,6 +900,11 @@ class TestModellwerteWirkenNurGespeichert:
     führt sie nicht. Von Haiko entschieden, dass sie **nur gespeichert** wirken;
     beide Richtungen stehen hier, damit weder die eine noch die andere still kippt.
 
+    **Seit P7.13-U13.3 auch Startwerte und Verläufe** (`property_edits`). Sie
+    wirkten bis dahin ungespeichert unter der Standard-Ausgangslage mit «Eigene
+    Werte anwenden» — und unter einem Rahmenszenario still gar nicht. Die eine
+    Ausnahme ist der Startpreis (von Haiko entschieden, eigenes Paket).
+
     Gespeichert wird in eine **Kopie** von `configs/`: Der Test darf die
     ausgelieferten Dateien nicht anfassen.
     """
@@ -906,16 +912,39 @@ class TestModellwerteWirkenNurGespeichert:
     def test_an_unsaved_change_reaches_no_run(self, abdruck_von):
         grund = str(abdruck_von(_entwurf(EINZELLAUF)))
         draft = _entwurf(EINZELLAUF)
+        assert draft.apply_custom_overrides, "Vorbedingung: der Schalter steht auf an"
         draft.market_feedback_edit.target_booking_rate = 0.61
         draft.saturation_edit.booking_increase = 0.11
         segment = next(s for s in draft.population_edits if s.type == "boolean")
         segment.prevalence = 0.9
+        draft.property_edits["carbon_tax_level"].baseline = 99.0
+        draft.property_edits["carbon_tax_level"].rules = []
 
         assert str(abdruck_von(draft)) == grund, (
-            "Preisbildung, Sättigung oder Bevölkerung erreichen jetzt ungespeichert einen "
-            "Lauf. Wenn das gewollt ist: den Hinweis im Bereich «Modell» und diesen Test "
-            "mitziehen (P7.13-U13.5)."
+            "Preisbildung, Sättigung, Bevölkerung oder ein Verlauf aus dem Bereich «Modell» "
+            "erreichen jetzt ungespeichert einen Lauf. Wenn das gewollt ist: den Hinweis im "
+            "Bereich «Modell» und diesen Test mitziehen (P7.13-U13.3, U13.5)."
         )
+
+    def test_a_saved_start_value_reaches_the_run(self, abdruck_von, monkeypatch, tmp_path):
+        """Die Gegenrichtung für Startwerte und Verläufe (P7.13-U13.3)."""
+
+        import shutil
+
+        from dashboard import config_catalog
+
+        kopie = tmp_path / "configs"
+        shutil.copytree(
+            config_catalog.CONFIGS_DIR, kopie, ignore=shutil.ignore_patterns("backtest")
+        )
+        monkeypatch.setattr(config_catalog, "CONFIGS_DIR", kopie)
+        grund = str(abdruck_von(_entwurf(EINZELLAUF)))
+
+        edits = config_catalog.extract_property_edits_from_file()
+        edits["carbon_tax_level"].baseline = 99.0
+        assert config_catalog.save_property_edits_to_file(edits) == ["carbon_tax_level"]
+
+        assert str(abdruck_von(_entwurf(EINZELLAUF))) != grund
 
     def test_a_saved_change_reaches_the_run(self, abdruck_von, monkeypatch, tmp_path):
         """Die Gegenrichtung: ohne sie wäre der Test oben auch grün, wenn gar nichts wirkte."""
@@ -940,9 +969,9 @@ class TestModellwerteWirkenNurGespeichert:
     def test_the_model_area_says_so_in_every_section(self):
         """Die andere Hälfte des Kriteriums: keine solche Eingabe, ohne dass die Oberfläche es sagt.
 
-        Vier Abschnitte tragen diese Werte — Preisverhalten, Sättigung, «Wer
-        fliegt?» und «Streuung der Eigenschaften». Gezählt wird im gezeichneten
-        Bereich, nicht im Quelltext.
+        Fünf Abschnitte tragen diese Werte — Systemgrößen (seit P7.13-U13.3),
+        Preisverhalten, Sättigung, «Wer fliegt?» und «Streuung der Eigenschaften».
+        Gezählt wird im gezeichneten Bereich, nicht im Quelltext.
         """
 
         from dashboard.web.config_editor import micro
@@ -961,7 +990,8 @@ class TestModellwerteWirkenNurGespeichert:
         rumpf = model_editor.rumpf_fuer("/app/modell", initial_draft_dict())
         hinweise = [t for t in texte(rumpf) if micro.NUR_GESPEICHERT in t]
 
-        assert len(hinweise) == 4, hinweise
+        assert len(hinweise) == 5, hinweise
+        assert sum("«Verläufe als Standard speichern»" in t for t in hinweise) == 1, hinweise
         assert sum("«Als Standard speichern»" in t for t in hinweise) == 1, hinweise
         assert sum("«Bevölkerung als Standard speichern»" in t for t in hinweise) == 3, hinweise
 

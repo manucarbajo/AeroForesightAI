@@ -47,8 +47,8 @@ PARAMS: dict[str, Param] = {
     "sweep_id": Param(
         label="Szenario-Preset",
         short="Ein fertiges Bündel von Annahmen als Ausgangspunkt.",
-        detail="Ein Preset legt Faktorlage, Politik und Kosten in einem Zug fest. Über "
-        "«Werte übernehmen» wandern sie in den Entwurf und lassen sich einzeln verändern.",
+        detail="Ein Preset legt Politik, Kosten und Konjunktur in einem Zug fest. Einzelne "
+        "Verläufe ändern Sie für diesen Lauf im Schritt «Verläufe».",
     ),
     "rounds": Param(
         label="Länge des Laufs",
@@ -313,8 +313,8 @@ PARAMS: dict[str, Param] = {
         "CO₂-Abgabe.",
     ),
     "property.is_active": Param(
-        label="In diesem Lauf aktiv",
-        short="Aus: Die Größe wird nicht angewendet.",
+        label="Aktiv",
+        short="Aus: Gespeichert steht die Größe auf 0 und ohne Regeln.",
     ),
 }
 

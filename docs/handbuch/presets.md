@@ -102,18 +102,17 @@ nach 40 Ticks schlicht nicht.
 
 ## Ein Preset als Ausgangspunkt nehmen
 
-Wenn Sie von einem Preset ausgehen, aber einzelne Annahmen ändern wollen,
-klicken Sie unter der Auswahl auf «Werte übernehmen und selbst anpassen». Die
-Werte wandern damit in den Editor, die Auswahl springt auf die
-«Standard-Ausgangslage», und «Eigene Werte anwenden» ist eingeschaltet.
+Wenn Sie von einem Preset ausgehen, aber einzelne Annahmen ändern wollen, bleibt
+das Preset gewählt: Einzelne Verläufe ändern Sie im Schritt **Verläufe**,
+Preisbildung, Sättigung und Bevölkerung im Schritt **Modellannahmen**. Solange
+«Eigene Werte anwenden» eingeschaltet ist, legt der Lauf Ihre Abweichungen auf das
+Preset; in den Dateien des Laufs heißt er dann «abgeleitet» und nennt, was
+abweicht.
 
-Dieser Wechsel ist nötig, nicht kosmetisch: Solange ein Preset gewählt ist,
-gelten ausschließlich seine Werte. Erst mit eingeschaltetem «Eigene Werte
-anwenden» unter der Standard-Ausgangslage wirkt, was im Editor steht; in den
-Dateien des Laufs heißt er dann «eigen».
-
-Danach können Sie im Bereich **Modell** einzelne Systemgrößen verändern, ohne
-den Rest neu aufsetzen zu müssen.
+Bis September 2026 ging das über «Werte übernehmen und selbst anpassen», das die
+Werte in den Bereich **Modell** schrieb und auf die Standard-Ausgangslage
+umschaltete. Den Knopf gibt es nicht mehr: Was im Bereich Modell steht, wirkt
+seither erst gespeichert — als neuer Standard für alle Läufe.
 
 ## Einen eigenen Stand sichern
 

@@ -503,24 +503,9 @@ def scenario_details(draft: dict) -> html.Div:
         children.append(
             ui.expert(ui.markdown(preset.rationale), title="Warum dieses Szenario so aufgebaut ist")
         )
-    children.append(
-        html.Div(
-            [
-                ui.button(
-                    "Werte übernehmen und selbst anpassen",
-                    id=c.action_id("apply-sweep"),
-                    variant="secondary",
-                    icon_name="download",
-                ),
-                html.P(
-                    "Schreibt die Werte des Szenarios in den Editor und schaltet auf die "
-                    "Standard-Ausgangslage mit «Eigene Werte anwenden» um.",
-                    className=f"{ui.CAPTION} mt-2",
-                ),
-            ],
-            className="mt-4",
-        )
-    )
+    # «Werte übernehmen und selbst anpassen» ist mit P7.13-U13.3 entfallen: Es
+    # schrieb in `property_edits`, und das erreicht keinen Lauf mehr. Ein Szenario
+    # ändert man im Schritt «Verläufe».
     return html.Div(children)
 
 
@@ -653,22 +638,21 @@ def _modell_kacheln(draft: dict) -> list:
     **Ziel-Auslastung und Segmente kommen aus der Datei, nicht aus dem Entwurf**
     (P7.13-U13.5). Preisbildung und Bevölkerung aus dem Bereich «Modell» wirken
     nur gespeichert; gemessen erreichte eine eingetragene Ziel-Auslastung von 0,61
-    keinen Lauf, und diese Kachel zeigte sie trotzdem an. Die aktiven Systemgrößen
-    stammen weiter aus dem Entwurf, weil sie mit «Eigene Werte anwenden» ankommen.
+    keinen Lauf, und diese Kachel zeigte sie trotzdem an. **Seit P7.13-U13.3 auch die
+    Systemgrößen**: Startwerte und Verläufe wirken ebenfalls nur gespeichert.
     """
 
     from dashboard.config_catalog import (
         extract_market_feedback_from_file,
         extract_population_edits_from_file,
+        extract_property_edits_from_file,
     )
 
     datei = draft.get("properties_file") or "properties.json"
     feedback = asdict(extract_market_feedback_from_file(datei))
     segments = [s for s in extract_population_edits_from_file(datei) if s.type == "boolean"]
     active_properties = [
-        key
-        for key, edit in (draft.get("property_edits") or {}).items()
-        if isinstance(edit, dict) and edit.get("is_active", True)
+        key for key, edit in extract_property_edits_from_file(datei).items() if edit.is_active
     ]
     return [
         ui.kachel(

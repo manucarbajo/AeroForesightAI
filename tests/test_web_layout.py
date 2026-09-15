@@ -212,7 +212,9 @@ def test_sweep_mode_offers_the_preset_controls():
 
     rendered = _text(start_flow.layout(draft))
 
-    assert "'action': 'apply-sweep'" in rendered
+    # «Werte übernehmen» ist mit P7.13-U13.3 entfallen: Es schrieb in
+    # `property_edits`, und das erreicht keinen Lauf mehr.
+    assert "'action': 'apply-sweep'" not in rendered
     assert "'field': 'scenario_choice'" in rendered
 
 
@@ -312,23 +314,6 @@ def test_reset_action_returns_the_default_draft():
     assert data["rounds"] != 999
     assert kind == "erfolg"
     assert message
-
-
-def test_apply_sweep_action_takes_over_the_preset():
-    from dashboard.config_catalog import list_sweep_presets
-
-    presets = list_sweep_presets()
-    if not presets:
-        pytest.skip("Keine Sweep-Presets unter configs/sweeps/ vorhanden.")
-
-    draft = initial_draft_dict()
-    draft["sweep_id"] = presets[0].id
-
-    data, message, kind = _handle_action({"type": "cfg-action", "action": "apply-sweep"}, draft, [])
-
-    assert kind == "erfolg"
-    assert presets[0].name in message
-    assert data["rounds"] == presets[0].max_ticks
 
 
 def test_add_property_rejects_an_invalid_identifier():

@@ -579,6 +579,7 @@ MODELL_SCHREIBER = (
     "delete_custom_property",
     "save_market_feedback_to_file",
     "save_population_edits_to_file",
+    "save_property_edits_to_file",
     "save_saturation_to_file",
 )
 

@@ -3,10 +3,10 @@ Bedienschritte kombinieren lassen.
 
 ## Was passiert bei einer hohen CO₂-Abgabe?
 
-Gehen Sie in **Rahmenbedingungen** und öffnen Sie die Systemgröße
-«CO₂-Steuer (€/t)». Setzen Sie eine Regel: ab Tick 5, Art «fährt hoch auf den
-Wert», Zielwert 200, über zehn Ticks. Ein Sprung wäre unrealistisch, ein
-Hochfahren bildet eine angekündigte Verschärfung ab.
+Gehen Sie im Einrichten in den Schritt **Verläufe** und wählen Sie die CO₂-Abgabe.
+Setzen Sie einen Stützpunkt: ab Tick 5, Art «fährt hoch auf den Wert», Zielwert
+200, über zehn Ticks. Ein Sprung wäre unrealistisch, ein Hochfahren bildet eine
+angekündigte Verschärfung ab.
 
 Achten Sie darauf, dass **Eigene Werte anwenden** eingeschaltet ist, und setzen
 Sie unter **Technik** einen festen Zufallsstartwert. Rechnen Sie mindestens 30

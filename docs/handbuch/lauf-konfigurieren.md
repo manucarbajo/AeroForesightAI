@@ -118,14 +118,16 @@ Folge von Entscheidungen und braucht Führung; die andere ist Facharbeit an
 vielen Zahlen und braucht Fläche und Überblick. Beides in dieselbe Schrittfolge
 zu legen ging nur zulasten einer von beiden.
 
-Die Systemgrößen und ihre Verläufe gelten für den nächsten Lauf, den Sie starten
-— also nur, wenn Sie sie **vor** «Lauf starten» einstellen, und nur unter den
-Bedingungen, die unter «Alle Einstellungen» stehen. **Bevölkerung, Preisbildung
-und Sättigung dagegen erreichen einen Lauf nur, wenn Sie sie speichern.** Einige
-Schaltflächen dort schreiben allerdings **dauerhaft** in die
-Konfigurationsdateien und wirken damit über Ihren Lauf hinaus: «Als Standard
-speichern», «Bevölkerung als Standard speichern», «Größe anlegen», «Größe
-dauerhaft löschen» und «Entfernen» an einem Segment.
+**Was Sie im Bereich Modell eintragen, erreicht einen Lauf erst, wenn Sie es
+speichern** — Systemgrößen und ihre Verläufe ebenso wie Bevölkerung,
+Preisbildung und Sättigung. Für einen einzelnen Lauf ändern Sie Verläufe im
+Schritt «Verläufe» und Modellannahmen im Schritt «Modellannahmen». Die
+Schaltflächen im Modell schreiben **dauerhaft** in die Konfigurationsdateien und
+wirken damit über Ihren Lauf hinaus: «Verläufe als Standard speichern», «Als
+Standard speichern», «Bevölkerung als Standard speichern», «Größe anlegen»,
+«Größe dauerhaft löschen» und «Entfernen» an einem Segment. **Eine Ausnahme gibt
+es noch:** «Startpreis selbst festlegen» gilt ohne Speichern für den nächsten
+Lauf unter der Standard-Ausgangslage, solange «Eigene Werte anwenden» an ist.
 
 **Jede von ihnen fragt vorher nach**, und die Rückfrage sagt beides: was
 geschieht, und wie weit es reicht — «für alle künftigen Läufe und für alle, die
@@ -302,28 +304,20 @@ das Preisverhalten der Airline, bei dem die Zielauslastung die entscheidende
 Größe ist, darunter die Sättigung, dann die Segmente der Bevölkerung und die
 Verteilungen für Zahlungsbereitschaft und Umweltbewusstsein.
 
-**Stellen Sie das vor «Lauf starten» ein.** Die Schrittfolge führt nicht in den
-Bereich Modell. Wechseln Sie mitten im Einrichten über die Kopfzeile dorthin und
-danach zurück — Ihr Entwurf und der Schritt, in dem Sie waren, bleiben erhalten.
-Was Sie nach dem Start ändern, gilt erst für den nächsten Lauf.
+**Im Bereich Modell ändern Sie den Standard, nicht einen Lauf.** Was Sie dort
+eintragen, wirkt erst gespeichert — «Verläufe als Standard speichern» für
+Startwerte und Verläufe der Systemgrößen, «Als Standard speichern» für das
+Preisverhalten, «Bevölkerung als Standard speichern» für Bevölkerung und
+Sättigung. Alle drei schreiben in `configs/properties.json` und gelten damit für
+alle künftigen Läufe, und zwar für die Standard-Ausgangslage: Ein Rahmenszenario
+bringt seine eigenen Verläufe mit. Eine ausgeschaltete Größe wird mit Startwert 0
+und ohne Regeln gespeichert. Was Sie nur eintragen, ohne zu speichern, rechnet
+kein Lauf mit. Die eine Ausnahme ist der Startpreis (siehe oben).
 
-**Und die Werte kommen nur unter zwei Bedingungen im Lauf an:**
-
-- Im ersten Schritt ist die **Standard-Ausgangslage** gewählt und hinter
-  «Feinabstimmung» **Eigene Werte anwenden** eingeschaltet.
-- Ist ein vorbereitetes **Szenario** gewählt, gilt allein das Szenario, und Ihre
-  Werte aus dem Modell greifen nicht. Wer von einem Szenario ausgehen und selbst
-  anpassen will, klickt dort **Werte übernehmen und selbst anpassen**: Das
-  schreibt die Verläufe des Szenarios in den Editor, stellt die Auswahl auf die
-  «Standard-Ausgangslage» und schaltet «Eigene Werte anwenden» ein.
-
-**Für einen einzelnen Lauf ändern Sie Bevölkerung, Preisbildung und Sättigung im
-Schritt «Modellannahmen».** Im Bereich **Modell** wirken sie nur, wenn Sie sie
-speichern —
-«Als Standard speichern» für das Preisverhalten, «Bevölkerung als Standard
-speichern» für Bevölkerung und Sättigung. Beide schreiben in
-`configs/properties.json` und gelten damit für alle künftigen Läufe. Was Sie dort
-nur eintragen, ohne zu speichern, rechnet kein Lauf mit.
+**Für einen einzelnen Lauf ändern Sie Verläufe im Schritt «Verläufe» und
+Bevölkerung, Preisbildung und Sättigung im Schritt «Modellannahmen»** — auf jedem
+Szenario, ohne das Modell anzufassen. «Werte übernehmen und selbst anpassen» gibt
+es dafür seit September 2026 nicht mehr.
 
 ### Verläufe
 

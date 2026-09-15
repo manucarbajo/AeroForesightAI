@@ -43,7 +43,8 @@ class RunLaunchConfig:
     simulation_name: str | None = None
     simulation_description: str | None = None
     apply_custom_overrides: bool = False
-    property_edits: dict[str, PropertyEditState] | None = None
+    # `property_edits` ist mit P7.13-U13.3 entfallen: Startwerte und Verläufe aus
+    # dem Bereich «Modell» wirken nur gespeichert und reisen nicht mit einem Lauf.
     #: Abweichungen vom gewählten Szenario (P7.13-U13.2). **In beiden Richtungen
     #: verdrahtet** — an dieser Rundreise ist der Startpreis still verloren gegangen.
     abweichungen: dict[str, PropertyEditState] | None = None
@@ -109,8 +110,6 @@ def launch_config_to_draft(config: RunLaunchConfig) -> ConfigDraft:
     draft.simulation_name = config.simulation_name or ""
     draft.simulation_description = config.simulation_description or ""
     draft.apply_custom_overrides = config.apply_custom_overrides
-    if config.property_edits:
-        draft.property_edits = dict(config.property_edits)
     draft.abweichungen = dict(config.abweichungen or {})
     draft.preisstrategie = config.preisstrategie
     draft.modellannahmen = dict(config.modellannahmen or {})
@@ -150,7 +149,6 @@ def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
         simulation_name=draft.simulation_name or None,
         simulation_description=draft.simulation_description or None,
         apply_custom_overrides=draft.apply_custom_overrides or draft.scenario_mode == "custom",
-        property_edits=draft.property_edits,
         abweichungen=draft.abweichungen,
         preisstrategie=draft.preisstrategie,
         modellannahmen=draft.modellannahmen,

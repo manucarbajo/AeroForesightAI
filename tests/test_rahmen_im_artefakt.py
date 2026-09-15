@@ -75,17 +75,23 @@ class TestJederStartpfadSetztIhn:
 
     def test_geaenderte_standardwerte_heissen_eigen(self):
         """Gemessen am 2026-09-15: CO₂-Start 99 im Modell, der Lauf rechnete damit —
-        und stand im Artefakt als «Standard-Ausgangslage»."""
+        und stand im Artefakt als «Standard-Ausgangslage».
+
+        **Seit P7.13-U13.3 ist der Startpreis der einzige solche Wert**: Startwerte
+        und Verläufe aus dem Modell wirken nur gespeichert, der Startpreis bleibt
+        vorerst die Ausnahme (von Haiko entschieden).
+        """
 
         draft = default_config_draft()
         draft.scenario_mode = "basis"
         draft.apply_custom_overrides = True
-        draft.property_edits["carbon_tax_level"].baseline = 99.0
+        draft.base_price = 123.0
 
         state = prepare_simulation_state(draft)
 
-        co2 = next(p for p in state.properties.system_properties if p.id == "carbon_tax_level")
-        assert co2.trajectory.baseline == 99.0, "Vorbedingung: der geänderte Wert kommt an"
+        assert state.properties.price_model.base_price == 123.0, (
+            "Vorbedingung: der geänderte Wert kommt an"
+        )
         assert state.rahmen is not None
         assert state.rahmen.quelle == "eigen"
 

@@ -19,8 +19,9 @@ dass keine Rückkopplung greift.
 
 Prüfen Sie zuerst, ob unter **Nachfrage & Preisbildung** die Preisanpassung
 eingeschaltet ist und ob unter **Technik** «Marktmodell abschalten» aus ist.
-Prüfen Sie dann, ob **Eigene Werte anwenden** aktiv ist — sonst rechnet der Lauf
-mit der Standard-Ausgangslage und ignoriert Ihre Änderungen.
+Prüfen Sie dann, ob **Eigene Werte anwenden** aktiv ist — sonst ignoriert der
+Lauf Ihre Änderungen aus den Schritten «Verläufe» und «Modellannahmen». Werte aus
+dem Bereich **Modell** wirken nur gespeichert.
 
 ## Der Preis klebt an einem Wert
 
@@ -48,8 +49,11 @@ Vier Ursachen, in der Reihenfolge ihrer Häufigkeit.
 Erstens: **Eigene Werte anwenden** ist ausgeschaltet. Das ist mit Abstand der
 häufigste Fall; im Preflight über dem Start-Knopf erscheint dafür eine Warnung.
 
-Zweitens: Der Modus steht auf «Szenario-Preset». Dann rechnet der Lauf mit den
-Werten des Presets, nicht mit Ihren.
+Zweitens: Die Änderung steht nur im Bereich **Modell** und ist nicht gespeichert.
+Dort gilt ein Wert erst nach «Verläufe als Standard speichern», «Als Standard
+speichern» oder «Bevölkerung als Standard speichern» — und dann als Standard für
+alle Läufe. Für einen einzelnen Lauf nehmen Sie die Schritte «Verläufe» und
+«Modellannahmen».
 
 Drittens: Die Größe wirkt erst ab einer Schwelle. Die CO₂-Abgabe etwa geht erst
 oberhalb von 50 € je Tonne in die Kaufentscheidung ein.

@@ -27,7 +27,6 @@ from dash import ALL, MATCH, Input, Output, State, ctx, html, no_update
 from dashboard.config_catalog import (
     PopulationEditState,
     add_custom_property,
-    apply_sweep_to_draft,
     default_config_draft,
     delete_custom_property,
     extract_population_edits_from_file,
@@ -35,6 +34,7 @@ from dashboard.config_catalog import (
     list_sweep_presets,
     save_market_feedback_to_file,
     save_population_edits_to_file,
+    save_property_edits_to_file,
     save_saturation_to_file,
 )
 from dashboard.web import components as ui
@@ -724,13 +724,18 @@ def _handle_action(
             return data, "Es gibt nichts zurückzunehmen.", "info"
         return dict(ruecknahme), "Die Einstellungen von vorher sind wiederhergestellt.", "erfolg"
 
-    if action == "apply-sweep":
-        sweeps = list_sweep_presets()
-        sweep = next((s for s in sweeps if s.id == data.get("sweep_id")), None)
-        if sweep is None:
-            return data, "Kein Szenario-Preset ausgewählt.", "warnung"
-        applied = apply_sweep_to_draft(draft_from_dict(data), sweep)
-        return draft_to_dict(applied), f"Parameter von «{sweep.name}» übernommen.", "erfolg"
+    if action == "save-properties":
+        # **Der Schreibweg für Startwerte und Verläufe** (P7.13-U13.3). Danach steht
+        # im Entwurf, was in der Datei steht — auch eine ausgeschaltete Größe kommt
+        # mit Startwert 0 zurück, so wie sie gespeichert wurde.
+        draft = draft_from_dict(data)
+        geschrieben = save_property_edits_to_file(draft.property_edits, draft.properties_file)
+        edits = extract_property_edits_from_file(draft.properties_file)
+        data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
+        if not geschrieben:
+            return data, "Keine Änderung — die Datei trägt diese Werte schon.", "info"
+        groessen = "eine Größe" if len(geschrieben) == 1 else f"{len(geschrieben)} Größen"
+        return data, f"Startwerte und Verläufe gespeichert — {groessen} geändert.", "erfolg"
 
     if action == "reload-properties":
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))

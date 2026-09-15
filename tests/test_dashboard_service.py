@@ -5,7 +5,6 @@ import shutil
 from pathlib import Path
 
 from dashboard.config_catalog import (
-    apply_sweep_to_draft,
     build_custom_sweep_from_draft,
     default_config_draft,
     effective_config_summary,
@@ -185,37 +184,17 @@ class TestConfigCatalog:
         assert "business_as_usual" in ids
         assert "co2_delayed" in ids
 
-    def test_apply_sweep_overrides_carbon_tax(self):
-        draft = default_config_draft()
-        sweep = next(s for s in list_sweep_presets() if s.id == "co2_delayed")
-        draft = apply_sweep_to_draft(draft, sweep)
-        assert draft.sweep_id == "co2_delayed"
-        carbon = draft.property_edits["carbon_tax_level"]
-        # Seit P4.5 auf 120 Ticks gestreckt: die verzögerte Stufe kommt bei Tick 60 (vorher 25).
-        assert any(rule.get("active_from_tick") == 60 for rule in carbon.rules)
+    # «Werte übernehmen» (`apply_sweep_to_draft`) ist mit P7.13-U13.3 entfallen, und
+    # mit ihm seine beiden Tests.
 
-    def test_taking_over_a_preset_switches_to_own_settings(self):
-        """Sonst liefen die eben übernommenen Werte ins Leere.
+    def test_an_unsaved_start_value_from_the_model_reaches_no_state(self):
+        """Seit P7.13-U13.3 umgekehrt: bis dahin kam der Wert hier an."""
 
-        Im Modus `sweep` gilt seit P1.1 ausschließlich die Preset-Datei. Bliebe
-        der Modus dort stehen, hätte «Werte übernehmen» sichtbar etwas in den
-        Editor geschrieben, das der Lauf nicht anfasst — genau die stille
-        Wirkungslosigkeit, gegen die dieses Paket antritt.
-        """
-
-        draft = default_config_draft()
-        sweep = next(s for s in list_sweep_presets() if s.id == "co2_delayed")
-
-        draft = apply_sweep_to_draft(draft, sweep)
-
-        assert draft.scenario_mode == "basis"
-        assert draft.apply_custom_overrides is True
-
-    def test_prepare_state_with_custom_property_override(self):
         draft = default_config_draft()
         draft.scenario_mode = "custom"
         draft.apply_custom_overrides = True
         draft.rounds = 5
+        ausgeliefert = draft.property_edits["carbon_tax_level"].baseline
         draft.property_edits["carbon_tax_level"].baseline = 99.0
         draft.property_edits["carbon_tax_level"].rules = [
             {"active_from_tick": 1, "effect": {"type": "set", "value": 99.0}}
@@ -223,7 +202,7 @@ class TestConfigCatalog:
         state = prepare_simulation_state(draft)
         assert state.clock.max_ticks == 5
         prop = next(p for p in state.properties.system_properties if p.id == "carbon_tax_level")
-        assert float(prop.trajectory.baseline) == 99.0
+        assert float(prop.trajectory.baseline) == ausgeliefert
 
     def test_effective_config_summary_includes_overrides(self):
         draft = default_config_draft()

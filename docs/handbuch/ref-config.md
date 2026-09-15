@@ -183,13 +183,17 @@ Datei.
 
 ## Was die Oberfläche schreibt
 
-Die Systemgrößen und ihre Verläufe gelten nur für den nächsten Lauf und
-verändern keine Datei. Preisbildung, Sättigung und Bevölkerung wirken dagegen
-erst, wenn sie gespeichert sind — dann für alle künftigen Läufe. Drei Aktionen
-schreiben dauerhaft.
+Systemgrößen, Preisbildung, Sättigung und Bevölkerung aus dem Bereich **Modell**
+wirken erst, wenn sie gespeichert sind — dann für alle künftigen Läufe. Die eine
+Ausnahme ist der Startpreis: Er gilt ungespeichert für den nächsten Lauf unter der
+Standard-Ausgangslage. Für einen einzelnen Lauf gibt es die Schritte «Verläufe»
+und «Modellannahmen»; sie verändern keine Datei.
 
-Unter **Nachfrage & Preisbildung** schreiben «Als Standard speichern» und
-«Bevölkerung als Standard speichern» in `properties.json`. «Als Szenario sichern» in der
+Unter **Systemgrößen** schreibt «Verläufe als Standard speichern» Startwert und
+Regeln jeder geänderten Größe in `system_properties[].trajectory` — eine
+ausgeschaltete mit Startwert 0 und ohne Regeln, eine unveränderte gar nicht. Unter
+**Nachfrage & Preisbildung** schreiben «Als Standard speichern» und «Bevölkerung
+als Standard speichern» in `properties.json`. «Als Szenario sichern» in der
 Kopfzeile des Einrichtens legt eine Datei unter `configs/sweeps/` an.
 
 ## Die eingefrorene Matrix

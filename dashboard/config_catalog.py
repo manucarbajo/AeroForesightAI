@@ -536,6 +536,53 @@ def save_market_feedback_to_file(
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
+def save_property_edits_to_file(
+    edits: dict[str, PropertyEditState], filename: str = "properties.json"
+) -> list[str]:
+    """Startwerte und Verläufe als neuer Standard in die Datei (P7.13-U13.3).
+
+    **Von Haiko entschieden am 2026-09-15:** Startwerte und Verläufe aus dem
+    Bereich «Modell» wirken nur gespeichert; für einen einzelnen Lauf ändert man
+    sie im Schritt «Verläufe». Bis dahin gab es keinen Schreibweg — die Werte
+    gingen in `property_edits` und wirkten nur unter der Standard-Ausgangslage mit
+    «Eigene Werte anwenden», unter einem Rahmenszenario still gar nicht.
+
+    **Geschrieben wird nur, was sich von der Datei unterscheidet.** Eine Größe als
+    Stufenfunktion (`bevoelkerungsentwicklung`) behält so ihre Form, solange
+    niemand sie ändert. **Eine ausgeschaltete Größe** wird mit Startwert 0 und ohne
+    Regeln gespeichert — genau das, womit ein Lauf sie bisher gerechnet hat (von
+    Haiko entschieden); die Rückfrage vor dem Speichern sagt es.
+
+    Gibt die Kennungen der geschriebenen Größen zurück.
+    """
+
+    path = CONFIGS_DIR / filename
+    if not path.is_file():
+        return []
+    ausgeliefert = extract_property_edits_from_file(filename)
+    neu: dict[str, dict[str, Any]] = {}
+    for prop_id, edit in edits.items():
+        alt = ausgeliefert.get(prop_id)
+        if alt is None:
+            continue
+        baseline = float(edit.baseline) if edit.is_active else 0.0
+        rules = list(edit.rules) if edit.is_active else []
+        if baseline == float(alt.baseline) and rules == list(alt.rules):
+            continue
+        neu[prop_id] = {"baseline": baseline, "rules": rules}
+    if not neu:
+        return []
+
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    for item in data.get("system_properties", []):
+        if isinstance(item, dict) and item.get("id") in neu:
+            item["trajectory"] = neu[item["id"]]
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    return sorted(neu)
+
+
 def factor_options_from_file(filename: str = "factors.json") -> dict[str, dict[str, str]]:
     data = load_config_file(filename)
     options: dict[str, dict[str, str]] = {}
@@ -548,39 +595,11 @@ def factor_options_from_file(filename: str = "factors.json") -> dict[str, dict[s
     return options
 
 
-def apply_sweep_to_draft(draft: ConfigDraft, sweep: SweepConfig) -> ConfigDraft:
-    """Merge sweep overrides into property/factor edits for UI display."""
-
-    prop_edits = dict(draft.property_edits)
-    for override in sweep.property_overrides:
-        existing = prop_edits.get(override.property_id)
-        baseline = (
-            override.baseline
-            if override.baseline is not None
-            else (existing.baseline if existing else 0.0)
-        )
-        rules = (
-            override.rules if override.rules is not None else (existing.rules if existing else [])
-        )
-        prop_edits[override.property_id] = PropertyEditState(
-            property_id=override.property_id,
-            baseline=float(baseline),
-            rules=list(rules),
-        )
-
-    # «Werte dieses Szenarios übernehmen» heißt: ab hier sind es *meine* Werte.
-    # Der Modus muss deshalb weg von `sweep` (seit P7.13-U13.2 Teil 3b auf `basis`
-    # mit «Eigene Werte anwenden», weil es «Eigene Einstellungen» als Auswahl nicht
-    # mehr gibt) — im Modus `sweep` gilt seit
-    # P1.1 ausschließlich die Preset-Datei, die eben übernommenen Werte im
-    # Entwurf wären dort wirkungslos. `docs/handbuch/presets.md` beschreibt
-    # diesen Wechsel schon länger; bis P1.1 blieb der Modus trotzdem auf `sweep`.
-    draft.scenario_mode = "basis"
-    draft.sweep_id = sweep.id
-    draft.rounds = sweep.max_ticks
-    draft.property_edits = prop_edits
-    draft.apply_custom_overrides = True
-    return draft
+# `apply_sweep_to_draft` («Werte übernehmen und selbst anpassen») ist mit
+# P7.13-U13.3 entfallen. Es schrieb die Verläufe eines Szenarios in
+# `property_edits` und schaltete auf die Standard-Ausgangslage — und
+# `property_edits` erreicht seither keinen Lauf mehr. Ein Szenario ändert man im
+# Schritt «Verläufe», auf dem Szenario selbst.
 
 
 def property_overrides_from_edits(edits: dict[str, PropertyEditState]) -> list[PropertyOverride]:
@@ -841,7 +860,12 @@ def build_custom_sweep_from_draft(draft: ConfigDraft, filename: str = "") -> Swe
         or "Benutzerdefinierte Overrides aus dem Dashboard",
         max_ticks=draft.rounds,
         base_price=draft.base_price,
-        property_overrides=property_overrides_from_edits(draft.property_edits),
+        # **Aus der Datei, nicht aus dem Entwurf** (P7.13-U13.3): Startwerte und
+        # Verläufe aus dem Bereich «Modell» wirken nur gespeichert. `property_edits`
+        # im Entwurf ist die Eingabe des Modell-Editors, nicht die eines Laufs.
+        property_overrides=property_overrides_from_edits(
+            extract_property_edits_from_file(draft.properties_file)
+        ),
         milestones=[],
     )
 
@@ -890,16 +914,13 @@ def llm_config_from_draft(draft: ConfigDraft) -> LLMConfig | None:
 def _eigene_werte_weichen_ab(draft: ConfigDraft) -> bool:
     """Ob die eigenen Werte des Entwurfs etwas an der ausgelieferten Datei ändern.
 
-    Verglichen werden die Überschreibungen, die gelegt würden, mit denen aus der
-    Datei selbst — und der Startpreis, den nur der Entwurf setzt.
+    **Seit P7.13-U13.3 ist das nur noch der Startpreis.** Startwerte und Verläufe
+    kommen aus der Datei (`build_custom_sweep_from_draft`); der Startpreis bleibt
+    vorerst die eine Eingabe des Bereichs «Modell», die ungespeichert wirkt (von
+    Haiko entschieden am 2026-09-15, eigenes Paket).
     """
 
-    if draft.base_price is not None:
-        return True
-    aus_datei = property_overrides_from_edits(
-        extract_property_edits_from_file(draft.properties_file)
-    )
-    return property_overrides_from_edits(draft.property_edits) != aus_datei
+    return draft.base_price is not None
 
 
 def prepare_simulation_state(draft: ConfigDraft):
@@ -927,7 +948,7 @@ def prepare_simulation_state(draft: ConfigDraft):
     # konstante CO₂-Abgabe von 50 und rechnete im Dashboard trotzdem mit dem
     # Sprung auf 120 in Tick 15. Über die CLI (`run_single_sweep`) stimmte es,
     # nur dieser Pfad nicht. Wer von einem Preset ausgehen und dann eigene
-    # Werte setzen will, nimmt «Werte übernehmen» — das schaltet auf `custom`.
+    # Werte setzen will, ändert es im Schritt «Verläufe» (P7.13-U13.2).
     # **Der Rahmen wird hier gesetzt** (P2.0-B). Nur an dieser Stelle ist
     # bekannt, welches Szenario gilt — nach `apply_sweep_overrides` stehen nur
     # noch Zahlen im Zustand, aus denen sich kein Name zurückgewinnen lässt.
@@ -1132,13 +1153,15 @@ def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:
         },
     }
     if draft.apply_custom_overrides or draft.scenario_mode == "custom":
+        # **Die Abweichungen, nicht `property_edits`** (P7.13-U13.3): Nur sie
+        # erreichen den Lauf.
         summary["property_overrides"] = [
             {
                 "property_id": edit.property_id,
                 "baseline": edit.baseline,
                 "rules": edit.rules,
             }
-            for edit in draft.property_edits.values()
+            for edit in draft.abweichungen.values()
         ]
     return summary
 
@@ -1185,12 +1208,8 @@ def szenario_zum_sichern(draft: ConfigDraft, filename: str) -> SweepConfig:
         grundlage = basis
     else:
         grundlage = build_custom_sweep_from_draft(draft, filename=filename)
-        edits = (
-            draft.property_edits
-            if eigene
-            else extract_property_edits_from_file(draft.properties_file)
-        )
-        verlaeufe = {o.property_id: o for o in property_overrides_from_edits(edits)}
+        # Aus der Datei, wie beim Rechnen (P7.13-U13.3).
+        verlaeufe = {o.property_id: o for o in grundlage.property_overrides}
         strategie = None
         beschreibung = grundlage.description
     annahmen = {k: dict(v) for k, v in (grundlage.modellannahmen or {}).items()}

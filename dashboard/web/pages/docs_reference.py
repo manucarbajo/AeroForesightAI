@@ -169,8 +169,7 @@ def presets() -> str:
         "Fertige Annahmenwelten. Ein Preset legt Politik, Kosten und Konjunktur in einem "
         "Zug fest und ist der schnellste Einstieg in einen Lauf; die Faktorlage "
         "entsteht daraus im Lauf. Auswahl im Bereich «Einrichten», erster Schritt; "
-        "über «Werte übernehmen und selbst anpassen» wandern die Einstellungen in "
-        "Ihren Entwurf und lassen sich einzeln verändern.",
+        "einzelne Verläufe ändern Sie für einen Lauf im Schritt «Verläufe».",
         "",
     ]
     if not sweeps:
