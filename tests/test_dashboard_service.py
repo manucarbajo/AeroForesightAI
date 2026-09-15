@@ -208,7 +208,7 @@ class TestConfigCatalog:
 
         draft = apply_sweep_to_draft(draft, sweep)
 
-        assert draft.scenario_mode == "custom"
+        assert draft.scenario_mode == "basis"
         assert draft.apply_custom_overrides is True
 
     def test_prepare_state_with_custom_property_override(self):

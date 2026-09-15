@@ -104,24 +104,25 @@ nach 40 Ticks schlicht nicht.
 
 Wenn Sie von einem Preset ausgehen, aber einzelne Annahmen ändern wollen,
 klicken Sie unter der Auswahl auf «Werte übernehmen und selbst anpassen». Die
-Werte wandern damit in den Editor, und die Auswahl springt auf «Eigene
-Einstellungen».
+Werte wandern damit in den Editor, die Auswahl springt auf die
+«Standard-Ausgangslage», und «Eigene Werte anwenden» ist eingeschaltet.
 
 Dieser Wechsel ist nötig, nicht kosmetisch: Solange ein Preset gewählt ist,
-gelten ausschließlich seine Werte. Erst unter «Eigene Einstellungen» wirkt, was
-im Editor steht.
+gelten ausschließlich seine Werte. Erst mit eingeschaltetem «Eigene Werte
+anwenden» unter der Standard-Ausgangslage wirkt, was im Editor steht; in den
+Dateien des Laufs heißt er dann «eigen».
 
-Danach können Sie im Schritt **Rahmenbedingungen** und
-**Nachfrage & Preisbildung** einzelne Größen verändern, ohne den Rest neu
-aufsetzen zu müssen.
+Danach können Sie im Bereich **Modell** einzelne Systemgrößen verändern, ohne
+den Rest neu aufsetzen zu müssen.
 
 ## Einen eigenen Stand sichern
 
 Solange Sie einrichten, steht oben in der Kopfzeile «Als Szenario sichern». Im
 Fenster geben Sie einen Namen ein — vorgeschlagen ist der Name des Laufs — und
 sichern. Abgelegt wird das gewählte Szenario samt Ihren Abweichungen als Datei
-unter `configs/sweeps/`. In der Auswahl steht es vorerst unter «Stresstests
-zeigen»: Ein gesichertes Experiment gilt nicht als begründetes Weltbild. Gibt es
+unter `configs/sweeps/`. In der Auswahl steht es danach als **Eigenes Szenario**
+direkt nach den Rahmenszenarien. Ein begründetes Weltbild ist es damit nicht —
+es trägt keine Kohärenzbegründung, und ein Szenario-Vergleich lässt es aus. Gibt es
 ein Szenario unter diesem Namen schon, sagt das Fenster es, bevor Sie es
 ersetzen.
 

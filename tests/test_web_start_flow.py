@@ -176,13 +176,25 @@ class TestDieSzenarioAuswahl:
 
         assert f"{preset.max_ticks} Ticks" in str(start_flow.scenario_details(draft))
 
-    def test_own_settings_are_their_own_choice(self, draft):
+    def test_an_old_own_settings_choice_becomes_standard_with_own_values(self, draft):
+        """P7.13-U13.2 Teil 3b: Den Eintrag gibt es nicht mehr — ein offener Tab kann ihn halten."""
+
         draft[start_flow.FIELD] = start_flow.CUSTOM
         result = start_flow.normalise(draft)
 
-        assert result["scenario_mode"] == "custom"
+        assert result["scenario_mode"] == "basis"
         assert result["apply_custom_overrides"] is True
-        assert start_flow.of(result) == start_flow.CUSTOM
+        assert start_flow.of(result) == start_flow.STANDARD
+
+    def test_a_stored_own_settings_mode_is_translated_too(self, draft):
+        """Auch ohne Auswahl im Entwurf — etwa nach «Werte übernehmen» aus einer älteren Fassung."""
+
+        draft["scenario_mode"] = start_flow.CUSTOM
+        draft["apply_custom_overrides"] = False
+        result = start_flow.normalise(draft)
+
+        assert result["scenario_mode"] == "basis"
+        assert result["apply_custom_overrides"] is True
 
     def test_every_preset_is_offered(self):
         """Jedes Preset ist erreichbar — die Stresstests seit P7.4-U4.1 über «Stresstests zeigen»."""
@@ -190,7 +202,8 @@ class TestDieSzenarioAuswahl:
         values = {option["value"] for option in start_flow.choice_options(stresstests=True)}
 
         assert {preset.id for preset in list_sweep_presets()} <= values
-        assert {start_flow.STANDARD, start_flow.CUSTOM} <= values
+        assert start_flow.STANDARD in values
+        assert start_flow.CUSTOM not in values, "«Eigene Einstellungen» ist entfallen (P7.13)"
 
 
 # --- Befunde am Feld -------------------------------------------------------

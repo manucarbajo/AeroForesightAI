@@ -103,8 +103,6 @@ def of(draft: dict) -> str:
 
     if draft.get("scenario_mode") == "sweep" and draft.get("sweep_id"):
         return str(draft["sweep_id"])
-    if draft.get("scenario_mode") == CUSTOM:
-        return CUSTOM
     return STANDARD
 
 
@@ -122,7 +120,9 @@ def apply(draft: dict, choice: str | None) -> dict:
     """
 
     if choice == CUSTOM:
-        draft["scenario_mode"] = CUSTOM
+        # Ein alter Eintrag «Eigene Einstellungen» aus einem offenen Tab — siehe
+        # `normalise`: dieselbe Übersetzung.
+        draft["scenario_mode"] = "basis"
         draft["apply_custom_overrides"] = True
     elif not choice or choice == STANDARD:
         draft["scenario_mode"] = "basis"
@@ -134,6 +134,14 @@ def apply(draft: dict, choice: str | None) -> dict:
 
 
 def normalise(draft: dict) -> dict:
+    # **Den Eintrag «Eigene Einstellungen» gibt es nicht mehr** (P7.13-U13.2 Teil 3b,
+    # von Haiko entschieden am 2026-09-15). Ein Entwurf, der den Modus noch trägt —
+    # aus einem offenen Tab oder aus «Werte übernehmen» —, wird zur
+    # Standard-Ausgangslage mit «Eigene Werte anwenden»: derselbe Lauf, und sein
+    # Rahmen heißt «eigen», sobald etwas von der Datei abweicht.
+    if draft.get("scenario_mode") == CUSTOM:
+        draft["scenario_mode"] = "basis"
+        draft["apply_custom_overrides"] = True
     if FIELD not in draft:
         return draft
     return apply(draft, draft.get(FIELD))
@@ -237,6 +245,11 @@ def _kennzahl(preset) -> str:
     # Ein Rahmen ist der Normalfall und braucht keine Marke, ein Belastungstest
     # der Engine schon — er stand bis dahin gleichrangig neben «Business as
     # Usual» und wurde als Zukunft angeboten.
+    # **Ein eigenes Szenario sagt, dass es eines ist** (P7.13-U13.2 Teil 3b): Es
+    # ist ein Stresstest nach Art (P2.2), steht aber bei den Rahmen, weil es
+    # jemand selbst abgelegt hat.
+    if preset.herkunft == "eigen":
+        return f"Eigenes Szenario · {kennzahl}"
     if preset.art != "rahmen":
         return f"Stresstest · {kennzahl}"
     return kennzahl
@@ -262,7 +275,7 @@ def _choice_label(title: str, kennzahl: str | None = None) -> html.Div:
 
 
 def choice_options(*, stresstests: bool = False, gewaehlt: str | None = None) -> list[dict]:
-    """Standard, die Rahmen, auf Wunsch die Stresstests, und die eigenen Einstellungen.
+    """Standard, die Rahmen, die eigenen Szenarien — und auf Wunsch die Stresstests.
 
     **Stresstests sind ausgeblendet** (P7.4-U4.1, von Haiko entschieden am
     2026-09-14): Sie standen alphabetisch zwischen den Rahmen und waren nur an
@@ -270,17 +283,30 @@ def choice_options(*, stresstests: bool = False, gewaehlt: str | None = None) ->
     sichtbar** — sonst stünde eine Auswahl da, die niemand sieht.
     """
 
+    # **Eigene Szenarien stehen nach den Rahmen, immer sichtbar** (P7.13-U13.2
+    # Teil 3b, von Haiko entschieden am 2026-09-15). Bis dahin landete ein
+    # gesichertes Szenario als Stresstest hinter «Stresstests zeigen», und der
+    # Eintrag «Eigene Einstellungen» stand dort, wo man es gesucht hätte.
+    presets = list_sweep_presets()
+    rahmen = [p for p in presets if p.art == "rahmen"]
+    eigene = [p for p in presets if p.art != "rahmen" and p.herkunft == "eigen"]
+    stress = [
+        p
+        for p in presets
+        if p.art != "rahmen" and p.herkunft != "eigen" and (stresstests or p.id == gewaehlt)
+    ]
     options: list[dict] = [{"label": _choice_label("Standard-Ausgangslage"), "value": STANDARD}]
-    for preset in list_sweep_presets():
-        if preset.art != "rahmen" and not stresstests and preset.id != gewaehlt:
-            continue
+    for preset in (*rahmen, *eigene, *stress):
         options.append({"label": _choice_label(preset.name, _kennzahl(preset)), "value": preset.id})
-    options.append({"label": _choice_label("Eigene Einstellungen"), "value": CUSTOM})
     return options
 
 
 def stresstest_anzahl() -> int:
-    return sum(1 for preset in list_sweep_presets() if preset.art != "rahmen")
+    return sum(
+        1
+        for preset in list_sweep_presets()
+        if preset.art != "rahmen" and preset.herkunft != "eigen"
+    )
 
 
 def stresstest_knopftext(gezeigt: bool) -> str:
@@ -422,20 +448,6 @@ def scenario_details(draft: dict) -> html.Div:
     """Was zur aktuellen Auswahl gehört — Begründung und der Weg in den Editor."""
 
     choice = of(draft)
-    if choice == CUSTOM:
-        # **Für eigene Werte gibt es keine Begründung, und das ist keine Lücke.**
-        # Ein selbst zusammengestellter Rahmen ist genau so stimmig, wie der
-        # Nutzer ihn macht; ihm eine Kohärenzbehauptung unterzuschieben wäre eine
-        # Aussage, die niemand getroffen hat.
-        return html.Div(
-            ui.hinweis(
-                "Für eine eigene Zusammenstellung gibt es **keine hinterlegte "
-                "Begründung** — die Rahmenszenarien tragen je eine, weil jemand sie "
-                "aufgeschrieben und belegt hat. Wer eigene Verläufe nach außen "
-                "zitiert, begründet ihre Stimmigkeit selbst.",
-                "kontext",
-            )
-        )
     if choice == STANDARD:
         # **Auch der Standard ist ein Rahmen** (P2.0-B), und seit A1 trägt er
         # seine Begründung wie jeder andere. Sie stand als einzige nicht da —
@@ -501,8 +513,8 @@ def scenario_details(draft: dict) -> html.Div:
                     icon_name="download",
                 ),
                 html.P(
-                    "Schreibt die Werte des Szenarios in den Editor und schaltet auf "
-                    "«Eigene Einstellungen» um.",
+                    "Schreibt die Werte des Szenarios in den Editor und schaltet auf die "
+                    "Standard-Ausgangslage mit «Eigene Werte anwenden» um.",
                     className=f"{ui.CAPTION} mt-2",
                 ),
             ],

@@ -54,7 +54,8 @@ unter `configs/sweeps/`, und was Sie im Bereich **Modell** eingestellt haben,
 bleibt dafür außen vor. Wollen Sie von einem Szenario ausgehen und einzelne
 Annahmen ändern, klicken Sie auf «Werte übernehmen und selbst anpassen» — dann
 wandern seine Werte in Ihren Entwurf, wo Sie sie im Bereich **Modell** ändern
-können, und die Auswahl springt auf «Eigene Einstellungen».
+können; die Auswahl springt auf die «Standard-Ausgangslage», und «Eigene Werte
+anwenden» ist eingeschaltet.
 
 ## Schritt 2: Wie weit reicht der Lauf?
 

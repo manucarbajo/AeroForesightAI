@@ -87,8 +87,6 @@ def _scenario_name(draft: dict) -> str:
     choice = start_flow.of(draft)
     if choice == start_flow.STANDARD:
         return "Standard-Ausgangslage"
-    if choice == start_flow.CUSTOM:
-        return "Eigene Einstellungen"
     preset = next((s for s in list_sweep_presets() if s.id == choice), None)
     return preset.name if preset is not None else str(choice)
 

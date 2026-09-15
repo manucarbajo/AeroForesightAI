@@ -39,10 +39,10 @@ PARAMS: dict[str, Param] = {
     # --- Lauf ------------------------------------------------------------
     "scenario_mode": Param(
         label="Womit starten?",
-        short="Standard, ein fertiges Szenario oder Ihre eigenen Einstellungen.",
-        detail="«Standard» rechnet mit den hinterlegten Werten des Modells. «Szenario-Preset» lädt "
-        "eine vorbereitete Annahmenwelt, die Sie danach anpassen können. «Eigene Parameter» "
-        "geht von dem aus, was in den übrigen Tabs eingestellt ist.",
+        short="Standard, ein Rahmenszenario oder ein eigenes Szenario.",
+        detail="«Standard» rechnet mit den hinterlegten Werten des Modells. Ein Rahmenszenario "
+        "lädt eine vorbereitete, begründete Annahmenwelt; ein eigenes Szenario eine, die Sie "
+        "mit «Als Szenario sichern» abgelegt haben.",
     ),
     "sweep_id": Param(
         label="Szenario-Preset",

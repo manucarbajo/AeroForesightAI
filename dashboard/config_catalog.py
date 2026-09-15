@@ -562,11 +562,13 @@ def apply_sweep_to_draft(draft: ConfigDraft, sweep: SweepConfig) -> ConfigDraft:
         )
 
     # «Werte dieses Szenarios übernehmen» heißt: ab hier sind es *meine* Werte.
-    # Der Modus muss deshalb auf `custom` wechseln — im Modus `sweep` gilt seit
+    # Der Modus muss deshalb weg von `sweep` (seit P7.13-U13.2 Teil 3b auf `basis`
+    # mit «Eigene Werte anwenden», weil es «Eigene Einstellungen» als Auswahl nicht
+    # mehr gibt) — im Modus `sweep` gilt seit
     # P1.1 ausschließlich die Preset-Datei, die eben übernommenen Werte im
     # Entwurf wären dort wirkungslos. `docs/handbuch/presets.md` beschreibt
     # diesen Wechsel schon länger; bis P1.1 blieb der Modus trotzdem auf `sweep`.
-    draft.scenario_mode = "custom"
+    draft.scenario_mode = "basis"
     draft.sweep_id = sweep.id
     draft.rounds = sweep.max_ticks
     draft.property_edits = prop_edits

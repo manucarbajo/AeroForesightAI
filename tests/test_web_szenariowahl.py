@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 
+import pytest
 from dash import html
 
 from dashboard.config_catalog import list_sweep_presets
@@ -38,7 +39,11 @@ def _werte(optionen: list[dict]) -> set[str]:
 
 
 def _stresstests() -> set[str]:
-    return {preset.id for preset in list_sweep_presets() if preset.art != "rahmen"}
+    return {
+        preset.id
+        for preset in list_sweep_presets()
+        if preset.art != "rahmen" and preset.herkunft != "eigen"
+    }
 
 
 def _rahmen() -> set[str]:
@@ -55,7 +60,8 @@ class TestStresstestsTretenZurueck:
         werte = _werte(start_flow.choice_options())
 
         assert _rahmen() <= werte
-        assert {start_flow.STANDARD, start_flow.CUSTOM} <= werte
+        assert start_flow.STANDARD in werte
+        assert start_flow.CUSTOM not in werte, "«Eigene Einstellungen» ist entfallen (P7.13)"
 
     def test_stress_tests_are_hidden_until_asked_for(self):
         assert not _stresstests() & _werte(start_flow.choice_options())
@@ -134,3 +140,46 @@ class TestEineListeUndDieEinzelheitenDaneben:
         entwurf = start_flow.apply(initial_draft_dict(), preset.id)
 
         assert preset.description in str(start_flow.scenario_details(entwurf))
+
+
+class TestEigeneSzenarienStehenBeiDenRahmen:
+    """P7.13-U13.2 Teil 3b — von Haiko entschieden am 2026-09-15.
+
+    Ein mit «Als Szenario sichern» abgelegtes Szenario ist nach Art ein Stresstest
+    (P2.2) und stand deshalb hinter «Stresstests zeigen»: Wer es gerade gesichert
+    hatte, fand es nicht wieder. Jetzt steht es nach den Rahmen, immer sichtbar, mit
+    dem Zusatz «Eigenes Szenario». Gesichert wird in eine Kopie von `configs/sweeps/`.
+    """
+
+    @pytest.fixture
+    def eigenes(self, monkeypatch, tmp_path):
+        import shutil
+
+        from dashboard import config_catalog
+
+        for datei in config_catalog.SWEEPS_DIR.glob("*.json"):
+            shutil.copy(datei, tmp_path)
+        monkeypatch.setattr(config_catalog, "SWEEPS_DIR", tmp_path)
+        entwurf = config_catalog.default_config_draft()
+        entwurf.scenario_mode = "sweep"
+        entwurf.sweep_id = "business_as_usual"
+        return config_catalog.save_custom_sweep_preset(entwurf, "meine_referenzwelt").stem
+
+    def test_it_is_offered_without_asking(self, eigenes):
+        assert eigenes in _werte(start_flow.choice_options())
+
+    def test_it_says_what_it_is(self, eigenes):
+        option = next(o for o in start_flow.choice_options() if o["value"] == eigenes)
+
+        assert "Eigenes Szenario" in str(option["label"])
+
+    def test_it_stands_after_the_frames_and_before_the_stress_tests(self, eigenes):
+        werte = [o["value"] for o in start_flow.choice_options(stresstests=True)]
+
+        letzter_rahmen = max(werte.index(r) for r in _rahmen())
+        erster_stresstest = min(werte.index(s) for s in _stresstests())
+        assert letzter_rahmen < werte.index(eigenes) < erster_stresstest
+
+    def test_it_is_not_counted_as_a_stress_test(self, eigenes):
+        assert eigenes not in _stresstests()
+        assert start_flow.stresstest_anzahl() == len(_stresstests())

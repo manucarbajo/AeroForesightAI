@@ -120,6 +120,10 @@ jedes Rahmenszenario in seinem Vorbehalt. Siehe [Presets](/doku/presets).
 Preisstrategie geändert wurden. Das Szenario selbst bleibt unverändert; der Lauf
 nennt es in seinen Dateien zusammen mit jeder Abweichung.
 
+**Eigenes Szenario** — Ein mit «Als Szenario sichern» abgelegtes Szenario: das
+gewählte Szenario samt Ihren Abweichungen. Es steht in der Auswahl nach den
+Rahmenszenarien, trägt keine Begründung, und ein Szenario-Vergleich lässt es aus.
+
 **Kennung** (eines Laufs) — Eindeutiger Name eines Laufs, zugleich der Name
 seines Ausgabeverzeichnisses, etwa `run_20260913_142530`.
 
