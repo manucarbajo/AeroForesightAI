@@ -1934,24 +1934,16 @@ html.dark .af-input[type="number"] {
     position: relative;
 }
 
-/* Die Einblendung im Viewport: Tick, Populationsgröße, Zoom. Bewusst ohne
-   Mausfang — sie liegt über dem Diagramm und darf dessen Hover nicht
-   abschneiden. */
+/* Die Einblendung im Viewport: Tick, Populationsgröße, Zoom. **Seit P7.5-U5.3 eine
+   Zeile unter dem Diagramm**, nicht mehr absolut darüber: Rechts unten deckte sie
+   Datenpunkte zu (L3 des Audits). Rechtsbündig, wo sie vorher stand. */
 .af-scene__overlay {
-    position: absolute;
-    right: 1.25rem;
-    bottom: 1.25rem;
-    z-index: 15;
     display: flex;
+    justify-content: flex-end;
     gap: 1rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--overlay);
-    backdrop-filter: blur(6px);
+    padding: 0.5rem 0.75rem 0.25rem;
     font-size: var(--schrift-klein);
     color: var(--text-muted);
-    pointer-events: none;
 }
 
 .af-scene__overlay dt {

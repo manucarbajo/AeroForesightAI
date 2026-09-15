@@ -137,10 +137,34 @@ def _ranges(frame, zoom: float) -> tuple[list[float], list[float]]:
     return [mitte - spanne, mitte + spanne], [-0.05, 1.05]
 
 
+#: Bis zu wie vielen Punkten die Deckkraft unverändert bleibt (P7.5-U5.3). Die
+#: Standard-Ausgangslage rechnet mit 1000 Personen; bei ihr sieht die Szene aus wie
+#: vorher. Darüber werden die Punkte mit der Wurzel der Dichte durchsichtiger.
+DICHTE_BEZUG = 1000
+
+#: Durchsichtiger als das wird kein Punkt — sonst verschwände eine dünne Gruppe.
+DECKKRAFT_MIN = 0.12
+
+
+def deckkraft(grundwert: float, punkte: int) -> float:
+    """Die Deckkraft eines Punkts bei *punkte* gleichzeitig gezeichneten (P7.5-U5.3).
+
+    **Überplottung wird behandelt, nicht übersehen:** Mit fester Deckkraft wird eine
+    dichte Wolke zu einer einheitlichen Fläche, und wo viele Personen übereinander
+    liegen, sieht es aus wie wenige. Die Wurzel dämpft stetig; bis `DICHTE_BEZUG`
+    bleibt der Grundwert, damit kleine Läufe nicht blasser werden.
+    """
+
+    if punkte <= DICHTE_BEZUG:
+        return grundwert
+    return max(DECKKRAFT_MIN, grundwert * (DICHTE_BEZUG / punkte) ** 0.5)
+
+
 def _figure(frame, tick: int, zoom: float, mode: str) -> go.Figure:
     tone = theme.palette(mode)
     ausschnitt = frame[frame["tick"] == tick]
     x_range, y_range = _ranges(frame, zoom)
+    punkte = len(ausschnitt)
 
     fig = go.Figure()
     for gebucht, farbe, name in (
@@ -157,7 +181,7 @@ def _figure(frame, tick: int, zoom: float, mode: str) -> go.Figure:
                 marker=dict(
                     size=7,
                     color=farbe,
-                    opacity=0.62 if gebucht else 0.42,
+                    opacity=deckkraft(0.62 if gebucht else 0.42, punkte),
                     line=dict(width=0),
                 ),
                 hovertemplate=(
@@ -184,7 +208,12 @@ def _figure(frame, tick: int, zoom: float, mode: str) -> go.Figure:
 
 
 def overlay(tick: int, max_tick: int, count: int, zoom_index: int | None) -> html.Dl:
-    """Die Einblendung im Viewport.
+    """Die Einblendung im Viewport — **unter** der Zeichenfläche, nicht darüber.
+
+    **Seit P7.5-U5.3 außerhalb des Diagramms** (L3 des Audits): Sie lag rechts unten
+    absolut über der Zeichenfläche und deckte dort Datenpunkte zu — gerade die mit
+    hoher Zahlungsbereitschaft und niedrigem Umweltbewusstsein. Jetzt ist sie eine
+    Zeile unter dem Diagramm.
 
     Die Vorgabe nannte hier eine Framerate. Es wird nichts fortlaufend
     gerendert, das eine hätte — eine erfundene Zahl wäre genau die Art Zierrat,

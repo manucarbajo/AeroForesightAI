@@ -552,6 +552,7 @@ class _Messgang:
                 # Nur im Leitstand: Er ist der einzige Bereich mit Bedienfeld (P7.5-U5.1).
                 "bedienfeld": seite.evaluate(_BEDIENFELD) if name == "Leitstand" else None,
                 "faktorleiste": seite.evaluate(_FAKTORLEISTE) if name == "Leitstand" else None,
+                "einblendung": seite.evaluate(_EINBLENDUNG) if name == "Leitstand" else None,
                 "fremd": list(fremd),
                 # Als Letztes: `_EINZUG` öffnet alle Klappen. Gemessen nur auf der
                 # Musterseite — die übrigen Bereiche hält Teil 7b über die
@@ -3797,6 +3798,43 @@ _FAKTORLEISTE = """
         };
     })
 """
+
+
+#: Die Einblendung der Szene gegen die Zeichenfläche ihres Diagramms (P7.5-U5.3): um
+#: wie viele Pixel sich die beiden Kästen schneiden. Die Zeichenfläche ist Plotlys
+#: `.nsewdrag` — der Bereich zwischen den Achsen, in dem die Punkte liegen.
+_EINBLENDUNG = """
+() => {
+    const einblendung = document.querySelector('.af-scene__overlay');
+    const flaeche = document.querySelector('.af-scene .nsewdrag');
+    if (!einblendung || einblendung.offsetParent === null) return {fehlt: 'Einblendung'};
+    if (!flaeche) return {fehlt: 'Zeichenfläche'};
+    const e = einblendung.getBoundingClientRect();
+    const f = flaeche.getBoundingClientRect();
+    const breit = Math.min(e.right, f.right) - Math.max(e.left, f.left);
+    const hoch = Math.min(e.bottom, f.bottom) - Math.max(e.top, f.top);
+    return {
+        ueberdeckt: breit > 0 && hoch > 0 ? Math.round(breit * hoch) : 0,
+        einblendung: [Math.round(e.top), Math.round(e.bottom)],
+        flaeche: [Math.round(f.top), Math.round(f.bottom)],
+    };
+}
+"""
+
+
+@pytest.mark.ueberlauf
+class TestDieEinblendungDecktKeineDaten:
+    """P7.5-U5.3 (L3): Rechts unten über der Zeichenfläche lag die Einblendung auf Punkten."""
+
+    @JE_BREITE
+    def test_the_overlay_stays_outside_the_plot_area(self, messung, breite):
+        befund = messung.bereich(breite, "Leitstand")["einblendung"]
+
+        assert befund and "fehlt" not in befund, f"Szene nicht gemessen: {befund}"
+        assert befund["ueberdeckt"] == 0, (
+            f"Bei {breite} px liegt die Einblendung auf {befund['ueberdeckt']} px² der "
+            f"Zeichenfläche (Einblendung y {befund['einblendung']}, Fläche y {befund['flaeche']})."
+        )
 
 
 @pytest.mark.breite

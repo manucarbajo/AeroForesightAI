@@ -457,6 +457,59 @@ class TestSzeneUndTelemetrieFolgenDemselbenTick:
         assert "fps" not in gerendert
         assert "framerate" not in gerendert
 
+    def test_the_overlay_no_longer_floats_over_the_plot(self):
+        """P7.5-U5.3 (L3): Absolut über der Zeichenfläche deckte die Einblendung Punkte zu.
+
+        Gelesen aus dem Stylesheet, weil die Lage dort entschieden wird; ob sie im
+        Browser wirklich neben dem Diagramm steht, misst der Browser-Wächter.
+        """
+
+        import re
+        from pathlib import Path
+
+        css = (
+            Path(__file__).resolve().parents[1] / "dashboard" / "web" / "assets" / "dashboard.css"
+        ).read_text(encoding="utf-8")
+        regeln = re.findall(r"\.af-scene__overlay\s*\{([^}]*)\}", css)
+
+        assert regeln, "Die Regel für die Einblendung fehlt"
+        assert not any("position: absolute" in regel for regel in regeln), regeln
+
+    def test_dense_scenes_get_more_transparent(self):
+        """P7.5-U5.3: Überplottung — bis zum Bezug unverändert, darüber durchsichtiger."""
+
+        grund = 0.42
+        assert scene.deckkraft(grund, 50) == grund
+        assert scene.deckkraft(grund, scene.DICHTE_BEZUG) == grund
+        assert scene.deckkraft(grund, 4 * scene.DICHTE_BEZUG) == pytest.approx(grund / 2)
+        assert scene.deckkraft(grund, 10**7) == scene.DECKKRAFT_MIN
+
+    def test_the_scene_uses_the_damping(self):
+        """Die Formel allein reicht nicht — die Figur muss sie benutzen.
+
+        Die Gegenprobe hat es gezeigt: Mit fester Deckkraft in `_figure` blieb jeder
+        Test grün, weil nur `deckkraft` geprüft war.
+        """
+
+        import pandas as pd
+
+        punkte = 4 * scene.DICHTE_BEZUG
+        frame = pd.DataFrame(
+            {
+                "tick": [3] * punkte,
+                "booked": [i % 2 == 0 for i in range(punkte)],
+                "wtp_eur": [100.0 + i % 200 for i in range(punkte)],
+                "environmental_awareness": [(i % 100) / 100 for i in range(punkte)],
+            }
+        )
+
+        figur = scene._figure(frame, 3, 1.0, "light")
+
+        deckkraefte = sorted(float(spur.marker.opacity) for spur in figur.data)
+        assert deckkraefte == pytest.approx(
+            sorted(scene.deckkraft(grund, punkte) for grund in (0.42, 0.62))
+        )
+
     @pytest.mark.parametrize("index", range(len(scene.ZOOM_STEPS)))
     def test_every_zoom_step_has_a_label(self, index):
         assert scene.zoom_label(index).endswith("%")
