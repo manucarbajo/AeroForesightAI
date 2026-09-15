@@ -551,6 +551,7 @@ class _Messgang:
                 "eingaben_im_modell": seite.locator("#model-editor-host input").count(),
                 # Nur im Leitstand: Er ist der einzige Bereich mit Bedienfeld (P7.5-U5.1).
                 "bedienfeld": seite.evaluate(_BEDIENFELD) if name == "Leitstand" else None,
+                "faktorleiste": seite.evaluate(_FAKTORLEISTE) if name == "Leitstand" else None,
                 "fremd": list(fremd),
                 # Als Letztes: `_EINZUG` öffnet alle Klappen. Gemessen nur auf der
                 # Musterseite — die übrigen Bereiche hält Teil 7b über die
@@ -3776,6 +3777,39 @@ class TestImBedienfeldIstNichtsAbgeschnitten:
             f"Bei {breite} px ({feld['breite']} px Spalte) abgeschnitten: {feld['gekuerzt']}. "
             "Vor P7.5-U5.1 standen alle drei Stand-Werte auf 59 px."
         )
+
+
+#: Die Faktorleiste über der Szene: je Chip der Kurzname und ob er über seinen Chip
+#: hinausreicht oder in sich abgeschnitten ist (P7.5-U5.3).
+_FAKTORLEISTE = """
+() => [...document.querySelectorAll('.af-factor')]
+    .filter(chip => chip.offsetParent !== null)
+    .map(chip => {
+        const name = chip.querySelector('.af-factor__name');
+        if (!name) return {name: null, abgeschnitten: true};
+        const n = name.getBoundingClientRect();
+        const c = chip.getBoundingClientRect();
+        const rand = parseFloat(getComputedStyle(chip).paddingRight) || 0;
+        return {
+            name: name.textContent.trim(),
+            abgeschnitten: name.scrollWidth > name.clientWidth + 1 || n.right > c.right - rand + 1,
+            breite: Math.round(c.width),
+        };
+    })
+"""
+
+
+@pytest.mark.breite
+class TestDieFaktorleisteKuerztKeinenNamen:
+    """P7.5-U5.3: Bei 1280 px waren alle sieben Zustandstexte auf 72 px gekürzt."""
+
+    @JE_BREITE
+    def test_every_factor_name_fits_its_chip(self, messung, breite):
+        leiste = messung.bereich(breite, "Leitstand")["faktorleiste"]
+
+        assert leiste and len(leiste) == 7, f"Faktorleiste nicht gemessen: {leiste}"
+        zu_lang = [chip for chip in leiste if chip["abgeschnitten"]]
+        assert not zu_lang, f"Bei {breite} px passt der Name nicht in seinen Chip: {zu_lang}"
 
 
 @pytest.mark.breite

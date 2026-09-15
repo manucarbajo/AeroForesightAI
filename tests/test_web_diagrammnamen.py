@@ -160,6 +160,18 @@ class TestNamenUndEinheitenAusEinerQuelle:
         assert SEGMENTE, "Keine Segmente in configs/properties.json gefunden"
         assert not ohne, f"Segmente ohne Namen in `SEGMENT_NAMEN`: {ohne}"
 
+    def test_every_factor_has_a_short_name(self):
+        """P7.5-U5.3: Die Faktorleiste zeigt Kurznamen — gesucht über `factors.json`."""
+
+        faktoren = set(katalog.factor_options_from_file())
+
+        assert faktoren, "Vorbedingung: `factors.json` nennt Faktoren"
+        assert faktoren == set(katalog.FAKTOR_KURZNAMEN), (
+            "Faktoren und Kurznamen laufen auseinander: "
+            f"ohne Kurzname {sorted(faktoren - set(katalog.FAKTOR_KURZNAMEN))}, "
+            f"Kurzname ohne Faktor {sorted(set(katalog.FAKTOR_KURZNAMEN) - faktoren)}"
+        )
+
     @pytest.mark.parametrize("aussage", list(AUSSAGEN))
     def test_no_chart_names_a_series_by_its_column(self, lauf, aussage):
         figuren = _figuren(AUSSAGEN[aussage](lauf))

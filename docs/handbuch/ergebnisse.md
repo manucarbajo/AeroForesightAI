@@ -29,8 +29,9 @@ In der Mitte steht die Population zu **einem** Tick — jeder Punkt eine Person,
 waagerecht ihre Zahlungsbereitschaft, senkrecht ihr Umweltbewusstsein, eingefärbt
 danach, ob sie gebucht hat. Die Achsen stehen über den ganzen Lauf fest, damit
 eine Bewegung im Bild wirklich eine Bewegung der Bevölkerung ist und nicht bloß
-eine nachgeführte Achse. Darüber liegt der Streifen mit den sieben
-Faktorzuständen; ein hervorgehobener Chip heißt, dieser Deskriptor ist gekippt.
+eine nachgeführte Achse. Darüber liegt der Streifen mit den sieben Faktoren, je
+Kurzname und Zustand («Regulierung», «F2.1»); ein hervorgehobener Chip heißt,
+dieser Faktor ist gekippt. Der volle Zustandstext steht im Tooltip des Chips.
 
 Rechts stehen die Kennzahlen desselben Ticks — Buchungsrate, Ticketpreis,
 Kostendruck, Nachfrageniveau, jeweils mit der Veränderung zum Vortick —, darunter

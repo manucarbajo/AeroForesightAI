@@ -471,6 +471,30 @@ class TestSzeneUndTelemetrieFolgenDemselbenTick:
         for factor in range(1, 8):
             assert f"F{factor}." in gerendert
 
+    def test_each_chip_carries_short_name_state_and_wording(self, demo):
+        """P7.5-U5.3: Kurzname und Zustand sichtbar, der Wortlaut im Tooltip und für Vorlesesoftware."""
+
+        from dashboard.config_catalog import FAKTOR_KURZNAMEN, factor_options_from_file
+
+        zustaende = demo.factors_at(30)
+        texte = factor_options_from_file()
+        streifen = scene.factor_strip(zustaende)
+        chips = [
+            k
+            for k in streifen.children
+            if "af-factor" in str(getattr(k, "className", "") or "").split()
+        ]
+
+        assert len(chips) == len(zustaende) == 7
+        for chip in chips:
+            teile = {k.className: k.children for k in chip.children if isinstance(k, html.Span)}
+            factor_id = teile["af-factor__id"].split(".")[0]
+            wortlaut = texte[factor_id][teile["af-factor__id"]]
+            assert teile["af-factor__name"] == FAKTOR_KURZNAMEN[factor_id]
+            assert wortlaut in chip.title
+            assert wortlaut in teile["af-nur-vorlesen"]
+        assert "af-factor__state" not in str(streifen), "Der abgeschnittene Zustandstext ist zurück"
+
     def test_a_missing_factor_series_is_said_out_loud(self):
         assert "timeseries/factors.csv" in _text(scene.factor_strip({}))
 

@@ -99,6 +99,22 @@ SEGMENT_NAMEN: dict[str, str] = {
 }
 
 
+#: Die Kurznamen der sieben Faktoren — für die Faktorleiste über der Szene (P7.5-U5.3,
+#: von Haiko entschieden am 2026-09-15: eine Reihe, Kurzname und Zustand als Marke).
+#: Die langen Namen in `configs/factors.json` («Mobilitaetsbeduerfnis / Nachfrage»)
+#: passen bei 1280 px in keinen Chip; gemessen blieben je Chip 72 px. Die Wörter sind
+#: die des Domain-Glossars in CLAUDE.md.
+FAKTOR_KURZNAMEN: dict[str, str] = {
+    "F1": "Nachfrage",
+    "F2": "Regulierung",
+    "F3": "Technologie",
+    "F4": "Wirtschaft",
+    "F5": "Alternativen",
+    "F6": "Gesellschaft",
+    "F7": "Geopolitik",
+}
+
+
 def segment_name(segment_id: str) -> str:
     """Der Name eines Segments — für ein unbekanntes die Kennung in Lesbarform."""
 

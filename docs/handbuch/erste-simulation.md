@@ -106,8 +106,10 @@ Ereignisse, und der neue Lauf ist in der Auswahl oben bereits gesetzt.
 Der Leitstand zeigt den neuen Lauf sofort. In der Mitte steht die Population zu
 **einem** Tick: jeder Punkt ein Individuum, waagerecht seine Zahlungsbereitschaft,
 senkrecht sein Umweltbewusstsein, eingefärbt danach, ob es gebucht hat. Darüber
-liegt der Streifen mit den sieben Faktorzuständen; ein hervorgehobener Chip heißt,
-dass dieser Deskriptor gekippt ist.
+liegt der Streifen mit den sieben Faktoren — je Kurzname und Zustand, etwa
+«Regulierung» und «F2.1»; ein hervorgehobener Chip heißt, dass dieser Faktor
+gekippt ist. Den vollen Zustandstext zeigt der Chip, wenn Sie mit der Maus darauf
+zeigen.
 
 Ziehen Sie unten den **Regler** durch den Lauf oder drücken Sie **Abspielen**.
 Szene, Kennzahlen und Verläufe rechts folgen alle demselben Tick — die Zeitleiste

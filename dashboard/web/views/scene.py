@@ -23,7 +23,7 @@ from typing import Any
 import plotly.graph_objects as go
 from dash import dcc, html
 
-from dashboard.config_catalog import factor_options_from_file
+from dashboard.config_catalog import FAKTOR_KURZNAMEN, factor_options_from_file
 from dashboard.web import components as ui
 from dashboard.web import theme
 from dashboard.web.run_data import RunData
@@ -68,7 +68,15 @@ def _factor_labels() -> dict[str, dict[str, str]]:
 
 
 def factor_strip(states: dict[str, str]) -> html.Div:
-    """Die sieben Deskriptoren als Zeile über der Szene."""
+    """Die sieben Deskriptoren als Zeile über der Szene.
+
+    **Kurzname und Zustand als Marke, der Wortlaut im Tooltip** (P7.5-U5.3, von
+    Haiko entschieden am 2026-09-15). Bis dahin stand im Chip der Zustandstext —
+    «Moderater Klimaschutz, Kompensationsfokus» — und brauchte 136 bis 272 px, wo
+    bei 1280 px 72 px blieben; alle sieben waren abgeschnitten. Der volle Text steht
+    zusätzlich beschnitten im Baum, damit ihn eine Vorlesesoftware liest: Ein
+    `title` allein erreicht sie nicht verlässlich.
+    """
 
     if not states:
         return html.Div(
@@ -88,12 +96,16 @@ def factor_strip(states: dict[str, str]) -> html.Div:
         # Streifen sofort ablesbar ist.
         gekippt = state.endswith(".2")
         beschreibung = (labels.get(factor_id) or {}).get(state, state)
+        name = FAKTOR_KURZNAMEN.get(factor_id, factor_id)
+        wortlaut = f"{name} ({state}): {beschreibung}" + (" — gekippt" if gekippt else "")
         chips.append(
             html.Div(
                 [
-                    html.Span(state, className="af-factor__id"),
-                    html.Span(beschreibung, className="af-factor__state", title=beschreibung),
+                    html.Span(name, className="af-factor__name", **{"aria-hidden": "true"}),
+                    html.Span(state, className="af-factor__id", **{"aria-hidden": "true"}),
+                    html.Span(wortlaut, className="af-nur-vorlesen"),
                 ],
+                title=wortlaut,
                 className="af-factor af-factor--active" if gekippt else "af-factor",
             )
         )
