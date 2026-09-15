@@ -927,7 +927,10 @@ DECKEL: dict[int, dict[str, float]] = {
         # **1,00 -> 1,05 mit Teil 2b-1**, gewollt: Unter der Kurve stehen Startwert
         # und Stützpunkte. Gemessen 1,05 — auf der Kante der Toleranz, deshalb als
         # Deckel eingetragen statt stillschweigend durchgelassen.
-        "Schritt 2": 1.05,
+        # **1,05 -> 1,13 mit Teil 2b-2**, gewollt: der Knopf «Stützpunkt hinzufügen».
+        # Gemessen wird unter der Standard-Ausgangslage, deren erste Größe keinen
+        # Stützpunkt trägt — die Zeilen selbst stehen hier nicht auf dem Schirm.
+        "Schritt 2": 1.13,
         "Schritt 3": 1.00,
         "Schritt 4": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
@@ -1018,7 +1021,9 @@ DECKEL: dict[int, dict[str, float]] = {
         # **1,35 -> 1,45 am selben Tag mit Teil 2b-1, und der Zuwachs ist gewollt**:
         # Unter der Kurve stehen seither Startwert und Stützpunkte. Bei 1280 und
         # 1440 px bleibt der Schritt innerhalb seines Deckels.
-        "Schritt 2": 1.45,
+        # **1,45 -> 1,53 mit Teil 2b-2**, gewollt: der Knopf «Stützpunkt
+        # hinzufügen» (siehe 1280).
+        "Schritt 2": 1.53,
         "Schritt 3": 1.00,
         "Schritt 4": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;

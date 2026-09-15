@@ -72,6 +72,34 @@ SPERRGRUND = (
 )
 
 
+#: «Stützpunkt hinzufügen» je Größe.
+NEU = "verlaeufe-neu"
+#: «Entfernen» je Zeile.
+WEG = "verlaeufe-weg"
+#: Der Wirt der Zeilen — neu gezeichnet, wenn eine Zeile dazukommt oder wegfällt.
+ZEILEN = "verlaeufe-zeilen"
+
+
+#: Die Zeilenzahl im Wirt der Zeilen — ein Eingang von `_sync`, siehe `zeilen`.
+STAND = "verlaeufe-stand"
+
+
+def stand_id(groesse: str) -> dict:
+    return {"type": STAND, "groesse": groesse}
+
+
+def neu_id(groesse: str) -> dict:
+    return {"type": NEU, "groesse": groesse}
+
+
+def weg_id(groesse: str, index: int) -> dict:
+    return {"type": WEG, "groesse": groesse, "index": index}
+
+
+def zeilen_id(groesse: str) -> dict:
+    return {"type": ZEILEN, "groesse": groesse}
+
+
 def start_id(groesse: str) -> dict:
     return {"type": START, "groesse": groesse}
 
@@ -237,29 +265,99 @@ def _zahl(groesse: str, index: int, key: str, wert, gesperrt: bool, schritt=None
     )
 
 
-def _zeile(groesse: str, index: int, regel: dict, gesperrt: bool) -> html.Div:
+#: Die Felder eines Stützpunkts, in der Reihenfolge der Zeile.
+FELDER = ("tick", "art", "wert", "dauer")
+
+
+def felder_aus_regel(regel: dict) -> dict:
+    """Die Felder einer Zeile aus einer Regel des Entwurfs oder des Szenarios."""
+
     effekt = regel.get("effect") or {}
+    return {
+        "tick": regel.get("active_from_tick"),
+        "art": effekt.get("type"),
+        "wert": effekt.get("value"),
+        "dauer": effekt.get("duration_ticks"),
+    }
+
+
+def felder_aus_eingaben(punkte: list, groesse: str) -> list[dict]:
+    """Die Zeilen einer Größe, wie sie gerade in den Feldern stehen — nach Index."""
+
+    zeilen: dict[int, dict] = {}
+    for eintrag in punkte or []:
+        kennung = eintrag.get("id") or {}
+        if kennung.get("groesse") != groesse:
+            continue
+        zeilen.setdefault(int(kennung["index"]), {})[kennung["key"]] = eintrag.get("value")
+    return [{k: zeilen[i].get(k) for k in FELDER} for i in sorted(zeilen)]
+
+
+def stuetzpunkte_aendern(felder: list[dict], ausloeser: dict) -> list[dict]:
+    """Eine leere Zeile dazu oder die angeklickte weg (P7.13-U13.1 Teil 2b-2).
+
+    **Eine neue Zeile ist leer**: Ein vorbelegter Tick oder Wert wäre eine Zahl
+    aus dem Quelltext, und ein vollständiger Stützpunkt rechnete sofort mit, ohne
+    dass jemand ihn eingetragen hat (Regel 2).
+    """
+
+    if ausloeser.get("type") == NEU:
+        return [*felder, {k: None for k in FELDER}]
+    if ausloeser.get("type") == WEG:
+        weg = int(ausloeser["index"])
+        return [f for i, f in enumerate(felder) if i != weg]
+    return felder
+
+
+def _zeile(groesse: str, index: int, felder: dict, gesperrt: bool) -> html.Div:
+    """Ein Stützpunkt: Kopfzeile mit «Entfernen», darunter vier Felder in zwei Spalten.
+
+    **«Entfernen» steht in der Kopfzeile**, im Browser zweimal anders gesehen am
+    2026-09-15: Als fünfte Rasterzelle stand der Knopf allein in einer Zeile, und
+    der Hinweis «nur beim Hochfahren» kostete eine weitere; neben die Dauer
+    gestellt, drückte er deren Feld zusammen und ihre Beschriftung auf drei
+    Zeilen. Die Kopfzeile ersetzt die Hinweiszeile.
+    """
+
+    kopf = html.Div(
+        [
+            html.Span(f"Stützpunkt {index + 1}", className=f"{ui.BESCHRIFTUNG} af-text-muted"),
+            ui.button(
+                "Entfernen",
+                id=weg_id(groesse, index),
+                variant="ghost",
+                icon_name="delete",
+                disabled=gesperrt,
+            ),
+        ],
+        className="flex items-center justify-between",
+    )
+    return html.Div(
+        [kopf, _felder_raster(groesse, index, felder, gesperrt)],
+        className="mt-3",
+    )
+
+
+def _felder_raster(groesse: str, index: int, felder: dict, gesperrt: bool) -> html.Div:
     return html.Div(
         ui.grid(
-            ui.field(
-                "ab Tick", _zahl(groesse, index, "tick", regel.get("active_from_tick"), gesperrt, 1)
-            ),
+            ui.field("ab Tick", _zahl(groesse, index, "tick", felder.get("tick"), gesperrt, 1)),
             ui.field(
                 "Art",
                 dcc.Dropdown(
                     id=punkt_id(groesse, index, "art"),
                     options=ARTEN,
-                    value=effekt.get("type"),
+                    value=felder.get("art"),
                     clearable=False,
+                    placeholder="Art wählen",
                     disabled=gesperrt,
                     className="af-dropdown",
                 ),
             ),
-            ui.field("Wert", _zahl(groesse, index, "wert", effekt.get("value"), gesperrt)),
+            ui.field("Wert", _zahl(groesse, index, "wert", felder.get("wert"), gesperrt)),
             ui.field(
-                "über … Ticks",
-                _zahl(groesse, index, "dauer", effekt.get("duration_ticks"), gesperrt, 1),
-                hint="nur beim Hochfahren",
+                "Dauer (Ticks)",
+                _zahl(groesse, index, "dauer", felder.get("dauer"), gesperrt, 1),
             ),
             # **Zwei Spalten, nicht vier**: Das Raster folgt der Fensterbreite, der
             # Editor steht aber in der rechten Spalte. Bei 1440 × 900 schnitten vier
@@ -296,13 +394,41 @@ def editor(draft: dict, groesse: str) -> html.Div:
                 hint=SPERRGRUND if gesperrt else None,
                 breite="feld-klein",
             ),
-            *[
-                _zeile(groesse, index, regel, gesperrt)
-                for index, regel in enumerate(verlauf.get("rules") or [])
-            ],
+            html.Div(
+                zeilen(
+                    groesse,
+                    [felder_aus_regel(r) for r in verlauf.get("rules") or []],
+                    gesperrt,
+                ),
+                id=zeilen_id(groesse),
+            ),
+            # **Außerhalb des Zeilen-Wirts**, wie «Stresstests zeigen»: Neu
+            # gezeichnet setzte er seinen Klickzähler zurück.
+            ui.button(
+                "Stützpunkt hinzufügen",
+                id=neu_id(groesse),
+                variant="ghost",
+                icon_name="add",
+                disabled=gesperrt,
+                className="mt-3",
+            ),
         ],
         className="mt-4",
     )
+
+
+def zeilen(groesse: str, felder: list[dict], gesperrt: bool) -> list:
+    """Die Zeilen **und ein Zähler**, der `_sync` auch ohne Felder auslöst.
+
+    `_sync` schreibt den Entwurf, sobald neue Felder eingefügt werden. Nach dem
+    Entfernen der letzten Zeile gibt es keines — der `dcc.Store` mit der
+    Zeilenzahl wird trotzdem neu eingefügt und ist ein Eingang von `_sync`.
+    """
+
+    return [
+        *[_zeile(groesse, index, f, gesperrt) for index, f in enumerate(felder)],
+        dcc.Store(id=stand_id(groesse), data=len(felder)),
+    ]
 
 
 def detail(draft: dict, groesse: str, *, mode: str | None = theme.LIGHT) -> html.Div:

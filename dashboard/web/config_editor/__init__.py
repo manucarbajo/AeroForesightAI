@@ -183,10 +183,11 @@ def register_callbacks(app) -> None:
         Input({"type": macro.RULE, "prop": ALL, "index": ALL, "key": ALL}, "value"),
         Input({"type": verlaeufe.START, "groesse": ALL}, "value"),
         Input({"type": verlaeufe.PUNKT, "groesse": ALL, "index": ALL, "key": ALL}, "value"),
+        Input({"type": verlaeufe.STAND, "groesse": ALL}, "data"),
         State(STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def _sync(_values, _flags, _rules, _starts, _punkte, draft: dict | None):
+    def _sync(_values, _flags, _rules, _starts, _punkte, _stand, draft: dict | None):
         """Sichtbare Felder in den Store — **und nur, wenn sich etwas ändert** (P3.9).
 
         Der zweite Halbsatz ist die ganze Arbeit von P3.9. Dieser Callback feuert
@@ -414,6 +415,51 @@ def register_callbacks(app) -> None:
         return [
             verlaeufe.figur(draft or {}, eintrag["id"]["groesse"], mode=theme.normalise(mode))
             for eintrag in ctx.outputs_list
+        ]
+
+    @app.callback(
+        Output({"type": verlaeufe.ZEILEN, "groesse": ALL}, "children"),
+        Input({"type": verlaeufe.NEU, "groesse": ALL}, "n_clicks"),
+        Input({"type": verlaeufe.WEG, "groesse": ALL, "index": ALL}, "n_clicks"),
+        State({"type": verlaeufe.PUNKT, "groesse": ALL, "index": ALL, "key": ALL}, "value"),
+        State(STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def _stuetzpunkte(_neu, _weg, _punkte, draft: dict | None):
+        """Stützpunkt hinzufügen oder entfernen (P7.13-U13.1 Teil 2b-2).
+
+        **Die Zeilen entstehen aus dem, was in den Feldern steht**, nicht aus dem
+        Entwurf — sonst ginge verloren, was jemand eingetippt, aber noch nicht
+        verlassen hat.
+
+        **Nur die Zeilen, nicht der Entwurf.** Der erste Anlauf schrieb hier auch
+        den Store, und der Rundlauf-Wächter zählte für «Verläufe» acht statt
+        sieben Server-Aufrufe je Klick: Dash lässt einen Callback trotz
+        `prevent_initial_call` beim Zeichnen feuern, wenn einer seiner Ausgänge
+        nicht mit den Eingängen zusammen eingefügt wird — und der Store steht
+        immer im Layout. Den Entwurf schreibt `_sync`, das die neu eingefügten
+        Felder und der Zeilen-Zähler (`verlaeufe.zeilen`) auslösen.
+
+        Ein neu gezeichneter Knopf meldet `n_clicks = 0` — das ist kein Klick.
+        """
+
+        ausloeser = ctx.triggered_id
+        ausgang = ctx.outputs_list
+        if not isinstance(ausloeser, dict) or not (ctx.triggered and ctx.triggered[0].get("value")):
+            return [no_update] * len(ausgang)
+
+        groesse = ausloeser["groesse"]
+        felder = verlaeufe.stuetzpunkte_aendern(
+            verlaeufe.felder_aus_eingaben(ctx.states_list[0], groesse), ausloeser
+        )
+        gesperrt = not (draft or {}).get("apply_custom_overrides")
+        return [
+            (
+                verlaeufe.zeilen(groesse, felder, gesperrt)
+                if eintrag["id"]["groesse"] == groesse
+                else no_update
+            )
+            for eintrag in ausgang
         ]
 
     @app.callback(

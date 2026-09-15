@@ -244,6 +244,82 @@ class TestDerEditorSchreibtNurWasAbweicht:
         assert verlaeufe.SPERRGRUND in str(baum)
 
 
+def _knoepfe(baum, typ) -> list:
+    return [
+        k
+        for k in _walk(baum)
+        if isinstance(getattr(k, "id", None), dict) and k.id.get("type") == typ
+    ]
+
+
+class TestStuetzpunkteKommenUndGehen:
+    """Teil 2b-2: eine leere Zeile dazu, eine Zeile weg — und der Entwurf folgt."""
+
+    def test_the_editor_offers_both_actions(self, draft):
+        baum = verlaeufe.editor(draft, "carbon_tax_level")
+        regeln = verlaeufe.verlauf_im_entwurf(draft, "carbon_tax_level")["rules"]
+
+        assert len(_knoepfe(baum, verlaeufe.NEU)) == 1
+        assert len(_knoepfe(baum, verlaeufe.WEG)) == len(regeln) > 0
+
+    def test_a_new_row_is_empty_and_invents_nothing(self, draft):
+        starts, punkte = _eingaben(verlaeufe.editor(draft, "carbon_tax_level"))
+        felder = verlaeufe.stuetzpunkte_aendern(
+            verlaeufe.felder_aus_eingaben(punkte, "carbon_tax_level"),
+            verlaeufe.neu_id("carbon_tax_level"),
+        )
+
+        assert felder[-1] == {k: None for k in verlaeufe.FELDER}
+        _, neue = _eingaben(html.Div(verlaeufe.zeilen("carbon_tax_level", felder, False)))
+        danach = verlaeufe.eingaben_anwenden(draft, starts, neue)
+        assert danach["abweichungen"] == {}, "Eine leere Zeile ist keine Abweichung"
+
+    def test_removing_a_scenario_rule_is_a_deviation(self, draft):
+        starts, punkte = _eingaben(verlaeufe.editor(draft, "carbon_tax_level"))
+        vorher = verlaeufe.felder_aus_eingaben(punkte, "carbon_tax_level")
+        felder = verlaeufe.stuetzpunkte_aendern(vorher, verlaeufe.weg_id("carbon_tax_level", 0))
+        _, neue = _eingaben(html.Div(verlaeufe.zeilen("carbon_tax_level", felder, False)))
+
+        danach = verlaeufe.eingaben_anwenden(draft, starts, neue)
+
+        assert len(felder) == len(vorher) - 1
+        assert len(danach["abweichungen"]["carbon_tax_level"]["rules"]) == len(vorher) - 1
+
+    def test_the_rows_renumber_after_removal(self):
+        felder = [
+            {"tick": 1, "art": "set", "wert": 1.0, "dauer": None},
+            {"tick": 2, "art": "set", "wert": 2.0, "dauer": None},
+            {"tick": 3, "art": "set", "wert": 3.0, "dauer": None},
+        ]
+        rest = verlaeufe.stuetzpunkte_aendern(felder, verlaeufe.weg_id("x", 1))
+        _, neue = _eingaben(html.Div(verlaeufe.zeilen("x", rest, False)))
+
+        assert [f["tick"] for f in verlaeufe.felder_aus_eingaben(neue, "x")] == [1, 3]
+        assert sorted({e["id"]["index"] for e in neue}) == [0, 1]
+
+    @pytest.mark.parametrize("anzahl", [0, 2])
+    def test_the_rows_carry_a_counter_even_when_empty(self, anzahl):
+        """Nach dem Entfernen der letzten Zeile muss `_sync` trotzdem feuern.
+
+        Der Zähler ist ein Eingang von `_sync` und wird mit den Zeilen neu
+        eingefügt — auch wenn es keine Felder mehr gibt, die das auslösen könnten.
+        """
+
+        felder = [{"tick": 1, "art": "set", "wert": 1.0, "dauer": None}] * anzahl
+        zaehler = _knoepfe(html.Div(verlaeufe.zeilen("x", felder, False)), verlaeufe.STAND)
+
+        assert len(zaehler) == 1
+        assert zaehler[0].data == anzahl
+
+    def test_both_actions_are_locked_without_the_switch(self, draft):
+        draft["apply_custom_overrides"] = False
+        baum = verlaeufe.editor(draft, "carbon_tax_level")
+
+        knoepfe = _knoepfe(baum, verlaeufe.NEU) + _knoepfe(baum, verlaeufe.WEG)
+
+        assert knoepfe and all(k.disabled for k in knoepfe)
+
+
 class TestDerSchrittSchreibtNichts:
     def test_no_configuration_field(self, draft):
         """Eine Auswahl, die nichts im Entwurf trägt, ist kein Feld (Regel 2)."""

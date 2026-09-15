@@ -345,8 +345,13 @@ fehlt, rechnet nicht mit, bis er vollständig ist.
 
 Die Felder wirken nur mit **Eigene Werte anwenden** — der Schalter steht hinter
 der «Feinabstimmung» des ersten Schritts. Ist er aus, sind sie gesperrt und
-sagen, warum. Neue Stützpunkte anlegen und vorhandene entfernen lässt sich hier
-noch nicht.
+sagen, warum.
+
+**Stützpunkt hinzufügen** legt unter den vorhandenen eine leere Zeile an. Sie
+rechnet erst mit, wenn Tick, Art und Wert eingetragen sind — beim Hochfahren
+auch die Dauer. **Entfernen** an einer Zeile nimmt diesen Stützpunkt heraus;
+war er einer des Szenarios, gilt der Lauf danach als abgeleitet. Was Sie in
+den übrigen Zeilen eingetippt haben, bleibt dabei stehen.
 
 ### Lauf & Ablage
 
