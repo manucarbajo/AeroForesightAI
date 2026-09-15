@@ -154,7 +154,24 @@ def figur(draft: dict, groesse: str, *, mode: str | None = theme.LIGHT) -> go.Fi
         xaxis_title="Tick",
         yaxis_title=_einheit(groesse),
     )
+    werte = szenario + eigen
+    if min(werte) == max(werte):
+        fig.update_yaxes(range=_spanne_um(werte[0]))
     return fig
+
+
+def _spanne_um(wert: float) -> list[float]:
+    """Die Achse um einen konstanten Wert — **so, dass er abzulesen ist**.
+
+    Plotly legt eine flache Reihe auf die Spanne ±1 um ihren Wert. Am 2026-09-15
+    im Browser gesehen: Das Nachfragewachstum von 0,0025 je Tick stand dort auf
+    der Linie «0», zwischen −1 und 1 — die Kurve sagte «kein Wachstum». Die Hälfte
+    des Betrags nach beiden Seiten hält den Wert in der Mitte und seine
+    Größenordnung auf den Achsenmarken; nur die Null bekommt ±1.
+    """
+
+    breite = abs(wert) * 0.5 or 1.0
+    return [wert - breite, wert + breite]
 
 
 def detail(draft: dict, groesse: str, *, mode: str | None = theme.LIGHT) -> html.Div:

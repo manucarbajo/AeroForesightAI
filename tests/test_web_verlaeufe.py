@@ -118,6 +118,29 @@ class TestDieKurveIstDerWertDesLaufs:
         assert fig.data[0].line.dash == "dash"
         assert fig.data[-1].y[0] == 77.0
 
+    def test_a_flat_small_value_is_readable(self, draft):
+        """0,0025 je Tick stand im Browser auf der Linie «0» einer Achse von −1 bis 1."""
+
+        fig = verlaeufe.figur(draft, "demand_growth_rate")
+        wert = fig.data[-1].y[0]
+        unten, oben = fig.layout.yaxis.range
+
+        assert wert != 0, "Gegen Blindheit: ohne Wert ungleich null prüfte das nichts"
+        assert unten < wert < oben
+        assert oben - unten <= abs(wert) * 2, "Die Achse ist breiter als der Wert selbst"
+
+    def test_a_curve_that_moves_keeps_its_own_range(self, draft):
+        draft["abweichungen"] = {
+            "carbon_tax_level": {
+                "property_id": "carbon_tax_level",
+                "baseline": 50.0,
+                "rules": [{"active_from_tick": 10, "effect": {"type": "set", "value": 120.0}}],
+            }
+        }
+        draft["apply_custom_overrides"] = True
+
+        assert verlaeufe.figur(draft, "carbon_tax_level").layout.yaxis.range is None
+
     def test_colours_come_from_the_palette(self, draft):
         for mode in theme.MODES:
             linie = verlaeufe.figur(draft, "carbon_tax_level", mode=mode).data[-1].line.color
