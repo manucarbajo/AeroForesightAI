@@ -1152,6 +1152,16 @@ class TestJederSchrittPasstAufEinenSchirm:
             "Steht der Zähler noch in `.af-wizard__counter`?"
         )
 
+        # **Und umgekehrt: ein gemessener Schritt ohne Deckel** (2026-09-15). Bis
+        # dahin prüfte der Wächter nur Deckel ohne Messung. Als «Verläufe»
+        # dazukam, stand er bei 1440 px mit sieben gemessenen und sechs
+        # gedeckelten Schritten grün — ein neuer Schritt wäre nie gehalten worden.
+        ohne_deckel = sorted(set(gemessen) - set(deckel))
+        assert not ohne_deckel, (
+            f"Bei {breite} px gemessen, aber ohne Deckel: {ohne_deckel}. "
+            "Ein neuer Schritt bekommt seine gemessene Höhe in `DECKEL`."
+        )
+
         gewachsen = [
             f"  {name}: {wert:.2f} Schirme, Deckel {deckel[name]:.2f}"
             for name, wert in sorted(gemessen.items())
