@@ -139,6 +139,7 @@ NUR_MIT_SPRACHMODELL = {"model", "base_url", "temperature", "max_tokens"}
 NICHT_GEMESSEN = {
     "property_edits": "verschachtelt; wirkt über `apply_custom_overrides` mit",
     "abweichungen": "verschachtelt; gemessen in TestAbweichungenLiegenAufDemSzenario",
+    "modellannahmen": "verschachtelt; gemessen in TestModellannahmenLiegenAufDemSzenario",
     # **Bis zum 2026-09-14 stand bei den drei folgenden «wirkt über
     # `apply_custom_overrides` mit» — und das stimmte nicht** (P7.13-U13.5): Aus dem
     # Entwurf erreichen sie keinen Lauf, nur gespeichert. Gemessen in
@@ -1030,5 +1031,41 @@ class TestAbweichungenLiegenAufDemSzenario:
         ohne = str(abdruck_von(_entwurf(SWEEP)))
         draft = _entwurf(SWEEP)
         draft.abweichungen = dict(self.ABWEICHUNG)
+
+        assert str(abdruck_von(draft)) == ohne
+
+
+class TestModellannahmenLiegenAufDemSzenario:
+    """Preisbildung, Sättigung, Bevölkerung je Lauf (P7.13-U13.5) — über den Startpfad.
+
+    Gemessen am **Wert in der Marktregel**, weil die Engine dort liest; ein Abdruck,
+    der sich nur durch das Etikett «abgeleitet» ändert, bestünde auch dann.
+    """
+
+    ANNAHMEN = {"market_feedback": {"target_booking_rate": 0.45}}
+
+    def _zielrate(self, abdruck) -> float:
+        import json
+
+        zustand = json.loads(abdruck.zustand.split(" ", 1)[1])
+        regel = next(
+            r
+            for r in zustand["properties"]["market_rules"]
+            if r["effect"].get("type") == "booking_yield_feedback"
+        )
+        return float(regel["effect"]["target_booking_rate"])
+
+    def test_it_reaches_the_run(self, abdruck_von):
+        draft = _entwurf(EINZELLAUF)
+        draft.scenario_mode = "sweep"
+        draft.sweep_id = "business_as_usual"
+        draft.modellannahmen = dict(self.ANNAHMEN)
+
+        assert self._zielrate(abdruck_von(draft)) == 0.45
+
+    def test_the_comparison_ignores_it(self, abdruck_von):
+        ohne = str(abdruck_von(_entwurf(SWEEP)))
+        draft = _entwurf(SWEEP)
+        draft.modellannahmen = dict(self.ANNAHMEN)
 
         assert str(abdruck_von(draft)) == ohne

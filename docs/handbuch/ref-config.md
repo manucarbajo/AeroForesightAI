@@ -53,6 +53,16 @@ das Feld, gilt die ausgelieferte Konfiguration; ein unbekannter Name wird beim
 Laden abgewiesen. Es hat bewusst keinen Tick-Verlauf: Ein Anbieter wechselt nicht
 mitten im Lauf seine Preislogik.
 
+Seit dem 15. September 2026 kann eine solche Datei außerdem **Modellannahmen**
+abweichend setzen (`modellannahmen`): unter `market_feedback` Werte der
+Preisbildung (etwa `target_booking_rate`; die Strategie steht in
+`preisstrategie`), unter `saturation` die Sättigung und unter `population` je
+Segment-Kennung dessen Felder (etwa `prevalence`). Es stehen nur die Werte darin,
+die von der Auslieferung abweichen; fehlt das Feld, gilt die Auslieferung. Ein
+unbekannter Abschnitt, Wert oder ein unbekanntes Segment wird abgewiesen.
+Ausgelieferte Rahmenszenarien setzen keine Modellannahmen; ein mit «Als Szenario
+sichern» abgelegtes Szenario trägt die des Laufs mit.
+
 ## Was wo drinsteht
 
 `properties.json` ist die umfangreichste Datei und trägt mehrere Abschnitte.

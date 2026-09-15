@@ -47,6 +47,9 @@ class MilestoneCheck(BaseModel):
 #: Usual» — einem Kunden wurde damit ein Belastungstest als Zukunft angeboten.
 ARTEN = ("rahmen", "stresstest")
 
+#: Welche Modellannahmen ein Szenario oder ein Lauf abweichend setzen darf (P7.13-U13.5).
+MODELLANNAHMEN_ABSCHNITTE = ("market_feedback", "saturation", "population")
+
 
 class Kohaerenz(BaseModel):
     """Warum die Verläufe eines Rahmenszenarios zusammen eine Welt ergeben.
@@ -139,7 +142,27 @@ class SweepConfig(BaseModel):
     #: nichts sagt, ändert nichts. Ein unbekannter Name scheitert laut — beim
     #: Laden der Datei, über `MarketFeedbackConfig`.
     preisstrategie: str | None = None
+    #: **Modellannahmen, die von der Auslieferung abweichen** (P7.13-U13.5): je
+    #: Abschnitt nur die Werte, die anders sind — `market_feedback` (Preisbildung
+    #: ohne die Strategie, die `preisstrategie` trägt), `saturation` und
+    #: `population` (je Segment-Kennung die Felder). Leer heißt «wie ausgeliefert».
+    #: Angewendet in `scenario_sweeps.apply_sweep_overrides`; ein unbekannter
+    #: Abschnitt, Wert oder ein unbekanntes Segment scheitert laut, weil eine
+    #: Annahme, die nicht ankommt, im Artefakt trotzdem «abgeleitet» hieße.
+    modellannahmen: dict[str, Any] = Field(default_factory=dict)
     base_price: float | None = None  # P2.3: override price_model.base_price
+
+    @field_validator("modellannahmen")
+    @classmethod
+    def _bekannte_abschnitte(cls, wert: dict[str, Any]) -> dict[str, Any]:
+        unbekannt = sorted(set(wert) - set(MODELLANNAHMEN_ABSCHNITTE))
+        if unbekannt:
+            raise ValueError(
+                f"Unbekannte Abschnitte der Modellannahmen: {unbekannt}; "
+                f"erlaubt sind {MODELLANNAHMEN_ABSCHNITTE}"
+            )
+        return wert
+
     property_overrides: list[PropertyOverride] = Field(default_factory=list)
     factor_overrides: list[FactorOverride] = Field(default_factory=list)
     milestones: list[MilestoneCheck] = Field(default_factory=list)

@@ -593,6 +593,7 @@ def eingaben_anwenden(
     bereinigt = abweichungen_bereinigen(draft_from_dict(neu))
     neu["abweichungen"] = {k: asdict(v) for k, v in bereinigt.abweichungen.items()}
     neu["preisstrategie"] = bereinigt.preisstrategie
+    neu["modellannahmen"] = bereinigt.modellannahmen
     return neu
 
 

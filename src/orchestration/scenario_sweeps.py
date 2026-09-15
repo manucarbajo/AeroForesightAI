@@ -149,6 +149,12 @@ UNBEACHTET: tuple[Festlegung, ...] = (
         "Jedes Szenario rechnet im Vergleich mit seiner eigenen Preisstrategie.",
     ),
     Festlegung(
+        "modellannahmen",
+        None,
+        "Eigene Modellannahmen gelten im Vergleich nicht: Er rechnet jedes Rahmenszenario "
+        "mit den ausgelieferten Werten für Preisbildung, Sättigung und Bevölkerung.",
+    ),
+    Festlegung(
         "apply_custom_overrides",
         None,
         "Jedes Szenario gilt unvermischt aus seiner eigenen Datei. Eigene "
@@ -449,10 +455,79 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
     if sweep.preisstrategie is not None:
         _preisstrategie_setzen(state, sweep.preisstrategie)
 
+    if sweep.modellannahmen:
+        _modellannahmen_setzen(state, sweep.modellannahmen)
+
     if sweep.base_price is not None:
         state.properties.price_model.base_price = sweep.base_price
 
     return state
+
+
+def _modellannahmen_setzen(state: Any, annahmen: dict[str, Any]) -> None:
+    """Preisbildung, Sättigung und Segmente dieser Welt in den Zustand (P7.13-U13.5).
+
+    **Die Preisbildung steht an zwei Stellen, und beide werden gesetzt.** Die
+    Engine liest sie aus der `booking_yield_feedback`-Regel und fällt erst ohne
+    Regel auf `market_feedback` zurück (`resolve_market_feedback_config`). Nur
+    `market_feedback` zu setzen hätte eine Ziel-Auslastung von 0,45 still bei 0,37
+    rechnen lassen — mit «abgeleitet» im Artefakt. `save_market_feedback_to_file`
+    schreibt aus demselben Grund beide.
+
+    **Jeder Wert läuft durch sein Modell** (`MarketFeedbackConfig`,
+    `SaturationConfig`, `IndividualProperty`): Ein ungültiger scheitert dort, nicht
+    an einer zweiten Prüfung hier. Ein unbekannter Wert oder ein unbekanntes
+    Segment scheitert laut.
+    """
+
+    from src.models.property_models import (
+        IndividualProperty,
+        MarketFeedbackConfig,
+        SaturationConfig,
+    )
+
+    props = state.properties
+
+    preis = dict(annahmen.get("market_feedback") or {})
+    if preis:
+        erlaubt = set(MarketFeedbackConfig.model_fields) - {"strategie", "enabled"}
+        unbekannt = sorted(set(preis) - erlaubt)
+        if unbekannt:
+            raise ValueError(f"Unbekannte Werte der Preisbildung: {unbekannt}")
+        neu = MarketFeedbackConfig.model_validate({**props.market_feedback.model_dump(), **preis})
+        regeln = []
+        for regel in props.market_rules:
+            if regel.effect.get("type") == BOOKING_YIELD_FEEDBACK:
+                effekt = {**regel.effect, **{k: getattr(neu, k) for k in preis}}
+                regel = regel.model_copy(update={"effect": effekt})
+            regeln.append(regel)
+        props = props.model_copy(update={"market_feedback": neu, "market_rules": regeln})
+
+    saettigung = dict(annahmen.get("saturation") or {})
+    if saettigung:
+        unbekannt = sorted(set(saettigung) - set(SaturationConfig.model_fields))
+        if unbekannt:
+            raise ValueError(f"Unbekannte Werte der Sättigung: {unbekannt}")
+        neu_s = SaturationConfig.model_validate({**props.saturation.model_dump(), **saettigung})
+        props = props.model_copy(update={"saturation": neu_s})
+
+    segmente = dict(annahmen.get("population") or {})
+    if segmente:
+        vorhanden = {p.id: p for p in props.individual_properties}
+        unbekannt = sorted(set(segmente) - set(vorhanden))
+        if unbekannt:
+            raise ValueError(f"Unbekannte Segmente der Bevölkerung: {unbekannt}")
+        erlaubt = set(IndividualProperty.model_fields) - {"id", "type"}
+        neue = []
+        for prop in props.individual_properties:
+            werte = dict(segmente.get(prop.id) or {})
+            falsch = sorted(set(werte) - erlaubt)
+            if falsch:
+                raise ValueError(f"Unbekannte Werte am Segment {prop.id!r}: {falsch}")
+            neue.append(IndividualProperty.model_validate({**prop.model_dump(), **werte}))
+        props = props.model_copy(update={"individual_properties": neue})
+
+    state.properties = props
 
 
 def _preisstrategie_setzen(state: Any, strategie: str) -> None:

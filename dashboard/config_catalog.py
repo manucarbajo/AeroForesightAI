@@ -256,6 +256,13 @@ class ConfigDraft:
     abweichungen: dict[str, PropertyEditState] = field(default_factory=dict)
     #: Die Preisstrategie, wenn sie vom Szenario abweicht; `None` heißt «wie das Szenario».
     preisstrategie: str | None = None
+    #: **Modellannahmen dieses Laufs** (P7.13-U13.5): Preisbildung, Sättigung und
+    #: Segmente, je Abschnitt nur, was vom gewählten Szenario abweicht — Format wie
+    #: `SweepConfig.modellannahmen`. **Nicht** `market_feedback_edit` und die übrigen
+    #: vollen Kopien: Die gehören dem Bereich «Modell» und wirken nur gespeichert.
+    #: Anders als `abweichungen` überleben sie einen Szenariowechsel — sie sind
+    #: Annahmen über das Modell, nicht über den Verlauf einer Welt.
+    modellannahmen: dict[str, Any] = field(default_factory=dict)
     # `factor_states` ist mit P2.0-C entfallen. Die Faktorlage war eine
     # **Eingabe** des Entwurfs und wurde als `factor_overrides` in den Lauf
     # gereicht; heute entsteht sie im Lauf aus den exogenen Systemgrößen.
@@ -635,7 +642,53 @@ def von_rahmen_veraendert() -> set[str]:
 
 
 def _ohne_abweichungen(draft: ConfigDraft) -> ConfigDraft:
-    return replace(draft, abweichungen={}, preisstrategie=None)
+    return replace(draft, abweichungen={}, preisstrategie=None, modellannahmen={})
+
+
+def _annahmen_namen(annahmen: dict[str, Any]) -> list[str]:
+    """Wie eine Modellannahme im Artefakt heißt: `abschnitt.wert`, bei Segmenten mit Kennung."""
+
+    namen = []
+    for abschnitt, werte in (annahmen or {}).items():
+        if abschnitt == "population":
+            for segment, felder in (werte or {}).items():
+                namen += [f"population.{segment}.{feld}" for feld in felder or {}]
+        else:
+            namen += [f"{abschnitt}.{feld}" for feld in werte or {}]
+    return sorted(namen)
+
+
+def _annahmen_bereinigen(annahmen: dict[str, Any], basis: Any) -> dict[str, Any]:
+    """Was den Werten des Szenarios gleicht, ist keine Modellannahme (P7.13-U13.5)."""
+
+    from src.market.market_feedback import resolve_market_feedback_config
+
+    vorlage = {
+        "market_feedback": resolve_market_feedback_config(basis),
+        "saturation": basis.saturation,
+    }
+    segmente = {p.id: p for p in basis.individual_properties}
+    ergebnis: dict[str, Any] = {}
+    for abschnitt, werte in (annahmen or {}).items():
+        if abschnitt == "population":
+            behalten = {}
+            for segment, felder in (werte or {}).items():
+                ist = segmente.get(segment)
+                rest = {
+                    k: v
+                    for k, v in (felder or {}).items()
+                    if ist is None or getattr(ist, k, None) != v
+                }
+                if rest:
+                    behalten[segment] = rest
+        else:
+            ist = vorlage.get(abschnitt)
+            behalten = {
+                k: v for k, v in (werte or {}).items() if ist is None or getattr(ist, k, None) != v
+            }
+        if behalten:
+            ergebnis[abschnitt] = behalten
+    return ergebnis
 
 
 def szenario_verlauf(draft: ConfigDraft, groesse: str) -> PropertyEditState:
@@ -743,7 +796,8 @@ def abweichungen_bereinigen(draft: ConfigDraft) -> ConfigDraft:
     strategie = draft.preisstrategie
     if strategie is not None and strategie == szenario_preisstrategie(draft):
         strategie = None
-    return replace(draft, abweichungen=behalten, preisstrategie=strategie)
+    annahmen = _annahmen_bereinigen(draft.modellannahmen, basis) if draft.modellannahmen else {}
+    return replace(draft, abweichungen=behalten, preisstrategie=strategie, modellannahmen=annahmen)
 
 
 def abweichungen_als_sweep(draft: ConfigDraft, state: Any) -> SweepConfig:
@@ -764,6 +818,7 @@ def abweichungen_als_sweep(draft: ConfigDraft, state: Any) -> SweepConfig:
         description="Abweichungen aus dem Assistenten",
         max_ticks=int(draft.rounds),
         preisstrategie=draft.preisstrategie,
+        modellannahmen=dict(draft.modellannahmen or {}),
         property_overrides=property_overrides_from_edits(draft.abweichungen),
     )
 
@@ -921,7 +976,7 @@ def prepare_simulation_state(draft: ConfigDraft):
     # Rahmenszenario. Ohne Abweichung bleibt ein Szenario unvermischt. Der Rahmen
     # sagt es: Ein geändertes Szenario steht nicht als unverändertes im Artefakt.
     if (draft.apply_custom_overrides or draft.scenario_mode == "custom") and (
-        draft.abweichungen or draft.preisstrategie
+        draft.abweichungen or draft.preisstrategie or draft.modellannahmen
     ):
         state = apply_sweep_overrides(state, abweichungen_als_sweep(draft, state))
         basis = state.rahmen
@@ -930,7 +985,11 @@ def prepare_simulation_state(draft: ConfigDraft):
             name=basis.name if basis else "Standard-Ausgangslage",
             quelle="abgeleitet",
             abweichungen=sorted(draft.abweichungen)
-            + (["preisstrategie"] if draft.preisstrategie else []),
+            + (["preisstrategie"] if draft.preisstrategie else [])
+            # **Und die Modellannahmen mit Namen** (P7.13-U13.5): `abschnitt.wert`,
+            # bei Segmenten mit Kennung — ein Lauf mit anderer Ziel-Auslastung steht
+            # sonst ununterscheidbar neben einem mit anderer CO₂-Abgabe.
+            + _annahmen_namen(draft.modellannahmen),
         )
 
     state.clock.max_ticks = int(draft.rounds)
@@ -1134,10 +1193,18 @@ def szenario_zum_sichern(draft: ConfigDraft, filename: str) -> SweepConfig:
         verlaeufe = {o.property_id: o for o in property_overrides_from_edits(edits)}
         strategie = None
         beschreibung = grundlage.description
+    annahmen = {k: dict(v) for k, v in (grundlage.modellannahmen or {}).items()}
     if eigene:
         for override in property_overrides_from_edits(draft.abweichungen):
             verlaeufe[override.property_id] = override
         strategie = draft.preisstrategie or strategie
+        for abschnitt, werte in (draft.modellannahmen or {}).items():
+            if abschnitt == "population":
+                ziel = annahmen.setdefault("population", {})
+                for segment, felder in werte.items():
+                    ziel[segment] = {**ziel.get(segment, {}), **felder}
+            else:
+                annahmen[abschnitt] = {**annahmen.get(abschnitt, {}), **werte}
     return grundlage.model_copy(
         update={
             "id": filename,
@@ -1148,6 +1215,7 @@ def szenario_zum_sichern(draft: ConfigDraft, filename: str) -> SweepConfig:
             "kohaerenz": None,
             "herkunft": "eigen",
             "preisstrategie": strategie,
+            "modellannahmen": annahmen,
             "property_overrides": list(verlaeufe.values()),
             "milestones": [],
         }
