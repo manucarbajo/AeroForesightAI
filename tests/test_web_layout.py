@@ -380,22 +380,25 @@ def test_the_setup_area_builds_with_the_default_draft():
 
 
 def test_launch_summary_describes_the_draft():
+    """Seit P7.5-U5.1 in den Stand-Zeilen — die Zeile unter dem Start-Knopf ist entfallen."""
+
     draft = initial_draft_dict()
     draft["rounds"] = 12
     draft["run_count"] = 3
 
-    assert "12 Ticks · 1 Jahr" in launch_page._summary(draft)
-    assert "3 Läufe" in launch_page._summary(draft)
+    zeilen = str(launch_page.summary_rows(draft))
+    assert "12 Ticks · 1 Jahr" in zeilen
+    assert "3×" in zeilen
 
-    # Beim Vergleich beschreibt die Zeile **nicht** mehr den Entwurf, sondern
+    # Beim Vergleich beschreiben die Zeilen **nicht** mehr den Entwurf, sondern
     # den Vergleich (P1.9-W1.3): Er nimmt vom Entwurf nichts entgegen, also darf
     # dort auch keine Länge und kein Szenario aus dem Entwurf stehen.
     draft["run_all_sweeps"] = True
-    zeile = launch_page._summary(draft)
-    assert "Szenario-Vergleich" in zeile
-    assert "je eigene Länge" in zeile
-    assert "12 Ticks" not in zeile, (
-        "Die Zeile nennt wieder die Länge aus dem Entwurf — die verwendet der "
+    zeilen = str(launch_page.summary_rows(draft))
+    assert "Vergleich" in zeilen
+    assert "je Szenario" in zeilen
+    assert "12 Ticks" not in zeilen, (
+        "Die Zeilen nennen wieder die Länge aus dem Entwurf — die verwendet der "
         "Vergleich seit W1.2 nicht."
     )
 

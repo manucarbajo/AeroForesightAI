@@ -643,14 +643,34 @@ body {
 /* Eine Stand-Zeile ist ein Verweis, kein Eingabefeld — geaendert wird im
    Bereich «Einrichten». Zwei Felder mit derselben ID im DOM sind fuer Dash ein
    Laufzeitfehler, und beide Zonen liegen gleichzeitig darin. */
+/* **Beschriftung über dem Wert** (P7.5-U5.1, von Haiko entschieden am
+   2026-09-15). Daneben, in einer festen Spalte von 6,5 rem, blieben dem Wert bei
+   1280 px 59 px — «Standard-Ausgangslage» stand als «Stand…» da. Der Wert bricht
+   jetzt um, statt abgeschnitten zu werden. */
 .af-rail-row {
     display: grid;
-    grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
     align-items: center;
-    gap: 0.5rem;
+    column-gap: 0.5rem;
     padding: 0.5rem 0.75rem;
     background: var(--surface);
     transition: background-color 0.15s ease;
+}
+
+.af-rail-row__label {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.af-rail-row__value {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.af-rail-row__chevron {
+    grid-column: 2;
+    grid-row: 1 / span 2;
 }
 
 .af-rail-row + .af-rail-row {
@@ -672,9 +692,7 @@ body {
     font-size: var(--schrift-beschriftung);
     font-weight: 500;
     color: var(--text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
 }
 
 .af-rail-row__chevron {

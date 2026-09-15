@@ -899,10 +899,35 @@ def _horizont_hinweis(draft: dict) -> list:
     ]
 
 
-#: Was im Bedienfeld von den sechs Kacheln übrig bleibt. Die drei, die vor dem
-#: Start wirklich zählen; der Rest steht im Bereich «Einrichten», wo er
-#: eingestellt wird.
-_COMPACT_TILES = 3
+# `_COMPACT_TILES` ist mit P7.5-U5.1 entfallen: Das Bedienfeld trägt keine
+# Kacheln mehr.
+
+
+def _hinweis_zaehler(draft: dict, errors: list[str]) -> object:
+    """Die Hinweise des Bedienfelds als Zahl, mit dem Ort, an dem sie stehen (P7.5-U5.1).
+
+    **Ein Befund, der den Start verhindert, bleibt ein Fehler** — gezählt, aber im
+    Ton «fehler», damit er neben dem Start-Knopf nicht wie ein Ratschlag aussieht.
+    Der Ort kommt aus der Schrittfolge (`schritttitel`), nicht als Literal.
+    """
+
+    hinweise = _warnings(draft, errors)
+    if not hinweise:
+        return None
+    ort = f"im Bereich «Einrichten», Schritt «{schritttitel('start')}»"
+    if errors:
+        anzahl = len(errors)
+        befunde = "ein Befund" if anzahl == 1 else f"{anzahl} Befunde"
+        return html.Div(
+            ui.hinweis(f"**Der Lauf kann so nicht starten** — {befunde}, {ort}.", "fehler"),
+            className="mt-4",
+        )
+    anzahl = len(hinweise)
+    wort = "ein Hinweis" if anzahl == 1 else f"{anzahl} Hinweise"
+    return html.Div(
+        ui.hinweis(f"Vor dem Start: {wort}, {ort}.", "info"),
+        className="mt-4",
+    )
 
 
 def preflight(
@@ -919,25 +944,30 @@ def preflight(
     weil derselbe Satz an mehreren Stellen stehen darf — dieselbe ID zweimal
     wäre dagegen ein Laufzeitfehler im Browser.
 
-    *compact* ist die Fassung für das Bedienfeld: drei Kacheln statt sechs,
-    einspaltig. Seit P1.6 steht der Preflight dort, direkt über dem Knopf, den
-    er absichert.
+    *compact* ist die Fassung für das Bedienfeld. Seit P1.6 steht der Preflight
+    dort, direkt über dem Knopf, den er absichert. **Seit P7.5-U5.1 ist sie ein
+    Satz und ein Zähler** (von Haiko entschieden am 2026-09-15): keine Kacheln,
+    keine Dauer, und die Hinweise nur gezählt — ausführlich stehen sie in
+    «Prüfen & Starten». Gemessen vorher bei 1280 × 800: 2,13 Bildschirme.
     """
 
-    tiles = _tiles(draft)
     if compact:
+        # **Ohne Karte und in Beschriftungsgröße** (P7.5-U5.1): In der 261 px breiten
+        # Spalte brach der Satz in Fließtextgröße auf rund neun Zeilen um, und die
+        # Stand-Zeilen darüber tragen dieselben Werte schon — gemessen stand das
+        # Bedienfeld damit noch bei 1,08 Bildschirmen.
         return html.Div(
             [
-                ui.card(html.Div(ui.markdown(summary_sentence(draft)), id=summary_id(slot))),
-                html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),
-                html.Div(vorgaben_hinweis(draft), className="mt-4"),
-                html.Div(dauer.hinweis(draft), className="mt-4"),
                 html.Div(
-                    ui.grid(*tiles[:_COMPACT_TILES], cols="grid-cols-1", gap="gap-2"),
-                    className="mt-4",
+                    ui.markdown(summary_sentence(draft), class_name="af-md--tight af-md--caption"),
+                    id=summary_id(slot),
                 ),
+                _hinweis_zaehler(draft, errors),
+                html.Div(vorgaben_hinweis(draft), className="mt-4"),
             ]
         )
+
+    tiles = _tiles(draft)
 
     # **Die feste Reihenfolge des Prüfschritts** (P7.4-U4.4): was läuft und wie
     # lange, die Werte, was abweicht, was zu beachten ist, zuletzt die Details.

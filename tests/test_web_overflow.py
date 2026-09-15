@@ -549,6 +549,8 @@ class _Messgang:
                 "achsentitel": seite.evaluate(_ACHSENTITEL),
                 "wirt": seite.evaluate(_WIRT),
                 "eingaben_im_modell": seite.locator("#model-editor-host input").count(),
+                # Nur im Leitstand: Er ist der einzige Bereich mit Bedienfeld (P7.5-U5.1).
+                "bedienfeld": seite.evaluate(_BEDIENFELD) if name == "Leitstand" else None,
                 "fremd": list(fremd),
                 # Als Letztes: `_EINZUG` öffnet alle Klappen. Gemessen nur auf der
                 # Musterseite — die übrigen Bereiche hält Teil 7b über die
@@ -3707,6 +3709,73 @@ def test_the_confirmation_is_a_modal_dialog(page):
 
 #: Wie viel der Fensterbreite ein Fokusbereich mindestens nutzt.
 FLAECHE_MIN = 0.9
+
+
+#: Das Bedienfeld: wie viele Bildschirme seine Zone hoch ist und welcher Text darin
+#: abgeschnitten steht. **Gesucht wird jedes Element mit `text-overflow: ellipsis`**,
+#: nicht die drei Stand-Zeilen — ein Wert, der künftig woanders gekürzt wird, fällt
+#: sonst nicht auf. Die Zone ist der nächste scrollende Vorfahr; findet sich keiner,
+#: sagt die Messung das, statt 1,00 zu melden.
+_BEDIENFELD = """
+() => {
+    const rail = document.querySelector('.af-rail');
+    if (!rail || rail.offsetParent === null) return null;
+    let zone = rail.parentElement;
+    while (zone && zone !== document.body) {
+        const stil = getComputedStyle(zone);
+        if (stil.overflowY === 'auto' || stil.overflowY === 'scroll') break;
+        zone = zone.parentElement;
+    }
+    if (!zone || zone === document.body) return {fehlt: 'keine scrollende Zone'};
+    const gekuerzt = [...rail.querySelectorAll('*')]
+        .filter(e => e.offsetParent !== null)
+        .filter(e => getComputedStyle(e).textOverflow === 'ellipsis')
+        .filter(e => e.scrollWidth > e.clientWidth + 1)
+        .map(e => e.textContent.trim().slice(0, 60));
+    return {
+        schirme: Math.round((zone.scrollHeight / zone.clientHeight) * 100) / 100,
+        breite: Math.round(rail.getBoundingClientRect().width),
+        gekuerzt: gekuerzt,
+    };
+}
+"""
+
+#: **Das Bedienfeld passt auf einen Schirm** (P7.5-U5.1, von Haiko entschieden am
+#: 2026-09-15). Gemessen vorher bei 1280 × 800: 2,13 — der Preflight trug
+#: Hinweise, Dauer und drei Kacheln. Eine Sperrklinke wie `DECKEL`: rot, wenn es
+#: wächst, und rot, wenn es um mehr als `SCHLUPF` schrumpft.
+BEDIENFELD_DECKEL = {1280: 1.00, 1024: 1.00}
+
+
+@pytest.mark.hoehe
+class TestDasBedienfeldPasstAufEinenSchirm:
+    @JE_BREITE
+    def test_the_rail_fits_one_screen(self, messung, breite):
+        feld = messung.bereich(breite, "Leitstand")["bedienfeld"]
+
+        assert feld and "fehlt" not in feld, f"Bedienfeld nicht gemessen: {feld}"
+        deckel = BEDIENFELD_DECKEL[breite]
+        assert feld["schirme"] <= deckel + TOLERANZ, (
+            f"Das Bedienfeld ist bei {breite} px {feld['schirme']:.2f} Bildschirme hoch "
+            f"(Deckel {deckel:.2f}). Vor P7.5-U5.1 waren es 2,13."
+        )
+        assert feld["schirme"] >= deckel - SCHLUPF, (
+            f"Das Bedienfeld ist geschrumpft ({feld['schirme']:.2f} statt {deckel:.2f}) — "
+            "den Gewinn in BEDIENFELD_DECKEL eintragen."
+        )
+
+
+@pytest.mark.breite
+class TestImBedienfeldIstNichtsAbgeschnitten:
+    @JE_BREITE
+    def test_no_value_in_the_rail_is_cut_off(self, messung, breite):
+        feld = messung.bereich(breite, "Leitstand")["bedienfeld"]
+
+        assert feld and "fehlt" not in feld, f"Bedienfeld nicht gemessen: {feld}"
+        assert not feld["gekuerzt"], (
+            f"Bei {breite} px ({feld['breite']} px Spalte) abgeschnitten: {feld['gekuerzt']}. "
+            "Vor P7.5-U5.1 standen alle drei Stand-Werte auf 59 px."
+        )
 
 
 @pytest.mark.breite

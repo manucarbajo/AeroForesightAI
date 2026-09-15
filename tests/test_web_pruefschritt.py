@@ -132,15 +132,29 @@ class TestModellinternaStehenHinterTechnischenDetails:
             assert not _enthaelt(offen, wort), wort
 
 
-class TestDasBedienfeldZeigtDieDreiWerte:
-    def test_length_repetitions_and_seed(self):
-        """So stand es seit Langem in «Die erste Simulation» — gezeigt wurde die Ziel-Auslastung."""
+class TestDasBedienfeldTraegtKeineKacheln:
+    def test_the_compact_preflight_is_a_sentence_not_tiles(self):
+        """Seit P7.5-U5.1 keine Kacheln mehr im Bedienfeld (von Haiko entschieden).
+
+        Bis dahin standen hier Länge, Wiederholungen und Zufallsstartwert als Kacheln
+        — «Länge» wiederholte die Stand-Zeile darüber, und das Bedienfeld war bei
+        1280 px 2,13 Bildschirme hoch. Die Werte stehen in «Prüfen & Starten».
+        """
 
         schmal = _texte(start_flow.preflight(initial_draft_dict(), [], slot="rail", compact=True))
 
-        for wort in ("Länge", "Wiederholungen", "Zufallsstartwert"):
-            assert _enthaelt(schmal, wort), wort
-        assert not _enthaelt(schmal, "Ziel-Auslastung")
+        for wort in ("Wiederholungen", "Zufallsstartwert", "Ziel-Auslastung"):
+            assert not _enthaelt(schmal, wort), wort
+        # `ui.kachel` rendert `af-tile__value` (Varianten «zahl», «text») oder
+        # `af-kpi` («kompakt») — gesucht wird beides.
+        assert not [
+            k
+            for k in _walk(start_flow.preflight(initial_draft_dict(), [], slot="rail", compact=True))
+            if any(
+                klasse in str(getattr(k, "className", "") or "")
+                for klasse in ("af-tile__value", "af-kpi")
+            )
+        ]
 
 
 class TestEinHinweisFuehrtZumSchritt:

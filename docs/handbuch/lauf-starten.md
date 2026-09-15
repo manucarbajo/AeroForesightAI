@@ -1,8 +1,11 @@
-Gestartet wird im **Bedienfeld links**. Es zeigt oben in drei Zeilen, was
-eingestellt ist — Szenario, Länge, Rechenmodus —, darunter den Preflight (in
-Klartext, was gleich passiert, dazu die wichtigsten Werte als Kacheln), und ganz
-unten den Start-Knopf. Der bleibt sichtbar, egal wie lang die Warnungen darüber
-werden. Ein Klick genügt.
+Gestartet wird im **Bedienfeld links**, überschrieben mit **Nächster Lauf** —
+daneben zeigt der Leitstand die Szene eines fertigen Laufs, und das Bedienfeld
+meint den, der als Nächstes rechnet. Es zeigt oben in drei Zeilen, was eingestellt
+ist — Szenario, Länge, Rechenmodus, je die Beschriftung über dem Wert —, darunter
+in einem Satz, was gleich passiert, und ganz unten den Start-Knopf. Gibt es vor
+dem Start etwas zu beachten, steht dort nur die Zahl der Hinweise und wo sie
+ausführlich stehen: im Bereich **Einrichten**, Schritt «Prüfen & Starten». Ein
+Befund, der den Start verhindert, ist rot abgesetzt. Ein Klick genügt.
 
 Eingestellt wird nicht hier, sondern im Bereich **Einrichten** — über die
 Kopfzeile oder über jede der drei Zeilen. Für einen ersten Lauf ist das nicht

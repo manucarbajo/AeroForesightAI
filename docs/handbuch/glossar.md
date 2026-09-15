@@ -12,8 +12,9 @@ heißt sie Preset.
 **Auslastung** — Hier gleichbedeutend mit Buchungsrate. Nicht die Auslastung
 eines einzelnen Flugzeugs.
 
-**Bedienfeld** — Die linke Zone des Leitstands: was eingestellt ist, der
-Preflight, der Start-Knopf. Bewusst **kein** Formular — eingestellt wird im
+**Bedienfeld** — Die linke Zone des Leitstands, überschrieben mit «Nächster
+Lauf»: was für den nächsten Lauf eingestellt ist, ein Satz dazu, die Zahl der
+Hinweise vor dem Start und der Start-Knopf. Bewusst **kein** Formular — eingestellt wird im
 Bereich «Einrichten». So bleibt der Start-Knopf immer sichtbar, statt hinter
 sechzig Eingabefeldern zu verschwinden.
 

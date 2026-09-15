@@ -75,10 +75,8 @@ def test_the_entry_counts_the_frameworks(vergleich, rahmen):
 ZAHL_VOR_SZENARIEN = r"(\d+) (?:Rahmens|S)zenarien"
 
 
-def test_the_rail_summary_counts_the_frameworks(vergleich, rahmen):
-    zeile = launch_page._summary(vergleich)
-
-    assert re.findall(ZAHL_VOR_SZENARIEN, zeile) == [str(rahmen)], zeile
+# Die Zeile unter dem Start-Knopf (`launch._summary`) ist mit P7.5-U5.1 entfallen;
+# die Zahl hält jetzt allein die Stand-Zeile.
 
 
 def test_the_rail_rows_count_the_frameworks(vergleich, rahmen):

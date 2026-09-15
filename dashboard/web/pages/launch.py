@@ -19,6 +19,13 @@ Seit P1.6 trägt die Spalte drei Dinge, und nur diese:
 3. **Den Start-Knopf**, in einem klebenden Fuß, damit er sichtbar bleibt, egal
    wie lang die Warnungen darüber werden.
 
+**Seit P7.5-U5.1 ist es ausdrücklich der nächste Lauf, und kompakt** (von Haiko
+entschieden am 2026-09-15). Gemessen vorher bei 1280 × 800: 2,13 Bildschirme
+hoch, alle drei Werte auf 59 px gekürzt, und der Preflight trug Hinweise,
+Dauer und drei Kacheln, von denen «Länge» die Zeile darüber wiederholte. Jetzt
+steht die Beschriftung über dem Wert, der Preflight ist ein Satz, und die
+Hinweise sind ein Zähler — ausführlich stehen sie in «Prüfen & Starten».
+
 Das Fortschritts-Log steht nicht hier, sondern in der Konsole der Telemetrie —
 zusammen mit den Ereignissen und den Vorfällen, zu denen es gehört. Es fließt
 über `run-progress-store` dorthin.
@@ -63,19 +70,13 @@ HEARTBEAT_INTERVAL_MS = 2000
 #: werden deshalb nachgefüllt, statt die Spalte neu zu bauen.
 SUMMARY_HOST = "rail-summary"
 
+#: Was das Bedienfeld zeigt: den Entwurf des **nächsten** Laufs (P7.5-U5.1).
+UEBERSCHRIFT = "Nächster Lauf"
 
-def _summary(draft: dict) -> str:
-    if start_flow.ist_vergleich(draft):
-        # **`rahmenszenarien()`, nicht `list_sweep_presets()`** (P7.2-U2.1): Ein
-        # Vergleich rechnet seit P2.2 nur die Rahmen. Hier stand bis zum
-        # 2026-09-11 die Zahl des ganzen Ordners — acht statt vier.
-        return f"Szenario-Vergleich · {len(rahmenszenarien())} Rahmenszenarien · je eigene Länge"
-    runs = int(draft.get("run_count") or 1)
-    run_label = f"{runs} Läufe" if runs > 1 else "1 Lauf"
-    return (
-        f"Szenario: {draft.get('scenario_mode', 'basis')} · "
-        f"{formate.ticks_mit_modellzeit(draft.get('rounds', '?'))} · {run_label}"
-    )
+
+# `_summary` — die Zeile unter dem Start-Knopf — ist mit P7.5-U5.1 entfallen. Sie
+# wiederholte die drei Stand-Zeilen darüber Wort für Wort und nannte das Szenario
+# obendrein mit seiner Kennung («Szenario: basis»).
 
 
 # --- Was eingestellt ist ---------------------------------------------------
@@ -196,8 +197,11 @@ def rail(draft: dict | None = None) -> html.Div:
             # Nur die Überschrift. Bis P1.7 stand hier ein Knopf «Einrichten» —
             # er führte dorthin, wo der Navigationspunkt zwei Zentimeter darüber
             # auch hinführt, und die drei Stand-Zeilen darunter tun es ebenfalls.
+            # **«Nächster Lauf», nicht «Lauf»** (P7.5-U5.1, von Haiko entschieden am
+            # 2026-09-15): Daneben steht die Szene eines fertigen Laufs, und
+            # «Lauf» ließ offen, welcher von beiden gemeint ist.
             html.Div(
-                html.H1("Lauf", className=ui.H3),
+                html.H1(UEBERSCHRIFT, className=ui.H3),
                 className="af-pane__sticky",
             ),
             dcc.Store(id="cfg-editor-refresh", data=0),
@@ -231,7 +235,6 @@ def rail(draft: dict | None = None) -> html.Div:
                         className="w-full",
                         disabled=laeuft,
                     ),
-                    html.P(_summary(draft), id="run-summary", className=f"{ui.CAPTION} mt-2"),
                 ],
                 className="af-rail-footer",
             ),
@@ -335,13 +338,11 @@ def register_callbacks(app) -> None:
         return ui.hinweis("Es läuft gerade nichts, was sich abbrechen ließe.", "warnung")
 
     @app.callback(
-        Output("run-summary", "children"),
         Output(SUMMARY_HOST, "children"),
         Input(STORE_ID, "data"),
     )
     def _update_summary(draft: dict | None):
-        data = draft or {}
-        return _summary(data), summary_rows(data)
+        return summary_rows(draft or {})
 
     @app.callback(
         Output("run-job-store", "data"),

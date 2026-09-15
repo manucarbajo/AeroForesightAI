@@ -24,10 +24,12 @@ anspringen und mit den Pfeiltasten verschieben. Was Sie einstellen, merkt sich
 Ihr Browser bis zum nächsten Mal. Sobald eine Spalte zur Schublade wird, ist ihr
 Griff weg — dort gibt es nichts mehr zu ziehen.
 
-**Das Bedienfeld links ist kein Formular.** Es zeigt in drei Zeilen, was
-eingestellt ist, darunter den Preflight, und ganz unten den Start-Knopf — der
-bleibt immer sichtbar. Eingestellt wird im Bereich **Einrichten**, den Sie oben
-in der Kopfzeile erreichen oder über jede der drei Zeilen.
+**Das Bedienfeld links ist kein Formular.** Es heißt **Nächster Lauf** und zeigt
+in drei Zeilen, was eingestellt ist, darunter in einem Satz, was gleich passiert,
+und ganz unten den Start-Knopf — der bleibt immer sichtbar. Hinweise vor dem
+Start stehen dort nur gezählt; ausführlich stehen sie in «Prüfen & Starten».
+Eingestellt wird im Bereich **Einrichten**, den Sie oben in der Kopfzeile
+erreichen oder über jede der drei Zeilen.
 
 Rechts oben schalten Sie zwischen hellem und dunklem Design um. Die Wahl bleibt
 im Browser gespeichert und gilt beim nächsten Öffnen weiter.

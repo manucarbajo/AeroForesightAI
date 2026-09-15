@@ -246,4 +246,5 @@ class TestJedeLauflaengeSagtIhreModellzeit:
         entwurf = {**initial_draft_dict(), "rounds": 40, "run_all_sweeps": False}
 
         assert "40 Ticks · rund 3 Jahre" in start_flow.summary_sentence(entwurf)
-        assert "40 Ticks · rund 3 Jahre" in launch._summary(entwurf)
+        # Seit P7.5-U5.1 die Stand-Zeile — die Zeile unter dem Start-Knopf ist entfallen.
+        assert "40 Ticks · rund 3 Jahre" in str(launch.summary_rows(entwurf))
