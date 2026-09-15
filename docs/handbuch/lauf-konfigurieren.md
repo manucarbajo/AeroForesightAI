@@ -340,7 +340,9 @@ dorthin hochfährt. Ändern Sie einen davon, zeigt die Kurve Ihre Fassung
 durchgezogen und das Szenario gestrichelt daneben. Der Lauf rechnet dann mit
 Ihrer Fassung und heißt im Ergebnis «abgeleitet» von diesem Szenario; die
 geänderten Größen stehen dort mit Namen. Was Sie auf den Wert des Szenarios
-zurücksetzen, zählt nicht mehr als Änderung. Ein Stützpunkt, dem Tick oder Wert
+zurücksetzen, zählt nicht mehr als Änderung — und ebenso nicht, was anders
+geschrieben ist, aber denselben Verlauf ergibt, etwa ein Stützpunkt, der auf den
+Wert springt, den die Größe ohnehin hat. Ein Stützpunkt, dem Tick oder Wert
 fehlt, rechnet nicht mit, bis er vollständig ist.
 
 Die Felder wirken nur mit **Eigene Werte anwenden** — der Schalter steht hinter

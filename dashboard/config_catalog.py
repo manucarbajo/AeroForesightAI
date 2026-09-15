@@ -683,19 +683,62 @@ def verlaeufe_je_tick(draft: ConfigDraft, groesse: str) -> tuple[list[float], li
     )
 
 
+def _letzter_tick(edit: PropertyEditState) -> int:
+    """Ab welchem Tick sich ein Verlauf nicht mehr ändert — spätester Stützpunkt samt Dauer."""
+
+    ticks = [0]
+    for regel in edit.rules or []:
+        effekt = regel.get("effect") or {}
+        ticks.append(
+            int(regel.get("active_from_tick") or 0) + int(effekt.get("duration_ticks") or 0)
+        )
+    return max(ticks)
+
+
 def abweichungen_bereinigen(draft: ConfigDraft) -> ConfigDraft:
-    """Was dem Szenario gleicht, ist keine Abweichung und fällt weg (P7.13-U13.1).
+    """Was im Verlauf dem Szenario gleicht, ist keine Abweichung und fällt weg (P7.13).
 
     Der Editor zeigt die Werte des Szenarios, und ein Eingabefeld meldet beim
     Zeichnen seinen unveränderten Wert. Ohne diese Bereinigung stünde jede
     angesehene Größe als «abgeleitet» im Artefakt, obwohl niemand etwas geändert hat.
+
+    **Verglichen wird der Verlauf je Tick, nicht die Regeln** (U13.6). Die erste
+    Fassung verglich die Regeln, und gemessen stand ein Lauf unter «Business as
+    Usual» als «abgeleitet» im Artefakt, nachdem der Stützpunkt «ab Tick 1 auf 50»
+    bei einem Startwert von 50 entfernt war — kein Tick hatte sich geändert.
+    Gefragt wird über `resolve_property`, also samt Begrenzung, genau wie im Lauf.
+
+    **Bis zum spätesten Stützpunkt beider Fassungen, nicht nur bis zur Lauflänge**:
+    Danach sind beide Verläufe konstant, der Vergleich ist also exakt. Nur bis zur
+    Lauflänge verlöre eine Änderung bei Tick 100 in einem Lauf über 40 Ticks — und
+    «Als Szenario sichern» legt das Szenario in seiner eigenen Länge ab.
+
+    **Der Schalter «Eigene Werte anwenden» gilt dabei als an**: Aus, wirkte keine
+    Abweichung, jede sähe wirkungslos aus und fiele still weg — nach dem
+    Wiedereinschalten wären sie verloren.
     """
 
+    from src.market.property_engine import resolve_property
+
+    angewendet = replace(draft, apply_custom_overrides=True)
+    basis = prepare_simulation_state(_ohne_abweichungen(angewendet)).properties
+
+    def _wirkt(groesse: str, edit: PropertyEditState) -> bool:
+        prop = basis.get_system_property(groesse)
+        if prop is None:
+            return True
+        vorlage = _trajectory_to_edit_state(groesse, prop.trajectory)
+        mit = prepare_simulation_state(
+            replace(angewendet, abweichungen={groesse: edit}, preisstrategie=None)
+        ).properties
+        horizont = max(int(draft.rounds), _letzter_tick(edit), _letzter_tick(vorlage)) + 1
+        return any(
+            resolve_property(groesse, tick, basis) != resolve_property(groesse, tick, mit)
+            for tick in range(horizont + 1)
+        )
+
     behalten = {
-        groesse: edit
-        for groesse, edit in draft.abweichungen.items()
-        if property_overrides_from_edits({groesse: edit})
-        != property_overrides_from_edits({groesse: szenario_verlauf(draft, groesse)})
+        groesse: edit for groesse, edit in draft.abweichungen.items() if _wirkt(groesse, edit)
     }
     strategie = draft.preisstrategie
     if strategie is not None and strategie == szenario_preisstrategie(draft):

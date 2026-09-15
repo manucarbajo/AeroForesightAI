@@ -179,6 +179,27 @@ def _geaendert(starts, punkte, groesse, key, wert, index=None):
     raise AssertionError(f"Kein Feld {key} für {groesse}")
 
 
+def _mit_wirksamem_stuetzpunkt(draft: dict) -> int:
+    """Ein Szenario mit einem CO₂-Stützpunkt, der den Verlauf wirklich ändert — sein Index.
+
+    **Business as Usual taugt dafür nicht** (U13.6): Sein einziger Stützpunkt setzt
+    ab Tick 1 den Startwert 50, den die Größe ohnehin hat. Ihn zu entfernen ändert
+    keinen Tick und ist deshalb keine Abweichung — zwei Tests aus Teil 2b hatten
+    genau diesen Stützpunkt gewählt und prüften damit das alte Etikett. **Auch
+    «Freiwillige Wende» beginnt so**; gesucht wird deshalb der erste Stützpunkt,
+    dessen Wert von dem davor abweicht, statt Index 0 anzunehmen.
+    """
+
+    draft["sweep_id"] = "freiwillige_wende"
+    verlauf = verlaeufe.verlauf_im_entwurf(draft, "carbon_tax_level")
+    wert = verlauf["baseline"]
+    for index, regel in enumerate(verlauf["rules"]):
+        if regel["effect"]["value"] != wert:
+            return index
+        wert = regel["effect"]["value"]
+    raise AssertionError("Gegen Blindheit: kein Stützpunkt ändert den Verlauf")
+
+
 class TestDerEditorSchreibtNurWasAbweicht:
     """Teil 2b: Startwert und Stützpunkte gehen in `abweichungen`, und nur, was abweicht."""
 
@@ -218,9 +239,10 @@ class TestDerEditorSchreibtNurWasAbweicht:
         assert regel["effect"]["value"] == 999.0
 
     def test_an_incomplete_row_invents_nothing(self, draft):
+        wirksam = _mit_wirksamem_stuetzpunkt(draft)
         starts, punkte = _eingaben(verlaeufe.editor(draft, "carbon_tax_level"))
         vorher = len(verlaeufe.verlauf_im_entwurf(draft, "carbon_tax_level")["rules"])
-        _geaendert(starts, punkte, "carbon_tax_level", "tick", None, index=0)
+        _geaendert(starts, punkte, "carbon_tax_level", "tick", None, index=wirksam)
 
         danach = verlaeufe.eingaben_anwenden(draft, starts, punkte)
 
@@ -282,9 +304,12 @@ class TestStuetzpunkteKommenUndGehen:
         assert danach["abweichungen"] == {}, "Eine leere Zeile ist keine Abweichung"
 
     def test_removing_a_scenario_rule_is_a_deviation(self, draft):
+        wirksam = _mit_wirksamem_stuetzpunkt(draft)
         starts, punkte = _eingaben(verlaeufe.editor(draft, "carbon_tax_level"))
         vorher = verlaeufe.felder_aus_eingaben(punkte, "carbon_tax_level")
-        felder = verlaeufe.stuetzpunkte_aendern(vorher, verlaeufe.weg_id("carbon_tax_level", 0))
+        felder = verlaeufe.stuetzpunkte_aendern(
+            vorher, verlaeufe.weg_id("carbon_tax_level", wirksam)
+        )
         _, neue = _eingaben(html.Div(verlaeufe.zeilen("carbon_tax_level", felder, False)))
 
         danach = verlaeufe.eingaben_anwenden(draft, starts, neue)

@@ -165,6 +165,47 @@ class TestWasDemSzenarioGleichtIstKeineAbweichung:
         andere = "marge" if eigene == "auslastung" else "auslastung"
         assert abweichungen_bereinigen(_entwurf(preisstrategie=andere)).preisstrategie == andere
 
+    def test_a_rule_without_effect_is_no_deviation(self):
+        """U13.6: «ab Tick 1 auf 50» bei Startwert 50 zu entfernen ändert keinen Tick."""
+
+        vorlage = szenario_verlauf(_entwurf(), "carbon_tax_level")
+        assert vorlage.baseline == 50.0 and vorlage.rules, "Gegen Blindheit: BAU hat den Stützpunkt"
+        ohne_regel = PropertyEditState(property_id="carbon_tax_level", baseline=50.0, rules=[])
+
+        bereinigt = abweichungen_bereinigen(_entwurf(abweichungen={"carbon_tax_level": ohne_regel}))
+
+        assert bereinigt.abweichungen == {}
+
+    def test_the_same_curve_written_differently_is_no_deviation(self):
+        anders = PropertyEditState(
+            property_id="carbon_tax_level",
+            baseline=50.0,
+            rules=[{"active_from_tick": 30, "effect": {"type": "set", "value": 50.0}}],
+        )
+
+        bereinigt = abweichungen_bereinigen(_entwurf(abweichungen={"carbon_tax_level": anders}))
+
+        assert bereinigt.abweichungen == {}
+
+    def test_a_change_after_the_run_stays(self):
+        """Gesichert wird das Szenario in seiner eigenen Länge — die Änderung darf nicht fallen."""
+
+        spaet = PropertyEditState(
+            property_id="carbon_tax_level",
+            baseline=50.0,
+            rules=[{"active_from_tick": 100, "effect": {"type": "set", "value": 200.0}}],
+        )
+        entwurf = _entwurf(abweichungen={"carbon_tax_level": spaet}, rounds=40)
+
+        assert set(abweichungen_bereinigen(entwurf).abweichungen) == {"carbon_tax_level"}
+
+    def test_the_switch_does_not_delete_deviations(self):
+        """Ohne «Eigene Werte anwenden» wirkt keine Abweichung — gelöscht wird trotzdem keine."""
+
+        entwurf = _entwurf(abweichungen=_co2(77.0), apply_custom_overrides=False)
+
+        assert set(abweichungen_bereinigen(entwurf).abweichungen) == {"carbon_tax_level"}
+
     def test_a_cleaned_draft_computes_the_same(self):
         """Die Bereinigung ändert nur das Etikett, nie die Rechnung."""
 
