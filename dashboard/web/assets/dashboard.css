@@ -1629,6 +1629,12 @@ html.dark .af-input[type="number"] {
     background: var(--accent-soft);
 }
 
+/* «Verlaeufe» (P7.13-U13.1) teilt Aufbau und Zeilen mit Schritt 1: links die
+   Liste, rechts die Einzelheiten -- dort die Kurve, die ihre Spalte fuellt. */
+.af-verlaeufe > div:last-child {
+    min-width: 0;
+}
+
 /* Die Feinabstimmung steht unter der Liste; ihr Abstand ist hier eine Stufe
    kleiner, die letzten Pixel bis zu einem Bildschirm bei 1440 x 900. */
 .af-szenariowahl .af-expert {

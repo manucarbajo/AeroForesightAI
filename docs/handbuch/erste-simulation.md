@@ -57,6 +57,11 @@ wandern seine Werte in Ihren Entwurf, wo Sie sie im Bereich **Modell** ändern
 können; die Auswahl springt auf die «Standard-Ausgangslage», und «Eigene Werte
 anwenden» ist eingeschaltet.
 
+Nach dieser Wahl folgt der Schritt **Verläufe**. Er zeigt, wie sich die Größen,
+die das Szenario vorgibt — etwa die CO₂-Abgabe —, über den Lauf entwickeln: links
+die Größe, rechts ihre Kurve. Er ist optional; für den ersten Durchgang klicken
+Sie auf **Weiter**.
+
 ## Schritt 2: Wie weit reicht der Lauf?
 
 Setzen Sie die Länge auf **10 Ticks**. Das reicht, um Rückkopplungen zu sehen,

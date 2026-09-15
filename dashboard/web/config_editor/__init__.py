@@ -38,6 +38,7 @@ from dashboard.config_catalog import (
     save_saturation_to_file,
 )
 from dashboard.web import components as ui
+from dashboard.web import theme
 from dashboard.web.config_editor import (
     compute_mode,
     delta,
@@ -47,6 +48,7 @@ from dashboard.web.config_editor import (
     micro,
     sichern,
     start_flow,
+    verlaeufe,
     wizard,
 )
 from dashboard.web.config_editor import controls as c
@@ -338,6 +340,52 @@ def register_callbacks(app) -> None:
                 for z in gezeigt
             ],
         )
+
+    @app.callback(
+        Output({"type": verlaeufe.LISTE, "slot": ALL}, "children"),
+        Output({"type": verlaeufe.WEITERE, "slot": ALL}, "children"),
+        Input({"type": verlaeufe.WEITERE, "slot": ALL}, "n_clicks"),
+        State({"type": verlaeufe.AUSWAHL, "slot": ALL}, "value"),
+        prevent_initial_call=True,
+    )
+    def _weitere_groessen(klicks, gewaehlt):
+        """«Weitere Größen zeigen» — dasselbe Muster wie «Stresstests zeigen» (P7.13-U13.1).
+
+        Die gewählte Größe bleibt gewählt: Neu gezeichnet wird nur das
+        Auswahlfeld, und sein Wert kommt aus dem, was gerade gewählt ist.
+        """
+
+        gezeigt = [bool((anzahl or 0) % 2) for anzahl in klicks]
+        werte = list(gewaehlt) + [None] * (len(gezeigt) - len(gewaehlt))
+        return (
+            [verlaeufe.auswahl(weitere=z, gewaehlt=w) for z, w in zip(gezeigt, werte)],
+            [[html.Span(verlaeufe.knopftext(z), className="af-btn__label")] for z in gezeigt],
+        )
+
+    from dashboard.web import shell
+
+    @app.callback(
+        Output({"type": verlaeufe.KURVE, "slot": ALL}, "children"),
+        Input({"type": verlaeufe.AUSWAHL, "slot": ALL}, "value"),
+        Input(shell.THEME_STORE, "data"),
+        Input("wizard-content-host", "children"),
+        State(STORE_ID, "data"),
+    )
+    def _verlauf(gewaehlt, mode, _content, draft: dict | None):
+        """Die Kurve der gewählten Größe — beim Zeichnen des Schritts, bei einer Wahl
+        und beim Wechsel des Farbmodus.
+
+        **Nicht am Entwurf hängend**, wie `_llm_status`: Ein `Input` auf den Store
+        löste bei jedem Tastendruck in jedem Schritt einen weiteren Rundlauf aus,
+        und die Zahl der Rundläufe je Klick ist die gemessene Ursache der
+        Klickdauer (P3.9, P7.11). Wer das Szenario wechselt, tut das in Schritt 1;
+        kommt er zurück, wird der Schritt neu gezeichnet und die Kurve mit ihm.
+        """
+
+        return [
+            verlaeufe.detail(draft or {}, verlaeufe.vorgabe(wert), mode=theme.normalise(mode))
+            for wert in gewaehlt
+        ]
 
     @app.callback(
         Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),

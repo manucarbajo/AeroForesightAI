@@ -66,7 +66,7 @@ vor den Feldern dieses Schritts und muss sich nicht erst durch Kopfzeile und
 Schrittliste tasten. Wer schon selbst irgendwohin geklickt oder getabbt ist,
 behält seinen Platz; die Seite reißt niemandem den Fokus weg.
 
-Angesagt wird der Wechsel ebenfalls: «Schritt 4 von 6: Lauf & Ablage». Dasselbe
+Angesagt wird der Wechsel ebenfalls: «Schritt 5 von 7: Lauf & Ablage». Dasselbe
 gilt für Statusmeldungen — eine gesperrte Weiter-Taste sagt sofort, was noch
 fehlt, statt stumm nicht zu reagieren. In der Schrittliste ist der offene Schritt
 nicht nur farblich markiert, sondern auch als solcher ausgezeichnet.
@@ -82,9 +82,11 @@ Leitstands sind noch nicht in gleicher Weise durchgegangen.
 
 **Drei Schritte genügen.** Was gerechnet wird, wie weit, und womit: Danach ist
 alles Weitere mit sinnvollen Werten vorbelegt, und der Knopf **Direkt zum Start**
-bringt Sie ans Ende. Die Schritte vier bis sechs sind als *optional*
-gekennzeichnet — Lauf & Ablage und Technik. Wer sie braucht, findet sie; wer
-nicht, geht daran vorbei.
+bringt Sie ans Ende. Drei Schritte sind als *optional* gekennzeichnet —
+Verläufe, Lauf & Ablage und Technik. Wer sie braucht, findet sie; wer nicht, geht
+daran vorbei. «Verläufe» steht direkt nach der Wahl des Szenarios und damit
+zwischen den Entscheidungen: Er zeigt, was das gewählte Szenario vorgibt, und
+«Weiter» führt über ihn hinweg zur nächsten Frage.
 
 > **Der Schritt «Ausgangslage» ist im August 2026 entfallen.** Er fragte die
 > sieben Faktorzustände ab, mit denen der Lauf startet. Nachgemessen war die
@@ -98,7 +100,9 @@ nicht, geht daran vorbei.
 ## Die Annahmen stehen woanders
 
 Systemgrößen, Bevölkerung und Preisbildung finden Sie seit August 2026 nicht
-mehr hier, sondern im eigenen Bereich **Modell** in der Kopfzeile. Die
+mehr hier, sondern im eigenen Bereich **Modell** in der Kopfzeile. Wie sich die
+Größen im gewählten Szenario über den Lauf entwickeln, zeigt seit September 2026
+wieder ein Schritt der Schrittfolge: **Verläufe** (siehe unten). Die
 **Faktorlage** ist seit August 2026 gar keine Einstellung mehr: Sie entsteht im
 Lauf.
 
@@ -287,7 +291,8 @@ Befunde hängen an keinem Eingabefeld und stehen deshalb nur im roten Kasten.
 
 Die Systemgrößen für Politik, Kosten und Konjunktur, dazu Bevölkerung und
 Preisbildung, stellen Sie im Bereich **Modell** in der Kopfzeile ein — nicht in
-dieser Schrittfolge.
+dieser Schrittfolge. Ansehen, was das gewählte Szenario vorgibt, können Sie im
+Schritt **Verläufe**.
 
 Jede Systemgröße hat einen Startwert und kann über Regeln einen zeitlichen
 Verlauf bekommen: «ab Tick 10 springt die CO₂-Abgabe auf 120» oder «ab Tick 5
@@ -318,6 +323,19 @@ Was Sie nach dem Start ändern, gilt erst für den nächsten Lauf.
 speichern» für Bevölkerung und Sättigung. Beide schreiben in
 `configs/properties.json` und gelten damit für alle künftigen Läufe. Was Sie dort
 nur eintragen, ohne zu speichern, rechnet kein Lauf mit.
+
+### Verläufe
+
+Der Schritt direkt nach der Wahl des Szenarios. Links stehen die Systemgrößen,
+rechts die Kurve der gewählten über die Länge des Laufs — so, wie das gewählte
+Szenario sie vorgibt. Offen stehen die Größen, die mindestens eines der
+Rahmenszenarien verändert, etwa die CO₂-Abgabe oder der Ölpreis; die übrigen
+zeigt **Weitere Größen zeigen**.
+
+Die Kurve ist derselbe Wert, mit dem der Lauf rechnet, samt Mindest- und
+Höchstwert der Größe — keine Näherung daneben. Ändern lassen sich die Verläufe
+hier **noch nicht**; bis dahin gilt, was unter «Systemgrößen, Verläufe und
+Preisbildung» steht.
 
 ### Lauf & Ablage
 

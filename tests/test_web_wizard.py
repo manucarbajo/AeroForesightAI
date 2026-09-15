@@ -89,11 +89,19 @@ class TestDreiEntscheidungenGenuegenWeiterhin:
         assert knopf.style is None, "Nach den drei Entscheidungen fehlt die Abkürzung"
 
     def test_the_three_decisions_come_first(self):
-        """Die Reihenfolge ist eine Aussage: erst entscheiden, dann feinjustieren."""
+        """Die Reihenfolge ist eine Aussage: erst entscheiden, dann feinjustieren.
+
+        **Seit P7.13-U13.1 steht ein optionaler Schritt zwischen ihnen** —
+        «Verläufe» direkt nach der Wahl des Szenarios, von Haiko entschieden am
+        2026-09-15, weil die Verläufe das gewählte Szenario zeigen. Die Aussage
+        bleibt: Nach der dritten Entscheidung ist nichts mehr Pflicht, und die
+        erste steht vorn.
+        """
 
         pflicht = [step.required for step in wizard.STEPS]
 
-        assert pflicht[: wizard.LAST_REQUIRED + 1] == [True, True, True]
+        assert pflicht[0] is True
+        assert sum(pflicht[: wizard.LAST_REQUIRED + 1]) == 3
         assert not any(pflicht[wizard.LAST_REQUIRED + 1 : wizard.FINAL])
 
     def test_the_optional_steps_say_so(self):
@@ -135,6 +143,9 @@ class TestModellUndExperimentSindZweiOrte:
         assert "faktorlage" not in schluessel
         assert schluessel == [
             "szenario",
+            # P7.13-U13.1: die zeitlichen Verläufe, optional, direkt nach dem
+            # Szenario — keine Formularwand, sondern eine Liste mit Kurve.
+            "verlaeufe",
             "umfang",
             "modus",
             "ablage",

@@ -384,12 +384,13 @@ def test_the_setup_area_builds_with_the_default_draft():
     assert "Lauf einrichten" in rendered
     assert "af-wizard" in rendered, "die Schrittfolge fehlt"
     assert "optional" in rendered, "die ueberspringbaren Schritte sind nicht als solche benannt"
-    # Sechs: acht bis P1.9-W3.1 (die beiden dichten Bereiche zogen ins
-    # «Modell»), sieben mit der «Ausgangslage» aus W3.3, und sechs seit P2.0-C
-    # -- die Faktorlage ist keine Eingabe mehr, sie entsteht im Lauf. Die Zahl
-    # steht hier bewusst als Zahl: Waechst die Schrittfolge, ist das eine
-    # Entscheidung und keine Nebenwirkung.
-    assert len(wizard.STEPS) == 6
+    # Sieben: acht bis P1.9-W3.1 (die beiden dichten Bereiche zogen ins
+    # «Modell»), sieben mit der «Ausgangslage» aus W3.3, sechs seit P2.0-C
+    # -- die Faktorlage ist keine Eingabe mehr, sie entsteht im Lauf --, und
+    # sieben seit P7.13-U13.1 mit «Verlaeufe» (von Haiko entschieden am
+    # 2026-09-15). Die Zahl steht hier bewusst als Zahl: Waechst die
+    # Schrittfolge, ist das eine Entscheidung und keine Nebenwirkung.
+    assert len(wizard.STEPS) == 7
 
 
 def test_launch_summary_describes_the_draft():

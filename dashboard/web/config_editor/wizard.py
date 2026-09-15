@@ -37,7 +37,7 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 from dashboard.config_catalog import rahmenszenarien
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
-from dashboard.web.config_editor import delta, experiment, llm_pipeline, start_flow
+from dashboard.web.config_editor import delta, experiment, llm_pipeline, start_flow, verlaeufe
 from dashboard.web.state import STORE_ID, initial_draft_dict
 
 #: Welcher Schritt gerade offen ist. Als Store und nicht als Adresse, weil ein
@@ -157,6 +157,20 @@ STEPS: list[Step] = [
         "Die Faktorlage entsteht daraus im Lauf.",
         lambda draft: start_flow.scenario_step(draft, number=None),
     ),
+    # **Direkt nach der Wahl des Szenarios, und optional** (P7.13-U13.1, von
+    # Haiko entschieden am 2026-09-15). Die zeitlichen Verläufe — etwa die
+    # CO₂-Abgabe — ließen sich bis dahin nur im Bereich «Modell» einstellen, den
+    # die Schrittfolge nicht nennt. Hier gehören sie hin, weil sie das gewählte
+    # Szenario zeigen, und optional, weil das Szenario sie schon festlegt. Die
+    # drei Entscheidungen aus P1.1 stehen damit nicht mehr am Stück vorn; die
+    # Abkürzung zum Start erscheint nach der letzten von ihnen.
+    Step(
+        "verlaeufe",
+        "Verläufe",
+        "Wie sich die Größen, die das Szenario vorgibt, über den Lauf entwickeln.",
+        verlaeufe.layout,
+        required=False,
+    ),
     Step(
         "umfang",
         "Wie weit reicht der Lauf?",
@@ -214,10 +228,12 @@ STEPS: list[Step] = [
     ),
 ]
 
-#: Ab hier ist alles Feinjustierung. Nach Schritt 3 sind die drei Entscheidungen
-#: aus P1.1 getroffen, und der Weg zum Start steht offen.
-LAST_REQUIRED = 2
 FINAL = len(STEPS) - 1
+#: Ab hier ist alles Feinjustierung: Nach diesem Schritt sind die drei
+#: Entscheidungen aus P1.1 getroffen, und der Weg zum Start steht offen.
+#: **Abgeleitet statt als Zahl**, seit ein optionaler Schritt zwischen ihnen steht
+#: (P7.13-U13.1).
+LAST_REQUIRED = max(i for i, step in enumerate(STEPS[:FINAL]) if step.required)
 
 
 def schritt(key: str) -> int:
