@@ -39,9 +39,10 @@ Sie eine größere Bevölkerung oder eine vorsichtigere Aussage.
 
 ## Welche Annahmenwelten unterscheiden sich überhaupt?
 
-Schalten Sie in **Lauf & Ablage** «Alle Szenarien vergleichen» ein. Jedes
-hinterlegte Preset wird einmal durchgerechnet, ohne Agenten-Dialog und damit
-schnell.
+Wählen Sie auf dem Einstieg von «Einrichten» **Szenario-Vergleich starten** —
+oder schalten Sie «Alle Szenarien vergleichen» hinter der «Feinabstimmung» des
+zweiten Schritts ein. Jedes Rahmenszenario wird einmal durchgerechnet, ohne
+Agenten-Dialog und damit schnell.
 
 Danach gehen Sie die Läufe in der Lauf-Auswahl durch und vergleichen in
 **Übersicht** die Endwerte. Presets, die zu ähnlichen Verläufen führen,
