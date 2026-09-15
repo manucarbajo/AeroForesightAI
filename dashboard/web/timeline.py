@@ -80,19 +80,53 @@ def _marks(max_tick: int) -> dict:
     return {tick: str(tick) for tick in ticks}
 
 
+#: Wie viele Ereignisse der Tooltip eines Markers höchstens nennt (P7.5-U5.4). Der
+#: Rest wird gezählt; ausführlich stehen alle in der Konsole und in `event_log.json`.
+TOOLTIP_MAX = 3
+
+#: Die Legende des Streifens: Stufe und Name. **Eine Quelle für Marker und Legende**,
+#: damit keine Farbe erklärt wird, die der Streifen nicht setzt.
+LEGENDE = (("warning", "Politik"), ("", "Ereignis"))
+
+
+def _ist_politik(event: dict) -> bool:
+    art = str(event.get("event_type") or "")
+    return "policy" in art or str(event.get("source_agent") or "") == "regulator"
+
+
+def _tooltip(tick: int, ereignisse: list[dict]) -> str:
+    """Was an einem Tick passiert ist — Politik zuerst, höchstens `TOOLTIP_MAX`.
+
+    **Seit P7.5-U5.4 nennt der Tooltip das Ereignis** statt nur «Tick 12» (L4 des
+    Audits). Ohne Beschreibung steht die Art des Ereignisses da, nie eine leere Zeile.
+    """
+
+    geordnet = sorted(ereignisse, key=lambda e: not _ist_politik(e))
+    texte = [
+        str(e.get("description") or e.get("event_type") or "Ereignis").strip()
+        for e in geordnet[:TOOLTIP_MAX]
+    ]
+    rest = len(ereignisse) - len(texte)
+    if rest > 0:
+        texte.append(f"+{rest} weitere")
+    return f"Tick {tick}: " + " · ".join(texte)
+
+
 def event_strip(data: RunData) -> html.Div:
-    """Wo im Lauf etwas passiert ist — als Streifen unter der Leiste.
+    """Wo im Lauf etwas passiert ist — als Streifen unter der Leiste, mit Legende.
 
     Ohne den Streifen müsste man den Lauf durchscrubben, um zu finden, wo eine
-    Politikänderung greift. Warnungen und Fehler stechen hervor, der
-    Normalbetrieb bleibt leise.
+    Politikänderung greift. Politik sticht hervor, der Normalbetrieb bleibt leise.
+    **Seit P7.5-U5.4 sagt eine Legende, was die Farben heißen, und der Tooltip
+    jedes Markers nennt die Ereignisse** — vorher stand dort «Tick 12», und die
+    Farben erklärte nur das Handbuch. Die Legende steht nur da, wo es Marker gibt.
     """
 
     max_tick = data.max_tick
     if max_tick <= 0 or not data.events:
         return html.Div(className="af-timeline__events")
 
-    stufen: dict[int, str] = {}
+    je_tick: dict[int, list[dict]] = {}
     for event in data.events:
         try:
             tick = int(event.get("round_number") or 0)
@@ -100,24 +134,42 @@ def event_strip(data: RunData) -> html.Div:
             continue
         if tick <= 0:
             continue
-        art = str(event.get("event_type") or "")
-        quelle = str(event.get("source_agent") or "")
-        if "policy" in art or quelle == "regulator":
-            stufen[tick] = "warning"
-        else:
-            stufen.setdefault(tick, "")
+        je_tick.setdefault(tick, []).append(event)
 
-    marker = [
-        html.Span(
-            className=(
-                f"af-timeline__event af-timeline__event--{stufe}" if stufe else "af-timeline__event"
-            ),
-            style={"left": f"{(tick - 1) / max(max_tick - 1, 1) * 100:.3f}%"},
-            title=f"Tick {tick}",
+    marker = []
+    for tick, ereignisse in sorted(je_tick.items()):
+        stufe = "warning" if any(_ist_politik(e) for e in ereignisse) else ""
+        marker.append(
+            html.Span(
+                className=(
+                    f"af-timeline__event af-timeline__event--{stufe}"
+                    if stufe
+                    else "af-timeline__event"
+                ),
+                style={"left": f"{(tick - 1) / max(max_tick - 1, 1) * 100:.3f}%"},
+                title=_tooltip(tick, ereignisse),
+            )
         )
-        for tick, stufe in sorted(stufen.items())
-    ]
-    return html.Div(marker, className="af-timeline__events")
+    legende = html.Div(
+        [
+            html.Span(
+                [
+                    html.Span(
+                        className=(
+                            f"af-timeline__swatch af-timeline__swatch--{stufe}"
+                            if stufe
+                            else "af-timeline__swatch"
+                        ),
+                    ),
+                    name,
+                ],
+                className="af-timeline__legend-item",
+            )
+            for stufe, name in LEGENDE
+        ],
+        className="af-timeline__legend",
+    )
+    return html.Div([html.Div(marker, className="af-timeline__events"), legende])
 
 
 def readout(tick: int, max_tick: int) -> str:

@@ -28,6 +28,16 @@ def _text(component) -> str:
     return str(component)
 
 
+def _alle(knoten):
+    """Jeder Knoten eines Komponentenbaums, der Wurzelknoten eingeschlossen."""
+
+    yield knoten
+    kinder = getattr(knoten, "children", None)
+    for kind in kinder if isinstance(kinder, (list, tuple)) else [kinder]:
+        if kind is not None and not isinstance(kind, str):
+            yield from _alle(kind)
+
+
 class _MitschreibendeApp:
     """Nimmt Callbacks entgegen, statt sie zu verdrahten.
 
@@ -436,6 +446,51 @@ class TestEineZeitachse:
         assert "af-timeline__event" in gerendert
         # Die Politikwechsel des Beispieldatensatzes stechen hervor.
         assert "af-timeline__event--warning" in gerendert
+
+    def test_a_marker_names_its_events_policy_first(self, demo):
+        """P7.5-U5.4 (L4): Der Tooltip stand auf «Tick 12» und nannte kein Ereignis."""
+
+        politik = next(
+            e
+            for e in demo.events
+            if "policy" in str(e.get("event_type")) and int(e.get("round_number") or 0) > 0
+        )
+        tick = int(politik["round_number"])
+        titel = [
+            k.title
+            for k in _alle(timeline.event_strip(demo))
+            if "af-timeline__event" in str(getattr(k, "className", "") or "")
+            and str(getattr(k, "title", "")).startswith(f"Tick {tick}:")
+        ]
+
+        assert len(titel) == 1, titel
+        texte = titel[0].split(": ", 1)[1].split(" · ")
+        assert texte[0] == politik["description"].strip(), "Politik steht nicht zuerst"
+        assert len([t for t in texte if not t.startswith("+")]) <= timeline.TOOLTIP_MAX
+
+    def test_many_events_on_one_tick_are_counted(self, demo):
+        ereignisse = [{"description": f"E{i}", "event_type": "market_event"} for i in range(5)]
+
+        titel = timeline._tooltip(7, ereignisse)
+
+        assert titel == "Tick 7: E0 · E1 · E2 · +2 weitere"
+
+    def test_the_legend_explains_every_colour_the_strip_sets(self, demo):
+        gerendert = _text(timeline.event_strip(demo))
+
+        assert "af-timeline__legend" in gerendert
+        for stufe, name in timeline.LEGENDE:
+            assert name in gerendert
+            if stufe:
+                assert f"af-timeline__swatch--{stufe}" in gerendert
+                assert f"af-timeline__event--{stufe}" in gerendert
+
+    def test_no_events_no_legend(self, demo):
+        import dataclasses
+
+        assert "af-timeline__legend" not in _text(
+            timeline.event_strip(dataclasses.replace(demo, events=[]))
+        )
 
 
 # --- Szene und Telemetrie folgen demselben Tick ----------------------------

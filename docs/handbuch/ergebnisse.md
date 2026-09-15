@@ -42,7 +42,9 @@ anliegen.
 Unten führt die **Zeitleiste** durch den Lauf: ziehen, schrittweise gehen oder
 abspielen. Sie ist die einzige Zeitachse der Oberfläche; alles andere folgt ihr.
 Die Marker unter der Leiste zeigen, wo etwas passiert ist — die gelben sind
-politische Eingriffe.
+politische Eingriffe; die Legende darunter sagt es ebenfalls. Zeigen Sie mit der
+Maus auf einen Marker, nennt er die Ereignisse dieses Ticks, Politik zuerst und
+höchstens drei; alle stehen in der Konsole.
 
 ## Szenario
 
