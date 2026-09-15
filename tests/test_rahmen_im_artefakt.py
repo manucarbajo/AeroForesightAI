@@ -73,6 +73,34 @@ class TestJederStartpfadSetztIhn:
         assert state.rahmen is not None
         assert state.rahmen.quelle == "eigen"
 
+    def test_geaenderte_standardwerte_heissen_eigen(self):
+        """Gemessen am 2026-09-15: CO₂-Start 99 im Modell, der Lauf rechnete damit —
+        und stand im Artefakt als «Standard-Ausgangslage»."""
+
+        draft = default_config_draft()
+        draft.scenario_mode = "basis"
+        draft.apply_custom_overrides = True
+        draft.property_edits["carbon_tax_level"].baseline = 99.0
+
+        state = prepare_simulation_state(draft)
+
+        co2 = next(p for p in state.properties.system_properties if p.id == "carbon_tax_level")
+        assert co2.trajectory.baseline == 99.0, "Vorbedingung: der geänderte Wert kommt an"
+        assert state.rahmen is not None
+        assert state.rahmen.quelle == "eigen"
+
+    def test_ohne_aenderung_bleibt_der_standard_der_standard(self):
+        """Der Schalter ist per Vorgabe an — er allein macht keinen eigenen Rahmen."""
+
+        draft = default_config_draft()
+        draft.scenario_mode = "basis"
+        draft.apply_custom_overrides = True
+
+        state = prepare_simulation_state(draft)
+
+        assert state.rahmen is not None
+        assert state.rahmen.quelle == "standard"
+
     def test_jedes_ausgelieferte_preset_kommt_durch(self):
         """Nicht eines von acht, sondern alle — ein fehlender Name fiele sonst
         erst dem auf, der genau dieses Szenario rechnet."""

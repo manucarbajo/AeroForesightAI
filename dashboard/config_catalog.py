@@ -688,6 +688,21 @@ def llm_config_from_draft(draft: ConfigDraft) -> LLMConfig | None:
     )
 
 
+def _eigene_werte_weichen_ab(draft: ConfigDraft) -> bool:
+    """Ob die eigenen Werte des Entwurfs etwas an der ausgelieferten Datei ändern.
+
+    Verglichen werden die Überschreibungen, die gelegt würden, mit denen aus der
+    Datei selbst — und der Startpreis, den nur der Entwurf setzt.
+    """
+
+    if draft.base_price is not None:
+        return True
+    aus_datei = property_overrides_from_edits(
+        extract_property_edits_from_file(draft.properties_file)
+    )
+    return property_overrides_from_edits(draft.property_edits) != aus_datei
+
+
 def prepare_simulation_state(draft: ConfigDraft):
     """Build SimulationState with file paths, sweep and/or custom overrides."""
 
@@ -749,6 +764,13 @@ def prepare_simulation_state(draft: ConfigDraft):
     ):
         custom = build_custom_sweep_from_draft(draft)
         state = apply_sweep_overrides(state, custom)
+        # **Geänderte Werte heißen «eigen», auch unter der Standard-Ausgangslage**
+        # (P7.13, gemessen am 2026-09-15): Mit «Eigene Werte anwenden» und einem im
+        # Modell auf 99 gesetzten CO₂-Startwert rechnete der Lauf mit 99 und stand
+        # im Artefakt als «Standard-Ausgangslage». Ohne Änderung bleibt es der
+        # Standard — der Schalter ist per Vorgabe an.
+        if _eigene_werte_weichen_ab(draft):
+            state.rahmen = Rahmenszenario(id="eigen", name="Eigene Werte", quelle="eigen")
 
     # **Abweichungen liegen auf dem Szenario** (P7.13-U13.2), unter demselben
     # Schalter wie die eigenen Werte — und anders als diese auch auf einem
