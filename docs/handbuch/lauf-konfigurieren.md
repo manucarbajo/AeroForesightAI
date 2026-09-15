@@ -332,9 +332,21 @@ Rahmenszenarien verändert, etwa die CO₂-Abgabe oder der Ölpreis; die übrige
 zeigt **Weitere Größen zeigen**.
 
 Die Kurve ist derselbe Wert, mit dem der Lauf rechnet, samt Mindest- und
-Höchstwert der Größe — keine Näherung daneben. Ändern lassen sich die Verläufe
-hier **noch nicht**; bis dahin gilt, was unter «Systemgrößen, Verläufe und
-Preisbildung» steht.
+Höchstwert der Größe — keine Näherung daneben.
+
+Unter der Kurve stehen der **Startwert** und die **Stützpunkte** des Szenarios:
+ab welchem Tick die Größe auf einen Wert springt oder über wie viele Ticks sie
+dorthin hochfährt. Ändern Sie einen davon, zeigt die Kurve Ihre Fassung
+durchgezogen und das Szenario gestrichelt daneben. Der Lauf rechnet dann mit
+Ihrer Fassung und heißt im Ergebnis «abgeleitet» von diesem Szenario; die
+geänderten Größen stehen dort mit Namen. Was Sie auf den Wert des Szenarios
+zurücksetzen, zählt nicht mehr als Änderung. Ein Stützpunkt, dem Tick oder Wert
+fehlt, rechnet nicht mit, bis er vollständig ist.
+
+Die Felder wirken nur mit **Eigene Werte anwenden** — der Schalter steht hinter
+der «Feinabstimmung» des ersten Schritts. Ist er aus, sind sie gesperrt und
+sagen, warum. Neue Stützpunkte anlegen und vorhandene entfernen lässt sich hier
+noch nicht.
 
 ### Lauf & Ablage
 

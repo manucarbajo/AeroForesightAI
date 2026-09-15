@@ -181,10 +181,12 @@ def register_callbacks(app) -> None:
         Input({"type": c.CFG, "field": ALL}, "value"),
         Input({"type": c.CFG_BOOL, "field": ALL}, "value"),
         Input({"type": macro.RULE, "prop": ALL, "index": ALL, "key": ALL}, "value"),
+        Input({"type": verlaeufe.START, "groesse": ALL}, "value"),
+        Input({"type": verlaeufe.PUNKT, "groesse": ALL, "index": ALL, "key": ALL}, "value"),
         State(STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def _sync(_values, _flags, _rules, draft: dict | None):
+    def _sync(_values, _flags, _rules, _starts, _punkte, draft: dict | None):
         """Sichtbare Felder in den Store — **und nur, wenn sich etwas ändert** (P3.9).
 
         Der zweite Halbsatz ist die ganze Arbeit von P3.9. Dieser Callback feuert
@@ -220,6 +222,14 @@ def register_callbacks(app) -> None:
             edit["rules"] = _rules_from_entries(cells)
 
         neu = _normalise(updated)
+
+        # **Die Verläufe des Schritts** (P7.13-U13.1 Teil 2b): nach `_normalise`,
+        # weil die Bereinigung das gewählte Szenario braucht, und nur, wenn der
+        # Schritt steht — sonst baute jeder Tastendruck zwei Zustände auf.
+        starts, punkte = ctx.inputs_list[3], ctx.inputs_list[4]
+        if starts or punkte:
+            neu = verlaeufe.eingaben_anwenden(neu, starts, punkte)
+
         if draft is not None and neu == draft:
             return no_update
         return neu
@@ -385,6 +395,25 @@ def register_callbacks(app) -> None:
         return [
             verlaeufe.detail(draft or {}, verlaeufe.vorgabe(wert), mode=theme.normalise(mode))
             for wert in gewaehlt
+        ]
+
+    @app.callback(
+        Output({"type": verlaeufe.FIGUR, "groesse": ALL}, "figure"),
+        Input(STORE_ID, "data"),
+        State(shell.THEME_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def _verlauf_kurve(draft: dict | None, mode):
+        """Die Kurve zieht mit, sobald `_sync` eine Abweichung schreibt (Teil 2b).
+
+        **Nur die Figur, nicht der Editor**: Den Editor neu zu zeichnen, während
+        jemand tippt, nähme ihm das Feld unter den Fingern weg. Ohne den Schritt
+        auf dem Schirm gibt es keinen Ausgang und damit nichts zu rechnen.
+        """
+
+        return [
+            verlaeufe.figur(draft or {}, eintrag["id"]["groesse"], mode=theme.normalise(mode))
+            for eintrag in ctx.outputs_list
         ]
 
     @app.callback(

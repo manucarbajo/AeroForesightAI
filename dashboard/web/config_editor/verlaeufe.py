@@ -1,4 +1,4 @@
-"""Der Schritt «Verläufe»: wie sich die Welt im Lauf verändert (P7.13-U13.1 Teil 2a).
+"""Der Schritt «Verläufe»: wie sich die Welt im Lauf verändert (P7.13-U13.1 Teil 2).
 
 **Von Haiko entschieden am 2026-09-15:** ein eigener, optionaler Schritt direkt
 nach der Wahl des Szenarios; links die Systemgrößen, rechts ihre Kurve über die
@@ -7,9 +7,11 @@ die übrigen hinter «Weitere Größen zeigen» — dasselbe Muster wie «Stress
 zeigen» in Schritt 1: **ein** Auswahlfeld, dessen Optionen ein Knopf erweitert,
 statt zweier Auswahlfelder für eine Wahl.
 
-**Noch ohne Eingabe.** Die Kurve zeigt, was das gewählte Szenario vorgibt;
-Stützpunkte und Preisstrategie folgen mit Teil 2b. Die Auswahl ist deshalb kein
-Konfigurationsfeld (`controls.CFG`) und schreibt nichts in den Entwurf.
+**Die Auswahl der Größe ist kein Konfigurationsfeld** (`controls.CFG`) und
+schreibt nichts in den Entwurf. **Startwert und Stützpunkte schon** (Teil 2b):
+Sie tragen eigene Musterkennungen, `_sync` liest sie und übersetzt sie mit
+`eingaben_anwenden` in `ConfigDraft.abweichungen` — nie in `property_edits`, die
+dem Bereich «Modell» gehören.
 
 **Die Kurve rechnet wie der Lauf**: Sie kommt aus
 `config_catalog.verlaeufe_je_tick`, nicht aus einer eigenen Verlaufsrechnung.
@@ -17,14 +19,18 @@ Konfigurationsfeld (`controls.CFG`) und schreibt nichts in den Entwurf.
 
 from __future__ import annotations
 
+from dataclasses import asdict
+
 import plotly.graph_objects as go
 from dash import dcc, html
 
 from dashboard.config_catalog import (
     EINHEITEN,
     PROPERTY_LABELS,
+    abweichungen_bereinigen,
     exogene_groessen,
     load_properties_config,
+    szenario_verlauf,
     verlaeufe_je_tick,
     von_rahmen_veraendert,
 )
@@ -42,6 +48,40 @@ WEITERE = "verlaeufe-weitere"
 KURVE = "verlaeufe-kurve"
 
 SLOT = "verlaeufe"
+
+#: Der Startwert einer Größe.
+START = "verlaeufe-start"
+#: Ein Feld eines Stützpunkts: `key` ist `tick`, `art`, `wert` oder `dauer`.
+PUNKT = "verlaeufe-punkt"
+#: Die Kurve selbst — ihre Figur zieht ein Callback mit dem Entwurf nach.
+FIGUR = "verlaeufe-figur"
+
+#: Die Arten eines Stützpunkts, in der Sprache der Oberfläche.
+ARTEN = [
+    {"label": "springt auf den Wert", "value": "set"},
+    {"label": "fährt hoch auf den Wert", "value": "ramp"},
+]
+
+#: Warum die Felder gesperrt sind, wenn «Eigene Werte anwenden» aus ist. Eine
+#: Abweichung liegt unter demselben Schalter wie die eigenen Werte
+#: (`config_catalog.prepare_simulation_state`); ohne ihn nähme das Feld eine
+#: Eingabe an, die kein Lauf mitrechnet.
+SPERRGRUND = (
+    "Wirkt nur mit «Eigene Werte anwenden» — der Schalter steht hinter der "
+    "Feinabstimmung des ersten Schritts."
+)
+
+
+def start_id(groesse: str) -> dict:
+    return {"type": START, "groesse": groesse}
+
+
+def punkt_id(groesse: str, index: int, key: str) -> dict:
+    return {"type": PUNKT, "groesse": groesse, "index": index, "key": key}
+
+
+def figur_id(groesse: str) -> dict:
+    return {"type": FIGUR, "groesse": groesse}
 
 
 def auswahl_id() -> dict:
@@ -174,16 +214,170 @@ def _spanne_um(wert: float) -> list[float]:
     return [wert - breite, wert + breite]
 
 
+def verlauf_im_entwurf(draft: dict, groesse: str) -> dict:
+    """Was der Editor zeigt: die eigene Abweichung, sonst das gewählte Szenario."""
+
+    eigen = (draft.get("abweichungen") or {}).get(groesse)
+    if eigen:
+        return dict(eigen)
+    from dashboard.web.state import draft_from_dict
+
+    return asdict(szenario_verlauf(draft_from_dict(draft), groesse))
+
+
+def _zahl(groesse: str, index: int, key: str, wert, gesperrt: bool, schritt=None):
+    return dcc.Input(
+        id=punkt_id(groesse, index, key),
+        type="number",
+        value=wert,
+        step=schritt,
+        className="af-input",
+        debounce=True,
+        disabled=gesperrt,
+    )
+
+
+def _zeile(groesse: str, index: int, regel: dict, gesperrt: bool) -> html.Div:
+    effekt = regel.get("effect") or {}
+    return html.Div(
+        ui.grid(
+            ui.field(
+                "ab Tick", _zahl(groesse, index, "tick", regel.get("active_from_tick"), gesperrt, 1)
+            ),
+            ui.field(
+                "Art",
+                dcc.Dropdown(
+                    id=punkt_id(groesse, index, "art"),
+                    options=ARTEN,
+                    value=effekt.get("type"),
+                    clearable=False,
+                    disabled=gesperrt,
+                    className="af-dropdown",
+                ),
+            ),
+            ui.field("Wert", _zahl(groesse, index, "wert", effekt.get("value"), gesperrt)),
+            ui.field(
+                "über … Ticks",
+                _zahl(groesse, index, "dauer", effekt.get("duration_ticks"), gesperrt, 1),
+                hint="nur beim Hochfahren",
+            ),
+            # **Zwei Spalten, nicht vier**: Das Raster folgt der Fensterbreite, der
+            # Editor steht aber in der rechten Spalte. Bei 1440 × 900 schnitten vier
+            # Spalten die Art auf «spri…» ab (im Browser gesehen am 2026-09-15).
+            cols="sm:grid-cols-2",
+            gap="gap-3",
+        ),
+        className="mt-3",
+    )
+
+
+def editor(draft: dict, groesse: str) -> html.Div:
+    """Startwert und Stützpunkte der gewählten Größe.
+
+    **Gesperrt mit Grund**, wenn «Eigene Werte anwenden» aus ist — dasselbe
+    Muster wie die Felder ohne Wirkung aus P7.4: lieber sagen, warum nichts geht,
+    als eine Eingabe annehmen, die kein Lauf mitrechnet.
+    """
+
+    verlauf = verlauf_im_entwurf(draft, groesse)
+    gesperrt = not draft.get("apply_custom_overrides")
+    return html.Div(
+        [
+            ui.field(
+                f"Startwert ({_einheit(groesse)})",
+                dcc.Input(
+                    id=start_id(groesse),
+                    type="number",
+                    value=verlauf.get("baseline"),
+                    className="af-input",
+                    debounce=True,
+                    disabled=gesperrt,
+                ),
+                hint=SPERRGRUND if gesperrt else None,
+                breite="feld-klein",
+            ),
+            *[
+                _zeile(groesse, index, regel, gesperrt)
+                for index, regel in enumerate(verlauf.get("rules") or [])
+            ],
+        ],
+        className="mt-4",
+    )
+
+
 def detail(draft: dict, groesse: str, *, mode: str | None = theme.LIGHT) -> html.Div:
     return html.Div(
         [
             html.H3(name(groesse), className=ui.H3),
             dcc.Graph(
+                id=figur_id(groesse),
                 figure=figur(draft, groesse, mode=mode),
                 config={**theme.GRAPH_CONFIG, "displayModeBar": False},
             ),
+            editor(draft, groesse),
         ]
     )
+
+
+def _regel(felder: dict) -> dict | None:
+    """Ein Stützpunkt aus seinen Feldern — **oder keiner**, solange etwas fehlt.
+
+    Ein leeres Feld wird nicht mit einer erfundenen Zahl gefüllt (Regel 2 aus
+    P1.9-W5.1): Ein Stützpunkt ohne Tick oder Wert rechnet nicht mit, bis er
+    vollständig ist.
+    """
+
+    tick, art, wert = felder.get("tick"), felder.get("art"), felder.get("wert")
+    if tick is None or art not in {"set", "ramp"} or wert is None:
+        return None
+    effekt: dict = {"type": art, "value": float(wert)}
+    if art == "ramp":
+        if felder.get("dauer") is None:
+            return None
+        effekt["duration_ticks"] = int(felder["dauer"])
+    return {"active_from_tick": int(tick), "effect": effekt}
+
+
+def eingaben_anwenden(draft: dict, starts: list, punkte: list) -> dict:
+    """Startwert und Stützpunkte aus dem Schritt in `abweichungen` — und bereinigt.
+
+    **Bereinigt, weil das Zeichnen allein schreibt**: Sobald der Schritt steht,
+    melden seine Felder ihre unveränderten Werte, und `_sync` ruft diese Funktion.
+    Ohne `abweichungen_bereinigen` stünde danach jede angesehene Größe als
+    «abgeleitet» im Artefakt.
+    """
+
+    zeilen: dict[str, dict[int, dict]] = {}
+    for eintrag in punkte or []:
+        kennung = eintrag.get("id") or {}
+        zeilen.setdefault(kennung["groesse"], {}).setdefault(int(kennung["index"]), {})[
+            kennung["key"]
+        ] = eintrag.get("value")
+    startwerte = {(e.get("id") or {})["groesse"]: e.get("value") for e in starts or []}
+    groessen = set(startwerte) | set(zeilen)
+    if not groessen:
+        return draft
+
+    abweichungen = {k: dict(v) for k, v in (draft.get("abweichungen") or {}).items()}
+    for groesse in groessen:
+        basis = startwerte.get(groesse)
+        if basis is None:
+            continue
+        regeln = [_regel(felder) for _, felder in sorted(zeilen.get(groesse, {}).items())]
+        abweichungen[groesse] = {
+            "property_id": groesse,
+            "baseline": float(basis),
+            "rules": [r for r in regeln if r is not None],
+            "is_active": True,
+        }
+
+    from dashboard.web.state import draft_from_dict
+
+    neu = {**draft, "abweichungen": abweichungen}
+    bereinigt = abweichungen_bereinigen(draft_from_dict(neu))
+    neu["abweichungen"] = {k: asdict(v) for k, v in bereinigt.abweichungen.items()}
+    neu["preisstrategie"] = bereinigt.preisstrategie
+    return neu
 
 
 def layout(draft: dict) -> object:

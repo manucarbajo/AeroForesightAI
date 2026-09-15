@@ -924,7 +924,10 @@ DECKEL: dict[int, dict[str, float]] = {
         # **«Verläufe», neu am 2026-09-15 mit P7.13-U13.1** (von Haiko entschieden):
         # direkt nach der Wahl des Szenarios. Ab hier sind es **dieselben
         # Schritte wie vorher, eine Nummer weiter** — gemessen am selben Tag.
-        "Schritt 2": 1.00,
+        # **1,00 -> 1,05 mit Teil 2b-1**, gewollt: Unter der Kurve stehen Startwert
+        # und Stützpunkte. Gemessen 1,05 — auf der Kante der Toleranz, deshalb als
+        # Deckel eingetragen statt stillschweigend durchgelassen.
+        "Schritt 2": 1.05,
         "Schritt 3": 1.00,
         "Schritt 4": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
@@ -1012,7 +1015,10 @@ DECKEL: dict[int, dict[str, float]] = {
         # **«Verläufe»: 1,35, und der Preis ist benannt.** Unter 1280 px stehen
         # Liste und Kurve untereinander wie in Schritt 1; die Kurve hat die
         # kompakte Höhe (`theme.HOEHE_KOMPAKT`). Gemessen am 2026-09-15.
-        "Schritt 2": 1.35,
+        # **1,35 -> 1,45 am selben Tag mit Teil 2b-1, und der Zuwachs ist gewollt**:
+        # Unter der Kurve stehen seither Startwert und Stützpunkte. Bei 1280 und
+        # 1440 px bleibt der Schritt innerhalb seines Deckels.
+        "Schritt 2": 1.45,
         "Schritt 3": 1.00,
         "Schritt 4": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;

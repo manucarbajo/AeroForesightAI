@@ -147,6 +147,103 @@ class TestDieKurveIstDerWertDesLaufs:
             assert linie == theme.palette(mode)["accent"]
 
 
+def _eingaben(baum) -> tuple[list, list]:
+    """Was `_sync` aus dem gezeichneten Editor liest — Kennung und Wert je Feld."""
+
+    starts, punkte = [], []
+    for k in _walk(baum):
+        kennung = getattr(k, "id", None)
+        if not isinstance(kennung, dict):
+            continue
+        if kennung.get("type") == verlaeufe.START:
+            starts.append({"id": kennung, "value": k.value})
+        elif kennung.get("type") == verlaeufe.PUNKT:
+            punkte.append({"id": kennung, "value": k.value})
+    return starts, punkte
+
+
+def _geaendert(starts, punkte, groesse, key, wert, index=None):
+    ziel = starts if key == "start" else punkte
+    for e in ziel:
+        passt = e["id"]["groesse"] == groesse and (key == "start" or e["id"]["key"] == key)
+        if passt and (index is None or e["id"].get("index") == index):
+            e["value"] = wert
+            return
+    raise AssertionError(f"Kein Feld {key} für {groesse}")
+
+
+class TestDerEditorSchreibtNurWasAbweicht:
+    """Teil 2b: Startwert und Stützpunkte gehen in `abweichungen`, und nur, was abweicht."""
+
+    @pytest.mark.parametrize("groesse", ["carbon_tax_level", "bevoelkerungsentwicklung"])
+    def test_drawing_and_reading_back_changes_nothing(self, draft, groesse):
+        """Die Felder melden beim Zeichnen ihre Werte — daraus darf keine Abweichung werden.
+
+        Die Bevölkerung ist die Stufenfunktion; der Editor zeigt sie als Regeln.
+        """
+
+        starts, punkte = _eingaben(verlaeufe.editor(draft, groesse))
+        assert starts, "Gegen Blindheit: der Editor hat kein Feld"
+
+        danach = verlaeufe.eingaben_anwenden(draft, starts, punkte)
+
+        assert danach["abweichungen"] == {}
+        assert danach["preisstrategie"] is None
+
+    def test_a_changed_start_value_arrives_in_draft_and_curve(self, draft):
+        starts, punkte = _eingaben(verlaeufe.editor(draft, "carbon_tax_level"))
+        _geaendert(starts, punkte, "carbon_tax_level", "start", 77)
+
+        danach = verlaeufe.eingaben_anwenden(draft, starts, punkte)
+
+        assert danach["abweichungen"]["carbon_tax_level"]["baseline"] == 77.0
+        assert verlaeufe.figur(danach, "carbon_tax_level").data[-1].y[0] == 77.0
+
+    def test_a_changed_rule_arrives(self, draft):
+        verlauf = verlaeufe.verlauf_im_entwurf(draft, "carbon_tax_level")
+        assert verlauf["rules"], "Gegen Blindheit: das Szenario braucht einen Stützpunkt"
+        starts, punkte = _eingaben(verlaeufe.editor(draft, "carbon_tax_level"))
+        _geaendert(starts, punkte, "carbon_tax_level", "wert", 999, index=0)
+
+        danach = verlaeufe.eingaben_anwenden(draft, starts, punkte)
+
+        regel = danach["abweichungen"]["carbon_tax_level"]["rules"][0]
+        assert regel["effect"]["value"] == 999.0
+
+    def test_an_incomplete_row_invents_nothing(self, draft):
+        starts, punkte = _eingaben(verlaeufe.editor(draft, "carbon_tax_level"))
+        vorher = len(verlaeufe.verlauf_im_entwurf(draft, "carbon_tax_level")["rules"])
+        _geaendert(starts, punkte, "carbon_tax_level", "tick", None, index=0)
+
+        danach = verlaeufe.eingaben_anwenden(draft, starts, punkte)
+
+        regeln = danach["abweichungen"]["carbon_tax_level"]["rules"]
+        assert len(regeln) == vorher - 1
+
+    def test_the_editor_shows_the_deviation(self, draft):
+        starts, punkte = _eingaben(verlaeufe.editor(draft, "carbon_tax_level"))
+        _geaendert(starts, punkte, "carbon_tax_level", "start", 77)
+        danach = verlaeufe.eingaben_anwenden(draft, starts, punkte)
+
+        wieder, _ = _eingaben(verlaeufe.editor(danach, "carbon_tax_level"))
+
+        assert wieder[0]["value"] == 77.0
+
+    def test_locked_with_reason_without_the_switch(self, draft):
+        draft["apply_custom_overrides"] = False
+        baum = verlaeufe.editor(draft, "carbon_tax_level")
+
+        felder = [
+            k
+            for k in _walk(baum)
+            if isinstance(getattr(k, "id", None), dict)
+            and k.id.get("type") in {verlaeufe.START, verlaeufe.PUNKT}
+        ]
+
+        assert felder and all(k.disabled for k in felder)
+        assert verlaeufe.SPERRGRUND in str(baum)
+
+
 class TestDerSchrittSchreibtNichts:
     def test_no_configuration_field(self, draft):
         """Eine Auswahl, die nichts im Entwurf trägt, ist kein Feld (Regel 2)."""
