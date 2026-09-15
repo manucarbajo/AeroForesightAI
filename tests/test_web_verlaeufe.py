@@ -1,13 +1,14 @@
-"""Der Schritt «Verläufe» (P7.13-U13.1 Teil 2a).
+"""Der Schritt «Verläufe» (P7.13-U13.1 Teil 2).
 
-Was er zusagt, solange er nur zeigt:
+Was er zusagt:
 
 1. **Er steht direkt nach der Wahl des Szenarios, optional**, und die Abkürzung
    zum Start erscheint trotzdem erst nach den drei Entscheidungen aus P1.1.
 2. **Offen stehen die Größen, die ein Rahmen verändert**, die übrigen hinter
    einem Knopf — ein Auswahlfeld, kein zweites.
 3. **Die Kurve ist der Wert des Laufs**, nicht eine eigene Rechnung.
-4. **Er schreibt nichts** in den Entwurf.
+4. **Die Auswahl der Größe schreibt nichts**; Startwert, Stützpunkte und
+   Preisstrategie schreiben nur, was vom Szenario abweicht (Teil 2b).
 """
 
 from __future__ import annotations
@@ -86,7 +87,13 @@ class TestOffenStehtWasEinRahmenVeraendert:
         assert _radio(verlaeufe.auswahl(weitere=False, gewaehlt=weitere)).value == weitere
 
     def test_one_selection_field(self, draft):
-        radios = [k for k in _walk(verlaeufe.layout(draft)) if isinstance(k, dcc.RadioItems)]
+        """Eine Auswahl für die Größe — die zweite im Schritt ist die Preisstrategie."""
+
+        radios = [
+            k
+            for k in _walk(verlaeufe.layout(draft))
+            if isinstance(k, dcc.RadioItems) and k.id == verlaeufe.auswahl_id()
+        ]
 
         assert len(radios) == 1
 
@@ -318,6 +325,72 @@ class TestStuetzpunkteKommenUndGehen:
         knoepfe = _knoepfe(baum, verlaeufe.NEU) + _knoepfe(baum, verlaeufe.WEG)
 
         assert knoepfe and all(k.disabled for k in knoepfe)
+
+
+class TestDiePreisstrategieIstEineWahl:
+    """Teil 2b-3: die Preisstrategie im Schritt, vorbelegt mit dem Szenario."""
+
+    def _auswahl(self, draft) -> dcc.RadioItems:
+        return _radio(verlaeufe.strategie(draft))
+
+    def _eintraege(self, wert) -> list:
+        return [{"id": verlaeufe.strategie_id(), "value": wert}]
+
+    def test_every_strategy_has_words_not_a_name(self):
+        from src.models.property_models import STRATEGIEN
+
+        assert set(verlaeufe.STRATEGIE_TEXTE) == set(STRATEGIEN)
+
+    def test_preselected_with_the_scenario_strategy(self, draft):
+        from dashboard.config_catalog import szenario_preisstrategie
+
+        assert self._auswahl(draft).value == szenario_preisstrategie(draft_from_dict(draft))
+
+    def test_reading_back_unchanged_is_no_deviation(self, draft):
+        wert = self._auswahl(draft).value
+
+        danach = verlaeufe.eingaben_anwenden(draft, [], [], self._eintraege(wert))
+
+        assert danach["preisstrategie"] is None
+        assert danach["abweichungen"] == {}
+
+    def test_the_other_strategy_arrives_in_the_run(self, draft):
+        from dashboard.config_catalog import prepare_simulation_state
+
+        andere = next(
+            o["value"]
+            for o in self._auswahl(draft).options
+            if o["value"] != self._auswahl(draft).value
+        )
+
+        danach = verlaeufe.eingaben_anwenden(draft, [], [], self._eintraege(andere))
+        state = prepare_simulation_state(draft_from_dict(danach))
+
+        assert danach["preisstrategie"] == andere
+        effekte = [r.effect for r in state.properties.market_rules]
+        assert any(e.get("strategie") == andere for e in effekte)
+        assert state.rahmen.quelle == "abgeleitet"
+        assert "preisstrategie" in state.rahmen.abweichungen
+
+    def test_locked_without_the_switch(self, draft):
+        draft["apply_custom_overrides"] = False
+
+        assert all(o["disabled"] for o in self._auswahl(draft).options)
+
+    def test_it_stands_left_under_the_list_once(self, draft):
+        """Links unter der Liste, nicht im rechten Wirt (Haiko, 2026-09-15, nach Messung).
+
+        Im rechten Wirt stünde sie zweimal im Baum, sobald er neu gezeichnet wird,
+        und der Schritt passte bei 1440 × 900 nicht mehr auf einen Schirm.
+        """
+
+        links = [getattr(k, "id", None) for k in _walk(verlaeufe.layout(draft))]
+        rechts = [
+            getattr(k, "id", None) for k in _walk(verlaeufe.detail(draft, "carbon_tax_level"))
+        ]
+
+        assert links.count(verlaeufe.strategie_id()) == 1
+        assert verlaeufe.strategie_id() not in rechts
 
 
 class TestDerSchrittSchreibtNichts:

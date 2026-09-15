@@ -30,12 +30,14 @@ from dashboard.config_catalog import (
     abweichungen_bereinigen,
     exogene_groessen,
     load_properties_config,
+    szenario_preisstrategie,
     szenario_verlauf,
     verlaeufe_je_tick,
     von_rahmen_veraendert,
 )
 from dashboard.web import components as ui
 from dashboard.web import theme
+from src.models.property_models import STRATEGIEN
 
 #: Das Auswahlfeld der Größen. **Keine Konfigurationskennung**, siehe Modul-Docstring.
 AUSWAHL = "verlaeufe-auswahl"
@@ -82,6 +84,21 @@ ZEILEN = "verlaeufe-zeilen"
 
 #: Die Zeilenzahl im Wirt der Zeilen — ein Eingang von `_sync`, siehe `zeilen`.
 STAND = "verlaeufe-stand"
+
+#: Die Auswahl der Preisstrategie (Teil 2b-3).
+STRATEGIE = "verlaeufe-strategie"
+
+#: Was eine Strategie tut, in der Sprache der Oberfläche — nicht ihr Name im Modell.
+#: `tests/test_web_verlaeufe.py` hält die Schlüssel gegen `STRATEGIEN`, damit eine
+#: neue Strategie nicht als Kennung auf dem Schirm landet.
+STRATEGIE_TEXTE = {
+    "auslastung": "Plätze füllen — der Preis sinkt, bis die Plätze gefüllt sind",
+    "marge": "Aufschlag halten — die Auslastung schwankt",
+}
+
+
+def strategie_id() -> dict:
+    return {"type": STRATEGIE, "slot": SLOT}
 
 
 def stand_id(groesse: str) -> dict:
@@ -431,6 +448,40 @@ def zeilen(groesse: str, felder: list[dict], gesperrt: bool) -> list:
     ]
 
 
+def strategie(draft: dict) -> html.Div:
+    """Die Preisstrategie des Laufs (P7.13-U13.1 Teil 2b-3).
+
+    **Links unter der Liste der Größen** (von Haiko entschieden am 2026-09-15,
+    nach einer Messung): Rechts unter dem Editor, wie zuerst entschieden, wurde
+    der Schritt bei 1440 × 900 1,12 Schirme hoch statt 1,00 und bei 1280 px 1,27
+    statt 1,13; links nutzt sie den freien Platz der Spalte, und beide Zahlen
+    bleiben. Sie gehört zu keiner einzelnen Größe, ist aber wie die Verläufe eine
+    Annahme des Szenarios über die Welt.
+    Vorbelegt mit der eigenen Wahl, sonst mit der Strategie des Szenarios; was ihr
+    gleicht, zählt nicht als Abweichung (`abweichungen_bereinigen`).
+    """
+
+    from dashboard.web.state import draft_from_dict
+
+    wert = draft.get("preisstrategie") or szenario_preisstrategie(draft_from_dict(draft))
+    gesperrt = not draft.get("apply_custom_overrides")
+    return html.Div(
+        [
+            html.H3("Preisstrategie", className=ui.H3),
+            ui.radio(
+                [
+                    {"label": STRATEGIE_TEXTE.get(s, s), "value": s, "disabled": gesperrt}
+                    for s in STRATEGIEN
+                ],
+                value=wert,
+                id=strategie_id(),
+                legend="Preisstrategie: wie der Anbieter in diesem Lauf preist.",
+            ),
+        ],
+        className="mt-6",
+    )
+
+
 def detail(draft: dict, groesse: str, *, mode: str | None = theme.LIGHT) -> html.Div:
     return html.Div(
         [
@@ -464,7 +515,9 @@ def _regel(felder: dict) -> dict | None:
     return {"active_from_tick": int(tick), "effect": effekt}
 
 
-def eingaben_anwenden(draft: dict, starts: list, punkte: list) -> dict:
+def eingaben_anwenden(
+    draft: dict, starts: list, punkte: list, strategien: list | None = None
+) -> dict:
     """Startwert und Stützpunkte aus dem Schritt in `abweichungen` — und bereinigt.
 
     **Bereinigt, weil das Zeichnen allein schreibt**: Sobald der Schritt steht,
@@ -481,7 +534,7 @@ def eingaben_anwenden(draft: dict, starts: list, punkte: list) -> dict:
         ] = eintrag.get("value")
     startwerte = {(e.get("id") or {})["groesse"]: e.get("value") for e in starts or []}
     groessen = set(startwerte) | set(zeilen)
-    if not groessen:
+    if not groessen and not strategien:
         return draft
 
     abweichungen = {k: dict(v) for k, v in (draft.get("abweichungen") or {}).items()}
@@ -500,6 +553,8 @@ def eingaben_anwenden(draft: dict, starts: list, punkte: list) -> dict:
     from dashboard.web.state import draft_from_dict
 
     neu = {**draft, "abweichungen": abweichungen}
+    for eintrag in strategien or []:
+        neu["preisstrategie"] = eintrag.get("value")
     bereinigt = abweichungen_bereinigen(draft_from_dict(neu))
     neu["abweichungen"] = {k: asdict(v) for k, v in bereinigt.abweichungen.items()}
     neu["preisstrategie"] = bereinigt.preisstrategie
@@ -522,6 +577,7 @@ def layout(draft: dict) -> object:
                             variant="ghost",
                             className="mt-2",
                         ),
+                        strategie(draft),
                     ]
                 ),
                 html.Div(id=kurve_id()),

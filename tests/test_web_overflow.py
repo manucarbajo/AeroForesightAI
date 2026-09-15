@@ -1023,7 +1023,10 @@ DECKEL: dict[int, dict[str, float]] = {
         # 1440 px bleibt der Schritt innerhalb seines Deckels.
         # **1,45 -> 1,53 mit Teil 2b-2**, gewollt: der Knopf «Stützpunkt
         # hinzufügen» (siehe 1280).
-        "Schritt 2": 1.53,
+        # **1,53 -> 1,68 mit Teil 2b-3**, gewollt: die Preisstrategie. Sie steht links
+        # unter der Liste (Haiko, 2026-09-15); unter 1280 px stehen die Spalten
+        # untereinander, dort kostet sie Höhe an jedem Platz.
+        "Schritt 2": 1.68,
         "Schritt 3": 1.00,
         "Schritt 4": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;

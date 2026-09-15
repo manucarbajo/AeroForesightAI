@@ -353,6 +353,13 @@ auch die Dauer. **Entfernen** an einer Zeile nimmt diesen Stützpunkt heraus;
 war er einer des Szenarios, gilt der Lauf danach als abgeleitet. Was Sie in
 den übrigen Zeilen eingetippt haben, bleibt dabei stehen.
 
+Links unter der Liste der Größen steht die **Preisstrategie** des Laufs: **Plätze füllen** senkt den
+Preis, bis die Plätze gefüllt sind; **Aufschlag halten** lässt den Preis stehen
+und die Auslastung schwanken. Vorgewählt ist die Strategie des Szenarios. Wählen
+Sie die andere, gilt der Lauf als abgeleitet, und im Ergebnis steht die
+Preisstrategie unter den Abweichungen. Sie wirkt wie die Verläufe nur mit
+**Eigene Werte anwenden**.
+
 ### Lauf & Ablage
 
 Die Fragestellung des Laufs — wozu er gerechnet wird. Sie erscheint im Bericht;
