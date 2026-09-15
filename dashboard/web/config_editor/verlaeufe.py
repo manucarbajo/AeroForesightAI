@@ -496,6 +496,41 @@ def detail(draft: dict, groesse: str, *, mode: str | None = theme.LIGHT) -> html
     )
 
 
+def szenario_name(wahl: str) -> str:
+    """Wie ein Szenario in einer Meldung heißt — sein Name, nicht seine Kennung."""
+
+    from dashboard.web.config_editor import start_flow
+
+    if wahl == start_flow.STANDARD:
+        return "Standard-Ausgangslage"
+    from dashboard.config_catalog import list_sweep_presets
+
+    return next((p.name for p in list_sweep_presets() if p.id == wahl), wahl)
+
+
+def nach_szenariowechsel(vorher: dict, nachher: dict) -> tuple[dict, bool]:
+    """Ein Wechsel des Szenarios verwirft die Abweichungen (P7.13-U13.2 Teil 2).
+
+    **Von Haiko entschieden am 2026-09-14:** Eine Abweichung ist der Unterschied
+    zu **einem** Szenario. Auf ein anderes gelegt, hieße «CO₂-Abgabe ab Tick 19
+    auf 120» dort etwas anderes — und der Lauf stünde als «abgeleitet» von einem
+    Szenario im Artefakt, dessen Verläufe niemand angesehen hat. **Mit
+    «Rückgängig»**, weil ein Klick in der Liste sonst Arbeit ohne Weg zurück
+    verwirft.
+
+    Liefert den Entwurf nach dem Wechsel und ob etwas verworfen wurde. Ohne
+    Abweichungen oder ohne Wechsel bleibt der Entwurf, wie er ist.
+    """
+
+    from dashboard.web.config_editor import start_flow
+
+    if start_flow.of(vorher) == start_flow.of(nachher):
+        return nachher, False
+    if not (vorher.get("abweichungen") or vorher.get("preisstrategie")):
+        return nachher, False
+    return {**nachher, "abweichungen": {}, "preisstrategie": None}, True
+
+
 def _regel(felder: dict) -> dict | None:
     """Ein Stützpunkt aus seinen Feldern — **oder keiner**, solange etwas fehlt.
 

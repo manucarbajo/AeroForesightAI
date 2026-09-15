@@ -362,6 +362,12 @@ Sie die andere, gilt der Lauf als abgeleitet, und im Ergebnis steht die
 Preisstrategie unter den Abweichungen. Sie wirkt wie die Verläufe nur mit
 **Eigene Werte anwenden**.
 
+**Wechseln Sie danach das Szenario, verfallen Ihre Abweichungen** — Verläufe und
+Preisstrategie. Eine Abweichung ist der Unterschied zu einem bestimmten Szenario;
+auf ein anderes gelegt, hieße sie dort etwas anderes. Über dem Schritt erscheint
+dann eine Meldung mit **Rückgängig**: Ein Klick holt das alte Szenario samt seinen
+Abweichungen zurück.
+
 ### Lauf & Ablage
 
 Die Fragestellung des Laufs — wozu er gerechnet wird. Sie erscheint im Bericht;

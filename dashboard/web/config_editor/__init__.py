@@ -178,6 +178,13 @@ def register_callbacks(app) -> None:
 
     @app.callback(
         Output(STORE_ID, "data"),
+        # **Ein Szenariowechsel verwirft die Abweichungen, mit «Rückgängig»**
+        # (P7.13-U13.2 Teil 2): der Stand davor für die Rücknahme aus U4.3, und die
+        # Meldung. Keine eigene Rückfrage und kein eigener Callback — die Wahl des
+        # Szenarios kommt hier an, und ein zusätzlicher Callback kostete einen
+        # Rundlauf je Klick.
+        Output(RUECKNAHME_ID, "data", allow_duplicate=True),
+        Output("cfg-status", "children", allow_duplicate=True),
         Input({"type": c.CFG, "field": ALL}, "value"),
         Input({"type": c.CFG_BOOL, "field": ALL}, "value"),
         Input({"type": macro.RULE, "prop": ALL, "index": ALL, "key": ALL}, "value"),
@@ -233,9 +240,13 @@ def register_callbacks(app) -> None:
         if starts or punkte or strategien:
             neu = verlaeufe.eingaben_anwenden(neu, starts, punkte, strategien)
 
+        neu, verworfen = verlaeufe.nach_szenariowechsel(draft or {}, neu)
+
         if draft is not None and neu == draft:
-            return no_update
-        return neu
+            return no_update, no_update, no_update
+        if verworfen:
+            return neu, dict(draft or {}), _wechsel_meldung(draft or {})
+        return neu, no_update, no_update
 
     @app.callback(
         Output({"type": start_flow.SUMMARY, "slot": ALL}, "children"),
@@ -584,6 +595,30 @@ def _meldung(trigger: dict, message: str, kind: str, *, knopf: bool) -> object:
     return html.Div(
         [
             hinweis,
+            html.Div(
+                ui.button("Rückgängig", id=c.action_id("reset-undo"), variant="ghost"),
+                className="mt-2",
+            ),
+        ]
+    )
+
+
+def _wechsel_meldung(vorher: dict) -> html.Div:
+    """Die Meldung nach einem Szenariowechsel — mit «Rückgängig» (P7.13-U13.2 Teil 2).
+
+    **Dieselbe Kennung wie nach dem Zurücksetzen** (`reset-undo`): Beide stellen
+    den Entwurf von vorher wieder her, hier samt dem alten Szenario, und `cfg-status`
+    zeigt immer nur eine Meldung — die Kennung steht also nie zweimal im Baum.
+    """
+
+    name = verlaeufe.szenario_name(start_flow.of(vorher))
+    return html.Div(
+        [
+            ui.hinweis(
+                f"Szenario gewechselt: Ihre Abweichungen von «{name}» gelten nur für dieses "
+                "Szenario und sind verworfen.",
+                "info",
+            ),
             html.Div(
                 ui.button("Rückgängig", id=c.action_id("reset-undo"), variant="ghost"),
                 className="mt-2",
