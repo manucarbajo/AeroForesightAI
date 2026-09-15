@@ -35,7 +35,10 @@ dieser Faktor ist gekippt. Der volle Zustandstext steht im Tooltip des Chips.
 
 Rechts stehen die Kennzahlen desselben Ticks — Buchungsrate, Ticketpreis,
 Kostendruck, Nachfrageniveau, jeweils mit der Veränderung zum Vortick —, darunter
-dieselben Größen als Verlauf mit einer Marke an der aktuellen Stelle. Ganz unten
+dieselben Größen als Verlauf mit einer Marke an der aktuellen Stelle, jeder mit
+seiner Einheit im Titel. Die Veränderung trägt einen Pfeil — ↑ gestiegen,
+↓ gefallen — und keine Farbe: Ob ein steigender Preis gut oder schlecht ist,
+entscheidet Ihre Fragestellung, nicht die Oberfläche. Ganz unten
 die Konsole; sie ist zugeklappt, die Zahl daneben sagt, wie viele Meldungen
 anliegen.
 

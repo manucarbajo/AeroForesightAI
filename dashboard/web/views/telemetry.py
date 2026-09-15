@@ -203,7 +203,9 @@ def charts(data: RunData, tick: int, *, mode: str = theme.LIGHT) -> html.Div:
                 booking_x,
                 booking_y,
                 tick,
-                title="Buchungsrate",
+                # Mit Einheit wie die beiden anderen (P7.5-U5.5): Die Achse zeigt
+                # Prozent, der Titel sagte es nicht.
+                title="Buchungsrate (%)",
                 color=tone["booking"],
                 mode=mode,
                 percent=True,

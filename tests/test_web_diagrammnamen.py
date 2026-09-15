@@ -160,6 +160,26 @@ class TestNamenUndEinheitenAusEinerQuelle:
         assert SEGMENTE, "Keine Segmente in configs/properties.json gefunden"
         assert not ohne, f"Segmente ohne Namen in `SEGMENT_NAMEN`: {ohne}"
 
+    def test_every_sparkline_names_its_unit(self):
+        """P7.5-U5.5: Jeder Verlauf der Telemetrie nennt seine Einheit im Titel.
+
+        «Buchungsrate» stand ohne Einheit neben «Ticketpreis (€)» und
+        «Kostendruck (€)»; die Achse zeigte Prozent, der Titel sagte es nicht.
+        """
+
+        from dashboard.web import run_data
+        from dashboard.web.views import telemetry
+
+        titel = [
+            graph.figure.layout.title.text
+            for graph in telemetry.charts(run_data.demo(), 10).children
+            if isinstance(graph, dcc.Graph)
+        ]
+
+        assert len(titel) == 3, f"Vorbedingung: drei Verläufe, gefunden {titel}"
+        ohne = [t for t in titel if not re.search(r"\([^)]+\)$", t or "")]
+        assert not ohne, f"Verläufe ohne Einheit im Titel: {ohne}"
+
     def test_every_factor_has_a_short_name(self):
         """P7.5-U5.3: Die Faktorleiste zeigt Kurznamen — gesucht über `factors.json`."""
 

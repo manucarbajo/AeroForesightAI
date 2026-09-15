@@ -2031,12 +2031,16 @@ html.dark .af-input[type="number"] {
     color: var(--text-muted);
 }
 
+/* **Neutral, die Richtung traegt der Pfeil** (P7.5-U5.5, von Haiko entschieden am
+   2026-09-15). Gestiegen stand hier gruen, gefallen rot -- auch beim Ticketpreis,
+   wo gestiegen meist keine gute Nachricht ist. Die Klassen bleiben, weil die
+   Musterseite genau diese Zustaende zeigt. */
 .af-kpi__delta--up {
-    color: var(--positive);
+    color: var(--text);
 }
 
 .af-kpi__delta--down {
-    color: var(--negative);
+    color: var(--text);
 }
 
 .af-kpi__hint {

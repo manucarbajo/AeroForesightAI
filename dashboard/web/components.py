@@ -484,6 +484,12 @@ def badge(text: str, *, variant: str = "default", icon_name: str | None = None) 
 KACHEL_VARIANTEN = ("zahl", "text", "kompakt")
 
 
+#: Die Richtung einer Veränderung als Zeichen (P7.5-U5.5). **Zeichen, kein
+#: Material-Symbol:** Der geladene Teilsatz hat keine Pfeile nach oben und unten, und
+#: ein fehlendes Symbol erschiene als sein Name in Buchstaben.
+PFEILE = {"up": "↑ ", "down": "↓ "}
+
+
 def kachel(
     label: str,
     value: Any,
@@ -531,11 +537,16 @@ def kachel(
 
     if variante == "kompakt":
         tone = f" af-kpi__delta--{direction}" if direction in {"up", "down"} else ""
+        # **Die Richtung als Pfeil, nicht als Farbe** (P7.5-U5.5, von Haiko entschieden
+        # am 2026-09-15): Gestiegen stand grün, gefallen rot — auch beim Ticketpreis,
+        # wo gestiegen meist keine gute Nachricht ist. Die Klassen bleiben, ihre Farbe
+        # ist seither neutral.
+        pfeil = PFEILE.get(direction or "", "")
         return html.Div(
             [
                 html.Div(label, className="af-kpi__label"),
                 html.Div(str(value), className="af-kpi__value"),
-                html.Div(delta, className=f"af-kpi__delta{tone}") if delta else None,
+                html.Div(f"{pfeil}{delta}", className=f"af-kpi__delta{tone}") if delta else None,
                 (
                     satz(hint, class_name="af-kpi__hint", element=html.Div, klein=True)
                     if hint

@@ -83,6 +83,17 @@ class TestEineKachel:
             ui.kachel("Preis", "120 EUR", delta="+1 %")
         assert "+1 %" in str(ui.kachel("Preis", "120 EUR", variante="kompakt", delta="+1 %"))
 
+    def test_the_direction_is_an_arrow_not_a_judgement(self):
+        """P7.5-U5.5 (von Haiko entschieden): Pfeil in neutraler Farbe statt grün und rot."""
+
+        oben = str(ui.kachel("Preis", "120 €", variante="kompakt", delta="+1 €", direction="up"))
+        unten = str(ui.kachel("Preis", "120 €", variante="kompakt", delta="−1 €", direction="down"))
+        gleich = str(ui.kachel("Preis", "120 €", variante="kompakt", delta="±0 €"))
+
+        assert "↑ +1 €" in oben
+        assert "↓ −1 €" in unten
+        assert "↑" not in gleich and "↓" not in gleich
+
     def test_the_three_variants_look_different(self):
         zahl = str(ui.kachel("Länge", 40))
         text = str(ui.kachel("Szenario", "Standard-Ausgangslage", variante="text"))
