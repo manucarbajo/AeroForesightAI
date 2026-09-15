@@ -146,6 +146,8 @@ class TestModellUndExperimentSindZweiOrte:
             # P7.13-U13.1: die zeitlichen Verläufe, optional, direkt nach dem
             # Szenario — keine Formularwand, sondern eine Liste mit Kurve.
             "verlaeufe",
+            # P7.13-U13.5: Preisbildung, Sättigung, Bevölkerung für diesen Lauf.
+            "modellannahmen",
             "umfang",
             "modus",
             "ablage",

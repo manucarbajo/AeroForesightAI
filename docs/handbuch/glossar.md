@@ -62,6 +62,11 @@ Zukunft. In den Laufdateien steht er als `consistency_score` mit dem Band
 `widerspruchsfrei` / `gemischt` / `spannungsreich`. Ausführlich:
 [CIB-Konsistenzprüfung](/doku/cib).
 
+**Modellannahmen** — Wie das Modell rechnet, soweit Sie es für einen Lauf ändern
+können: Preisbildung, Sättigung und Bevölkerung. Im Schritt «Modellannahmen»
+gelten sie nur für diesen Lauf, der dann «abgeleitet» heißt; im Bereich «Modell»
+ändern Sie die Standardwerte dauerhaft. Siehe [Lauf konfigurieren](/doku/lauf-konfigurieren).
+
 **Schrittfolge** — Die Form des Einrichtens seit August 2026: eine Frage je
 Bildschirm, mit «Zurück» und «Weiter» und einer Liste aller Schritte daneben.
 Drei davon genügen bis zum Start, der Rest ist optional. «Zurück» auf dem ersten

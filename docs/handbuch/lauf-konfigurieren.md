@@ -45,7 +45,7 @@ gerade gelesen haben.
 ## Auf schmalem Bildschirm
 
 Unter rund 900 px Breite ändert die Schrittfolge ihre Gestalt: Die Liste der
-Schritte wird ein schmaler Balken aus sieben Marken über der Frage, statt sieben
+Schritte wird ein schmaler Balken aus acht Marken über der Frage, statt acht
 Knöpfe untereinander zu stapeln — sonst hätte man an der Navigation vorbeirollen
 müssen, um zum Inhalt zu kommen. Welcher Schritt offen ist, sagt die Marke;
 welcher es ist, sagt die Überschrift darunter, und der Name jedes Schritts
@@ -66,7 +66,7 @@ vor den Feldern dieses Schritts und muss sich nicht erst durch Kopfzeile und
 Schrittliste tasten. Wer schon selbst irgendwohin geklickt oder getabbt ist,
 behält seinen Platz; die Seite reißt niemandem den Fokus weg.
 
-Angesagt wird der Wechsel ebenfalls: «Schritt 5 von 7: Lauf & Ablage». Dasselbe
+Angesagt wird der Wechsel ebenfalls: «Schritt 6 von 8: Lauf & Ablage». Dasselbe
 gilt für Statusmeldungen — eine gesperrte Weiter-Taste sagt sofort, was noch
 fehlt, statt stumm nicht zu reagieren. In der Schrittliste ist der offene Schritt
 nicht nur farblich markiert, sondern auch als solcher ausgezeichnet.
@@ -82,8 +82,8 @@ Leitstands sind noch nicht in gleicher Weise durchgegangen.
 
 **Drei Schritte genügen.** Was gerechnet wird, wie weit, und womit: Danach ist
 alles Weitere mit sinnvollen Werten vorbelegt, und der Knopf **Direkt zum Start**
-bringt Sie ans Ende. Drei Schritte sind als *optional* gekennzeichnet —
-Verläufe, Lauf & Ablage und Technik. Wer sie braucht, findet sie; wer nicht, geht
+bringt Sie ans Ende. Vier Schritte sind als *optional* gekennzeichnet —
+Verläufe, Modellannahmen, Lauf & Ablage und Technik. Wer sie braucht, findet sie; wer nicht, geht
 daran vorbei. «Verläufe» steht direkt nach der Wahl des Szenarios und damit
 zwischen den Entscheidungen: Er zeigt, was das gewählte Szenario vorgibt, und
 «Weiter» führt über ihn hinweg zur nächsten Frage.
@@ -317,7 +317,9 @@ Was Sie nach dem Start ändern, gilt erst für den nächsten Lauf.
   schreibt die Verläufe des Szenarios in den Editor, stellt die Auswahl auf die
   «Standard-Ausgangslage» und schaltet «Eigene Werte anwenden» ein.
 
-**Bevölkerung, Preisbildung und Sättigung wirken nur, wenn Sie sie speichern** —
+**Für einen einzelnen Lauf ändern Sie Bevölkerung, Preisbildung und Sättigung im
+Schritt «Modellannahmen».** Im Bereich **Modell** wirken sie nur, wenn Sie sie
+speichern —
 «Als Standard speichern» für das Preisverhalten, «Bevölkerung als Standard
 speichern» für Bevölkerung und Sättigung. Beide schreiben in
 `configs/properties.json` und gelten damit für alle künftigen Läufe. Was Sie dort
@@ -367,6 +369,30 @@ Preisstrategie. Eine Abweichung ist der Unterschied zu einem bestimmten Szenario
 auf ein anderes gelegt, hieße sie dort etwas anderes. Über dem Schritt erscheint
 dann eine Meldung mit **Rückgängig**: Ein Klick holt das alte Szenario samt seinen
 Abweichungen zurück.
+
+### Modellannahmen
+
+Der Schritt nach «Verläufe». Hier ändern Sie für **diesen Lauf**, wie das Modell
+rechnet, ohne es zu speichern:
+
+- **Preisbildung** — die Ziel-Auslastung, auf die der Anbieter seinen Preis
+  ausrichtet, und hinter «Feinabstimmung» Preisuntergrenze, Reaktionsstärke,
+  Dämpfung, Preisdeckel und die Kopplung an die Buchungen.
+- **Sättigung** — wie stark eine Buchung die nächste unwahrscheinlicher macht, und
+  wie stark das wirkt.
+- **Bevölkerung** — der Anteil jedes Segments und, hinter «Streuung der
+  Eigenschaften», Mittelwert und Streuung von Zahlungsbereitschaft und
+  Umweltbewusstsein.
+
+Vorbelegt ist jedes Feld mit dem Wert des gewählten Szenarios. Was Sie ändern,
+gilt nur für diesen Lauf: Er heißt im Ergebnis «abgeleitet» und nennt jede
+geänderte Annahme; «Prüfen & Starten» zeigt sie vorher unter den Abweichungen,
+und «Als Szenario sichern» nimmt sie mit. Was dem Szenario gleicht, zählt nicht als
+Änderung. Anders als die Verläufe bleiben die Modellannahmen stehen, wenn Sie das
+Szenario wechseln — sie beschreiben das Modell, nicht den Verlauf einer Welt. Sie
+wirken nur mit **Eigene Werte anwenden**; ist der Schalter aus, sind die Felder
+gesperrt. Die selteneren Felder eines Segments — etwa seine Erholung nach einer
+Buchung — stehen nur im Bereich **Modell**.
 
 ### Lauf & Ablage
 

@@ -37,7 +37,14 @@ from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 from dashboard.config_catalog import rahmenszenarien
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
-from dashboard.web.config_editor import delta, experiment, llm_pipeline, start_flow, verlaeufe
+from dashboard.web.config_editor import (
+    delta,
+    experiment,
+    llm_pipeline,
+    modellannahmen,
+    start_flow,
+    verlaeufe,
+)
 from dashboard.web.state import STORE_ID, initial_draft_dict
 
 #: Welcher Schritt gerade offen ist. Als Store und nicht als Adresse, weil ein
@@ -169,6 +176,19 @@ STEPS: list[Step] = [
         "Verläufe",
         "Wie sich die Größen, die das Szenario vorgibt, über den Lauf entwickeln.",
         verlaeufe.layout,
+        required=False,
+    ),
+    # **Direkt nach «Verläufe», optional** (P7.13-U13.5, von Haiko entschieden am
+    # 2026-09-15): Preisbildung, Sättigung und Bevölkerung für diesen Lauf. Ein
+    # eigener Schritt statt eines Teils von «Verläufe», weil es Einzelwerte und
+    # Verteilungen sind, keine Kurven — und statt einer Wahl im Bereich «Modell»,
+    # weil der sonst wieder halb Experiment, halb Modell wäre (P1.9).
+    Step(
+        "modellannahmen",
+        "Modellannahmen",
+        "Wie der Anbieter preist, wie schnell Reisende gesättigt sind und wer bucht — "
+        "für diesen Lauf, ohne das Modell zu ändern.",
+        modellannahmen.layout,
         required=False,
     ),
     Step(

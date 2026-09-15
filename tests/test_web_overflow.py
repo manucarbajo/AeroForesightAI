@@ -931,8 +931,13 @@ DECKEL: dict[int, dict[str, float]] = {
         # Gemessen wird unter der Standard-Ausgangslage, deren erste Größe keinen
         # Stützpunkt trägt — die Zeilen selbst stehen hier nicht auf dem Schirm.
         "Schritt 2": 1.13,
-        "Schritt 3": 1.00,
+        # **«Modellannahmen», neu am 2026-09-15 mit P7.13-U13.5** (von Haiko entschieden):
+        # direkt nach «Verläufe». Drei Karten untereinander maßen 1,39; mit
+        # Preisbildung und Sättigung nebeneinander 1,15. Ab hier dieselben Schritte
+        # wie vorher, eine Nummer weiter.
+        "Schritt 3": 1.15,
         "Schritt 4": 1.00,
+        "Schritt 5": 1.00,
         # Ab hier sind es **dieselben Schritte wie vorher, eine Nummer
         # weiter**: P2.0-C hat den vierten entfernt. Der alte Schritt 5 (1,31)
         # ist der neue 4 und misst 1,22, der alte 6 (1,00) ist der neue 5 und
@@ -944,8 +949,8 @@ DECKEL: dict[int, dict[str, float]] = {
         # 1,15 -> 1,00 am 2026-09-15: «Lauf & Ablage» passt auf einen Schirm, seit
         # P7.13-U13.4 die Dateiauswahl entfernt hat. Der Gewinn lag innerhalb von
         # SCHLUPF und fiel erst beim Umnummerieren auf.
-        "Schritt 5": 1.00,
-        "Schritt 6": 1.00,  # Technik; 1,02 -> 1,00: passt auf einen Schirm
+        "Schritt 6": 1.00,
+        "Schritt 7": 1.00,  # Technik; 1,02 -> 1,00: passt auf einen Schirm
         # **1,29 → 1,45 mit W5.4, und das ist bezahlt, nicht verrutscht.** Das
         # Lesemaß bricht den Preflight-Text bei 75 statt bei 124 Zeichen um;
         # dieselben Sätze brauchen dadurch mehr Zeilen. Der Handel: 0,16
@@ -978,7 +983,7 @@ DECKEL: dict[int, dict[str, float]] = {
         # **1,59 → 1,57 am 2026-09-13** mit U1.3 Teil B, wie bei Schritt 1.
         # **1,57 -> 1,28 am 2026-09-14 mit P7.4-U4.4**: Zusammenfassung in fester
         # Reihenfolge; Modellinterna und Herkunft hinter «Technische Details».
-        "Schritt 7": 1.28,
+        "Schritt 8": 1.28,
     },
     1024: {
         "Einstieg": 1.00,
@@ -1027,19 +1032,21 @@ DECKEL: dict[int, dict[str, float]] = {
         # unter der Liste (Haiko, 2026-09-15); unter 1280 px stehen die Spalten
         # untereinander, dort kostet sie Höhe an jedem Platz.
         "Schritt 2": 1.68,
-        "Schritt 3": 1.00,
+        # «Modellannahmen» (P7.13-U13.5), siehe 1280: vorher 1,45.
+        "Schritt 3": 1.15,
         "Schritt 4": 1.00,
+        "Schritt 5": 1.00,
         # Umnummeriert wie bei 1280: alter 5 (1,31) → neuer 4, misst 1,22;
         # alter 6 (1,08) → neuer 5, misst 1,08.
-        "Schritt 5": 1.00,  # Lauf & Ablage; 1,15 -> 1,00, siehe 1280
+        "Schritt 6": 1.00,  # Lauf & Ablage; 1,15 -> 1,00, siehe 1280
         # Technik: gemessen 1,05 am 2026-09-15, vorher 1,00. Am Schritt hat sich
         # nichts geändert; die Zahl steht als Ist-Stand, nicht als Zuwachs.
-        "Schritt 6": 1.05,
+        "Schritt 7": 1.05,
         # 1,57 -> 1,65 am 2026-09-13 mit U2.6: Satz und Laengenkachel des
         # Pruefschritts tragen die Modellzeit (siehe Schritt 1).
         # **1,65 -> 1,31 am 2026-09-14 mit P7.4-U4.4**: Zusammenfassung in fester
         # Reihenfolge; Modellinterna und Herkunft hinter «Technische Details».
-        "Schritt 7": 1.31,
+        "Schritt 8": 1.31,
     },
     # **1440 × 900, die Größe der Kriterien von P7.4** (von Haiko entschieden am
     # 2026-09-14). Gemessen am selben Tag vor U4.1 und U4.4: Nur Schritt 1 und
@@ -1052,13 +1059,14 @@ DECKEL: dict[int, dict[str, float]] = {
         # und der Einzelheiten darunter; Stresstests hinter «Stresstests zeigen».
         "Schritt 1": 1.00,
         "Schritt 2": 1.00,  # «Verläufe», P7.13-U13.1
-        "Schritt 3": 1.00,
+        "Schritt 3": 1.00,  # «Modellannahmen», P7.13-U13.5
         "Schritt 4": 1.00,
         "Schritt 5": 1.00,
         "Schritt 6": 1.00,
+        "Schritt 7": 1.00,
         # **1,42 -> 1,13 am 2026-09-14 mit P7.4-U4.4**: Zusammenfassung in fester
         # Reihenfolge; Modellinterna und Herkunft hinter «Technische Details».
-        "Schritt 7": 1.13,
+        "Schritt 8": 1.13,
     },
 }
 

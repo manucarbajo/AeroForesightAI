@@ -46,6 +46,7 @@ from dashboard.web.config_editor import (
     llm_pipeline,
     macro,
     micro,
+    modellannahmen,
     sichern,
     start_flow,
     verlaeufe,
@@ -192,10 +193,13 @@ def register_callbacks(app) -> None:
         Input({"type": verlaeufe.PUNKT, "groesse": ALL, "index": ALL, "key": ALL}, "value"),
         Input({"type": verlaeufe.STAND, "groesse": ALL}, "data"),
         Input({"type": verlaeufe.STRATEGIE, "slot": ALL}, "value"),
+        Input({"type": modellannahmen.ANNAHME, "pfad": ALL}, "value"),
         State(STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def _sync(_values, _flags, _rules, _starts, _punkte, _stand, _strategie, draft: dict | None):
+    def _sync(
+        _values, _flags, _rules, _starts, _punkte, _stand, _strategie, _annahmen, draft: dict | None
+    ):
         """Sichtbare Felder in den Store — **und nur, wenn sich etwas ändert** (P3.9).
 
         Der zweite Halbsatz ist die ganze Arbeit von P3.9. Dieser Callback feuert
@@ -239,6 +243,11 @@ def register_callbacks(app) -> None:
         strategien = ctx.inputs_list[6]
         if starts or punkte or strategien:
             neu = verlaeufe.eingaben_anwenden(neu, starts, punkte, strategien)
+
+        # **Die Modellannahmen des Schritts** (P7.13-U13.5), aus demselben Grund hier.
+        annahmen = ctx.inputs_list[7]
+        if annahmen:
+            neu = modellannahmen.eintraege_anwenden(neu, annahmen)
 
         neu, verworfen = verlaeufe.nach_szenariowechsel(draft or {}, neu)
 

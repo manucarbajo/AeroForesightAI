@@ -387,10 +387,11 @@ def test_the_setup_area_builds_with_the_default_draft():
     # Sieben: acht bis P1.9-W3.1 (die beiden dichten Bereiche zogen ins
     # «Modell»), sieben mit der «Ausgangslage» aus W3.3, sechs seit P2.0-C
     # -- die Faktorlage ist keine Eingabe mehr, sie entsteht im Lauf --, und
-    # sieben seit P7.13-U13.1 mit «Verlaeufe» (von Haiko entschieden am
-    # 2026-09-15). Die Zahl steht hier bewusst als Zahl: Waechst die
-    # Schrittfolge, ist das eine Entscheidung und keine Nebenwirkung.
-    assert len(wizard.STEPS) == 7
+    # sieben seit P7.13-U13.1 mit «Verlaeufe» und acht seit U13.5 mit
+    # «Modellannahmen» (beide von Haiko entschieden am 2026-09-15). Die Zahl steht
+    # hier bewusst als Zahl: Waechst die Schrittfolge, ist das eine Entscheidung
+    # und keine Nebenwirkung.
+    assert len(wizard.STEPS) == 8
 
 
 def test_launch_summary_describes_the_draft():

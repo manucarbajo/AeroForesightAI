@@ -36,6 +36,8 @@ _DISTRIBUTION_LABELS = {
     "wtp_eur": "Zahlungsbereitschaft (in Euro)",
     "environmental_awareness": "Umweltbewusstsein",
 }
+#: Dieselben Namen für den Schritt «Modellannahmen» (P7.13-U13.5) — eine Quelle.
+VERTEILUNG_NAMEN = _DISTRIBUTION_LABELS
 
 _MODIFIERS = [
     ("wtp_multiplier", 1.0),
