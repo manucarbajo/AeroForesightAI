@@ -220,6 +220,22 @@ LAST_REQUIRED = 2
 FINAL = len(STEPS) - 1
 
 
+def schritt(key: str) -> int:
+    """Wo ein Schritt steht, gefunden über seinen Schlüssel statt über eine Zahl.
+
+    Die Positionen haben sich mit W3.1, W3.3 und P2.0-C dreimal bewegt, und jedes
+    Mal musste eine Hand jede Zahl nachziehen, die einen Schritt meinte. Über den
+    Schlüssel bleibt eine Zuordnung richtig, wenn ein Schritt dazukommt. **Ein
+    unbekannter Schlüssel scheitert laut**: Ein still gewählter Rückfall sperrte
+    «Weiter» im falschen Schritt.
+    """
+
+    for index, step in enumerate(STEPS):
+        if step.key == key:
+            return index
+    raise KeyError(f"Keinen Schritt mit dem Schlüssel {key!r}")
+
+
 #: In welchem Schritt ein beanstandetes Feld eingestellt wird (P1.9-W2.2).
 #:
 #: `src/validation.py` hängt seine Befunde an ein Feld — sechs Felder sind es
@@ -239,21 +255,22 @@ FINAL = len(STEPS) - 1
 #: brauchen — kostete aber acht Schrittbäume je Tastendruck, darunter die beiden
 #: mit zusammen 168 Bedienelementen.
 FELD_SCHRITT: dict[str, int] = {
-    "rounds": 1,
-    "seed": 2,
+    "rounds": schritt("umfang"),
+    "seed": schritt("modus"),
     "simulation_name": FINAL,
-    # Um eins nach vorn gerückt, seit «Ausgangslage» mit P2.0-C entfallen ist.
+    # **Über den Schlüssel, nicht als Zahl.** Bis zum 2026-09-15 standen hier
+    # Positionen, nach P2.0-C von Hand um eins nach vorn gerückt.
     # `test_web_wizard` gleicht die Tabelle gegen die wirklich gerenderten
-    # Felder ab — eine von Hand gepflegte Zahl läuft sonst still weg, und dann
-    # sperrt «Weiter» im falschen Schritt.
-    "model": 4,
+    # Felder ab — eine von Hand gepflegte Zahl lief sonst still weg, und dann
+    # sperrte «Weiter» im falschen Schritt.
+    "model": schritt("technik"),
     # **Mit P3.4 dazugekommen**, und der Wächter hat es gemeldet, nicht ein
     # Blick: Seit `validate_llm_settings` auch den Endpunkt prüft, kann ein
     # Befund an `base_url` hängen — ohne diese Zeile landete er auf «Prüfen &
     # Starten», also *nicht* in dem Schritt, in dem das Feld steht.
-    "base_url": 4,
-    "temperature": 4,
-    "max_tokens": 4,
+    "base_url": schritt("technik"),
+    "temperature": schritt("technik"),
+    "max_tokens": schritt("technik"),
 }
 
 #: Wohin ein Befund gehört, dessen Feld die Schrittfolge nicht kennt. «Prüfen &

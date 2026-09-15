@@ -1235,7 +1235,8 @@ class TestDasTorHaeltWasEsZusagt:
 
         assert weiter is False, "«Weiter» sperrt in einem Schritt ohne den Befund"
         assert start is True, "«Lauf starten» muss trotzdem sperren"
-        assert "Schritt 2" in str(meldung), "Die Meldung sagt nicht, wohin"
+        wohin = f"Schritt {wizard.FELD_SCHRITT['rounds'] + 1}"
+        assert wohin in str(meldung), "Die Meldung sagt nicht, wohin"
 
     def test_start_is_blocked_by_any_finding(self, draft):
         """Von «Prüfen & Starten» geht es nicht weiter, sondern los."""
