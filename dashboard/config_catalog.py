@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -602,6 +602,105 @@ def property_overrides_from_edits(edits: dict[str, PropertyEditState]) -> list[P
 # Assistenten gewählte Faktorlage in Vorgaben für den Lauf — und stellte damit
 # die Antwort vor die Rechnung. Die Faktoren entstehen heute im Lauf aus den
 # exogenen Systemgrößen des Rahmenszenarios.
+
+
+def exogene_groessen(properties_file: str = "properties.json") -> list[str]:
+    """Die Systemgrößen, deren Verlauf ein Szenario vorgibt — in Dateireihenfolge (P7.13-U13.1).
+
+    Gesucht über `source == "trajectory"`, nicht aufgezählt: `provider_markup` und
+    `ticket_price` rechnet der Lauf selbst, und eine neue Größe in der Datei steht
+    ohne weiteres Zutun im Schritt «Verläufe».
+    """
+
+    from src.market.property_engine import is_exogenous_property
+
+    properties = load_properties_config(CONFIGS_DIR / properties_file)
+    return [prop.id for prop in properties.system_properties if is_exogenous_property(prop)]
+
+
+def von_rahmen_veraendert() -> set[str]:
+    """Welche Systemgrößen mindestens ein Rahmenszenario verändert (P7.13-U13.1).
+
+    Sie stehen im Schritt «Verläufe» offen, die übrigen hinter «Weitere Größen» —
+    von Haiko entschieden am 2026-09-15. Abgeleitet aus den Dateien, damit ein
+    neues Rahmenszenario die Liste mitbringt.
+    """
+
+    return {
+        override.property_id
+        for preset in list_sweep_presets()
+        if preset.art == "rahmen"
+        for override in preset.property_overrides
+    }
+
+
+def _ohne_abweichungen(draft: ConfigDraft) -> ConfigDraft:
+    return replace(draft, abweichungen={}, preisstrategie=None)
+
+
+def szenario_verlauf(draft: ConfigDraft, groesse: str) -> PropertyEditState:
+    """Startwert und Regeln einer Größe **im gewählten Szenario** — ohne die Abweichungen.
+
+    Die Vorbelegung des Editors und der Maßstab dafür, was eine Abweichung ist.
+    Gelesen aus dem Zustand, den der Lauf ohne Abweichungen bekäme, nicht aus der
+    Szenariodatei: Nur so gilt dieselbe Regel wie beim Rechnen, auch für die
+    Standard-Ausgangslage mit «Eigene Werte anwenden».
+    """
+
+    state = prepare_simulation_state(_ohne_abweichungen(draft))
+    prop = next(p for p in state.properties.system_properties if p.id == groesse)
+    return _trajectory_to_edit_state(groesse, prop.trajectory)
+
+
+def szenario_preisstrategie(draft: ConfigDraft) -> str:
+    """Die Preisstrategie des gewählten Szenarios, ohne eine eigene Wahl."""
+
+    state = prepare_simulation_state(_ohne_abweichungen(draft))
+    for regel in state.properties.market_rules:
+        if regel.effect.get("type") == "booking_yield_feedback":
+            return str(regel.effect.get("strategie") or "auslastung")
+    return "auslastung"
+
+
+def verlaeufe_je_tick(draft: ConfigDraft, groesse: str) -> tuple[list[float], list[float]]:
+    """Die beiden Kurven des Schritts «Verläufe»: Szenario und eigene Fassung, je Tick.
+
+    **Dieselbe Rechnung wie im Lauf** (P7.13-U13.1): beide aus dem Zustand, den
+    `prepare_simulation_state` bauen würde, gefragt über `resolve_property` —
+    samt Begrenzung auf Mindest- und Höchstwert. Eine zweite Verlaufsrechnung für
+    die Oberfläche könnte von der ersten abweichen, und die Kurve zeigte etwas
+    anderes, als gerechnet wird.
+    """
+
+    from src.market.property_engine import resolve_property
+
+    ticks = range(0, int(draft.rounds) + 1)
+    basis = prepare_simulation_state(_ohne_abweichungen(draft)).properties
+    eigen = prepare_simulation_state(draft).properties
+    return (
+        [resolve_property(groesse, tick, basis) for tick in ticks],
+        [resolve_property(groesse, tick, eigen) for tick in ticks],
+    )
+
+
+def abweichungen_bereinigen(draft: ConfigDraft) -> ConfigDraft:
+    """Was dem Szenario gleicht, ist keine Abweichung und fällt weg (P7.13-U13.1).
+
+    Der Editor zeigt die Werte des Szenarios, und ein Eingabefeld meldet beim
+    Zeichnen seinen unveränderten Wert. Ohne diese Bereinigung stünde jede
+    angesehene Größe als «abgeleitet» im Artefakt, obwohl niemand etwas geändert hat.
+    """
+
+    behalten = {
+        groesse: edit
+        for groesse, edit in draft.abweichungen.items()
+        if property_overrides_from_edits({groesse: edit})
+        != property_overrides_from_edits({groesse: szenario_verlauf(draft, groesse)})
+    }
+    strategie = draft.preisstrategie
+    if strategie is not None and strategie == szenario_preisstrategie(draft):
+        strategie = None
+    return replace(draft, abweichungen=behalten, preisstrategie=strategie)
 
 
 def abweichungen_als_sweep(draft: ConfigDraft, state: Any) -> SweepConfig:
