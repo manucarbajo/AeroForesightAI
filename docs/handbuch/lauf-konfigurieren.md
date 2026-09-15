@@ -310,13 +310,12 @@ Was Sie nach dem Start ändern, gilt erst für den nächsten Lauf.
 **Und die Werte kommen nur unter zwei Bedingungen im Lauf an:**
 
 - Im ersten Schritt ist die **Standard-Ausgangslage** gewählt und hinter
-  «Feinabstimmung» **Eigene Werte anwenden** eingeschaltet — oder **Eigene
-  Einstellungen**.
+  «Feinabstimmung» **Eigene Werte anwenden** eingeschaltet.
 - Ist ein vorbereitetes **Szenario** gewählt, gilt allein das Szenario, und Ihre
   Werte aus dem Modell greifen nicht. Wer von einem Szenario ausgehen und selbst
   anpassen will, klickt dort **Werte übernehmen und selbst anpassen**: Das
-  schreibt die Verläufe des Szenarios in den Editor und schaltet auf «Eigene
-  Einstellungen» um.
+  schreibt die Verläufe des Szenarios in den Editor, stellt die Auswahl auf die
+  «Standard-Ausgangslage» und schaltet «Eigene Werte anwenden» ein.
 
 **Bevölkerung, Preisbildung und Sättigung wirken nur, wenn Sie sie speichern** —
 «Als Standard speichern» für das Preisverhalten, «Bevölkerung als Standard
