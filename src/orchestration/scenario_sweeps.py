@@ -345,6 +345,35 @@ def rahmenszenarien(directory: Path | None = None) -> list[SweepConfig]:
     return [config for config in load_all_sweep_configs(directory) if config.art == "rahmen"]
 
 
+def _gleicher_verlauf(override: Any, verlauf: Any) -> bool:
+    """Ob eine Überschreibung einen Verlauf aus Startwert und Regeln unverändert ließe."""
+
+    from src.models.property_models import TrajectoryRule
+
+    if override.baseline is not None and override.baseline != verlauf.baseline:
+        return False
+    if override.rules is None:
+        return True
+    return [TrajectoryRule.model_validate(regel) for regel in override.rules] == verlauf.rules
+
+
+def _stufen_als_regeln(traj: Any) -> Any:
+    """Eine Stufenfunktion als Startwert mit «springt auf»-Regeln — derselbe Verlauf."""
+
+    from src.models.property_models import BaselineTrajectory, SetEffect, TrajectoryRule
+
+    punkte = sorted(traj.points, key=lambda punkt: punkt.tick)
+    if not punkte:
+        return BaselineTrajectory()
+    return BaselineTrajectory(
+        baseline=punkte[0].value,
+        rules=[
+            TrajectoryRule(active_from_tick=punkt.tick, effect=SetEffect(value=punkt.value))
+            for punkt in punkte
+        ],
+    )
+
+
 def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
     """Apply sweep overrides to an initial SimulationState.
 
@@ -353,6 +382,8 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
     - Overrides initial factor states
     - Sets max_ticks from sweep config
     """
+    from src.models.property_models import StepFunctionTrajectory
+
     state.clock.max_ticks = sweep.max_ticks
 
     prop_lookup: dict[str, Any] = {}
@@ -366,6 +397,24 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
         traj = prop.trajectory
         if traj is None:
             continue
+
+        # **Eine Stufenfunktion wird zu Startwert plus Regeln** (P7.13, gemessen am
+        # 2026-09-15). Sie hat weder `baseline` noch `rules`, und die beiden
+        # Prüfungen unten übersprangen eine Überschreibung darauf still: Eine
+        # Abweichung an der Bevölkerung kam nicht an, und das Artefakt nannte sie
+        # trotzdem. Die Umwandlung ist verlustfrei — `resolve_trajectory` nimmt bei
+        # einer Stufenfunktion den ersten Punkt als Startwert und ab jedem Punkt
+        # dessen Wert, und genau das tut eine «springt auf»-Regel.
+        if isinstance(traj, StepFunctionTrajectory):
+            als_regeln = _stufen_als_regeln(traj)
+            # **Nur wenn sich wirklich etwas ändert.** Jeder Entwurf mit «Eigene Werte
+            # anwenden» trägt die Punkte als Regeln; umgewandelt würde dann die
+            # Darstellung im Zustand wechseln, ohne dass sich ein Wert bewegt — und
+            # der Wirkungstest sähe den Schalter wirken, wo er nichts tut.
+            if _gleicher_verlauf(override, als_regeln):
+                continue
+            traj = als_regeln
+            prop.trajectory = traj
 
         if override.baseline is not None:
             if hasattr(traj, "baseline"):

@@ -147,6 +147,30 @@ class TestJederStartpfadSetztIhn:
         )
         assert feedback.effect.get("strategie") == "marge"
 
+    def test_eine_abweichung_an_der_bevoelkerung_kommt_an(self):
+        """Gemessen am 2026-09-15: Das Artefakt nannte sie, der Lauf rechnete ohne."""
+
+        from dashboard.config_catalog import PropertyEditState
+        from src.market.property_engine import resolve_trajectory
+
+        draft = default_config_draft()
+        draft.scenario_mode = "sweep"
+        draft.sweep_id = "business_as_usual"
+        draft.abweichungen = {
+            "bevoelkerungsentwicklung": PropertyEditState(
+                property_id="bevoelkerungsentwicklung", baseline=5000.0
+            )
+        }
+
+        state = prepare_simulation_state(draft)
+
+        prop = next(
+            p for p in state.properties.system_properties if p.id == "bevoelkerungsentwicklung"
+        )
+        assert resolve_trajectory(prop.trajectory, 60) == 5000.0
+        assert state.rahmen is not None
+        assert "bevoelkerungsentwicklung" in state.rahmen.abweichungen
+
     def test_eine_unbekannte_abweichung_scheitert_laut(self):
         """Still übersprungen wäre sie eine Abweichung, die nicht ankommt."""
 

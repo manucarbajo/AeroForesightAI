@@ -443,3 +443,74 @@ class TestDerSweepHatKeinSprachmodell:
             "`test_ein_sweep_ruft_ihn_nie` nichts."
         )
         assert all("kein Sprachmodell" in i.error for i in ende.llm_incidents)
+
+
+class TestEineStufenfunktionLaesstSichUeberschreiben:
+    """P7.13, gemessen am 2026-09-15.
+
+    `bevoelkerungsentwicklung` ist die einzige Stufenfunktion unter den
+    Systemgrößen. `apply_sweep_overrides` prüfte nur, ob ein Verlauf `baseline`
+    und `rules` hat — eine Überschreibung darauf fiel still weg. Über das Dashboard
+    stand die Abweichung dann im Artefakt («abgeleitet»), im Lauf nicht.
+    """
+
+    GROESSE = "bevoelkerungsentwicklung"
+
+    def _verlauf(self, state) -> list[float]:
+        from src.market.property_engine import resolve_trajectory
+
+        prop = next(p for p in state.properties.system_properties if p.id == self.GROESSE)
+        return [resolve_trajectory(prop.trajectory, tick) for tick in range(0, 131)]
+
+    def _szenario(self, **override):
+        from src.models.sweep_models import PropertyOverride, SweepConfig
+
+        return SweepConfig(
+            id="probe",
+            name="Probe",
+            description="Stufenfunktion",
+            property_overrides=[PropertyOverride(property_id=self.GROESSE, **override)],
+        )
+
+    def test_the_conversion_alone_changes_no_tick(self):
+        from src.config_loader import build_initial_state
+
+        vorher = self._verlauf(build_initial_state())
+        nachher = self._verlauf(apply_sweep_overrides(build_initial_state(), self._szenario()))
+
+        assert nachher == vorher
+
+    def test_a_new_start_value_arrives(self):
+        from src.config_loader import build_initial_state
+
+        state = apply_sweep_overrides(
+            build_initial_state(), self._szenario(baseline=5000.0, rules=[])
+        )
+
+        assert set(self._verlauf(state)) == {5000.0}
+
+    def test_an_override_with_its_own_values_leaves_its_form(self):
+        """Jeder Entwurf mit «Eigene Werte anwenden» trägt die Punkte als Regeln.
+
+        Das ist keine Änderung. Die erste Fassung wandelte trotzdem um, und der
+        Wirkungstest sah den Schalter auf dem Einzellauf wirken, obwohl sich kein
+        einziger Wert bewegte — nur die Darstellung im Zustand.
+        """
+
+        from src.config_loader import build_initial_state
+        from src.models.property_models import StepFunctionTrajectory
+
+        state = build_initial_state()
+        prop = next(p for p in state.properties.system_properties if p.id == self.GROESSE)
+        punkte = sorted(prop.trajectory.points, key=lambda punkt: punkt.tick)
+        regeln = [
+            {"active_from_tick": punkt.tick, "effect": {"type": "set", "value": punkt.value}}
+            for punkt in punkte
+        ]
+
+        nachher = apply_sweep_overrides(
+            state, self._szenario(baseline=punkte[0].value, rules=regeln)
+        )
+
+        prop = next(p for p in nachher.properties.system_properties if p.id == self.GROESSE)
+        assert isinstance(prop.trajectory, StepFunctionTrajectory)
