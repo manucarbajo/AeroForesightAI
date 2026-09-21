@@ -66,7 +66,7 @@ Von billig und mechanisch zu teuer und urteilsabhängig. Die Blöcke 2, 3 und 5 
 1. `dashboard/legacy_streamlit/` und `src/legacy/`: mit `grep` über Code, `pyproject.toml`, `Dockerfile`, `docker-compose.yml`, CI, `README.md` und `docs/handbuch/` nach übrig gebliebenen Verweisen suchen. `tests/test_launcher_vertrag.py` darf keinen alten Import mehr sehen.
 2. Die «sieben Namen, auf die nichts verweist» und die Funktionen, die «nur ihr eigener Test am Leben hielt»: Kann sie ein dynamischer Zugriff erreichen (`getattr`, Namen als Zeichenkette in Config oder JSON)? Ein statisches `grep` findet das nicht.
 3. **Verhaltensänderungen, die Nutzer treffen** — jeweils prüfen, ob README und `docs/handbuch/ref-ausgaben.md` bzw. `ref-config.md` mitgezogen sind:
-   - `--sweep` ist weg (die CLI bricht ab, statt still den Standardlauf zu rechnen).
+   - `--sweep` ist weg (die CLI bricht ab, statt still den Standardlauf zu rechnen). **Von Hand nachstellen:** `python -m src.run_simulation --sweep x` muss mit Exit-Code 2 scheitern, `python -m src.orchestration.scenario_sweeps --sweep <id>` muss weiterhin rechnen (dort steht `--sweep` in `scenario_sweeps.py:942` bewusst noch). Der Wächter dazu ist `tests/test_cli_schalter.py`, er gehört in die Mutationsprobe von Block 3.
    - `round_history.json` zeigt jede Runde statt überall den Endzustand.
    - `compute_ticket_price` heißt jetzt `compute_base_cost`.
 4. Die drei gelöschten Tests: Ist die jeweilige Zusage durch einen anderen Test gehalten? Nachweis per Mutation (Zusage brechen, Test muss rot werden).
