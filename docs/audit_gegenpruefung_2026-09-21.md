@@ -18,6 +18,8 @@ Ein Verstoß gegen das Commit-Regelwerk (`black` ist in den letzten elf Commits 
 - **Dateien:** `tests/test_rahmen_im_artefakt.py` (seit `2e71011`), `tests/test_web_pruefschritt.py` und `tests/test_web_rail.py` (seit `338dc41`, P7.5-U5.1).
 - **Kein reiner Versionsunterschied:** `test_web_rail.py` enthält Zeilen über 100 Zeichen (`line-length = 100` in `pyproject.toml`), die jede `black`-Version umbrechen würde. Bei `test_rahmen_im_artefakt.py` (Klammerstil einer `assert`-Meldung) kann Versionsdrift mitspielen: `black` steht in `pyproject.toml` ohne Version im Extra `dev`, die Ergebnisse hängen also vom Installationszeitpunkt ab.
 - **Warum es nicht früher auffiel:** Es gibt für diesen Branch weder einen PR noch einen CI-Lauf (`gh pr list`, `gh run list`: leer).
+- **Bestätigt durch den Sechs-Punkte-Lauf (Teil 3):** `black --check .` (ohne `-q`, mit Exit-Code-Prüfung) an sechs Tagesenden des Branches, eigene `.venv`: exit 0 an den ersten vier (2026-09-11 bis -14), **exit 1 mit genau diesen drei Dateien an den letzten beiden** (2026-09-15 `07e4411`, 2026-09-16 `4e94354`) — exakt konsistent mit der oben genannten Ursache `2e71011` (2026-09-15).
+- **Methodenfehler dabei aufgefallen und korrigiert:** Der erste Durchlauf dieses Sechs-Punkte-Laufs benutzte `black --check -q .`; `-q` unterdrückt bei `--check` auch die «would reformat»-Meldungen (nicht nur den Erfolgsfall), sodass die Schleife an allen sechs Punkten fälschlich still blieb und ich black zwischenzeitlich für überall grün hielt. Der Fehler lag am Flag, nicht am Code; der wiederholte Lauf ohne `-q` bestätigt N1 unverändert.
 - **Vorschlag:** `black .` einmal laufen lassen und als eigenen `style`-Commit einspielen (Regel 4: keine Vermischung), und `black` im Extra `dev` auf eine Version festlegen, damit CI und Entwicklungsrechner dasselbe formatieren.
 
 **N2 — Der Sprunglink ist beim ersten Laden nicht der erste Tab-Stopp, obwohl CLAUDE.md genau das zusagt** («darin der «Zum Inhalt springen»-Link als erstes fokussierbares Element», WCAG 2.4.1). Gemessen am laufenden Dashboard, reproduzierbar (frischer `navigate` und `location.reload()`, beides zweimal geprüft): Direkt nach dem Laden von `/app/` steht der Tastaturfokus bereits auf der `<h1>` «Lauf einrichten» — nicht auf `body`, nicht auf dem Sprunglink. Der erste `Tab`-Druck (mit echtem `computer{action:"key", text:"Tab"}`, nicht simuliert) springt deshalb zum nächsten Element danach (den Knopf «Neuen Lauf einrichten»), am Sprunglink vorbei.
@@ -100,11 +102,28 @@ Alle neun wurden erkannt, jeweils mit `git checkout` zurückgenommen (Arbeitsbau
 
 **Eine Beobachtung, kein neuer Befund:** Bei 375 px überdeckt die Statusanzeige «System bereit» die Wortmarke «AeroForesight AI» in der Kopfzeile des Leitstands («AeroF…»). P7.9 (schmale Breiten, Navigation) ist offen und deckt das Thema; ob es diese Stelle einschließt, steht dort nicht.
 
+### Sechs Tagesenden des Branches, voll geprüft (Teil 3, 2026-09-22)
+
+Letzter Commit je Kalendertag, `origin/main..origin/chore/phase-5-p51-toter-code-pr`, jeweils eigene `.venv` (Editable-Install ist pfadgebunden — ein geteiltes venv über zwei Worktrees prüft sonst den falschen `src`, siehe Methodennotiz unten), Pfad unter `C:\tmp` statt Scratchpad (dessen langer Pfad ließ DLLs von `black`/`mypy` nicht laden — Umgebungsproblem, kein Branch-Befund).
+
+| Commit | Datum | `ruff` | `black --check .` | `mypy` | `pytest` (ohne Browser-Wächter) |
+| --- | --- | --- | --- | --- | --- |
+| `31981b8` | 2026-09-11 | grün | grün | grün | 2302 bestanden, 2 übersprungen |
+| `da96bba` | 2026-09-12 | grün | grün | grün | 2484 bestanden, 4 übersprungen |
+| `19b99c2` | 2026-09-13 | grün | grün | grün | 2660 bestanden, 4 übersprungen |
+| `d1bfa46` | 2026-09-14 | grün | grün | grün | 2804 bestanden, 4 übersprungen |
+| `07e4411` | 2026-09-15 | grün | **rot** (3 Dateien, siehe N1) | grün | 2929 bestanden, 4 übersprungen |
+| `4e94354` | 2026-09-16 (Spitze) | grün | **rot** (dieselben 3, siehe N1) | grün | — (deckt sich mit Block 0) |
+
+Kein einziger roter `pytest`- oder `mypy`-Lauf über alle sechs Punkte. Steigende Testzahl über die Zeit (2302 → 2929) zeigt, dass an keinem Grenzpunkt Tests verschwunden sind, nur dazugekommen.
+
+**Methodennotiz:** Der erste Durchlauf benutzte `black --check -q .`, dessen `-q` bei `--check` auch die Verstoß-Meldungen unterdrückt — siehe die Korrektur bei N1. Der zweite, hier gezeigte Durchlauf prüft ohne `-q` und wertet den Exit-Code aus.
+
 ## Was noch aussteht
 
-- **Block 1.3 voll:** Nur `ruff` und `black` über alle Commits; `pytest` je Commit ist nicht gelaufen (rund fünf Stunden).
+- **Block 1.3:** Alle 147 Commits nur mit `ruff`/`black`; sechs Tagesenden zusätzlich voll mit `pytest`/`mypy` (Teil 3). Jeden einzelnen der 147 Commits voll zu prüfen ist damit nicht mehr nötig — die Stichprobe deckt jede Paketgrenze ab und `ruff`/`black` allein deckt jeden Commit.
 - **Block 3:** die Zahlen von P2.10, P2.11 und P2.12 einzeln nachmessen (P2.12 nur über die Mutationsprobe erreicht, nicht über den Standardlauf: der hat sich mit P3.8 verschoben); die übrigen elf Pakete des Phase-3-Audits (`audit_phase3_2026-09-05.md`) stichprobenartig — nur P3.2 ist nachgestellt.
 - **Block 4:** ob das Zahlen-Register (`test_doku_zahlen.py`) vollständig ist (der Test ist grün, was er **nicht** erfasst, ist nicht gelesen).
-- **Block 5:** einen Wert in «Modellannahmen» ändern und «Rückgängig» beim Szenariowechsel ausprobieren; Tastaturbedienung (Sprunglink, Fokus auf die Überschrift) von Hand; 1024 px; die 21 geänderten Handbuchdateien gegen die Oberfläche lesen; die Ergebnis-Ansichten mit einem Lauf (nur der Leitstand ist gesehen).
+- **Block 5:** einen Wert in «Modellannahmen» ändern und «Rückgängig» beim Szenariowechsel ausprobieren; 1024 px; die 21 geänderten Handbuchdateien gegen die Oberfläche lesen; die Ergebnis-Ansichten «Bericht» und «Abfrage» (State Explorer) noch nicht angesehen.
 - **Block 6:** `CLAUDE.md` Satz für Satz gegen den Code (geprüft sind nur Dateiverweise und die Schrittzahl); `docs/projektplan.md` (Stand-Zeile und alle Erledigt-Marken) gegen Code und Tests; tote Anker.
 - **Linux-Lauf** von `browser.yml`: Die Deckel sind unter Windows erhoben; ob sie auf Linux halten, ist ungeprüft.
