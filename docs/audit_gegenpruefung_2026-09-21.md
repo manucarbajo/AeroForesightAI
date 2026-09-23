@@ -1,8 +1,8 @@
-# Befundprotokoll der Gegenprüfung (Teil 1, 2 und 3) — 2026-09-21 und 2026-09-22
+# Befundprotokoll der Gegenprüfung (Teil 1 bis 4) — 2026-09-21 bis 2026-09-23
 
 **Geprüfter Stand:** `4e94354` (Branch `chore/phase-5-p51-toter-code-pr`). **Plan:** [`pruefplan_gegenpruefung_2026-09-21.md`](pruefplan_gegenpruefung_2026-09-21.md).
 
-**Das ist immer noch ein Zwischenstand.** Geprüft sind Block 0, 1 und 2 bis auf die unten genannten Lücken, aus Block 3 die Mutationsproben, P2.13, P3.2, der Backtest und (neu) sechs Tagesenden des Branches mit vollem `pytest`/`ruff`/`black`/`mypy`, aus Block 4 P4.5, aus Block 5 ein Durchgang durch alle acht Schritte, alle Bereiche, 375 px, den dunklen Modus und (neu) die Tastaturbedienung beim ersten Laden, aus Block 6 die Dateiverweise und die Schrittzahl in CLAUDE.md. **Nicht geprüft** ist alles unter [Was noch aussteht](#was-noch-aussteht). «Kein Blocker gefunden» heißt deshalb nur: keiner in dem, was gelaufen ist.
+**Das ist immer noch ein Zwischenstand**, aber ein deutlich kleinerer als noch gestern. Geprüft: Block 0 vollständig; Block 1 (Commit-Regeln) bis auf den vollen Commit-für-Commit-`pytest`-Lauf (ersetzt durch sechs Tagesenden voll geprüft, siehe unten); Block 2 vollständig; Block 3 die Mutationsproben, P2.11, P2.13, P3.2 und der Backtest (P2.10, P2.12 nur indirekt über Mutationsproben, nicht einzeln nachgemessen); Block 4 P4.5 (das Zahlen-Register selbst nicht auf Vollständigkeit geprüft); Block 5 ein Durchgang durch alle acht Schritte, alle Bereiche, 375 px, 1024 px, den dunklen Modus, die Tastaturbedienung beim ersten Laden, den State Explorer, die «Bericht»-Ansicht und «Modellannahmen» mit Szenariowechsel; Block 6 die Dateiverweise, die Schrittzahl, tote Anker und die Stand-Zeile in CLAUDE.md/Projektplan (nicht Satz für Satz vollständig). **Nicht geprüft** ist alles unter [Was noch aussteht](#was-noch-aussteht). «Kein Blocker gefunden» heißt deshalb nur: keiner in dem, was gelaufen ist.
 
 ## Ergebnis in einem Satz
 
@@ -102,6 +102,19 @@ Alle neun wurden erkannt, jeweils mit `git checkout` zurückgenommen (Arbeitsbau
 
 **Eine Beobachtung, kein neuer Befund:** Bei 375 px überdeckt die Statusanzeige «System bereit» die Wortmarke «AeroForesight AI» in der Kopfzeile des Leitstands («AeroF…»). P7.9 (schmale Breiten, Navigation) ist offen und deckt das Thema; ob es diese Stelle einschließt, steht dort nicht.
 
+### Nachgemessen in Teil 4 (2026-09-23)
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| **P2.11** (zwei Quellen für dieselbe Marktkonstante) | `resolve_market_feedback_config` trägt keine Literal-Rückfälle mehr (nur `_FELDER`-Übersetzung); `marginal_cost_fraction` steht einheitlich bei `0,25` in `configs/properties.json`; `test_market_feedback.py -k marginal_cost` grün |
+| **State Explorer, live** | Ohne Ollama: Abfrage scheitert **laut** mit klarer Fehlermeldung (Invariante 1 hält, keine erfundene Antwort). Mit «Beispielantworten ohne Sprachmodell»: liefert eine markierte Demo-Antwort ohne Zahlen — die Grounding-Prüfung selbst (P2.5) ließ sich damit nicht am Text beobachten, nur indirekt über die grüne Suite (`test_explorer_grounding.py`) |
+| **«Bericht»-Ansicht** | Lädt fehlerfrei, Property-Zeitplan zeigt denselben Wortlaut wie CLAUDE.md («0,2657 % p.a.» zur Bevölkerungskurve), Preis Start/Ende deckt sich mit `price_history.json` |
+| **«Modellannahmen» ändern + Szenariowechsel** | Ein an «Freiwillige Wende» geänderter Startwert (`demand_growth_rate`) wurde nach Wechsel zu «Business as Usual» auf dessen Standard zurückgesetzt — die Kernfunktion («ein Szenariowechsel verwirft Abweichungen») ist bestätigt. Die zugesagte «Rückgängig»-Meldung selbst habe ich **nicht** gesehen (vermutlich Timing meines Testablaufs) — nicht abschließend geprüft |
+| **1024 px** | Kein waagerechter Überlauf in allen fünf Bereichen |
+| **Modell-Bereich, Knotenzahlen** (C1-Nachfolgemessung) | Live im Browser bei 1280 px nachgemessen (dieselbe Methode wie der Docstring von `model_editor.HOST`: `document.querySelectorAll('*').length`): **2872 / 1951 / 134** statt der dokumentierten **3364 / 1886 / 146**. **Kein Befund:** Die Zahl in CLAUDE.md ist ausdrücklich «nachgemessen am 2026-09-06» datiert — nach der eigenen Doku-Regel («eine datierte Messung ist Geschichte und wird bewusst nicht gehalten») ist das keine Pflichtverletzung. Die tragende, undatierte Zusage («keine feste ID im Rumpf») hält weiter per grünem Test |
+| **Tote Anker** `docs/projektplan.md#...` | 15 Verweise aus CLAUDE.md/Projektplan geprüft; alle 13 stichprobenartig direkt nachgesehenen Präfixe (P0.2, P1.9, P2.0, P2.2, P2.3, P2.7, P3.8, P3.9, P3.17, P4.4, P4.5, P7.11, Phase 7) haben eine passende Überschrift. Ein erster automatisierter Lauf meldete alle als «fehlend» — eigener Skriptfehler (En-Dash `–` in Überschriften wie «2015–2024» falsch behandelt), keine echten toten Links |
+| **Stand-Zeile des Plans** | «163 bestanden» für den vollen Browser-Wächter (2026-09-16) deckt sich mit meiner eigenen Messung (Teil 1: 163 bestanden, 2026-09-21) |
+
 ### Sechs Tagesenden des Branches, voll geprüft (Teil 3, 2026-09-22)
 
 Letzter Commit je Kalendertag, `origin/main..origin/chore/phase-5-p51-toter-code-pr`, jeweils eigene `.venv` (Editable-Install ist pfadgebunden — ein geteiltes venv über zwei Worktrees prüft sonst den falschen `src`, siehe Methodennotiz unten), Pfad unter `C:\tmp` statt Scratchpad (dessen langer Pfad ließ DLLs von `black`/`mypy` nicht laden — Umgebungsproblem, kein Branch-Befund).
@@ -122,8 +135,8 @@ Kein einziger roter `pytest`- oder `mypy`-Lauf über alle sechs Punkte. Steigend
 ## Was noch aussteht
 
 - **Block 1.3:** Alle 147 Commits nur mit `ruff`/`black`; sechs Tagesenden zusätzlich voll mit `pytest`/`mypy` (Teil 3). Jeden einzelnen der 147 Commits voll zu prüfen ist damit nicht mehr nötig — die Stichprobe deckt jede Paketgrenze ab und `ruff`/`black` allein deckt jeden Commit.
-- **Block 3:** die Zahlen von P2.10, P2.11 und P2.12 einzeln nachmessen (P2.12 nur über die Mutationsprobe erreicht, nicht über den Standardlauf: der hat sich mit P3.8 verschoben); die übrigen elf Pakete des Phase-3-Audits (`audit_phase3_2026-09-05.md`) stichprobenartig — nur P3.2 ist nachgestellt.
+- **Block 3:** die Zahlen von P2.10 und P2.12 einzeln nachmessen (nur über Mutationsproben erreicht, nicht über einen dedizierten Lauf mit `marge`-Strategie bzw. höherer Kapazität); die übrigen elf Pakete des Phase-3-Audits (`audit_phase3_2026-09-05.md`) stichprobenartig — nur P3.2 ist nachgestellt.
 - **Block 4:** ob das Zahlen-Register (`test_doku_zahlen.py`) vollständig ist (der Test ist grün, was er **nicht** erfasst, ist nicht gelesen).
-- **Block 5:** einen Wert in «Modellannahmen» ändern und «Rückgängig» beim Szenariowechsel ausprobieren; 1024 px; die 21 geänderten Handbuchdateien gegen die Oberfläche lesen; die Ergebnis-Ansichten «Bericht» und «Abfrage» (State Explorer) noch nicht angesehen.
-- **Block 6:** `CLAUDE.md` Satz für Satz gegen den Code (geprüft sind nur Dateiverweise und die Schrittzahl); `docs/projektplan.md` (Stand-Zeile und alle Erledigt-Marken) gegen Code und Tests; tote Anker.
+- **Block 5:** die zugesagte «Rückgängig»-Meldung selbst sehen (die Kernfunktion ist bestätigt, die Meldung nicht); die 21 geänderten Handbuchdateien gegen die Oberfläche lesen; die Grounding-Prüfung des State Explorers mit einer echten (nicht Demo-)Antwort — braucht Ollama.
+- **Block 6:** `CLAUDE.md` Satz für Satz gegen den Code vollständig (stichprobenartig geprüft: Dateiverweise, Schrittzahl, Konstantennamen, Modell-Bereich-Zahlen, tote Anker — keiner ein Befund); `docs/projektplan.md` alle Erledigt-Marken einzeln gegen Code und Tests (nur die Stand-Zeile geprüft).
 - **Linux-Lauf** von `browser.yml`: Die Deckel sind unter Windows erhoben; ob sie auf Linux halten, ist ungeprüft.
