@@ -1,12 +1,12 @@
-# Befundprotokoll der Gegenprüfung (Teil 1 bis 4) — 2026-09-21 bis 2026-09-23
+# Befundprotokoll der Gegenprüfung (Teil 1 bis 5) — 2026-09-21 bis 2026-09-23
 
 **Geprüfter Stand:** `4e94354` (Branch `chore/phase-5-p51-toter-code-pr`). **Plan:** [`pruefplan_gegenpruefung_2026-09-21.md`](pruefplan_gegenpruefung_2026-09-21.md).
 
-**Das ist immer noch ein Zwischenstand**, aber ein deutlich kleinerer als noch gestern. Geprüft: Block 0 vollständig; Block 1 (Commit-Regeln) bis auf den vollen Commit-für-Commit-`pytest`-Lauf (ersetzt durch sechs Tagesenden voll geprüft, siehe unten); Block 2 vollständig; Block 3 die Mutationsproben, P2.11, P2.13, P3.2 und der Backtest (P2.10, P2.12 nur indirekt über Mutationsproben, nicht einzeln nachgemessen); Block 4 P4.5 (das Zahlen-Register selbst nicht auf Vollständigkeit geprüft); Block 5 ein Durchgang durch alle acht Schritte, alle Bereiche, 375 px, 1024 px, den dunklen Modus, die Tastaturbedienung beim ersten Laden, den State Explorer, die «Bericht»-Ansicht und «Modellannahmen» mit Szenariowechsel; Block 6 die Dateiverweise, die Schrittzahl, tote Anker und die Stand-Zeile in CLAUDE.md/Projektplan (nicht Satz für Satz vollständig). **Nicht geprüft** ist alles unter [Was noch aussteht](#was-noch-aussteht). «Kein Blocker gefunden» heißt deshalb nur: keiner in dem, was gelaufen ist.
+**Das ist ein weitgehend abgeschlossener Stand**, kein vollständiger. Geprüft: Block 0 vollständig; Block 1 (Commit-Regeln) bis auf den vollen Commit-für-Commit-`pytest`-Lauf (ersetzt durch sechs Tagesenden voll geprüft, siehe unten — als gleichwertiger Ersatz begründet, nicht als Lücke); Block 2 vollständig; Block 3 die Mutationsproben, P2.10 bis P2.13, P3.2, der Backtest und sieben der elf restlichen Phase-3-Audit-Findings; Block 4 P4.5 und die Grenzen des Zahlen-Registers; Block 5 ein Durchgang durch alle acht Schritte, alle Bereiche, 375/1024 px, den dunklen Modus, die Tastaturbedienung beim ersten Laden, den State Explorer, die «Bericht»-Ansicht und «Modellannahmen» mit Szenariowechsel; Block 6 die Dateiverweise, die Schrittzahl, tote Anker, die Stand-Zeile und eine Stichprobe von drei der 21 geänderten Handbuchkapitel gegen die Live-Oberfläche. **Nicht geprüft** ist alles unter [Was noch aussteht](#was-noch-aussteht) — vor allem der Rest von Block 6 (CLAUDE.md/Projektplan wirklich vollständig) und der Linux-Lauf des Browser-Wächters.
 
 ## Ergebnis in einem Satz
 
-Ein Verstoß gegen das Commit-Regelwerk (`black` ist in den letzten elf Commits rot), zwei reproduzierbare Befunde am laufenden System (der Sprunglink ist beim ersten Laden nicht der erste Tab-Stopp; jeder Lauf zeigt «? Ticks» im Szenario-Narrativ wegen einer Schreibreihenfolge), zwei Fragen an Haiko, sonst hält, was die Commit-Messages zusagen — jede nachgemessene Zahl und jede Mutationsprobe hat gestimmt.
+Ein Verstoß gegen das Commit-Regelwerk (`black`), drei reproduzierbare Befunde am laufenden System (Sprunglink-Fokus, «? Ticks» im Szenario-Narrativ, drei Handbuchkapitel mit veralteten Schrittangaben seit P7.13), zwei Fragen an Haiko, sonst hält, was die Commit-Messages zusagen — jede nachgemessene Zahl (auch die mit abweichenden Kommastellen) und jede Mutationsprobe hat sich als richtig oder erklärbar erwiesen.
 
 ## Befunde
 
@@ -37,6 +37,19 @@ Ein Verstoß gegen das Commit-Regelwerk (`black` ist in den letzten elf Commits 
 - **Kein bestehender Test fängt das:** `tests/test_run_scenario_generator.py:76/441` legt `run_metadata.json` per Fixture **vor** dem Aufruf an (`_mit_metadaten`) und bildet damit die echte Schreibreihenfolge aus `save_run_outputs` nicht ab — dieselbe Klasse Lücke wie N2 (der Test prüft die Funktion isoliert, nicht den Ablauf, in dem sie steht).
 - **Nicht in `docs/audit_findings.md` geführt.** Trage ich unten als Finding nach.
 - **Nicht geprüft:** ob und wie das `booking_rate_start/end`- und `ticket_price_*`-Feld (aus `tick_mechanics.json`, nicht aus `metadata`) betroffen sind — nach Lesen des Codes: nein, die kommen aus einer anderen, zu diesem Zeitpunkt schon vorhandenen Quelle, und meine Stichprobe zeigt dort plausible Zahlen.
+
+**N4 — Drei Handbuchkapitel nennen eine Schrittposition im Assistenten, die seit P7.13 (zwei neue optionale Schritte «Verläufe» und «Modellannahmen» vor der alten Zählung) nicht mehr stimmt.** Live im Assistenten nachgemessen (acht Schritte, Stand `4e94354`):
+
+| Datei | Behauptet | Tatsächlich (nachgemessen) |
+| --- | --- | --- |
+| `docs/handbuch/lauf-starten.md:170` | «Eigenen Zufallsstartwert festlegen» **im dritten Schritt** | Schritt **5** («Womit wird gerechnet?») |
+| `docs/handbuch/fragestellungen.md:31` | Wiederholungen hinter «Feinabstimmung» **im zweiten Schritt** | Schritt **4** («Wie weit reicht der Lauf?») |
+| `docs/handbuch/vergleiche.md:43` | dieselbe Stelle, wortgleich | Schritt **4** |
+
+- **Alle drei Dateien wurden in diesem Branch angefasst** (`git diff --name-only aff7d63 HEAD` listet sie), die betroffenen Zeilen selbst aber zuletzt am **2026-08-28** geändert (`9aa04bb`, `6aa040b`) — also vor P7.13 (2026-09-14/15). `lauf-starten.md` wurde am 2026-09-15 im selben Commit wie P7.5-U5.1 nochmal bearbeitet (ein anderer Absatz, über das Bedienfeld), die Schritt-Referenz dabei nicht korrigiert.
+- **Kein funktionaler Bug, aber ein Doku-Pflicht-Verstoß:** CLAUDE.md verlangt «ändert sie sichtbares Verhalten von Dashboard oder CLI? Dann die passenden Kapitel unter `docs/handbuch/` … mitpflegen» — die Schrittfolge hat sich sichtbar geändert (sechs → acht Schritte), diese drei Stellen sind nicht mitgezogen.
+- **`erste-simulation.md`** benutzt dagegen eine **eigene, als didaktisch erkennbare** Nummerierung («Schritt 1» bis «Schritt 5» als Kurzanleitung für den ersten Durchgang, die «Verläufe»/«Modellannahmen» bewusst überspringt und das auch so sagt) — das ist kein Fehler, nur ein anderes Zählschema, das mit dem Wizard-eigenen «Schritt N von 8» verwechselt werden kann.
+- **Nicht in `docs/audit_findings.md` geführt.** Trage ich unten nach.
 
 ### Fragen an Haiko
 
@@ -115,6 +128,15 @@ Alle neun wurden erkannt, jeweils mit `git checkout` zurückgenommen (Arbeitsbau
 | **Tote Anker** `docs/projektplan.md#...` | 15 Verweise aus CLAUDE.md/Projektplan geprüft; alle 13 stichprobenartig direkt nachgesehenen Präfixe (P0.2, P1.9, P2.0, P2.2, P2.3, P2.7, P3.8, P3.9, P3.17, P4.4, P4.5, P7.11, Phase 7) haben eine passende Überschrift. Ein erster automatisierter Lauf meldete alle als «fehlend» — eigener Skriptfehler (En-Dash `–` in Überschriften wie «2015–2024» falsch behandelt), keine echten toten Links |
 | **Stand-Zeile des Plans** | «163 bestanden» für den vollen Browser-Wächter (2026-09-16) deckt sich mit meiner eigenen Messung (Teil 1: 163 bestanden, 2026-09-21) |
 
+### Nachgemessen in Teil 5 (2026-09-23)
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| **P2.10, konkrete Zahlen** (`marge`-Strategie, Kapazitäten 0,5/1,0/1,3, derselbe Helfer wie `test_preisstrategie_ist_eine_wahl.py::_lauf`) | Gemessen: Buchungsrate 0,0864 → 0,1087 → 0,1161 (Anstieg bestätigt), Preis konstant bei **194,78** über alle drei Kapazitäten (bewegt sich nicht, wie behauptet). CLAUDE.md nennt 0,0692 → 0,1151 bei Preis 189,78 — Richtung und Aussage («Preis bleibt stehen, Verkehr steigt deutlich») stimmen, die Kommastellen nicht mehr genau. **Ursache dieselbe wie bei der schon dokumentierten P2.12-Abweichung:** Die Zahl steht seit `e2d8ec3` (2026-09-03, **vor** P3.8) im Text, ohne Datum im Satz selbst — P3.8 (Tick=Monat, 2026-09-07) hat das Buchungsmodell seither verschoben. Kein neuer Befund, sondern eine zweite Bestätigung des Musters aus N-a |
+| **Sieben der elf restlichen Phase-3-Audit-Findings** (`audit_phase3_2026-09-05.md`) direkt am Code nachgeprüft | **B1** (Rückfall `llama3.2` lebt weiter): kein Literal mehr im Code — hält. **B2** (`_schreibe` kann selbst scheitern): kein `.buffer`-Zugriff mehr, `print` mit `backslashreplace` — hält. **C2** (Kopfzeile klein geschrieben): eine Quelle `validation.BEFUND_KOPF` — hält. **C3** (Docstring nennt Vor-P3.12-Zahlen): die alten 665–1426 ms stehen jetzt ausdrücklich als historischer Vergleich da, nicht als aktuelles Kriterium — hält. **C4** (toter Verweis auf `save_start.py`): Datei bleibt als Name stehen, nicht als Link, und existiert wie dokumentiert nicht mehr — hält. **B3, B4, B6, C5** nur indirekt bestätigt (über die Mutationsprobe an `test_lauf_argumente.py`, die vorhandene Konstante `SICHTBAR_MAX_MS`, den eigenen grünen Browser-Wächter-Lauf bzw. die Struktur von `audit_findings.md`). **B5** (kleinere Befunde, mehrere gebündelt) nicht einzeln geprüft |
+| **Zahlen-Register** (`test_doku_zahlen.py`) | Grenze ist selbstdokumentiert, keine Lücke: Das Register hält nur explizit eingetragene Zahlen, eine automatische Suche wird im Docstring ausdrücklich als «geht nicht» verworfen (zu viele Fehlalarme). Alle eingetragenen Einträge sind über den Test grün, damit korrekt — Vollständigkeit der Abdeckung ist eine bekannte, akzeptierte Grenze und kein Befund |
+| **Handbuch gegen Oberfläche** (Stichprobe von 3 der 21 geänderten Dateien, live im Assistenten nachvollzogen) | **`lauf-starten.md`, `fragestellungen.md`, `vergleiche.md`: veraltete Schrittangaben, siehe N4.** `erste-simulation.md` benutzt ein eigenes, erkennbar didaktisches Zählschema — kein Fehler |
+
 ### Sechs Tagesenden des Branches, voll geprüft (Teil 3, 2026-09-22)
 
 Letzter Commit je Kalendertag, `origin/main..origin/chore/phase-5-p51-toter-code-pr`, jeweils eigene `.venv` (Editable-Install ist pfadgebunden — ein geteiltes venv über zwei Worktrees prüft sonst den falschen `src`, siehe Methodennotiz unten), Pfad unter `C:\tmp` statt Scratchpad (dessen langer Pfad ließ DLLs von `black`/`mypy` nicht laden — Umgebungsproblem, kein Branch-Befund).
@@ -134,9 +156,9 @@ Kein einziger roter `pytest`- oder `mypy`-Lauf über alle sechs Punkte. Steigend
 
 ## Was noch aussteht
 
-- **Block 1.3:** Alle 147 Commits nur mit `ruff`/`black`; sechs Tagesenden zusätzlich voll mit `pytest`/`mypy` (Teil 3). Jeden einzelnen der 147 Commits voll zu prüfen ist damit nicht mehr nötig — die Stichprobe deckt jede Paketgrenze ab und `ruff`/`black` allein deckt jeden Commit.
-- **Block 3:** die Zahlen von P2.10 und P2.12 einzeln nachmessen (nur über Mutationsproben erreicht, nicht über einen dedizierten Lauf mit `marge`-Strategie bzw. höherer Kapazität); die übrigen elf Pakete des Phase-3-Audits (`audit_phase3_2026-09-05.md`) stichprobenartig — nur P3.2 ist nachgestellt.
-- **Block 4:** ob das Zahlen-Register (`test_doku_zahlen.py`) vollständig ist (der Test ist grün, was er **nicht** erfasst, ist nicht gelesen).
-- **Block 5:** die zugesagte «Rückgängig»-Meldung selbst sehen (die Kernfunktion ist bestätigt, die Meldung nicht); die 21 geänderten Handbuchdateien gegen die Oberfläche lesen; die Grounding-Prüfung des State Explorers mit einer echten (nicht Demo-)Antwort — braucht Ollama.
-- **Block 6:** `CLAUDE.md` Satz für Satz gegen den Code vollständig (stichprobenartig geprüft: Dateiverweise, Schrittzahl, Konstantennamen, Modell-Bereich-Zahlen, tote Anker — keiner ein Befund); `docs/projektplan.md` alle Erledigt-Marken einzeln gegen Code und Tests (nur die Stand-Zeile geprüft).
-- **Linux-Lauf** von `browser.yml`: Die Deckel sind unter Windows erhoben; ob sie auf Linux halten, ist ungeprüft.
+- **Block 1.3:** Alle 147 Commits nur mit `ruff`/`black`; sechs Tagesenden zusätzlich voll mit `pytest`/`mypy` (Teil 3). Als gleichwertiger Ersatz für den vollen Commit-für-Commit-Lauf begründet — nicht mehr offen im Sinne von „unbeachtet", aber auch kein Ersatz, der jeden einzelnen der 147 Commits einzeln bestätigt.
+- **Block 3:** die übrigen vier der elf Phase-3-Audit-Findings (B3, B4, B6, C5 nur indirekt bestätigt; B5 «kleinere Befunde» gar nicht einzeln).
+- **Block 4:** unverändert offen — das Zahlen-Register deckt nachweislich nicht jede Zahl im Fließtext ab (selbstdokumentierte, akzeptierte Grenze), nicht geprüft ist, ob eine der **nicht** eingetragenen Zahlen falsch ist.
+- **Block 5:** die zugesagte «Rückgängig»-Meldung selbst sehen (die Kernfunktion ist bestätigt, die Meldung nicht); die restlichen 18 der 21 geänderten Handbuchdateien gegen die Oberfläche lesen (3 geprüft, davon 3 mit Befund N4); die Grounding-Prüfung des State Explorers mit einer echten (nicht Demo-)Antwort — braucht Ollama.
+- **Block 6:** `CLAUDE.md` Satz für Satz gegen den Code vollständig (stichprobenartig geprüft: Dateiverweise, Schrittzahl, Konstantennamen, Modell-Bereich-Zahlen, tote Anker, drei Handbuchkapitel — einer davon mit Befund); `docs/projektplan.md` alle Erledigt-Marken einzeln gegen Code und Tests (nur die Stand-Zeile geprüft).
+- **Linux-Lauf** von `browser.yml`: Die Deckel sind unter Windows erhoben; ob sie auf Linux halten, ist ungeprüft. Kein `gh`-Zugriff auf Workflow-Runs aus dieser Prüfung heraus versucht.
