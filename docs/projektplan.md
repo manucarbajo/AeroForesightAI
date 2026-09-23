@@ -4477,7 +4477,7 @@ Jeder Abschnitt aus [`audit_findings.md`](audit_findings.md) ist einem Paket zug
 | Sonstiges | Gegenprüfung vom 2026-09-21 (`black` seit `2e71011`, Klickdeckel im PR, Zuschnitt des Branches — neu 2026-09-21): vor dem PR erledigen, der Klickdeckel gehört zu [P7.11](#p711--der-klick-deckel-ist-gerissen--offen-neu-2026-09-12), ~~P3.10 (Zeichensatz der Konsole)~~ ✅, ~~P5.3 (`src/legacy/`)~~ ✅, ~~P4.6 (die Installation macht `src` nicht importierbar)~~ ✅, ~~Dockerfile startete eine Datei, die es nicht gibt (neu 2026-09-05, behoben vor P5.2)~~ ✅ |
 | **Landingpage** (neu 2026-08-26) | P1.4 (Formular-Endpunkt, Rechtstexte, CDN-Abhängigkeiten) |
 | **Reproduzierbarkeit / Run-Artefakte** (neu 2026-08-26) | ~~P0.6 (Seed, Rechenmodus, Config-Hash in `run_metadata.json`)~~ ✅ |
-| **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) |
+| **Reporting / Grounding** (neu 2026-08-26) | P2.5 (State Explorer prüft seine eigenen Zahlen nicht) ✅, offene Restposition (neu 2026-09-23, noch keinem Paket zugeordnet): die Prüfung markiert ganzzahlige Prozentangaben von 1–250 % gegen einen echten Kontext praktisch nie als unbelegt — Details in `audit_findings.md` |
 | **Doku-Konsistenz** (neu 2026-08-26) | ~~P4.3 (Zahlen in `CLAUDE.md` mechanisch halten)~~ ✅ — der Plan selbst ist Protokoll und wird nicht gehalten |
 | **Einrichten-Assistent** (neu 2026-08-28) | P1.9 (Sweep-Pfad verwirft den Entwurf, Schreibzugriff auf `configs/` aus optionalen Schritten, Schritthöhe, Fortschritts- und Validierungslücken, Barrierefreiheit) |
 | **Nachfrageseite** (neu 2026-08-31) | P2.8 (kein Nachfragetreiber nach oben; Trajektorien-Horizont endet vor dem Lauf) |
