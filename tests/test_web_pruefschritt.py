@@ -149,7 +149,9 @@ class TestDasBedienfeldTraegtKeineKacheln:
         # `af-kpi` («kompakt») — gesucht wird beides.
         assert not [
             k
-            for k in _walk(start_flow.preflight(initial_draft_dict(), [], slot="rail", compact=True))
+            for k in _walk(
+                start_flow.preflight(initial_draft_dict(), [], slot="rail", compact=True)
+            )
             if any(
                 klasse in str(getattr(k, "className", "") or "")
                 for klasse in ("af-tile__value", "af-kpi")

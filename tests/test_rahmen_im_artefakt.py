@@ -89,9 +89,9 @@ class TestJederStartpfadSetztIhn:
 
         state = prepare_simulation_state(draft)
 
-        assert state.properties.price_model.base_price == 123.0, (
-            "Vorbedingung: der geänderte Wert kommt an"
-        )
+        assert (
+            state.properties.price_model.base_price == 123.0
+        ), "Vorbedingung: der geänderte Wert kommt an"
         assert state.rahmen is not None
         assert state.rahmen.quelle == "eigen"
 
