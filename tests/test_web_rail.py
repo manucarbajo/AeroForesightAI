@@ -165,7 +165,9 @@ class TestDieHinweiseWerdenGezaehlt:
         }
         assert start_flow._warnings(entwurf, []) == [], "Vorbedingung: ein Entwurf ohne Hinweis"
 
-        assert "Vor dem Start" not in str(start_flow.preflight(entwurf, [], slot="rail", compact=True))
+        assert "Vor dem Start" not in str(
+            start_flow.preflight(entwurf, [], slot="rail", compact=True)
+        )
 
     def test_a_blocking_finding_stays_an_error(self, draft):
         text = str(
@@ -249,9 +251,9 @@ class TestWasDasBedienfeldTraegt:
         assert "run-start" in str(fuss)
         # Gezählt wird ein Textabsatz, nicht Wörter: Der Knopf trägt neben «Start»
         # den Symbolnamen `play_arrow` als Text.
-        assert not [k for k in _walk(fuss) if isinstance(k, html.P)], (
-            f"Unter dem Start-Knopf steht wieder eine Zeile: {fuss}"
-        )
+        assert not [
+            k for k in _walk(fuss) if isinstance(k, html.P)
+        ], f"Unter dem Start-Knopf steht wieder eine Zeile: {fuss}"
 
     def test_the_mode_is_named_in_two_words(self, draft):
         """Der volle Optionstext ist ein Satz und passt hier nicht hin."""
