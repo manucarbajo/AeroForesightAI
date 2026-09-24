@@ -12,6 +12,10 @@ haben kann.
 
 from __future__ import annotations
 
+import ast
+import importlib
+import importlib.util
+import json
 import os
 import re
 import subprocess
@@ -26,6 +30,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT = ROOT / "pyproject.toml"
 REQUIREMENTS = ROOT / "requirements.txt"
 WORKFLOW = ROOT / ".github" / "workflows" / "tests.yml"
+DOCKERFILE = ROOT / "Dockerfile"
+COMPOSE = ROOT / "docker-compose.yml"
 
 
 def _pyproject() -> dict:
@@ -376,3 +382,115 @@ class TestDerTypprueferLaeuftUeberEineListeDieWaechst:
         assert (
             "mypy" in dev
         ), "mypy fehlt im Extra `dev` — `pip install -e .[dev]` brächte ihn nicht."
+
+
+# --- Container --------------------------------------------------------------
+
+
+def _dockerfile_zeile(anweisung: str) -> str:
+    zeilen = [
+        z
+        for z in DOCKERFILE.read_text(encoding="utf-8").splitlines()
+        if z.startswith(anweisung + " ")
+    ]
+    assert len(zeilen) == 1, f"Das Dockerfile hat {len(zeilen)} {anweisung}-Zeilen"
+    return zeilen[0].removeprefix(anweisung + " ")
+
+
+class TestDerContainerStartetDieAktiveOberflaeche:
+    """**Der Container startet, was heute die Oberfläche ist — und ist von außen erreichbar.**
+
+    Bis zum 2026-09-11 lautete der Startbefehl `python -m streamlit run
+    dashboard/app.py`: eine Datei, die es seit der Dash-Migration nicht mehr gab,
+    auf der abgelösten Oberfläche. Gemessen wird an der **echten CLI** der App,
+    nicht am Text des Dockerfiles: Der naheliegende Fix — nur den Modulpfad
+    tauschen — hätte eine App gestartet, die auf 127.0.0.1 lauscht und aus dem
+    Container heraus niemand erreicht.
+    """
+
+    def test_das_modul_im_startbefehl_liegt_in_diesem_repo(self):
+        befehl = json.loads(_dockerfile_zeile("CMD"))
+        assert befehl[:2] == ["python", "-m"], f"Kein `python -m`-Start: {befehl}"
+
+        spec = importlib.util.find_spec(befehl[2])
+        assert spec is not None and spec.origin, f"Das Modul `{befehl[2]}` gibt es nicht."
+        ort = Path(spec.origin).resolve()
+        assert ort.is_relative_to(ROOT) and not ort.relative_to(ROOT).parts[0].startswith("."), (
+            f"`{befehl[2]}` kommt nicht aus diesem Repo, sondern aus {ort} — "
+            "der Container startete dann fremden Code statt der Oberfläche."
+        )
+
+    def test_die_app_lauscht_nach_aussen_auf_dem_freigegebenen_port(self, monkeypatch):
+        befehl = json.loads(_dockerfile_zeile("CMD"))
+        modul = importlib.import_module(befehl[2])
+        aufrufe: list[dict] = []
+        monkeypatch.setattr(modul.app, "run", lambda **kw: aufrufe.append(kw))
+        monkeypatch.setattr(sys, "argv", [befehl[2], *befehl[3:]])
+
+        modul.main()
+
+        assert len(aufrufe) == 1, "`main()` hat die App nicht gestartet."
+        assert aufrufe[0]["host"] == "0.0.0.0", (
+            f"Die App lauscht auf {aufrufe[0]['host']!r} — aus dem Container heraus "
+            "erreicht sie dann niemand."
+        )
+        assert aufrufe[0]["port"] == int(_dockerfile_zeile("EXPOSE"))
+
+    def test_compose_gibt_denselben_port_frei(self):
+        port = int(_dockerfile_zeile("EXPOSE"))
+
+        assert f'"{port}:{port}"' in COMPOSE.read_text(
+            encoding="utf-8"
+        ), f"docker-compose.yml gibt Port {port} nicht frei."
+
+
+# --- Streamlit (P5.2) -------------------------------------------------------
+
+
+class TestKeinStreamlitMehr:
+    """**P5.2: Die abgelöste Oberfläche ist weg — und kommt nicht still zurück.**
+
+    Bis zum 2026-09-11 lag sie unter `dashboard/legacy_streamlit/`, und
+    `streamlit>=1.32` zog in jede CI-Installation und jeden Container. Gelöscht
+    wurde erst, als die fünf Diagramme ihrer Researcher-Animation in der Dash-App
+    standen. Gesucht wird der **Import** per Syntaxbaum, nicht das Wort:
+    Erklärtexte wie «der Ersatz für Streamlits `session_state`» sind Geschichte
+    und bleiben stehen.
+    """
+
+    def test_keine_abhaengigkeitsliste_nennt_streamlit(self):
+        projekt = _pyproject()["project"]
+        listen = {
+            "pyproject.toml": projekt["dependencies"],
+            "requirements.txt": _requirements(),
+            **{
+                f"pyproject.toml [{extra}]": e
+                for extra, e in projekt["optional-dependencies"].items()
+            },
+        }
+
+        treffer = [ort for ort, eintraege in listen.items() if "streamlit" in map(_name, eintraege)]
+        assert not treffer, f"`streamlit` steht wieder in: {treffer}"
+
+    def test_keine_python_datei_importiert_streamlit(self):
+        dateien = subprocess.run(
+            ["git", "ls-files", "*.py"], cwd=ROOT, capture_output=True, text=True, check=True
+        ).stdout.splitlines()
+        assert len(dateien) > 100, f"Verdächtig wenige Python-Dateien: {len(dateien)}"
+
+        befunde: list[str] = []
+        for relativ in dateien:
+            pfad = ROOT / relativ
+            if not pfad.is_file():
+                continue
+            for knoten in ast.walk(ast.parse(pfad.read_text(encoding="utf-8-sig"))):
+                if isinstance(knoten, ast.Import):
+                    module = [alias.name for alias in knoten.names]
+                elif isinstance(knoten, ast.ImportFrom):
+                    module = [knoten.module or ""]
+                else:
+                    continue
+                if any(m.split(".")[0] == "streamlit" for m in module):
+                    befunde.append(f"{relativ}:{knoten.lineno}")
+
+        assert not befunde, "Diese Stellen importieren Streamlit:\n  " + "\n  ".join(befunde)

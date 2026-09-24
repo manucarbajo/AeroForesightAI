@@ -74,7 +74,7 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
 
     row = data.tick_row(tick)
     if not row:
-        return ui.alert(
+        return ui.hinweis(
             "Für diesen Tick liegen keine Kennzahlen vor (`tick_mechanics.json` fehlt "
             "oder reicht nicht so weit).",
             "info",
@@ -89,31 +89,35 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
     preis_delta, preis_richtung = _delta(row.get("market_price_delta_eur"), suffix=" €")
 
     return ui.grid(
-        ui.kpi_card(
+        ui.kachel(
             "Buchungsrate",
             "—" if rate is None else f"{rate:.1%}",
+            variante="kompakt",
             delta=raten_delta,
             direction=raten_richtung,
             hint=None if row.get("booked") is None else f"{row['booked']} Buchungen",
         ),
-        ui.kpi_card(
+        ui.kachel(
             "Ticketpreis",
             "—" if preis is None else f"{preis:.2f} €",
+            variante="kompakt",
             delta=preis_delta,
             direction=preis_richtung,
         ),
-        ui.kpi_card(
+        ui.kachel(
             "Kostendruck",
             "—" if kosten is None else f"{kosten:.2f} €",
+            variante="kompakt",
             hint=(
                 None
                 if row.get("carbon_tax_level") is None
                 else f"CO₂-Abgabe {float(row['carbon_tax_level']):.0f} €/t"
             ),
         ),
-        ui.kpi_card(
+        ui.kachel(
             "Nachfrageniveau",
             "—" if nachfrage is None else f"{nachfrage:.2f}",
+            variante="kompakt",
             hint=None if row.get("population") is None else f"{row['population']} Personen",
         ),
         # Einspaltig: In einer rund 20 rem breiten Zone blieben je Karte 146 px,
@@ -199,7 +203,9 @@ def charts(data: RunData, tick: int, *, mode: str = theme.LIGHT) -> html.Div:
                 booking_x,
                 booking_y,
                 tick,
-                title="Buchungsrate",
+                # Mit Einheit wie die beiden anderen (P7.5-U5.5): Die Achse zeigt
+                # Prozent, der Titel sagte es nicht.
+                title="Buchungsrate (%)",
                 color=tone["booking"],
                 mode=mode,
                 percent=True,
@@ -223,7 +229,7 @@ def charts(data: RunData, tick: int, *, mode: str = theme.LIGHT) -> html.Div:
         )
 
     if not blocks:
-        return ui.alert("Keine Zeitreihen in diesem Lauf.", "info")
+        return ui.hinweis("Keine Zeitreihen in diesem Lauf.", "info")
     return html.Div(blocks, className="space-y-1")
 
 

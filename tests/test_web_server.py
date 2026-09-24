@@ -67,7 +67,7 @@ def test_the_app_is_served_under_its_prefix(client):
 
     assert response.status_code == 200
     body = response.get_data(as_text=True)
-    assert "Technology Lab" in body
+    assert "AeroForesight AI" in body
     assert "react-entry-point" in body, "Dash-Grundgerüst erwartet"
 
 

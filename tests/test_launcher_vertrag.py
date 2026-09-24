@@ -27,7 +27,6 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 #: Die Bäume, die aus `src/` importieren dürfen — und dabei nur Öffentliches.
-#: `legacy_streamlit` ist draußen: abgelöste Oberfläche, P5.2 entfernt sie.
 AUFRUFER = ("dashboard",)
 
 
@@ -55,8 +54,6 @@ class TestKeinDashboardModulGreiftInsInnenleben:
         befunde: list[str] = []
         for baum in AUFRUFER:
             for pfad in sorted((ROOT / baum).rglob("*.py")):
-                if "legacy_streamlit" in pfad.relative_to(ROOT).parts:
-                    continue
                 for zeile, modul, name in _importierte_namen(pfad):
                     if name.startswith("_"):
                         befunde.append(f"{pfad.relative_to(ROOT)}:{zeile} — {modul}.{name}")

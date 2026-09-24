@@ -1,7 +1,9 @@
 Die Ausgangslage jedes Laufs steht in sechs Dateien unter `configs/`. Im
 Normalbetrieb müssen Sie sie nicht anfassen — alles Nötige lässt sich im Editor
-einstellen. Wer mit alternativen Konfigurationen arbeiten will, wählt sie im Tab
-**Lauf & Ablage** unter «Datengrundlage».
+einstellen. Ein Lauf liest immer diese Dateien; eine Auswahl alternativer
+Dateien gibt es in der Oberfläche nicht mehr. Wer eine Ausgangslage dauerhaft
+ändern will, tut das im Bereich «Modell», wer sie nur für einen Lauf ändern
+will, wählt ein Szenario.
 
 | Datei | Inhalt |
 |---|---|
@@ -51,6 +53,16 @@ das Feld, gilt die ausgelieferte Konfiguration; ein unbekannter Name wird beim
 Laden abgewiesen. Es hat bewusst keinen Tick-Verlauf: Ein Anbieter wechselt nicht
 mitten im Lauf seine Preislogik.
 
+Seit dem 15. September 2026 kann eine solche Datei außerdem **Modellannahmen**
+abweichend setzen (`modellannahmen`): unter `market_feedback` Werte der
+Preisbildung (etwa `target_booking_rate`; die Strategie steht in
+`preisstrategie`), unter `saturation` die Sättigung und unter `population` je
+Segment-Kennung dessen Felder (etwa `prevalence`). Es stehen nur die Werte darin,
+die von der Auslieferung abweichen; fehlt das Feld, gilt die Auslieferung. Ein
+unbekannter Abschnitt, Wert oder ein unbekanntes Segment wird abgewiesen.
+Ausgelieferte Rahmenszenarien setzen keine Modellannahmen; ein mit «Als Szenario
+sichern» abgelegtes Szenario trägt die des Laufs mit.
+
 ## Was wo drinsteht
 
 `properties.json` ist die umfangreichste Datei und trägt mehrere Abschnitte.
@@ -61,9 +73,9 @@ Werte, die im Editor unter **Nachfrage & Preisbildung** stehen.
 
 ### Einheiten, die eine Zeitskala tragen
 
-**Eine Runde ist ein Monat** (P3.8, seit dem 7. September 2026). Das steht in
+**Ein Tick ist ein Monat** (P3.8, seit dem 7. September 2026). Das steht in
 keiner Datei als Feld, wirkt sich aber auf jede Größe aus, deren Einheit auf
-`_per_tick` endet: Ihr Wert wird Runde für Runde aufgezinst.
+`_per_tick` endet: Ihr Wert wird Tick für Tick aufgezinst.
 
 | Größe | Einheit | ausgeliefert | im Jahr |
 | --- | --- | ---: | ---: |
@@ -78,7 +90,7 @@ der Beschreibung als *jährliche* Rate ausgewiesen. Aufgezinst waren es 42,6
 Prozent im Jahr.
 
 Dasselbe gilt für Verläufe mit Stützpunkten: `bevoelkerungsentwicklung` trägt
-Jahresstufen im Abstand von zwölf Runden und reicht bis Runde 120, also über
+Jahresstufen im Abstand von zwölf Ticks und reicht bis Tick 120, also über
 zehn Jahre.
 
 ### Wie der Anbieter preist
@@ -118,7 +130,7 @@ Eine Bedingung nennt **eine Bezugsgröße** und vergleicht sie:
 | `factor` + `state` | Ein Faktor steht in einem bestimmten Zustand. Beide Felder sind Pflicht. |
 | `system_property` | Eine Systemgröße aus `system_properties`, verglichen mit einem Zahlenwert. Nur **exogene** Verläufe (`source: "trajectory"`) — siehe den Hinweis unten. |
 | `metric` | Eine Laufzeitgröße: `booking_rate`, `prior_booking_rate`, `cost_pressure`, `cost_index`, `ticket_price`, `demand_level`, `carbon_tax_level`, `saf_mandate_share`, `fuel_price_change`, `oil_price_index`, `tick`. |
-| `tick` | Kurzform für „genau in dieser Runde". |
+| `tick` | Kurzform für „genau in diesem Tick". |
 
 Verglichen wird mit `above` (echt größer), `below` (echt kleiner), `at_least`,
 `at_most` oder `eq`. `gte` und `lte` sind ältere Namen für `at_least` und
@@ -141,12 +153,12 @@ nennt die Alternative: Den Preis des laufenden Ticks gibt es als `metric`.
 
 Der Grund, warum der Laufzeitwert nicht einfach durchgereicht wird, ist eine
 Modellentscheidung und keine Bequemlichkeit: Die Faktor-Regeln laufen **vor** der
-Preisberechnung einer Runde. Eine Bedingung auf `ticket_price` prüfte je nach
+Preisberechnung eines Ticks. Eine Bedingung auf `ticket_price` prüfte je nach
 Einhängepunkt gegen den Preis von vorhin oder von jetzt — dieselbe Regel würde
 je nach Ort im Ablauf etwas anderes bedeuten.
 
 Zwei Feinheiten, die im Verlauf sichtbar werden: Eine `shift_rule`, die auf
-`booking_rate` reagiert, sieht die Rate der **vorigen** Runde — die aktuelle
+`booking_rate` reagiert, sieht die Rate des **vorigen** Ticks — die aktuelle
 entsteht erst aus der Kaufentscheidung, die die Regel gerade beeinflusst. Und
 ein `regulatory_influence` kann **keine** `metric` prüfen: Die Kostenrechnung
 läuft, bevor es Laufzeitgrößen gibt. Statt wirkungslos zu bleiben, wird eine
@@ -154,12 +166,12 @@ solche Regel beim Start abgewiesen.
 
 Ein leeres `when` heißt „immer". Bei einem Kostentreiber ist das erlaubt und
 sinnvoll. Bei `factor_rules` und `shift_rules` wird es abgewiesen: Eine Regel,
-die in jeder Runde greift, ist fast immer ein vergessenes `when`.
+die in jedem Tick greift, ist fast immer ein vergessenes `when`.
 
 Zwei Schreibweisen weist die Prüfung ausdrücklich ab, weil sie früher still
 wirkungslos blieben: ein `factor` mit leerem oder fehlendem `state` (`null`
 zählt dazu — die Regel wurde dann gegen den Zustand „None" verglichen und traf
-nie zu), und ein `tick` mit Nachkommastelle. `{"tick": 3.7}` griff in Runde 3,
+nie zu), und ein `tick` mit Nachkommastelle. `{"tick": 3.7}` griff in Tick 3,
 weil die Nachkommastelle abgeschnitten wurde; ein Zahlendreher sah damit aus
 wie eine Regel, die eben woanders greift. `3.0` bleibt zulässig — JSON kennt
 keine ganzen Zahlen als eigenen Typ.
@@ -171,12 +183,18 @@ Datei.
 
 ## Was die Oberfläche schreibt
 
-Die meisten Einstellungen im Editor gelten nur für den nächsten Lauf und
-verändern keine Datei. Drei Aktionen schreiben dauerhaft.
+Systemgrößen, Preisbildung, Sättigung und Bevölkerung aus dem Bereich **Modell**
+wirken erst, wenn sie gespeichert sind — dann für alle künftigen Läufe. Die eine
+Ausnahme ist der Startpreis: Er gilt ungespeichert für den nächsten Lauf unter der
+Standard-Ausgangslage. Für einen einzelnen Lauf gibt es die Schritte «Verläufe»
+und «Modellannahmen»; sie verändern keine Datei.
 
-Unter **Nachfrage & Preisbildung** schreiben «Als Standard speichern» und
-«Bevölkerung als Standard speichern» in `properties.json`. Unter **Lauf & Ablage**
-legt «Szenario sichern» eine neue Datei unter `configs/sweeps/` an.
+Unter **Systemgrößen** schreibt «Verläufe als Standard speichern» Startwert und
+Regeln jeder geänderten Größe in `system_properties[].trajectory` — eine
+ausgeschaltete mit Startwert 0 und ohne Regeln, eine unveränderte gar nicht. Unter
+**Nachfrage & Preisbildung** schreiben «Als Standard speichern» und «Bevölkerung
+als Standard speichern» in `properties.json`. «Als Szenario sichern» in der
+Kopfzeile des Einrichtens legt eine Datei unter `configs/sweeps/` an.
 
 ## Die eingefrorene Matrix
 

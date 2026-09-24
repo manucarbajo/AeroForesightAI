@@ -179,9 +179,8 @@ class TestJederKnopfPasstZuSeinerZone:
         gerendert = str(shell.navbar("")) + str(
             shell.header(
                 "",
-                state=shell.status.derive(running=False, demo=False, degraded=False),
-                run_options=[],
-                run_value=None,
+                state=shell.status.derive(running=False, demo=False),
+                lauf_bezeichnung=None,
             )
         )
         assert "af-drawer-toggle--left" in gerendert
@@ -223,9 +222,8 @@ class TestDieGriffeGehoerenZuIhrenSpalten:
         gerendert = str(
             shell.layout(
                 active="",
-                state=shell.status.derive(running=False, demo=False, degraded=False),
-                run_options=[],
-                run_value=None,
+                state=shell.status.derive(running=False, demo=False),
+                lauf_bezeichnung=None,
                 left="l",
                 main="m",
                 timeline="t",

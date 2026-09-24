@@ -27,18 +27,18 @@ from dash import ALL, MATCH, Input, Output, State, ctx, html, no_update
 from dashboard.config_catalog import (
     PopulationEditState,
     add_custom_property,
-    apply_sweep_to_draft,
     default_config_draft,
     delete_custom_property,
     extract_population_edits_from_file,
     extract_property_edits_from_file,
     list_sweep_presets,
-    save_custom_sweep_preset,
     save_market_feedback_to_file,
     save_population_edits_to_file,
+    save_property_edits_to_file,
     save_saturation_to_file,
 )
 from dashboard.web import components as ui
+from dashboard.web import theme
 from dashboard.web.config_editor import (
     compute_mode,
     delta,
@@ -46,12 +46,15 @@ from dashboard.web.config_editor import (
     llm_pipeline,
     macro,
     micro,
+    modellannahmen,
+    sichern,
     start_flow,
+    verlaeufe,
     wizard,
 )
 from dashboard.web.config_editor import controls as c
 from dashboard.web.pages import model_editor
-from dashboard.web.state import STORE_ID, draft_from_dict, draft_to_dict
+from dashboard.web.state import RUECKNAHME_ID, STORE_ID, draft_from_dict, draft_to_dict
 
 # Die vier Bereiche, die bis P1.7 Reiter waren und jetzt die Schritte vier bis
 # sieben sind. Reihenfolge ist die Lesereihenfolge: die Annahmen von grob nach
@@ -78,24 +81,36 @@ def tab_layout(tab: str, draft: dict):
     try:
         return _LAYOUTS.get(tab or DEFAULT_TAB, experiment.layout)(draft)
     except Exception as exc:  # noqa: BLE001 - eine kaputte Config soll den Editor nicht sprengen
-        return ui.alert(f"Editor konnte nicht aufgebaut werden: {exc}", "error")
+        return ui.hinweis(f"Editor konnte nicht aufgebaut werden: {exc}", "fehler")
 
 
 def reset_button() -> html.Div:
-    """«Auf Standard zurücksetzen» — seit P1.7 im Schritt «Lauf & Ablage».
+    """«Alle Einstellungen zurücksetzen» — im Schritt «Lauf & Ablage», **rücknehmbar**.
 
-    Vorher stand er über den Reitern und damit über *allen* Einstellungen. In
-    einer Schrittfolge gibt es diesen Ort nicht mehr; er gehört dorthin, wo man
-    ohnehin über den Lauf als Ganzes nachdenkt.
+    Seit P1.7 steht er hier statt über den Reitern. Bis P7.4-U4.3 hieß er «Auf
+    Standard-Config zurücksetzen» und verwarf den ganzen Entwurf ohne Rückfrage
+    und ohne Weg zurück — in einem als optional markierten Schritt. Jetzt hält
+    `state.RUECKNAHME_ID` den Stand davor, und die Meldung trägt «Rückgängig».
+
+    **Eine Rückfrage davor gibt es bewusst nicht.** Das Paket nannte beides; das
+    Kriterium verlangt die Rücknahme mit einem Klick, und vor einer Handlung,
+    die sich so zurücknehmen lässt, wäre eine Rückfrage nur ein Hindernis.
     """
 
     return html.Div(
-        ui.button(
-            "Auf Standard-Config zurücksetzen",
-            id=c.action_id("reset"),
-            variant="secondary",
-            icon_name="restart_alt",
-        ),
+        [
+            ui.button(
+                "Alle Einstellungen zurücksetzen",
+                id=c.action_id("reset"),
+                variant="secondary",
+                icon_name="restart_alt",
+            ),
+            ui.hint_text(
+                "Setzt jede Einstellung auf den Auslieferungszustand. Lässt sich danach "
+                "mit einem Klick rückgängig machen.",
+                class_name="mt-2",
+            ),
+        ],
         className="mt-6",
     )
 
@@ -159,16 +174,32 @@ def register_callbacks(app) -> None:
     # Editor-Bereiche, die vorher Reiter waren. Ein eigener Callback dafür gibt
     # es nicht mehr; er hinge an `cfg-tabs`, und die Reiter sind weg.
     wizard.register_callbacks(app)
+    c.register_callbacks(app)
+    sichern.register_callbacks(app)
 
     @app.callback(
         Output(STORE_ID, "data"),
+        # **Ein Szenariowechsel verwirft die Abweichungen, mit «Rückgängig»**
+        # (P7.13-U13.2 Teil 2): der Stand davor für die Rücknahme aus U4.3, und die
+        # Meldung. Keine eigene Rückfrage und kein eigener Callback — die Wahl des
+        # Szenarios kommt hier an, und ein zusätzlicher Callback kostete einen
+        # Rundlauf je Klick.
+        Output(RUECKNAHME_ID, "data", allow_duplicate=True),
+        Output("cfg-status", "children", allow_duplicate=True),
         Input({"type": c.CFG, "field": ALL}, "value"),
         Input({"type": c.CFG_BOOL, "field": ALL}, "value"),
         Input({"type": macro.RULE, "prop": ALL, "index": ALL, "key": ALL}, "value"),
+        Input({"type": verlaeufe.START, "groesse": ALL}, "value"),
+        Input({"type": verlaeufe.PUNKT, "groesse": ALL, "index": ALL, "key": ALL}, "value"),
+        Input({"type": verlaeufe.STAND, "groesse": ALL}, "data"),
+        Input({"type": verlaeufe.STRATEGIE, "slot": ALL}, "value"),
+        Input({"type": modellannahmen.ANNAHME, "pfad": ALL}, "value"),
         State(STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def _sync(_values, _flags, _rules, draft: dict | None):
+    def _sync(
+        _values, _flags, _rules, _starts, _punkte, _stand, _strategie, _annahmen, draft: dict | None
+    ):
         """Sichtbare Felder in den Store — **und nur, wenn sich etwas ändert** (P3.9).
 
         Der zweite Halbsatz ist die ganze Arbeit von P3.9. Dieser Callback feuert
@@ -204,9 +235,27 @@ def register_callbacks(app) -> None:
             edit["rules"] = _rules_from_entries(cells)
 
         neu = _normalise(updated)
+
+        # **Die Verläufe des Schritts** (P7.13-U13.1 Teil 2b): nach `_normalise`,
+        # weil die Bereinigung das gewählte Szenario braucht, und nur, wenn der
+        # Schritt steht — sonst baute jeder Tastendruck zwei Zustände auf.
+        starts, punkte = ctx.inputs_list[3], ctx.inputs_list[4]
+        strategien = ctx.inputs_list[6]
+        if starts or punkte or strategien:
+            neu = verlaeufe.eingaben_anwenden(neu, starts, punkte, strategien)
+
+        # **Die Modellannahmen des Schritts** (P7.13-U13.5), aus demselben Grund hier.
+        annahmen = ctx.inputs_list[7]
+        if annahmen:
+            neu = modellannahmen.eintraege_anwenden(neu, annahmen)
+
+        neu, verworfen = verlaeufe.nach_szenariowechsel(draft or {}, neu)
+
         if draft is not None and neu == draft:
-            return no_update
-        return neu
+            return no_update, no_update, no_update
+        if verworfen:
+            return neu, dict(draft or {}), _wechsel_meldung(draft or {})
+        return neu, no_update, no_update
 
     @app.callback(
         Output({"type": start_flow.SUMMARY, "slot": ALL}, "children"),
@@ -302,6 +351,140 @@ def register_callbacks(app) -> None:
         return model_editor.rumpf_fuer(pathname, draft)
 
     @app.callback(
+        Output({"type": start_flow.LISTE, "slot": ALL}, "children"),
+        Output({"type": start_flow.STRESS_TOGGLE, "slot": ALL}, "children"),
+        Input({"type": start_flow.STRESS_TOGGLE, "slot": ALL}, "n_clicks"),
+        State(STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def _stresstests(klicks, draft: dict | None):
+        """«Stresstests zeigen» — ein Knopf, kein Feld (P7.4-U4.1).
+
+        Jeder zweite Klick blendet wieder aus. Neu gezeichnet wird nur das
+        Auswahlfeld; sein Wert kommt aus dem Entwurf, `_sync` schreibt deshalb
+        nichts zurück.
+        """
+
+        gezeigt = [bool((anzahl or 0) % 2) for anzahl in klicks]
+        return (
+            [start_flow.szenario_radio(draft or {}, stresstests=z) for z in gezeigt],
+            [
+                [html.Span(start_flow.stresstest_knopftext(z), className="af-btn__label")]
+                for z in gezeigt
+            ],
+        )
+
+    @app.callback(
+        Output({"type": verlaeufe.LISTE, "slot": ALL}, "children"),
+        Output({"type": verlaeufe.WEITERE, "slot": ALL}, "children"),
+        Input({"type": verlaeufe.WEITERE, "slot": ALL}, "n_clicks"),
+        State({"type": verlaeufe.AUSWAHL, "slot": ALL}, "value"),
+        prevent_initial_call=True,
+    )
+    def _weitere_groessen(klicks, gewaehlt):
+        """«Weitere Größen zeigen» — dasselbe Muster wie «Stresstests zeigen» (P7.13-U13.1).
+
+        Die gewählte Größe bleibt gewählt: Neu gezeichnet wird nur das
+        Auswahlfeld, und sein Wert kommt aus dem, was gerade gewählt ist.
+        """
+
+        gezeigt = [bool((anzahl or 0) % 2) for anzahl in klicks]
+        werte = list(gewaehlt) + [None] * (len(gezeigt) - len(gewaehlt))
+        return (
+            [verlaeufe.auswahl(weitere=z, gewaehlt=w) for z, w in zip(gezeigt, werte)],
+            [[html.Span(verlaeufe.knopftext(z), className="af-btn__label")] for z in gezeigt],
+        )
+
+    from dashboard.web import shell
+
+    @app.callback(
+        Output({"type": verlaeufe.KURVE, "slot": ALL}, "children"),
+        Input({"type": verlaeufe.AUSWAHL, "slot": ALL}, "value"),
+        Input(shell.THEME_STORE, "data"),
+        Input("wizard-content-host", "children"),
+        State(STORE_ID, "data"),
+    )
+    def _verlauf(gewaehlt, mode, _content, draft: dict | None):
+        """Die Kurve der gewählten Größe — beim Zeichnen des Schritts, bei einer Wahl
+        und beim Wechsel des Farbmodus.
+
+        **Nicht am Entwurf hängend**, wie `_llm_status`: Ein `Input` auf den Store
+        löste bei jedem Tastendruck in jedem Schritt einen weiteren Rundlauf aus,
+        und die Zahl der Rundläufe je Klick ist die gemessene Ursache der
+        Klickdauer (P3.9, P7.11). Wer das Szenario wechselt, tut das in Schritt 1;
+        kommt er zurück, wird der Schritt neu gezeichnet und die Kurve mit ihm.
+        """
+
+        return [
+            verlaeufe.detail(draft or {}, verlaeufe.vorgabe(wert), mode=theme.normalise(mode))
+            for wert in gewaehlt
+        ]
+
+    @app.callback(
+        Output({"type": verlaeufe.FIGUR, "groesse": ALL}, "figure"),
+        Input(STORE_ID, "data"),
+        State(shell.THEME_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def _verlauf_kurve(draft: dict | None, mode):
+        """Die Kurve zieht mit, sobald `_sync` eine Abweichung schreibt (Teil 2b).
+
+        **Nur die Figur, nicht der Editor**: Den Editor neu zu zeichnen, während
+        jemand tippt, nähme ihm das Feld unter den Fingern weg. Ohne den Schritt
+        auf dem Schirm gibt es keinen Ausgang und damit nichts zu rechnen.
+        """
+
+        return [
+            verlaeufe.figur(draft or {}, eintrag["id"]["groesse"], mode=theme.normalise(mode))
+            for eintrag in ctx.outputs_list
+        ]
+
+    @app.callback(
+        Output({"type": verlaeufe.ZEILEN, "groesse": ALL}, "children"),
+        Input({"type": verlaeufe.NEU, "groesse": ALL}, "n_clicks"),
+        Input({"type": verlaeufe.WEG, "groesse": ALL, "index": ALL}, "n_clicks"),
+        State({"type": verlaeufe.PUNKT, "groesse": ALL, "index": ALL, "key": ALL}, "value"),
+        State(STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def _stuetzpunkte(_neu, _weg, _punkte, draft: dict | None):
+        """Stützpunkt hinzufügen oder entfernen (P7.13-U13.1 Teil 2b-2).
+
+        **Die Zeilen entstehen aus dem, was in den Feldern steht**, nicht aus dem
+        Entwurf — sonst ginge verloren, was jemand eingetippt, aber noch nicht
+        verlassen hat.
+
+        **Nur die Zeilen, nicht der Entwurf.** Der erste Anlauf schrieb hier auch
+        den Store, und der Rundlauf-Wächter zählte für «Verläufe» acht statt
+        sieben Server-Aufrufe je Klick: Dash lässt einen Callback trotz
+        `prevent_initial_call` beim Zeichnen feuern, wenn einer seiner Ausgänge
+        nicht mit den Eingängen zusammen eingefügt wird — und der Store steht
+        immer im Layout. Den Entwurf schreibt `_sync`, das die neu eingefügten
+        Felder und der Zeilen-Zähler (`verlaeufe.zeilen`) auslösen.
+
+        Ein neu gezeichneter Knopf meldet `n_clicks = 0` — das ist kein Klick.
+        """
+
+        ausloeser = ctx.triggered_id
+        ausgang = ctx.outputs_list
+        if not isinstance(ausloeser, dict) or not (ctx.triggered and ctx.triggered[0].get("value")):
+            return [no_update] * len(ausgang)
+
+        groesse = ausloeser["groesse"]
+        felder = verlaeufe.stuetzpunkte_aendern(
+            verlaeufe.felder_aus_eingaben(ctx.states_list[0], groesse), ausloeser
+        )
+        gesperrt = not (draft or {}).get("apply_custom_overrides")
+        return [
+            (
+                verlaeufe.zeilen(groesse, felder, gesperrt)
+                if eintrag["id"]["groesse"] == groesse
+                else no_update
+            )
+            for eintrag in ausgang
+        ]
+
+    @app.callback(
         Output({"type": compute_mode.STATUS, "slot": ALL}, "children"),
         Input(compute_mode.FIELD_ID, "value"),
         Input("wizard-content-host", "children"),
@@ -344,42 +527,113 @@ def register_callbacks(app) -> None:
         # die Haelfte aller Rueckmeldungen ins Nichts zu schicken -- genau das
         # war zwischen W3.1 und W3.2 der Fall.
         Output(model_editor.STATUS, "children"),
+        # Der Stand vor dem Zurücksetzen (P7.4-U4.3), siehe `_ruecknahme_nach`.
+        Output(RUECKNAHME_ID, "data"),
         Input({"type": c.ACTION, "action": ALL}, "n_clicks"),
-        # **Die schreibenden Aktionen liefern `submit_n_clicks`** (P1.9-W3.2):
-        # Sie stecken in einer `ConfirmDialogProvider`, und die meldet erst,
-        # wenn jemand die Rückfrage bejaht hat. Ein Callback kann nicht beide
-        # Eigenschaften derselben ID-Menge abhören — deshalb tragen sie einen
-        # eigenen Typ.
-        Input({"type": c.WRITE, "action": ALL}, "submit_n_clicks"),
+        # **Die schreibenden Aktionen melden sich erst mit der Bestätigung**
+        # (P1.9-W3.2, seit P7.1-U1.4 im gestalteten Dialog): Ihre ID trägt der
+        # Knopf **im** Dialog, nicht der, der ihn öffnet (`c.ASK`). Der Klick auf
+        # der Seite erreicht den Server also gar nicht.
+        Input({"type": c.WRITE, "action": ALL}, "n_clicks"),
         Input({"type": delta.REVERT, "feld": ALL}, "n_clicks"),
-        Input({"type": macro.PROP_DELETE, "prop": ALL}, "submit_n_clicks"),
-        Input({"type": micro.SEGMENT_DELETE, "segment": ALL}, "submit_n_clicks"),
+        Input({"type": macro.PROP_DELETE, "prop": ALL}, "n_clicks"),
+        Input({"type": micro.SEGMENT_DELETE, "segment": ALL}, "n_clicks"),
         State(STORE_ID, "data"),
         State({"type": c.FREE, "name": ALL}, "value"),
         State("cfg-editor-refresh", "data"),
+        State(RUECKNAHME_ID, "data"),
         prevent_initial_call=True,
     )
-    def _actions(_a, _w, _r, _p, _s, draft: dict | None, _free, refresh):
+    def _actions(_a, _w, _r, _p, _s, draft: dict | None, _free, refresh, gemerkt):
         trigger = ctx.triggered_id
         if not isinstance(trigger, dict) or not any(
             entry["value"] for entry in ctx.triggered if entry["value"]
         ):
-            return no_update, no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update, no_update
 
         free = ctx.states_list[1]
-        data = dict(draft or {})
+        vorher = dict(draft or {})
+        data = dict(vorher)
         version = int(refresh or 0) + 1
 
         try:
-            data, message, kind = _handle_action(trigger, data, free)
+            data, message, kind = _handle_action(trigger, data, free, ruecknahme=gemerkt)
         except Exception as exc:  # noqa: BLE001 - Datei- und Validierungsfehler gehören in die UI
-            fehler = ui.alert(str(exc), "error")
-            return no_update, no_update, fehler, fehler
+            fehler = ui.hinweis(str(exc), "fehler")
+            return no_update, no_update, fehler, fehler, no_update
 
         if message is None:
-            return no_update, no_update, no_update, no_update
-        meldung = ui.alert(message, kind)
-        return data, version, meldung, meldung
+            return no_update, no_update, no_update, no_update, no_update
+        return (
+            data,
+            version,
+            _meldung(trigger, message, kind, knopf=True),
+            _meldung(trigger, message, kind, knopf=False),
+            _ruecknahme_nach(trigger, vorher, gemerkt),
+        )
+
+
+def _ruecknahme_nach(trigger: dict, vorher: dict, gemerkt: dict | None):
+    """Was der Rücknahme-Store nach einer Aktion hält (P7.4-U4.3).
+
+    Nach «zurücksetzen» den Stand davor; nach «Rückgängig» nichts mehr — eine
+    Rücknahme wirkt einmal, sonst setzte ein zweiter Klick wieder zurück. Jede
+    andere Aktion lässt stehen, was gemerkt ist.
+    """
+
+    aktion = trigger.get("action")
+    if aktion == "reset":
+        return vorher
+    if aktion == "reset-undo":
+        return None
+    return no_update
+
+
+def _meldung(trigger: dict, message: str, kind: str, *, knopf: bool) -> object:
+    """Die Meldung einer Aktion — nach dem Zurücksetzen mit «Rückgängig».
+
+    **Der Knopf steht nur in einer der beiden Meldungen** (*knopf*): Dieselbe
+    Meldung geht an die Schrittfolge und an den Modell-Bereich, und zweimal
+    dieselbe Kennung ist für Dash ein Laufzeitfehler. Zurückgesetzt wird nur im
+    Einrichten, also steht er dort.
+    """
+
+    hinweis = ui.hinweis(message, kind)
+    if not knopf or trigger.get("action") != "reset":
+        return hinweis
+    return html.Div(
+        [
+            hinweis,
+            html.Div(
+                ui.button("Rückgängig", id=c.action_id("reset-undo"), variant="ghost"),
+                className="mt-2",
+            ),
+        ]
+    )
+
+
+def _wechsel_meldung(vorher: dict) -> html.Div:
+    """Die Meldung nach einem Szenariowechsel — mit «Rückgängig» (P7.13-U13.2 Teil 2).
+
+    **Dieselbe Kennung wie nach dem Zurücksetzen** (`reset-undo`): Beide stellen
+    den Entwurf von vorher wieder her, hier samt dem alten Szenario, und `cfg-status`
+    zeigt immer nur eine Meldung — die Kennung steht also nie zweimal im Baum.
+    """
+
+    name = verlaeufe.szenario_name(start_flow.of(vorher))
+    return html.Div(
+        [
+            ui.hinweis(
+                f"Szenario gewechselt: Ihre Abweichungen von «{name}» gelten nur für dieses "
+                "Szenario und sind verworfen.",
+                "info",
+            ),
+            html.Div(
+                ui.button("Rückgängig", id=c.action_id("reset-undo"), variant="ghost"),
+                className="mt-2",
+            ),
+        ]
+    )
 
 
 def _namensvorschlag(draft: dict) -> str:
@@ -406,28 +660,34 @@ def _namensvorschlag(draft: dict) -> str:
     else:
         woher = "Standard-Ausgangslage"
 
-    stempel = datetime.now().strftime("%Y-%m-%d %H:%M")
+    stempel = datetime.now().strftime("%d.%m.%Y, %H:%M")
     if draft.get("run_all_sweeps"):
         return f"{woher} · {stempel}"
     return f"{woher} · {draft.get('rounds', '?')} Ticks · {stempel}"
 
 
-def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | None, str]:
-    """Eine Aktion ausführen und (neuer Draft, Meldung, Meldungsart) zurückgeben."""
+def _handle_action(
+    trigger: dict, data: dict, free: list, *, ruecknahme: dict | None = None
+) -> tuple[dict, str | None, str]:
+    """Eine Aktion ausführen und (neuer Draft, Meldung, Ton des Hinweises) zurückgeben.
+
+    Der Ton ist einer aus `ui.HINWEIS_TOENE`; `tests/test_web_hinweis.py` liest
+    jede Rückgabe hier und hält sie dagegen.
+    """
 
     kind = trigger.get("type")
 
     if kind == delta.REVERT:
         feld = trigger["feld"]
         data = delta.zuruecknehmen(data, feld)
-        return data, f"«{delta._name(feld)}» auf den Auslieferungswert zurückgesetzt.", "success"
+        return data, f"«{delta._name(feld)}» auf den Auslieferungswert zurückgesetzt.", "erfolg"
 
     if kind == macro.PROP_DELETE:
         prop = trigger["prop"]
         delete_custom_property(prop, data.get("properties_file", "properties.json"))
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))
         data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
-        return data, f"Property «{prop}» gelöscht.", "success"
+        return data, f"Property «{prop}» gelöscht.", "erfolg"
 
     if kind == micro.SEGMENT_DELETE:
         segment = trigger["segment"]
@@ -436,7 +696,7 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         ]
         draft = draft_from_dict(data)
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
-        return data, f"Segment «{segment}» gelöscht.", "success"
+        return data, f"Segment «{segment}» gelöscht.", "erfolg"
 
     # `WRITE` und `ACTION` tragen denselben Schlüssel `action`; welcher Typ eine
     # Aktion trägt, sagt nur, ob eine Rückfrage davorsteht.
@@ -449,32 +709,43 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         # `touched()` meldete danach Einstellungen, die niemand vorgenommen hat.
         # Hier drückt jemand auf einen Knopf — das ist eine Entscheidung.
         data["simulation_name"] = _namensvorschlag(data)
-        return data, f"Name gesetzt: «{data['simulation_name']}»", "success"
+        return data, f"Name gesetzt: «{data['simulation_name']}»", "erfolg"
 
     if action == "reset":
         return (
             draft_to_dict(default_config_draft()),
-            "Auf Standard-Config zurückgesetzt.",
-            "success",
+            "Alle Einstellungen stehen wieder auf dem Auslieferungszustand.",
+            "erfolg",
         )
 
-    if action == "apply-sweep":
-        sweeps = list_sweep_presets()
-        sweep = next((s for s in sweeps if s.id == data.get("sweep_id")), None)
-        if sweep is None:
-            return data, "Kein Szenario-Preset ausgewählt.", "warning"
-        applied = apply_sweep_to_draft(draft_from_dict(data), sweep)
-        return draft_to_dict(applied), f"Parameter von «{sweep.name}» übernommen.", "success"
+    if action == "reset-undo":
+        # *ruecknahme* kommt aus `state.RUECKNAHME_ID` (P7.4-U4.3).
+        if not ruecknahme:
+            return data, "Es gibt nichts zurückzunehmen.", "info"
+        return dict(ruecknahme), "Die Einstellungen von vorher sind wiederhergestellt.", "erfolg"
+
+    if action == "save-properties":
+        # **Der Schreibweg für Startwerte und Verläufe** (P7.13-U13.3). Danach steht
+        # im Entwurf, was in der Datei steht — auch eine ausgeschaltete Größe kommt
+        # mit Startwert 0 zurück, so wie sie gespeichert wurde.
+        draft = draft_from_dict(data)
+        geschrieben = save_property_edits_to_file(draft.property_edits, draft.properties_file)
+        edits = extract_property_edits_from_file(draft.properties_file)
+        data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
+        if not geschrieben:
+            return data, "Keine Änderung — die Datei trägt diese Werte schon.", "info"
+        groessen = "eine Größe" if len(geschrieben) == 1 else f"{len(geschrieben)} Größen"
+        return data, f"Startwerte und Verläufe gespeichert — {groessen} geändert.", "erfolg"
 
     if action == "reload-properties":
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))
         data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
-        return data, "Properties neu geladen.", "success"
+        return data, "Properties neu geladen.", "erfolg"
 
     if action == "add-property":
         prop_id = c.free_value(free, "new-prop-id").strip()
         if not prop_id or not prop_id.isidentifier():
-            return data, "Bitte eine gültige Property-ID angeben (Python-Bezeichner).", "warning"
+            return data, "Bitte eine gültige Property-ID angeben (Python-Bezeichner).", "warnung"
         add_custom_property(
             prop_id,
             c.free_value(free, "new-prop-label").strip() or prop_id,
@@ -483,20 +754,20 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         )
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))
         data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
-        return data, f"Property «{prop_id}» angelegt.", "success"
+        return data, f"Property «{prop_id}» angelegt.", "erfolg"
 
     if action == "save-market-feedback":
         draft = draft_from_dict(data)
         save_market_feedback_to_file(draft.market_feedback_edit, draft.properties_file)
-        return data, "Markt-Feedback gespeichert.", "success"
+        return data, "Markt-Feedback gespeichert.", "erfolg"
 
     if action == "add-segment":
         segment_id = c.free_value(free, "new-segment-id").strip()
         if not segment_id or not segment_id.isidentifier():
-            return data, "Bitte eine gültige Segment-ID angeben (Python-Bezeichner).", "warning"
+            return data, "Bitte eine gültige Segment-ID angeben (Python-Bezeichner).", "warnung"
         segments = data.get("population_edits") or []
         if any(item.get("id") == segment_id for item in segments):
-            return data, f"Ein Segment «{segment_id}» existiert bereits.", "warning"
+            return data, f"Ein Segment «{segment_id}» existiert bereits.", "warnung"
         if not segments:
             draft = draft_from_dict(data)
             segments = [
@@ -513,20 +784,12 @@ def _handle_action(trigger: dict, data: dict, free: list) -> tuple[dict, str | N
         data["population_edits"] = segments
         draft = draft_from_dict(data)
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
-        return data, f"Segment «{segment_id}» angelegt.", "success"
+        return data, f"Segment «{segment_id}» angelegt.", "erfolg"
 
     if action == "save-population":
         draft = draft_from_dict(data)
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
         save_saturation_to_file(draft.saturation_edit, draft.properties_file)
-        return data, "Population und Sättigung gespeichert.", "success"
-
-    if action == "save-preset":
-        name = c.free_value(free, "preset-name", "mein_szenario").strip()
-        draft = draft_from_dict(data)
-        draft.simulation_name = name
-        path = save_custom_sweep_preset(draft, name)
-        data = draft_to_dict(draft)
-        return data, f"Gespeichert: `{path}`", "success"
+        return data, "Population und Sättigung gespeichert.", "erfolg"
 
     return data, None, "info"

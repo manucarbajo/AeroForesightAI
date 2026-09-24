@@ -13,5 +13,5 @@ from dashboard.web import components as ui
 def render(run_dir: Path, run_id: str) -> html.Div:
     path = run_dir / "final_narrative.md"
     if not path.is_file():
-        return ui.alert("`final_narrative.md` fehlt in diesem Run.", "warning")
-    return ui.card(ui.markdown(read_run_file(path)), class_name="max-w-4xl")
+        return ui.hinweis("`final_narrative.md` fehlt in diesem Lauf.", "warnung")
+    return ui.card(ui.markdown(read_run_file(path)))

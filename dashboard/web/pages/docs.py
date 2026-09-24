@@ -85,7 +85,7 @@ CHAPTERS: list[Chapter] = [
         "tick-und-lauf",
         "Tick, Lauf und Szenario",
         "Konzepte",
-        "Warum ein Tick kein Zeitraum ist.",
+        "Was ein Tick ist: ein Monat Modellzeit, ohne Datum.",
         markdown="tick-und-lauf.md",
     ),
     Chapter(
@@ -340,19 +340,19 @@ def render(chapter: Chapter) -> html.Div:
         # `id` nur setzen, wenn es eine Überschrift gibt — Dash lehnt `id=None`
         # ab, und der Vorspann eines Kapitels braucht kein Sprungziel.
         extra = {"id": anchor(title)} if title else {}
-        blocks.append(html.Section(children, className="mb-10", **extra))
+        blocks.append(html.Section(children, className="mb-8", **extra))
 
     return html.Div(
         [
             html.P(
-                chapter.part.upper(), className="font-body text-xs tracking-wider af-text-muted"
+                chapter.part.upper(), className=f"font-body {ui.KLEIN} tracking-wider af-text-muted"
             ),
             html.H1(chapter.title, className=f"{ui.H1} mt-1"),
-            html.P(chapter.summary, className="font-body af-text-body mt-2 mb-8 max-w-3xl"),
+            html.P(chapter.summary, className="font-body af-text-body mt-2 mb-8"),
             *blocks,
             _chapter_footer(chapter),
         ],
-        className="max-w-3xl",
+        className="af-breite-inhalt",
     )
 
 
@@ -371,7 +371,7 @@ def _chapter_footer(chapter: Chapter) -> html.Div:
                 html.Span(label, className=f"{ui.CAPTION} block"),
                 html.Span(
                     target.title,
-                    className="font-body text-sm font-medium af-text-accent",
+                    className=f"font-body {ui.BESCHRIFTUNG} font-medium af-text-accent",
                 ),
             ],
             href=target.href,
@@ -416,7 +416,7 @@ def navigation(active_slug: str, query: str = "") -> html.Div:
         blocks.append(
             html.P(
                 part.upper(),
-                className="font-body text-xs tracking-wider af-text-faint mt-6 mb-2 first:mt-0",
+                className=f"font-body {ui.KLEIN} tracking-wider af-text-faint mt-6 mb-2 first:mt-0",
             )
         )
         blocks.append(
@@ -427,7 +427,7 @@ def navigation(active_slug: str, query: str = "") -> html.Div:
                             chapter.title,
                             href=chapter.href,
                             className=(
-                                "block py-1.5 font-body text-sm border-l-2 pl-3 -ml-px "
+                                f"block py-1 font-body {ui.BESCHRIFTUNG} border-l-2 pl-3 -ml-px "
                                 + (
                                     "af-docs__link af-docs__link--active"
                                     if chapter.slug == active_slug
@@ -446,7 +446,7 @@ def navigation(active_slug: str, query: str = "") -> html.Div:
         blocks.append(
             html.P(
                 f"Nichts gefunden zu «{query}».",
-                className="font-body text-sm af-text-muted py-2",
+                className=f"font-body {ui.BESCHRIFTUNG} af-text-muted py-2",
             )
         )
     return html.Div(blocks)

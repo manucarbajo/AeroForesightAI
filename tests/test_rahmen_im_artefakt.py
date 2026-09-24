@@ -73,6 +73,40 @@ class TestJederStartpfadSetztIhn:
         assert state.rahmen is not None
         assert state.rahmen.quelle == "eigen"
 
+    def test_geaenderte_standardwerte_heissen_eigen(self):
+        """Gemessen am 2026-09-15: CO₂-Start 99 im Modell, der Lauf rechnete damit —
+        und stand im Artefakt als «Standard-Ausgangslage».
+
+        **Seit P7.13-U13.3 ist der Startpreis der einzige solche Wert**: Startwerte
+        und Verläufe aus dem Modell wirken nur gespeichert, der Startpreis bleibt
+        vorerst die Ausnahme (von Haiko entschieden).
+        """
+
+        draft = default_config_draft()
+        draft.scenario_mode = "basis"
+        draft.apply_custom_overrides = True
+        draft.base_price = 123.0
+
+        state = prepare_simulation_state(draft)
+
+        assert (
+            state.properties.price_model.base_price == 123.0
+        ), "Vorbedingung: der geänderte Wert kommt an"
+        assert state.rahmen is not None
+        assert state.rahmen.quelle == "eigen"
+
+    def test_ohne_aenderung_bleibt_der_standard_der_standard(self):
+        """Der Schalter ist per Vorgabe an — er allein macht keinen eigenen Rahmen."""
+
+        draft = default_config_draft()
+        draft.scenario_mode = "basis"
+        draft.apply_custom_overrides = True
+
+        state = prepare_simulation_state(draft)
+
+        assert state.rahmen is not None
+        assert state.rahmen.quelle == "standard"
+
     def test_jedes_ausgelieferte_preset_kommt_durch(self):
         """Nicht eines von acht, sondern alle — ein fehlender Name fiele sonst
         erst dem auf, der genau dieses Szenario rechnet."""
@@ -87,6 +121,74 @@ class TestJederStartpfadSetztIhn:
                 ohne_namen.append(pfad.stem)
 
         assert not ohne_namen, f"Diese Szenarien tragen keinen lesbaren Rahmen: {ohne_namen}"
+
+    def test_ein_abgeleiteter_lauf_nennt_szenario_und_abweichungen(self):
+        """P7.13-U13.2 — ein geändertes Szenario steht nicht als unverändertes da."""
+
+        from dashboard.config_catalog import PropertyEditState
+
+        draft = default_config_draft()
+        draft.scenario_mode = "sweep"
+        draft.sweep_id = "business_as_usual"
+        draft.abweichungen = {
+            "carbon_tax_level": PropertyEditState(property_id="carbon_tax_level", baseline=77.0)
+        }
+        draft.preisstrategie = "marge"
+
+        state = prepare_simulation_state(draft)
+
+        assert state.rahmen is not None
+        assert state.rahmen.id == "business_as_usual"
+        assert state.rahmen.quelle == "abgeleitet"
+        assert state.rahmen.abweichungen == ["carbon_tax_level", "preisstrategie"]
+        # **Und der Wert selbst**, nicht nur das Etikett: Ein Rahmen, der
+        # «abgeleitet» heißt, ohne dass die Abweichung gelegt wurde, wäre die
+        # nächste stille Falschaussage.
+        co2 = next(p for p in state.properties.system_properties if p.id == "carbon_tax_level")
+        assert co2.trajectory.baseline == 77.0
+        feedback = next(
+            r
+            for r in state.properties.market_rules
+            if r.effect.get("type") == "booking_yield_feedback"
+        )
+        assert feedback.effect.get("strategie") == "marge"
+
+    def test_eine_abweichung_an_der_bevoelkerung_kommt_an(self):
+        """Gemessen am 2026-09-15: Das Artefakt nannte sie, der Lauf rechnete ohne."""
+
+        from dashboard.config_catalog import PropertyEditState
+        from src.market.property_engine import resolve_trajectory
+
+        draft = default_config_draft()
+        draft.scenario_mode = "sweep"
+        draft.sweep_id = "business_as_usual"
+        draft.abweichungen = {
+            "bevoelkerungsentwicklung": PropertyEditState(
+                property_id="bevoelkerungsentwicklung", baseline=5000.0
+            )
+        }
+
+        state = prepare_simulation_state(draft)
+
+        prop = next(
+            p for p in state.properties.system_properties if p.id == "bevoelkerungsentwicklung"
+        )
+        assert resolve_trajectory(prop.trajectory, 60) == 5000.0
+        assert state.rahmen is not None
+        assert "bevoelkerungsentwicklung" in state.rahmen.abweichungen
+
+    def test_eine_unbekannte_abweichung_scheitert_laut(self):
+        """Still übersprungen wäre sie eine Abweichung, die nicht ankommt."""
+
+        from dashboard.config_catalog import PropertyEditState
+
+        draft = default_config_draft()
+        draft.abweichungen = {
+            "gibt_es_nicht": PropertyEditState(property_id="gibt_es_nicht", baseline=1.0)
+        }
+
+        with pytest.raises(ValueError, match="gibt_es_nicht"):
+            prepare_simulation_state(draft)
 
     def test_die_kennung_stimmt_mit_der_datei_ueberein(self):
         """Sonst zeigte das Artefakt auf ein Szenario, das es nicht gibt."""

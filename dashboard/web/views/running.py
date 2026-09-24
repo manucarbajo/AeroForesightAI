@@ -132,9 +132,9 @@ def _what(draft: dict) -> html.Div:
     # `prose=True`, weil hier **Text** steht und keine Zahl: Im Zahlensatz
     # sprengten «Standard-Ausgangslage» und «Ohne Sprachmodell» ihre Karten.
     return ui.grid(
-        ui.metric_tile("Szenario", _scenario_name(draft), prose=True),
-        ui.metric_tile("Umfang", _length(draft), prose=True),
-        ui.metric_tile("Rechenmodus", compute_mode.short_label(draft), prose=True),
+        ui.kachel("Szenario", _scenario_name(draft), variante="text"),
+        ui.kachel("Umfang", _length(draft), variante="text"),
+        ui.kachel("Rechenmodus", compute_mode.short_label(draft), variante="text"),
         cols="sm:grid-cols-3",
         gap="gap-3",
     )
@@ -155,7 +155,7 @@ def render(progress: Progress, draft: dict) -> html.Div:
                         "Die Zahlen entstehen jetzt in Python. Sie können in der Zwischenzeit "
                         "unter «Ergebnisse» einen früheren Lauf ansehen — der Fortschritt "
                         "bleibt dann unten rechts sichtbar.",
-                        className=f"{ui.CAPTION} mt-2 max-w-2xl",
+                        className=f"{ui.CAPTION} mt-2",
                     ),
                 ],
                 className="mb-6",
@@ -179,7 +179,7 @@ def render(progress: Progress, draft: dict) -> html.Div:
                 ),
                 html.P(progress.line or "…", className=f"{ui.CAPTION} mt-3 font-mono truncate"),
             ),
-            html.Div(_what(draft), className="mt-5"),
+            html.Div(_what(draft), className="mt-4"),
             # **Abbrechen** (P1.9-W4.5). Bis dahin lief ein Lauf bis zum Ende
             # oder bis der Prozess starb: Wer versehentlich 500 Ticks mit
             # Sprachmodell startete, konnte nur warten oder den Server neu
@@ -208,7 +208,7 @@ def render(progress: Progress, draft: dict) -> html.Div:
                             "seinen Rechenlauf selbst und fragt zwischen den Ticks nicht "
                             "nach. Er läuft bis zum Ende durch."
                         ),
-                        className=f"{ui.CAPTION} mt-2 max-w-2xl",
+                        className=f"{ui.CAPTION} mt-2",
                     ),
                     html.Div(
                         id=CANCEL_STATUS,
@@ -226,7 +226,7 @@ def render(progress: Progress, draft: dict) -> html.Div:
                 className="mt-6",
             ),
         ],
-        className="af-pane p-5",
+        className="af-pane p-4",
     )
 
 
@@ -296,8 +296,8 @@ def finished_link() -> html.Div:
         dcc.Link(
             [ui.icon("arrow_forward", "text-sm"), "Ergebnisse ansehen"],
             href=routing.url(ziel),
-            className="af-btn af-btn--primary inline-flex items-center gap-1.5 "
-            "px-3 py-1.5 font-body text-xs font-medium",
+            className="af-btn af-btn--primary inline-flex items-center gap-1 "
+            f"px-3 py-1 font-body {ui.KLEIN} font-medium",
         ),
         className="mt-3",
     )

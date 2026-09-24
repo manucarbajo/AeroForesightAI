@@ -23,7 +23,7 @@ from typing import Any
 import plotly.graph_objects as go
 from dash import dcc, html
 
-from dashboard.config_catalog import factor_options_from_file
+from dashboard.config_catalog import FAKTOR_KURZNAMEN, factor_options_from_file
 from dashboard.web import components as ui
 from dashboard.web import theme
 from dashboard.web.run_data import RunData
@@ -68,11 +68,19 @@ def _factor_labels() -> dict[str, dict[str, str]]:
 
 
 def factor_strip(states: dict[str, str]) -> html.Div:
-    """Die sieben Deskriptoren als Zeile über der Szene."""
+    """Die sieben Deskriptoren als Zeile über der Szene.
+
+    **Kurzname und Zustand als Marke, der Wortlaut im Tooltip** (P7.5-U5.3, von
+    Haiko entschieden am 2026-09-15). Bis dahin stand im Chip der Zustandstext —
+    «Moderater Klimaschutz, Kompensationsfokus» — und brauchte 136 bis 272 px, wo
+    bei 1280 px 72 px blieben; alle sieben waren abgeschnitten. Der volle Text steht
+    zusätzlich beschnitten im Baum, damit ihn eine Vorlesesoftware liest: Ein
+    `title` allein erreicht sie nicht verlässlich.
+    """
 
     if not states:
         return html.Div(
-            ui.alert(
+            ui.hinweis(
                 "Keine Faktor-Zeitreihe in diesem Lauf (`timeseries/factors.csv` fehlt).",
                 "info",
             ),
@@ -88,12 +96,16 @@ def factor_strip(states: dict[str, str]) -> html.Div:
         # Streifen sofort ablesbar ist.
         gekippt = state.endswith(".2")
         beschreibung = (labels.get(factor_id) or {}).get(state, state)
+        name = FAKTOR_KURZNAMEN.get(factor_id, factor_id)
+        wortlaut = f"{name} ({state}): {beschreibung}" + (" — gekippt" if gekippt else "")
         chips.append(
             html.Div(
                 [
-                    html.Span(state, className="af-factor__id"),
-                    html.Span(beschreibung, className="af-factor__state", title=beschreibung),
+                    html.Span(name, className="af-factor__name", **{"aria-hidden": "true"}),
+                    html.Span(state, className="af-factor__id", **{"aria-hidden": "true"}),
+                    html.Span(wortlaut, className="af-nur-vorlesen"),
                 ],
+                title=wortlaut,
                 className="af-factor af-factor--active" if gekippt else "af-factor",
             )
         )
@@ -125,10 +137,34 @@ def _ranges(frame, zoom: float) -> tuple[list[float], list[float]]:
     return [mitte - spanne, mitte + spanne], [-0.05, 1.05]
 
 
+#: Bis zu wie vielen Punkten die Deckkraft unverändert bleibt (P7.5-U5.3). Die
+#: Standard-Ausgangslage rechnet mit 1000 Personen; bei ihr sieht die Szene aus wie
+#: vorher. Darüber werden die Punkte mit der Wurzel der Dichte durchsichtiger.
+DICHTE_BEZUG = 1000
+
+#: Durchsichtiger als das wird kein Punkt — sonst verschwände eine dünne Gruppe.
+DECKKRAFT_MIN = 0.12
+
+
+def deckkraft(grundwert: float, punkte: int) -> float:
+    """Die Deckkraft eines Punkts bei *punkte* gleichzeitig gezeichneten (P7.5-U5.3).
+
+    **Überplottung wird behandelt, nicht übersehen:** Mit fester Deckkraft wird eine
+    dichte Wolke zu einer einheitlichen Fläche, und wo viele Personen übereinander
+    liegen, sieht es aus wie wenige. Die Wurzel dämpft stetig; bis `DICHTE_BEZUG`
+    bleibt der Grundwert, damit kleine Läufe nicht blasser werden.
+    """
+
+    if punkte <= DICHTE_BEZUG:
+        return grundwert
+    return max(DECKKRAFT_MIN, grundwert * (DICHTE_BEZUG / punkte) ** 0.5)
+
+
 def _figure(frame, tick: int, zoom: float, mode: str) -> go.Figure:
     tone = theme.palette(mode)
     ausschnitt = frame[frame["tick"] == tick]
     x_range, y_range = _ranges(frame, zoom)
+    punkte = len(ausschnitt)
 
     fig = go.Figure()
     for gebucht, farbe, name in (
@@ -145,7 +181,7 @@ def _figure(frame, tick: int, zoom: float, mode: str) -> go.Figure:
                 marker=dict(
                     size=7,
                     color=farbe,
-                    opacity=0.62 if gebucht else 0.42,
+                    opacity=deckkraft(0.62 if gebucht else 0.42, punkte),
                     line=dict(width=0),
                 ),
                 hovertemplate=(
@@ -161,7 +197,7 @@ def _figure(frame, tick: int, zoom: float, mode: str) -> go.Figure:
         hovermode="closest",
         height=None,
         margin=dict(l=64, r=24, t=16, b=52),
-        xaxis_title="Zahlungsbereitschaft (WTP) in €",
+        xaxis_title="Zahlungsbereitschaft in €",
         yaxis_title="Umweltbewusstsein",
         legend=dict(orientation="h", y=1.04, x=0),
         uirevision="scene",
@@ -172,7 +208,12 @@ def _figure(frame, tick: int, zoom: float, mode: str) -> go.Figure:
 
 
 def overlay(tick: int, max_tick: int, count: int, zoom_index: int | None) -> html.Dl:
-    """Die Einblendung im Viewport.
+    """Die Einblendung im Viewport — **unter** der Zeichenfläche, nicht darüber.
+
+    **Seit P7.5-U5.3 außerhalb des Diagramms** (L3 des Audits): Sie lag rechts unten
+    absolut über der Zeichenfläche und deckte dort Datenpunkte zu — gerade die mit
+    hoher Zahlungsbereitschaft und niedrigem Umweltbewusstsein. Jetzt ist sie eine
+    Zeile unter dem Diagramm.
 
     Die Vorgabe nannte hier eine Framerate. Es wird nichts fortlaufend
     gerendert, das eine hätte — eine erfundene Zahl wäre genau die Art Zierrat,
@@ -245,12 +286,12 @@ def render(
                 kopf,
                 factor_strip(data.factors_at(tick)),
                 _empty(
-                    "Keine Agenten-History in diesem Lauf.",
-                    "`individuals_history.csv` fehlt. Starten Sie links einen Lauf — "
-                    "dann zeichnet die Simulation die Population je Tick auf.",
+                    "Kein Personenverlauf in diesem Lauf.",
+                    "Neue Läufe zeichnen die Population je Tick auf — einen Lauf "
+                    "richten Sie unter «Einrichten» ein.",
                 ),
             ],
-            className="p-5",
+            className="p-4",
         )
 
     ausschnitt = frame[frame["tick"] == tick]
@@ -272,7 +313,7 @@ def render(
                 className="af-scene af-card p-2",
             ),
         ],
-        className="p-5",
+        className="p-4",
     )
 
 

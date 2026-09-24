@@ -37,7 +37,7 @@ def _table(path: Path, mode: str = theme.LIGHT) -> html.Div:
     except Exception as exc:  # noqa: BLE001 - kaputte CSV soll lesbar bleiben
         return html.Div(
             [
-                ui.alert(f"CSV konnte nicht gelesen werden: {exc}", "warning", class_name="mb-3"),
+                ui.hinweis(f"CSV konnte nicht gelesen werden: {exc}", "warnung", class_name="mb-3"),
                 ui.code_block(read_run_file(path, max_chars=120_000)),
             ]
         )
@@ -55,7 +55,7 @@ def _table(path: Path, mode: str = theme.LIGHT) -> html.Div:
             style_table={"overflowX": "auto"},
             style_cell={
                 "fontFamily": theme.FONT_BODY,
-                "fontSize": "13px",
+                "fontSize": f"{theme.SCHRIFT_PX['beschriftung']}px",
                 "padding": "8px 12px",
                 "color": tone["text-body"],
                 "border": "none",
@@ -68,7 +68,7 @@ def _table(path: Path, mode: str = theme.LIGHT) -> html.Div:
             style_header={
                 "fontFamily": theme.FONT_HEADLINE,
                 "fontWeight": "600",
-                "fontSize": "12px",
+                "fontSize": f"{theme.SCHRIFT_PX['klein']}px",
                 "color": tone["text"],
                 "backgroundColor": tone["surface-inset"],
                 "borderBottom": f"1px solid {tone['border']}",
@@ -99,7 +99,7 @@ def _content(path: Path, kind: str, mode: str = theme.LIGHT) -> html.Div:
     if kind == "png":
         url = run_file_url(path)
         if not url:
-            return ui.alert("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warning")
+            return ui.hinweis("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warnung")
         return html.Div(html.Img(src=url, className="w-full rounded"), className="af-paper")
     return ui.code_block(read_run_file(path), max_height="40rem")
 
@@ -122,7 +122,7 @@ def _download_link(path: Path):
         [ui.icon("download", "text-sm"), "Herunterladen"],
         href=url,
         className="af-btn af-btn--secondary inline-flex items-center gap-2 px-4 py-2 "
-        "font-body text-sm font-medium",
+        f"font-body {ui.BESCHRIFTUNG} font-medium",
     )
 
 
@@ -134,15 +134,22 @@ def _view(run_dir: Path, relative_path: str, mode: str = theme.LIGHT):
         None,
     )
     if entry is None:
-        return ui.alert("Datei nicht mehr vorhanden.", "warning"), None
-    header = html.P(str(entry.absolute_path), className=f"{ui.CAPTION} mb-3 break-all")
+        return ui.hinweis("Datei nicht mehr vorhanden.", "warnung"), None
+    # **Der Pfad im Lauf, nicht der auf der Platte** (P7.0-U0.6): Hier stand
+    # `entry.absolute_path`, also etwas wie
+    # «F:\AeroForesight\AeroForesightAI\outputs\run_…\cib_matrix.json». Brauchbar
+    # daran ist genau der hintere Teil — welche Datei des Laufs man ansieht; der
+    # vordere beschreibt die Maschine, auf der der Server läuft, und gehört im
+    # Mehrbenutzerbetrieb niemandem außer ihr. Der Download-Link unten benutzt
+    # weiterhin den absoluten Pfad, nur zeigt er ihn nicht.
+    header = html.P(entry.relative_path, className=f"{ui.CAPTION} mb-3 break-all")
 
     if entry.kind != "png" and entry.size_bytes > LAZY_THRESHOLD_BYTES:
         # Nicht bloß ausblenden — gar nicht erst übertragen. Ein geschlossenes
         # <details> läge trotzdem vollständig im DOM.
         content = html.Div(
             [
-                ui.alert(
+                ui.hinweis(
                     f"Große Datei ({entry.size_bytes // 1024} KB). Der Inhalt wird erst "
                     "auf Klick geladen.",
                     "info",
@@ -168,7 +175,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
 
     options = _options(run_dir)
     if not options:
-        return ui.alert("Keine Dateien gefunden.", "warning")
+        return ui.hinweis("Keine Dateien gefunden.", "warnung")
 
     first = options[0]["value"]
     content, download = _view(run_dir, first, mode)
@@ -187,9 +194,9 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                         ),
                         class_name="flex-1 min-w-[18rem]",
                     ),
-                    html.Div(download, id="files-download", className="pt-7"),
+                    html.Div(download, id="files-download", className="af-neben-feld"),
                 ],
-                className="flex items-start gap-4 flex-wrap mb-5",
+                className="flex items-start gap-4 flex-wrap mb-4",
             ),
             html.Div(content, id="files-content"),
         ]
@@ -225,5 +232,5 @@ def register_callbacks(app) -> None:
             None,
         )
         if entry is None:
-            return ui.alert("Datei nicht mehr vorhanden.", "warning")
+            return ui.hinweis("Datei nicht mehr vorhanden.", "warnung")
         return _content(entry.absolute_path, entry.kind)

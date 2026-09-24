@@ -360,7 +360,7 @@ class TestDasDashboardZeigtDieHerkunft:
         rendered = self._render(
             tmp_path, {"compute_mode": "mock_llm", "seed": 1, "model": "llama3.2"}
         )
-        assert "Ohne Sprachmodell (Mock)" in rendered
+        assert "Ohne Sprachmodell" in rendered
         assert "ohne Sprachmodell entstanden" in rendered
 
     def test_mock_run_does_not_claim_a_model(self, tmp_path) -> None:
@@ -712,9 +712,9 @@ class TestDerHybridModusDesSweeps:
 
         from pathlib import Path
 
-        from src.orchestration.scenario_sweeps import festlegung_fuer
+        from src.orchestration.scenario_sweeps import vorgegebene_felder
 
-        festlegung = festlegung_fuer("deterministic_only")
+        festlegung = vorgegebene_felder().get("deterministic_only")
         assert festlegung is not None, "Der Sweep-Vertrag sagt nichts mehr über den Rechenmodus"
         assert festlegung.wert is True, (
             "Der Sweep rechnet seine Ticks nicht mehr deterministisch — dann trägt "

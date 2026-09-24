@@ -139,36 +139,74 @@ def code_version() -> dict[str, Any] | None:
     Bewusst **nicht** zwischengespeichert: Das Dashboard läuft als ein Prozess
     über Stunden. Ein `lru_cache` hätte Commit und `dirty` beim Prozessstart
     eingefroren, und jeder spätere Lauf trüge den Codestand von damals — die
-    Sorte Angabe, die stimmt, bis sie gebraucht wird. Drei `git`-Aufrufe pro
-    Lauf sind neben der Simulation nicht messbar.
+    Sorte Angabe, die stimmt, bis sie gebraucht wird.
+
+    **Ein `git`-Aufruf, nicht drei** (P7.11-U11.1, 2026-09-12). Bis dahin
+    standen hier `rev-parse HEAD`, `status --porcelain` und
+    `rev-parse --abbrev-ref HEAD` nebeneinander, und die Begründung dafür war
+    «drei `git`-Aufrufe pro Lauf sind neben der Simulation nicht messbar». Für
+    einen Lauf stimmt das weiterhin — nur ist der Aufrufer längst nicht mehr
+    nur der Lauf: Der Prüfschritt des Assistenten baut seine Herkunftsangabe
+    bei **jedem Zeichnen** (`start_flow.herkunft`), und unter Windows kostet
+    das Starten eines Prozesses allein 30 bis 45 ms. Gemessen 124 ms je
+    Zeichnen, während jeder andere Schritt der Schrittfolge zusammen unter
+    7 ms blieb — der Schritt lag damit über dem Klick-Deckel aus P3.16.
+
+    `status --porcelain=v2 --branch` liefert alle drei Angaben in einem Zug:
+    `# branch.oid` den Commit, `# branch.head` den Zweig, und jede Zeile ohne
+    `#` ist eine nicht eingecheckte Änderung. Gemessen 44 ms statt 124.
+
+    **Eine Angabe hat sich dabei verschoben**, und zwar zum Genaueren: Bei
+    abgetrenntem `HEAD` nannte `rev-parse --abbrev-ref HEAD` den Zweig
+    `"HEAD"` — ein Name, den es nicht gibt. Jetzt steht dort ``None``, also
+    «kein Zweig», und `run_metadata.json` schreibt `null`.
     """
 
-    def _git(*args: str) -> str | None:
-        try:
-            result = subprocess.run(
-                ["git", *args],
-                cwd=REPO_ROOT,
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-            )
-        except (OSError, subprocess.SubprocessError):
-            return None
-        if result.returncode != 0:
-            return None
-        return result.stdout.strip()
-
-    commit = _git("rev-parse", "HEAD")
-    if not commit:
+    stand = _git_status()
+    if stand is None:
         return None
 
-    status = _git("status", "--porcelain")
+    kopf: dict[str, str] = {}
+    schmutzig = False
+    for zeile in stand.splitlines():
+        if not zeile.startswith("#"):
+            schmutzig = True
+            continue
+        teile = zeile[1:].split(maxsplit=1)
+        if len(teile) == 2:
+            kopf[teile[0]] = teile[1]
+
+    commit = kopf.get("branch.oid", "")
+    # `(initial)` steht dort, solange noch kein Commit existiert — dann gibt es
+    # keinen Codestand zu nennen, und `None` sagt das.
+    if not commit or commit == "(initial)":
+        return None
+
+    zweig = kopf.get("branch.head", "")
     return {
         "commit": commit,
-        "dirty": bool(status),
-        "branch": _git("rev-parse", "--abbrev-ref", "HEAD") or None,
+        "dirty": schmutzig,
+        "branch": None if zweig in ("", "(detached)") else zweig,
     }
+
+
+def _git_status() -> str | None:
+    """Die Ausgabe von `git status --porcelain=v2 --branch` — oder ``None``."""
+
+    try:
+        ergebnis = subprocess.run(
+            ["git", "status", "--porcelain=v2", "--branch"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if ergebnis.returncode != 0:
+        return None
+    return ergebnis.stdout
 
 
 def compute_mode(args: RunArgs) -> str:
@@ -200,7 +238,7 @@ def compute_mode(args: RunArgs) -> str:
 
 COMPUTE_MODE_LABELS = {
     "llm": "Mit Sprachmodell",
-    "mock_llm": "Ohne Sprachmodell (Mock)",
+    "mock_llm": "Ohne Sprachmodell",
     "deterministic_only": "Nur Zahlen (deterministisch)",
     "deterministic_with_llm_narrative": "Nur Zahlen, Abschlusstext vom Modell",
 }

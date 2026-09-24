@@ -2,7 +2,7 @@
 
 Zwei Befunde am Bild, beide von Manu gemeldet:
 
-1. **Werte traten aus ihrer Kachel.** `ui.metric_tile` ist für kurze Zahlen
+1. **Werte traten aus ihrer Kachel.** `ui.kachel` ist für kurze Zahlen
    gebaut — 2xl, fett, Ziffern gleicher Breite. «Standard-Ausgangslage» und
    «Ohne Sprachmodell» sind aber Text und sprengten in einer dreispaltigen Reihe
    ihre Karte.
@@ -87,19 +87,26 @@ class TestKeineAusrichtungGehtMehrAnDash:
 
 class TestKeinWertTrittAusSeinerKachel:
     def test_a_prose_value_gets_the_smaller_setting(self):
-        """Der Zahlensatz ist für «Standard-Ausgangslage» zu groß."""
+        """Der Zahlensatz ist für «Standard-Ausgangslage» zu groß.
 
-        zahl = str(ui.metric_tile("Länge", "40 Ticks"))
-        text = str(ui.metric_tile("Szenario", "Standard-Ausgangslage", prose=True))
+        Geprüft wird seit P7.1-U1.1 die **Rolle** statt der Tailwind-Klasse:
+        Eine Zahl bekommt «Titel» (24 px), ein Satz «Abschnitt» (16 px). Die
+        Zusage ist dieselbe geblieben — nur heißt die große Größe nicht mehr
+        `text-2xl`, sondern `ui.TITEL`.
+        """
 
-        assert "text-2xl" in zahl
-        assert "text-2xl" not in text
+        zahl = str(ui.kachel("Länge", "40 Ticks"))
+        text = str(ui.kachel("Szenario", "Standard-Ausgangslage", variante="text"))
+
+        assert ui.TITEL in zahl
+        assert ui.TITEL not in text
+        assert ui.ABSCHNITT in text
 
     def test_every_tile_value_can_be_capped(self):
         """`af-tile__value` trägt den Umbruch — ohne die Klasse greift er nicht."""
 
-        assert "af-tile__value" in str(ui.metric_tile("Szenario", "x", prose=True))
-        assert "af-tile__value" in str(ui.metric_tile("Länge", 40))
+        assert "af-tile__value" in str(ui.kachel("Szenario", "x", variante="text"))
+        assert "af-tile__value" in str(ui.kachel("Länge", 40))
 
     def test_the_cap_breaks_inside_a_long_word(self):
         """`anywhere`, nicht `break-word`.
@@ -117,4 +124,4 @@ class TestKeinWertTrittAusSeinerKachel:
         assert "min-width: 0" in _regel(".af-grid > *")
 
     def test_the_grid_helper_carries_the_class(self):
-        assert "af-grid" in str(ui.grid(ui.metric_tile("a", 1)))
+        assert "af-grid" in str(ui.grid(ui.kachel("a", 1)))

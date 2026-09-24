@@ -14,6 +14,7 @@ eine gepflegte Liste finge nur den Rückfall an bekannter Stelle.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Iterable
 
 from dash import dcc, html
@@ -23,25 +24,58 @@ from dashboard.web import routing
 # --- Klassenbausteine ------------------------------------------------------
 
 CARD = "af-card"
-CARD_PAD = f"{CARD} p-5 sm:p-6"
-LABEL = "block font-body text-sm font-medium af-text-body mb-1.5"
+CARD_PAD = f"{CARD} p-4 sm:p-6"
+#: Die sechs Rollen der Schriftskala (P7.1-U1.1, entschieden am 2026-09-12).
+#: Größe, Gewicht und Zeilenhöhe stehen in `assets/dashboard.css` als
+#: `.af-schrift-*`; hier stehen nur die Namen. **Vorher kamen die Größen aus
+#: drei Quellen** — dem Stylesheet, Tailwinds `text-*`-Klassen im Python-Code
+#: und diesen Konstanten, die selbst wieder Tailwind zusammensetzten —, und
+#: gerendert waren es dreizehn Größen in 23 Kombinationen aus Größe und
+#: Gewicht. Wer eine siebte Rolle braucht, ändert die Skala und nicht den
+#: Aufruf; `tests/test_web_schriftskala.py` meldet jede Größe daneben.
+TITEL = "af-schrift-titel"
+UEBERSCHRIFT = "af-schrift-ueberschrift"
+ABSCHNITT = "af-schrift-abschnitt"
+TEXT = "af-schrift-text"
+BESCHRIFTUNG = "af-schrift-beschriftung"
+KLEIN = "af-schrift-klein"
+
+#: Nach wie vielen Millisekunden eine Ladeanzeige erscheint (P7.3-U3.5). Was
+#: schneller fertig ist, zeigt keine — sonst blitzte sie bei jeder Ansicht auf,
+#: die in 90 ms steht. Eine Zahl für jeden Bereich, der neu gebaut wird.
+LADEANZEIGE_NACH_MS = 300
+
+LABEL = f"block font-body {BESCHRIFTUNG} font-medium af-text-body mb-1"
 #: Der kleine Erklaertext unter einem Feld oder einer Zustandsanzeige.
 #:
-#: **Mit Lesemass seit P3.17.** Ohne lief er so weit wie seine Zone; gemessen
-#: hat es der Browser-Waechter an `status_dot` in der Verfuegbarkeitsanzeige:
-#: 106 Zeichen je Zeile bei 1024 px («Nicht erreichbar: [WinError 10061] …»),
-#: zugesagt sind 75. Eine Fehlermeldung eines fremden Dienstes ist die
-#: laengste Zeichenkette, die hier ankommen kann — und niemand schreibt sie
-#: kuerzer.
-HINT = "font-body text-xs af-text-muted mt-1.5 leading-relaxed af-mass"
-CAPTION = "font-body text-xs af-text-muted"
-H1 = "font-headline text-2xl sm:text-3xl font-bold af-text tracking-tight"
-H2 = "font-headline text-xl font-semibold af-text tracking-tight"
-H3 = "font-headline text-base font-semibold af-text"
+#: **Ohne Deckel seit dem 2026-09-12** (Ruecknahme von E3): Er laeuft so weit
+#: wie der Rahmen, in dem er steht. P3.17 hatte ihm ein Lesemass gegeben, weil
+#: der Browser-Waechter an `status_dot` 106 Zeichen je Zeile gemessen hatte;
+#: zugesagt waren 75. **Die Beobachtung von damals bleibt wahr und ist
+#: aufschlussreich:** Die laengste Zeichenkette, die hier ankommen kann, ist
+#: die Fehlermeldung eines fremden Dienstes («Nicht erreichbar: [WinError
+#: 10061] …») — die schreibt niemand kuerzer, und ein Deckel hat sie nicht
+#: gekuerzt, sondern nur umgebrochen.
+HINT = f"font-body {KLEIN} af-text-muted mt-1"
+CAPTION = f"font-body {KLEIN} af-text-muted"
+#: Der Einleitungssatz eines Schritts oder eines Blocks — **Fliesstext**.
+#:
+#: **Seit dem 2026-09-12 eine eigene Rolle, und zwar in Fliesstextgroesse.**
+#: Vorher war eine Lede zweierlei: die eines Schritts stand in `CAPTION`
+#: (12 px), die eines Blocks in `af-md--lede` (14 px) — beide kleiner als der
+#: Fliesstext, den sie einleiten. Gemessen war die Schritt-Lede damit der
+#: schmalste Text des Bildschirms (409 px von 760, 53,8 %), weil 12-px-Prosa
+#: fuer 75 Zeichen nur 416 px braucht. **Eine Lede ist kein Beiwerk zum Text,
+#: sie ist der erste Satz davon** — und eine Bildunterschrift ist sie schon
+#: deshalb nicht, weil kein Bild darueber steht.
+LEDE = f"font-body {TEXT} af-text-muted"
+H1 = f"font-headline {TITEL} font-bold af-text tracking-tight"
+H2 = f"font-headline {UEBERSCHRIFT} font-semibold af-text tracking-tight"
+H3 = f"font-headline {ABSCHNITT} font-semibold af-text"
 
 _BUTTON_BASE = (
-    "af-btn inline-flex items-center justify-center gap-2 px-5 py-2.5 font-body text-sm "
-    "font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+    "af-btn inline-flex items-center justify-center gap-2 px-4 py-3 font-body "
+    f"{BESCHRIFTUNG} font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 )
 _BUTTON_VARIANTS = {
     "primary": "af-btn--primary",
@@ -50,11 +84,19 @@ _BUTTON_VARIANTS = {
     "danger": "af-btn--danger",
 }
 
-_ALERT_VARIANTS = {
+#: Die Töne des Hinweisbausteins — Ton → (Klasse, Symbol) (P7.1-U1.4, E5).
+#:
+#: **`kontext` ist keine Meldung**, sondern erklärender Text neben einer
+#: Entscheidung. Die übrigen fünf melden etwas: dass etwas gilt (`info`),
+#: gelungen ist (`erfolg`), Aufmerksamkeit braucht (`warnung`), gescheitert ist
+#: (`fehler`) oder nur ein Beispiel zeigt (`demo`). Die Klassen tragen weiter
+#: ihre alten Namen; umbenannt sind die Töne, nicht das Stylesheet.
+HINWEIS_TOENE: dict[str, tuple[str, str]] = {
+    "kontext": ("", "lightbulb"),
     "info": ("af-alert--info", "info"),
-    "success": ("af-alert--success", "check_circle"),
-    "warning": ("af-alert--warning", "warning"),
-    "error": ("af-alert--error", "error"),
+    "erfolg": ("af-alert--success", "check_circle"),
+    "warnung": ("af-alert--warning", "warning"),
+    "fehler": ("af-alert--error", "error"),
     "demo": ("af-alert--demo", "science"),
 }
 
@@ -92,7 +134,11 @@ def section(
                     html.Div(
                         [
                             html.H2(title, className=H2) if title else None,
-                            html.P(subtitle, className=f"{CAPTION} mt-1") if subtitle else None,
+                            (
+                                satz(subtitle, class_name=f"{CAPTION} mt-1", klein=True)
+                                if subtitle
+                                else None
+                            ),
                         ]
                     ),
                     (
@@ -111,7 +157,7 @@ def page_heading(title: str, subtitle: str | None = None) -> html.Div:
     return html.Div(
         [
             html.H1(title, className=H1),
-            html.P(subtitle, className="font-body af-text-body mt-2") if subtitle else None,
+            satz(subtitle, class_name="font-body af-text-body mt-2") if subtitle else None,
         ],
         className="mb-6",
     )
@@ -167,6 +213,42 @@ def hint_text(hint: str | None, *, class_name: str = "") -> Any:
     return dcc.Markdown(hint, className=f"af-hint af-md af-md--tight {class_name}".strip())
 
 
+#: Was einen Text als Markdown kennzeichnet: Fettung, Code, ein Verweis oder eine
+#: Aufzählung. Ohne das bleibt ein Satz ein Satz — und der Baum genau so, wie er
+#: war.
+_AUSZEICHNUNG = re.compile(r"\*\*|`[^`\n]+`|\[[^\]\n]+\]\([^)\s]+\)|^\s*[-*] \S", re.M)
+
+
+def satz(text: Any, *, class_name: str = "", element: Any = html.P, klein: bool = False) -> Any:
+    """Ein Text, der selbst entscheidet, ob er Markdown ist (P7.1-U1.4).
+
+    **Markdown ist eine Eigenschaft des Textes, nicht die Wahl des Aufrufers.**
+    Bis zum 2026-09-11 stand in der Oberfläche `**Name**` mit Sternchen, weil ein
+    Aufrufer `html.P` gewählt hatte, wo der Text Markdown war (Q3). Die ersten
+    Korrekturen stellten die betroffenen Aufrufe um — und ließen den Mechanismus
+    stehen: `section`, `page_heading`, `empty_state`, `kachel` und `status_dot`
+    setzten ihren Text weiter wörtlich, gleich was man ihnen gab.
+
+    Ohne Auszeichnung entsteht das Element, das dort immer stand, mit derselben
+    Klasse; mit Auszeichnung ein `dcc.Markdown`. *klein* nimmt die Satzgröße
+    einer Bildunterschrift (`af-md--caption`), damit ein ausgezeichneter Hinweis
+    nicht größer wird als sein schlichter Nachbar. Was kein Text ist, bleibt,
+    wie es ist.
+    """
+
+    if not isinstance(text, str):
+        return text
+    if _AUSZEICHNUNG.search(text):
+        rolle = "af-md af-md--tight af-md--caption" if klein else "af-md af-md--tight"
+        return dcc.Markdown(text, className=f"{rolle} {class_name}".strip())
+    return element(text, className=class_name)
+
+
+#: Die Breiten, die eine Eingabe haben darf — als Stufe, nicht als Wert. Die
+#: Werte stehen als `--breite-feld-*` in `assets/dashboard.css`.
+FELDBREITEN = ("feld-klein", "feld", "feld-weit")
+
+
 def field(
     label: str,
     control: Any,
@@ -174,18 +256,34 @@ def field(
     hint: str | None = None,
     below: Any = None,
     class_name: str = "",
+    breite: str | None = None,
 ) -> html.Div:
     """Beschriftetes Eingabefeld.
 
     *below* nimmt auf, was unter Feld und Kurzhinweis gehört — heute der
     Platzhalter für Fehlermeldungen aus der Konfigurationsprüfung und die
     aufklappbare Langerklärung aus dem Glossar.
+
+    **`breite` begrenzt die Eingabe, nicht das Feld** (2026-09-12). Bis dahin
+    kam die Breite über `class_name` — und `class_name` sitzt auf dem Rahmen um
+    Beschriftung, Eingabe, Hinweis *und* Erklärung. Ein `max-w-xs` für ein
+    Zahlenfeld stellte damit die Glossar-Erklärung zu «Ticks» in einen 320 px
+    breiten Streifen, mitten in einer 760 px breiten Karte. Das war ein
+    Lesemaß unter anderem Namen, und es hat die Rücknahme von E3 überlebt, weil
+    der Breitenwächter zunächst nur eine Ebene über dem Text nachsah.
+
+    Jetzt steckt nur die Eingabe in einem begrenzten Träger; alles darunter
+    füllt den Rahmen. `class_name` bleibt für Abstände (`mb-4`). Ein
+    unbekannter Wert scheitert laut, statt still keine Breite zu setzen.
     """
 
+    if breite is not None and breite not in FELDBREITEN:
+        raise ValueError(f"Unbekannte Feldbreite {breite!r}; erlaubt sind {FELDBREITEN}.")
+    eingabe = html.Div(control, className=f"af-breite-{breite}") if breite else control
     return html.Div(
         [
             html.Label(label, className=LABEL),
-            control,
+            eingabe,
             hint_text(hint),
             below,
         ],
@@ -206,11 +304,11 @@ def field_errors(messages: list[str]) -> Any:
         [
             html.Div(
                 [icon("error", "text-sm shrink-0 mt-0.5"), html.Span(text)],
-                className="flex items-start gap-1.5",
+                className="flex items-start gap-1",
             )
             for text in messages
         ],
-        className="font-body text-xs af-text-negative mt-1.5 leading-relaxed space-y-1",
+        className=f"font-body {KLEIN} af-text-negative mt-1 space-y-1",
     )
 
 
@@ -330,21 +428,28 @@ def radio(
     )
 
 
-def status_dot(ok: bool, text: str, *, hint: str | None = None) -> html.Div:
-    """Zustandsanzeige für etwas, das erreichbar sein kann oder nicht."""
+def status_dot(zustand: str, text: str, *, hint: str | None = None) -> html.Div:
+    """Zustandsanzeige für etwas, das erreichbar sein kann — **in drei Zuständen**.
 
-    tone = "af-status__dot--ok" if ok else "af-status__dot--off"
+    `bereit`, `pruefen` (der Punkt pulsiert) und `aus`. **Bis P7.4-U4.2 waren es
+    zwei**, ein Wahrheitswert: «Ollama wird geprüft …» stand mit demselben
+    grauen Punkt da wie «Ollama ist nicht erreichbar», und wer nicht las, sah
+    eine Absage, wo noch gefragt wurde. Ein unbekannter Zustand scheitert laut.
+    """
+
+    if zustand not in ("bereit", "pruefen", "aus"):
+        raise ValueError(f"Unbekannter Zustand {zustand!r} für status_dot.")
     return html.Div(
         [
-            html.Span(className=f"af-status__dot mt-1.5 {tone}"),
+            html.Span(className=f"af-status__dot mt-1 af-status__dot--{zustand}"),
             html.Div(
                 [
-                    html.Span(text, className="font-body text-sm af-text-body"),
-                    html.P(hint, className=HINT) if hint else None,
+                    html.Span(text, className=f"font-body {BESCHRIFTUNG} af-text-body"),
+                    satz(hint, class_name=HINT, klein=True) if hint else None,
                 ]
             ),
         ],
-        className="flex items-start gap-2.5",
+        className="flex items-start gap-2",
     )
 
 
@@ -373,69 +478,108 @@ def badge(text: str, *, variant: str = "default", icon_name: str | None = None) 
     return html.Span(children, className=f"af-badge{suffix}")
 
 
-def metric_tile(
-    label: str, value: Any, hint: str | None = None, *, prose: bool = False
-) -> html.Div:
-    """Beschriftung über einem Wert, in einer Karte.
+#: Die Varianten der Kachel (P7.1-U1.4, Entscheidung E5): eine **Zahl** im
+#: großen Satz, ein **Text** im kleineren, und **kompakt** für die Telemetrie,
+#: dort mit einer Veränderung daneben.
+KACHEL_VARIANTEN = ("zahl", "text", "kompakt")
 
-    *prose* ist die Fassung für Werte, die **Text** sind statt einer Zahl —
-    «Standard-Ausgangslage», «Ohne Sprachmodell». Der große Zahlensatz (2xl,
+
+#: Die Richtung einer Veränderung als Zeichen (P7.5-U5.5). **Zeichen, kein
+#: Material-Symbol:** Der geladene Teilsatz hat keine Pfeile nach oben und unten, und
+#: ein fehlendes Symbol erschiene als sein Name in Buchstaben.
+PFEILE = {"up": "↑ ", "down": "↓ "}
+
+
+def kachel(
+    label: str,
+    value: Any,
+    hint: str | None = None,
+    *,
+    variante: str = "zahl",
+    delta: str | None = None,
+    direction: str | None = None,
+) -> html.Div:
+    """Beschriftung über einem Wert — **eine** Kachel in drei Varianten (P7.1-U1.4).
+
+    Bis zum 2026-09-13 waren das zwei Bausteine: `metric_tile` (mit einem
+    Schalter `prose` für Text) und `kpi_card` für die Telemetrie. Welche
+    Gestalt eine Kennzahl bekam, hing daran, welcher Baustein an der Stelle
+    gerade importiert wurde. Jetzt ist es eine Variante aus
+    :data:`KACHEL_VARIANTEN`, und ein unbekannter Name scheitert laut.
+
+    **`text` ist die Fassung für Werte, die Text sind statt einer Zahl** —
+    «Standard-Ausgangslage», «Ohne Sprachmodell». Der große Zahlensatz (Titel,
     fett, Ziffern gleicher Breite) ist für sie zu groß: In einer dreispaltigen
     Reihe trat er aus der Karte heraus und lief in die Nachbarkachel. Die
     Textfassung setzt kleiner, erlaubt den Umbruch **innerhalb** eines Wortes
     und schaltet die Ziffernbreite ab, die bei Buchstaben nur Lücken erzeugt.
-
     `af-tile__value` deckelt in beiden Fällen den Überlauf — eine Karte, aus der
     Text heraussteht, ist keine Karte.
+
+    **`kompakt` trägt als einzige eine Veränderung** (*delta*, *direction*).
+    *direction* ist `up`, `down` oder `None` und färbt nur die Veränderung,
+    nicht den Wert: Ob ein steigender Preis gut oder schlecht ist, entscheidet
+    die Fragestellung, nicht die Oberfläche. An einer anderen Variante scheitert
+    eine Veränderung laut, statt still zu verschwinden.
+
+    **Das Aussehen ist unverändert**; die drei Varianten tragen die Gestalt der
+    Bausteine, aus denen sie entstanden sind.
     """
 
+    if variante not in KACHEL_VARIANTEN:
+        raise ValueError(
+            f"Unbekannte Kachel-Variante {variante!r}; erlaubt sind {KACHEL_VARIANTEN}."
+        )
+    if variante != "kompakt" and (delta is not None or direction is not None):
+        raise ValueError(
+            "Eine Veränderung (`delta`, `direction`) trägt nur die Variante «kompakt»."
+        )
+
+    if variante == "kompakt":
+        tone = f" af-kpi__delta--{direction}" if direction in {"up", "down"} else ""
+        # **Die Richtung als Pfeil, nicht als Farbe** (P7.5-U5.5, von Haiko entschieden
+        # am 2026-09-15): Gestiegen stand grün, gefallen rot — auch beim Ticketpreis,
+        # wo gestiegen meist keine gute Nachricht ist. Die Klassen bleiben, ihre Farbe
+        # ist seither neutral.
+        pfeil = PFEILE.get(direction or "", "")
+        return html.Div(
+            [
+                html.Div(label, className="af-kpi__label"),
+                html.Div(str(value), className="af-kpi__value"),
+                html.Div(f"{pfeil}{delta}", className=f"af-kpi__delta{tone}") if delta else None,
+                (
+                    satz(hint, class_name="af-kpi__hint", element=html.Div, klein=True)
+                    if hint
+                    else None
+                ),
+            ],
+            className="af-kpi",
+        )
+
     wert = (
-        "font-headline text-base font-semibold af-text-accent mt-1 af-tile__value"
-        if prose
-        else "font-headline text-2xl font-bold af-text-accent mt-1 "
+        f"font-headline {ABSCHNITT} font-semibold af-text-accent mt-1 af-tile__value"
+        if variante == "text"
+        else f"font-headline {TITEL} font-bold af-text-accent mt-1 "
         "tracking-tight af-num af-tile__value"
     )
     return html.Div(
         [
-            html.Div(label.upper(), className="font-body text-xs tracking-wider af-text-muted"),
+            html.Div(label.upper(), className=f"font-body {KLEIN} tracking-wider af-text-muted"),
             html.Div(str(value), className=wert),
-            html.Div(hint, className=f"{CAPTION} mt-1") if hint else None,
+            (
+                satz(hint, class_name=f"{CAPTION} mt-1", element=html.Div, klein=True)
+                if hint
+                else None
+            ),
         ],
         className=f"{CARD} p-4 min-w-0",
-    )
-
-
-def kpi_card(
-    label: str,
-    value: Any,
-    *,
-    delta: str | None = None,
-    direction: str | None = None,
-    hint: str | None = None,
-) -> html.Div:
-    """Kennzahl der Telemetrie — kompakter als `metric_tile`, mit Veränderung.
-
-    *direction* ist `up`, `down` oder `None`. Es färbt nur die Veränderung,
-    nicht den Wert: Ob ein steigender Preis gut oder schlecht ist, entscheidet
-    die Fragestellung, nicht die Oberfläche.
-    """
-
-    tone = f" af-kpi__delta--{direction}" if direction in {"up", "down"} else ""
-    return html.Div(
-        [
-            html.Div(label, className="af-kpi__label"),
-            html.Div(str(value), className="af-kpi__value"),
-            html.Div(delta, className=f"af-kpi__delta{tone}") if delta else None,
-            html.Div(hint, className="af-kpi__hint") if hint else None,
-        ],
-        className="af-kpi",
     )
 
 
 def log_line(level: str, text: str, *, tick: int | str | None = None) -> html.Div:
     """Eine Zeile der Konsole, nach Stufe gefärbt.
 
-    Info blau, Warnung gelb, Fehler rot — dieselben Rollen wie in `alert`, nur
+    Info blau, Warnung gelb, Fehler rot — dieselben Rollen wie in `hinweis`, nur
     zeilenweise. `muted` trägt, was nur Kontext ist (Fortschrittszeilen).
     """
 
@@ -457,39 +601,70 @@ def console(lines: Iterable[Any], *, empty: str = "Noch keine Meldungen.") -> ht
     return html.Div(entries, className="af-console")
 
 
-def alert(text: Any, kind: str = "info", *, class_name: str = "") -> html.Div:
-    """Ein Hinweis mit Symbol — **und mit Lesemaß** (P3.17).
+def hinweis(
+    text: Any, ton: str = "info", *, icon_name: str | None = None, class_name: str = ""
+) -> html.Div:
+    """Ein Hinweis mit Symbol — **der eine** Baustein für Kontext und Meldung (P7.1-U1.4).
 
-    Der Rumpf trug bis zum 2026-09-05 kein `af-mass`, und damit lief **jeder**
-    Hinweis dieser Anwendung so weit, wie seine Zone breit ist. Gemessen hat es
-    der Browser-Wächter an der längsten Stelle: Der Hinweis auf Verläufe, die vor
-    dem Laufende aufhören, brauchte **98 Zeichen** je Zeile — zugesagt sind 75
-    (P1.9-W5.4).
+    Bis zum 2026-09-13 waren das zwei: `note` für erklärenden Text neben einer
+    Entscheidung, `alert` mit fünf Tönen für Meldungen. Welcher gemeint war,
+    entschied der Name des Aufrufs; jetzt entscheidet es der **Ton**
+    (:data:`HINWEIS_TOENE`). **Ein unbekannter Ton scheitert laut** — `alert`
+    fiel still auf «info» zurück, und ein Tippfehler machte aus einer Warnung
+    eine Auskunft.
 
-    **Das Maß gehört an die Komponente und nicht an die Aufrufstelle**, aus
-    demselben Grund wie bei `explainer` am 2026-09-03: Sonst ist es eine Frage
-    der Sorgfalt an jedem einzelnen Aufruf, und der nächste vergisst es. Es ist
-    eine Obergrenze — ein Hinweis in einer engen Zone bleibt so breit, wie er
-    war.
+    **Das Aussehen ist unverändert:** `kontext` trägt die Gestalt des alten
+    `note`, die übrigen Töne die des alten `alert`. Dass sich Kontext und Info im
+    dunklen Design kaum unterscheiden (Audit vom 2026-09-11), ist damit nicht
+    behoben, sondern an **eine** Stelle gebracht, an der es sich beheben lässt.
+
+    **Ohne Lesemaß seit dem 2026-09-12** (Rücknahme von E3): Ein Hinweis füllt
+    den Rahmen, in dem er steht. Was von P3.17 bleibt, ist die Stelle — Breite
+    gehört an den Baustein und nicht an die Aufrufstelle, sonst ist sie eine
+    Frage der Sorgfalt an jedem einzelnen Aufruf.
+
+    *text* wird als Markdown gesetzt, wenn es eine Zeichenkette ist; ein
+    fertiger Baustein steht, wie er ist.
     """
 
-    tone, icon_name = _ALERT_VARIANTS.get(kind, _ALERT_VARIANTS["info"])
-    body = dcc.Markdown(text, className="af-md") if isinstance(text, str) else text
+    if ton not in HINWEIS_TOENE:
+        raise ValueError(f"Unbekannter Ton {ton!r}; erlaubt sind {tuple(HINWEIS_TOENE)}.")
+    klasse, symbol = HINWEIS_TOENE[ton]
+    symbol = icon_name or symbol
+    if ton == "kontext":
+        rumpf = (
+            dcc.Markdown(text, className="af-md af-md--tight") if isinstance(text, str) else text
+        )
+        return html.Div(
+            [icon(symbol, "text-base af-text-faint shrink-0 mt-0.5"), rumpf],
+            className=f"flex items-start gap-2 font-body {BESCHRIFTUNG} af-text-body "
+            f"af-surface-inset af-bordered rounded px-6 py-3 {class_name}".strip(),
+        )
+    rumpf = dcc.Markdown(text, className="af-md") if isinstance(text, str) else text
     return html.Div(
         [
-            icon(icon_name, "text-lg shrink-0 mt-0.5"),
-            html.Div(body, className="font-body text-sm leading-relaxed min-w-0 af-mass"),
+            icon(symbol, "text-lg shrink-0 mt-0.5"),
+            html.Div(rumpf, className=f"font-body {BESCHRIFTUNG} min-w-0"),
         ],
-        className=f"af-alert {tone} flex items-start gap-3 px-4 py-3 {class_name}".strip(),
+        className=f"af-alert {klasse} flex items-start gap-3 px-6 py-3 {class_name}".strip(),
     )
 
 
-def empty_state(text: str, *, hint: str | None = None, icon_name: str = "inbox") -> html.Div:
+def empty_state(text: str, *, hint: str | None = None, icon_name: str) -> html.Div:
+    """Ein leerer Zustand: Symbol, Satz und ein Hinweis, wie er sich füllt.
+
+    **Das Symbol ist Pflicht, ohne Vorgabe** (2026-09-13). Die Vorgabe lautete
+    «inbox», und dieser Name steckt nicht im Symbol-Teilsatz — gesetzt worden
+    wäre er als Wort. Jeder Aufrufer gab ein eigenes Symbol mit, deshalb fiel es
+    nicht auf. Eine Vorgabe, die niemand benutzt, ist eine Falle für den
+    Ersten, der es tut.
+    """
+
     return html.Div(
         [
             icon(icon_name, "text-3xl af-text-faint"),
-            html.P(text, className="font-body text-sm af-text-body mt-3"),
-            html.P(hint, className=f"{CAPTION} mt-1 max-w-md") if hint else None,
+            satz(text, class_name=f"font-body {BESCHRIFTUNG} af-text-body mt-3"),
+            satz(hint, class_name=f"{CAPTION} mt-1", klein=True) if hint else None,
         ],
         className=f"{CARD} flex flex-col items-center justify-center text-center px-6 py-12",
     )
@@ -501,13 +676,13 @@ def accordion(title: Any, *children: Any, open: bool = False, badge: str | None 
     summary = html.Summary(
         [
             icon("chevron_right", "af-acc__chevron text-lg af-text-faint"),
-            html.Span(title, className="font-body text-sm font-medium af-text flex-1"),
+            html.Span(title, className=f"font-body {BESCHRIFTUNG} font-medium af-text flex-1"),
             (html.Span(badge, className="af-badge") if badge else None),
         ],
-        className="af-acc__summary flex items-center gap-2 cursor-pointer select-none px-4 py-3",
+        className="af-acc__summary flex items-center gap-2 cursor-pointer select-none px-6 py-3",
     )
     return html.Details(
-        [summary, html.Div(list(children), className="px-4 pb-4 pt-1")],
+        [summary, html.Div(list(children), className="px-6 pb-4 pt-1")],
         open=open,
         className=f"af-acc {CARD} mb-2",
     )
@@ -518,21 +693,32 @@ def expert(
     count: int | None = None,
     title: str = "Feinabstimmung",
     names: str | None = None,
+    einheit: tuple[str, str] = ("Parameter", "Parameter"),
 ) -> html.Details:
     """Aufklappbarer Block für Parameter, die selten angefasst werden.
 
     Bewusst schlichter als `accordion`: keine Karte, kleinere Schrift. Der
     Block soll erkennbar zweitrangig sein — die Standardwerte tragen einen
     sinnvollen Lauf, wer hier aufklappt, weiß in der Regel warum.
+
+    **Die Zahl nennt, was sie zählt** (P7.1-U1.4, E5 Punkt 4). Bis zum
+    2026-09-13 hing der Baustein an jede Zahl das Wort «Parameter» — auch an
+    «Rohdaten ansehen», eine Klappe mit drei Vorschauen und keiner einzigen
+    Eingabe. Wer etwas anderes zählt, sagt es mit *einheit* (Einzahl, Mehrzahl).
+    **«N Parameter» heißt N Eingaben**, und `tests/test_web_klappen.py` misst das
+    im gerenderten Baum.
     """
 
-    heading = title if count is None else f"{title} ({count} Parameter)"
+    if count is None:
+        heading = title
+    else:
+        heading = f"{title} ({count} {einheit[0] if count == 1 else einheit[1]})"
     return html.Details(
         [
             html.Summary(
                 [
                     icon("chevron_right", "af-acc__chevron text-base af-text-faint"),
-                    html.Span(heading, className="font-body text-sm af-text-muted"),
+                    html.Span(heading, className=f"font-body {BESCHRIFTUNG} af-text-muted"),
                     (
                         html.Span(names, className=f"{CAPTION} truncate hidden sm:inline")
                         if names
@@ -543,7 +729,7 @@ def expert(
             ),
             html.Div(list(children), className="pt-3 pb-1 pl-6"),
         ],
-        className="af-acc af-expert af-border-t af-border-subtle mt-5",
+        className="af-acc af-expert af-border-t af-border-subtle mt-4",
     )
 
 
@@ -555,13 +741,13 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
     meisten reicht; wer mehr will, klappt an Ort und Stelle auf, statt die Seite
     zu verlassen.
 
-    **`af-mass` seit dem 2026-09-03, und es ist eine Struktur- und keine
-    Textkorrektur.** Der Körper einer Erklärung ist Fließtext und lief bis dahin
-    ohne Lesemaß über die ganze Spalte — gemessen 89 Zeichen je Zeile bei 1280 px
-    (zugesagt sind höchstens 75, P1.9-W5.4). Aufgefallen ist es an **einer**
-    Erklärung, weil P2.0-C den Schalter «Eigene Werte anwenden» nach Schritt 1
-    verschoben hat; betroffen war aber **jede** Erklärung an jedem Feld. Den Text
-    zu kürzen hätte den einen Fall behoben und den Mechanismus stehen lassen.
+    **Das Lesemaß, das hier vom 2026-09-03 bis zum 2026-09-12 stand, ist weg**
+    (Rücknahme von E3): Der Körper einer Erklärung füllt den Rahmen, in dem er
+    steht. Die Beobachtung von damals bleibt trotzdem richtig und gehört
+    aufgehoben — aufgefallen war das fehlende Maß an **einer** Erklärung, weil
+    P2.0-C den Schalter «Eigene Werte anwenden» nach Schritt 1 verschoben hatte;
+    betroffen war aber **jede** Erklärung an jedem Feld. Den Text zu kürzen
+    hätte den einen Fall behoben und den Mechanismus stehen lassen.
     """
 
     return html.Details(
@@ -573,27 +759,9 @@ def explainer(text: str, *, label: str = "Mehr dazu") -> html.Details:
                 ],
                 className="af-acc__summary flex items-center gap-1 cursor-pointer select-none py-1",
             ),
-            markdown(text, class_name="af-md--tight af-text-body af-mass pl-5 pb-1"),
+            markdown(text, class_name="af-md--tight af-text-body pl-6 pb-1"),
         ],
-        className="af-acc mt-1.5",
-    )
-
-
-def note(text: str, *, icon_name: str = "lightbulb") -> html.Div:
-    """Erklärender Fließtext ohne Alarmcharakter — Kontext, keine Meldung.
-
-    **Mit Lesemaß** (P1.9-W5.4): Der Text bricht spätestens bei rund 68 Zeichen
-    um, auch wenn die Spalte breiter ist. `max-width` streckt nichts — in einer
-    engen Zelle bleibt der Hinweis so schmal, wie die Zelle ist.
-    """
-
-    return html.Div(
-        [
-            icon(icon_name, "text-base af-text-faint shrink-0 mt-0.5"),
-            dcc.Markdown(text, className="af-md af-md--tight af-mass"),
-        ],
-        className="flex items-start gap-2.5 font-body text-sm af-text-body "
-        "af-surface-inset af-bordered rounded px-4 py-3",
+        className="af-acc mt-1",
     )
 
 
@@ -607,25 +775,34 @@ def doc_link(slug: str, label: str = "Im Handbuch nachlesen") -> Any:
     return dcc.Link(
         [label, icon("arrow_forward", "text-xs")],
         href=routing.url(f"doku/{slug}"),
-        className="af-link inline-flex items-center gap-1 font-body text-xs",
+        className=f"af-link inline-flex items-center gap-1 font-body {KLEIN}",
     )
 
 
-def lede(text: str) -> html.P:
+def lede(text: str) -> dcc.Markdown:
     """Einleitungssatz über einem Block — sagt, wozu die Einstellungen dienen.
 
-    **Mit Lesemaß statt `max-w-3xl`** (P1.9-W5.4): Jene 768 px ergaben gemessen
-    bis zu 108 Zeichen je Zeile. Der Deckel steht jetzt in `ch` — in der
-    Einheit, von der die Zusage handelt.
+    **Als Markdown, seit dem 2026-09-11** (P7.1-U1.4, vorgezogen). Die
+    Einleitungen sind mit `**fett**` und `` `Pfad` `` geschrieben, gerendert
+    wurden sie als `html.P` — im Browser stand «Der `**Name**` steht im letzten
+    Schritt» mit Sternchen.
+
+    **Und seit dem 2026-09-12 in Fließtextgröße.** Bis dahin hielt die Rolle
+    `af-md--lede` die 14 px des Absatzes, den sie ersetzt hatte — das war beim
+    Umstieg auf Markdown richtig (nichts sollte sich optisch ändern) und ist
+    als Dauerzustand falsch: Eine Lede leitet Fließtext ein und ist selbst
+    welcher. Die Rolle ist damit **weg** statt umgestellt; `.af-md` setzt die
+    15 px ohnehin, und eine Regel, die nur eine Größe wiederholt, ist eine
+    Stelle zu viel, an der sie auseinanderlaufen kann.
     """
 
-    return html.P(text, className="font-body text-sm af-text-body af-mass mb-4 leading-relaxed")
+    return dcc.Markdown(text, className="af-md af-md--tight font-body mb-4")
 
 
 def code_block(text: str, *, max_height: str = "24rem") -> html.Pre:
     return html.Pre(
         text,
-        className="af-code text-xs p-4 overflow-auto whitespace-pre",
+        className=f"af-code {KLEIN} p-4 overflow-auto whitespace-pre",
         style={"maxHeight": max_height},
     )
 

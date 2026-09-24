@@ -23,6 +23,7 @@ Usual». Einem Kunden wurde damit ein Belastungstest als Zukunft angeboten.
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 from pydantic import ValidationError
@@ -587,3 +588,77 @@ class TestJederRahmenSagtSeineSpanne:
         befunde = befunde_zur_spanne(SweepConfig.model_validate(daten))
 
         assert any("nennt die Spanne nicht" in b for b in befunde), befunde
+
+
+# --- Eine Quelle nennt ein Werk (P7.2-U2.3) -----------------------------------
+
+#: Woran man einen Dateiverweis erkennt: ein Ordner des Repos oder eine
+#: Dateiendung. **Ein Schrägstrich allein zählt nicht** — «Richtlinie (EU)
+#: 2023/958» und «der Einbruch 2020/21» sind keine Pfade, und ein Muster, das
+#: sie meldet, wird abgeschaltet statt gelesen. Die Belege liegen weiterhin
+#: unter `docs/research/`; sie gehören ins Repo, nicht in die Angabe, die
+#: jemand im Assistenten liest.
+_DATEIVERWEIS = re.compile("docs/|[.]pdf|[.]md", re.IGNORECASE)
+
+#: Wie viele Quellenangaben die Suche mindestens liest — gegen die eigene
+#: Blindheit. Gemessen am 2026-09-13: **26** über die vier Rahmen (6, 6, 5, 6)
+#: und die Standard-Ausgangslage (3). Der Boden liegt darunter, weil ein
+#: Rahmen eine Quelle verlieren darf, ohne dass dieser Wächter rot wird —
+#: blind werden darf er nicht.
+QUELLEN_MIN = 20
+
+
+def _alle_quellen() -> list[tuple[str, str]]:
+    """(Herkunft, Quellenangabe) aus jedem Rahmen und aus der Standard-Ausgangslage."""
+
+    quellen: list[tuple[str, str]] = []
+    for pfad in sorted(SWEEPS_DIR.glob("*.json")):
+        daten = json.loads(pfad.read_text(encoding="utf-8"))
+        for eintrag in (daten.get("kohaerenz") or {}).get("quellen") or []:
+            quellen.append((pfad.name, eintrag))
+    standard = json.loads((SWEEPS_DIR.parent / "properties.json").read_text(encoding="utf-8"))
+    for eintrag in (standard.get("kohaerenz") or {}).get("quellen") or []:
+        quellen.append(("properties.json", eintrag))
+    return quellen
+
+
+class TestEineQuelleNenntEinWerk:
+    """«docs/research/studies_future/policy-net-zero-roadmap.pdf (IATA)».
+
+    Die Quellen stehen im Assistenten hinter «Begründung und Quellen» — dort
+    liest sie jemand, der wissen will, worauf ein Szenario beruht. Ein Pfad
+    beantwortet das nicht; er sagt, wo die Datei im Repo liegt.
+
+    **Der Sprachwächter kann das nicht halten, und zwar mit Grund:** Sein
+    `PFAD` lässt `docs/` bewusst aus (siehe den Kommentar dort), weil dort die
+    Zitierweise falsch ist und nicht der Ort — die bibliografische Angabe ist
+    aus einem Dateinamen nicht zu erfinden. Sie steht jetzt in den Dateien,
+    und dieser Wächter hält sie.
+    """
+
+    def test_no_source_names_a_file(self) -> None:
+        befunde = [
+            f"{herkunft}: {quelle[:90]}"
+            for herkunft, quelle in _alle_quellen()
+            if _DATEIVERWEIS.search(quelle)
+        ]
+
+        assert not befunde, "\n  ".join(
+            [
+                "Diese Quellenangaben nennen eine Datei statt eines Werks:",
+                *befunde,
+                "Die Belege bleiben unter `docs/research/`; die Angabe nennt das Werk.",
+            ]
+        )
+
+    def test_the_search_reads_all_sources(self) -> None:
+        quellen = _alle_quellen()
+
+        assert len(quellen) >= QUELLEN_MIN, f"Nur {len(quellen)} Quellenangaben gelesen"
+
+    def test_the_search_would_notice_a_relapse(self) -> None:
+        assert _DATEIVERWEIS.search("docs/research/links.md — EU-ETS")
+        assert _DATEIVERWEIS.search("policy-net-zero-roadmap.pdf (IATA)")
+        assert not _DATEIVERWEIS.search("IATA Net-Zero-Roadmap: «Policy»")
+        assert not _DATEIVERWEIS.search("Verordnung (EU) 2023/2405 (ReFuelEU Aviation)")
+        assert not _DATEIVERWEIS.search("Eurostat avia_paoc — der Einbruch 2020/21")

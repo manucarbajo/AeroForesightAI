@@ -14,7 +14,7 @@ from dash import dcc, html
 
 from dashboard.run_browser import load_price_series, load_tick_mechanics
 from dashboard.web import components as ui
-from dashboard.web import theme
+from dashboard.web import formate, theme
 from src.reporting.output_writer.provenance import (
     COMPUTE_MODE_LABELS,
     MODES_WITHOUT_ANY_LLM,
@@ -72,7 +72,7 @@ def _line_chart(
         mode=mode,
         title=title,
         showlegend=False,
-        height=320,
+        height=theme.HOEHE_KOMPAKT,
         xaxis_title="Tick",
         yaxis_title=y_title,
     )
@@ -95,7 +95,7 @@ def _model_label(metadata: dict) -> str:
     return metadata.get("model") or "—"
 
 
-def _provenance(metadata: dict) -> html.Div:
+def _provenance(metadata: dict, *, run_id: str | None = None) -> html.Div:
     """Seed und Rechenmodus (P0.6).
 
     Ein Lauf ohne Sprachmodell darf nicht wie ein vollwertiger aussehen. Vor
@@ -126,21 +126,20 @@ def _provenance(metadata: dict) -> html.Div:
     rahmen_label = str(rahmen.get("name") or "") or "nicht festgehalten"
 
     tiles = [
-        ui.metric_tile(
+        ui.kachel(
             "Rahmenszenario",
             rahmen_label,
             hint="Die Außenwelt, aus der die Zahlen entstanden sind",
         ),
-        ui.metric_tile("Rechenmodus", mode_label),
-        ui.metric_tile("Seed", seed_label, hint="Gleicher Seed, gleiche Ziehung"),
-        ui.metric_tile("Codestand", code_label),
+        ui.kachel("Rechenmodus", mode_label),
+        ui.kachel("Seed", seed_label, hint="Gleicher Seed, gleiche Ziehung"),
     ]
 
     children: list = [html.Div(ui.grid(*tiles, cols="sm:grid-cols-2"), className="mt-4")]
 
     if mode in MODES_WITHOUT_ANY_LLM:
         children.append(
-            ui.alert(
+            ui.hinweis(
                 "Dieser Lauf ist ohne Sprachmodell entstanden. Die Zahlen sind vollwertig — "
                 "die Texte der Akteure stammen aus Platzhaltern, nicht aus einem Modell.",
                 "info",
@@ -149,7 +148,7 @@ def _provenance(metadata: dict) -> html.Div:
         )
     elif mode in MODES_WITHOUT_LLM_TICKS:
         children.append(
-            ui.alert(
+            ui.hinweis(
                 "Die Zahlen dieses Laufs sind rein deterministisch entstanden, ohne Agenten-"
                 "Dialog. Ein Sprachmodell war nur am Abschlusstext beteiligt.",
                 "info",
@@ -157,17 +156,35 @@ def _provenance(metadata: dict) -> html.Div:
             )
         )
 
+    # **Codestand und Fingerabdruck stehen hinter einer Klappe** (P7.2-U2.3).
+    # Beides sind Hashes: Sie beantworten «ist das derselbe Lauf wie damals»
+    # und keine Frage, die man beim Lesen der Ergebnisse stellt. Weg sind sie
+    # damit nicht — ein Lauf ohne nachvollziehbare Herkunft wäre der Befund,
+    # den P0.6 abgeräumt hat.
     fingerprint = metadata.get("config_fingerprint") or {}
+    angaben = [html.P(["Codestand: ", html.Code(code_label)], className=ui.CAPTION)]
+    # **Die Kennung steht bei den Hashes** (D6, P7.3-U3.3): Sie ist ein Ablageort
+    # und keine Bezeichnung — die Auswahl nennt den Lauf nach Name, Rahmen und Datum.
+    if run_id:
+        angaben.insert(0, html.P(["Kennung: ", html.Code(run_id)], className=ui.CAPTION))
     if fingerprint:
         parts = ", ".join(
             f"{name}: {value}" for name, value in sorted(fingerprint.items()) if value
         )
-        children.append(
+        angaben.append(
             html.P(
                 f"Konfigurations-Fingerabdruck — {parts}",
-                className=f"{ui.CAPTION} mt-3 break-all",
+                className=f"{ui.CAPTION} break-all",
             )
         )
+    children.append(
+        ui.expert(
+            *angaben,
+            count=len(angaben),
+            title="Technische Details",
+            einheit=("Angabe", "Angaben"),
+        )
+    )
 
     return html.Div(children)
 
@@ -180,24 +197,21 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     if metadata:
         children.append(
             ui.grid(
-                ui.metric_tile(
+                ui.kachel(
                     "Ticks",
                     f"{metadata.get('ticks_completed', '?')} / {metadata.get('ticks_max', '?')}",
+                    formate.modellzeit(metadata.get("ticks_completed")) or None,
                 ),
-                ui.metric_tile("Events", metadata.get("total_events", "?")),
-                ui.metric_tile("Modell", _model_label(metadata)),
-                ui.metric_tile("Markt", "an" if metadata.get("market_enabled", True) else "aus"),
+                ui.kachel("Ereignisse", metadata.get("total_events", "?")),
+                ui.kachel("Modell", _model_label(metadata)),
+                ui.kachel("Markt", "an" if metadata.get("market_enabled", True) else "aus"),
                 cols="sm:grid-cols-2 lg:grid-cols-4",
             )
         )
-        children.append(_provenance(metadata))
+        children.append(_provenance(metadata, run_id=run_id))
         children.append(
             html.P(
-                [
-                    "Run-ID: ",
-                    html.Code(run_id, className="af-text-muted"),
-                    f" · erstellt {metadata.get('timestamp', '—')}",
-                ],
+                f"Erstellt {formate.zeitpunkt(metadata.get('timestamp'))}",
                 className=f"{ui.CAPTION} mt-3",
             )
         )
@@ -205,7 +219,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     ticks = load_tick_mechanics(run_dir)
     prices = load_price_series(run_dir)
     if not ticks and not prices:
-        children.append(ui.alert("Keine Zeitreihen-Daten vorhanden.", "info", class_name="mt-6"))
+        children.append(ui.hinweis("Keine Zeitreihen-Daten vorhanden.", "info", class_name="mt-6"))
         return html.Div(children)
 
     charts: list = []
@@ -235,7 +249,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                     price_x,
                     price_y,
                     title="Ticketpreis",
-                    y_title="Preis (EUR)",
+                    y_title="Preis (€)",
                     color=tone["price"],
                     mode=mode,
                 ),

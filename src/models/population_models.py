@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from src.models.enums import DistributionType
@@ -78,24 +76,3 @@ class PopulationStats(BaseModel):
     avg_income_factor: float = 1.0
     segments: dict[str, SegmentStats]
     age_groups: dict[str, AgeGroupStats] = Field(default_factory=dict)
-
-
-class PopulationShift(BaseModel):
-    """Population shift for one segment."""
-
-    segment_id: str
-    segment_name: str
-    old_share: float
-    new_share: float
-    shift_amount: float
-    reasoning: str
-    clamped: bool = False
-
-
-class PopulationUpdateResult(BaseModel):
-    """Result of a population update."""
-
-    round_number: int
-    shifts: list[PopulationShift] = Field(default_factory=list)
-    total_reasoning: str = ""
-    metadata: dict[str, Any] = Field(default_factory=dict)

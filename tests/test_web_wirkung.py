@@ -48,7 +48,7 @@ from pathlib import Path
 import pytest
 
 from dashboard import run_launcher
-from dashboard.config_catalog import ConfigDraft, default_config_draft
+from dashboard.config_catalog import ConfigDraft, PropertyEditState, default_config_draft
 from src.orchestration.scenario_sweeps import vorgegebene_felder
 
 # --- Die drei Startpfade ---------------------------------------------------
@@ -110,6 +110,7 @@ ANDERER_WERT: dict[str, object] = {
     "no_scenarios": True,
     "generate_figures": False,
     "base_price": 123.0,
+    "preisstrategie": "marge",
 }
 
 #: Felder, die den Startpfad **auswählen**, statt ihn zu parametrisieren. Sie
@@ -136,10 +137,17 @@ NUR_MIT_SPRACHMODELL = {"model", "base_url", "temperature", "max_tokens"}
 #: hier ausgenommen und **benannt**, damit die Lücke sichtbar bleibt statt
 #: unsichtbar zu sein.
 NICHT_GEMESSEN = {
-    "property_edits": "verschachtelt; wirkt über `apply_custom_overrides` mit",
-    "population_edits": "verschachtelt; wirkt über `apply_custom_overrides` mit",
-    "saturation_edit": "verschachtelt; wirkt über `apply_custom_overrides` mit",
-    "market_feedback_edit": "verschachtelt; wirkt über `apply_custom_overrides` mit",
+    # Bis P7.13-U13.3 «wirkt über `apply_custom_overrides` mit» — seither nur gespeichert.
+    "property_edits": "wirkt nur gespeichert, siehe TestModellwerteWirkenNurGespeichert",
+    "abweichungen": "verschachtelt; gemessen in TestAbweichungenLiegenAufDemSzenario",
+    "modellannahmen": "verschachtelt; gemessen in TestModellannahmenLiegenAufDemSzenario",
+    # **Bis zum 2026-09-14 stand bei den drei folgenden «wirkt über
+    # `apply_custom_overrides` mit» — und das stimmte nicht** (P7.13-U13.5): Aus dem
+    # Entwurf erreichen sie keinen Lauf, nur gespeichert. Gemessen in
+    # `TestModellwerteWirkenNurGespeichert`.
+    "population_edits": "wirkt nur gespeichert, siehe TestModellwerteWirkenNurGespeichert",
+    "saturation_edit": "wirkt nur gespeichert, siehe TestModellwerteWirkenNurGespeichert",
+    "market_feedback_edit": "wirkt nur gespeichert, siehe TestModellwerteWirkenNurGespeichert",
     "simulation_config_file": "verlangt eine zweite Konfigurationsdatei im Repo",
     "properties_file": "verlangt eine zweite Konfigurationsdatei im Repo",
     "agents_file": "verlangt eine zweite Konfigurationsdatei im Repo",
@@ -193,6 +201,7 @@ ERWARTET: dict[str, set[str]] = {
         "no_market",
         "redebedarf",
         "checkpoint_interval",
+        "preisstrategie",
     },
     WIEDERHOLUNGEN: {
         "base_price",
@@ -206,6 +215,7 @@ ERWARTET: dict[str, set[str]] = {
         "no_market",
         "redebedarf",
         "checkpoint_interval",
+        "preisstrategie",
     },
     #: **Leer, und das ist das Ergebnis von W1.1 und W1.2.** Ein
     #: Szenario-Vergleich nimmt vom Entwurf nichts entgegen: Er rechnet alle
@@ -590,6 +600,11 @@ class TestDieRundreiseVerliertNichts:
                 "agents_file": "andere_agents.json",
                 "factors_file": "andere_factors.json",
                 "cib_file": "andere_cib.json",
+                "abweichungen": {
+                    "carbon_tax_level": PropertyEditState(
+                        property_id="carbon_tax_level", baseline=77.0
+                    )
+                },
             }
         )
 
@@ -873,3 +888,214 @@ class TestDieMessungIstVollstaendig:
         assert str(abdruck_von(draft)) != str(
             grund
         ), "Selbst die Lauflänge bewegt den Abdruck nicht — die Messung misst nichts."
+
+
+class TestModellwerteWirkenNurGespeichert:
+    """Bevölkerung, Preisbildung und Sättigung aus dem Bereich «Modell» (P7.13-U13.5).
+
+    **Gemessen am 2026-09-14, bevor dieser Test existierte:** Eine im Entwurf
+    eingetragene Ziel-Auslastung von 0,61 kam im Zustand als 0,37 an, ein
+    Segmentanteil von 0,90 als 0,10 — mit und ohne «Eigene Einstellungen».
+    `prepare_simulation_state` liest die drei Felder nicht, und `RunLaunchConfig`
+    führt sie nicht. Von Haiko entschieden, dass sie **nur gespeichert** wirken;
+    beide Richtungen stehen hier, damit weder die eine noch die andere still kippt.
+
+    **Seit P7.13-U13.3 auch Startwerte und Verläufe** (`property_edits`). Sie
+    wirkten bis dahin ungespeichert unter der Standard-Ausgangslage mit «Eigene
+    Werte anwenden» — und unter einem Rahmenszenario still gar nicht. Die eine
+    Ausnahme ist der Startpreis (von Haiko entschieden, eigenes Paket).
+
+    Gespeichert wird in eine **Kopie** von `configs/`: Der Test darf die
+    ausgelieferten Dateien nicht anfassen.
+    """
+
+    def test_an_unsaved_change_reaches_no_run(self, abdruck_von):
+        grund = str(abdruck_von(_entwurf(EINZELLAUF)))
+        draft = _entwurf(EINZELLAUF)
+        assert draft.apply_custom_overrides, "Vorbedingung: der Schalter steht auf an"
+        draft.market_feedback_edit.target_booking_rate = 0.61
+        draft.saturation_edit.booking_increase = 0.11
+        segment = next(s for s in draft.population_edits if s.type == "boolean")
+        segment.prevalence = 0.9
+        draft.property_edits["carbon_tax_level"].baseline = 99.0
+        draft.property_edits["carbon_tax_level"].rules = []
+
+        assert str(abdruck_von(draft)) == grund, (
+            "Preisbildung, Sättigung, Bevölkerung oder ein Verlauf aus dem Bereich «Modell» "
+            "erreichen jetzt ungespeichert einen Lauf. Wenn das gewollt ist: den Hinweis im "
+            "Bereich «Modell» und diesen Test mitziehen (P7.13-U13.3, U13.5)."
+        )
+
+    def test_a_saved_start_value_reaches_the_run(self, abdruck_von, monkeypatch, tmp_path):
+        """Die Gegenrichtung für Startwerte und Verläufe (P7.13-U13.3)."""
+
+        import shutil
+
+        from dashboard import config_catalog
+
+        kopie = tmp_path / "configs"
+        shutil.copytree(
+            config_catalog.CONFIGS_DIR, kopie, ignore=shutil.ignore_patterns("backtest")
+        )
+        monkeypatch.setattr(config_catalog, "CONFIGS_DIR", kopie)
+        grund = str(abdruck_von(_entwurf(EINZELLAUF)))
+
+        edits = config_catalog.extract_property_edits_from_file()
+        edits["carbon_tax_level"].baseline = 99.0
+        assert config_catalog.save_property_edits_to_file(edits) == ["carbon_tax_level"]
+
+        assert str(abdruck_von(_entwurf(EINZELLAUF))) != grund
+
+    def test_a_saved_change_reaches_the_run(self, abdruck_von, monkeypatch, tmp_path):
+        """Die Gegenrichtung: ohne sie wäre der Test oben auch grün, wenn gar nichts wirkte."""
+
+        import shutil
+
+        from dashboard import config_catalog
+
+        kopie = tmp_path / "configs"
+        shutil.copytree(
+            config_catalog.CONFIGS_DIR, kopie, ignore=shutil.ignore_patterns("backtest")
+        )
+        monkeypatch.setattr(config_catalog, "CONFIGS_DIR", kopie)
+        grund = str(abdruck_von(_entwurf(EINZELLAUF)))
+
+        gespeichert = config_catalog.extract_market_feedback_from_file()
+        gespeichert.target_booking_rate = 0.61
+        config_catalog.save_market_feedback_to_file(gespeichert)
+
+        assert str(abdruck_von(_entwurf(EINZELLAUF))) != grund
+
+    def test_the_model_area_says_so_in_every_section(self):
+        """Die andere Hälfte des Kriteriums: keine solche Eingabe, ohne dass die Oberfläche es sagt.
+
+        Fünf Abschnitte tragen diese Werte — Systemgrößen (seit P7.13-U13.3),
+        Preisverhalten, Sättigung, «Wer fliegt?» und «Streuung der Eigenschaften».
+        Gezählt wird im gezeichneten Bereich, nicht im Quelltext.
+        """
+
+        from dashboard.web.config_editor import micro
+        from dashboard.web.pages import model_editor
+        from dashboard.web.state import initial_draft_dict
+
+        def texte(knoten):
+            if isinstance(knoten, str):
+                yield knoten
+                return
+            kinder = getattr(knoten, "children", None)
+            for kind in kinder if isinstance(kinder, (list, tuple)) else [kinder]:
+                if kind is not None:
+                    yield from texte(kind)
+
+        rumpf = model_editor.rumpf_fuer("/app/modell", initial_draft_dict())
+        hinweise = [t for t in texte(rumpf) if micro.NUR_GESPEICHERT in t]
+
+        assert len(hinweise) == 5, hinweise
+        assert sum("«Verläufe als Standard speichern»" in t for t in hinweise) == 1, hinweise
+        assert sum("«Als Standard speichern»" in t for t in hinweise) == 1, hinweise
+        assert sum("«Bevölkerung als Standard speichern»" in t for t in hinweise) == 3, hinweise
+
+
+class TestAbweichungenLiegenAufDemSzenario:
+    """Ein Szenario plus das, was davon abweicht (P7.13-U13.2).
+
+    Vier Zusagen, jede gegen einen früheren oder möglichen Fehler. Eine
+    Abweichung kommt auf «Business as Usual» an. **Ohne** Abweichung bleibt das
+    Szenario unvermischt, auch mit eingeschaltetem «Eigene Werte anwenden» — vor
+    P1.1 drehte der Entwurf mit seiner vollen Kopie aller Größen die Verläufe des
+    Szenarios still zurück. Mit ausgeschaltetem Schalter gilt sie nicht, und der
+    Szenario-Vergleich ignoriert sie (sein Vertrag sagt es).
+    """
+
+    SZENARIO = "business_as_usual"
+    ABWEICHUNG = {
+        "carbon_tax_level": PropertyEditState(property_id="carbon_tax_level", baseline=77.0)
+    }
+
+    def _szenario(self, *, abweichung: bool, schalter: bool = True) -> ConfigDraft:
+        draft = _entwurf(EINZELLAUF)
+        draft.scenario_mode = "sweep"
+        draft.sweep_id = self.SZENARIO
+        draft.apply_custom_overrides = schalter
+        if abweichung:
+            draft.abweichungen = dict(self.ABWEICHUNG)
+        return draft
+
+    def test_a_deviation_reaches_the_run(self, abdruck_von):
+        """Gemessen am **Wert** im Zustand, nicht am Unterschied des Abdrucks.
+
+        Die erste Fassung verglich nur die Abdrücke — und blieb in der Gegenprobe
+        grün, als die Abweichungen gar nicht mehr gelegt wurden: Der Rahmen hieß
+        trotzdem «abgeleitet», und das allein änderte den Abdruck.
+        """
+
+        import json
+
+        abdruck = abdruck_von(self._szenario(abweichung=True))
+        zustand = json.loads(abdruck.zustand.split(" ", 1)[1])
+        startwert = next(
+            groesse["trajectory"]["baseline"]
+            for groesse in zustand["properties"]["system_properties"]
+            if groesse["id"] == "carbon_tax_level"
+        )
+
+        assert (
+            startwert == 77.0
+        ), f"Die Abweichung kommt nicht an: CO₂-Abgabe startet bei {startwert}, erwartet 77."
+
+    def test_without_deviation_the_scenario_stays_unmixed(self, abdruck_von):
+        an = str(abdruck_von(self._szenario(abweichung=False, schalter=True)))
+        aus = str(abdruck_von(self._szenario(abweichung=False, schalter=False)))
+
+        assert an == aus, (
+            "Mit eingeschaltetem «Eigene Werte anwenden» verändert der Entwurf das Szenario, "
+            "obwohl nichts abweicht — der Fehler vor P1.1."
+        )
+
+    def test_the_switch_turns_it_off(self, abdruck_von):
+        ohne = str(abdruck_von(self._szenario(abweichung=False, schalter=False)))
+
+        assert str(abdruck_von(self._szenario(abweichung=True, schalter=False))) == ohne
+
+    def test_the_comparison_ignores_it(self, abdruck_von):
+        ohne = str(abdruck_von(_entwurf(SWEEP)))
+        draft = _entwurf(SWEEP)
+        draft.abweichungen = dict(self.ABWEICHUNG)
+
+        assert str(abdruck_von(draft)) == ohne
+
+
+class TestModellannahmenLiegenAufDemSzenario:
+    """Preisbildung, Sättigung, Bevölkerung je Lauf (P7.13-U13.5) — über den Startpfad.
+
+    Gemessen am **Wert in der Marktregel**, weil die Engine dort liest; ein Abdruck,
+    der sich nur durch das Etikett «abgeleitet» ändert, bestünde auch dann.
+    """
+
+    ANNAHMEN = {"market_feedback": {"target_booking_rate": 0.45}}
+
+    def _zielrate(self, abdruck) -> float:
+        import json
+
+        zustand = json.loads(abdruck.zustand.split(" ", 1)[1])
+        regel = next(
+            r
+            for r in zustand["properties"]["market_rules"]
+            if r["effect"].get("type") == "booking_yield_feedback"
+        )
+        return float(regel["effect"]["target_booking_rate"])
+
+    def test_it_reaches_the_run(self, abdruck_von):
+        draft = _entwurf(EINZELLAUF)
+        draft.scenario_mode = "sweep"
+        draft.sweep_id = "business_as_usual"
+        draft.modellannahmen = dict(self.ANNAHMEN)
+
+        assert self._zielrate(abdruck_von(draft)) == 0.45
+
+    def test_the_comparison_ignores_it(self, abdruck_von):
+        ohne = str(abdruck_von(_entwurf(SWEEP)))
+        draft = _entwurf(SWEEP)
+        draft.modellannahmen = dict(self.ANNAHMEN)
+
+        assert str(abdruck_von(draft)) == ohne

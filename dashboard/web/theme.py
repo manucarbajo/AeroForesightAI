@@ -88,6 +88,22 @@ FONT_HEADLINE = "Plus Jakarta Sans, sans-serif"
 FONT_BODY = "Inter, sans-serif"
 FONT_MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
 
+#: Die Schriftskala als Zahlen — für die wenigen Stellen, die keine Klasse
+#: annehmen können (P7.1-U1.1). Dashs `DataTable` bekommt seine Zellenstile als
+#: Python-Dict; `assets/dashboard.css` erreicht sie nicht. Bis zum 2026-09-12
+#: standen dort `"13px"` und `"12px"` als Literale, also zwei Größen neben der
+#: Skala — genau die Sorte zweite Quelle, gegen die diese Skala angetreten ist.
+#: **Die Namen sind dieselben wie die Tokens**, damit `tests/test_web_theme.py`
+#: beide Seiten deckungsgleich halten kann.
+SCHRIFT_PX = {
+    "titel": 24,
+    "ueberschrift": 20,
+    "abschnitt": 16,
+    "text": 15,
+    "beschriftung": 14,
+    "klein": 12,
+}
+
 LIGHT = "light"
 DARK = "dark"
 MODES = (LIGHT, DARK)
@@ -286,6 +302,12 @@ NEUTRAL = PALETTE[LIGHT]["neutral"]
 
 #: Kategorien-Reihenfolge für Serien ohne eigene Bedeutung. Alle Töne tragen
 #: denselben Helligkeitseindruck, damit keine Serie unabsichtlich hervorsticht.
+#:
+#: **Acht Töne, nicht zehn** (P7.1-U1.5). Mehr lassen sich in einer Legende
+#: nicht zuverlässig auseinanderhalten; der Szenario-Vergleich zeichnete zehn
+#: Läufe in zehn Farben, von denen zwei Navy-Stufen neben zwei anderen standen.
+#: **Grau gehört nicht in die Folge** — es ist die Farbe für «Weitere», siehe
+#: :func:`reihen_ordnen`.
 COLORWAYS = {
     LIGHT: [
         NAVY[800],
@@ -294,8 +316,6 @@ COLORWAYS = {
         NAVY[400],
         "#9f1239",
         "#4d7c0f",
-        NAVY[600],
-        SLATE[500],
         "#7c3aed",
         NAVY[300],
     ],
@@ -306,12 +326,26 @@ COLORWAYS = {
         "#93c5fd",
         "#fb7185",
         "#a3e635",
-        NAVY[400],
-        INK[400],
         "#a78bfa",
         "#e0eaf3",
     ],
 }
+
+#: Wie viele Reihen eine Figur höchstens in eigenen Tönen zeigt.
+KATEGORIE_TOENE = len(COLORWAYS[LIGHT])
+
+#: **Zwei Höhenstufen für Diagramme** (P7.1-U1.5, von Haiko entschieden am
+#: 2026-09-13). «Aussage» für Diagramme, die eine Frage beantworten, «Kompakt»
+#: für Übersichten. Bis dahin standen 420, 320 und 520 px als Zahlen an den
+#: Aufrufstellen — die Animation war höher als jede Aussage, ohne dass es dafür
+#: einen Grund gab. **Zwei Formen sind keine Stufe und stehen mit Grund in
+#: `tests/test_web_diagrammhoehen.py`:** die Kennlinie der Telemetrie und die
+#: Szene, die den Viewport füllt.
+HOEHE_AUSSAGE = 420
+HOEHE_KOMPAKT = 320
+
+#: Die Legendengruppe, in der die Reihen ab der achten gemeinsam stehen.
+WEITERE = "_weitere"
 COLORWAY = COLORWAYS[LIGHT]
 
 TEMPLATE_NAMES = {LIGHT: "aeroforesight", DARK: "aeroforesight_dark"}
@@ -451,7 +485,72 @@ def style_figure(fig: go.Figure, *, mode: str | None = LIGHT, **layout: object) 
     """
 
     layout.setdefault("hovermode", "x unified")
+    reihen_ordnen(fig, mode=mode)
     fig.update_layout(template=template_for(mode), **layout)
+    return fig
+
+
+def _eigene_farbe(spur: object) -> bool:
+    """Ob eine Reihe ihre Farbe selbst trägt — dann ist sie eine Rolle, keine Kategorie."""
+
+    for teil in ("line", "marker"):
+        objekt = getattr(spur, teil, None)
+        if objekt is not None and getattr(objekt, "color", None) is not None:
+            return True
+    return getattr(spur, "fillcolor", None) is not None
+
+
+def reihen_ordnen(fig: go.Figure, *, mode: str | None = LIGHT) -> go.Figure:
+    """Höchstens acht Töne in einer Figur; der Rest teilt sich ein Grau (P7.1-U1.5).
+
+    **Von Haiko entschieden am 2026-09-13:** Ab der neunten Reihe ohne eigene
+    Farbe bekommen die ersten sieben je einen Ton, alle weiteren ein gedämpftes
+    Grau ohne eigenen Legendeneintrag, und die Legende trägt **einen** Eintrag
+    «Weitere (n)». Sichtbar bleibt alles, hervorgehoben nur, was sich
+    unterscheiden lässt; im Hover steht weiter der echte Name.
+
+    Reihen mit eigener Farbe (Preis, Buchung, Bänder) sind Rollen und bleiben
+    unberührt. **Ein zweiter Aufruf ändert nichts** — `style_figure` läuft je
+    Figur oft zweimal.
+    """
+
+    if any(getattr(spur, "legendgroup", None) == WEITERE for spur in fig.data):
+        return fig
+    frei = [
+        spur
+        for spur in fig.data
+        if getattr(spur, "showlegend", None) is not False and not _eigene_farbe(spur)
+    ]
+    if len(frei) <= KATEGORIE_TOENE:
+        return fig
+
+    toene = COLORWAYS[normalise(mode)]
+    grau = PALETTE[normalise(mode)]["neutral"]
+
+    def faerben(spur: object, farbe: str) -> None:
+        for teil in ("line", "marker"):
+            objekt = getattr(spur, teil, None)
+            if objekt is not None:
+                objekt.color = farbe
+
+    for index, spur in enumerate(frei[: KATEGORIE_TOENE - 1]):
+        faerben(spur, toene[index])
+    rest = frei[KATEGORIE_TOENE - 1 :]
+    for spur in rest:
+        faerben(spur, grau)
+        spur.showlegend = False
+        spur.legendgroup = WEITERE
+    fig.add_trace(
+        go.Scatter(
+            x=[None],
+            y=[None],
+            mode="lines",
+            line=dict(color=grau, width=2.5),
+            name=f"Weitere ({len(rest)})",
+            legendgroup=WEITERE,
+            hoverinfo="skip",
+        )
+    )
     return fig
 
 

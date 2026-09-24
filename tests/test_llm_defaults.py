@@ -34,9 +34,7 @@ from src.llm.llm_client import OllamaConfig
 
 ROOT = Path(__file__).resolve().parent.parent
 
-#: Die Bäume, in denen keine zweite Quelle stehen darf. `legacy_streamlit` ist
-#: bewusst draußen: abgelöste Oberfläche, nur noch zum Vergleich lauffähig
-#: (P5.2 entfernt sie).
+#: Die Bäume, in denen keine zweite Quelle stehen darf.
 GEPRUEFTE_BAEUME = ("src", "dashboard")
 
 #: Die Datei, die die Werte **halten darf** — sie ist die Quelle.
@@ -85,7 +83,7 @@ class TestEineQuelleFuerModellUndEndpunkt:
         for baum in GEPRUEFTE_BAEUME:
             for pfad in sorted((ROOT / baum).rglob("*.py")):
                 relativ = pfad.relative_to(ROOT)
-                if relativ == QUELLE or "legacy_streamlit" in relativ.parts:
+                if relativ == QUELLE:
                     continue
                 for zeile, text in _laufzeit_zeichenketten(pfad):
                     treffer = [v for v in VERBOTENE_TEXTE if v in text]

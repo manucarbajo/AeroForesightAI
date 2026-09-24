@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -31,15 +31,6 @@ from src.validation import collect_state_errors, field_of, issue
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-CONFIG_FILE_OPTIONS: dict[str, str] = {
-    "simulation_config.json": "Simulation (Name, Clock, LLM-Defaults)",
-    "properties.json": "System-Properties & Marktregeln",
-    "agents.json": "Agenten (Provider, Regulator, Consumer)",
-    "agent_profiles.json": "Agent-Profile (observes, depends_on)",
-    "factors.json": "Faktor-Landschaft F1–F7",
-    "cib_frozen.json": "Fixe CIB-Matrix",
-}
-
 STANDARD_PROPERTY_IDS: tuple[str, ...] = (
     "carbon_tax_level",
     "saf_mandate_share",
@@ -55,8 +46,14 @@ STANDARD_PROPERTY_IDS: tuple[str, ...] = (
     "staff_cost_index",
 )
 
+#: **Die Namen der Systemgrößen — die eine Quelle** für Diagramme, Modell-Bereich
+#: und Handbuch (P7.1-U1.5). Bis zum 2026-09-13 standen hier acht von sechzehn;
+#: die übrigen erschienen als Kennung (`maintenance_cost_index`), und das
+#: Diagramm «Was die Politik bewirkt» benannte **alle** seine Reihen so, weil es
+#: die Liste gar nicht benutzte. `tests/test_web_diagrammnamen.py` hält jede
+#: Größe aus `configs/properties.json` gegen diese Liste.
 PROPERTY_LABELS: dict[str, str] = {
-    "carbon_tax_level": "CO₂-Steuer (EUR/t)",
+    "carbon_tax_level": "CO₂-Steuer (€/t)",
     "saf_mandate_share": "SAF-Mandat (0–1)",
     "demand_growth_rate": "Nachfragewachstum / Tick",
     "income_index": "Einkommensindex",
@@ -64,7 +61,81 @@ PROPERTY_LABELS: dict[str, str] = {
     "fuel_price_change": "Treibstoff-Trend / Tick",
     "efuel_subsidy": "E-Fuel-Subvention",
     "bevoelkerungsentwicklung": "Bevölkerung (Personen)",
+    "provider_markup": "Anbieter-Marge (€)",
+    "ticket_price": "Ticketpreis (€)",
+    "kapazitaet_index": "Kapazitätsindex",
+    "altersmittel_jahre": "Altersmittel (Jahre)",
+    "erneuerungsrate": "Erneuerungsrate / Tick",
+    "maintenance_cost_index": "Wartungskostenindex",
+    "staff_cost_index": "Personalkostenindex",
+    "airport_fee": "Flughafengebühr (€)",
 }
+
+#: Einheiten aus `properties.json` — (kurz für Achsentitel, lang für Tabellen).
+#: Bis zum 2026-09-13 lebte eine zweite, halbe Fassung im Handbuch
+#: (`docs_reference.UNIT_LABELS`), und sie sprach noch von «Runde» statt Tick.
+EINHEITEN: dict[str, tuple[str, str]] = {
+    "eur_per_tonne": ("€/t", "€ je Tonne"),
+    "fraction": ("0–1", "Anteil (0–1)"),
+    "fraction_per_tick": ("Anteil je Tick", "Anteil je Tick"),
+    "share_per_tick": ("Anteil je Tick", "Anteil je Tick"),
+    "index": ("Index", "Index (1.0 = Basis)"),
+    "eur": ("€", "Euro"),
+    "EUR": ("€", "Euro"),
+    "persons": ("Personen", "Personen"),
+    "years": ("Jahre", "Jahre"),
+    "%": ("%", "Prozent"),
+}
+
+#: Die Namen der Bevölkerungssegmente — dieselbe Quelle für die Karten im
+#: Modell-Bereich und die Linien in «Wer noch fliegt». Vorher entstand der Name
+#: an beiden Stellen aus der Kennung («Eco Conscious»).
+SEGMENT_NAMEN: dict[str, str] = {
+    "business": "Geschäftsreisende",
+    "family": "Familien",
+    "price_sensitive": "Preisbewusste",
+    "eco_conscious": "Umweltbewusste",
+    "frequent_flyer": "Vielflieger",
+}
+
+
+#: Die Kurznamen der sieben Faktoren — für die Faktorleiste über der Szene (P7.5-U5.3,
+#: von Haiko entschieden am 2026-09-15: eine Reihe, Kurzname und Zustand als Marke).
+#: Die langen Namen in `configs/factors.json` («Mobilitaetsbeduerfnis / Nachfrage»)
+#: passen bei 1280 px in keinen Chip; gemessen blieben je Chip 72 px. Die Wörter sind
+#: die des Domain-Glossars in CLAUDE.md.
+FAKTOR_KURZNAMEN: dict[str, str] = {
+    "F1": "Nachfrage",
+    "F2": "Regulierung",
+    "F3": "Technologie",
+    "F4": "Wirtschaft",
+    "F5": "Alternativen",
+    "F6": "Gesellschaft",
+    "F7": "Geopolitik",
+}
+
+
+def segment_name(segment_id: str) -> str:
+    """Der Name eines Segments — für ein unbekanntes die Kennung in Lesbarform."""
+
+    return SEGMENT_NAMEN.get(segment_id, segment_id.replace("_", " "))
+
+
+def property_einheit(property_id: str, properties_file: str = "properties.json") -> str:
+    """Die kurze Einheit einer Systemgröße, gelesen aus der Konfiguration.
+
+    **Nicht zwischengespeichert:** Eine eigene Systemgröße kann zur Laufzeit dazukommen.
+    """
+
+    path = CONFIGS_DIR / properties_file
+    if not path.is_file():
+        return ""
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    for eintrag in data.get("system_properties", []):
+        if isinstance(eintrag, dict) and eintrag.get("id") == property_id:
+            return EINHEITEN.get(str(eintrag.get("unit") or ""), ("", ""))[0]
+    return ""
 
 
 def get_editable_property_ids(properties_file: str = "properties.json") -> list[str]:
@@ -194,6 +265,20 @@ class ConfigDraft:
     apply_custom_overrides: bool = True
 
     property_edits: dict[str, PropertyEditState] = field(default_factory=dict)
+    #: **Was vom gewählten Szenario abweicht** (P7.13-U13.2) — je Größe nur, was
+    #: jemand geändert hat, keine volle Kopie wie `property_edits`. Beim Start liegt
+    #: es **auf** dem Szenario; eine volle Kopie drehte dessen Verläufe still zurück
+    #: (so rechnete «Business as Usual» vor P1.1 mit dem Sprung auf 120).
+    abweichungen: dict[str, PropertyEditState] = field(default_factory=dict)
+    #: Die Preisstrategie, wenn sie vom Szenario abweicht; `None` heißt «wie das Szenario».
+    preisstrategie: str | None = None
+    #: **Modellannahmen dieses Laufs** (P7.13-U13.5): Preisbildung, Sättigung und
+    #: Segmente, je Abschnitt nur, was vom gewählten Szenario abweicht — Format wie
+    #: `SweepConfig.modellannahmen`. **Nicht** `market_feedback_edit` und die übrigen
+    #: vollen Kopien: Die gehören dem Bereich «Modell» und wirken nur gespeichert.
+    #: Anders als `abweichungen` überleben sie einen Szenariowechsel — sie sind
+    #: Annahmen über das Modell, nicht über den Verlauf einer Welt.
+    modellannahmen: dict[str, Any] = field(default_factory=dict)
     # `factor_states` ist mit P2.0-C entfallen. Die Faktorlage war eine
     # **Eingabe** des Entwurfs und wurde als `factor_overrides` in den Lauf
     # gereicht; heute entsteht sie im Lauf aus den exogenen Systemgrößen.
@@ -467,6 +552,53 @@ def save_market_feedback_to_file(
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
+def save_property_edits_to_file(
+    edits: dict[str, PropertyEditState], filename: str = "properties.json"
+) -> list[str]:
+    """Startwerte und Verläufe als neuer Standard in die Datei (P7.13-U13.3).
+
+    **Von Haiko entschieden am 2026-09-15:** Startwerte und Verläufe aus dem
+    Bereich «Modell» wirken nur gespeichert; für einen einzelnen Lauf ändert man
+    sie im Schritt «Verläufe». Bis dahin gab es keinen Schreibweg — die Werte
+    gingen in `property_edits` und wirkten nur unter der Standard-Ausgangslage mit
+    «Eigene Werte anwenden», unter einem Rahmenszenario still gar nicht.
+
+    **Geschrieben wird nur, was sich von der Datei unterscheidet.** Eine Größe als
+    Stufenfunktion (`bevoelkerungsentwicklung`) behält so ihre Form, solange
+    niemand sie ändert. **Eine ausgeschaltete Größe** wird mit Startwert 0 und ohne
+    Regeln gespeichert — genau das, womit ein Lauf sie bisher gerechnet hat (von
+    Haiko entschieden); die Rückfrage vor dem Speichern sagt es.
+
+    Gibt die Kennungen der geschriebenen Größen zurück.
+    """
+
+    path = CONFIGS_DIR / filename
+    if not path.is_file():
+        return []
+    ausgeliefert = extract_property_edits_from_file(filename)
+    neu: dict[str, dict[str, Any]] = {}
+    for prop_id, edit in edits.items():
+        alt = ausgeliefert.get(prop_id)
+        if alt is None:
+            continue
+        baseline = float(edit.baseline) if edit.is_active else 0.0
+        rules = list(edit.rules) if edit.is_active else []
+        if baseline == float(alt.baseline) and rules == list(alt.rules):
+            continue
+        neu[prop_id] = {"baseline": baseline, "rules": rules}
+    if not neu:
+        return []
+
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    for item in data.get("system_properties", []):
+        if isinstance(item, dict) and item.get("id") in neu:
+            item["trajectory"] = neu[item["id"]]
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    return sorted(neu)
+
+
 def factor_options_from_file(filename: str = "factors.json") -> dict[str, dict[str, str]]:
     data = load_config_file(filename)
     options: dict[str, dict[str, str]] = {}
@@ -479,37 +611,11 @@ def factor_options_from_file(filename: str = "factors.json") -> dict[str, dict[s
     return options
 
 
-def apply_sweep_to_draft(draft: ConfigDraft, sweep: SweepConfig) -> ConfigDraft:
-    """Merge sweep overrides into property/factor edits for UI display."""
-
-    prop_edits = dict(draft.property_edits)
-    for override in sweep.property_overrides:
-        existing = prop_edits.get(override.property_id)
-        baseline = (
-            override.baseline
-            if override.baseline is not None
-            else (existing.baseline if existing else 0.0)
-        )
-        rules = (
-            override.rules if override.rules is not None else (existing.rules if existing else [])
-        )
-        prop_edits[override.property_id] = PropertyEditState(
-            property_id=override.property_id,
-            baseline=float(baseline),
-            rules=list(rules),
-        )
-
-    # «Werte dieses Szenarios übernehmen» heißt: ab hier sind es *meine* Werte.
-    # Der Modus muss deshalb auf `custom` wechseln — im Modus `sweep` gilt seit
-    # P1.1 ausschließlich die Preset-Datei, die eben übernommenen Werte im
-    # Entwurf wären dort wirkungslos. `docs/handbuch/presets.md` beschreibt
-    # diesen Wechsel schon länger; bis P1.1 blieb der Modus trotzdem auf `sweep`.
-    draft.scenario_mode = "custom"
-    draft.sweep_id = sweep.id
-    draft.rounds = sweep.max_ticks
-    draft.property_edits = prop_edits
-    draft.apply_custom_overrides = True
-    return draft
+# `apply_sweep_to_draft` («Werte übernehmen und selbst anpassen») ist mit
+# P7.13-U13.3 entfallen. Es schrieb die Verläufe eines Szenarios in
+# `property_edits` und schaltete auf die Standard-Ausgangslage — und
+# `property_edits` erreicht seither keinen Lauf mehr. Ein Szenario ändert man im
+# Schritt «Verläufe», auf dem Szenario selbst.
 
 
 def property_overrides_from_edits(edits: dict[str, PropertyEditState]) -> list[PropertyOverride]:
@@ -540,9 +646,227 @@ def property_overrides_from_edits(edits: dict[str, PropertyEditState]) -> list[P
 # exogenen Systemgrößen des Rahmenszenarios.
 
 
+def exogene_groessen(properties_file: str = "properties.json") -> list[str]:
+    """Die Systemgrößen, deren Verlauf ein Szenario vorgibt — in Dateireihenfolge (P7.13-U13.1).
+
+    Gesucht über `source == "trajectory"`, nicht aufgezählt: `provider_markup` und
+    `ticket_price` rechnet der Lauf selbst, und eine neue Größe in der Datei steht
+    ohne weiteres Zutun im Schritt «Verläufe».
+    """
+
+    from src.market.property_engine import is_exogenous_property
+
+    properties = load_properties_config(CONFIGS_DIR / properties_file)
+    return [prop.id for prop in properties.system_properties if is_exogenous_property(prop)]
+
+
+def von_rahmen_veraendert() -> set[str]:
+    """Welche Systemgrößen mindestens ein Rahmenszenario verändert (P7.13-U13.1).
+
+    Sie stehen im Schritt «Verläufe» offen, die übrigen hinter «Weitere Größen» —
+    von Haiko entschieden am 2026-09-15. Abgeleitet aus den Dateien, damit ein
+    neues Rahmenszenario die Liste mitbringt.
+    """
+
+    return {
+        override.property_id
+        for preset in list_sweep_presets()
+        if preset.art == "rahmen"
+        for override in preset.property_overrides
+    }
+
+
+def _ohne_abweichungen(draft: ConfigDraft) -> ConfigDraft:
+    return replace(draft, abweichungen={}, preisstrategie=None, modellannahmen={})
+
+
+def _annahmen_namen(annahmen: dict[str, Any]) -> list[str]:
+    """Wie eine Modellannahme im Artefakt heißt: `abschnitt.wert`, bei Segmenten mit Kennung."""
+
+    namen = []
+    for abschnitt, werte in (annahmen or {}).items():
+        if abschnitt == "population":
+            for segment, felder in (werte or {}).items():
+                namen += [f"population.{segment}.{feld}" for feld in felder or {}]
+        else:
+            namen += [f"{abschnitt}.{feld}" for feld in werte or {}]
+    return sorted(namen)
+
+
+def _annahmen_bereinigen(annahmen: dict[str, Any], basis: Any) -> dict[str, Any]:
+    """Was den Werten des Szenarios gleicht, ist keine Modellannahme (P7.13-U13.5)."""
+
+    from src.market.market_feedback import resolve_market_feedback_config
+
+    vorlage = {
+        "market_feedback": resolve_market_feedback_config(basis),
+        "saturation": basis.saturation,
+    }
+    segmente = {p.id: p for p in basis.individual_properties}
+    ergebnis: dict[str, Any] = {}
+    for abschnitt, werte in (annahmen or {}).items():
+        if abschnitt == "population":
+            behalten = {}
+            for segment, felder in (werte or {}).items():
+                ist = segmente.get(segment)
+                rest = {
+                    k: v
+                    for k, v in (felder or {}).items()
+                    if ist is None or getattr(ist, k, None) != v
+                }
+                if rest:
+                    behalten[segment] = rest
+        else:
+            ist = vorlage.get(abschnitt)
+            behalten = {
+                k: v for k, v in (werte or {}).items() if ist is None or getattr(ist, k, None) != v
+            }
+        if behalten:
+            ergebnis[abschnitt] = behalten
+    return ergebnis
+
+
+def szenario_verlauf(draft: ConfigDraft, groesse: str) -> PropertyEditState:
+    """Startwert und Regeln einer Größe **im gewählten Szenario** — ohne die Abweichungen.
+
+    Die Vorbelegung des Editors und der Maßstab dafür, was eine Abweichung ist.
+    Gelesen aus dem Zustand, den der Lauf ohne Abweichungen bekäme, nicht aus der
+    Szenariodatei: Nur so gilt dieselbe Regel wie beim Rechnen, auch für die
+    Standard-Ausgangslage mit «Eigene Werte anwenden».
+    """
+
+    state = prepare_simulation_state(_ohne_abweichungen(draft))
+    prop = next(p for p in state.properties.system_properties if p.id == groesse)
+    return _trajectory_to_edit_state(groesse, prop.trajectory)
+
+
+def szenario_preisstrategie(draft: ConfigDraft) -> str:
+    """Die Preisstrategie des gewählten Szenarios, ohne eine eigene Wahl."""
+
+    state = prepare_simulation_state(_ohne_abweichungen(draft))
+    for regel in state.properties.market_rules:
+        if regel.effect.get("type") == "booking_yield_feedback":
+            return str(regel.effect.get("strategie") or "auslastung")
+    return "auslastung"
+
+
+def verlaeufe_je_tick(draft: ConfigDraft, groesse: str) -> tuple[list[float], list[float]]:
+    """Die beiden Kurven des Schritts «Verläufe»: Szenario und eigene Fassung, je Tick.
+
+    **Dieselbe Rechnung wie im Lauf** (P7.13-U13.1): beide aus dem Zustand, den
+    `prepare_simulation_state` bauen würde, gefragt über `resolve_property` —
+    samt Begrenzung auf Mindest- und Höchstwert. Eine zweite Verlaufsrechnung für
+    die Oberfläche könnte von der ersten abweichen, und die Kurve zeigte etwas
+    anderes, als gerechnet wird.
+    """
+
+    from src.market.property_engine import resolve_property
+
+    ticks = range(0, int(draft.rounds) + 1)
+    basis = prepare_simulation_state(_ohne_abweichungen(draft)).properties
+    eigen = prepare_simulation_state(draft).properties
+    return (
+        [resolve_property(groesse, tick, basis) for tick in ticks],
+        [resolve_property(groesse, tick, eigen) for tick in ticks],
+    )
+
+
+def _letzter_tick(edit: PropertyEditState) -> int:
+    """Ab welchem Tick sich ein Verlauf nicht mehr ändert — spätester Stützpunkt samt Dauer."""
+
+    ticks = [0]
+    for regel in edit.rules or []:
+        effekt = regel.get("effect") or {}
+        ticks.append(
+            int(regel.get("active_from_tick") or 0) + int(effekt.get("duration_ticks") or 0)
+        )
+    return max(ticks)
+
+
+def abweichungen_bereinigen(draft: ConfigDraft) -> ConfigDraft:
+    """Was im Verlauf dem Szenario gleicht, ist keine Abweichung und fällt weg (P7.13).
+
+    Der Editor zeigt die Werte des Szenarios, und ein Eingabefeld meldet beim
+    Zeichnen seinen unveränderten Wert. Ohne diese Bereinigung stünde jede
+    angesehene Größe als «abgeleitet» im Artefakt, obwohl niemand etwas geändert hat.
+
+    **Verglichen wird der Verlauf je Tick, nicht die Regeln** (U13.6). Die erste
+    Fassung verglich die Regeln, und gemessen stand ein Lauf unter «Business as
+    Usual» als «abgeleitet» im Artefakt, nachdem der Stützpunkt «ab Tick 1 auf 50»
+    bei einem Startwert von 50 entfernt war — kein Tick hatte sich geändert.
+    Gefragt wird über `resolve_property`, also samt Begrenzung, genau wie im Lauf.
+
+    **Bis zum spätesten Stützpunkt beider Fassungen, nicht nur bis zur Lauflänge**:
+    Danach sind beide Verläufe konstant, der Vergleich ist also exakt. Nur bis zur
+    Lauflänge verlöre eine Änderung bei Tick 100 in einem Lauf über 40 Ticks — und
+    «Als Szenario sichern» legt das Szenario in seiner eigenen Länge ab.
+
+    **Der Schalter «Eigene Werte anwenden» gilt dabei als an**: Aus, wirkte keine
+    Abweichung, jede sähe wirkungslos aus und fiele still weg — nach dem
+    Wiedereinschalten wären sie verloren.
+    """
+
+    from src.market.property_engine import resolve_property
+
+    angewendet = replace(draft, apply_custom_overrides=True)
+    basis = prepare_simulation_state(_ohne_abweichungen(angewendet)).properties
+
+    def _wirkt(groesse: str, edit: PropertyEditState) -> bool:
+        prop = basis.get_system_property(groesse)
+        if prop is None:
+            return True
+        vorlage = _trajectory_to_edit_state(groesse, prop.trajectory)
+        mit = prepare_simulation_state(
+            replace(angewendet, abweichungen={groesse: edit}, preisstrategie=None)
+        ).properties
+        horizont = max(int(draft.rounds), _letzter_tick(edit), _letzter_tick(vorlage)) + 1
+        return any(
+            resolve_property(groesse, tick, basis) != resolve_property(groesse, tick, mit)
+            for tick in range(horizont + 1)
+        )
+
+    behalten = {
+        groesse: edit for groesse, edit in draft.abweichungen.items() if _wirkt(groesse, edit)
+    }
+    strategie = draft.preisstrategie
+    if strategie is not None and strategie == szenario_preisstrategie(draft):
+        strategie = None
+    annahmen = _annahmen_bereinigen(draft.modellannahmen, basis) if draft.modellannahmen else {}
+    return replace(draft, abweichungen=behalten, preisstrategie=strategie, modellannahmen=annahmen)
+
+
+def abweichungen_als_sweep(draft: ConfigDraft, state: Any) -> SweepConfig:
+    """Die Abweichungen des Entwurfs als Szenario, das auf den Zustand gelegt wird.
+
+    **Eine unbekannte Größe scheitert laut** (P7.13-U13.2): `apply_sweep_overrides`
+    überspringt sie still, und eine Abweichung, die nicht ankommt, wäre genau der
+    Fehler, gegen den das Paket angetreten ist.
+    """
+
+    bekannt = {prop.id for prop in state.properties.system_properties}
+    unbekannt = sorted(set(draft.abweichungen) - bekannt)
+    if unbekannt:
+        raise ValueError(f"Abweichungen für unbekannte Systemgrößen: {unbekannt}")
+    return SweepConfig(
+        id="abweichungen",
+        name="Abweichungen vom gewählten Szenario",
+        description="Abweichungen aus dem Assistenten",
+        max_ticks=int(draft.rounds),
+        preisstrategie=draft.preisstrategie,
+        modellannahmen=dict(draft.modellannahmen or {}),
+        property_overrides=property_overrides_from_edits(draft.abweichungen),
+    )
+
+
 def build_custom_sweep_from_draft(draft: ConfigDraft, filename: str = "") -> SweepConfig:
     sweep_name = draft.simulation_name
-    if not sweep_name or sweep_name == "Flugverkehr Szenarioplanung MVP":
+    # **Der Vorgabename kommt aus der Datei, nicht aus einem Literal** (P7.2-U2.7).
+    # Hier stand bis zum 2026-09-11 «Flugverkehr Szenarioplanung MVP» ein zweites
+    # Mal — wer den Namen in `simulation_config.json` änderte, hätte jedes
+    # gesicherte Szenario unter dem Vorgabenamen statt unter dem Dateinamen
+    # abgelegt.
+    vorgabe = str(load_config_file("simulation_config.json").get("name", ""))
+    if not sweep_name or sweep_name == vorgabe:
         sweep_name = filename or "Dashboard Custom"
 
     return SweepConfig(
@@ -552,7 +876,12 @@ def build_custom_sweep_from_draft(draft: ConfigDraft, filename: str = "") -> Swe
         or "Benutzerdefinierte Overrides aus dem Dashboard",
         max_ticks=draft.rounds,
         base_price=draft.base_price,
-        property_overrides=property_overrides_from_edits(draft.property_edits),
+        # **Aus der Datei, nicht aus dem Entwurf** (P7.13-U13.3): Startwerte und
+        # Verläufe aus dem Bereich «Modell» wirken nur gespeichert. `property_edits`
+        # im Entwurf ist die Eingabe des Modell-Editors, nicht die eines Laufs.
+        property_overrides=property_overrides_from_edits(
+            extract_property_edits_from_file(draft.properties_file)
+        ),
         milestones=[],
     )
 
@@ -598,6 +927,18 @@ def llm_config_from_draft(draft: ConfigDraft) -> LLMConfig | None:
     )
 
 
+def _eigene_werte_weichen_ab(draft: ConfigDraft) -> bool:
+    """Ob die eigenen Werte des Entwurfs etwas an der ausgelieferten Datei ändern.
+
+    **Seit P7.13-U13.3 ist das nur noch der Startpreis.** Startwerte und Verläufe
+    kommen aus der Datei (`build_custom_sweep_from_draft`); der Startpreis bleibt
+    vorerst die eine Eingabe des Bereichs «Modell», die ungespeichert wirkt (von
+    Haiko entschieden am 2026-09-15, eigenes Paket).
+    """
+
+    return draft.base_price is not None
+
+
 def prepare_simulation_state(draft: ConfigDraft):
     """Build SimulationState with file paths, sweep and/or custom overrides."""
 
@@ -623,7 +964,7 @@ def prepare_simulation_state(draft: ConfigDraft):
     # konstante CO₂-Abgabe von 50 und rechnete im Dashboard trotzdem mit dem
     # Sprung auf 120 in Tick 15. Über die CLI (`run_single_sweep`) stimmte es,
     # nur dieser Pfad nicht. Wer von einem Preset ausgehen und dann eigene
-    # Werte setzen will, nimmt «Werte übernehmen» — das schaltet auf `custom`.
+    # Werte setzen will, ändert es im Schritt «Verläufe» (P7.13-U13.2).
     # **Der Rahmen wird hier gesetzt** (P2.0-B). Nur an dieser Stelle ist
     # bekannt, welches Szenario gilt — nach `apply_sweep_overrides` stehen nur
     # noch Zahlen im Zustand, aus denen sich kein Name zurückgewinnen lässt.
@@ -659,6 +1000,34 @@ def prepare_simulation_state(draft: ConfigDraft):
     ):
         custom = build_custom_sweep_from_draft(draft)
         state = apply_sweep_overrides(state, custom)
+        # **Geänderte Werte heißen «eigen», auch unter der Standard-Ausgangslage**
+        # (P7.13, gemessen am 2026-09-15): Mit «Eigene Werte anwenden» und einem im
+        # Modell auf 99 gesetzten CO₂-Startwert rechnete der Lauf mit 99 und stand
+        # im Artefakt als «Standard-Ausgangslage». Ohne Änderung bleibt es der
+        # Standard — der Schalter ist per Vorgabe an.
+        if _eigene_werte_weichen_ab(draft):
+            state.rahmen = Rahmenszenario(id="eigen", name="Eigene Werte", quelle="eigen")
+
+    # **Abweichungen liegen auf dem Szenario** (P7.13-U13.2), unter demselben
+    # Schalter wie die eigenen Werte — und anders als diese auch auf einem
+    # Rahmenszenario. Ohne Abweichung bleibt ein Szenario unvermischt. Der Rahmen
+    # sagt es: Ein geändertes Szenario steht nicht als unverändertes im Artefakt.
+    if (draft.apply_custom_overrides or draft.scenario_mode == "custom") and (
+        draft.abweichungen or draft.preisstrategie or draft.modellannahmen
+    ):
+        state = apply_sweep_overrides(state, abweichungen_als_sweep(draft, state))
+        basis = state.rahmen
+        state.rahmen = Rahmenszenario(
+            id=basis.id if basis else "standard",
+            name=basis.name if basis else "Standard-Ausgangslage",
+            quelle="abgeleitet",
+            abweichungen=sorted(draft.abweichungen)
+            + (["preisstrategie"] if draft.preisstrategie else [])
+            # **Und die Modellannahmen mit Namen** (P7.13-U13.5): `abschnitt.wert`,
+            # bei Segmenten mit Kennung — ein Lauf mit anderer Ziel-Auslastung steht
+            # sonst ununterscheidbar neben einem mit anderer CO₂-Abgabe.
+            + _annahmen_namen(draft.modellannahmen),
+        )
 
     state.clock.max_ticks = int(draft.rounds)
     if draft.use_seed and draft.seed is not None:
@@ -800,28 +1169,100 @@ def effective_config_summary(draft: ConfigDraft) -> dict[str, Any]:
         },
     }
     if draft.apply_custom_overrides or draft.scenario_mode == "custom":
+        # **Die Abweichungen, nicht `property_edits`** (P7.13-U13.3): Nur sie
+        # erreichen den Lauf.
         summary["property_overrides"] = [
             {
                 "property_id": edit.property_id,
                 "baseline": edit.baseline,
                 "rules": edit.rules,
             }
-            for edit in draft.property_edits.values()
+            for edit in draft.abweichungen.values()
         ]
     return summary
+
+
+def sweep_ziel(filename: str) -> Path:
+    """Wohin ein Szenario unter diesem Namen gesichert wird — ohne etwas zu schreiben.
+
+    Eine eigene Funktion, damit sich **vor** dem Sichern fragen lässt, ob es
+    die Datei schon gibt. Die Regel ist dieselbe wie beim Schreiben, weil
+    `save_custom_sweep_preset` sie hier holt: Leerzeichen werden Unterstriche,
+    alles klein, `.json` angehängt, wenn es fehlt.
+    """
+
+    safe_name = filename.strip().replace(" ", "_").lower()
+    if not safe_name.endswith(".json"):
+        safe_name = f"{safe_name}.json"
+    return SWEEPS_DIR / safe_name
+
+
+def szenario_zum_sichern(draft: ConfigDraft, filename: str) -> SweepConfig:
+    """Was «Als Szenario sichern» ablegt: das gewählte Szenario samt seinen Abweichungen.
+
+    **Bis zum 2026-09-14 war es die Standard-Ausgangslage** (P7.13-U13.2 Teil 3):
+    Gebaut wurde aus `property_edits`, der vollen Kopie der Dateiwerte, und aus der
+    Länge des Entwurfs. Mit «Business as Usual» gewählt entstand ein Szenario mit
+    dem CO₂-Sprung auf 120 und 200 statt konstant 50, 40 statt 120 Ticks, ohne
+    Preisstrategie und mit 16 statt 6 Systemgrößen.
+
+    **Die Regel ist dieselbe wie beim Rechnen** in `prepare_simulation_state`: das
+    Szenario, darauf die Abweichungen, sofern «Eigene Werte anwenden» an ist.
+    Meilensteine und Kohärenzbegründung eines Rahmens gehen nicht mit — sie
+    beschreiben das unveränderte Szenario. Gesichert wird immer als Stresstest mit
+    der Herkunft «eigen» (P2.2).
+    """
+
+    eigene = draft.apply_custom_overrides or draft.scenario_mode == "custom"
+    name = build_custom_sweep_from_draft(draft, filename=filename).name
+    if draft.scenario_mode == "sweep" and draft.sweep_id:
+        pfad = SWEEPS_DIR / f"{draft.sweep_id}.json"
+        basis = load_sweep_config(pfad if pfad.is_file() else Path(draft.sweep_id))
+        verlaeufe = {o.property_id: o for o in basis.property_overrides}
+        strategie = basis.preisstrategie
+        beschreibung = f"Abgeleitet von «{basis.name}»."
+        grundlage = basis
+    else:
+        grundlage = build_custom_sweep_from_draft(draft, filename=filename)
+        # Aus der Datei, wie beim Rechnen (P7.13-U13.3).
+        verlaeufe = {o.property_id: o for o in grundlage.property_overrides}
+        strategie = None
+        beschreibung = grundlage.description
+    annahmen = {k: dict(v) for k, v in (grundlage.modellannahmen or {}).items()}
+    if eigene:
+        for override in property_overrides_from_edits(draft.abweichungen):
+            verlaeufe[override.property_id] = override
+        strategie = draft.preisstrategie or strategie
+        for abschnitt, werte in (draft.modellannahmen or {}).items():
+            if abschnitt == "population":
+                ziel = annahmen.setdefault("population", {})
+                for segment, felder in werte.items():
+                    ziel[segment] = {**ziel.get(segment, {}), **felder}
+            else:
+                annahmen[abschnitt] = {**annahmen.get(abschnitt, {}), **werte}
+    return grundlage.model_copy(
+        update={
+            "id": filename,
+            "name": name,
+            "description": draft.simulation_description or beschreibung,
+            "rationale": "Erstellt im Dashboard als eigenes Szenario.",
+            "art": "stresstest",
+            "kohaerenz": None,
+            "herkunft": "eigen",
+            "preisstrategie": strategie,
+            "modellannahmen": annahmen,
+            "property_overrides": list(verlaeufe.values()),
+            "milestones": [],
+        }
+    )
 
 
 def save_custom_sweep_preset(draft: ConfigDraft, filename: str) -> Path:
     """Persistiert den aktuellen Entwurf als Sweep unter configs/sweeps/."""
 
     SWEEPS_DIR.mkdir(parents=True, exist_ok=True)
-    safe_name = filename.strip().replace(" ", "_").lower()
-    if not safe_name.endswith(".json"):
-        safe_name = f"{safe_name}.json"
-    sweep = build_custom_sweep_from_draft(draft, filename=Path(safe_name).stem)
+    target = sweep_ziel(filename)
+    sweep = szenario_zum_sichern(draft, filename=target.stem)
     payload = sweep.model_dump(mode="json")
-    payload["id"] = Path(safe_name).stem
-    payload["rationale"] = "Erstellt im Dashboard als benutzerdefiniertes Szenario."
-    target = SWEEPS_DIR / safe_name
     target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return target

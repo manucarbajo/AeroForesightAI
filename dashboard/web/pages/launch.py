@@ -19,6 +19,13 @@ Seit P1.6 trägt die Spalte drei Dinge, und nur diese:
 3. **Den Start-Knopf**, in einem klebenden Fuß, damit er sichtbar bleibt, egal
    wie lang die Warnungen darüber werden.
 
+**Seit P7.5-U5.1 ist es ausdrücklich der nächste Lauf, und kompakt** (von Haiko
+entschieden am 2026-09-15). Gemessen vorher bei 1280 × 800: 2,13 Bildschirme
+hoch, alle drei Werte auf 59 px gekürzt, und der Preflight trug Hinweise,
+Dauer und drei Kacheln, von denen «Länge» die Zeile darüber wiederholte. Jetzt
+steht die Beschriftung über dem Wert, der Preflight ist ein Satz, und die
+Hinweise sind ein Zähler — ausführlich stehen sie in «Prüfen & Starten».
+
 Das Fortschritts-Log steht nicht hier, sondern in der Konsole der Telemetrie —
 zusammen mit den Ereignissen und den Vorfällen, zu denen es gehört. Es fließt
 über `run-progress-store` dorthin.
@@ -28,9 +35,9 @@ from __future__ import annotations
 
 from dash import Input, Output, State, dcc, html, no_update
 
-from dashboard.config_catalog import list_sweep_presets, validate_draft
+from dashboard.config_catalog import list_sweep_presets, rahmenszenarien, validate_draft
 from dashboard.web import components as ui
-from dashboard.web import config_editor, routing, runner
+from dashboard.web import config_editor, formate, routing, runner
 from dashboard.web.config_editor import compute_mode, start_flow, wizard
 from dashboard.web.state import STORE_ID, draft_from_dict, initial_draft_dict
 from dashboard.web.views import running
@@ -63,16 +70,13 @@ HEARTBEAT_INTERVAL_MS = 2000
 #: werden deshalb nachgefüllt, statt die Spalte neu zu bauen.
 SUMMARY_HOST = "rail-summary"
 
+#: Was das Bedienfeld zeigt: den Entwurf des **nächsten** Laufs (P7.5-U5.1).
+UEBERSCHRIFT = "Nächster Lauf"
 
-def _summary(draft: dict) -> str:
-    if start_flow.ist_vergleich(draft):
-        return f"Szenario-Vergleich · {len(list_sweep_presets())} Szenarien · je eigene Länge"
-    runs = int(draft.get("run_count") or 1)
-    run_label = f"{runs} Läufe" if runs > 1 else "1 Lauf"
-    return (
-        f"Szenario: {draft.get('scenario_mode', 'basis')} · "
-        f"Ticks: {draft.get('rounds', '?')} · {run_label}"
-    )
+
+# `_summary` — die Zeile unter dem Start-Knopf — ist mit P7.5-U5.1 entfallen. Sie
+# wiederholte die drei Stand-Zeilen darüber Wort für Wort und nannte das Szenario
+# obendrein mit seiner Kennung («Szenario: basis»).
 
 
 # --- Was eingestellt ist ---------------------------------------------------
@@ -84,8 +88,6 @@ def _scenario_name(draft: dict) -> str:
     choice = start_flow.of(draft)
     if choice == start_flow.STANDARD:
         return "Standard-Ausgangslage"
-    if choice == start_flow.CUSTOM:
-        return "Eigene Einstellungen"
     preset = next((s for s in list_sweep_presets() if s.id == choice), None)
     return preset.name if preset is not None else str(choice)
 
@@ -97,7 +99,8 @@ def _length(draft: dict) -> str:
     # verwendet.
     ticks = draft.get("rounds", "?")
     runs = int(draft.get("run_count") or 1)
-    return f"{ticks} Ticks" if runs == 1 else f"{ticks} Ticks · {runs}×"
+    dauer = formate.ticks_mit_modellzeit(ticks)
+    return dauer if runs == 1 else f"{dauer} · {runs}×"
 
 
 def _row(label: str, value: str) -> dcc.Link:
@@ -131,7 +134,7 @@ def summary_rows(draft: dict) -> html.Div:
     if start_flow.ist_vergleich(draft):
         return html.Div(
             [
-                _row("Lauf", f"Vergleich · {len(list_sweep_presets())} Szenarien"),
+                _row("Lauf", f"Vergleich · {len(rahmenszenarien())} Rahmenszenarien"),
                 _row("Länge", "je Szenario"),
                 _row("Rechenmodus", "Nur Zahlen (vorgegeben)"),
             ],
@@ -194,8 +197,11 @@ def rail(draft: dict | None = None) -> html.Div:
             # Nur die Überschrift. Bis P1.7 stand hier ein Knopf «Einrichten» —
             # er führte dorthin, wo der Navigationspunkt zwei Zentimeter darüber
             # auch hinführt, und die drei Stand-Zeilen darunter tun es ebenfalls.
+            # **«Nächster Lauf», nicht «Lauf»** (P7.5-U5.1, von Haiko entschieden am
+            # 2026-09-15): Daneben steht die Szene eines fertigen Laufs, und
+            # «Lauf» ließ offen, welcher von beiden gemeint ist.
             html.Div(
-                html.H1("Lauf", className=ui.H3),
+                html.H1(UEBERSCHRIFT, className=ui.H3),
                 className="af-pane__sticky",
             ),
             dcc.Store(id="cfg-editor-refresh", data=0),
@@ -204,7 +210,7 @@ def rail(draft: dict | None = None) -> html.Div:
             dcc.Store(id=RUNNING_STORE, data=laeuft),
             dcc.Interval(id="run-poll", interval=POLL_INTERVAL_MS, disabled=True),
             dcc.Interval(id=HEARTBEAT, interval=HEARTBEAT_INTERVAL_MS),
-            html.Div(summary_rows(draft), id=SUMMARY_HOST, className="mb-5"),
+            html.Div(summary_rows(draft), id=SUMMARY_HOST, className="mb-4"),
             # Der Preflight wird von `_live` nachgefüllt — er haengt an der
             # Konfigurationspruefung, die bei jeder Aenderung einmal laeuft.
             html.Div(
@@ -229,7 +235,6 @@ def rail(draft: dict | None = None) -> html.Div:
                         className="w-full",
                         disabled=laeuft,
                     ),
-                    html.P(_summary(draft), id="run-summary", className=f"{ui.CAPTION} mt-2"),
                 ],
                 className="af-rail-footer",
             ),
@@ -247,7 +252,7 @@ def _result_message(result) -> html.Div:
     """Die drei Ausgänge eines Laufs: Sweep-Batch, Multi-Run, Einzellauf."""
 
     if result.sweep_batch:
-        children = [ui.alert("Szenario-Vergleich abgeschlossen.", "success")]
+        children = [ui.hinweis("Szenario-Vergleich abgeschlossen.", "erfolg")]
         if result.sweep_summary_path:
             children.append(
                 html.P(
@@ -257,8 +262,8 @@ def _result_message(result) -> html.Div:
             )
         if result.child_run_ids:
             children.append(
-                ui.alert(
-                    "Einzelne Sweep-Runs oben in der Lauf-Auswahl wählen: "
+                ui.hinweis(
+                    "Einzelne Szenario-Läufe oben in der Lauf-Auswahl wählen: "
                     + ", ".join(f"`{run_id}`" for run_id in result.child_run_ids),
                     "info",
                     class_name="mt-2",
@@ -271,10 +276,11 @@ def _result_message(result) -> html.Div:
     if result.multi_run_batch:
         return html.Div(
             [
-                ui.alert(
-                    f"Multi-Run `{result.batch_id}` — {len(result.child_run_ids)} Läufe, "
-                    f"je {result.ticks_completed} Ticks, {result.total_events} Events gesamt.",
-                    "success",
+                ui.hinweis(
+                    f"Mehrfachlauf `{result.batch_id}` — {len(result.child_run_ids)} Läufe, "
+                    f"je {formate.ticks_mit_modellzeit(result.ticks_completed)}, "
+                    f"{result.total_events} Ereignisse gesamt.",
+                    "erfolg",
                 ),
                 html.P(
                     "Einzelne Läufe oben in der Lauf-Auswahl: "
@@ -288,10 +294,10 @@ def _result_message(result) -> html.Div:
 
     return html.Div(
         [
-            ui.alert(
-                f"Run `{result.run_id}` — {result.ticks_completed} Ticks, "
-                f"{result.total_events} Events.",
-                "success",
+            ui.hinweis(
+                f"Lauf `{result.run_id}` — {formate.ticks_mit_modellzeit(result.ticks_completed)}, "
+                f"{result.total_events} Ereignisse.",
+                "erfolg",
             ),
             html.P(
                 "Die Szene und die Telemetrie zeigen ihn ab jetzt.",
@@ -326,17 +332,17 @@ def register_callbacks(app) -> None:
         if not n_clicks:
             return no_update
         if runner.cancel():
-            return ui.alert("Abbruch angefordert — der Lauf endet nach dem laufenden Tick.", "info")
-        return ui.alert("Es läuft gerade nichts, was sich abbrechen ließe.", "warning")
+            return ui.hinweis(
+                "Abbruch angefordert — der Lauf endet nach dem laufenden Tick.", "info"
+            )
+        return ui.hinweis("Es läuft gerade nichts, was sich abbrechen ließe.", "warnung")
 
     @app.callback(
-        Output("run-summary", "children"),
         Output(SUMMARY_HOST, "children"),
         Input(STORE_ID, "data"),
     )
     def _update_summary(draft: dict | None):
-        data = draft or {}
-        return _summary(data), summary_rows(data)
+        return summary_rows(draft or {})
 
     @app.callback(
         Output("run-job-store", "data"),
@@ -383,10 +389,10 @@ def register_callbacks(app) -> None:
             return (
                 no_update,
                 no_update,
-                ui.alert(
+                ui.hinweis(
                     "**Lauf nicht gestartet — die Konfiguration hat Fehler:**\n\n"
                     + "\n".join(f"- {error}" for error in config_errors),
-                    "error",
+                    "fehler",
                 ),
                 no_update,
                 False,
@@ -396,7 +402,14 @@ def register_callbacks(app) -> None:
         try:
             job_id = runner.start(draft or {})
         except Exception as exc:  # noqa: BLE001 - «läuft schon» ist ein normaler Fall
-            return no_update, no_update, ui.alert(str(exc), "warning"), no_update, False, no_update
+            return (
+                no_update,
+                no_update,
+                ui.hinweis(str(exc), "warnung"),
+                no_update,
+                False,
+                no_update,
+            )
         # Der Fortschritt wird geleert, nicht stehen gelassen: Sonst zeigte der
         # Ladebildschirm eine Sekunde lang den Stand des vorigen Laufs, bis der
         # Takt ihn ersetzt. Die Zieladresse kommt aus der Bereichsliste und
@@ -404,7 +417,7 @@ def register_callbacks(app) -> None:
         return (
             job_id,
             False,
-            ui.alert("Lauf aktiv …", "info"),
+            ui.hinweis("Lauf aktiv …", "info"),
             None,
             True,
             routing.url(running.leitstand_route()),
@@ -438,7 +451,7 @@ def register_callbacks(app) -> None:
 
         runner.forget(job_id)
         if job.error:
-            return ui.alert(f"Lauf fehlgeschlagen: {job.error}", "error"), True, False, no_update
+            return ui.hinweis(f"Lauf fehlgeschlagen: {job.error}", "fehler"), True, False, no_update
 
         result = job.result
         selected = (

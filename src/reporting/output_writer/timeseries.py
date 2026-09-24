@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import List
 
 from src.models.event_models import PriceHistoryEntry
+from src.models.population_models import Individual
+from src.models.property_models import BookingModelConfig
+from src.population.population_sampler import erschwinglichkeitsgrenze
 from src.reporting.output_writer.paths import ensure_output_dir, resolve_output_path
 
 
@@ -80,7 +83,6 @@ def save_population_individuals(
             "income_factor": data.get("income_factor", 1.0),
             "saturation_level": data.get("saturation_level", 0.0),
             "booked": data.get("booked"),
-            "last_booked_tick": data.get("last_booked_tick"),
         }
         for label_id, active in (data.get("labels") or {}).items():
             row[label_id] = active
@@ -100,9 +102,17 @@ def append_individuals_history(
     individuals: list,
     filename: str = "individuals_history.csv",
     *,
+    koeffizienten: BookingModelConfig,
     run_dir: Path | None = None,
 ) -> str | None:
-    """Append individual states for a single tick to the history CSV."""
+    """Append individual states for a single tick to the history CSV.
+
+    **`erschwinglichkeitsgrenze_eur` seit P5.2 (2026-09-11):** der höchste
+    Ticketpreis, den die Person überhaupt bezahlen kann — aus derselben Funktion,
+    mit der `booking_probability` rechnet. Die Dash-App zeigt ihn im «Surplus
+    Pulse»; eine zweite Formel dort war der Fehler der abgelösten Streamlit-Ansicht.
+    *koeffizienten* ist deshalb Pflicht und hat keine Vorgabe.
+    """
     if not individuals:
         return None
 
@@ -118,9 +128,15 @@ def append_individuals_history(
             "substitution_readiness": data.get("substitution_readiness"),
             "price_sensitivity": data.get("price_sensitivity"),
             "income_factor": data.get("income_factor", 1.0),
+            "erschwinglichkeitsgrenze_eur": round(
+                erschwinglichkeitsgrenze(
+                    person if isinstance(person, Individual) else Individual.model_validate(data),
+                    koeffizienten=koeffizienten,
+                ),
+                2,
+            ),
             "saturation_level": data.get("saturation_level", 0.0),
             "booked": data.get("booked"),
-            "last_booked_tick": data.get("last_booked_tick"),
         }
         for label_id, active in (data.get("labels") or {}).items():
             row[label_id] = active

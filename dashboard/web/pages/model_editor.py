@@ -30,7 +30,7 @@ lenkt von einer Arbeit ab, bei der es auf Zahlen ankommt.
 
 from __future__ import annotations
 
-from dash import html
+from dash import dcc, html
 
 from dashboard.web import components as ui
 from dashboard.web.config_editor import macro, micro
@@ -103,7 +103,7 @@ def body(draft: dict) -> html.Div:
     try:
         return html.Div([macro.layout(draft), micro.layout(draft)])
     except Exception as exc:  # noqa: BLE001 - eine kaputte Config soll den Bereich nicht sprengen
-        return ui.alert(f"Modell konnte nicht aufgebaut werden: {exc}", "error")
+        return ui.hinweis(f"Modell konnte nicht aufgebaut werden: {exc}", "fehler")
 
 
 def rumpf_fuer(pathname: str | None, draft: dict | None) -> object:
@@ -144,9 +144,10 @@ def layout(draft: dict | None = None) -> html.Div:
         [
             ui.page_heading(
                 "Modell",
-                "Die Annahmen, aus denen jeder Lauf rechnet — Faktorlage, Systemgrößen, "
-                "Bevölkerung und Preisbildung. Was Sie hier ändern, gilt für den nächsten "
-                "Lauf; was Sie ausdrücklich speichern, für alle künftigen.",
+                "Die Annahmen, aus denen jeder Lauf rechnet — Systemgrößen, Preisbildung, "
+                "Sättigung und Bevölkerung. Systemgrößen und ihre Verläufe gelten für den "
+                "nächsten Lauf; Preisbildung, Sättigung und Bevölkerung erst, wenn Sie sie "
+                "speichern — dann für alle künftigen.",
             ),
             html.Div(
                 id=STATUS,
@@ -158,7 +159,15 @@ def layout(draft: dict | None = None) -> html.Div:
             # **Leer** — gefüllt wird beim Aufsuchen des Bereichs (P3.12). Der
             # Callback `_model_editor` hört dafür auf den Pfad; `entwurf` steht
             # hier nur noch für die Überschriften darüber.
-            html.Div([], id=HOST),
+            # **In einer Ladeanzeige** (P7.3-U3.5): Der Rumpf entsteht erst beim Aufsuchen.
+            # Braucht das länger als `LADEANZEIGE_NACH_MS`, sieht man, dass etwas kommt;
+            # sonst sieht man nichts davon.
+            dcc.Loading(
+                html.Div([], id=HOST),
+                type="dot",
+                className="af-ladeanzeige",
+                delay_show=ui.LADEANZEIGE_NACH_MS,
+            ),
         ],
         className="af-pane af-pane--focus",
     )

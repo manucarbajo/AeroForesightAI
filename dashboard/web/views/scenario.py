@@ -34,13 +34,13 @@ def _scenario_items(scenario: dict) -> list:
                 f"{rank}. {item.get('title', 'Szenario')}",
                 html.P(
                     "Anhaltspunkte aus dem Lauf (Ticks)",
-                    className="font-body text-xs font-semibold tracking-wide af-text-muted uppercase mb-1",
+                    className=f"font-body {ui.KLEIN} font-semibold tracking-wide af-text-muted uppercase mb-1",
                 ),
                 ui.markdown(str(item.get("tick_grounding", ""))),
                 ui.divider("my-4"),
                 html.P(
                     "Szenario-Beschreibung",
-                    className="font-body text-xs font-semibold tracking-wide af-text-muted uppercase mb-1",
+                    className=f"font-body {ui.KLEIN} font-semibold tracking-wide af-text-muted uppercase mb-1",
                 ),
                 ui.markdown(str(item.get("story") or item.get("what_could_happen", ""))),
                 open=expanded,
@@ -74,7 +74,7 @@ def body(run_dir: Path, run_id: str) -> html.Div:
                 ui.card(
                     html.P(
                         "Lauf-Narrativ — was im Lauf passiert ist",
-                        className="font-body text-xs font-semibold tracking-wide af-text-muted uppercase mb-2",
+                        className=f"font-body {ui.KLEIN} font-semibold tracking-wide af-text-muted uppercase mb-2",
                     ),
                     ui.markdown(str(run_story)),
                     class_name="mb-6",
@@ -95,9 +95,9 @@ def body(run_dir: Path, run_id: str) -> html.Div:
         warnings = scenario.get("grounding_warnings") or []
         if warnings:
             children.append(
-                ui.alert(
+                ui.hinweis(
                     "Grounding-Hinweise: " + "; ".join(str(item) for item in warnings[:5]),
-                    "warning",
+                    "warnung",
                     class_name="mt-4",
                 )
             )
@@ -106,7 +106,7 @@ def body(run_dir: Path, run_id: str) -> html.Div:
         if isinstance(ground_truth, dict) and ground_truth:
             children.append(
                 ui.accordion(
-                    "Ground Truth (Python-Kennzahlen)",
+                    "Kennzahlen aus der Rechnung",
                     ui.json_view(ground_truth),
                     open=False,
                 )
@@ -124,10 +124,10 @@ def body(run_dir: Path, run_id: str) -> html.Div:
         )
     elif not scenario:
         children.append(
-            ui.alert(
-                "`run_scenario.md` fehlt in diesem Run. Starten Sie eine neue Simulation "
+            ui.hinweis(
+                "`run_scenario.md` fehlt in diesem Lauf. Starten Sie eine neue Simulation "
                 "oder klicken Sie auf «Szenarien neu erzeugen».",
-                "warning",
+                "warnung",
             )
         )
 
@@ -140,7 +140,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
             html.Div(
                 [
                     html.P(
-                        "P3 — Szenarien aus dem Lauf: Tick-Anhaltspunkte und sachliche Beschreibung.",
+                        "Szenarien aus dem Lauf: Tick-Anhaltspunkte und sachliche Beschreibung.",
                         className=ui.CAPTION,
                     ),
                     ui.button(
@@ -150,7 +150,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                         icon_name="refresh",
                     ),
                 ],
-                className="flex items-center justify-between gap-4 flex-wrap mb-5",
+                className="flex items-center justify-between gap-4 flex-wrap mb-4",
             ),
             html.Div(id="scenario-status"),
             dcc.Loading(
@@ -178,5 +178,5 @@ def register_callbacks(app) -> None:
         try:
             regenerate_run_scenario(run_id, run_dir=run_dir, mock_llm=True, deterministic_only=True)
         except Exception as exc:  # noqa: BLE001 - Fehler gehört in die UI, nicht in die Konsole
-            return no_update, ui.alert(f"Szenario-Erzeugung fehlgeschlagen: {exc}", "error")
-        return body(run_dir, run_id), ui.alert("Szenarien aktualisiert.", "success")
+            return no_update, ui.hinweis(f"Szenario-Erzeugung fehlgeschlagen: {exc}", "fehler")
+        return body(run_dir, run_id), ui.hinweis("Szenarien aktualisiert.", "erfolg")

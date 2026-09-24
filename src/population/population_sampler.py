@@ -593,6 +593,26 @@ def apply_factor_shifts(
     return updated
 
 
+def erschwinglichkeitsgrenze(person: Individual, *, koeffizienten: BookingModelConfig) -> float:
+    """Der höchste Ticketpreis in EUR, den diese Person überhaupt bezahlen kann.
+
+    Zahlungsbereitschaft mal Einkommensfaktor, erhöht um den Grün-Aufschlag, den
+    umweltbewusste Personen zu zahlen bereit sind. Darüber ist die
+    Buchungswahrscheinlichkeit null — eine harte Schranke, keine
+    Wahrscheinlichkeit (siehe :func:`booking_probability`).
+
+    **Eine eigene Funktion seit P5.2 (2026-09-11)**, damit die Schranke eine
+    Quelle hat. Die abgelöste Streamlit-Ansicht schrieb sie ein zweites Mal hin
+    und vergaß dabei den Grün-Aufschlag.
+    """
+
+    return (
+        person.wtp_eur
+        * person.income_factor
+        * (1.0 + koeffizienten.green_premium.wert * person.environmental_awareness)
+    )
+
+
 def booking_probability(
     person: Individual,
     *,
@@ -651,12 +671,7 @@ def booking_probability(
         return 0.0
 
     k = koeffizienten
-    affordability_limit = (
-        person.wtp_eur
-        * person.income_factor
-        * (1.0 + k.green_premium.wert * person.environmental_awareness)
-    )
-    if ticket_price > affordability_limit:
+    if ticket_price > erschwinglichkeitsgrenze(person, koeffizienten=k):
         return 0.0
 
     base_utility = k.base_utility.wert
@@ -1052,36 +1067,3 @@ def run_population_tick(
         system_properties=system_properties,
         rng=buchungsstrom(seed, current_tick),
     )
-
-
-def run_population_sampling(
-    config: PopulationConfig,
-    ticket_price: float,
-    carbon_tax: float,
-    *,
-    properties: PropertiesConfig | None = None,
-    seed: int = 42,
-) -> PopulationStats:
-    """Backward-compatible entry point (non-persistent single-tick sample)."""
-
-    from src.config_loader import load_properties_config
-
-    resolved_properties = properties or load_properties_config()
-    individuals, stats = run_population_tick(
-        resolved_properties,
-        config,
-        None,
-        ticket_price=ticket_price,
-        carbon_tax=carbon_tax,
-        factors={},
-        system_properties={},
-        seed=seed,
-        # Eine einzelne Stichprobe ohne Lauf: Es gibt keinen Tick und keine
-        # Laufzeitmetriken. Das steht jetzt da, statt aus Defaults zu folgen —
-        # eine `shift_rule` mit `tick`- oder `metric`-Bedingung greift hier
-        # nicht, und das ist eine Aussage, kein Versehen.
-        current_tick=0,
-        metrics=None,
-    )
-    _ = individuals
-    return stats

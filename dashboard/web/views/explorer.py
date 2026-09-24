@@ -54,11 +54,11 @@ def _message_bubble(role: str, content: str) -> html.Div:
     if role == "user":
         return html.Div(
             ui.markdown(content),
-            className="af-chat-user rounded-lg px-4 py-3 max-w-3xl ml-auto mb-3",
+            className="af-chat-user rounded-lg px-4 py-3 af-breite-sprechblase ml-auto mb-3",
         )
     return html.Div(
         ui.markdown(content),
-        className="af-surface af-bordered rounded-lg px-4 py-3 max-w-3xl mb-3",
+        className="af-surface af-bordered rounded-lg px-4 py-3 af-breite-sprechblase mb-3",
     )
 
 
@@ -68,7 +68,7 @@ def _history(messages: list) -> html.Div:
             ui.empty_state(
                 "Noch keine Fragen zu diesem Lauf.",
                 hint="Stellen Sie unten eine Frage — die Antwort stützt sich ausschließlich "
-                "auf die Artefakte dieses Runs.",
+                "auf die Artefakte dieses Laufs.",
                 icon_name="forum",
             ),
             className="mb-4",
@@ -87,16 +87,24 @@ def _checks_panel(run_dir) -> html.Div:
                 ),
                 html.Div(
                     [
-                        html.Span(check.title, className="font-body text-sm font-medium af-text"),
-                        html.Span(f" — {check.detail}", className="font-body text-sm af-text-body"),
+                        html.Span(
+                            check.title,
+                            className=f"font-body {ui.BESCHRIFTUNG} font-medium af-text",
+                        ),
+                        html.Span(
+                            f" — {check.detail}",
+                            className=f"font-body {ui.BESCHRIFTUNG} af-text-body",
+                        ),
                     ]
                 ),
             ],
-            className="flex items-start gap-2 py-1.5",
+            className="flex items-start gap-2 py-1",
         )
         for check in checks
     ]
-    return ui.accordion("Konsistenz-Checks (Ground Truth)", html.Div(rows), open=True)
+    return ui.accordion(
+        "Konsistenz-Checks (Kennzahlen aus der Rechnung)", html.Div(rows), open=True
+    )
 
 
 def render(
@@ -108,7 +116,7 @@ def render(
                 "Fragen Sie den gesamten Lauf ab — z. B. Verlauf über alle Ticks, Vergleiche "
                 "oder einzelne Perioden. Optional: Tick-Nummer eingeben oder in der Frage "
                 "nennen (z. B. «Was passierte bei Tick 15?»).",
-                className="font-body text-sm af-text-body mb-5 max-w-3xl",
+                className=f"font-body {ui.BESCHRIFTUNG} af-text-body mb-4",
             ),
             ui.card(
                 ui.grid(
@@ -127,7 +135,7 @@ def render(
                     html.Div(
                         [
                             ui.checkbox(
-                                "Demo ohne Ollama (Mock)",
+                                "Beispielantworten ohne Sprachmodell",
                                 value=False,
                                 id="explorer-mock",
                                 hint="Deaktivieren für echte Antworten via Ollama (Modell in .env).",
@@ -143,9 +151,9 @@ def render(
                     ),
                     cols="md:grid-cols-2",
                 ),
-                class_name="mb-5",
+                class_name="mb-4",
             ),
-            html.Div(id="explorer-panels", className="mb-5"),
+            html.Div(id="explorer-panels", className="mb-4"),
             dcc.Loading(
                 html.Div(_history(messages or []), id="explorer-history"),
                 type="dot",

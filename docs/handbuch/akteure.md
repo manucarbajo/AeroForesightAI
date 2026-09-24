@@ -1,4 +1,4 @@
-Drei Akteure handeln in jeder Runde: der Consumer als Nachfrageseite, der
+Drei Akteure handeln in jedem Tick: der Consumer als Nachfrageseite, der
 Provider als Airline, der Regulator als Politik. Sie sind als Sprachmodell-Agenten
 umgesetzt, und sie sind absichtlich beschränkt.
 
@@ -29,19 +29,19 @@ Dass allein der Regulator Faktoren verschieben darf, und auch nur die beiden fü
 Regulierung und gesellschaftlichen Wertewandel, wird in Python geprüft. Ein
 Vorschlag außerhalb dieser Rechte wird verworfen, nicht diskutiert.
 
-## Die Reihenfolge einer Runde
+## Die Reihenfolge eines Ticks
 
 Zuerst rechnet das Modell: Die Bevölkerung entscheidet über Buchungen, daraus
 entsteht die Buchungsrate, die Airline passt den Preis an, Systemgrößen und
 Faktoren werden fortgeschrieben.
 
-Erst danach kommen die Akteure zu Wort. Sie sehen das Ergebnis der Runde und
-deuten es. Was sie sagen, kann Ereignisse für die nächste Runde erzeugen — aber
-es verändert nicht rückwirkend die Zahlen dieser Runde.
+Erst danach kommen die Akteure zu Wort. Sie sehen das Ergebnis des Ticks und
+deuten es. Was sie sagen, kann Ereignisse für den nächsten Tick erzeugen — aber
+es verändert nicht rückwirkend die Zahlen dieses Ticks.
 
 ## Redebedarf
 
-Im Normalbetrieb äußert sich jeder Akteur in jeder Runde. Das erzeugt viel Text,
+Im Normalbetrieb äußert sich jeder Akteur in jedem Tick. Das erzeugt viel Text,
 von dem wenig neu ist. Der **Redebedarf-Modus** unter **Technik** ändert das: Ein
 Akteur meldet sich nur, wenn sich für ihn etwas Wesentliches verändert hat.
 
@@ -49,12 +49,12 @@ Die Protokolle werden dadurch kürzer und dichter. Für lange Läufe ist das mei
 die bessere Wahl; für die Vorführung eines kurzen Laufs ist der vollständige
 Dialog anschaulicher.
 
-Im Fortschrittsfenster steht in diesem Modus je Runde **eine** Zeile: wer spricht.
+Im Fortschrittsfenster steht in diesem Modus je Tick **eine** Zeile: wer spricht.
 Bis September 2026 waren es acht — eine Sprechreihenfolge zwischen sieben Zeilen
 Innenansicht des Zählwerks. Die sieben gibt es weiterhin, aber nur auf Nachfrage
 (Logstufe `DEBUG`); weggeworfen wären sie beim Nachstellen eines Laufs zu
 vermissen.
 
-Greift die **Sicherheitsgrenze** — mehr als zehn Beiträge in einer Runde —, wird
-der Rest der Runde übersprungen und geht direkt an die Marktberechnung. Das steht
+Greift die **Sicherheitsgrenze** — mehr als zehn Beiträge in einem Tick —, wird
+der Rest des Ticks übersprungen und geht direkt an die Marktberechnung. Das steht
 seither als Warnung da, nicht mehr als eine Zeile unter acht.

@@ -1,5 +1,5 @@
 Jeder Lauf legt ein eigenes Verzeichnis unter `outputs/` an, benannt nach seiner
-Run-ID. Läufe eines Szenario-Vergleichs liegen unter `outputs/sweeps/`.
+Kennung. Läufe eines Szenario-Vergleichs liegen unter `outputs/sweeps/`.
 
 Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 
@@ -11,6 +11,8 @@ Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 | `final_narrative.md` | Der Tick-für-Tick-Bericht mit Kennzahlen und Akteursbeiträgen |
 | `scenarios.md` / `.json` | Die CIB-Kandidaten mit ihren Konsistenzwerten. **Sie stammen aus der Einflussmatrix, nicht aus dem Lauf** — es sind die bestbewerteten aller Kombinationen von F1–F7 und fallen deshalb für jeden Lauf gleich aus. Das Szenario-Tripleset *dieses* Laufs steht in `run_scenario.md`. |
 | `protocol.md` / `.json` | Das Gesprächsprotokoll der Akteure |
+
+**Die Überschrift nennt den Lauf beim Namen.** Sie nimmt den Namen, den Sie unter «Lauf & Ablage» vergeben haben; ohne ihn den Rahmen, unter dem der Lauf stand, und erst zuletzt seine Kennung. Läufe eines Szenario-Vergleichs trugen dort bis zum 13. September 2026 ihren Ablageort — «Szenarien zum Lauf sweeps/sweep_transformation_conflict». Ältere Artefakte behalten ihren Titel; er entsteht beim Schreiben.
 
 ### Der Konsistenzwert in `run_scenario.json`
 
@@ -39,10 +41,10 @@ gegeneinander», nicht «das passiert eher nicht».
 
 | Datei | Inhalt |
 |---|---|
-| `tick_mechanics.json` | Die maßgeblichen Kennzahlen je Runde: Preis, Buchungsrate, Kostendruck, Marge |
+| `tick_mechanics.json` | Die maßgeblichen Kennzahlen je Tick: Preis, Buchungsrate, Kostendruck, Marge |
 | `price_history.json` | Preisverlauf mit Nachfrageniveau und Buchungsrate |
 | `event_log.json` | Alle Ereignisse, einschließlich der als `[delta:…]` markierten Python-Änderungen |
-| `round_history.json` | Der Zustand je Runde |
+| `round_history.json` | Der Zustand je Tick — erst seit dem 11. September 2026 wirklich der dieses Ticks; ältere Läufe tragen in jedem Tick den Endzustand |
 | `run_metadata.json` | Ticks, Modell, Zeitstempel, **Rechendauer**, ob das Marktmodell aktiv war, ob der Lauf beeinträchtigt war — und woraus er entstanden ist (Seed, Rechenmodus, Konfigurations-Fingerabdruck, Codestand) |
 | `llm_incidents.json` | Nur vorhanden, wenn Aufrufe an das Sprachmodell ins Leere gingen: welcher Tick, welcher Aufrufer, welcher Fehler |
 | `segment_analysis.json` | Auswertung nach Segmenten |
@@ -51,7 +53,7 @@ gegeneinander», nicht «das passiert eher nicht».
 Drei Felder in `run_metadata.json` betreffen die Verlässlichkeit eines Laufs:
 `degraded` sagt, ob mindestens ein Aufruf an das Sprachmodell unbeantwortet
 blieb, `llm_incident_count` zählt sie, und `llm_degraded_ticks` nennt die
-betroffenen Runden. Die drei stehen **immer** in der Datei, auch bei einem
+betroffenen Ticks. Die drei stehen **immer** in der Datei, auch bei einem
 sauberen Lauf mit `false` und `0` — fehlen sie ganz, stammt der Lauf aus der
 Zeit vor dieser Aufzeichnung. `llm_incidents.json` entsteht dagegen nur, wenn es
 etwas zu berichten gibt.
@@ -63,12 +65,12 @@ welchen Bedingungen er lief.
 
 | Feld | Bedeutung |
 |---|---|
-| `rahmen` | **Unter welchem Rahmenszenario der Lauf stand** — `id`, `name` und `quelle`. `quelle` ist `preset` (eine Datei unter `configs/sweeps/`), `eigen` (im Assistenten zusammengestellt) oder `standard` (die ausgelieferten Konfigurationsdateien — auch das ist ein Rahmen, nur ein unbenannter). Läufe von vor dem 2026-08-30 haben das Feld nicht; dann steht in der Oberfläche «nicht festgehalten». |
+| `rahmen` | **Unter welchem Rahmenszenario der Lauf stand** — `id`, `name` und `quelle`. `quelle` ist `preset` (eine Datei unter `configs/sweeps/`), `eigen` (eigene Werte für die Systemgrößen — auch die Standard-Ausgangslage, sobald «Eigene Werte anwenden» dort etwas ändert), `standard` (die ausgelieferten Konfigurationsdateien — auch das ist ein Rahmen, nur ein unbenannter) oder `abgeleitet` (ein Szenario mit Abweichungen: `id` und `name` nennen das Szenario, `abweichungen` die geänderten Systemgrößen, dazu `preisstrategie`, falls sie geändert wurde, und seit dem 15. September 2026 jede geänderte Modellannahme als `abschnitt.wert` — etwa `market_feedback.target_booking_rate` für die Ziel-Auslastung oder `population.family.prevalence` für den Anteil eines Segments). Seit P7.13 steht ein geändertes Szenario damit nicht mehr als unverändertes da. Läufe von vor dem 2026-08-30 haben das Feld nicht; dann steht in der Oberfläche «nicht festgehalten». |
 | `seed` | Der tatsächlich benutzte Startwert der Zufallsziehung — auch dann, wenn Sie keinen angegeben haben: Dann steht hier der Standardwert, mit dem gerechnet wurde. Gleicher Seed und gleiche Konfiguration ergeben denselben Lauf. |
 | `compute_mode` | `llm` (mit Sprachmodell), `mock_llm` (ohne, mit Platzhaltertexten), `deterministic_only` (nur Zahlen) oder `deterministic_with_llm_narrative` (Zahlen deterministisch, Abschlusstext vom Modell — so laufen die Sweeps). |
 | `mock_llm`, `deterministic_only` | Die beiden Schalter einzeln, für die maschinelle Auswertung. |
 | `config_fingerprint` | Je ein Kurzhash über Simulationskonfiguration, Systemgrößen, Faktoren, Akteursprofile und Einflussmatrix. |
-| `code_version` | Git-Commit, Branch und ob der Arbeitsbaum dabei ungesicherte Änderungen trug. `null`, wenn kein Repository verfügbar war. |
+| `code_version` | Git-Commit, Branch und ob der Arbeitsbaum dabei ungesicherte Änderungen trug. `null`, wenn kein Repository verfügbar war. Der Branch ist `null`, wenn der Lauf auf einem abgetrennten `HEAD` stand — also auf einem Commit ohne Zweig. |
 | `elapsed_seconds` | Wie lange der Lauf **gerechnet** hat, in Sekunden — die reine Tick-Zeit ohne das Schreiben der Artefakte danach. Aus diesen Werten schätzt der Prüfschritt, wie lange der nächste Lauf dauert; ohne sie zeigt er dort nichts. Läufe von vor August 2026 haben das Feld nicht. |
 | `model`, `base_url`, `temperature`, `max_tokens` | Das befragte Sprachmodell und seine Einstellungen. Bei einem Lauf **ohne** Modell (`mock_llm`, `deterministic_only`) stehen alle vier auf `null` — die Felder beschreiben dort nichts. Ein Sweep behält seinen Modellnamen, denn dort schreibt das Modell den Abschlusstext. |
 
@@ -94,8 +96,9 @@ beantwortete genau die Frage nicht mehr, für die er da ist. Ein Lauf, den Sie
 aus einem Checkpoint fortsetzen, behält den Fingerabdruck des ursprünglichen
 Laufs: Er setzt dieselbe Konfiguration fort.
 
-Im Dashboard zeigt der Ansicht **Übersicht** Rechenmodus, Seed und Codestand direkt
-unter den Kennzahlen. Ein Lauf ohne Sprachmodell trägt dort einen Hinweis: Die
+Im Dashboard zeigt die Ansicht **Übersicht** Rechenmodus und Seed direkt unter
+den Kennzahlen; Codestand und Fingerabdruck stehen dort hinter «Technische
+Details». Ein Lauf ohne Sprachmodell trägt dort einen Hinweis: Die
 Zahlen sind vollwertig, die Texte der Akteure stammen aus Platzhaltern.
 
 Ältere Läufe kennen diese Felder nicht. Dann steht in der Oberfläche «nicht
@@ -107,14 +110,14 @@ Ein Lauf mit mehreren Wiederholungen legt sie unter `outputs/batch_…/` ab, je
 Wiederholung ein eigenes Verzeichnis plus eine `multi_run_summary.json`.
 
 Deren `aggregate` enthält neben der Buchhaltung (Zahl der Läufe, Startwerte,
-erreichte Runden) das Feld **`baender`**:
+erreichte Ticks) das Feld **`baender`**:
 
 | Feld | Inhalt |
 |---|---|
 | `laeufe` | Wie viele Wiederholungen in das Band eingegangen sind |
 | `ticks` | Wie weit es trägt — so lang wie der **kürzeste** Lauf |
 | `perzentile` | Welche Perzentile berechnet wurden (`10`, `50`, `90`) |
-| `reihen` | Je Reihe (`booking_rate`, `ticket_price`) und Perzentil eine Liste mit einem Wert je Runde |
+| `reihen` | Je Reihe (`booking_rate`, `ticket_price`) und Perzentil eine Liste mit einem Wert je Tick |
 
 Das Band ist die Antwort auf «wie sicher ist diese Zahl». Ein einzelner Lauf
 liefert einen Punktwert; erst mehrere zeigen, wie weit er wandern kann. Bei
@@ -128,25 +131,37 @@ Weiterverarbeitung in einer Tabellenkalkulation.
 
 | Datei | Inhalt |
 |---|---|
-| `properties.csv` | Alle Systemgrößen je Runde |
-| `factors.csv` | Die Zustände von F1 bis F7 je Runde |
+| `properties.csv` | Alle Systemgrößen je Tick |
+| `factors.csv` | Die Zustände von F1 bis F7 je Tick |
 | `population.csv` | Buchungsraten je Profil-Segment |
 | `age_property.csv` | Buchungsraten je Altersgruppe |
 
 ## Personen und Zwischenstände
 
-`individuals_history.csv` enthält jede simulierte Person in jeder Runde, mit
+`individuals_history.csv` enthält jede simulierte Person in jedem Tick, mit
 Merkmalen und Buchungsentscheidung. Das ist die Grundlage des Tabs «Animation»
 und die größte Datei eines Laufs. `population.csv` im Hauptverzeichnis enthält
 die gezogene Ausgangsbevölkerung.
 
+**Seit dem 11. September 2026** steht je Person und Tick auch
+`erschwinglichkeitsgrenze_eur`: der höchste Ticketpreis, den sie überhaupt
+bezahlen kann — Zahlungsbereitschaft mal Einkommen, erhöht um den Aufschlag, den
+Umweltbewusste für einen grüneren Flug zahlen. Das ist dieselbe Grenze, mit der
+das Modell rechnet: Liegt der Preis darüber, bucht diese Person nicht. Läufe von
+vor diesem Datum haben die Spalte nicht.
+
+**Ebenfalls seit dem 11. September 2026 fehlt `last_booked_tick`**, in
+`individuals_history.csv` und in `population.csv`. Eine simulierte Person trägt
+kein solches Merkmal; die Spalte stand deshalb in jeder Zeile leer. Ältere Läufe
+haben sie noch.
+
 Unter `checkpoints/` liegen Zwischenstände, sofern das unter **Technik**
 eingeschaltet war. Sie werden gebraucht, um einen Lauf fortzusetzen und um im Tab
-**Abfrage** einzelne Runden im Detail nachzuschlagen. Ohne sie funktioniert die
+**Abfrage** einzelne Ticks im Detail nachzuschlagen. Ohne sie funktioniert die
 Abfrage weiterhin, aber gröber.
 
 Jeder Zwischenstand trägt neben dem Zustand einen Metadatenblock mit `run_id`,
-Rundennummer, Zeitstempel und **Formatversion**. Die Version wird beim Fortsetzen
+Ticknummer, Zeitstempel und **Formatversion**. Die Version wird beim Fortsetzen
 geprüft: Ein Zwischenstand aus einer anderen Fassung des Programms wird mit einer
 Meldung abgewiesen, statt mit stillen Vorgabewerten geladen zu werden. Es gibt
 bewusst keine Umwandlung alter Zwischenstände — ein Lauf, dessen Format nicht mehr
@@ -157,7 +172,7 @@ Archiv; was von einem Lauf bleiben soll, steht in den übrigen Dateien.
 
 Unter `figures/` liegen sechs Diagramme im PNG-Format plus eine
 `manifest.json` mit ihren Titeln. Sie entstehen, wenn beim Start
-«Auswertungsgrafiken erzeugen» aktiv war, und lassen sich in der Ansicht **Figures**
+«Auswertungsgrafiken erzeugen» aktiv war, und lassen sich in der Ansicht **Diagramme**
 unter «PNG-Export» jederzeit neu erzeugen.
 
 **Der Ordner enthält immer einen vollständigen Satz oder gar keinen.** Die Bilder
@@ -170,7 +185,7 @@ Erzeugung abgebrochen. Das ist kein Ergebnis, sondern ein Rest: In der Ansicht
 darin liegt, ist unvollständig — verwenden Sie es nicht.
 
 Seit August 2026 sind es **fünf Dateien zu vier Aussagen** — dieselben vier, die
-auch die Ansicht **Figures** gliedert. Der Titel im Manifest nennt die Aussage,
+auch die Ansicht **Diagramme** gliedert. Der Titel im Manifest nennt die Aussage,
 damit man beim Einbau in einen Bericht nicht raten muss, welche Frage ein Bild
 beantwortet.
 

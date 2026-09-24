@@ -4,10 +4,11 @@ anfangen? Drei Wege stehen zur Wahl.
 **Neuen Lauf einrichten** führt in die Schrittfolge unten — die Fragen der Reihe
 nach. Das ist der Weg, wenn Sie den Lauf zusammenstellen wollen.
 
-**Szenario-Vergleich starten** rechnet alle hinterlegten Szenarien nacheinander
-und legt sie am Ende nebeneinander. Sie landen unmittelbar bei **Prüfen &
-Starten**; wie viele Ticks gerechnet werden, steht dort und lässt sich vorher
-noch ändern.
+**Szenario-Vergleich starten** rechnet alle **Rahmenszenarien** nacheinander
+und legt sie am Ende nebeneinander; die Stresstests der Engine sind nicht dabei.
+Sie landen unmittelbar bei **Prüfen & Starten**. Jedes Szenario läuft in der
+Länge, auf die es angelegt ist — die Länge aus dem zweiten Schritt gilt für den
+Vergleich nicht.
 
 **Letzte Einstellungen weiterverwenden** springt ebenfalls ans Ende, mit dem, was
 zuletzt eingestellt war — ohne die Fragen erneut durchzugehen. Dieser Weg ist
@@ -21,7 +22,8 @@ bekommt ihn also, ohne ein Kästchen suchen zu müssen.
 
 Einer der drei Wege ist hervorgehoben — der, der in Ihrer Lage der naheliegende
 ist: beim ersten Mal «Neuen Lauf einrichten», und sobald etwas eingestellt war,
-«Letzte Einstellungen weiterverwenden». Die Karten wechseln dabei nicht ihren
+«Letzte Einstellungen weiterverwenden». Auf breiten Bildschirmen stehen die drei
+Wege nebeneinander. Die Karten wechseln dabei nicht ihren
 Platz, nur ihr Gewicht; wo ein Weg beim letzten Mal lag, liegt er auch beim
 nächsten.
 
@@ -43,16 +45,15 @@ gerade gelesen haben.
 ## Auf schmalem Bildschirm
 
 Unter rund 900 px Breite ändert die Schrittfolge ihre Gestalt: Die Liste der
-Schritte wird ein schmaler Balken aus sieben Marken über der Frage, statt sieben
+Schritte wird ein schmaler Balken aus acht Marken über der Frage, statt acht
 Knöpfe untereinander zu stapeln — sonst hätte man an der Navigation vorbeirollen
 müssen, um zum Inhalt zu kommen. Welcher Schritt offen ist, sagt die Marke;
 welcher es ist, sagt die Überschrift darunter, und der Name jedes Schritts
 erscheint, wenn Sie auf seiner Marke verweilen.
 
-Die Leiste am unteren Rand bleibt dabei eine Zeile. Zweitrangige Knöpfe zeigen
-dort nur ihr Symbol — «Direkt zum Start» und «Als Szenario speichern». Ihre
-Namen sind nicht verschwunden: Vorlesesoftware liest sie weiterhin, und ein
-Verweilen auf dem Knopf zeigt sie an.
+Die Leiste am unteren Rand bleibt dabei eine Zeile. Der zweitrangige Knopf
+«Direkt zum Start» zeigt dort nur sein Symbol. Sein Name ist nicht verschwunden:
+Vorlesesoftware liest ihn weiterhin, und ein Verweilen auf dem Knopf zeigt ihn an.
 
 ## Ohne Maus, ohne Bildschirm
 
@@ -65,7 +66,7 @@ vor den Feldern dieses Schritts und muss sich nicht erst durch Kopfzeile und
 Schrittliste tasten. Wer schon selbst irgendwohin geklickt oder getabbt ist,
 behält seinen Platz; die Seite reißt niemandem den Fokus weg.
 
-Angesagt wird der Wechsel ebenfalls: «Schritt 4 von 6: Lauf & Ablage». Dasselbe
+Angesagt wird der Wechsel ebenfalls: «Schritt 6 von 8: Lauf & Ablage». Dasselbe
 gilt für Statusmeldungen — eine gesperrte Weiter-Taste sagt sofort, was noch
 fehlt, statt stumm nicht zu reagieren. In der Schrittliste ist der offene Schritt
 nicht nur farblich markiert, sondern auch als solcher ausgezeichnet.
@@ -81,14 +82,16 @@ Leitstands sind noch nicht in gleicher Weise durchgegangen.
 
 **Drei Schritte genügen.** Was gerechnet wird, wie weit, und womit: Danach ist
 alles Weitere mit sinnvollen Werten vorbelegt, und der Knopf **Direkt zum Start**
-bringt Sie ans Ende. Die Schritte vier bis sechs sind als *optional*
-gekennzeichnet — Lauf & Ablage und Technik. Wer sie braucht, findet sie; wer
-nicht, geht daran vorbei.
+bringt Sie ans Ende. Vier Schritte sind als *optional* gekennzeichnet —
+Verläufe, Modellannahmen, Lauf & Ablage und Technik. Wer sie braucht, findet sie; wer nicht, geht
+daran vorbei. «Verläufe» steht direkt nach der Wahl des Szenarios und damit
+zwischen den Entscheidungen: Er zeigt, was das gewählte Szenario vorgibt, und
+«Weiter» führt über ihn hinweg zur nächsten Frage.
 
 > **Der Schritt «Ausgangslage» ist im August 2026 entfallen.** Er fragte die
 > sieben Faktorzustände ab, mit denen der Lauf startet. Nachgemessen war die
-> Antwort folgenlos: Vier der sieben Faktoren werden schon in der **ersten**
-> Runde von den Regeln überschrieben, die sie an CO₂-Abgabe, SAF-Quote und
+> Antwort folgenlos: Vier der sieben Faktoren werden schon im **ersten**
+> Tick von den Regeln überschrieben, die sie an CO₂-Abgabe, SAF-Quote und
 > Ölpreis binden; und in allen vier Szenarien, die eine Faktorvorgabe trugen,
 > endete der Lauf auf denselben Zuständen wie ohne sie. Die Faktorlage ist heute
 > ein **Ergebnis**: Sie entsteht im Lauf aus den Annahmen, die Sie im ersten
@@ -97,7 +100,9 @@ nicht, geht daran vorbei.
 ## Die Annahmen stehen woanders
 
 Systemgrößen, Bevölkerung und Preisbildung finden Sie seit August 2026 nicht
-mehr hier, sondern im eigenen Bereich **Modell** in der Kopfzeile. Die
+mehr hier, sondern im eigenen Bereich **Modell** in der Kopfzeile. Wie sich die
+Größen im gewählten Szenario über den Lauf entwickeln, zeigt seit September 2026
+wieder ein Schritt der Schrittfolge: **Verläufe** (siehe unten). Die
 **Faktorlage** ist seit August 2026 gar keine Einstellung mehr: Sie entsteht im
 Lauf.
 
@@ -113,17 +118,26 @@ Folge von Entscheidungen und braucht Führung; die andere ist Facharbeit an
 vielen Zahlen und braucht Fläche und Überblick. Beides in dieselbe Schrittfolge
 zu legen ging nur zulasten einer von beiden.
 
-Was Sie im Modell ändern, gilt für den nächsten Lauf — genau wie vorher. Einige
-Schaltflächen dort schreiben allerdings **dauerhaft** in die
-Konfigurationsdateien und wirken damit über Ihren Lauf hinaus: «Als Standard
-speichern», «Bevölkerung als Standard speichern», «Größe anlegen», «Größe
-dauerhaft löschen» und «Entfernen» an einem Segment.
+**Was Sie im Bereich Modell eintragen, erreicht einen Lauf erst, wenn Sie es
+speichern** — Systemgrößen und ihre Verläufe ebenso wie Bevölkerung,
+Preisbildung und Sättigung. Für einen einzelnen Lauf ändern Sie Verläufe im
+Schritt «Verläufe» und Modellannahmen im Schritt «Modellannahmen». Die
+Schaltflächen im Modell schreiben **dauerhaft** in die Konfigurationsdateien und
+wirken damit über Ihren Lauf hinaus: «Verläufe als Standard speichern», «Als
+Standard speichern», «Bevölkerung als Standard speichern», «Größe anlegen»,
+«Größe dauerhaft löschen» und «Entfernen» an einem Segment. **Eine Ausnahme gibt
+es noch:** «Startpreis selbst festlegen» gilt ohne Speichern für den nächsten
+Lauf unter der Standard-Ausgangslage, solange «Eigene Werte anwenden» an ist.
 
 **Jede von ihnen fragt vorher nach**, und die Rückfrage sagt beides: was
 geschieht, und wie weit es reicht — «für alle künftigen Läufe und für alle, die
 dieses Dashboard benutzen». Derselbe Satz steht als Hinweis unter der
 Schaltfläche, damit man ihn schon vor dem Klick liest. Rückgängig machen lässt
 sich so eine Änderung nur über die Versionsverwaltung; ein Undo gibt es nicht.
+Die Rückfrage öffnet sich als Fenster über dem Modell. Vorausgewählt ist
+«Abbrechen»; mit der Escape-Taste schließen Sie sie, ohne dass etwas
+geschrieben wird. Bestätigt wird mit der Beschriftung der Handlung selbst —
+«Größe anlegen» statt eines «OK».
 
 > **Bis August 2026 fragte keine von ihnen nach.** Sie lagen in als *optional*
 > gekennzeichneten Schritten des Einrichtens, schrieben sofort, und ein Klick auf
@@ -140,7 +154,7 @@ Frage, die man am Ende hat: *Habe ich etwas übersehen?*
 > **Bis August 2026 hieß jeder Lauf gleich.** Der Name lag im optionalen Schritt
 > «Lauf & Ablage», und drei von vier Wegen führen daran vorbei — wer den
 > Szenario-Vergleich, «Weiterverwenden» oder «Direkt zum Start» nimmt, landet
-> unmittelbar auf «Prüfen & Starten». Die Run-Liste füllte sich mit
+> unmittelbar auf «Prüfen & Starten». Die Liste der Läufe füllte sich mit
 > gleichnamigen Einträgen.
 
 > **Bis August 2026 log die Liste.** Sie richtete sich allein danach, wo Sie
@@ -170,9 +184,13 @@ Vorbehalt möglich ist.
 Der letzte Schritt heißt **Prüfen & Starten**: Dort steht zuoberst der **Name
 dieses Laufs** — so, wie er später in der Auswahl der Kopfzeile erscheint. Ein
 Klick auf «Vorschlag» setzt einen sprechenden Namen aus Ausgangspunkt, Länge und
-Zeitpunkt. Darunter steht, was gleich passiert,
-und daneben die beiden Wege hinaus — den Lauf starten, oder die Einstellungen als
-Szenario speichern und später wieder aufrufen.
+Zeitpunkt. Darunter steht, was gleich passiert, und daneben der Knopf, der den
+Lauf startet. Die Reihenfolge ist fest: was läuft und wie lange es dauert, die
+drei Werte Länge, Wiederholungen und Zufallsstartwert, was von der Auslieferung
+abweicht, was zu beachten ist — ein Hinweis, der sich in einem Schritt beheben
+lässt, trägt einen Knopf dorthin —, und zuletzt «Technische Details» mit
+Codestand, Konfiguration und den Kennzahlen des Modells, so wie sie gespeichert
+sind.
 
 Solange Sie einrichten, gehört Ihnen der ganze Bildschirm: Bedienfeld, Telemetrie
 und Zeitleiste treten zurück. Einrichten ist eine Sache für sich, und eine Szene
@@ -194,9 +212,12 @@ Wer nur die drei Entscheidungen anfasst, bekommt einen sinnvollen Lauf.
 ## Die drei Entscheidungen
 
 **1. Was soll gerechnet werden?** Die Annahmenwelt: die Standard-Ausgangslage
-aus `configs/`, eines der vorbereiteten Szenarien, oder das, was Sie sich in den
-Schritten vier bis sieben selbst zusammengestellt haben. Unter jedem Szenario steht, wofür es
-steht; aufklappbar dazu die Begründung, warum es so aufgebaut ist.
+des Modells, eines der vorbereiteten Szenarien, oder das, was Sie sich im
+Bereich **Modell** selbst zusammengestellt haben. Links steht die Auswahl mit Name,
+Länge und Zahl der Eingriffe; rechts steht zum gewählten Szenario, wofür es steht,
+dazu seine These und die ersten zwei Sätze der Begründung; der Rest liegt hinter
+«Begründung und Quellen». Die Stresstests der Engine sind ausgeblendet, bis Sie
+«Stresstests zeigen» wählen; ein gewählter bleibt sichtbar.
 
 **2. Wie weit reicht der Lauf?** Die Länge in Ticks. Hinter «Feinabstimmung»
 die Wiederholungen und der Schalter «Alle Szenarien vergleichen» — denselben
@@ -204,7 +225,9 @@ Schalter legt der Einstieg um, wenn Sie dort «Szenario-Vergleich starten»
 wählen.
 
 **3. Womit wird gerechnet?** Der Rechenmodus, dazu die Auskunft, ob Ollama
-gerade erreichbar ist. Hinter «Feinabstimmung» der Zufallsstartwert.
+gerade erreichbar ist. Solange noch gefragt wird, pulsiert der Punkt davor —
+erst dann steht fest, ob «Mit Sprachmodell» möglich ist. Hinter «Feinabstimmung»
+der Zufallsstartwert.
 
 Diese Auskunft beantwortet genau, was eingestellt ist — und sagt es auch, wenn
 nichts eingestellt ist. Ist das Feld für den Modellnamen leer, steht dort
@@ -222,8 +245,10 @@ Einstellungen mit Einheit und Config-Feld steht unter
 
 ## Preflight: der letzte Blick vor dem Start
 
-Unter den drei Schritten steht in Klartext, was gleich passiert, darunter sechs
-Kacheln mit den Werten, die einen zweiten Blick lohnen.
+Unter den drei Schritten steht in Klartext, was gleich passiert, darunter die
+Werte, die einen zweiten Blick lohnen — Länge, Wiederholungen und
+Zufallsstartwert. Die Kennzahlen des Modells stehen im Prüfschritt hinter
+«Technische Details».
 
 Daneben erscheinen Warnungen für die Fälle, die später enttäuschen:
 Wiederholungen ohne festen Zufallsstartwert, abgeschaltete Szenario-Erzeugung,
@@ -264,44 +289,134 @@ Befunde hängen an keinem Eingabefeld und stehen deshalb nur im roten Kasten.
 
 ## Alle Einstellungen
 
-### Rahmenbedingungen
+### Systemgrößen, Verläufe und Preisbildung
 
-Die Systemgrößen für Politik, Kosten und Konjunktur.
+Die Systemgrößen für Politik, Kosten und Konjunktur, dazu Bevölkerung und
+Preisbildung, stellen Sie im Bereich **Modell** in der Kopfzeile ein — nicht in
+dieser Schrittfolge. Ansehen, was das gewählte Szenario vorgibt, können Sie im
+Schritt **Verläufe**.
 
 Jede Systemgröße hat einen Startwert und kann über Regeln einen zeitlichen
-Verlauf bekommen: «ab Runde 10 springt die CO₂-Abgabe auf 120» oder «ab Runde 5
-über acht Runden hochfahren auf 200». Aufklappen, Anzahl der Regeln setzen,
-Werte eintragen.
+Verlauf bekommen: «ab Tick 10 springt die CO₂-Abgabe auf 120» oder «ab Tick 5
+über acht Ticks hochfahren auf 200». Aufklappen, Anzahl der Regeln setzen,
+Werte eintragen. Unter «Nachfrage & Preisbildung» folgen zwei Regelkreise: oben
+das Preisverhalten der Airline, bei dem die Zielauslastung die entscheidende
+Größe ist, darunter die Sättigung, dann die Segmente der Bevölkerung und die
+Verteilungen für Zahlungsbereitschaft und Umweltbewusstsein.
 
-Der Schalter **Eigene Werte anwenden** ist hier der wichtigste. Steht er auf
-aus, rechnet der Lauf mit den Konfigurationsdateien und ignoriert alles, was Sie
-auf diesem Tab eingestellt haben. Ist oben ein Szenario gewählt, greifen diese
-Werte ohnehin nicht — dann gilt allein das Szenario.
+**Im Bereich Modell ändern Sie den Standard, nicht einen Lauf.** Was Sie dort
+eintragen, wirkt erst gespeichert — «Verläufe als Standard speichern» für
+Startwerte und Verläufe der Systemgrößen, «Als Standard speichern» für das
+Preisverhalten, «Bevölkerung als Standard speichern» für Bevölkerung und
+Sättigung. Alle drei schreiben in `configs/properties.json` und gelten damit für
+alle künftigen Läufe, und zwar für die Standard-Ausgangslage: Ein Rahmenszenario
+bringt seine eigenen Verläufe mit. Eine ausgeschaltete Größe wird mit Startwert 0
+und ohne Regeln gespeichert. Was Sie nur eintragen, ohne zu speichern, rechnet
+kein Lauf mit. Die eine Ausnahme ist der Startpreis (siehe oben).
 
-### Nachfrage & Preisbildung
+**Für einen einzelnen Lauf ändern Sie Verläufe im Schritt «Verläufe» und
+Bevölkerung, Preisbildung und Sättigung im Schritt «Modellannahmen»** — auf jedem
+Szenario, ohne das Modell anzufassen. «Werte übernehmen und selbst anpassen» gibt
+es dafür seit September 2026 nicht mehr.
 
-Zwei Regelkreise. Oben das Preisverhalten der Airline, bei dem die Zielauslastung
-die entscheidende Größe ist. Darunter die Sättigung. Dann die Segmente der
-Bevölkerung mit ihren Anteilen, und zuletzt die Verteilungen für
-Zahlungsbereitschaft und Umweltbewusstsein.
+### Verläufe
 
-Die beiden Speichern-Knöpfe auf diesem Tab schreiben in `configs/properties.json`
-und wirken damit über den einzelnen Lauf hinaus. Alles andere im Editor gilt nur
-für den nächsten Start.
+Der Schritt direkt nach der Wahl des Szenarios. Links stehen die Systemgrößen,
+rechts die Kurve der gewählten über die Länge des Laufs — so, wie das gewählte
+Szenario sie vorgibt. Offen stehen die Größen, die mindestens eines der
+Rahmenszenarien verändert, etwa die CO₂-Abgabe oder der Ölpreis; die übrigen
+zeigt **Weitere Größen zeigen**.
+
+Die Kurve ist derselbe Wert, mit dem der Lauf rechnet, samt Mindest- und
+Höchstwert der Größe — keine Näherung daneben.
+
+Unter der Kurve stehen der **Startwert** und die **Stützpunkte** des Szenarios:
+ab welchem Tick die Größe auf einen Wert springt oder über wie viele Ticks sie
+dorthin hochfährt. Ändern Sie einen davon, zeigt die Kurve Ihre Fassung
+durchgezogen und das Szenario gestrichelt daneben. Der Lauf rechnet dann mit
+Ihrer Fassung und heißt im Ergebnis «abgeleitet» von diesem Szenario; die
+geänderten Größen stehen dort mit Namen. Was Sie auf den Wert des Szenarios
+zurücksetzen, zählt nicht mehr als Änderung — und ebenso nicht, was anders
+geschrieben ist, aber denselben Verlauf ergibt, etwa ein Stützpunkt, der auf den
+Wert springt, den die Größe ohnehin hat. Ein Stützpunkt, dem Tick oder Wert
+fehlt, rechnet nicht mit, bis er vollständig ist.
+
+Die Felder wirken nur mit **Eigene Werte anwenden** — der Schalter steht hinter
+der «Feinabstimmung» des ersten Schritts. Ist er aus, sind sie gesperrt und
+sagen, warum.
+
+**Stützpunkt hinzufügen** legt unter den vorhandenen eine leere Zeile an. Sie
+rechnet erst mit, wenn Tick, Art und Wert eingetragen sind — beim Hochfahren
+auch die Dauer. **Entfernen** an einer Zeile nimmt diesen Stützpunkt heraus;
+war er einer des Szenarios, gilt der Lauf danach als abgeleitet. Was Sie in
+den übrigen Zeilen eingetippt haben, bleibt dabei stehen.
+
+Links unter der Liste der Größen steht die **Preisstrategie** des Laufs: **Plätze füllen** senkt den
+Preis, bis die Plätze gefüllt sind; **Aufschlag halten** lässt den Preis stehen
+und die Auslastung schwanken. Vorgewählt ist die Strategie des Szenarios. Wählen
+Sie die andere, gilt der Lauf als abgeleitet, und im Ergebnis steht die
+Preisstrategie unter den Abweichungen. Sie wirkt wie die Verläufe nur mit
+**Eigene Werte anwenden**.
+
+**Wechseln Sie danach das Szenario, verfallen Ihre Abweichungen** — Verläufe und
+Preisstrategie. Eine Abweichung ist der Unterschied zu einem bestimmten Szenario;
+auf ein anderes gelegt, hieße sie dort etwas anderes. Über dem Schritt erscheint
+dann eine Meldung mit **Rückgängig**: Ein Klick holt das alte Szenario samt seinen
+Abweichungen zurück.
+
+### Modellannahmen
+
+Der Schritt nach «Verläufe». Hier ändern Sie für **diesen Lauf**, wie das Modell
+rechnet, ohne es zu speichern:
+
+- **Preisbildung** — die Ziel-Auslastung, auf die der Anbieter seinen Preis
+  ausrichtet, und hinter «Feinabstimmung» Preisuntergrenze, Reaktionsstärke,
+  Dämpfung, Preisdeckel und die Kopplung an die Buchungen.
+- **Sättigung** — wie stark eine Buchung die nächste unwahrscheinlicher macht, und
+  wie stark das wirkt.
+- **Bevölkerung** — der Anteil jedes Segments und, hinter «Streuung der
+  Eigenschaften», Mittelwert und Streuung von Zahlungsbereitschaft und
+  Umweltbewusstsein.
+
+Vorbelegt ist jedes Feld mit dem Wert des gewählten Szenarios. Was Sie ändern,
+gilt nur für diesen Lauf: Er heißt im Ergebnis «abgeleitet» und nennt jede
+geänderte Annahme; «Prüfen & Starten» zeigt sie vorher unter den Abweichungen,
+und «Als Szenario sichern» nimmt sie mit. Was dem Szenario gleicht, zählt nicht als
+Änderung. Anders als die Verläufe bleiben die Modellannahmen stehen, wenn Sie das
+Szenario wechseln — sie beschreiben das Modell, nicht den Verlauf einer Welt. Sie
+wirken nur mit **Eigene Werte anwenden**; ist der Schalter aus, sind die Felder
+gesperrt. Die selteneren Felder eines Segments — etwa seine Erholung nach einer
+Buchung — stehen nur im Bereich **Modell**.
 
 ### Lauf & Ablage
 
-Name und Fragestellung des Laufs — sie erscheinen im Bericht und in der
-Lauf-Auswahl; ohne sie sind mehrere Läufe später schwer auseinanderzuhalten.
-Darunter «Als Szenario sichern», mit dem der aktuelle Stand als eigenes Preset
-unter `configs/sweeps/` landet, die Auswahl der Konfigurationsdateien, und ganz
-unten die Rohdaten: was tatsächlich an die Simulation übergeben wird.
+Die Fragestellung des Laufs — wozu er gerechnet wird. Sie erscheint im Bericht;
+den Namen vergeben Sie im letzten Schritt. Darunter die Rohdaten — was
+tatsächlich an die Simulation übergeben wird — und **Alle Einstellungen
+zurücksetzen**. Das setzt jede
+Einstellung auf den Auslieferungszustand; die Meldung danach trägt
+«Rückgängig», das den Stand davor mit einem Klick zurückholt.
+
+**Als Szenario sichern** steht oben in der Kopfzeile, solange Sie einrichten, und
+ist der einzige Weg dafür. Ein Klick öffnet ein Fenster mit einem Namen —
+vorgeschlagen ist der Name des Laufs —, der Option «Mit Zeitstempel im Namen
+sichern», die so kein vorhandenes Szenario ersetzt, und einer
+Warnung, wenn es ein Szenario unter diesem Namen schon gibt. Gesichert wird unter
+`configs/sweeps/`; danach steht das Szenario im ersten Schritt zur Auswahl.
+Gesichert wird **das gewählte Szenario** in seiner eigenen Länge und mit seiner
+Preisstrategie, und darauf Ihre Abweichungen, sofern «Eigene Werte anwenden» an
+ist — also genau das, was ein Lauf mit diesen Einstellungen rechnen würde.
 
 ### Technik
 
 Welches Sprachmodell unter welcher Adresse, wie oft ein Zwischenstand
 geschrieben wird, und was am Ende ausgegeben wird. Nichts davon verändert die
 berechneten Zahlen.
+
+Modellname, Adresse, Kreativität und Antwortlänge sind **gesperrt**, wenn sie
+nichts bewirken würden — unter «Ohne Sprachmodell» und «Nur Zahlen», und bei
+einem Szenario-Vergleich, der diese Einstellungen nicht übernimmt. Unter jedem
+Feld steht dann, warum.
 
 Was Sie hier einstellen, **steht im Lauf und nicht nur im Formular**: Modellname,
 Adresse, Kreativität und Antwortlänge gehen in die Konfiguration des Laufs, und

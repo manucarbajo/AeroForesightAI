@@ -135,7 +135,7 @@ def test_every_figures_subtab_renders(tab, minimal_run):
 def test_runs_page_render_tab_survives_a_missing_directory(tmp_path):
     selection = {"run_id": "weg", "run_dir": str(tmp_path / "gibt-es-nicht")}
 
-    assert "Run-Verzeichnis fehlt" in _text(runs_page.render_tab("overview", selection))
+    assert "Laufverzeichnis fehlt" in _text(runs_page.render_tab("overview", selection))
 
 
 def _summary(tmp_path, **overrides) -> RunSummary:
@@ -160,7 +160,7 @@ def _summary(tmp_path, **overrides) -> RunSummary:
 def test_degraded_run_is_flagged_above_every_tab(tmp_path):
     """P0.1: Der Banner sitzt im Kopf der Seite, nicht in einer einzelnen Ansicht."""
 
-    rendered = _text(runs_page._meta(_summary(tmp_path, degraded=True, llm_incident_count=3)))
+    rendered = _text(runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=3)))
 
     assert "beeinträchtigt" in rendered
     assert "3 Aufrufe" in rendered
@@ -168,13 +168,13 @@ def test_degraded_run_is_flagged_above_every_tab(tmp_path):
 
 
 def test_a_single_incident_is_phrased_in_the_singular(tmp_path):
-    rendered = _text(runs_page._meta(_summary(tmp_path, degraded=True, llm_incident_count=1)))
+    rendered = _text(runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=1)))
 
     assert "ein Aufruf" in rendered
 
 
 def test_a_clean_run_gets_no_warning(tmp_path):
-    rendered = _text(runs_page._meta(_summary(tmp_path)))
+    rendered = _text(runs_page.lauf_kopf(_summary(tmp_path)))
 
     assert "beeinträchtigt" not in rendered
 
@@ -212,7 +212,9 @@ def test_sweep_mode_offers_the_preset_controls():
 
     rendered = _text(start_flow.layout(draft))
 
-    assert "'action': 'apply-sweep'" in rendered
+    # «Werte übernehmen» ist mit P7.13-U13.3 entfallen: Es schrieb in
+    # `property_edits`, und das erreicht keinen Lauf mehr.
+    assert "'action': 'apply-sweep'" not in rendered
     assert "'field': 'scenario_choice'" in rendered
 
 
@@ -310,25 +312,8 @@ def test_reset_action_returns_the_default_draft():
     data, message, kind = _handle_action({"type": "cfg-action", "action": "reset"}, draft, [])
 
     assert data["rounds"] != 999
-    assert kind == "success"
+    assert kind == "erfolg"
     assert message
-
-
-def test_apply_sweep_action_takes_over_the_preset():
-    from dashboard.config_catalog import list_sweep_presets
-
-    presets = list_sweep_presets()
-    if not presets:
-        pytest.skip("Keine Sweep-Presets unter configs/sweeps/ vorhanden.")
-
-    draft = initial_draft_dict()
-    draft["sweep_id"] = presets[0].id
-
-    data, message, kind = _handle_action({"type": "cfg-action", "action": "apply-sweep"}, draft, [])
-
-    assert kind == "success"
-    assert presets[0].name in message
-    assert data["rounds"] == presets[0].max_ticks
 
 
 def test_add_property_rejects_an_invalid_identifier():
@@ -338,7 +323,7 @@ def test_add_property_rejects_an_invalid_identifier():
         {"type": "cfg-action", "action": "add-property"}, initial_draft_dict(), free
     )
 
-    assert kind == "warning"
+    assert kind == "warnung"
     assert "Python-Bezeichner" in message
 
 
@@ -349,7 +334,7 @@ def test_add_segment_rejects_a_duplicate():
 
     _, message, kind = _handle_action({"type": "cfg-action", "action": "add-segment"}, draft, free)
 
-    assert kind == "warning"
+    assert kind == "warnung"
     assert "existiert bereits" in message
 
 
@@ -384,31 +369,36 @@ def test_the_setup_area_builds_with_the_default_draft():
     assert "Lauf einrichten" in rendered
     assert "af-wizard" in rendered, "die Schrittfolge fehlt"
     assert "optional" in rendered, "die ueberspringbaren Schritte sind nicht als solche benannt"
-    # Sechs: acht bis P1.9-W3.1 (die beiden dichten Bereiche zogen ins
-    # «Modell»), sieben mit der «Ausgangslage» aus W3.3, und sechs seit P2.0-C
-    # -- die Faktorlage ist keine Eingabe mehr, sie entsteht im Lauf. Die Zahl
-    # steht hier bewusst als Zahl: Waechst die Schrittfolge, ist das eine
-    # Entscheidung und keine Nebenwirkung.
-    assert len(wizard.STEPS) == 6
+    # Sieben: acht bis P1.9-W3.1 (die beiden dichten Bereiche zogen ins
+    # «Modell»), sieben mit der «Ausgangslage» aus W3.3, sechs seit P2.0-C
+    # -- die Faktorlage ist keine Eingabe mehr, sie entsteht im Lauf --, und
+    # sieben seit P7.13-U13.1 mit «Verlaeufe» und acht seit U13.5 mit
+    # «Modellannahmen» (beide von Haiko entschieden am 2026-09-15). Die Zahl steht
+    # hier bewusst als Zahl: Waechst die Schrittfolge, ist das eine Entscheidung
+    # und keine Nebenwirkung.
+    assert len(wizard.STEPS) == 8
 
 
 def test_launch_summary_describes_the_draft():
+    """Seit P7.5-U5.1 in den Stand-Zeilen — die Zeile unter dem Start-Knopf ist entfallen."""
+
     draft = initial_draft_dict()
     draft["rounds"] = 12
     draft["run_count"] = 3
 
-    assert "Ticks: 12" in launch_page._summary(draft)
-    assert "3 Läufe" in launch_page._summary(draft)
+    zeilen = str(launch_page.summary_rows(draft))
+    assert "12 Ticks · 1 Jahr" in zeilen
+    assert "3×" in zeilen
 
-    # Beim Vergleich beschreibt die Zeile **nicht** mehr den Entwurf, sondern
+    # Beim Vergleich beschreiben die Zeilen **nicht** mehr den Entwurf, sondern
     # den Vergleich (P1.9-W1.3): Er nimmt vom Entwurf nichts entgegen, also darf
     # dort auch keine Länge und kein Szenario aus dem Entwurf stehen.
     draft["run_all_sweeps"] = True
-    zeile = launch_page._summary(draft)
-    assert "Szenario-Vergleich" in zeile
-    assert "je eigene Länge" in zeile
-    assert "Ticks: 12" not in zeile, (
-        "Die Zeile nennt wieder die Länge aus dem Entwurf — die verwendet der "
+    zeilen = str(launch_page.summary_rows(draft))
+    assert "Vergleich" in zeilen
+    assert "je Szenario" in zeilen
+    assert "12 Ticks" not in zeilen, (
+        "Die Zeilen nennen wieder die Länge aus dem Entwurf — die verwendet der "
         "Vergleich seit W1.2 nicht."
     )
 
@@ -438,7 +428,7 @@ def test_result_message_covers_all_three_outcomes():
     multi = _Result()
     multi.multi_run_batch = True
     multi.child_run_ids = ("run_1", "run_2")
-    assert "Multi-Run" in _text(launch_page._result_message(multi))
+    assert "Mehrfachlauf" in _text(launch_page._result_message(multi))
 
     sweep = _Result()
     sweep.sweep_batch = True
@@ -474,9 +464,9 @@ def test_run_file_url_builds_a_relative_route():
 # --- Bausteine -------------------------------------------------------------
 
 
-def test_alert_renders_markdown_and_plain_children():
-    assert _text(ui.alert("**fett**", "warning"))
-    assert _text(ui.alert(ui.markdown("x"), "info"))
+def test_hinweis_renders_markdown_and_plain_children():
+    assert _text(ui.hinweis("**fett**", "warnung"))
+    assert _text(ui.hinweis(ui.markdown("x"), "info"))
 
 
 def test_draft_to_dict_is_json_serialisable():
@@ -550,3 +540,311 @@ class TestDieErgebnisseBeantwortenVierFragen:
         geschwister = figures.sweep_geschwister(sweeps / "sweep_a")
 
         assert [p.name for p in geschwister] == ["sweep_a", "sweep_b"]
+
+
+# --- P5.2: Einzelsichten der Researcher-Variante ------------------------------------
+
+
+def _schreibe_historie(run_dir, *, mit_grenze: bool = True, personen: int = 200) -> None:
+    """Eine Personen-Historie über zwei Ticks; die Grenze bewusst ≠ WTP × Einkommen."""
+
+    spalten = [
+        "tick",
+        "id",
+        "age",
+        "wtp_eur",
+        "environmental_awareness",
+        "substitution_readiness",
+        "price_sensitivity",
+        "income_factor",
+        "saturation_level",
+        "booked",
+    ]
+    if mit_grenze:
+        spalten.append("erschwinglichkeitsgrenze_eur")
+    spalten.append("business")
+    zeilen = [",".join(spalten)]
+    for tick in (1, 2):
+        for i in range(personen):
+            wtp = 100.0 + i
+            werte = [
+                tick,
+                i,
+                20 + i % 60,
+                wtp,
+                round((i % 10) / 10, 2),
+                0.5,
+                round((i % 7) / 7, 3),
+                1.0,
+                0.0,
+                i % 3 == 0,
+            ]
+            if mit_grenze:
+                werte.append(round(wtp * 1.2, 2))
+            werte.append(i % 4 == 0)
+            zeilen.append(",".join(str(w) for w in werte))
+    (run_dir / "individuals_history.csv").write_text("\n".join(zeilen) + "\n", encoding="utf-8")
+
+
+@pytest.fixture
+def history_run(minimal_run):
+    _schreibe_historie(minimal_run)
+    return minimal_run
+
+
+class TestSurplusPulse:
+    """P5.2 (2026-09-11): der erste übernommene Block der Researcher-Variante."""
+
+    def test_der_block_erscheint(self, history_run):
+        assert "Wer sich den Flug leisten kann" in _text(
+            animation.render(history_run, "run_minimal")
+        )
+
+    def test_spielraum_ist_grenze_aus_der_historie_minus_ticketpreis(self, history_run):
+        frame = animation.surplus_frame(animation.load_history(history_run))
+
+        zeile = frame[(frame["tick"] == 1) & (frame["id"] == 5)].iloc[0]
+
+        # Ticketpreis der Runde 1 im Fixture: 101.0; Grenze im Fixture: WTP x 1,2.
+        assert zeile["spielraum_eur"] == pytest.approx(105.0 * 1.2 - 101.0)
+
+    def test_die_stichprobe_ist_fest_und_begrenzt(self, history_run):
+        frame = animation.load_history(history_run)
+
+        erste = animation.stichprobe(frame)
+        zweite = animation.stichprobe(frame)
+
+        ids = set(erste["id"].unique())
+        assert ids == set(zweite["id"].unique())
+        assert len(ids) == animation.STICHPROBE
+        assert all(set(erste[erste["tick"] == t]["id"]) == ids for t in (1, 2))
+
+    def test_ohne_spalte_ein_hinweis(self, minimal_run):
+        _schreibe_historie(minimal_run, mit_grenze=False)
+
+        gerendert = _text(animation.render(minimal_run, "run_minimal"))
+
+        assert "erschwinglichkeitsgrenze_eur" in gerendert
+        assert "Wer sich den Flug leisten kann:" not in gerendert
+
+
+class TestSaturationSwarm:
+    """P5.2 (2026-09-11): Sättigung und Wiederkehr aus der Researcher-Variante."""
+
+    def test_der_block_erscheint(self, history_run):
+        assert "Sättigung: Reisebedarf" in _text(animation.render(history_run, "run_minimal"))
+
+    def test_reisebedarf_ist_eins_minus_saettigung(self, history_run):
+        frame = animation.load_history(history_run)
+        frame.loc[frame["id"] == 7, "saturation_level"] = 0.6
+
+        bedarf = animation.bedarf_frame(frame)
+
+        assert bedarf.loc[bedarf["id"] == 7, "reisebedarf"].tolist() == pytest.approx([0.4, 0.4])
+        assert bedarf.loc[bedarf["id"] == 8, "reisebedarf"].tolist() == pytest.approx([1.0, 1.0])
+
+    def test_ohne_saettigung_ein_hinweis(self, history_run):
+        import pandas as pd
+
+        pfad = history_run / "individuals_history.csv"
+        pd.read_csv(pfad).drop(columns=["saturation_level"]).to_csv(pfad, index=False)
+
+        gerendert = _text(animation.render(history_run, "run_minimal"))
+
+        assert "saturation_level" in gerendert
+        assert "Sättigung: Reisebedarf" not in gerendert
+
+
+class TestMerkmalsSichten:
+    """P5.2 (2026-09-11): die drei Merkmals-Streuungen der Researcher-Variante."""
+
+    def test_alle_drei_bloecke_erscheinen(self, history_run):
+        gerendert = _text(animation.render(history_run, "run_minimal"))
+
+        for sicht in animation.MERKMALSICHTEN:
+            assert sicht.titel in gerendert
+
+    def test_jede_spalte_schreibt_der_lauf_wirklich(self, tmp_path):
+        """Gemessen am echten Schreiber, nicht an einer Liste von Spaltennamen."""
+
+        import csv
+        import io
+
+        from src.config_loader import load_properties_config
+        from src.models.population_models import PopulationConfig
+        from src.population.population_sampler import initialize_population
+        from src.reporting.output_writer import append_individuals_history
+
+        properties = load_properties_config()
+        leute = initialize_population(
+            properties, PopulationConfig(segments=[], total_population=5), seed=3
+        )
+        append_individuals_history(
+            1, leute, koeffizienten=properties.booking_model, run_dir=tmp_path
+        )
+        kopf = next(
+            csv.reader(
+                io.StringIO((tmp_path / "individuals_history.csv").read_text(encoding="utf-8"))
+            )
+        )
+
+        gelesen = {spalte for sicht in animation.MERKMALSICHTEN for spalte in (sicht.x, sicht.y)}
+        gelesen |= {"saturation_level", "erschwinglichkeitsgrenze_eur", "wtp_eur", "booked"}
+        assert gelesen <= set(kopf), f"Nicht geschrieben: {sorted(gelesen - set(kopf))}"
+
+    def test_fehlt_eine_spalte_erscheint_ein_hinweis(self, history_run):
+        import pandas as pd
+
+        pfad = history_run / "individuals_history.csv"
+        pd.read_csv(pfad).drop(columns=["income_factor"]).to_csv(pfad, index=False)
+
+        gerendert = _text(animation.render(history_run, "run_minimal"))
+
+        assert "`income_factor`" in gerendert
+
+
+# --- Hashes hinter einer Klappe (P7.2-U2.3) -----------------------------------
+
+from dash import html  # noqa: E402
+
+
+def _text_ohne_klappen(knoten) -> str:
+    """Sichtbarer Text, aber ohne alles, was in einer `html.Details` steckt.
+
+    `_text` oben ist `str(...)` und zeigt den **ganzen** Baum — mit ihm wäre die
+    Zusage «steht hinter einer Klappe» nicht messbar, weil der Inhalt der Klappe
+    in der Zeichenkette ebenso auftaucht wie alles andere.
+    """
+
+    if knoten is None or isinstance(knoten, html.Details):
+        return ""
+    if isinstance(knoten, str):
+        return knoten
+    if isinstance(knoten, (list, tuple)):
+        return " ".join(_text_ohne_klappen(k) for k in knoten)
+    return _text_ohne_klappen(getattr(knoten, "children", None))
+
+
+def _text_der_klappen(knoten) -> str:
+    """Nur das, was in einer `html.Details` steht — Zusammenfassung eingeschlossen."""
+
+    if knoten is None or isinstance(knoten, str):
+        return ""
+    if isinstance(knoten, (list, tuple)):
+        return " ".join(_text_der_klappen(k) for k in knoten)
+    if isinstance(knoten, html.Details):
+        return _text(knoten)
+    return _text_der_klappen(getattr(knoten, "children", None))
+
+
+def _uebersicht_mit_herkunft(tmp_path):
+    from dashboard.web.views import overview
+
+    (tmp_path / "run_metadata.json").write_text(
+        json.dumps(
+            {
+                "ticks_completed": 3,
+                "ticks_max": 3,
+                "compute_mode": "mock_llm",
+                "seed": 42,
+                "code_version": {"commit": "abcdef1234567890", "dirty": True},
+                "config_fingerprint": {"properties": "0f1e2d", "agents": "9a8b7c"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    return overview.render(tmp_path, "run_probe")
+
+
+class TestTechnischeDetails:
+    """Q6: Codestand und Konfigurations-Fingerabdruck standen offen in der Übersicht.
+
+    Beides sind Hashes. Sie beantworten «ist das derselbe Lauf wie damals» und
+    keine Frage, die man beim Lesen der Ergebnisse stellt — **weg dürfen sie
+    trotzdem nicht**: Ein Lauf ohne nachvollziehbare Herkunft ist genau der
+    Befund, den P0.6 abgeräumt hat.
+    """
+
+    def test_the_hashes_stand_behind_a_disclosure(self, tmp_path):
+        gerendert = _uebersicht_mit_herkunft(tmp_path)
+
+        offen = _text_ohne_klappen(gerendert)
+        verborgen = _text_der_klappen(gerendert)
+
+        assert "Technische Details" in verborgen
+        assert "0f1e2d" in verborgen, "Der Fingerabdruck steht nicht in der Klappe"
+        assert "abcdef12" in verborgen, "Der Codestand steht nicht in der Klappe"
+        assert "0f1e2d" not in offen, "Der Fingerabdruck steht weiterhin offen"
+        assert "abcdef12" not in offen, "Der Codestand steht weiterhin offen"
+
+    def test_the_overview_still_answers_its_own_questions(self, tmp_path):
+        """Rahmen, Rechenmodus und Seed bleiben offen — sie sind die Lesehilfe."""
+
+        offen = _text_ohne_klappen(_uebersicht_mit_herkunft(tmp_path)).lower()
+
+        # Die Kachel setzt ihre Beschriftung in Grossbuchstaben — geprueft wird,
+        # was dasteht, nicht wie es gesetzt ist.
+        assert "rechenmodus" in offen
+        assert "seed" in offen
+        assert "42" in offen
+
+    def test_the_identifier_stands_behind_the_disclosure(self, tmp_path):
+        """D6: Die Kennung ist ein Ablageort und steht bei den Hashes, nicht offen."""
+
+        gerendert = _uebersicht_mit_herkunft(tmp_path)
+
+        assert "run_probe" in _text_der_klappen(gerendert)
+        assert "run_probe" not in _text_ohne_klappen(gerendert)
+
+    def test_the_measurement_separates_inside_from_outside(self, tmp_path):
+        """Gegen die eigene Blindheit: Die beiden Texte sind wirklich verschieden."""
+
+        probe = html.Div(["draussen", html.Details([html.Summary("Titel"), "drinnen"])])
+
+        assert "drinnen" not in _text_ohne_klappen(probe)
+        assert "draussen" in _text_ohne_klappen(probe)
+        assert "drinnen" in _text_der_klappen(probe)
+
+
+class TestDerLaufKopf:
+    """P7.3-U3.2: einmal, kompakt, im Leitstand und in «Ergebnisse».
+
+    Unter «Ergebnisse» standen Datum, Ticks, Modell, Warnbanner und die
+    Zusammenfassung des Szenarios über jeder der sieben Ansichten (R1), und die
+    Zusammenfassung stand in «Szenario» ein zweites Mal. Im Leitstand stand der
+    Name des gezeigten Laufs nirgends (Q5).
+    """
+
+    def test_one_line_names_the_run_and_how_it_was_computed(self, tmp_path):
+        summary = _summary(tmp_path, rahmen_name="Business as Usual", compute_mode="mock_llm")
+
+        text = _text(runs_page.lauf_kopf(summary))
+
+        assert "Business as Usual" in text
+        assert "Ohne Sprachmodell" in text
+        assert "run_test" not in text, "Die Kennung gehört unter «Technische Details»"
+
+    def test_the_warning_is_visible_and_only_its_explanation_folds(self, tmp_path):
+        kopf = runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=2))
+
+        assert "beeinträchtigt" in _text_ohne_klappen(kopf)
+        assert "llm_incidents.json" in _text_der_klappen(kopf)
+        assert "llm_incidents.json" not in _text_ohne_klappen(kopf)
+
+    def test_the_scenario_summary_is_not_repeated(self, tmp_path):
+        """R1: Sie steht in «Szenario» — über jeder Ansicht stand sie ein zweites Mal."""
+
+        summary = _summary(tmp_path, scenario_summary="Drei explorative Pfade.")
+
+        assert "Drei explorative Pfade" not in _text(runs_page.lauf_kopf(summary))
+
+    def test_the_control_room_carries_the_run_header(self):
+        assert runs_page.LAUF_KOPF_LEITSTAND in str(web_app.serve_layout())
+
+    def test_one_callback_fills_both_headers(self):
+        """Derselbe Auslöser, dieselbe Rechnung — kein zweiter Rundlauf je Laufwechsel."""
+
+        schluessel = [k for k in web_app.app.callback_map if "runs-meta.children" in k]
+
+        assert len(schluessel) == 1, schluessel
+        assert f"{runs_page.LAUF_KOPF_LEITSTAND}.children" in schluessel[0]

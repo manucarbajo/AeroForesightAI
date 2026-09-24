@@ -10,11 +10,12 @@ from typing import Any, Callable, Protocol, Sequence
 if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from src.agents.agent_node import AgentNode, LLMCallable
+from src.agents.agent_node import AgentNode
 from src.agents.orchestrator_node import OrchestratorNode
 from src.agents.parallel_round_node import ParallelRoundNode
 from src.agents.redebedarf_node import RoundExecutionNode
 from src.config_loader import build_initial_state
+from src.llm import LLMCallable
 from src.market.market_node import MarketNode
 from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
@@ -508,7 +509,12 @@ class SimulationRunner:
             if checkpoint_store is not None and hasattr(checkpoint_store, "checkpoint_dir"):
                 # Prefer the checkpoint_store's parent dir if available (keeps paths consistent)
                 run_dir = checkpoint_store.checkpoint_dir.parent
-            append_individuals_history(tick, state.population_individuals, run_dir=run_dir)
+            append_individuals_history(
+                tick,
+                state.population_individuals,
+                koeffizienten=state.resolved_properties().booking_model,
+                run_dir=run_dir,
+            )
 
             if self.options.verbose_ticks:
                 self._print_tick_progress(state, tick=tick, max_ticks=max_ticks)

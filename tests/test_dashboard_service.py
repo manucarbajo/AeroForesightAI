@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 
 from dashboard.config_catalog import (
-    apply_sweep_to_draft,
+    build_custom_sweep_from_draft,
     default_config_draft,
     effective_config_summary,
     extract_market_feedback_from_file,
@@ -119,6 +119,21 @@ class TestConfigCatalog:
         assert draft.saturation_edit.booking_increase == 0.6
         assert draft.market_feedback_edit.target_booking_rate == 0.37
 
+    def test_a_scenario_saved_under_the_default_name_takes_the_file_name(self):
+        """Der Vorgabename zählt als «kein eigener Name» — gelesen aus der Datei (P7.2-U2.7).
+
+        Bis zum 2026-09-11 stand der Vorgabename hier ein zweites Mal als
+        Literal. Mit dem neuen Namen in `simulation_config.json` hätte jedes
+        gesicherte Szenario ohne eigenen Namen «Flugverkehr-Szenarioplanung»
+        geheißen statt wie seine Datei.
+        """
+
+        draft = default_config_draft()
+        assert build_custom_sweep_from_draft(draft, "meine_datei").name == "meine_datei"
+
+        draft.simulation_name = "Mein Lauf"
+        assert build_custom_sweep_from_draft(draft, "meine_datei").name == "Mein Lauf"
+
     def test_save_saturation_and_market_feedback_to_properties_json(self, monkeypatch, tmp_path):
         import dashboard.config_catalog as catalog
 
@@ -169,37 +184,17 @@ class TestConfigCatalog:
         assert "business_as_usual" in ids
         assert "co2_delayed" in ids
 
-    def test_apply_sweep_overrides_carbon_tax(self):
-        draft = default_config_draft()
-        sweep = next(s for s in list_sweep_presets() if s.id == "co2_delayed")
-        draft = apply_sweep_to_draft(draft, sweep)
-        assert draft.sweep_id == "co2_delayed"
-        carbon = draft.property_edits["carbon_tax_level"]
-        # Seit P4.5 auf 120 Ticks gestreckt: die verzögerte Stufe kommt bei Tick 60 (vorher 25).
-        assert any(rule.get("active_from_tick") == 60 for rule in carbon.rules)
+    # «Werte übernehmen» (`apply_sweep_to_draft`) ist mit P7.13-U13.3 entfallen, und
+    # mit ihm seine beiden Tests.
 
-    def test_taking_over_a_preset_switches_to_own_settings(self):
-        """Sonst liefen die eben übernommenen Werte ins Leere.
+    def test_an_unsaved_start_value_from_the_model_reaches_no_state(self):
+        """Seit P7.13-U13.3 umgekehrt: bis dahin kam der Wert hier an."""
 
-        Im Modus `sweep` gilt seit P1.1 ausschließlich die Preset-Datei. Bliebe
-        der Modus dort stehen, hätte «Werte übernehmen» sichtbar etwas in den
-        Editor geschrieben, das der Lauf nicht anfasst — genau die stille
-        Wirkungslosigkeit, gegen die dieses Paket antritt.
-        """
-
-        draft = default_config_draft()
-        sweep = next(s for s in list_sweep_presets() if s.id == "co2_delayed")
-
-        draft = apply_sweep_to_draft(draft, sweep)
-
-        assert draft.scenario_mode == "custom"
-        assert draft.apply_custom_overrides is True
-
-    def test_prepare_state_with_custom_property_override(self):
         draft = default_config_draft()
         draft.scenario_mode = "custom"
         draft.apply_custom_overrides = True
         draft.rounds = 5
+        ausgeliefert = draft.property_edits["carbon_tax_level"].baseline
         draft.property_edits["carbon_tax_level"].baseline = 99.0
         draft.property_edits["carbon_tax_level"].rules = [
             {"active_from_tick": 1, "effect": {"type": "set", "value": 99.0}}
@@ -207,7 +202,7 @@ class TestConfigCatalog:
         state = prepare_simulation_state(draft)
         assert state.clock.max_ticks == 5
         prop = next(p for p in state.properties.system_properties if p.id == "carbon_tax_level")
-        assert float(prop.trajectory.baseline) == 99.0
+        assert float(prop.trajectory.baseline) == ausgeliefert
 
     def test_effective_config_summary_includes_overrides(self):
         draft = default_config_draft()
@@ -229,6 +224,21 @@ class TestConfigCatalog:
         assert path.is_file()
         payload = json.loads(path.read_text(encoding="utf-8"))
         assert payload["id"] == "test_preset"
+
+    def test_the_target_is_known_before_saving(self, monkeypatch, tmp_path):
+        """Wer vor dem Sichern fragt, bekommt denselben Pfad, der danach geschrieben wird."""
+
+        from dashboard import config_catalog
+
+        monkeypatch.setattr(config_catalog, "SWEEPS_DIR", tmp_path)
+
+        for name in ("Mein Szenario", "zweites_szenario.json", "  Probe  "):
+            ziel = config_catalog.sweep_ziel(name)
+            assert not ziel.exists()
+            assert save_custom_sweep_preset(default_config_draft(), name) == ziel
+            assert ziel.is_file()
+
+        assert config_catalog.sweep_ziel("Mein Szenario").name == "mein_szenario.json"
 
     def test_list_runs_scenario_preview(self, tmp_path):
         run_dir = tmp_path / "run_20260101T120000Z"
@@ -429,3 +439,62 @@ class TestEinGeratenerSatzSagtDassErGeratenIst:
         assert (
             _satz_hinweis(list_run_figures(run_dir)) is None
         ), "Ein vollständiger Satz wird mit einer Warnung versehen"
+
+
+class TestDieAuswahlListetLaeufeUndSortiertNachZeit:
+    """P7.3-U3.3: nur Ordner mit Laufdaten, der jüngste zuerst.
+
+    Am 2026-09-14 listete die Auswahl 646 Einträge, 452 davon Ordner mit nichts
+    als einem leeren `checkpoints/` — die CLI legt sie an, bevor sie eine
+    Konfiguration prüft. Und vorausgewählt war ein Sweep vom 2026-09-07, weil
+    die Reihenfolge alphabetisch war und `sweeps` vor `run_*` verarbeitet wurde.
+    """
+
+    @staticmethod
+    def _lauf(wurzel: Path, name: str, zeitstempel: str | None = None) -> None:
+        _write_minimal_run(wurzel / name)
+        if zeitstempel:
+            pfad = wurzel / name / "run_metadata.json"
+            daten = json.loads(pfad.read_text(encoding="utf-8"))
+            daten["timestamp"] = zeitstempel
+            pfad.write_text(json.dumps(daten), encoding="utf-8")
+
+    def test_a_folder_with_only_an_empty_checkpoints_dir_is_no_run(self, tmp_path):
+        (tmp_path / "run_20260914T065629Z" / "checkpoints").mkdir(parents=True)
+        self._lauf(tmp_path, "run_20260101T120000Z")
+
+        assert [lauf.run_id for lauf in list_runs(tmp_path)] == ["run_20260101T120000Z"]
+
+    def test_the_newest_run_comes_first_across_all_kinds(self, tmp_path):
+        self._lauf(tmp_path, "run_20260901T100000Z", "2026-09-01T10:00:00+00:00")
+        self._lauf(tmp_path / "sweeps", "sweep_business_as_usual", "2026-08-01T10:00:00+00:00")
+        self._lauf(tmp_path / "batch_20260910T100000Z", "run_001", "2026-09-10T10:00:00+00:00")
+        self._lauf(tmp_path, "run_test", "2026-07-01T10:00:00+00:00")
+
+        assert [lauf.run_id for lauf in list_runs(tmp_path)] == [
+            "batch_20260910T100000Z/run_001",
+            "run_20260901T100000Z",
+            "sweeps/sweep_business_as_usual",
+            "run_test",
+        ]
+
+    def test_without_a_timestamp_the_identifier_decides(self, tmp_path):
+        self._lauf(tmp_path, "run_20260101T120000Z")
+        self._lauf(tmp_path, "run_20260301T120000Z")
+        self._lauf(tmp_path, "run_ohne_zeit")
+
+        assert [lauf.run_id for lauf in list_runs(tmp_path)] == [
+            "run_20260301T120000Z",
+            "run_20260101T120000Z",
+            "run_ohne_zeit",
+        ]
+
+    def test_the_preselection_is_the_newest_run(self, tmp_path, monkeypatch):
+        from dashboard import run_browser
+        from dashboard.web.pages import runs
+
+        self._lauf(tmp_path / "sweeps", "sweep_test_short", "2026-09-13T20:44:00+00:00")
+        self._lauf(tmp_path, "run_20260914T065633Z", "2026-09-14T06:56:33+00:00")
+        monkeypatch.setattr(run_browser, "OUTPUT_DIR", str(tmp_path))
+
+        assert runs.default_selection()["run_id"] == "run_20260914T065633Z"

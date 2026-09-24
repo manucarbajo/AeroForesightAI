@@ -133,6 +133,52 @@ class TestDasBedienfeldBleibtSchlank:
         assert _fields(rueckfall)
 
 
+# --- Hinweise werden gezählt, nicht aufgezählt (P7.5-U5.1) ------------------
+
+
+class TestDieHinweiseWerdenGezaehlt:
+    """Von Haiko entschieden am 2026-09-15: ein Satz und ein Zähler, ausführlich im Prüfschritt."""
+
+    def _mit_zwei_hinweisen(self, draft) -> dict:
+        return {**draft, "run_count": 2, "use_seed": False, "no_scenarios": True}
+
+    def test_two_notes_become_one_counter_that_names_the_place(self, draft):
+        entwurf = self._mit_zwei_hinweisen(draft)
+        ausfuehrlich = start_flow._warnings(entwurf, [])
+        assert len(ausfuehrlich) >= 2, "Vorbedingung: Der Entwurf trägt mehrere Hinweise"
+
+        text = str(start_flow.preflight(entwurf, [], slot="rail", compact=True))
+
+        assert f"{len(ausfuehrlich)} Hinweise" in text
+        assert "«Prüfen & Starten»" in text
+        assert "Mehrere Wiederholungen ohne festen Zufallsstartwert" not in text
+
+    def test_no_notes_no_counter(self, draft):
+        """Zehn Ticks: Kein ausgelieferter Verlauf endet davor, also keine Horizontlücke."""
+
+        entwurf = {
+            **draft,
+            "rounds": 10,
+            "run_count": 1,
+            "no_scenarios": False,
+            "apply_custom_overrides": True,
+        }
+        assert start_flow._warnings(entwurf, []) == [], "Vorbedingung: ein Entwurf ohne Hinweis"
+
+        assert "Vor dem Start" not in str(
+            start_flow.preflight(entwurf, [], slot="rail", compact=True)
+        )
+
+    def test_a_blocking_finding_stays_an_error(self, draft):
+        text = str(
+            start_flow.preflight(draft, ["Seed darf nicht negativ sein"], slot="rail", compact=True)
+        )
+
+        assert "Der Lauf kann so nicht starten" in text
+        assert "af-alert--error" in text, "Ein Befund, der den Start verhindert, ist kein Ratschlag"
+        assert "«Prüfen & Starten»" in text
+
+
 # --- Was es dafür tragen muss ----------------------------------------------
 
 
@@ -182,6 +228,32 @@ class TestWasDasBedienfeldTraegt:
 
         einrichten = next(route for route, label in shell.ROUTES if label == "Einrichten")
         assert f"href='{routing.url(einrichten)}'" in str(launch_page.summary_rows(draft))
+
+    def test_the_heading_says_it_is_the_next_run(self, draft):
+        """P7.5-U5.1: Daneben steht die Szene eines fertigen Laufs — «Lauf» ließ offen, welcher."""
+
+        ueberschriften = [
+            k.children for k in _walk(launch_page.rail(draft)) if isinstance(k, html.H1)
+        ]
+
+        assert ueberschriften == [launch_page.UEBERSCHRIFT] == ["Nächster Lauf"]
+
+    def test_the_footer_carries_only_the_start(self, draft):
+        """P7.5-U5.1: Unter dem Start-Knopf stand eine Zeile, die die Stand-Zeilen wiederholte
+        und das Szenario mit seiner Kennung nannte («Szenario: basis»)."""
+
+        fuss = next(
+            k
+            for k in _walk(launch_page.rail(draft))
+            if "af-rail-footer" in str(getattr(k, "className", "") or "")
+        )
+
+        assert "run-start" in str(fuss)
+        # Gezählt wird ein Textabsatz, nicht Wörter: Der Knopf trägt neben «Start»
+        # den Symbolnamen `play_arrow` als Text.
+        assert not [
+            k for k in _walk(fuss) if isinstance(k, html.P)
+        ], f"Unter dem Start-Knopf steht wieder eine Zeile: {fuss}"
 
     def test_the_mode_is_named_in_two_words(self, draft):
         """Der volle Optionstext ist ein Satz und passt hier nicht hin."""

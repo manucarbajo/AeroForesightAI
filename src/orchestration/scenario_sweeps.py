@@ -2,9 +2,9 @@
 and evaluates end-states against the CIB consistency matrix.
 
 CLI usage:
-    python src/scenario_sweeps.py                           # all sweeps in configs/sweeps/
-    python src/scenario_sweeps.py --ticks 10000             # 10k-tick benchmark
-    python src/scenario_sweeps.py --sweep co2_delayed.json  # single sweep
+    python -m src.orchestration.scenario_sweeps                      # all frame scenarios
+    python -m src.orchestration.scenario_sweeps --ticks 10000        # 10k-tick benchmark
+    python -m src.orchestration.scenario_sweeps --sweep co2_delayed  # one scenario, by id
 """
 
 from __future__ import annotations
@@ -138,6 +138,23 @@ FESTLEGUNGEN: tuple[Festlegung, ...] = (
 #: einstellt und dann einen Vergleich startet, sieht davon nichts wieder.
 UNBEACHTET: tuple[Festlegung, ...] = (
     Festlegung(
+        "abweichungen",
+        None,
+        "Abweichungen von einem Szenario gelten im Vergleich nicht: Er rechnet jedes "
+        "Rahmenszenario unverändert — sonst verglichen Sie Ihre Änderung mit sich selbst.",
+    ),
+    Festlegung(
+        "preisstrategie",
+        None,
+        "Jedes Szenario rechnet im Vergleich mit seiner eigenen Preisstrategie.",
+    ),
+    Festlegung(
+        "modellannahmen",
+        None,
+        "Eigene Modellannahmen gelten im Vergleich nicht: Er rechnet jedes Rahmenszenario "
+        "mit den ausgelieferten Werten für Preisbildung, Sättigung und Bevölkerung.",
+    ),
+    Festlegung(
         "apply_custom_overrides",
         None,
         "Jedes Szenario gilt unvermischt aus seiner eigenen Datei. Eigene "
@@ -229,12 +246,6 @@ def vorgegebene_felder() -> dict[str, Festlegung]:
 #: P4.2 ausdrücklich nicht mitentschieden. Diese Konstante beschreibt deshalb
 #: weiterhin, was auf dem Vergleichspfad passiert.
 SZENARIOTEXT_NUTZT_LLM = True
-
-
-def festlegung_fuer(feld: str) -> Festlegung | None:
-    """Die Festlegung zu einem Entwurfsfeld — oder `None`, wenn es frei ist."""
-
-    return vorgegebene_felder().get(feld)
 
 
 def sweep_metadata_args(*, llm_narrative: bool = True) -> RunArgs:
@@ -340,6 +351,35 @@ def rahmenszenarien(directory: Path | None = None) -> list[SweepConfig]:
     return [config for config in load_all_sweep_configs(directory) if config.art == "rahmen"]
 
 
+def _gleicher_verlauf(override: Any, verlauf: Any) -> bool:
+    """Ob eine Überschreibung einen Verlauf aus Startwert und Regeln unverändert ließe."""
+
+    from src.models.property_models import TrajectoryRule
+
+    if override.baseline is not None and override.baseline != verlauf.baseline:
+        return False
+    if override.rules is None:
+        return True
+    return [TrajectoryRule.model_validate(regel) for regel in override.rules] == verlauf.rules
+
+
+def _stufen_als_regeln(traj: Any) -> Any:
+    """Eine Stufenfunktion als Startwert mit «springt auf»-Regeln — derselbe Verlauf."""
+
+    from src.models.property_models import BaselineTrajectory, SetEffect, TrajectoryRule
+
+    punkte = sorted(traj.points, key=lambda punkt: punkt.tick)
+    if not punkte:
+        return BaselineTrajectory()
+    return BaselineTrajectory(
+        baseline=punkte[0].value,
+        rules=[
+            TrajectoryRule(active_from_tick=punkt.tick, effect=SetEffect(value=punkt.value))
+            for punkt in punkte
+        ],
+    )
+
+
 def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
     """Apply sweep overrides to an initial SimulationState.
 
@@ -348,6 +388,8 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
     - Overrides initial factor states
     - Sets max_ticks from sweep config
     """
+    from src.models.property_models import StepFunctionTrajectory
+
     state.clock.max_ticks = sweep.max_ticks
 
     prop_lookup: dict[str, Any] = {}
@@ -361,6 +403,24 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
         traj = prop.trajectory
         if traj is None:
             continue
+
+        # **Eine Stufenfunktion wird zu Startwert plus Regeln** (P7.13, gemessen am
+        # 2026-09-15). Sie hat weder `baseline` noch `rules`, und die beiden
+        # Prüfungen unten übersprangen eine Überschreibung darauf still: Eine
+        # Abweichung an der Bevölkerung kam nicht an, und das Artefakt nannte sie
+        # trotzdem. Die Umwandlung ist verlustfrei — `resolve_trajectory` nimmt bei
+        # einer Stufenfunktion den ersten Punkt als Startwert und ab jedem Punkt
+        # dessen Wert, und genau das tut eine «springt auf»-Regel.
+        if isinstance(traj, StepFunctionTrajectory):
+            als_regeln = _stufen_als_regeln(traj)
+            # **Nur wenn sich wirklich etwas ändert.** Jeder Entwurf mit «Eigene Werte
+            # anwenden» trägt die Punkte als Regeln; umgewandelt würde dann die
+            # Darstellung im Zustand wechseln, ohne dass sich ein Wert bewegt — und
+            # der Wirkungstest sähe den Schalter wirken, wo er nichts tut.
+            if _gleicher_verlauf(override, als_regeln):
+                continue
+            traj = als_regeln
+            prop.trajectory = traj
 
         if override.baseline is not None:
             if hasattr(traj, "baseline"):
@@ -395,10 +455,79 @@ def apply_sweep_overrides(state: Any, sweep: SweepConfig) -> Any:
     if sweep.preisstrategie is not None:
         _preisstrategie_setzen(state, sweep.preisstrategie)
 
+    if sweep.modellannahmen:
+        _modellannahmen_setzen(state, sweep.modellannahmen)
+
     if sweep.base_price is not None:
         state.properties.price_model.base_price = sweep.base_price
 
     return state
+
+
+def _modellannahmen_setzen(state: Any, annahmen: dict[str, Any]) -> None:
+    """Preisbildung, Sättigung und Segmente dieser Welt in den Zustand (P7.13-U13.5).
+
+    **Die Preisbildung steht an zwei Stellen, und beide werden gesetzt.** Die
+    Engine liest sie aus der `booking_yield_feedback`-Regel und fällt erst ohne
+    Regel auf `market_feedback` zurück (`resolve_market_feedback_config`). Nur
+    `market_feedback` zu setzen hätte eine Ziel-Auslastung von 0,45 still bei 0,37
+    rechnen lassen — mit «abgeleitet» im Artefakt. `save_market_feedback_to_file`
+    schreibt aus demselben Grund beide.
+
+    **Jeder Wert läuft durch sein Modell** (`MarketFeedbackConfig`,
+    `SaturationConfig`, `IndividualProperty`): Ein ungültiger scheitert dort, nicht
+    an einer zweiten Prüfung hier. Ein unbekannter Wert oder ein unbekanntes
+    Segment scheitert laut.
+    """
+
+    from src.models.property_models import (
+        IndividualProperty,
+        MarketFeedbackConfig,
+        SaturationConfig,
+    )
+
+    props = state.properties
+
+    preis = dict(annahmen.get("market_feedback") or {})
+    if preis:
+        erlaubt = set(MarketFeedbackConfig.model_fields) - {"strategie", "enabled"}
+        unbekannt = sorted(set(preis) - erlaubt)
+        if unbekannt:
+            raise ValueError(f"Unbekannte Werte der Preisbildung: {unbekannt}")
+        neu = MarketFeedbackConfig.model_validate({**props.market_feedback.model_dump(), **preis})
+        regeln = []
+        for regel in props.market_rules:
+            if regel.effect.get("type") == BOOKING_YIELD_FEEDBACK:
+                effekt = {**regel.effect, **{k: getattr(neu, k) for k in preis}}
+                regel = regel.model_copy(update={"effect": effekt})
+            regeln.append(regel)
+        props = props.model_copy(update={"market_feedback": neu, "market_rules": regeln})
+
+    saettigung = dict(annahmen.get("saturation") or {})
+    if saettigung:
+        unbekannt = sorted(set(saettigung) - set(SaturationConfig.model_fields))
+        if unbekannt:
+            raise ValueError(f"Unbekannte Werte der Sättigung: {unbekannt}")
+        neu_s = SaturationConfig.model_validate({**props.saturation.model_dump(), **saettigung})
+        props = props.model_copy(update={"saturation": neu_s})
+
+    segmente = dict(annahmen.get("population") or {})
+    if segmente:
+        vorhanden = {p.id: p for p in props.individual_properties}
+        unbekannt = sorted(set(segmente) - set(vorhanden))
+        if unbekannt:
+            raise ValueError(f"Unbekannte Segmente der Bevölkerung: {unbekannt}")
+        erlaubt = set(IndividualProperty.model_fields) - {"id", "type"}
+        neue = []
+        for prop in props.individual_properties:
+            werte = dict(segmente.get(prop.id) or {})
+            falsch = sorted(set(werte) - erlaubt)
+            if falsch:
+                raise ValueError(f"Unbekannte Werte am Segment {prop.id!r}: {falsch}")
+            neue.append(IndividualProperty.model_validate({**prop.model_dump(), **werte}))
+        props = props.model_copy(update={"individual_properties": neue})
+
+    state.properties = props
 
 
 def _preisstrategie_setzen(state: Any, strategie: str) -> None:
@@ -477,15 +606,6 @@ def evaluate_milestone_on_state(state: Any, ms: MilestoneCheck) -> dict[str, Any
                 result["passed"] = True
 
     return result
-
-
-def evaluate_milestones(
-    state: Any,
-    milestones: list[MilestoneCheck],
-    tick: int,
-) -> list[dict[str, Any]]:
-    """Evaluate milestones that are due at this tick."""
-    return [evaluate_milestone_on_state(state, ms) for ms in milestones if ms.tick == tick]
 
 
 class KeinSprachmodell:

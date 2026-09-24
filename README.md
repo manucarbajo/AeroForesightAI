@@ -45,7 +45,7 @@ python src/run_simulation.py --mock-llm --rounds 10 --quiet
 python src/run_simulation.py --rounds 30 --model llama3.2 --temperature 0.7
 ```
 
-Outputs landen unter `outputs/<run_id>/` (z. B. `outputs/run_20260614T112808Z/`). Checkpoints: `outputs/<run_id>/checkpoints/<run_id>/tick_0005.json`, …
+Outputs landen unter `outputs/<run_id>/` (z. B. `outputs/run_20260614T112808Z/`). **Die Umgebungsvariable `AF_AUSGABE` verlegt dieses Verzeichnis** — für CLI, Dashboard und jeden Unterprozess; die Test-Suite setzt sie auf ein Temp-Verzeichnis, damit kein Testlauf in `outputs/` landet. Checkpoints: `outputs/<run_id>/checkpoints/<run_id>/tick_0005.json`, …
 
 ### Dashboard (Leitstand)
 
@@ -62,7 +62,9 @@ Seit P1.5 ist das Dashboard ein **Leitstand**: ein Bildschirm mit fünf Bereiche
 statt eines Stapels Seiten — links das Bedienfeld (was eingestellt ist, der
 Preflight, der Start), in der Mitte die Population zum gewählten Tick, rechts
 Kennzahlen, Verläufe und Konsole, unten die Zeitleiste mit Abspielsteuerung,
-oben Zustand, Lauf-Auswahl und die globalen Aktionen. Eingestellt wird seit P1.6
+oben der Zustand und, wo sie passen, Laufwahl und Aktionen: Den Lauf wählt man im
+Leitstand und unter «Ergebnisse» über einen Dialog mit Suche und Filter, gesichert
+wird im Einrichten. Seit September 2026 hat nur der Leitstand diese Seitenzonen. Eingestellt wird seit P1.6
 im eigenen Bereich **Einrichten**, der die volle Breite bekommt — dort steht der
 geführte Ablauf aus P1.1 mit den Presets als Kartenraster. Kopfzeile und Zeitleiste bleiben stehen, die drei
 Bereiche dazwischen rollen jeder für sich; auf schmalen Fenstern weichen die
@@ -80,8 +82,7 @@ solchen markierten **Beispieldatensatz**, damit die Ansicht nicht leer bleibt. E
 wird nirgends gespeichert und verschwindet mit dem ersten echten Lauf.
 
 Gebaut mit Plotly Dash. Landingpage und Dashboard teilen sich Server und
-Design-Tokens. Die abgelöste Streamlit-Oberfläche liegt zum Vergleich unter
-`dashboard/legacy_streamlit/` und wird nach der Abnahme entfernt.
+Design-Tokens.
 
 Details: [`dashboard/README.md`](dashboard/README.md)
 
@@ -203,7 +204,7 @@ python src/run_simulation.py --studio
 
 ## Deployment
 
-Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und `docker-compose.yml` sind ein Ausgangspunkt (Dashboard + Ollama als Services) — noch nicht produktionsfertig verkabelt (kein TLS/Reverse Proxy, keine Persistenzstrategie für `outputs/`).
+Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und `docker-compose.yml` sind ein Ausgangspunkt (Dashboard + Ollama als Services) — noch nicht produktionsfertig verkabelt (kein TLS/Reverse Proxy, keine Persistenzstrategie für `outputs/`). Der Container startet die Dash-App auf Port 8511 — Landingpage auf `/`, Dashboard auf `/app/`.
 
 ## Projektstruktur
 
@@ -217,9 +218,8 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 │   ├── run_browser.py               # Lauf-Auswahl, Artefakte laden
 │   ├── consistency_report.py        # Konsistenz-Checks
 │   ├── web/                         # Plotly-Dash-Leitstand (aktiv): shell, theme,
-│   │                                #   timeline, status, run_data, views/,
+│   │                                #   timeline, status, run_data, lauf_wahl, views/,
 │   │                                #   pages/ (launch=Bedienfeld, setup, runs, docs)
-│   ├── legacy_streamlit/            # abgelöste Streamlit-UI (nur Vergleich)
 │   └── README.md
 ├── docs/                            # Technische Doku (CIB-Methodik, Agent-Profile, Workflow)
 │   └── research/                    # Fachliteratur, Studien
@@ -235,8 +235,7 @@ Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und 
 │   ├── reporting/                   # output_writer/, run_scenario_generator/, figure_generator/, protocol_generator.py, state_explorer.py
 │   ├── llm/                          # LLM-Backend-Auswahl, Ollama-Client
 │   ├── models/                       # Pydantic-Datenmodelle (State, Events, Agenten, …)
-│   ├── prompts/                      # Prompt-Templates pro Agent
-│   └── legacy/                       # Abgelöste Komponenten (z. B. CIBExtractorNode)
+│   └── prompts/                      # Prompt-Templates pro Agent
 ├── tests/
 └── outputs/<run_id>/                # Laufzeit-Artefakte (gitignored)
     ├── final_narrative.md           # Lesbarer Simulationsbericht
@@ -306,9 +305,9 @@ einer Konsole trat das nie auf, weshalb es lange niemandem aufgefallen ist.
 
 **Pro Run** (Hauptweg): `outputs/<run_id>/figures/` — 6 PNGs + `manifest.json`
 
-- Automatisch im Dashboard (Checkbox «Figures nach Lauf erzeugen», Standard: an)
+- Automatisch im Dashboard (Schalter «Auswertungsgrafiken erzeugen», Standard: an)
 - Oder manuell: `python -m src.reporting.figure_generator.cli --run-only <run_id>`
-- Im Dashboard: Ansicht **Figures** unter «Ergebnisse»
+- Im Dashboard: Ansicht **Diagramme** unter «Ergebnisse»
 
 Workflow und Sweep-Läufe: [`docs/scenario_runs.md`](docs/scenario_runs.md)
 

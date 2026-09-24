@@ -51,6 +51,32 @@ ABSOLUTE_POLICY_COLUMNS = {"carbon_tax_level", "airport_fee"}
 COST_COLUMNS = ["maintenance_cost_index", "staff_cost_index", "fuel_price_change"]
 
 
+def _reihenname(spalte: str) -> str:
+    """Der Name einer Systemgröße für Legende und Hover — nie die Kennung (P7.1-U1.5)."""
+
+    from dashboard.config_catalog import PROPERTY_LABELS
+
+    return PROPERTY_LABELS.get(spalte, spalte.replace("_", " "))
+
+
+def _achse(wort: str, spalten: list[str]) -> str:
+    """Ein Achsentitel mit den Einheiten der Reihen, **die wirklich auf ihr liegen**.
+
+    Bis zum 2026-09-13 stand an der linken Achse von «Die Instrumente»
+    «Betrag (EUR/t o. ä.)» — eine geratene Einheit für zwei verschiedene Größen
+    (CO₂-Steuer in EUR/t, Flughafengebühr in EUR). Jetzt steht dort, was es ist.
+    """
+
+    from dashboard.config_catalog import property_einheit
+
+    einheiten: list[str] = []
+    for spalte in spalten:
+        einheit = property_einheit(spalte)
+        if einheit and einheit not in einheiten:
+            einheiten.append(einheit)
+    return f"{wort} ({' · '.join(einheiten)})" if einheiten else wort
+
+
 # --- Datenzugriff ----------------------------------------------------------
 
 
@@ -79,7 +105,7 @@ def _read_ticks(run_dir: Path):
     return pd.DataFrame(rows) if rows else None
 
 
-def _graph(fig, height: int = 420, *, mode: str = theme.LIGHT) -> dcc.Graph:
+def _graph(fig, height: int = theme.HOEHE_AUSSAGE, *, mode: str = theme.LIGHT) -> dcc.Graph:
     theme.style_figure(fig, height=height, mode=mode)
     return dcc.Graph(figure=fig, config=theme.GRAPH_CONFIG)
 
@@ -183,7 +209,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
 
     ticks = _read_ticks(run_dir)
     if ticks is None:
-        return ui.alert("Keine Marktdaten verfügbar.", "info")
+        return ui.hinweis("Keine Marktdaten verfügbar.", "info")
 
     price = ticks.get("market_price_after_feedback_eur")
     if price is None:
@@ -200,7 +226,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
         go.Scatter(
             x=ticks["tick"],
             y=price,
-            name="Ticketpreis (EUR)",
+            name="Ticketpreis (€)",
             line=dict(color=theme.PRICE, width=2.5),
         ),
         secondary_y=False,
@@ -214,7 +240,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
         ),
         secondary_y=True,
     )
-    fig.update_yaxes(title_text="Ticketpreis (EUR)", secondary_y=False)
+    fig.update_yaxes(title_text="Ticketpreis (€)", secondary_y=False)
     fig.update_yaxes(title_text="Buchungsrate (0–1)", range=[0, 1.05], secondary_y=True)
     fig.update_xaxes(title_text="Tick")
     # Der Titel bleibt kurz, **auch mit Band**: Die Zahl der Läufe steht in der
@@ -237,15 +263,13 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
     if hat_band:
         blocks.insert(
             1,
-            ui.note(
-                f"Die Linien zeigen **diesen einen** Lauf. Die getönten Flächen zeigen, "
-                f"wo **80 Prozent der {int(baender['laeufe'])} Wiederholungen** dieses "
-                "Szenarios lagen — zwischen dem 10. und dem 90. Perzentil je Tick. "
-                "**Nicht Minimum und Maximum:** Deren Ränder wandern mit jeder weiteren "
-                "Wiederholung nach außen, ein solches Band sähe bei fünfzig Läufen "
-                "breiter aus als bei zehn, ohne dass sich am Modell etwas geändert "
-                f"hätte. Das Band reicht so weit wie der kürzeste Lauf (Tick "
-                f"{int(baender.get('ticks') or 0)})."
+            ui.hinweis(
+                f"Die Linien zeigen **diesen einen** Lauf. Die Flächen zeigen, wo "
+                f"**80 Prozent der {int(baender['laeufe'])} Wiederholungen** lagen — das "
+                "10. bis 90. Perzentil je Tick, **nicht Minimum und Maximum**: deren "
+                "Ränder wandern mit jeder Wiederholung. Das Band endet bei Tick "
+                f"{int(baender.get('ticks') or 0)}, beim kürzesten Lauf.",
+                "kontext",
             ),
         )
 
@@ -255,7 +279,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
             go.Bar(
                 x=ticks["tick"],
                 y=ticks["cost_pressure"],
-                name="Kostendruck (Base)",
+                name="Kostendruck",
                 marker_color=theme.NAVY[800],
             )
         )
@@ -263,7 +287,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
             go.Bar(
                 x=ticks["tick"],
                 y=ticks["provider_markup"],
-                name="Airline-Marge (Markup)",
+                name="Anbieter-Marge",
                 marker_color=theme.NAVY[300],
             )
         )
@@ -276,6 +300,7 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
                         mode=mode,
                         barmode="stack",
                         title="Woraus der Preis sich zusammensetzt",
+                        yaxis_title="Betrag (€)",
                     ),
                     mode=mode,
                 ),
@@ -287,6 +312,8 @@ def _view_nachfrage(run_dir: Path, mode: str = theme.LIGHT):
 
 
 def _booking_rate_lines(frame, group_column: str, title: str, mode: str = theme.LIGHT):
+    from dashboard.config_catalog import segment_name
+
     fig = go.Figure()
     for value in frame[group_column].unique():
         subset = frame[frame[group_column] == value]
@@ -295,7 +322,9 @@ def _booking_rate_lines(frame, group_column: str, title: str, mode: str = theme.
                 x=subset["tick"],
                 y=subset["booking_rate"],
                 mode="lines+markers",
-                name=str(value).replace("_", " ").title(),
+                # Segmente heißen nach ihrem Namen (P7.1-U1.5), Altersgruppen
+                # sind schon eine Spanne und bleiben, wie sie sind.
+                name=segment_name(str(value)) if group_column == "segment_id" else str(value),
             )
         )
     theme.style_figure(
@@ -303,7 +332,7 @@ def _booking_rate_lines(frame, group_column: str, title: str, mode: str = theme.
         mode=mode,
         title=title,
         xaxis_title="Tick",
-        yaxis_title="Buchungsrate",
+        yaxis_title="Buchungsrate (0–1)",
         yaxis_range=[0, 1.05],
     )
     return fig
@@ -321,7 +350,7 @@ def _view_politik(run_dir: Path, mode: str = theme.LIGHT):
 
     properties = _read_csv(run_dir / "timeseries" / "properties.csv")
     if properties is None:
-        return ui.alert("Keine Property-Zeitreihen vorhanden.", "info")
+        return ui.hinweis("Keine Property-Zeitreihen vorhanden.", "info")
 
     blocks: list = [html.H3("Was die Politik bewirkt", className=f"{ui.H3} mb-3")]
 
@@ -330,11 +359,13 @@ def _view_politik(run_dir: Path, mode: str = theme.LIGHT):
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         for column in instrumente:
             fig.add_trace(
-                go.Scatter(x=properties["tick"], y=properties[column], name=column),
+                go.Scatter(x=properties["tick"], y=properties[column], name=_reihenname(column)),
                 secondary_y=column not in ABSOLUTE_POLICY_COLUMNS,
             )
-        fig.update_yaxes(title_text="Betrag (EUR/t o. ä.)", secondary_y=False)
-        fig.update_yaxes(title_text="Anteil (0–1)", secondary_y=True)
+        betraege = [c for c in instrumente if c in ABSOLUTE_POLICY_COLUMNS]
+        anteile = [c for c in instrumente if c not in ABSOLUTE_POLICY_COLUMNS]
+        fig.update_yaxes(title_text=_achse("Betrag", betraege), secondary_y=False)
+        fig.update_yaxes(title_text=_achse("Anteil", anteile), secondary_y=True)
         fig.update_xaxes(title_text="Tick")
         blocks.append(
             ui.card(
@@ -347,14 +378,17 @@ def _view_politik(run_dir: Path, mode: str = theme.LIGHT):
             )
         )
     else:
-        blocks.append(ui.alert("Keine Policy-Properties gefunden.", "info"))
+        blocks.append(ui.hinweis("Keine Policy-Properties gefunden.", "info"))
 
     kosten = [c for c in properties.columns if c in COST_COLUMNS]
     if kosten:
         fig = go.Figure()
         for column in kosten:
-            fig.add_trace(go.Scatter(x=properties["tick"], y=properties[column], name=column))
+            fig.add_trace(
+                go.Scatter(x=properties["tick"], y=properties[column], name=_reihenname(column))
+            )
         fig.update_xaxes(title_text="Tick")
+        fig.update_yaxes(title_text=_achse("Wert", kosten))
         blocks.append(
             ui.card(
                 _graph(
@@ -390,7 +424,7 @@ def _view_wer(run_dir: Path, mode: str = theme.LIGHT):
             class_name="p-2",
         )
         if population is not None and not population.empty
-        else ui.alert("Keine Profil-Segment-Daten.", "info")
+        else ui.hinweis("Keine Profil-Segment-Daten.", "info")
     )
     right = (
         ui.card(
@@ -402,7 +436,7 @@ def _view_wer(run_dir: Path, mode: str = theme.LIGHT):
             class_name="p-2",
         )
         if ages is not None and not ages.empty
-        else ui.alert("Keine Altersgruppen-Daten.", "info")
+        else ui.hinweis("Keine Altersgruppen-Daten.", "info")
     )
     return _panel(
         html.H3("Wer noch fliegt", className=f"{ui.H3} mb-3"),
@@ -437,7 +471,20 @@ def sweep_geschwister(run_dir: Path) -> list[Path]:
 
 
 def _szenario_name(run_dir: Path) -> str:
-    return run_dir.name.removeprefix("sweep_").replace("_", " ").title()
+    """Der Name des Rahmens, unter dem ein Lauf stand — nicht der seines Ordners.
+
+    **Der Lauf nennt ihn selbst** (`run_metadata.json` → `rahmen.name`, seit
+    P2.0-B). Bis zum 2026-09-13 entstand der Name aus dem Verzeichnis: «Co2
+    Delayed» statt «CO₂-Verzögerung». Nur ein Lauf ohne diese Angabe fällt auf
+    den Ordner zurück.
+    """
+
+    try:
+        metadaten = json.loads((run_dir / "run_metadata.json").read_text(encoding="utf-8"))
+        name = (metadaten.get("rahmen") or {}).get("name")
+    except (OSError, ValueError, AttributeError):
+        name = None
+    return str(name) if name else run_dir.name.removeprefix("sweep_").replace("_", " ")
 
 
 def _endlage(run_dir: Path) -> str:
@@ -493,7 +540,7 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
     if len(geschwister) < 2:
         return _panel(
             html.H3("Die Szenarien nebeneinander", className=f"{ui.H3} mb-3"),
-            ui.alert(
+            ui.hinweis(
                 "Dieser Lauf steht allein — ein Vergleich braucht mehr als einen. "
                 "Über «Einrichten → Szenario-Vergleich starten» werden alle "
                 "hinterlegten Szenarien nacheinander gerechnet und landen hier "
@@ -507,7 +554,9 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
                             "Faktorlage am Ende dieses Laufs",
                             className=f"{ui.CAPTION} mb-1",
                         ),
-                        html.P(_endlage(run_dir), className="font-body text-sm af-text-body"),
+                        html.P(
+                            _endlage(run_dir), className=f"font-body {ui.BESCHRIFTUNG} af-text-body"
+                        ),
                     ]
                 ),
                 class_name="mt-4",
@@ -517,7 +566,7 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
     blocks: list = [html.H3("Die Szenarien nebeneinander", className=f"{ui.H3} mb-3")]
     for spalte, titel, achse in (
         ("booking_rate", "Buchungsrate je Szenario", "Buchungsrate (0–1)"),
-        ("market_price_after_feedback_eur", "Ticketpreis je Szenario", "Ticketpreis (EUR)"),
+        ("market_price_after_feedback_eur", "Ticketpreis je Szenario", "Ticketpreis (€)"),
     ):
         fig = _vergleichskurven(geschwister, spalte, titel, achse, mode)
         if fig is not None:
@@ -538,12 +587,12 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
                                         [
                                             html.Td(
                                                 _szenario_name(p),
-                                                className="pr-4 py-1 font-body text-sm "
+                                                className=f"pr-4 py-1 font-body {ui.BESCHRIFTUNG} "
                                                 "af-text font-semibold align-top",
                                             ),
                                             html.Td(
                                                 _endlage(p),
-                                                className="py-1 font-body text-sm af-text-body",
+                                                className=f"py-1 font-body {ui.BESCHRIFTUNG} af-text-body",
                                             ),
                                         ]
                                     )
@@ -560,7 +609,7 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
     blocks.append(
         html.P(
             f"Verglichen werden alle {len(geschwister)} Szenario-Läufe unter "
-            "«outputs/sweeps/» — auch solche aus früheren Durchläufen.",
+            "aus einem Szenario-Vergleich — auch aus früheren Durchläufen.",
             className=f"{ui.CAPTION} mt-3",
         )
     )
@@ -577,18 +626,18 @@ def _satz_hinweis(figures) -> object:
     """
 
     if figures.herkunft == run_browser.GERATEN:
-        return ui.alert(
+        return ui.hinweis(
             "Zu diesen Bildern gibt es kein Manifest. Die Titel sind aus den "
             "Dateinamen abgeleitet, und ob der Satz vollständig ist, lässt sich "
-            "nicht sagen. «Figures neu erzeugen» stellt einen benannten Satz her.",
-            "warning",
+            "nicht sagen. «Diagramme neu erzeugen» stellt einen benannten Satz her.",
+            "warnung",
         )
     if figures.fehlend:
         fehlt = ", ".join(figures.fehlend)
-        return ui.alert(
+        return ui.hinweis(
             f"Das Manifest nennt {len(figures.fehlend)} Bild(er), die nicht "
             f"vorliegen: {fehlt}. Der Satz ist unvollständig.",
-            "warning",
+            "warnung",
         )
     return None
 
@@ -597,9 +646,9 @@ def png_gallery(run_dir: Path) -> html.Div:
     figures = list_run_figures(run_dir)
     if not figures:
         return ui.empty_state(
-            "Noch keine PNG-Figures für diesen Run.",
-            hint="Aktivieren Sie «Figures nach Lauf erzeugen» beim Start oder klicken Sie "
-            "oben auf «Figures neu erzeugen».",
+            "Noch keine PNG-Diagramme für diesen Lauf.",
+            hint="Aktivieren Sie «Auswertungsgrafiken erzeugen» beim Start oder klicken Sie "
+            "oben auf «Diagramme neu erzeugen».",
             icon_name="image",
         )
 
@@ -615,7 +664,7 @@ def png_gallery(run_dir: Path) -> html.Div:
                 (
                     html.Div(html.Img(src=url, className="w-full rounded"), className="af-paper")
                     if url
-                    else ui.alert("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warning")
+                    else ui.hinweis("Datei liegt außerhalb des Outputs-Verzeichnisses.", "warnung")
                 ),
                 class_name="mb-4",
             )
@@ -632,7 +681,7 @@ def _view_png(run_dir: Path, mode: str = theme.LIGHT):
                     className=f"{ui.CAPTION} break-all",
                 ),
                 ui.button(
-                    "Figures neu erzeugen",
+                    "Diagramme neu erzeugen",
                     id="figures-regenerate-btn",
                     variant="secondary",
                     icon_name="refresh",
@@ -666,7 +715,7 @@ def _render_view(tab: str | None, run_dir: Path, mode: str = theme.LIGHT):
     try:
         return view(run_dir, mode)
     except Exception as exc:  # noqa: BLE001 - unvollständige Runs kommen vor
-        return ui.alert(f"Auswertung fehlgeschlagen: {exc}", "error")
+        return ui.hinweis(f"Auswertung fehlgeschlagen: {exc}", "fehler")
 
 
 def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
@@ -706,5 +755,7 @@ def register_callbacks(app) -> None:
         try:
             figures = generate_figures_for_run(run_dir)
         except Exception as exc:  # noqa: BLE001 - matplotlib-Fehler gehören in die UI
-            return no_update, ui.alert(f"Figure-Erzeugung fehlgeschlagen: {exc}", "error")
-        return png_gallery(run_dir), ui.alert(f"{len(figures)} Figures erzeugt.", "success")
+            return no_update, ui.hinweis(
+                f"Die Diagramme ließen sich nicht erzeugen: {exc}", "fehler"
+            )
+        return png_gallery(run_dir), ui.hinweis(f"{len(figures)} Diagramme erzeugt.", "erfolg")

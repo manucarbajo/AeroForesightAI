@@ -9,12 +9,22 @@ wirken also über den einzelnen Lauf hinaus. Seit P1.9-W3.2 stehen sie deshalb
 hinter einer Rückfrage (`controls.write_action`), und ihre Reichweite steht als
 Hinweis darunter. Dieses Modul wird seit W3.1 im Bereich «Modell» gerendert,
 nicht mehr in der Schrittfolge.
+
+**Was hier eingetragen wird, wirkt erst gespeichert** (P7.13-U13.5). Gemessen am
+2026-09-14 erreichte eine eingetragene Ziel-Auslastung keinen Lauf:
+`prepare_simulation_state` liest Preisbildung, Sättigung und Bevölkerung nicht
+aus dem Entwurf. Von Haiko entschieden, dass es so bleibt und die Oberfläche es
+sagt — je Abschnitt ein fester Hinweis. Welche Werte ungespeichert sind, zeigt
+erst der Änderungszähler aus P7.7-U7.1; eine Anzeige beim Tippen bräuchte einen
+Callback bei jeder Änderung am Entwurf, und die Klickdauer liegt schon über
+ihrem Deckel (P7.11).
 """
 
 from __future__ import annotations
 
 from dash import dcc, html
 
+from dashboard.config_catalog import segment_name
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
 
@@ -26,6 +36,8 @@ _DISTRIBUTION_LABELS = {
     "wtp_eur": "Zahlungsbereitschaft (in Euro)",
     "environmental_awareness": "Umweltbewusstsein",
 }
+#: Dieselben Namen für den Schritt «Modellannahmen» (P7.13-U13.5) — eine Quelle.
+VERTEILUNG_NAMEN = _DISTRIBUTION_LABELS
 
 _MODIFIERS = [
     ("wtp_multiplier", 1.0),
@@ -43,6 +55,23 @@ _FEEDBACK_FINE = [
 ]
 
 
+#: Der Satz, den jeder Abschnitt mit Preisbildung, Sättigung oder Bevölkerung trägt
+#: (P7.13-U13.5). **Die Reichweite nennt er nicht** — sie steht unter jedem
+#: Speicher-Knopf aus `controls.REICHWEITE`, und zwei Fassungen desselben Satzes
+#: liefen auseinander.
+NUR_GESPEICHERT = "Was Sie hier nur eintragen, rechnet kein Lauf mit."
+
+
+def _wirkt_erst_gespeichert(knopf: str) -> object:
+    """Der feste Hinweis je Abschnitt, mit dem Knopf, der speichert."""
+
+    return ui.hinweis(
+        f"Wirkt erst, wenn Sie «{knopf}» klicken. {NUR_GESPEICHERT}",
+        "info",
+        class_name="mb-4",
+    )
+
+
 def _market_feedback(draft: dict) -> html.Div:
     feedback = draft.get("market_feedback_edit") or {}
     prefix = "market_feedback_edit"
@@ -56,9 +85,9 @@ def _market_feedback(draft: dict) -> html.Div:
                 min=0.05,
                 max=1.0,
                 step=0.01,
-                class_name="max-w-sm",
+                breite="feld",
             ),
-            className="mt-5",
+            className="mt-4",
         ),
         ui.expert(
             ui.grid(
@@ -83,7 +112,7 @@ def _market_feedback(draft: dict) -> html.Div:
             frage="Das Preisverhalten wird als neuer Standard in die "
             "Konfigurationsdatei geschrieben.",
             icon_name="save",
-            class_name="mt-5",
+            class_name="mt-4",
         ),
     )
 
@@ -97,7 +126,7 @@ def _saturation(draft: dict) -> html.Div:
             min=0.0,
             max=1.0,
             step=0.05,
-            class_name="max-w-sm",
+            breite="feld",
         ),
         ui.expert(
             c.number(
@@ -106,7 +135,7 @@ def _saturation(draft: dict) -> html.Div:
                 min=0.0,
                 max=3.0,
                 step=0.1,
-                class_name="max-w-sm",
+                breite="feld",
             ),
             count=1,
             names="Wirkung auf die Buchungsneigung",
@@ -123,7 +152,7 @@ def _exclusive_hint(segment: dict) -> str | None:
 
 def _segment_card(index: int, segment: dict) -> html.Div:
     segment_id = segment.get("id", "")
-    label = segment_id.replace("_", " ").title()
+    label = segment_name(segment_id)
     path = f"population_edits.{index}"
     modifiers = segment.get("modifiers") or {}
     decay = segment.get("saturation_decay")
@@ -173,7 +202,7 @@ def _segment_card(index: int, segment: dict) -> html.Div:
                     ],
                     cols="sm:grid-cols-2",
                 ),
-                className="mt-5",
+                className="mt-4",
             ),
             count=1 + len(_MODIFIERS),
             title="Verhalten dieses Segments",
@@ -234,7 +263,8 @@ def _distribution_card(index: int, segment: dict) -> html.Details:
             kind,
             [{"label": name, "value": name} for name in DISTRIBUTIONS],
             key="distribution.kind",
-            class_name="max-w-xs mb-5",
+            class_name="mb-4",
+            breite="feld",
         ),
         ui.grid(*shape, *bounds, cols="sm:grid-cols-2 lg:grid-cols-4"),
         open=False,
@@ -268,8 +298,7 @@ def _add_segment_block() -> html.Div:
                     "Segment anlegen",
                     frage="Das neue Segment wird in die Konfigurationsdatei geschrieben.",
                     icon_name="add",
-                    variant="primary",
-                    class_name="pt-7",
+                    class_name="af-neben-feld",
                 ),
             ],
             className="flex items-start gap-4 flex-wrap",
@@ -291,6 +320,7 @@ def layout(draft: dict) -> html.Div:
                     "Wie der Anbieter auf die beobachtete Auslastung reagiert. Das ist der "
                     "Regelkreis, der Preis und Nachfrage im Lauf aneinander koppelt."
                 ),
+                _wirkt_erst_gespeichert("Als Standard speichern"),
                 _market_feedback(draft),
                 actions=ui.doc_link("preisbildung"),
             ),
@@ -300,6 +330,7 @@ def layout(draft: dict) -> html.Div:
                     "Wer gerade geflogen ist, bucht so schnell nicht wieder. Diese beiden "
                     "Werte bestimmen, wie stark dieser Effekt die Nachfrage bremst."
                 ),
+                _wirkt_erst_gespeichert("Bevölkerung als Standard speichern"),
                 _saturation(draft),
                 actions=ui.doc_link("saettigung"),
             ),
@@ -309,6 +340,7 @@ def layout(draft: dict) -> html.Div:
                     "Die Bevölkerung besteht aus Segmenten mit eigenem Verhalten. Der Anteil "
                     "bestimmt, wie stark ein Segment das Gesamtergebnis prägt."
                 ),
+                _wirkt_erst_gespeichert("Bevölkerung als Standard speichern"),
                 _add_segment_block(),
                 (
                     ui.grid(
@@ -316,7 +348,7 @@ def layout(draft: dict) -> html.Div:
                         cols="lg:grid-cols-2 2xl:grid-cols-3",
                     )
                     if booleans
-                    else ui.alert("Keine Segmente definiert.", "info")
+                    else ui.hinweis("Keine Segmente definiert.", "info")
                 ),
                 actions=ui.doc_link("kaufentscheidung"),
             ),
@@ -326,10 +358,11 @@ def layout(draft: dict) -> html.Div:
                     "Zahlungsbereitschaft und Umweltbewusstsein sind nicht bei allen gleich. "
                     "Hier legen Sie fest, wie breit sie über die Bevölkerung streuen."
                 ),
+                _wirkt_erst_gespeichert("Bevölkerung als Standard speichern"),
                 (
                     html.Div([_distribution_card(i, s) for i, s in distributions])
                     if distributions
-                    else ui.alert("Keine Verteilungen definiert.", "info")
+                    else ui.hinweis("Keine Verteilungen definiert.", "info")
                 ),
             ),
             c.write_action(
@@ -338,7 +371,6 @@ def layout(draft: dict) -> html.Div:
                 frage="Bevölkerung und Sättigung werden als neuer Standard in die "
                 "Konfigurationsdatei geschrieben.",
                 icon_name="save",
-                variant="primary",
                 class_name="mt-2",
             ),
         ]

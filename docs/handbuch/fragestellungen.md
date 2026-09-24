@@ -3,18 +3,18 @@ Bedienschritte kombinieren lassen.
 
 ## Was passiert bei einer hohen CO₂-Abgabe?
 
-Gehen Sie in **Rahmenbedingungen** und öffnen Sie die Systemgröße
-«CO₂-Steuer (EUR/t)». Setzen Sie eine Regel: ab Runde 5, Art «fährt hoch auf den
-Wert», Zielwert 200, über zehn Runden. Ein Sprung wäre unrealistisch, ein
-Hochfahren bildet eine angekündigte Verschärfung ab.
+Gehen Sie im Einrichten in den Schritt **Verläufe** und wählen Sie die CO₂-Abgabe.
+Setzen Sie einen Stützpunkt: ab Tick 5, Art «fährt hoch auf den Wert», Zielwert
+200, über zehn Ticks. Ein Sprung wäre unrealistisch, ein Hochfahren bildet eine
+angekündigte Verschärfung ab.
 
 Achten Sie darauf, dass **Eigene Werte anwenden** eingeschaltet ist, und setzen
 Sie unter **Technik** einen festen Zufallsstartwert. Rechnen Sie mindestens 30
 Ticks, damit die Rückkopplung Zeit hat zu wirken.
 
 Im Ergebnis schauen Sie zuerst in **Übersicht** auf Preis und Buchungsrate, dann
-in **Figures** unter «Segmente & Alter», welche Gruppen zuerst aussteigen. Wichtig
-zu wissen: Die Abgabe wirkt auf die Kaufentscheidung erst oberhalb von 50 EUR je
+in **Diagramme** unter «Segmente & Alter», welche Gruppen zuerst aussteigen. Wichtig
+zu wissen: Die Abgabe wirkt auf die Kaufentscheidung erst oberhalb von 50 € je
 Tonne, siehe [Wie eine Buchung entsteht](/doku/kaufentscheidung).
 
 ## Wie stark hängt das Ergebnis an der Airline-Strategie?
@@ -39,9 +39,10 @@ Sie eine größere Bevölkerung oder eine vorsichtigere Aussage.
 
 ## Welche Annahmenwelten unterscheiden sich überhaupt?
 
-Schalten Sie in **Lauf & Ablage** «Alle Szenarien vergleichen» ein. Jedes
-hinterlegte Preset wird einmal durchgerechnet, ohne Agenten-Dialog und damit
-schnell.
+Wählen Sie auf dem Einstieg von «Einrichten» **Szenario-Vergleich starten** —
+oder schalten Sie «Alle Szenarien vergleichen» hinter der «Feinabstimmung» des
+zweiten Schritts ein. Jedes Rahmenszenario wird einmal durchgerechnet, ohne
+Agenten-Dialog und damit schnell.
 
 Danach gehen Sie die Läufe in der Lauf-Auswahl durch und vergleichen in
 **Übersicht** die Endwerte. Presets, die zu ähnlichen Verläufen führen,

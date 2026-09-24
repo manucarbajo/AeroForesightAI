@@ -34,10 +34,17 @@ from typing import Callable
 
 from dash import ALL, Input, Output, State, ctx, dcc, html, no_update
 
-from dashboard.config_catalog import list_sweep_presets
+from dashboard.config_catalog import rahmenszenarien
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
-from dashboard.web.config_editor import delta, experiment, llm_pipeline, start_flow
+from dashboard.web.config_editor import (
+    delta,
+    experiment,
+    llm_pipeline,
+    modellannahmen,
+    start_flow,
+    verlaeufe,
+)
 from dashboard.web.state import STORE_ID, initial_draft_dict
 
 #: Welcher Schritt gerade offen ist. Als Store und nicht als Adresse, weil ein
@@ -85,8 +92,6 @@ SKIP = "wizard-skip"
 #: selben Callback wie der Knopf im Bedienfeld, mit derselben Prüfung und
 #: demselben `runner.start`.
 START = "wizard-start"
-#: Ebenso für das Sichern als Szenario.
-SAVE = "wizard-save"
 
 #: Sprungziel je Schritt der Schrittliste.
 JUMP = "wizard-jump"
@@ -148,15 +153,6 @@ class Step:
     body: Callable[[dict], object] | None = None
     #: `False` heißt: darf übersprungen werden, ohne dass etwas fehlt.
     required: bool = True
-    #: Wie breit der Rumpf werden darf (P1.9-W5.4). `"lesen"` deckelt ihn auf
-    #: das Lesemaß, `"voll"` lässt ihn die Spalte nehmen. **Der Unterschied ist
-    #: die Form des Inhalts, nicht seine Menge:** Ein Raster aus Auswahlfeldern
-    #: (Ausgangslage) und eine Reihe Karten (Szenario, Rechenmodus) brauchen
-    #: Breite und ordnen sich darin; ein kurzes Formular aus drei Feldern
-    #: bekommt sie geschenkt und wird davon nicht besser. Gemessen bei 1280:
-    #: «Wie weit reicht der Lauf?» stellte ein 245 px breites Feld in eine
-    #: 760 px breite Spalte — 32 %, der Rest war Leere neben einer Zahl.
-    breite: str = "voll"
 
 
 STEPS: list[Step] = [
@@ -168,6 +164,33 @@ STEPS: list[Step] = [
         "Die Faktorlage entsteht daraus im Lauf.",
         lambda draft: start_flow.scenario_step(draft, number=None),
     ),
+    # **Direkt nach der Wahl des Szenarios, und optional** (P7.13-U13.1, von
+    # Haiko entschieden am 2026-09-15). Die zeitlichen Verläufe — etwa die
+    # CO₂-Abgabe — ließen sich bis dahin nur im Bereich «Modell» einstellen, den
+    # die Schrittfolge nicht nennt. Hier gehören sie hin, weil sie das gewählte
+    # Szenario zeigen, und optional, weil das Szenario sie schon festlegt. Die
+    # drei Entscheidungen aus P1.1 stehen damit nicht mehr am Stück vorn; die
+    # Abkürzung zum Start erscheint nach der letzten von ihnen.
+    Step(
+        "verlaeufe",
+        "Verläufe",
+        "Wie sich die Größen, die das Szenario vorgibt, über den Lauf entwickeln.",
+        verlaeufe.layout,
+        required=False,
+    ),
+    # **Direkt nach «Verläufe», optional** (P7.13-U13.5, von Haiko entschieden am
+    # 2026-09-15): Preisbildung, Sättigung und Bevölkerung für diesen Lauf. Ein
+    # eigener Schritt statt eines Teils von «Verläufe», weil es Einzelwerte und
+    # Verteilungen sind, keine Kurven — und statt einer Wahl im Bereich «Modell»,
+    # weil der sonst wieder halb Experiment, halb Modell wäre (P1.9).
+    Step(
+        "modellannahmen",
+        "Modellannahmen",
+        "Wie der Anbieter preist, wie schnell Reisende gesättigt sind und wer bucht — "
+        "für diesen Lauf, ohne das Modell zu ändern.",
+        modellannahmen.layout,
+        required=False,
+    ),
     Step(
         "umfang",
         "Wie weit reicht der Lauf?",
@@ -175,7 +198,6 @@ STEPS: list[Step] = [
         "trotzdem kein Datum. Mehr Ticks heißt vor allem mehr Gelegenheiten für "
         "Rückkopplung zwischen Preis und Nachfrage.",
         lambda draft: start_flow.scope_step(draft, number=None),
-        breite="lesen",
     ),
     Step(
         "modus",
@@ -207,10 +229,9 @@ STEPS: list[Step] = [
     Step(
         "ablage",
         "Lauf & Ablage",
-        "Name, Beschreibung und was am Ende geschrieben wird.",
+        "Fragestellung und die Dateien, aus denen der Lauf liest.",
         experiment.layout,
         required=False,
-        breite="lesen",
     ),
     Step(
         "technik",
@@ -218,12 +239,6 @@ STEPS: list[Step] = [
         "Sprachmodell, Adresse, Zeitgrenzen.",
         llm_pipeline.layout,
         required=False,
-        # **Bewusst «voll», obwohl es ein kurzes Formular ist.** Mit dem
-        # Lesemaß wuchs der Schritt von 1,00 auf 1,08 Bildschirme — bezahlt
-        # für ein Schmälern der Eingabefelder, das niemandem hilft: Sein
-        # Fließtext ist über `af-mass` ohnehin gedeckelt, und seine Spalte
-        # füllt er auch so. Wo Lesbarkeit und Höhe sich widersprechen und die
-        # Lesbarkeit schon anderweitig gesichert ist, gewinnt die Höhe.
     ),
     Step(
         "start",
@@ -233,10 +248,28 @@ STEPS: list[Step] = [
     ),
 ]
 
-#: Ab hier ist alles Feinjustierung. Nach Schritt 3 sind die drei Entscheidungen
-#: aus P1.1 getroffen, und der Weg zum Start steht offen.
-LAST_REQUIRED = 2
 FINAL = len(STEPS) - 1
+#: Ab hier ist alles Feinjustierung: Nach diesem Schritt sind die drei
+#: Entscheidungen aus P1.1 getroffen, und der Weg zum Start steht offen.
+#: **Abgeleitet statt als Zahl**, seit ein optionaler Schritt zwischen ihnen steht
+#: (P7.13-U13.1).
+LAST_REQUIRED = max(i for i, step in enumerate(STEPS[:FINAL]) if step.required)
+
+
+def schritt(key: str) -> int:
+    """Wo ein Schritt steht, gefunden über seinen Schlüssel statt über eine Zahl.
+
+    Die Positionen haben sich mit W3.1, W3.3 und P2.0-C dreimal bewegt, und jedes
+    Mal musste eine Hand jede Zahl nachziehen, die einen Schritt meinte. Über den
+    Schlüssel bleibt eine Zuordnung richtig, wenn ein Schritt dazukommt. **Ein
+    unbekannter Schlüssel scheitert laut**: Ein still gewählter Rückfall sperrte
+    «Weiter» im falschen Schritt.
+    """
+
+    for index, step in enumerate(STEPS):
+        if step.key == key:
+            return index
+    raise KeyError(f"Keinen Schritt mit dem Schlüssel {key!r}")
 
 
 #: In welchem Schritt ein beanstandetes Feld eingestellt wird (P1.9-W2.2).
@@ -258,21 +291,22 @@ FINAL = len(STEPS) - 1
 #: brauchen — kostete aber acht Schrittbäume je Tastendruck, darunter die beiden
 #: mit zusammen 168 Bedienelementen.
 FELD_SCHRITT: dict[str, int] = {
-    "rounds": 1,
-    "seed": 2,
+    "rounds": schritt("umfang"),
+    "seed": schritt("modus"),
     "simulation_name": FINAL,
-    # Um eins nach vorn gerückt, seit «Ausgangslage» mit P2.0-C entfallen ist.
+    # **Über den Schlüssel, nicht als Zahl.** Bis zum 2026-09-15 standen hier
+    # Positionen, nach P2.0-C von Hand um eins nach vorn gerückt.
     # `test_web_wizard` gleicht die Tabelle gegen die wirklich gerenderten
-    # Felder ab — eine von Hand gepflegte Zahl läuft sonst still weg, und dann
-    # sperrt «Weiter» im falschen Schritt.
-    "model": 4,
+    # Felder ab — eine von Hand gepflegte Zahl lief sonst still weg, und dann
+    # sperrte «Weiter» im falschen Schritt.
+    "model": schritt("technik"),
     # **Mit P3.4 dazugekommen**, und der Wächter hat es gemeldet, nicht ein
     # Blick: Seit `validate_llm_settings` auch den Endpunkt prüft, kann ein
     # Befund an `base_url` hängen — ohne diese Zeile landete er auf «Prüfen &
     # Starten», also *nicht* in dem Schritt, in dem das Feld steht.
-    "base_url": 4,
-    "temperature": 4,
-    "max_tokens": 4,
+    "base_url": schritt("technik"),
+    "temperature": schritt("technik"),
+    "max_tokens": schritt("technik"),
 }
 
 #: Wohin ein Befund gehört, dessen Feld die Schrittfolge nicht kennt. «Prüfen &
@@ -328,7 +362,7 @@ def gate(draft: dict, step) -> tuple[bool, bool, object]:
         wohin = ", ".join(f"Schritt {s + 1} ({STEPS[s].title})" for s in anderswo)
         text = f"**Der Lauf kann so nicht starten.** Zu beheben in: {wohin}."
 
-    return bool(hier), True, ui.alert(text, "error")
+    return bool(hier), True, ui.hinweis(text, "fehler")
 
 
 def clamp(step) -> int:
@@ -469,7 +503,10 @@ def entry(draft: dict | None = None) -> html.Div:
     """
 
     weiter = touched(draft)
-    presets = len(list_sweep_presets())
+    # **Gezählt wird, was der Vergleich rechnet** (P7.2-U2.1): die Rahmen, nicht
+    # der ganze Ordner. Bis zum 2026-09-11 stand hier «Alle 8 hinterlegten
+    # Szenarien», während der Prüfschritt «alle 4 Rahmenszenarien» sagte.
+    rahmen = len(rahmenszenarien())
     haupt = _hauptweg(weiter)
 
     def _gewicht(ident: str) -> str:
@@ -492,12 +529,12 @@ def entry(draft: dict | None = None) -> html.Div:
                         "compare_arrows",
                         "Szenario-Vergleich starten",
                         (
-                            f"Alle {presets} hinterlegten Szenarien nacheinander rechnen "
+                            f"Alle {rahmen} Rahmenszenarien nacheinander rechnen "
                             "und am Ende nebeneinanderlegen."
-                            if presets
-                            else "Zurzeit liegt kein Szenario unter `configs/sweeps/`."
+                            if rahmen
+                            else "Zurzeit ist kein Rahmenszenario hinterlegt."
                         ),
-                        disabled=not presets,
+                        disabled=not rahmen,
                         gewicht=_gewicht(WAY_SWEEP),
                     ),
                     _way(
@@ -658,8 +695,9 @@ def rail(current: int | None, besucht: set[int] | None = None) -> html.Div:
 def _final_step(draft: dict) -> html.Div:
     """Der letzte Blick vor dem Start.
 
-    Die beiden Ausgänge — starten und sichern — stehen **nicht** hier, sondern
-    in der Navigationsleiste: Dort sitzt auf jedem Schritt der nächste Griff,
+    Der Ausgang — starten — steht **nicht** hier, sondern in der
+    Navigationsleiste (gesichert wird seit P7.4-U4.5 oben rechts):
+    Dort sitzt auf jedem Schritt der nächste Griff,
     und der letzte Schritt soll keine Ausnahme sein. Technisch kommt dazu, dass
     die Leiste immer im DOM liegt; ein Knopf, den es nur auf einem Schritt gibt,
     legte jeden Callback lahm, der ihn als Eingang führt.
@@ -676,46 +714,38 @@ def _final_step(draft: dict) -> html.Div:
             #
             # Dieser Schritt ist der einzige, den **jeder** Weg passiert — der
             # Name gehört deshalb hierher und nirgendwo anders hin.
-            ui.card(
-                # Knopf **neben** dem Feld, nicht darunter: Eine eigene Zeile
-                # kostete 0,07 Bildschirme auf dem einen Schritt, den jeder Weg
-                # passiert. `pt-7` setzt ihn auf die Höhe des Eingabefelds —
-                # dasselbe Muster wie bei «Segment anlegen».
-                html.Div(
-                    [
-                        c.text(
-                            "simulation_name",
-                            draft.get("simulation_name", ""),
-                            label="Name dieses Laufs",
-                            hint="So erscheint er später in der Auswahl der Kopfzeile.",
-                            class_name="flex-1 min-w-[16rem]",
+            # Knopf **neben** dem Feld, nicht darunter: Eine eigene Zeile kostete
+            # 0,07 Bildschirme auf dem einen Schritt, den jeder Weg passiert.
+            # **Ohne Kartenrahmen seit P7.4-U4.4**: Er kostete 48 px Polsterung um
+            # ein einziges Feld.
+            html.Div(
+                [
+                    c.text(
+                        "simulation_name",
+                        draft.get("simulation_name", ""),
+                        label="Name dieses Laufs",
+                        hint="So erscheint er später in der Auswahl der Kopfzeile.",
+                        class_name="flex-1 min-w-[16rem]",
+                    ),
+                    html.Div(
+                        ui.button(
+                            "Vorschlag",
+                            id=c.action_id("suggest-name"),
+                            variant="secondary",
+                            icon_name="auto_awesome",
                         ),
-                        html.Div(
-                            ui.button(
-                                "Vorschlag",
-                                id=c.action_id("suggest-name"),
-                                variant="secondary",
-                                icon_name="auto_awesome",
-                            ),
-                            className="pt-7",
-                        ),
-                    ],
-                    className="flex items-start gap-4 flex-wrap",
-                ),
-                class_name="mb-5",
+                        className="af-neben-feld",
+                    ),
+                ],
+                className="flex items-start gap-4 flex-wrap mb-4",
             ),
-            start_flow.preflight(draft, start_flow.errors_for(draft), slot="wizard"),
-            # **Was weicht vom Standard ab** (P1.9-W4.2). Der Preflight sagt,
-            # was gleich passiert; das hier sagt, was **Sie** daran geändert
-            # haben. Bei über hundert Feldern über sieben Schritte und einen
-            # Modell-Bereich war das die einzige Frage ohne Antwort — und der
-            # einzige Umkehrmechanismus war «Auf Standard zurücksetzen», das
-            # alles verwirft.
-            html.Div(delta.layout(draft), className="mt-4"),
-            html.P(
-                "«Als Szenario speichern» legt die Einstellungen unter `configs/sweeps/` ab. "
-                "Sie stehen danach im ersten Schritt zur Auswahl.",
-                className=f"{ui.CAPTION} mt-4 af-mass",
+            # **Was abweicht, steht im Preflight an seiner Stelle** (P7.4-U4.4): nach
+            # den Werten und vor den Hinweisen, statt ganz unten.
+            start_flow.preflight(
+                draft,
+                start_flow.errors_for(draft),
+                slot="wizard",
+                abweichungen=delta.layout(draft),
             ),
         ]
     )
@@ -798,16 +828,17 @@ def content(draft: dict, current: int) -> html.Div:
                         # — sie soll nicht in die Tabreihenfolge geraten.
                         tabIndex=-1,
                     ),
-                    # **Fliesstext bekommt ein Lesemass** (W5.4). Bei 1280
-                    # lief der Vorspann ueber bis zu 123 Zeichen je Zeile; die
-                    # Typografie nennt 45 bis 75. Der Deckel sitzt am Text und
-                    # nicht am Schritt: Ein Raster darf die Spalte nehmen, ein
-                    # Satz soll es nicht.
-                    html.P(step.lede, className=f"{ui.CAPTION} mt-1 af-mass"),
+                    # **Die Lede ist Fliesstext** (2026-09-12). Bis dahin
+                    # stand sie in `ui.CAPTION`, also in der Rolle einer
+                    # Bildunterschrift bei 12 px -- und war damit gemessen der
+                    # schmalste Text des Bildschirms: 409 px von 760, weil
+                    # 12-px-Prosa fuer 75 Zeichen nur 416 px braucht. Sie
+                    # teilt jetzt die Groesse des Textes, den sie einleitet.
+                    html.P(step.lede, className=f"{ui.LEDE} mt-1"),
                 ],
                 className="mb-6",
             ),
-            html.Div(koerper, id="wizard-body", className=f"af-body--{step.breite}"),
+            html.Div(koerper, id="wizard-body"),
         ],
         id=CONTENT,
         className="af-wizard__content",
@@ -874,15 +905,6 @@ def navigation(current: int | None) -> html.Div:
                         id=NEXT,
                         icon_name="arrow_forward",
                         style=None if not letzter else {"display": "none"},
-                    ),
-                    ui.button(
-                        "Als Szenario speichern",
-                        id=SAVE,
-                        variant="secondary",
-                        icon_name="save",
-                        className="af-btn--symbol-schmal",
-                        title="Als Szenario speichern",
-                        style=None if letzter else {"display": "none"},
                     ),
                     ui.button(
                         "Lauf starten",
@@ -983,6 +1005,8 @@ def register_callbacks(app) -> None:
         Input(WAY_SWEEP, "n_clicks"),
         Input(WAY_RESUME, "n_clicks"),
         Input({"type": JUMP, "index": ALL}, "n_clicks"),
+        # Ein Hinweis im Prüfschritt führt zu seinem Schritt (P7.4-U4.4).
+        Input({"type": start_flow.SPRUNG, "schritt": ALL}, "n_clicks"),
         State(STEP_STORE, "data"),
         State(STORE_ID, "data"),
         State(VISITED_STORE, "data"),
@@ -990,7 +1014,7 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def _navigate(
-        _back, _next, _skip, _new, _sweep, _resume, _jump, current, draft, besucht, verlauf
+        _back, _next, _skip, _new, _sweep, _resume, _jump, _sprung, current, draft, besucht, verlauf
     ):
         """Alle Wege durch die Schrittfolge in einem Callback.
 
@@ -1036,6 +1060,16 @@ def register_callbacks(app) -> None:
             if not stapel:
                 return ENTRY, no_update, sorted(gesehen), []
             return resolve(stapel[-1]), no_update, sorted(gesehen), stapel[:-1]
+
+        if isinstance(ausgeloest, dict) and ausgeloest.get("type") == start_flow.SPRUNG:
+            if not any(eintrag["value"] for eintrag in ctx.triggered if eintrag["value"]):
+                return no_update, no_update, no_update, no_update
+            ziel = next(
+                (i for i, step in enumerate(STEPS) if step.key == ausgeloest.get("schritt")), None
+            )
+            if ziel is None:
+                return no_update, no_update, no_update, no_update
+            return gehe(ziel)
 
         if isinstance(ausgeloest, dict) and ausgeloest.get("type") == JUMP:
             # Nur ein wirklich gedrückter Knopf zählt: Beim Neuaufbau der Liste

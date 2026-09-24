@@ -89,11 +89,19 @@ class TestDreiEntscheidungenGenuegenWeiterhin:
         assert knopf.style is None, "Nach den drei Entscheidungen fehlt die Abkürzung"
 
     def test_the_three_decisions_come_first(self):
-        """Die Reihenfolge ist eine Aussage: erst entscheiden, dann feinjustieren."""
+        """Die Reihenfolge ist eine Aussage: erst entscheiden, dann feinjustieren.
+
+        **Seit P7.13-U13.1 steht ein optionaler Schritt zwischen ihnen** —
+        «Verläufe» direkt nach der Wahl des Szenarios, von Haiko entschieden am
+        2026-09-15, weil die Verläufe das gewählte Szenario zeigen. Die Aussage
+        bleibt: Nach der dritten Entscheidung ist nichts mehr Pflicht, und die
+        erste steht vorn.
+        """
 
         pflicht = [step.required for step in wizard.STEPS]
 
-        assert pflicht[: wizard.LAST_REQUIRED + 1] == [True, True, True]
+        assert pflicht[0] is True
+        assert sum(pflicht[: wizard.LAST_REQUIRED + 1]) == 3
         assert not any(pflicht[wizard.LAST_REQUIRED + 1 : wizard.FINAL])
 
     def test_the_optional_steps_say_so(self):
@@ -135,6 +143,11 @@ class TestModellUndExperimentSindZweiOrte:
         assert "faktorlage" not in schluessel
         assert schluessel == [
             "szenario",
+            # P7.13-U13.1: die zeitlichen Verläufe, optional, direkt nach dem
+            # Szenario — keine Formularwand, sondern eine Liste mit Kurve.
+            "verlaeufe",
+            # P7.13-U13.5: Preisbildung, Sättigung, Bevölkerung für diesen Lauf.
+            "modellannahmen",
             "umfang",
             "modus",
             "ablage",
@@ -473,6 +486,50 @@ class TestDieDauerWirdGemessenNichtGeraten:
             dauer.schaetzung(draft, wurzel=tmp_path) is None
         ), "Der Lauf mit Sprachmodell wurde mitgezählt"
 
+    def test_only_the_youngest_runs_count(self, draft, tmp_path):
+        """Das Fenster ist `FENSTER` Läufe breit — und es sind die jüngsten.
+
+        «Mehr macht die Schätzung nicht besser, aber das Einlesen langsamer»,
+        sagt der Docstring von `FENSTER`, «und ältere Läufe stammen eher von
+        einem anderen Codestand». Ohne einen Wächter ist das eine Absicht: Wer
+        die Auswahl anfasst, merkt nicht, wenn sie plötzlich alles einliest
+        oder die ältesten nimmt.
+        """
+
+        from dashboard.web.config_editor import dauer
+
+        # Ein einzelner uralter Ausreißer, der die Spanne sprengen würde.
+        self._lauf(tmp_path, "0000_uralt", sekunden=9000.0, ticks=40)
+        for nummer in range(dauer.FENSTER):
+            self._lauf(tmp_path, f"9{nummer:03d}_jung", sekunden=12.0, ticks=40)
+
+        satz = dauer.schaetzung(draft, wurzel=tmp_path)
+
+        assert satz and "9000" not in satz, satz
+        assert f"{dauer.FENSTER} vergleichbaren Läufen" in satz, satz
+
+    def test_a_folder_without_metadata_does_not_use_up_the_window(self, draft, tmp_path):
+        """Ein Ordner ohne Artefakt zählt nicht mit — sonst wäre das Fenster leer.
+
+        **Der Fall ist der Normalfall und nicht der Rand:** Ein abgebrochener
+        Lauf, ein Ordner aus einem Sichtprüfungslauf, ein halb geschriebenes
+        Verzeichnis — von 698 Ordnern unter `outputs/` trugen am 2026-09-12
+        genau 137 Metadaten. Würde die Auswahl die jüngsten `FENSTER`
+        **Ordner** nehmen statt der jüngsten `FENSTER` **Läufe**, verschwände
+        die Schätzung, sobald oben etwas Leeres liegt.
+        """
+
+        from dashboard.web.config_editor import dauer
+
+        for nummer in range(dauer.FENSTER + 5):
+            (tmp_path / f"z{nummer:03d}_leer").mkdir()
+        self._lauf(tmp_path, "a", sekunden=12.0, ticks=40)
+        self._lauf(tmp_path, "b", sekunden=20.0, ticks=40)
+
+        satz = dauer.schaetzung(draft, wurzel=tmp_path)
+
+        assert satz and "2 vergleichbaren Läufen" in satz, satz
+
     def test_the_runner_records_the_duration(self):
         """Ohne diese Zeile gäbe es nie Messwerte."""
 
@@ -522,14 +579,15 @@ MODELL_SCHREIBER = (
     "delete_custom_property",
     "save_market_feedback_to_file",
     "save_population_edits_to_file",
+    "save_property_edits_to_file",
     "save_saturation_to_file",
 )
 
 #: `save_custom_sweep_preset` steht **nicht** darin, und das ist eine
-#: Entscheidung: «Als Szenario speichern» legt unter `configs/sweeps/` ab, und
-#: das ist die Ablage des Experiments, nicht das Modell. Es darf deshalb in der
-#: Schrittfolge stehen — mit ausdrücklichem Namen und einer Schaltfläche, die
-#: nichts anderes tut.
+#: Entscheidung: «Als Szenario sichern» legt unter `configs/sweeps/` ab, und
+#: das ist die Ablage des Experiments, nicht das Modell. Es darf deshalb zum
+#: Einrichten gehören — seit P7.4-U4.5 als der eine Dialog aus der Kopfzeile
+#: (`config_editor.sichern`), nicht mehr als Knopf in einem Schritt.
 EXPERIMENT_SCHREIBER = ("save_custom_sweep_preset",)
 
 
@@ -548,7 +606,6 @@ def _freie_werte():
         {"id": {"type": c.FREE, "name": "new-prop-label"}, "value": "Probe"},
         {"id": {"type": c.FREE, "name": "new-prop-category"}, "value": "none"},
         {"id": {"type": c.FREE, "name": "new-segment-id"}, "value": "probe_segment"},
-        {"id": {"type": c.FREE, "name": "preset-name"}, "value": "probe_preset"},
     ]
 
 
@@ -585,12 +642,18 @@ def _schreibt(monkeypatch, trigger: dict, draft: dict) -> bool:
         monkeypatch.setattr(config_editor, name, _versuch)
 
     # **Auch die erlaubten Schreiber werden stillgelegt.** Sie sind hier nicht
-    # der Gegenstand, aber `save-preset` steht in Schritt 4 und würde beim
-    # Durchgehen aller Aktionen wirklich eine Datei unter `configs/sweeps/`
-    # anlegen. Beim ersten Lauf ist genau das passiert — ein Test, der das Repo
-    # verändert, ist ein Fehler im Test.
+    # der Gegenstand, und bis P7.4-U4.5 stand `save-preset` in Schritt 4 und
+    # legte beim Durchgehen aller Aktionen wirklich eine Datei unter
+    # `configs/sweeps/` an. Beim ersten Lauf ist genau das passiert — ein Test,
+    # der das Repo verändert, ist ein Fehler im Test. Die Sperre bleibt, falls
+    # ein Schritt je wieder sichert.
+    from dashboard.web.config_editor import sichern
+
     for name in EXPERIMENT_SCHREIBER:
-        monkeypatch.setattr(config_editor, name, lambda *_a, **_k: "pfad")
+        # Seit P7.4-U4.5 ruft nur `sichern` den Schreiber; auf `config_editor` bleibt
+        # die Sperre für den Fall, dass ein Schritt je wieder sichert.
+        for modul in (config_editor, sichern):
+            monkeypatch.setattr(modul, name, lambda *_a, **_k: "pfad", raising=False)
 
     try:
         config_editor._handle_action(trigger, dict(draft), _freie_werte())
@@ -632,24 +695,46 @@ class TestNurDasModellSchreibtInsModell:
         )
 
     def test_the_experiment_may_still_save_itself(self, monkeypatch, draft):
-        """«Als Szenario speichern» bleibt — es legt kein Modell an, sondern ein Experiment.
+        """«Als Szenario sichern» bleibt — es legt kein Modell an, sondern ein Experiment.
 
         Die Zusage lautet «kein Schreibpfad **ins Modell**», nicht «kein
         Schreibpfad». Ein Szenario unter `configs/sweeps/` abzulegen ist die
-        Ablage des Experiments und gehört genau dorthin, wo man über den Lauf
-        als Ganzes nachdenkt.
+        Ablage des Experiments. Seit P7.4-U4.5 geschieht es im Dialog aus der
+        Kopfzeile; der Test ruft dessen Callback und prüft, dass er das Experiment
+        schreibt und sonst nichts.
         """
 
-        from dashboard.web import config_editor
-        from dashboard.web.config_editor import controls as c
+        from pathlib import Path
+
+        from dashboard.web.config_editor import sichern
+
+        class _Mitschrift:
+            def __init__(self):
+                self.callbacks = {}
+
+            def callback(self, *_a, **_k):
+                def _dekorator(funktion):
+                    self.callbacks[funktion.__name__] = funktion
+                    return funktion
+
+                return _dekorator
+
+            def clientside_callback(self, *_a, **_k):
+                return None
 
         gerufen = []
         for name in EXPERIMENT_SCHREIBER:
             monkeypatch.setattr(
-                config_editor, name, lambda *a, __n=name, **k: gerufen.append(__n) or "pfad"
+                sichern, name, lambda *a, __n=name, **k: gerufen.append(__n) or Path("probe.json")
             )
+        for name in MODELL_SCHREIBER:
+            monkeypatch.setattr(
+                sichern, name, lambda *a, __n=name, **k: gerufen.append(__n), raising=False
+            )
+        mitschrift = _Mitschrift()
+        sichern.register_callbacks(mitschrift)
 
-        config_editor._handle_action(c.action_id("save-preset"), dict(draft), _freie_werte())
+        mitschrift.callbacks["_sichern"](1, "probe", None, dict(draft))
 
         assert gerufen == list(EXPERIMENT_SCHREIBER)
 
@@ -658,20 +743,22 @@ class TestNurDasModellSchreibtInsModell:
 
         Auch das über die Wirkung: Erst wird ermittelt, welche Aktionen des
         Bereichs schreiben, dann wird geprüft, dass genau diese in einer
-        `ConfirmDialogProvider` stecken. Eine neue schreibende Aktion ohne
+        Rückfrage stecken — als Bestätigung im Dialog von `controls.write_action`.
+        Eine neue schreibende Aktion ohne
         Rückfrage fällt damit auf, ohne dass jemand eine Liste pflegt.
         """
 
-        from dash import dcc
+        from dash import html
 
         from dashboard.web.pages import model_editor
 
         baum = model_editor.rumpf_fuer(_MODELL_PFAD, draft)
         mit_rueckfrage = {
-            str(item.id)
-            for item in _walk(baum)
-            if isinstance(item, dcc.ConfirmDialogProvider)
-            and isinstance(getattr(item, "id", None), dict)
+            str(knopf.id)
+            for dialog in _walk(baum)
+            if isinstance(dialog, html.Dialog)
+            for knopf in _walk(dialog)
+            if isinstance(getattr(knopf, "id", None), dict)
         }
 
         ohne = [
@@ -692,22 +779,21 @@ class TestNurDasModellSchreibtInsModell:
         sagen, wie weit die Änderung reicht.
         """
 
-        from dash import dcc
+        from dash import html
 
         from dashboard.web.config_editor import controls as c
         from dashboard.web.pages import model_editor
 
-        provider = [
+        dialoge = [
             item
             for item in _walk(model_editor.rumpf_fuer(_MODELL_PFAD, draft))
-            if isinstance(item, dcc.ConfirmDialogProvider)
+            if isinstance(item, html.Dialog)
         ]
 
-        assert provider, "Keine einzige Rückfrage im Modell-Bereich"
-        for eintrag in provider:
-            assert c.REICHWEITE in (
-                eintrag.message or ""
-            ), f"Die Rückfrage zu {eintrag.id} nennt die Reichweite nicht: {eintrag.message!r}"
+        assert dialoge, "Keine einzige Rückfrage im Modell-Bereich"
+        for dialog in dialoge:
+            text = " ".join(k for k in _walk(dialog) if isinstance(k, str))
+            assert c.REICHWEITE in text, f"Eine Rückfrage nennt die Reichweite nicht: {text[:80]!r}"
 
     def test_the_reach_is_worded_once(self):
         """Ein Satz, eine Quelle — sonst laufen Hinweis und Rückfrage auseinander."""
@@ -766,9 +852,7 @@ class TestJederKnopfBleibtImDom:
     Muster wie bei den vier Viewport-Bereichen in `app.py`.
     """
 
-    @pytest.mark.parametrize(
-        "kennung", [wizard.BACK, wizard.NEXT, wizard.SKIP, wizard.START, wizard.SAVE]
-    )
+    @pytest.mark.parametrize("kennung", [wizard.BACK, wizard.NEXT, wizard.SKIP, wizard.START])
     def test_it_exists_on_every_step(self, kennung):
         for schritt in range(len(wizard.STEPS)):
             _knopf(wizard.navigation(schritt), kennung)
@@ -1165,7 +1249,8 @@ class TestDasTorHaeltWasEsZusagt:
 
         assert weiter is False, "«Weiter» sperrt in einem Schritt ohne den Befund"
         assert start is True, "«Lauf starten» muss trotzdem sperren"
-        assert "Schritt 2" in str(meldung), "Die Meldung sagt nicht, wohin"
+        wohin = f"Schritt {wizard.FELD_SCHRITT['rounds'] + 1}"
+        assert wohin in str(meldung), "Die Meldung sagt nicht, wohin"
 
     def test_start_is_blocked_by_any_finding(self, draft):
         """Von «Prüfen & Starten» geht es nicht weiter, sondern los."""
@@ -1268,7 +1353,7 @@ class TestZurueckFuehrtDorthinWoManWar:
         navigate = self._navigate(monkeypatch, wizard.BACK)
 
         schritt, _e, _b, verlauf = navigate(
-            *[None] * 6, None, wizard.FINAL, draft, [], [wizard.ENTRY]
+            *[None] * 6, None, None, wizard.FINAL, draft, [], [wizard.ENTRY]
         )
 
         assert schritt is wizard.ENTRY, "«Zurück» führt in einen Schritt, in dem man nie war"
@@ -1279,7 +1364,9 @@ class TestZurueckFuehrtDorthinWoManWar:
 
         navigate = self._navigate(monkeypatch, wizard.BACK)
 
-        schritt, _e, _b, verlauf = navigate(*[None] * 6, None, 6, draft, [], [wizard.ENTRY, 0])
+        schritt, _e, _b, verlauf = navigate(
+            *[None] * 6, None, None, 6, draft, [], [wizard.ENTRY, 0]
+        )
 
         assert schritt == 0
         assert verlauf == [wizard.ENTRY]
@@ -1292,11 +1379,11 @@ class TestZurueckFuehrtDorthinWoManWar:
         """
 
         weiter = self._navigate(monkeypatch, wizard.NEXT)
-        schritt, _e, _b, verlauf = weiter(*[None] * 6, None, 1, draft, [], [wizard.ENTRY, 0])
+        schritt, _e, _b, verlauf = weiter(*[None] * 6, None, None, 1, draft, [], [wizard.ENTRY, 0])
         assert (schritt, verlauf) == (2, [wizard.ENTRY, 0, 1])
 
         zurueck = self._navigate(monkeypatch, wizard.BACK)
-        schritt, _e, _b, verlauf = zurueck(*[None] * 6, None, 2, draft, [], verlauf)
+        schritt, _e, _b, verlauf = zurueck(*[None] * 6, None, None, 2, draft, [], verlauf)
         assert schritt == 1
         assert verlauf == [wizard.ENTRY, 0]
 
@@ -1310,7 +1397,7 @@ class TestZurueckFuehrtDorthinWoManWar:
 
         navigate = self._navigate(monkeypatch, wizard.BACK)
 
-        schritt, _e, _b, verlauf = navigate(*[None] * 6, None, 4, draft, [], [])
+        schritt, _e, _b, verlauf = navigate(*[None] * 6, None, None, 4, draft, [], [])
 
         assert schritt is wizard.ENTRY
         assert verlauf == []
@@ -1321,7 +1408,7 @@ class TestZurueckFuehrtDorthinWoManWar:
         for weg in (wizard.WAY_NEW, wizard.WAY_SWEEP, wizard.WAY_RESUME):
             navigate = self._navigate(monkeypatch, weg)
             _s, _e, besucht, verlauf = navigate(
-                *[None] * 6, None, 5, draft, [1, 2, 3], [wizard.ENTRY, 1, 2]
+                *[None] * 6, None, None, 5, draft, [1, 2, 3], [wizard.ENTRY, 1, 2]
             )
             assert verlauf == [wizard.ENTRY], f"{weg} erbt einen alten Verlauf"
             assert besucht == [], f"{weg} erbt alte Häkchen"
@@ -1332,7 +1419,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.WAY_NEW)
 
         schritt, entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, wizard.ENTRY, {**draft, "run_all_sweeps": True}, [], []
+            *[None] * 6, None, None, wizard.ENTRY, {**draft, "run_all_sweeps": True}, [], []
         )
 
         assert schritt == 0
@@ -1342,7 +1429,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.WAY_SWEEP)
 
         schritt, entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, wizard.ENTRY, draft, [], []
+            *[None] * 6, None, None, wizard.ENTRY, draft, [], []
         )
 
         assert schritt == wizard.FINAL, "Der Vergleich führt direkt zu «Prüfen & Starten»"
@@ -1360,7 +1447,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.WAY_RESUME)
 
         schritt, entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, wizard.ENTRY, draft, [], []
+            *[None] * 6, None, None, wizard.ENTRY, draft, [], []
         )
 
         assert schritt == wizard.FINAL
@@ -1376,7 +1463,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.BACK)
 
         schritt, _entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, 0, draft, [], [wizard.ENTRY]
+            *[None] * 6, None, None, 0, draft, [], [wizard.ENTRY]
         )
 
         assert schritt is wizard.ENTRY

@@ -46,9 +46,12 @@ from dashboard.web import routing, status
 #: Einrichten → Leitstand → Ergebnisse ist der Arbeitsablauf eines Laufs; das
 #: Modell zu pflegen gehört nicht hinein, sondern daneben. Es steht deshalb bei
 #: dem anderen Bereich, den man aufsucht statt durchläuft: dem Handbuch.
+#: Der eine Bereich mit Seitenzonen und Zeitleiste (D2, P7.3-U3.1).
+LEITSTAND = "lauf"
+
 ROUTES = [
     ("", "Einrichten"),
-    ("lauf", "Leitstand"),
+    (LEITSTAND, "Leitstand"),
     ("runs", "Ergebnisse"),
     ("modell", "Modell"),
     ("doku", "Handbuch"),
@@ -56,6 +59,17 @@ ROUTES = [
 
 #: Alte Adressen, die weiterhin funktionieren sollen — Pfad → Bereich.
 ALIASES = {"setup": ""}
+
+#: Bereiche, die es gibt, die die Navigation aber nicht zeigt (P7.1-U1.6). Heute
+#: einer: die **Musterseite**, jeder Baustein in jedem Zustand — die Referenz,
+#: gegen die die Gestaltungswächter laufen. Wer sie braucht, ruft ihre Adresse
+#: auf; in den Arbeitsablauf gehört sie nicht.
+INTERNE_ROUTES = [("muster", "Musterseite")]
+
+#: Jeder Bereich mit eigenem Wirt im Layout, verlinkt oder nicht. **Daraus**
+#: leiten `app.visibility`, der Seitentitel und die Ansage ab; die Navigation
+#: liest nur `ROUTES`.
+BEREICHE = ROUTES + INTERNE_ROUTES
 
 
 def active_route(pathname: str | None) -> str:
@@ -78,7 +92,7 @@ def active_route(pathname: str | None) -> str:
         return "doku"
     if relative in ALIASES:
         return ALIASES[relative]
-    return relative if relative in {route for route, _ in ROUTES} else ""
+    return relative if relative in {route for route, _ in BEREICHE} else ""
 
 
 LANDING_URL = routing.LANDING_PATH
@@ -108,27 +122,72 @@ NAV_HOST = "shell-nav"
 #: Schrittfolge (P1.9-W5.3).
 BEREICH_ANSAGE = "shell-bereich-ansage"
 
+#: Der Name, unter dem das Produkt im Browser-Tab steht (P7.2-U2.7).
+MARKE = "AeroForesight AI"
+
+#: Träger des Seitentitels je Bereich. Unsichtbar; ein clientseitiger Callback
+#: schreibt seinen Text nach `document.title`.
+SEITENTITEL = "shell-seitentitel"
+
 #: Das Sprungziel des «Zum Inhalt springen»-Links (WCAG 2.4.1).
 MAIN_ID = "shell-main"
-RUN_SELECT = "shell-run-select"
+#: Der Öffner des Lauf-Browsers (P7.3-U3.3). Bis dahin ein Auswahlfeld mit
+#: jedem Lauf darin; der Dialog steht in `lauf_wahl`.
+LAUF_WAHL = "shell-lauf-wahl"
 
-#: Globale Aktionen der Kopfzeile. Alle drei gibt es bereits als Funktion — sie
-#: standen nur an drei verschiedenen Stellen tief in der Seite.
+#: Aktionen der Kopfzeile. «Als Szenario sichern» öffnet seit P7.4-U4.5 den
+#: Dialog in `config_editor.sichern` — den einen Speicherweg. Der Knopf daneben,
+#: der dieselben Werte mit Zeitstempel ablegte, ist dort eine Option.
 ACTION_SAVE = "shell-action-save"
-ACTION_SNAPSHOT = "shell-action-snapshot"
 ACTION_EXPORT = "shell-action-export"
+
+#: Die Bereiche, die einen Lauf zeigen (P7.3-U3.4).
+LAUF_BEREICHE = frozenset({LEITSTAND, "runs"})
+
+#: **Was in der Kopfzeile nur zu bestimmten Bereichen gehört** — Kennung → Bereiche
+#: (P7.3-U3.4, von Haiko entschieden am 2026-09-14).
+#:
+#: Bis dahin stand alles auf jedem Bereich: Auf dem Handbuch bot die Kopfzeile
+#: an, Einstellungen zu sichern, im Einrichten die Dateien eines Laufs. Und
+#: beschriftet passte es nicht mehr — gemessen drückten die beiden
+#: Speicher-Aktionen die Bereichsnavigation bei 1280 px um 224 px zusammen,
+#: solange die Laufauswahl daneben stand. **Die Laufauswahl gehört deshalb zu den
+#: Bereichen mit einem Lauf**, das Sichern zum Einrichten.
+KONTEXT = {
+    LAUF_WAHL: LAUF_BEREICHE,
+    ACTION_SAVE: frozenset({""}),
+    ACTION_EXPORT: LAUF_BEREICHE,
+}
+
+#: Was zusätzlich einen gewählten Lauf braucht — ohne ihn gibt es keine Dateien.
+BRAUCHT_LAUF = frozenset({ACTION_EXPORT})
+
+#: **Knöpfe der Kopfzeile, die ohne sichtbare Beschriftung bleiben** — mit Grund
+#: (P7.3-U3.4). Jeder andere trägt seinen Namen sichtbar; ein Name, der nur im
+#: `title` steht, erscheint erst, wenn jemand mit der Maus darauf verweilt.
+OHNE_BESCHRIFTUNG = {
+    THEME_TOGGLE: (
+        "ein Zustandsschalter und keine Aktion: Sonne und Mond sagen, wohin er "
+        "schaltet, und eine Beschriftung nähme der Navigation die Breite"
+    ),
+    LEFT_TOGGLE: "erscheint erst unter 1024 px, wo die Beschriftungen beschnitten sind",
+    RIGHT_TOGGLE: "erscheint erst unter 1280 px, wo die Beschriftungen beschnitten sind",
+}
 
 
 #: Bereiche, die den Bildschirm **allein** bekommen. Seitenzonen und Zeitleiste
 #: verschwinden dort.
 #:
-#: Einrichten ist eine überlegte, lineare Arbeit; daneben eine Szene laufen zu
-#: lassen, die einen *anderen* Lauf zeigt, lenkt nur ab — und die Stand-Zeilen
-#: links wiederholen genau das, was man gerade einstellt. Der Bildschirm gehört
-#: in diesem Moment einer Sache.
-#: «Modell» kommt seit P1.9-W3.1 dazu: Facharbeit an vielen Zahlen, bei der eine
-#: Szene daneben genauso ablenkt wie beim Einrichten.
-FOCUS_ROUTES = {"", "modell"}
+#: **Seit P7.3-U3.1 ist das jeder Bereich außer dem Leitstand** (D2, von Haiko
+#: entschieden am 2026-09-14), und die Menge wird abgeleitet statt aufgezählt —
+#: ein neuer Bereich ist ohne weiteren Eintrag einer. Bis dahin standen hier
+#: Einrichten, Modell und Musterseite; «Ergebnisse» und «Handbuch» teilten den
+#: Bildschirm mit Bedienfeld, Telemetrie und Zeitleiste und zeigten damit drei
+#: Zusammenhänge zugleich: den Entwurf des nächsten Laufs links, einen
+#: vergangenen Lauf in der Mitte, dessen Kennzahlen bei Tick 1 rechts. **Die
+#: Zeitleiste bewegte gemessen keine der sieben Ergebnis-Ansichten** — es geht
+#: nichts verloren, was dort wirkte.
+FOCUS_ROUTES = {route for route, _ in BEREICHE} - {LEITSTAND}
 
 
 def shell_class(active: str) -> str:
@@ -170,10 +229,23 @@ def bereich_ansage(active: str) -> str:
     **gewechselt** hat.
     """
 
-    for route, label in ROUTES:
+    for route, label in BEREICHE:
         if route == active:
             return f"Bereich gewechselt: {label}"
     return ""
+
+
+def seitentitel(active: str) -> str:
+    """Was im Browser-Tab steht — Marke und Bereich (P7.2-U2.7).
+
+    Bis zum 2026-09-11 stand dort auf **jedem** Bereich «Technology Lab ·
+    Leitstand»: ein Name, den das Produkt nirgends sonst trägt, und ein Bereich,
+    in dem man meistens gar nicht war. Wer mehrere Tabs offen hat, findet den
+    richtigen am Titel — und nur, wenn er sagt, was darin offen ist.
+    """
+
+    bereich = dict(BEREICHE).get(active)
+    return f"{MARKE} · {bereich}" if bereich else MARKE
 
 
 def navbar(active: str) -> html.Div:
@@ -196,7 +268,7 @@ def navbar(active: str) -> html.Div:
             html.A(
                 "AeroForesight AI",
                 href=LANDING_URL,
-                className="font-headline text-base font-bold af-text-accent tracking-tight "
+                className=f"font-headline {ui.ABSCHNITT} font-bold af-text-accent tracking-tight "
                 "whitespace-nowrap",
             ),
             html.Nav(
@@ -231,24 +303,69 @@ def theme_toggle() -> html.Button:
     )
 
 
-def actions() -> html.Div:
-    """Speichern, Snapshot, Exportieren — die drei Aktionen der Kopfzeile.
+def kontext_stile(active: str, *, lauf: bool) -> dict[str, dict | None]:
+    """Welche Teile der Kopfzeile in diesem Bereich stehen (P7.3-U3.4).
 
-    «Speichern» sichert die Einstellungen als Szenario-Preset unter
-    `configs/sweeps/`, «Snapshot» legt dieselben Werte unter einem Namen mit
-    Zeitstempel ab, damit ein Zwischenstand den benannten Entwurf nicht
-    überschreibt, und «Exportieren» führt in die Dateiablage des gewählten
-    Laufs.
+    Als eigene Funktion und nicht im Callback, damit die Entscheidung ohne
+    laufende App prüfbar ist. **Ausgeblendet, nicht weggelassen** (Regel 6):
+    `app._save`, `app._export` und die Laufauswahl hängen an diesen Kennungen.
     """
 
+    return {
+        kennung: (
+            None
+            if active in bereiche and (lauf or kennung not in BRAUCHT_LAUF)
+            else {"display": "none"}
+        )
+        for kennung, bereiche in KONTEXT.items()
+    }
+
+
+def actions(active: str = "", *, lauf: bool = False) -> html.Div:
+    """Die Aktionen der Kopfzeile — beschriftet, und nur dort, wo sie passen.
+
+    «Als Szenario sichern» öffnet den Dialog, der die Einstellungen als
+    Szenario ablegt — den einen Speicherweg (P7.4-U4.5), im Einrichten.
+    «Dateien des Laufs» führt in die Dateiablage des gewählten Laufs.
+
+    **Bis P7.3-U3.4 waren es drei Symbolknöpfe**, deren Name nur im `title`
+    stand. Unter 1280 px wird die Beschriftung beschnitten und nicht entfernt
+    (`af-kopfaktion` im Stylesheet): Der Name bleibt im Baum und im `title`.
+    """
+
+    stile = kontext_stile(active, lauf=lauf)
+    knoepfe = [
+        (ACTION_SAVE, "Als Szenario sichern", "save"),
+        (ACTION_EXPORT, "Dateien des Laufs", "download"),
+    ]
     return html.Div(
         [
-            ui.icon_button("save", "Einstellungen als Szenario sichern", id=ACTION_SAVE),
-            ui.icon_button("photo_camera", "Snapshot des Entwurfs anlegen", id=ACTION_SNAPSHOT),
-            ui.icon_button("download", "Dateien dieses Laufs ansehen", id=ACTION_EXPORT),
+            ui.button(
+                beschriftung,
+                variant="ghost",
+                icon_name=symbol,
+                id=kennung,
+                title=beschriftung,
+                className="af-kopfaktion",
+                style=stile[kennung],
+            )
+            for kennung, beschriftung, symbol in knoepfe
         ],
         className="flex items-center gap-1",
     )
+
+
+def lauf_wahl_inhalt(bezeichnung: str | None) -> list:
+    """Was auf dem Öffner des Lauf-Browsers steht — der gewählte Lauf (P7.3-U3.3).
+
+    Vorgelesen wird davor, was der Knopf tut; zu sehen ist nur der Lauf, weil
+    die Breite der Kopfzeile genau für ihn reicht (gemessen in P7.3-U3.4).
+    """
+
+    return [
+        html.Span("Lauf wählen: ", className="af-nur-vorlesen"),
+        html.Span(bezeichnung or "Kein Lauf vorhanden", className="af-btn__label"),
+    ]
 
 
 def status_view(state: status.Status) -> html.Div:
@@ -259,24 +376,32 @@ def header(
     active: str,
     *,
     state: status.Status,
-    run_options: list[dict],
-    run_value: str | None,
+    lauf_bezeichnung: str | None,
 ) -> html.Header:
+    stile = kontext_stile(active, lauf=lauf_bezeichnung is not None)
     return html.Header(
         [
             navbar(active),
             html.Div(
                 [
                     html.Div(status_view(state), id=STATUS_HOST),
-                    dcc.Dropdown(
-                        id=RUN_SELECT,
-                        options=run_options,
-                        value=run_value,
-                        clearable=False,
-                        placeholder="Kein Lauf vorhanden",
-                        className="af-dropdown w-64 hidden lg:block",
+                    # **Ein Knopf, der den Lauf-Browser öffnet** (P7.3-U3.3), in der
+                    # Breite des früheren Auswahlfelds (`w-64`): Mehr trägt die
+                    # Kopfzeile im Leitstand nicht. Unter 1024 px steht er nicht da,
+                    # wie vorher das Auswahlfeld (`.af-laufwahl-oeffner`).
+                    html.Button(
+                        lauf_wahl_inhalt(lauf_bezeichnung),
+                        id=LAUF_WAHL,
+                        n_clicks=0,
+                        title="Lauf wählen",
+                        className=(
+                            "af-btn af-btn--secondary af-laufwahl-oeffner inline-flex items-center "
+                            f"px-4 py-3 font-body {ui.BESCHRIFTUNG} font-medium w-64"
+                        ),
+                        style=stile[LAUF_WAHL],
+                        **{"aria-haspopup": "dialog"},
                     ),
-                    actions(),
+                    actions(active, lauf=lauf_bezeichnung is not None),
                     theme_toggle(),
                     ui.icon_button(
                         "insights",
@@ -320,8 +445,7 @@ def layout(
     *,
     active: str,
     state: status.Status,
-    run_options: list[dict],
-    run_value: str | None,
+    lauf_bezeichnung: str | None,
     left: Any,
     main: Any,
     timeline: Any,
@@ -348,7 +472,10 @@ def layout(
                 className="af-nur-vorlesen",
                 **{"aria-live": "polite", "aria-atomic": "true"},
             ),
-            header(active, state=state, run_options=run_options, run_value=run_value),
+            # Der Seitentitel. `hidden` und nicht `af-nur-vorlesen`: Die Ansage
+            # darüber sagt den Wechsel schon, ein zweiter Text wäre Doppelung.
+            html.Div(seitentitel(active), id=SEITENTITEL, hidden=True),
+            header(active, state=state, lauf_bezeichnung=lauf_bezeichnung),
             html.Aside(left, className="af-shell__left", id="shell-left"),
             _gutter("left", "Breite des Bedienfelds ändern"),
             html.Main(main, className="af-shell__main", id=MAIN_ID),
@@ -392,6 +519,20 @@ def register_callbacks(app) -> None:
         Output(THEME_STORE, "data"),
         Input(THEME_TOGGLE, "n_clicks"),
         State(THEME_STORE, "data"),
+    )
+
+    # Der Browser-Tab folgt dem Bereich (P7.2-U2.7). Clientseitig, weil
+    # `document.title` nur im Browser existiert; der Text selbst entsteht auf
+    # dem Server in `seitentitel`, damit er ohne Browser prüfbar bleibt.
+    app.clientside_callback(
+        """
+        function(titel) {
+            if (titel) { document.title = titel; }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output(SEITENTITEL, "title"),
+        Input(SEITENTITEL, "children"),
     )
 
     app.clientside_callback(

@@ -1,5 +1,5 @@
 Die Buchungsrate ist kein Parameter, den man einstellt. Sie ist das Ergebnis
-vieler Einzelentscheidungen: In jeder Runde wird für jede simulierte Person
+vieler Einzelentscheidungen: In jedem Tick wird für jede simulierte Person
 gerechnet, ob sie bucht oder nicht.
 
 ## Zwei Stufen
@@ -21,7 +21,7 @@ gemindert.
 | Was mindert | Wodurch |
 |---|---|
 | Preis | Preisempfindlichkeit der Person, multipliziert mit dem Ticketpreis **im Verhältnis zu ihrem Einkommen** |
-| CO₂-Abgabe | Umweltbewusstsein, multipliziert mit dem Teil der Abgabe, der über dem Referenzwert von 50 EUR je Tonne liegt |
+| CO₂-Abgabe | Umweltbewusstsein, multipliziert mit dem Teil der Abgabe, der über dem Referenzwert von 50 € je Tonne liegt |
 | Bahn als Alternative | Wechselbereitschaft der Person, multipliziert mit dem Preis, mit anderthalbfachem Gewicht |
 | Sättigung | Wie viel diese Person zuletzt schon geflogen ist |
 
@@ -62,13 +62,13 @@ sicher eine Zahl ist. Die Größenordnung der Verzerrung steht in
 [Vergleiche](/doku/vergleiche).
 
 **Reproduzierbar bleibt der Lauf trotzdem.** Der Zufallsstartwert bestimmt beides:
-das Ziehen der Bevölkerung zu Beginn und die Buchungsentscheidungen in jeder
-Runde. Zwei Läufe mit demselben Startwert liefern exakt dasselbe Ergebnis — auch
+das Ziehen der Bevölkerung zu Beginn und die Buchungsentscheidungen in jedem
+Tick. Zwei Läufe mit demselben Startwert liefern exakt dasselbe Ergebnis — auch
 dann, wenn Sie unter **Technik** keinen eigenen setzen: Dann rechnet der Lauf mit
 einem Standardwert.
 
-Jede Runde bekommt dabei ihren eigenen Zufallsstrom. Ohne das buchten in jeder
-Runde dieselben Personen, und die Buchungsrate würde zur Treppe statt zu einer
+Jeder Tick bekommt dabei seinen eigenen Zufallsstrom. Ohne das buchten in jedem
+Tick dieselben Personen, und die Buchungsrate würde zur Treppe statt zu einer
 Kurve.
 
 ## Was daraus folgt
@@ -76,9 +76,9 @@ Kurve.
 Weil jede Person einzeln entscheidet, wirken Änderungen ungleich. Eine
 Preiserhöhung trifft zuerst die preisempfindlichen Segmente, während Vielflieger
 mit hoher Zahlungsbereitschaft lange unbeeindruckt bleiben. Die aggregierte
-Buchungsrate verdeckt das; in der Ansicht **Figures** unter «Segmente & Alter» wird es
+Buchungsrate verdeckt das; in der Ansicht **Diagramme** unter «Segmente & Alter» wird es
 sichtbar.
 
-Ebenso wirkt eine CO₂-Abgabe erst oberhalb von 50 EUR je Tonne überhaupt auf die
+Ebenso wirkt eine CO₂-Abgabe erst oberhalb von 50 € je Tonne überhaupt auf die
 Entscheidung ein. Wer den Wert von 30 auf 45 anhebt und keine Reaktion sieht, hat
 nichts falsch gemacht — der Referenzwert war schlicht noch nicht überschritten.

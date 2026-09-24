@@ -24,7 +24,7 @@ from dashboard.config_catalog import (
 )
 from dashboard.web import components as ui
 from dashboard.web.config_editor import controls as c
-from dashboard.web.config_editor import glossary
+from dashboard.web.config_editor import glossary, micro
 
 RULE = "cfg-rule"
 RULE_COUNT = "cfg-rule-count"
@@ -39,6 +39,10 @@ PRICE_CATEGORY_OPTIONS = [
 
 _BADGES = {"tax": "wirkt als Steuer", "fee": "wirkt als Gebühr"}
 
+#: Der Knopf, der Startwerte und Verläufe schreibt (P7.13-U13.3) — eine Quelle für
+#: Knopf und Hinweis.
+SPEICHERN = "Verläufe als Standard speichern"
+
 #: Kurzbeschreibungen der Standardgrößen. PROPERTY_LABELS liefert nur den
 #: Namen; hier steht, wozu die Größe im Modell dient.
 _PROPERTY_EFFECTS = {
@@ -46,11 +50,11 @@ _PROPERTY_EFFECTS = {
     "verteuert das Fliegen gegenüber der Bahn.",
     "saf_mandate_share": "Vorgeschriebener Anteil nachhaltigen Treibstoffs. Höher = höhere "
     "Kosten für die Airline, solange SAF teurer ist als Kerosin.",
-    "demand_growth_rate": "Wachstum der Grundnachfrage je Runde, unabhängig vom Preis.",
+    "demand_growth_rate": "Wachstum der Grundnachfrage je Tick, unabhängig vom Preis.",
     "income_index": "Kaufkraft der Bevölkerung. Höher = die Menschen halten steigende "
     "Preise länger aus.",
     "oil_price_index": "Ölpreis als Index. Treibt die Treibstoffkosten der Airline.",
-    "fuel_price_change": "Trend der Treibstoffkosten je Runde.",
+    "fuel_price_change": "Trend der Treibstoffkosten je Tick.",
     "efuel_subsidy": "Förderung synthetischer Kraftstoffe. Dämpft die Mehrkosten aus der "
     "SAF-Quote.",
     "bevoelkerungsentwicklung": "Größe der Bevölkerung, aus der die Nachfrage entsteht.",
@@ -74,7 +78,7 @@ def rule_rows(prop_id: str, rules: list, count: int, baseline: float) -> list:
         kind = effect.get("type", "set")
         cells = [
             ui.field(
-                "ab Runde",
+                "ab Tick",
                 _rule_input(
                     prop_id, index, "tick", int(existing.get("active_from_tick", 1)), 1, 500, 1
                 ),
@@ -96,7 +100,7 @@ def rule_rows(prop_id: str, rules: list, count: int, baseline: float) -> list:
         if kind == "ramp":
             cells.append(
                 ui.field(
-                    "über … Runden",
+                    "über … Ticks",
                     _rule_input(
                         prop_id, index, "duration", int(effect.get("duration_ticks", 5)), 1, 100, 1
                     ),
@@ -150,7 +154,7 @@ def _rule_count_input(prop_id: str, count: int):
             className="af-input",
             debounce=True,
         ),
-        class_name="max-w-[10rem]",
+        breite="feld-klein",
     )
 
 
@@ -166,7 +170,7 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
 
     body: list = []
     if effect_text:
-        body.append(html.Div(ui.note(effect_text), className="mb-5"))
+        body.append(html.Div(ui.hinweis(effect_text, "kontext"), className="mb-4"))
     body.append(c.check(f"property_edits.{prop_id}.is_active", is_active, key="property.is_active"))
 
     if is_active:
@@ -177,9 +181,9 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
                     baseline,
                     key="property.baseline",
                     step=0.0001,
-                    class_name="max-w-xs",
+                    breite="feld",
                 ),
-                className="mt-5",
+                className="mt-4",
             )
         )
         rule_param = glossary.get("property.rules")
@@ -189,7 +193,7 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
                     html.P("Zeitlicher Verlauf", className=f"{ui.H3} mt-6 mb-1"),
                     html.P(
                         rule_param.short if rule_param else "",
-                        className=f"{ui.CAPTION} mb-4 max-w-2xl",
+                        className=f"{ui.CAPTION} mb-4",
                     ),
                     _rule_count_input(prop_id, len(rules)),
                     html.Div(
@@ -202,8 +206,10 @@ def _property_card(prop_id: str, edit: dict, badge: str) -> html.Details:
         )
     else:
         body.append(
-            ui.alert(
-                "Deaktiviert — wird in diesem Lauf nicht angewendet.", "info", class_name="mt-4"
+            ui.hinweis(
+                "Ausgeschaltet — gespeichert steht die Größe auf 0 und ohne Regeln.",
+                "info",
+                class_name="mt-4",
             )
         )
         body.append(
@@ -259,7 +265,6 @@ def _add_property_block() -> html.Details:
             "Größe anlegen",
             frage="Die neue Systemgröße wird in die Konfigurationsdatei geschrieben.",
             icon_name="add",
-            variant="primary",
             class_name="mt-4",
         ),
         title="Eigene Systemgröße anlegen",
@@ -282,9 +287,6 @@ def layout(draft: dict) -> html.Div:
     }
 
     edits = draft.get("property_edits") or {}
-    overrides_on = (
-        bool(draft.get("apply_custom_overrides")) or draft.get("scenario_mode") == "custom"
-    )
     base_price = draft.get("base_price")
 
     cards = [
@@ -315,21 +317,16 @@ def layout(draft: dict) -> html.Div:
                     "Politik, Kosten und Konjunktur als Zahlen. Jede Größe hat einen "
                     "Startwert und kann sich über Regeln im Lauf verändern."
                 ),
-                (
-                    # Der Schalter dazu steht seit W3.3 im Schritt «Ausgangslage»
-                    # des Einrichtens: Ob eigene Werte gelten, ist eine
-                    # Entscheidung über den Lauf und nicht über das Modell. Hier
-                    # bleibt der Hinweis, damit niemand Zahlen pflegt, die im
-                    # nächsten Lauf nicht ankommen.
-                    None
-                    if overrides_on
-                    else ui.alert(
-                        "«Eigene Werte anwenden» ist ausgeschaltet — was Sie hier einstellen, "
-                        "wirkt im nächsten Lauf nicht. Einschalten im Einrichten, Schritt "
-                        "«Ausgangslage».",
-                        "warning",
-                        class_name="mb-4",
-                    )
+                # **Startwerte und Verläufe wirken nur gespeichert** (P7.13-U13.3, von
+                # Haiko entschieden am 2026-09-15). Bis dahin stand hier ein Hinweis
+                # auf «Eigene Werte anwenden» — unter einem Rahmenszenario griffen die
+                # Werte trotzdem nicht. Für einen einzelnen Lauf ist der Schritt
+                # «Verläufe» der Ort.
+                ui.hinweis(
+                    f"Wirkt erst, wenn Sie «{SPEICHERN}» klicken. {micro.NUR_GESPEICHERT} "
+                    "Für einen einzelnen Lauf ändern Sie Verläufe im Schritt «Verläufe».",
+                    "info",
+                    class_name="mb-4",
                 ),
                 ui.card(
                     html.Div(
@@ -338,7 +335,12 @@ def layout(draft: dict) -> html.Div:
                                 "base_price_enabled",
                                 base_price is not None,
                                 label="Startpreis selbst festlegen",
-                                hint="Aus: Der Startpreis kommt aus der Konfigurationsdatei.",
+                                # Die eine Ausnahme (von Haiko entschieden am
+                                # 2026-09-15, eigenes Paket): Der Startpreis wirkt
+                                # ungespeichert, und es gibt keinen Speicherweg.
+                                hint="Aus: Der Startpreis kommt aus der Konfigurationsdatei. "
+                                "An: Er gilt ohne Speichern für den nächsten Lauf unter der "
+                                "Standard-Ausgangslage, solange «Eigene Werte anwenden» an ist.",
                             ),
                             (
                                 c.number(
@@ -359,6 +361,15 @@ def layout(draft: dict) -> html.Div:
                 reload_button,
                 _add_property_block(),
                 html.Div(cards),
+                c.write_action(
+                    "save-properties",
+                    SPEICHERN,
+                    frage="Startwerte und Verläufe aller Systemgrößen werden als neuer "
+                    "Standard in die Konfigurationsdatei geschrieben. Eine ausgeschaltete "
+                    "Größe wird mit Startwert 0 und ohne Regeln gespeichert.",
+                    icon_name="save",
+                    class_name="mt-4",
+                ),
                 actions=ui.doc_link("ref-systemgroessen"),
             ),
         ]

@@ -14,7 +14,7 @@ und wie viele Ereignisse entstanden sind. Die beiden Diagramme zeigen den Verlau
 von Buchungsrate und Ticketpreis — das ist der Regelkreis, um den sich alles
 dreht.
 
-Wenn Sie mehr Detail brauchen, folgt **Figures** mit sechs thematischen
+Wenn Sie mehr Detail brauchen, folgt **Diagramme** mit sechs thematischen
 Auswertungen, von der Preiszusammensetzung bis zu den Faktor-Trajektorien.
 
 **Abfrage** eignet sich für gezielte Rückfragen an genau diesen Lauf, ohne durch
@@ -27,8 +27,8 @@ Diagramme zu suchen.
 | Szenario | Was ist passiert, und wie könnte es weitergehen? |
 | Übersicht | Wie haben sich Buchungsrate und Preis entwickelt? |
 | Animation | Wie verteilt sich das Verhalten über die einzelnen Personen? |
-| Figures | Vier Fragen entlang der Wirkungskette: Wie antwortet die Nachfrage auf den Preis, was bewirkt die Politik, wer bleibt zuerst weg, worin unterscheiden sich die Szenarien? Bei einem Lauf mit Wiederholungen zeigt die erste Frage zusätzlich das **Streuband**. |
-| Bericht | Was geschah in einer bestimmten Runde? |
+| Diagramme | Vier Fragen entlang der Wirkungskette: Wie antwortet die Nachfrage auf den Preis, was bewirkt die Politik, wer bleibt zuerst weg, worin unterscheiden sich die Szenarien? Bei einem Lauf mit Wiederholungen zeigt die erste Frage zusätzlich das **Streuband**. |
+| Bericht | Was geschah in einem bestimmten Tick? |
 | Abfrage | Eine konkrete Frage an die Daten dieses Laufs. |
 | Dateien | Die Rohdaten, zum Prüfen oder Weiterverarbeiten. |
 
@@ -41,9 +41,9 @@ Erstens der Verlauf der **Buchungsrate**. Bleibt sie über den ganzen Lauf nahez
 konstant, hat vermutlich keine Rückkopplung gegriffen — dann ist entweder das
 Marktmodell abgeschaltet oder die Annahmen sind zu zahm gewählt.
 
-Zweitens der **Preis**. Klebt er über viele Runden am selben Wert, stößt er
+Zweitens der **Preis**. Klebt er über viele Ticks am selben Wert, stößt er
 wahrscheinlich an eine Grenze: entweder an die Preisuntergrenze oder an den
-Deckel für die Preisänderung je Runde.
+Deckel für die Preisänderung je Tick.
 
 Drittens die **Zahl der Ereignisse** in der Übersicht. Sehr wenige Ereignisse
 deuten darauf hin, dass der Lauf deterministisch gerechnet wurde oder die Agenten

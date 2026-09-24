@@ -52,6 +52,8 @@ PFADWAHL = {"run_all_sweeps", "scenario_mode", "sweep_id", "resume_from"}
 #: Anzahl zu benennen ist.
 VERSCHACHTELT = {
     "property_edits": ("Systemgrößen", "geändert"),
+    "abweichungen": ("Verläufe", "geändert"),
+    "modellannahmen": ("Modellannahmen", "geändert"),
     "population_edits": ("Bevölkerungssegmente", "geändert"),
     "market_feedback_edit": ("Preisbildung", "geändert"),
     "saturation_edit": ("Sättigung", "geändert"),
@@ -136,7 +138,7 @@ def _zeile(abweichung: Abweichung) -> html.Div:
                 "Zurücknehmen",
                 id=revert_id(abweichung.feld),
                 variant="ghost",
-                className="!px-2 !py-1 text-xs shrink-0",
+                className=f"!px-2 !py-1 {ui.KLEIN} shrink-0",
             ),
         ],
         className="af-delta__zeile",
@@ -153,15 +155,17 @@ def layout(draft: dict) -> object:
 
     abweichungen = unterschiede(draft)
     if not abweichungen:
-        return ui.note(
+        return ui.hinweis(
             "Der Lauf verwendet durchgehend die ausgelieferten Werte — es gibt nichts, "
             "was Sie beim Vergleich mit einem anderen Lauf berücksichtigen müssten.",
+            "kontext",
             icon_name="check_circle",
         )
 
     return ui.expert(
         html.Div([_zeile(a) for a in abweichungen], className="af-delta"),
         count=len(abweichungen),
+        einheit=("Abweichung", "Abweichungen"),
         title="Was von der Auslieferung abweicht",
         names=", ".join(a.was for a in abweichungen[:4]) + (" …" if len(abweichungen) > 4 else ""),
     )

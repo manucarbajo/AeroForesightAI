@@ -136,6 +136,19 @@ def demo() -> RunData:
     )
 
 
+def zeigt_demo(selected: dict | None) -> bool:
+    """Ob für diese Auswahl der Beispieldatensatz gilt — ohne den Lauf zu laden.
+
+    Die eine Stelle für die Bedingung, nach der `load` entscheidet: keine Auswahl,
+    kein Verzeichnis darin, oder ein Verzeichnis, das es nicht mehr gibt. Wer nur
+    wissen will, *ob* der Demo-Fall gilt, fragt hier und liest keinen Lauf.
+    """
+
+    if not selected or not selected.get("run_dir"):
+        return True
+    return not Path(selected["run_dir"]).is_dir()
+
+
 def load(selected: dict | None) -> RunData:
     """Die Daten des gewählten Laufs — oder den Beispieldatensatz.
 
@@ -145,12 +158,10 @@ def load(selected: dict | None) -> RunData:
     dass eine Ansicht leer bleibt und die nächste eine Fehlermeldung zeigt.
     """
 
-    if not selected or not selected.get("run_dir"):
+    if zeigt_demo(selected):
         return demo()
 
     run_dir = Path(selected["run_dir"])
-    if not run_dir.is_dir():
-        return demo()
 
     return RunData(
         run_id=str(selected.get("run_id") or run_dir.name),

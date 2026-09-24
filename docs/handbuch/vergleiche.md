@@ -27,11 +27,15 @@ sich die Wirkungen addieren oder gegenseitig aufheben.
 
 ## Namen vergeben
 
-Tragen Sie unter **Lauf & Ablage** einen Namen und die Fragestellung ein. In der
-Lauf-Auswahl erscheint der Name neben der Run-ID; ohne ihn stehen dort nur
-Zeitstempel, die sich nach dem dritten Lauf nicht mehr unterscheiden lassen.
+Tragen Sie im Schritt **Prüfen & Starten** einen Namen ein und unter **Lauf &
+Ablage** die Fragestellung. In der Lauf-Auswahl heißt ein Lauf **Name · Rahmen ·
+Datum**, etwa «CO₂ 200 ab Tick 5 · Business as Usual · 14.09.2026, 08:56». Ohne
+eigenen Namen stehen dort nur Rahmen und Datum — zwei Läufe unter demselben
+Rahmen unterscheiden sich dann allein durch die Uhrzeit. Der vorbelegte Name
+«Flugverkehr-Szenarioplanung» zählt dabei nicht als Name. Die Kennung, unter der
+ein Lauf in `outputs/` liegt, steht in der Übersicht unter «Technische Details».
 
-Ein brauchbares Schema ist der Bezug auf den Vergleich, etwa «CO₂ 200 ab Runde 5»
+Ein brauchbares Schema ist der Bezug auf den Vergleich, etwa «CO₂ 200 ab Tick 5»
 gegen «CO₂ konstant 50».
 
 ## Streuung von Wirkung unterscheiden
@@ -52,14 +56,14 @@ Ist der Unterschied zwischen Ihren beiden Läufen kleiner als diese Streuung, is
 er nicht belastbar.
 
 **Seit August 2026 müssen Sie das nicht mehr von Hand vergleichen.** Ein Lauf mit
-Wiederholungen legt in `multi_run_summary.json` ein **Band** ab: für jede Runde
+Wiederholungen legt in `multi_run_summary.json` ein **Band** ab: für jeden Tick
 den Median und ein 80-Prozent-Intervall über alle Wiederholungen, für
 Buchungsrate und Ticketpreis. Die Streuung steht damit als Zahl da, statt aus
 mehreren Läufen abgelesen werden zu müssen.
 
 **Und Sie sehen es.** Wählen Sie einen der Läufe aus einem Durchgang mit
 Wiederholungen aus — in der Lauf-Auswahl steht er als
-`batch_…/run_003` — und öffnen Sie unter **Ergebnisse** die Ansicht **Figures**,
+`batch_…/run_003` — und öffnen Sie unter **Ergebnisse** die Ansicht **Diagramme**,
 Aussage 1 «Preis und Nachfrage». Die Linien zeigen weiterhin **diesen einen**
 Lauf; hinter ihnen liegen getönte Flächen, und die zeigen, wo 80 Prozent aller
 Wiederholungen lagen.
@@ -87,7 +91,7 @@ Vergleichen Sie nur Läufe, die mit demselben Stand gerechnet wurden. Am
 2026-08-27 wurde ein Fehler in der Kostenrechnung behoben: Regulatorische
 Abgaben gingen bis dahin nicht in den Startpreis ein. Läufe von davor beginnen
 deshalb billiger, und die Nachfrage weicht später aus — im Standardlauf kippt
-die Mobilitätsnachfrage seither in Runde 4 statt in Runde 15. Die Endzustände
+die Mobilitätsnachfrage seither in Tick 4 statt in Tick 15. Die Endzustände
 der Faktoren sind dieselben geblieben, der Weg dorthin nicht.
 
 Am selben Tag wurde ein zweiter Unterschied begradigt: **Wiederholungen ohne
@@ -104,7 +108,7 @@ Betroffen waren alle acht ausgelieferten Presets — je nach Preset zwischen zwe
 und zehn Systemgrößen, bei «Totaler Wahnsinn» zusätzlich alle sieben Faktoren.
 Am deutlichsten bei «Business as Usual»: Das Szenario schließt eine steigende
 CO₂-Abgabe ausdrücklich aus, gerechnet wurde sie trotzdem, womit die Regulierung
-in Runde 15 auf «streng» kippte. Preset-Läufe von davor beschreiben also nicht
+in Tick 15 auf «streng» kippte. Preset-Läufe von davor beschreiben also nicht
 die Annahmenwelt, deren Namen sie tragen. Über die Kommandozeile gestartete
 Sweeps waren nie betroffen.
 
@@ -113,12 +117,12 @@ vorgegeben.** Vier der acht Szenarien setzten bis dahin Faktorzustände fest,
 und der Assistent bot dafür einen eigenen Schritt an. Beides ist entfallen — die
 Faktoren entstehen jetzt im Lauf aus den Systemgrößen.
 
-Für die **Endzustände** ändert das nichts: Nachgemessen über 20 Runden landen in
+Für die **Endzustände** ändert das nichts: Nachgemessen über 20 Ticks landen in
 allen vier betroffenen Szenarien alle sieben Faktoren auf denselben Zuständen wie
-zuvor. Was sich ändert, sind die **ersten Runden**, in denen die Vorgabe noch
+zuvor. Was sich ändert, sind die **ersten Ticks**, in denen die Vorgabe noch
 stand, bevor die Regeln sie überschrieben — und über die Rückkopplung auch die
 Preise am Ende: bei «Totaler Wahnsinn» 588,47 statt 574,47 Euro (2,4 %), bei
-«P5.7» 121,27 statt 120,59 (0,6 %). Für die anderen beiden ist kein Unterschied
+«Prüflauf Abfrage-Ansicht» 121,27 statt 120,59 (0,6 %). Für die anderen beiden ist kein Unterschied
 messbar. Läufe dieser vier Szenarien von vor diesem Datum sind mit späteren also
 nur eingeschränkt vergleichbar.
 
@@ -153,7 +157,7 @@ Einzelzahl nur vorgetäuscht hat.
 Zwei Dinge bleiben: Ein Lauf mit demselben Zufallsstartwert liefert weiterhin
 **exakt** dasselbe Ergebnis. Und ein Seed ändert die **Faktor-Endzustände**
 heute kaum noch — nachgemessen landen die Startwerte 1, 2 und 3 nach 10, 15 und
-20 Runden auf denselben sieben Zuständen. Die Einzelentscheidungen mitteln sich
+20 Ticks auf denselben sieben Zuständen. Die Einzelentscheidungen mitteln sich
 über tausend Personen aus; was streut, sind die Raten, nicht die Lage.
 
 Ebenfalls am 2026-08-28 kam ein vierter Schnitt, und er trifft **nur den
@@ -191,7 +195,7 @@ Am **2026-08-31** kam ein fünfter Schnitt dazu, und er betrifft, **was ein
 Szenario-Vergleich überhaupt vergleicht**: Bis dahin rechnete er *alle acht*
 hinterlegten Dateien durch. Vier davon sind aber keine Zukünfte, sondern
 Stresstests der Engine — «Achterbahn der Extreme», «Action-Szenario», «Totaler
-Wahnsinn (Alle Parameter)» und ein gesichertes Experiment namens «P5.7». Ihre
+Wahnsinn (Alle Parameter)» und ein gesichertes Experiment, heute «Prüflauf Abfrage-Ansicht». Ihre
 Verläufe sind auf Sichtbarkeit und Belastung gebaut, nicht auf Plausibilität.
 
 Ein Vergleich stellt seither **vier Rahmenszenarien** nebeneinander statt acht
@@ -257,7 +261,7 @@ unveränderten; seither trägt jedes einen begründeten Kapazitätspfad und die 
 wie der Anbieter preist.
 
 **Das verschiebt die Zahlen aller vier deutlich.** Gemessen über die letzten
-Runden, vorher gegen nachher: «Business as Usual» 0,30 → 0,39 Buchungsrate bei
+Ticks, vorher gegen nachher: «Business as Usual» 0,30 → 0,39 Buchungsrate bei
 145 → 129 Euro, «CO₂-Verzögerung» 0,25 → 0,27 bei 124 → 118, «Freiwillige Wende»
 0,292 → 0,285 bei nahezu gleichem Preis, «Transformationskonflikt» 0,26 → 0,04
 bei 98 → 228 Euro. Läufe dieser vier Szenarien von vor diesem Datum gehören nicht
@@ -273,25 +277,25 @@ gleich schmerzhaft.
 Seither wird der Preis daran gemessen, was jemand hat: Dieselben 140 Euro sind
 ein anderer Verzicht, je nachdem wovon sie abgehen. **Das verschiebt jede Zahl**,
 wenn auch weniger stark als die Umstellung auf die gezogene Buchung: Ein
-Standardlauf über 40 Runden endet bei einer Buchungsrate von 0,264 statt 0,259
+Standardlauf über 40 Ticks endet bei einer Buchungsrate von 0,264 statt 0,259
 und einem Preis von 120,13 statt 118,85. Die Faktorlage bleibt dieselbe.
 
 Am **2026-09-07** kam ein zwölfter Schnitt dazu, und er trifft **jeden Lauf**:
-**Eine Runde ist ein Monat.** Bis dahin war das nicht festgelegt, und drei
+**Ein Tick ist ein Monat.** Bis dahin war das nicht festgelegt, und drei
 Mechanismen unterstellten drei verschiedene Zeitskalen — um den Faktor zwölf
 auseinander. Zwei Vorgaben rechneten in Jahren und rechnen jetzt in Monaten:
 
 * Die **Bevölkerungskurve** wächst um 2,7 Prozent über zehn Jahre statt um acht
-  Prozent über 29 Runden. Sie reicht außerdem bis Runde 120 statt bis Runde 30 —
+  Prozent über 29 Ticks. Sie reicht außerdem bis Tick 120 statt bis Tick 30 —
   in einem Standardlauf wächst die Bevölkerung damit bis zum Schluss, statt nach
   drei Vierteln stehenzubleiben.
-* Das **Nachfragewachstum** steht bei 0,0025 je Runde statt bei 0,03. Der alte
-  Wert war als Jahresrate gemeint und wurde je Runde aufgezinst — das waren
+* Das **Nachfragewachstum** steht bei 0,0025 je Tick statt bei 0,03. Der alte
+  Wert war als Jahresrate gemeint und wurde je Tick aufgezinst — das waren
   42,6 Prozent im Jahr.
 
 **Die Jahresraten sind dabei unverändert geblieben**; geändert wurde die
 Einheit, nicht die Aussage über die Welt. **Die Zahlen verschieben sich
-trotzdem**, wenn auch schwach: Ein Standardlauf über 40 Runden endet bei einer
+trotzdem**, wenn auch schwach: Ein Standardlauf über 40 Ticks endet bei einer
 Buchungsrate von **0,2679 statt 0,2685** und einem Preis von **116,59 statt
 116,46**. Die Faktorlage bleibt dieselbe. Am deutlichsten ist der Unterschied
 bei **langen** Läufen, weil sich dort beide Vorgaben am stärksten aufsummieren.
@@ -299,13 +303,13 @@ bei **langen** Läufen, weil sich dort beide Vorgaben am stärksten aufsummieren
 **Und er trifft die mitgelieferten Szenarien**, drei von vieren: «Business as
 Usual», «Freiwillige Wende» und «Transformationskonflikt» trugen ein eigenes
 Nachfragewachstum, und zwar in Jahren gerechnet — bei «Business as Usual»
-entsprachen die 0,03 je Runde **42,6 Prozent im Jahr**. «CO₂-Verzögerung» hatte
+entsprachen die 0,03 je Tick **42,6 Prozent im Jahr**. «CO₂-Verzögerung» hatte
 keine eigene Vorgabe und rechnete deshalb still als einziges richtig. Die vier
 waren damit auf diesem Kanal **nicht vergleichbar**, obwohl der
 Szenario-Vergleich genau das tut.
 
 Was sich dadurch ändert, ist enger, als man erwarten würde — gemessen über 50
-Runden je Szenario:
+Ticks je Szenario:
 
 | Szenario | Nachfrageniveau vorher | nachher |
 | --- | ---: | ---: |
@@ -321,13 +325,13 @@ dort in die Richtung, die zur Erzählung passt: Ein Krisenszenario wies vorher
 ein Nachfrageniveau **über** dem Ausgangswert aus.
 
 Am **2026-09-07** kam ein dreizehnter Schnitt dazu, und er trifft **jeden
-Lauf**: **Ein Faktor kippte in jeder Runde hin und her.** «Gesellschaftlicher
-Wertewandel» (F6) wechselte ab Runde 16 in *jeder* Runde den Zustand — über 120
-Runden 105 Mal.
+Lauf**: **Ein Faktor kippte in jedem Tick hin und her.** «Gesellschaftlicher
+Wertewandel» (F6) wechselte ab Tick 16 in *jedem* Tick den Zustand — über 120
+Ticks 105 Mal.
 
-**Teuer war daran nicht das Kippen, sondern das Ende.** Weil der Zustand jede
-Runde wechselte, hing der **Endzustand** an der Parität der Rundenzahl: Ein Lauf
-über 40 Runden endete mit «Fliegen bleibt akzeptiert», einer über 41 mit «starkes
+**Teuer war daran nicht das Kippen, sondern das Ende.** Weil der Zustand jeden
+Tick wechselte, hing der **Endzustand** an der Parität der Tickzahl: Ein Lauf
+über 40 Ticks endete mit «Fliegen bleibt akzeptiert», einer über 41 mit «starkes
 Klimabewusstsein» — bei sonst identischen Einstellungen. Und der Endzustand ist
 das, woraus die Szenarien und die Konsistenzbewertung entstehen.
 
@@ -339,21 +343,21 @@ auch einer, die das Gegenteil verlangt. Seither entscheidet der Rang wirklich.
 
 | | vorher | nachher |
 | --- | ---: | ---: |
-| Standardlauf über 40 Runden, Buchungsrate | 0,2679 | **0,2569** |
-| Standardlauf über 40 Runden, Preis | 116,59 | **119,95** |
+| Standardlauf über 40 Ticks, Buchungsrate | 0,2679 | **0,2569** |
+| Standardlauf über 40 Ticks, Preis | 116,59 | **119,95** |
 | «CO₂-Verzögerung», Endlage F6 | akzeptiert | **Klimabewusstsein** |
 | «Freiwillige Wende», Endlage F6 | akzeptiert | **Klimabewusstsein** |
 | «Freiwillige Wende», Preis | 106,25 | **107,15** |
 
 «Business as Usual» und «Transformationskonflikt» bleiben unverändert. Läufe von
 vor diesem Datum gehören nicht neben spätere — und ihre **Szenarien** sind mit
-Vorsicht zu lesen, weil ihr Endzustand von der Rundenzahl abhängen konnte.
+Vorsicht zu lesen, weil ihr Endzustand von der Tickzahl abhängen konnte.
 
 Am **2026-09-11** kam ein vierzehnter Schnitt dazu, und er trifft **nur die vier
-mitgelieferten Rahmenszenarien**: Sie laufen seither **120 statt 50 Runden**,
+mitgelieferten Rahmenszenarien**: Sie laufen seither **120 statt 50 Ticks**,
 und jede Marke darin ist im selben Verhältnis mitgewandert — die CO₂-Abgabe der
-«Freiwilligen Wende» erreicht 200 Euro nach 48 Runden statt nach 20. Anlass war,
-dass fünfzig Runden, seit eine Runde ein Monat ist, gut vier Jahre bedeuten — zu
+«Freiwilligen Wende» erreicht 200 Euro nach 48 Ticks statt nach 20. Anlass war,
+dass fünfzig Ticks, seit ein Tick ein Monat ist, gut vier Jahre bedeuten — zu
 kurz für die Politikpfade, die diese Szenarien erzählen.
 
 **Was gleich bleibt:** Jeder Meilenstein wird erreicht, und die Endlage der sieben
@@ -372,12 +376,21 @@ Annahmen jetzt zehn Jahre lang hält statt vier. Ein Szenario-Vergleich von vor
 diesem Datum gehört **nicht** neben einen späteren — auch dort nicht, wo die
 Zahlen nah beieinanderliegen: Die Läufe beschreiben verschiedene Zeitspannen.
 
+Ebenfalls am **2026-09-11** kam ein fünfzehnter Schnitt dazu, und er verschiebt
+**keine einzige Zahl**: Der Vorgabename eines Laufs heißt jetzt
+«Flugverkehr-Szenarioplanung» statt «Flugverkehr Szenarioplanung MVP», die
+Beschreibung ist mitgezogen. Beides steht in `configs/simulation_config.json`, und
+deshalb hat diese Datei seither einen **anderen Fingerabdruck**. Ein Lauf von
+davor und einer von danach tragen damit verschiedene Fingerabdrücke, obwohl sie —
+dieses einen Schnitts wegen — dieselben Zahlen liefern. Hier, und nur hier, dürfen
+sie trotzdem nebeneinander.
+
 ## Wo Sie vergleichen
 
 Die Endwerte stehen in **Übersicht**. Für den Verlauf über die Zeit eignet sich
-**Figures** unter «1 · Preis und Nachfrage», weil dort Preis und Buchungsrate gemeinsam
+**Diagramme** unter «1 · Preis und Nachfrage», weil dort Preis und Buchungsrate gemeinsam
 dargestellt sind.
 
 Wollen Sie die Zahlen nebeneinanderlegen, laden Sie aus dem Ansicht **Dateien** die
 Datei `timeseries/properties.csv` beider Läufe herunter — sie enthält alle
-Systemgrößen je Runde in tabellarischer Form.
+Systemgrößen je Tick in tabellarischer Form.

@@ -4,13 +4,14 @@ import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 from uuid import uuid4
 
 from pydantic import ValidationError
 
 from src.agents.agent_dependencies import format_depends_on_block
 from src.agents.agent_permissions import may_propose_factor
+from src.llm import LLMCallable
 from src.market.property_engine import scheduled_property_events
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
 from src.models.enums import AgentType, EventType
@@ -33,10 +34,6 @@ DEFAULT_EVENT_TYPE_BY_AGENT: dict[AgentType, EventType] = {
     AgentType.PROVIDER: EventType.PRICE_CHANGE,
     AgentType.REGULATOR: EventType.POLICY_CHANGE,
 }
-
-
-class LLMCallable(Protocol):
-    def call(self, prompt: str) -> str: ...
 
 
 class AgentNode:
@@ -75,7 +72,7 @@ class AgentNode:
                 round_number=state.clock.current_tick,
                 agent_responses=[response],
                 events=events,
-                environment_snapshot=state.environment,
+                environment_snapshot=state.environment.model_copy(deep=True),
                 summary=f"Agent run: {self.config.id}",
             )
         )
@@ -273,9 +270,6 @@ class AgentNode:
         return rendered
 
     def _format_factors(self, state: SimulationState) -> str:
-        if self.config.profile and "factors F1,F5,F6" not in self.config.profile.observes:
-            pass  # We should dynamically check observed_factors
-
         allowed_factors = None
         if self.config.profile:
             allowed_factors = self.config.profile.observed_factors

@@ -424,3 +424,83 @@ def test_alle_mechanismen_nennen_dieselbe_zeitskala(properties):
         + f"\n  Bevölkerung {bevoelkerung_pa:.3%} p.a., Reiseabstand "
         f"{reiseabstand_ticks:.1f} Ticks, größte Rate {schlimmste_rate:.2%} p.a."
     )
+
+
+# --- Die Oberfläche sagt dasselbe --------------------------------------------
+
+#: Was einem Tick seine Dauer abspricht. **«Kein Kalenderzeitraum» ist davon
+#: ausgenommen**, und das mit Grund: Ein Tick hat kein Datum (Invariante 5), er
+#: lässt sich auf keinen Zeitstrahl legen. Falsch ist erst, er stehe für
+#: *keinen Zeitraum* — seit P3.8 steht er für einen Monat.
+_KEIN_ZEITRAUM = r"\bkein(?:en)?\s+Zeitraum\b"
+
+
+def _sichtbare_texte(quelle: str) -> list[tuple[int, str]]:
+    """Jede Zeichenkette eines Moduls, die kein Docstring ist — (Zeile, Text)."""
+
+    import ast
+
+    baum = ast.parse(quelle)
+    docstrings = {
+        id(knoten.body[0].value)
+        for knoten in ast.walk(baum)
+        if isinstance(knoten, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+        and knoten.body
+        and isinstance(knoten.body[0], ast.Expr)
+        and isinstance(knoten.body[0].value, ast.Constant)
+    }
+    return [
+        (knoten.lineno, knoten.value)
+        for knoten in ast.walk(baum)
+        if isinstance(knoten, ast.Constant)
+        and isinstance(knoten.value, str)
+        and id(knoten) not in docstrings
+    ]
+
+
+def _spricht_die_dauer_ab(texte) -> list[str]:
+    import re
+
+    return [f"{ort}: {text[:90]!r}" for ort, text in texte if re.search(_KEIN_ZEITRAUM, text)]
+
+
+class TestDieOberflaecheSprichtDemTickKeineDauerAb:
+    """P7.2 (2026-09-13): Die Oberfläche sagte «ein Tick steht für keinen Zeitraum».
+
+    Die Erklärung zu «Länge des Laufs» und die Beschreibung des Handbuchkapitels
+    «Tick, Lauf und Szenario» stammten von vor P3.8 und widersprachen dem
+    Kapitel, das sie ankündigten. **Gesucht** wird über jede sichtbare
+    Zeichenkette unter `dashboard/web/` und jedes Handbuchkapitel, nicht an den
+    beiden bekannten Stellen.
+    """
+
+    def test_no_visible_text_says_a_tick_has_no_duration(self):
+        from pathlib import Path
+
+        wurzel = Path(__file__).resolve().parents[1]
+        texte: list[tuple[str, str]] = []
+        for pfad in sorted((wurzel / "dashboard" / "web").rglob("*.py")):
+            ort = pfad.relative_to(wurzel).as_posix()
+            texte += [
+                (f"{ort}:{zeile}", text)
+                for zeile, text in _sichtbare_texte(pfad.read_text(encoding="utf-8"))
+            ]
+        for pfad in sorted((wurzel / "docs" / "handbuch").glob("*.md")):
+            texte.append((pfad.relative_to(wurzel).as_posix(), pfad.read_text(encoding="utf-8")))
+
+        befunde = _spricht_die_dauer_ab(texte)
+
+        assert not befunde, (
+            "Diese Texte sprechen einem Tick die Dauer ab — seit P3.8 ist er ein Monat:\n  "
+            + "\n  ".join(befunde)
+        )
+
+    def test_the_search_would_notice_the_old_sentence(self):
+        quelle = (
+            '"""Ein Tick steht für keinen Zeitraum — als Docstring erlaubt."""\n'
+            'ALT = "Ein Tick ist eine Runde des Modells und steht bewusst für keinen Zeitraum."\n'
+            'KAPITEL = "Warum ein Tick kein Zeitraum ist."\n'
+            'RICHTIG = "Ein Tick ist ein Monat Modellzeit, ohne Kalenderdatum — kein Kalenderzeitraum."\n'
+        )
+
+        assert len(_spricht_die_dauer_ab(_sichtbare_texte(quelle))) == 2

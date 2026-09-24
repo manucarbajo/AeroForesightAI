@@ -159,11 +159,17 @@ class Rahmenszenario(BaseModel):
     `"preset"` (eine Datei unter `configs/sweeps/`), `"eigen"` (im Assistenten
     zusammengestellt) und `"standard"` (die ausgelieferten Konfigurationsdateien
     — auch das ist ein Rahmen, nur ein unbenannter).
+
+    **Seit P7.13-U13.2 dazu `"abgeleitet"`:** ein Szenario, auf das Abweichungen
+    gelegt wurden. `id` und `name` nennen das Szenario, `abweichungen` die
+    geänderten Systemgrößen, dazu `"preisstrategie"`, falls sie geändert wurde.
+    Ein geändertes Szenario stünde sonst als unverändertes im Artefakt.
     """
 
     id: str
     name: str
     quelle: str = "preset"
+    abweichungen: list[str] = []
 
 
 class SimulationState(BaseModel):
@@ -205,7 +211,6 @@ class SimulationState(BaseModel):
     price_history: list[PriceHistoryEntry] = Field(default_factory=list)
     round_results: list[RoundResult] = Field(default_factory=list)
     cib_matrix: CIBMatrix | None = None
-    cib_history: CIBMatrixHistory | None = None
     market_metrics: dict[str, float] = Field(default_factory=dict)
     property_timeseries: list[dict[str, Any]] = Field(default_factory=list)
     population_individuals: list[Individual] = Field(default_factory=list)
@@ -266,7 +271,6 @@ class PlaygroundState(InputState):
     price_history: list[dict[str, Any]] = Field(default_factory=list)
     round_results: list[dict[str, Any]] = Field(default_factory=list)
     cib_matrix: dict[str, Any] | None = Field(default=None)
-    cib_history: dict[str, Any] | None = Field(default=None)
 
     redebedarf_scores: dict[str, int] = Field(default_factory=dict)
     current_speech_candidates: list[SpeechCandidateState] = Field(default_factory=list)
@@ -278,7 +282,7 @@ class PlaygroundState(InputState):
 
 # deferred imports for forward refs
 from src.models.agent_models import AgentConfig  # noqa: E402
-from src.models.cib_models import CIBMatrix, CIBMatrixHistory  # noqa: E402
+from src.models.cib_models import CIBMatrix  # noqa: E402
 from src.models.event_models import EventLogEntry, PriceHistoryEntry, RoundResult  # noqa: E402
 
 SimulationState.model_rebuild()

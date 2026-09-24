@@ -39,7 +39,7 @@ def placeholder(slot: str) -> html.Div:
     """Steht im Layout, bis der Callback die Auskunft nachreicht."""
 
     return html.Div(
-        ui.status_dot(False, "Ollama wird geprüft …"),
+        ui.status_dot("pruefen", "Ollama wird geprüft …"),
         id=status_id(slot),
     )
 
@@ -130,7 +130,7 @@ def availability(draft: dict) -> html.Div:
     # beantwortet die falsche Frage.
     if not base_url:
         return ui.status_dot(
-            False,
+            "aus",
             "Keine Adresse für Ollama eingestellt",
             hint="Ohne Endpunkt lässt sich nicht prüfen, ob ein Sprachmodell "
             "erreichbar ist. Adresse unter «Technik» eintragen.",
@@ -140,7 +140,7 @@ def availability(draft: dict) -> html.Div:
 
     if not status.reachable:
         return ui.status_dot(
-            False,
+            "aus",
             "Ollama ist nicht erreichbar",
             hint=f"{status.detail} Ohne laufenden Dienst funktionieren nur die beiden "
             f"unteren Modi. Adresse: {base_url}",
@@ -152,7 +152,7 @@ def availability(draft: dict) -> html.Div:
     if not model:
         vorhanden = ", ".join(status.models) or "keine"
         return ui.status_dot(
-            False,
+            "aus",
             "Ollama läuft, aber es ist kein Modell eingestellt",
             hint=f"Vorhanden dort: {vorhanden}. Modellnamen unter «Technik» eintragen.",
         )
@@ -160,14 +160,14 @@ def availability(draft: dict) -> html.Div:
     if not status.has_model(model):
         vorhanden = ", ".join(status.models) or "keine"
         return ui.status_dot(
-            False,
+            "aus",
             f"Ollama läuft, aber «{model}» fehlt dort",
             hint=f"Vorhanden: {vorhanden}. Modellnamen unter «Technik» anpassen "
             f"oder das Modell nachladen.",
         )
 
     return ui.status_dot(
-        True,
+        "bereit",
         f"Ollama läuft, «{model}» ist einsatzbereit",
         hint="Alle drei Modi stehen zur Verfügung.",
     )

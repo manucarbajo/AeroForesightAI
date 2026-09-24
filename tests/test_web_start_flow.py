@@ -176,19 +176,34 @@ class TestDieSzenarioAuswahl:
 
         assert f"{preset.max_ticks} Ticks" in str(start_flow.scenario_details(draft))
 
-    def test_own_settings_are_their_own_choice(self, draft):
+    def test_an_old_own_settings_choice_becomes_standard_with_own_values(self, draft):
+        """P7.13-U13.2 Teil 3b: Den Eintrag gibt es nicht mehr — ein offener Tab kann ihn halten."""
+
         draft[start_flow.FIELD] = start_flow.CUSTOM
         result = start_flow.normalise(draft)
 
-        assert result["scenario_mode"] == "custom"
+        assert result["scenario_mode"] == "basis"
         assert result["apply_custom_overrides"] is True
-        assert start_flow.of(result) == start_flow.CUSTOM
+        assert start_flow.of(result) == start_flow.STANDARD
+
+    def test_a_stored_own_settings_mode_is_translated_too(self, draft):
+        """Auch ohne Auswahl im Entwurf — etwa nach «Werte übernehmen» aus einer älteren Fassung."""
+
+        draft["scenario_mode"] = start_flow.CUSTOM
+        draft["apply_custom_overrides"] = False
+        result = start_flow.normalise(draft)
+
+        assert result["scenario_mode"] == "basis"
+        assert result["apply_custom_overrides"] is True
 
     def test_every_preset_is_offered(self):
-        values = {option["value"] for option in start_flow.choice_options()}
+        """Jedes Preset ist erreichbar — die Stresstests seit P7.4-U4.1 über «Stresstests zeigen»."""
+
+        values = {option["value"] for option in start_flow.choice_options(stresstests=True)}
 
         assert {preset.id for preset in list_sweep_presets()} <= values
-        assert {start_flow.STANDARD, start_flow.CUSTOM} <= values
+        assert start_flow.STANDARD in values
+        assert start_flow.CUSTOM not in values, "«Eigene Einstellungen» ist entfallen (P7.13)"
 
 
 # --- Befunde am Feld -------------------------------------------------------
@@ -254,3 +269,158 @@ def test_live_state_fills_every_slot_the_layout_declares(draft):
     slots, _by_field = start_flow.live_state(draft)
 
     assert erklaert == set(slots)
+
+
+def _groesse(klassen: set[str]) -> str | None:
+    """Welche Schriftgröße für ein Element mit diesen Klassen gewinnt.
+
+    **Nachgerechnet mit dem Kaskaden-Nachrechner aus `test_web_drawers`**, und
+    das ist wichtiger, als es aussieht — zwei Näherungen davor haben nicht
+    getragen:
+
+    * Der erste Anlauf las **Klassennamen** und hielt jede Klasse mit
+      `af-md--`-Präfix für eine Größe. Er schlug damit bei `af-md--these` an,
+      das nur Farbe und Gewicht setzt.
+    * Der zweite suchte die Klasse **im Stylesheet** und fand für `af-md` die
+      Regel `.af-md.af-md--caption`, weil deren Selektor die Zeichenfolge
+      enthält — gemeldet wurde damit 12 px für einen 15-px-Text.
+
+    Hier gewinnt die Regel, die auch im Browser gewinnt: höchste Spezifität,
+    bei Gleichstand die spätere in der Datei.
+    """
+
+    from tests.test_web_drawers import _sieger
+
+    try:
+        _, wert = _sieger(klassen, "font-size")
+    except (AssertionError, StopIteration, ValueError):
+        return None
+    return wert.strip() or None
+
+
+class TestDieBegruendungStoertDieEntscheidungNicht:
+    """**D3, entschieden am 2026-09-12.** Sichtbar sind These und zwei Sätze.
+
+    Vorher stand die ganze Begründung offen: je Szenario 1163 bis 2429 Zeichen
+    zusammen mit der These, beim Standardrahmen 2261 allein aus Begründung und
+    Vorbehalt. Das Audit nennt das die Tonlage eines Projektplans. **Die
+    Ehrlichkeit bleibt vollständig erreichbar** — der Rest steht einen Klick
+    tiefer, hinter «Begründung und Quellen».
+
+    **Und D3 ist die Voraussetzung von U1.2.** Der erste Anlauf der Breiten ist
+    daran gescheitert, dass dieser Block zwei Textgrößen mischte: Ein Deckel in
+    Pixeln kann die Zusage «höchstens 75 Zeichen je Zeile» nicht für zwei
+    Größen halten — 608 px tragen bei 15 px 66 Zeichen und bei 12 px 106. Die
+    Regel, die daraus folgt, steht hier als Zusage: **ein Leseblock hat eine
+    Textgröße.**
+    """
+
+    @staticmethod
+    def _rahmen():
+        from dashboard.config_catalog import list_sweep_presets
+        from src.config_loader import load_properties_config
+
+        rahmen = [("Standard-Ausgangslage", load_properties_config().kohaerenz)]
+        rahmen += [(p.name, p.kohaerenz) for p in list_sweep_presets() if p.kohaerenz]
+        return [(name, k) for name, k in rahmen if k is not None]
+
+    def test_the_visible_layer_carries_one_text_size(self):
+        """Die tragende Zusage — sie macht U1.2 überhaupt möglich.
+
+        **Gemessen wird die Größe, nicht der Klassenname.** Der erste Anlauf
+        dieses Wächters meldete jede Klasse mit `af-md--`-Präfix und schlug
+        damit auch bei `af-md--these` an — einer Betonung, die Farbe und
+        Gewicht setzt und die Größe gerade **nicht** anfasst. Nachgeschlagen
+        wird deshalb im Stylesheet, welche Klasse eine `font-size` trägt.
+        """
+
+        for name, kohaerenz in self._rahmen():
+            block = start_flow._kohaerenz_block(kohaerenz)
+            sichtbar = [kind for kind in block.children if not isinstance(kind, html.Details)]
+            groessen = {
+                _groesse(set(str(getattr(kind, "className", "")).split()))
+                for kind in sichtbar
+                if _groesse(set(str(getattr(kind, "className", "")).split()))
+            }
+
+            assert len(groessen) <= 1, (
+                f"«{name}»: Die sichtbare Ebene trägt {len(groessen)} Textgrößen "
+                f"({sorted(groessen)}). Ein Leseblock hat eine Textgröße — sonst kann "
+                "kein Pixeldeckel die Zusage «höchstens 75 Zeichen je Zeile» halten: "
+                "608 px tragen bei 15 px 66 Zeichen und bei 12 px 106."
+            )
+
+    def test_only_two_sentences_of_the_reasoning_are_open(self):
+        for name, kohaerenz in self._rahmen():
+            offen, _ = start_flow.satzanfang(kohaerenz.begruendung)
+            saetze = len(start_flow._SATZENDE.split(offen))
+
+            assert saetze <= start_flow.SAETZE_OFFEN, (
+                f"«{name}»: {saetze} Sätze stehen offen, erlaubt sind "
+                f"{start_flow.SAETZE_OFFEN}."
+            )
+            assert len(offen) < len(kohaerenz.begruendung), (
+                f"«{name}»: Die ganze Begründung steht offen ({len(offen)} Zeichen) — "
+                "dann ist D3 nicht umgesetzt, sondern nur umbenannt."
+            )
+
+    def test_nothing_is_lost_behind_the_disclosure(self):
+        """**Weggeklappt ist nicht weggelassen.** Der Text bleibt vollständig.
+
+        Ohne diese Zusage wäre D3 ein Textverlust: Ein Satzschnitt, der den
+        Rest wegwirft, nimmt der Variante C ihre einzige Absicherung.
+        """
+
+        for name, kohaerenz in self._rahmen():
+            offen, rest = start_flow.satzanfang(kohaerenz.begruendung)
+            zusammen = " ".join(teil for teil in (offen, rest) if teil)
+
+            assert zusammen == " ".join(kohaerenz.begruendung.split()), (
+                f"«{name}»: Der Satzschnitt verliert Text. Offen plus Rest muss die "
+                "ganze Begründung sein."
+            )
+
+    def test_the_sentence_split_holds_on_every_shipped_reasoning(self):
+        """**Die Machbarkeit ist gemessen, nicht angenommen.**
+
+        Ein Satzschnitt am Punkt ist fragil, sobald eine Abkürzung oder eine
+        Dezimalzahl im Text steht — «z. B.» würde nach «z.» trennen und einen
+        halben Satz zeigen. Am 2026-09-12 enthielt keine der fünf
+        Begründungen so etwas; wer eine schreibt, die es tut, bekommt hier
+        Bescheid, bevor ein Leser den Bruch sieht.
+        """
+
+        import re
+
+        stolpersteine = {
+            "Abkürzung": r"\b(?:z\.\s?B\.|bzw\.|ca\.|vgl\.|Nr\.|S\.\s?\d|u\.\s?a\.|d\.\s?h\.)",
+            "Dezimalzahl": r"\d\.\d",
+        }
+        befunde = []
+        for name, kohaerenz in self._rahmen():
+            for art, muster in stolpersteine.items():
+                treffer = re.findall(muster, kohaerenz.begruendung)
+                if treffer:
+                    befunde.append(f"«{name}»: {art} {treffer}")
+
+        assert not befunde, (
+            "Diese Begründungen enthalten etwas, woran der Satzschnitt scheitert:\n  "
+            + "\n  ".join(befunde)
+            + "\n\nEntweder umformulieren, oder D3 braucht ein eigenes Feld für die "
+            "sichtbare Kurzfassung (die dritte Variante der Entscheidung)."
+        )
+
+    def test_the_disclosure_names_what_it_holds(self):
+        for name, kohaerenz in self._rahmen():
+            block = start_flow._kohaerenz_block(kohaerenz)
+            klappen = [kind for kind in block.children if isinstance(kind, html.Details)]
+
+            assert len(klappen) == 1, (
+                f"«{name}»: {len(klappen)} Klappen im Block. D3 hat **eine** entschieden — "
+                "zwei übereinander lesen sich als Formular (U1.4)."
+            )
+            assert "Begründung und Quellen" in str(klappen[0]), (
+                f"«{name}»: Die Klappe sagt nicht, dass die Begründung darin steckt. "
+                "Sie hieß bis D3 «Quellen und was davon nicht belegt ist» und trug nur "
+                "zwei der vier Texte."
+            )

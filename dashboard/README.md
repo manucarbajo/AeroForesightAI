@@ -33,7 +33,7 @@ python -m dashboard.web.app --port 8511
 | `http://localhost:8511/app/` | Einrichten (die Schrittfolge, sechs Schritte) |
 | `http://localhost:8511/app/lauf` | Leitstand (Szene + Zeitleiste) |
 | `http://localhost:8511/app/runs` | Ergebnisse (die sieben Ansichten) |
-| `http://localhost:8511/app/modell` | Modell (Faktorlage, Systemgrößen, Bevölkerung, Preisbildung) |
+| `http://localhost:8511/app/modell` | Modell (Systemgrößen, Preisbildung, Sättigung, Bevölkerung) |
 | `http://localhost:8511/app/doku` | Handbuch |
 
 Die Reihenfolge ist seit P1.7 der Arbeitsablauf: Man richtet ein, sieht dann zu,
@@ -53,13 +53,12 @@ dashboard/
 ├── run_browser.py          # Runs, Dateien, Figures, Zeitreihen lesen
 ├── run_launcher.py         # Lauf ausführen (inkl. Fortschritts-Callback)
 ├── consistency_report.py   # Artefakt-Checks gegen die Ground Truth
-├── web/                    # Plotly-Dash-Oberfläche  ← aktiv
-└── legacy_streamlit/       # abgelöste Streamlit-UI  ← nur noch zum Vergleich
+└── web/                    # Plotly-Dash-Oberfläche
 ```
 
 Die vier Module oben sind **oberflächenfrei** — sie enthalten keine Zeile
-Dash und keine Zeile Streamlit. Beide Oberflächen setzen darauf auf, und
-`tests/test_dashboard_service.py` testet sie unabhängig von der UI.
+Dash. Die Oberfläche setzt darauf auf, und
+`tests/test_dashboard_service.py` testet sie unabhängig von ihr.
 
 ### `web/`
 
@@ -129,12 +128,12 @@ Dateien unter `configs/`; sie können dadurch nicht veralten.
 Systemgröße oder ein neues Preset ohne Eintrag im Handbuch lässt die Suite
 fehlschlagen.
 
-**Demo-Ablauf:** Run wählen → **Szenario** lesen → **Figures** → **Abfrage**
+**Demo-Ablauf:** Run wählen → **Szenario** lesen → **Diagramme** → **Abfrage**
 (Chat). Details: [`../docs/scenario_runs.md`](../docs/scenario_runs.md)
 
 Run-Figures liegen unter `outputs/<run_id>/figures/` (6 PNGs + `manifest.json`),
-sofern «Figures nach Lauf erzeugen» aktiv ist (Standard). Sie erscheinen in der
-Ansicht **Figures** unter **PNG-Export**; im Dark Mode stehen sie auf einer
+sofern «Auswertungsgrafiken erzeugen» aktiv ist (Standard). Sie erscheinen in der
+Ansicht **Diagramme** unter **PNG-Export**; im Dark Mode stehen sie auf einer
 weißen Fläche wie ein aufgelegtes Blatt — matplotlib rendert sie hell, und
 ehrlich dargestellt schlägt falsch eingefärbt (offen in P1.2). die sechs Live-Auswertungen daneben entstehen
 direkt aus `outputs/<run_id>/timeseries/`. Sweep-Runs: `outputs/sweeps/sweep_<preset>/`.
@@ -171,12 +170,5 @@ bei jedem Laden kurz auf.
 Tailwind und die Schriften kommen wie auf der Landingpage über CDN. Für das
 Deployment auf den eigenen Server müssen beide lokal ausgeliefert werden;
 siehe [`../aeroforesight-ai-landing-page/DEPLOY.md`](../aeroforesight-ai-landing-page/DEPLOY.md).
-
-## Legacy
-
-`legacy_streamlit/` ist die abgelöste Streamlit-Oberfläche. Sie bleibt bis auf
-Weiteres lauffähig, damit sich alt und neu direkt vergleichen lassen — siehe
-[`legacy_streamlit/README.md`](legacy_streamlit/README.md). Neue Funktionen
-gehören ausschließlich nach `web/`.
 
 Projekt-README: [`../README.md`](../README.md)

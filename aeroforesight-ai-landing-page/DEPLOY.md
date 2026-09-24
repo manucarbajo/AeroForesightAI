@@ -81,10 +81,10 @@ im `<style>`-Block jeder Seite, das Skript am Seitenende.
 ## Deployment-Optionen
 
 - **Statisches Hosting:** Ordner direkt zu Netlify, Vercel oder GitHub Pages deployen.
-- **Neben dem Dashboard:** Da das Deployment-Ziel ohnehin ein Hetzner-Server mit Streamlit ist,
-  bietet es sich an, die statischen Seiten über den vorgelagerten Reverse Proxy (nginx/Caddy)
-  auszuliefern und `/dashboard` auf die Streamlit-App zu routen. Dann funktioniert der
-  Login-Button ohne Anpassung.
+- **Mit dem Dashboard:** Die Dash-App liefert diese Seiten selbst aus — Landingpage auf `/`,
+  Dashboard auf `/app/` (`dashboard/web/landing_route.py`). Ein vorgelagerter Reverse Proxy
+  (nginx/Caddy) leitet deshalb nur auf die App weiter, und der Login-Button funktioniert
+  ohne Anpassung.
 
 ## Gestaltungsentscheidungen
 

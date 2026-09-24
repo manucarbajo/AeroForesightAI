@@ -1,7 +1,24 @@
-Den Lauf wählen Sie oben in der Kopfzeile — die Wahl gilt für den ganzen
-Leitstand, also auch für Szene, Kennzahlen und Zeitleiste. Unter **Ergebnisse**
-liegen sieben Ansichten auf dieselben Daten. Welche wann sinnvoll ist, steht
+Den Lauf wählen Sie oben in der Kopfzeile, solange Sie im Leitstand oder hier sind —
+die Wahl gilt für den Leitstand mit
+Szene, Kennzahlen und Zeitleiste und für die sieben Ansichten unter **Ergebnisse**,
+die auf dieselben Daten schauen. «Ergebnisse» bekommt den Bildschirm allein:
+Bedienfeld, Kennzahlen und Zeitleiste gibt es nur im Leitstand. Welche Ansicht
+wann sinnvoll ist, steht
 unter [Ergebnisse lesen](/doku/ergebnisse-lesen).
+
+Neben der Auswahl führt «Dateien des Laufs» zu den Dateien des gewählten Laufs.
+Beides erscheint nur hier und im Leitstand: Beim Einrichten, im Modell und im
+Handbuch geht es nicht um einen Lauf, der schon gerechnet ist.
+
+Ein Klick auf den Namen des Laufs öffnet **Lauf wählen**: die Läufe, der jüngste
+zuerst, mit Art, Rechenmodus und — wenn ein Sprachmodell ausgefallen ist — dem
+Vermerk «beeinträchtigt». Die Suche geht über Name, Rahmen, Datum und
+Rechenmodus; jedes Wort muss passen. Darunter wählen Sie, welche Art Sie sehen
+wollen: Einzelläufe, Wiederholungen, Szenario-Vergleiche oder Prüfläufe.
+**Prüfläufe sind ausgeblendet, bis Sie sie wählen** — Läufe unter einem
+Szenario, das heute kein Rahmenszenario ist, etwa einem Stresstest. Die Liste
+zeigt höchstens 30 Läufe; die Suche grenzt ein. Ein Klick auf eine Zeile wählt
+den Lauf und schließt das Fenster, Escape schließt es ohne Wahl.
 
 ## Der Leitstand selbst
 
@@ -12,19 +29,25 @@ In der Mitte steht die Population zu **einem** Tick — jeder Punkt eine Person,
 waagerecht ihre Zahlungsbereitschaft, senkrecht ihr Umweltbewusstsein, eingefärbt
 danach, ob sie gebucht hat. Die Achsen stehen über den ganzen Lauf fest, damit
 eine Bewegung im Bild wirklich eine Bewegung der Bevölkerung ist und nicht bloß
-eine nachgeführte Achse. Darüber liegt der Streifen mit den sieben
-Faktorzuständen; ein hervorgehobener Chip heißt, dieser Deskriptor ist gekippt.
+eine nachgeführte Achse. Darüber liegt der Streifen mit den sieben Faktoren, je
+Kurzname und Zustand («Regulierung», «F2.1»); ein hervorgehobener Chip heißt,
+dieser Faktor ist gekippt. Der volle Zustandstext steht im Tooltip des Chips.
 
 Rechts stehen die Kennzahlen desselben Ticks — Buchungsrate, Ticketpreis,
 Kostendruck, Nachfrageniveau, jeweils mit der Veränderung zum Vortick —, darunter
-dieselben Größen als Verlauf mit einer Marke an der aktuellen Stelle. Ganz unten
+dieselben Größen als Verlauf mit einer Marke an der aktuellen Stelle, jeder mit
+seiner Einheit im Titel. Die Veränderung trägt einen Pfeil — ↑ gestiegen,
+↓ gefallen — und keine Farbe: Ob ein steigender Preis gut oder schlecht ist,
+entscheidet Ihre Fragestellung, nicht die Oberfläche. Ganz unten
 die Konsole; sie ist zugeklappt, die Zahl daneben sagt, wie viele Meldungen
 anliegen.
 
 Unten führt die **Zeitleiste** durch den Lauf: ziehen, schrittweise gehen oder
 abspielen. Sie ist die einzige Zeitachse der Oberfläche; alles andere folgt ihr.
 Die Marker unter der Leiste zeigen, wo etwas passiert ist — die gelben sind
-politische Eingriffe.
+politische Eingriffe; die Legende darunter sagt es ebenfalls. Zeigen Sie mit der
+Maus auf einen Marker, nennt er die Ereignisse dieses Ticks, Politik zuerst und
+höchstens drei; alle stehen in der Konsole.
 
 ## Szenario
 
@@ -43,14 +66,17 @@ Szenario-Erzeugung gerechnet wurde.
 
 ## Übersicht
 
-Vier Kacheln und zwei Diagramme — dieselben Größen wie in der Telemetrie rechts,
+Vier Kacheln und zwei Diagramme — dieselben Größen wie in den Kennzahlen des Leitstands,
 aber über den ganzen Lauf statt zu einem Tick. Die Kacheln nennen erreichte und geplante Ticks,
 die Zahl der Ereignisse, das verwendete Modell und ob das Marktmodell aktiv war.
 
 Darunter steht, **woraus der Lauf entstanden ist**: das Rahmenszenario, der
-Rechenmodus, der Zufallsstartwert und der Codestand.
+Rechenmodus und der Zufallsstartwert. Codestand und der Fingerabdruck der
+gelesenen Konfigurationsdateien stehen hinter «Technische Details» — sie
+beantworten, ob zwei Läufe vergleichbar sind, und nicht, was herausgekommen
+ist.
 
-Das **Rahmenszenario** ist dabei die wichtigste der vier Angaben — es ist die
+Das **Rahmenszenario** ist dabei die wichtigste der drei Angaben — es ist die
 Außenwelt, aus der alle Zahlen des Laufs entstanden sind. Es steht seit August
 2026 dort; davor ließ sich einem fertigen Lauf nicht ansehen, unter welchen
 Annahmen er gerechnet hatte. Läufe von davor zeigen «nicht festgehalten».
@@ -61,23 +87,44 @@ im Lauf überhaupt etwas passiert ist.
 
 ## Animation
 
-Vier Streudiagramme, die sich über die Ticks abspielen lassen. Sie bringen ihre
-eigenen Abspielknöpfe mit und folgen **nicht** der Zeitleiste unten — anders als
+Streudiagramme, die sich über die Ticks abspielen lassen. Sie bringen ihre
+eigenen Abspielknöpfe mit; eine Zeitleiste gibt es unter «Ergebnisse» nicht — anders als
 die Szene im Bereich «Leitstand», die genau das tut. Wer beides nebeneinander
 braucht, nimmt die Szene; wer eine Aggregation über Alters- oder Segmentgruppen
 sucht, ist hier richtig. Das erste zeigt
 jede einzelne Person nach Zahlungsbereitschaft und Umweltbewusstsein, eingefärbt
-danach, ob sie gebucht hat. Die übrigen drei fassen nach Altersgruppen und
-Segmenten zusammen.
+danach, ob sie gebucht hat.
 
-Das vierte ist das aufschlussreichste: Es stellt den Anteil eines Segments an der
+**«Wer sich den Flug leisten kann»** zeigt eine feste Stichprobe von 150 Personen, in jedem
+Tick dieselben. Waagrecht steht der höchste Ticketpreis, den eine Person
+überhaupt bezahlen kann, senkrecht ihr Abstand zum Ticketpreis des Ticks. Steigt
+der Preis, sinkt die ganze Wolke. Wer unter die gestrichelte Linie fällt, kann
+sich das Ticket nicht leisten und bucht nicht. Oberhalb der Linie entscheidet die
+Wahrscheinlichkeit — ein Punkt knapp darüber bucht oft trotzdem nicht. Läufe vor
+dem 11. September 2026 zeigen an seiner Stelle einen Hinweis, weil ihnen die
+nötige Spalte fehlt.
+
+**«Sättigung»** zeigt dieselben Personen mit ihrer Zahlungsbereitschaft
+gegen den Reisebedarf, also eins minus die Sättigung. Wer bucht, ist danach
+gesättigt, und sein Punkt fällt nach unten. Tick für Tick klingt die Sättigung
+ab, und der Punkt steigt wieder — wie schnell, hängt am Segment.
+
+**Drei Merkmals-Streuungen** zeigen dieselben Personen nach je zwei Merkmalen:
+Preisempfindlichkeit gegen Bahnbereitschaft, Alter gegen Umweltbewusstsein und
+Einkommensfaktor gegen Zahlungsbereitschaft. Diese Merkmale entstehen beim Ziehen
+einer Person und bewegen sich im Lauf wenig: Einmalige Regeln können
+Preisempfindlichkeit und Umweltbewusstsein anheben, der Einkommensfaktor folgt dem
+Einkommensindex. Zu sehen ist vor allem, an welchen Stellen der Wolke gebucht wird.
+
+Die Aggregations-Sichten darunter fassen nach Altersgruppen und Segmenten zusammen. Die Sicht
+«Marktanteil vs. Populationsanteil» ist die aufschlussreichste: Es stellt den Anteil eines Segments an der
 Bevölkerung seinem Anteil an den Buchungen gegenüber. Liegt ein Punkt über der
 Diagonalen, bucht dieses Segment überdurchschnittlich oft, gemessen an seiner
 Größe.
 
 Die Ansicht setzt voraus, dass der Lauf die Personen-Historie mitgeschrieben hat.
 
-## Figures
+## Diagramme
 
 **Vier Fragen, die ein Lauf beantwortet** — und daneben der Bildexport.
 
@@ -104,14 +151,15 @@ Szenario endet.
 **Aussage 4 braucht mehr als einen Lauf.** Steht Ihr Lauf allein, sagt die
 Ansicht das und zeigt seine Faktorlage am Ende; ein Vergleich entsteht über
 **Einrichten → Szenario-Vergleich starten**. Verglichen werden dann alle
-Szenario-Läufe unter `outputs/sweeps/` — auch solche aus früheren Durchläufen.
+Szenario-Läufe aus einem Vergleich — auch solche aus früheren Durchläufen; auf
+der Platte liegen sie unter `outputs/sweeps/`.
 
 Unter **PNG-Export** kann eine Warnung über den Bildern stehen; sie sagt, dass
 dem Satz nicht zu trauen ist. Zwei Fälle gibt es:
 
 **«Kein Manifest»** — die Bilder liegen da, aber die Liste ihrer Titel fehlt.
 Das betrifft ältere Läufe: Ihre Titel sind aus den Dateinamen abgeleitet, und ob
-der Satz vollständig ist, lässt sich nicht sagen. «Figures neu erzeugen» stellt
+der Satz vollständig ist, lässt sich nicht sagen. «Diagramme neu erzeugen» stellt
 einen benannten Satz her.
 
 **«Das Manifest nennt Bilder, die nicht vorliegen»** — der Satz ist
@@ -122,12 +170,18 @@ Steht keine Warnung da, ist der Satz vollständig und benannt.
 ## Bericht
 
 Der Tick-für-Tick-Bericht des Laufs, mit Kennzahlen und dem, was die Akteure
-gesagt haben. Der richtige Ort, um einer einzelnen Runde nachzugehen.
+gesagt haben. Der richtige Ort, um einem einzelnen Tick nachzugehen.
 
 ## Abfrage
 
 Ein Chat, der ausschließlich über die Daten dieses Laufs antwortet. Ausführlich
 unter [Läufe abfragen](/doku/abfrage).
+
+Beim Wechsel zwischen den Ansichten erscheint ein Ladepunkt, solange die neue
+Ansicht gebaut wird. **«Animation» braucht dafür am längsten** — sie überträgt
+die simulierten Personen selbst, nicht nur die Ergebnisdaten, und bei einigen
+Tausend Personen über viele Ticks sind das mehrere Megabyte und einige Sekunden.
+Die übrigen Ansichten sind in Bruchteilen einer Sekunde da.
 
 ## Dateien
 

@@ -3,10 +3,12 @@ Anleitung führt einmal durch, vom leeren Leitstand bis zum fertigen Szenario.
 
 ## Der Bildschirm in einem Absatz
 
-Das Dashboard ist ein Leitstand: **eine** Ansicht, fünf Bereiche, kein Blättern.
-Links das Bedienfeld, in der Mitte die Simulation, rechts die Kennzahlen und die
-Konsole, unten die Zeitleiste, oben der Zustand der Anlage. Kopfzeile und
-Zeitleiste bleiben stehen; die drei Bereiche dazwischen rollen jeder für sich.
+Das Dashboard hat fünf Bereiche, zwischen denen Sie oben in der Kopfzeile wechseln.
+Der **Leitstand** ist der eine mit Seitenzonen: links das Bedienfeld, in der Mitte
+die Simulation, rechts die Kennzahlen und die Konsole, unten die Zeitleiste.
+Einrichten, Ergebnisse, Modell und Handbuch bekommen den Bildschirm allein. Im
+Leitstand bleiben Kopfzeile und Zeitleiste stehen; die drei Bereiche dazwischen
+rollen jeder für sich.
 Ist Ihr Fenster schmal, weichen die beiden Seitenspalten in Schubladen aus — die
 Knöpfe dafür sitzen links und rechts in der Kopfzeile. Sie erscheinen jeweils
 erst dann, wenn ihre Spalte wirklich zur Schublade geworden ist: die Telemetrie
@@ -22,10 +24,12 @@ anspringen und mit den Pfeiltasten verschieben. Was Sie einstellen, merkt sich
 Ihr Browser bis zum nächsten Mal. Sobald eine Spalte zur Schublade wird, ist ihr
 Griff weg — dort gibt es nichts mehr zu ziehen.
 
-**Das Bedienfeld links ist kein Formular.** Es zeigt in drei Zeilen, was
-eingestellt ist, darunter den Preflight, und ganz unten den Start-Knopf — der
-bleibt immer sichtbar. Eingestellt wird im Bereich **Einrichten**, den Sie oben
-in der Kopfzeile erreichen oder über jede der drei Zeilen.
+**Das Bedienfeld links ist kein Formular.** Es heißt **Nächster Lauf** und zeigt
+in drei Zeilen, was eingestellt ist, darunter in einem Satz, was gleich passiert,
+und ganz unten den Start-Knopf — der bleibt immer sichtbar. Hinweise vor dem
+Start stehen dort nur gezählt; ausführlich stehen sie in «Prüfen & Starten».
+Eingestellt wird im Bereich **Einrichten**, den Sie oben in der Kopfzeile
+erreichen oder über jede der drei Zeilen.
 
 Rechts oben schalten Sie zwischen hellem und dunklem Design um. Die Wahl bleibt
 im Browser gespeichert und gilt beim nächsten Öffnen weiter.
@@ -47,19 +51,23 @@ Nehmen Sie eines der vorbereiteten Szenarien, etwa *Business as Usual*. Unter
 jedem steht, wofür es steht. Ein Szenario legt Politik, Kosten und Nachfrage in
 einem Zug fest und ist deutlich schneller, als jede Größe einzeln einzustellen.
 
-Ein gewähltes Szenario gilt **unverändert**: Die Werte kommen aus seiner Datei
-unter `configs/sweeps/`, und was Sie in den Schritten vier bis sieben
-eingestellt haben, bleibt dafür außen vor. Wollen Sie von einem Szenario
-ausgehen und einzelne Annahmen ändern, klicken Sie auf «Werte übernehmen und
-selbst anpassen» — dann wandern seine Werte in die folgenden Schritte, und die
-Auswahl springt auf «Eigene Einstellungen».
+Ein gewähltes Szenario gilt, wie seine Datei unter `configs/sweeps/` es
+beschreibt. Wollen Sie davon ausgehen und einzelne Annahmen ändern, tun Sie das
+in den nächsten beiden Schritten, **Verläufe** und **Modellannahmen** — der Lauf
+legt Ihre Änderungen auf das Szenario. Der Bereich **Modell** ist dafür nicht der
+Ort: Was dort steht, wirkt erst gespeichert, und dann für alle Läufe.
+
+Nach dieser Wahl folgt der Schritt **Verläufe**. Er zeigt, wie sich die Größen,
+die das Szenario vorgibt — etwa die CO₂-Abgabe —, über den Lauf entwickeln: links
+die Größe, rechts ihre Kurve. Er ist optional; für den ersten Durchgang klicken
+Sie auf **Weiter**.
 
 ## Schritt 2: Wie weit reicht der Lauf?
 
 Setzen Sie die Länge auf **10 Ticks**. Das reicht, um Rückkopplungen zu sehen,
 und ist in Sekunden gerechnet.
 
-Ein Tick ist eine Modellrunde, kein Quartal und kein Jahr. Mehr dazu unter
+Ein Tick ist ein Monat Modellzeit, ohne Kalenderdatum. Mehr dazu unter
 [Tick, Lauf und Szenario](/doku/tick-und-lauf).
 
 Jedes Szenario nennt daneben, auf wie viele Ticks es angelegt ist — seine
@@ -88,9 +96,9 @@ betroffene Wert ist zusätzlich am Feld selbst markiert. Sonst klicken Sie auf
 **Start**.
 
 Der Zustand in der Kopfzeile wechselt auf «Simulation läuft» und der Punkt
-daneben pulsiert. Der Fortschritt läuft Runde für Runde in die **Konsole** rechts
+daneben pulsiert. Der Fortschritt läuft Tick für Tick in die **Konsole** rechts
 — klappen Sie sie auf, um Preis und Buchungsrate je Tick zu sehen. Ist der Lauf
-fertig, meldet das Bedienfeld die Run-ID, die Zahl der Ticks und die Zahl der
+fertig, meldet das Bedienfeld die Kennung des Laufs, die Zahl der Ticks und die Zahl der
 Ereignisse, und der neue Lauf ist in der Auswahl oben bereits gesetzt.
 
 ## Schritt 5: Ergebnis lesen
@@ -98,8 +106,10 @@ Ereignisse, und der neue Lauf ist in der Auswahl oben bereits gesetzt.
 Der Leitstand zeigt den neuen Lauf sofort. In der Mitte steht die Population zu
 **einem** Tick: jeder Punkt ein Individuum, waagerecht seine Zahlungsbereitschaft,
 senkrecht sein Umweltbewusstsein, eingefärbt danach, ob es gebucht hat. Darüber
-liegt der Streifen mit den sieben Faktorzuständen; ein hervorgehobener Chip heißt,
-dass dieser Deskriptor gekippt ist.
+liegt der Streifen mit den sieben Faktoren — je Kurzname und Zustand, etwa
+«Regulierung» und «F2.1»; ein hervorgehobener Chip heißt, dass dieser Faktor
+gekippt ist. Den vollen Zustandstext zeigt der Chip, wenn Sie mit der Maus darauf
+zeigen.
 
 Ziehen Sie unten den **Regler** durch den Lauf oder drücken Sie **Abspielen**.
 Szene, Kennzahlen und Verläufe rechts folgen alle demselben Tick — die Zeitleiste
@@ -109,7 +119,7 @@ im Lauf etwas passiert ist; die gelben sind politische Eingriffe.
 Für die ausführlichen Auswertungen wechseln Sie oben auf **Ergebnisse**. Die
 erste Ansicht **Szenario** zeigt das Lauf-Narrativ und darunter die drei
 Szenarien, jeweils mit den Tick-Werten, auf die sie sich stützen. Danach lohnt
-sich **Übersicht** für den Verlauf von Buchungsrate und Preis, und **Figures**
+sich **Übersicht** für den Verlauf von Buchungsrate und Preis, und **Diagramme**
 für die Detailauswertungen. Die empfohlene Lesereihenfolge steht unter
 [Ergebnisse lesen](/doku/ergebnisse-lesen).
 

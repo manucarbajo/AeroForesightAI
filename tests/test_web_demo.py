@@ -110,6 +110,32 @@ class TestErGreiftNurOhneEchtenLauf:
         assert not geladen.is_demo
         assert geladen.max_tick == 1
 
+    @pytest.mark.parametrize("fall", ["ohne Auswahl", "ohne Verzeichnis", "verschwunden", "echt"])
+    def test_the_named_condition_decides_as_load_does(self, tmp_path, fall):
+        """`zeigt_demo` ist die Bedingung, nach der `load` entscheidet — ohne zu laden.
+
+        Die Kopfzeile fragt sie, um nicht bei jedem Laufwechsel den ganzen Lauf zu
+        lesen (P7.3-U3.2). Sie darf dabei nie anders antworten als `load` selbst.
+        """
+
+        run_dir = tmp_path / "run_echt"
+        run_dir.mkdir()
+        (run_dir / "run_metadata.json").write_text(
+            json.dumps({"run_id": "run_echt", "ticks_completed": 3}), encoding="utf-8"
+        )
+        (run_dir / "tick_mechanics.json").write_text(
+            json.dumps({"ticks": [{"tick": 1, "booking_rate": 0.5}]}), encoding="utf-8"
+        )
+        auswahl = {
+            "ohne Auswahl": None,
+            "ohne Verzeichnis": {"run_id": "leer"},
+            "verschwunden": {"run_id": "weg", "run_dir": str(tmp_path / "gibt-es-nicht")},
+            "echt": {"run_id": "run_echt", "run_dir": str(run_dir)},
+        }[fall]
+
+        assert run_data.zeigt_demo(auswahl) is run_data.load(auswahl).is_demo
+        assert run_data.zeigt_demo(auswahl) is (fall != "echt")
+
 
 # --- 2. Er ist überall als Demo erkennbar -----------------------------------
 
@@ -124,7 +150,7 @@ class TestErIstUeberallMarkiert:
             assert row[demo_run.MARKER] is True
 
     def test_the_status_says_demo(self):
-        zustand = status.derive(running=False, demo=True, degraded=False)
+        zustand = status.derive(running=False, demo=True)
 
         assert zustand.tone == status.DEMO
         assert zustand.is_demo
@@ -134,7 +160,7 @@ class TestErIstUeberallMarkiert:
     def test_a_running_simulation_outranks_the_demo_state(self):
         """Was sich von selbst ändert, schlägt alles andere."""
 
-        assert status.derive(running=True, demo=True, degraded=True).tone == status.RUNNING
+        assert status.derive(running=True, demo=True).tone == status.RUNNING
 
     def test_the_viewport_carries_the_notice_above_the_scene(self):
         gerendert = _text(scene_block(run_data.demo(), 1))

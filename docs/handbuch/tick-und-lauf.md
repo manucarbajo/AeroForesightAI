@@ -3,35 +3,35 @@ auseinanderzuhalten erspart die häufigste Fehldeutung von Ergebnissen.
 
 ## Der Tick
 
-Ein Tick ist eine Runde des Modells. In ihm entscheidet die Bevölkerung über
+Ein Tick ist ein Rechenschritt des Modells. In ihm entscheidet die Bevölkerung über
 Buchungen, die Airline passt den Preis an, die Akteure bringen Ereignisse ein und
 Faktoren können sich verschieben.
 
 **Ein Tick ist ein Monat.** Seit dem 7. September 2026 ist das festgelegt, und
 zwar für alles, was das Modell *rechnet*: Wie schnell eine Reise «vergessen» ist,
 wie schnell die Bevölkerung wächst, wie schnell Treibstoff teurer wird — all das
-läuft in Monaten. Vierzig Runden sind damit gut drei Jahre, fünfzig gut vier.
+läuft in Monaten. Vierzig Ticks sind damit gut drei Jahre, fünfzig gut vier.
 
 **In den Zahlen, die Sie zu sehen bekommen, steht trotzdem nirgends ein Datum**,
-und das bleibt so. Der Grund ist derselbe wie vorher: Sobald aus Runde 40 der
+und das bleibt so. Der Grund ist derselbe wie vorher: Sobald aus Tick 40 der
 «Dezember 2029» wird, entstehen Aussagen der Form «2029 kostet das Ticket 214
 Euro», für die das Modell keine Grundlage hat — es ist nicht auf Jahreszahlen
 geeicht, kennt keine Saison und keine Reisebeschränkung. Was es liefert, sind
 Wirkungsrichtungen und Größenordnungen unter gegebenen Annahmen.
 
 Die beiden Sätze widersprechen sich nicht. Der erste sagt, in welchem Takt die
-Mechanik rechnet; der zweite, dass eine Runde trotzdem kein Kalendermonat ist,
+Mechanik rechnet; der zweite, dass ein Tick trotzdem kein Kalendermonat ist,
 den man auf einen Zeitstrahl legen könnte.
 
-**Warum das überhaupt eine Frage war.** Jeder Mechanismus, der sich pro Runde
+**Warum das überhaupt eine Frage war.** Jeder Mechanismus, der sich pro Tick
 verändert, unterstellt stillschweigend eine Zeitskala — und im Modell
 unterstellten sie bis September 2026 nicht dieselbe, sondern drei verschiedene um
 den Faktor zwölf auseinander. Die Bevölkerungskurve wuchs um acht Prozent über 29
-Runden: plausibel als Jahre, unmöglich als Monate. Die Sättigung ließ eine Reise
-nach etwa drei Runden vergessen sein: plausibel als Monate, absurd als Jahre. Der
-Backtest bildete eine Runde ausdrücklich auf einen Monat ab. Und eine vierte
+Ticks: plausibel als Jahre, unmöglich als Monate. Die Sättigung ließ eine Reise
+nach etwa drei Ticks vergessen sein: plausibel als Monate, absurd als Jahre. Der
+Backtest bildete einen Tick ausdrücklich auf einen Monat ab. Und eine vierte
 Größe widersprach sich sogar selbst: Das Nachfragewachstum war als «jährlich»
-beschrieben und wurde je Runde aufgezinst — aus drei Prozent wurden so
+beschrieben und wurde je Tick aufgezinst — aus drei Prozent wurden so
 zweiundvierzig im Jahr.
 
 **Was sich dadurch an den Zahlen geändert hat:** Die Bevölkerungskurve wächst
@@ -44,14 +44,18 @@ neben spätere (siehe [Läufe vergleichen](/doku/vergleiche)).
 **Was Sie daraus mitnehmen sollten:** Lesen Sie einen Lauf als Wirkungskette,
 nicht als Zeitreihe — dafür ist er gebaut. Wenn Sie die Zeitskala trotzdem
 brauchen, um eine Vorgabe einzustellen (wie schnell soll die Abgabe steigen?),
-rechnen Sie zwölf Runden auf ein Jahr. Und vergleichen Sie zwei Läufe nur bei
-gleicher Rundenzahl.
+rechnen Sie zwölf Ticks auf ein Jahr. Und vergleichen Sie zwei Läufe nur bei
+gleicher Tickzahl.
+
+**Die Oberfläche rechnet es Ihnen vor:** Neben jeder Lauflänge steht die
+Modellzeit, gerundet — «40 Ticks · rund 3 Jahre», «120 Ticks · 10 Jahre». Ein
+Datum ist das nicht; es sagt nur, wie lang der Ausschnitt ist.
 
 **Die mitgelieferten Rahmenszenarien laufen seit dem 11. September 2026
-hundertzwanzig Runden, also zehn Jahre.** Vorher waren es fünfzig — gut vier
+hundertzwanzig Ticks, also zehn Jahre.** Vorher waren es fünfzig — gut vier
 Jahre, in denen die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 Euro stieg.
 Gestreckt wurde jede Marke im selben Verhältnis, nicht nur die Länge. Ein
-Standardlauf über 40 Runden bleibt dagegen, was er war: ein Ausschnitt von gut
+Standardlauf über 40 Ticks bleibt dagegen, was er war: ein Ausschnitt von gut
 drei Jahren.
 
 ## Der Lauf
@@ -69,23 +73,23 @@ nicht — dann hing das Ergebnis an der Stichprobe und nicht an den Annahmen.
 ## Wie weit die Vorgaben reichen
 
 Manche Systemgrößen haben einen Verlauf mit Stützpunkten — die CO₂-Abgabe steigt
-etwa in zwei Stufen, die Bevölkerung wächst bis zu einer bestimmten Runde. **Hinter
+etwa in zwei Stufen, die Bevölkerung wächst bis zu einem bestimmten Tick. **Hinter
 dem letzten Stützpunkt hält eine solche Kurve ihren letzten Wert.**
 
 Das ist meistens gemeint: Eine Abgabe, die ihren Endwert erreicht hat, bleibt dort.
 Bei der Bevölkerung hieß derselbe Mechanismus aber «ab hier wächst niemand mehr»,
 und das ist eine ganz andere Aussage — im Standardlauf betraf es die letzten zehn
-von vierzig Runden.
+von vierzig Ticks.
 
 **Diese eine Kurve reicht seit dem 7. September 2026 weiter** (P3.8): Sie läuft
-bis Runde 120, also über jeden üblichen Lauf hinaus. Der Hinweis unten gibt es
+bis Tick 120, also über jeden üblichen Lauf hinaus. Der Hinweis unten gibt es
 weiterhin und er greift weiterhin — im Standardlauf nennt er jetzt **drei**
 Verläufe statt vier (SAF-Mandat, Einkommensindex, CO₂-Abgabe). Dass ausgerechnet
 die Bevölkerung ihn nicht mehr auslöst, ist dabei kein Nebeneffekt: Ein Hinweis,
 der ohnehin bei jedem Lauf erscheint, wird überlesen.
 
 **Deshalb sagt der Lauf es seit September 2026.** Der Preflight nennt vor dem Start
-den frühesten Verlauf und wie viele Runden über ihn hinauslaufen; im Protokoll steht
+den frühesten Verlauf und wie viele Ticks über ihn hinauslaufen; im Protokoll steht
 es für jeden betroffenen Verlauf. Es ist ein **Hinweis und kein Fehler**: Der Lauf
 startet, die Zahlen stimmen, Sie wissen nur, worauf sie beruhen.
 

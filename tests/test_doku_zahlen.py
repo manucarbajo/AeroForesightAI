@@ -185,7 +185,7 @@ def _akteure() -> int:
 def _bereiche() -> int:
     from dashboard.web import shell
 
-    return len(shell.ROUTES)
+    return len(shell.BEREICHE)
 
 
 def _zonen() -> int:
@@ -305,14 +305,14 @@ REGISTER: tuple[Zahl, ...] = (
         "CLAUDE.md",
         r"alle (\w+) Bereiche liegen gleichzeitig im DOM",
         _bereiche,
-        "Einträge in shell.ROUTES — jeder ist ein Bereich mit eigenem Wirt im Layout.",
+        "Einträge in shell.BEREICHE (Navigation und Bereiche ohne Link) — jeder ist ein Bereich mit eigenem Wirt im Layout.",
     ),
     Zahl(
         "viewport_bereiche",
         "CLAUDE.md",
         r"`app\.py` für die (\w+) Viewport-Bereiche schon benutzt",
         _bereiche,
-        "Einträge in shell.ROUTES; app.visibility liefert je Eintrag genau einen Stil.",
+        "Einträge in shell.BEREICHE (Navigation und Bereiche ohne Link); app.visibility liefert je Eintrag genau einen Stil.",
     ),
     Zahl(
         "wege_des_einstiegs",
@@ -333,7 +333,7 @@ REGISTER: tuple[Zahl, ...] = (
     Zahl(
         "schritte",
         "CLAUDE.md",
-        r"\*\*(\w+) Schritte seit P2\.0-C\*\*",
+        r"\*\*(\w+) Schritte seit P7\.13-U13\.5\*\*",
         _schritte,
         "Einträge in wizard.STEPS — ohne den Einstieg davor.",
     ),
@@ -412,7 +412,7 @@ REGISTER: tuple[Zahl, ...] = (
     Zahl(
         "hoechster_deckel_1280",
         "CLAUDE.md",
-        r"seit P3\.17 sind es sechs Schritte, der höchste \*\*(\d+,\d+)\*\*",
+        r"acht Schritte, \*\*vier davon auf 1,00\*\*, der höchste \*\*(\d+,\d+)\*\*",
         lambda: _hoechster_deckel(1280),
         "Größter Wert in DECKEL[1280] von tests/test_web_overflow.py, gelesen über den "
         "Syntaxbaum (ohne Playwright zu importieren).",
@@ -420,7 +420,7 @@ REGISTER: tuple[Zahl, ...] = (
     Zahl(
         "hoechster_deckel_1024",
         "CLAUDE.md",
-        r"der höchste \*\*\d+,\d+\*\* \(1024 px: (\d+,\d+);",
+        r"der höchste \*\*\d+,\d+\*\* \(1024 px: (\d+,\d+)\)",
         lambda: _hoechster_deckel(1024),
         "Größter Wert in DECKEL[1024] von tests/test_web_overflow.py.",
     ),
@@ -456,21 +456,21 @@ REGISTER: tuple[Zahl, ...] = (
         "dashboard/web/app.py",
         r"Alle (\w+) Viewport-Bereiche liegen dauerhaft im Layout",
         _bereiche,
-        "Einträge in shell.ROUTES.",
+        "Einträge in shell.BEREICHE (Navigation und Bereiche ohne Link).",
     ),
     Zahl(
         "app_visibility_welcher",
         "dashboard/web/app.py",
         r"Welcher der (\w+) Viewport-Bereiche sichtbar ist",
         _bereiche,
-        "Einträge in shell.ROUTES — visibility liefert je Eintrag genau einen Stil.",
+        "Einträge in shell.BEREICHE (Navigation und Bereiche ohne Link) — visibility liefert je Eintrag genau einen Stil.",
     ),
     Zahl(
         "app_visibility_alle",
         "dashboard/web/app.py",
         r"Alle (\w+) bleiben im DOM",
         _bereiche,
-        "Einträge in shell.ROUTES — jeder Bereich hat einen Wirt, der im DOM bleibt.",
+        "Einträge in shell.BEREICHE (Navigation und Bereiche ohne Link) — jeder Bereich hat einen Wirt, der im DOM bleibt.",
     ),
 )
 

@@ -14,9 +14,13 @@ unten hält deshalb eine Eigenschaft der ganzen Suite fest, keinen Dateinamen.
 
 from __future__ import annotations
 
+import ast
 import fnmatch
+import os
 import tomllib
 from pathlib import Path
+
+from tests import conftest
 
 ROOT = Path(__file__).resolve().parent.parent
 TESTS = ROOT / "tests"
@@ -81,6 +85,61 @@ class TestJedeDateiInTestsWirdAuchAusgefuehrt:
         (tmp_path / "debug_lauf.py").write_text("", encoding="utf-8")
 
         assert nicht_eingesammelt(tmp_path, ["test_*.py", "*_test.py"]) == ["debug_lauf.py"]
+
+
+def ohne_test(verzeichnis: Path, muster: list[str]) -> list[str]:
+    """Jede eingesammelte Datei, in der pytest **keinen einzigen Test** findet.
+
+    Gesucht wird über den Syntaxbaum: eine Funktion `test…` oder eine Klasse
+    `Test…` auf Modulebene. Ein Name allein genügt nicht — gezählt wird, was
+    pytest wirklich ausführt.
+    """
+
+    befunde = []
+    for pfad in sorted(verzeichnis.rglob("*.py")):
+        if "__pycache__" in pfad.parts or not any(fnmatch.fnmatch(pfad.name, m) for m in muster):
+            continue
+        baum = ast.parse(pfad.read_text(encoding="utf-8"))
+        hat_test = any(
+            (isinstance(k, (ast.FunctionDef, ast.AsyncFunctionDef)) and k.name.startswith("test"))
+            or (isinstance(k, ast.ClassDef) and k.name.startswith("Test"))
+            for k in baum.body
+        )
+        if not hat_test:
+            befunde.append(str(pfad.relative_to(verzeichnis)))
+    return befunde
+
+
+class TestJedeTestdateiEnthaeltEinenTest:
+    """**Ein Dateiname ist kein Test.** Die Zusage darüber hat nur den Namen geprüft.
+
+    Der Anlass war `test_output_writer.py`, seit dem ersten Commit
+    (2026-08-18): 30 Anweisungen auf Modulebene, keine Funktion, keine
+    Zusicherung. Es lief bei jedem Einsammeln — also *vor* jeder Fixture —,
+    schrieb dabei nach `outputs/` und meldete einen Fehler mit
+    `print("[ERROR] …")`, den niemand las. Die Regel darüber war erfüllt, weil
+    die Datei `test_…` hieß.
+    """
+
+    def test_jede_eingesammelte_datei_enthaelt_einen_test(self):
+        befunde = ohne_test(TESTS, _einsammelmuster())
+
+        assert not befunde, (
+            "Diese Dateien sammelt pytest ein, finden aber keinen Test darin:\n  "
+            + "\n  ".join(befunde)
+            + "\n\nCode auf Modulebene läuft beim Einsammeln, vor jeder Fixture, "
+            "und kann nicht scheitern — er kann nur etwas ausgeben."
+        )
+
+    def test_der_waechter_saehe_eine_solche_datei(self, tmp_path):
+        (tmp_path / "test_echt.py").write_text("def test_x():\n    assert True\n", encoding="utf-8")
+        (tmp_path / "test_klasse.py").write_text("class TestX:\n    pass\n", encoding="utf-8")
+        (tmp_path / "test_skript.py").write_text("print('laeuft')\n", encoding="utf-8")
+        (tmp_path / "test_nur_helfer.py").write_text("def hilf():\n    pass\n", encoding="utf-8")
+
+        befunde = ohne_test(tmp_path, ["test_*.py"])
+
+        assert befunde == ["test_nur_helfer.py", "test_skript.py"]
 
 
 def eingriffe_in_sys_path(quelltext: str) -> list[int]:
@@ -552,3 +611,62 @@ class TestKeineTestklasseVerschattetEinenProduktnamen:
             f"Zeile 5 darf nicht gemeldet werden: {befunde}"
         )
         assert befunde[0].endswith("a.py:1"), befunde
+
+
+# --- Die siebte Regel: Die Suite schreibt nicht nach outputs/ (P7.3-U3.3) ------
+
+
+class TestDieSuiteSchreibtNichtNachOutputs:
+    """**Kein Test schreibt in das echte `outputs/`.**
+
+    Bis zum 2026-09-14 legte jeder Durchlauf dort Laufordner an — am
+    2026-09-13 96 Stück, fast alle nur mit `checkpoints/` —, und
+    `test_scenario_sweeps.py` überschrieb die Zusammenfassung des letzten echten
+    Szenario-Vergleichs. Die Lauf-Auswahl listete danach 630 Einträge, 440 davon
+    ohne jede Laufdatei.
+
+    Durchgesetzt wird es an zwei Stellen in `conftest.py`: Eine Umleitung
+    **sucht** jede Modulvariable, die dorthin zeigt, und ein Vergleich am Ende
+    der Sitzung macht den Lauf rot, wenn trotzdem etwas geschrieben wurde. Diese
+    Klasse prüft, dass beide Hälften greifen.
+    """
+
+    def test_the_redirect_leaves_no_root_pointing_into_outputs(self) -> None:
+        """Während der Sitzung zeigt keine Modulvariable mehr in das echte `outputs/`."""
+
+        assert not conftest.schreibwurzeln(), conftest.schreibwurzeln()
+
+    def test_the_search_would_find_a_new_root(self, monkeypatch) -> None:
+        """Eine morgen angelegte Konstante fiele auf, ohne dass jemand sie einträgt."""
+
+        from dashboard import run_browser
+
+        monkeypatch.setattr(
+            run_browser, "NEUE_WURZEL", conftest.ECHTE_AUSGABE / "neu", raising=False
+        )
+
+        funde = {(modul, name) for modul, name, _ in conftest.schreibwurzeln()}
+
+        assert ("dashboard.run_browser", "NEUE_WURZEL") in funde
+
+    def test_a_relative_root_counts_as_well(self, monkeypatch) -> None:
+        """`Path("outputs") / "x"` zeigt aus dem Repo heraus gestartet ebenso dorthin."""
+
+        monkeypatch.chdir(conftest.WURZEL)
+
+        assert conftest._zeigt_in_die_ausgabe("outputs/demo.jsonl") is not None
+        assert conftest._zeigt_in_die_ausgabe("configs/sweeps") is None
+
+    def test_the_comparison_would_notice_a_write(self, tmp_path) -> None:
+        """Der Bestandsvergleich sieht eine neue und eine geänderte Datei."""
+
+        (tmp_path / "alt.txt").write_text("a", encoding="utf-8")
+        vorher = conftest._bestand(tmp_path)
+        (tmp_path / "neu.txt").write_text("b", encoding="utf-8")
+
+        os.utime(tmp_path / "alt.txt", ns=(1, 1))
+
+        nachher = conftest._bestand(tmp_path)
+
+        assert set(nachher) - set(vorher) == {"neu.txt"}
+        assert nachher["alt.txt"] != vorher["alt.txt"]

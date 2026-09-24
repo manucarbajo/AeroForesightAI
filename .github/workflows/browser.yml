@@ -75,36 +75,14 @@ jobs:
       - name: Chromium
         run: python -m playwright install --with-deps chromium
 
-      # **Ein Lauf muss da sein, sonst misst der Wächter eine leere Fläche.**
-      #
-      # Sechs seiner Zusagen betreffen die Ergebnis-Ansicht: die Legende darf
-      # ihren Titel in keiner der vier Aussagen verdecken (P3.7), und der
-      # Selbsttest daneben. Sie öffnen «Ergebnisse → Figures» und warten auf
-      # `#figures-tabs`. Ohne Lauf gibt es keine Auswahl (`runs.default_selection`
-      # gibt `None` zurück), ohne Auswahl keine Daten und ohne Daten keine
-      # Reiter — sie liefen fünfzehn Sekunden in einen Timeout.
-      #
-      # **Aufgefallen ist das erst beim ersten CI-Lauf am 2026-09-07**, und der
-      # Grund gehört dazu: Der Wächter war nie gegen einen sauberen Checkout
-      # gelaufen. Auf der Entwicklungsmaschine lagen 389 Einträge in `outputs/`,
-      # und er war deshalb grün. Dieselbe Klasse hatte diese Branch schon als
-      # Befund notiert (`be6afb4`: der Höhen-Deckel hängt am Inhalt von
-      # `outputs/`) — hier beißt sie.
-      #
-      # `--mock-llm` und nicht `--deterministic-only`: Beide rechnen ohne
-      # Sprachmodell, aber der deterministische Weg *versucht* den Aufruf und
-      # läuft gegen ein nicht vorhandenes Ollama in Retry und Backoff. Der Mock
-      # ist die Ansage «ohne Sprachmodell» (P0.1) und braucht kein Netz.
-      #
-      # Der Name muss mit `run_` beginnen — `run_browser.list_runs` nimmt nur
-      # solche Verzeichnisse, alles andere ist für die Oberfläche unsichtbar.
-      #
-      # Gemessen 3,4 s bei 20 Ticks; die Länge ist so gewählt, dass die vier
-      # Aussagen eine Legende mit mehreren Einträgen haben.
-      - name: Ein Lauf zum Messen
-        run: |
-          python -m src.run_simulation --mock-llm --rounds 20 --seed 42 --quiet \
-            --run-id run_ci_referenz
+      # **Kein Schritt «Ein Lauf zum Messen» mehr** (bis zum 2026-09-14 stand er
+      # hier). Der Wächter braucht einen Lauf, sonst misst er eine leere
+      # Ergebnis-Ansicht — aber die Suite liest seit P7.3-U3.3 nicht mehr aus
+      # `outputs/` (`tests/conftest.py` leitet jede Schreib- und Lesewurzel in
+      # ein Temp-Verzeichnis um). Ein hier vorab angelegter Lauf wäre für ihn
+      # unsichtbar. Er rechnet ihn deshalb selbst, in der Fixture `referenzlauf`
+      # von `tests/test_web_overflow.py`; die Gründe für `--mock-llm`, den Namen
+      # und die 20 Ticks stehen dort.
 
       # `-p no:randomly` hält die Reihenfolge fest (die Messungen bauen
       # aufeinander auf), `-ra` zeigt jeden Skip mit Grund, `--strict-markers`
@@ -126,7 +104,9 @@ jobs:
       # `--with-deps` oben, startete Chromium nicht, und ohne diesen Schritt
       # wüsste es niemand.
       #
-      # Geprüft wird deshalb die **Zahl**: Am 2026-09-06 liefen 118 Zusagen. Die
+      # Geprüft wird deshalb die **Zahl**: Am 2026-09-06 liefen 118 Zusagen, seit
+      # dem 2026-09-13 sind es 103 — Breitenunabhängiges läuft einmal statt je
+      # Breite, die Klickdauer nur nachts. Die
       # Untergrenze liegt bewusst darunter, damit ein einzelner neuer Test die
       # Schwelle nicht sprengt — aber weit über null, denn genau null ist der
       # Fall, den es zu erkennen gilt.
@@ -137,7 +117,7 @@ jobs:
           import sys
           import xml.etree.ElementTree as ET
 
-          MINDESTENS = 100
+          MINDESTENS = 90
 
           wurzel = ET.parse("browser-guard.xml").getroot()
           suite = wurzel if wurzel.tag == "testsuite" else wurzel.find("testsuite")
@@ -153,6 +133,16 @@ jobs:
                   "seiner Systembibliotheken. Ein gruener Job waere hier eine Luege."
               )
           PY
+
+      # **Die Klickdauer läuft nachts und von Hand, nicht bei jedem Pull Request**
+      # (2026-09-13). Sie ist eine Leistungsmessung, streut je Schritt um rund
+      # 150 ms und prüft keine Darstellung — im Lauf je Änderung war sie der
+      # einzige rote Test, ohne dass die Änderung sie berührt hätte (P7.11). Der
+      # Test überspringt sich ohne `-m leistung`; hier wird er ausdrücklich gewählt.
+      - name: Leistung (Klickdauer)
+        if: always() && github.event_name != 'pull_request'
+        run: |
+          pytest tests/test_web_overflow.py -q -ra --strict-markers -p no:randomly -m leistung
 
       # Erst wenn der Wächter durch ist, sagen wir, was er gemessen hat: Die
       # Deckel in `DECKEL` und die Klickdauern sind auf **Windows** erhoben

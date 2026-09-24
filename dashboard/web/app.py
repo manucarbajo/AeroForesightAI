@@ -8,16 +8,18 @@ Die Anwendung ist **ein** Bildschirm, kein Stapel Seiten: links die Parameter,
 in der Mitte der Viewport, rechts die Telemetrie, unten die Zeitleiste, oben die
 Kopfzeile. Der Bereichswechsel (`Einrichten` / `Leitstand` / `Ergebnisse` /
 `Modell` / `Handbuch`) tauscht nur den Inhalt des Viewports — die anderen vier
-Zonen bleiben stehen; «Einrichten» und «Modell» bekommen den Bildschirm allein
-(`shell.FOCUS_ROUTES`).
+Zonen bleiben stehen — **aber nur im Leitstand**: Jeder andere Bereich bekommt
+den Bildschirm allein (`shell.FOCUS_ROUTES`, seit P7.3-U3.1). Dazu kommt die
+**Musterseite** unter `/app/muster`, ein
+Bereich ohne Link (`shell.INTERNE_ROUTES`, P7.1-U1.6).
 Das Raster steht in `assets/dashboard.css`, der Aufbau in `shell.py`.
 
-Alle fünf Viewport-Bereiche liegen dauerhaft im Layout und werden nur ein- und
+Alle sechs Viewport-Bereiche liegen dauerhaft im Layout und werden nur ein- und
 ausgeblendet: So existiert jede Komponente, auf die ein Callback zeigt, von
 Anfang an, der Wechsel ist ohne Nachladen sofort sichtbar, und der Browser
 meldet keine fehlenden Inputs. **Eine Ausnahme seit P3.12:** Der Rumpf des
 Modell-Bereichs entsteht erst beim Aufsuchen — er trägt keine feste ID; sein
-Wirt liegt trotzdem von Anfang an da.
+Wirt liegt trotzdem von Anfang an da. Die Musterseite folgt demselben Muster.
 
 **Zum Theme:** Die Klasse `dark` muss auf `<html>` stehen, **bevor** der Browser
 zum ersten Mal zeichnet — sonst blitzt bei jedem Laden das helle Design auf. Ein
@@ -32,11 +34,11 @@ import argparse
 
 from dash import Dash, Input, Output, State, ctx, dcc, html, no_update
 
-from dashboard.config_catalog import save_custom_sweep_preset
 from dashboard.web import components as ui
 from dashboard.web import (
     files_route,
     landing_route,
+    lauf_wahl,
     routing,
     run_data,
     runner,
@@ -46,10 +48,11 @@ from dashboard.web import (
     theme,
     timeline,
 )
-from dashboard.web.config_editor import wizard
+from dashboard.web.config_editor import sichern, wizard
 from dashboard.web.pages import docs as docs_page
 from dashboard.web.pages import launch as launch_page
 from dashboard.web.pages import model_editor as model_page
+from dashboard.web.pages import muster as muster_page
 from dashboard.web.pages import runs as runs_page
 from dashboard.web.pages import setup as setup_page
 
@@ -57,11 +60,15 @@ from dashboard.web.pages import setup as setup_page
 # `ALIASES`). Hier weiterhin unter dem alten Namen erreichbar: mehrere Tests
 # und zwei Callbacks in dieser Datei rufen `web_app.active_route`.
 from dashboard.web.shell import active_route
-from dashboard.web.state import STORE_ID, draft_from_dict
+from dashboard.web.state import RUECKNAHME_ID, STORE_ID
 from dashboard.web.views import scene, telemetry
 from src.logging_setup import stdio_auf_utf8
 
-TITLE = "Technology Lab · Leitstand"
+#: Der Titel beim ersten Laden. Danach setzt ihn der Bereichswechsel
+#: (`shell.seitentitel`); bis zum 2026-09-11 stand hier «Technology Lab ·
+#: Leitstand» — auf jedem Bereich und unter einem Namen, den das Produkt sonst
+#: nirgends trägt (P7.2-U2.7).
+TITLE = shell.MARKE
 
 _HIDDEN = {"display": "none"}
 
@@ -224,33 +231,32 @@ def scene_block(
     if data.is_demo:
         from dashboard.web import demo_run
 
-        children.append(html.Div(ui.alert(demo_run.notice(), "demo"), className="px-5 pt-5"))
+        children.append(html.Div(ui.hinweis(demo_run.notice(), "demo"), className="px-4 pt-4"))
     children.append(scene.render(data, tick, mode=mode, zoom_index=zoom))
     return html.Div(children)
 
 
 def visibility(active: str) -> tuple[dict, ...]:
-    """Welcher der fünf Viewport-Bereiche sichtbar ist — genau einer.
+    """Welcher der sechs Viewport-Bereiche sichtbar ist — genau einer.
 
-    Alle fünf bleiben im DOM (sonst zeigten Callbacks auf Komponenten, die es
+    Alle sechs bleiben im DOM (sonst zeigten Callbacks auf Komponenten, die es
     nicht gibt); umgeschaltet wird nur die Sichtbarkeit.
 
-    Die Reihenfolge ist die von `shell.ROUTES` — und zwar **abgeleitet**, nicht
+    Die Reihenfolge ist die von `shell.BEREICHE` — erst die Navigation, dann die
+    Bereiche ohne Link — und zwar **abgeleitet**, nicht
     abgeschrieben: Seit P1.7 ist diese Reihenfolge der Arbeitsablauf und hat
     sich einmal geändert. Eine zweite handgepflegte Liste hätte an dem Tag
     stillschweigend den falschen Bereich eingeblendet.
     """
 
-    return tuple(_VISIBLE if active == route else _HIDDEN for route, _ in shell.ROUTES)
+    return tuple(_VISIBLE if active == route else _HIDDEN for route, _ in shell.BEREICHE)
 
 
-def _status_for(data: run_data.RunData, *, running: bool = False) -> status.Status:
-    return status.derive(
-        running=running,
-        demo=data.is_demo,
-        degraded=bool(data.metadata.get("degraded")),
-        incidents=int(data.metadata.get("llm_incident_count") or 0),
-    )
+def _status_for(selected: dict | None, *, running: bool = False) -> status.Status:
+    # **Ohne den gewählten Lauf zu laden** (P7.3-U3.2): Die Kopfzeile fragt nur,
+    # ob gerechnet wird und ob es überhaupt einen Lauf gibt. Bis dahin lud sie
+    # bei jedem Laufwechsel dessen komplette Daten, um ein Feld zu lesen.
+    return status.derive(running=running, demo=run_data.zeigt_demo(selected))
 
 
 def serve_layout() -> html.Div:
@@ -264,14 +270,17 @@ def serve_layout() -> html.Div:
     selection = runs_page.default_selection()
     draft = state.initial_draft_dict()
     data = run_data.load(selection)
-    options, _ = runs_page.run_options()
+    options, by_id = runs_page.run_options()
     run_value = (selection or {}).get("run_id")
+    summary = by_id.get(run_value) if run_value else None
+    bezeichnung = next((o["label"] for o in options if o["value"] == run_value), None)
     start = visibility("")
 
     return html.Div(
         [
             dcc.Location(id="url", refresh=False),
             dcc.Store(id=STORE_ID, storage_type="session", data=draft),
+            dcc.Store(id=RUECKNAHME_ID, storage_type="session"),
             dcc.Store(id="selected-run-store", data=selection),
             dcc.Store(id="last-launched-run-store", storage_type="session"),
             dcc.Store(id="explorer-messages-store", storage_type="session", data={}),
@@ -292,13 +301,17 @@ def serve_layout() -> html.Div:
             dcc.Store(id=wizard.STEP_STORE, data=wizard.ENTRY),
             dcc.Store(id=wizard.VISITED_STORE, data=[]),
             dcc.Store(id=wizard.HISTORY_STORE, data=[]),
+            # Der Lauf-Browser (P7.3-U3.3). Ein modaler Dialog liegt über allem und
+            # gehört deshalb in keine der fünf Zonen; sein Öffner steht in der Kopfzeile.
+            lauf_wahl.dialog(),
+            # Der eine Speicherweg für Szenarien (P7.4-U4.5), geöffnet aus der Kopfzeile.
+            sichern.dialog(),
             shell.layout(
                 active="",
                 # Auch beim ersten Zeichnen gilt der Serverzustand: Ein Lauf,
                 # den eine andere Sitzung gestartet hat, ist einer.
-                state=_status_for(data, running=runner.is_running()),
-                run_options=options,
-                run_value=run_value,
+                state=_status_for(selection, running=runner.is_running()),
+                lauf_bezeichnung=bezeichnung,
                 left=launch_page.rail(draft),
                 # Die Anfangssichtbarkeiten kommen aus derselben Funktion wie die
                 # späteren — sonst zeigte der erste Aufbau einen anderen Bereich
@@ -309,6 +322,14 @@ def serve_layout() -> html.Div:
                         html.Div(
                             [
                                 _bereichstitel("Leitstand"),
+                                # **Der Kopf des Laufs steht hier und nicht in der Szene** (P7.3-U3.2):
+                                # Die Szene wird bei jedem Tick neu gezeichnet, der Kopf nur, wenn ein
+                                # anderer Lauf gewählt wird — gefüllt vom selben Callback wie unter «Ergebnisse».
+                                html.Div(
+                                    runs_page.lauf_kopf(summary) if summary else None,
+                                    id=runs_page.LAUF_KOPF_LEITSTAND,
+                                    className="mb-4",
+                                ),
                                 html.Div(
                                     scene_block(
                                         data,
@@ -329,6 +350,7 @@ def serve_layout() -> html.Div:
                         ),
                         html.Div(model_page.layout(draft), id="page-modell", style=start[3]),
                         html.Div(docs_page.layout(), id="page-docs", style=start[4]),
+                        html.Div(muster_page.layout(), id="page-muster", style=start[5]),
                     ],
                     id="page-scene-wrap",
                 ),
@@ -355,8 +377,8 @@ def create_app() -> Dash:
     landing_route.register(app.server)
     app.layout = serve_layout
 
-    # Die vier Sichtbarkeiten stehen in der Reihenfolge von `shell.ROUTES`:
-    # Einrichten, Leitstand, Ergebnisse, Handbuch.
+    # Die Sichtbarkeiten stehen in der Reihenfolge von `shell.BEREICHE`:
+    # Einrichten, Leitstand, Ergebnisse, Modell, Handbuch, Musterseite.
     @app.callback(
         Output(shell.NAV_HOST, "children"),
         Output(shell.SHELL_ID, "className"),
@@ -365,7 +387,9 @@ def create_app() -> Dash:
         Output("page-runs", "style"),
         Output("page-modell", "style"),
         Output("page-docs", "style"),
+        Output("page-muster", "style"),
         Output(shell.BEREICH_ANSAGE, "children"),
+        Output(shell.SEITENTITEL, "children"),
         Input("url", "pathname"),
     )
     def _route(pathname: str | None):
@@ -378,7 +402,19 @@ def create_app() -> Dash:
             # lautlos: Der Bildschirm zeigt etwas anderes, und wer nicht
             # hinsieht, erfährt es nicht.
             shell.bereich_ansage(active),
+            shell.seitentitel(active),
         )
+
+    @app.callback(Output(muster_page.HOST, "children"), Input("url", "pathname"))
+    def _musterseite(pathname: str | None):
+        """Die Musterseite bauen, **wenn jemand sie aufsucht** (P7.1-U1.6).
+
+        Aus demselben Grund wie der Modell-Bereich (P3.12): Jede eingehängte
+        Komponente kostet jeden Klick in der Schrittfolge etwas, und diese Seite
+        sieht fast nie jemand. Ihr Rumpf trägt keine feste Kennung.
+        """
+
+        return muster_page.rumpf_fuer(pathname)
 
     # **Der Fokus wandert auf die Überschrift des neuen Bereichs** (P1.5).
     #
@@ -455,36 +491,27 @@ def create_app() -> Dash:
         prevent_initial_call=True,
     )
 
-    # --- Die Lauf-Auswahl der Kopfzeile ------------------------------------
-
-    @app.callback(
-        Output(shell.RUN_SELECT, "options"),
-        Output(shell.RUN_SELECT, "value"),
-        Input("last-launched-run-store", "data"),
-        State(shell.RUN_SELECT, "value"),
-    )
-    def _refresh_runs(last_launched: str | None, current: str | None):
-        """Die Liste nachziehen, sobald ein Lauf fertig geworden ist."""
-
-        options, _ = runs_page.run_options()
-        values = [option["value"] for option in options]
-        if last_launched in values:
-            return options, last_launched
-        return options, (current if current in values else (values[0] if values else None))
+    # --- Der gewählte Lauf --------------------------------------------------
 
     @app.callback(
         Output("selected-run-store", "data"),
-        Input(shell.RUN_SELECT, "value"),
-        prevent_initial_call=True,
+        Input("last-launched-run-store", "data"),
     )
-    def _select_run(run_id: str | None):
-        if not run_id:
+    def _nach_lauf(last_launched: str | None):
+        """Ein fertiger Lauf ist danach gewählt — auch nach einem Neuladen der Sitzung.
+
+        Gewählt wird sonst im Lauf-Browser (`lauf_wahl`). Bis P7.3-U3.3 zog dieser
+        Callback die Einträge eines Auswahlfelds nach; einen Dialog füllt erst das
+        Öffnen.
+        """
+
+        if not last_launched:
             return no_update
         _, by_id = runs_page.run_options()
-        summary = by_id.get(run_id)
+        summary = by_id.get(last_launched)
         if summary is None:
             return no_update
-        return {"run_id": run_id, "run_dir": str(summary.run_dir)}
+        return {"run_id": last_launched, "run_dir": str(summary.run_dir)}
 
     # --- Die vier Zonen, die dem Lauf und dem Tick folgen -------------------
 
@@ -551,8 +578,7 @@ def create_app() -> Dash:
         Input("selected-run-store", "data"),
     )
     def _status(running: bool | None, selected: dict | None):
-        data = run_data.load(selected)
-        return shell.status_view(_status_for(data, running=bool(running)))
+        return shell.status_view(_status_for(selected, running=bool(running)))
 
     @app.callback(
         Output(shell.DOCK_HOST, "children"),
@@ -590,40 +616,8 @@ def create_app() -> Dash:
 
     # --- Globale Aktionen der Kopfzeile ------------------------------------
 
-    @app.callback(
-        Output("cfg-status", "children", allow_duplicate=True),
-        Input(shell.ACTION_SAVE, "n_clicks"),
-        Input(shell.ACTION_SNAPSHOT, "n_clicks"),
-        # Zweiter Ausloeser aus dem letzten Schritt des Einrichtens -- **kein**
-        # zweiter Speicherpfad: derselbe Callback, dieselbe Funktion dahinter.
-        Input(wizard.SAVE, "n_clicks"),
-        State(STORE_ID, "data"),
-        prevent_initial_call=True,
-    )
-    def _save(save_clicks, snapshot_clicks, wizard_clicks, data: dict | None):
-        """Entwurf als Szenario sichern — benannt oder als Zwischenstand.
-
-        Der Unterschied ist der Name: «Speichern» schreibt unter dem Namen der
-        Simulation und überschreibt damit denselben Stand wieder, «Snapshot»
-        hängt einen Zeitstempel an. Beide landen in `configs/sweeps/` und stehen
-        danach im ersten Schritt des geführten Ablaufs zur Auswahl.
-        """
-
-        if not (save_clicks or snapshot_clicks or wizard_clicks):
-            return no_update
-
-        draft = draft_from_dict(data or {})
-        name = (draft.simulation_name or "mein_szenario").strip() or "mein_szenario"
-        if ctx.triggered_id == shell.ACTION_SNAPSHOT:
-            from datetime import datetime, timezone
-
-            name = f"{name}_{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}"
-
-        try:
-            path = save_custom_sweep_preset(draft, name)
-        except Exception as exc:  # noqa: BLE001 - Dateifehler gehören in die UI
-            return ui.alert(f"Konnte nicht gespeichert werden: {exc}", "error")
-        return ui.alert(f"Gespeichert: `{path}`", "success")
+    # «Als Szenario sichern» öffnet seit P7.4-U4.5 den Dialog in
+    # `config_editor.sichern`; Öffnen und Sichern stehen dort.
 
     @app.callback(
         Output("url", "pathname"),
@@ -644,10 +638,27 @@ def create_app() -> Dash:
             return no_update, no_update, no_update
         return routing.url("runs"), "files", runs_page.viewbar("files").children
 
+    @app.callback(
+        *(Output(kennung, "style") for kennung in shell.KONTEXT),
+        Input("url", "pathname"),
+        Input("selected-run-store", "data"),
+    )
+    def _kontext(pathname: str | None, selected: dict | None):
+        """Die Kopfzeile zeigt, was zum Bereich passt (P7.3-U3.4).
+
+        Am Pfad **und** an der Auswahl: «Dateien des Laufs» braucht einen Lauf,
+        und den gibt es erst, wenn einer fertig ist — der Bereich ändert sich
+        dabei nicht.
+        """
+
+        stile = shell.kontext_stile(active_route(pathname), lauf=not run_data.zeigt_demo(selected))
+        return tuple(stile[kennung] for kennung in shell.KONTEXT)
+
     shell.register_callbacks(app)
     timeline.register_callbacks(app)
     launch_page.register_callbacks(app)
     runs_page.register_callbacks(app)
+    lauf_wahl.register_callbacks(app)
     docs_page.register_callbacks(app)
     return app
 

@@ -26,9 +26,13 @@ Zwei Dinge zur Mechanik:
 
 from __future__ import annotations
 
+import re
+from dataclasses import asdict
+
 from dash import html
 
 from dashboard.config_catalog import (
+    PROPERTY_LABELS,
     issues_by_field,
     list_sweep_presets,
     rahmenszenarien,
@@ -36,6 +40,7 @@ from dashboard.config_catalog import (
     validate_draft,
 )
 from dashboard.web import components as ui
+from dashboard.web import formate
 from dashboard.web.config_editor import compute_mode, dauer
 from dashboard.web.config_editor import controls as c
 from dashboard.web.state import draft_from_dict
@@ -73,6 +78,23 @@ def summary_id(slot: str) -> dict:
     return {"type": SUMMARY, "slot": slot}
 
 
+#: Der Wirt des Auswahlfelds in Schritt 1 — neu gezeichnet, wenn jemand die
+#: Stresstests ein- oder ausblendet (P7.4-U4.1).
+LISTE = "start-szenarioliste"
+
+#: Der Knopf «Stresstests zeigen». **Keine Konfigurationskennung**: Er schreibt
+#: nichts in den Entwurf und ist damit keine vierte Entscheidung (P1.1).
+STRESS_TOGGLE = "start-stresstests"
+
+
+def liste_id(slot: str) -> dict:
+    return {"type": LISTE, "slot": slot}
+
+
+def stress_toggle_id(slot: str) -> dict:
+    return {"type": STRESS_TOGGLE, "slot": slot}
+
+
 # --- Auswahl ⇄ Entwurf -----------------------------------------------------
 
 
@@ -81,8 +103,6 @@ def of(draft: dict) -> str:
 
     if draft.get("scenario_mode") == "sweep" and draft.get("sweep_id"):
         return str(draft["sweep_id"])
-    if draft.get("scenario_mode") == CUSTOM:
-        return CUSTOM
     return STANDARD
 
 
@@ -100,7 +120,9 @@ def apply(draft: dict, choice: str | None) -> dict:
     """
 
     if choice == CUSTOM:
-        draft["scenario_mode"] = CUSTOM
+        # Ein alter Eintrag «Eigene Einstellungen» aus einem offenen Tab — siehe
+        # `normalise`: dieselbe Übersetzung.
+        draft["scenario_mode"] = "basis"
         draft["apply_custom_overrides"] = True
     elif not choice or choice == STANDARD:
         draft["scenario_mode"] = "basis"
@@ -112,6 +134,14 @@ def apply(draft: dict, choice: str | None) -> dict:
 
 
 def normalise(draft: dict) -> dict:
+    # **Den Eintrag «Eigene Einstellungen» gibt es nicht mehr** (P7.13-U13.2 Teil 3b,
+    # von Haiko entschieden am 2026-09-15). Ein Entwurf, der den Modus noch trägt —
+    # aus einem offenen Tab oder aus «Werte übernehmen» —, wird zur
+    # Standard-Ausgangslage mit «Eigene Werte anwenden»: derselbe Lauf, und sein
+    # Rahmen heißt «eigen», sobald etwas von der Datei abweicht.
+    if draft.get("scenario_mode") == CUSTOM:
+        draft["scenario_mode"] = "basis"
+        draft["apply_custom_overrides"] = True
     if FIELD not in draft:
         return draft
     return apply(draft, draft.get(FIELD))
@@ -120,7 +150,7 @@ def normalise(draft: dict) -> dict:
 # --- Der Satz in Klartext --------------------------------------------------
 
 _MODE_PLAIN = {
-    "basis": "der Standard-Ausgangslage aus `configs/`",
+    "basis": "der Standard-Ausgangslage des Modells",
     "sweep": "einem vorbereiteten Szenario",
     CUSTOM: "Ihren eigenen Einstellungen",
 }
@@ -189,7 +219,10 @@ def summary_sentence(draft: dict) -> str:
     else:
         mode = f"mit dem Sprachmodell «{draft.get('model', '?')}» für die Agenten-Narrative"
 
-    return f"Sie starten {scope} über **{ticks} Ticks**, ausgehend von {basis}, {mode}."
+    return (
+        f"Sie starten {scope} über **{formate.ticks_mit_modellzeit(ticks)}**, "
+        f"ausgehend von {basis}, {mode}."
+    )
 
 
 # --- Schritt 1: Was soll gerechnet werden? ---------------------------------
@@ -206,74 +239,92 @@ def _kennzahl(preset) -> str:
 
     eingriffe = len(preset.property_overrides) + len(preset.factor_overrides)
     wort = "Änderung" if eingriffe == 1 else "Änderungen"
-    kennzahl = f"{preset.max_ticks} Ticks · {eingriffe} {wort}"
+    kennzahl = f"{formate.ticks_mit_modellzeit(preset.max_ticks)} · {eingriffe} {wort}"
 
     # **Seit P2.2 steht die Art vorneweg**, und zwar nur bei den Stresstests:
     # Ein Rahmen ist der Normalfall und braucht keine Marke, ein Belastungstest
     # der Engine schon — er stand bis dahin gleichrangig neben «Business as
     # Usual» und wurde als Zukunft angeboten.
+    # **Ein eigenes Szenario sagt, dass es eines ist** (P7.13-U13.2 Teil 3b): Es
+    # ist ein Stresstest nach Art (P2.2), steht aber bei den Rahmen, weil es
+    # jemand selbst abgelegt hat.
+    if preset.herkunft == "eigen":
+        return f"Eigenes Szenario · {kennzahl}"
     if preset.art != "rahmen":
         return f"Stresstest · {kennzahl}"
     return kennzahl
 
 
-def _choice_label(title: str, description: str, kennzahl: str | None = None) -> html.Div:
-    """Eine Kachel im Raster: Name, Kennzahl, zwei Zeilen Beschreibung (P1.9-W3.4).
+def _choice_label(title: str, kennzahl: str | None = None) -> html.Div:
+    """Ein Eintrag der Liste: **Name und Kennzahl, kein Satz** (P7.4-U4.1).
 
-    Vorher trug jede Kachel ihre **vollständige** Beschreibung — zwischen einer
-    und sechs Zeilen, je nach Szenario. Gemessen waren die zehn Kacheln damit
-    zwischen 88 und 264 px hoch, das Raster 5 Reihen, und Schritt 1 brauchte
-    1,92 Bildschirme: der zweithöchste Wert der ganzen Schrittfolge.
-
-    Ein Raster, dessen Zeilen unterschiedlich hoch sind, lässt sich außerdem
-    nicht überfliegen — man liest zehn Absätze, statt zehn Möglichkeiten zu
-    vergleichen. Die Beschreibung ist deshalb auf zwei Zeilen geklemmt, und die
-    **Kennzahl** darüber macht die Kacheln erst vergleichbar.
-
-    Der vollständige Text geht dabei nicht verloren: Er steht unter dem Raster,
-    sobald ein Szenario gewählt ist (`scenario_details`) — dort, wo man ihn
-    braucht, und nur für das eine, das zur Debatte steht.
+    Seit P1.9-W3.4 trug jede Kachel zwei Zeilen Beschreibung, abgeschnitten mit
+    Auslassung — gemessen stand der Satz meist mitten im Gedanken still (E2).
+    **Jetzt steht die Beschreibung nur noch in den Einzelheiten daneben**, voll,
+    und nur für das eine Szenario, das zur Debatte steht. Die Kennzahl macht die
+    Einträge vergleichbar.
     """
 
     return html.Div(
         [
-            html.Span(title, className="font-body text-sm font-medium af-text block"),
+            html.Span(title, className=f"font-body {ui.BESCHRIFTUNG} font-medium af-text block"),
             (html.Span(kennzahl, className="af-choice__meta") if kennzahl else None),
-            html.Span(description, className=f"{ui.CAPTION} af-choice__text"),
         ],
         className="min-w-0",
     )
 
 
-def choice_options() -> list[dict]:
-    """Standard, jedes Preset, und der Weg zu den eigenen Einstellungen."""
+def choice_options(*, stresstests: bool = False, gewaehlt: str | None = None) -> list[dict]:
+    """Standard, die Rahmen, die eigenen Szenarien — und auf Wunsch die Stresstests.
 
-    options: list[dict] = [
-        {
-            "label": _choice_label(
-                "Standard-Ausgangslage",
-                "Die hinterlegten Werte aus `configs/` — der neutrale Ausgangspunkt.",
-            ),
-            "value": STANDARD,
-        }
+    **Stresstests sind ausgeblendet** (P7.4-U4.1, von Haiko entschieden am
+    2026-09-14): Sie standen alphabetisch zwischen den Rahmen und waren nur an
+    einem kleinen Zusatz zu erkennen (E2). **Ein gewählter Stresstest bleibt
+    sichtbar** — sonst stünde eine Auswahl da, die niemand sieht.
+    """
+
+    # **Eigene Szenarien stehen nach den Rahmen, immer sichtbar** (P7.13-U13.2
+    # Teil 3b, von Haiko entschieden am 2026-09-15). Bis dahin landete ein
+    # gesichertes Szenario als Stresstest hinter «Stresstests zeigen», und der
+    # Eintrag «Eigene Einstellungen» stand dort, wo man es gesucht hätte.
+    presets = list_sweep_presets()
+    rahmen = [p for p in presets if p.art == "rahmen"]
+    eigene = [p for p in presets if p.art != "rahmen" and p.herkunft == "eigen"]
+    stress = [
+        p
+        for p in presets
+        if p.art != "rahmen" and p.herkunft != "eigen" and (stresstests or p.id == gewaehlt)
     ]
-    for preset in list_sweep_presets():
-        options.append(
-            {
-                "label": _choice_label(preset.name, preset.description, _kennzahl(preset)),
-                "value": preset.id,
-            }
-        )
-    options.append(
-        {
-            "label": _choice_label(
-                "Eigene Einstellungen",
-                "Was Sie in den Schritten 4 bis 7 selbst eingestellt haben.",
-            ),
-            "value": CUSTOM,
-        }
-    )
+    options: list[dict] = [{"label": _choice_label("Standard-Ausgangslage"), "value": STANDARD}]
+    for preset in (*rahmen, *eigene, *stress):
+        options.append({"label": _choice_label(preset.name, _kennzahl(preset)), "value": preset.id})
     return options
+
+
+def stresstest_anzahl() -> int:
+    return sum(
+        1
+        for preset in list_sweep_presets()
+        if preset.art != "rahmen" and preset.herkunft != "eigen"
+    )
+
+
+def stresstest_knopftext(gezeigt: bool) -> str:
+    """Was der Knopf sagt — was ein Klick als Nächstes tut."""
+
+    return "Stresstests verbergen" if gezeigt else f"Stresstests zeigen ({stresstest_anzahl()})"
+
+
+def szenario_radio(draft: dict, *, stresstests: bool) -> object:
+    """Das eine Auswahlfeld des Schritts — mit oder ohne Stresstests."""
+
+    return ui.radio(
+        choice_options(stresstests=stresstests, gewaehlt=of(draft)),
+        value=of(draft),
+        id=FIELD_ID,
+        cards=True,
+        legend="Was soll gerechnet werden? Die Annahmenwelt des Laufs.",
+    )
 
 
 def _eigene_werte_wirken(draft: dict) -> bool:
@@ -283,6 +334,39 @@ def _eigene_werte_wirken(draft: dict) -> bool:
     """
 
     return bool(draft.get("apply_custom_overrides")) or of(draft) == CUSTOM
+
+
+#: Wie viele Sätze der Begründung offen stehen (D3, entschieden am 2026-09-12).
+#:
+#: **Zwei**, und die Zahl ist die Entscheidung: Vorher stand die ganze
+#: Begründung da — je Szenario 1163 bis 2429 Zeichen zusammen mit der These,
+#: und beim Standardrahmen 2261 Zeichen allein aus Begründung und Vorbehalt. Das
+#: ist die Tonlage eines Projektplans, nicht die eines Produkts. **Die
+#: Ehrlichkeit bleibt vollständig erreichbar**, sie stört nur nicht mehr die
+#: Entscheidung: Der Rest steht einen Klick tiefer.
+SAETZE_OFFEN = 2
+
+#: Satzende: Punkt, Frage- oder Ausrufezeichen, gefolgt von Weißraum.
+#:
+#: **Nachgemessen tragfähig, nicht angenommen** (2026-09-12): In keiner der
+#: fünf Kohärenzbegründungen steht eine Abkürzung («z. B.», «bzw.», «ca.»,
+#: «vgl.», «Nr.») oder eine Dezimalzahl, an der dieses Muster falsch schneiden
+#: würde. `test_web_start_flow.py` misst das an den ausgelieferten Dateien —
+#: wer eine Begründung mit einer Abkürzung schreibt, bekommt Bescheid, bevor
+#: ein Leser einen halben Satz sieht.
+_SATZENDE = re.compile(r"(?<=[.!?])\s+")
+
+
+def satzanfang(text: str, saetze: int = SAETZE_OFFEN) -> tuple[str, str]:
+    """Die ersten `saetze` Sätze und der Rest — beide bereits beschnitten.
+
+    Öffentlich, weil der Wächter dieselbe Trennung nachrechnet, die die
+    Oberfläche zeigt. Zwei Implementierungen wären die zweite Quelle, an der
+    sie auseinanderlaufen.
+    """
+
+    teile = _SATZENDE.split(text.strip())
+    return " ".join(teile[:saetze]).strip(), " ".join(teile[saetze:]).strip()
 
 
 def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
@@ -303,30 +387,60 @@ def _kohaerenz_block(kohaerenz, *, vorspann=None) -> html.Div:
     if kohaerenz is None:
         return html.Div()
 
+    offen, rest = satzanfang(kohaerenz.begruendung)
     kinder: list = [vorspann] if vorspann is not None else []
     kinder += [
-        html.P(kohaerenz.these, className="font-body text-sm af-text mb-2 af-mass"),
-        html.P(kohaerenz.begruendung, className=f"{ui.CAPTION} mb-3 af-mass"),
+        # **These und zwei Sätze in Fließtextgröße** (D3). Vorher trug die These
+        # `af-md--betont` (14 px) und die Begründung `af-md--caption` (12 px) —
+        # zwei Größen in einem Leseblock, und genau daran ist U1.2 beim ersten
+        # Anlauf gescheitert: Ein Deckel in Pixeln kann die Zusage «höchstens 75
+        # Zeichen je Zeile» nicht für zwei Schriftgrößen halten (608 px tragen
+        # bei 15 px 66 Zeichen, bei 12 px 106). **Ein Leseblock hat eine
+        # Textgröße** — das ist die Regel, die aus dem Fehlschlag folgt.
+        #
+        # **Markdown, nicht `html.P`** (P7.1-U1.4): Die Begründungen in
+        # `configs/` sind mit `**fett**` und `` `avia_paoc` `` geschrieben, und
+        # im Browser standen die Zeichen roh da.
+        ui.markdown(kohaerenz.these, class_name="af-md--tight af-md--these mb-2"),
+        ui.markdown(offen, class_name="af-md--tight"),
         ui.expert(
             html.Div(
                 [
-                    html.Ul(
-                        # **Auch eine Quellenangabe ist Fließtext** (P3.17). Die
-                        # zwei Absätze darüber tragen ein Lesemaß, diese Liste
-                        # trug keines — gemessen 109 Zeichen je Zeile bei 1280 px
-                        # («docs/research/links.md — EU-ETS / Fit for 55 …»),
-                        # zugesagt sind 75. Eine Quelle ist die längste Zeile,
-                        # die eine Oberfläche zu bieten hat: Titel, Autor, Jahr,
-                        # Fundstelle in einer Zeile.
-                        [html.Li(q, className=f"{ui.CAPTION} af-mass") for q in kohaerenz.quellen],
-                        className="mb-3 list-disc pl-5",
+                    # Der Rest der Begründung — er stand bis D3 offen da.
+                    (
+                        ui.markdown(rest, class_name="af-md--tight af-md--caption mb-3")
+                        if rest
+                        else None
                     ),
-                    html.P(kohaerenz.vorbehalt, className=f"{ui.CAPTION} af-mass"),
+                    # **Als Markdown-Liste**, weil die Quellen Tabellen in
+                    # Backticks nennen. Eine Quelle ist die längste Zeile, die
+                    # eine Oberfläche zu bieten hat — Titel, Autor, Jahr,
+                    # Fundstelle in einer Zeile —, und sie läuft seit der
+                    # Rücknahme von E3 über die volle Breite.
+                    ui.markdown(
+                        "\n".join(f"- {quelle}" for quelle in kohaerenz.quellen),
+                        class_name="af-md--tight af-md--caption mb-3",
+                    ),
+                    ui.markdown(kohaerenz.vorbehalt, class_name="af-md--tight af-md--caption"),
                 ]
             ),
-            title="Quellen und was davon nicht belegt ist",
+            # **Eine Klappe für alles, was belegt** (D3). Vorher hieß sie
+            # «Quellen und was davon nicht belegt ist» und trug nur zwei der
+            # vier Texte; die Begründung stand darüber offen.
+            title="Begründung und Quellen",
         ),
     ]
+    # **Gar kein Deckel mehr** (Rücknahme von E3 am 2026-09-12). Der Weg
+    # hierher in drei Stufen, und jede war eine Messung: Zuerst trug jeder Text
+    # sein eigenes `af-mass` in `ch`, also bekam jeder eine andere Breite
+    # (These 424 px, Begründung 363, Quellenliste verschachtelt 341) — vier
+    # Breiten in einem Block, der Befund, mit dem das UI/UX-Audit angefangen
+    # hat. Dann saß mit U1.2 ein Deckel in `rem` am Block, und die Texte
+    # endeten an einer Kante — bei 512 px von 760. Jetzt endet die Kante dort,
+    # wo der Block endet.
+    #
+    # **Was von D3 bleibt, ist die Regel dahinter:** Ein Leseblock hat eine
+    # Textgröße. Sie galt unabhängig vom Deckel.
     return html.Div(kinder, className="mb-4")
 
 
@@ -334,19 +448,6 @@ def scenario_details(draft: dict) -> html.Div:
     """Was zur aktuellen Auswahl gehört — Begründung und der Weg in den Editor."""
 
     choice = of(draft)
-    if choice == CUSTOM:
-        # **Für eigene Werte gibt es keine Begründung, und das ist keine Lücke.**
-        # Ein selbst zusammengestellter Rahmen ist genau so stimmig, wie der
-        # Nutzer ihn macht; ihm eine Kohärenzbehauptung unterzuschieben wäre eine
-        # Aussage, die niemand getroffen hat.
-        return html.Div(
-            ui.note(
-                "Für eine eigene Zusammenstellung gibt es **keine hinterlegte "
-                "Begründung** — die Rahmenszenarien tragen je eine, weil jemand sie "
-                "aufgeschrieben und belegt hat. Wer eigene Verläufe nach außen "
-                "zitiert, begründet ihre Stimmigkeit selbst."
-            )
-        )
     if choice == STANDARD:
         # **Auch der Standard ist ein Rahmen** (P2.0-B), und seit A1 trägt er
         # seine Begründung wie jeder andere. Sie stand als einzige nicht da —
@@ -354,30 +455,31 @@ def scenario_details(draft: dict) -> html.Div:
         # Preset-Wahl benutzt.
         return _kohaerenz_block(
             load_properties_config().kohaerenz,
-            vorspann=ui.note(
-                "Der Lauf rechnet mit den Verläufen aus `configs/`. **Auch das ist "
-                "ein Rahmenszenario** — es trägt eigene Annahmen über Politik, "
-                "Kosten und Konjunktur und heißt nur nicht so."
+            # **Eine Zeile, kein Kasten** (P7.4-U4.1): Als Kasten kostete sie bei
+            # 1440 × 900 128 px in der schmalen rechten Spalte.
+            vorspann=ui.satz(
+                "Der Lauf rechnet mit den **hinterlegten Verläufen des Modells** — eigenen "
+                "Annahmen über Politik, Kosten und Konjunktur, begründet wie jedes Szenario.",
+                class_name=f"{ui.CAPTION} mb-2",
             ),
         )
 
     preset = next((s for s in list_sweep_presets() if s.id == choice), None)
     if preset is None:
-        return html.Div(
-            ui.alert(f"Preset `{choice}` liegt nicht unter `configs/sweeps/`.", "warning")
-        )
+        return html.Div(ui.hinweis(f"Das Szenario «{choice}» ist nicht hinterlegt.", "warnung"))
 
     children: list = [
         # **Der volle Beschreibungstext steht hier**, seit die Kachel ihn auf
         # zwei Zeilen klemmt (W3.4). Er ist nicht verschwunden, er steht nur
         # dort, wo er gebraucht wird: bei dem einen Szenario, das zur Debatte
         # steht, statt zehnmal im Raster.
-        html.P(preset.description, className=f"{ui.CAPTION} mb-4 af-mass"),
-        ui.note(
+        html.P(preset.description, className=f"{ui.CAPTION} mb-4"),
+        ui.hinweis(
             "Das Szenario gilt **unverändert**: Politik, Kosten und Nachfrageumfeld kommen aus "
             f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
-            f"Angelegt ist es auf **{preset.max_ticks} Ticks** — die Länge stellen Sie im "
-            "nächsten Schritt selbst ein."
+            f"Angelegt ist es auf **{formate.ticks_mit_modellzeit(preset.max_ticks)}** — die Länge stellen Sie im "
+            "nächsten Schritt selbst ein.",
+            "kontext",
         ),
     ]
     # **Die Kohärenzbegründung (P2.2, Variante C).** Sie steht offen da und
@@ -388,12 +490,12 @@ def scenario_details(draft: dict) -> html.Div:
         children.append(_kohaerenz_block(preset.kohaerenz))
     elif preset.art != "rahmen":
         children.append(
-            ui.alert(
+            ui.hinweis(
                 "Dies ist ein **Stresstest der Engine**, kein begründetes Weltbild. Die "
                 "Verläufe sind auf Sichtbarkeit und Belastung gebaut, nicht auf "
                 "Plausibilität — die Zahlen taugen zum Prüfen der Mechanik, nicht als "
                 "Aussage über die Zukunft. Ein Szenario-Vergleich lässt ihn deshalb aus.",
-                "warning",
+                "warnung",
             )
         )
 
@@ -401,28 +503,30 @@ def scenario_details(draft: dict) -> html.Div:
         children.append(
             ui.expert(ui.markdown(preset.rationale), title="Warum dieses Szenario so aufgebaut ist")
         )
-    children.append(
-        html.Div(
-            [
-                ui.button(
-                    "Werte übernehmen und selbst anpassen",
-                    id=c.action_id("apply-sweep"),
-                    variant="secondary",
-                    icon_name="download",
-                ),
-                html.P(
-                    "Schreibt die Werte des Szenarios in den Editor und schaltet auf "
-                    "«Eigene Einstellungen» um.",
-                    className=f"{ui.CAPTION} mt-2",
-                ),
-            ],
-            className="mt-5",
-        )
-    )
+    # «Werte übernehmen und selbst anpassen» ist mit P7.13-U13.3 entfallen: Es
+    # schrieb in `property_edits`, und das erreicht keinen Lauf mehr. Ein Szenario
+    # ändert man im Schritt «Verläufe».
     return html.Div(children)
 
 
 # --- Preflight -------------------------------------------------------------
+
+
+def schritttitel(key: str) -> str:
+    """Der Titel eines Schritts — aus `wizard.STEPS`, nie hingeschrieben (P7.2-U2.2).
+
+    Zwei Texte verwiesen auf Schritte, die es so nicht mehr gab: «Schritten 4
+    bis 7» (die Schrittfolge hat seit P2.0-C sechs) und Schritt «Ausgangslage»
+    (mit P2.0-C entfallen). Beide waren beim Schreiben richtig. Eine Nummer oder
+    ein Titel als Literal weiß nichts davon, dass die Schrittfolge sich ändert —
+    `tests/test_web_schrittverweise.py` meldet jedes.
+
+    Der Import steht in der Funktion, weil `wizard` dieses Modul importiert.
+    """
+
+    from dashboard.web.config_editor import wizard
+
+    return next(step.title for step in wizard.STEPS if step.key == key)
 
 
 def _vergleich_tiles() -> list:
@@ -434,30 +538,41 @@ def _vergleich_tiles() -> list:
     Zahlen zu nennen, mit denen nicht gerechnet wird.
     """
 
-    presets = list_sweep_presets()
-    laengen = sorted({p.max_ticks for p in presets})
-    laenge = f"{laengen[0]} Ticks" if len(laengen) == 1 else f"{min(laengen)}–{max(laengen)} Ticks"
+    # **Die Rahmen, nicht der ganze Ordner** (P7.2-U2.1). Bis zum 2026-09-11
+    # zählte diese Kachel `list_sweep_presets()` — acht, samt der Stresstests —,
+    # während der Satz darüber «alle vier Rahmenszenarien» sagte. Auch die
+    # Längenspanne kam aus den Stresstests: «40–120 Ticks» für einen Vergleich,
+    # dessen Szenarien alle 120 Ticks lang sind.
+    rahmen = rahmenszenarien()
+    laengen = sorted({p.max_ticks for p in rahmen}) or [0]
+    laenge = (
+        formate.ticks_mit_modellzeit(laengen[0])
+        if len(laengen) == 1
+        else f"{min(laengen)}–{max(laengen)} Ticks"
+    )
 
     return [
-        ui.metric_tile("Szenarien", len(presets)),
-        ui.metric_tile(
+        ui.kachel("Rahmenszenarien", len(rahmen)),
+        ui.kachel(
             "Länge",
             laenge,
-            hint="Je Szenario so, wie es angelegt ist — nicht die Länge aus Schritt 2.",
-            prose=True,
+            hint=(
+                "Je Szenario so, wie es angelegt ist — nicht die Länge aus "
+                f"«{schritttitel('umfang')}»."
+            ),
+            variante="text",
         ),
-        ui.metric_tile(
+        ui.kachel(
             "Rechenmodus",
             "Nur Zahlen",
             hint="Vom Vergleich vorgegeben, damit die Szenarien vergleichbar bleiben.",
-            prose=True,
+            variante="text",
         ),
-        ui.metric_tile(
+        ui.kachel(
             "Zufallsstartwert",
             f"{SWEEP_SEED} (vorgegeben)",
-            hint="Für alle Szenarien derselbe — sonst zeigte ein Unterschied die "
-            "Ziehung statt des Szenarios.",
-            prose=True,
+            hint="Für alle Szenarien derselbe — sonst zeigt ein Unterschied die Ziehung.",
+            variante="text",
         ),
     ]
 
@@ -499,21 +614,48 @@ def _tiles(draft: dict) -> list:
     if ist_vergleich(draft):
         return _vergleich_tiles()
 
-    feedback = draft.get("market_feedback_edit") or {}
-    segments = [s for s in (draft.get("population_edits") or []) if s.get("type") == "boolean"]
-    active_properties = [
-        key
-        for key, edit in (draft.get("property_edits") or {}).items()
-        if isinstance(edit, dict) and edit.get("is_active", True)
-    ]
-
+    # **Drei Werte, die vor dem Start zählen** (P7.4-U4.4). Ziel-Auslastung,
+    # Segmente und aktive Systemgrößen sind Modellinterna; sie stehen seither
+    # hinter «Technische Details» (`_modell_kacheln`). Das Bedienfeld zeigt die
+    # ersten drei — und damit jetzt, was «Die erste Simulation» schon lange sagt.
     return [
-        ui.metric_tile("Länge", f"{draft.get('rounds', '?')} Ticks"),
-        ui.metric_tile(
+        ui.kachel("Länge", formate.ticks_mit_modellzeit(draft.get("rounds", "?"))),
+        ui.kachel(
             "Wiederholungen",
             "alle Szenarien" if draft.get("run_all_sweeps") else draft.get("run_count", 1),
         ),
-        ui.metric_tile(
+        ui.kachel(
+            "Zufallsstartwert",
+            draft.get("seed", "—") if draft.get("use_seed") else f"{DEFAULT_SEED} (Standard)",
+            hint="Ohne eigenen Startwert rechnet der Lauf mit dem Standardwert.",
+        ),
+    ]
+
+
+def _modell_kacheln(draft: dict) -> list:
+    """Kennzahlen des Modells — für wen nachsehen will, nicht für die Entscheidung.
+
+    **Ziel-Auslastung und Segmente kommen aus der Datei, nicht aus dem Entwurf**
+    (P7.13-U13.5). Preisbildung und Bevölkerung aus dem Bereich «Modell» wirken
+    nur gespeichert; gemessen erreichte eine eingetragene Ziel-Auslastung von 0,61
+    keinen Lauf, und diese Kachel zeigte sie trotzdem an. **Seit P7.13-U13.3 auch die
+    Systemgrößen**: Startwerte und Verläufe wirken ebenfalls nur gespeichert.
+    """
+
+    from dashboard.config_catalog import (
+        extract_market_feedback_from_file,
+        extract_population_edits_from_file,
+        extract_property_edits_from_file,
+    )
+
+    datei = draft.get("properties_file") or "properties.json"
+    feedback = asdict(extract_market_feedback_from_file(datei))
+    segments = [s for s in extract_population_edits_from_file(datei) if s.type == "boolean"]
+    active_properties = [
+        key for key, edit in extract_property_edits_from_file(datei).items() if edit.is_active
+    ]
+    return [
+        ui.kachel(
             "Ziel-Auslastung",
             (
                 f"{float(feedback.get('target_booking_rate', 0.37)):.0%}"
@@ -521,13 +663,8 @@ def _tiles(draft: dict) -> list:
                 else "Preis fix"
             ),
         ),
-        ui.metric_tile("Segmente", len(segments)),
-        ui.metric_tile("Aktive Systemgrößen", len(active_properties)),
-        ui.metric_tile(
-            "Zufallsstartwert",
-            draft.get("seed", "—") if draft.get("use_seed") else f"{DEFAULT_SEED} (Standard)",
-            hint="Ohne eigenen Startwert rechnet der Lauf mit dem Standardwert.",
-        ),
+        ui.kachel("Segmente", len(segments)),
+        ui.kachel("Aktive Systemgrößen", len(active_properties)),
     ]
 
 
@@ -569,23 +706,47 @@ def herkunft(draft: dict) -> object:
     if not zeilen:
         return None
 
+    # **Zeilen, keine eigene Klappe** (P7.4-U4.4): Sie stehen in «Technische
+    # Details», und eine Klappe in der Klappe verbietet die Regel zum Aufklappen.
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Span(name, className="af-delta__was"),
+                    html.Span(wert, className="af-delta__wert"),
+                ],
+                className="af-delta__zeile",
+            )
+            for name, wert in zeilen
+        ],
+        className="af-delta",
+    )
+
+
+def technische_details(draft: dict) -> object:
+    """Woran der Lauf später wiederzuerkennen ist, und die Kennzahlen des Modells (P7.4-U4.4).
+
+    **Eine Klappe am Ende des Prüfschritts.** Bis dahin stand die Herkunft als
+    eigene Klappe mitten im Preflight und daneben sechs Kacheln, drei davon
+    Modellinterna — gemessen bei 1440 × 900 zusammen fast 300 px für Angaben, die
+    man zum Nachsehen braucht und nicht zum Starten (E9).
+    """
+
+    teile: list = [herkunft(draft)]
+    if not ist_vergleich(draft):
+        teile.append(
+            html.Div(
+                ui.grid(*_modell_kacheln(draft), cols="sm:grid-cols-2 lg:grid-cols-3", gap="gap-4"),
+                className="mt-4",
+            )
+        )
+    teile = [teil for teil in teile if teil is not None]
+    if not teile:
+        return None
     return ui.expert(
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Span(name, className="af-delta__was"),
-                        html.Span(wert, className="af-delta__wert"),
-                    ],
-                    className="af-delta__zeile",
-                )
-                for name, wert in zeilen
-            ],
-            className="af-delta",
-        ),
-        count=len(zeilen),
-        title="Woran dieser Lauf später wiederzuerkennen ist",
-        names="Codestand, Fingerabdruck der Konfiguration",
+        *teile,
+        title="Technische Details",
+        names="Codestand, Konfiguration, Kennzahlen des Modells",
     )
 
 
@@ -597,7 +758,39 @@ def _zustand(draft: dict):
     return prepare_simulation_state(draft_from_dict(draft))
 
 
-def _warnings(draft: dict, errors: list[str]) -> list:
+#: Der Knopf unter einem Hinweis, der zum Schritt führt, in dem er sich beheben
+#: lässt (P7.4-U4.4). **Eigene Kennung**, nicht die der Schrittliste: Dieselbe
+#: Kennung zweimal im DOM wäre für Dash ein Laufzeitfehler.
+SPRUNG = "wizard-hinweis-sprung"
+
+
+def sprung_id(schritt: str) -> dict:
+    return {"type": SPRUNG, "schritt": schritt}
+
+
+def _mit_sprung(hinweis: object, schritt: str, sprung: bool) -> object:
+    """Ein Hinweis mit Knopf zum Schritt — **nur im Prüfschritt** (*sprung*).
+
+    Im Bedienfeld steht man im Leitstand; ein Sprung schaltete dort einen
+    Schritt des Einrichtens um, den niemand sieht.
+    """
+
+    if not sprung:
+        return hinweis
+    return html.Div(
+        [
+            hinweis,
+            ui.button(
+                f"Zu «{schritttitel(schritt)}»",
+                id=sprung_id(schritt),
+                variant="ghost",
+                className="mt-1",
+            ),
+        ]
+    )
+
+
+def _warnings(draft: dict, errors: list[str], *, sprung: bool = False) -> list:
     """Was den Start verhindert, und was später enttäuscht — getrennt gehalten.
 
     Fehler zuerst und sichtbar abgesetzt: Die Hinweise darunter sind Ratschläge,
@@ -616,7 +809,7 @@ def _warnings(draft: dict, errors: list[str]) -> list:
         if am_feld:
             steht = "steht ein Hinweis" if am_feld == 1 else f"stehen {am_feld} Hinweise"
             text += f" Dazu {steht} direkt am betroffenen Feld."
-        warnings.append(ui.alert(text, "error"))
+        warnings.append(ui.hinweis(text, "fehler"))
 
     # Zwei der Hinweise unten gelten nur für einen Lauf: Der Vergleich hat einen
     # vorgegebenen Startwert und wendet eigene Werte ohnehin nicht an. Sie dort
@@ -625,19 +818,27 @@ def _warnings(draft: dict, errors: list[str]) -> list:
 
     if not vergleich and not draft.get("use_seed") and int(draft.get("run_count") or 1) > 1:
         warnings.append(
-            ui.alert(
-                "Mehrere Wiederholungen ohne festen Zufallsstartwert: Die Läufe werden sich "
-                "unterscheiden. Das ist gewollt, wenn Sie die Streuung sehen wollen — für "
-                "einen sauberen A/B-Vergleich setzen Sie den Startwert unter «Feinabstimmung».",
-                "info",
+            _mit_sprung(
+                ui.hinweis(
+                    "Mehrere Wiederholungen ohne festen Zufallsstartwert: Die Läufe werden sich "
+                    "unterscheiden. Das ist gewollt, wenn Sie die Streuung sehen wollen — für "
+                    "einen sauberen A/B-Vergleich setzen Sie den Startwert unter «Feinabstimmung».",
+                    "info",
+                ),
+                "modus",
+                sprung,
             )
         )
     if draft.get("no_scenarios"):
         warnings.append(
-            ui.alert(
-                "«Keine Szenarien erzeugen» ist aktiv — der Tab «Szenario» bleibt nach dem "
-                "Lauf leer, obwohl er die Hauptansicht ist.",
-                "warning",
+            _mit_sprung(
+                ui.hinweis(
+                    "«Keine Szenarien erzeugen» ist aktiv — der Tab «Szenario» bleibt nach dem "
+                    "Lauf leer, obwohl er die Hauptansicht ist.",
+                    "warnung",
+                ),
+                "technik",
+                sprung,
             )
         )
     if (
@@ -646,10 +847,14 @@ def _warnings(draft: dict, errors: list[str]) -> list:
         and not draft.get("apply_custom_overrides")
     ):
         warnings.append(
-            ui.alert(
-                "«Eigene Werte anwenden» ist aus — Änderungen an den Systemgrößen "
-                "wirken in diesem Lauf nicht.",
-                "warning",
+            _mit_sprung(
+                ui.hinweis(
+                    "«Eigene Werte anwenden» ist aus — Änderungen an den Systemgrößen "
+                    "wirken in diesem Lauf nicht.",
+                    "warnung",
+                ),
+                "szenario",
+                sprung,
             )
         )
 
@@ -681,9 +886,10 @@ def _horizont_hinweis(draft: dict) -> list:
     frueheste = luecken[0]
     wie_viele = "Ein Verlauf endet" if len(luecken) == 1 else f"{len(luecken)} Verläufe enden"
     return [
-        ui.alert(
+        ui.hinweis(
             f"{wie_viele} vor dem Ende des Laufs — der früheste ist "
-            f"`{frueheste.property_id}` bei Tick {frueheste.letzter_stuetzpunkt}. "
+            f"«{PROPERTY_LABELS.get(frueheste.property_id, frueheste.property_id)}» "
+            f"bei Tick {frueheste.letzter_stuetzpunkt}. "
             f"Danach hält er seinen letzten Wert; die letzten "
             f"{frueheste.ticks_darueber} Ticks rechnen also mit einer "
             "fortgeschriebenen Vorgabe. Das ist zulässig — gemeint ist es nicht "
@@ -693,14 +899,44 @@ def _horizont_hinweis(draft: dict) -> list:
     ]
 
 
-#: Was im Bedienfeld von den sechs Kacheln übrig bleibt. Die drei, die vor dem
-#: Start wirklich zählen; der Rest steht im Bereich «Einrichten», wo er
-#: eingestellt wird.
-_COMPACT_TILES = 3
+# `_COMPACT_TILES` ist mit P7.5-U5.1 entfallen: Das Bedienfeld trägt keine
+# Kacheln mehr.
+
+
+def _hinweis_zaehler(draft: dict, errors: list[str]) -> object:
+    """Die Hinweise des Bedienfelds als Zahl, mit dem Ort, an dem sie stehen (P7.5-U5.1).
+
+    **Ein Befund, der den Start verhindert, bleibt ein Fehler** — gezählt, aber im
+    Ton «fehler», damit er neben dem Start-Knopf nicht wie ein Ratschlag aussieht.
+    Der Ort kommt aus der Schrittfolge (`schritttitel`), nicht als Literal.
+    """
+
+    hinweise = _warnings(draft, errors)
+    if not hinweise:
+        return None
+    ort = f"im Bereich «Einrichten», Schritt «{schritttitel('start')}»"
+    if errors:
+        anzahl = len(errors)
+        befunde = "ein Befund" if anzahl == 1 else f"{anzahl} Befunde"
+        return html.Div(
+            ui.hinweis(f"**Der Lauf kann so nicht starten** — {befunde}, {ort}.", "fehler"),
+            className="mt-4",
+        )
+    anzahl = len(hinweise)
+    wort = "ein Hinweis" if anzahl == 1 else f"{anzahl} Hinweise"
+    return html.Div(
+        ui.hinweis(f"Vor dem Start: {wort}, {ort}.", "info"),
+        className="mt-4",
+    )
 
 
 def preflight(
-    draft: dict, errors: list[str], *, slot: str = "setup", compact: bool = False
+    draft: dict,
+    errors: list[str],
+    *,
+    slot: str = "setup",
+    compact: bool = False,
+    abweichungen: object = None,
 ) -> html.Div:
     """Der letzte Blick vor dem Start.
 
@@ -708,37 +944,59 @@ def preflight(
     weil derselbe Satz an mehreren Stellen stehen darf — dieselbe ID zweimal
     wäre dagegen ein Laufzeitfehler im Browser.
 
-    *compact* ist die Fassung für das Bedienfeld: drei Kacheln statt sechs,
-    einspaltig. Seit P1.6 steht der Preflight dort, direkt über dem Knopf, den
-    er absichert.
+    *compact* ist die Fassung für das Bedienfeld. Seit P1.6 steht der Preflight
+    dort, direkt über dem Knopf, den er absichert. **Seit P7.5-U5.1 ist sie ein
+    Satz und ein Zähler** (von Haiko entschieden am 2026-09-15): keine Kacheln,
+    keine Dauer, und die Hinweise nur gezählt — ausführlich stehen sie in
+    «Prüfen & Starten». Gemessen vorher bei 1280 × 800: 2,13 Bildschirme.
     """
 
-    tiles = _tiles(draft)
-    return html.Div(
-        [
-            # Der Satz ist Fliesstext und bekommt das Lesemass (W5.4):
-            # bei 1024 px lief er sonst auf 76 Zeichen je Zeile.
-            ui.card(
+    if compact:
+        # **Ohne Karte und in Beschriftungsgröße** (P7.5-U5.1): In der 261 px breiten
+        # Spalte brach der Satz in Fließtextgröße auf rund neun Zeilen um, und die
+        # Stand-Zeilen darüber tragen dieselben Werte schon — gemessen stand das
+        # Bedienfeld damit noch bei 1,08 Bildschirmen.
+        return html.Div(
+            [
                 html.Div(
-                    ui.markdown(summary_sentence(draft)),
+                    ui.markdown(summary_sentence(draft), class_name="af-md--tight af-md--caption"),
                     id=summary_id(slot),
-                    className="af-mass",
-                )
-            ),
-            html.Div(_warnings(draft, errors), className="space-y-2 mt-4"),
-            html.Div(vorgaben_hinweis(draft), className="mt-4"),
-            html.Div(dauer.hinweis(draft), className="mt-4"),
-            html.Div(herkunft(draft) if not compact else None, className="mt-4"),
-            html.Div(
-                ui.grid(
-                    *(tiles[:_COMPACT_TILES] if compact else tiles),
-                    cols="grid-cols-1" if compact else "sm:grid-cols-2 lg:grid-cols-3",
-                    gap="gap-2" if compact else "gap-4",
                 ),
-                className="mt-4",
-            ),
-        ]
-    )
+                _hinweis_zaehler(draft, errors),
+                html.Div(vorgaben_hinweis(draft), className="mt-4"),
+            ]
+        )
+
+    tiles = _tiles(draft)
+
+    # **Die feste Reihenfolge des Prüfschritts** (P7.4-U4.4): was läuft und wie
+    # lange, die Werte, was abweicht, was zu beachten ist, zuletzt die Details.
+    # Bis dahin standen die Abweichungen ganz unten und zwischen Satz und Kacheln
+    # Hinweise, Dauer und Herkunft (E9) — gemessen 1,42 Schirme bei 1440 × 900.
+    satz = dauer.schaetzung(draft)
+    teile: list = [
+        ui.card(
+            html.Div(
+                [
+                    html.Div(ui.markdown(summary_sentence(draft)), id=summary_id(slot)),
+                    ui.satz(satz, class_name=f"{ui.CAPTION} mt-2") if satz else None,
+                ]
+            )
+        ),
+        html.Div(
+            ui.grid(*tiles, cols="sm:grid-cols-2 lg:grid-cols-3", gap="gap-4"),
+            className="mt-4",
+        ),
+    ]
+    if abweichungen is not None:
+        teile.append(html.Div(abweichungen, className="mt-4"))
+    hinweise = _warnings(draft, errors, sprung=True)
+    if hinweise:
+        teile.append(html.Div(hinweise, className="space-y-2 mt-4"))
+    for teil in (vorgaben_hinweis(draft), technische_details(draft)):
+        if teil is not None:
+            teile.append(html.Div(teil, className="mt-4"))
+    return html.Div(teile)
 
 
 # --- Aufbau ----------------------------------------------------------------
@@ -774,29 +1032,51 @@ def scenario_step(draft: dict, number: int | None = 1) -> object:
         "Die Annahmenwelt, von der der Lauf ausgeht. Ein vorbereitetes Szenario ist der "
         "schnellste Einstieg — es legt Politik, Kosten und Nachfrageumfeld in einem Zug fest.",
         ui.card(
-            ui.radio(
-                choice_options(),
-                value=of(draft),
-                id=FIELD_ID,
-                cards=True,
-                legend="Was soll gerechnet werden? Die Annahmenwelt des Laufs.",
-            ),
-            html.Div(scenario_details(draft), id=slot_id("scenario"), className="mt-5"),
-            # **Der Schalter stand bis P2.0-C im Schritt «Ausgangslage».** Mit
-            # dem Wegfall der Faktorlage hat er dort nichts mehr zu steuern; was
-            # bleibt, sind die Systemgrößen aus dem Modell-Editor. Er gehört
-            # damit hierher: Die Frage, ob *meine* Werte gelten, ist Teil der
-            # Wahl des Ausgangspunkts.
-            #
-            # **Hinter «Feinabstimmung» und mit `detail=True`**, nicht auf der
-            # Entscheidungsfläche. Der erste Anlauf legte ihn daneben, und der
-            # Wächter aus P1.1 hat das sofort gemeldet: vier Felder statt drei.
-            # Er hatte recht — «gelten meine Werte» ist kein vierter Schritt zum
-            # Lauf, sondern eine Einstellung für den, der schon etwas geändert
-            # hat.
-            ui.expert(
-                c.check("apply_custom_overrides", _eigene_werte_wirken(draft), detail=True),
-                title="Feinabstimmung",
+            # **Links die Liste, rechts die Einzelheiten** (P7.4-U4.1, von Haiko
+            # entschieden am 2026-09-14). Gemessen bei 1440 × 900 standen zehn
+            # Karten 539 px hoch und die Einzelheiten 317 px darunter. Unter
+            # 1280 px stehen beide untereinander (`.af-szenariowahl`).
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(
+                                szenario_radio(draft, stresstests=False),
+                                id=liste_id("scenario"),
+                            ),
+                            # **Außerhalb des Wirts**: Neu gezeichnet setzte er seinen
+                            # Klickzähler zurück, und der Knopf wüsste nicht mehr, was er
+                            # zeigt.
+                            (
+                                ui.button(
+                                    stresstest_knopftext(False),
+                                    id=stress_toggle_id("scenario"),
+                                    variant="ghost",
+                                    className="mt-2",
+                                )
+                                if stresstest_anzahl()
+                                else None
+                            ),
+                            # **Hinter «Feinabstimmung» und mit `detail=True`**, nicht auf
+                            # der Entscheidungsfläche: «gelten meine Werte» ist kein vierter
+                            # Schritt zum Lauf (der Wächter aus P1.1 hat den ersten Anlauf
+                            # gemeldet). Der Schalter stand bis P2.0-C im Schritt
+                            # «Ausgangslage». **Links unter der Liste seit P7.4-U4.1**:
+                            # Unter beiden Spalten kostete er die letzte Zeile über einem
+                            # Bildschirm bei 1440 × 900.
+                            ui.expert(
+                                c.check(
+                                    "apply_custom_overrides",
+                                    _eigene_werte_wirken(draft),
+                                    detail=True,
+                                ),
+                                title="Feinabstimmung",
+                            ),
+                        ]
+                    ),
+                    html.Div(scenario_details(draft), id=slot_id("scenario")),
+                ],
+                className="af-szenariowahl",
             ),
         ),
         actions=ui.doc_link("presets"),
@@ -818,7 +1098,7 @@ def scope_step(draft: dict, number: int | None = 2) -> object:
                 max=500,
                 step=1,
                 detail=True,
-                class_name="max-w-xs",
+                breite="feld",
             ),
             ui.expert(
                 ui.grid(
@@ -832,7 +1112,7 @@ def scope_step(draft: dict, number: int | None = 2) -> object:
                     ),
                     html.Div(
                         c.check("run_all_sweeps", bool(draft.get("run_all_sweeps")), detail=True),
-                        className="pt-7",
+                        className="af-neben-feld",
                     ),
                     cols="md:grid-cols-2",
                 ),
@@ -860,7 +1140,7 @@ def mode_step(draft: dict, number: int | None = 3) -> object:
             ),
             html.Div(
                 compute_mode.placeholder("start"),
-                className="mt-5 pt-4 af-border-t af-border-subtle",
+                className="mt-4 pt-4 af-border-t af-border-subtle",
             ),
             ui.expert(
                 ui.grid(

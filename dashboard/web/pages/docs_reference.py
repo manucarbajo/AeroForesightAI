@@ -16,7 +16,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from dashboard.config_catalog import configs_dir, list_sweep_presets, load_config_file
+from dashboard.config_catalog import EINHEITEN, configs_dir, list_sweep_presets, load_config_file
+from dashboard.web import formate
 from dashboard.web.config_editor import glossary
 
 #: Rollenbezeichnungen für `agent_profiles.json`.
@@ -26,16 +27,9 @@ AGENT_LABELS = {
     "regulator": "Regulator — die Politik",
 }
 
-#: Einheiten aus `properties.json` in lesbare Form.
-UNIT_LABELS = {
-    "fraction_per_tick": "Anteil je Runde",
-    "eur_per_tonne": "EUR je Tonne",
-    "fraction": "Anteil (0–1)",
-    "index": "Index (1.0 = Basis)",
-    "persons": "Personen",
-    "eur": "EUR",
-    "EUR": "EUR",
-}
+#: Einheiten aus `properties.json` in lesbare Form — die Langform aus
+#: `config_catalog.EINHEITEN`, der einen Quelle (P7.1-U1.5).
+UNIT_LABELS = {kennung: lang for kennung, (_, lang) in EINHEITEN.items()}
 
 
 def _escape(text: Any) -> str:
@@ -126,7 +120,7 @@ def systemgroessen() -> str:
     lines = [
         "Systemgrößen sind die Zahlen hinter den Faktoren: Politik, Kosten, Konjunktur. "
         "Jede hat einen Startwert und kann sich über Regeln im Lauf verändern. "
-        "Zu bearbeiten unter «Simulation starten» im Tab «Rahmenbedingungen».",
+        "Zu bearbeiten im Bereich «Modell», Abschnitt «Rahmenbedingungen».",
         "",
         "## Größen des Systems",
         "",
@@ -149,8 +143,8 @@ def systemgroessen() -> str:
         "## Eigenschaften einer Person",
         "",
         "Diese Merkmale trägt jede simulierte Person. Aus ihnen entsteht die "
-        "Kaufentscheidung. Anteile und Verteilungen legen Sie im Tab "
-        "«Nachfrage & Preisbildung» fest.",
+        "Kaufentscheidung. Anteile und Verteilungen legen Sie im Bereich "
+        "«Modell» fest, Abschnitt «Nachfrage & Preisbildung».",
         "",
         "| Merkmal | Art | Bedeutung |",
         "|---|---|---|",
@@ -172,10 +166,10 @@ def systemgroessen() -> str:
 def presets() -> str:
     sweeps = list_sweep_presets()
     lines = [
-        "Fertige Annahmenwelten. Ein Preset legt Faktorlage, Politik und Kosten in einem "
-        "Zug fest und ist der schnellste Einstieg in einen Lauf. Auswahl unter "
-        "«Simulation starten» im Tab «Überblick»; über «Werte übernehmen» wandern die "
-        "Einstellungen in Ihren Entwurf und lassen sich einzeln verändern.",
+        "Fertige Annahmenwelten. Ein Preset legt Politik, Kosten und Konjunktur in einem "
+        "Zug fest und ist der schnellste Einstieg in einen Lauf; die Faktorlage "
+        "entsteht daraus im Lauf. Auswahl im Bereich «Einrichten», erster Schritt; "
+        "einzelne Verläufe ändern Sie für einen Lauf im Schritt «Verläufe».",
         "",
     ]
     if not sweeps:
@@ -185,7 +179,7 @@ def presets() -> str:
         lines += [
             f"## {_escape(sweep.name)}",
             "",
-            f"`{_escape(sweep.id)}` · {sweep.max_ticks} Ticks",
+            f"`{_escape(sweep.id)}` · {formate.ticks_mit_modellzeit(sweep.max_ticks)}",
             "",
             _escape(sweep.description),
             "",
@@ -198,7 +192,7 @@ def presets() -> str:
             lines += [
                 "Erwarteter Verlauf:",
                 "",
-                "| Ab Runde | Was gelten sollte |",
+                "| Ab Tick | Was gelten sollte |",
                 "|---|---|",
             ]
             for tick, description in milestones:

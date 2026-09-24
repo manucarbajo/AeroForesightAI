@@ -9,6 +9,7 @@ from src.reporting.run_scenario_generator.context import (
     RunScenarioContext,
     _booking_trend,
     _price_trend,
+    lauf_name,
 )
 from src.reporting.run_scenario_generator.factors import (
     FACTOR_IDS,
@@ -21,7 +22,7 @@ from src.reporting.run_scenario_generator.factors import (
 def build_run_narrative(context: RunScenarioContext, factor_profile: dict[str, Any]) -> str:
     """Kompakte sachliche Beschreibung des Laufverlaufs."""
     metrics = context.summary_metrics
-    sim_name = metrics.get("simulation_name") or context.run_id
+    sim_name = lauf_name(context)
     ticks = metrics.get("ticks_completed") or metrics.get("ticks_max") or "?"
     booking = _booking_trend(metrics)
     price = _price_trend(metrics)
@@ -92,7 +93,3 @@ def build_scenario_tick_grounding(
         lines.append("Entspricht der Faktor-Endlage des Laufs.")
 
     return "\n".join(lines)
-
-
-def _observed_run_brief(context: RunScenarioContext, factor_profile: dict[str, Any]) -> str:
-    return build_run_narrative(context, factor_profile)

@@ -43,7 +43,14 @@ class RunLaunchConfig:
     simulation_name: str | None = None
     simulation_description: str | None = None
     apply_custom_overrides: bool = False
-    property_edits: dict[str, PropertyEditState] | None = None
+    # `property_edits` ist mit P7.13-U13.3 entfallen: Startwerte und Verläufe aus
+    # dem Bereich «Modell» wirken nur gespeichert und reisen nicht mit einem Lauf.
+    #: Abweichungen vom gewählten Szenario (P7.13-U13.2). **In beiden Richtungen
+    #: verdrahtet** — an dieser Rundreise ist der Startpreis still verloren gegangen.
+    abweichungen: dict[str, PropertyEditState] | None = None
+    preisstrategie: str | None = None
+    #: Modellannahmen dieses Laufs (P7.13-U13.5), ebenfalls in beiden Richtungen.
+    modellannahmen: dict[str, dict] | None = None
     # `factor_states` ist mit P2.0-C entfallen: Die Faktorlage wird nicht
     # mehr vorgegeben, sie entsteht im Lauf aus den exogenen Systemgrößen.
     mock_llm: bool = True
@@ -103,8 +110,9 @@ def launch_config_to_draft(config: RunLaunchConfig) -> ConfigDraft:
     draft.simulation_name = config.simulation_name or ""
     draft.simulation_description = config.simulation_description or ""
     draft.apply_custom_overrides = config.apply_custom_overrides
-    if config.property_edits:
-        draft.property_edits = dict(config.property_edits)
+    draft.abweichungen = dict(config.abweichungen or {})
+    draft.preisstrategie = config.preisstrategie
+    draft.modellannahmen = dict(config.modellannahmen or {})
     draft.mock_llm = config.mock_llm
     draft.deterministic_only = config.deterministic_only
     draft.model = config.model
@@ -141,7 +149,9 @@ def draft_to_launch_config(draft: ConfigDraft) -> RunLaunchConfig:
         simulation_name=draft.simulation_name or None,
         simulation_description=draft.simulation_description or None,
         apply_custom_overrides=draft.apply_custom_overrides or draft.scenario_mode == "custom",
-        property_edits=draft.property_edits,
+        abweichungen=draft.abweichungen,
+        preisstrategie=draft.preisstrategie,
+        modellannahmen=draft.modellannahmen,
         mock_llm=draft.mock_llm,
         deterministic_only=draft.deterministic_only,
         # **Kein Rückfall auf den Vorgabewert** (P3.13). Hier stand

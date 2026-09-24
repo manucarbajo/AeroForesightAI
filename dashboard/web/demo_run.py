@@ -189,7 +189,7 @@ def event_log() -> list[dict[str, Any]]:
                     "round_number": tick,
                     "source_agent": "regulator",
                     "event_type": "policy_event",
-                    "description": (f"CO₂-Abgabe auf {row['carbon_tax_level']:.0f} EUR/t gesetzt."),
+                    "description": (f"CO₂-Abgabe auf {row['carbon_tax_level']:.0f} €/t gesetzt."),
                     "affected_factors": ["F2"],
                     "timestamp": "",
                     MARKER: True,

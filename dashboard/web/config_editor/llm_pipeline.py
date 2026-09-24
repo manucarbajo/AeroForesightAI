@@ -12,12 +12,32 @@ from __future__ import annotations
 from dash import html
 
 from dashboard.web import components as ui
+from dashboard.web.config_editor import compute_mode
 from dashboard.web.config_editor import controls as c
 
 _PIPELINE_SWITCHES = ["no_market", "redebedarf", "no_protocol", "no_scenarios"]
 
 
+def sperrgrund(draft: dict) -> str | None:
+    """Warum Modellname, Adresse, Kreativität und Antwortlänge nichts bewirken — oder nichts.
+
+    **Gemessen, nicht angenommen** (P7.4-U4.2): `tests/test_web_wirkung.py` zeigt,
+    dass die vier unter `mock_llm` folgenlos sind (`NUR_MIT_SPRACHMODELL`) und
+    dass ein Szenario-Vergleich vom Entwurf gar nichts übernimmt. Bis dahin
+    standen sie in beiden Fällen voll bedienbar da (E8). **Gesperrt, nicht
+    ausgeblendet**: Wer sie sucht, findet sie und liest, warum.
+    """
+
+    if draft.get("run_all_sweeps"):
+        return "Der Szenario-Vergleich übernimmt diese Einstellung nicht."
+    modus = compute_mode.of(draft)
+    if modus != compute_mode.WITH_LLM:
+        return f"Wirkt nur mit Sprachmodell — gewählt ist «{compute_mode.SHORT_LABELS[modus]}»."
+    return None
+
+
 def layout(draft: dict) -> html.Div:
+    grund = sperrgrund(draft)
     return html.Div(
         [
             ui.section(
@@ -29,14 +49,15 @@ def layout(draft: dict) -> html.Div:
                 ui.card(
                     html.Div(
                         ui.grid(
-                            c.text("model", draft.get("model")),
-                            c.text("base_url", draft.get("base_url")),
+                            c.text("model", draft.get("model"), gesperrt=grund),
+                            c.text("base_url", draft.get("base_url"), gesperrt=grund),
                             c.slider(
                                 "temperature",
                                 draft.get("temperature"),
                                 min=0.0,
                                 max=1.5,
                                 step=0.05,
+                                gesperrt=grund,
                             ),
                             c.number(
                                 "max_tokens",
@@ -44,6 +65,7 @@ def layout(draft: dict) -> html.Div:
                                 min=256,
                                 max=8192,
                                 step=1,
+                                gesperrt=grund,
                             ),
                             cols="md:grid-cols-2",
                         ),
@@ -67,19 +89,19 @@ def layout(draft: dict) -> html.Div:
                     min=0,
                     step=1,
                     detail=True,
-                    class_name="max-w-xs",
+                    breite="feld",
                 ),
                 html.Div(
                     c.check("generate_figures", draft.get("generate_figures")),
-                    className="mt-5",
+                    className="mt-4",
                 ),
                 html.Div(
                     [c.check(name, draft.get(name)) for name in _PIPELINE_SWITCHES],
                     className="space-y-3 mt-3",
                 ),
                 html.Div(
-                    c.text("resume_from", draft.get("resume_from"), class_name="max-w-lg"),
-                    className="mt-5",
+                    c.text("resume_from", draft.get("resume_from"), breite="feld-weit"),
+                    className="mt-4",
                 ),
                 count=len(_PIPELINE_SWITCHES) + 3,
                 title="Zwischenstände und Ausgaben",

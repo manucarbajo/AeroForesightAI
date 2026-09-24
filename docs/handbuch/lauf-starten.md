@@ -1,8 +1,11 @@
-Gestartet wird im **Bedienfeld links**. Es zeigt oben in drei Zeilen, was
-eingestellt ist — Szenario, Länge, Rechenmodus —, darunter den Preflight (in
-Klartext, was gleich passiert, dazu die wichtigsten Werte als Kacheln), und ganz
-unten den Start-Knopf. Der bleibt sichtbar, egal wie lang die Warnungen darüber
-werden. Ein Klick genügt.
+Gestartet wird im **Bedienfeld links**, überschrieben mit **Nächster Lauf** —
+daneben zeigt der Leitstand die Szene eines fertigen Laufs, und das Bedienfeld
+meint den, der als Nächstes rechnet. Es zeigt oben in drei Zeilen, was eingestellt
+ist — Szenario, Länge, Rechenmodus, je die Beschriftung über dem Wert —, darunter
+in einem Satz, was gleich passiert, und ganz unten den Start-Knopf. Gibt es vor
+dem Start etwas zu beachten, steht dort nur die Zahl der Hinweise und wo sie
+ausführlich stehen: im Bereich **Einrichten**, Schritt «Prüfen & Starten». Ein
+Befund, der den Start verhindert, ist rot abgesetzt. Ein Klick genügt.
 
 Eingestellt wird nicht hier, sondern im Bereich **Einrichten** — über die
 Kopfzeile oder über jede der drei Zeilen. Für einen ersten Lauf ist das nicht
@@ -16,7 +19,7 @@ deshalb eindeutig.
 
 Der Fortschritt läuft in die **Konsole** in der rechten Spalte. Sie ist
 zugeklappt — die Zahl daneben sagt, wie viele Meldungen anliegen. Aufgeklappt
-zeigt sie je Runde die vergangene Zeit, die Geschwindigkeit, den Ticketpreis und
+zeigt sie je Tick die vergangene Zeit, die Geschwindigkeit, den Ticketpreis und
 die Buchungsrate — dieselben Zeilen, die auch im Terminal stehen —, und darüber,
 was sonst noch zu melden ist: ausgefallene Modellaufrufe in Gelb, ein Lauffehler
 in Rot. Der Start-Knopf ist gesperrt, solange gerechnet wird.
@@ -63,8 +66,8 @@ keine Tick-Zählung — so ist es beim Szenario-Vergleich, der je Szenario nur
 dessen Abschluss meldet. Die Prozentangabe erscheint, sobald eine Tick-Zählung
 vorliegt.
 
-Ist der Lauf fertig, meldet das Bedienfeld links die Run-ID mit der Zahl der
-Ticks und Events — und daneben steht der Weg weiter: **Ergebnisse ansehen**.
+Ist der Lauf fertig, meldet das Bedienfeld links die Kennung des Laufs mit der Zahl der
+Ticks und Ereignisse — und daneben steht der Weg weiter: **Ergebnisse ansehen**.
 
 Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit auf **Einrichten**,
 **Ergebnisse** oder ins **Handbuch** wechseln, ohne ihn abzubrechen — die Kopfzeile bleibt
@@ -100,7 +103,7 @@ Bevölkerung in Standardgröße:
 | Modus | Zehn Ticks |
 |---|---|
 | Nur Zahlen (ohne Agenten-Dialog) | unter einer Sekunde |
-| Ohne Sprachmodell (Mock) | wenige Sekunden |
+| Ohne Sprachmodell | wenige Sekunden |
 | Mit Sprachmodell | Minuten, je nach Modell und Rechner |
 
 Der Unterschied liegt allein bei den Agenten-Narrativen. Die Kennzahlen sind in
@@ -110,7 +113,7 @@ allen drei Fällen dieselben.
 
 Was am Ende erscheint, hängt davon ab, was Sie konfiguriert haben.
 
-Bei einem **Einzellauf** meldet das Bedienfeld die Run-ID, die Zahl der
+Bei einem **Einzellauf** meldet das Bedienfeld die Kennung des Laufs, die Zahl der
 gerechneten Ticks und die Zahl der Ereignisse. Der Lauf ist danach in der
 Auswahl oben in der Kopfzeile bereits gesetzt, und Szene, Kennzahlen und
 Zeitleiste zeigen ihn.
@@ -118,7 +121,7 @@ Zeitleiste zeigen ihn.
 Bei **Wiederholungen** entsteht ein Bündel unter einer gemeinsamen Batch-ID. Die
 Meldung nennt, wie viele Läufe entstanden sind und wie viele Ereignisse
 insgesamt. Die einzelnen Läufe wählen Sie danach über die Auswahl in der
-Kopfzeile.
+Kopfzeile des Leitstands oder der Ergebnisse.
 
 Beim **Szenario-Vergleich** — also wenn Sie ihn auf dem Einstieg von
 «Einrichten» gewählt oder «Alle Szenarien vergleichen» hinter der
@@ -144,11 +147,13 @@ rein rechnerisch; betroffen ist nur der Text am Ende.
 
 Jeder Lauf schreibt mit, unter welchen Bedingungen er entstanden ist: Seed,
 Rechenmodus und Codestand. Sie finden das nach dem Lauf unter **Ergebnisse** in
-der Ansicht **Übersicht**, direkt unter den Kennzahlen.
+der Ansicht **Übersicht**: Rechenmodus und Startwert direkt unter den
+Kennzahlen, Codestand und Fingerabdruck hinter «Technische Details» — so wie im
+Prüfschritt vor dem Start.
 
-**Vor dem Start steht dasselbe im Prüfschritt.** Startwert und Rechenmodus als
-Kacheln, dazu aufklappbar «Woran dieser Lauf später wiederzuerkennen ist»:
-Codestand und der Fingerabdruck der gelesenen Konfigurationsdateien. Das ist
+**Vor dem Start steht dasselbe im Prüfschritt.** Der Startwert als Kachel, der
+Rechenmodus im Satz darüber, und hinter «Technische Details» Codestand und der
+Fingerabdruck der gelesenen Konfigurationsdateien. Das ist
 nicht Buchhaltung, sondern die Vorbedingung fürs Vergleichen — ein Lauf mit
 anderem Codestand oder anderem Fingerabdruck gehört nicht neben einen anderen,
 und das merkt man besser vorher als nach einer halben Stunde Rechenzeit.
@@ -176,9 +181,11 @@ bleibt stehen. Die häufigsten Ursachen: Ollama läuft nicht, obwohl
 «Ohne Ollama rechnen» ausgeschaltet ist, oder eine Kombination aus
 Wiederholungen und «Lauf fortsetzen», die sich gegenseitig ausschließt.
 
-Ein abgebrochener Lauf hinterlässt trotzdem ein Verzeichnis unter `outputs/`,
-allerdings ohne die Auswertungen am Ende. In der Lauf-Auswahl erkennen Sie ihn
-daran, dass die Zahl der Ticks unter dem Maximum liegt und die Ansicht
-«Szenario» leer bleibt. Die Zeitleiste reicht dann nur bis zum letzten
-gerechneten Tick — sie richtet sich nach dem, was da ist, nicht nach dem, was
-geplant war.
+Ein Lauf, der mit einem Fehler abbricht, hinterlässt zwar ein Verzeichnis unter
+`outputs/`, aber keine Auswertung — und erscheint deshalb **nicht** in der
+Lauf-Auswahl. Bis September 2026 stand er dort als leerer Eintrag, der beim
+Anklicken nur Fehlermeldungen zeigte. Anders ein Lauf, den Sie selbst mit
+**Lauf abbrechen** beenden: Er wird gespeichert und steht in der Auswahl,
+erkennbar an einer Tickzahl unter dem Maximum (siehe oben). Die Zeitleiste
+reicht dann nur bis zum letzten gerechneten Tick — sie richtet sich nach dem,
+was da ist, nicht nach dem, was geplant war.

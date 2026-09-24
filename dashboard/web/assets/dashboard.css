@@ -164,6 +164,233 @@ html.dark {
     --console-error: #fb7185;
 }
 
+/* --- Die Schriftskala (P7.1-U1.1, entschieden am 2026-09-12) ---------------- */
+/* SECHS Groessen, und jede Regel dieses Stylesheets benutzt eine davon. Vorher
+   standen hier 60 `font-size`-Regeln mit 14 verschiedenen Werten; gerendert
+   waren es dreizehn Groessen in 23 Kombinationen aus Groesse und Gewicht, je
+   Bereich sieben bis elf. Herleitung und Preis:
+   `docs/entscheidung_gestaltungssystem_2026-09-12.md`.
+
+   **Die Farbe hat es vorgemacht** (Regel 4): Ein Token je Rolle, dieselben
+   Namen in hell und dunkel, und ein Waechter, der jede Abweichung meldet.
+   Schrift, Breite und Abstand folgen demselben Muster -- vorher kamen sie aus
+   drei unabhaengigen Quellen (diese Datei, Tailwinds `text-*`-Klassen im
+   Python-Code, die Rollenkonstanten in `components.py`), und die widersprachen
+   sich.
+
+   **«Mono» ist eine Familie, keine Groesse**, und das ist gemessen und nicht
+   gesetzt: Die erste Fassung der Skala gab ihr 13 px. Die Konsole waere damit
+   von 11 auf 13 px gegangen -- 18 Prozent mehr Zeilenhoehe --, und Inline-Code
+   in einem 12-px-Hinweis waere GROESSER geworden als der Satz, in dem er steht
+   (heute macht `0.95em` ihn bewusst kleiner). Festbreitenschrift nimmt deshalb
+   dieselben Groessen wie alles andere; `.af-mono` setzt nur die Familie.
+
+   **Keine `em`-Groessen mehr.** Zwei Regeln rechneten in `em` und erzeugten
+   damit 12,2 px und 9,8 px -- Werte, die auf keiner Skala liegen und die
+   niemand gewaehlt hat. Eine Groesse haengt an ihrer Rolle, nicht am
+   Elternelement. */
+
+:root {
+    --schrift-titel: 1.5rem; /* 24 px -- Seitentitel, KPI-Zahl, Fortschritt */
+    --schrift-ueberschrift: 1.25rem; /* 20 px -- Bereich, Frage */
+    --schrift-abschnitt: 1rem; /* 16 px -- Zwischenueberschrift, Weg-Titel */
+    --schrift-text: 0.9375rem; /* 15 px -- Fliesstext */
+    --schrift-beschriftung: 0.875rem; /* 14 px -- was man liest, um zu bedienen */
+    --schrift-klein: 0.75rem; /* 12 px -- Hinweis, Bildunterschrift, Marke */
+}
+
+/* Die Rollen als Klassen, damit der Python-Code sie benutzt statt Tailwinds
+   `text-*`.
+
+   **Groesse und Zeilenhoehe, ausdruecklich KEIN Gewicht.** Der erste Entwurf
+   gab jeder Rolle ein `font-weight`, und das waere ein stiller Bruch gewesen:
+   Dash laedt seine Assets alphabetisch, `dashboard.css` kommt also NACH
+   `00-tailwind.css` -- eine Rolle mit Gewicht haette bei gleicher Spezifitaet
+   jedes `font-semibold` am Aufrufort ueberschrieben. Dieselbe Kaskadenfalle,
+   die P7.1-U1.1 an `.af-md` gegen `.af-hint` schon einmal aufgeraeumt hat.
+   Das Gewicht bleibt dort, wo es steht. */
+.af-schrift-titel {
+    font-size: var(--schrift-titel);
+    line-height: 1.25;
+}
+
+.af-schrift-ueberschrift {
+    font-size: var(--schrift-ueberschrift);
+    line-height: 1.3;
+}
+
+.af-schrift-abschnitt {
+    font-size: var(--schrift-abschnitt);
+    line-height: 1.4;
+}
+
+.af-schrift-text {
+    font-size: var(--schrift-text);
+    line-height: 1.625;
+}
+
+.af-schrift-beschriftung {
+    font-size: var(--schrift-beschriftung);
+    line-height: var(--zeilenhoehe-beschriftung);
+}
+
+.af-schrift-klein {
+    font-size: var(--schrift-klein);
+    line-height: 1.55;
+}
+
+/* --- Die Breiten (P7.1-U1.2, E3 zurueckgenommen am 2026-09-12) ------------- */
+/* **Es gibt kein Lesemass mehr, und das ist eine Entscheidung mit Preis.**
+   Fliesstext bekommt keinen Deckel; er fuellt den Rahmen, in dem er steht.
+   Gedeckelt werden nur noch Eingaben (`--breite-feld-*`, an der Eingabe und
+   nicht am Feld) und die Seite selbst (`--breite-inhalt`) -- Kaesten und
+   Spalten, keine Saetze. **`--breite-formular` ist am selben Tag gefallen:**
+   Sein einziger Nutzer war der Rumpf-Deckel `af-body--lesen`, und der hat
+   gemessen Prosa gedeckelt.
+
+   **Der Weg dorthin in drei Schritten, weil jeder eine Messung ist.**
+
+   1. Bis U1.2 stand der Deckel in `ch`, dem Ziffernvorschub der Schrift des
+      jeweiligen ELEMENTS. Dieselbe Regel `max-width: 48ch` ergab 454 px an
+      einem 15-px-Absatz, 424 px an einem 14-px-Text und 363 px an einer
+      12-px-Bildunterschrift -- in Schritt 1 standen SECHS Textbreiten und ELF
+      rechte Kanten uebereinander, waehrend die Zusage aus P1.9-W5.4
+      (hoechstens 75 Zeichen je Zeile) an jeder Stelle erfuellt war.
+   2. U1.2 machte daraus zwei Tokens in `rem`, am Block statt am Element:
+      512 px fuer Fliesstext, 416 px fuer kleine Prosa. Zwei Breiten statt
+      sechs, eine Einheit statt drei -- und die Texte eines Blocks endeten an
+      einer Kante.
+   3. **Und der Befund blieb trotzdem stehen.** Nachgemessen bei 1440 px in
+      einer 760 px breiten Spalte: der breiteste Fliesstext 509 px (67,0 %),
+      die Lede 409 px (53,8 %). Der Deckel war dabei nicht zu eng, sondern
+      AUSGEREIZT -- die Lede trug auf ihren 409 px schon 72 der 75 erlaubten
+      Zeichen.
+
+   **Die Rechnung, die die Entscheidung erzwingt:** gemessen 7,17 px je Zeichen
+   bei 15 px Schrift. Um 760 px mit hoechstens 75 Zeichen zu fuellen, muesste
+   der Fliesstext rund 21 px gross sein. «Text fuellt seine Spalte» und
+   «hoechstens 75 Zeichen je Zeile» sind bei dieser Spaltenbreite nicht
+   gleichzeitig erfuellbar; E1 hat die Schriftgroesse entschieden, also fiel die
+   andere Zusage.
+
+   **Das Argument dafuer ist gemessen, nicht aesthetisch:** Die 75-Zeichen-Regel
+   schuetzt den Ruecksprung des Auges ueber VIELE Zeilen. Fast jeder Text hier
+   ist 150 bis 300 Zeichen lang und steht bei voller Breite auf einer bis zwei
+   Zeilen -- dieser Ruecksprung kommt kaum vor. Dreissig Prozent der Breite fuer
+   einen Zweizeiler zu opfern ist der falsche Tausch.
+
+   **Der Preis, benannt:** Ein langer Text laeuft jetzt ueber rund 106 Zeichen
+   je Zeile (15 px in 760 px), im Handbuch ueber rund 150. Das liegt ueber jeder
+   typografischen Empfehlung und ist eine Entscheidung fuer diese Oberflaeche,
+   keine Erkenntnis ueber Lesbarkeit.
+
+   **Die Zusage ist umgedreht, nicht geloescht:** Kein Prosablock wird schmaler
+   gesetzt als der Platz, den er hat. Gemessen im Browser je Block, am
+   Verhaeltnis seiner Breite zur verfuegbaren Breite seines Elternelements --
+   Teil 7 von `tests/test_web_overflow.py`.
+
+   Herleitung und Preis: `docs/entscheidung_gestaltungssystem_2026-09-12.md`
+   (zweiter Nachtrag). */
+
+:root {
+    --breite-inhalt: 68rem; /* 1088 px -- Karten, Raster, Tabellen, Fokusbereich */
+    /* **Feldbreiten: die Breite einer EINGABE, nicht eines Feldes.** Bis zum
+       2026-09-12 standen hier fuenf Tailwind-Werte (160, 320, 384, 512 und
+       672 px), und sie sassen am Rahmen von `ui.field` -- also auch an
+       Hinweis und Glossar-Erklaerung darunter. Drei Stufen, nach dem, was
+       hineingeschrieben wird: */
+    --breite-feld-klein: 10rem; /* 160 px -- eine kleine Zahl, etwa eine Anzahl */
+    --breite-feld: 20rem; /* 320 px -- eine Zahl mit Nachkommastellen, eine Auswahl */
+    --breite-feld-weit: 32rem; /* 512 px -- eine Kennung, ein Pfad, ein Freitext */
+    /* Die einzige Breite hier, die BEDEUTUNG traegt: Eine Sprechblase ist
+       schmaler als ihr Rahmen, damit man sieht, wer spricht. */
+    --breite-sprechblase: 48rem; /* 768 px */
+    --breite-rueckfrage: 32rem; /* 512 px -- eine Frage, auf die man antwortet */
+}
+
+.af-breite-inhalt {
+    max-width: var(--breite-inhalt);
+}
+
+.af-breite-feld-klein {
+    max-width: var(--breite-feld-klein);
+}
+
+.af-breite-feld {
+    max-width: var(--breite-feld);
+}
+
+.af-breite-feld-weit {
+    max-width: var(--breite-feld-weit);
+}
+
+.af-breite-sprechblase {
+    max-width: var(--breite-sprechblase);
+}
+
+/* --- Der Einzug (P7.1-U1.3, Teil A) ----------------------------------------- */
+/* **Eine Stufe tiefer ist 24 px, und zwar ueberall.** Gemessen am 2026-09-12
+   standen dafuer fuenf Werte im Stylesheet und in den Bausteinen: 16 px
+   (Hinweis- und Meldungskasten `px-4`), 20 px (Glossar-Erklaerung `pl-5`),
+   22 px (Markdown-Liste), 24 px (Karte, «Feinabstimmung») und 26 px (Hinweis
+   unter einem Kaestchen). In Schritt 1 begannen Texte dadurch an x = 0, 25,
+   42, 49, 69, 71 und 75 -- die Treppe, die der erste Screenshot des UI/UX-Audits
+   zeigte, als die Breiten schon stimmten.
+
+   **Der Hinweis unter einem Kaestchen wird nicht gerundet, sondern abgeleitet:**
+   Er steht buendig unter der Beschriftung, also Kaestchen plus Abstand. Mit
+   16 + 8 ergibt das genau eine Stufe; gehalten von
+   `tests/test_web_abstaende.py`, damit niemand eine der drei Zahlen allein
+   aendert. Der Umschalter ist 36 px breit und traegt dieselbe Hinweisklasse --
+   sein Hinweis stand schon bisher nicht unter der Beschriftung und steht jetzt
+   auf dem Raster.
+
+   **Randlinien zaehlen nicht mit.** Eine Karte in einer Karte verschiebt ihren
+   Text um zwei 1-px-Raender; der Kantenwaechter (Teil 7b von
+   `tests/test_web_overflow.py`) rechnet deshalb nur Polsterung und Abstand. */
+:root {
+    --einzug: 1.5rem; /* 24 px -- eine Stufe tiefer */
+    --kaestchen: 1rem; /* 16 px -- Kaestchen und Optionspunkt */
+    --kaestchen-abstand: 0.5rem; /* 8 px -- zwischen Kaestchen und Beschriftung */
+}
+
+/* --- Die Abstaende, Teil B (P7.1-U1.3, entschieden am 2026-09-13) ----------- */
+/* **Jeder Abstand liegt auf der Skala aus E4** -- 4, 8, 12, 16, 24, 32, 48,
+   64 px --, und zwar nach zwei Regeln, die Haiko am 2026-09-13 entschieden hat:
+   Ein Wert zwischen zwei Stufen geht auf die NAECHSTE (22 -> 24), ein
+   Gleichstand wird ABGERUNDET (6 -> 4, 10 -> 8, 14 -> 12, 20 -> 16, 28 -> 24,
+   40 -> 32, 56 -> 48), weil die Oberflaeche dicht ist und die Schritthoehe eine
+   ausdrueckliche Zusage traegt. **Knoepfe weichen ab**: senkrecht 12 px
+   (`py-3`), also rund 44 px hoch -- die uebliche Mindestgroesse einer
+   Trefferflaeche; waagerecht folgen sie der Regel.
+
+   Gemessen standen vorher 47 Deklarationen und 48 Tailwind-Klassen neben der
+   Skala, mit neun verschiedenen Werten ab 4 px.
+
+   **Drei Arten Werte sind keine Abstaende und folgen deshalb nicht der
+   Rundung** -- `tests/test_web_abstaende.py` fuehrt sie je mit Grund:
+   Geometrie, die aus einem anderen Mass folgt (die negative Polsterung von
+   `.af-pane__sticky`, die Hoehe neben einem Feld); Zeichnung und optische
+   Ausrichtung eines Glyphs (der Haken, die Grundlinie des Kaestchens, der
+   Innenabstand von Inline-Code in `em`); und die `-1px`, mit denen eine Linie
+   ueberdeckt oder ein Text fuer Vorlesesoftware beschnitten wird. **Unter 4 px
+   bleibt genau ein Wert erlaubt**, der Haarabstand, und nur ueber sein Token. */
+:root {
+    --haarabstand: 0.125rem; /* 2 px -- zwischen dicht gestapelten Zeilen */
+    --pane-polster: 1rem; /* 16 px -- die Seitenzonen; `.af-pane__sticky` hebt es auf */
+    --zeilenhoehe-beschriftung: 1.45;
+}
+
+/* **Neben einem Feld auf Hoehe der Eingabe.** Ein Knopf oder Kaestchen neben
+   einem beschrifteten Feld steht nicht oben buendig, sondern auf der Hoehe der
+   Eingabe -- also Beschriftung (Schriftgroesse mal Zeilenhoehe) plus ihr
+   Abstand (`mb-1` in `components.LABEL`). Bis zum 2026-09-13 stand dafuer
+   fuenfmal `pt-7` (28 px): gerundet aus 20,3 + 6. Mit dem Beschriftungsabstand
+   von 4 px stimmt keine Rasterstufe mehr -- deshalb gerechnet statt gerundet. */
+.af-neben-feld {
+    padding-top: calc(var(--schrift-beschriftung) * var(--zeilenhoehe-beschriftung) + 0.25rem);
+}
+
 /* --- Dashs eigene Design-Tokens --------------------------------------------- */
 /* Dash 3/4 faerbt seine mitgelieferten Komponenten (Slider, Eingaben, Menues)
    ueber eine eigene Token-Ebene `--Dash-*` und spritzt deren Definitionen zur
@@ -346,7 +573,7 @@ body {
     grid-area: timeline;
     background: var(--surface);
     border-top: 1px solid var(--border);
-    padding: 0.75rem 1.25rem;
+    padding: 0.75rem 1rem;
 }
 
 .af-shell__right {
@@ -369,7 +596,7 @@ body {
 }
 
 .af-pane {
-    padding: 1.25rem;
+    padding: var(--pane-polster);
 }
 
 /* Ein Abschnittskopf, der beim Scrollen in der Seitenleiste stehen bleibt. */
@@ -379,8 +606,8 @@ body {
     z-index: 10;
     background: var(--surface);
     border-bottom: 1px solid var(--border-subtle);
-    padding: 0.75rem 1.25rem;
-    margin: -1.25rem -1.25rem 1rem;
+    padding: 0.75rem var(--pane-polster);
+    margin: calc(-1 * var(--pane-polster)) calc(-1 * var(--pane-polster)) 1rem;
 }
 
 /* --- Das Bedienfeld ------------------------------------------------------- */
@@ -401,7 +628,7 @@ body {
     position: sticky;
     bottom: 0;
     margin-top: auto;
-    padding: 0.875rem 0 0.25rem;
+    padding: 0.75rem 0 0.25rem;
     background: linear-gradient(to bottom, transparent, var(--surface) 35%);
 }
 
@@ -416,14 +643,34 @@ body {
 /* Eine Stand-Zeile ist ein Verweis, kein Eingabefeld — geaendert wird im
    Bereich «Einrichten». Zwei Felder mit derselben ID im DOM sind fuer Dash ein
    Laufzeitfehler, und beide Zonen liegen gleichzeitig darin. */
+/* **Beschriftung über dem Wert** (P7.5-U5.1, von Haiko entschieden am
+   2026-09-15). Daneben, in einer festen Spalte von 6,5 rem, blieben dem Wert bei
+   1280 px 59 px — «Standard-Ausgangslage» stand als «Stand…» da. Der Wert bricht
+   jetzt um, statt abgeschnitten zu werden. */
 .af-rail-row {
     display: grid;
-    grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 0.75rem;
+    column-gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
     background: var(--surface);
     transition: background-color 0.15s ease;
+}
+
+.af-rail-row__label {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.af-rail-row__value {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.af-rail-row__chevron {
+    grid-column: 2;
+    grid-row: 1 / span 2;
 }
 
 .af-rail-row + .af-rail-row {
@@ -436,18 +683,16 @@ body {
 
 .af-rail-row__label {
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     color: var(--text-muted);
 }
 
 .af-rail-row__value {
     font-family: var(--font-body);
-    font-size: 0.8125rem;
+    font-size: var(--schrift-beschriftung);
     font-weight: 500;
     color: var(--text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
 }
 
 .af-rail-row__chevron {
@@ -509,6 +754,26 @@ body {
 @media (max-width: 1023px) {
     .af-icon-btn.af-drawer-toggle--left {
         display: inline-flex;
+    }
+}
+
+/* Die Aktionen der Kopfzeile sind beschriftet (P7.3-U3.4). Unter 1280 px wird
+   die Beschriftung beschnitten und nicht entfernt, wie in der Fußleiste der
+   Schrittfolge: Der Name bleibt für die Vorlesesoftware und im `title`, und
+   die Kopfzeile passt weiter auf 1024 px. */
+.af-kopfaktion {
+    white-space: nowrap;
+}
+
+@media (max-width: 1279px) {
+    .af-kopfaktion .af-btn__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
     }
 }
 
@@ -616,11 +881,11 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.25rem 0.75rem 0.25rem 0.625rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.5rem;
     border: 1px solid var(--border);
     border-radius: 9999px;
     background: var(--surface-inset);
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     font-weight: 500;
     color: var(--text-body);
     white-space: nowrap;
@@ -640,12 +905,19 @@ body {
 
 /* Der Punkt kommt auch allein vor — in der Erreichbarkeitszeile des
    Rechenmodus, ohne die Kapsel drumherum. */
-.af-status__dot--ok {
+.af-status__dot--bereit {
     background: var(--positive);
 }
 
-.af-status__dot--off {
+.af-status__dot--aus {
     background: var(--text-faint);
+}
+
+/* Solange geprueft wird (P7.4-U4.2): der Akzent und der Puls des laufenden
+   Laufs. Bis dahin sah das Pruefen aus wie die Absage. */
+.af-status__dot--pruefen {
+    background: var(--accent);
+    animation: af-pulse 1.6s ease-in-out infinite;
 }
 
 .af-status--running {
@@ -957,16 +1229,91 @@ html.dark .af-theme-toggle__to-light {
     color: inherit;
 }
 
+/* --- Die Rückfrage (P7.1-U1.4, D7) -----------------------------------------
+
+   Ein `<dialog>`, geöffnet mit `showModal()`: Der Browser hält den Fokus darin,
+   schließt ihn mit Escape und gibt den Fokus danach an den Knopf zurück. Bis zum
+   2026-09-13 stand hier der Dialog des Browsers -- nicht aus den Tokens, im
+   dunklen Design ein heller Kasten. */
+.af-rueckfrage {
+    width: calc(100% - 2rem);
+    max-width: var(--breite-rueckfrage);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-raised);
+    color: var(--text-body);
+    box-shadow: 0 12px 28px -14px var(--scrim);
+}
+
+.af-rueckfrage::backdrop {
+    background: var(--scrim);
+}
+
+/* --- Der Lauf-Browser (P7.3-U3.3) -----------------------------------------
+
+   Derselbe Dialog wie die Rueckfrage, darin eine Liste. Der Oeffner in der
+   Kopfzeile hat die Breite des frueheren Auswahlfelds (`w-64`) und kuerzt den
+   Namen mit Auslassung; der volle steht im Dialog. */
+.af-laufwahl-oeffner {
+    justify-content: flex-start;
+}
+
+.af-laufwahl-oeffner .af-btn__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Unter 1024 px stand schon das Auswahlfeld nicht da (`hidden lg:block`). Zwei
+   Klassen, damit die Regel `inline-flex` aus Tailwind schlaegt. */
+@media (max-width: 1023px) {
+    .af-btn.af-laufwahl-oeffner {
+        display: none;
+    }
+}
+
+.af-laufwahl__liste {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.af-laufwahl__eintrag {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    border-radius: var(--radius);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.af-laufwahl__eintrag:hover {
+    background: var(--surface-hover);
+}
+
+.af-laufwahl__eintrag:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
 .af-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.125rem 0.5rem;
+    padding: var(--haarabstand) 0.5rem;
     border-radius: 9999px;
     border: 1px solid var(--accent-border);
     background: var(--accent-soft);
     color: var(--accent-text);
-    font-size: 0.6875rem;
+    font-size: var(--schrift-klein);
     font-weight: 600;
     letter-spacing: 0.02em;
     white-space: nowrap;
@@ -995,7 +1342,7 @@ input[type="search"].af-input,
 textarea.af-input {
     width: 100%;
     font-family: var(--font-body);
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     font-variant-numeric: tabular-nums;
     color: var(--text);
     background: var(--surface-raised);
@@ -1060,7 +1407,7 @@ html.dark .af-input[type="number"] {
 .af-dropdown .Select-value-label,
 .af-dropdown .Select-input > input {
     font-family: var(--font-body);
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     color: var(--text-body);
     line-height: 2.25rem;
 }
@@ -1088,7 +1435,7 @@ html.dark .af-input[type="number"] {
 .af-dropdown .VirtualizedSelectOption,
 .af-dropdown .Select-option {
     font-family: var(--font-body);
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     color: var(--text-body);
     background: var(--surface-raised);
     padding: 0.5rem 0.75rem;
@@ -1120,17 +1467,17 @@ html.dark .af-input[type="number"] {
 .af-check label,
 .af-radio label {
     font-family: var(--font-body);
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     color: var(--text-body);
     display: flex;
     /* An der ersten Textzeile, nicht mittig: In einer Liste entsteht so eine
        gerade Spalte von Haken neben den Beschriftungen. Auf einer Auswahlkarte
        gilt das Gegenteil, siehe `.af-radio--cards label`. */
     align-items: flex-start;
-    gap: 0.625rem;
+    gap: var(--kaestchen-abstand);
     line-height: 1.5;
     cursor: pointer;
-    padding: 0.3125rem 0;
+    padding: 0.25rem 0;
 }
 
 /* Der Umschalter richtet mittig aus: Seine Bahn ist hoeher als ein Kaestchen
@@ -1143,14 +1490,14 @@ html.dark .af-input[type="number"] {
 
 .af-check label + label,
 .af-radio label + label {
-    margin-top: 0.125rem;
+    margin-top: var(--haarabstand);
 }
 
 .af-check input[type="checkbox"],
 .af-radio input[type="radio"] {
     appearance: none;
-    width: 1rem;
-    height: 1rem;
+    width: var(--kaestchen);
+    height: var(--kaestchen);
     /* An der Grundlinie der ersten Textzeile ausrichten. */
     margin-top: 0.1875rem;
     flex: none;
@@ -1217,28 +1564,13 @@ html.dark .af-input[type="number"] {
    Ziffern gleicher Breite. */
 .af-choice__meta {
     display: block;
-    margin-top: 0.125rem;
+    margin-top: var(--haarabstand);
     font-family: var(--font-body);
-    font-size: 0.6875rem;
+    font-size: var(--schrift-klein);
     font-weight: 600;
     letter-spacing: 0.02em;
     color: var(--accent);
     font-variant-numeric: tabular-nums;
-}
-
-/* **Zwei Zeilen, dann Schluss.** Vorher war jede Kachel so hoch wie ihre
-   laengste Beschreibung -- gemessen zwischen 88 und 264 px. Ein Raster mit
-   ungleich hohen Zeilen laesst sich nicht ueberfliegen: Man liest zehn
-   Absaetze, statt zehn Moeglichkeiten zu vergleichen. Der volle Text steht
-   unter dem Raster, sobald ein Szenario gewaehlt ist. */
-.af-choice__text {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-top: 0.25rem;
-    line-height: 1.45;
 }
 
 .af-radio--cards label {
@@ -1281,6 +1613,59 @@ html.dark .af-input[type="number"] {
     margin-top: 0;
 }
 
+/* --- Die Szenariowahl in Schritt 1 (P7.4-U4.1) ------------------------------
+
+   Links die Liste, rechts die Einzelheiten. Bis dahin stand ein Raster aus
+   zehn Karten mit je zwei abgeschnittenen Zeilen Beschreibung, und die
+   Einzelheiten darunter -- gemessen 1,60 Bildschirme bei 1440 x 900. Unter
+   1280 px ist die Spalte zu schmal fuer beides nebeneinander. */
+.af-szenariowahl {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.af-szenariowahl .af-radio--cards {
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+
+/* **Zeilen, keine Karten.** Als Karten in der Karte lag der Text der Eintraege
+   bei 36 px, neben dem Einzugsraster (Kantenwaechter, 1024 px), und die Liste
+   war mit Rahmen und Polsterung die hoehere Spalte -- 1,21 Schirme bei
+   1440 x 900. Im Browser ausprobiert, bevor der Code geaendert wurde. */
+.af-szenariowahl .af-radio--cards label {
+    border: 0;
+    background: transparent;
+    padding: 0.5rem 0.75rem 0.5rem 0;
+}
+
+.af-szenariowahl .af-radio--cards label:hover {
+    background: var(--surface-hover);
+}
+
+.af-szenariowahl .af-radio--cards label:has(input:checked) {
+    background: var(--accent-soft);
+}
+
+/* «Verlaeufe» (P7.13-U13.1) teilt Aufbau und Zeilen mit Schritt 1: links die
+   Liste, rechts die Einzelheiten -- dort die Kurve, die ihre Spalte fuellt. */
+.af-verlaeufe > div:last-child {
+    min-width: 0;
+}
+
+/* Die Feinabstimmung steht unter der Liste; ihr Abstand ist hier eine Stufe
+   kleiner, die letzten Pixel bis zu einem Bildschirm bei 1440 x 900. */
+.af-szenariowahl .af-expert {
+    margin-top: 0.5rem;
+}
+
+@media (min-width: 1280px) {
+    .af-szenariowahl {
+        grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr);
+        align-items: start;
+    }
+}
+
 /* --- Umschalter ----------------------------------------------------------- */
 /* Ein echter Schalter für Systemzustände, die an oder aus sind. Optisch
    deutlich von einer Checkbox getrennt: Die Checkbox wählt aus einer Menge,
@@ -1289,9 +1674,9 @@ html.dark .af-input[type="number"] {
 .af-switch label {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: var(--kaestchen-abstand);
     font-family: var(--font-body);
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     color: var(--text-body);
     cursor: pointer;
     padding: 0.25rem 0;
@@ -1358,7 +1743,7 @@ html.dark .af-input[type="number"] {
 
 .af-slider .dash-slider-mark {
     font-family: var(--font-body);
-    font-size: 0.6875rem;
+    font-size: var(--schrift-klein);
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
 }
@@ -1411,7 +1796,7 @@ html.dark .af-input[type="number"] {
 
 .af-slider .rc-slider-mark-text {
     font-family: var(--font-body);
-    font-size: 0.6875rem;
+    font-size: var(--schrift-klein);
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
 }
@@ -1440,9 +1825,9 @@ html.dark .af-input[type="number"] {
     flex-wrap: wrap;
     /* Abstand ueber gap statt ueber Innenabstand: die Trefferflaeche bleibt
        gross, die Leiste wirkt trotzdem leicht. */
-    gap: 1.75rem;
+    gap: 1.5rem;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 1.75rem;
+    margin-bottom: 1.5rem;
 }
 
 /* dcc.Tabs bringt eigene Stile per styled-jsx mit und spritzt sein <style>
@@ -1452,7 +1837,7 @@ html.dark .af-input[type="number"] {
     flex: 0 0 auto;
     width: auto;
     font-family: var(--font-body);
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     /* Gewicht bleibt in beiden Zustaenden gleich — ein Sprung von 500 auf 600
        verschiebt beim Wechsel die Nachbarn und wirkt unruhig. */
     font-weight: 500;
@@ -1490,7 +1875,7 @@ html.dark .af-input[type="number"] {
 
 .af-tabs--sub .af-tabs__list .af-tab,
 .af-tabs--sub .af-tabs__list .af-tab--selected {
-    font-size: 0.8125rem;
+    font-size: var(--schrift-beschriftung);
     padding: 0.5rem 0;
 }
 
@@ -1519,12 +1904,12 @@ html.dark .af-input[type="number"] {
 
 .af-viewbar__item {
     flex: 0 0 auto;
-    padding: 0.375rem 0.75rem;
+    padding: 0.25rem 0.75rem;
     border-radius: var(--radius);
     border: 1px solid transparent;
     background: transparent;
     font-family: var(--font-body);
-    font-size: 0.8125rem;
+    font-size: var(--schrift-beschriftung);
     font-weight: 500;
     color: var(--text-muted);
     cursor: pointer;
@@ -1549,37 +1934,29 @@ html.dark .af-input[type="number"] {
     position: relative;
 }
 
-/* Die Einblendung im Viewport: Tick, Populationsgröße, Zoom. Bewusst ohne
-   Mausfang — sie liegt über dem Diagramm und darf dessen Hover nicht
-   abschneiden. */
+/* Die Einblendung im Viewport: Tick, Populationsgröße, Zoom. **Seit P7.5-U5.3 eine
+   Zeile unter dem Diagramm**, nicht mehr absolut darüber: Rechts unten deckte sie
+   Datenpunkte zu (L3 des Audits). Rechtsbündig, wo sie vorher stand. */
 .af-scene__overlay {
-    position: absolute;
-    right: 1.25rem;
-    bottom: 1.25rem;
-    z-index: 15;
     display: flex;
-    gap: 1.25rem;
-    padding: 0.5rem 0.875rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--overlay);
-    backdrop-filter: blur(6px);
-    font-size: 0.6875rem;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem 0.25rem;
+    font-size: var(--schrift-klein);
     color: var(--text-muted);
-    pointer-events: none;
 }
 
 .af-scene__overlay dt {
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    font-size: 0.625rem;
+    font-size: var(--schrift-klein);
     color: var(--text-faint);
 }
 
 .af-scene__overlay dd {
-    margin: 0.125rem 0 0;
+    margin: var(--haarabstand) 0 0;
     font-family: var(--font-mono);
-    font-size: 0.8125rem;
+    font-size: var(--schrift-klein);
     color: var(--text);
 }
 
@@ -1587,8 +1964,8 @@ html.dark .af-input[type="number"] {
 .af-factor {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
-    padding: 0.375rem 0.625rem;
+    gap: var(--haarabstand);
+    padding: 0.25rem 0.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
@@ -1602,18 +1979,21 @@ html.dark .af-input[type="number"] {
 
 .af-factor__id {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--schrift-klein);
     font-weight: 600;
     color: var(--accent);
 }
 
-.af-factor__state {
-    font-size: 0.6875rem;
+/* **Der Kurzname statt des Zustandstexts** (P7.5-U5.3): Der Text brauchte 136 bis
+   272 px, wo bei 1280 px 72 px blieben, und stand abgeschnitten da. Der Kurzname
+   bricht nicht um und wird nicht gekuerzt -- passt er nicht, meldet es der
+   Browser-Waechter, statt dass eine Ellipse es verdeckt. */
+.af-factor__name {
+    font-size: var(--schrift-klein);
+    font-weight: 600;
     /* Nicht `--text-muted`: auf `--accent-soft` kaeme das im hellen Modus nur
        auf 4,3 — bei 11 px zu wenig. Nachgemessen, nicht geschaetzt. */
     color: var(--text-body);
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
@@ -1622,15 +2002,15 @@ html.dark .af-input[type="number"] {
 .af-kpi {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
-    padding: 0.75rem 0.875rem;
+    gap: var(--haarabstand);
+    padding: 0.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
 }
 
 .af-kpi__label {
-    font-size: 0.6875rem;
+    font-size: var(--schrift-klein);
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--text-muted);
@@ -1638,7 +2018,7 @@ html.dark .af-input[type="number"] {
 
 .af-kpi__value {
     font-family: var(--font-headline);
-    font-size: 1.375rem;
+    font-size: var(--schrift-titel);
     font-weight: 700;
     line-height: 1.2;
     color: var(--text);
@@ -1646,21 +2026,25 @@ html.dark .af-input[type="number"] {
 }
 
 .af-kpi__delta {
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     font-variant-numeric: tabular-nums;
     color: var(--text-muted);
 }
 
+/* **Neutral, die Richtung traegt der Pfeil** (P7.5-U5.5, von Haiko entschieden am
+   2026-09-15). Gestiegen stand hier gruen, gefallen rot -- auch beim Ticketpreis,
+   wo gestiegen meist keine gute Nachricht ist. Die Klassen bleiben, weil die
+   Musterseite genau diese Zustaende zeigt. */
 .af-kpi__delta--up {
-    color: var(--positive);
+    color: var(--text);
 }
 
 .af-kpi__delta--down {
-    color: var(--negative);
+    color: var(--text);
 }
 
 .af-kpi__hint {
-    font-size: 0.6875rem;
+    font-size: var(--schrift-klein);
     color: var(--text-faint);
 }
 
@@ -1675,7 +2059,7 @@ html.dark .af-input[type="number"] {
 .af-timeline__controls {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.25rem;
     flex: none;
 }
 
@@ -1687,7 +2071,7 @@ html.dark .af-input[type="number"] {
 .af-timeline__readout {
     flex: none;
     font-family: var(--font-mono);
-    font-size: 0.8125rem;
+    font-size: var(--schrift-klein);
     color: var(--text);
     min-width: 7rem;
     text-align: right;
@@ -1722,11 +2106,41 @@ html.dark .af-input[type="number"] {
     opacity: 0.9;
 }
 
+/* **Die Legende des Streifens** (P7.5-U5.4): was die Farben der Marker heissen.
+   Dieselben Farben wie die Marker, aus `timeline.LEGENDE`. */
+.af-timeline__legend {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+    font-size: var(--schrift-klein);
+    color: var(--text-muted);
+}
+
+.af-timeline__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.af-timeline__swatch {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--accent);
+    opacity: 0.55;
+}
+
+.af-timeline__swatch--warning {
+    background: var(--warning);
+    opacity: 0.9;
+}
+
 /* --- Log-Fenster --------------------------------------------------------- */
 
 .af-log {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     line-height: 1.6;
     color: var(--console-text);
     background: var(--console-bg);
@@ -1742,7 +2156,7 @@ html.dark .af-input[type="number"] {
 /* Die Konsole der Telemetrie: dieselbe Fläche, aber zeilenweise gefärbt. */
 .af-console {
     font-family: var(--font-mono);
-    font-size: 0.6875rem;
+    font-size: var(--schrift-klein);
     line-height: 1.55;
     background: var(--console-bg);
     border: 1px solid var(--border);
@@ -1755,7 +2169,7 @@ html.dark .af-input[type="number"] {
 .af-console__line {
     display: flex;
     gap: 0.5rem;
-    padding: 0.125rem 0.25rem;
+    padding: var(--haarabstand) 0.25rem;
     border-left: 2px solid transparent;
     color: var(--console-text);
     word-break: break-word;
@@ -1844,23 +2258,82 @@ html.dark .af-input[type="number"] {
 /* Erklärung unter einem Eingabefeld: leise, aber lesbar. Der technische
    Feldname am Ende steht bewusst als Code — er ist Nachschlagehilfe, nicht
    Teil des Satzes. */
-.af-check__hint,
+/* **Zwei Regeln statt einer Gruppe**, aus demselben Grund wie bei den Breiten:
+   Der Kaskaden-Nachrechner in `tests/test_web_drawers.py` ueberspringt jeden
+   Selektor mit Komma, und die Zusage «der Hinweis steht auf dem Raster» liefe
+   ins Leere. Kaestchen plus Abstand -- buendig zum Beschriftungstext, und nach
+   Konstruktion genau ein `--einzug`. */
+.af-check__hint {
+    margin-left: calc(var(--kaestchen) + var(--kaestchen-abstand));
+    margin-top: var(--haarabstand);
+}
+
 .af-radio + .af-hint {
-    /* Kaestchen (1rem) plus Abstand (0.625rem) — buendig zum Beschriftungstext. */
-    margin-left: 1.625rem;
-    margin-top: 0.125rem;
+    margin-left: calc(var(--kaestchen) + var(--kaestchen-abstand));
+    margin-top: var(--haarabstand);
 }
 
 .af-hint {
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     line-height: 1.55;
     color: var(--text-muted);
-    margin-top: 0.375rem;
-    max-width: 46rem;
+    margin-top: 0.25rem;
+}
+
+/* **Der Hinweis schlägt `.af-md`** (P7.1-U1.1, vorgezogen am 2026-09-11).
+   `ui.hint_text` rendert als `dcc.Markdown` mit `af-hint af-md`. Beide Regeln
+   tragen eine Klasse, und `.af-md` steht weiter unten — bei gleicher
+   Spezifität gewinnt die spätere. Gemessen war der Kurzhinweis damit **15 px**
+   in der Fließtextfarbe, die Beschriftung darüber **14 px**: das lauteste
+   Element eines Feldes war der Satz, der es erklärt.
+
+   **Zwei Klassen statt Umsortieren** — dieselbe Lösung wie beim
+   Schubladen-Knopf (Gegenprobe zu P1.5): ordnungsunabhängig, während ein
+   verschobener Block nur bis zur nächsten Umsortierung hält.
+   `tests/test_web_typografie.py` rechnet die Kaskade nach. */
+.af-md.af-hint {
+    font-size: var(--schrift-klein);
+    line-height: 1.55;
+    color: var(--text-muted);
+}
+
+/* **Markdown in der Größe des Bausteins, der es trägt** (P7.1-U1.4, vorgezogen
+   am 2026-09-11). Texte mit `**fett**` und `` `Pfad` `` standen als `html.P`
+   da, und die Zeichen waren zu sehen. Als `dcc.Markdown` bekämen sie ohne diese
+   Rollen den Fließtext von `.af-md` (15 px) — deshalb je zwei Klassen, damit
+   die Rolle ordnungsunabhängig gewinnt. Die Werte sind die der Absätze, die
+   sie ersetzen: `text-sm leading-relaxed`, `text-xs af-text-muted`,
+   `text-sm af-text`. Eine Schriftskala ist das nicht — die kommt mit U1.1. */
+.af-md.af-md--caption {
+    font-size: var(--schrift-klein);
+    line-height: 1rem;
+    color: var(--text-muted);
+}
+
+.af-md.af-md--betont {
+    font-size: var(--schrift-beschriftung);
+    line-height: 1.5;
+    color: var(--text);
+}
+
+/* **Betonung ohne eigene Groesse** (D3, 2026-09-12). Die These eines Rahmens
+   hob sich vorher durch `af-md--betont` ab -- also durch eine andere GROESSE
+   (14 gegen 12 px). Genau daran ist U1.2 gescheitert: Ein Leseblock mit zwei
+   Groessen laesst keinen Pixeldeckel zu, der die damalige Zusage «hoechstens
+   75 Zeichen je Zeile» haelt. Die These traegt ihre Betonung deshalb in Farbe
+   und Gewicht und bleibt auf der Groesse des Blocks.
+
+   **Die Zusage ist seither zurueckgenommen, die Regel bleibt** (zweiter
+   Nachtrag der Entscheidungsvorlage): Ein Leseblock mit zwei Groessen liest
+   sich schlechter als einer mit einer -- das galt unabhaengig vom Deckel und
+   ist der Grund, aus dem D3 hier stehen bleibt. */
+.af-md.af-md--these {
+    color: var(--text);
+    font-weight: 500;
 }
 
 .af-hint code {
-    font-size: 0.95em;
+    font-size: var(--schrift-klein);
     background: var(--surface-inset);
     border-color: var(--border);
     color: var(--text-muted);
@@ -1870,7 +2343,7 @@ html.dark .af-input[type="number"] {
 
 .af-md {
     font-family: var(--font-body);
-    font-size: 0.9375rem;
+    font-size: var(--schrift-text);
     line-height: 1.7;
     color: var(--text-body);
 }
@@ -1891,19 +2364,19 @@ html.dark .af-input[type="number"] {
     font-weight: 600;
     color: var(--text);
     line-height: 1.3;
-    margin: 1.75rem 0 0.75rem;
+    margin: 1.5rem 0 0.75rem;
 }
 
 .af-md h1 {
-    font-size: 1.5rem;
+    font-size: var(--schrift-titel);
 }
 
 .af-md h2 {
-    font-size: 1.25rem;
+    font-size: var(--schrift-ueberschrift);
 }
 
 .af-md h3 {
-    font-size: 1.0625rem;
+    font-size: var(--schrift-abschnitt);
 }
 
 .af-md p,
@@ -1914,7 +2387,7 @@ html.dark .af-input[type="number"] {
 
 .af-md ul,
 .af-md ol {
-    padding-left: 1.375rem;
+    padding-left: var(--einzug);
 }
 
 .af-md ul {
@@ -1926,7 +2399,7 @@ html.dark .af-input[type="number"] {
 }
 
 .af-md li {
-    margin-bottom: 0.375rem;
+    margin-bottom: 0.25rem;
 }
 
 .af-md strong {
@@ -1941,7 +2414,7 @@ html.dark .af-input[type="number"] {
 }
 
 .af-md code {
-    font-size: 0.8125em;
+    font-size: var(--schrift-klein);
     font-family: var(--font-mono);
     background: var(--surface-inset);
     border: 1px solid var(--border);
@@ -1974,7 +2447,7 @@ html.dark .af-input[type="number"] {
 .af-md table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     margin: 0 0 1rem;
     display: block;
     overflow-x: auto;
@@ -2020,10 +2493,10 @@ html.dark .af-input[type="number"] {
 .af-nav__links > a {
     flex: 0 0 auto;
     white-space: nowrap;
-    padding: 0.375rem 0.75rem;
+    padding: 0.25rem 0.75rem;
     border-radius: var(--radius);
     font-family: var(--font-body);
-    font-size: 0.8125rem;
+    font-size: var(--schrift-beschriftung);
     font-weight: 500;
     color: var(--text-muted);
     transition: background-color 0.15s ease, color 0.15s ease;
@@ -2056,7 +2529,7 @@ html.dark .af-input[type="number"] {
 @media (min-width: 1024px) {
     .af-docs {
         grid-template-columns: 16rem minmax(0, 1fr);
-        gap: 3.5rem;
+        gap: 3rem;
     }
 
     .af-docs__nav {
@@ -2077,7 +2550,7 @@ html.dark .af-input[type="number"] {
 }
 
 .af-docs__nav input[type="search"] {
-    font-size: 0.8125rem;
+    font-size: var(--schrift-beschriftung);
 }
 
 .af-docs__list {
@@ -2086,11 +2559,11 @@ html.dark .af-input[type="number"] {
 
 .af-docs__link {
     display: block;
-    padding: 0.375rem 0 0.375rem 0.75rem;
+    padding: 0.25rem 0 0.25rem 0.75rem;
     margin-left: -1px;
     border-left: 2px solid transparent;
     font-family: var(--font-body);
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     color: var(--text-muted);
     transition: color 0.15s ease, border-color 0.15s ease;
 }
@@ -2110,7 +2583,7 @@ html.dark .af-input[type="number"] {
 .af-table .dash-spreadsheet-container .dash-spreadsheet-inner td,
 .af-table .dash-spreadsheet-container .dash-spreadsheet-inner th {
     font-family: var(--font-body);
-    font-size: 0.8125rem;
+    font-size: var(--schrift-beschriftung);
     font-variant-numeric: tabular-nums;
 }
 
@@ -2158,8 +2631,27 @@ html.dark .af-input[type="number"] {
 
 /* --- Ladeanzeige --------------------------------------------------------- */
 
+/* `._dash-loading` ist **nicht** die Anzeige eines Callbacks, sondern der
+   Platzhalter, den Dash vor dem ersten Rendern ins HTML schreibt: das Wort
+   «Loading...» ungestaltet im Dokumentfluss. Ihn zu verstecken ist eine
+   bewusste Entscheidung und hat mit `dcc.Loading` nichts zu tun -- das Audit
+   vom 2026-09-11 hat beides verwechselt und daraus geschlossen, die Ladeanzeige
+   sei global abgeschaltet. Nachgelesen in `dash/dash.py::_app_entry`. */
 ._dash-loading {
     display: none;
+}
+
+/* Die Anzeige beim Wechsel einer Ergebnis-Ansicht (P7.0-U0.5). Der Punkt bekommt
+   seine Farbe **hier** und nicht am Aufruf: `runs.layout()` laeuft einmal beim
+   Start, ein `color=` von dort waere fuer immer die Farbe des Startdesigns --
+   im dunklen Modus das dunkle Navy auf dunklem Grund. Ueber das Token traegt
+   er in beiden Modi die richtige. */
+.af-ladeanzeige [class*="dash-spinner"],
+.af-ladeanzeige [class*="dash-spinner"]::before,
+.af-ladeanzeige [class*="dash-spinner"]::after,
+.af-ladeanzeige [class*="dash-loading"] {
+    color: var(--accent);
+    background-color: currentColor;
 }
 
 .af-spinner-host {
@@ -2262,14 +2754,14 @@ html.dark .af-input[type="number"] {
 
 .af-run__readout {
     font-family: var(--font-headline);
-    font-size: 1.125rem;
+    font-size: var(--schrift-ueberschrift);
     font-weight: 600;
     color: var(--text);
 }
 
 .af-run__percent {
     font-family: var(--font-headline);
-    font-size: 1.5rem;
+    font-size: var(--schrift-titel);
     font-weight: 700;
     color: var(--accent);
 }
@@ -2295,7 +2787,7 @@ html.dark .af-input[type="number"] {
     bottom: calc(var(--shell-timeline) + 1rem);
     z-index: 60;
     width: min(20rem, calc(100vw - 2rem));
-    padding: 0.75rem 0.875rem;
+    padding: 0.75rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface-raised);
@@ -2311,7 +2803,7 @@ html.dark .af-input[type="number"] {
 
 .af-dock__title {
     font-family: var(--font-body);
-    font-size: 0.8125rem;
+    font-size: var(--schrift-klein);
     font-weight: 600;
     color: var(--text);
 }
@@ -2319,7 +2811,7 @@ html.dark .af-input[type="number"] {
 .af-dock__percent {
     margin-left: auto;
     font-family: var(--font-headline);
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     font-weight: 700;
     color: var(--accent);
 }
@@ -2347,7 +2839,7 @@ html.dark .af-input[type="number"] {
 
 .af-dock__link {
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     font-weight: 600;
     color: var(--accent);
     text-decoration: none;
@@ -2424,7 +2916,7 @@ html.dark .af-input[type="number"] {
 /* Der Inhalt bekommt eine Lesebreite statt der vollen Flaeche: Eine Frage, die
    ueber 1900 px laeuft, ist schwerer zu lesen als eine, die es nicht tut. */
 .af-pane--focus {
-    max-width: 68rem;
+    max-width: var(--breite-inhalt);
     margin: 0 auto;
     padding: 2rem 1.5rem 4rem;
 }
@@ -2434,7 +2926,7 @@ html.dark .af-input[type="number"] {
 .af-wizard {
     display: grid;
     grid-template-columns: 15rem minmax(0, 1fr);
-    gap: 2.5rem;
+    gap: 2rem;
     align-items: start;
 }
 
@@ -2453,64 +2945,24 @@ html.dark .af-input[type="number"] {
     grid-template-columns: minmax(0, 1fr);
 }
 
-/* **Das Lesemass** (P1.9-W5.4). Gemessen wurden bis zu **124** Zeichen je
-   Zeile; die typografische Spanne ist 45 bis 75. Ueber etwa 75 verliert das
-   Auge am Zeilenende die Spur zum naechsten Anfang.
+/* **Was von `ch` bleibt, weil es beim naechsten Mal wieder lockt.** Bis zum
+   2026-09-12 stand hier das Lesemass, und zwar in `ch` -- mit dem Argument,
+   die Zusage handle von Zeichen. Das Argument war richtig, der Preis war eine
+   Breite je Schriftgroesse. Zwei Messungen gehoeren aufgehoben:
 
-   **In `ch`, nicht in `rem`.** Die Zusage handelt von Zeichen, also steht sie
-   in der Einheit, die Zeichen misst -- ein `rem`-Deckel haengt an der
-   Schriftgroesse, und genau daran ist der erste Anlauf gescheitert: 34rem
-   ergaben im grossen Fliesstext 84, in der kleineren Bildunterschrift aber 90
-   Zeichen. `ch` ist die Breite der Null; Ziffern sind breiter als der
-   Durchschnittsbuchstabe, deshalb steht hier weniger als 75.
+   1. **`ch` ist textabhaengig.** Es legt eine Breite fest, keine Zeichenzahl:
+      Bei 56ch standen im selben Absatzformat 71 bis 78 Zeichen.
+   2. **`ch` ist plattformabhaengig.** Chromium quantisiert den Vorschub der
+      Null unter Linux auf ganze Pixel -- gemessen an derselben Stelle, gleiche
+      Schrift, Inter auf beiden geladen:
 
-   **Und deshalb mit Luft.** Ein `ch`-Deckel legt eine Breite fest, keine
-   Zeichenzahl: Wie viele Buchstaben hineinpassen, haengt davon ab, welche.
-   Bei 56ch standen im selben Absatzformat 71 bis 78 Zeichen -- dieselbe
-   Regel, zwei Ergebnisse.
+        Windows   "0" = 7,78 px   ->   53ch = 401 px   ->   71 Zeichen
+        Linux     "0" = 8,00 px   ->   53ch = 424 px   ->   78 Zeichen
 
-   **53ch -> 48ch am 2026-09-07, und der Grund korrigiert den Absatz darueber.**
-   `ch` ist nicht nur textabhaengig, sondern auch **plattformabhaengig**: Die
-   Einheit ist der Vorschub der Null, und Chromium quantisiert den unter Linux
-   auf ganze Pixel. Gemessen an derselben Stelle, gleiche Schrift, gleiche
-   Groesse, Inter auf beiden geladen und benutzbar:
-
-     Windows   "0" = 7,78 px   ->   53ch = 401 px   ->   71 Zeichen
-     Linux     "0" = 8,00 px   ->   53ch = 424 px   ->   78 Zeichen
-
-   Dieselbe Regel, sechs Prozent mehr Breite, zehn Prozent mehr Zeichen -- und
-   damit ueber der Zusage von 75. Die 53 stammten aus einer Messung unter
-   Windows; unter Linux hat der Deckel nie gehalten, es hat nur niemand
-   gemessen (der Browser-Waechter lief bis zum 2026-09-07 nirgends automatisch,
-   siehe P3.17).
-
-   **Gewaehlt wird nach der Plattform, auf der das Produkt laeuft** -- das
-   Deployment-Ziel ist ein Linux-Server. 48ch bringen Linux auf rund 71
-   Zeichen und Windows auf rund 64; beides liegt in der Spanne 45 bis 75,
-   Windows nur konservativer. Der umgekehrte Weg -- die Zusage auf 78 heben,
-   weil Linux so rendert -- haette die Zusage der Umgebung angepasst.
-
-   Der Deckel sitzt am Fliesstext, nicht am Schritt: Ein Raster aus
-   Auswahlfeldern ordnet sich in der Breite, ein Satz zerfaellt darin. */
-.af-mass {
-    max-width: 48ch;
-}
-
-/* **Breite je Schritt** (P1.9-W5.4). Die Form des Inhalts entscheidet, nicht
-   seine Menge: Karten und Raster nehmen die Spalte, ein kurzes Formular aus
-   drei Feldern bekommt sie geschenkt und wird davon nicht besser. Gemessen
-   stand ein 245 px breites Feld in einer 760 px breiten Spalte. */
-.af-body--lesen {
-    max-width: 34rem;
-}
-
-/* Code ist kein Fliesstext: Eine JSON-Vorschau bricht nicht bei 75 Zeichen um,
-   sie wird gescrollt. Das Lesemass gilt dort nicht. */
-.af-mass pre,
-.af-mass code {
-    max-width: none;
-}
-
+      Dieselbe Regel, sechs Prozent mehr Breite, zehn Prozent mehr Zeichen --
+      und damit ueber der damaligen Zusage von 75. Die 53 stammten aus einer
+      Messung unter Windows; auf dem Deployment-Ziel hat der Deckel nie
+      gehalten, es hat nur bis P3.17 niemand gemessen. */
 .af-wizard__rail {
     position: sticky;
     top: 0;
@@ -2518,7 +2970,7 @@ html.dark .af-input[type="number"] {
 
 .af-wizard__counter {
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -2534,7 +2986,7 @@ html.dark .af-input[type="number"] {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-top: 2.5rem;
+    margin-top: 2rem;
     padding: 1rem 0;
     border-top: 1px solid var(--border);
     flex-wrap: wrap;
@@ -2565,6 +3017,18 @@ html.dark .af-input[type="number"] {
     margin-top: 0.5rem;
 }
 
+/* **Ab 1280 px nebeneinander** (P7.4-U4.6). Untereinander standen bei 1440 px
+   drei Karten von je 1040 px Breite, und ihr Text endete bei 51 bis 70 % davon
+   (E11). Gleich hoch, damit die Reihenfolge ein Raster bleibt und keine Treppe
+   wird; die Reihenfolge selbst aendert sich nicht (W5.6: Ort fest, Gewicht
+   veraenderlich). */
+@media (min-width: 1280px) {
+    .af-ways {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: stretch;
+    }
+}
+
 .af-way {
     display: flex;
     align-items: flex-start;
@@ -2574,7 +3038,7 @@ html.dark .af-input[type="number"] {
        Beschreibung die Karte auf, statt umzubrechen. Genau das Muster aus
        Stufe D. */
     min-width: 0;
-    padding: 1.25rem 1.375rem;
+    padding: 1rem 1.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--surface);
@@ -2608,14 +3072,14 @@ html.dark .af-input[type="number"] {
 
 .af-way__title {
     font-family: var(--font-headline);
-    font-size: 1rem;
+    font-size: var(--schrift-abschnitt);
     font-weight: 600;
     color: var(--text);
     overflow-wrap: anywhere;
 }
 
 .af-way__text {
-    font-size: 0.8125rem;
+    font-size: var(--schrift-klein);
     line-height: 1.5;
     color: var(--text-muted);
     overflow-wrap: anywhere;
@@ -2649,7 +3113,7 @@ html.dark .af-input[type="number"] {
 
 .af-step__heading {
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -2660,22 +3124,22 @@ html.dark .af-input[type="number"] {
 .af-steps {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
+    gap: var(--haarabstand);
 }
 
 .af-step {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: 0.5rem;
     width: 100%;
-    padding: 0.5rem 0.625rem;
+    padding: 0.5rem;
     border: none;
     border-radius: var(--radius);
     background: transparent;
     text-align: left;
     cursor: pointer;
     font-family: var(--font-body);
-    font-size: 0.8125rem;
+    font-size: var(--schrift-beschriftung);
     color: var(--text-muted);
     transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -2695,9 +3159,20 @@ html.dark .af-input[type="number"] {
     overflow-wrap: anywhere;
 }
 
+/* **`--text-muted`, nicht `--text-faint`** (P7.9-U9.1, vorgezogen am
+   2026-09-11). Das Wort «optional» steht in 11 px; gemessen im dunklen Design
+   kam es auf dem Grund auf **3,77**, auf der markierten Zeile auf **2,87** —
+   WCAG 2.2 AA verlangt 4,5. `tests/test_web_kontrast.py` rechnet es aus den
+   Tokens nach, in beiden Designs und auf allen drei Gründen. */
 .af-step__tag {
-    font-size: 0.6875rem;
-    color: var(--text-faint);
+    font-size: var(--schrift-klein);
+    color: var(--text-muted);
+}
+
+/* Auf der markierten Zeile trägt die Zeile ihre eigene Textfarbe; der Zusatz
+   folgt ihr. `--text-muted` käme hell auf `--accent-soft` nur auf 4,31. */
+.af-step--current .af-step__tag {
+    color: var(--accent-text);
 }
 
 .af-step--done {
@@ -2821,7 +3296,7 @@ html.dark .af-input[type="number"] {
 .af-delta__was {
     display: block;
     font-family: var(--font-body);
-    font-size: 0.8125rem;
+    font-size: var(--schrift-klein);
     font-weight: 500;
     color: var(--text);
     overflow-wrap: anywhere;
@@ -2830,7 +3305,7 @@ html.dark .af-input[type="number"] {
 .af-delta__wert {
     display: block;
     font-family: var(--font-mono, var(--font-body));
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere;
@@ -2838,10 +3313,10 @@ html.dark .af-input[type="number"] {
 
 .af-step__hinweis {
     font-family: var(--font-body);
-    font-size: 0.75rem;
+    font-size: var(--schrift-klein);
     color: var(--text-muted);
-    margin-top: 0.625rem;
-    padding-left: 0.625rem;
+    margin-top: 0.5rem;
+    padding-left: 0.5rem;
 }
 
 /* --- Schmale Breite: Fortschrittsbalken und einzeilige Fußleiste (P1.9-W5.5)
@@ -2879,7 +3354,7 @@ html.dark .af-input[type="number"] {
         width: auto;
         flex: 1 1 0;
         justify-content: center;
-        padding: 0.375rem 0.25rem;
+        padding: 0.25rem;
         min-width: 2rem;
     }
 
@@ -2942,11 +3417,11 @@ html.dark .af-input[type="number"] {
 
 .af-way--haupt {
     border-color: var(--accent);
-    padding: 1.5rem 1.375rem;
+    padding: 1.5rem;
 }
 
 .af-way--haupt .af-way__title {
-    font-size: 1.0625rem;
+    font-size: var(--schrift-abschnitt);
 }
 
 .af-way--haupt .af-way__chevron {
@@ -2956,11 +3431,11 @@ html.dark .af-input[type="number"] {
 /* Die zweitrangigen Wege treten zurück -- ohne zu verschwinden: Sie sind
    erreichbar, nur nicht das Naheliegende. */
 .af-way--neben {
-    padding: 1rem 1.375rem;
+    padding: 1rem 1.5rem;
 }
 
 .af-way--neben .af-way__title {
-    font-size: 0.9375rem;
+    font-size: var(--schrift-text);
 }
 
 .af-way--neben .af-way__icon {
@@ -2990,11 +3465,11 @@ html.dark .af-input[type="number"] {
     left: 0;
     z-index: 100;
     transform: translateY(-120%);
-    padding: 0.625rem 1rem;
+    padding: 0.5rem 1rem;
     background: var(--accent);
     color: var(--text-inverted);
     font-family: var(--font-body);
-    font-size: 0.875rem;
+    font-size: var(--schrift-beschriftung);
     font-weight: 600;
     border-bottom-right-radius: var(--radius);
     text-decoration: none;

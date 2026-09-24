@@ -12,8 +12,9 @@ heißt sie Preset.
 **Auslastung** — Hier gleichbedeutend mit Buchungsrate. Nicht die Auslastung
 eines einzelnen Flugzeugs.
 
-**Bedienfeld** — Die linke Zone des Leitstands: was eingestellt ist, der
-Preflight, der Start-Knopf. Bewusst **kein** Formular — eingestellt wird im
+**Bedienfeld** — Die linke Zone des Leitstands, überschrieben mit «Nächster
+Lauf»: was für den nächsten Lauf eingestellt ist, ein Satz dazu, die Zahl der
+Hinweise vor dem Start und der Start-Knopf. Bewusst **kein** Formular — eingestellt wird im
 Bereich «Einrichten». So bleibt der Start-Knopf immer sichtbar, statt hinter
 sechzig Eingabefeldern zu verschwinden.
 
@@ -23,7 +24,7 @@ bleibt. Er ist überall als solcher markiert — Abzeichen in der Kopfzeile, Ban
 über dem Viewport, eigene Farbe — und verschwindet mit dem ersten echten Lauf.
 Er wird nirgends gespeichert.
 
-**Buchungsrate** — Anteil der simulierten Bevölkerung, der sich in einer Runde
+**Buchungsrate** — Anteil der simulierten Bevölkerung, der sich in einem Tick
 für eine Reise entscheidet. Ergebnis vieler Einzelentscheidungen, kein
 Parameter.
 
@@ -62,6 +63,11 @@ Zukunft. In den Laufdateien steht er als `consistency_score` mit dem Band
 `widerspruchsfrei` / `gemischt` / `spannungsreich`. Ausführlich:
 [CIB-Konsistenzprüfung](/doku/cib).
 
+**Modellannahmen** — Wie das Modell rechnet, soweit Sie es für einen Lauf ändern
+können: Preisbildung, Sättigung und Bevölkerung. Im Schritt «Modellannahmen»
+gelten sie nur für diesen Lauf, der dann «abgeleitet» heißt; im Bereich «Modell»
+ändern Sie die Standardwerte dauerhaft. Siehe [Lauf konfigurieren](/doku/lauf-konfigurieren).
+
 **Schrittfolge** — Die Form des Einrichtens seit August 2026: eine Frage je
 Bildschirm, mit «Zurück» und «Weiter» und einer Liste aller Schritte daneben.
 Drei davon genügen bis zum Start, der Rest ist optional. «Zurück» auf dem ersten
@@ -78,10 +84,11 @@ führt zum Ladebildschirm; abbrechen kann man von dort nicht.
 **Lauf** — Eine Folge von Ticks aus einer festgelegten Ausgangslage. Erzeugt ein
 eigenes Verzeichnis unter `outputs/`.
 
-**Leitstand** — Die Form der Oberfläche: ein Bildschirm mit fünf Bereichen —
-Kopfzeile, Parameter links, Viewport in der Mitte, Telemetrie rechts, Zeitleiste
-unten — statt mehrerer Seiten hintereinander. Gedacht für den Fall, dass
-Einstellung und Wirkung gleichzeitig im Blick bleiben sollen.
+**Leitstand** — Der Bereich, in dem ein Lauf läuft und sich beobachten lässt:
+Kopfzeile, Bedienfeld links, Szene in der Mitte, Kennzahlen rechts, Zeitleiste
+unten. Gedacht für den Fall, dass Einstellung und Wirkung gleichzeitig im Blick
+bleiben sollen. **Seit September 2026 der einzige Bereich mit diesen Seitenzonen** —
+Einrichten, Ergebnisse, Modell und Handbuch bekommen den Bildschirm allein.
 
 **Logit-Modell** — Das Verfahren, mit dem aus den Merkmalen einer Person eine
 Buchungsentscheidung wird. Siehe
@@ -90,11 +97,17 @@ Buchungsentscheidung wird. Siehe
 **Marge** — Der Aufschlag der Airline auf die Kosten. Zusammen mit dem
 Kostenanteil ergibt er den Ticketpreis.
 
-**Mock** — Betrieb ohne Sprachmodell. Die Kennzahlen sind unverändert, die
-Agenten-Texte sind Platzhalter.
+**Ohne Sprachmodell** — Rechenmodus, in dem kein Sprachmodell befragt wird (in der
+Kommandozeile `--mock-llm`). Die Kennzahlen sind unverändert, die Agenten-Texte
+sind Platzhalter.
 
 **Preset** — Eine gespeicherte Annahmenwelt unter `configs/sweeps/`. Siehe
 [Szenario-Presets](/doku/ref-presets).
+
+**Prüflauf** — Ein Lauf unter einem hinterlegten Szenario, das heute kein
+**Rahmenszenario** ist: ein Stresstest oder ein früherer Prüflauf, dessen Datei es
+nicht mehr gibt. Er behauptet keine Zukunft. Die Laufauswahl blendet ihn aus, bis
+man ihn ausdrücklich wählt.
 
 ## R bis Z
 
@@ -109,8 +122,16 @@ Bezifferung: Bei welchem Tick die CO₂-Abgabe auf welchen Wert springt, ist
 gesetzt und nicht aus Daten geschätzt. Welche Zeitspanne es beschreibt, sagt
 jedes Rahmenszenario in seinem Vorbehalt. Siehe [Presets](/doku/presets).
 
-**Run-ID** — Eindeutige Kennung eines Laufs, zugleich der Name seines
-Ausgabeverzeichnisses.
+**Abgeleitet** (Lauf) — Ein Lauf unter einem Szenario, dessen Verläufe oder
+Preisstrategie geändert wurden. Das Szenario selbst bleibt unverändert; der Lauf
+nennt es in seinen Dateien zusammen mit jeder Abweichung.
+
+**Eigenes Szenario** — Ein mit «Als Szenario sichern» abgelegtes Szenario: das
+gewählte Szenario samt Ihren Abweichungen. Es steht in der Auswahl nach den
+Rahmenszenarien, trägt keine Begründung, und ein Szenario-Vergleich lässt es aus.
+
+**Kennung** (eines Laufs) — Eindeutiger Name eines Laufs, zugleich der Name
+seines Ausgabeverzeichnisses, etwa `run_20260913_142530`.
 
 **SAF** — Sustainable Aviation Fuel, nachhaltiger Flugtreibstoff. Als Quote eine
 Systemgröße, die die Kosten der Airline erhöht.
@@ -124,8 +145,9 @@ Segmenten angehören.
 
 **Stresstest** — Ein hinterlegtes Szenario, das die Engine belastet oder die
 Darstellung prüft, statt eine Zukunft zu behaupten. Seine Verläufe fahren durch
-Extreme, damit man sieht, ob etwas bricht. In der Auswahl steht das Wort an der
-Kachel; ein Szenario-Vergleich lässt ihn aus. Gegenstück zum
+Extreme, damit man sieht, ob etwas bricht. In der Auswahl ist er ausgeblendet, bis
+man «Stresstests zeigen» wählt, und trägt dann das Wort vor seiner Kennzahl; ein
+Szenario-Vergleich lässt ihn aus. Gegenstück zum
 **Rahmenszenario**.
 
 **Systemgröße** — Eine der Zahlen hinter den Faktoren: CO₂-Abgabe, SAF-Quote,
@@ -140,7 +162,7 @@ Bild eine Bewegung der Bevölkerung ist und nicht eine nachgeführte Achse.
 **Szenario** — Eine mögliche Fortsetzung nach dem Lauf, nicht der Lauf selbst.
 Jeder Lauf erzeugt drei davon.
 
-**Tick** — Eine Modellrunde. **In der Mechanik ein Monat** (seit dem 7. September 2026): Alles, was sich pro Runde verändert, rechnet in Monaten, vierzig Runden sind gut drei Jahre. **Ein Datum ist eine Runde trotzdem nicht** — sie lässt sich auf keine Jahreszahl abbilden. Siehe
+**Tick** — Ein Rechenschritt des Modells. **In der Mechanik ein Monat** (seit dem 7. September 2026): Alles, was sich pro Tick verändert, rechnet in Monaten, vierzig Ticks sind gut drei Jahre. **Ein Datum ist ein Tick trotzdem nicht** — er lässt sich auf keine Jahreszahl abbilden. Siehe
 [Tick, Lauf und Szenario](/doku/tick-und-lauf).
 
 **Telemetrie** — Der rechte Bereich des Leitstands: Kennzahlen des gewählten

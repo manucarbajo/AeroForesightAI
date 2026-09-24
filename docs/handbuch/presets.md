@@ -17,6 +17,12 @@ Unter den hinterlegten Szenarien liegen zwei verschiedene Dinge, und seit dem
 unter «Quellen und was davon nicht belegt ist» finden Sie die Belege und —
 ebenso wichtig — den Vorbehalt.
 
+**Eine Quellenangabe nennt ein Werk** — einen Rechtsakt, eine Studie, eine
+Datenreihe. Bis zum 2026-09-13 nannten fünfzehn von ihnen stattdessen die
+Datei, in der der Beleg im Projekt liegt; das beantwortet die Frage nicht,
+die jemand an dieser Stelle stellt. Die Belege selbst bleiben, wo sie sind:
+unter `docs/research/` im Projekt.
+
 Denn belegt ist immer die Geschichte, **nicht ihre Bezifferung**: Dass strenge
 Regulierung ohne verfügbaren Ausweichpfad zur reinen Verteuerung wird, ist
 begründbar. Bei welchem Tick die CO₂-Abgabe dann auf welchen Wert springt, ist
@@ -50,14 +56,19 @@ wie der Rest: **Die Richtung ist argumentiert, die Zahlen sind gesetzt.**
 
 **Ein Stresstest** ist ein Belastungs- oder Sichtprüfungslauf der Engine. Seine
 Verläufe fahren durch Extreme, damit man sieht, ob etwas bricht — sie behaupten
-nichts über die Zukunft. Die Kachel schreibt «Stresstest» davor, und ein
+nichts über die Zukunft. In der Auswahl ist er ausgeblendet, bis Sie «Stresstests
+zeigen» wählen, und trägt dann «Stresstest» vor seiner Kennzahl; ein
 Szenario-Vergleich lässt ihn aus.
 
 ## Ein Preset verwenden
 
-Unter **Simulation starten** ist die Auswahl die erste der drei Entscheidungen.
-Jedes Preset steht dort mit seiner Beschreibung; aufklappbar daneben die
-Begründung, warum es so aufgebaut ist.
+Im Bereich **Einrichten** ist die Auswahl die erste der drei Entscheidungen.
+Jedes Preset steht dort mit seiner Beschreibung. Darunter die **These** des
+Szenarios und die ersten zwei Sätze der Begründung; der Rest — Begründung,
+Quellen und Vorbehalt — liegt hinter **«Begründung und Quellen»**. Bis zum
+2026-09-12 stand die ganze Begründung offen da, je Szenario 1163 bis 2429
+Zeichen. Verborgen ist nichts weggelassen: Ein Klick führt zu allem, was die
+Stimmigkeit belegt.
 
 **Das gewählte Preset gilt unverändert.** Politik, Kosten und Nachfrageumfeld kommen
 aus seiner Datei unter `configs/sweeps/`; was Sie unten unter «Alle
@@ -66,15 +77,15 @@ bleibt Ihre Entscheidung: die **Länge** des Laufs. Auf wie viele Ticks ein
 Preset angelegt ist, steht neben seiner Beschreibung — seine Meilensteine sind
 auf diese Länge hin gedacht.
 
-**Seit dem 7. September 2026 lässt sich diese Länge in Zeit umrechnen:** Eine
-Runde ist ein Monat. **Seit dem 11. September 2026 laufen die vier
-Rahmenszenarien 120 Runden, also zehn Jahre.** Vorher waren es 50, und
+**Seit dem 7. September 2026 lässt sich diese Länge in Zeit umrechnen:** Ein
+Tick ist ein Monat. **Seit dem 11. September 2026 laufen die vier
+Rahmenszenarien 120 Ticks, also zehn Jahre.** Vorher waren es 50, und
 «Freiwillige Wende» brachte die CO₂-Abgabe binnen 20 Monaten von 50 auf 200 Euro —
 zu schnell für Politikpfade, deren Quellen in Fünfjahresstufen denken. Gestreckt
 wurde jede Marke im selben Verhältnis: Die Geschichte ist dieselbe, nur ihr Tempo
 passt jetzt. Welche Spanne ein Rahmen meint, steht in seinem Vorbehalt.
-**Eine Kalenderprognose sind sie trotzdem nicht** — eine Runde trägt kein Datum,
-und Runde 60 ist nicht «2030».
+**Eine Kalenderprognose sind sie trotzdem nicht** — ein Tick trägt kein Datum,
+und Tick 60 ist nicht «2030».
 
 **Im Szenario-Vergleich gilt das nicht.** Wer alle Szenarien nacheinander
 rechnen lässt, stellt keine Länge ein: Jedes läuft so lang, wie es angelegt ist.
@@ -91,24 +102,28 @@ nach 40 Ticks schlicht nicht.
 
 ## Ein Preset als Ausgangspunkt nehmen
 
-Wenn Sie von einem Preset ausgehen, aber einzelne Annahmen ändern wollen,
-klicken Sie unter der Auswahl auf «Werte übernehmen und selbst anpassen». Die
-Werte wandern damit in den Editor, und die Auswahl springt auf «Eigene
-Einstellungen».
+Wenn Sie von einem Preset ausgehen, aber einzelne Annahmen ändern wollen, bleibt
+das Preset gewählt: Einzelne Verläufe ändern Sie im Schritt **Verläufe**,
+Preisbildung, Sättigung und Bevölkerung im Schritt **Modellannahmen**. Solange
+«Eigene Werte anwenden» eingeschaltet ist, legt der Lauf Ihre Abweichungen auf das
+Preset; in den Dateien des Laufs heißt er dann «abgeleitet» und nennt, was
+abweicht.
 
-Dieser Wechsel ist nötig, nicht kosmetisch: Solange ein Preset gewählt ist,
-gelten ausschließlich seine Werte. Erst unter «Eigene Einstellungen» wirkt, was
-im Editor steht.
-
-Danach können Sie im Schritt **Rahmenbedingungen** und
-**Nachfrage & Preisbildung** einzelne Größen verändern, ohne den Rest neu
-aufsetzen zu müssen.
+Bis September 2026 ging das über «Werte übernehmen und selbst anpassen», das die
+Werte in den Bereich **Modell** schrieb und auf die Standard-Ausgangslage
+umschaltete. Den Knopf gibt es nicht mehr: Was im Bereich Modell steht, wirkt
+seither erst gespeichert — als neuer Standard für alle Läufe.
 
 ## Einen eigenen Stand sichern
 
-Im Schritt **Lauf & Ablage** geben Sie einen
-Dateinamen ein und klicken auf «Szenario sichern». Der aktuelle Entwurf landet
-als Datei unter `configs/sweeps/` und erscheint danach oben in der Auswahl.
+Solange Sie einrichten, steht oben in der Kopfzeile «Als Szenario sichern». Im
+Fenster geben Sie einen Namen ein — vorgeschlagen ist der Name des Laufs — und
+sichern. Abgelegt wird das gewählte Szenario samt Ihren Abweichungen als Datei
+unter `configs/sweeps/`. In der Auswahl steht es danach als **Eigenes Szenario**
+direkt nach den Rahmenszenarien. Ein begründetes Weltbild ist es damit nicht —
+es trägt keine Kohärenzbegründung, und ein Szenario-Vergleich lässt es aus. Gibt es
+ein Szenario unter diesem Namen schon, sagt das Fenster es, bevor Sie es
+ersetzen.
 
 Nützlich, sobald Sie eine Konstellation gefunden haben, auf die Sie mehrfach
 zurückkommen wollen — etwa eine Referenzwelt, gegen die alle weiteren Läufe
@@ -134,11 +149,11 @@ Unter den hinterlegten Dateien liegen zwei verschiedene Dinge: begründete
 Weltbilder und Belastungstests der Engine. Ein Vergleich stellt Weltbilder
 gegeneinander — ein Stresstest, dessen Verläufe auf Sichtbarkeit gebaut sind,
 gehört nicht als Zukunft daneben. Starten lässt er sich weiterhin einzeln; in
-der Auswahl steht «Stresstest» an seiner Kachel.
+der Auswahl erscheint er nach «Stresstests zeigen».
 
 ## Meilensteine
 
-Manche Presets bringen Meilensteine mit: Erwartungen der Form «ab Runde 10 sollte
+Manche Presets bringen Meilensteine mit: Erwartungen der Form «ab Tick 10 sollte
 die CO₂-Abgabe bei 50 liegen». Sie beschreiben, wie das Szenario gemeint ist, und
 helfen beim Gegenlesen eines Laufs. In der Referenz sind sie je Preset
 aufgeführt.

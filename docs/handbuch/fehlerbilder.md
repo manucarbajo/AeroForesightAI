@@ -4,12 +4,12 @@ die häufigsten Beobachtungen ein.
 
 ## Die Buchungsrate fällt stetig
 
-Das ist der Normalfall, kein Fehler. In den ersten Runden bucht, wer buchen will;
+Das ist der Normalfall, kein Fehler. In den ersten Ticks bucht, wer buchen will;
 danach ist ein wachsender Teil der Bevölkerung gesättigt. Siehe
 [Sättigung](/doku/saettigung).
 
 Auffällig wird es erst, wenn die Rate gegen null geht und dort bleibt. Dann ist
-entweder die Erholung je Runde zu niedrig eingestellt oder der Preis über die
+entweder die Erholung je Tick zu niedrig eingestellt oder der Preis über die
 Zahlungsbereitschaft fast aller Personen gestiegen.
 
 ## Die Buchungsrate bleibt konstant
@@ -19,17 +19,18 @@ dass keine Rückkopplung greift.
 
 Prüfen Sie zuerst, ob unter **Nachfrage & Preisbildung** die Preisanpassung
 eingeschaltet ist und ob unter **Technik** «Marktmodell abschalten» aus ist.
-Prüfen Sie dann, ob **Eigene Werte anwenden** aktiv ist — sonst rechnet der Lauf
-mit der Standard-Ausgangslage und ignoriert Ihre Änderungen.
+Prüfen Sie dann, ob **Eigene Werte anwenden** aktiv ist — sonst ignoriert der
+Lauf Ihre Änderungen aus den Schritten «Verläufe» und «Modellannahmen». Werte aus
+dem Bereich **Modell** wirken nur gespeichert.
 
 ## Der Preis klebt an einem Wert
 
 Zwei Grenzen kommen infrage. Entweder ist die Preisuntergrenze erreicht, dann
 kann der Preis nicht weiter fallen, obwohl die Nachfrage schwach ist. Oder der
-Preisdeckel je Runde ist so eng gesetzt, dass sich der Preis nur in winzigen
+Preisdeckel je Tick ist so eng gesetzt, dass sich der Preis nur in winzigen
 Schritten bewegen darf.
 
-In der Ansicht **Figures** zeigt die Aussage «1 · Preis und Nachfrage» die Zusammensetzung aus
+In der Ansicht **Diagramme** zeigt die Aussage «1 · Preis und Nachfrage» die Zusammensetzung aus
 Kosten und Marge. Ist die Marge nahe null, liegt der Preis an der Untergrenze.
 
 ## Der Preis schwingt hin und her
@@ -48,13 +49,16 @@ Vier Ursachen, in der Reihenfolge ihrer Häufigkeit.
 Erstens: **Eigene Werte anwenden** ist ausgeschaltet. Das ist mit Abstand der
 häufigste Fall; im Preflight über dem Start-Knopf erscheint dafür eine Warnung.
 
-Zweitens: Der Modus steht auf «Szenario-Preset». Dann rechnet der Lauf mit den
-Werten des Presets, nicht mit Ihren.
+Zweitens: Die Änderung steht nur im Bereich **Modell** und ist nicht gespeichert.
+Dort gilt ein Wert erst nach «Verläufe als Standard speichern», «Als Standard
+speichern» oder «Bevölkerung als Standard speichern» — und dann als Standard für
+alle Läufe. Für einen einzelnen Lauf nehmen Sie die Schritte «Verläufe» und
+«Modellannahmen».
 
 Drittens: Die Größe wirkt erst ab einer Schwelle. Die CO₂-Abgabe etwa geht erst
-oberhalb von 50 EUR je Tonne in die Kaufentscheidung ein.
+oberhalb von 50 € je Tonne in die Kaufentscheidung ein.
 
-Viertens: Der Lauf war zu kurz. Rückkopplungen brauchen Runden; bei fünf Ticks
+Viertens: Der Lauf war zu kurz. Rückkopplungen brauchen Ticks; bei fünf Ticks
 ist oft noch nichts zu sehen.
 
 ## Die Ansicht «Szenario» ist leer
@@ -102,15 +106,18 @@ neu gestartet. Zwischenstände sind Fortsetzungspunkte, kein Archiv.
 
 ## Der Lauf ist als beeinträchtigt markiert
 
-Über den Tabs steht ein gelber Hinweis, dass Aufrufe an das Sprachmodell
-unbeantwortet blieben. Das heißt nicht, dass die Zahlen falsch sind: Preise,
+Im Kopf des Laufs — im Leitstand über der Szene, unter «Ergebnisse» über den
+sieben Ansichten — steht ein gelber Hinweis, dass Aufrufe an das Sprachmodell
+unbeantwortet blieben; «Was das heißt» klappt die Erklärung auf. In der Kopfzeile
+erscheint der Hinweis nicht: Sie sagt seit September 2026 nur, ob gerade gerechnet
+wird — ein beeinträchtigter Lauf ist eine Eigenschaft dieses Laufs, nicht der Anlage. Das heißt nicht, dass die Zahlen falsch sind: Preise,
 Buchungsraten und Faktorzustände rechnet Python, unabhängig vom Sprachmodell.
 Fehlen können die Beiträge der Akteure und Teile der Deutung — an den
 betroffenen Stellen hat der jeweilige Akteur ausgesetzt.
 
-Welche Runden es traf und woran es lag, steht in `llm_incidents.json`; im Tab
+Welche Ticks es traf und woran es lag, steht in `llm_incidents.json`; im Tab
 **Dateien** lässt sie sich öffnen. Die häufigste Ursache ist ein nicht laufendes
-Ollama. Prüfen Sie im Tab **Technik**, ob der angegebene Endpunkt erreichbar
+Ollama. Prüfen Sie im Schritt **Technik**, ob der angegebene Endpunkt erreichbar
 ist, und starten Sie das Modell gegebenenfalls mit `ollama run llama3.2`.
 
 Ein Lauf, der bewusst ohne Sprachmodell gerechnet wurde, ist **nicht**
@@ -130,7 +137,7 @@ Ordner ist ihr Rest, kein Ergebnis — was darin liegt, ist unvollständig.
 vom letzten geglückten Durchlauf und ist vollständig; die Bilder entstehen
 bewusst erst nebenan und ziehen nur als ganzer Satz um.
 
-**Was zu tun ist:** In der Ansicht **Figures** unter «PNG-Export» neu erzeugen.
+**Was zu tun ist:** In der Ansicht **Diagramme** unter «PNG-Export» neu erzeugen.
 Gelingt es, verschwindet der Rest von selbst. Gelingt es wieder nicht, steht der
 Grund im Protokoll des Laufs.
 

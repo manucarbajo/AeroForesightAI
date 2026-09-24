@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable
 
-from dash import dcc, html
+from dash import MATCH, Input, Output, State, dcc, html
 
 from dashboard.web import components as ui
 from dashboard.web.config_editor import glossary
@@ -40,10 +40,13 @@ ERROR = "cfg-error"
 
 
 #: Aktionen, die **dauerhaft in `configs/` schreiben** (P1.9-W3.2). Eigener Typ,
-#: weil sie hinter einer Rückfrage stehen und deshalb `submit_n_clicks` liefern
-#: statt `n_clicks` — ein Callback kann nicht beide Eigenschaften derselben
-#: ID-Menge abhören.
+#: weil sie hinter einer Rückfrage stehen: Die ID trägt der Knopf **im Dialog**,
+#: der bestätigt — nicht der Knopf auf der Seite, der den Dialog öffnet (`ASK`).
 WRITE = "cfg-write"
+
+#: Der Knopf, der eine Rückfrage öffnet (P7.1-U1.4). Er schreibt nichts; er
+#: öffnet den Dialog, und das geschieht im Browser, ohne Rundlauf.
+ASK = "cfg-ask"
 
 
 def cfg_id(field: str, kind: str = CFG) -> dict:
@@ -52,6 +55,16 @@ def cfg_id(field: str, kind: str = CFG) -> dict:
 
 def write_id(name: str) -> dict:
     return {"type": WRITE, "action": name}
+
+
+def rueckfrage_schluessel(ziel: dict) -> str:
+    """Der Name einer Rückfrage — aus der ID der Aktion, die sie bestätigt."""
+
+    return "|".join(f"{k}={ziel[k]}" for k in sorted(ziel))
+
+
+def ask_id(ziel: dict) -> dict:
+    return {"type": ASK, "key": rueckfrage_schluessel(ziel)}
 
 
 #: Der Satz, der an **jeder** dieser Schaltflächen steht — im Hinweis darunter
@@ -90,24 +103,93 @@ def write_action(
     *identifier* erlaubt eine eigene Pattern-ID (die beiden Löschknöpfe tragen
     ihren Gegenstand darin). Ohne sie entsteht eine aus `name`.
 
-    **Zur Rückfrage selbst:** `dcc.ConfirmDialogProvider` zeigt den Dialog des
-    Browsers. Der ist nicht mit den Farbtokens gestaltet — dafür lässt er sich
-    nicht übersehen, braucht keinen zusätzlichen Zustand und kommt ohne eine
-    zweite Klickstufe aus, die man aus Versehen mitnimmt. Für eine Handlung, die
-    sich nur über die Versionsverwaltung zurückholen lässt, ist das der richtige
-    Tausch. Ein gestalteter Dialog wäre Politur und änderte nichts an der Zusage.
+    **Die Rückfrage ist ein gestalteter Dialog** (P7.1-U1.4, D7; von Haiko
+    entschieden am 2026-09-13: gleicher Inhalt, keine Änderungsvorschau). Bis
+    dahin zeigte `dcc.ConfirmDialogProvider` den Dialog des Browsers — nicht mit
+    den Farbtokens gestaltet, im dunklen Design ein heller Kasten, und mit einem
+    «OK», das nicht sagt, was es tut. Die Begründung dafür stand hier und war
+    richtig: Er lässt sich nicht übersehen und braucht keinen Zustand. **Beides
+    hält der Nachfolger**, weil er dieselbe Maschinerie des Browsers benutzt, nur
+    gestaltet: ein `<dialog>`, geöffnet mit `showModal()`. Der Browser hält den
+    Fokus darin, schließt ihn mit Escape und gibt den Fokus danach an den Knopf
+    zurück; beide Knöpfe stehen in einem `form method="dialog"` und schließen ihn
+    ohne eine Zeile Skript. **Nur das Öffnen läuft über einen Callback**
+    (`register_callbacks`), im Browser. «Abbrechen» steht zuerst, damit es beim
+    Öffnen den Fokus bekommt; bestätigt wird mit der Beschriftung der Handlung.
+
+    **Die Vorgabe ist `secondary`, und im Modell-Bereich bleibt sie es** (P7.1-U1.4,
+    von Haiko entschieden am 2026-09-13). Dort standen drei Schreibaktionen als
+    Primärknopf auf einer Fläche. Das Modell ist ein Ort zum Pflegen, kein Ablauf
+    mit einem nächsten Schritt — und eine Handlung, die sich nur über die
+    Versionsverwaltung zurückholen lässt, soll nicht zum Klicken einladen.
+    `tests/test_web_primaeraktion.py` hält höchstens eine Primäraktion je Fläche.
     """
 
+    ziel = identifier or write_id(name)
+    schluessel = rueckfrage_schluessel(ziel)
     return html.Div(
         [
-            dcc.ConfirmDialogProvider(
-                children=ui.button(label, variant=variant, icon_name=icon_name),
-                id=identifier or write_id(name),
-                message=f"{frage}\n\n{REICHWEITE}",
+            ui.button(
+                label,
+                variant=variant,
+                icon_name=icon_name,
+                id=ask_id(ziel),
+                **{"aria-haspopup": "dialog", "data-rueckfrage-oeffnet": schluessel},
             ),
-            ui.hint_text(REICHWEITE, class_name="mt-2 af-mass"),
+            ui.hint_text(REICHWEITE, class_name="mt-2"),
+            html.Dialog(
+                html.Form(
+                    [
+                        html.H3(label, className=ui.H3),
+                        html.P(frage, className=f"font-body {ui.TEXT} af-text-body mt-2"),
+                        ui.hinweis(REICHWEITE, "warnung", class_name="mt-4"),
+                        html.Div(
+                            [
+                                ui.button("Abbrechen", variant="ghost", type="submit"),
+                                ui.button(
+                                    label,
+                                    variant=variant,
+                                    icon_name=icon_name,
+                                    id=ziel,
+                                    type="submit",
+                                ),
+                            ],
+                            className="flex justify-end gap-3 mt-6 flex-wrap",
+                        ),
+                    ],
+                    method="dialog",
+                ),
+                className="af-rueckfrage",
+                **{"data-rueckfrage": schluessel, "aria-label": label},
+            ),
         ],
         className=class_name,
+    )
+
+
+def register_callbacks(app) -> None:
+    """Eine Rückfrage öffnen — im Browser, ohne Rundlauf über den Server.
+
+    **`showModal()`, nicht das Attribut `open`.** Nur der modale Aufruf hält den
+    Fokus im Dialog, legt den Rest der Seite still und schließt mit Escape; ein
+    geöffneter, nicht modaler Dialog ist ein Kasten auf der Seite.
+    """
+
+    app.clientside_callback(
+        """
+        function (geklickt, id) {
+            if (!geklickt || !id) { return window.dash_clientside.no_update; }
+            var dialog = document.querySelector(
+                'dialog[data-rueckfrage="' + CSS.escape(id.key) + '"]'
+            );
+            if (dialog && !dialog.open) { dialog.showModal(); }
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output({"type": ASK, "key": MATCH}, "title"),
+        Input({"type": ASK, "key": MATCH}, "n_clicks"),
+        State({"type": ASK, "key": MATCH}, "id"),
+        prevent_initial_call=True,
     )
 
 
@@ -255,6 +337,8 @@ def number(
     max: float | None = None,
     step: float | None = None,
     class_name: str = "",
+    breite: str | None = None,
+    gesperrt: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -268,10 +352,12 @@ def number(
             step=step,
             className="af-input",
             debounce=True,
+            disabled=bool(gesperrt),
         ),
-        hint=text_hint,
+        hint=gesperrt or text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 
@@ -285,6 +371,8 @@ def text(
     detail: bool = False,
     placeholder: str = "",
     class_name: str = "",
+    breite: str | None = None,
+    gesperrt: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -296,10 +384,12 @@ def text(
             placeholder=placeholder,
             className="af-input",
             debounce=True,
+            disabled=bool(gesperrt),
         ),
-        hint=text_hint,
+        hint=gesperrt or text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 
@@ -312,6 +402,7 @@ def textarea(
     key: str | None = None,
     detail: bool = False,
     class_name: str = "",
+    breite: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -322,6 +413,7 @@ def textarea(
         hint=text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 
@@ -336,6 +428,7 @@ def select(
     detail: bool = False,
     clearable: bool = False,
     class_name: str = "",
+    breite: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     return ui.field(
@@ -350,6 +443,7 @@ def select(
         hint=text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 
@@ -365,6 +459,8 @@ def slider(
     max: float = 1.0,
     step: float = 0.05,
     class_name: str = "",
+    breite: str | None = None,
+    gesperrt: str | None = None,
 ) -> html.Div:
     text_label, text_hint = _described(field, key, label, hint)
     marks = {min: f"{min:g}", max: f"{max:g}"}
@@ -378,14 +474,18 @@ def slider(
                 step=step,
                 value=value,
                 marks=marks,
-                tooltip={"placement": "bottom", "always_visible": True},
+                # **Nur beim Bedienen** (P7.4-U4.2, E8): Dauerhaft eingeblendet stand
+                # der Wert als Kasten über dem Feld darunter.
+                tooltip={"placement": "bottom", "always_visible": False},
                 className="af-slider",
+                disabled=bool(gesperrt),
             ),
             className="pt-1",
         ),
-        hint=text_hint,
+        hint=gesperrt or text_hint,
         below=_below(field, key, detail),
         class_name=class_name,
+        breite=breite,
     )
 
 
