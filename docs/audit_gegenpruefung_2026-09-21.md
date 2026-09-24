@@ -40,7 +40,7 @@ Ein Verstoß gegen das Commit-Regelwerk (`black`), **elf** reproduzierbare Befun
 
 ### Nachbesserung
 
-**N1 — `black` ist seit `2e71011` rot, elf Commits lang.** Regel 2 des Commit-Regelwerks («jeder Commit für sich grün») ist damit verletzt.
+**N1 — `black` ist seit `2e71011` rot, elf Commits lang.** Regel 2 des Commit-Regelwerks («jeder Commit für sich grün») ist damit verletzt. **Behoben am 2026-09-24:** Die CI von PR #18 hat genau diese drei Dateien gemeldet, `black` formatiert sie jetzt, `black --check .`, `ruff check .` und ihre Tests sind grün (Änderung nur Formatierung, 12 Zeilen hinzu, 8 weg).
 
 - **Nachgewiesen:** `ruff check` und `black --check` über jeden der 147 Commits des Branches. `ruff` ist in allen grün. `black` ist es bis `8591d2f` und wird ab **`2e71011`** (2026-09-15, P7.13) rot, danach in jedem Commit bis zur Spitze.
 - **Dateien:** `tests/test_rahmen_im_artefakt.py` (seit `2e71011`), `tests/test_web_pruefschritt.py` und `tests/test_web_rail.py` (seit `338dc41`, P7.5-U5.1).
