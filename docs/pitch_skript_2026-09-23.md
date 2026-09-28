@@ -1,6 +1,6 @@
 # Pitch-Skript: AeroForesight AI
 
-Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026). Er folgt Folie für Folie der Präsentation, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-09-24.
+Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026). Er folgt Folie für Folie der Präsentation, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-09-28 — die Folien sind noch nicht nachgezogen, was abweicht, steht dort unter „Folien nachziehen“.
 
 Länge: rund 2:15 Minuten bei ruhigem Tempo (etwa 100 Wörter pro Minute), Puffer für Pausen und Folienwechsel. Kurze Sätze, keine Aufzählungen.
 
@@ -8,17 +8,17 @@ Länge: rund 2:15 Minuten bei ruhigem Tempo (etwa 100 Wörter pro Minute), Puffe
 
 ## Folie 1: Cover
 
-Die EU senkt heute das CO₂-Preislimit. Morgen weiß keine Airline, was das für ihre Marge heißt. Sie raten, und es geht um Millionen.
+Ab 2026 bekommen Airlines in Europa keine kostenlosen CO₂-Zertifikate mehr. Wie teuer das wird, hängt am CO₂-Preis, an der SAF-Quote und an der Bahn, alles zugleich. Wer das nur schätzt, plant mit Millionen im Blindflug.
 
 Wir liefern die Zukunft des europäischen Luftverkehrs. Berechnet, nicht geraten.
 
 ## Folie 2: Problem
 
-Die Zukunft der Luftfahrt ist tief unsicher. CO₂-Preise, SAF-Quoten und die Bahn wirken gleichzeitig und verstärken sich. Ab 2026 gibt es keine kostenlosen Emissionszertifikate mehr für Airlines. Und die Forschung sagt: Eine einzelne Prognose reicht nicht. Es braucht mehrere Szenarien.
+Die Zukunft der Luftfahrt ist tief unsicher. CO₂-Preise, SAF-Quoten und die Bahn wirken gleichzeitig und verstärken sich. Die SAF-Quote steigt von 2 Prozent heute auf 6 Prozent bis 2030. Und die Forschung sagt: Eine einzelne Prognose reicht nicht. Es braucht mehrere Szenarien.
 
 ## Folie 3: Lösung
 
-Genau die liefern wir. In unserem Modell handeln drei Akteure: Passagiere, Fluggesellschaften und Regulierer. Sie reagieren aufeinander, so wie im echten Markt. Daraus rechnen wir verschiedene Zukünfte vor. Jede Zahl kommt aus der Berechnung. Die KI erklärt danach jedes Szenario, verständlich und nah an der Realität. Geprüft haben wir das an echten Marktdaten von 2015 bis 2024.
+Genau die liefern wir. In unserem Modell handeln drei Akteure: Passagiere, Fluggesellschaften und Regulierer. Sie reagieren aufeinander, so wie im echten Markt. Daraus rechnen wir verschiedene Zukünfte vor. Jede Zahl kommt aus der Berechnung. Die KI erklärt danach jedes Szenario, verständlich und nah an der Realität. Wir messen das Modell an echten Marktdaten von 2015 bis 2024 und zeigen offen, wo es trifft und wo noch nicht.
 
 ## Folie 4: Markt
 
@@ -49,11 +49,14 @@ Jede Zahl der Folien ist hier belegt oder als eigene Rechnung ausgewiesen.
 | Forschung fordert mehrere Szenarien statt einer Prognose | ScienceDirect 2025, [„Aviation sector decarbonisation as a case of deep uncertainty"](https://www.sciencedirect.com/science/article/pii/S2214629625002397). Nur über die Trefferbeschreibung geprüft, nicht im Volltext gelesen |
 | Drei Akteure handeln gegeneinander | `README.md`, `CLAUDE.md`, Paket `src/agents/` |
 | Alle Zahlen aus der Berechnung, die KI erklärt nur | Invariante 1 in `CLAUDE.md` |
-| Geprüft an Marktdaten 2015 bis 2024 | `docs/backtest_vorlauf.md`, Paket `src/backtest/`. Ein Vergleich, keine Eichung, und er schneidet nicht überall gut ab |
+| Gemessen an Marktdaten 2015 bis 2024, offen, wo es trifft und wo nicht | `docs/backtest_vorlauf.md`, Paket `src/backtest/`. Ein Vergleich, keine Eichung. Stand 2026-09-28: Die Preisseite liegt 2016–2019 im Mittel 1,15 Indexpunkte neben der Zielreihe, die Nachfrageseite 25,04 (über alle bewerteten Jahre 9,82 bzw. 36,44). Deshalb „gemessen“ statt „geprüft“: Das Wort klang nach bestanden, und auf der Nachfrageseite ist es das nicht. Die Zahlen gehören in die Antwort auf eine Rückfrage, nicht in den Pitch — die Datei wird mit jedem Lauf überschrieben |
+| Wie teuer der Ausstieg aus den Gratiszertifikaten wird, hängt an mehreren Größen zugleich | Folgt aus den Zeilen zu EU-ETS und SAF-Quote. „Wer das nur schätzt, plant im Blindflug“ ist bewusst ein Bedingungssatz: Dass Airlines heute schätzen, ist nicht belegt und wird nicht behauptet (derselbe Grund, aus dem der Satz über Excel gestrichen wurde) |
 | Rund 80 Airlines, 120 Flughäfen, 35 Regulierer, 9 und 33 Mio. €, 570 Tsd. € | Eigene Rechnung, siehe unten |
 | Wir sind Manuel und Haiko, Wirtschaftsinformatik im Master | Angabe aus der Teamfolie im Artefakt |
 
 Nicht belegt und bewusst nicht behauptet: Pilotkunden, Umsatz, Investitionssumme. Die Traktionsfolie nennt nur Ziele, keine Ist-Werte.
+
+**Entfallen am 2026-09-28:** der frühere Aufhänger „Die EU senkt heute das CO₂-Preislimit“. Er war die einzige Aussage ohne Zeile in dieser Tabelle, band sich mit „heute“ an einen Tag, und eine gesenkte Preisobergrenze senkte die Kosten eher, statt sie zu erhöhen. Ersetzt durch die belegte Tatsache aus Folie 2, die dort deshalb der SAF-Quote Platz macht.
 
 ### Herleitung TAM/SAM/SOM (2026-09-23, eigene Rechnung, bottom-up)
 

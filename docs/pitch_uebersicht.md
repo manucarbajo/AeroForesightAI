@@ -1,6 +1,6 @@
 # Pitch: Wo liegt was?
 
-Diese Seite beantwortet, wenn im Chat jemand fragt „wo ist der Pitch, wie ändere ich ihn, woher kommt die Zahl?". Anlass ist der Pitch bei „Pitch, Please!" am 08.10.2026 im HdM Startup Center Stuttgart. Stand 2026-09-24.
+Diese Seite beantwortet, wenn im Chat jemand fragt „wo ist der Pitch, wie ändere ich ihn, woher kommt die Zahl?". Anlass ist der Pitch bei „Pitch, Please!" am 08.10.2026 im HdM Startup Center Stuttgart. Stand 2026-09-28.
 
 ## Die Dateien
 
@@ -42,6 +42,14 @@ Alles steht mit Quelle in [`docs/pitch_skript_2026-09-23.md`](pitch_skript_2026-
 - **`pitch.html` neu erzeugen:** im Chat sagen „erzeuge pitch.html aus dem Artefakt neu". Dabei wird der aktuelle Artefakt-Stand gelesen und jede Folie in die Datei übernommen. Der animierte Hintergrund wird als eingebettetes Fenster eingesetzt, die Bilder werden als Base64 eingebettet, die Sprechernotizen entfallen.
 - **PowerPoint:** im Artefakt über das Teilen-Menü als .pptx exportieren. Der animierte Hintergrund wird dabei zu einem Standbild.
 - **Skript angleichen:** Nach jeder Textänderung an den Folien gehört das Skript mit, sonst laufen Folie und gesprochener Text auseinander.
+
+## Folien nachziehen
+
+Das Skript ist am 2026-09-28 überarbeitet worden, die Folien noch nicht. Sie werden im Artefakt geändert und `pitch.html` danach neu erzeugt — nicht in `pitch.html` von Hand, sonst überschreibt die nächste Erzeugung die Änderung. Bis dahin sagen Folie und Sprecher an diesen Stellen Verschiedenes:
+
+- **Folie 1:** Der Aufhänger „Die EU senkt heute das CO₂-Preislimit …“ ist entfallen, weil er keine Quelle hat. Neu: „Ab 2026 bekommen Airlines in Europa keine kostenlosen CO₂-Zertifikate mehr. Wie teuer das wird, hängt am CO₂-Preis, an der SAF-Quote und an der Bahn, alles zugleich.“
+- **Folie 2:** Statt der Gratiszertifikate (jetzt auf Folie 1) die SAF-Quote: „2 % heute, 6 % bis 2030“.
+- **Folie 3:** „Geprüft an echten Marktdaten von 2015 bis 2024“ wird zu „Gemessen an echten Marktdaten von 2015 bis 2024“. Die Nachfrageseite liegt dort deutlich daneben; „geprüft“ klang nach bestanden.
 
 ## Offene Punkte
 
