@@ -2,7 +2,7 @@
 
 Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026). Er folgt Folie für Folie der Präsentation, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-09-28 — die Folien sind noch nicht nachgezogen, was abweicht, steht dort unter „Folien nachziehen“.
 
-Länge: rund 2:15 Minuten bei ruhigem Tempo (etwa 100 Wörter pro Minute), Puffer für Pausen und Folienwechsel. Kurze Sätze, keine Aufzählungen.
+Länge: rund 275 Wörter, rund 2:45 Minuten bei ruhigem Tempo (etwa 100 Wörter pro Minute); der Rest der drei Minuten ist Puffer für Pausen und Folienwechsel. Wer ergänzt, streicht an anderer Stelle — bis zum 2026-09-28 waren es 229 Wörter, und der Zuwachs ist Folie 4, der Produktbeleg auf Folie 3 und die Bitte am Schluss. Kurze Sätze, keine Aufzählungen.
 
 ---
 
@@ -14,27 +14,31 @@ Wir liefern die Zukunft des europäischen Luftverkehrs. Berechnet, nicht geraten
 
 ## Folie 2: Problem
 
-Die Zukunft der Luftfahrt ist tief unsicher. CO₂-Preise, SAF-Quoten und die Bahn wirken gleichzeitig und verstärken sich. Die SAF-Quote steigt von 2 Prozent heute auf 6 Prozent bis 2030. Und die Forschung sagt: Eine einzelne Prognose reicht nicht. Es braucht mehrere Szenarien.
+Die Zukunft der Luftfahrt ist tief unsicher. Die SAF-Quote steigt von 2 Prozent heute auf 6 Prozent bis 2030. Und die Forschung sagt: Eine einzelne Prognose reicht nicht. Es braucht mehrere Szenarien.
 
 ## Folie 3: Lösung
 
-Genau die liefern wir. In unserem Modell handeln drei Akteure: Passagiere, Fluggesellschaften und Regulierer. Sie reagieren aufeinander, so wie im echten Markt. Daraus rechnen wir verschiedene Zukünfte vor. Jede Zahl kommt aus der Berechnung. Die KI erklärt danach jedes Szenario, verständlich und nah an der Realität. Wir messen das Modell an echten Marktdaten von 2015 bis 2024 und zeigen offen, wo es trifft und wo noch nicht.
+Genau die liefern wir. In unserem Modell handeln drei Akteure: Passagiere, Fluggesellschaften und Regulierer. Sie reagieren aufeinander, so wie im echten Markt. Daraus rechnen wir verschiedene Zukünfte vor, und die KI erklärt jedes Szenario verständlich. Das ist kein Entwurf: Der Prototyp läuft, mit Dashboard und Szenario-Vergleich.
 
-## Folie 4: Markt
+## Folie 4: Warum wir
 
-Alles greift gleichzeitig: Emissionshandel, SAF-Quote und CORSIA. Unsere Kunden sind rund 80 Airlines, 120 Flughäfen und 35 Regulierer in Europa. Das ist ein Markt von 9 Millionen Euro in Europa und 33 Millionen weltweit. Davon wollen wir in drei Jahren 570 Tausend Euro erreichen.
+Was uns unterscheidet: Jede Zahl kommt aus der Berechnung, nie aus der KI. Die KI erzählt, sie rechnet nicht. Das Sprachmodell läuft auf eigener Infrastruktur, ohne externen KI-Dienst. Und wir messen das Modell an echten Marktdaten von 2015 bis 2024 und zeigen offen, wo es trifft und wo noch nicht.
 
-## Folie 5: Traktion
+## Folie 5: Markt
+
+Unsere Kunden sind rund 80 Airlines, 120 Flughäfen und 35 Regulierer in Europa. Das ist ein Markt von 9 Millionen Euro in Europa und 33 Millionen weltweit. Und das ist nur der Kern: Beratungen und SAF-Hersteller stehen vor denselben Fragen.
+
+## Folie 6: Fahrplan
 
 Unser Ziel: drei Design-Partner im ersten Jahr, acht Kunden im zweiten, fünfzehn im dritten. Das sind rund 570 Tausend Euro Jahresumsatz.
 
-## Folie 6: Team
+## Folie 7: Team
 
-Wir sind Manuel und Haiko, beide Wirtschaftsinformatik im Master. Unsere LinkedIn-Profile findet ihr als QR-Code auf der Folie.
+Wir sind Manuel und Haiko, beide Wirtschaftsinformatik im Master. Unsere Profile findet ihr per QR-Code.
 
-## Folie 7: Schluss
+## Folie 8: Schluss
 
-AeroForesight AI. Wir liefern die Zukunft des Luftverkehrs. Berechnet, nicht geraten. Sprecht uns gern an.
+Dafür suchen wir jetzt unsere ersten Design-Partner: Menschen aus Strategie und Netzwerkplanung bei Airlines und Flughäfen. Wenn ihr jemanden kennt, sprecht uns an. AeroForesight AI. Berechnet, nicht geraten.
 
 ---
 
@@ -51,10 +55,14 @@ Jede Zahl der Folien ist hier belegt oder als eigene Rechnung ausgewiesen.
 | Alle Zahlen aus der Berechnung, die KI erklärt nur | Invariante 1 in `CLAUDE.md` |
 | Gemessen an Marktdaten 2015 bis 2024, offen, wo es trifft und wo nicht | `docs/backtest_vorlauf.md`, Paket `src/backtest/`. Ein Vergleich, keine Eichung. Stand 2026-09-28: Die Preisseite liegt 2016–2019 im Mittel 1,15 Indexpunkte neben der Zielreihe, die Nachfrageseite 25,04 (über alle bewerteten Jahre 9,82 bzw. 36,44). Deshalb „gemessen“ statt „geprüft“: Das Wort klang nach bestanden, und auf der Nachfrageseite ist es das nicht. Die Zahlen gehören in die Antwort auf eine Rückfrage, nicht in den Pitch — die Datei wird mit jedem Lauf überschrieben |
 | Wie teuer der Ausstieg aus den Gratiszertifikaten wird, hängt an mehreren Größen zugleich | Folgt aus den Zeilen zu EU-ETS und SAF-Quote. „Wer das nur schätzt, plant im Blindflug“ ist bewusst ein Bedingungssatz: Dass Airlines heute schätzen, ist nicht belegt und wird nicht behauptet (derselbe Grund, aus dem der Satz über Excel gestrichen wurde) |
+| Der Prototyp läuft, mit Dashboard und Szenario-Vergleich | Dash-App unter `dashboard/web/`, Start laut `README.md`; der Szenario-Vergleich ist der zweite Weg im Einstieg des Bereichs „Einrichten“. Ein Prototyp, kein Produkt im Kundeneinsatz |
+| Das Sprachmodell läuft auf eigener Infrastruktur, ohne externen KI-Dienst | Ein einziger LLM-Client für ein lokal laufendes Ollama (`src/llm/llm_client.py`), Deployment-Ziel in `CLAUDE.md`. Bewusst nicht gesagt: „auf unseren Servern beim Kunden“ — das Deployment ist laut `CLAUDE.md` noch nicht produktionsscharf |
+| Die KI erzählt, sie rechnet nicht | Invariante 1 in `CLAUDE.md`, wie die Zeile darüber |
+| Beratungen und SAF-Hersteller stehen vor denselben Fragen | Eigene Einschätzung, nicht beziffert und **nicht** in TAM, SAM oder SOM eingerechnet. Sie sagt nur, dass der Kern nicht die Grenze ist. Wer nach einer Zahl fragt, bekommt keine |
 | Rund 80 Airlines, 120 Flughäfen, 35 Regulierer, 9 und 33 Mio. €, 570 Tsd. € | Eigene Rechnung, siehe unten |
 | Wir sind Manuel und Haiko, Wirtschaftsinformatik im Master | Angabe aus der Teamfolie im Artefakt |
 
-Nicht belegt und bewusst nicht behauptet: Pilotkunden, Umsatz, Investitionssumme. Die Traktionsfolie nennt nur Ziele, keine Ist-Werte.
+Nicht belegt und bewusst nicht behauptet: Pilotkunden, Umsatz, Investitionssumme. Die Fahrplanfolie nennt nur Ziele, keine Ist-Werte — sie hieß bis zum 2026-09-28 „Traktion“, und so benannt versprach sie Ist-Werte, die sie nicht zeigte. Die Bitte am Schluss ist bewusst keine Geldsumme, sondern Kontakte zu künftigen Design-Partnern; sie passt damit zum Ziel auf Folie 6.
 
 **Entfallen am 2026-09-28:** der frühere Aufhänger „Die EU senkt heute das CO₂-Preislimit“. Er war die einzige Aussage ohne Zeile in dieser Tabelle, band sich mit „heute“ an einen Tag, und eine gesenkte Preisobergrenze senkte die Kosten eher, statt sie zu erhöhen. Ersetzt durch die belegte Tatsache aus Folie 2, die dort deshalb der SAF-Quote Platz macht.
 
