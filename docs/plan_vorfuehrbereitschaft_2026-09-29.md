@@ -55,13 +55,15 @@
 
 **Offen — Haiko, auf dem Laptop:** `python -m src.reporting.pruefsatz_sprachmodell --rechner "Vorführ-Laptop"` (Ollama mit `llama3.2` muss laufen, rund 5 min) und den Bericht zurück ins Repo; entscheidend ist die Zeile «Sekunden je Tick».
 
-#### V2 — Alles, was das Modell schreibt, ist deutsch
+#### V2 — Alles, was das Modell schreibt, ist deutsch ✅ erledigt 2026-09-29
 
 **Befund:** Die Prompts der drei Agenten sind englisch und verlangen keine Ausgabesprache; die Texte erscheinen englisch in Protokoll, Ereignisstreifen und Bericht. Der Abschlusstext ist deutsch, die Agenten nicht.
 **Fundstelle:** die LLM-Aufrufer im Lauf und daneben, gezählt am 2026-09-29: `src/agents/agent_node.py` mit `src/prompts/consumer.md`, `provider.md`, `regulator.md`; `src/cib/scenario_agent_node.py`; `src/reporting/run_scenario_generator/pipeline.py` und `prompt.py` mit `src/prompts/run_scenario.md`; `src/reporting/state_explorer.py`.
 **Was zu tun ist:** Jeden LLM-Aufrufer im Lauf auf eine deutsche Ausgabe festlegen (Anweisung im Prompt, die maschinenlesbaren Schlüssel bleiben wie sie sind). Ein Wächter, der **sucht statt aufzuzählen**: jeder Prompt unter `src/prompts/` und jeder Aufrufer, der `OllamaClient` benutzt, verlangt Deutsch.
 **Fertig wenn:** Ein Lauf über 6 Ticks mit `llama3.2` erzeugt keinen englischen Satz in `event_log.json`, `protocol.md`, `run_scenario.md`; Handbuch und `docs/agent_profiles.md` sagen es.
 **Aufwand:** ½ Tag.
+
+**Erledigt am 2026-09-29.** Die Anweisung steht einmal in `src/llm/sprache.py` (`AUSGABESPRACHE`); alle vier Aufrufer hängen sie über `auf_deutsch` ans Ende ihres Prompts, die Abfrage vor «ANSWER:». `tests/test_ausgabesprache.py` sucht jeden Aufruf `.call(` in `src/` und verlangt sie (Gegenprobe: ohne sie bei den Agenten rot); die Abfrage baut ihren Prompt seither an einer Stelle statt an zweien. **Gemessen mit dem Prüfsatz, Entwicklungsrechner, `llama3.2`: Agenten englisch 15 von 17 → 0 von 17**, Abschlusstexte und Abfrage weiterhin 0. **Zwei Nebenbefunde:** Die Zeit je Tick stieg von 9,7 auf **13,8 s** (längerer Prompt, längere deutsche Antworten; eine Messung, sie streut) — für den Laptop wichtig; und das kleine Modell **wiederholt sich** über die Ticks (dieselbe Zeile zu E-Fuels dreimal in sechs Ticks), obwohl der Prompt das verbietet. Das Zweite gehört zu V3 und V6.
 
 #### V3 — Ein Text über einen Lauf widerspricht dessen Zahlen nicht
 

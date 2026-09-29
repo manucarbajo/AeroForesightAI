@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from src.llm import LLMCallable
+from src.llm import LLMCallable, auf_deutsch
 from src.reporting.run_scenario_generator.candidates import _normalize_scenarios
 from src.reporting.run_scenario_generator.context import load_run_scenario_context
 from src.reporting.run_scenario_generator.factors import _load_factor_catalog, build_factor_profile
@@ -50,7 +50,7 @@ def generate_run_scenario(
         # ankommt. Der Fehler geht als `llm_error` an den Aufrufer zurück, der
         # ihn als Vorfall protokolliert.
         try:
-            raw = llm.call(build_scenario_prompt(context))
+            raw = llm.call(auf_deutsch(build_scenario_prompt(context)))
         except Exception as exc:  # noqa: BLE001 - jeder Backend-Fehler endet im Template
             logger.warning(
                 "Lauf-Szenario konnte nicht vom Sprachmodell erzeugt werden: %s. "

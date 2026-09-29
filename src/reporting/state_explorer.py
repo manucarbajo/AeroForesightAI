@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from src.llm import LLMCallable, OllamaClient, OllamaConfig
+from src.llm import LLMCallable, OllamaClient, OllamaConfig, auf_deutsch
 from src.logging_setup import stdio_auf_utf8
 from src.orchestration.checkpoint_manager import CheckpointManager
 from src.reporting.output_writer import OUTPUT_DIR
@@ -507,12 +507,14 @@ class StateExplorer:
         self.llm = llm or OllamaClient(OllamaConfig(temperature=0.2))
 
     def build_prompt(self, question: str) -> str:
+        """Der Prompt einer Frage — die Sprachanweisung vor «ANSWER:» (P8-V2)."""
+
         grounded = build_grounded_context_block(self.context)
-        return (
+        return auf_deutsch(
             f"{EXPLORER_INSTRUCTIONS}\n\n"
             f"GROUND TRUTH DATA:\n{grounded}\n\n"
-            f"USER QUESTION:\n{question.strip()}\n\n"
-            "ANSWER:"
+            f"USER QUESTION:\n{question.strip()}",
+            schluss="\n\nANSWER:",
         )
 
     def ask(self, question: str) -> Antwort:
@@ -523,8 +525,8 @@ class StateExplorer:
         aber im Text mit; wer die einzelnen Befunde braucht, liest `unbelegt`.
         """
 
-        # Ein Prompt, eine Stelle: Bis hierher stand er ein zweites Mal wörtlich
-        # neben `build_prompt`.
+        # Ein Prompt, eine Stelle: Bis P8-V2 stand er hier ein zweites Mal wörtlich
+        # neben `build_prompt`, und die Sprachanweisung hätte an beiden gefehlt.
         grounded = build_grounded_context_block(self.context)
         return pruefe_gegen_kontext(self.llm.call(self.build_prompt(question)), grounded)
 

@@ -6,62 +6,39 @@ Gemessen am 2026-09-29 auf «Entwicklungsrechner», Modell `llama3.2`. Die Antwo
 
 | Weg | Texte | englisch | mit Datum | Richtungswiderspruch | unbelegte Zahlen |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Abschlusstexte | 7 | 0 | 0 | 2 | 0 |
-| Abfrage | 10 | 0 | 0 | 2 | 0 |
-| Agenten | 17 | 15 | 0 | 0 | 0 |
+| Abschlusstexte | 7 | 0 | 0 | 3 | 0 |
+| Abfrage | 10 | 0 | 0 | 3 | 0 |
+| Agenten | 17 | 0 | 0 | 1 | 0 |
 
-**Sekunden je Tick** im Lauf mit Agenten: 9.7
+**Sekunden je Tick** im Lauf mit Agenten: 13.8
 
 ## Befunde im Einzelnen
 
 ### Abschlusstexte
 
 - **Business as Usual (A1+B1): run_narrative**
-  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «Ein starker Anstieg der Nachfrage nach Ressourcen führt zu einer Krise.»
-  - richtung: Ticketpreis: im Text «steigt», gerechnet «sinkt». — «Die Preise steigen»
-- **Freiwillige Wende (A2+B2): run_narrative**
-  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «Nachfrage steigt kontinuierlich (40%)»
+  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «Ein starker Anstieg in der Nachfrage nach Flugreisen führte zu einer erheblichen Belastung der Infrastruktur»
+- **CO₂-Verzögerung: run_narrative**
+  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «gefolgt von einer Erhöhung der Nachfrage nach Flugreisen.»
+- **Transformationskonflikt (B2 vs A1): run_narrative**
+  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «die Nachfrage nach erneuerbarer Energie nimmt zu.»
 
 ### Abfrage
 
 - **business_as_usual: Ist die Buchungsrate im Lauf gestiegen oder gesunken?**
-  - richtung: Buchungsrate: im Text «steigt», gerechnet «sinkt». — «Die Buchungsrate ist im Lauf gestiegen»
-  - richtung: Buchungsrate: im Text «steigt», gerechnet «sinkt». — «dass die Buchungsrate im Lauf gestiegen ist.»
+  - richtung: Buchungsrate: im Text «steigt», gerechnet «sinkt». — «Die Buchungsrate im Lauf ist gestiegen.»
+- **business_as_usual: Wie hat sich der Kostendruck entwickelt?**
+  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «da die Nachfrage nach Flugreisen noch nicht stark anstieg.»
+  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «der zunehmenden Nachfrage nach Flugreisen.»
+  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «der zunehmenden Nachfrage nach Flugreisen.»
 - **transformation_conflict: Ist die Buchungsrate im Lauf gestiegen oder gesunken?**
-  - richtung: Buchungsrate: im Text «steigt», gerechnet «sinkt». — «Die Buchungsrate ist im Lauf gestiegen.»
+  - richtung: Buchungsrate: im Text «steigt», gerechnet «sinkt». — «Die Buchungsrate ist gestiegen.»
 
 ### Agenten
 
-- **Agent, price_change**
-  - englisch: Der Text ist überwiegend englisch. — «Investing in Sustainable Aviation Fuel (SAF) and modernising the fleet to reduce»
-- **Agent, policy_change**
-  - englisch: Der Text ist überwiegend englisch. — «Update regulation to align with the growing demand for air travel while reducing»
 - **Agent, demand_shift**
-  - englisch: Der Text ist überwiegend englisch. — «Shift in demand towards eco-conscious airlines due to increasing environmental a»
-- **Agent, price_change**
-  - englisch: Der Text ist überwiegend englisch. — «Airlines will increase investment in Sustainable Aviation Fuel (SAF) and moderni»
-- **Agent, policy_change**
-  - englisch: Der Text ist überwiegend englisch. — «Update regulation to align with the growing demand for air travel while reducing»
-- **Agent, demand_shift**
-  - englisch: Der Text ist überwiegend englisch. — «Shift in demand towards eco-conscious airlines due to increasing environmental a»
-- **Agent, price_change**
-  - englisch: Der Text ist überwiegend englisch. — «Increase investment in Sustainable Aviation Fuel (SAF) and modernize fleet to re»
-- **Agent, policy_change**
-  - englisch: Der Text ist überwiegend englisch. — «Update regulation to align with the growing demand for air travel while reducing»
-- **Agent, demand_shift**
-  - englisch: Der Text ist überwiegend englisch. — «Booking rate increases for eco-conscious airlines as consumers prioritize sustai»
-- **Agent, price_change**
-  - englisch: Der Text ist überwiegend englisch. — «To capitalize on the growing demand for eco-conscious airlines, we will announce»
-- **Agent, price_change**
-  - englisch: Der Text ist überwiegend englisch. — «We will announce a new sustainable aviation fuel sourcing initiative, aiming to »
-- **Agent, policy_change**
-  - englisch: Der Text ist überwiegend englisch. — «Update regulation to align with growing demand for sustainable aviation practice»
-- **Agent, price_change**
-  - englisch: Der Text ist überwiegend englisch. — «We will announce a new sustainable aviation fuel sourcing initiative, aiming to »
-- **Agent, policy_change**
-  - englisch: Der Text ist überwiegend englisch. — «We update regulation to align with the growing demand for sustainable aviation p»
-- **Agent, demand_shift**
-  - englisch: Der Text ist überwiegend englisch. — «The consumer's booking behaviour influences the demand for air travel, which in »
+  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «Die Nachfrage nach Flughäusern steigt aufgrund des steigenden Bedarfs von Reisenden»
+  - richtung: Nachfrage: im Text «steigt», gerechnet «sinkt». — «was zu einer Erhöhung der Nachfrage führt.»
 
 ## Was der Prüfsatz nicht sieht
 

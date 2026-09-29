@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from src.cib.scenario_consistency import ScenarioDeriver, scenarios_to_dict
-from src.llm import LLMCallable
+from src.llm import LLMCallable, auf_deutsch
 from src.models.cib_models import DESCRIPTOR_IDS, MAX_INFLUENCE, MIN_INFLUENCE, CIBMatrix
 from src.models.llm_models import LLMIncident
 from src.models.scenario_models import (
@@ -288,7 +288,7 @@ class ScenarioAgentNode:
 
         prompt = _build_scenario_prompt(state, gerechnet)
         try:
-            raw = self.llm.call(prompt)
+            raw = self.llm.call(auf_deutsch(prompt))
         except Exception as e:
             # Ohne Narrativ bleibt der deterministische Teil (`gerechnete_szenarien`)
             # stehen — der Lauf ist damit unvollständig, nicht falsch. Festhalten,

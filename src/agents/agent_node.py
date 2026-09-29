@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from src.agents.agent_dependencies import format_depends_on_block
 from src.agents.agent_permissions import may_propose_factor
-from src.llm import LLMCallable
+from src.llm import LLMCallable, auf_deutsch
 from src.market.property_engine import scheduled_property_events
 from src.models.agent_models import AgentConfig, AgentResponse, StateChange
 from src.models.enums import AgentType, EventType
@@ -52,7 +52,7 @@ class AgentNode:
     def invoke(self, state: SimulationState) -> SimulationState:
         prompt = self._build_prompt(state)
         try:
-            raw_output = self.llm.call(prompt)
+            raw_output = self.llm.call(auf_deutsch(prompt))
         except Exception as exc:
             # Der Lauf stirbt nicht an einem einzelnen Aussetzer — er verschweigt
             # ihn aber auch nicht mehr. Bis P0.1 lag hier ein zweiter Versuch über
