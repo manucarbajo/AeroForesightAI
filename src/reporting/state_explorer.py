@@ -523,14 +523,10 @@ class StateExplorer:
         aber im Text mit; wer die einzelnen Befunde braucht, liest `unbelegt`.
         """
 
+        # Ein Prompt, eine Stelle: Bis hierher stand er ein zweites Mal wörtlich
+        # neben `build_prompt`.
         grounded = build_grounded_context_block(self.context)
-        prompt = (
-            f"{EXPLORER_INSTRUCTIONS}\n\n"
-            f"GROUND TRUTH DATA:\n{grounded}\n\n"
-            f"USER QUESTION:\n{question.strip()}\n\n"
-            "ANSWER:"
-        )
-        return pruefe_gegen_kontext(self.llm.call(prompt), grounded)
+        return pruefe_gegen_kontext(self.llm.call(self.build_prompt(question)), grounded)
 
 
 def _build_parser() -> argparse.ArgumentParser:
