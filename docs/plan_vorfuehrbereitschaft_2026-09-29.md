@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | Test-Suite | **3093 bestanden, 5 übersprungen**, 11:28 min; darin der Browser-Wächter mit 165 Zusagen | ✅ |
 | `ruff`, `black`, `mypy` | alle grün | ✅ |
-| Lauf mit Sprachmodell (Kommandozeile, 3 Ticks, `llama3.2`) | läuft, kein Ausfall, 25 Ereignisse; **rund 10 s je Tick** → 40 Ticks ≈ 7 min, 120 Ticks ≈ 21 min | ✅ technisch, ⚠️ zu langsam für live |
+| Lauf mit Sprachmodell (Kommandozeile, 3 Ticks, `llama3.2`) | läuft, kein Ausfall, 25 Ereignisse; **rund 10 s je Tick** auf dem Entwicklungsrechner → 40 Ticks ≈ 7 min, 120 Ticks ≈ 21 min. Auf dem Vorführ-Laptop eher langsamer, dort neu zu messen (V1) | ✅ technisch, ⚠️ zu langsam für live |
 | Szenario-Vergleich (4 Rahmen × 120 Ticks, Abschlusstexte mit Sprachmodell) | 113 s, Zahlen plausibel, Vergleichsansicht aussagekräftig | ✅ |
 | **Texte der Agenten** | **englisch** («Implement a pilot program for SAF-powered flights …»), die Oberfläche ist deutsch; die Prompts in `src/prompts/` sind englisch, und nichts verlangt eine deutsche Ausgabe | ❌ |
 | **Abschlusstext eines Laufs / Szenario-Vergleichs** | widerspricht der Rechnung: steigende CO₂-Preise bei konstant 50 €, «Elektroflotte», erfundenes Datum «2023-01-01», «Die Temperaturen stiegen» | ❌ |
@@ -32,7 +32,6 @@
 | Sprunglink | nicht der erste Tab-Stopp beim ersten Laden (Befund 3 vom 2026-09-21) | ⚠️ |
 | Landingpage auf `/` | Impressum, Datenschutz, AGB und Demo-Anfrage mit sichtbarem Platzhalter-Warnblock (P1.4-Rest) | ⚠️ |
 | Lauf-Browser | **980 Ordner** unter `outputs/`, 199 mit Metadaten, 327 davon Mess- und Prüfläufe (`audit_…`, `messung_…`, `p2…`, `strategie_…`) | ⚠️ für die Vorführung |
-| Hardware dieses Rechners | NVIDIA RTX 2070 SUPER, 8 GB — reicht für ein Modell mit 7–8 Mrd. Parametern | ℹ️ |
 | Offen im Projektplan | P2.14, P7.0, P7.6–P7.11, P1.4-Rest | siehe unten |
 
 **Die Zusammenfassung in einem Satz:** Rechnung, Oberfläche und Tests tragen; **was nicht trägt, ist alles, was das Sprachmodell schreibt** — es ist englisch, wo es deutsch sein soll, und es widerspricht der Rechnung. Genau das ist aber das Versprechen «KI fasst zusammen», und es ist das, was ein Zuschauer vor Ort als Erstes ausprobiert.
@@ -43,19 +42,19 @@
 
 ### Muss — ohne diese keine Vorführung
 
-#### V1 — Das Sprachmodell wählen, mit Messung statt Gefühl
+#### V1 — Mit `llama3.2` auf dem Laptop auskommen, mit Messung statt Gefühl
 
-**Befund:** `llama3.2` (3 Mrd. Parameter) widerspricht in allen vier Abschlusstexten und in der Abfrage der Rechnung. Der Rechner hat 8 GB Grafikspeicher; ein Modell mit 7–8 Mrd. Parametern passt quantisiert (≈ 5 GB).
-**Was zu tun ist:** Einen **festen Prüfsatz** bauen — die vier Abschlusstexte eines Szenario-Vergleichs, fünf Abfragen mit bekannter Antwort (Preisverlauf, Buchungsrate, Faktorwechsel, CO₂-Abgabe, Vergleich zweier Ticks), die Agententexte eines Laufs über 6 Ticks. Zwei bis drei Kandidaten gegen `llama3.2` messen (etwa `qwen2.5:7b-instruct`, `llama3.1:8b`), je: Widersprüche gegen die Laufdaten (gezählt), Deutsch ja/nein, Sekunden je Tick, Grafikspeicher.
-**Fertig wenn:** Ein Modell ist gewählt, in `configs/simulation_config.json` eingetragen, und der Prüfsatz liegt als wiederholbarer Test vor (markiert, läuft nur mit Ollama). **Entscheidung von Haiko nötig:** Download von einigen GB je Kandidat.
-**Aufwand:** ½–1 Tag. **Zuerst**, weil V2 und V3 am gewählten Modell gemessen werden.
+**Befund:** Vorgeführt wird auf einem Laptop, ein größeres Modell läuft dort nicht — es bleibt bei `llama3.2` (3 Mrd. Parameter). Genau dieses Modell widerspricht in allen vier Abschlusstexten und in der Abfrage der Rechnung. Die Güte der Texte muss deshalb aus dem kommen, was das Modell bekommt (V3: Faktenblatt statt Deutung), nicht aus einem größeren Modell.
+**Was zu tun ist:** Einen **festen Prüfsatz** bauen — die vier Abschlusstexte eines Szenario-Vergleichs, fünf Abfragen mit bekannter Antwort (Preisverlauf, Buchungsrate, Faktorwechsel, CO₂-Abgabe, Vergleich zweier Ticks), die Agententexte eines Laufs über 6 Ticks. Gemessen je Durchgang: Widersprüche gegen die Laufdaten (gezählt), Deutsch ja/nein, Sekunden je Tick. Einmal jetzt als Ausgangswert, danach nach V2 und V3 — und **einmal auf dem Laptop**, weil dort die Sekunden je Tick über den Vorführbestand (V5) und das Drehbuch (V8) entscheiden.
+**Fertig wenn:** Der Prüfsatz liegt als wiederholbarer Test vor (markiert, läuft nur mit Ollama), der Ausgangswert ist festgehalten, und die Sekunden je Tick auf dem Laptop sind gemessen.
+**Aufwand:** ½ Tag. **Zuerst**, weil V2 und V3 daran gemessen werden.
 
 #### V2 — Alles, was das Modell schreibt, ist deutsch
 
 **Befund:** Die Prompts der drei Agenten sind englisch und verlangen keine Ausgabesprache; die Texte erscheinen englisch in Protokoll, Ereignisstreifen und Bericht. Der Abschlusstext ist deutsch, die Agenten nicht.
 **Fundstelle:** die LLM-Aufrufer im Lauf und daneben, gezählt am 2026-09-29: `src/agents/agent_node.py` mit `src/prompts/consumer.md`, `provider.md`, `regulator.md`; `src/cib/scenario_agent_node.py`; `src/reporting/run_scenario_generator/pipeline.py` und `prompt.py` mit `src/prompts/run_scenario.md`; `src/reporting/state_explorer.py`.
 **Was zu tun ist:** Jeden LLM-Aufrufer im Lauf auf eine deutsche Ausgabe festlegen (Anweisung im Prompt, die maschinenlesbaren Schlüssel bleiben wie sie sind). Ein Wächter, der **sucht statt aufzuzählen**: jeder Prompt unter `src/prompts/` und jeder Aufrufer, der `OllamaClient` benutzt, verlangt Deutsch.
-**Fertig wenn:** Ein Lauf über 6 Ticks mit dem gewählten Modell erzeugt keinen englischen Satz in `event_log.json`, `protocol.md`, `run_scenario.md`; Handbuch und `docs/agent_profiles.md` sagen es.
+**Fertig wenn:** Ein Lauf über 6 Ticks mit `llama3.2` erzeugt keinen englischen Satz in `event_log.json`, `protocol.md`, `run_scenario.md`; Handbuch und `docs/agent_profiles.md` sagen es.
 **Aufwand:** ½ Tag.
 
 #### V3 — Ein Text über einen Lauf widerspricht dessen Zahlen nicht
@@ -76,7 +75,7 @@
 #### V5 — Eine aufgeräumte Vorführumgebung mit vorgerechneten Läufen
 
 **Befund:** Ein Lauf mit Sprachmodell dauert Minuten; der Lauf-Browser listet 980 Ordner, darunter hunderte Mess- und Prüfläufe.
-**Was zu tun ist:** Einen **Vorführbestand** festlegen und vorrechnen, mit dem in V1 gewählten Modell: (1) «Business as Usual», 40 Ticks, mit Sprachmodell; (2) derselbe Rahmen mit angehobener CO₂-Abgabe (der Anwendungsfall aus dem Pitch); (3) Szenario-Vergleich der vier Rahmen über 120 Ticks. Der übrige Inhalt von `outputs/` wandert in ein Archiv außerhalb des Ordners (verschieben, nicht löschen). Ein kurzes Skript oder eine Anleitung, die den Bestand reproduzierbar erzeugt.
+**Was zu tun ist:** Einen **Vorführbestand** festlegen und vorrechnen, mit `llama3.2` und nach V2 bis V4: (1) «Business as Usual», 40 Ticks, mit Sprachmodell; (2) derselbe Rahmen mit angehobener CO₂-Abgabe (der Anwendungsfall aus dem Pitch); (3) Szenario-Vergleich der vier Rahmen über 120 Ticks. Der übrige Inhalt von `outputs/` wandert in ein Archiv außerhalb des Ordners (verschieben, nicht löschen). Ein kurzes Skript oder eine Anleitung, die den Bestand reproduzierbar erzeugt.
 **Fertig wenn:** Der Lauf-Browser zeigt nur den Vorführbestand; jeder Lauf darin besteht die Abnahme oben.
 **Aufwand:** ½ Tag Arbeit, dazu Rechenzeit.
 
@@ -87,12 +86,12 @@
 **Fertig wenn:** Das Protokoll liegt unter `docs/` und hat keinen offenen Befund der Stufe «bricht die Vorführung».
 **Aufwand:** 1 Tag, **zweimal**: einmal nach V1–V4, einmal als Generalprobe am Vortag.
 
-#### V7 — Der Vorführrechner und die Offline-Probe
+#### V7 — Der Laptop und die Offline-Probe
 
-**Befund:** Die Datenhoheits-Zusage heißt «kein Aufruf verlässt den Server» — für die Vorführung heißt sie: Es muss **ohne Internet** gehen. Ungeprüft ist, auf welchem Rechner vorgeführt wird, ob Ollama mit dem gewählten Modell dort läuft und wie schnell. `pitch.html` lädt seine Schriften von Google (ohne Netz greifen Systemschriften).
-**Was zu tun ist:** Den Rechner festlegen; dort `ollama pull` des gewählten Modells, `.venv`, Dashboard-Start, der Vorführbestand aus V5; dann **mit getrenntem Netz** V6 in Kurzform. Beamer-Auflösung prüfen. Die Schriften von `pitch.html` einbetten oder die Datei ohne Netz abnehmen. Ein Plan B: Bildschirmaufnahme des Vorführpfads als Video, falls vor Ort etwas nicht startet.
-**Fertig wenn:** Ein Durchgang ohne Netz auf dem Vorführrechner ist protokolliert; die Aufnahme liegt bereit.
-**Aufwand:** ½ Tag. **Entscheidung von Haiko nötig:** welcher Rechner.
+**Befund:** Die Datenhoheits-Zusage heißt «kein Aufruf verlässt den Server» — für die Vorführung heißt sie: Es muss **ohne Internet** gehen. Vorgeführt wird auf einem Laptop; ungeprüft ist, ob Ollama mit `llama3.2` dort läuft und wie schnell. `pitch.html` lädt seine Schriften von Google (ohne Netz greifen Systemschriften).
+**Was zu tun ist:** Auf dem Laptop `ollama pull llama3.2`, `.venv`, Dashboard-Start, der Vorführbestand aus V5; dann **mit getrenntem Netz** V6 in Kurzform. Beamer-Auflösung prüfen. Die Schriften von `pitch.html` einbetten oder die Datei ohne Netz abnehmen. Ein Plan B: Bildschirmaufnahme des Vorführpfads als Video, falls vor Ort etwas nicht startet.
+**Fertig wenn:** Ein Durchgang ohne Netz auf dem Laptop ist protokolliert; die Aufnahme liegt bereit.
+**Aufwand:** ½ Tag.
 
 #### V8 — Das Drehbuch der Vorführung
 
@@ -139,13 +138,13 @@ Diese Pakete bleiben offen, und das ist eine Entscheidung, keine Lücke: **P7.0*
 
 | Tag | Was |
 | --- | --- |
-| Di 30.09. | V1 (Modellwahl, Messung) · V4 |
+| Di 30.09. | V1 (Prüfsatz, Ausgangswert) · V4 |
 | Mi 01.10. | V2 · V3 (a, d) |
 | Do 02.10. | V3 (b, c) · V10 |
 | Fr 03.10. | V5 (Vorführbestand rechnen) · V9 |
 | Sa 04.10. | V6, erster Abnahme-Durchgang · daraus entstehende Befunde |
 | So 05.10. | Befunde aus V6 · V11 |
-| Mo 06.10. | V7 (Vorführrechner, Offline-Probe, Aufnahme) · V8 (Drehbuch) |
+| Mo 06.10. | V7 (Laptop, Offline-Probe, Aufnahme) · V8 (Drehbuch) |
 | Di 07.10. | **Einfrieren am Mittag** — danach nur noch Fehler, die die Vorführung brechen · V6 als Generalprobe |
 | Mi 08.10. | Pitch |
 
@@ -153,13 +152,14 @@ Diese Pakete bleiben offen, und das ist eine Entscheidung, keine Lücke: **P7.0*
 
 ## Entscheidungen, die Haiko treffen muss
 
-1. **Download eines größeren Modells** (einige GB je Kandidat) für V1 — ja oder nein.
-2. **Welcher Rechner** führt vor (V7), und ob dort eine Grafikkarte wie diese steckt. Ohne sie ist ein 8-Mrd.-Modell zu langsam für live, der vorgerechnete Bestand trägt dann alles.
-3. **Wann vorgeführt wird** — am Stand, in der Fragerunde, oder nur auf Nachfrage (V8).
-4. **Ob «Animation» repariert oder in der Vorführung ausgelassen wird** (V11).
+**Entschieden am 2026-09-29:** Vorgeführt wird auf einem Laptop, ein größeres Modell kommt nicht in Frage — es bleibt bei `llama3.2`.
+
+
+1. **Wann vorgeführt wird** — am Stand, in der Fragerunde, oder nur auf Nachfrage (V8).
+2. **Ob «Animation» repariert oder in der Vorführung ausgelassen wird** (V11).
 
 ## Risiken
 
 - **V3 ist Forschung, nicht nur Handwerk.** Richtungsaussagen gegen Daten zu prüfen ist machbar; freie Behauptungen wie «Elektroflotte» zu erkennen nur über das Faktenblatt (was dort nicht steht, darf der Text nicht behaupten). Fällt V3 kürzer aus, bleibt der Satz aus dem Pitch: Wir zeigen keine KI-Texte, die Rechnung trägt.
-- **Ein größeres Modell kann langsamer sein.** Dann wird der Vorführbestand wichtiger, und live wird nur «Nur Zahlen» gerechnet.
+- **Der Laptop kann deutlich langsamer rechnen** als der Entwicklungsrechner. Dann trägt der vorgerechnete Bestand (V5) alles mit Sprachmodell, und live wird nur «Nur Zahlen» gerechnet — das Drehbuch (V8) plant das von vornherein so.
 - **Neun Tage sind knapp.** Der Plan hält das Muss bei rund fünf Arbeitstagen, damit Puffer für die Befunde aus V6 bleibt.

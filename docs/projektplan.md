@@ -4458,13 +4458,13 @@ Jetzt liegen alle drei Wirte in einer `dcc.Loading` mit derselben Verzögerung, 
 
 | Paket | Stufe | Inhalt |
 | --- | --- | --- |
-| V1 | Muss | Sprachmodell wählen, an einem festen Prüfsatz gemessen (`llama3.2` gegen 7–8-Mrd.-Modelle; 8 GB Grafikspeicher vorhanden) |
+| V1 | Muss | Prüfsatz für alles, was `llama3.2` schreibt, mit Ausgangswert; Sekunden je Tick auf dem Vorführ-Laptop gemessen (ein größeres Modell läuft dort nicht, entschieden am 2026-09-29) |
 | V2 | Muss | Alles, was das Modell schreibt, ist deutsch; ein Wächter sucht jeden Aufrufer |
 | V3 | Muss | Ein Text über einen Lauf widerspricht dessen Zahlen nicht: N10, Faktenblatt für den Abschlusstext, Prüfung der Richtungsaussagen |
 | V4 | Muss | Der Abschlusstext liest die Daten seines eigenen Laufs; kein Artefakt eines vorigen Laufs bleibt liegen |
 | V5 | Muss | Aufgeräumte Vorführumgebung mit vorgerechneten Läufen |
 | V6 | Muss | Abnahme-Durchgang über jede Funktion, mit Protokoll — zweimal |
-| V7 | Muss | Vorführrechner und Probe ohne Netz, Aufnahme als Rückfall |
+| V7 | Muss | Laptop und Probe ohne Netz, Aufnahme als Rückfall |
 | V8 | Muss | Drehbuch der Vorführung |
 | V9 | Soll | Handbuch: die sechs offenen Befunde (4)–(9) der Gegenprüfung vom 2026-09-21 |
 | V10 | Soll | Vergleich zeigt nur Rahmen, Satzfehler «unter aus einem» (zieht P7.6-U6.4 vor) |
@@ -4472,7 +4472,7 @@ Jetzt liegen alle drei Wirte in einer `dcc.Loading` mit derselben Verzögerung, 
 | V12–V14 | Kann | Sprunglink, Rechtstexte der Landingpage (P1.4-Rest), Klick-Latenz (P7.11) |
 
 **Fertig wenn:** Der zweite Abnahme-Durchgang (V6, Generalprobe am 07.10.) hat keinen Befund der Stufe «bricht die Vorführung», und der Prüfsatz aus V1 ergibt keinen unmarkierten Widerspruch.
-**Entscheidungen von Haiko:** Download eines größeren Modells; welcher Rechner vorführt; wann vorgeführt wird; «Animation» reparieren oder auslassen.
+**Entscheidungen von Haiko:** wann vorgeführt wird; «Animation» reparieren oder auslassen. **Entschieden am 2026-09-29:** vorgeführt wird auf einem Laptop, es bleibt bei `llama3.2`.
 **Doku zieht mit:** dieser Plan und die Vollfassung (Stand je Paket), `docs/pitch_uebersicht.md` (Drehbuch, Vorführbestand), `docs/audit_findings.md` (behobene Zeilen entfernen), die Handbuchkapitel aus V9, `CLAUDE.md` (Glossar «State Explorer» bei V3, Invariante 1 bei V3/V4).
 
 ---
