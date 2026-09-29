@@ -1,6 +1,6 @@
 # Pitch-Skript: AeroForesight AI
 
-Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026). Er folgt Folie für Folie der Präsentation, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-09-28 — die Folien sind noch nicht nachgezogen, was abweicht, steht dort unter „Folien nachziehen“.
+Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026). Er folgt Folie für Folie der Präsentation, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-09-29; Folien, Sprechernotizen und dieser Text tragen denselben Stand.
 
 Länge: rund 275 Wörter, rund 2:45 Minuten bei ruhigem Tempo (etwa 100 Wörter pro Minute); der Rest der drei Minuten ist Puffer für Pausen und Folienwechsel. Wer ergänzt, streicht an anderer Stelle — bis zum 2026-09-28 waren es 229 Wörter, und der Zuwachs ist Folie 4, der Produktbeleg auf Folie 3 und die Bitte am Schluss. Kurze Sätze, keine Aufzählungen.
 
