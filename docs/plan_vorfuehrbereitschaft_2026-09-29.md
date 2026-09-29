@@ -42,12 +42,18 @@
 
 ### Muss — ohne diese keine Vorführung
 
-#### V1 — Mit `llama3.2` auf dem Laptop auskommen, mit Messung statt Gefühl
+#### V1 — Mit `llama3.2` auf dem Laptop auskommen, mit Messung statt Gefühl 🟡 bis auf die Messung am Laptop erledigt (2026-09-29)
 
 **Befund:** Vorgeführt wird auf einem Laptop, ein größeres Modell läuft dort nicht — es bleibt bei `llama3.2` (3 Mrd. Parameter). Genau dieses Modell widerspricht in allen vier Abschlusstexten und in der Abfrage der Rechnung. Die Güte der Texte muss deshalb aus dem kommen, was das Modell bekommt (V3: Faktenblatt statt Deutung), nicht aus einem größeren Modell.
 **Was zu tun ist:** Einen **festen Prüfsatz** bauen — die vier Abschlusstexte eines Szenario-Vergleichs, fünf Abfragen mit bekannter Antwort (Preisverlauf, Buchungsrate, Faktorwechsel, CO₂-Abgabe, Vergleich zweier Ticks), die Agententexte eines Laufs über 6 Ticks. Gemessen je Durchgang: Widersprüche gegen die Laufdaten (gezählt), Deutsch ja/nein, Sekunden je Tick. Einmal jetzt als Ausgangswert, danach nach V2 und V3 — und **einmal auf dem Laptop**, weil dort die Sekunden je Tick über den Vorführbestand (V5) und das Drehbuch (V8) entscheiden.
 **Fertig wenn:** Der Prüfsatz liegt als wiederholbarer Test vor (markiert, läuft nur mit Ollama), der Ausgangswert ist festgehalten, und die Sekunden je Tick auf dem Laptop sind gemessen.
 **Aufwand:** ½ Tag. **Zuerst**, weil V2 und V3 daran gemessen werden.
+
+**Stand am 2026-09-29.** Gebaut: `src/reporting/aussagen_pruefung.py` (die Prüfung: Sprache, Datum, Richtungsaussagen gegen den gerechneten Verlauf) und `src/reporting/pruefsatz_sprachmodell.py` (der Prüfsatz, schreibt `docs/pruefsatz_sprachmodell.md`). Deterministisch gehalten von `tests/test_aussagen_pruefung.py`, darin die vier Fälle vom 2026-09-29 als Regressionsfälle. **Kein Test mit Deckel über das Sprachmodell** — seine Antworten streuen, ein solcher Wächter würde ohne Anlass rot. **Der erste Durchlauf hat die Prüfung selbst korrigiert:** Drei Fehlalarme (Wortgrenze bei «abzunehmen», ein Bedingungssatz mit Formel, «Nachfrage» nur als Buchungsrate gelesen) stehen jetzt als Gegenproben in den Tests.
+
+**Ausgangswert auf dem Entwicklungsrechner, `llama3.2`** (zweiter Durchlauf, nach der Korrektur): Abschlusstexte 2 von 7 mit Richtungswiderspruch, Abfrage 2 von 10, **Agenten 15 von 17 englisch**, kein Datum, keine unbelegte Zahl; **9,7 s je Tick**. Einzelheiten und Wortlaut im Bericht; die Zahlen streuen zwischen Durchläufen (der erste ergab 3 von 8, 2 von 10 und 11 von 18).
+
+**Offen — Haiko, auf dem Laptop:** `python -m src.reporting.pruefsatz_sprachmodell --rechner "Vorführ-Laptop"` (Ollama mit `llama3.2` muss laufen, rund 5 min) und den Bericht zurück ins Repo; entscheidend ist die Zeile «Sekunden je Tick».
 
 #### V2 — Alles, was das Modell schreibt, ist deutsch
 
