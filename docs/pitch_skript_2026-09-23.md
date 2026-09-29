@@ -1,6 +1,6 @@
 # Pitch-Skript: AeroForesight AI (5 Minuten)
 
-Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026), Folie für Folie, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-09-29. **Die Folien sind noch auf dem Stand der 3-Minuten-Fassung** (acht Folien, ausformulierte Sätze); was sich an ihnen ändert, steht je Folie unter „Auf der Folie“.
+Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026), Folie für Folie, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-09-29. Deck und `pitch.html` tragen diesen Stand seit dem 2026-09-29 (zwölf Folien, dazu die Anhangfolien A1–A3); offen sind zwei Platzhalter.
 
 Länge: 12 Folien, **429 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wörter pro Minute) rund 4:15. Mit Pausen an den drei Produktfolien, damit das Publikum die Bilder ansieht, sind es rund **4:35**; der Rest der fünf Minuten ist Puffer. Gezählt wird nur der Text in den Zitatblöcken unter „Gesprochen“. Gesprochen wird nur, was unter „Gesprochen“ steht; wer ergänzt, streicht an anderer Stelle.
 
@@ -139,7 +139,7 @@ Länge: 12 Folien, **429 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wört
 
 ## Anhang für die Fragerunde
 
-Diese Folien werden nicht gezeigt, solange niemand fragt. Sie stehen nach der Bitte.
+Diese Folien werden nicht gezeigt, solange niemand fragt. Sie stehen nach der Bitte; A1 bis A3 sind als Folien gebaut, A4 bleibt mündlich.
 
 | # | Folie | Kern der Antwort |
 | --- | --- | --- |
