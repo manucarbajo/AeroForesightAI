@@ -56,7 +56,9 @@ blieb, `llm_incident_count` zählt sie, und `llm_degraded_ticks` nennt die
 betroffenen Ticks. Die drei stehen **immer** in der Datei, auch bei einem
 sauberen Lauf mit `false` und `0` — fehlen sie ganz, stammt der Lauf aus der
 Zeit vor dieser Aufzeichnung. `llm_incidents.json` entsteht dagegen nur, wenn es
-etwas zu berichten gibt.
+etwas zu berichten gibt — und rechnet ein Lauf in einen Ordner, in dem schon
+einmal gerechnet wurde (etwa ein Szenario-Vergleich), räumt er die Datei des
+früheren Laufs ab, wenn er selbst keinen Ausfall hatte.
 
 ## Woraus ein Lauf entstanden ist
 

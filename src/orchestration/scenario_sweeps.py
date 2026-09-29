@@ -756,6 +756,13 @@ def run_single_sweep(
         final_state.cib_matrix.metadata["consistency_score"] = consistency_score
     save_cib_matrix(final_state, run_dir=run_dir_path)
 
+    # **Die Metadaten stehen, bevor der Abschlusstext entsteht** (P8-V4): Der
+    # Generator liest sie von der Platte, und ein Sweep schreibt in einen festen
+    # Ordner — bis zum 2026-09-29 las er die des vorigen Durchlaufs und schrieb
+    # «50 Ticks» über einen Lauf mit 120. Unten wird noch einmal geschrieben,
+    # weil ein Ausfall im Text den Lauf als beeinträchtigt markiert.
+    save_run_metadata(final_state, dummy_args, run_dir=run_dir_path, run_id=run_id_str)
+
     # Generate LLM Scenario
     #
     # `llm=None` **und** `prefer_llm=False`: Der erste Wert allein genügte

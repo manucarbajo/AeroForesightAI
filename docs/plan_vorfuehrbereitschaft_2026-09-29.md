@@ -64,13 +64,15 @@
 **Fertig wenn:** Der Prüfsatz aus V1 ergibt **null unmarkierte Widersprüche**; die vier Fälle vom 2026-09-29 (CO₂ steigt bei 50 €, «Elektroflotte», Datum, «keine Veränderung im Ticketpreis») sind als Regressionsfälle festgehalten.
 **Aufwand:** 1½–2 Tage. **Das größte Paket und das wichtigste**: Invariante 1 verspricht es.
 
-#### V4 — Der Abschlusstext liest die Daten seines eigenen Laufs
+#### V4 — Der Abschlusstext liest die Daten seines eigenen Laufs ✅ erledigt 2026-09-29
 
 **Befund:** `save_run_outputs` und `run_single_sweep` erzeugen den Szenariotext, **bevor** `run_metadata.json` geschrieben ist: «? Ticks» im Einzellauf, die Tickzahl des vorigen Laufs im Szenario-Vergleich. `save_llm_incidents` schreibt ohne Vorfall nichts, eine alte Datei bleibt liegen.
 **Fundstelle:** `src/run_simulation.py::save_run_outputs`, `src/orchestration/scenario_sweeps.py::run_single_sweep`, `src/reporting/output_writer/llm_incidents.py`.
 **Was zu tun ist:** Die Metadaten vor dem Text bereitstellen (aus dem Zustand übergeben statt von der Platte lesen), und ein Lauf in einen bestehenden Ordner räumt die Artefakte des vorigen Laufs ab oder überschreibt jede. Ein Test, der die **echte** Schreibreihenfolge abbildet, nicht eine vorab angelegte Datei.
 **Fertig wenn:** Einzellauf und Szenario-Vergleich nennen die richtige Tickzahl, und ein zweiter Vergleich in denselben Ordnern hinterlässt keine Datei des ersten. Die zwei Zeilen in `audit_findings.md` sind entfernt.
 **Aufwand:** ½ Tag.
+
+**Erledigt am 2026-09-29.** Beide Startpfade schreiben `run_metadata.json` jetzt **vor** dem Abschlusstext und endgültig danach; `save_llm_incidents` räumt ohne Vorfall eine alte Datei im Laufordner ab (nie in der Ausgabewurzel). Gehalten von `tests/test_abschlusstext_liest_seinen_lauf.py` — Einzellauf als eigener Prozess, Szenario-Vergleich als zweiter Durchlauf in einen Ordner mit Artefakten eines 50-Tick-Laufs; gegen den alten Code vier von fünf Zusagen rot. `tests/test_run_provenance.py` prüft seither das **letzte** Schreiben der Metadaten nach dem Vorfall.
 
 #### V5 — Eine aufgeräumte Vorführumgebung mit vorgerechneten Läufen
 

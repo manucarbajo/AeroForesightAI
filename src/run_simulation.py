@@ -312,6 +312,15 @@ def save_run_outputs(
             run_dir=run_dir,
         )
 
+    # **Die Metadaten stehen, bevor der Abschlusstext entsteht** (P8-V4). Der
+    # Generator liest seine Grundlage von der Platte — richtig so, denn «Szenarien
+    # neu erzeugen» im Dashboard arbeitet nachträglich auf denselben Dateien. Bis
+    # zum 2026-09-29 lief er aber vor `save_run_metadata`: In einem neuen Ordner
+    # fand er keine Datei und schrieb «? Ticks», in einem wiederbenutzten die des
+    # vorigen Laufs. Geschrieben wird deshalb zweimal — hier für den Text, unten
+    # endgültig, weil ein Ausfall im Text den Lauf noch als beeinträchtigt markiert.
+    metadata_path = save_run_metadata(state, args, run_dir=run_dir, run_id=run_id)
+
     run_scenario_md_path = None
     run_scenario_json_path = None
     if not args.no_run_scenario:
