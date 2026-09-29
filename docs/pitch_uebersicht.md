@@ -10,7 +10,7 @@ Diese Seite beantwortet, wenn im Chat jemand fragt „wo ist der Pitch, wie änd
 | Gesprochener Text | [`docs/pitch_skript_2026-09-23.md`](pitch_skript_2026-09-23.md) | Die **5-Minuten-Fassung** mit zwölf Folien (rund 4:35): je Folie, was darauf steht und was gesprochen wird, dazu Anhang für die Fragerunde, die Quellen jeder Zahl und die Herleitung von TAM, SAM und SOM |
 | Bearbeitbare Fassung | Artefakt in claude.ai (Haikos Konto): <https://claude.ai/artifact/XRaiAGbnRJ4dj2VQ6qPBEw> | Hier wird der Pitch inhaltlich angepasst, und aus ihm entsteht `pitch.html`. Von dort lässt sich als PowerPoint oder PDF exportieren. Privat, bis es über das Teilen-Menü freigegeben ist |
 | Frühere Fassung | Artefakt in claude.ai (Manus Konto): <https://claude.ai/artifact/V8DxvLSBtGVAmrFFYnaVnz> | Manus Deck, auf dem die bearbeitbare Fassung am 2026-09-28 aufsetzt. Es liegt in einer anderen Organisation, und Änderungen daran ließen sich aus Haikos Sitzung nicht speichern; deshalb die Kopie. **Wird nicht mehr gepflegt** (von Haiko entschieden am 2026-09-29): Änderungen gehören in die bearbeitbare Fassung darüber |
-| Bild für Folie 3 | [`docs/pitch/pitch_folie3_leitstand.png`](pitch/pitch_folie3_leitstand.png), daneben `pitch_folie3_leitstand_voll.png` | Der Leitstand nach einem Lauf, 3160 × 2052 bzw. 3840 × 2160 px (1920 × 1080 bei doppelter Pixeldichte). Die erste Fassung ist ohne die linke Spalte zugeschnitten und für die Folie gedacht; die zweite zeigt das ganze Fenster. Wie sie entstanden sind, steht unten |
+| Bilder für die Folien | [`docs/pitch/`](pitch/): `pitch_folie3_leitstand.png` (Leitstand, in der 5-Minuten-Fassung Folie 5), daneben `pitch_folie3_leitstand_voll.png`, dazu `pitch_folie4_verlaeufe.png` und `pitch_folie6_szenarien.png` | Der Leitstand nach einem Lauf, 3160 × 2052 bzw. 3840 × 2160 px (1920 × 1080 bei doppelter Pixeldichte). Die erste Fassung ist ohne die linke Spalte zugeschnitten und für die Folie gedacht; die zweite zeigt das ganze Fenster. Wie sie entstanden sind, steht unten |
 | Diese Übersicht | `docs/pitch_uebersicht.md` | Wegweiser |
 
 ## Umbau auf 5 Minuten (seit 2026-09-29)
@@ -20,7 +20,7 @@ Anlass ist eine Vorab-Prüfung am 2026-09-29: Die Sprechzeit steigt von drei auf
 | Schritt | Stand |
 | --- | --- |
 | Skript für 5 Minuten | **erledigt** (2026-09-29) |
-| Drei ganzseitige Screenshots, einer mit KI-Erklärung aus einem Lauf mit Sprachmodell | offen, wartet auf einen laufenden Ollama |
+| Drei ganzseitige Screenshots | **erledigt** (2026-09-29): `docs/pitch/pitch_folie4_verlaeufe.png` (Verläufe, CO₂-Steuer angehoben), `pitch_folie3_leitstand.png` für Folie 5, `pitch_folie6_szenarien.png` (die vier Rahmen im Vergleich, frisch gerechnet über 120 Ticks); je 1920 × 1080 bei doppelter Pixeldichte. **Ohne KI-Text** (entschieden am 2026-09-29): Die Texte mit `llama3.2` widersprachen der Rechnung, und ein Bild der Ansicht „Abfrage“ scheiterte am selben Grund — siehe Skript |
 | Grafiken (Zeitstrahl, Kreislauf, Markttreppe, Vergleichstabelle, Bausteine) | offen |
 | Deck umbauen: zwölf Folien plus Anhang, Stichworte statt Sätze, Notizen gleich Skript | offen |
 | `pitch.html` neu erzeugen und jede Folie im Browser prüfen | offen |

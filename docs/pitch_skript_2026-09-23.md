@@ -2,7 +2,7 @@
 
 Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026), Folie für Folie, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-09-29. **Die Folien sind noch auf dem Stand der 3-Minuten-Fassung** (acht Folien, ausformulierte Sätze); was sich an ihnen ändert, steht je Folie unter „Auf der Folie“.
 
-Länge: 12 Folien, **425 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wörter pro Minute) rund 4:15. Mit Pausen an den drei Produktfolien, damit das Publikum die Bilder ansieht, sind es rund **4:35**; der Rest der fünf Minuten ist Puffer. Gezählt wird nur der Text in den Zitatblöcken unter „Gesprochen“. Gesprochen wird nur, was unter „Gesprochen“ steht; wer ergänzt, streicht an anderer Stelle.
+Länge: 12 Folien, **429 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wörter pro Minute) rund 4:15. Mit Pausen an den drei Produktfolien, damit das Publikum die Bilder ansieht, sind es rund **4:35**; der Rest der fünf Minuten ist Puffer. Gezählt wird nur der Text in den Zitatblöcken unter „Gesprochen“. Gesprochen wird nur, was unter „Gesprochen“ steht; wer ergänzt, streicht an anderer Stelle.
 
 **Die Regel für die Folien:** Sie stützen, sie lesen nicht vor. Auf einer Folie steht eine Zahl, ein Diagramm, ein Bild oder höchstens drei Stichworte — der ausformulierte Satz gehört in die Sprechernotizen. Bis zum 2026-09-28 stand fast jeder gesprochene Satz auch auf der Folie; das war der wichtigste Punkt der Vorab-Prüfung am 2026-09-29.
 
@@ -16,7 +16,8 @@ Länge: 12 Folien, **425 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wört
 | Förderung und Kapital | **Nicht im Pitch**, nur als vorbereitete Antwort in der Fragerunde |
 | Kundengespräche | Bisher keine — der Pitch behauptet deshalb keine |
 | Aussicht | „Luftfahrt ist der Einstieg, gebaut für regulierte Märkte mit vielen Akteuren“ — ohne Zahl für andere Branchen |
-| Bilder des Produkts | Drei ganzseitige Screenshots, darunter einer mit KI-Erklärung aus einem Lauf **mit** Sprachmodell |
+| Bilder des Produkts | Drei ganzseitige Screenshots: Einrichten mit Verlauf der CO₂-Abgabe, Leitstand, Szenarien im Vergleich |
+| KI-Texte (Nachtrag am selben Tag) | **Kein KI-Text auf den Folien**, und die KI wird nur als Zusammenfassung angekündigt, nicht als Erklärung. Anlass: Die Texte aus dem Szenario-Vergleich widersprachen der Rechnung (siehe „Herkunft der Fakten“). Getestet wurde zusätzlich ein Bild der Ansicht „Abfrage“ — **verworfen**, siehe „Herkunft der Fakten“ |
 
 ## Ablauf
 
@@ -56,35 +57,35 @@ Länge: 12 Folien, **425 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wört
 
 ## Folie 3: Lösung (0:20)
 
-**Auf der Folie:** ein Kreislauf — Passagiere ⇄ Fluggesellschaften ⇄ Regulierer → **Szenarien** → **KI erklärt**. Keine Sätze.
+**Auf der Folie:** ein Kreislauf — Passagiere ⇄ Fluggesellschaften ⇄ Regulierer → **Szenarien** → **KI fasst zusammen**. Keine Sätze.
 
 **Gesprochen:**
 
-> Genau die rechnen wir. In unserem Modell handeln Passagiere, Fluggesellschaften und Regulierer und reagieren aufeinander, Monat für Monat. Daraus entstehen mehrere Zukünfte, und die KI erklärt jede davon.
+> Genau die rechnen wir. In unserem Modell handeln Passagiere, Fluggesellschaften und Regulierer und reagieren aufeinander, Monat für Monat. Daraus entstehen mehrere Zukünfte. Eine KI fasst sie in Worte, die Zahlen liefert die Rechnung.
 
 ## Folie 4: Produkt — Szenario wählen (0:20)
 
-**Auf der Folie:** Screenshot, ganzseitig: der Bereich „Einrichten“ mit dem Verlauf der CO₂-Abgabe. Eine Marke: „① Szenario wählen“.
+**Auf der Folie:** Screenshot, ganzseitig: der Schritt „Verläufe“ — die CO₂-Steuer unter „Business as Usual“, gestrichelt das Szenario (50 €/t), durchgezogen dieser Lauf (ab Tick 24 hoch auf 200 €/t) (`docs/pitch/pitch_folie4_verlaeufe.png`). Eine Marke: „① Szenario wählen“.
 
 **Gesprochen:**
 
-> Stellt euch eine Netzwerkplanerin vor. Ihre Frage: Was passiert mit unserer Nachfrage, wenn der CO₂-Preis schneller steigt? Sie wählt ein Szenario und stellt die CO₂-Abgabe höher ein. Drei Entscheidungen, dann läuft es.
+> Stellt euch eine Netzwerkplanerin vor. Ihre Frage: Was passiert mit unserer Nachfrage, wenn der CO₂-Preis schneller steigt? Sie wählt ein Szenario, stellt die CO₂-Abgabe höher ein und startet.
 
 ## Folie 5: Produkt — Leitstand (0:25)
 
-**Auf der Folie:** Screenshot, ganzseitig: der Leitstand. Zwei Marken: „Jeder Punkt: ein Reisender“ · „Preis und Buchungen je Monat“.
+**Auf der Folie:** Screenshot, ganzseitig: der Leitstand (`docs/pitch/pitch_folie3_leitstand.png`, aufgenommen für die 3-Minuten-Fassung). Zwei Marken: „Jeder Punkt: ein Reisender“ · „Preis und Buchungen je Monat“.
 
 **Gesprochen:**
 
 > Jeder Punkt ist ein simulierter Reisender, der entscheidet: buchen oder nicht. Rechts sieht sie Buchungsrate, Ticketpreis und Kostendruck, Monat für Monat. Jede dieser Zahlen ist gerechnet, keine kommt von der KI.
 
-## Folie 6: Produkt — Vergleich und KI-Erklärung (0:20)
+## Folie 6: Produkt — Szenarien im Vergleich (0:20)
 
-**Auf der Folie:** Screenshot, ganzseitig: Szenarien nebeneinander, daneben ein Ausschnitt der KI-Erklärung aus einem Lauf **mit** Sprachmodell. Eine Marke: „③ Ergebnis“.
+**Auf der Folie:** Screenshot, ganzseitig: die vier Rahmenszenarien nebeneinander, Buchungsrate und Ticketpreis über 120 Ticks (`docs/pitch/pitch_folie6_szenarien.png`). Eine Marke: „③ Ergebnis“. **Kein KI-Text** — siehe „Herkunft der Fakten“.
 
 **Gesprochen:**
 
-> Am Ende legt sie die Szenarien nebeneinander. Die KI erklärt, was passiert ist und warum, in verständlichen Sätzen. Sie erzählt, sie rechnet nicht.
+> Am Ende legt sie die Szenarien nebeneinander. Auf einen Blick: In welcher Welt hält die Nachfrage, in welcher bricht sie weg, und was macht der Preis?
 
 ## Folie 7: Warum wir (0:30)
 
@@ -160,9 +161,11 @@ Jede Zahl und jede Behauptung über das Produkt ist hier belegt oder als eigene 
 | Forschung: tiefe Unsicherheit, mehrere Szenarien statt einer Prognose | ScienceDirect 2025, [„Aviation sector decarbonisation as a case of deep uncertainty"](https://www.sciencedirect.com/science/article/pii/S2214629625002397). Nur über die Trefferbeschreibung geprüft, nicht im Volltext gelesen |
 | Wie teuer der Ausstieg wird, hängt an mehreren Größen zugleich; „Wer das nur schätzt, plant im Blindflug“ | Folgt aus den Zeilen zu EU-ETS und SAF-Quote. Bewusst ein Bedingungssatz: Dass Airlines heute schätzen, ist nicht belegt und wird nicht behauptet (derselbe Grund, aus dem der Satz über Excel gestrichen wurde) |
 | Drei Akteure reagieren aufeinander, Monat für Monat | `README.md`, Paket `src/agents/`; ein Tick ist ein Monat (Glossar „Tick“ in `CLAUDE.md`) |
-| Drei Entscheidungen bis zum Start | Schrittfolge im Bereich „Einrichten“: Szenario, Länge, Rechenmodus; alle übrigen Schritte sind optional (`CLAUDE.md`, Abschnitt `config_editor/`) |
+| Sie stellt die CO₂-Abgabe höher ein und startet | Schritt „Verläufe“ im Bereich „Einrichten“; eine Abweichung vom Szenario wirkt nur mit „Eigene Werte anwenden“ (hinter der Feinabstimmung des ersten Schritts). Bis zum 2026-09-29 hieß es hier „Drei Entscheidungen, dann läuft es“ — für einen Lauf **mit** geänderter CO₂-Abgabe stimmt das nicht, es sind mehr |
 | Jeder Punkt ein simulierter Reisender, der bucht oder nicht | Szene im Leitstand; das Buchungsmodell zieht je Person gegen eine Wahrscheinlichkeit (Glossar „Logit-Modell“ in `CLAUDE.md`) |
 | Jede Zahl aus der Berechnung, die KI erzählt, sie rechnet nicht | Invariante 1 in `CLAUDE.md` |
+| „Eine KI fasst sie in Worte“ — und bewusst **nicht** „die KI erklärt jedes Szenario verständlich“ | Gemessen am 2026-09-29 an einem Szenario-Vergleich mit `llama3.2` (3B, lokal): Die Abschlusstexte widersprachen der Rechnung — „Business as Usual“ nannte steigende CO₂-Preise, obwohl die Abgabe dort bei 50 € bleibt; ein Text sprach von einer „Elektroflotte“, die das Modell nicht kennt; einer begann mit einem erfundenen Datum. Die Zahlen des Laufs waren davon unberührt. Deshalb zeigt keine Folie einen KI-Text, und das Versprechen ist auf das zurückgenommen, was stimmt: Die KI formuliert, sie rechnet nicht. Ob ein stärkeres lokales Modell bessere Texte liefert, ist nicht geprüft. **Die Ansicht „Abfrage“ ist ebenfalls kein Ausweg**, getestet am selben Tag: Auf „Wie haben sich Ticketpreis und Buchungsrate über den Lauf entwickelt?“ antwortete das Modell zum „Transformationskonflikt“ „Der Lauf zeigt jedoch keine Veränderung im Ticketpreis“ — gerechnet steigt er dort von rund 140 € auf über 400 €. Die Zahlenprüfung markierte nichts, weil sie Zahlen prüft und die Antwort kaum welche enthielt |
+| „In welcher Welt hält die Nachfrage, in welcher bricht sie weg“ | Szenario-Vergleich vom 2026-09-29 (Bild auf Folie 6): Unter „Transformationskonflikt“ fällt die Buchungsrate gegen null, während der Ticketpreis auf über 400 € steigt; die drei anderen Rahmen bleiben zwischen etwa 0,25 und 0,4 |
 | Sprachmodell auf eigener Infrastruktur, keine Daten an externe KI-Dienste | Ein einziger LLM-Client für ein lokal laufendes Ollama (`src/llm/llm_client.py`), Deployment-Ziel in `CLAUDE.md`. Bewusst nicht gesagt: „läuft beim Kunden“ — das Deployment ist laut `CLAUDE.md` noch nicht produktionsscharf |
 | Gemessen an Marktdaten 2015 bis 2024, offen, wo es trifft und wo nicht | `docs/backtest_vorlauf.md`, Paket `src/backtest/`. Ein Vergleich, keine Eichung. Stand 2026-09-28: Die Preisseite liegt 2016–2019 im Mittel 1,15 Indexpunkte neben der Zielreihe, die Nachfrageseite 25,04 (über alle bewerteten Jahre 9,82 bzw. 36,44). Deshalb „gemessen“ statt „geprüft“: Das Wort klang nach bestanden, und auf der Nachfrageseite ist es das nicht |
 | „Einzelprognose“ in der Vergleichstabelle | Keine Aussage über ein bestimmtes Unternehmen oder Werkzeug, sondern die Gegenposition, die die Forschung aus Zeile 3 kritisiert. Konkrete Wettbewerber werden nur mit Quelle genannt |
