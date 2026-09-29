@@ -48,7 +48,7 @@ Jede Zahl der Folien ist hier belegt oder als eigene Rechnung ausgewiesen.
 
 | Aussage | Beleg |
 | --- | --- |
-| Ab 2026 keine kostenlosen Emissionszertifikate für Airlines | [EASA, EU-Emissionshandel](https://www.easa.europa.eu/en/domains/environment/eaer/market-based-measures/eu-emissions-trading-system): Gratiszuteilung 25 % (2024), 50 % (2025), 0 % ab 2026 (Ausnahme: 20 Mio. Zertifikate als SAF-Anreiz) |
+| Ab 2026 keine kostenlosen Emissionszertifikate für Airlines | [EASA, EU-Emissionshandel](https://www.easa.europa.eu/en/domains/environment/eaer/market-based-measures/eu-emissions-trading-system): wörtlich: „Gradual phase-out of the free ETS allocation to airlines as follows: 25% in 2024; 50% in 2025 and 100% from 2026“. Die Prozente sind der **Abbau**: übrig bleiben 75 % (2024), 50 % (2025) und 0 % (ab 2026) der bisherigen Gratiszuteilung. Bis zum 2026-09-29 stand hier „Gratiszuteilung 25 % (2024)“, der umgekehrte Wert. Ausnahme: bis zu 20 Mio. Zertifikate 2024–2030 als SAF-Anreiz |
 | SAF-Quote 2 % ab 2025, 6 % bis 2030, 70 % bis 2050 | [EASA, Sustainable Aviation Fuels](https://www.easa.europa.eu/en/domains/environment/eaer/sustainable-aviation-fuels) (ReFuelEU Aviation) |
 | Forschung fordert mehrere Szenarien statt einer Prognose | ScienceDirect 2025, [„Aviation sector decarbonisation as a case of deep uncertainty"](https://www.sciencedirect.com/science/article/pii/S2214629625002397). Nur über die Trefferbeschreibung geprüft, nicht im Volltext gelesen |
 | Drei Akteure handeln gegeneinander | `README.md`, `CLAUDE.md`, Paket `src/agents/` |
