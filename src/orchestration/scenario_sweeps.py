@@ -42,7 +42,6 @@ from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
 from src.logging_setup import stdio_auf_utf8
 from src.market.market_feedback import BOOKING_YIELD_FEEDBACK
-from src.models.llm_models import LLMIncident
 from src.models.run_models import RunArgs
 from src.models.state_models import Rahmenszenario
 from src.models.sweep_models import (
@@ -67,7 +66,10 @@ from src.reporting.output_writer import (
     save_segment_analysis,
     save_tick_mechanics,
 )
-from src.reporting.run_scenario_generator import generate_and_save_run_scenario
+from src.reporting.run_scenario_generator import (
+    generate_and_save_run_scenario,
+    szenario_vorfall,
+)
 
 #: Sweeps laufen bewusst mit festem Seed — sie sollen vergleichbar sein,
 #: nicht variabel. Stand bis P0.6 zweimal als Literal im Modul: einmal im
@@ -783,16 +785,9 @@ def run_single_sweep(
     # Fiel er auf das Template zurück, stand im Sweep trotzdem
     # `degraded: false`. Dieselbe Kette wie in `run_simulation.save_run_outputs`,
     # und in derselben Reihenfolge: erst der Vorfall, dann die Metadaten.
-    scenario_llm_error = scenario_result.get("llm_error")
-    if scenario_llm_error:
-        final_state.llm_incidents.append(
-            LLMIncident(
-                tick=final_state.clock.current_tick,
-                caller="run_scenario_generator",
-                kind="call_failed",
-                error=str(scenario_llm_error),
-            )
-        )
+    vorfall = szenario_vorfall(scenario_result, final_state.clock.current_tick)
+    if vorfall is not None:
+        final_state.llm_incidents.append(vorfall)
 
     save_llm_incidents(final_state.llm_incidents, run_dir=run_dir_path)
     save_run_metadata(final_state, dummy_args, run_dir=run_dir_path, run_id=run_id_str)

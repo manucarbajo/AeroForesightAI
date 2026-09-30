@@ -19,7 +19,11 @@ from pydantic import BaseModel, Field
 
 #: Was genau schiefging. `call_failed` ist der Aufruf selbst; `no_op_emitted`
 #: sagt zusätzlich, dass der Agent daraufhin einen Leerzug eingesetzt hat.
-LLMIncidentKind = Literal["call_failed", "no_op_emitted"]
+#: `answer_unusable` (seit P8-V5): Das Modell hat geantwortet, aber die Antwort
+#: ließ sich nicht verwenden, und an ihre Stelle trat die Vorlage. Am 2026-09-30
+#: geschah das bei drei von sechs Läufen des Vorführbestands, **ohne** Vorfall —
+#: der Lauf sah vollwertig aus.
+LLMIncidentKind = Literal["call_failed", "no_op_emitted", "answer_unusable"]
 
 
 class LLMIncident(BaseModel):

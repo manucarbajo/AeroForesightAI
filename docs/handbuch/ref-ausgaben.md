@@ -61,12 +61,12 @@ gegeneinander», nicht «das passiert eher nicht».
 | `event_log.json` | Alle Ereignisse, einschließlich der als `[delta:…]` markierten Python-Änderungen |
 | `round_history.json` | Der Zustand je Tick — erst seit dem 11. September 2026 wirklich der dieses Ticks; ältere Läufe tragen in jedem Tick den Endzustand |
 | `run_metadata.json` | Ticks, Modell, Zeitstempel, **Rechendauer**, ob das Marktmodell aktiv war, ob der Lauf beeinträchtigt war — und woraus er entstanden ist (Seed, Rechenmodus, Konfigurations-Fingerabdruck, Codestand) |
-| `llm_incidents.json` | Nur vorhanden, wenn Aufrufe an das Sprachmodell ins Leere gingen: welcher Tick, welcher Aufrufer, welcher Fehler |
+| `llm_incidents.json` | Nur vorhanden, wenn Aufrufe an das Sprachmodell ins Leere gingen: welcher Tick, welcher Aufrufer, welcher Fehler. Die Art (`kind`) ist `call_failed` (der Aufruf scheiterte), `no_op_emitted` (ein Akteur setzte daraufhin aus) oder `answer_unusable` (das Modell antwortete, die Antwort ließ sich nicht verwenden, und an ihre Stelle trat die Vorlage) |
 | `segment_analysis.json` | Auswertung nach Segmenten |
 | `cib_matrix.json` | Die im Lauf verwendete Einflussmatrix |
 
 Drei Felder in `run_metadata.json` betreffen die Verlässlichkeit eines Laufs:
-`degraded` sagt, ob mindestens ein Aufruf an das Sprachmodell unbeantwortet
+`degraded` sagt, ob mindestens ein Aufruf an das Sprachmodell ohne verwertbare Antwort
 blieb, `llm_incident_count` zählt sie, und `llm_degraded_ticks` nennt die
 betroffenen Ticks. Die drei stehen **immer** in der Datei, auch bei einem
 sauberen Lauf mit `false` und `0` — fehlen sie ganz, stammt der Lauf aus der

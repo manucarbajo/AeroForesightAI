@@ -51,7 +51,6 @@ from src.llm.defaults import (
     DEFAULT_TEMPERATURE,
 )
 from src.logging_setup import configure_logging, stdio_auf_utf8
-from src.models.llm_models import LLMIncident
 from src.models.run_models import RunArgs, run_args_from
 from src.models.state_models import LLMConfig, Rahmenszenario
 from src.orchestration.checkpoint_manager import CheckpointManager, CheckpointVersionError
@@ -83,7 +82,10 @@ from src.reporting.protocol_generator import (
     build_protocol_payload,
     render_protocol_markdown,
 )
-from src.reporting.run_scenario_generator import generate_and_save_run_scenario
+from src.reporting.run_scenario_generator import (
+    generate_and_save_run_scenario,
+    szenario_vorfall,
+)
 from src.validation import BEFUND_KOPF, ValidationError, validate_llm_settings
 
 #: Die öffentliche Schnittstelle dieses Moduls (P3.6). Was nicht hier steht,
@@ -337,16 +339,9 @@ def save_run_outputs(
         # zurück, statt den fertig gerechneten Lauf mitzureißen. Damit das Ergebnis
         # nicht als vollwertiges Narrativ durchgeht, wird der Ausfall hier zum
         # Vorfall — und landet damit in `llm_incidents.json` und im Warnbanner.
-        scenario_llm_error = scenario_result.get("llm_error")
-        if scenario_llm_error:
-            state.llm_incidents.append(
-                LLMIncident(
-                    tick=state.clock.current_tick,
-                    caller="run_scenario_generator",
-                    kind="call_failed",
-                    error=str(scenario_llm_error),
-                )
-            )
+        vorfall = szenario_vorfall(scenario_result, state.clock.current_tick)
+        if vorfall is not None:
+            state.llm_incidents.append(vorfall)
 
     # Zuletzt, damit auch ein Ausfall im Szenario-Narrativ noch mitgezaehlt wird.
     llm_incidents_path = save_llm_incidents(state.llm_incidents, run_dir=run_dir)

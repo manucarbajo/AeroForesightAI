@@ -156,7 +156,7 @@ def lauf_kopf(summary: RunSummary) -> html.Div:
         kinder.append(
             ui.hinweis(
                 f"**Dieser Lauf ist beeinträchtigt:** {calls} an das Sprachmodell blieben "
-                "unbeantwortet.",
+                "ohne verwertbare Antwort.",
                 "warnung",
                 class_name="mt-2",
             )

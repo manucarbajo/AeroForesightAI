@@ -7,7 +7,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from src.llm import LLMCallable, auf_deutsch
+from src.llm import LLMCallable, MockLLM, auf_deutsch
+from src.models.llm_models import LLMIncident
 from src.reporting.aussagen_pruefung import laufzeilen, widersprueche
 from src.reporting.run_scenario_generator.candidates import _normalize_scenarios
 from src.reporting.run_scenario_generator.context import load_run_scenario_context
@@ -41,8 +42,14 @@ def generate_run_scenario(
     narrative: dict[str, Any] | None = None
     grounding_warnings: list[str] = []
     llm_error: str | None = None
+    llm_fehlerart = "call_failed"
 
-    if prefer_llm and llm is not None:
+    # **Ein Platzhalter ist kein Sprachmodell** (P8-V5): Ein Lauf «Ohne
+    # Sprachmodell» gibt `MockLLM` weiter, dessen Antwort nie ein Abschlusstext
+    # ist. Seit eine verworfene Antwort ein Vorfall ist, machte das jeden
+    # bewussten Lauf ohne Modell zu einem beeinträchtigten — genau das, was
+    # Invariante 1 ausschließt. Er bekommt die Vorlage, ohne gefragt zu werden.
+    if prefer_llm and llm is not None and not isinstance(llm, MockLLM):
         # Fällt der Aufruf aus, greift weiter unten `build_template_scenario` —
         # ein deterministisches Narrativ ohne Sprachmodell. Ohne dieses `except`
         # riss der Ausfall den ganzen Lauf mit, und zwar *nachdem* er gerechnet
@@ -85,6 +92,13 @@ def generate_run_scenario(
             narrative["source"] = "llm"
             if grounding_warnings:
                 narrative["grounding_warnings"] = grounding_warnings
+        elif llm_error is None:
+            # **Geantwortet, aber nicht verwertbar** (P8-V5). Bis dahin sprang hier
+            # die Vorlage ein, ohne dass es irgendwo stand — Invariante 1 verlangt,
+            # dass ein Ausfall sichtbar ist, und eine verworfene Antwort ist einer.
+            llm_error = f"Antwort nicht verwertbar: {_warum_unbrauchbar(parsed)}"
+            llm_fehlerart = "answer_unusable"
+            logger.warning("Lauf-Szenario: %s. Es wird die Vorlage verwendet.", llm_error)
 
     if narrative is None:
         narrative = build_template_scenario(context)
@@ -121,11 +135,49 @@ def generate_run_scenario(
         "grounding_warnings": grounding_warnings,
         "widersprueche": narrative.get("widersprueche", []),
         "llm_error": llm_error,
+        "llm_fehlerart": llm_fehlerart if llm_error else None,
         "agent_digest": context.agent_digest,
         "narrative": narrative,
         "ground_truth": ground_truth,
         "markdown": markdown,
     }
+
+
+def _warum_unbrauchbar(parsed: dict[str, Any] | None) -> str:
+    """Warum eine Antwort des Modells nicht übernommen wurde — für den Vorfall."""
+
+    if not isinstance(parsed, dict):
+        return "kein lesbares JSON-Objekt"
+    fehlt = [
+        name
+        for name, da in (
+            ("title", parsed.get("title")),
+            ("run_narrative", parsed.get("run_narrative") or parsed.get("observed_run")),
+        )
+        if not da
+    ]
+    if fehlt:
+        return "es fehlt " + ", ".join(fehlt)
+    return "weniger als zwei Szenarien"
+
+
+def szenario_vorfall(ergebnis: dict[str, Any], tick: int) -> LLMIncident | None:
+    """Der Vorfall zu einem Abschlusstext, der nicht vom Modell stammt — oder keiner.
+
+    **Eine Stelle für beide Startpfade** (Einzellauf und Szenario-Vergleich). Bis
+    P8-V5 baute jeder seinen Vorfall selbst, beide mit `call_failed` — eine
+    verworfene Antwort kam darin nicht vor.
+    """
+
+    fehler = ergebnis.get("llm_error")
+    if not fehler:
+        return None
+    return LLMIncident(
+        tick=tick,
+        caller="run_scenario_generator",
+        kind=ergebnis.get("llm_fehlerart") or "call_failed",
+        error=str(fehler),
+    )
 
 
 def save_run_scenario_artifacts(
