@@ -4463,7 +4463,7 @@ Jetzt liegen alle drei Wirte in einer `dcc.Loading` mit derselben Verzögerung, 
 | V3 | ✅ 2026-09-30 | Ein Text über einen Lauf widerspricht dessen Zahlen nicht: N10 behoben, Faktenblatt für Abschlusstext und Abfrage, Widersprüche markiert. Prüfsatz: Abschlusstexte 3 Widersprüche, **0 unmarkiert**; Abfrage 3 → **0**. Offen: Agententexte (5 in 18, nicht markiert) und frei erfundene Begriffe |
 | V4 | ✅ 2026-09-29 | Der Abschlusstext liest die Daten seines eigenen Laufs; kein Artefakt eines vorigen Laufs bleibt liegen |
 | V5 | ✅ 2026-09-30 | Aufgeräumte Vorführumgebung mit vorgerechneten Läufen: `python -m dashboard.vorfuehrbestand` archiviert `outputs/`, rechnet drei Läufe und prüft sie. Dabei gefunden und behoben: verworfene Antworten des Modells ohne Vorfall, im Lauf-Browser unsichtbare Einzelläufe, ein genanntes Jahr als Datum. Auf dem Laptop neu zu rechnen |
-| V6 | Muss | Abnahme-Durchgang über jede Funktion, mit Protokoll — zweimal |
+| V6 | 🟡 erster Durchgang 2026-09-30 | Abnahme-Durchgang über jede Funktion, mit Protokoll — zweimal. Erster Durchgang: jeder Bereich läuft, kein Befund «bricht»; sechs Befunde behoben, zehn offen mit Paket ([Protokoll](abnahme_v6_2026-09-30.md)). Offen: Generalprobe auf dem Laptop |
 | V7 | Muss | Laptop und Probe ohne Netz, Aufnahme als Rückfall |
 | V8 | Muss | Drehbuch der Vorführung |
 | V9 | Soll | Handbuch: die sechs offenen Befunde (4)–(9) der Gegenprüfung vom 2026-09-21 |

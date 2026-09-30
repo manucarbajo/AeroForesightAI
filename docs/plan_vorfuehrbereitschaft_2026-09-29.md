@@ -118,12 +118,14 @@ Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung,
 
 **Was in den Texten steht, muss kennen, wer vorführt** (V6, V8): In fünf der sechs Abschlusstexte steht ein markierter Widerspruch, fast immer «Nachfrage steigt», während sie fällt; im Einzellauf «Business as Usual» ein markiertes «Jahres 2025». **Auf dem Laptop ist der Bestand neu zu rechnen** — die Läufe tragen den Codestand und die Zeiten dieses Rechners.
 
-#### V6 — Abnahme-Durchgang: jede Funktion einmal angefasst, mit Protokoll
+#### V6 — Abnahme-Durchgang: jede Funktion einmal angefasst, mit Protokoll 🟡 erster Durchgang 2026-09-30
 
 **Befund:** Die Test-Suite ist grün, aber kein Test klickt die Vorführung von vorne bis hinten durch; der Weg «Einrichten → Lauf mit Sprachmodell starten → Fortschritt → Abbrechen → Ergebnisse» ist im Dashboard mit echtem Modell nicht geprüft.
 **Was zu tun ist:** Ein Protokoll über **jeden** Bereich und jede Ansicht: Einstieg und alle acht Schritte, beide Startwege (Einzellauf, Vergleich), alle drei Rechenmodi, Abbrechen eines Laufs, Leitstand mit Zeitleiste und Abspielen, alle sieben Ergebnis-Ansichten mit PNG-Export und «Dateien des Laufs», Abfrage mit fünf Fragen, Lauf-Browser mit Suche und Filter, Modell-Bereich lesen und einmal speichern **und zurücksetzen**, Handbuch mit Suche, Szenario sichern, helles und dunkles Design, 1920 × 1080 (Beamer) und 1280 × 800. Jede Abweichung wird ein Befund mit Paket.
 **Fertig wenn:** Das Protokoll liegt unter `docs/` und hat keinen offenen Befund der Stufe «bricht die Vorführung».
 **Aufwand:** 1 Tag, **zweimal**: einmal nach V1–V4, einmal als Generalprobe am Vortag.
+
+**Erster Durchgang am 2026-09-30**, Protokoll: [`abnahme_v6_2026-09-30.md`](abnahme_v6_2026-09-30.md). Jeder Bereich läuft, **kein offener Befund der Stufe «bricht»**. Sechs Befunde sind im Durchgang behoben und am laufenden Dashboard nachgeprüft: eine Tick-Frage wurde mit den Werten des ganzen Laufs beantwortet (eigener Fehler aus V3b), «Dateien des Laufs» führte zu «Szenario», der Prüfschritt nannte beim Rechenmodus das Gegenteil der Wahl, das Zugriffsprotokoll des Webservers stand im Fortschrittsfenster, ein Lauf mit veränderter CO₂-Abgabe war vom unveränderten Rahmen nicht zu unterscheiden, und die Einleitung des Modell-Bereichs widersprach dem Hinweis darunter. **Zehn Befunde bleiben offen** (sechs «stört», vier «klein») mit Paket im Protokoll. Zwei davon entscheiden über das Drehbuch: Der Entwurf bleibt nach einem Vergleich auf «Vergleich» stehen (vor jedem Einzellauf neu laden), und **im Pitch-Fall sinkt der Ticketpreis** nach dem Sprung der CO₂-Abgabe — das Modell rechnet so, aber man muss es erklären können. **Die fünf festen Fragen der Abfrage waren alle richtig.** Offen ist der zweite Durchgang: die Generalprobe auf dem Laptop.
 
 #### V7 — Der Laptop und die Offline-Probe
 
