@@ -158,10 +158,12 @@ def lauf_kopf(summary: RunSummary) -> html.Div:
     kinder: list = [html.P(" · ".join(teile), className=f"{ui.BESCHRIFTUNG} af-text-muted")]
     if summary.degraded:
         count = summary.llm_incident_count
+        # Das Verb zählt mit: «ein Aufruf … blieben» stand bis zum 2026-09-30 da.
         calls = "ein Aufruf" if count == 1 else f"{count} Aufrufe"
+        blieb = "blieb" if count == 1 else "blieben"
         kinder.append(
             ui.hinweis(
-                f"**Dieser Lauf ist beeinträchtigt:** {calls} an das Sprachmodell blieben "
+                f"**Dieser Lauf ist beeinträchtigt:** {calls} an das Sprachmodell {blieb} "
                 "ohne verwertbare Antwort.",
                 "warnung",
                 class_name="mt-2",

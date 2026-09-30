@@ -163,14 +163,14 @@ def test_degraded_run_is_flagged_above_every_tab(tmp_path):
     rendered = _text(runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=3)))
 
     assert "beeinträchtigt" in rendered
-    assert "3 Aufrufe" in rendered
+    assert "3 Aufrufe an das Sprachmodell blieben" in rendered
     assert "llm_incidents.json" in rendered
 
 
 def test_a_single_incident_is_phrased_in_the_singular(tmp_path):
     rendered = _text(runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=1)))
 
-    assert "ein Aufruf" in rendered
+    assert "ein Aufruf an das Sprachmodell blieb ohne" in rendered
 
 
 def test_a_clean_run_gets_no_warning(tmp_path):
