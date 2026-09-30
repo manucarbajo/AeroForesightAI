@@ -195,14 +195,24 @@ def ist_englisch(text: str) -> bool:
     return en >= 3 and en > de
 
 
+def richtung_von(anfang: float, ende: float) -> str:
+    """«steigt», «sinkt» oder «gleich» — die eine Antwort auf diese Frage im Paket.
+
+    Mehr als `SCHWELLE` relative Änderung vom Anfangs- zum Endwert ist eine
+    Richtung, darunter bleibt die Größe gleich. Ein Anfangswert von null misst
+    die Änderung absolut.
+    """
+
+    bezug = abs(anfang) if anfang else 1.0
+    aenderung = (ende - anfang) / bezug
+    return "steigt" if aenderung > SCHWELLE else "sinkt" if aenderung < -SCHWELLE else "gleich"
+
+
 def _richtung(ticks: list[dict[str, Any]], feld: str) -> str | None:
     werte = [float(t[feld]) for t in ticks if isinstance(t.get(feld), (int, float))]
     if len(werte) < 2:
         return None
-    anfang, ende = werte[0], werte[-1]
-    bezug = abs(anfang) if anfang else 1.0
-    aenderung = (ende - anfang) / bezug
-    return "steigt" if aenderung > SCHWELLE else "sinkt" if aenderung < -SCHWELLE else "gleich"
+    return richtung_von(werte[0], werte[-1])
 
 
 def verlaeufe(ticks: list[dict[str, Any]]) -> dict[str, frozenset[str]]:
