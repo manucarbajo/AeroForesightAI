@@ -156,6 +156,8 @@ Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung,
 **Fertig wenn:** Ein Testlauf in `outputs/sweeps/` taucht im Vergleich nicht auf; ein Wächter hält es.
 **Aufwand:** ¼ Tag.
 
+**Erledigt am 2026-09-30** (`da2bbd2`), zusammen mit Befund 9 des Abnahme-Durchgangs (`268e6cc`, `f278c00`, `d3e8831`). Der Vergleich nimmt nur Läufe unter einem heutigen Rahmenszenario, der Satz darunter nennt die Zahl der Rahmen und der ausgeblendeten Läufe; gehalten von `tests/test_web_vergleich_rahmen.py`. Befund 9: Nach dem Vergleich ist ein Rahmen gewählt, die Fertigmeldung nennt die Rahmen und geht nicht mehr verloren, der Ladebildschirm zählt Szenarien. Am laufenden Dashboard mit einem künstlichen Prüflauf nachgeprüft ([Nachtrag im Protokoll](abnahme_v6_2026-09-30.md)).
+
 #### V11 — «Animation» ohne acht Sekunden Warten
 
 **Befund:** 8,5 s und 9,1 MiB je Aufruf, weil die Ansicht Personen statt Ergebnisse überträgt (P7.6-U6.2).
