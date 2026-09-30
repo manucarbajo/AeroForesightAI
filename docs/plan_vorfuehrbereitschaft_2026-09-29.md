@@ -65,7 +65,7 @@
 
 **Erledigt am 2026-09-29.** Die Anweisung steht einmal in `src/llm/sprache.py` (`AUSGABESPRACHE`); alle vier Aufrufer hängen sie über `auf_deutsch` ans Ende ihres Prompts, die Abfrage vor «ANSWER:». `tests/test_ausgabesprache.py` sucht jeden Aufruf `.call(` in `src/` und verlangt sie (Gegenprobe: ohne sie bei den Agenten rot); die Abfrage baut ihren Prompt seither an einer Stelle statt an zweien. **Gemessen mit dem Prüfsatz, Entwicklungsrechner, `llama3.2`: Agenten englisch 15 von 17 → 0 von 17**, Abschlusstexte und Abfrage weiterhin 0. **Zwei Nebenbefunde:** Die Zeit je Tick stieg von 9,7 auf **13,8 s** (längerer Prompt, längere deutsche Antworten; eine Messung, sie streut) — für den Laptop wichtig; und das kleine Modell **wiederholt sich** über die Ticks (dieselbe Zeile zu E-Fuels dreimal in sechs Ticks), obwohl der Prompt das verbietet. Das Zweite gehört zu V3 und V6.
 
-#### V3 — Ein Text über einen Lauf widerspricht dessen Zahlen nicht
+#### V3 — Ein Text über einen Lauf widerspricht dessen Zahlen nicht ✅ erledigt 2026-09-30
 
 **Befund:** Die Zahlenprüfung aus P2.5 gilt nur für die Abfrage, prüft keine Richtungsaussagen («steigt», «sinkt») und lässt ganzzahlige Prozentangaben ungeprüft durch (N10). Abschlusstext und Szenariotext sind gar nicht geprüft.
 **Was zu tun ist:** (a) N10 beheben (Prozentangaben gegen die passende Größe, nicht gegen jede Zahl). (b) Den Abschlusstext mit einem **Faktenblatt** erzeugen, das die Richtung jeder Kerngröße über den Lauf bereits ausrechnet (Preis, Buchungsrate, CO₂-Abgabe, SAF-Quote, Faktorwechsel) — das Modell formuliert, statt zu deuten. (c) Eine Prüfung der Richtungsaussagen gegen dieses Faktenblatt; ein Widerspruch wird markiert wie eine unbelegte Zahl. (d) Der Vorbehalt der Abfrage erscheint immer, nicht nur bei einer unbelegten Zahl.
@@ -79,6 +79,16 @@
 - **(b) erledigt.** Das Faktenblatt (`aussagen_pruefung.faktenblatt_saetze`) nennt die Richtung von CO₂-Abgabe, SAF-Quote, Kostendruck, Ticketpreis, Buchungsrate und Nachfrageniveau mit Anfangs- und Endwert und jeden Faktorwechsel; Abschlusstext und Abfrage bekommen es vor den Rohdaten, `run_scenario.json` trägt es unter `ground_truth`. `booking_trend`/`price_trend` mit eigenen Schwellen sind aus dem Prompt entfernt. Gemessen wird die Wirkung mit (c) zusammen im Prüfsatz.
 - **(c) erledigt.** Was ein Abschlusstext über den gerechneten Lauf sagt (Titel, Zusammenfassung, Laufverlauf, Auswahlbegründung — nicht die drei Szenarien), wird gegen die Rechnung gehalten; ein Widerspruch steht als `widersprueche` in `run_scenario.json`, im Markdown und im Dashboard direkt unter dem Lauf-Narrativ. Die Abfrage zeigt ihn als Warnblock (nicht bei einer Frage zu einem einzelnen Tick). Die Fälle vom 2026-09-29 sind Regressionsfälle — **bis auf «Elektroflotte»**: Eine frei erfundene Sache ohne falsche Richtung erkennt die Prüfung nicht, der Rest steht in `audit_findings.md`. Der Prüfsatz hat die Spalte «davon unmarkiert»; die Agententexte markiert das Produkt nicht (sie beschreiben einen Tick).
 - **Nachgezogen:** Auch die deterministische Vorlage des Abschlusstexts urteilt seither mit derselben Richtung (`richtung_von`) statt mit eigenen absoluten Schwellen — sonst hätte die Prüfung Pythons eigenen Satz markiert.
+
+**Gemessen am 2026-09-30 mit dem Prüfsatz** (Entwicklungsrechner, `llama3.2`, Bericht in `docs/pruefsatz_sprachmodell.md`):
+
+| Weg | Texte | Richtungswiderspruch | davon unmarkiert | vorher (29.09.) |
+| --- | ---: | ---: | ---: | --- |
+| Abschlusstexte | 10 | 3 | **0** | 3 von 7, keiner markiert |
+| Abfrage | 10 | **0** | 0 | 3, keiner markiert |
+| Agenten | 18 | 5 | 5 | 1 |
+
+Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung, sie streut). **Das Kriterium ist für Abschlusstext und Abfrage erfüllt.** Zwei Dinge bleiben, und beide gehören in die Vorführung: (1) Alle drei Widersprüche im Abschlusstext sind dieselbe Aussage — «Nachfrage steigt», während Buchungsrate und Nachfrageniveau fallen; das Faktenblatt allein bringt `llama3.2` davon nicht ab. Sie stehen markiert unter dem Text, aber sichtbar. (2) Die **Agenten** schreiben in fünf von 18 Texten von gestiegener Nachfrage, und das Produkt markiert sie nicht, weil sie einen Tick beschreiben. Im Ereignisstreifen sind sie zu sehen — für V6 und V8 ein bekannter Punkt, kein Befund, der die Vorführung bricht. Beides steht in `audit_findings.md`.
 
 #### V4 — Der Abschlusstext liest die Daten seines eigenen Laufs ✅ erledigt 2026-09-29
 

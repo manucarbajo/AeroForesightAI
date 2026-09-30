@@ -4460,7 +4460,7 @@ Jetzt liegen alle drei Wirte in einer `dcc.Loading` mit derselben Verzögerung, 
 | --- | --- | --- |
 | V1 | 🟡 bis auf die Laptop-Messung (2026-09-29) | Prüfsatz für alles, was `llama3.2` schreibt, mit Ausgangswert; Sekunden je Tick auf dem Vorführ-Laptop gemessen (ein größeres Modell läuft dort nicht, entschieden am 2026-09-29) |
 | V2 | ✅ 2026-09-29 | Alles, was das Modell schreibt, ist deutsch; ein Wächter sucht jeden Aufrufer (Agenten englisch 15/17 → 0/17) |
-| V3 | Muss | Ein Text über einen Lauf widerspricht dessen Zahlen nicht: N10, Faktenblatt für den Abschlusstext, Prüfung der Richtungsaussagen |
+| V3 | ✅ 2026-09-30 | Ein Text über einen Lauf widerspricht dessen Zahlen nicht: N10 behoben, Faktenblatt für Abschlusstext und Abfrage, Widersprüche markiert. Prüfsatz: Abschlusstexte 3 Widersprüche, **0 unmarkiert**; Abfrage 3 → **0**. Offen: Agententexte (5 in 18, nicht markiert) und frei erfundene Begriffe |
 | V4 | ✅ 2026-09-29 | Der Abschlusstext liest die Daten seines eigenen Laufs; kein Artefakt eines vorigen Laufs bleibt liegen |
 | V5 | Muss | Aufgeräumte Vorführumgebung mit vorgerechneten Läufen |
 | V6 | Muss | Abnahme-Durchgang über jede Funktion, mit Protokoll — zweimal |
