@@ -117,8 +117,8 @@ betroffenen Stellen hat der jeweilige Akteur ausgesetzt.
 
 **Auch eine Antwort, die sich nicht verwenden ließ, zählt** (seit Ende September
 2026): Hat das Modell zum Abschlusstext geantwortet, aber etwa ohne Titel oder in
-kaputtem Format, steht dort die deterministische Vorlage — und der Lauf ist
-beeinträchtigt. Vorher sah er in diesem Fall vollwertig aus.
+kaputtem Format, fragt das Programm ein zweites Mal; ist auch diese Antwort unbrauchbar, steht
+dort die deterministische Vorlage — und der Lauf ist beeinträchtigt. Vorher sah er in diesem Fall vollwertig aus.
 
 Welche Ticks es traf und woran es lag, steht in `llm_incidents.json`; im Tab
 **Dateien** lässt sie sich öffnen. Die häufigste Ursache ist ein nicht laufendes

@@ -444,3 +444,57 @@ def test_a_run_without_a_language_model_is_no_incident(tmp_path) -> None:
 
     assert result["source"] == "template"
     assert pipeline.szenario_vorfall(result, tick=3) is None
+
+
+def test_an_unusable_answer_gets_a_second_try(tmp_path) -> None:
+    """Die Antworten streuen — eine unbrauchbare wird einmal wiederholt, bevor die Vorlage einspringt."""
+
+    import json as _json
+
+    from src.reporting.run_scenario_generator import pipeline
+    from tests.test_run_scenario_generator import _write_scenario_fixture
+    from tests.test_widerspruch_markiert import RICHTIG
+
+    run_dir = tmp_path / "lauf"
+    _write_scenario_fixture(run_dir, booking_start=0.7, booking_end=0.3)
+    gut = _json.dumps(
+        {
+            "title": "Titel",
+            "summary": "Eine sachliche Zusammenfassung des Laufs. " * 6,
+            "run_narrative": RICHTIG,
+            "scenarios": [
+                {"candidate_id": "C1", "story": "a"},
+                {"candidate_id": "C2", "story": "b"},
+            ],
+        }
+    )
+
+    class _ErstKaputt:
+        aufrufe = 0
+
+        def call(self, prompt: str) -> str:
+            _ErstKaputt.aufrufe += 1
+            return "kein JSON" if _ErstKaputt.aufrufe == 1 else gut
+
+    result = pipeline.generate_run_scenario("lauf", _ErstKaputt(), run_dir=run_dir)
+
+    assert _ErstKaputt.aufrufe == 2
+    assert result["source"] == "llm" and result["llm_error"] is None
+
+
+def test_two_unusable_answers_are_one_incident(tmp_path, monkeypatch) -> None:
+    from src.reporting.run_scenario_generator import pipeline
+
+    monkeypatch.setattr(pipeline, "load_run_scenario_context", _stub_context)
+    monkeypatch.setattr(pipeline, "build_scenario_prompt", lambda context: "prompt")
+    aufrufe = []
+
+    class _ImmerKaputt:
+        def call(self, prompt: str) -> str:
+            aufrufe.append(prompt)
+            return "kein JSON"
+
+    result = pipeline.generate_run_scenario("run_x", _ImmerKaputt(), run_dir=tmp_path)
+
+    assert len(aufrufe) == pipeline.VERSUCHE
+    assert result["llm_error"] == "Antwort nicht verwertbar: kein lesbares JSON-Objekt"

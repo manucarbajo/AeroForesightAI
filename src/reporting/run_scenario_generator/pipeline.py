@@ -57,25 +57,36 @@ def generate_run_scenario(
         # Lauf in der Liste — die Degradation wäre unsichtbar, weil gar nichts
         # ankommt. Der Fehler geht als `llm_error` an den Aufrufer zurück, der
         # ihn als Vorfall protokolliert.
-        try:
-            raw = llm.call(auf_deutsch(build_scenario_prompt(context)))
-        except Exception as exc:  # noqa: BLE001 - jeder Backend-Fehler endet im Template
+        prompt = build_scenario_prompt(context)
+        parsed: dict[str, Any] | None = None
+        # **Eine unbrauchbare Antwort bekommt einen zweiten Versuch** (P8-V5). Die
+        # Antworten von `llama3.2` streuen: Beim Vorführbestand kam auch nach dem
+        # nachsichtigen Lesen einer von sechs Texten als «kein lesbares
+        # JSON-Objekt» zurück, während zwölf direkte Aufrufe mit demselben Prompt
+        # gelangen. Ein gescheiterter **Aufruf** wird hier nicht wiederholt — das
+        # tut der Client schon, mit Backoff.
+        for versuch in range(1, VERSUCHE + 1):
+            try:
+                raw = llm.call(auf_deutsch(prompt))
+            except Exception as exc:  # noqa: BLE001 - jeder Backend-Fehler endet im Template
+                logger.warning(
+                    "Lauf-Szenario konnte nicht vom Sprachmodell erzeugt werden: %s. "
+                    "Es wird das deterministische Template verwendet.",
+                    exc,
+                )
+                llm_error = f"{type(exc).__name__}: {exc}"
+                break
+            parsed = _extract_json_object(raw)
+            if _brauchbar(parsed):
+                break
             logger.warning(
-                "Lauf-Szenario konnte nicht vom Sprachmodell erzeugt werden: %s. "
-                "Es wird das deterministische Template verwendet.",
-                exc,
+                "Lauf-Szenario: Antwort %d von %d nicht verwertbar (%s).",
+                versuch,
+                VERSUCHE,
+                _warum_unbrauchbar(parsed),
             )
-            llm_error = f"{type(exc).__name__}: {exc}"
-            raw = ""
-        parsed = _extract_json_object(raw)
-        scenarios_raw = parsed.get("scenarios") if isinstance(parsed, dict) else None
-        if (
-            isinstance(parsed, dict)
-            and parsed.get("title")
-            and (parsed.get("run_narrative") or parsed.get("observed_run"))
-            and isinstance(scenarios_raw, list)
-            and len(scenarios_raw) >= 2
-        ):
+        if parsed is not None and _brauchbar(parsed):
+            scenarios_raw = parsed["scenarios"]
             parsed["factor_profile"] = factor_profile
             parsed["agent_digest"] = context.agent_digest
             if not parsed.get("run_narrative"):
@@ -141,6 +152,23 @@ def generate_run_scenario(
         "ground_truth": ground_truth,
         "markdown": markdown,
     }
+
+
+#: Wie oft der Abschlusstext erfragt wird, bevor die Vorlage einspringt.
+VERSUCHE = 2
+
+
+def _brauchbar(parsed: dict[str, Any] | None) -> bool:
+    """Ob sich aus der Antwort ein Abschlusstext bauen lässt: Titel, Laufverlauf, zwei Szenarien."""
+
+    szenarien = parsed.get("scenarios") if isinstance(parsed, dict) else None
+    return bool(
+        isinstance(parsed, dict)
+        and parsed.get("title")
+        and (parsed.get("run_narrative") or parsed.get("observed_run"))
+        and isinstance(szenarien, list)
+        and len(szenarien) >= 2
+    )
 
 
 def _warum_unbrauchbar(parsed: dict[str, Any] | None) -> str:
