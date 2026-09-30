@@ -156,3 +156,23 @@ class TestPruefen:
         hart, hinweise = pruefen(self._lauf(tmp_path, widersprueche=widerspruch), "llm")
 
         assert hart == [] and len(hinweise) == 1
+
+
+class TestDerLaufBrowserZeigtDenBestand:
+    def test_jeder_lauf_des_bestands_steht_in_der_liste(self, tmp_path: Path):
+        """**Der erste Bestand am 2026-09-30 war zur Hälfte unsichtbar.** Die Einzelläufe
+        hießen `vorfuehrung_bau` und `vorfuehrung_co2`, und `list_runs` nimmt nur
+        Ordner auf, die mit `run_` beginnen — ausgerechnet der Pitch-Fall fehlte."""
+
+        from dashboard.run_browser import list_runs
+
+        erwartet = [ordner for lauf in bestand() for ordner in lauf.ordner]
+        for ordner in erwartet:
+            (tmp_path / ordner).mkdir(parents=True)
+            (tmp_path / ordner / "run_metadata.json").write_text(
+                json.dumps({"timestamp": "2026-09-30T10:00:00+00:00"}), encoding="utf-8"
+            )
+
+        gefunden = {lauf.run_id for lauf in list_runs(tmp_path)}
+
+        assert set(erwartet) <= gefunden, set(erwartet) - gefunden

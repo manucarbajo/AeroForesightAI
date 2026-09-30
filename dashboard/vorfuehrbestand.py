@@ -104,11 +104,11 @@ def bestand() -> list[Vorfuehrlauf]:
                 scenario_mode="sweep",
                 sweep_id="business_as_usual",
                 simulation_name="Vorführung: Business as Usual",
-                run_id="vorfuehrung_bau",
+                run_id="run_vorfuehrung_bau",
                 **mit_modell,
             ),
             rechenmodus="llm",
-            ordner=("vorfuehrung_bau",),
+            ordner=("run_vorfuehrung_bau",),
         ),
         Vorfuehrlauf(
             kennung="vorfuehrung_co2",
@@ -120,11 +120,11 @@ def bestand() -> list[Vorfuehrlauf]:
                 apply_custom_overrides=True,
                 abweichungen={"carbon_tax_level": CO2_ABWEICHUNG},
                 simulation_name="Vorführung: CO₂-Abgabe steigt auf 200 €",
-                run_id="vorfuehrung_co2",
+                run_id="run_vorfuehrung_co2",
                 **mit_modell,
             ),
             rechenmodus="llm",
-            ordner=("vorfuehrung_co2",),
+            ordner=("run_vorfuehrung_co2",),
         ),
     ]
 
