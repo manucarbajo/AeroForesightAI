@@ -394,6 +394,10 @@ def _zahlen(text: str) -> list[tuple[str, float, int, bool]]:
     return gefunden
 
 
+def _zahlwort(anzahl: int) -> str:
+    return "1 Zahl" if anzahl == 1 else f"{anzahl} Zahlen"
+
+
 @dataclass(frozen=True)
 class Antwort:
     """Was der Explorer zurückgibt — **samt Prüfung** (P2.5).
@@ -424,14 +428,33 @@ class Antwort:
         return not self.unbelegt
 
     def __str__(self) -> str:
-        """Antwort mit angehängtem Vorbehalt, wenn es einen gibt.
+        """Antwort mit angehängtem Vorbehalt — **immer**, nicht nur bei einem Befund.
 
         Damit bleibt jeder Aufrufer, der die Antwort als Text behandelt,
         richtig — und bekommt die Warnung mit, statt sie zu verlieren.
+
+        **Bis P8-V3 stand die Auskunft nur unter einer markierten Antwort** (Rest
+        von N10). Eine Antwort ohne unbelegte Zahl — oder ganz ohne Zahl — sah
+        damit genauso aus wie eine ungeprüfte, und gerade die Antwort, deren
+        falsche Prozentangabe durchgerutscht war, trug keinen Hinweis. Die
+        Abwägung aus B7c («sonst geht die Markierung in einer Fußnote unter»)
+        gilt weiter für die **Form**: Der Hinweis unter einer belegten Antwort ist
+        ein Satz, die Warnung unter einer unbelegten bleibt ein Block.
         """
 
         if self.belegt:
-            return self.text
+            if self.geprueft == 0:
+                hinweis = (
+                    "Prüfung: Diese Antwort enthält keine Zahl, die sich gegen die "
+                    "Laufdaten halten ließe."
+                )
+            else:
+                hinweis = (
+                    f"Prüfung: {_zahlwort(self.geprueft)} der Antwort, gehalten gegen "
+                    f"{self.kontextzahlen} verschiedene Zahlen der Laufdaten — jede kommt "
+                    "dort vor. Ob an der richtigen Stelle, prüft das nicht."
+                )
+            return f"{self.text}\n\n_{hinweis}_"
         zahlen = ", ".join(self.unbelegt)
         return (
             f"{self.text}\n\n"

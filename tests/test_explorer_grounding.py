@@ -152,10 +152,21 @@ class TestDieZahlenzerlegungIstDerWundePunkt:
 class TestDerVorbehaltGehtNichtVerloren:
     """Eine Prüfung, deren Ergebnis niemand sieht, ist keine."""
 
-    def test_eine_belegte_antwort_bleibt_unveraendert(self):
-        text = "Der Ticketpreis lag bei 140,38 Euro."
+    def test_eine_belegte_antwort_traegt_einen_pruefhinweis(self):
+        """**Rest von N10, behoben mit P8-V3 (d).** Bis dahin blieb eine belegte
+        Antwort ohne Anhang — und sah damit aus wie eine ungeprüfte."""
 
-        assert str(pruefe_gegen_kontext(text, KONTEXT)) == text
+        text = "Der Ticketpreis lag bei 140,38 Euro."
+        ausgabe = str(pruefe_gegen_kontext(text, KONTEXT))
+
+        assert ausgabe.startswith(text)
+        assert "Prüfung: 1 Zahl der Antwort" in ausgabe
+        assert "Nicht in den Laufdaten belegt" not in ausgabe, "Keine Warnung ohne Befund"
+
+    def test_eine_antwort_ohne_zahl_sagt_das(self):
+        ausgabe = str(pruefe_gegen_kontext("Keine Auffälligkeiten.", KONTEXT))
+
+        assert "keine Zahl, die sich gegen die Laufdaten halten ließe" in ausgabe
 
     def test_eine_unbelegte_antwort_traegt_die_warnung_im_text(self):
         """`str()` ist der Weg, auf dem der Vorbehalt bei den Oberflächen
@@ -294,18 +305,20 @@ class TestDieTrennschaerfeStehtDabei:
         assert f"{antwort.geprueft} Zahlen" in text
         assert f"{antwort.kontextzahlen} verschiedene Zahlen" in text
 
-    def test_eine_belegte_antwort_bleibt_still(self):
-        """**Die Auskunft gehört zum Vorbehalt, nicht zu jeder Antwort.**
-
-        Wer nichts Unbelegtes sagt, bekommt keinen Anhang — sonst stünde unter
-        jeder Antwort eine Fußnote, und die Markierung, auf die es ankommt,
-        ginge darin unter.
+    def test_eine_belegte_antwort_nennt_die_trennschaerfe_in_einem_satz(self):
+        """**Bis P8-V3 blieb eine belegte Antwort still** — mit der Begründung,
+        eine Fußnote unter jeder Antwort ließe die Markierung untergehen. Die
+        Gegenprüfung vom 2026-09-21 (N10) hat gezeigt, was das kostet: Gerade die
+        Antwort mit der durchgerutschten falschen Zahl trug gar keinen Hinweis.
+        Die Abwägung gilt weiter für die **Form** — ein Satz statt eines Blocks.
         """
 
         antwort = pruefe_gegen_kontext("Der Preis lag bei 140,38.", self.KONTEXT)
+        anhang = str(antwort)[len(antwort.text) :]
 
         assert antwort.belegt
-        assert str(antwort) == antwort.text
+        assert f"{antwort.kontextzahlen} verschiedene Zahlen" in anhang
+        assert "⚠️" not in anhang and anhang.count("\n\n") == 1
 
 
 def _grosser_kontext() -> str:

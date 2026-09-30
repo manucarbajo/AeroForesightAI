@@ -235,7 +235,7 @@ def register_callbacks(app) -> None:
                 if use_mock
                 else StateExplorer(context)
             )
-            # `str()` hängt den Vorbehalt an, wenn Zahlen unbelegt sind (P2.5).
+            # `str()` hängt den Vorbehalt an (P2.5), seit P8-V3 unter jede Antwort.
             # Ohne diese Umwandlung stünde das `Antwort`-Objekt selbst im
             # Verlauf und der Hinweis ginge verloren.
             answer = str(explorer.ask(question))

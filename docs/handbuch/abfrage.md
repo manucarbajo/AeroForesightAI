@@ -49,6 +49,12 @@ Ticketpreis von 140 Euro, und «49 %» keine Buchungsrate, die nie bei 49 % lag.
 oft trotzdem brauchbar — sie kommt deshalb vollständig, mit dem Vorbehalt
 darunter.
 
+**Und jede Antwort sagt, dass sie geprüft wurde.** Seit Ende September 2026 steht
+auch unter einer Antwort ohne Befund ein Satz, etwa «Prüfung: 3 Zahlen der
+Antwort, gehalten gegen 442 verschiedene Zahlen der Laufdaten — jede kommt dort
+vor.» Enthält die Antwort keine Zahl, steht das dort. Vorher blieb eine belegte
+Antwort ohne Hinweis und sah damit aus wie eine ungeprüfte.
+
 ## Fragen stellen
 
 Sie können den ganzen Lauf abfragen oder einen einzelnen Tick. Für einen Tick
