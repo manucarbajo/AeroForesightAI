@@ -144,10 +144,13 @@ def layout(draft: dict | None = None) -> html.Div:
         [
             ui.page_heading(
                 "Modell",
+                # Bis zur Abnahme V6 stand hier «Systemgrößen und ihre Verläufe gelten
+                # für den nächsten Lauf» — seit P7.13-U13.3 falsch, und der Hinweis
+                # direkt darunter sagte das Gegenteil.
                 "Die Annahmen, aus denen jeder Lauf rechnet — Systemgrößen, Preisbildung, "
-                "Sättigung und Bevölkerung. Systemgrößen und ihre Verläufe gelten für den "
-                "nächsten Lauf; Preisbildung, Sättigung und Bevölkerung erst, wenn Sie sie "
-                "speichern — dann für alle künftigen.",
+                "Sättigung und Bevölkerung. Was Sie hier ändern, gilt erst, wenn Sie es "
+                "speichern — dann für alle künftigen Läufe. Für einen einzelnen Lauf ändern "
+                "Sie Verläufe und Modellannahmen im Bereich «Einrichten».",
             ),
             html.Div(
                 id=STATUS,

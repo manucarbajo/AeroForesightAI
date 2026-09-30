@@ -147,3 +147,16 @@ def test_the_model_area_offers_the_save(kopie):
     rumpf = str(model_editor.rumpf_fuer("/app/modell", draft_to_dict(default_config_draft())))
 
     assert "'action': 'save-properties'" in rumpf
+
+
+def test_die_einleitung_des_modell_bereichs_verspricht_keine_wirkung_ohne_speichern():
+    """Abnahme V6 (2026-09-30): Die Einleitung sagte «Systemgrößen und ihre Verläufe
+    gelten für den nächsten Lauf», der Hinweis direkt darunter «Wirkt erst, wenn Sie
+    … speichern». Seit P7.13-U13.3 stimmt nur der zweite."""
+
+    from dashboard.web.pages import model_editor
+
+    text = str(model_editor.layout())
+
+    assert "gelten für den nächsten Lauf" not in text
+    assert "gilt erst, wenn Sie es speichern" in text
