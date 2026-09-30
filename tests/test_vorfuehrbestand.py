@@ -176,3 +176,26 @@ class TestDerLaufBrowserZeigtDenBestand:
         gefunden = {lauf.run_id for lauf in list_runs(tmp_path)}
 
         assert set(erwartet) <= gefunden, set(erwartet) - gefunden
+
+
+class TestEinEinzelnerLaufNeu:
+    def test_nur_seine_ordner_wandern(self, tmp_path: Path):
+        ausgabe = tmp_path / "outputs"
+        for ordner in ("sweeps/sweep_a", "sweeps/sweep_b", "run_vorfuehrung_bau"):
+            (ausgabe / ordner).mkdir(parents=True)
+            (ausgabe / ordner / "run_metadata.json").write_text("{}", encoding="utf-8")
+
+        ziel = archivieren(ausgabe, tmp_path / "archiv", nur=("sweeps/sweep_a", "fehlt"))
+
+        assert ziel is not None
+        assert (ziel / "sweeps" / "sweep_a" / "run_metadata.json").is_file()
+        assert not (ausgabe / "sweeps" / "sweep_a").exists()
+        assert (ausgabe / "sweeps" / "sweep_b").is_dir() and (
+            ausgabe / "run_vorfuehrung_bau"
+        ).is_dir()
+
+    def test_ohne_vorhandenen_ordner_passiert_nichts(self, tmp_path: Path):
+        ausgabe = tmp_path / "outputs"
+        ausgabe.mkdir()
+
+        assert archivieren(ausgabe, tmp_path / "archiv", nur=("run_vorfuehrung_bau",)) is None

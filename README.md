@@ -213,7 +213,8 @@ Verschiebt den bisherigen Inhalt von `outputs/` in ein Archiv neben dem Reposito
 Szenario-Vergleich, «Business as Usual» über 40 Ticks und denselben Rahmen mit
 einer CO₂-Abgabe, die ab Tick 24 auf 200 € steigt — und prüft jeden davon. Braucht
 Ollama und dauert rund zwanzig Minuten. `--nur-pruefen` prüft einen vorhandenen
-Bestand, ohne etwas zu verschieben oder zu rechnen.
+Bestand, ohne etwas zu verschieben oder zu rechnen; `--nur vorfuehrung_bau` (oder
+`vergleich`, `vorfuehrung_co2`) rechnet einen einzelnen Lauf neu, wenn er durchfällt.
 
 ## Deployment
 

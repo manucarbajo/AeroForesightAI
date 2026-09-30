@@ -4,6 +4,7 @@ Aufruf (Ollama muss laufen, das Modell aus ``configs/simulation_config.json`` ge
 
     python -m dashboard.vorfuehrbestand
     python -m dashboard.vorfuehrbestand --archiv F:/Ablage/outputs_archiv
+    python -m dashboard.vorfuehrbestand --nur vorfuehrung_bau
     python -m dashboard.vorfuehrbestand --nur-pruefen
 
 **Warum es ihn gibt:** Ein Lauf mit Sprachmodell dauert Minuten — vor Publikum zu
@@ -28,6 +29,9 @@ und die Liste zeigt nur das.
    Abschlusstexts werden gezählt, nicht verworfen — sie stehen im Lauf markiert.
 
 ``--nur-pruefen`` rechnet nichts und verschiebt nichts: Es prüft, was schon da ist.
+``--nur KENNUNG`` rechnet einen Lauf neu und verschiebt nur dessen Ordner — für den
+Fall, dass einer durchfällt: Die Antworten des Modells streuen, und den ganzen
+Bestand deswegen neu zu rechnen kostet zwanzig Minuten.
 """
 
 from __future__ import annotations
@@ -129,24 +133,32 @@ def bestand() -> list[Vorfuehrlauf]:
     ]
 
 
-def archivieren(ausgabe: Path, archiv: Path) -> Path | None:
+def archivieren(ausgabe: Path, archiv: Path, nur: tuple[str, ...] | None = None) -> Path | None:
     """Alles außer `BEHALTEN` aus ``ausgabe`` nach ``archiv/<Zeitstempel>/`` verschieben.
 
     Gibt den Zielordner zurück, oder ``None``, wenn es nichts zu verschieben gab.
     **Ein Archiv in ``outputs/`` wird abgewiesen**: Der Lauf-Browser läse es weiter,
     und der Zweck wäre verfehlt.
+
+    Mit ``nur`` wandern allein diese Ordner (relativ zu ``ausgabe``) — für einen
+    Lauf, der einzeln neu gerechnet wird; der übrige Bestand bleibt stehen.
     """
 
     ausgabe, archiv = ausgabe.resolve(), archiv.resolve()
     if archiv == ausgabe or ausgabe in archiv.parents:
         raise ValueError(f"Das Archiv darf nicht in {ausgabe} liegen: {archiv}")
-    eintraege = sorted(p for p in ausgabe.iterdir() if p.name not in BEHALTEN)
+    if nur is None:
+        eintraege = sorted(p for p in ausgabe.iterdir() if p.name not in BEHALTEN)
+    else:
+        eintraege = [ausgabe / ordner for ordner in nur if (ausgabe / ordner).exists()]
     if not eintraege:
         return None
     ziel = archiv / datetime.now().strftime("%Y-%m-%dT%H%M%S")
     ziel.mkdir(parents=True, exist_ok=False)
     for eintrag in eintraege:
-        shutil.move(str(eintrag), str(ziel / eintrag.name))
+        platz = ziel / eintrag.relative_to(ausgabe)
+        platz.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(eintrag), str(platz))
     return ziel
 
 
@@ -212,14 +224,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--nur-pruefen", action="store_true", help="Nichts verschieben, nichts rechnen"
     )
+    parser.add_argument(
+        "--nur",
+        choices=[lauf.kennung for lauf in bestand()],
+        help="Nur diesen Lauf neu rechnen; der übrige Bestand bleibt stehen",
+    )
     args = parser.parse_args(argv)
     ausgabe = Path(OUTPUT_DIR)
     laeufe = bestand()
 
     if not args.nur_pruefen:
-        ziel = archivieren(ausgabe, args.archiv)
+        zu_rechnen = [lauf for lauf in laeufe if args.nur in (None, lauf.kennung)]
+        nur = tuple(o for lauf in zu_rechnen for o in lauf.ordner) if args.nur else None
+        ziel = archivieren(ausgabe, args.archiv, nur)
         print(f"Archiviert nach {ziel}" if ziel else "Nichts zu archivieren.")
-        for lauf in laeufe:
+        for lauf in zu_rechnen:
             print(f"\n=== {lauf.beschreibung} ===", flush=True)
             launch_simulation(lauf.konfiguration, repo_root=REPO)
 
