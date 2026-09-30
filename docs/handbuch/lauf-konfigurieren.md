@@ -33,6 +33,11 @@ wer nach einem Szenario-Vergleich einen einzelnen Lauf will, wählt «Neuen Lauf
 einrichten»; wer denselben Lauf noch einmal mit einer Änderung rechnen will,
 «Letzte Einstellungen weiterverwenden».
 
+Ist der Vergleich gewählt und Sie öffnen trotzdem einen der ersten fünf
+Schritte — Szenario, Verläufe, Modellannahmen, Länge oder Rechenmodus —, steht
+dort oben ein Hinweis: Der Vergleich übernimmt nicht, was Sie in diesem Schritt
+einstellen. **Zum Einstieg** führt zurück zur Auswahl, ohne etwas zu ändern.
+
 ## Die Schrittfolge
 
 Einrichten geht seit August 2026 Schritt für Schritt. Über der Frage steht, der

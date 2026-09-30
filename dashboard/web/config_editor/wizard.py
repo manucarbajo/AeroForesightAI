@@ -123,6 +123,21 @@ WAY_NEW = "wizard-way-new"
 WAY_SWEEP = "wizard-way-sweep"
 WAY_RESUME = "wizard-way-resume"
 
+#: Der Knopf «Zum Einstieg» unter dem Hinweis, dass der Vergleich gewählt ist
+#: (P8-V6, Befund 7). **Eine Musterkennung**, weil der Hinweis nur in manchen
+#: Schritten steht: Eine feste Kennung, die fehlt, legte `_navigate` lahm
+#: (Regel 6), `ALL` verträgt null Treffer.
+ZUM_EINSTIEG = "wizard-zum-einstieg"
+
+#: Die Schritte, deren Wahl ein Szenario-Vergleich nicht übernimmt: Szenario,
+#: Verläufe, Modellannahmen, Länge und Rechenmodus stehen in
+#: `scenario_sweeps.FESTLEGUNGEN` bzw. `UNBEACHTET` oder sind die Wahl des Pfads
+#: selbst. «Lauf & Ablage» und «Technik» fehlen, weil dort nicht jedes Feld
+#: wirkungslos ist — das Sprachmodell aus «Technik» schreibt die Abschlusstexte
+#: des Vergleichs; ein Hinweis, der den ganzen Schritt übergangen nennt, stimmte
+#: dort nicht.
+VERGLEICH_UEBERGEHT = ("szenario", "verlaeufe", "modellannahmen", "umfang", "modus")
+
 #: Wirte, deren **Sichtbarkeit** zwischen Einstieg und Schrittfolge umgeschaltet
 #: wird. Ausblenden statt weglassen, aus demselben Grund wie oben.
 ENTRY_HOST = "wizard-entry-host"
@@ -796,6 +811,39 @@ def grid_class(current: int | None) -> str:
     return "af-wizard af-wizard--einstieg" if is_entry(resolve(current)) else "af-wizard"
 
 
+def vergleich_hinweis(schritt: str) -> html.Div:
+    """Dass der Vergleich gewählt ist und diesen Schritt nicht übernimmt (Befund 7).
+
+    **Der Befund vom 2026-09-30:** Wer einmal «Szenario-Vergleich starten»
+    genommen hatte und danach in Schritt 1 ein Szenario wählte, bekam keine
+    Warnung — und startete wieder den Vergleich, der Szenario und Verläufe
+    nicht übernimmt. Der Schalter dafür liegt hinter der Feinabstimmung von
+    «Wie weit reicht der Lauf?». Der Knopf führt zum Einstieg und schreibt
+    **nichts**: Dort stellt «Neuen Lauf einrichten» den Einzellauf ein, auf dem
+    einen Weg, der dafür eine Ausnahme von Regel 2 hat.
+    """
+
+    return html.Div(
+        [
+            ui.hinweis(
+                f"**Gewählt ist der Szenario-Vergleich.** Er rechnet alle "
+                f"{len(rahmenszenarien())} Rahmenszenarien, jedes wie angelegt — was Sie "
+                "in diesem Schritt einstellen, übernimmt er nicht. Für einen einzelnen "
+                "Lauf wählen Sie auf dem Einstieg «Neuen Lauf einrichten».",
+                "warnung",
+            ),
+            ui.button(
+                "Zum Einstieg",
+                id={"type": ZUM_EINSTIEG, "schritt": schritt},
+                variant="ghost",
+                icon_name="first_page",
+                className="mt-1",
+            ),
+        ],
+        className="mb-6",
+    )
+
+
 def content(draft: dict, current: int) -> html.Div:
     """Der offene Schritt — und **nur** er.
 
@@ -805,6 +853,8 @@ def content(draft: dict, current: int) -> html.Div:
 
     step = STEPS[current]
     koerper = _final_step(draft) if step.body is None else step.body(draft)
+    if step.key in VERGLEICH_UEBERGEHT and start_flow.ist_vergleich(draft):
+        koerper = html.Div([vergleich_hinweis(step.key), koerper])
 
     return html.Div(
         [
@@ -1007,6 +1057,8 @@ def register_callbacks(app) -> None:
         Input({"type": JUMP, "index": ALL}, "n_clicks"),
         # Ein Hinweis im Prüfschritt führt zu seinem Schritt (P7.4-U4.4).
         Input({"type": start_flow.SPRUNG, "schritt": ALL}, "n_clicks"),
+        # «Zum Einstieg» unter dem Hinweis auf den gewählten Vergleich (Befund 7).
+        Input({"type": ZUM_EINSTIEG, "schritt": ALL}, "n_clicks"),
         State(STEP_STORE, "data"),
         State(STORE_ID, "data"),
         State(VISITED_STORE, "data"),
@@ -1014,7 +1066,19 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def _navigate(
-        _back, _next, _skip, _new, _sweep, _resume, _jump, _sprung, current, draft, besucht, verlauf
+        _back,
+        _next,
+        _skip,
+        _new,
+        _sweep,
+        _resume,
+        _jump,
+        _sprung,
+        _einstieg,
+        current,
+        draft,
+        besucht,
+        verlauf,
     ):
         """Alle Wege durch die Schrittfolge in einem Callback.
 
@@ -1070,6 +1134,13 @@ def register_callbacks(app) -> None:
             if ziel is None:
                 return no_update, no_update, no_update, no_update
             return gehe(ziel)
+
+        if isinstance(ausgeloest, dict) and ausgeloest.get("type") == ZUM_EINSTIEG:
+            # Wie die Schrittliste: Beim Zeichnen feuert Dash den neuen Knopf mit `None`.
+            if not any(eintrag["value"] for eintrag in ctx.triggered if eintrag["value"]):
+                return no_update, no_update, no_update, no_update
+            # Zurück an den Anfang — dasselbe Zurücksetzen wie auf den drei Wegen.
+            return ENTRY, no_update, [], []
 
         if isinstance(ausgeloest, dict) and ausgeloest.get("type") == JUMP:
             # Nur ein wirklich gedrückter Knopf zählt: Beim Neuaufbau der Liste

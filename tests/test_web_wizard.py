@@ -1353,7 +1353,7 @@ class TestZurueckFuehrtDorthinWoManWar:
         navigate = self._navigate(monkeypatch, wizard.BACK)
 
         schritt, _e, _b, verlauf = navigate(
-            *[None] * 6, None, None, wizard.FINAL, draft, [], [wizard.ENTRY]
+            *[None] * 6, None, None, None, wizard.FINAL, draft, [], [wizard.ENTRY]
         )
 
         assert schritt is wizard.ENTRY, "«Zurück» führt in einen Schritt, in dem man nie war"
@@ -1365,7 +1365,7 @@ class TestZurueckFuehrtDorthinWoManWar:
         navigate = self._navigate(monkeypatch, wizard.BACK)
 
         schritt, _e, _b, verlauf = navigate(
-            *[None] * 6, None, None, 6, draft, [], [wizard.ENTRY, 0]
+            *[None] * 6, None, None, None, 6, draft, [], [wizard.ENTRY, 0]
         )
 
         assert schritt == 0
@@ -1379,11 +1379,13 @@ class TestZurueckFuehrtDorthinWoManWar:
         """
 
         weiter = self._navigate(monkeypatch, wizard.NEXT)
-        schritt, _e, _b, verlauf = weiter(*[None] * 6, None, None, 1, draft, [], [wizard.ENTRY, 0])
+        schritt, _e, _b, verlauf = weiter(
+            *[None] * 6, None, None, None, 1, draft, [], [wizard.ENTRY, 0]
+        )
         assert (schritt, verlauf) == (2, [wizard.ENTRY, 0, 1])
 
         zurueck = self._navigate(monkeypatch, wizard.BACK)
-        schritt, _e, _b, verlauf = zurueck(*[None] * 6, None, None, 2, draft, [], verlauf)
+        schritt, _e, _b, verlauf = zurueck(*[None] * 6, None, None, None, 2, draft, [], verlauf)
         assert schritt == 1
         assert verlauf == [wizard.ENTRY, 0]
 
@@ -1397,7 +1399,7 @@ class TestZurueckFuehrtDorthinWoManWar:
 
         navigate = self._navigate(monkeypatch, wizard.BACK)
 
-        schritt, _e, _b, verlauf = navigate(*[None] * 6, None, None, 4, draft, [], [])
+        schritt, _e, _b, verlauf = navigate(*[None] * 6, None, None, None, 4, draft, [], [])
 
         assert schritt is wizard.ENTRY
         assert verlauf == []
@@ -1408,7 +1410,7 @@ class TestZurueckFuehrtDorthinWoManWar:
         for weg in (wizard.WAY_NEW, wizard.WAY_SWEEP, wizard.WAY_RESUME):
             navigate = self._navigate(monkeypatch, weg)
             _s, _e, besucht, verlauf = navigate(
-                *[None] * 6, None, None, 5, draft, [1, 2, 3], [wizard.ENTRY, 1, 2]
+                *[None] * 6, None, None, None, 5, draft, [1, 2, 3], [wizard.ENTRY, 1, 2]
             )
             assert verlauf == [wizard.ENTRY], f"{weg} erbt einen alten Verlauf"
             assert besucht == [], f"{weg} erbt alte Häkchen"
@@ -1419,7 +1421,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.WAY_NEW)
 
         schritt, entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, None, wizard.ENTRY, {**draft, "run_all_sweeps": True}, [], []
+            *[None] * 6, None, None, None, wizard.ENTRY, {**draft, "run_all_sweeps": True}, [], []
         )
 
         assert schritt == 0
@@ -1429,7 +1431,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.WAY_SWEEP)
 
         schritt, entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, None, wizard.ENTRY, draft, [], []
+            *[None] * 6, None, None, None, wizard.ENTRY, draft, [], []
         )
 
         assert schritt == wizard.FINAL, "Der Vergleich führt direkt zu «Prüfen & Starten»"
@@ -1447,7 +1449,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.WAY_RESUME)
 
         schritt, entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, None, wizard.ENTRY, draft, [], []
+            *[None] * 6, None, None, None, wizard.ENTRY, draft, [], []
         )
 
         assert schritt == wizard.FINAL
@@ -1463,7 +1465,7 @@ class TestJederWegSagtGenauEineSache:
         navigate = _navigate_callback(monkeypatch, wizard.BACK)
 
         schritt, _entwurf, _besucht, _verlauf = navigate(
-            *[None] * 6, None, None, 0, draft, [], [wizard.ENTRY]
+            *[None] * 6, None, None, None, 0, draft, [], [wizard.ENTRY]
         )
 
         assert schritt is wizard.ENTRY
@@ -1566,3 +1568,66 @@ class TestEinUnveraenderterEntwurfWirdNichtGeschrieben:
         assert any(
             isinstance(op, ast.Eq) for v in vergleiche for op in v.ops
         ), "`_sync` vergleicht nichts auf Gleichheit"
+
+
+# --- Befund 7 der Abnahme vom 2026-09-30 --------------------------------------
+
+
+class TestDerGewaehlteVergleichSagtEs:
+    """Wer den Vergleich gewählt hat und danach in Schritt 1 ein Szenario wählt,
+    stellt etwas ein, das der Vergleich nicht übernimmt. Bis zum 2026-09-30
+    ohne Warnung — der Schalter dafür liegt hinter der Feinabstimmung."""
+
+    HINWEIS = "Gewählt ist der Szenario-Vergleich"
+
+    @pytest.mark.parametrize("schritt", wizard.VERGLEICH_UEBERGEHT)
+    def test_jeder_uebergangene_schritt_sagt_es(self, schritt):
+        vergleich = {**initial_draft_dict(), "run_all_sweeps": True}
+
+        text = str(wizard.content(vergleich, wizard.schritt(schritt)))
+
+        assert self.HINWEIS in text
+        assert wizard.ZUM_EINSTIEG in text
+
+    @pytest.mark.parametrize("schritt", wizard.VERGLEICH_UEBERGEHT)
+    def test_ein_einzellauf_bekommt_ihn_nicht(self, schritt):
+        text = str(wizard.content(initial_draft_dict(), wizard.schritt(schritt)))
+
+        assert self.HINWEIS not in text
+
+    def test_wo_felder_den_vergleich_erreichen_steht_er_nicht(self):
+        vergleich = {**initial_draft_dict(), "run_all_sweeps": True}
+        uebrige = [s.key for s in wizard.STEPS if s.key not in wizard.VERGLEICH_UEBERGEHT]
+
+        assert set(uebrige) == {"ablage", "technik", "start"}
+        for schritt in uebrige:
+            assert self.HINWEIS not in str(wizard.content(vergleich, wizard.schritt(schritt)))
+
+    def test_zum_einstieg_fuehrt_zurueck_und_schreibt_nichts(self, monkeypatch):
+        from dash import no_update
+
+        ausloeser = {"type": wizard.ZUM_EINSTIEG, "schritt": "szenario"}
+        navigate = _navigate_callback(monkeypatch, ausloeser)
+        vergleich = {**initial_draft_dict(), "run_all_sweeps": True}
+
+        schritt, entwurf, besucht, verlauf = navigate(
+            *[None] * 6, None, None, [1], 0, vergleich, [0], [wizard.ENTRY]
+        )
+
+        assert schritt is wizard.ENTRY
+        assert entwurf is no_update, "Der Knopf navigiert nur — Regel 2 bleibt unberührt"
+        assert besucht == [] and verlauf == []
+
+    def test_beim_zeichnen_feuert_er_nicht(self, monkeypatch):
+        from dash import no_update
+
+        class _Ctx:
+            triggered_id = {"type": wizard.ZUM_EINSTIEG, "schritt": "szenario"}
+            triggered = [{"prop_id": "x.n_clicks", "value": None}]
+
+        navigate = _navigate_callback(monkeypatch, wizard.BACK)
+        monkeypatch.setattr(wizard, "ctx", _Ctx)
+
+        ergebnis = navigate(*[None] * 6, None, None, [None], 0, {}, [], [])
+
+        assert ergebnis == (no_update,) * 4
