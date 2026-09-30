@@ -99,6 +99,13 @@ def build_scenario_prompt(context: RunScenarioContext) -> str:
     return f"{RUN_SCENARIO_MARKER}\n\nRUN CONTEXT (Ground Truth):\n```json\n{json.dumps(payload, ensure_ascii=False, indent=2)}\n```\n\n{prompt_template}\n"
 
 
+#: Steuerzeichen in einem JSON-Text zulassen (P8-V5). `llama3.2` schreibt in lange
+#: Texte wie `story` gelegentlich einen echten Zeilenumbruch statt `\n`; der
+#: strenge Leser wies die ganze Antwort ab, und der Abschlusstext kam aus der
+#: Vorlage — am 2026-09-30 bei drei von sechs Läufen des Vorführbestands.
+_NACHSICHTIG = json.JSONDecoder(strict=False)
+
+
 def _extract_json_object(text: str) -> dict[str, Any] | None:
     text = text.strip()
     if not text:
@@ -108,7 +115,7 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
         return re.sub(r",\s*([\]}])", r"\1", s)
 
     try:
-        parsed = json.loads(_clean_json(text))
+        parsed = _NACHSICHTIG.decode(_clean_json(text))
         return parsed if isinstance(parsed, dict) else None
     except json.JSONDecodeError:
         pass
@@ -116,7 +123,7 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
     if not match:
         return None
     try:
-        parsed = json.loads(_clean_json(match.group(0)))
+        parsed = _NACHSICHTIG.decode(_clean_json(match.group(0)))
         return parsed if isinstance(parsed, dict) else None
     except json.JSONDecodeError:
         return None

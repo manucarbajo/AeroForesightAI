@@ -146,14 +146,16 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
     if cleaned.startswith("```"):
         cleaned = cleaned.strip("`")
         cleaned = cleaned.replace("json\n", "", 1).strip()
+    # Steuerzeichen in Texten zulassen — derselbe Befund wie beim Abschlusstext
+    # (P8-V5): ein echter Zeilenumbruch in einem JSON-Text verwarf die Antwort.
+    decoder = json.JSONDecoder(strict=False)
     try:
-        direct = json.loads(cleaned)
+        direct = decoder.decode(cleaned)
         if isinstance(direct, dict):
             return direct
     except json.JSONDecodeError:
         pass
 
-    decoder = json.JSONDecoder()
     for idx, ch in enumerate(cleaned):
         if ch != "{":
             continue
