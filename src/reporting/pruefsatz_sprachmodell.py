@@ -37,7 +37,7 @@ from pathlib import Path
 
 from src.llm import OllamaClient, OllamaConfig
 from src.logging_setup import stdio_auf_utf8
-from src.reporting.aussagen_pruefung import Befund, pruefe
+from src.reporting.aussagen_pruefung import Befund, laufzeilen, pruefe
 from src.reporting.output_writer.paths import OUTPUT_DIR
 
 REPO = Path(__file__).resolve().parents[2]
@@ -70,8 +70,9 @@ class Text:
 
 
 def _ticks(run_dir: Path) -> list[dict]:
-    daten = json.loads((run_dir / "tick_mechanics.json").read_text(encoding="utf-8"))
-    return list(daten.get("ticks") or [])
+    """Die Ticks mit allen Größen des Faktenblatts — auch der SAF-Quote (P8-V3)."""
+
+    return laufzeilen(run_dir)
 
 
 def abschlusstexte() -> tuple[list[Text], dict[str, Path]]:

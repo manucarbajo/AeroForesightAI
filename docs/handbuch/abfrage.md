@@ -5,7 +5,10 @@ nichts wissen.
 ## Was er sieht
 
 Die Antwort stützt sich auf die Kennzahlen je Tick, den Preisverlauf und das
-Ereignisprotokoll. Sind Zwischenstände geschrieben worden, kommen einzelne
+Ereignisprotokoll. Ganz vorn steht seit Ende September 2026 ein **Faktenblatt**:
+die Richtung jeder Kerngröße über den Lauf — «Buchungsrate sinkt von 47,9 % auf
+35,7 %» — und jeder Faktorwechsel, fertig gerechnet. Das Modell soll die Richtung
+von dort übernehmen, statt sie aus Zahlenreihen zu deuten. Sind Zwischenstände geschrieben worden, kommen einzelne
 Ticks im Detail dazu.
 
 Über den Schalter «Datenkontext anzeigen» sehen Sie genau die Daten, die einer

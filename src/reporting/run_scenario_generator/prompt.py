@@ -7,18 +7,21 @@ import re
 from pathlib import Path
 from typing import Any
 
+from src.reporting import aussagen_pruefung
 from src.reporting.run_scenario_generator.candidates import (
     KONSISTENZ_BEDEUTUNG,
     build_candidate_constellations,
 )
 from src.reporting.run_scenario_generator.context import (
     RunScenarioContext,
-    _booking_trend,
     _cib_score,
-    _price_trend,
     _safe_float,
 )
-from src.reporting.run_scenario_generator.factors import _load_factor_catalog, build_factor_profile
+from src.reporting.run_scenario_generator.factors import (
+    _load_factor_catalog,
+    build_factor_profile,
+    faktor_namen,
+)
 
 RUN_SCENARIO_MARKER = "RUN_SCENARIO_GENERATOR"
 
@@ -26,6 +29,17 @@ RUN_SCENARIO_MARKER = "RUN_SCENARIO_GENERATOR"
 #: Die Vorlage für den Abschlusstext eines Laufs — **neben dem Code**, nicht im
 #: Arbeitsverzeichnis gesucht. Modulkonstante, damit ein Test sie umbiegen kann.
 VORLAGE = Path(__file__).resolve().parents[2] / "prompts" / "run_scenario.md"
+
+
+def faktenblatt_saetze(
+    context: RunScenarioContext, catalog: dict[str, Any] | None = None
+) -> list[str]:
+    """Das Faktenblatt dieses Laufs, mit den Faktorbezeichnungen aus dem Katalog (P8-V3)."""
+
+    catalog = catalog if catalog is not None else _load_factor_catalog()
+    return aussagen_pruefung.faktenblatt_saetze(
+        context.run_dir, context.factors, faktor_namen(catalog)
+    )
 
 
 def build_scenario_prompt(context: RunScenarioContext) -> str:
@@ -50,6 +64,12 @@ def build_scenario_prompt(context: RunScenarioContext) -> str:
         )
 
     payload = {
+        # **Zuerst, und als Sätze** (P8-V3): Das Modell formuliert die Richtung
+        # jeder Kerngröße, statt sie aus Zahlenreihen selbst zu deuten. Bis dahin
+        # standen hier `booking_trend`/`price_trend` mit eigenen Schwellen neben
+        # den Rohzahlen, und `llama3.2` las daraus eine steigende CO₂-Abgabe, wo
+        # sie über 120 Ticks bei 50 EUR stand.
+        "faktenblatt": faktenblatt_saetze(context, catalog),
         "run_id": context.run_id,
         "metadata": context.metadata,
         "summary_metrics": context.summary_metrics,
@@ -62,8 +82,6 @@ def build_scenario_prompt(context: RunScenarioContext) -> str:
         # den Score als Wahrscheinlichkeit ausgedeutet — genau die Aussage, die
         # er nicht trägt (P2.0).
         "cib_consistency_bedeutung": KONSISTENZ_BEDEUTUNG,
-        "booking_trend": _booking_trend(context.summary_metrics),
-        "price_trend": _price_trend(context.summary_metrics),
         "candidate_scenarios": clean_candidates,
         "agent_digest": context.agent_digest,
     }
@@ -194,4 +212,7 @@ def build_ground_truth_block(context: RunScenarioContext) -> dict[str, Any]:
     block["run_id"] = context.run_id
     block["cib_consistency_score"] = _cib_score(context)
     block["factor_profile"] = factor_profile
+    # Was das Sprachmodell als Rechnung bekommen hat, steht im Artefakt daneben —
+    # wer den Text liest, kann ihn gegen dieselben Sätze halten (P8-V3).
+    block["faktenblatt"] = faktenblatt_saetze(context, catalog)
     return block

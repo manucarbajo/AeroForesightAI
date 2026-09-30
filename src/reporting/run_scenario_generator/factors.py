@@ -34,6 +34,19 @@ def _factor_name(catalog: dict[str, Any], factor_id: str) -> str:
     return str(factor.get("name") or factor_id)
 
 
+def faktor_namen(catalog: dict[str, Any]) -> dict[str, str]:
+    """Faktor- und Zustandskennungen auf ihre Bezeichnung — für das Faktenblatt (P8-V3)."""
+
+    namen: dict[str, str] = {}
+    for factor_id, eintrag in catalog.items():
+        if not isinstance(eintrag, dict):
+            continue
+        namen[factor_id] = _factor_name(catalog, factor_id)
+        for state_id in eintrag.get("possible_states") or {}:
+            namen[state_id] = _factor_state_label(catalog, factor_id, state_id)
+    return namen
+
+
 def _flip_state(state_id: str) -> str:
     if not state_id or "." not in state_id:
         return state_id

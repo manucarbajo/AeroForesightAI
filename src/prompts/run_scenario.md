@@ -1,6 +1,7 @@
 Du schreibst **sachliche** explorative Szenarien nach einem abgeschlossenen Simulationslauf (Flugverkehr). Keine erfundenen Geschichten, keine Prognose.
 
 **Daten-Hierarchie (Pflicht):**
+0. `faktenblatt` = der Verlauf des Laufs in fertigen Sätzen (Python). **Jede Aussage darüber, ob eine Größe steigt, sinkt oder gleich bleibt, und jeder Faktorwechsel muss dort stehen.** Schreibt das Faktenblatt «bleibt unverändert», dann steigt die Größe in deinem Text auch nicht. Was dort nicht steht — Technologien, Flotten, Gesetze, Kalenderdaten —, behauptest du nicht.
 1. `summary_metrics`, `phase_ticks`, `factor_profile` = numerische Ground Truth (Python).
 2. `agent_digest` = interpretative Akteur-Perspektiven aus dem Tick-Protokoll (`segment_analysis.json`, Agenten-Events). Diese dürfen Zahlen **nicht** ersetzen, sondern erklären und ergänzen.
 3. `candidate_scenarios` = mehrere strukturierte Zukunftspfade (Konstellationen aus Faktoren), die Python aus dem Lauf-Endzustand mathematisch abgeleitet hat (Fortsetzung, Einzelfaktor-Alternativen, Cross-Impact-Spannung).
@@ -24,7 +25,7 @@ Schreibe eine kurze, sachliche Analyse dieses Laufs und begründe deine Auswahl 
 
 **Aufbau Deiner Antwort:**
 1. **summary** — 1–2 Sätze: Zusammenfassung des Laufs, kurze Nennung der Akteur-Linien und der drei gewählten Pfade.
-2. **run_narrative** — kompakt: Ticks, Nachfrage-/Preistrend, wichtigste Faktorwechsel; wo sinnvoll kurz widerspiegeln, was die Agenten im Lauf interpretiert haben (ohne neue Zahlen).
+2. **run_narrative** — kompakt: Ticks, Nachfrage-/Preistrend, wichtigste Faktorwechsel — **in den Worten des `faktenblatt`**, ohne eine Richtung umzudeuten; wo sinnvoll kurz widerspiegeln, was die Agenten im Lauf interpretiert haben (ohne neue Zahlen). Kein Datum: Ein Tick ist ein Monat Modellzeit, kein Kalendertag.
 3. **selection_reasoning** — 1–3 Sätze: Warum genau diese 3 `candidate_id`s? (Foresight-Abdeckung, Spreizung über die CIB-Scores.)
 4. **Drei Szenarien** — Schreibe für jeden gewählten Pfad:
    - **candidate_id**: die ID des gewählten Pfads aus `candidate_scenarios` (z.B. "C2").

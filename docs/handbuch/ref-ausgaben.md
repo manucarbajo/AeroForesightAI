@@ -14,6 +14,15 @@ Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 
 **Die Überschrift nennt den Lauf beim Namen.** Sie nimmt den Namen, den Sie unter «Lauf & Ablage» vergeben haben; ohne ihn den Rahmen, unter dem der Lauf stand, und erst zuletzt seine Kennung. Läufe eines Szenario-Vergleichs trugen dort bis zum 13. September 2026 ihren Ablageort — «Szenarien zum Lauf sweeps/sweep_transformation_conflict». Ältere Artefakte behalten ihren Titel; er entsteht beim Schreiben.
 
+### Das Faktenblatt in `run_scenario.json`
+
+Unter `ground_truth.faktenblatt` steht, was das Sprachmodell vor dem Schreiben als
+Rechnung bekommen hat: je Kerngröße ein Satz mit Richtung, Anfangs- und Endwert
+(«CO₂-Abgabe bleibt unverändert bei 50,00 € (Tick 1 bis 120).») und je Faktor
+einer mit seinem Verlauf. «Steigt» und «sinkt» heißt: mehr als fünf Prozent
+Änderung vom ersten zum letzten Tick. Den Abschlusstext können Sie gegen genau
+diese Sätze lesen. Ältere Läufe tragen das Feld nicht.
+
 ### Der Konsistenzwert in `run_scenario.json`
 
 Jedes der drei Szenarien trägt dort drei zusammengehörige Felder:

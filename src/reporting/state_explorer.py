@@ -12,7 +12,9 @@ from typing import Any
 from src.llm import LLMCallable, OllamaClient, OllamaConfig, auf_deutsch
 from src.logging_setup import stdio_auf_utf8
 from src.orchestration.checkpoint_manager import CheckpointManager
+from src.reporting.aussagen_pruefung import faktenblatt_saetze
 from src.reporting.output_writer import OUTPUT_DIR
+from src.reporting.run_scenario_generator.factors import _load_factor_catalog, faktor_namen
 
 EXPLORER_INSTRUCTIONS = """You are an expert data analyst and simulation explorer for an aviation foresight scenario.
 Your task is to answer the user's question comprehensively and helpfully using ONLY the GROUND TRUTH DATA block below.
@@ -240,6 +242,16 @@ def build_grounded_context_block(context: RunExplorerContext) -> str:
         f"run_id={context.run_id}",
         f"simulation={context.metadata.get('simulation_name', context.metadata.get('name', 'unknown'))}",
     ]
+    # Die Richtung jeder Kerngröße als Satz, vor den Rohdaten (P8-V3). Am
+    # 2026-09-29 antwortete `llama3.2` auf «Ist die Buchungsrate gestiegen oder
+    # gesunken?» mit «gestiegen», während sie fiel — aus Zahlenreihen gedeutet.
+    # Eine Frage zu einem einzelnen Tick bekommt es ebenso: Es beschreibt den Lauf.
+    faktenblatt = faktenblatt_saetze(
+        context.run_dir, context.factors_timeseries, faktor_namen(_load_factor_catalog())
+    )
+    if faktenblatt:
+        lines.append("faktenblatt (Verlauf über den ganzen Lauf, von Python gerechnet):")
+        lines.extend(f"- {satz}" for satz in faktenblatt)
     if context.tick_mechanics.get("reading_guide"):
         lines.append(f"reading_guide: {context.tick_mechanics['reading_guide']}")
 

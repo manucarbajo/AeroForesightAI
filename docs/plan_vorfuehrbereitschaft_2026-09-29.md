@@ -76,6 +76,7 @@
 
 - **(a) erledigt.** N10 nachgemessen an zwei echten Läufen: 250 von 250 ganzzahligen Prozentangaben galten als belegt. Eine Prozentangabe wird seither nur gegen Anteile (Zahlen mit Nachkommastellen, mal hundert) und Prozentwerte gehalten — 72 bzw. 70 von 250, die übrigen Treffer sind Anteile, die wirklich im Lauf stehen (Buchungsraten, Nachfrageniveau). «49 %» aus dem Audit wird markiert, «140 %» trifft keinen Preis mehr, «200 %» keinen Tick 2. **Der Rest ist die Grenze aus B7c**: Eine Zuordnung von Zahl zu Größe bleibt ungebaut; eine falsche *Richtung* fängt (c).
 - **(d) erledigt.** Unter jeder Antwort der Abfrage steht ein Prüfhinweis — ein Satz unter einer belegten («Prüfung: 3 Zahlen der Antwort, gehalten gegen 442 verschiedene Zahlen der Laufdaten»), die Auskunft «keine Zahl» unter einer ohne, der Warnblock unter einer unbelegten. Damit ist N10 vollständig aus `audit_findings.md` entfernt.
+- **(b) erledigt.** Das Faktenblatt (`aussagen_pruefung.faktenblatt_saetze`) nennt die Richtung von CO₂-Abgabe, SAF-Quote, Kostendruck, Ticketpreis, Buchungsrate und Nachfrageniveau mit Anfangs- und Endwert und jeden Faktorwechsel; Abschlusstext und Abfrage bekommen es vor den Rohdaten, `run_scenario.json` trägt es unter `ground_truth`. `booking_trend`/`price_trend` mit eigenen Schwellen sind aus dem Prompt entfernt. Gemessen wird die Wirkung mit (c) zusammen im Prüfsatz.
 
 #### V4 — Der Abschlusstext liest die Daten seines eigenen Laufs ✅ erledigt 2026-09-29
 
