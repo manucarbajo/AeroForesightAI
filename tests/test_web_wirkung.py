@@ -291,7 +291,7 @@ def abdruck_von(monkeypatch, tmp_path):
 
     def _kein_sweep(**kwargs):
         aufzeichnung.sweep = repr(sorted(kwargs.items()))
-        return None
+        return sweeps.SweepSummary()
 
     monkeypatch.setattr(run_launcher, "SimulationRunner", _Runner)
     monkeypatch.setattr(sweeps, "run_all_sweeps", _kein_sweep)

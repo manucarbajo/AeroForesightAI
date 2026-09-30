@@ -421,6 +421,7 @@ def test_result_message_covers_all_three_outcomes():
         multi_run_batch = False
         sweep_summary_path = None
         child_run_ids: tuple = ()
+        child_names: tuple = ()
 
     single = _Result()
     assert "run_1" in _text(launch_page._result_message(single))
@@ -433,6 +434,7 @@ def test_result_message_covers_all_three_outcomes():
     sweep = _Result()
     sweep.sweep_batch = True
     sweep.child_run_ids = ("sweeps/sweep_a",)
+    sweep.child_names = ("Business as Usual",)
     sweep.sweep_summary_path = "outputs/sweeps/sweep_summary.json"
     assert "Szenario-Vergleich" in _text(launch_page._result_message(sweep))
 

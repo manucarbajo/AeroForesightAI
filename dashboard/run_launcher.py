@@ -91,6 +91,9 @@ class RunLaunchResult:
     multi_run_batch: bool = False
     batch_id: str | None = None
     child_run_ids: tuple[str, ...] = ()
+    #: Wie die Läufe aus `child_run_ids` heißen, in derselben Reihenfolge — beim
+    #: Szenario-Vergleich die Namen der Rahmen, sonst leer.
+    child_names: tuple[str, ...] = ()
 
 
 def launch_config_to_draft(config: RunLaunchConfig) -> ConfigDraft:
@@ -269,7 +272,7 @@ def launch_simulation(
 
     def _run_body() -> RunLaunchResult:
         if config.run_all_sweeps:
-            run_all_sweeps(
+            zusammenfassung = run_all_sweeps(
                 # **Kein `ticks_override` mehr vom Dashboard aus** (P1.9-W1.2).
                 #
                 # Hier stand `int(config.rounds) if config.rounds else None`, und
@@ -290,14 +293,19 @@ def launch_simulation(
                 verbose=True,
             )
             summary_path = SWEEP_OUTPUT_DIR / "sweep_summary.json"
-            child_run_ids: list[str] = []
+            # **Nur die Läufe dieses Vergleichs**, in der Reihenfolge der Rahmen
+            # (P8-V6, Befund 9). Bis zum 2026-09-30 stand hier jeder Ordner unter
+            # `sweeps/`, rückwärts sortiert — gewählt wurde danach, was im Alphabet
+            # hinten lag, auch ein alter Prüflauf, und die Meldung zählte ihn mit.
+            gerechnet = [
+                (f"sweeps/sweep_{r.sweep_id}", r.sweep_name)
+                for r in zusammenfassung.results
+                if (SWEEP_OUTPUT_DIR / f"sweep_{r.sweep_id}" / "run_metadata.json").is_file()
+            ]
+            child_run_ids = [run_id for run_id, _name in gerechnet]
             if config.generate_figures:
-                for sweep_dir in sorted(SWEEP_OUTPUT_DIR.glob("sweep_*")):
-                    if sweep_dir.is_dir() and (sweep_dir / "run_metadata.json").is_file():
-                        _maybe_generate_figures(sweep_dir)
-            for sweep_dir in sorted(SWEEP_OUTPUT_DIR.glob("sweep_*"), reverse=True):
-                if sweep_dir.is_dir() and (sweep_dir / "run_metadata.json").is_file():
-                    child_run_ids.append(f"sweeps/{sweep_dir.name}")
+                for run_id in child_run_ids:
+                    _maybe_generate_figures(SWEEP_OUTPUT_DIR / run_id.split("/", 1)[1])
             return RunLaunchResult(
                 run_id=child_run_ids[0] if child_run_ids else "sweep-batch",
                 run_dir=(
@@ -311,6 +319,7 @@ def launch_simulation(
                 sweep_batch=True,
                 sweep_summary_path=str(summary_path),
                 child_run_ids=tuple(child_run_ids),
+                child_names=tuple(name for _run_id, name in gerechnet),
             )
 
         runs = max(1, int(config.runs))

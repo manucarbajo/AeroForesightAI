@@ -248,30 +248,47 @@ def rail(draft: dict | None = None) -> html.Div:
 layout = rail
 
 
+def _vergleich_fertig(result) -> html.Div:
+    """Die Fertigmeldung eines Szenario-Vergleichs (P8-V6, Befund 9).
+
+    **Sie nennt die Rahmen, nicht ihre Ablageorte**, und sagt, welcher Lauf
+    danach gewählt ist. Bis zum 2026-09-30 stand hier der Pfad der
+    Zusammenfassung und die Kennung jedes Ordners unter `sweeps/`, auch alter
+    Prüfläufe — und «oben in der Lauf-Auswahl wählen», obwohl `_poll` schon
+    einen gewählt hatte.
+    """
+
+    from dashboard.web.views import running
+
+    namen = list(result.child_names)
+    if not namen:
+        return ui.hinweis(
+            "Der Szenario-Vergleich ist durchgelaufen, hat aber keinen Lauf hinterlassen.",
+            "warnung",
+        )
+    return html.Div(
+        [
+            ui.hinweis(
+                f"Szenario-Vergleich abgeschlossen: {len(namen)} Rahmenszenarien gerechnet — "
+                + ", ".join(namen)
+                + ".",
+                "erfolg",
+            ),
+            html.P(
+                f"Gewählt ist «{namen[0]}». Unter «Diagramme» stehen alle "
+                "Szenarien nebeneinander.",
+                className=f"{ui.CAPTION} mt-2",
+            ),
+            running.finished_link(),
+        ]
+    )
+
+
 def _result_message(result) -> html.Div:
     """Die drei Ausgänge eines Laufs: Sweep-Batch, Multi-Run, Einzellauf."""
 
     if result.sweep_batch:
-        children = [ui.hinweis("Szenario-Vergleich abgeschlossen.", "erfolg")]
-        if result.sweep_summary_path:
-            children.append(
-                html.P(
-                    ["Summary: ", html.Code(str(result.sweep_summary_path))],
-                    className=f"{ui.CAPTION} mt-2",
-                )
-            )
-        if result.child_run_ids:
-            children.append(
-                ui.hinweis(
-                    "Einzelne Szenario-Läufe oben in der Lauf-Auswahl wählen: "
-                    + ", ".join(f"`{run_id}`" for run_id in result.child_run_ids),
-                    "info",
-                    class_name="mt-2",
-                )
-            )
-        else:
-            children.append(ui.json_view(result.artifacts))
-        return html.Div(children)
+        return _vergleich_fertig(result)
 
     if result.multi_run_batch:
         return html.Div(

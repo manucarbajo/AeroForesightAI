@@ -68,6 +68,9 @@ vorliegt.
 
 Ist der Lauf fertig, meldet das Bedienfeld links die Kennung des Laufs mit der Zahl der
 Ticks und Ereignisse — und daneben steht der Weg weiter: **Ergebnisse ansehen**.
+Der fertige Lauf ist danach gewählt; Szene und Telemetrie zeigen ihn. **Nach
+einem Szenario-Vergleich** nennt die Meldung die gerechneten Rahmenszenarien,
+gewählt ist das erste davon, und unter **Diagramme** stehen alle nebeneinander.
 
 Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit auf **Einrichten**,
 **Ergebnisse** oder ins **Handbuch** wechseln, ohne ihn abzubrechen — die Kopfzeile bleibt
