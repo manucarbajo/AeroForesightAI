@@ -121,32 +121,34 @@ def _row(label: str, value: str) -> dcc.Link:
     )
 
 
-def summary_rows(draft: dict) -> html.Div:
-    """Szenario, Länge, Rechenmodus — der Entwurf auf drei Zeilen.
+def stand(draft: dict) -> list[tuple[str, str]]:
+    """Was als Nächstes gerechnet wird, als drei Paare aus Beschriftung und Wert.
 
-    **Beim Szenario-Vergleich stehen hier andere drei** (P1.9-W1.3). Er nimmt
-    vom Entwurf nichts entgegen: Szenario, Länge und Rechenmodus kommen dann aus
-    den Presets bzw. aus dem Vertrag des Sweeps. Die Zeilen des Entwurfs
-    anzuzeigen hieße, drei Werte zu behaupten, mit denen nicht gerechnet wird —
-    derselbe Fehler wie im Preflight, nur in der Nachbarzone.
+    **Beim Szenario-Vergleich sind es andere drei** (P1.9-W1.3). Er nimmt vom
+    Entwurf nichts entgegen: Szenario, Länge und Rechenmodus kommen dann aus den
+    Presets bzw. aus dem Vertrag des Sweeps. Die Zeilen des Entwurfs anzuzeigen
+    hieße, drei Werte zu behaupten, mit denen nicht gerechnet wird — derselbe
+    Fehler wie im Preflight, nur in der Nachbarzone.
     """
 
     if start_flow.ist_vergleich(draft):
-        return html.Div(
-            [
-                _row("Lauf", f"Vergleich · {len(rahmenszenarien())} Rahmenszenarien"),
-                _row("Länge", "je Szenario"),
-                _row("Rechenmodus", "Nur Zahlen (vorgegeben)"),
-            ],
-            className="af-rail-rows",
-        )
+        return [
+            ("Lauf", f"Vergleich · {len(rahmenszenarien())} Rahmenszenarien"),
+            ("Länge", "je Szenario"),
+            ("Rechenmodus", "Nur Zahlen (vorgegeben)"),
+        ]
+    return [
+        ("Szenario", _scenario_name(draft)),
+        ("Länge", _length(draft)),
+        ("Rechenmodus", compute_mode.short_label(draft)),
+    ]
+
+
+def summary_rows(draft: dict) -> html.Div:
+    """Szenario, Länge, Rechenmodus — der Entwurf auf drei Zeilen (siehe `stand`)."""
 
     return html.Div(
-        [
-            _row("Szenario", _scenario_name(draft)),
-            _row("Länge", _length(draft)),
-            _row("Rechenmodus", compute_mode.short_label(draft)),
-        ],
+        [_row(label, wert) for label, wert in stand(draft)],
         className="af-rail-rows",
     )
 
