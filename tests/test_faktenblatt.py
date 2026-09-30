@@ -171,3 +171,14 @@ class TestDieVorlageSprichtDieselbeRichtung:
         text = build_run_narrative(context, build_factor_profile(context))
 
         assert pruefe(text, laufzeilen(tmp_path)) == [], text
+
+    def test_eine_frage_zu_einem_tick_bekommt_es_nicht(self, tmp_path: Path):
+        """Abnahme V6: «Was passierte bei Tick 24?» wurde mit den Werten des ganzen
+        Laufs beantwortet — das Modell schrieb das Faktenblatt ab."""
+
+        from src.reporting.state_explorer import build_grounded_context_block, load_run_context
+
+        _write_scenario_fixture(tmp_path / "lauf", booking_start=0.6, booking_end=0.4)
+        kontext = load_run_context("lauf", focus_tick=2, outputs_root=tmp_path)
+
+        assert "faktenblatt" not in build_grounded_context_block(kontext)

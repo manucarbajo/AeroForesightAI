@@ -245,9 +245,17 @@ def build_grounded_context_block(context: RunExplorerContext) -> str:
     # Die Richtung jeder Kerngröße als Satz, vor den Rohdaten (P8-V3). Am
     # 2026-09-29 antwortete `llama3.2` auf «Ist die Buchungsrate gestiegen oder
     # gesunken?» mit «gestiegen», während sie fiel — aus Zahlenreihen gedeutet.
-    # Eine Frage zu einem einzelnen Tick bekommt es ebenso: Es beschreibt den Lauf.
-    faktenblatt = faktenblatt_saetze(
-        context.run_dir, context.factors_timeseries, faktor_namen(_load_factor_catalog())
+    #
+    # **Nicht bei einer Frage zu einem einzelnen Tick** (Abnahme V6, 2026-09-30):
+    # Auf «Was passierte bei Tick 24?» antwortete das Modell mit «Die Buchungsrate
+    # sank von 47,9 % auf 24,7 %» — den Werten des ganzen Laufs, wörtlich aus dem
+    # Faktenblatt. Es stand vor den Daten des Ticks und wurde abgeschrieben.
+    faktenblatt = (
+        faktenblatt_saetze(
+            context.run_dir, context.factors_timeseries, faktor_namen(_load_factor_catalog())
+        )
+        if context.focus_tick is None
+        else []
     )
     if faktenblatt:
         lines.append("faktenblatt (Verlauf über den ganzen Lauf, von Python gerechnet):")
