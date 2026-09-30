@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from src.reporting.aussagen_pruefung import richtung_von
+
 
 @dataclass(frozen=True)
 class RunScenarioContext:
@@ -198,30 +200,30 @@ def _cib_score(context: RunScenarioContext) -> float | None:
     return None
 
 
-def _booking_trend(metrics: dict[str, Any]) -> str:
-    start = metrics.get("booking_rate_start")
-    end = metrics.get("booking_rate_end")
+#: Die Richtung als Adjektiv, wie die Vorlage sie in ihre Sätze setzt.
+_TREND = {"steigt": "steigend", "sinkt": "fallend", "gleich": "stabil"}
+
+
+def _trend(start: Any, end: Any) -> str:
+    """Dieselbe Richtung wie im Faktenblatt und in der Prüfung (P8-V3).
+
+    Bis dahin urteilte die Vorlage mit eigenen, **absoluten** Schwellen — 0,05
+    auf der Buchungsrate, 5 EUR auf dem Preis. Bei 140 auf 146 EUR schrieb sie
+    «steigend», das Faktenblatt «bleibt etwa gleich», und die Prüfung markierte
+    Pythons eigenen Satz als Widerspruch.
+    """
+
     if start is None or end is None:
         return "stabil"
-    delta = float(end) - float(start)
-    if delta > 0.05:
-        return "steigend"
-    if delta < -0.05:
-        return "fallend"
-    return "stabil"
+    return _TREND[richtung_von(float(start), float(end))]
+
+
+def _booking_trend(metrics: dict[str, Any]) -> str:
+    return _trend(metrics.get("booking_rate_start"), metrics.get("booking_rate_end"))
 
 
 def _price_trend(metrics: dict[str, Any]) -> str:
-    start = metrics.get("ticket_price_start_eur")
-    end = metrics.get("ticket_price_end_eur")
-    if start is None or end is None:
-        return "stabil"
-    delta = float(end) - float(start)
-    if delta > 5:
-        return "steigend"
-    if delta < -5:
-        return "fallend"
-    return "stabil"
+    return _trend(metrics.get("ticket_price_start_eur"), metrics.get("ticket_price_end_eur"))
 
 
 # `_plausibility_for_rank` ist mit P2.0 entfallen. Sie machte aus dem

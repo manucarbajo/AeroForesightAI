@@ -149,3 +149,25 @@ class TestDieAbfrageBekommtDasBlatt:
 
         assert block.index("faktenblatt") < block.index("run_summary:")
         assert "- Buchungsrate sinkt von 60,0 % auf 40,0 %" in block
+
+
+class TestDieVorlageSprichtDieselbeRichtung:
+    """Die deterministische Vorlage des Abschlusstexts urteilte mit eigenen Schwellen."""
+
+    def test_ein_kleiner_preisanstieg_ist_auch_dort_stabil(self):
+        from src.reporting.run_scenario_generator.context import _price_trend
+
+        # +6 EUR sind über der alten Schwelle von 5 EUR, aber unter fünf Prozent.
+        metriken = {"ticket_price_start_eur": 140.0, "ticket_price_end_eur": 146.0}
+
+        assert _price_trend(metriken) == "stabil"
+
+    def test_das_lauf_narrativ_der_vorlage_besteht_die_pruefung(self, tmp_path: Path):
+        from src.reporting.run_scenario_generator import build_factor_profile, build_run_narrative
+
+        _write_scenario_fixture(tmp_path, booking_start=0.6, booking_end=0.4)
+        context = load_run_scenario_context("fixture", run_dir=tmp_path)
+
+        text = build_run_narrative(context, build_factor_profile(context))
+
+        assert pruefe(text, laufzeilen(tmp_path)) == [], text
