@@ -456,18 +456,68 @@ def _factor_to_number(value) -> float:
     return 0.0
 
 
-def sweep_geschwister(run_dir: Path) -> list[Path]:
-    """Die anderen Szenario-Läufe neben diesem — oder keine.
-
-    Ein Szenario-Vergleich schreibt nach `outputs/sweeps/sweep_<id>/`.
-    Geschwister sind deshalb die übrigen `sweep_*`-Verzeichnisse im selben
-    Ordner. Ein einzelner Lauf hat keine, **und das ist eine Auskunft, kein
-    Fehler**: Ein Vergleich braucht mehr als einen Lauf.
-    """
+def _alle_sweep_laeufe(run_dir: Path) -> list[Path]:
+    """Jeder Lauf unter `sweeps/` neben diesem — auch Prüfläufe."""
 
     if run_dir.parent.name != "sweeps" or not run_dir.parent.is_dir():
         return []
-    return sorted(p for p in run_dir.parent.iterdir() if p.is_dir() and p.name.startswith("sweep_"))
+    return sorted(
+        p
+        for p in run_dir.parent.iterdir()
+        if p.name.startswith("sweep_") and (p / "run_metadata.json").is_file()
+    )
+
+
+def _rahmen_des_laufs(run_dir: Path) -> str | None:
+    """Unter welchem hinterlegten Szenario ein Lauf stand (`rahmen.id`) — oder `None`."""
+
+    try:
+        metadaten = json.loads((run_dir / "run_metadata.json").read_text(encoding="utf-8"))
+        rahmen = metadaten.get("rahmen") or {}
+    except (OSError, ValueError, AttributeError):
+        return None
+    if not isinstance(rahmen, dict) or rahmen.get("quelle") != "preset":
+        return None
+    return str(rahmen.get("id") or "") or None
+
+
+def sweep_geschwister(run_dir: Path, rahmen_ids: set[str] | None = None) -> list[Path]:
+    """Die Läufe der heutigen Rahmenszenarien neben diesem — oder keine.
+
+    Ein Szenario-Vergleich schreibt nach `outputs/sweeps/sweep_<id>/`, und der
+    Ordner behält jeden Lauf, dessen Szenario es längst nicht mehr gibt. **Bis
+    P8-V10 (2026-09-30) nahm der Vergleich sie alle mit** — «Short Test Sweep»
+    stand neben «Business as Usual». Seither gehört nur dazu, was unter einem
+    heutigen Rahmenszenario stand: dieselbe Ableitung wie der Filter
+    «Prüfläufe» im Lauf-Browser (`lauf_wahl.lauf_art`), aus derselben Quelle,
+    aus der ein Vergleich seine Rahmen nimmt.
+
+    Ein einzelner Lauf hat keine Geschwister, **und das ist eine Auskunft, kein
+    Fehler**: Ein Vergleich braucht mehr als einen Lauf.
+    """
+
+    if rahmen_ids is None:
+        from dashboard.config_catalog import rahmenszenarien
+
+        rahmen_ids = {rahmen.id for rahmen in rahmenszenarien()}
+    return [p for p in _alle_sweep_laeufe(run_dir) if _rahmen_des_laufs(p) in rahmen_ids]
+
+
+def _vergleich_satz(verglichen: int, ausgeblendet: int) -> str:
+    """Was der Vergleich zeigt — und was er weglässt."""
+
+    satz = (
+        f"Verglichen werden die {verglichen} Rahmenszenarien, jedes mit seinem "
+        "jüngsten Lauf aus einem Szenario-Vergleich."
+    )
+    if ausgeblendet == 1:
+        return satz + " Ein Lauf unter einem Szenario, das heute kein Rahmen ist, ist ausgeblendet."
+    if ausgeblendet > 1:
+        return (
+            satz + f" {ausgeblendet} Läufe unter Szenarien, die heute kein Rahmen sind, "
+            "sind ausgeblendet."
+        )
+    return satz
 
 
 def _szenario_name(run_dir: Path) -> str:
@@ -608,8 +658,7 @@ def _view_szenarien(run_dir: Path, mode: str = theme.LIGHT):
     )
     blocks.append(
         html.P(
-            f"Verglichen werden alle {len(geschwister)} Szenario-Läufe unter "
-            "aus einem Szenario-Vergleich — auch aus früheren Durchläufen.",
+            _vergleich_satz(len(geschwister), len(_alle_sweep_laeufe(run_dir)) - len(geschwister)),
             className=f"{ui.CAPTION} mt-3",
         )
     )

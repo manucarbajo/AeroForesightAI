@@ -533,11 +533,13 @@ class TestDieErgebnisseBeantwortenVierFragen:
         from dashboard.web.views import figures
 
         sweeps = tmp_path / "sweeps"
-        for name in ("sweep_a", "sweep_b"):
+        for name in ("sweep_a", "sweep_b", "nicht_ein_sweep"):
             (sweeps / name).mkdir(parents=True)
-        (sweeps / "nicht_ein_sweep").mkdir()
+            (sweeps / name / "run_metadata.json").write_text(
+                json.dumps({"rahmen": {"id": name[-1], "quelle": "preset"}}), encoding="utf-8"
+            )
 
-        geschwister = figures.sweep_geschwister(sweeps / "sweep_a")
+        geschwister = figures.sweep_geschwister(sweeps / "sweep_a", {"a", "b"})
 
         assert [p.name for p in geschwister] == ["sweep_a", "sweep_b"]
 
