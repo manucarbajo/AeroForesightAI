@@ -81,6 +81,20 @@ def body(run_dir: Path, run_id: str) -> html.Div:
                 )
             )
 
+        # Direkt unter dem Text, dem sie widersprechen — nicht am Ende bei den
+        # Grounding-Hinweisen, wo sie niemand neben dem Satz liest (P8-V3).
+        widerspruch = scenario.get("widersprueche") or narrative.get("widersprueche") or []
+        if widerspruch:
+            children.append(
+                ui.hinweis(
+                    "**Widerspricht der Rechnung.** Das Sprachmodell hat hier etwas anderes "
+                    "geschrieben, als der Lauf gerechnet hat:\n\n"
+                    + "\n".join(f"- {eintrag.get('zeile', '')}" for eintrag in widerspruch),
+                    "warnung",
+                    class_name="mb-6",
+                )
+            )
+
         items = _scenario_items(scenario)
         if items:
             children.append(html.H3("Szenarien", className=f"{ui.H2} mb-3"))

@@ -23,6 +23,12 @@ einer mit seinem Verlauf. «Steigt» und «sinkt» heißt: mehr als fünf Prozen
 Änderung vom ersten zum letzten Tick. Den Abschlusstext können Sie gegen genau
 diese Sätze lesen. Ältere Läufe tragen das Feld nicht.
 
+Daneben steht `widersprueche`: jede Stelle in Titel, Zusammenfassung,
+Lauf-Narrativ oder Auswahlbegründung, die der Rechnung widerspricht, je mit
+`feld`, `art` (`richtung`, `datum` oder `englisch`), der `stelle` im Text, der
+`erklaerung` und der `zeile`, die das Dashboard zeigt. Eine leere Liste heißt:
+nichts gefunden — die drei Szenarien werden nicht geprüft.
+
 ### Der Konsistenzwert in `run_scenario.json`
 
 Jedes der drei Szenarien trägt dort drei zusammengehörige Felder:

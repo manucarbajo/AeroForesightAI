@@ -5,14 +5,14 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
 from src.llm import LLMCallable, OllamaClient, OllamaConfig, auf_deutsch
 from src.logging_setup import stdio_auf_utf8
 from src.orchestration.checkpoint_manager import CheckpointManager
-from src.reporting.aussagen_pruefung import faktenblatt_saetze
+from src.reporting.aussagen_pruefung import faktenblatt_saetze, laufzeilen, pruefe
 from src.reporting.output_writer import OUTPUT_DIR
 from src.reporting.run_scenario_generator.factors import _load_factor_catalog, faktor_namen
 
@@ -434,6 +434,10 @@ class Antwort:
     #: wiegt anders als eines aus einem mit dreihundert, und wer die Antwort liest,
     #: konnte das bisher nicht wissen.
     kontextzahlen: int = 0
+    #: Stellen, an denen die Antwort der Rechnung widerspricht (P8-V3) — eine
+    #: Richtung gegen das Faktenblatt, ein Kalenderdatum, englischer Text. Je
+    #: Befund die Zeile, die der Leser sieht (`aussagen_pruefung.Befund.zeile`).
+    widersprueche: tuple[str, ...] = ()
 
     @property
     def belegt(self) -> bool:
@@ -454,7 +458,17 @@ class Antwort:
         ein Satz, die Warnung unter einer unbelegten bleibt ein Block.
         """
 
+        widerspruch = ""
+        if self.widersprueche:
+            zeilen = "\n".join(f"- {zeile}" for zeile in self.widersprueche)
+            widerspruch = (
+                f"⚠️ **Widerspricht der Rechnung:**\n\n{zeilen}\n\n"
+                "Den gerechneten Verlauf nennt das Faktenblatt am Anfang der Laufdaten."
+            )
+
         if self.belegt:
+            if widerspruch:
+                return f"{self.text}\n\n{widerspruch}"
             if self.geprueft == 0:
                 hinweis = (
                     "Prüfung: Diese Antwort enthält keine Zahl, die sich gegen die "
@@ -478,7 +492,7 @@ class Antwort:
             f"{self.kontextzahlen} verschiedene Zahlen der Laufdaten. Die Prüfung "
             "fragt, **ob** eine Zahl dort vorkommt — nicht, ob sie an der richtigen "
             "Stelle steht."
-        )
+        ) + (f"\n\n{widerspruch}" if widerspruch else "")
 
 
 def pruefe_gegen_kontext(antwort: str, kontext: str) -> Antwort:
@@ -578,7 +592,14 @@ class StateExplorer:
         # Ein Prompt, eine Stelle: Bis P8-V2 stand er hier ein zweites Mal wörtlich
         # neben `build_prompt`, und die Sprachanweisung hätte an beiden gefehlt.
         grounded = build_grounded_context_block(self.context)
-        return pruefe_gegen_kontext(self.llm.call(self.build_prompt(question)), grounded)
+        antwort = pruefe_gegen_kontext(self.llm.call(self.build_prompt(question)), grounded)
+        # Und was sie behauptet, gegen den Verlauf gehalten (P8-V3). Eine Frage zu
+        # einem einzelnen Tick darf etwas anderes über die Richtung sagen als der
+        # ganze Lauf — dort gilt die Richtungsprüfung nicht.
+        befunde = pruefe(antwort.text, laufzeilen(self.context.run_dir))
+        if self.context.focus_tick is not None:
+            befunde = [befund for befund in befunde if befund.art != "richtung"]
+        return replace(antwort, widersprueche=tuple(befund.zeile for befund in befunde))
 
 
 def _build_parser() -> argparse.ArgumentParser:

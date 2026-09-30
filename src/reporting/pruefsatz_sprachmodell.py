@@ -37,7 +37,7 @@ from pathlib import Path
 
 from src.llm import OllamaClient, OllamaConfig
 from src.logging_setup import stdio_auf_utf8
-from src.reporting.aussagen_pruefung import Befund, laufzeilen, pruefe
+from src.reporting.aussagen_pruefung import LAUFTEXTE, Befund, laufzeilen, pruefe
 from src.reporting.output_writer.paths import OUTPUT_DIR
 
 REPO = Path(__file__).resolve().parents[2]
@@ -67,6 +67,17 @@ class Text:
     inhalt: str
     befunde: list[Befund] = field(default_factory=list)
     unbelegt: tuple[str, ...] = ()
+    #: Was das Produkt selbst an diesem Text markiert (P8-V3) — je Befund die
+    #: Zeile, die der Leser sieht. ``None``: Dieser Weg markiert nichts.
+    markiert: tuple[str, ...] | None = None
+
+    @property
+    def unmarkiert(self) -> int:
+        """Befunde, die der Leser nicht zu sehen bekommt — das Kriterium von P8-V3."""
+
+        if self.markiert is None:
+            return len(self.befunde)
+        return sum(befund.zeile not in self.markiert for befund in self.befunde)
 
 
 def _ticks(run_dir: Path) -> list[dict]:
@@ -98,10 +109,19 @@ def abschlusstexte() -> tuple[list[Text], dict[str, Path]]:
             continue
         # Geprüft wird, was der Text über **diesen** Lauf sagt. Die Geschichten der
         # drei Szenarien beschreiben andere Zukünfte und dürfen anders verlaufen.
-        for schluessel in ("summary", "run_narrative"):
-            inhalt = str(daten.get(schluessel) or "").strip()
+        narrativ = daten.get("narrative") or {}
+        markiert = tuple(w.get("zeile", "") for w in daten.get("widersprueche") or [])
+        for schluessel in LAUFTEXTE:
+            inhalt = str(daten.get(schluessel) or narrativ.get(schluessel) or "").strip()
             if inhalt:
-                texte.append(Text(f"{sweep.name}: {schluessel}", inhalt, pruefe(inhalt, ticks)))
+                texte.append(
+                    Text(
+                        f"{sweep.name}: {schluessel}",
+                        inhalt,
+                        pruefe(inhalt, ticks),
+                        markiert=markiert,
+                    )
+                )
     return texte, ordner
 
 
@@ -126,6 +146,7 @@ def abfragen(ordner: dict[str, Path]) -> list[Text]:
                     antwort.text,
                     pruefe(antwort.text, ticks),
                     antwort.unbelegt,
+                    markiert=antwort.widersprueche,
                 )
             )
     return texte
@@ -183,14 +204,14 @@ def bericht(rechner: str, gruppen: dict[str, list[Text]], sekunden_je_tick: floa
         f"Gemessen am {date.today().isoformat()} auf «{rechner}», Modell `{modell}`. "
         "Die Antworten eines Sprachmodells streuen von Aufruf zu Aufruf; eine einzelne Messung ist ein Ausgangswert, kein Urteil.",
         "",
-        "| Weg | Texte | englisch | mit Datum | Richtungswiderspruch | unbelegte Zahlen |",
-        "| --- | ---: | ---: | ---: | ---: | ---: |",
+        "| Weg | Texte | englisch | mit Datum | Richtungswiderspruch | davon unmarkiert | unbelegte Zahlen |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for name, texte in gruppen.items():
         zaehl = lambda art: sum(any(b.art == art for b in t.befunde) for t in texte)  # noqa: E731
         zeilen.append(
             f"| {name} | {len(texte)} | {zaehl('englisch')} | {zaehl('datum')} | {zaehl('richtung')} | "
-            f"{sum(bool(t.unbelegt) for t in texte)} |"
+            f"{sum(t.unmarkiert for t in texte)} | {sum(bool(t.unbelegt) for t in texte)} |"
         )
     zeilen += [
         "",
@@ -208,16 +229,25 @@ def bericht(rechner: str, gruppen: dict[str, list[Text]], sekunden_je_tick: floa
         for t in auffaellig:
             zeilen.append(f"- **{t.herkunft}**")
             for b in t.befunde:
-                zeilen.append(f"  - {b.art}: {b.erklaerung} — «{b.stelle[:160]}»")
+                marke = (
+                    "" if t.markiert is not None and b.zeile in t.markiert else " **(unmarkiert)**"
+                )
+                zeilen.append(f"  - {b.art}{marke}: {b.zeile}")
             if t.unbelegt:
                 zeilen.append(f"  - unbelegt: {', '.join(t.unbelegt)}")
         zeilen.append("")
     zeilen += [
         "## Was der Prüfsatz nicht sieht",
         "",
-        "Erfundene Dinge ohne falsche Richtung oder Zahl («eine Elektroflotte») erkennt er nicht; "
-        "dafür braucht es ein Faktenblatt (P8-V3). Eine Richtungsaussage zählt nur, wenn ihr Satzteil "
-        "genau eine Größe und genau eine Richtung nennt — alles andere wird übergangen statt geraten.",
+        "Erfundene Dinge ohne falsche Richtung oder Zahl («eine Elektroflotte») erkennt er nicht — "
+        "das Faktenblatt sagt dem Modell nur, was es behaupten darf. Eine Richtungsaussage zählt nur, "
+        "wenn ihr Satzteil genau eine Größe und genau eine Richtung nennt — alles andere wird übergangen "
+        "statt geraten.",
+        "",
+        "**«davon unmarkiert»** zählt Befunde, die das Produkt dem Leser nicht zeigt. Abschlusstext "
+        "und Abfrage markieren seit P8-V3 jeden Befund dieser Prüfung; die Texte der Agenten markiert "
+        "das Produkt nicht, weil sie den Zustand eines Ticks beschreiben und nicht den ganzen Lauf — "
+        "ihr Richtungsbefund ist deshalb ein Hinweis, kein sicherer Widerspruch.",
         "",
     ]
     return "\n".join(zeilen)

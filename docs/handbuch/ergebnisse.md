@@ -54,6 +54,18 @@ höchstens drei; alle stehen in der Konsole.
 Die Hauptansicht. Oben das Lauf-Narrativ, also was im Lauf tatsächlich passiert
 ist, darunter das Tripleset aus drei möglichen Fortsetzungen.
 
+**Widerspricht der Text der Rechnung, steht das direkt darunter.** Seit Ende
+September 2026 hält das Programm Titel, Zusammenfassung, Lauf-Narrativ und
+Auswahlbegründung eines vom Sprachmodell geschriebenen Texts gegen den
+gerechneten Verlauf: Schreibt der Text, die CO₂-Abgabe steige, während sie den
+ganzen Lauf bei 50 € stand, erscheint ein gelber Hinweis «Widerspricht der
+Rechnung» mit der Stelle. Ebenso ein Kalenderdatum — ein Tick hat keines — und
+englischer Text. Der Text wird nicht verändert oder verworfen. Die drei
+Szenarien sind ausgenommen: Sie beschreiben mögliche Zukünfte, die anders
+verlaufen dürfen als der Lauf. **Was die Prüfung nicht erkennt**, sind frei
+erfundene Dinge ohne falsche Richtung — etwa eine «Elektroflotte», die das
+Modell nicht kennt.
+
 Jedes Szenario lässt sich aufklappen und zeigt dann zweierlei: die Anhaltspunkte
 aus dem Lauf mit konkreten Tick-Werten, und die Beschreibung selbst. Die
 Anhaltspunkte sind der Beleg dafür, dass die Erzählung an gerechneten Zahlen

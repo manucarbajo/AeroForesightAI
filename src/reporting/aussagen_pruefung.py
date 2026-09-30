@@ -150,6 +150,41 @@ class Befund:
     stelle: str  # der Satzteil, um den es geht
     erklaerung: str
 
+    @property
+    def zeile(self) -> str:
+        """Wie der Befund einem Leser gezeigt wird: was falsch ist, und wo."""
+
+        return f"{self.erklaerung} — «{self.stelle[:160]}»"
+
+
+#: Die Felder eines Abschlusstexts, die etwas über den **gerechneten** Lauf sagen
+#: (P8-V3). Die drei Szenarien fehlen mit Absicht: Sie beschreiben mögliche
+#: Zukünfte, und gegen den Lauf gehalten wäre jede ihrer Richtungsaussagen ein
+#: Fehlalarm.
+LAUFTEXTE = ("title", "summary", "run_narrative", "selection_reasoning")
+
+
+def widersprueche(
+    abschlusstext: dict[str, Any], ticks: list[dict[str, Any]]
+) -> list[dict[str, str]]:
+    """Die Befunde eines Abschlusstexts, je mit dem Feld, in dem sie stehen (P8-V3).
+
+    Als Wörterbücher, weil sie so in ``run_scenario.json`` landen und von dort in
+    Markdown und Dashboard.
+    """
+
+    return [
+        {
+            "feld": feld,
+            "art": b.art,
+            "stelle": b.stelle,
+            "erklaerung": b.erklaerung,
+            "zeile": b.zeile,
+        }
+        for feld in LAUFTEXTE
+        for b in pruefe(str(abschlusstext.get(feld) or ""), ticks)
+    ]
+
 
 def ist_englisch(text: str) -> bool:
     """Überwiegen englische Funktionswörter? Mindestens drei, damit ein Fachbegriff nicht zählt."""

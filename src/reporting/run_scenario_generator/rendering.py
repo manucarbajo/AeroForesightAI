@@ -87,6 +87,17 @@ def render_run_scenario_markdown(
         "",
     ]
 
+    # Direkt unter dem Text, über den sie etwas sagen — nicht am Ende (P8-V3).
+    widerspruch = payload.get("widersprueche") or []
+    if widerspruch:
+        lines.append(
+            "> **Widerspricht der Rechnung.** Das Sprachmodell hat hier etwas anderes "
+            "geschrieben, als der Lauf gerechnet hat:"
+        )
+        lines.append(">")
+        lines.extend(f"> - {eintrag.get('zeile', '')}" for eintrag in widerspruch)
+        lines.append("")
+
     selection_reasoning = str(payload.get("selection_reasoning", "")).strip()
     if selection_reasoning:
         lines.extend(["## Auswahl der Szenarien", selection_reasoning, ""])

@@ -52,6 +52,12 @@ Ticketpreis von 140 Euro, und «49 %» keine Buchungsrate, die nie bei 49 % lag.
 oft trotzdem brauchbar — sie kommt deshalb vollständig, mit dem Vorbehalt
 darunter.
 
+**Auch eine falsche Richtung wird markiert.** Sagt die Antwort, die Buchungsrate
+sei gestiegen, während sie über den Lauf fiel, steht darunter «Widerspricht der
+Rechnung» mit der Stelle — geprüft gegen das Faktenblatt. Bei einer Frage zu
+einem einzelnen Tick entfällt diese Prüfung, weil eine Größe dort anders laufen
+kann als über den ganzen Lauf.
+
 **Und jede Antwort sagt, dass sie geprüft wurde.** Seit Ende September 2026 steht
 auch unter einer Antwort ohne Befund ein Satz, etwa «Prüfung: 3 Zahlen der
 Antwort, gehalten gegen 442 verschiedene Zahlen der Laufdaten — jede kommt dort

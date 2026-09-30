@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from src.llm import LLMCallable, auf_deutsch
+from src.reporting.aussagen_pruefung import laufzeilen, widersprueche
 from src.reporting.run_scenario_generator.candidates import _normalize_scenarios
 from src.reporting.run_scenario_generator.context import load_run_scenario_context
 from src.reporting.run_scenario_generator.factors import _load_factor_catalog, build_factor_profile
@@ -92,6 +93,13 @@ def generate_run_scenario(
         if len(str(narrative.get("summary") or "")) < 200:
             template = build_template_scenario(context)
             narrative["summary"] = template["summary"]
+        # Was der Text über den Lauf sagt, gegen die Rechnung gehalten (P8-V3):
+        # markiert wie eine unbelegte Zahl, nicht zurückgewiesen. **Nach** dem
+        # Ersetzen einer zu kurzen Zusammenfassung — sonst stünde ein Befund zu
+        # einem Satz da, den niemand mehr sieht.
+        widerspruch = widersprueche(narrative, laufzeilen(context.run_dir))
+        if widerspruch:
+            narrative["widersprueche"] = widerspruch
 
     scenarios = narrative.get("scenarios") or _normalize_scenarios(
         [],
@@ -111,6 +119,7 @@ def generate_run_scenario(
         "scenarios": scenarios,
         "source": narrative.get("source", "template"),
         "grounding_warnings": grounding_warnings,
+        "widersprueche": narrative.get("widersprueche", []),
         "llm_error": llm_error,
         "agent_digest": context.agent_digest,
         "narrative": narrative,
@@ -139,6 +148,7 @@ def save_run_scenario_artifacts(
         "scenarios": result.get("scenarios") or (result.get("narrative") or {}).get("scenarios"),
         "source": result.get("source"),
         "grounding_warnings": result.get("grounding_warnings", []),
+        "widersprueche": result.get("widersprueche", []),
         "agent_digest": result.get("agent_digest")
         or (result.get("narrative") or {}).get("agent_digest"),
         "narrative": result.get("narrative"),
