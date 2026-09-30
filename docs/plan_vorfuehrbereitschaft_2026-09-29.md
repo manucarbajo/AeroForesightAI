@@ -100,12 +100,23 @@ Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung,
 
 **Erledigt am 2026-09-29.** Beide Startpfade schreiben `run_metadata.json` jetzt **vor** dem Abschlusstext und endgültig danach; `save_llm_incidents` räumt ohne Vorfall eine alte Datei im Laufordner ab (nie in der Ausgabewurzel). Gehalten von `tests/test_abschlusstext_liest_seinen_lauf.py` — Einzellauf als eigener Prozess, Szenario-Vergleich als zweiter Durchlauf in einen Ordner mit Artefakten eines 50-Tick-Laufs; gegen den alten Code vier von fünf Zusagen rot. `tests/test_run_provenance.py` prüft seither das **letzte** Schreiben der Metadaten nach dem Vorfall.
 
-#### V5 — Eine aufgeräumte Vorführumgebung mit vorgerechneten Läufen
+#### V5 — Eine aufgeräumte Vorführumgebung mit vorgerechneten Läufen ✅ erledigt 2026-09-30
 
 **Befund:** Ein Lauf mit Sprachmodell dauert Minuten; der Lauf-Browser listet 980 Ordner, darunter hunderte Mess- und Prüfläufe.
 **Was zu tun ist:** Einen **Vorführbestand** festlegen und vorrechnen, mit `llama3.2` und nach V2 bis V4: (1) «Business as Usual», 40 Ticks, mit Sprachmodell; (2) derselbe Rahmen mit angehobener CO₂-Abgabe (der Anwendungsfall aus dem Pitch); (3) Szenario-Vergleich der vier Rahmen über 120 Ticks. Der übrige Inhalt von `outputs/` wandert in ein Archiv außerhalb des Ordners (verschieben, nicht löschen). Ein kurzes Skript oder eine Anleitung, die den Bestand reproduzierbar erzeugt.
 **Fertig wenn:** Der Lauf-Browser zeigt nur den Vorführbestand; jeder Lauf darin besteht die Abnahme oben.
 **Aufwand:** ½ Tag Arbeit, dazu Rechenzeit.
+
+**Erledigt am 2026-09-30.** `python -m dashboard.vorfuehrbestand` verschiebt `outputs/` in ein Archiv neben dem Repository (nichts wird gelöscht; der Bestand vom 2026-09-30 mit 984 Einträgen liegt in `AeroForesight_outputs_archiv/2026-09-30T092819`), rechnet über denselben Weg wie das Dashboard den Szenario-Vergleich, «Business as Usual» über 40 Ticks und den Pitch-Fall (CO₂-Abgabe ab Tick 24 bei 200 €) und prüft jeden Lauf; `--nur KENNUNG` rechnet einen einzelnen neu, `--nur-pruefen` prüft nur. Auf dem Entwicklungsrechner rund 21 Minuten. **Stand des Bestands:** alle sechs Läufe bestehen (Text vom Modell, kein Ausfall, kein englischer Text), der Lauf-Browser zeigt genau diese sechs, den Pitch-Fall und «Business as Usual» zuoberst.
+
+**Der Bestand hat vier Befunde geliefert, bevor er bestand** — und das ist sein eigentlicher Ertrag:
+
+1. **Drei von sechs Abschlusstexten kamen aus der Vorlage**, ohne dass es irgendwo stand: `llama3.2` schrieb einen Zeilenumbruch in einen JSON-Text, der Leser wies die Antwort ab. Der Leser ist nachsichtig geworden, **und eine verworfene Antwort ist seither ein Vorfall** (`answer_unusable`, Invariante 1) — nach einem zweiten Versuch.
+2. **Die Einzelläufe waren im Lauf-Browser unsichtbar**, weil ihre Kennungen nicht mit `run_` begannen. Für den Bestand behoben; dass die Kommandozeile mit `--run-id` jeden Namen annimmt, steht in `audit_findings.md`.
+3. **«Im Lauf des Jahres 2025»** — ein genanntes Jahr wird jetzt als Datum markiert.
+4. **Die Streuung bleibt:** In vier Durchläufen fiel zweimal ein Lauf durch. Vor der Vorführung deshalb `--nur-pruefen` laufen lassen und einen durchgefallenen Lauf mit `--nur` ersetzen.
+
+**Was in den Texten steht, muss kennen, wer vorführt** (V6, V8): In fünf der sechs Abschlusstexte steht ein markierter Widerspruch, fast immer «Nachfrage steigt», während sie fällt; im Einzellauf «Business as Usual» ein markiertes «Jahres 2025». **Auf dem Laptop ist der Bestand neu zu rechnen** — die Läufe tragen den Codestand und die Zeiten dieses Rechners.
 
 #### V6 — Abnahme-Durchgang: jede Funktion einmal angefasst, mit Protokoll
 
