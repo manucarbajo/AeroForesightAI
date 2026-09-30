@@ -120,3 +120,19 @@ class TestDieFehlalarmeDesErstenPruefsatzes:
         ]
         assert pruefe("Die Nachfrage steigt im Lauf.", ticks) == []
         assert [b.art for b in pruefe("Die Buchungsrate steigt im Lauf.", ticks)] == ["richtung"]
+
+
+class TestEinGenanntesJahrIstEinDatum:
+    """Aus dem Vorführbestand vom 2026-09-30, wörtlich — ein Tick hat kein Kalenderjahr."""
+
+    def test_der_satz_aus_dem_pitch_fall(self):
+        text = "Im Lauf des Jahres 2025 wächst die globale Luftverkehrsnachfrage."
+
+        assert [b.stelle for b in pruefe(text, BAU) if b.art == "datum"] == ["Jahres 2025"]
+
+    def test_im_jahr_und_ein_volles_datum(self):
+        assert any(b.art == "datum" for b in pruefe("Im Jahr 2030 gilt die Quote.", BAU))
+        assert any(b.art == "datum" for b in pruefe("Am 01.01.2023 begann es.", BAU))
+
+    def test_eine_blosse_zahl_ist_kein_jahr(self):
+        assert not any(b.art == "datum" for b in pruefe("Es waren 2048 Personen in Tick 20.", BAU))

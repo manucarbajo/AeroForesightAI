@@ -59,8 +59,8 @@ September 2026 hält das Programm Titel, Zusammenfassung, Lauf-Narrativ und
 Auswahlbegründung eines vom Sprachmodell geschriebenen Texts gegen den
 gerechneten Verlauf: Schreibt der Text, die CO₂-Abgabe steige, während sie den
 ganzen Lauf bei 50 € stand, erscheint ein gelber Hinweis «Widerspricht der
-Rechnung» mit der Stelle. Ebenso ein Kalenderdatum — ein Tick hat keines — und
-englischer Text. Der Text wird nicht verändert oder verworfen. Die drei
+Rechnung» mit der Stelle. Ebenso ein Kalenderdatum oder ein genanntes Jahr («im Jahr 2030») — ein Tick
+hat keines — und englischer Text. Der Text wird nicht verändert oder verworfen. Die drei
 Szenarien sind ausgenommen: Sie beschreiben mögliche Zukünfte, die anders
 verlaufen dürfen als der Lauf. **Was die Prüfung nicht erkennt**, sind frei
 erfundene Dinge ohne falsche Richtung — etwa eine «Elektroflotte», die das

@@ -101,8 +101,15 @@ RICHTUNGEN: dict[str, str] = {
 BEDINGUNG = re.compile(r"\b(?:wenn|falls|sofern|ob|angenommen)\b|=|\?")
 
 #: Ein Kalenderdatum. Die Daten eines Laufs tragen keines (Invariante 5), also ist
-#: jedes Datum in einem Text über den Lauf erfunden.
-DATUM = re.compile(r"\b(?:19|20)\d{2}-\d{2}-\d{2}\b|\b\d{1,2}\.\s?\d{1,2}\.\s?(?:19|20)\d{2}\b")
+#: jedes Datum in einem Text über den Lauf erfunden. **Auch ein genanntes Jahr**
+#: («im Jahr 2030», «des Jahres 2025»): Der Pitch-Fall des Vorführbestands schrieb
+#: am 2026-09-30 «Im Lauf des Jahres 2025 wächst …», und nichts markierte es. Eine
+#: bloße vierstellige Zahl zählt nicht — «2048 Personen» ist kein Jahr.
+DATUM = re.compile(
+    r"\b(?:19|20)\d{2}-\d{2}-\d{2}\b"
+    r"|\b\d{1,2}\.\s?\d{1,2}\.\s?(?:19|20)\d{2}\b"
+    r"|(?i:\bjahr(?:es|e|en)?\s+(?:19|20)\d{2}\b)"
+)
 
 #: Häufige Funktionswörter je Sprache. Gezählt wird, welche Sprache überwiegt —
 #: robuster als jedes Einzelwort, und ohne eine Abhängigkeit für Spracherkennung.
