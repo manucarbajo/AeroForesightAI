@@ -186,6 +186,9 @@ def _progress_from(payload: dict | None) -> runner.Progress | None:
         # Muss mit durch den Browser, sonst fiele die Restzeit genau dort aus,
         # wo sie gezeigt wird — dieselbe Falle wie bei `cancellable`.
         tick_seconds=tuple(float(w) for w in (payload.get("tick_seconds") or ())),
+        szenarien=payload.get("szenarien"),
+        szenarien_fertig=int(payload.get("szenarien_fertig") or 0),
+        szenario_name=payload.get("szenario_name"),
     )
 
 

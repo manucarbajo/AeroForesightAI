@@ -28,7 +28,7 @@ from dash import dcc, html
 
 from dashboard.web import components as ui
 from dashboard.web import routing
-from dashboard.web.config_editor import compute_mode, dauer
+from dashboard.web.config_editor import dauer
 from dashboard.web.runner import Progress
 
 #: Wie viele Konsolenzeilen der Ladebildschirm zeigt. Mehr als hier passt nicht
@@ -84,6 +84,14 @@ def _readout(progress: Progress) -> str:
 
     if progress.tick and progress.total:
         return f"Tick {progress.tick} von {progress.total}"
+    if progress.szenarien:
+        if progress.szenarien_fertig >= progress.szenarien:
+            return f"Alle {progress.szenarien} Szenarien gerechnet — Abschluss wird geschrieben"
+        if progress.szenario_name:
+            return (
+                f"Szenario {progress.szenarien_fertig + 1} von {progress.szenarien}: "
+                f"{progress.szenario_name}"
+            )
     if progress.lines:
         return "Läuft — Fortschritt nicht bezifferbar"
     return "Lauf wird vorbereitet …"
@@ -125,16 +133,19 @@ def _restzeit(progress: Progress) -> str | None:
 
 
 def _what(draft: dict) -> html.Div:
-    """Was gerade gerechnet wird — dieselben drei Angaben wie im Bedienfeld."""
+    """Was gerade gerechnet wird — **dieselben** drei Angaben wie im Bedienfeld.
 
-    from dashboard.web.pages.launch import _length, _scenario_name
+    Bis zum 2026-09-30 leitete der Ladebildschirm sie selbst ab und kannte den
+    Szenario-Vergleich nicht: Während vier Rahmen rechneten, stand dort
+    «Standard-Ausgangslage · 40 Ticks» (Befund 9 der Abnahme).
+    """
 
-    # `prose=True`, weil hier **Text** steht und keine Zahl: Im Zahlensatz
+    from dashboard.web.pages.launch import stand
+
+    # Variante `text`, weil hier **Text** steht und keine Zahl: Im Zahlensatz
     # sprengten «Standard-Ausgangslage» und «Ohne Sprachmodell» ihre Karten.
     return ui.grid(
-        ui.kachel("Szenario", _scenario_name(draft), variante="text"),
-        ui.kachel("Umfang", _length(draft), variante="text"),
-        ui.kachel("Rechenmodus", compute_mode.short_label(draft), variante="text"),
+        *[ui.kachel(label, wert, variante="text") for label, wert in stand(draft)],
         cols="sm:grid-cols-3",
         gap="gap-3",
     )

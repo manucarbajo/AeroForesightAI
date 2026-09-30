@@ -62,9 +62,15 @@ Wie weit der Lauf ist, weiß nur, wer eine Tick-Meldung gesehen hat, und die
 Oberfläche erfindet keine. Sie unterscheidet dabei zwei Fälle. **«Lauf wird
 vorbereitet …»** heißt: Es ist noch keine Zeile angekommen. **«Läuft —
 Fortschritt nicht bezifferbar»** heißt: Es rechnet, aber die Ausgabe enthält
-keine Tick-Zählung — so ist es beim Szenario-Vergleich, der je Szenario nur
-dessen Abschluss meldet. Die Prozentangabe erscheint, sobald eine Tick-Zählung
+keine Tick-Zählung. Die Prozentangabe erscheint, sobald eine Tick-Zählung
 vorliegt.
+
+**Der Szenario-Vergleich zählt Szenarien statt Ticks.** Er meldet keine Ticks,
+aber jedes Szenario, das er beginnt und beendet: Dort steht etwa «Szenario 2
+von 4: CO₂-Verzögerung», der Balken zeigt den Anteil der fertigen Szenarien,
+und die drei Kacheln darunter nennen den Vergleich statt eines einzelnen
+Szenarios. Sind alle gerechnet, schreibt er noch seine Zusammenfassung — dann
+steht dort «Alle 4 Szenarien gerechnet — Abschluss wird geschrieben».
 
 Ist der Lauf fertig, meldet das Bedienfeld links die Kennung des Laufs mit der Zahl der
 Ticks und Ereignisse — und daneben steht der Weg weiter: **Ergebnisse ansehen**.
@@ -96,8 +102,8 @@ ein Lauf langsamer wird. Auch hier eine Spanne statt einer Zahl.
 
 Drei Fälle, in denen dort nichts steht, und in allen dreien ist das die richtige
 Antwort: in den ersten Ticks (eine einzelne Messung ist keine Erwartung), beim
-**Szenario-Vergleich** (er meldet keine Tick-Zahlen, deshalb läuft dort auch der
-Balken unbestimmt) und im letzten Tick. Ist es nur noch eine Frage von
+**Szenario-Vergleich** (er meldet keine Tick-Zahlen; sein Balken zählt fertige
+Szenarien, eine Restzeit daraus zu schätzen wäre zu grob) und im letzten Tick. Ist es nur noch eine Frage von
 Sekundenbruchteilen, steht dort «gleich fertig».
 
 Die folgende Tabelle bleibt eine grobe Schätzung ohne Messung, für eine

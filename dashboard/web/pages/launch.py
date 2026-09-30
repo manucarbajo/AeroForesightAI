@@ -181,6 +181,11 @@ def progress_payload() -> dict | None:
         # hier, zeigte er sie nie — die Ansicht bekommt den Fortschritt immer
         # über diesen Umweg, nie direkt aus `runner.progress()`.
         "tick_seconds": list(aktuell.tick_seconds),
+        # Und die Zählung des Szenario-Vergleichs — ohne sie stünde dort wieder
+        # «nicht bezifferbar» (Befund 9 der Abnahme vom 2026-09-30).
+        "szenarien": aktuell.szenarien,
+        "szenarien_fertig": aktuell.szenarien_fertig,
+        "szenario_name": aktuell.szenario_name,
     }
 
 

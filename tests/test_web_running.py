@@ -160,7 +160,8 @@ class TestDerLaufBekommtDenBildschirm:
 
         assert "szenario" in gerendert
         assert "rechenmodus" in gerendert
-        assert "umfang" in gerendert
+        # «Länge» wie im Bedienfeld — seit P8-V6 kommen beide Angaben aus `stand`.
+        assert "länge" in gerendert
 
 
 # --- Das Fortschrittsfenster -----------------------------------------------
@@ -499,3 +500,97 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
             zahl = float(text.split()[0])
             einzahl = text.split()[1].endswith("e")
             assert einzahl == (zahl == 1), f"{sekunden}s -> {text!r}"
+
+
+# --- Der Szenario-Vergleich auf dem Ladebildschirm (P8-V6, Befund 9) ----------
+
+
+class TestDerVergleichSagtWasErRechnet:
+    """**Befund 9 der Abnahme vom 2026-09-30.** Während vier Rahmen rechneten,
+    beschrieb der Ladebildschirm einen Einzellauf («Standard-Ausgangslage ·
+    40 Ticks»), und der Fortschritt hieß «nicht bezifferbar» — obwohl die
+    Ausgabe jedes Szenario mit Kopf und Abschluss meldet."""
+
+    KOEPFE = (
+        "Sweep: Business as Usual (A1+B1) (business_as_usual)",
+        "  Completed 120 ticks in 3.20s (38 ticks/sec)",
+        "Sweep: CO₂-Verzögerung (co2_delayed)",
+    )
+
+    def _vergleich(self, *zeilen: str) -> runner.Progress:
+        job = _job_mit(*zeilen)
+        job.szenarien = 4
+        fortschritt = runner.progress()
+        assert fortschritt is not None
+        return fortschritt
+
+    def test_er_zaehlt_die_fertigen_szenarien(self):
+        fortschritt = self._vergleich(*self.KOEPFE)
+
+        assert fortschritt.szenarien_fertig == 1
+        assert fortschritt.fraction == 0.25
+        text = str(running.render(fortschritt, initial_draft_dict()))
+        assert "Szenario 2 von 4: CO₂-Verzögerung" in text
+        assert "nicht bezifferbar" not in text
+
+    def test_gezaehlt_wird_ueber_alle_zeilen(self):
+        """Durch den Browser gehen nur die letzten `VISIBLE_LINES` Zeilen."""
+
+        fuellung = ("Protokoll",) * (runner.VISIBLE_LINES + 5)
+        fortschritt = self._vergleich(*self.KOEPFE[:2], *fuellung)
+
+        assert fortschritt.szenarien_fertig == 1
+
+    def test_am_ende_sagt_er_es(self):
+        zeilen = []
+        for i in range(4):
+            zeilen += [f"Sweep: Rahmen {i} (r{i})", "  Completed 40 ticks in 1.00s (40 ticks/sec)"]
+
+        fortschritt = self._vergleich(*zeilen)
+
+        assert fortschritt.fraction == 1.0
+        assert "Alle 4 Szenarien gerechnet" in str(
+            running.render(fortschritt, initial_draft_dict())
+        )
+
+    def test_die_zaehlung_kommt_durch_den_browser(self):
+        from dashboard.web.pages import launch as launch_page
+
+        self._vergleich(*self.KOEPFE)
+
+        zurueck = web_app._progress_from(launch_page.progress_payload())
+
+        assert zurueck is not None
+        assert (zurueck.szenarien, zurueck.szenarien_fertig, zurueck.szenario_name) == (
+            4,
+            1,
+            "CO₂-Verzögerung",
+        )
+
+    def test_ein_vergleich_bekommt_die_zahl_seiner_rahmen(self, monkeypatch):
+        from dashboard.config_catalog import rahmenszenarien
+
+        monkeypatch.setattr(runner, "launch_from_draft", lambda draft, **kw: "ok")
+        entwurf = {**initial_draft_dict(), "run_all_sweeps": True}
+
+        job = runner.poll(runner.start(entwurf))
+
+        assert job is not None and job.szenarien == len(rahmenszenarien())
+
+    def test_ein_einzellauf_zaehlt_keine_szenarien(self):
+        _job_mit("Sweep: X (x)")
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None and fortschritt.szenarien is None
+        assert fortschritt.fraction is None
+
+    def test_die_kacheln_beschreiben_den_vergleich(self):
+        from dashboard.config_catalog import rahmenszenarien
+
+        entwurf = {**initial_draft_dict(), "run_all_sweeps": True}
+        leer = runner.Progress(job_id="x", tick=None, total=None, line="", szenarien=4)
+
+        text = str(running.render(leer, entwurf))
+
+        assert f"Vergleich · {len(rahmenszenarien())} Rahmenszenarien" in text
+        assert "Standard-Ausgangslage" not in text

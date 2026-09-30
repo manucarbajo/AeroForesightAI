@@ -21,6 +21,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
+from dashboard.config_catalog import rahmenszenarien
 from dashboard.run_launcher import REPO_ROOT, launch_from_draft
 from dashboard.web.state import draft_from_dict
 
@@ -49,6 +50,8 @@ class Job:
     #: Tick», und dann passiert nichts. Ein Versprechen ohne Deckung ist
     #: schlimmer als ein fehlender Knopf.
     cancellable: bool = True
+    #: Wie viele Szenarien ein Szenario-Vergleich rechnet — bei einem Einzellauf `None`.
+    szenarien: int | None = None
 
 
 #: Die Fortschrittszeile des Tick-Loops: `[tick  14/40] 0.14s (…) — price=…`.
@@ -79,6 +82,13 @@ TEMPO_MINDESTENS = 2
 #: ohnehin nur die letzten; alles davor waere Ballast im Browser.
 VISIBLE_LINES = 200
 
+#: Der Kopf, mit dem ein Szenario-Vergleich jedes Szenario beginnt:
+#: `Sweep: Business as Usual (A1+B1) (business_as_usual)`.
+_SZENARIO_KOPF = re.compile(r"^Sweep: (.+?)(?: \([\w-]+\))?$")
+
+#: Die Zeile, mit der er es beendet: `  Completed 120 ticks in 3.20s (…)`.
+_SZENARIO_ENDE = re.compile(r"^\s*Completed \d+ ticks\b")
+
 
 @dataclass(frozen=True)
 class Progress:
@@ -100,6 +110,13 @@ class Progress:
     #: Die Dauer der zuletzt gerechneten Ticks, in Sekunden, älteste zuerst.
     #: Höchstens `TEMPO_FENSTER` Einträge.
     tick_seconds: tuple[float, ...] = ()
+    #: Beim Szenario-Vergleich: wie viele Szenarien er rechnet, wie viele davon
+    #: fertig sind und welches gerade rechnet (P8-V6, Befund 9). Gezählt über
+    #: **alle** Zeilen des Laufs, nicht nur die `VISIBLE_LINES`, die durch den
+    #: Browser gehen — sonst verlöre die Zählung ihre ersten Szenarien.
+    szenarien: int | None = None
+    szenarien_fertig: int = 0
+    szenario_name: str | None = None
 
     @property
     def fraction(self) -> float | None:
@@ -107,11 +124,18 @@ class Progress:
 
         `None` heißt «unbestimmt» und gehört als unbestimmter Balken dargestellt.
         Eine Null an dieser Stelle waere eine Behauptung.
+
+        **Ein Szenario-Vergleich zählt fertige Szenarien** statt Ticks: Er
+        schreibt keine Tick-Zeilen, meldet aber jedes Szenario mit Kopf und
+        Abschluss. Bis zum 2026-09-30 stand dort «nicht bezifferbar», obwohl
+        die Zahl in der Ausgabe stand.
         """
 
-        if not self.tick or not self.total:
-            return None
-        return min(1.0, self.tick / self.total)
+        if self.tick and self.total:
+            return min(1.0, self.tick / self.total)
+        if self.szenarien:
+            return min(1.0, self.szenarien_fertig / self.szenarien)
+        return None
 
     @property
     def remaining_seconds(self) -> tuple[float, float] | None:
@@ -204,6 +228,15 @@ def progress() -> Progress | None:
         elif len(dauern) >= TEMPO_FENSTER:
             break
 
+    fertig, name = 0, None
+    if job.szenarien:
+        for eintrag in zeilen:
+            kopf = _SZENARIO_KOPF.match(eintrag.strip())
+            if kopf:
+                name = kopf.group(1)
+            elif _SZENARIO_ENDE.match(eintrag):
+                fertig += 1
+
     return Progress(
         job_id=job.job_id,
         tick=tick,
@@ -213,6 +246,9 @@ def progress() -> Progress | None:
         cancellable=job.cancellable,
         # Älteste zuerst — gelesen wurde von hinten.
         tick_seconds=tuple(reversed(dauern)),
+        szenarien=job.szenarien,
+        szenarien_fertig=fertig,
+        szenario_name=name,
     )
 
 
@@ -231,7 +267,12 @@ def start(draft_data: dict) -> str:
     # Ein Szenario-Vergleich ist nicht abbrechbar — der Sweep-Pfad bekommt
     # `should_stop` nicht. Das steht hier fest, damit die Oberflaeche es
     # anzeigen kann, statt einen wirkungslosen Knopf zu zeigen.
-    job = Job(job_id=uuid.uuid4().hex, cancellable=not bool(draft.run_all_sweeps))
+    job = Job(
+        job_id=uuid.uuid4().hex,
+        cancellable=not bool(draft.run_all_sweeps),
+        # Dieselbe Quelle, aus der `run_all_sweeps` seine Szenarien nimmt.
+        szenarien=len(rahmenszenarien()) if draft.run_all_sweeps else None,
+    )
     with _LOCK:
         _JOBS[job.job_id] = job
 
