@@ -498,3 +498,17 @@ def test_two_unusable_answers_are_one_incident(tmp_path, monkeypatch) -> None:
 
     assert len(aufrufe) == pipeline.VERSUCHE
     assert result["llm_error"] == "Antwort nicht verwertbar: kein lesbares JSON-Objekt"
+
+
+def test_the_web_servers_access_log_stays_out_of_the_progress_window() -> None:
+    """Abnahme V6: «INFO werkzeug: 127.0.0.1 … POST /app/_dash-update-component» stand
+    im Fortschrittsfenster, während ein Szenario-Vergleich rechnete."""
+
+    lines: list[str] = []
+
+    with progress_logging(lines.append):
+        logging.getLogger("werkzeug").warning('127.0.0.1 - - "POST /app/_dash-update-component"')
+        logging.getLogger("src.orchestration.simulation_runner").warning("Tick 3 gerechnet")
+        logging.getLogger("dashboard.run_launcher").warning("Lauf gestartet")
+
+    assert [zeile.split(": ", 1)[1] for zeile in lines] == ["Tick 3 gerechnet", "Lauf gestartet"]

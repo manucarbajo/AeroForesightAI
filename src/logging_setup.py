@@ -115,12 +115,32 @@ def configure_logging(level: int = logging.INFO, *, stream: TextIO | None = None
     root.addHandler(console)
 
 
+#: Wessen Meldungen ins Fortschrittsfenster gehören: die des Projekts. Der
+#: Empfänger hängt am Wurzel-Logger, und dort kommt auch an, was der Webserver
+#: über jede Anfrage schreibt.
+_PROJEKT_LOGGER = ("src", "dashboard", "__main__")
+
+
+def _gehoert_zum_lauf(record: logging.LogRecord) -> bool:
+    """Nur Meldungen aus dem Projekt — nicht das Zugriffsprotokoll des Webservers.
+
+    **Gefunden im Abnahme-Durchgang am 2026-09-30:** Während ein
+    Szenario-Vergleich rechnete, stand im Fortschrittsfenster und in der Konsole
+    «INFO werkzeug: 127.0.0.1 - - "POST /app/_dash-update-component…"» — das
+    Dashboard fragt den Fortschritt im Sekundentakt ab, und jede dieser Anfragen
+    landete als Zeile im Fenster, das sie anzeigen sollte.
+    """
+
+    return record.name.split(".", 1)[0] in _PROJEKT_LOGGER
+
+
 class _CallbackHandler(logging.Handler):
     """Reicht jede Zeile an einen Callback weiter statt an einen Stream."""
 
     def __init__(self, callback: Callable[[str], None], level: int) -> None:
         super().__init__(level)
         self._callback = callback
+        self.addFilter(_gehoert_zum_lauf)
         setattr(self, _PROGRESS_MARKER, True)
 
     def emit(self, record: logging.LogRecord) -> None:
