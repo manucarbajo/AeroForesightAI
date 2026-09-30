@@ -312,6 +312,39 @@ def test_the_start_button_starts_a_healthy_config(monkeypatch):
     assert ergebnis[_KNOPF] is True, "während des Laufs ist der Knopf gesperrt"
 
 
+class TestNachDemStartStehtEinrichtenAmEinstieg:
+    """**Befund 7 der Abnahme vom 2026-09-30.** Nach einem Szenario-Vergleich blieb
+    die Schrittfolge auf «Prüfen & Starten» stehen. Wer dort einen Einzellauf
+    einstellte, wählte Szenario und Verläufe ohne Warnung — und startete wieder
+    den Vergleich, der beides nicht übernimmt. Seit dem Start steht «Einrichten»
+    wieder am Einstieg, wie der Docstring von `wizard.STEP_STORE` es verspricht."""
+
+    #: Die drei letzten Ausgänge: Schritt, Besuchtes, Verlauf.
+    SCHRITT, BESUCHT, VERLAUF = 6, 7, 8
+
+    def test_ein_gestarteter_lauf_setzt_die_schrittfolge_zurueck(self, monkeypatch):
+        from dashboard.web.config_editor import wizard
+
+        monkeypatch.setattr(runner, "start", lambda draft: "job-1")
+
+        ergebnis = _start_callback()(None, 1, {**initial_draft_dict(), "run_all_sweeps": True})
+
+        assert ergebnis[self.SCHRITT] is wizard.ENTRY
+        assert ergebnis[self.BESUCHT] == [] and ergebnis[self.VERLAUF] == []
+
+    def test_ein_abgewiesener_start_laesst_sie_stehen(self, monkeypatch):
+        """Wer die Fehlermeldung lesen soll, bleibt bei den Feldern."""
+
+        from dash import no_update
+
+        monkeypatch.setattr(runner, "start", lambda draft: "job-1")
+        draft = {**initial_draft_dict(), "use_seed": True, "seed": -1}
+
+        ergebnis = _start_callback()(None, 1, draft)
+
+        assert ergebnis[self.SCHRITT :] == (no_update, no_update, no_update)
+
+
 # --- Ein Lauf gehört dem Server, nicht der Sitzung --------------------------
 #
 # `runner` lässt genau **einen** Lauf im ganzen Prozess zu: `launch_simulation`

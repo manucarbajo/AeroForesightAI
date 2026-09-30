@@ -28,7 +28,10 @@ Platz, nur ihr Gewicht; wo ein Weg beim letzten Mal lag, liegt er auch beim
 nächsten.
 
 Einen Weg zurück gibt es auch: **Zurück** auf dem ersten Schritt führt wieder auf
-diese Auswahl.
+diese Auswahl. **Und nach jedem Start** fängt **Einrichten** wieder hier an —
+wer nach einem Szenario-Vergleich einen einzelnen Lauf will, wählt «Neuen Lauf
+einrichten»; wer denselben Lauf noch einmal mit einer Änderung rechnen will,
+«Letzte Einstellungen weiterverwenden».
 
 ## Die Schrittfolge
 

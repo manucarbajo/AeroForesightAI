@@ -379,6 +379,12 @@ def register_callbacks(app) -> None:
         # Index 2, Knopf an Index 4); ein Einschub dazwischen ließe die Meldung
         # in der falschen Komponente landen, ohne dass etwas rot wird.
         Output("url", "pathname", allow_duplicate=True),
+        # **Nach dem Start steht «Einrichten» wieder am Einstieg** (P8-V6, Befund 7).
+        # Drei Ausgänge, weil ein Anlauf aus Schritt, Besuchtem und Verlauf besteht
+        # — dasselbe Zurücksetzen wie auf den drei Wegen des Einstiegs.
+        Output(wizard.STEP_STORE, "data", allow_duplicate=True),
+        Output(wizard.VISITED_STORE, "data", allow_duplicate=True),
+        Output(wizard.HISTORY_STORE, "data", allow_duplicate=True),
         Input("run-start", "n_clicks"),
         # Der Knopf am Ende der Schrittfolge (P1.7). Zwei Ausloeser, **ein**
         # Startpfad: dieselbe Pruefung, dasselbe `runner.start`. Der Einwand
@@ -401,7 +407,7 @@ def register_callbacks(app) -> None:
         """
 
         if not (n_clicks or wizard_clicks):
-            return no_update, no_update, no_update, no_update, no_update, no_update
+            return (no_update,) * 9
 
         # Vor dem Start prüfen, nicht danach: Ohne das läuft eine kaputte Config
         # an und scheitert irgendwo im ersten Tick — ein negativer Seed etwa mit
@@ -421,6 +427,9 @@ def register_callbacks(app) -> None:
                 no_update,
                 False,
                 no_update,
+                no_update,
+                no_update,
+                no_update,
             )
 
         try:
@@ -432,6 +441,9 @@ def register_callbacks(app) -> None:
                 ui.hinweis(str(exc), "warnung"),
                 no_update,
                 False,
+                no_update,
+                no_update,
+                no_update,
                 no_update,
             )
         # Der Fortschritt wird geleert, nicht stehen gelassen: Sonst zeigte der
@@ -445,6 +457,13 @@ def register_callbacks(app) -> None:
             None,
             True,
             routing.url(running.leitstand_route()),
+            # Wer danach «Einrichten» öffnet, wählt wieder, welche Art von Lauf es
+            # wird. Bis zum 2026-09-30 blieb die Schrittfolge nach einem
+            # Szenario-Vergleich auf «Prüfen & Starten» stehen, und ein dort
+            # eingestellter Einzellauf startete wieder den Vergleich.
+            wizard.ENTRY,
+            [],
+            [],
         )
 
     @app.callback(
