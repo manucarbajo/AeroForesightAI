@@ -72,6 +72,10 @@
 **Fertig wenn:** Der Prüfsatz aus V1 ergibt **null unmarkierte Widersprüche**; die vier Fälle vom 2026-09-29 (CO₂ steigt bei 50 €, «Elektroflotte», Datum, «keine Veränderung im Ticketpreis») sind als Regressionsfälle festgehalten.
 **Aufwand:** 1½–2 Tage. **Das größte Paket und das wichtigste**: Invariante 1 verspricht es.
 
+**Stand am 2026-09-30:**
+
+- **(a) erledigt.** N10 nachgemessen an zwei echten Läufen: 250 von 250 ganzzahligen Prozentangaben galten als belegt. Eine Prozentangabe wird seither nur gegen Anteile (Zahlen mit Nachkommastellen, mal hundert) und Prozentwerte gehalten — 72 bzw. 70 von 250, die übrigen Treffer sind Anteile, die wirklich im Lauf stehen (Buchungsraten, Nachfrageniveau). «49 %» aus dem Audit wird markiert, «140 %» trifft keinen Preis mehr, «200 %» keinen Tick 2. **Der Rest ist die Grenze aus B7c**: Eine Zuordnung von Zahl zu Größe bleibt ungebaut; eine falsche *Richtung* fängt (c).
+
 #### V4 — Der Abschlusstext liest die Daten seines eigenen Laufs ✅ erledigt 2026-09-29
 
 **Befund:** `save_run_outputs` und `run_single_sweep` erzeugen den Szenariotext, **bevor** `run_metadata.json` geschrieben ist: «? Ticks» im Einzellauf, die Tickzahl des vorigen Laufs im Szenario-Vergleich. `save_llm_incidents` schreibt ohne Vorfall nichts, eine alte Datei bleibt liegen.

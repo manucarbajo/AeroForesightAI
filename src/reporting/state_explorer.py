@@ -469,7 +469,19 @@ def pruefe_gegen_kontext(antwort: str, kontext: str) -> Antwort:
     Markierung würde zum Rauschen, das niemand mehr liest.
     """
 
-    im_kontext = [wert for _, wert, _, _ in _zahlen(kontext)]
+    kontextzahlen = _zahlen(kontext)
+    im_kontext = [wert for _, wert, _, _ in kontextzahlen]
+    # Auf Prozent gebracht: ein Anteil mal hundert, eine Prozentangabe wie sie ist.
+    # **Ein Anteil hat Nachkommastellen** — im JSON trägt jede Gleitkommazahl
+    # welche (`1.0`). Eine ganze Zahl ist ein Tick oder eine Personenzahl, und
+    # «200 %» traf sonst Tick 2.
+    als_prozent = [
+        wert if prozent else wert * 100.0
+        for _, wert, stellen, prozent in kontextzahlen
+        if prozent or stellen > 0
+    ]
+    # Auf die Skala einer schlichten Zahl: eine Prozentangabe des Kontexts durch hundert.
+    als_zahl = [wert / 100.0 if prozent else wert for _, wert, _, prozent in kontextzahlen]
     unbelegt: list[str] = []
     geprueft = 0
 
@@ -478,13 +490,16 @@ def pruefe_gegen_kontext(antwort: str, kontext: str) -> Antwort:
             continue
         geprueft += 1
 
-        # Ein Prozentwert darf auch als Anteil in den Daten stehen und umgekehrt.
-        kandidaten = [wert, wert / 100.0] if prozent else [wert, wert * 100.0]
-        if any(
-            round(im_daten, stellen) == round(kandidat, stellen)
-            for im_daten in im_kontext
-            for kandidat in kandidaten
-        ):
+        # Eine Prozentangabe wird gegen die Kontextzahlen **als Prozent** gehalten
+        # — ein Anteil mal hundert, eine Prozentangabe wie sie ist — und nicht
+        # gegen jede Zahl (N10, P8-V3). Bis dahin wurde «49 %» zu 0,49
+        # verkleinert und auf null Stellen gerundet: 0,0, und jede Kontextzahl
+        # unter 0,5 ebenfalls. Gegen einen echten Lauf galten damit 250 von 250
+        # ganzzahligen Prozentangaben als belegt; nach der Skalenkorrektur allein
+        # noch 137, weil «140 %» den Ticketpreis von 140 EUR traf.
+        vergleich = als_prozent if prozent else als_zahl
+        ziel = round(wert, stellen)
+        if any(round(im_daten, stellen) == ziel for im_daten in vergleich):
             continue
         if schreibweise not in unbelegt:
             unbelegt.append(schreibweise)

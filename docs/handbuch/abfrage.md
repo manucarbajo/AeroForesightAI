@@ -41,7 +41,9 @@ gerechnet ist. Ob eine Rechnung stimmt, kann die Prüfung nicht wissen.
 Umgekehrt gilt: Eine **nicht** markierte Zahl steht so in den Daten. Gerundete
 Angaben zählen dabei mit — «rund 140 Euro» gilt als belegt, wenn der Wert 140,38
 beträgt. Und Prozentangaben werden erkannt: «48,2 %» belegt einen gespeicherten
-Anteil von 0,4818.
+Anteil von 0,4818. Eine Prozentangabe wird dabei nur gegen Anteile und
+Prozentwerte gehalten, nicht gegen jede Zahl — «140 %» belegt also keinen
+Ticketpreis von 140 Euro, und «49 %» keine Buchungsrate, die nie bei 49 % lag.
 
 **Zurückgewiesen wird nichts.** Eine Antwort mit einer nicht belegten Zahl wäre
 oft trotzdem brauchbar — sie kommt deshalb vollständig, mit dem Vorbehalt

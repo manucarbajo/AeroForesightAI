@@ -306,3 +306,67 @@ class TestDieTrennschaerfeStehtDabei:
 
         assert antwort.belegt
         assert str(antwort) == antwort.text
+
+
+def _grosser_kontext() -> str:
+    """Ein Kontextblock in der Dichte eines echten Laufs (N10).
+
+    Vierzig Ticks: Buchungsrate von 47,9 % auf 35,7 % fallend, Ticketpreis um
+    140 EUR, CO₂-Abgabe 50 EUR, dazu viele kleine Deltas und Bruchteile — genau
+    die Zahlen, an denen die Prüfung bis P8-V3 jede ganzzahlige Prozentangabe
+    durchließ. Der Kontext des Tests aus P2.5 hatte fünf Zahlen und fand es nie.
+    """
+
+    zeilen = []
+    for tick in range(1, 41):
+        rate = 0.479 - (0.479 - 0.357) * (tick - 1) / 39
+        zeilen.append(
+            f"tick: {tick}, booking_rate: {rate:.4f}, ticket_price: {140.6 - 0.2 * tick:.2f}, "
+            f"price_delta: {-0.0123 * (tick % 7):.4f}, demand_delta: {0.0071 * (tick % 5):.4f}, "
+            f"carbon_tax_level: 50.0"
+        )
+    return "\n".join(zeilen)
+
+
+class TestEineProzentangabeWirdAlsProzentGeprueft:
+    """**N10 aus der Gegenprüfung vom 2026-09-21, behoben mit P8-V3.**
+
+    Eine ganzzahlige Prozentangabe wurde zu einem Anteil verkleinert und auf
+    null Stellen gerundet — «49 %» wurde 0,0, und jede Kontextzahl unter 0,5
+    ebenfalls. Gegen einen echten Lauf galten 250 von 250 ganzzahligen
+    Prozentangaben als belegt, darunter die falsche «49 %» einer echten
+    `llama3.2`-Antwort. Nach der Korrektur, gemessen am 2026-09-30 an zwei
+    Läufen: 72 und 70 von 250, und die übrigen Treffer sind Anteile, die wirklich
+    in den Daten stehen.
+    """
+
+    def test_die_erfundene_rate_aus_dem_audit_wird_markiert(self):
+        antwort = pruefe_gegen_kontext(
+            "Die Buchungsrate stieg auf einen Maximalwert von 49 %.", _grosser_kontext()
+        )
+
+        assert antwort.unbelegt == ("49",)
+
+    def test_eine_prozentangabe_trifft_keinen_preis(self):
+        """«140 %» ist keine Aussage über einen Preis von 140 EUR."""
+
+        assert not pruefe_gegen_kontext("Der Wert lag bei 140 %.", _grosser_kontext()).belegt
+
+    @pytest.mark.parametrize("angabe", ["47,9 %", "48 %", "36 %", "35,7 Prozent"])
+    def test_eine_abgelesene_rate_bleibt_belegt(self, angabe: str):
+        antwort = pruefe_gegen_kontext(f"Die Buchungsrate lag bei {angabe}.", _grosser_kontext())
+
+        assert antwort.belegt, antwort.unbelegt
+
+    def test_die_meisten_erfundenen_prozente_fallen_auf(self):
+        """Die Sperrklinke gegen den Rückfall: Vorher galten alle 240 als belegt."""
+
+        kontext = _grosser_kontext()
+        belegt = [
+            p for p in range(11, 251) if pruefe_gegen_kontext(f"Es waren {p} %.", kontext).belegt
+        ]
+
+        # Belegt sind nur die Raten, die wirklich im Lauf vorkommen (36 bis 48 %),
+        # und 100, das als harmlos gar nicht geprüft wird. «200 %» traf bis zur
+        # Korrektur Tick 2 — eine ganze Zahl ist kein Anteil.
+        assert set(belegt) <= set(range(35, 49)) | {100}, belegt
