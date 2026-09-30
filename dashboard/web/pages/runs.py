@@ -94,7 +94,13 @@ def lauf_bezeichnung(summary: RunSummary, *, vorgabe: str | None = None) -> str:
     teile = []
     if summary.simulation_name and summary.simulation_name != vorgabe:
         teile.append(summary.simulation_name)
-    teile.append(summary.rahmen_name or OHNE_RAHMEN)
+    rahmen = summary.rahmen_name or OHNE_RAHMEN
+    # **Ein abgeleiteter Lauf sagt es** (Abnahme V6, 2026-09-30): Der Pitch-Fall —
+    # «Business as Usual» mit angehobener CO₂-Abgabe — hieß in Auswahl und Kopf
+    # genau wie der unveränderte Rahmen. Was abweicht, steht in der Übersicht.
+    if summary.rahmen_quelle == "abgeleitet":
+        rahmen += ", verändert"
+    teile.append(rahmen)
     teile.append(formate.zeitpunkt(summary.timestamp))
     wiederholung = _WIEDERHOLUNG.match(summary.run_id)
     if wiederholung:

@@ -20,6 +20,12 @@ Szenario, das heute kein Rahmenszenario ist, etwa einem Stresstest. Die Liste
 zeigt höchstens 30 Läufe; die Suche grenzt ein. Ein Klick auf eine Zeile wählt
 den Lauf und schließt das Fenster, Escape schließt es ohne Wahl.
 
+**Ein Lauf, der ein Szenario verändert hat, sagt es im Namen:** Haben Sie im
+Schritt «Verläufe» etwa die CO₂-Abgabe angehoben, heißt der Lauf «Business as
+Usual (A1+B1), verändert» — in der Auswahl, im Kopf des Laufs und in der
+Übersicht, wo unter dem Rahmenszenario steht, welche Größen abweichen. Bis Ende
+September 2026 hieß er genau wie der unveränderte Rahmen.
+
 ## Der Leitstand selbst
 
 Bevor Sie in die sieben Ansichten gehen: Der Bereich **Leitstand** beantwortet

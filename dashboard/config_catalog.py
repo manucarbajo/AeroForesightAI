@@ -185,6 +185,18 @@ def add_custom_property(
         PROPERTY_LABELS[property_id] = label
 
 
+def abweichungen_benannt(abweichungen: list[str] | tuple[str, ...]) -> list[str]:
+    """Die Abweichungen eines abgeleiteten Laufs in den Namen der Oberfläche (P8-V6).
+
+    `rahmen.abweichungen` trägt Kennungen (`carbon_tax_level`, `preisstrategie`,
+    `abschnitt.wert`); gezeigt wird, was `PROPERTY_LABELS` dazu kennt. Eine
+    Kennung ohne Namen bleibt stehen — lieber sie als gar nichts.
+    """
+
+    eigene = {"preisstrategie": "Preisstrategie"}
+    return [PROPERTY_LABELS.get(a, eigene.get(a, a)) for a in abweichungen]
+
+
 def delete_custom_property(property_id: str, properties_file: str = "properties.json") -> None:
     """Löscht eine Property dauerhaft aus der properties.json."""
     if property_id in STANDARD_PROPERTY_IDS:

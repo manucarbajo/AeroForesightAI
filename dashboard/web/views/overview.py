@@ -12,6 +12,7 @@ from pathlib import Path
 import plotly.graph_objects as go
 from dash import dcc, html
 
+from dashboard.config_catalog import abweichungen_benannt
 from dashboard.run_browser import load_price_series, load_tick_mechanics
 from dashboard.web import components as ui
 from dashboard.web import formate, theme
@@ -124,12 +125,20 @@ def _provenance(metadata: dict, *, run_id: str | None = None) -> html.Div:
     # der Fingerabdruck unterschied die Rahmen zwar, aber nur als Hash.
     rahmen = metadata.get("rahmen") or {}
     rahmen_label = str(rahmen.get("name") or "") or "nicht festgehalten"
+    rahmen_hinweis = "Die Außenwelt, aus der die Zahlen entstanden sind"
+    # Ein abgeleiteter Lauf nennt, was er am Szenario geändert hat (P8-V6) —
+    # sonst stehen zwei Läufe mit verschiedener CO₂-Abgabe unter demselben Namen.
+    if rahmen.get("quelle") == "abgeleitet":
+        rahmen_label += ", verändert"
+        geaendert = abweichungen_benannt(rahmen.get("abweichungen") or [])
+        if geaendert:
+            rahmen_hinweis = "Gegenüber dem Szenario geändert: " + ", ".join(geaendert)
 
     tiles = [
         ui.kachel(
             "Rahmenszenario",
             rahmen_label,
-            hint="Die Außenwelt, aus der die Zahlen entstanden sind",
+            hint=rahmen_hinweis,
         ),
         ui.kachel("Rechenmodus", mode_label),
         ui.kachel("Seed", seed_label, hint="Gleicher Seed, gleiche Ziehung"),
