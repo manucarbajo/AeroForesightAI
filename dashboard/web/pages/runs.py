@@ -288,6 +288,23 @@ def layout(selection: dict | None = None) -> html.Div:
     )
 
 
+def reiter_nach_klick(trigger: object, geklickt: object, current: str | None) -> str | None:
+    """Welcher Reiter nach einem Klick gilt — oder ``None``, wenn keiner geklickt wurde.
+
+    **Ein neu eingefügter Knopf ist kein Klick** (Abnahme V6, 2026-09-30).
+    «Dateien des Laufs» in der Kopfzeile setzt den Reiter auf «Dateien» und
+    tauscht dafür die Reiterleiste aus. Dash feuert danach diesen Callback für
+    die eingefügten Knöpfe — trotz `prevent_initial_call`, dieselbe Regel wie im
+    Schritt «Verläufe» —, und weil nur der Auslöser geprüft wurde, nicht sein
+    Wert, gewann der erste Reiter: Man landete auf «Szenario».
+    """
+
+    if not isinstance(trigger, dict) or not geklickt:
+        return None
+    tab = str(trigger.get("tab") or DEFAULT_TAB)
+    return None if tab == (current or DEFAULT_TAB) else tab
+
+
 def register_callbacks(app) -> None:
     scenario.register_callbacks(app)
     figures.register_callbacks(app)
@@ -318,11 +335,9 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def _switch(_clicks, current: str | None):
-        trigger = ctx.triggered_id
-        if not isinstance(trigger, dict):
-            return no_update, no_update
-        tab = str(trigger.get("tab") or DEFAULT_TAB)
-        if tab == (current or DEFAULT_TAB):
+        geklickt = ctx.triggered[0]["value"] if ctx.triggered else None
+        tab = reiter_nach_klick(ctx.triggered_id, geklickt, current)
+        if tab is None:
             return no_update, no_update
         return tab, viewbar(tab).children
 
