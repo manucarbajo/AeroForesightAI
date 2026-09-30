@@ -1,4 +1,4 @@
-"""Der Vorführbestand: drei vorgerechnete Läufe und sonst nichts in ``outputs/`` (P8-V5).
+"""Der Vorführbestand: vorgerechnete Läufe und sonst nichts in ``outputs/`` (P8-V5).
 
 Aufruf (Ollama muss laufen, das Modell aus ``configs/simulation_config.json`` geladen sein)::
 
@@ -21,8 +21,9 @@ und die Liste zeigt nur das.
    keine Läufe, sondern Post.
 2. **Rechnen**, über denselben Weg wie das Dashboard (`launch_simulation`), damit
    der Bestand genau so aussieht wie ein Lauf aus der Oberfläche: erst der
-   Szenario-Vergleich, dann «Business as Usual», zuletzt derselbe Rahmen mit
-   steigender CO₂-Abgabe — der Anwendungsfall aus dem Pitch. Der letzte ist der
+   Szenario-Vergleich, dann «Business as Usual» unverändert, dann derselbe
+   Rahmen mit «Aufschlag halten» — die Referenz — und zuletzt dieser mit
+   steigender CO₂-Abgabe, der Anwendungsfall aus dem Pitch. Der letzte ist der
    jüngste und steht im Lauf-Browser oben.
 3. **Prüfen**, gegen den Teil der Abnahme, der sich ohne Browser messen lässt
    (`pruefen`). Ein harter Befund macht den Aufruf rot; Widersprüche des
@@ -73,6 +74,17 @@ CO2_ABWEICHUNG = PropertyEditState(
 )
 
 
+#: Die Preisstrategie des Pitch-Falls **und seiner Referenz**: «Aufschlag halten».
+#: Von Haiko entschieden am 2026-09-30, nach dem Abnahme-Durchgang (Befund 8):
+#: Unter «Plätze füllen» sank der Ticketpreis nach dem Sprung der Abgabe von 147
+#: auf 122 € — der Anbieter senkte ihn, um die eingebrochene Auslastung zu füllen.
+#: Das Modell rechnet so, aber «Abgabe vervierfacht, Tickets billiger» trägt keine
+#: Vorführung. Unter «Aufschlag halten» wird das Ticket teurer und die Nachfrage
+#: fällt. **Beide Läufe tragen dieselbe Strategie**, sonst unterschiede sie mehr
+#: als die CO₂-Abgabe.
+PITCH_STRATEGIE = "marge"
+
+
 @dataclass(frozen=True)
 class Vorfuehrlauf:
     """Ein Lauf des Bestands — was er ist, wie er gerechnet wird, was er liefern muss."""
@@ -87,7 +99,7 @@ class Vorfuehrlauf:
 
 
 def bestand() -> list[Vorfuehrlauf]:
-    """Die drei Läufe, in der Reihenfolge, in der sie gerechnet werden."""
+    """Die Läufe des Bestands, in der Reihenfolge, in der sie gerechnet werden."""
 
     from src.orchestration.scenario_sweeps import rahmenszenarien
 
@@ -115,14 +127,31 @@ def bestand() -> list[Vorfuehrlauf]:
             ordner=("run_vorfuehrung_bau",),
         ),
         Vorfuehrlauf(
+            kennung="vorfuehrung_bau_marge",
+            beschreibung="«Business as Usual» mit «Aufschlag halten» — die Referenz des Pitch-Falls",
+            konfiguration=RunLaunchConfig(
+                rounds=40,
+                scenario_mode="sweep",
+                sweep_id="business_as_usual",
+                apply_custom_overrides=True,
+                preisstrategie=PITCH_STRATEGIE,
+                simulation_name="Vorführung: Business as Usual, Aufschlag halten",
+                run_id="run_vorfuehrung_bau_marge",
+                **mit_modell,
+            ),
+            rechenmodus="llm",
+            ordner=("run_vorfuehrung_bau_marge",),
+        ),
+        Vorfuehrlauf(
             kennung="vorfuehrung_co2",
-            beschreibung="Derselbe Rahmen, CO₂-Abgabe ab Tick 24 bei 200 € — der Fall aus dem Pitch",
+            beschreibung="Dieselbe Referenz, CO₂-Abgabe ab Tick 24 bei 200 € — der Fall aus dem Pitch",
             konfiguration=RunLaunchConfig(
                 rounds=40,
                 scenario_mode="sweep",
                 sweep_id="business_as_usual",
                 apply_custom_overrides=True,
                 abweichungen={"carbon_tax_level": CO2_ABWEICHUNG},
+                preisstrategie=PITCH_STRATEGIE,
                 simulation_name="Vorführung: CO₂-Abgabe steigt auf 200 €",
                 run_id="run_vorfuehrung_co2",
                 **mit_modell,

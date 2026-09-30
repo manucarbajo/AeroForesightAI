@@ -116,7 +116,7 @@ Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung,
 3. **«Im Lauf des Jahres 2025»** — ein genanntes Jahr wird jetzt als Datum markiert.
 4. **Die Streuung bleibt:** In vier Durchläufen fiel zweimal ein Lauf durch. Vor der Vorführung deshalb `--nur-pruefen` laufen lassen und einen durchgefallenen Lauf mit `--nur` ersetzen.
 
-**Was in den Texten steht, muss kennen, wer vorführt** (V6, V8): In fünf der sechs Abschlusstexte steht ein markierter Widerspruch, fast immer «Nachfrage steigt», während sie fällt; im Einzellauf «Business as Usual» ein markiertes «Jahres 2025». **Auf dem Laptop ist der Bestand neu zu rechnen** — die Läufe tragen den Codestand und die Zeiten dieses Rechners.
+**Was in den Texten steht, muss kennen, wer vorführt** (V6, V8): In fünf der sechs Abschlusstexte steht ein markierter Widerspruch, fast immer «Nachfrage steigt», während sie fällt; im Einzellauf «Business as Usual» ein markiertes «Jahres 2025». **Nachtrag am 2026-09-30, nach dem Abnahme-Durchgang:** Der Pitch-Fall rechnet mit der Preisstrategie «Aufschlag halten», und der Bestand führt dafür eine eigene Referenz (von Haiko entschieden; unter «Plätze füllen» sank der Ticketpreis nach dem Sprung der Abgabe von 147 auf 122 €). Der Bestand hat damit sieben Läufe, ein voller Durchlauf dauert rund eine halbe Stunde. **Auf dem Laptop ist der Bestand neu zu rechnen** — die Läufe tragen den Codestand und die Zeiten dieses Rechners.
 
 #### V6 — Abnahme-Durchgang: jede Funktion einmal angefasst, mit Protokoll 🟡 erster Durchgang 2026-09-30
 

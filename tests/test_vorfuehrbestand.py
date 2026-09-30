@@ -15,7 +15,13 @@ import pytest
 
 from dashboard.config_catalog import prepare_simulation_state
 from dashboard.run_launcher import launch_config_to_draft
-from dashboard.vorfuehrbestand import BEHALTEN, archivieren, bestand, pruefen
+from dashboard.vorfuehrbestand import (
+    BEHALTEN,
+    PITCH_STRATEGIE,
+    archivieren,
+    bestand,
+    pruefen,
+)
 from src.market.property_engine import resolve_property
 from src.orchestration.scenario_sweeps import rahmenszenarien
 
@@ -62,6 +68,10 @@ class TestArchivieren:
         assert (ausgabe / "run_20260101T000000Z").is_dir(), "Nichts darf verschoben sein"
 
 
+def laeufe_kennungen() -> list[str]:
+    return [lauf.kennung for lauf in bestand()]
+
+
 def _zustand(kennung: str):
     lauf = next(lauf for lauf in bestand() if lauf.kennung == kennung)
     return prepare_simulation_state(launch_config_to_draft(lauf.konfiguration))
@@ -84,9 +94,26 @@ class TestDerBestandRechnetDenPitchFall:
         zustand = _zustand("vorfuehrung_co2")
 
         assert zustand.rahmen.quelle == "abgeleitet"
-        assert zustand.rahmen.abweichungen == ["carbon_tax_level"]
+        assert zustand.rahmen.abweichungen == ["carbon_tax_level", "preisstrategie"]
         assert resolve_property("carbon_tax_level", 23, zustand.properties) == 50.0
         assert resolve_property("carbon_tax_level", 24, zustand.properties) == 200.0
+
+    def test_der_pitch_fall_und_seine_referenz_unterscheiden_sich_nur_in_der_abgabe(self):
+        """**Befund 8 der Abnahme vom 2026-09-30.** Unter «Plätze füllen» sank der
+        Preis nach dem Sprung der Abgabe; der Pitch-Fall rechnet deshalb mit
+        «Aufschlag halten» — und seine Referenz ebenso, sonst vergliche man zwei
+        Änderungen auf einmal."""
+
+        laeufe = {lauf.kennung: lauf.konfiguration for lauf in bestand()}
+        referenz, fall = laeufe["vorfuehrung_bau_marge"], laeufe["vorfuehrung_co2"]
+
+        assert referenz.preisstrategie == fall.preisstrategie == PITCH_STRATEGIE == "marge"
+        assert referenz.abweichungen is None and set(fall.abweichungen) == {"carbon_tax_level"}
+        assert (referenz.rounds, referenz.sweep_id) == (fall.rounds, fall.sweep_id)
+        assert _zustand("vorfuehrung_bau_marge").rahmen.abweichungen == ["preisstrategie"]
+
+    def test_der_unveraenderte_rahmen_bleibt_im_bestand(self):
+        assert laeufe_kennungen()[:2] == ["vergleich", "vorfuehrung_bau"]
 
     def test_jeder_einzellauf_rechnet_mit_dem_sprachmodell(self):
         for lauf in bestand():
