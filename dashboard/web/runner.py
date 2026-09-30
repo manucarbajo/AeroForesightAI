@@ -222,6 +222,11 @@ def start(draft_data: dict) -> str:
     if is_running():
         raise RuntimeError("Es läuft bereits eine Simulation. Bitte abwarten.")
 
+    # Erst hier wird ein fertiger Lauf vergessen, nicht beim Abholen: Siehe `forget`.
+    with _LOCK:
+        for alt in [kennung for kennung, eintrag in _JOBS.items() if eintrag.done]:
+            del _JOBS[alt]
+
     draft = draft_from_dict(draft_data)
     # Ein Szenario-Vergleich ist nicht abbrechbar — der Sweep-Pfad bekommt
     # `should_stop` nicht. Das steht hier fest, damit die Oberflaeche es
@@ -294,7 +299,16 @@ def poll(job_id: str | None) -> Job | None:
 
 
 def forget(job_id: str | None) -> None:
-    """Abgeschlossenen Job vergessen, damit der Speicher nicht mitwächst."""
+    """Abgeschlossenen Job vergessen, damit der Speicher nicht mitwächst.
+
+    **Die Oberfläche ruft das nicht beim Abholen** (P8-V6, Befund 9). Bis zum
+    2026-09-30 vergaß `_poll` den Job in derselben Antwort, die ihn als fertig
+    meldete. Dash verwirft aber die Antwort eines Callbacks, der noch läuft,
+    wenn sein Takt ihn erneut auslöst — dauerte diese eine Antwort länger als
+    der Takt, ging sie verloren, und der nächste Aufruf fand keinen Job mehr:
+    keine Fertigmeldung, «Lauf aktiv …» blieb stehen, kein Lauf wurde gewählt.
+    Abgeholt wird deshalb wiederholbar; aufgeräumt wird beim nächsten `start`.
+    """
 
     if not job_id:
         return

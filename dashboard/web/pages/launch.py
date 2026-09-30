@@ -449,7 +449,10 @@ def register_callbacks(app) -> None:
         if not job.done:
             return no_update, False, True, no_update
 
-        runner.forget(job_id)
+        # **Kein `runner.forget` hier.** Diese Antwort kann verloren gehen — Dash
+        # verwirft sie, wenn der Takt `_poll` erneut auslöst, bevor sie ankommt —,
+        # und dann muss der nächste Aufruf dasselbe noch einmal sagen können.
+        # Aufgeräumt wird beim nächsten Start (`runner.start`).
         if job.error:
             return ui.hinweis(f"Lauf fehlgeschlagen: {job.error}", "fehler"), True, False, no_update
 

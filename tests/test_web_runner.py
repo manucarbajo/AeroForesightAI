@@ -192,6 +192,49 @@ def test_the_log_does_not_grow_without_bound(monkeypatch):
     assert job.lines[-1] == f"Zeile {ueberzaehlig - 1}", "die jüngsten Zeilen bleiben"
 
 
+class TestDieFertigmeldungGehtNichtVerloren:
+    """**Befund 9 der Abnahme vom 2026-09-30.** Nach dem Szenario-Vergleich kam
+    keine Fertigmeldung, «Lauf aktiv …» blieb stehen, und kein Lauf wurde gewählt.
+
+    Dash verwirft die Antwort eines Callbacks, der noch läuft, wenn sein Takt
+    ihn erneut auslöst. `_poll` vergaß den Job in genau der Antwort, die ihn als
+    fertig meldete — ging sie verloren, fand der nächste Aufruf nichts mehr.
+    """
+
+    def _poll(self):
+        from dashboard.web.pages import launch as launch_page
+
+        app = _MitschreibendeApp()
+        launch_page.register_callbacks(app)
+        return next(fn for _ids, fn in app.callbacks if fn.__name__ == "_poll")
+
+    def test_ein_zweites_abholen_sagt_dasselbe(self, monkeypatch):
+        from dashboard.run_launcher import RunLaunchResult
+
+        ergebnis = RunLaunchResult(
+            run_id="run_x", run_dir=None, ticks_completed=3, total_events=0, artifacts={}
+        )
+        monkeypatch.setattr(runner, "launch_from_draft", lambda draft, **kw: ergebnis)
+        job_id = runner.start(initial_draft_dict())
+        _warte_auf_ende(job_id)
+
+        erste, zweite = self._poll()(1, job_id), self._poll()(2, job_id)
+
+        assert str(erste) == str(zweite)
+        assert erste[3] == "run_x", "der fertige Lauf wird gewählt"
+        assert erste[1] is True, "danach fragt niemand mehr nach"
+
+    def test_der_naechste_start_raeumt_auf(self, monkeypatch):
+        monkeypatch.setattr(runner, "launch_from_draft", lambda draft, **kw: "ok")
+        erster = runner.start(initial_draft_dict())
+        _warte_auf_ende(erster)
+
+        zweiter = runner.start(initial_draft_dict())
+        _warte_auf_ende(zweiter)
+
+        assert runner.poll(erster) is None and runner.poll(zweiter) is not None
+
+
 # --- Der Start-Knopf selbst -------------------------------------------------
 
 
