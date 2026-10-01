@@ -181,6 +181,7 @@ def add_custom_property(
         )
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
     if label:
         PROPERTY_LABELS[property_id] = label
 
@@ -212,6 +213,7 @@ def delete_custom_property(property_id: str, properties_file: str = "properties.
         ]
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+            f.write("\n")
 
 
 @dataclass
@@ -479,6 +481,7 @@ def save_population_edits_to_file(
     data["individual_properties"] = new_props
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
 
 def extract_saturation_from_file(filename: str = "properties.json") -> SaturationEditState:
@@ -504,6 +507,7 @@ def save_saturation_to_file(edit: SaturationEditState, filename: str = "properti
     }
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
 
 def extract_market_feedback_from_file(filename: str = "properties.json") -> MarketFeedbackEditState:
@@ -562,6 +566,7 @@ def save_market_feedback_to_file(
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
 
 def save_property_edits_to_file(
@@ -608,6 +613,7 @@ def save_property_edits_to_file(
             item["trajectory"] = neu[item["id"]]
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
     return sorted(neu)
 
 
@@ -1282,5 +1288,5 @@ def save_custom_sweep_preset(draft: ConfigDraft, filename: str) -> Path:
     if eingabe and sweep.name == target.stem:
         sweep = sweep.model_copy(update={"name": eingabe})
     payload = sweep.model_dump(mode="json")
-    target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    target.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return target
