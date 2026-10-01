@@ -151,6 +151,8 @@ Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung,
 **Fertig wenn:** Alle sechs Stellen stimmen, und `grenzen.md` nennt die Zahlen mit Datum. Die Zeile der Gegenprüfung in `audit_findings.md` ist entsprechend gekürzt.
 **Aufwand:** ½ Tag.
 
+**Erledigt am 2026-10-01**, in sechs Commits (`2f88f74`, `bb66e9d`, `327af39`, `931d8ef`, `c91b1b2`, `aa3d493`) und einem siebten für einen Nebenfund (`ead0cea`). **Größer als gemeldet:** Die Suche fand acht statt vier falsche Schrittverweise; in «Grenzen des Modells» beschrieben zwei weitere Sätze Einkommen und Kapazität noch als fehlend; die Referenz zählte acht statt neun Koeffizienten. Der Backtest ist dafür neu gerechnet worden — Bericht inhaltlich gleich dem vom 2026-09-08. Drei Wächter neu oder erweitert: Schrittpositionen in Worten im Handbuch (`test_web_schrittverweise.py`), die Aussagen der Diagramme als Ortsverweis (`test_web_glossar.py`), Tabellenzeilen ohne Tabelle (`test_handbuch_tabellen.py`). Die Zeile in `audit_findings.md` ist gekürzt und hat dabei wieder drei Spalten — die zitierten Pipe-Zeichen hatten sie in sieben zerlegt.
+
 #### V10 — Der Vergleich zeigt nur Rahmen, und sein Satz stimmt
 
 **Befund:** «unter aus einem» unter der Vergleichsansicht; die Ansicht nimmt jeden Ordner unter `outputs/sweeps/` mit (P7.6-U6.4).
