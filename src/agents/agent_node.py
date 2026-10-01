@@ -193,7 +193,8 @@ class AgentNode:
             response = AgentResponse(
                 agent_id=self.config.id,
                 round_number=round_number,
-                reasoning=str(payload.get("reasoning", "")).strip() or "Kein Reasoning geliefert.",
+                reasoning=str(payload.get("reasoning", "")).strip()
+                or "Keine Begründung geliefert.",
                 actions=[
                     str(action) for action in payload.get("actions", []) if str(action).strip()
                 ],

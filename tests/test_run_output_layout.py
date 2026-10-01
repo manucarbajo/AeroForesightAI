@@ -62,7 +62,7 @@ def test_final_narrative_includes_property_schedule(tmp_path):
 
     assert "## Geplante Änderungen der Systemgrößen" in content
     assert "Tick 8" in content
-    assert "saf_mandate_share" in content
+    assert "SAF-Mandat" in content
     assert "Leseschlüssel" in content
     assert "gebucht (" in content
 

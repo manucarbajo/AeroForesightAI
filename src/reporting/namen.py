@@ -83,3 +83,59 @@ def segment_name(segment_id: str) -> str:
     """Der Name eines Segments — für ein unbekanntes die Kennung in Lesbarform."""
 
     return SEGMENT_NAMEN.get(segment_id, segment_id.replace("_", " "))
+
+
+#: Die Merkmale einer simulierten Person — für Regeln, die die Bevölkerung
+#: verschieben (`shift_rules`). Dieselben Wörter wie in Legende und Hover der
+#: Animation.
+MERKMAL_NAMEN: dict[str, str] = {
+    "price_sensitivity": "Preisempfindlichkeit",
+    "environmental_awareness": "Umweltbewusstsein",
+    "income_factor": "Einkommensfaktor",
+    "substitution_readiness": "Bahnbereitschaft",
+    "wtp_eur": "Zahlungsbereitschaft",
+    "saturation_level": "Sättigung",
+    "age": "Alter",
+}
+
+
+def groesse_name(property_id: str) -> str:
+    """Der Name einer Systemgröße für einen Satz — ohne die Einheit in Klammern.
+
+    `PROPERTY_LABELS` ist für Achsen gebaut («CO₂-Steuer (€/t)»); in einem Satz
+    steht die Einheit hinter der Zahl. Eine unbekannte Größe behält ihre Kennung.
+    """
+
+    name = PROPERTY_LABELS.get(property_id, property_id)
+    for zusatz in (" / Tick",):
+        name = name.removesuffix(zusatz)
+    if name.endswith(")") and " (" in name:
+        name = name[: name.rindex(" (")]
+    return name
+
+
+def einheit_kurz(einheit: str) -> str:
+    """Die kurze Einheit hinter einer Zahl — leer, wo sie nichts sagt (Index, Anteil)."""
+
+    kurz = EINHEITEN.get(einheit, ("", ""))[0]
+    return "" if kurz in ("Index", "0–1", "Anteil je Tick") else kurz
+
+
+def zahl(wert: float, stellen: int | None = None) -> str:
+    """Eine Zahl mit Dezimalkomma; ohne `stellen` so knapp wie möglich (`:g`)."""
+
+    text = f"{wert:g}" if stellen is None else f"{wert:.{stellen}f}"
+    return text.replace(".", ",")
+
+
+def prozent(anteil: float, stellen: int = 1) -> str:
+    """Ein Anteil als Prozent: `prozent(0.479)` → `"47,9 %"`."""
+
+    return f"{zahl(anteil * 100, stellen)} %"
+
+
+def prozentpunkte(delta: float) -> str:
+    """Eine Veränderung eines Anteils: `prozentpunkte(-0.114)` → `"−11,4 Prozentpunkte"`."""
+
+    text = zahl(abs(delta) * 100, 1)
+    return f"{'+' if delta >= 0 else '−'}{text} Prozentpunkte"

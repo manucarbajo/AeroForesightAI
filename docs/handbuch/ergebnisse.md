@@ -201,6 +201,16 @@ Vorangestellt sind die vom Szenario geplanten Änderungen der Systemgrößen —
 nur die, die in die Länge dieses Laufs fallen. Ein Bericht vor dem 1. Oktober
 2026 listet dort noch alle Stützpunkte samt ihrer Konfigurationsbeschreibung.
 
+Je Tick steht eine Kennzahlenzeile — Buchungsrate, Veränderung in
+Prozentpunkten, Preis vorher und nachher, die Vorgaben des Szenarios für diesen
+Tick —, darunter ein **Faktorwechsel**, wenn es einen gab, dann **Wer bucht**
+nach Segment, die **Begründungen der Akteure** und ihre **Meldungen**. Die
+beiden letzten gibt es nur in einem Lauf mit Sprachmodell. Die Meldungen des
+Systems selbst («[delta:…]») stehen nicht im Bericht, weil die Kennzahlenzeile
+dieselben Zahlen nennt; im Ereignisprotokoll (`event_log.json`) bleiben sie.
+Berichte von vor dem 1. Oktober 2026 nennen Segmente und Größen noch mit ihren
+Kennungen und schreiben Zahlen mit Punkt.
+
 ## Abfrage
 
 Ein Chat, der ausschließlich über die Daten dieses Laufs antwortet. Ausführlich

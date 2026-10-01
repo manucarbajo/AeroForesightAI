@@ -1,8 +1,28 @@
-"""Human-readable Markdown run report (final_narrative.md)."""
+"""Der Bericht eines Laufs in Markdown (`final_narrative.md`, Reiter «Bericht»).
+
+**Deutsch, mit Dezimalkomma und den Namen der Oberfläche** (P7.6, 2026-10-01).
+Bis dahin stand hier, was der Rechenkern intern sagt: «price_sensitive»,
+«Δ -11.4% pp», «Shocks: kapazitaet_index 1.06», «Total Demand», und unter
+«Öffentliche Events» jede Delta-Meldung des Systems auf Englisch
+(«[delta:booking:population] booking rate 23.3% → 12.0% (-11.4 pp, Python
+delta)») — dieselben Zahlen, die die Kennzahlenzeile darüber schon nennt. Die
+Namen kommen aus `src.reporting.namen`, derselben Quelle wie im Dashboard.
+Gehalten von `tests/test_bericht.py`.
+"""
 
 from pathlib import Path
 
 from src.market.property_engine import scheduled_property_events
+from src.reporting.namen import (
+    FAKTOR_KURZNAMEN,
+    MERKMAL_NAMEN,
+    PROPERTY_LABELS,
+    groesse_name,
+    prozent,
+    prozentpunkte,
+    segment_name,
+    zahl,
+)
 from src.reporting.output_writer.events import agent_responses_for_round, narrative_events_for_round
 from src.reporting.output_writer.paths import ensure_output_dir, resolve_output_path
 from src.reporting.output_writer.tick_mechanics import (
@@ -13,21 +33,25 @@ from src.reporting.output_writer.tick_mechanics import (
 )
 from src.rule_engine import describe_when
 
-_SEGMENT_LABELS = {
-    "business": "Business",
-    "leisure_price_sensitive": "Preissensitiv",
-    "leisure_eco_conscious": "Öko-bewusst",
-}
-
 _AGENT_LABELS = {
     "provider": "Provider",
     "regulator": "Regulator",
     "consumer": "Consumer",
 }
 
+#: Was ein Akteur liefert, wenn das Modell keine Begründung schreibt. Der erste
+#: Wert ist der Text, den `agent_node` bis zum 2026-10-01 einsetzte; Läufe von
+#: davor tragen ihn in ihren Daten. «mock» ist die Antwort des Platzhalters
+#: (`MockLLM`) in einem Lauf ohne Sprachmodell.
+_OHNE_BEGRUENDUNG = ("Kein Reasoning geliefert.", "Keine Begründung geliefert.", "mock")
+
+
+def _veraenderung_wichtig(delta: object) -> bool:
+    return isinstance(delta, (int, float)) and abs(float(delta)) >= 0.001
+
 
 def _format_tick_summary_markdown(record: dict[str, object]) -> list[str]:
-    """One compact ground-truth line per tick; interpretation only when surprising."""
+    """Eine Kennzahlenzeile je Tick; eine Deutung nur, wenn etwas überrascht."""
 
     chunks: list[str] = []
     br = record.get("booking_rate")
@@ -38,17 +62,21 @@ def _format_tick_summary_markdown(record: dict[str, object]) -> list[str]:
     post = record.get("market_price_after_feedback_eur")
 
     if br is not None and booked is not None and pop is not None:
-        booking_part = f"**{float(br):.1%}** gebucht ({booked}/{pop})"
-        if isinstance(br_delta, (int, float)) and abs(float(br_delta)) >= 0.001:
-            booking_part += f", Δ {float(br_delta):+.1%} pp"
+        booking_part = f"**{prozent(float(br))}** gebucht ({booked} von {pop})"
+        if _veraenderung_wichtig(br_delta):
+            booking_part += f", {prozentpunkte(float(br_delta))}"
         chunks.append(booking_part)
 
     if isinstance(ref, (int, float)) and isinstance(post, (int, float)):
         delta = float(post) - float(ref)
-        chunks.append(f"Preis {float(ref):.2f} → {float(post):.2f} € ({delta:+.2f} €)")
+        vorzeichen = "+" if delta >= 0 else "−"
+        chunks.append(
+            f"Preis {zahl(float(ref), 2)} → {zahl(float(post), 2)} € "
+            f"({vorzeichen}{zahl(abs(delta), 2)} €)"
+        )
 
     shocks = record.get("scheduled_shocks") or []
-    if shocks:
+    if isinstance(shocks, list) and shocks:
         shock_text = ", ".join(
             part
             for shock in shocks
@@ -57,7 +85,7 @@ def _format_tick_summary_markdown(record: dict[str, object]) -> list[str]:
             if part
         )
         if shock_text:
-            chunks.append(f"Shocks: {shock_text}")
+            chunks.append(f"Vorgaben: {shock_text}")
 
     lines: list[str] = []
     if chunks:
@@ -65,26 +93,45 @@ def _format_tick_summary_markdown(record: dict[str, object]) -> list[str]:
         lines.append(" · ".join(chunks))
 
     interpretations = record.get("interpretation") or []
-    if interpretations:
-        # Only surface the first note — enough when something looks paradoxical.
+    if isinstance(interpretations, list) and interpretations:
+        # Nur die erste Deutung — genug, wenn etwas widersprüchlich aussieht.
         note = str(interpretations[0]).replace("**", "")
         lines.append(f"\n→ *{note}*")
 
     return lines
 
 
+def _format_faktorwechsel(state, round_number: int) -> list[str]:
+    """Welche Faktoren in diesem Tick ihren Zustand gewechselt haben.
+
+    Aus `factor_timeseries` gelesen — derselben Reihe, aus der die englischen
+    Delta-Meldungen im Ereignisprotokoll entstehen, statt diese zu zerlegen.
+    """
+
+    zeilen = {row.get("tick"): row for row in state.factor_timeseries}
+    vorher, jetzt = zeilen.get(round_number - 1), zeilen.get(round_number)
+    if not vorher or not jetzt:
+        return []
+    wechsel = [
+        f"{FAKTOR_KURZNAMEN.get(str(fid), str(fid))} {vorher[fid]} → {jetzt[fid]}"
+        for fid in sorted(jetzt)
+        if fid != "tick" and vorher.get(fid) is not None and vorher.get(fid) != jetzt[fid]
+    ]
+    return ["", f"**Faktorwechsel:** {', '.join(wechsel)}"] if wechsel else []
+
+
 def _format_segment_booking_block(
     stats_for_round: dict,
     prior_stats: dict | None,
 ) -> list[str]:
-    """Per-segment booking with booked/total, rate, and delta vs prior tick."""
+    """Je Segment: wie viele gebucht haben, zu welchem Anteil, und die Veränderung."""
 
     segments = stats_for_round.get("segments") or {}
     if not segments:
         return []
 
     prior_segments = (prior_stats or {}).get("segments") or {}
-    lines = ["", "#### Segment-Buchung", ""]
+    lines = ["", "#### Wer bucht", ""]
 
     for seg_id, seg_data in segments.items():
         if not isinstance(seg_data, dict):
@@ -92,38 +139,54 @@ def _format_segment_booking_block(
         booked = seg_data.get("booked_individuals")
         total = seg_data.get("total_individuals")
         rate = seg_data.get("booking_rate")
-        label = _SEGMENT_LABELS.get(seg_id, seg_id)
         if booked is None or total is None or rate is None:
             continue
 
-        line = f"- **{label}:** {booked}/{total} gebucht ({float(rate):.1%})"
+        line = (
+            f"- **{segment_name(seg_id)}:** {booked} von {total} gebucht ({prozent(float(rate))})"
+        )
         prior_seg = prior_segments.get(seg_id)
         if isinstance(prior_seg, dict) and prior_seg.get("booking_rate") is not None:
             delta = float(rate) - float(prior_seg["booking_rate"])
-            if abs(delta) >= 0.001:
-                line += f", Δ {delta:+.1%} pp"
+            if _veraenderung_wichtig(delta):
+                line += f", {prozentpunkte(delta)}"
         lines.append(line)
 
     return lines
 
 
+def _hat_inhalt(resp) -> bool:
+    """Ob ein Akteur etwas gesagt hat — eine Begründung, eine Aktion, einen Vorschlag."""
+
+    begruendung = (resp.reasoning or "").strip()
+    aktionen = [a for a in (getattr(resp, "actions", None) or []) if a.upper() != "NO_OP"]
+    return (
+        bool(begruendung and begruendung not in _OHNE_BEGRUENDUNG)
+        or bool(aktionen)
+        or bool(getattr(resp, "state_changes", None))
+    )
+
+
 def _format_agent_reasoning_block(agent_responses) -> list[str]:
-    if not agent_responses:
+    """Die Begründungen der Akteure — **weggelassen, wenn keiner etwas gesagt hat**.
+
+    In einem Lauf ohne Sprachmodell stand hier je Tick dreimal «> mock».
+    """
+
+    if not any(_hat_inhalt(resp) for resp in agent_responses or []):
         return []
 
-    lines = ["", "#### Agenten-Begründungen & Handlungen", ""]
+    lines = ["", "#### Begründungen der Akteure", ""]
     for resp in agent_responses:
         label = _AGENT_LABELS.get(resp.agent_id, resp.agent_id)
 
         lines.append(f"**{label}**")
 
-        if resp.reasoning:
-            reasoning_formatted = "\n".join(
-                [f"> {line}" for line in resp.reasoning.strip().splitlines()]
-            )
-            lines.append(reasoning_formatted)
+        begruendung = (resp.reasoning or "").strip()
+        if begruendung and begruendung not in _OHNE_BEGRUENDUNG:
+            lines.append("\n".join(f"> {line}" for line in begruendung.splitlines()))
         else:
-            lines.append("> *(Keine Begründung angegeben)*")
+            lines.append("> *(keine Begründung)*")
 
         actions_line = []
         if hasattr(resp, "actions") and resp.actions:
@@ -137,11 +200,11 @@ def _format_agent_reasoning_block(agent_responses) -> list[str]:
                 if isinstance(sc, dict):
                     f_id = sc.get("factor_id")
                     s_id = sc.get("proposed_state")
-                    changes_list.append(f"`{f_id}→{s_id}`")
+                    changes_list.append(f"{f_id} → {s_id}")
                 elif hasattr(sc, "factor_id"):
-                    changes_list.append(f"`{sc.factor_id}→{sc.proposed_state}`")
+                    changes_list.append(f"{sc.factor_id} → {sc.proposed_state}")
             if changes_list:
-                actions_line.append(f"**Faktor-Vorschläge:** {', '.join(changes_list)}")
+                actions_line.append(f"**Vorgeschlagen:** {', '.join(changes_list)}")
 
         if actions_line:
             lines.append("\n" + " | ".join(actions_line))
@@ -151,14 +214,45 @@ def _format_agent_reasoning_block(agent_responses) -> list[str]:
 
 
 def _format_agent_events_block(events) -> list[str]:
-    if not events:
+    """Die Meldungen der Akteure nach außen.
+
+    **Ohne die Delta-Meldungen des Systems** und ohne die Preismeldung des
+    Markts: Sie wiederholen auf Englisch, was die Kennzahlenzeile und der
+    Faktorwechsel darüber schon sagen. Im Ereignisprotokoll bleiben sie stehen.
+    """
+
+    meldungen = [
+        event
+        for event in events
+        if event.source_agent in _AGENT_LABELS and not event.description.startswith("[delta:")
+    ]
+    if not meldungen:
         return []
 
-    lines = ["", "#### Öffentliche Events & Markteffekte", ""]
-    for event in events:
-        label = _AGENT_LABELS.get(event.source_agent, event.source_agent)
-        lines.append(f"- **[{label}]** {event.description}")
+    lines = ["", "#### Meldungen", ""]
+    for event in meldungen:
+        lines.append(f"- **{_AGENT_LABELS[event.source_agent]}:** {event.description}")
     return lines
+
+
+def _regel_satz(rule) -> str:
+    """Eine Regel, die die Bevölkerung verschiebt, als Satz mit Namen statt Kennungen."""
+
+    effect = rule.effect
+    # Beschreibung und Auswertung kommen seit P0.4 aus derselben Quelle.
+    # Vorher stand hier eine eigene, ärmere Lesart: `metric` und `at_least`
+    # fehlten, und eine Regel ohne Bedingung wurde als "immer" beschrieben,
+    # obwohl der Code sie nie greifen ließ.
+    when_label = describe_when(rule.when)
+    for property_id in PROPERTY_LABELS:
+        when_label = when_label.replace(f"`{property_id}`", groesse_name(property_id))
+    merkmal = str(effect.get("property", "?"))
+    delta = float(effect.get("delta", 0))
+    vorzeichen = "+" if delta >= 0 else "−"
+    return (
+        f"- Wenn {when_label}: {MERKMAL_NAMEN.get(merkmal, merkmal)} "
+        f"{vorzeichen}{zahl(abs(delta))}"
+    )
 
 
 def save_final_narrative(
@@ -185,31 +279,31 @@ def save_final_narrative(
     lines.append(f"\n{state.config.description}\n")
 
     lines.append("## Überblick")
-    lines.append(f"- **Simulierte Ticks:** {state.clock.current_tick} / {state.clock.max_ticks}")
+    lines.append(f"- **Gerechnete Ticks:** {state.clock.current_tick} von {state.clock.max_ticks}")
     if start_tick is not None and end_tick is not None:
-        lines.append(f"- **Tick-Bereich:** Tick {start_tick} – Tick {end_tick}")
-    lines.append(f"- **Gesamte Events:** {len(state.event_log)}")
+        lines.append(f"- **Ticks:** {start_tick} bis {end_tick}")
+    lines.append(f"- **Ereignisse:** {len(state.event_log)}")
     lines.append(
-        f"- **Preis Start:** {state.price_history[0].price:.2f} €"
+        f"- **Preis am Anfang:** {zahl(state.price_history[0].price, 2)} €"
         if state.price_history
-        else "- **Preis Start:** n/a"
+        else "- **Preis am Anfang:** nicht bekannt"
     )
     lines.append(
-        f"- **Preis Ende:** {state.price_history[-1].price:.2f} €"
+        f"- **Preis am Ende:** {zahl(state.price_history[-1].price, 2)} €"
         if state.price_history
-        else "- **Preis Ende:** n/a"
+        else "- **Preis am Ende:** nicht bekannt"
     )
 
     lines.append("\n## Leseschlüssel")
     lines.append(
-        "Pro Tick bucht die Population **zuerst** (Referenzpreis = Endpreis des Vorticks), "
-        "der Markt setzt **danach** den neuen Endpreis. Die Kennzahlen-Zeile kommt aus der "
-        "Rechnung, nicht vom Sprachmodell."
+        "Je Tick bucht die Bevölkerung **zuerst**, zum Preis des Vorticks; der Markt setzt "
+        "**danach** den neuen Preis. Die Kennzahlenzeile kommt aus der Rechnung, nicht vom "
+        "Sprachmodell."
     )
     lines.append(
-        "Pro Tick drei Blöcke: **Segment-Buchung** (wer bucht) → **Agenten-Einschätzung** "
-        "(die Begründung des Sprachmodells) → **Öffentliche Meldungen** (eine je Rolle — "
-        "nicht doppelt: dort die Begründung, hier die Meldung nach außen). "
+        "Je Tick folgen: **Wer bucht** (nach Segment) → **Begründungen der Akteure** (was das "
+        "Sprachmodell als Grund nennt) → **Meldungen** (was die Akteure nach außen sagen). "
+        "In einem Lauf ohne Sprachmodell fehlen die beiden letzten. "
         "Maschinenlesbar: `tick_mechanics.json`."
     )
 
@@ -228,23 +322,16 @@ def save_final_narrative(
 
     shift_rules = properties.shift_rules
     if shift_rules:
-        lines.append("\nDynamische Populations-Shift-Regeln:")
+        lines.append("\nRegeln, die die Bevölkerung verschieben:")
         for rule in shift_rules:
-            effect = rule.effect
-            # Beschreibung und Auswertung kommen seit P0.4 aus derselben Quelle.
-            # Vorher stand hier eine eigene, ärmere Lesart: `metric` und
-            # `at_least` fehlten, und eine Regel ohne Bedingung wurde als
-            # "immer" beschrieben, obwohl der Code sie nie greifen ließ.
-            when_label = describe_when(rule.when)
-            effect_label = f"`{effect.get('property', '?')}` " f"{effect.get('delta', 0):+g}"
-            lines.append(f"- Wenn {when_label}: {effect_label}")
+            lines.append(_regel_satz(rule))
 
     scheduled_by_tick: dict[int, list[dict[str, object]]] = {}
     for event in schedule:
         tick = int(event["tick"])
         scheduled_by_tick.setdefault(tick, []).append(event)
 
-    lines.append("\n## Tick-Übersicht")
+    lines.append("\n## Tick für Tick")
     round_numbers = sorted(
         {rr.round_number for rr in state.round_results if rr.round_number >= 1}
         | {event.round_number for event in state.event_log if event.round_number >= 1}
@@ -260,6 +347,7 @@ def save_final_narrative(
             scheduled_by_tick=scheduled_by_tick,
         )
         lines.extend(_format_tick_summary_markdown(mechanics))
+        lines.extend(_format_faktorwechsel(state, round_number))
 
         stats_for_round = next(
             (s for s in state.population_stats if s.get("round_number") == round_number),
@@ -275,24 +363,28 @@ def save_final_narrative(
         narrative_events = narrative_events_for_round(state, round_number)
         lines.extend(_format_agent_events_block(narrative_events))
 
-    lines.append("\n## Finaler Umweltzustand")
+    lines.append("\n## Faktorlage am Ende")
     for factor_id, factor in state.environment.factors.items():
         state_label = factor.possible_states.get(factor.current_state, factor.current_state)
-        lines.append(f"- **{factor.name}:** {factor.current_state} – {state_label}")
+        name = FAKTOR_KURZNAMEN.get(factor_id, factor.name)
+        lines.append(f"- **{name}:** {factor.current_state} – {state_label}")
 
     if hasattr(state, "population_stats") and state.population_stats:
         last_stats = state.population_stats[-1]
-        lines.append("\n## Populations-Statistik (Aktueller Stand)")
+        lines.append("\n## Bevölkerung am Ende")
         lines.append(
-            f"- **Total Demand:** {last_stats['total_demand']:.1%} ({last_stats['total_booked']} von {last_stats['total_population']} gebucht)"
+            f"- **Buchungsrate:** {prozent(last_stats['total_demand'])} "
+            f"({last_stats['total_booked']} von {last_stats['total_population']} gebucht)"
         )
-        lines.append("- **Segment-Details:**")
+        lines.append("- **Je Segment:**")
         for seg_id, seg_data in last_stats["segments"].items():
             lines.append(
-                f"  - **{seg_id}** (Anteil: {seg_data['share']:.1%}): {seg_data['booked_individuals']} gebucht / {seg_data['total_individuals']} gesamt (Rate: {seg_data['booking_rate']:.1%})"
+                f"  - **{segment_name(seg_id)}** (Anteil {prozent(seg_data['share'])}): "
+                f"{seg_data['booked_individuals']} von {seg_data['total_individuals']} gebucht "
+                f"({prozent(seg_data['booking_rate'])})"
             )
 
     with open(filepath, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
+        f.write("\n".join(lines) + "\n")
 
     return filepath

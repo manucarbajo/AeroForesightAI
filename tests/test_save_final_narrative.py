@@ -144,15 +144,15 @@ def test_includes_all_agent_events_per_tick(tmp_path) -> None:
     assert "> Regulator launches awareness campaign." in content
     assert "> Consumer books eco-conscious flights." in content
     # Public events are rendered as a bullet list with a role tag
-    assert "**[Provider]** Airline expands SAF logistics." in content
-    assert "**[Regulator]** Commission launches SAF awareness campaign." in content
-    assert "**[Consumer]** Consumers increase eco-conscious bookings." in content
+    assert "**Provider:** Airline expands SAF logistics." in content
+    assert "**Regulator:** Commission launches SAF awareness campaign." in content
+    assert "**Consumer:** Consumers increase eco-conscious bookings." in content
     assert "market: Market update" not in content
     assert "Leseschlüssel" in content
-    assert "#### Segment-Buchung" in content
-    assert "#### Agenten-Begründungen & Handlungen" in content
-    assert "#### Öffentliche Events & Markteffekte" in content
-    assert "220/300 gebucht" in content
+    assert "#### Wer bucht" in content
+    assert "#### Begründungen der Akteure" in content
+    assert "#### Meldungen" in content
+    assert "220 von 300 gebucht" in content
 
 
 def test_tick_mechanics_json_structure(tmp_path) -> None:
