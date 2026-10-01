@@ -13,7 +13,7 @@ Sie unter **Technik** einen festen Zufallsstartwert. Rechnen Sie mindestens 30
 Ticks, damit die Rückkopplung Zeit hat zu wirken.
 
 Im Ergebnis schauen Sie zuerst in **Übersicht** auf Preis und Buchungsrate, dann
-in **Diagramme** unter «Segmente & Alter», welche Gruppen zuerst aussteigen. Wichtig
+in **Diagramme** unter der Aussage «3 · Wer noch fliegt», welche Gruppen zuerst aussteigen. Wichtig
 zu wissen: Die Abgabe wirkt auf die Kaufentscheidung erst oberhalb von 50 € je
 Tonne, siehe [Wie eine Buchung entsteht](/doku/kaufentscheidung).
 

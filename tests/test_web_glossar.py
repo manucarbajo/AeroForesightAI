@@ -28,6 +28,7 @@ from pathlib import Path
 from dashboard.web import shell
 from dashboard.web.config_editor import wizard
 from dashboard.web.pages import runs
+from dashboard.web.views import figures
 from src.reporting.output_writer.provenance import COMPUTE_MODE_LABELS
 
 WURZEL = Path(__file__).resolve().parents[1]
@@ -258,6 +259,10 @@ ORTE = {
     "Reiter": {name for name, _ in runs.TABS},
     "Bereich": {name for _, name in shell.BEREICHE},
     "Schritt": {schritt.title for schritt in wizard.STEPS},
+    # **Seit dem 2026-10-01 auch die vier Aussagen der Diagramme** (Befund N8 der
+    # Gegenprüfung vom 2026-09-21): Zwei Kapitel schickten «unter ‹Segmente &
+    # Alter›» zu einem Abschnitt, den es seit P1.2 nicht mehr gibt.
+    "Aussage": {name for name, _ in figures.TABS},
 }
 
 #: Wie viele Ortsverweise die Suche mindestens liest — gegen die eigene
@@ -278,7 +283,11 @@ ORTE_AUSNAHMEN = {
 }
 
 #: Ein Verweis in sichtbarem Text: das Wort, dann der Name in Guillemets.
-_ORTSVERWEIS = re.compile("(Tab|Reiter|Bereich|Schritt) [«]([^»]+)[»]")
+_ORTSVERWEIS = re.compile("(Tab|Reiter|Bereich|Schritt|Aussage) [«]([^»]+)[»]")
+#: Und die Form, in der der Befund N8 stand: «in **Diagramme** unter «…»» — ohne das
+#: Wort «Aussage» davor, also für die Suche oben unsichtbar. Fett, weil das die
+#: Ansicht meint — «die Diagramme unter «Animation»» sind Diagramme eines Reiters.
+_DIAGRAMME_UNTER = re.compile("[*]{2}Diagramme[*]{2} unter [«]([^»]+)[»]")
 
 
 def _orte_ausgenommen(ort: str, text: str) -> bool:
@@ -294,6 +303,9 @@ def _ortsbefunde(texte: list[tuple[str, str]]) -> list[str]:
         for wort, name in _ORTSVERWEIS.findall(_CODE.sub("", text)):
             if name not in ORTE[wort]:
                 befunde.append(f"{ort}: {wort} «{name}» — den gibt es nicht")
+        for name in _DIAGRAMME_UNTER.findall(_CODE.sub("", text)):
+            if name not in ORTE["Aussage"]:
+                befunde.append(f"{ort}: Diagramme unter «{name}» — die Aussage gibt es nicht")
     return befunde
 
 
@@ -311,7 +323,7 @@ class TestEinOrtsverweisNenntEinenOrt:
     meldet sich jeder Text, der ihn noch alt nennt.
 
     **Was er nicht kann:** Ein Name, den es *nirgends mehr* gibt («Simulation
-    starten»), fällt nur auf, wenn er hinter einem dieser vier Wörter steht.
+    starten»), fällt nur auf, wenn er hinter einem dieser fünf Wörter steht.
     Frei stehende Beschriftungen in Guillemets sind Knopfnamen und keine
     Ortsangaben; sie mechanisch zu prüfen bräuchte eine Liste, und eine Liste
     verfällt.
