@@ -52,6 +52,7 @@ from src.models.sweep_models import (
 )
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.reporting.output_writer import (
+    OUTPUT_DIR,
     resolve_run_output_dir,
     save_cib_matrix,
     save_event_log,
@@ -316,7 +317,12 @@ def sweep_metadata_args(*, llm_narrative: bool = True) -> RunArgs:
 
 
 SWEEPS_DIR = REPO_ROOT / "configs" / "sweeps"
-SWEEP_OUTPUT_DIR = REPO_ROOT / "outputs" / "sweeps"
+#: Wohin ein Vergleich seine Zusammenfassung schreibt — **unter demselben
+#: Ausgabeordner wie seine Läufe**, also auch unter `AF_AUSGABE`. Bis zum
+#: 2026-10-01 stand hier `REPO_ROOT / "outputs" / "sweeps"`: Die Läufe landeten
+#: im verlegten Ordner, `sweep_summary.json` und `scenario_scores.json` im
+#: Repository und überschrieben dort die Zusammenfassung des Bestands.
+SWEEP_OUTPUT_DIR = Path(OUTPUT_DIR) / "sweeps"
 
 
 def load_sweep_config(path: Path) -> SweepConfig:
