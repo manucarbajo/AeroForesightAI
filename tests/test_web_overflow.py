@@ -4027,6 +4027,40 @@ def test_the_run_browser_finds_and_selects_with_two_inputs(page):
     )
 
 
+# --- Zeitleiste (Befund 16 der Abnahme vom 2026-09-30) ---------------------------
+
+
+@pytest.mark.zeitleiste
+def test_two_quick_clicks_are_two_ticks(page):
+    """Ein Doppelklick auf «Ein Tick vor» rückt zwei Ticks vor, nicht einen.
+
+    Auf dem Server las der zweite Klick den Tick, bevor die Antwort auf den
+    ersten ankam — gemessen auch mit 80 ms Abstand. Seither wertet der Browser
+    die Knöpfe aus. Gemessen mit zwei echten Klicks im Abstand von 60 ms, der
+    unteren Grenze eines Doppelklicks; ohne jeden Abstand verliert schon der
+    Knopf selbst einen, weil er `n_clicks` aus seinem alten Stand hochzählt.
+    """
+
+    from dashboard.web import timeline
+
+    page.goto(page.basis + BEREICHE["Leitstand"], wait_until="networkidle")
+    anzeige = f"#{timeline.READOUT}"
+    page.locator(f"#{timeline.TO_START}").click()
+    page.wait_for_function(
+        "(s) => document.querySelector(s).innerText.startsWith('Tick 1 /')",
+        arg=anzeige,
+        timeout=5_000,
+    )
+
+    knopf = page.locator(f"#{timeline.STEP_FORWARD}")
+    knopf.click()
+    page.wait_for_timeout(60)
+    knopf.click()
+    page.wait_for_timeout(1_500)
+
+    assert page.locator(anzeige).inner_text().startswith("Tick 3 /")
+
+
 # --- Als Szenario sichern (P7.4-U4.5) -------------------------------------------
 
 

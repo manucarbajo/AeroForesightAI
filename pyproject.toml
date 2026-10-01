@@ -126,5 +126,6 @@ markers = [
     "modellbereich: Browser-Wächter — der Modell-Bereich wird aus- und eingehängt",
     "rueckfrage: Browser-Wächter — die Rückfrage öffnet, fokussiert und schließt sich",
     "laufwahl: Browser-Wächter — der Lauf-Browser öffnet modal, sucht und wählt",
+    "zeitleiste: Browser-Wächter — zwei schnelle Klicks auf «Ein Tick vor» sind zwei Ticks",
     "leistung: Leistungsmessung (Klickdauer, P7.11) — läuft nur mit -m leistung",
 ]
