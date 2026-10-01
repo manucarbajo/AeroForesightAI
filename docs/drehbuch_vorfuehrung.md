@@ -33,7 +33,7 @@ Paket [P8-V8](plan_vorfuehrbereitschaft_2026-09-29.md). Stand 2026-10-01.
 1. **Live nur «Ohne Sprachmodell»** (oder «Nur Zahlen», gleich schnell). «Mit Sprachmodell» braucht 40 Ticks lang rund 10 s je Tick (Entwicklungsrechner; auf dem Laptop eher mehr). «Ohne Sprachmodell» ist die sichere Wahl, weil es Ollama auch dann nicht braucht, wenn auf dem Laptop etwas klemmt.
 2. Keinen Szenario-Vergleich live starten (rund zwei Minuten mit Sprachmodell), keinen Lauf abbrechen (eine Minute ohne Rückmeldung, Befund 10).
 3. Im Bereich «Modell» nichts speichern — das ändert die Auslieferung (Befund 14).
-4. «Animation» nicht öffnen: neun Sekunden Laden, englische Legende (V11).
+4. «Animation» darf jetzt offen werden: Die Ansicht ist sofort da, jedes Diagramm rechnet auf «Diagramm zeigen» in ein bis zwei Sekunden (Pitch-Fall), und die Legende ist deutsch (V11, seit 2026-10-01). Das erste Diagramm zeigt die Wolke der Reisenden über die Ticks — passend zu Schritt 1.
 5. Den Pitch-Fall gegen seine Referenz «Aufschlag halten» zeigen, nicht gegen «Vorführung: Business as Usual» — die rechnet mit «Plätze füllen», und dort sinkt der Ticketpreis nach dem Sprung (Befund 8).
 
 ## Wenn jemand fragt

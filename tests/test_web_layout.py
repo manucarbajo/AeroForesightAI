@@ -651,6 +651,32 @@ class TestDieAnimationRechnetErstAufKlick:
         assert gefangen["_zeigen"](None, {"run_dir": "x"}, "light") == (no_update, no_update)
 
 
+class TestDieAnimationSprichtDeutsch:
+    """Befund 12 der Abnahme vom 2026-09-30: Die Legende der Animation hieß
+    «False, Leisure» und «True, Business», der Hover nannte Spaltennamen."""
+
+    ENGLISCH = ("True", "False", "Business", "Leisure", "Awareness")
+    SPALTEN = ("substitution_readiness", "price_sensitivity", "saturation_level", "wtp_eur")
+
+    def test_legende_und_hover(self, history_run):
+        for kennung in ("bevoelkerung", "spielraum", "saettigung", "merkmal-0"):
+            figur = animation.diagramm(kennung, history_run).figure
+            namen = " ".join(spur.name or "" for spur in figur.data)
+            hover = " ".join(spur.hovertemplate or "" for spur in figur.data)
+
+            assert animation.GEBUCHT in namen, (kennung, namen)
+            assert not [w for w in self.ENGLISCH if w in namen], (kennung, namen)
+            assert not [w for w in self.SPALTEN if w + "=" in hover], (kennung, hover)
+
+    def test_segmente_heissen_wie_im_modell(self, history_run):
+        from dashboard.config_catalog import SEGMENT_NAMEN
+
+        figur = animation.diagramm("segmente", history_run).figure
+
+        namen = {spur.name for spur in figur.data}
+        assert SEGMENT_NAMEN["business"] in namen, namen
+
+
 class TestSurplusPulse:
     """P5.2 (2026-09-11): der erste übernommene Block der Researcher-Variante."""
 

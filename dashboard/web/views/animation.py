@@ -20,6 +20,7 @@ from pathlib import Path
 
 from dash import MATCH, Input, Output, State, ctx, dcc, html, no_update
 
+from dashboard.config_catalog import segment_name
 from dashboard.web import components as ui
 from dashboard.web import theme
 
@@ -111,6 +112,28 @@ MERKMALSICHTEN = (
     ),
 )
 
+#: Die Werte und Spaltennamen, die in Legende und Hover der Diagramme stehen.
+GEBUCHT = "gebucht"
+NICHT_GEBUCHT = "nicht gebucht"
+GESCHAEFTLICH = "Geschäftsreise"
+PRIVAT = "Privatreise"
+_BESCHRIFTUNG = {
+    "Gebucht": "Buchung",
+    "Segment": "Reiseanlass",
+    "tick": "Tick",
+    "id": "Person",
+    "age": "Alter",
+    "substitution_readiness": "Bahnbereitschaft",
+    "price_sensitivity": "Preisempfindlichkeit",
+    "saturation_level": "Sättigung",
+    "income_factor": "Einkommensfaktor",
+    "wtp_eur": "Zahlungsbereitschaft in €",
+    "environmental_awareness": "Umweltbewusstsein",
+    "ticket_price": "Ticketpreis (€)",
+    "total_agenten": "Personen",
+    "gebucht": "Anzahl Buchungen",
+}
+
 _AGE_BINS = [0, 18, 26, 36, 51, 66, 120]
 _AGE_LABELS = ["<18", "18-25", "26-35", "36-50", "51-65", ">65"]
 
@@ -156,11 +179,14 @@ def load_history(run_dir: Path):
     else:
         frame["ticket_price"] = 0
 
-    frame["Segment"] = frame.apply(
-        lambda row: "Business" if str(row.get("business", False)).lower() == "true" else "Leisure",
-        axis=1,
-    )
-    frame["Gebucht"] = frame["booked"].astype(str)
+    # **Deutsche Werte, weil sie die Legende sind** (Befund 12 der Abnahme vom
+    # 2026-09-30): Dort stand «False, Leisure» und «True, Business».
+    if "business" in frame.columns:
+        geschaeftlich = frame["business"].astype(str).str.lower() == "true"
+    else:
+        geschaeftlich = frame["id"] != frame["id"]
+    frame["Segment"] = geschaeftlich.map({True: GESCHAEFTLICH, False: PRIVAT})
+    frame["Gebucht"] = frame["booked"].astype(bool).map({True: GEBUCHT, False: NICHT_GEBUCHT})
     frame["booked_num"] = frame["booked"].astype(bool).astype(int)
     frame["Altersgruppe"] = pd.cut(frame["age"], bins=_AGE_BINS, labels=_AGE_LABELS, right=False)
     return frame
@@ -216,12 +242,13 @@ def _surplus_figure(frame, mode: str = theme.LIGHT):
         hover_data=hover,
         title="Wer sich den Flug leisten kann",
         labels={
+            **_BESCHRIFTUNG,
             "erschwinglichkeitsgrenze_eur": "Höchster bezahlbarer Preis (€)",
             "spielraum_eur": "Spielraum bis zur Grenze (€)",
             "ticket_price": "Ticketpreis (€)",
             "tick": "Tick",
         },
-        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        color_discrete_map={GEBUCHT: tone["positive"], NICHT_GEBUCHT: tone["negative"]},
         range_x=[0, frame["erschwinglichkeitsgrenze_eur"].max() * 1.1],
         range_y=[frame["spielraum_eur"].min() - 10, frame["spielraum_eur"].max() + 10],
     )
@@ -266,12 +293,13 @@ def _swarm_figure(frame, mode: str = theme.LIGHT):
         hover_data=["saturation_level"],
         title="Sättigung",
         labels={
+            **_BESCHRIFTUNG,
             "wtp_eur": "Zahlungsbereitschaft in €",
             "reisebedarf": "Reisebedarf (1 − Sättigung)",
             "saturation_level": "Sättigung",
             "tick": "Tick",
         },
-        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        color_discrete_map={GEBUCHT: tone["positive"], NICHT_GEBUCHT: tone["negative"]},
         range_x=[0, frame["wtp_eur"].max() * 1.1],
         range_y=[-0.05, 1.05],
     )
@@ -293,8 +321,8 @@ def _merkmal_figure(frame, sicht: Merkmalsicht, mode: str = theme.LIGHT):
         symbol="Segment",
         hover_name="id",
         title=sicht.titel.split(":")[0],
-        labels={sicht.x: sicht.x_achse, sicht.y: sicht.y_achse, "tick": "Tick"},
-        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        labels={**_BESCHRIFTUNG, sicht.x: sicht.x_achse, sicht.y: sicht.y_achse},
+        color_discrete_map={GEBUCHT: tone["positive"], NICHT_GEBUCHT: tone["negative"]},
         range_x=list(sicht.x_bereich) if sicht.x_bereich else None,
         range_y=list(sicht.y_bereich) if sicht.y_bereich else None,
     )
@@ -318,11 +346,12 @@ def _population_figure(frame, mode: str = theme.LIGHT):
         hover_data=["age", "substitution_readiness", "price_sensitivity"],
         title="Population über Zeit",
         labels={
+            **_BESCHRIFTUNG,
             "wtp_eur": "Zahlungsbereitschaft in €",
-            "environmental_awareness": "Umweltbewusstsein (Awareness)",
+            "environmental_awareness": "Umweltbewusstsein",
             "tick": "Tick",
         },
-        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        color_discrete_map={GEBUCHT: tone["positive"], NICHT_GEBUCHT: tone["negative"]},
         range_x=[
             frame["wtp_eur"].quantile(0.01) * 0.9,
             frame["wtp_eur"].quantile(0.99) * 1.1,
@@ -372,6 +401,7 @@ def _age_figure(frame):
         },
         title="Buchungsverhalten nach Altersgruppen",
         labels={
+            **_BESCHRIFTUNG,
             "Buchungsrate": "Buchungsrate (0–1)",
             "avg_wtp": "Ø Zahlungsbereitschaft in €",
             "gebucht": "Anzahl Buchungen",
@@ -405,7 +435,7 @@ def _segment_frame(frame):
             records.append(
                 {
                     "tick": tick,
-                    "Segment": column.replace("_", " ").title(),
+                    "Segment": segment_name(column),
                     "total_agenten": total,
                     "gebucht": booked,
                     "Buchungsrate": booked / total,
@@ -439,6 +469,9 @@ def _segment_figure(segments):
         },
         title="Buchungsverhalten nach Segmenten",
         labels={
+            **_BESCHRIFTUNG,
+            # Hier ist «Segment» das Bevölkerungssegment, nicht der Reiseanlass.
+            "Segment": "Segment",
             "Buchungsrate": "Buchungsrate (0–1)",
             "avg_wtp": "Ø Zahlungsbereitschaft in €",
             "gebucht": "Anzahl Buchungen",
@@ -480,6 +513,9 @@ def _efficiency_figure(frame, segments, mode: str = theme.LIGHT):
         },
         title="Marktanteil vs. Populationsanteil",
         labels={
+            **_BESCHRIFTUNG,
+            # Hier ist «Segment» das Bevölkerungssegment, nicht der Reiseanlass.
+            "Segment": "Segment",
             "pop_share": "Anteil an Gesamtpopulation (0–1)",
             "booking_share": "Anteil an Gesamtbuchungen (0–1)",
             "gebucht": "Anzahl Buchungen",
