@@ -236,6 +236,7 @@ def layout(data: RunData, tick: int = 1, *, playing: bool = False) -> html.Div:
                         className="af-timeline__readout",
                     ),
                     dcc.Dropdown(
+                        labels=ui.AUSWAHL_TEXTE,
                         id=SPEED,
                         options=SPEEDS,
                         value=DEFAULT_SPEED,

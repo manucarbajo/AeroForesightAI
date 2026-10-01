@@ -186,6 +186,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                     ui.field(
                         "Datei",
                         dcc.Dropdown(
+                            labels=ui.AUSWAHL_TEXTE,
                             id="files-select",
                             options=options,
                             value=first,

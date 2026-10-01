@@ -434,6 +434,7 @@ def select(
     return ui.field(
         text_label,
         dcc.Dropdown(
+            labels=ui.AUSWAHL_TEXTE,
             id=cfg_id(field),
             options=options,
             value=value,

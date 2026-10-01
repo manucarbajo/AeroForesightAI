@@ -130,6 +130,7 @@ def _rule_input(prop_id: str, index: int, key: str, value, minimum, maximum, ste
 
 def _rule_select(prop_id: str, index: int, value: str):
     return dcc.Dropdown(
+        labels=ui.AUSWAHL_TEXTE,
         id=rule_id(prop_id, index, "kind"),
         options=[
             {"label": "springt auf den Wert (set)", "value": "set"},
@@ -250,6 +251,7 @@ def _add_property_block() -> html.Details:
             ui.field(
                 "Wirkt auf den Preis als",
                 dcc.Dropdown(
+                    labels=ui.AUSWAHL_TEXTE,
                     id=c.free_id("new-prop-category"),
                     options=PRICE_CATEGORY_OPTIONS,
                     value="none",

@@ -65,3 +65,34 @@ def test_die_suche_findet_einen_rueckfall(tmp_path):
     )
 
     assert [text for _z, text in _texte(probe) if ".env" in text] == ["Modell in .env"]
+
+
+def test_jede_auswahlliste_spricht_deutsch():
+    """Dash 4 schreibt «Search» in das Suchfeld einer Auswahlliste — im Schritt
+    «Verläufe» gefunden. Jeder Aufruf von `dcc.Dropdown` bekommt deshalb
+    `labels=ui.AUSWAHL_TEXTE`; gesucht wird der Aufruf, nicht eine Liste."""
+
+    ohne = []
+    aufrufe = 0
+    for pfad in sorted(WEB.rglob("*.py")):
+        for knoten in ast.walk(ast.parse(pfad.read_text(encoding="utf-8"))):
+            if (
+                isinstance(knoten, ast.Call)
+                and isinstance(knoten.func, ast.Attribute)
+                and knoten.func.attr == "Dropdown"
+            ):
+                aufrufe += 1
+                if not any(k.arg == "labels" for k in knoten.keywords):
+                    ohne.append(f"{pfad.relative_to(WEB)}:{knoten.lineno}")
+
+    assert aufrufe, "Misst der Test ins Leere?"
+    assert not ohne, f"Auswahlliste ohne deutsche Texte: {ohne}"
+
+
+def test_die_texte_sind_gueltige_schluessel():
+    from dash import dcc
+
+    from dashboard.web import components as ui
+
+    dcc.Dropdown(options=[], labels=ui.AUSWAHL_TEXTE)
+    assert "Search" not in ui.AUSWAHL_TEXTE.values()

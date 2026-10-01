@@ -45,6 +45,20 @@ KLEIN = "af-schrift-klein"
 #: die in 90 ms steht. Eine Zahl für jeden Bereich, der neu gebaut wird.
 LADEANZEIGE_NACH_MS = 300
 
+#: Die eingebauten Texte der Auswahlliste (`dcc.Dropdown(labels=…)`), auf Deutsch.
+#: Dash 4 schreibt sonst «Search» in das Suchfeld und «No options found» unter
+#: eine leere Suche — gefunden im Abnahme-Durchgang vom 2026-09-30 im Schritt
+#: «Verläufe» (Befund 13). Jede Auswahlliste unter `dashboard/web/` bekommt sie,
+#: gehalten von `tests/test_web_entwicklersprache.py`.
+AUSWAHL_TEXTE = {
+    "search": "Suchen",
+    "clear_search": "Suche leeren",
+    "clear_selection": "Auswahl leeren",
+    "no_options_found": "Keine Treffer",
+    "select_all": "Alle wählen",
+    "deselect_all": "Keine wählen",
+}
+
 LABEL = f"block font-body {BESCHRIFTUNG} font-medium af-text-body mb-1"
 #: Der kleine Erklaertext unter einem Feld oder einer Zustandsanzeige.
 #:
