@@ -74,6 +74,10 @@ Modell nicht kennt.
 
 Jedes Szenario lässt sich aufklappen und zeigt dann zweierlei: die Anhaltspunkte
 aus dem Lauf mit konkreten Tick-Werten, und die Beschreibung selbst. Die
+Anhaltspunkte nennen Buchungsrate und Ticketpreis zu einigen Ticks, die
+Faktorlage des Szenarios in derselben Kurzform wie die Faktorleiste im
+Leitstand (etwa «F1.2, F2.2, …») und, wo sie vom Ende des Laufs abweicht, den
+Wechsel («Anders als am Ende des Laufs: F3.1 → F3.2»). Die
 Anhaltspunkte sind der Beleg dafür, dass die Erzählung an gerechneten Zahlen
 hängt.
 

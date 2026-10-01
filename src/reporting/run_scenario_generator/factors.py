@@ -56,12 +56,14 @@ def _flip_state(state_id: str) -> str:
 
 
 def _format_factor_compact(catalog: dict[str, Any], states: dict[str, str]) -> str:
-    parts: list[str] = []
-    for factor_id in FACTOR_IDS:
-        state_id = states.get(factor_id)
-        if state_id:
-            parts.append(f"{factor_id}={state_id}")
-    return ", ".join(parts)
+    """Die Zustände in Kurzform — «F1.2, F2.2, …», wie die Faktorleiste im Leitstand.
+
+    Bis zum 2026-10-01 «F1=F1.2, F2=F2.2»: die Schreibweise eines Programms, in
+    der Szenario-Ansicht sichtbar (Befund 13 der Abnahme). Der Zustand nennt
+    seinen Faktor schon selbst.
+    """
+
+    return ", ".join(state_id for factor_id in FACTOR_IDS if (state_id := states.get(factor_id)))
 
 
 def _format_factor_labels_short(
