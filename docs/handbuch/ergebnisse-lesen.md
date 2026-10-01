@@ -14,8 +14,9 @@ und wie viele Ereignisse entstanden sind. Die beiden Diagramme zeigen den Verlau
 von Buchungsrate und Ticketpreis — das ist der Regelkreis, um den sich alles
 dreht.
 
-Wenn Sie mehr Detail brauchen, folgt **Diagramme** mit sechs thematischen
-Auswertungen, von der Preiszusammensetzung bis zu den Faktor-Trajektorien.
+Wenn Sie mehr Detail brauchen, folgt **Diagramme** mit vier Fragen entlang
+der Wirkungskette, von der Antwort der Nachfrage auf den Preis bis zum Vergleich
+der Szenarien.
 
 **Abfrage** eignet sich für gezielte Rückfragen an genau diesen Lauf, ohne durch
 Diagramme zu suchen.
