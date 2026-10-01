@@ -882,10 +882,22 @@ def _horizont_hinweis(draft: dict) -> list:
     """
 
     ticks = int(draft.get("rounds") or 0)
-    if ticks <= 0:
+    # **Beim Vergleich gibt es keine Länge des Laufs**: Jeder Rahmen rechnet in
+    # seiner eigenen. Bis zum 2026-10-01 stand hier die Rechnung eines Laufs über
+    # die Länge des Entwurfs (Befund 15 der Abnahme).
+    if ticks <= 0 or ist_vergleich(draft):
         return []
 
-    luecken = horizontluecken(load_properties_config(), max_ticks=ticks)
+    # **Die Verläufe, mit denen der Lauf wirklich rechnet** — das gewählte
+    # Szenario samt Abweichungen, wie `prepare_simulation_state` sie legt. Bis zum
+    # 2026-10-01 kamen sie immer aus `properties.json`, also aus der
+    # Standard-Ausgangslage: Unter «Business as Usual» nannte der Hinweis die
+    # SAF-Quote des Standards, die dieser Lauf gar nicht hat.
+    try:
+        verlaeufe = _zustand(draft).properties
+    except Exception:  # noqa: BLE001 - ein ungültiger Entwurf meldet sich im Preflight
+        return []
+    luecken = horizontluecken(verlaeufe, max_ticks=ticks)
     if not luecken:
         return []
 
