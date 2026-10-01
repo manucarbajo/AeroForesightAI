@@ -20,7 +20,7 @@ Anlass ist eine Vorab-Prüfung am 2026-09-29: Die Sprechzeit steigt von drei auf
 | Schritt | Stand |
 | --- | --- |
 | Skript für 5 Minuten | **erledigt** (2026-09-29) |
-| Drei ganzseitige Screenshots | **erledigt** (2026-09-29): `docs/pitch/pitch_folie4_verlaeufe.png` (Verläufe, CO₂-Steuer angehoben), `pitch_folie3_leitstand.png` für Folie 5, `pitch_folie6_szenarien.png` (die vier Rahmen im Vergleich, frisch gerechnet über 120 Ticks); je 1920 × 1080 bei doppelter Pixeldichte. **Ohne KI-Text** (entschieden am 2026-09-29): Die Texte mit `llama3.2` widersprachen der Rechnung, und ein Bild der Ansicht „Abfrage“ scheiterte am selben Grund — siehe Skript |
+| Drei ganzseitige Screenshots | **erledigt** (2026-09-29): `docs/pitch/pitch_folie4_verlaeufe.png` (Verläufe, CO₂-Steuer angehoben), `pitch_folie3_leitstand.png` für Folie 5, `pitch_folie6_szenarien.png` (die vier Rahmen im Vergleich; **alle drei am 2026-10-01 neu aus dem Vorführbestand**, siehe «Die Bilder»; ursprünglich frisch gerechnet über 120 Ticks); je 1920 × 1080 bei doppelter Pixeldichte. **Ohne KI-Text** (entschieden am 2026-09-29): Die Texte mit `llama3.2` widersprachen der Rechnung, und ein Bild der Ansicht „Abfrage“ scheiterte am selben Grund — siehe Skript |
 | Grafiken (Zeitstrahl, Kreislauf, Markttreppe, Vergleichstabelle, Bausteine) | **erledigt** (2026-09-29), als Folienbausteine im Deck, nicht als Bilder — sie bleiben im Editor bearbeitbar |
 | Deck umbauen: zwölf Folien plus Anhang, Stichworte statt Sätze, Notizen gleich Skript | **erledigt** (2026-09-29) bis auf zwei Platzhalter: `[Rolle]` je Person auf Folie 11, `[Kontakt]` auf Folie 12 |
 | `pitch.html` neu erzeugen und jede Folie im Browser prüfen | **erledigt** (2026-09-29): 15 Folien bei 1920 × 1080 in Chromium aufgenommen, keine Skriptfehler, kein Element unter y = 920 außerhalb der Fußzeile |
@@ -77,15 +77,13 @@ Die Korrektur am Bild von Folie 3 aus der 3-Minuten-Fassung entfällt mit dem Um
 
 ## Die Bilder
 
-**Leitstand (Folie 5):**
+**Neu aufgenommen am 2026-10-01**, weil die Bilder vom 2026-09-28/29 nicht mehr zur Geschichte passten: Folie 4 zeigte eine CO₂-Abgabe, die ab Tick 24 allmählich steigt, unter «Plätze füllen»; Folie 5 zeigte direkt danach einen **unveränderten** «Business as Usual»-Lauf mit lesbarer «CO₂-Abgabe 50 €/t» — während gesprochen wird, die Planerin habe die Abgabe erhöht. Dazu standen im Leitstand Zahlen mit englischem Dezimalpunkt («37.4%», «131.94 €»). Alle drei Bilder kommen jetzt aus dem **Vorführbestand** (`python -m dashboard.vorfuehrbestand`), also aus denselben Läufen, die am Stand gezeigt werden. Aufgenommen mit Playwright bei 1920 × 1080 und doppelter Pixeldichte am laufenden Dashboard, Codestand dieses Branches.
 
-Aufgenommen am 2026-09-28 aus dem laufenden Dashboard, Codestand dieses Branches. Der Lauf ist über den Assistenten eingerichtet: Szenario „Business as Usual“, 120 Ticks (10 Jahre), Rechenmodus „Nur Zahlen“, Zufallsstartwert 42; die Zeitleiste steht auf Tick 120. Wer das Bild neu aufnimmt, stellt denselben Lauf ein, damit Folie und Q&A dieselben Zahlen meinen.
+- **Folie 4 (Verläufe):** «Business as Usual», 40 Ticks, CO₂-Steuer mit einem zweiten Stützpunkt: ab Tick 24 «springt auf den Wert» 200 €/t, Preisstrategie «Aufschlag halten» — genau die Einstellung des Pitch-Falls im Bestand.
+- **Folie 5 (Leitstand, ohne linke Spalte zugeschnitten; daneben `pitch_folie3_leitstand_voll.png`):** der Pitch-Fall «Vorführung: CO₂-Abgabe steigt auf 200 €» (Mit Sprachmodell, 40 Ticks), Zeitleiste auf Tick 40. Zu sehen: Buchungsrate 8,2 %, Ticketpreis 201,23 €, Kostendruck 173,23 € bei «CO₂-Abgabe 200 €/t»; der Verlauf der Buchungsrate bricht bei Tick 24 ein. **Die Zahlen sind eine Momentaufnahme** des Modellstands und keine Aussage des Pitches; gesprochen wird über sie nicht. Die Referenz ohne Erhöhung («Business as Usual, Aufschlag halten») steht bei Tick 40 bei 194,08 € und 15,9 % (Nachtrag zu Befund 8 im Abnahme-Protokoll).
+- **Folie 6 (Szenarien im Vergleich):** der Szenario-Vergleich des Bestands vom 2026-09-30, gewählt «Transformationskonflikt», «Diagramme → 4 · Die Szenarien nebeneinander»; vier Rahmen über 120 Ticks, Achsen mit Dezimalkomma.
 
-- **„Nur Zahlen“, weil beim Aufnehmen kein Ollama lief.** Erkennbar ist das nur an der Zeile oben links. Das Bild zeigt das Rechnen, nicht das Erzählen — ein Bild der KI-Texte bräuchte einen Lauf mit Sprachmodell. Ein Lauf „Ohne Sprachmodell“ wäre die schlechtere Wahl gewesen: Er füllt die Agententexte mit Platzhaltern, und die gehören nicht auf eine Folie.
-- **Die Kachel „CO₂-Abgabe 50 €/t“ bei Tick 120 ist richtig.** Unter „Business as Usual“ bleibt die Abgabe laut Szenariodatei bei 50 €; der Anstieg auf 200 € gehört zur Standard-Ausgangslage. Der Kostendruck steigt trotzdem auf 348 €, aus anderen Treibern. Beides ist eine naheliegende Rückfrage.
-- **Die Zahlen auf dem Bild sind eine Momentaufnahme** des Modellstands vom 2026-09-28 und keine Aussage des Pitches; gesprochen wird über sie nicht.
-
-**Verläufe und Vergleich (Folien 4 und 6), aufgenommen am 2026-09-29:** Folie 4 zeigt den Schritt „Verläufe“ unter „Business as Usual“ mit „Eigene Werte anwenden“, 120 Ticks und einem Stützpunkt: ab Tick 24 „fährt hoch“ auf 200 €/t über 48 Ticks. Folie 6 zeigt „Die Szenarien nebeneinander“ nach einem Szenario-Vergleich mit Ollama (`llama3.2`); sechs Testläufe vom 2026-09-14, die sonst mitgezeichnet worden wären, lagen dafür im Archivordner `outputs/_archiv_testlaeufe_2026-09-14/`.
+**Wer die Bilder neu aufnimmt**, nimmt sie aus dem Bestand und nicht aus einem eigenen Lauf — sonst meinen Folie und Stand verschiedene Zahlen. In `pitch.html` werden sie dann ausgetauscht, nicht die ganze Datei neu gebaut; im Artefakt sind es Assets.
 
 ## Offene Punkte
 

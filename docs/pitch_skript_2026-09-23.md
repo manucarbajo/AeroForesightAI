@@ -65,7 +65,7 @@ Länge: 12 Folien, **429 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wört
 
 ## Folie 4: Produkt — Szenario wählen (0:20)
 
-**Auf der Folie:** Screenshot, ganzseitig: der Schritt „Verläufe“ — die CO₂-Steuer unter „Business as Usual“, gestrichelt das Szenario (50 €/t), durchgezogen dieser Lauf (ab Tick 24 hoch auf 200 €/t) (`docs/pitch/pitch_folie4_verlaeufe.png`). Eine Marke: „① Szenario wählen“.
+**Auf der Folie:** Screenshot, ganzseitig: der Schritt „Verläufe“ — die CO₂-Steuer unter „Business as Usual“, gestrichelt das Szenario (50 €/t), durchgezogen dieser Lauf (ab Tick 24 sprunghaft auf 200 €/t, Preisstrategie „Aufschlag halten“ — der Pitch-Fall des Vorführbestands) (`docs/pitch/pitch_folie4_verlaeufe.png`). Eine Marke: „① Szenario wählen“.
 
 **Gesprochen:**
 
@@ -73,7 +73,7 @@ Länge: 12 Folien, **429 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wört
 
 ## Folie 5: Produkt — Leitstand (0:25)
 
-**Auf der Folie:** Screenshot, ganzseitig: der Leitstand (`docs/pitch/pitch_folie3_leitstand.png`, aufgenommen für die 3-Minuten-Fassung). Zwei Marken: „Jeder Punkt: ein Reisender“ · „Preis und Buchungen je Monat“.
+**Auf der Folie:** Screenshot, ganzseitig: der Leitstand mit dem Pitch-Fall bei Tick 40 — CO₂-Abgabe 200 €/t, die Buchungsrate nach dem Sprung eingebrochen (`docs/pitch/pitch_folie3_leitstand.png`, neu aufgenommen am 2026-10-01; vorher zeigte die Folie einen unveränderten Lauf mit 50 €/t, direkt nachdem gesprochen wird, die Abgabe sei erhöht). Zwei Marken: „Jeder Punkt: ein Reisender“ · „Preis und Buchungen je Monat“.
 
 **Gesprochen:**
 
@@ -81,7 +81,7 @@ Länge: 12 Folien, **429 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wört
 
 ## Folie 6: Produkt — Szenarien im Vergleich (0:20)
 
-**Auf der Folie:** Screenshot, ganzseitig: die vier Rahmenszenarien nebeneinander, Buchungsrate und Ticketpreis über 120 Ticks (`docs/pitch/pitch_folie6_szenarien.png`). Eine Marke: „③ Ergebnis“. **Kein KI-Text** — siehe „Herkunft der Fakten“.
+**Auf der Folie:** Screenshot, ganzseitig: die vier Rahmenszenarien nebeneinander, Buchungsrate und Ticketpreis über 120 Ticks (`docs/pitch/pitch_folie6_szenarien.png`, aus dem Vergleich des Vorführbestands). Eine Marke: „③ Ergebnis“. **Kein KI-Text** — siehe „Herkunft der Fakten“.
 
 **Gesprochen:**
 
@@ -165,7 +165,7 @@ Jede Zahl und jede Behauptung über das Produkt ist hier belegt oder als eigene 
 | Jeder Punkt ein simulierter Reisender, der bucht oder nicht | Szene im Leitstand; das Buchungsmodell zieht je Person gegen eine Wahrscheinlichkeit (Glossar „Logit-Modell“ in `CLAUDE.md`) |
 | Jede Zahl aus der Berechnung, die KI erzählt, sie rechnet nicht | Invariante 1 in `CLAUDE.md` |
 | „Eine KI fasst sie in Worte“ — und bewusst **nicht** „die KI erklärt jedes Szenario verständlich“ | Gemessen am 2026-09-29 an einem Szenario-Vergleich mit `llama3.2` (3B, lokal): Die Abschlusstexte widersprachen der Rechnung — „Business as Usual“ nannte steigende CO₂-Preise, obwohl die Abgabe dort bei 50 € bleibt; ein Text sprach von einer „Elektroflotte“, die das Modell nicht kennt; einer begann mit einem erfundenen Datum. Die Zahlen des Laufs waren davon unberührt. Deshalb zeigt keine Folie einen KI-Text, und das Versprechen ist auf das zurückgenommen, was stimmt: Die KI formuliert, sie rechnet nicht. Ob ein stärkeres lokales Modell bessere Texte liefert, ist nicht geprüft. **Die Ansicht „Abfrage“ ist ebenfalls kein Ausweg**, getestet am selben Tag: Auf „Wie haben sich Ticketpreis und Buchungsrate über den Lauf entwickelt?“ antwortete das Modell zum „Transformationskonflikt“ „Der Lauf zeigt jedoch keine Veränderung im Ticketpreis“ — gerechnet steigt er dort von rund 140 € auf über 400 €. Die Zahlenprüfung markierte nichts, weil sie Zahlen prüft und die Antwort kaum welche enthielt |
-| „In welcher Welt hält die Nachfrage, in welcher bricht sie weg“ | Szenario-Vergleich vom 2026-09-29 (Bild auf Folie 6): Unter „Transformationskonflikt“ fällt die Buchungsrate gegen null, während der Ticketpreis auf über 400 € steigt; die drei anderen Rahmen bleiben zwischen etwa 0,25 und 0,4 |
+| „In welcher Welt hält die Nachfrage, in welcher bricht sie weg“ | Szenario-Vergleich des Vorführbestands vom 2026-09-30 (Bild auf Folie 6): Unter „Transformationskonflikt“ fällt die Buchungsrate gegen null, während der Ticketpreis auf über 400 € steigt; die drei anderen Rahmen bleiben zwischen etwa 0,25 und 0,4 |
 | Sprachmodell auf eigener Infrastruktur, keine Daten an externe KI-Dienste | Ein einziger LLM-Client für ein lokal laufendes Ollama (`src/llm/llm_client.py`), Deployment-Ziel in `CLAUDE.md`. Bewusst nicht gesagt: „läuft beim Kunden“ — das Deployment ist laut `CLAUDE.md` noch nicht produktionsscharf |
 | Gemessen an Marktdaten 2015 bis 2024, offen, wo es trifft und wo nicht | `docs/backtest_vorlauf.md`, Paket `src/backtest/`. Ein Vergleich, keine Eichung. Stand 2026-09-28: Die Preisseite liegt 2016–2019 im Mittel 1,15 Indexpunkte neben der Zielreihe, die Nachfrageseite 25,04 (über alle bewerteten Jahre 9,82 bzw. 36,44). Deshalb „gemessen“ statt „geprüft“: Das Wort klang nach bestanden, und auf der Nachfrageseite ist es das nicht |
 | „Einzelprognose“ in der Vergleichstabelle | Keine Aussage über ein bestimmtes Unternehmen oder Werkzeug, sondern die Gegenposition, die die Forschung aus Zeile 3 kritisiert. Konkrete Wettbewerber werden nur mit Quelle genannt |
