@@ -96,3 +96,35 @@ def test_die_texte_sind_gueltige_schluessel():
 
     dcc.Dropdown(options=[], labels=ui.AUSWAHL_TEXTE)
     assert "Search" not in ui.AUSWAHL_TEXTE.values()
+
+
+def test_der_png_export_nennt_keinen_pfad_des_rechners(tmp_path):
+    """Befund 13: «Speicherort:» mit dem vollen Ordner des Rechners stand über den Bildern."""
+
+    from dashboard.web.views import figures
+
+    lauf = tmp_path / "run_x"
+    (lauf / "figures").mkdir(parents=True)
+
+    text = str(figures._view_png(lauf))
+
+    assert str(tmp_path) not in text and "Speicherort" not in text
+
+
+#: Die Bildbeschriftungen des PNG-Exports (matplotlib) — englische Reste aus dem
+#: Abnahme-Durchgang: «Preis und Booking», Achse «Booking Rate», «EUR».
+VERBOTEN_IN_BILDERN = ("Booking", "EUR", "Property", "Policy", "Consistency")
+
+
+def test_die_bilder_des_png_exports_sind_deutsch_beschriftet():
+    quelle = Path(__file__).resolve().parents[1] / "src" / "reporting" / "figure_generator"
+    funde = [
+        f"{pfad.name}:{zeile}: {text!r}"
+        for name in ("plots.py", "global_figures.py")
+        for pfad in [quelle / name]
+        for zeile, text in _texte(pfad)
+        for wort in VERBOTEN_IN_BILDERN
+        if wort in text
+    ]
+
+    assert not funde, "\n".join(funde)

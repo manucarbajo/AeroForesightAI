@@ -725,9 +725,12 @@ def _view_png(run_dir: Path, mode: str = theme.LIGHT):
     return _panel(
         html.Div(
             [
+                # **Kein Pfad des Rechners** (Befund 13 der Abnahme, 2026-10-01): Hier
+                # stand der volle Ordner auf der Festplatte — am Beamer eine
+                # Auskunft über den Vorführrechner und für niemanden ein Weg.
                 html.P(
-                    ["Speicherort: ", html.Code(str(run_dir / "figures"))],
-                    className=f"{ui.CAPTION} break-all",
+                    "Die Bilder gehören zum Lauf und stehen auch unter «Dateien».",
+                    className=ui.CAPTION,
                 ),
                 ui.button(
                     "Diagramme neu erzeugen",
