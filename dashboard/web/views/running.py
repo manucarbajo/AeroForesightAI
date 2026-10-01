@@ -82,6 +82,9 @@ def _readout(progress: Progress) -> str:
     läuft der Lauf; nur *wie weit* er ist, weiß niemand.
     """
 
+    if progress.abbruch:
+        stand = f" nach Tick {progress.tick} von {progress.total}" if progress.tick else ""
+        return f"Abgebrochen{stand} — der Lauf wird gesichert"
     if progress.tick and progress.total:
         return f"Tick {progress.tick} von {progress.total}"
     if progress.szenarien:
@@ -160,8 +163,15 @@ def render(progress: Progress, draft: dict) -> html.Div:
         [
             html.Div(
                 [
-                    ui.badge("Simulation läuft", variant="info", icon_name="autorenew"),
-                    html.H1("Der Lauf rechnet", className=f"{ui.H1} mt-3"),
+                    ui.badge(
+                        "Abbruch angefordert" if progress.abbruch else "Simulation läuft",
+                        variant="warning" if progress.abbruch else "info",
+                        icon_name="autorenew",
+                    ),
+                    html.H1(
+                        "Der Lauf wird beendet" if progress.abbruch else "Der Lauf rechnet",
+                        className=f"{ui.H1} mt-3",
+                    ),
                     html.P(
                         "Die Zahlen entstehen jetzt in Python. Sie können in der Zwischenzeit "
                         "unter «Ergebnisse» einen früheren Lauf ansehen — der Fortschritt "

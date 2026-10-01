@@ -45,7 +45,9 @@ bringt Sie zurück zum Ladebildschirm.
 abbrechen** unter dem Fortschritt. Er endet dann **nach dem laufenden Tick**,
 nicht sofort: Ein Tick lässt sich nicht in der Mitte anhalten, ohne einen halben
 Zustand zu hinterlassen. Bei «Nur Zahlen» ist das eine Sache von Millisekunden,
-mit Sprachmodell kann der letzte Tick noch laufen.
+mit Sprachmodell kann der letzte Tick noch laufen, und danach schreibt das Modell
+noch den Abschlusstext. So lange sagt der Ladebildschirm **«Der Lauf wird
+beendet»** und, bei welchem Tick abgebrochen wurde.
 
 Was bis dahin gerechnet wurde, bleibt erhalten. Der Lauf steht danach in der
 Auswahl wie jeder andere — erkennbar daran, dass die Zahl der Ticks unter dem

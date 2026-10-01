@@ -117,6 +117,11 @@ class Progress:
     szenarien: int | None = None
     szenarien_fertig: int = 0
     szenario_name: str | None = None
+    #: Ob jemand den Lauf abgebrochen hat (P8-V6, Befund 10). Der Lauf rechnet
+    #: danach noch den laufenden Tick zu Ende und schreibt seine Artefakte —
+    #: mit Sprachmodell bis zu einer Minute, in der der Ladebildschirm bis zum
+    #: 2026-10-01 weiter «Der Lauf rechnet» sagte.
+    abbruch: bool = False
 
     @property
     def fraction(self) -> float | None:
@@ -249,6 +254,7 @@ def progress() -> Progress | None:
         szenarien=job.szenarien,
         szenarien_fertig=fertig,
         szenario_name=name,
+        abbruch=job.stop.is_set(),
     )
 
 

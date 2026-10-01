@@ -189,6 +189,7 @@ def _progress_from(payload: dict | None) -> runner.Progress | None:
         szenarien=payload.get("szenarien"),
         szenarien_fertig=int(payload.get("szenarien_fertig") or 0),
         szenario_name=payload.get("szenario_name"),
+        abbruch=bool(payload.get("abbruch")),
     )
 
 

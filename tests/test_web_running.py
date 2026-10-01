@@ -594,3 +594,40 @@ class TestDerVergleichSagtWasErRechnet:
 
         assert f"Vergleich · {len(rahmenszenarien())} Rahmenszenarien" in text
         assert "Standard-Ausgangslage" not in text
+
+
+# --- Abbrechen sagt sich sofort an (P8-V6, Befund 10) --------------------------
+
+
+class TestDerAbbruchSagtSichAn:
+    """Nach «Lauf abbrechen» rechnet der Lauf den laufenden Tick zu Ende und
+    schreibt seine Artefakte — mit Sprachmodell bis zu einer Minute. So lange
+    stand bis zum 2026-10-01 unverändert «Der Lauf rechnet»."""
+
+    def test_der_ladebildschirm_sagt_es(self):
+        job = _job_mit("[tick   5/40] 9.00s - price=140")
+        job.stop.set()
+        fortschritt = runner.progress()
+        assert fortschritt is not None and fortschritt.abbruch
+
+        text = str(running.render(fortschritt, initial_draft_dict()))
+
+        assert "Der Lauf wird beendet" in text
+        assert "Abgebrochen nach Tick 5 von 40" in text
+        assert "Der Lauf rechnet" not in text
+
+    def test_ohne_abbruch_bleibt_alles_wie_es_war(self):
+        _job_mit("[tick   5/40] 9.00s - price=140")
+        fortschritt = runner.progress()
+
+        assert fortschritt is not None and not fortschritt.abbruch
+        assert "Der Lauf rechnet" in str(running.render(fortschritt, initial_draft_dict()))
+
+    def test_der_abbruch_kommt_durch_den_browser(self):
+        from dashboard.web.pages import launch as launch_page
+
+        _job_mit("[tick   5/40] 9.00s - price=140").stop.set()
+
+        zurueck = web_app._progress_from(launch_page.progress_payload())
+
+        assert zurueck is not None and zurueck.abbruch

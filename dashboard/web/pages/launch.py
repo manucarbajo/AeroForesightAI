@@ -202,6 +202,7 @@ def progress_payload() -> dict | None:
         "szenarien": aktuell.szenarien,
         "szenarien_fertig": aktuell.szenarien_fertig,
         "szenario_name": aktuell.szenario_name,
+        "abbruch": aktuell.abbruch,
     }
 
 
