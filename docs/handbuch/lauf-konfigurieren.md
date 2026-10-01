@@ -282,9 +282,14 @@ statt `http://127.0.0.1:11434`) sieht sie richtig aus und erreicht keinen Host �
 vorher endete das in einem Verbindungsfehler mitten im Lauf, dem niemand die
 Ursache ansah.
 
-Die letzten vier betreffen ausschließlich Ollama. In den Modi «Ohne
-Sprachmodell» und «Nur Zahlen» wird gar kein Client aufgebaut — dort dürfen die
-Felder also stehen, wie sie wollen, und blockieren nichts.
+Die letzten vier betreffen ausschließlich Ollama. Im Modus «Ohne
+Sprachmodell» wird gar kein Client aufgebaut — dort dürfen die Felder stehen,
+wie sie wollen, und blockieren nichts. **«Nur Zahlen» ist davon heute nicht
+ganz frei:** Die Ticks rechnen ohne Sprachmodell, aber nach dem letzten Tick
+fragt der Lauf Ollama einmal nach den Szenario-Erzählungen. Ist es nicht
+erreichbar, gilt der Lauf als beeinträchtigt, obwohl seine Zahlen stimmen. Das
+ist ein bekannter Fehler (Stand Oktober 2026); wer sicher ohne Sprachmodell
+rechnen will, nimmt «Ohne Sprachmodell».
 
 Der **Name des Laufs** darf leer bleiben — dann greift der Name aus
 `simulation_config.json`. Leer sein darf er nur dort nicht.
