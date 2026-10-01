@@ -129,8 +129,8 @@ Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung,
 
 #### V7 — Der Laptop und die Offline-Probe
 
-**Befund:** Die Datenhoheits-Zusage heißt «kein Aufruf verlässt den Server» — für die Vorführung heißt sie: Es muss **ohne Internet** gehen. Vorgeführt wird auf einem Laptop; ungeprüft ist, ob Ollama mit `llama3.2` dort läuft und wie schnell. `pitch.html` lädt seine Schriften von Google (ohne Netz greifen Systemschriften).
-**Was zu tun ist:** Auf dem Laptop `ollama pull llama3.2`, `.venv`, Dashboard-Start, der Vorführbestand aus V5; dann **mit getrenntem Netz** V6 in Kurzform. Beamer-Auflösung prüfen. Die Schriften von `pitch.html` einbetten oder die Datei ohne Netz abnehmen. Ein Plan B: Bildschirmaufnahme des Vorführpfads als Video, falls vor Ort etwas nicht startet.
+**Befund:** Die Datenhoheits-Zusage heißt «kein Aufruf verlässt den Server» — für die Vorführung heißt sie: Es muss **ohne Internet** gehen. Vorgeführt wird auf einem Laptop; ungeprüft ist, ob Ollama mit `llama3.2` dort läuft und wie schnell. `pitch.html` lud seine Schriften von Google (ohne Netz griffen Systemschriften) — **erledigt am 2026-10-01**: Die Schriften sind eingebettet, und `pitch.pdf` liegt als Rückfall daneben (siehe `pitch_uebersicht.md`).
+**Was zu tun ist:** Auf dem Laptop `ollama pull llama3.2`, `.venv`, Dashboard-Start, der Vorführbestand aus V5; dann **mit getrenntem Netz** V6 in Kurzform. Beamer-Auflösung prüfen. Die Schriften von `pitch.html` einbetten oder die Datei ohne Netz abnehmen (erledigt am 2026-10-01, ohne Netz geprüft; auf dem Laptop bleibt nur, die Datei einmal zu öffnen). Ein Plan B: Bildschirmaufnahme des Vorführpfads als Video, falls vor Ort etwas nicht startet.
 **Fertig wenn:** Ein Durchgang ohne Netz auf dem Laptop ist protokolliert; die Aufnahme liegt bereit.
 **Aufwand:** ½ Tag.
 

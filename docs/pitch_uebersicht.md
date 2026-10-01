@@ -6,7 +6,8 @@ Diese Seite beantwortet, wenn im Chat jemand fragt „wo ist der Pitch, wie änd
 
 | Was | Wo | Zweck |
 | --- | --- | --- |
-| Präsentation zum Vorführen | [`pitch.html`](../pitch.html) im Repo-Wurzelverzeichnis | Eine einzige Datei, per Doppelklick im Browser zu öffnen. Pfeiltasten oder Klick blättern, F schaltet Vollbild. Die Bilder sind eingebettet. Nur die Schriften (Plus Jakarta Sans, Inter) kommen aus dem Netz, ohne Internet greifen Systemschriften |
+| Präsentation zum Vorführen | [`pitch.html`](../pitch.html) im Repo-Wurzelverzeichnis | Eine einzige Datei, per Doppelklick im Browser zu öffnen. Pfeiltasten oder Klick blättern, F schaltet Vollbild. Bilder **und Schriften** sind eingebettet (seit 2026-10-01: Plus Jakarta Sans und Inter, Teilsätze latin und latin-ext, rund 240 KiB) — die Datei braucht kein Netz und stellt keine einzige Anfrage, geprüft in einem Browser, der jede Netzanfrage abweist. Bis dahin kamen die Schriften von Google, und ohne Internet sprang die Schrift auf eine Ersatzschrift |
+| Rückfall als PDF | [`pitch.pdf`](../pitch.pdf) im Repo-Wurzelverzeichnis | Dieselben 15 Folien als Bilder (1920 × 1080 bei 1,5-facher Dichte), aufgenommen aus `pitch.html` ohne Netz, ohne Blätterhinweis. Für einen fremden Vorführrechner oder wenn der Veranstalter ein PDF verlangt; der Text ist darin nicht auswählbar. **Wer `pitch.html` ändert, erzeugt es neu** — sonst zeigt das PDF den alten Stand |
 | Gesprochener Text | [`docs/pitch_skript_2026-09-23.md`](pitch_skript_2026-09-23.md) | Die **5-Minuten-Fassung** mit zwölf Folien (rund 4:35): je Folie, was darauf steht und was gesprochen wird, dazu Anhang für die Fragerunde, die Quellen jeder Zahl und die Herleitung von TAM, SAM und SOM |
 | Bearbeitbare Fassung | Artefakt in claude.ai (Haikos Konto): <https://claude.ai/artifact/XRaiAGbnRJ4dj2VQ6qPBEw> | Hier wird der Pitch inhaltlich angepasst, und aus ihm entsteht `pitch.html`. Von dort lässt sich als PowerPoint oder PDF exportieren. Privat, bis es über das Teilen-Menü freigegeben ist |
 | Frühere Fassung | Artefakt in claude.ai (Manus Konto): <https://claude.ai/artifact/V8DxvLSBtGVAmrFFYnaVnz> | Manus Deck, auf dem die bearbeitbare Fassung am 2026-09-28 aufsetzt. Es liegt in einer anderen Organisation, und Änderungen daran ließen sich aus Haikos Sitzung nicht speichern; deshalb die Kopie. **Wird nicht mehr gepflegt** (von Haiko entschieden am 2026-09-29): Änderungen gehören in die bearbeitbare Fassung darüber |
@@ -63,6 +64,8 @@ Alles steht mit Quelle in [`docs/pitch_skript_2026-09-23.md`](pitch_skript_2026-
 
 - **Text oder Layout ändern:** im Artefakt bearbeiten (die bearbeitbare Fassung oben).
 - **`pitch.html` neu erzeugen:** im Chat sagen „erzeuge pitch.html aus dem Artefakt neu". Dabei wird der aktuelle Artefakt-Stand gelesen und jede Folie in die Datei übernommen. Der animierte Hintergrund wird als eingebettetes Fenster eingesetzt, die Bilder werden als Base64 eingebettet, die Sprechernotizen entfallen.
+- **Schriften:** `pitch.html` trägt sie im `<style>` des Kopfes. Das Neuerzeugen aus dem Artefakt übernimmt den Kopf der bestehenden Datei und behält sie damit; wer die Datei von Grund auf neu baut, bettet sie wieder ein (im Chat: «bette die Schriften in pitch.html ein»).
+- **PDF:** im Chat sagen «erzeuge pitch.pdf aus pitch.html neu». Jede Folie wird ohne Netz bei 1920 × 1080 aufgenommen und zu einem PDF zusammengesetzt.
 - **PowerPoint:** im Artefakt über das Teilen-Menü als .pptx exportieren. Der animierte Hintergrund wird dabei zu einem Standbild.
 - **Skript angleichen:** Nach jeder Textänderung an den Folien gehört das Skript mit, sonst laufen Folie und gesprochener Text auseinander.
 
