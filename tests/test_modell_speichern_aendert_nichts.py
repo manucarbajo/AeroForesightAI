@@ -47,3 +47,32 @@ def test_speichern_ohne_aenderung_aendert_nichts(kopie, speichern):
 
     assert _inhalt(kopie).endswith("}\n"), "Der Zeilenumbruch am Ende fehlt"
     assert _inhalt(kopie) == vorher
+
+
+def test_die_bevoelkerung_ohne_aenderung_aendert_nichts(kopie):
+    """Bis dahin fiel die Quellenangabe der Altersverteilung (`quelle`) weg."""
+
+    vorher = _inhalt(kopie)
+
+    cc.save_population_edits_to_file(cc.extract_population_edits_from_file())
+
+    assert _inhalt(kopie) == vorher
+
+
+def test_was_der_editor_nicht_kennt_bleibt_stehen(kopie):
+    import json
+
+    daten = json.loads(_inhalt(kopie))
+    alter = next(p for p in daten["individual_properties"] if p["id"] == "age")
+    alter["enabled"] = False
+    kopie.write_text(json.dumps(daten, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    edits = cc.extract_population_edits_from_file()
+    next(e for e in edits if e.id == "age").mean = 45.0
+    cc.save_population_edits_to_file(edits)
+
+    gespeichert = json.loads(_inhalt(kopie))
+    alter = next(p for p in gespeichert["individual_properties"] if p["id"] == "age")
+    assert alter["mean"] == 45.0
+    assert alter["quelle"].startswith("Eurostat")
+    assert alter["enabled"] is False

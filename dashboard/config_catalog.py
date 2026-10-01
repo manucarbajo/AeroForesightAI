@@ -441,6 +441,22 @@ def extract_population_edits_from_file(
     return edits
 
 
+#: Die Felder eines Bevölkerungsmerkmals, die der Modell-Editor pflegt.
+_POPULATION_FELDER = (
+    "prevalence",
+    "exclusive_group",
+    "saturation_decay",
+    "modifiers",
+    "distribution",
+    "mean",
+    "std_dev",
+    "min_value",
+    "max_value",
+    "alpha",
+    "beta",
+)
+
+
 def save_population_edits_to_file(
     edits: list[PopulationEditState], filename: str = "properties.json"
 ) -> None:
@@ -450,32 +466,43 @@ def save_population_edits_to_file(
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
 
+    # **Was der Editor nicht kennt, bleibt stehen** (Befund 14 der Abnahme vom
+    # 2026-09-30): Bis dahin entstand jeder Eintrag neu aus den Feldern von
+    # `PopulationEditState` — die Quellenangabe der Altersverteilung (`quelle`)
+    # fiel dabei weg, und ein ausgeschaltetes Merkmal war danach wieder an.
+    # Gesetzt werden nur die Felder, die der Editor pflegt; ein leeres entfällt.
+    bisher = {p.get("id"): p for p in data.get("individual_properties", [])}
     new_props = []
     for e in edits:
-        d = {"id": e.id, "type": e.type, "enabled": True}
+        d = dict(bisher.get(e.id, {}))
+        d.update({"id": e.id, "type": e.type})
+        d.setdefault("enabled", True)
+        werte: dict
         if e.type == "boolean":
-            if e.prevalence is not None:
-                d["prevalence"] = float(e.prevalence)
-            if e.exclusive_group:
-                d["exclusive_group"] = e.exclusive_group
-            if e.saturation_decay is not None:
-                d["saturation_decay"] = float(e.saturation_decay)
-            d["modifiers"] = e.modifiers
+            werte = {
+                "prevalence": e.prevalence,
+                "exclusive_group": e.exclusive_group or None,
+                "saturation_decay": e.saturation_decay,
+                "modifiers": e.modifiers,
+            }
         else:
-            if e.distribution:
-                d["distribution"] = e.distribution
-            if e.mean is not None:
-                d["mean"] = float(e.mean)
-            if e.std_dev is not None:
-                d["std_dev"] = float(e.std_dev)
-            if e.min_value is not None:
-                d["min_value"] = float(e.min_value)
-            if e.max_value is not None:
-                d["max_value"] = float(e.max_value)
-            if e.alpha is not None:
-                d["alpha"] = float(e.alpha)
-            if e.beta is not None:
-                d["beta"] = float(e.beta)
+            werte = {
+                "distribution": e.distribution or None,
+                "mean": e.mean,
+                "std_dev": e.std_dev,
+                "min_value": e.min_value,
+                "max_value": e.max_value,
+                "alpha": e.alpha,
+                "beta": e.beta,
+            }
+        for feld in _POPULATION_FELDER:
+            wert = werte.get(feld)
+            if wert is None:
+                d.pop(feld, None)
+            elif isinstance(wert, (int, float)) and not isinstance(wert, bool):
+                d[feld] = float(wert)
+            else:
+                d[feld] = wert
         new_props.append(d)
 
     data["individual_properties"] = new_props
