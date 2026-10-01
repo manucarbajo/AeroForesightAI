@@ -20,7 +20,7 @@ import plotly.graph_objects as go
 from dash import dcc, html
 
 from dashboard.web import components as ui
-from dashboard.web import theme
+from dashboard.web import formate, theme
 from dashboard.web.run_data import RunData
 
 #: Wie viele Konsolenzeilen höchstens dargestellt werden. Bei 300 lagen bei
@@ -58,7 +58,7 @@ def _delta(value: Any, *, digits: int = 2, suffix: str = "") -> tuple[str | None
     if abs(number) < 10**-digits / 2:
         return f"±0{suffix}", None
     zeichen = "+" if number > 0 else "−"
-    return f"{zeichen}{abs(number):.{digits}f}{suffix}", ("up" if number > 0 else "down")
+    return f"{zeichen}{formate.zahl(abs(number), digits)}{suffix}", ("up" if number > 0 else "down")
 
 
 def _number(row: dict, key: str) -> float | None:
@@ -91,7 +91,7 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
     return ui.grid(
         ui.kachel(
             "Buchungsrate",
-            "—" if rate is None else f"{rate:.1%}",
+            "—" if rate is None else formate.prozent(rate),
             variante="kompakt",
             delta=raten_delta,
             direction=raten_richtung,
@@ -99,24 +99,24 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
         ),
         ui.kachel(
             "Ticketpreis",
-            "—" if preis is None else f"{preis:.2f} €",
+            "—" if preis is None else formate.euro(preis),
             variante="kompakt",
             delta=preis_delta,
             direction=preis_richtung,
         ),
         ui.kachel(
             "Kostendruck",
-            "—" if kosten is None else f"{kosten:.2f} €",
+            "—" if kosten is None else formate.euro(kosten),
             variante="kompakt",
             hint=(
                 None
                 if row.get("carbon_tax_level") is None
-                else f"CO₂-Abgabe {float(row['carbon_tax_level']):.0f} €/t"
+                else f"CO₂-Abgabe {formate.zahl(float(row['carbon_tax_level']), 0)} €/t"
             ),
         ),
         ui.kachel(
             "Nachfrageniveau",
-            "—" if nachfrage is None else f"{nachfrage:.2f}",
+            "—" if nachfrage is None else formate.zahl(nachfrage),
             variante="kompakt",
             hint=None if row.get("population") is None else f"{row['population']} Personen",
         ),

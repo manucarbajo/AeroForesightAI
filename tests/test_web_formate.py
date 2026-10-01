@@ -248,3 +248,35 @@ class TestJedeLauflaengeSagtIhreModellzeit:
         assert "40 Ticks · rund 3 Jahre" in start_flow.summary_sentence(entwurf)
         # Seit P7.5-U5.1 die Stand-Zeile — die Zeile unter dem Start-Knopf ist entfallen.
         assert "40 Ticks · rund 3 Jahre" in str(launch.summary_rows(entwurf))
+
+
+# --- Zahlen (P8-V6, 2026-10-01) ------------------------------------------------
+
+#: Ein englischer Dezimalbruch: Punkt vor höchstens zwei Ziffern. «1.027» ist eine
+#: deutsche Tausendertrennung und zählt nicht.
+_ENGLISCH = re.compile(r"\b\d+\.\d{1,2}\b")
+
+
+class TestZahlen:
+    """Im Leitstand standen «37.4%» und «131.94 €» — auf einer Folie des Pitches."""
+
+    @pytest.mark.parametrize(
+        ("wert", "stellen", "erwartet"),
+        [(131.94, 2, "131,94"), (1027.5, 2, "1.027,50"), (0.81, 2, "0,81"), (50.0, 0, "50")],
+    )
+    def test_eine_zahl_steht_deutsch_da(self, wert, stellen, erwartet):
+        assert formate.zahl(wert, stellen) == erwartet
+
+    def test_geld_und_anteil(self):
+        assert formate.euro(131.94) == "131,94 €"
+        assert formate.prozent(0.374) == "37,4 %"
+
+    @pytest.mark.parametrize("tick", [1, 2, 20, 35])
+    def test_die_kennzahlen_des_leitstands_sind_deutsch(self, tick):
+        from dashboard.web import run_data
+        from dashboard.web.views import telemetry
+
+        text = _text(telemetry.kpi_row(run_data.demo(), tick))
+
+        assert "%" in text and "€" in text, "Misst der Test ins Leere?"
+        assert not _ENGLISCH.findall(text), _ENGLISCH.findall(text)

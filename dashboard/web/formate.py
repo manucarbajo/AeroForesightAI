@@ -1,4 +1,4 @@
-"""Wie die Oberfläche Zeit schreibt (P7.2-U2.6).
+"""Wie die Oberfläche Zeit und Zahlen schreibt (P7.2-U2.6, Zahlen seit P8-V6).
 
 **Eine Stelle, weil die Frage an vielen Orten gestellt wird.** Der Zeitstempel
 eines Laufs stand in der Kopfzeile der Ergebnisse und in der Übersicht roh aus
@@ -74,3 +74,31 @@ def ticks_mit_modellzeit(ticks: object) -> str:
 
     zeit = modellzeit(ticks)
     return f"{ticks} Ticks · {zeit}" if zeit else f"{ticks} Ticks"
+
+
+_DEUTSCH = str.maketrans({",": ".", ".": ","})
+
+
+def zahl(wert: float, stellen: int = 2) -> str:
+    """Eine Zahl, wie man sie auf Deutsch schreibt — «131,94», «1.027,50».
+
+    **Seit dem 2026-10-01.** Bis dahin standen im Leitstand «37.4%» und
+    «131.94 €» — englischer Dezimalpunkt in einer deutschen Oberfläche, und
+    genau dieses Bild trug eine Folie des Pitches. In den Daten bleibt die Zahl,
+    wie sie ist; umgewandelt wird erst beim Anzeigen, wie beim Zeitstempel.
+    """
+
+    # Komma und Punkt tauschen die Rollen: aus «1,027.50» wird «1.027,50».
+    return f"{wert:,.{stellen}f}".translate(_DEUTSCH)
+
+
+def euro(wert: float, stellen: int = 2) -> str:
+    """Ein Geldbetrag — «131,94 €»."""
+
+    return f"{zahl(wert, stellen)} €"
+
+
+def prozent(anteil: float, stellen: int = 1) -> str:
+    """Ein Anteil zwischen 0 und 1 in Prozent — «37,4 %», mit Leerzeichen nach DIN 5008."""
+
+    return f"{zahl(anteil * 100, stellen)} %"
