@@ -1275,6 +1275,12 @@ def save_custom_sweep_preset(draft: ConfigDraft, filename: str) -> Path:
     SWEEPS_DIR.mkdir(parents=True, exist_ok=True)
     target = sweep_ziel(filename)
     sweep = szenario_zum_sichern(draft, filename=target.stem)
+    # **Der Name ist, was eingegeben wurde** (Befund 13 der Abnahme, 2026-10-01).
+    # Ohne eigenen Laufnamen hieß das Szenario wie seine Datei: Aus «Abnahme V6»
+    # wurde in der Auswahl «abnahme_v6». Die Kennung bleibt der Dateiname.
+    eingabe = filename.strip().removesuffix(".json").strip()
+    if eingabe and sweep.name == target.stem:
+        sweep = sweep.model_copy(update={"name": eingabe})
     payload = sweep.model_dump(mode="json")
     target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     return target
