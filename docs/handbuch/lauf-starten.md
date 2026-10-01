@@ -136,7 +136,7 @@ Kopfzeile des Leitstands oder der Ergebnisse.
 
 Beim **Szenario-Vergleich** — also wenn Sie ihn auf dem Einstieg von
 «Einrichten» gewählt oder «Alle Szenarien vergleichen» hinter der
-«Feinabstimmung» des zweiten Schritts eingeschaltet haben — wird jedes Preset
+«Feinabstimmung» des Schritts «Wie weit reicht der Lauf?» eingeschaltet haben — wird jedes Preset
 einmal durchgerechnet. Die Ergebnisse
 liegen unter `outputs/sweeps/`, dazu entsteht eine Zusammenfassung. Auch hier
 erscheinen die einzelnen Läufe in der Auswahl der Kopfzeile.
@@ -178,7 +178,7 @@ rechnen will, braucht den Seed. Alle Felder stehen auch in
 [Was ein Lauf hinterlässt](/doku/ref-ausgaben).
 
 **Auch ohne eigenen Startwert ist ein Lauf wiederholbar.** Lassen Sie das Feld
-«Eigenen Zufallsstartwert festlegen» im dritten Schritt aus, rechnet der Lauf mit einem
+«Eigenen Zufallsstartwert festlegen» im Schritt «Womit wird gerechnet?» aus, rechnet der Lauf mit einem
 Standardwert — nicht zufällig. Zwei Wiederholungen desselben Aufbaus liefern
 dann dasselbe Ergebnis, und welcher Wert es war, steht nach dem Lauf in der
 Ansicht **Übersicht**. Einen eigenen Startwert brauchen Sie erst, wenn Sie denselben

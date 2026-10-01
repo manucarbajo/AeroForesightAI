@@ -29,7 +29,7 @@ einbringt, zeigt der Vergleich der beiden Läufe.
 
 ## Trägt dieses Ergebnis überhaupt?
 
-Stellen Sie im zweiten Schritt hinter «Feinabstimmung» die Wiederholungen auf
+Stellen Sie im Schritt «Wie weit reicht der Lauf?» hinter «Feinabstimmung» die Wiederholungen auf
 fünf und lassen Sie den Zufallsstartwert **frei**. Sie bekommen fünf Läufe mit derselben Konfiguration,
 aber unterschiedlich gezogener Bevölkerung.
 
@@ -41,7 +41,7 @@ Sie eine größere Bevölkerung oder eine vorsichtigere Aussage.
 
 Wählen Sie auf dem Einstieg von «Einrichten» **Szenario-Vergleich starten** —
 oder schalten Sie «Alle Szenarien vergleichen» hinter der «Feinabstimmung» des
-zweiten Schritts ein. Jedes Rahmenszenario wird einmal durchgerechnet, ohne
+Schritts «Wie weit reicht der Lauf?» ein. Jedes Rahmenszenario wird einmal durchgerechnet, ohne
 Agenten-Dialog und damit schnell.
 
 Danach gehen Sie die Läufe in der Lauf-Auswahl durch und vergleichen in

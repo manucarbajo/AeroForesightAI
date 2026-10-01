@@ -134,7 +134,7 @@ verglichen werden.
 Der kürzeste Weg dorthin ist **Szenario-Vergleich starten** auf dem Einstieg
 von «Einrichten»: Er stellt den Vergleich ein und bringt Sie unmittelbar zu
 «Prüfen & Starten». Dasselbe bewirkt der Schalter «Alle Szenarien vergleichen»
-hinter der «Feinabstimmung» des zweiten Schritts — es ist derselbe Schalter,
+hinter der «Feinabstimmung» des Schritts «Wie weit reicht der Lauf?» — es ist derselbe Schalter,
 nur an der Stelle, an der man ihn auch fein einstellt.
 
 So oder so wird jedes **Rahmenszenario** einmal durchgerechnet, ohne

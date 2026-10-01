@@ -41,8 +41,8 @@ gegen «CO₂ konstant 50».
 ## Streuung von Wirkung unterscheiden
 
 Bevor Sie einen Unterschied zwischen zwei Läufen für eine Wirkung halten, prüfen
-Sie, wie groß die natürliche Streuung ist. Stellen Sie dazu im zweiten Schritt
-hinter «Feinabstimmung» die **Wiederholungen** auf fünf und lassen Sie den
+Sie, wie groß die natürliche Streuung ist. Stellen Sie dazu im Schritt «Wie weit reicht
+der Lauf?» hinter «Feinabstimmung» die **Wiederholungen** auf fünf und lassen Sie den
 Zufallsstartwert frei. Sie
 bekommen fünf Läufe mit derselben Konfiguration, aber unterschiedlich gezogener
 Bevölkerung, und sehen, wie weit die Ergebnisse auseinanderliegen.

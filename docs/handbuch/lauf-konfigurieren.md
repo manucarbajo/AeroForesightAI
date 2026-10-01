@@ -7,8 +7,8 @@ nach. Das ist der Weg, wenn Sie den Lauf zusammenstellen wollen.
 **Szenario-Vergleich starten** rechnet alle **Rahmenszenarien** nacheinander
 und legt sie am Ende nebeneinander; die Stresstests der Engine sind nicht dabei.
 Sie landen unmittelbar bei **Prüfen & Starten**. Jedes Szenario läuft in der
-Länge, auf die es angelegt ist — die Länge aus dem zweiten Schritt gilt für den
-Vergleich nicht.
+Länge, auf die es angelegt ist — die Länge aus dem Schritt «Wie weit reicht der
+Lauf?» gilt für den Vergleich nicht.
 
 **Letzte Einstellungen weiterverwenden** springt ebenfalls ans Ende, mit dem, was
 zuletzt eingestellt war — ohne die Fragen erneut durchzugehen. Dieser Weg ist
@@ -439,8 +439,8 @@ der Lauf rechnete mit dem Formular, im Zustand stand weiter der Wert aus
 auffiel. Bei einem Lauf **ohne** Sprachmodell bleiben die vier Felder unberührt:
 Gerufen wird nichts, also beschreiben sie nichts, und in `run_metadata.json`
 stehen sie dann ausdrücklich leer. **Ob** überhaupt ein Sprachmodell beteiligt ist und mit
-welchem Zufallsstartwert gerechnet wird, entscheiden Sie oben im dritten
-Schritt.
+welchem Zufallsstartwert gerechnet wird, entscheiden Sie oben im Schritt
+«Womit wird gerechnet?».
 
 Ein einzelner Lauf ist auch ohne eigenen Startwert wiederholbar — ohne Angabe
 gilt ein Standardwert. Der Startwert zählt an zwei Stellen: Setzen Sie ihn fest,
