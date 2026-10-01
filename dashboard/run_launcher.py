@@ -224,9 +224,9 @@ def launch_simulation(
             return
         try:
             generate_figures_for_run(run_directory)
-            print(f"Figures saved under {run_directory / 'figures'}")
+            print("Diagramme gespeichert")
         except Exception as exc:
-            print(f"Warning: figure generation failed for {run_directory.name}: {exc}")
+            print(f"Warnung: Diagramme ließen sich nicht erzeugen ({run_directory.name}): {exc}")
 
     def _build_llm():
         """Der Client aus **derselben** Ableitung, die auch den Zustand füllt (P3.4).
@@ -340,9 +340,7 @@ def launch_simulation(
             if config.seed is not None:
                 base_state.config.seed = int(config.seed)
 
-            print(
-                f"Starting multi-run: runs={runs}, ticks={base_state.clock.max_ticks}, batch_id={batch_id}"
-            )
+            print(f"Wiederholungen: {runs} Läufe zu je {base_state.clock.max_ticks} Ticks")
             multi_result = runner.run_multi(
                 runs,
                 base_state=base_state,
@@ -399,8 +397,9 @@ def launch_simulation(
                 total_events += len(run_result.final_state.event_log)
                 _maybe_generate_figures(run_dir)
                 print(
-                    f"Run {index:03d}: {sub_run_id} seed={run_result.seed} "
-                    f"ticks={run_result.ticks_completed} events={len(run_result.final_state.event_log)}"
+                    f"Lauf {index} von {runs} gespeichert: Zufallsstartwert {run_result.seed}, "
+                    f"{run_result.ticks_completed} Ticks, "
+                    f"{len(run_result.final_state.event_log)} Ereignisse"
                 )
 
             summary_path = batch_dir / "multi_run_summary.json"

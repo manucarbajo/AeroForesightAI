@@ -45,7 +45,7 @@ def _warte_auf_ende(job_id: str, sekunden: float = 5.0) -> runner.Job:
 def test_a_run_reports_its_progress_and_result(monkeypatch):
     def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
         for tick in (1, 2, 3):
-            on_progress(f"[tick {tick}/3] price=100")
+            on_progress(f"[Tick {tick}/3] price=100")
         return "fertig"
 
     monkeypatch.setattr(runner, "launch_from_draft", fake_launch)
@@ -56,7 +56,7 @@ def test_a_run_reports_its_progress_and_result(monkeypatch):
     assert job.error is None
     assert job.result == "fertig"
     assert len(job.lines) == 3
-    assert job.lines[0].startswith("[tick 1/3]")
+    assert job.lines[0].startswith("[Tick 1/3]")
 
 
 def test_progress_arrives_while_the_run_is_still_going(monkeypatch):

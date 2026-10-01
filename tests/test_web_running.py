@@ -20,6 +20,7 @@ from dashboard.web import app as web_app
 from dashboard.web import run_data, runner
 from dashboard.web.state import initial_draft_dict
 from dashboard.web.views import running
+from src.orchestration import konsole
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +46,7 @@ class TestFortschrittAmServer:
     def test_it_is_readable_without_the_job_id(self):
         """Genau das konnte die frühere Fassung nicht."""
 
-        _job_mit("[tick  14/40] 0.05s — price=90")
+        _job_mit("[Tick  14/40] 0,05 s — price=90")
 
         fortschritt = runner.progress()
 
@@ -54,9 +55,9 @@ class TestFortschrittAmServer:
 
     def test_it_reads_the_latest_tick_line(self):
         _job_mit(
-            "[tick   1/40] los",
+            "[Tick   1/40] los",
             "irgendeine Zwischenmeldung ohne Tick",
-            "[tick  12/40] weiter",
+            "[Tick  12/40] weiter",
         )
 
         assert runner.progress().tick == 12
@@ -65,7 +66,7 @@ class TestFortschrittAmServer:
         assert runner.progress() is None
 
     def test_a_finished_job_does_not_count(self):
-        job = _job_mit("[tick  40/40] fertig")
+        job = _job_mit("[Tick  40/40] fertig")
         job.done = True
 
         assert runner.progress() is None
@@ -79,7 +80,7 @@ class TestFortschrittAmServer:
 
         from dashboard.web.pages import launch as launch_page
 
-        _job_mit("[tick   7/25] unterwegs")
+        _job_mit("[Tick   7/25] unterwegs")
 
         zurueck = web_app._progress_from(launch_page.progress_payload())
 
@@ -130,7 +131,7 @@ class TestDerBalkenErfindetNichts:
 class TestDerLaufBekommtDenBildschirm:
     def test_the_viewport_shows_the_run_while_it_computes(self):
         daten = run_data.demo()
-        laufend = runner.Progress(job_id="x", tick=3, total=10, line="[tick 3/10]")
+        laufend = runner.Progress(job_id="x", tick=3, total=10, line="[Tick 3/10]")
 
         gerendert = str(web_app.scene_block(daten, 1, progress=laufend, draft=initial_draft_dict()))
 
@@ -200,8 +201,8 @@ class TestDasFortschrittsfenster:
 class TestDieBeschriftungBehauptetNichtsFalsches:
     """«Lauf wird vorbereitet …» galt fuer alles ohne Tick-Zeile.
 
-    Ein Szenario-Vergleich schreibt nie `[tick n/m]` — er meldet je Szenario
-    «Completed 50 ticks». Am laufenden System stand deshalb **38 Sekunden lang**
+    Ein Szenario-Vergleich schreibt nie `[Tick n/m]` — er meldet je Szenario
+    «50 Ticks gerechnet». Am laufenden System stand deshalb **38 Sekunden lang**
     «wird vorbereitet», waehrend acht Szenarien rechneten. Der Balken war dabei
     richtig (unbestimmt, weil es keine Zahl gibt); die Beschriftung war es nicht.
     """
@@ -216,8 +217,8 @@ class TestDieBeschriftungBehauptetNichtsFalsches:
             job_id="x",
             tick=None,
             total=None,
-            line="Completed 50 ticks in 2.02s",
-            lines=("Sweep: Business as Usual", "Completed 50 ticks in 2.02s"),
+            line="50 Ticks gerechnet in 2,0 s",
+            lines=("Szenario «Business as Usual»", "50 Ticks gerechnet in 2,0 s"),
         )
 
         gerendert = str(running.render(laufend, initial_draft_dict()))
@@ -294,7 +295,7 @@ class TestKeinKnopfVersprichtWasErNichtHaltenKann:
         from dashboard.web.pages import launch as launch_page
 
         job = runner.Job(job_id="sweep", cancellable=False)
-        job.lines.append("Sweep: Business as Usual")
+        job.lines.append("Szenario «Business as Usual»")
         runner._JOBS[job.job_id] = job
 
         zurueck = web_app._progress_from(launch_page.progress_payload())
@@ -316,8 +317,8 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
 
     def test_sie_kommt_aus_den_tickdauern_des_laufenden_laufs(self):
         _job_mit(
-            "[tick   1/10] 2.00s (0.50 ticks/s) - price=90",
-            "[tick   2/10] 2.00s (0.50 ticks/s) - price=91",
+            "[Tick   1/10] 2,00 s (0,5 Ticks/s) - price=90",
+            "[Tick   2/10] 2,00 s (0,5 Ticks/s) - price=91",
         )
 
         fortschritt = runner.progress()
@@ -329,8 +330,8 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
 
     def test_sie_ist_eine_spanne_und_kein_punktwert(self):
         _job_mit(
-            "[tick   1/11] 1.00s - price=90",
-            "[tick   2/11] 3.00s - price=91",
+            "[Tick   1/11] 1,00 s - price=90",
+            "[Tick   2/11] 3,00 s - price=91",
         )
 
         fortschritt = runner.progress()
@@ -341,7 +342,7 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
     def test_aus_einer_einzigen_messung_wird_nichts_abgeleitet(self):
         """Dieselbe Zurueckhaltung wie `config_editor.dauer.MINDESTENS`."""
 
-        _job_mit("[tick   1/40] 2.00s - price=90")
+        _job_mit("[Tick   1/40] 2,00 s - price=90")
 
         fortschritt = runner.progress()
 
@@ -350,9 +351,9 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
         assert fortschritt.remaining_seconds is None
 
     def test_ohne_tick_zeile_gibt_es_nichts_zu_sagen(self):
-        """Der Szenario-Vergleich schreibt keine `[tick n/m]`-Zeilen."""
+        """Der Szenario-Vergleich schreibt keine `[Tick n/m]`-Zeilen."""
 
-        _job_mit("Sweep: Business as Usual", "Completed 50 ticks")
+        _job_mit("Szenario «Business as Usual»", "50 Ticks gerechnet")
 
         fortschritt = runner.progress()
 
@@ -361,8 +362,8 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
 
     def test_im_letzten_tick_steht_dort_nichts_mehr(self):
         _job_mit(
-            "[tick   9/10] 2.00s - price=90",
-            "[tick  10/10] 2.00s - price=91",
+            "[Tick   9/10] 2,00 s - price=90",
+            "[Tick  10/10] 2,00 s - price=91",
         )
 
         fortschritt = runner.progress()
@@ -373,8 +374,8 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
     def test_nur_die_juengsten_tickdauern_zaehlen(self):
         """Ein Lauf wird langsamer; die Anzeige soll dem folgen."""
 
-        zeilen = [f"[tick {n:>3}/100] 1.00s" for n in range(1, 21)]
-        zeilen += [f"[tick {n:>3}/100] 5.00s" for n in range(21, 41)]
+        zeilen = [f"[Tick {n:>3}/100] 1,00 s" for n in range(1, 21)]
+        zeilen += [f"[Tick {n:>3}/100] 5,00 s" for n in range(21, 41)]
         _job_mit(*zeilen)
 
         fortschritt = runner.progress()
@@ -387,7 +388,7 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
     def test_eine_fehlende_dauer_nimmt_dem_balken_nicht_seine_zahl(self):
         """Die Restzeit darf ausfallen, der Fortschritt nicht."""
 
-        _job_mit("[tick  12/40] weiter ohne Dauer")
+        _job_mit("[Tick  12/40] weiter ohne Dauer")
 
         fortschritt = runner.progress()
 
@@ -402,8 +403,8 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
         from dashboard.web.pages import launch as launch_page
 
         _job_mit(
-            "[tick   1/10] 2.00s - price=90",
-            "[tick   2/10] 2.00s - price=91",
+            "[Tick   1/10] 2,00 s - price=90",
+            "[Tick   2/10] 2,00 s - price=91",
         )
 
         zurueck = web_app._progress_from(launch_page.progress_payload())
@@ -413,8 +414,8 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
 
     def test_der_ladebildschirm_zeigt_sie_an(self):
         _job_mit(
-            "[tick   1/10] 2.00s - price=90",
-            "[tick   2/10] 2.00s - price=91",
+            "[Tick   1/10] 2,00 s - price=90",
+            "[Tick   2/10] 2,00 s - price=91",
         )
         fortschritt = runner.progress()
 
@@ -430,8 +431,8 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
         """
 
         _job_mit(
-            "[tick  38/40] 0.02s - price=90",
-            "[tick  39/40] 0.02s - price=91",
+            "[Tick  38/40] 0,02 s - price=90",
+            "[Tick  39/40] 0,02 s - price=91",
         )
         fortschritt = runner.progress()
 
@@ -443,7 +444,7 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
     def test_und_schweigt_wenn_es_nichts_zu_sagen_gibt(self):
         """Kein «unbekannt» — der Platz bleibt leer."""
 
-        _job_mit("[tick   1/40] 2.00s - price=90")
+        _job_mit("[Tick   1/40] 2,00 s - price=90")
         fortschritt = runner.progress()
 
         gezeigt = str(running.render(fortschritt, initial_draft_dict()))
@@ -454,8 +455,8 @@ class TestDieRestzeitWirdGemessenNichtGeraten:
         """Wer waehrenddessen einen aelteren Lauf ansieht, will sie auch sehen."""
 
         _job_mit(
-            "[tick   1/10] 2.00s - price=90",
-            "[tick   2/10] 2.00s - price=91",
+            "[Tick   1/10] 2,00 s - price=90",
+            "[Tick   2/10] 2,00 s - price=91",
         )
         fortschritt = runner.progress()
 
@@ -511,10 +512,12 @@ class TestDerVergleichSagtWasErRechnet:
     40 Ticks»), und der Fortschritt hieß «nicht bezifferbar» — obwohl die
     Ausgabe jedes Szenario mit Kopf und Abschluss meldet."""
 
+    # Gebaut von denselben Funktionen, die der Rechenkern schreibt — ein Test mit
+    # abgeschriebenen Zeilen prüfte das Muster gegen sich selbst.
     KOEPFE = (
-        "Sweep: Business as Usual (A1+B1) (business_as_usual)",
-        "  Completed 120 ticks in 3.20s (38 ticks/sec)",
-        "Sweep: CO₂-Verzögerung (co2_delayed)",
+        konsole.szenario_kopf("Business as Usual (A1+B1)"),
+        "  " + konsole.szenario_ende(120, 3.2),
+        konsole.szenario_kopf("CO₂-Verzögerung"),
     )
 
     def _vergleich(self, *zeilen: str) -> runner.Progress:
@@ -544,7 +547,7 @@ class TestDerVergleichSagtWasErRechnet:
     def test_am_ende_sagt_er_es(self):
         zeilen = []
         for i in range(4):
-            zeilen += [f"Sweep: Rahmen {i} (r{i})", "  Completed 40 ticks in 1.00s (40 ticks/sec)"]
+            zeilen += [konsole.szenario_kopf(f"Rahmen {i}"), "  " + konsole.szenario_ende(40, 1.0)]
 
         fortschritt = self._vergleich(*zeilen)
 
@@ -578,7 +581,7 @@ class TestDerVergleichSagtWasErRechnet:
         assert job is not None and job.szenarien == len(rahmenszenarien())
 
     def test_ein_einzellauf_zaehlt_keine_szenarien(self):
-        _job_mit("Sweep: X (x)")
+        _job_mit(konsole.szenario_kopf("X"))
         fortschritt = runner.progress()
 
         assert fortschritt is not None and fortschritt.szenarien is None
@@ -605,7 +608,7 @@ class TestDerAbbruchSagtSichAn:
     stand bis zum 2026-10-01 unverändert «Der Lauf rechnet»."""
 
     def test_der_ladebildschirm_sagt_es(self):
-        job = _job_mit("[tick   5/40] 9.00s - price=140")
+        job = _job_mit("[Tick   5/40] 9,00 s - price=140")
         job.stop.set()
         fortschritt = runner.progress()
         assert fortschritt is not None and fortschritt.abbruch
@@ -617,7 +620,7 @@ class TestDerAbbruchSagtSichAn:
         assert "Der Lauf rechnet" not in text
 
     def test_ohne_abbruch_bleibt_alles_wie_es_war(self):
-        _job_mit("[tick   5/40] 9.00s - price=140")
+        _job_mit("[Tick   5/40] 9,00 s - price=140")
         fortschritt = runner.progress()
 
         assert fortschritt is not None and not fortschritt.abbruch
@@ -626,7 +629,7 @@ class TestDerAbbruchSagtSichAn:
     def test_der_abbruch_kommt_durch_den_browser(self):
         from dashboard.web.pages import launch as launch_page
 
-        _job_mit("[tick   5/40] 9.00s - price=140").stop.set()
+        _job_mit("[Tick   5/40] 9,00 s - price=140").stop.set()
 
         zurueck = web_app._progress_from(launch_page.progress_payload())
 

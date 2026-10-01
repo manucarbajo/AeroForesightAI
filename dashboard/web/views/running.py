@@ -72,8 +72,8 @@ def _readout(progress: Progress) -> str:
 
     **Drei Zustände, nicht zwei.** Die frühere Fassung kannte nur «Tick x von y»
     und sonst «Lauf wird vorbereitet …». Bei einem Szenario-Vergleich stimmte
-    das nie: Der Sweep schreibt keine `[tick n/m]`-Zeilen, sondern meldet je
-    Szenario «Completed 50 ticks». Am laufenden System gemessen stand deshalb
+    das nie: Der Sweep schreibt keine `[Tick n/m]`-Zeilen, sondern meldet je
+    Szenario «50 Ticks gerechnet». Am laufenden System gemessen stand deshalb
     **achtunddreißig Sekunden lang** «wird vorbereitet», während acht Szenarien
     rechneten.
 
@@ -115,7 +115,7 @@ def _restzeit(progress: Progress) -> str | None:
     das nicht nötig.
 
     **Nichts zu sagen heißt nichts sagen.** In den ersten Ticks, bei einem
-    Szenario-Vergleich ohne `[tick n/m]`-Zeilen und im letzten Tick gibt es
+    Szenario-Vergleich ohne `[Tick n/m]`-Zeilen und im letzten Tick gibt es
     keine Zahl. Ein «unbekannt» an dieser Stelle wäre Platz für eine Auskunft,
     die es nicht gibt — dieselbe Entscheidung wie beim unbestimmten Balken.
     """

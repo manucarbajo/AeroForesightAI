@@ -15,7 +15,6 @@ gegenseitig die Ausgabe abschneiden.
 from __future__ import annotations
 
 import queue
-import re
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -24,6 +23,12 @@ from typing import Any
 from dashboard.config_catalog import rahmenszenarien
 from dashboard.run_launcher import REPO_ROOT, launch_from_draft
 from dashboard.web.state import draft_from_dict
+from src.orchestration.konsole import (
+    SZENARIO_ENDE,
+    SZENARIO_KOPF,
+    TICK_ZEILE,
+    tick_sekunden,
+)
 
 #: Wie viele Zeilen das Log höchstens behält. Ein 500-Tick-Lauf schreibt sonst
 #: mehr in den Browser, als dieser flüssig darstellen kann.
@@ -54,7 +59,11 @@ class Job:
     szenarien: int | None = None
 
 
-#: Die Fortschrittszeile des Tick-Loops: `[tick  14/40] 0.14s (…) — price=…`.
+#: Die Fortschrittszeile des Tick-Loops: `[Tick  14/40] 0,14 s (…) — Preis …`.
+#: **Format und Muster stehen im Rechenkern** (`src.orchestration.konsole`), seit
+#: die Zeile deutsch ist (Befund 13 der Abnahme vom 2026-09-30) — vorher kannten
+#: zwei Stellen dasselbe Format, ohne voneinander zu wissen.
+#:
 #: Gelesen, nicht geschätzt — steht dort nichts, gibt es keine Prozentzahl
 #: (Invariante 1: Zahlen werden nicht erfunden).
 #:
@@ -65,7 +74,7 @@ class Job:
 #: **Sie ist bewusst optional.** Verlangte das Muster sie, ginge bei einer Zeile
 #: ohne Dauer auch `tick`/`total` verloren — der Balken verlöre seine Zahl, weil
 #: eine Nebenauskunft fehlt. Die Restzeit darf ausfallen, der Fortschritt nicht.
-_TICK_LINE = re.compile(r"\[tick\s+(\d+)\s*/\s*(\d+)\](?:\s+([\d.]+)s)?")
+_TICK_LINE = TICK_ZEILE
 
 #: Wie viele der zuletzt gemessenen Tickdauern in die Restzeit eingehen. Genug,
 #: um einen Ausreißer zu dämpfen, wenig genug, um dem aktuellen Tempo zu folgen:
@@ -82,12 +91,11 @@ TEMPO_MINDESTENS = 2
 #: ohnehin nur die letzten; alles davor waere Ballast im Browser.
 VISIBLE_LINES = 200
 
-#: Der Kopf, mit dem ein Szenario-Vergleich jedes Szenario beginnt:
-#: `Sweep: Business as Usual (A1+B1) (business_as_usual)`.
-_SZENARIO_KOPF = re.compile(r"^Sweep: (.+?)(?: \([\w-]+\))?$")
-
-#: Die Zeile, mit der er es beendet: `  Completed 120 ticks in 3.20s (…)`.
-_SZENARIO_ENDE = re.compile(r"^\s*Completed \d+ ticks\b")
+#: Der Kopf, mit dem ein Szenario-Vergleich jedes Szenario beginnt
+#: (`Szenario «Business as Usual (A1+B1)»`), und die Zeile, mit der er es
+#: beendet (`120 Ticks gerechnet in 3,2 s (…)`).
+_SZENARIO_KOPF = SZENARIO_KOPF
+_SZENARIO_ENDE = SZENARIO_ENDE
 
 
 @dataclass(frozen=True)
@@ -228,8 +236,9 @@ def progress() -> Progress | None:
         if tick is None:
             tick, total = int(treffer.group(1)), int(treffer.group(2))
             zeile = eintrag
-        if treffer.group(3) is not None and len(dauern) < TEMPO_FENSTER:
-            dauern.append(float(treffer.group(3)))
+        sekunden = tick_sekunden(treffer)
+        if sekunden is not None and len(dauern) < TEMPO_FENSTER:
+            dauern.append(sekunden)
         elif len(dauern) >= TEMPO_FENSTER:
             break
 

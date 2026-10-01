@@ -21,6 +21,7 @@ from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
 from src.models.state_models import DEFAULT_SEED, SimulationState
 from src.orchestration.environment_node import EnvironmentNode
+from src.orchestration.konsole import tick_zeile
 from src.reporting.output_writer import append_individuals_history, resolve_run_output_dir
 from src.reporting.output_writer.provenance import config_fingerprint
 from src.validation import horizontluecken, validate_state
@@ -537,8 +538,6 @@ class SimulationRunner:
         booking = metrics.get("booking_rate")
         if booking is None and state.price_history:
             booking = state.price_history[-1].booking_rate
-        price_text = f"{price:.2f}" if isinstance(price, (int, float)) else "n/a"
-        booking_text = f"{booking:.1%}" if isinstance(booking, (int, float)) else "n/a"
 
         now = time.perf_counter()
         tick_elapsed = now - getattr(self, "_progress_last_tick_at", now)
@@ -546,9 +545,13 @@ class SimulationRunner:
         self._progress_last_tick_at = now
         rate = tick / total_elapsed if total_elapsed > 0 else 0.0
 
-        msg = (
-            f"[tick {tick:>3}/{max_ticks}] {tick_elapsed:.2f}s "
-            f"({rate:.2f} ticks/s) — price={price_text} €, booking={booking_text}"
+        msg = tick_zeile(
+            tick,
+            max_ticks,
+            sekunden=tick_elapsed,
+            je_sekunde=rate,
+            preis=price,
+            buchungsrate=booking,
         )
         print(msg, flush=True)
         callback = self.options.tick_progress_callback
