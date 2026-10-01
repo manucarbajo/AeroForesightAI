@@ -1271,6 +1271,9 @@ def register_callbacks(app) -> None:
             var wirt = document.getElementById("wizard-content-host");
             if (wirt) {
                 var setzen = function () {
+                    // Erst nach einer Handlung (P8-V12, assets/fokus_folgt_handlung.js):
+                    // Beim ersten Zeichnen gehoert der erste Tabulator dem Sprunglink.
+                    if (!window.afHatGehandelt) { return; }
                     var aktiv = document.activeElement;
                     var frei = !aktiv || aktiv === document.body || !document.contains(aktiv);
                     if (!frei) { return; }

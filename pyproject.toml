@@ -127,5 +127,6 @@ markers = [
     "rueckfrage: Browser-Wächter — die Rückfrage öffnet, fokussiert und schließt sich",
     "laufwahl: Browser-Wächter — der Lauf-Browser öffnet modal, sucht und wählt",
     "zeitleiste: Browser-Wächter — zwei schnelle Klicks auf «Ein Tick vor» sind zwei Ticks",
+    "sprunglink: Browser-Wächter — nach dem Laden ist «Zum Inhalt springen» der erste Tab-Stopp",
     "leistung: Leistungsmessung (Klickdauer, P7.11) — läuft nur mit -m leistung",
 ]

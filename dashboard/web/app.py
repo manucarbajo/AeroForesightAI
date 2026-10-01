@@ -433,6 +433,9 @@ def create_app() -> Dash:
             var wirt = document.getElementById("%s");
             if (!wirt) { return window.dash_clientside.no_update; }
             var setzen = function () {
+                // Erst nach einer Handlung (P8-V12, assets/fokus_folgt_handlung.js):
+                // `dcc.Location` meldet den Pfad auch beim Laden als Aenderung.
+                if (!window.afHatGehandelt) { return; }
                 var aktiv = document.activeElement;
                 // **Auch frei, wenn das Fokussierte unsichtbar geworden ist.**
                 // Ein Bereichswechsel schaltet die Sichtbarkeiten nacheinander:

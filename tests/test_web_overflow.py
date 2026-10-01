@@ -4027,6 +4027,51 @@ def test_the_run_browser_finds_and_selects_with_two_inputs(page):
     )
 
 
+# --- Sprunglink (P8-V12, Befund N2 der Gegenprüfung vom 2026-09-21) ------------
+
+
+@pytest.mark.sprunglink
+@pytest.mark.parametrize("bereich", ["Einstieg", "Leitstand"])
+def test_the_skip_link_is_the_first_tab_stop(page, bereich):
+    """Nach dem Laden führt der erste Tabulator auf «Zum Inhalt springen».
+
+    Der Fokus folgt der Frage (P1.9-W5.3) und dem Bereich (P1.5) — beim
+    **ersten** Zeichnen aber hat niemand etwas getan, dem er folgen könnte.
+    Die Schrittfolge setzte ihn trotzdem auf ihre Überschrift, und der
+    Sprunglink lag hinter dem ersten Tabulator. Der bestehende Wächter prüfte
+    nur die Reihenfolge im Baum; gemessen wird hier, wohin die Taste führt.
+    """
+
+    page.goto(page.basis + BEREICHE[bereich], wait_until="networkidle")
+    page.wait_for_timeout(3_000)  # länger als das Fenster der Fokus-Beobachter
+
+    page.keyboard.press("Tab")
+    fokus = page.evaluate(
+        "() => ({ text: document.activeElement.textContent.trim(), "
+        "cls: document.activeElement.className })"
+    )
+
+    assert "af-sprunglink" in fokus["cls"], f"Erster Tab-Stopp: {fokus}"
+
+
+@pytest.mark.sprunglink
+def test_after_a_click_the_focus_still_follows_the_question(page):
+    """Die Gegenprobe: Nach einer Handlung folgt der Fokus weiterhin.
+
+    Die Sperre für das erste Zeichnen hängt an `window.afHatGehandelt`. Ginge
+    das Merken verloren, sähe der Test oben grün aus, und der Fokus folgte nie
+    mehr — weder der Frage noch dem Bereich.
+    """
+
+    page.goto(page.basis + BEREICHE["Einstieg"], wait_until="networkidle")
+    page.locator(".af-way--haupt").click()
+    page.wait_for_function(
+        "() => document.activeElement && document.activeElement.tagName === 'H1' "
+        "&& document.getElementById('wizard-content-host').contains(document.activeElement)",
+        timeout=5_000,
+    )
+
+
 # --- Zeitleiste (Befund 16 der Abnahme vom 2026-09-30) ---------------------------
 
 

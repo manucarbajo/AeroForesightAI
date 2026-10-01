@@ -173,7 +173,7 @@ Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung,
 
 ### Kann — nur, wenn Zeit bleibt
 
-- **V12 — Sprunglink als erster Tab-Stopp** (Befund 3 vom 2026-09-21): der Fokus-folgt-der-Frage-Mechanismus greift beim ersten Laden nicht. ¼ Tag.
+- **V12 — Sprunglink als erster Tab-Stopp** (Befund 3 vom 2026-09-21): der Fokus-folgt-der-Frage-Mechanismus greift beim ersten Laden nicht. ¼ Tag. **Erledigt am 2026-10-01:** Es waren zwei Mechanismen, nicht einer — auch der Bereichswechsel nahm den Fokus beim Laden, weil `dcc.Location` den Pfad dann als Änderung meldet (im Leitstand stand er danach auf der Überschrift «Leitstand»). Beide nehmen ihn jetzt erst nach einer Handlung; gemessen wird mit echter Tabulatortaste, und eine Gegenprobe hält fest, dass er nach einem Klick weiter folgt.
 - **V13 — Rechtstexte der Landingpage** (P1.4-Rest): braucht Inhalte vom Team; bis dahin beginnt jede Vorführung auf `/app/` statt auf `/`, damit kein Warnblock zu sehen ist.
 - **V14 — Klick-Latenz** (P7.11): gemessen 541–747 ms statt 500. Für eine Vorführung spürbar, aber nicht störend; die Ursache sind sieben Rundläufe je Klick, ein Umbau vor dem Pitch wäre riskant.
 
