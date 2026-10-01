@@ -30,7 +30,7 @@ Paket [P8-V8](plan_vorfuehrbereitschaft_2026-09-29.md). Stand 2026-10-01.
 
 ## Regeln
 
-1. **Live nur «Ohne Sprachmodell».** «Mit Sprachmodell» braucht 40 Ticks lang rund 10 s je Tick (Entwicklungsrechner; auf dem Laptop eher mehr). Auch **«Nur Zahlen» nicht**: Es fragt am Ende doch das Sprachmodell, und ohne laufendes Ollama steht der Lauf danach als «beeinträchtigt» da (Befund in `audit_findings.md`, 2026-10-01).
+1. **Live nur «Ohne Sprachmodell»** (oder «Nur Zahlen», gleich schnell). «Mit Sprachmodell» braucht 40 Ticks lang rund 10 s je Tick (Entwicklungsrechner; auf dem Laptop eher mehr). «Ohne Sprachmodell» ist die sichere Wahl, weil es Ollama auch dann nicht braucht, wenn auf dem Laptop etwas klemmt.
 2. Keinen Szenario-Vergleich live starten (rund zwei Minuten mit Sprachmodell), keinen Lauf abbrechen (eine Minute ohne Rückmeldung, Befund 10).
 3. Im Bereich «Modell» nichts speichern — das ändert die Auslieferung (Befund 14).
 4. «Animation» nicht öffnen: neun Sekunden Laden, englische Legende (V11).

@@ -34,7 +34,7 @@ sondern nur, wie viel dazu erzählt wird.
 |---|---|---|
 | Mit Sprachmodell | aus dem Rechenmodell | von Ollama geschrieben |
 | Ohne Sprachmodell | aus dem Rechenmodell | Platzhaltertexte |
-| Nur Zahlen | aus dem Rechenmodell | keine von den Akteuren; die Szenario-Erzählungen am Ende fragt der Lauf heute noch beim Sprachmodell an (bekannter Fehler) |
+| Nur Zahlen | aus dem Rechenmodell | keine |
 
 Der Editor zeigt unter «Rechenmodus» zugleich an, ob Ollama gerade erreichbar
 ist und ob das eingestellte Modell dort vorliegt. Läuft der Dienst nicht,

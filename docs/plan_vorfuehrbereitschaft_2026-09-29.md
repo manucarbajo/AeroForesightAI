@@ -140,7 +140,7 @@ Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung,
 **Fertig wenn:** Ein Drehbuch von einer Seite liegt bei der Übersicht des Pitches und ist zweimal geprobt.
 **Aufwand:** ¼ Tag plus Proben.
 
-**Stand am 2026-10-01:** Das Drehbuch steht: [`drehbuch_vorfuehrung.md`](drehbuch_vorfuehrung.md). Entschieden ist der Rahmen (der Pitch ist nur die Präsentation, gezeigt wird danach am eigenen Stand auf Nachfrage). Der Live-Weg rechnet «Ohne Sprachmodell» — nachgerechnet liefert er auf den Cent die Zahlen des vorgerechneten Pitch-Falls, in rund fünf Sekunden. Dabei gefunden: «Nur Zahlen» fragt doch das Sprachmodell (Finding in `audit_findings.md`). **Offen:** zweimal proben, auf dem Laptop.
+**Stand am 2026-10-01:** Das Drehbuch steht: [`drehbuch_vorfuehrung.md`](drehbuch_vorfuehrung.md). Entschieden ist der Rahmen (der Pitch ist nur die Präsentation, gezeigt wird danach am eigenen Stand auf Nachfrage). Der Live-Weg rechnet «Ohne Sprachmodell» — nachgerechnet liefert er auf den Cent die Zahlen des vorgerechneten Pitch-Falls, in rund fünf Sekunden. Dabei gefunden und am selben Tag behoben: «Nur Zahlen» fragte am Ende doch das Sprachmodell und galt ohne Ollama als beeinträchtigt. **Offen:** zweimal proben, auf dem Laptop.
 
 ### Soll — sichtbar, wenn jemand selbst klickt
 

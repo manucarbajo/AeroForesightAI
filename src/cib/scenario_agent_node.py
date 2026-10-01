@@ -273,9 +273,20 @@ def _normalize_scenarios(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 class ScenarioAgentNode:
-    def __init__(self, llm: LLMCallable, output_dir: Path | None = None) -> None:
+    def __init__(
+        self, llm: LLMCallable, output_dir: Path | None = None, *, erzaehlen: bool = True
+    ) -> None:
+        """*erzaehlen* ``False``: nur die gerechneten Szenarien, kein Aufruf ans Modell.
+
+        **Für «Nur Zahlen»** (`deterministic_only`, seit 2026-10-01). Bis dahin
+        fragte dieser Knoten das Sprachmodell auch in einem reinen Zahlenlauf:
+        Ohne Ollama wurde der Lauf als beeinträchtigt markiert, mit Ollama stand
+        ein Modelltext unter `compute_mode: deterministic_only`.
+        """
+
         self.llm = llm
         self.output_dir = output_dir
+        self.erzaehlen = erzaehlen
 
     def invoke(self, state: SimulationState) -> SimulationState:
         if state.cib_matrix is None:
@@ -287,6 +298,8 @@ class ScenarioAgentNode:
         # **Zwei Schlüssel, die sich nicht um ein Wort unterscheiden** (P1.3).
         # Vorher: `scenario_candidates` und `scenarios`.
         state.cib_matrix.metadata["gerechnete_szenarien"] = gerechnet.model_dump()
+        if not self.erzaehlen:
+            return state
 
         prompt = _build_scenario_prompt(state, gerechnet)
         try:

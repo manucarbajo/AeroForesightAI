@@ -293,7 +293,9 @@ def save_run_outputs(
     scenarios_path = None
     scenarios_md_path = None
     if not args.no_scenarios and state.cib_matrix is not None:
-        scenario_node = ScenarioAgentNode(llm=llm)
+        # Ein Zahlenlauf fragt das Modell auch hier nicht — wie beim Abschlusstext
+        # (`prefer_llm=not deterministic_only`, unten).
+        scenario_node = ScenarioAgentNode(llm=llm, erzaehlen=not args.deterministic_only)
         state = scenario_node.invoke(state)
         # **`erzaehlte_szenarien`, nicht `scenarios`** (behoben mit P2.0-B).
         # P1.3 hat den Metadaten-Schlüssel umbenannt und diesen Leser nicht
