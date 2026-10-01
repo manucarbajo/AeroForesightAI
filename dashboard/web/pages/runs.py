@@ -316,6 +316,7 @@ def reiter_nach_klick(trigger: object, geklickt: object, current: str | None) ->
 def register_callbacks(app) -> None:
     scenario.register_callbacks(app)
     figures.register_callbacks(app)
+    animation.register_callbacks(app)
     files.register_callbacks(app)
     explorer.register_callbacks(app)
 

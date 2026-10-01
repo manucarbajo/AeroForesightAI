@@ -596,6 +596,61 @@ def history_run(minimal_run):
     return minimal_run
 
 
+class TestDieAnimationRechnetErstAufKlick:
+    """P8-V11 (2026-10-01): «Animation» zeichnete neun animierte Diagramme auf einmal —
+    gemessen 7,6 s und 5,05 MiB für den Pitch-Fall, 20,5 s und 14,84 MiB für einen
+    Rahmen über 120 Ticks. Seither rechnet jedes erst auf «Diagramm zeigen»."""
+
+    def _graphen(self, knoten) -> int:
+        from dash import dcc
+
+        if isinstance(knoten, dcc.Graph):
+            return 1
+        kinder = getattr(knoten, "children", None)
+        if isinstance(kinder, (list, tuple)):
+            return sum(self._graphen(k) for k in kinder)
+        return self._graphen(kinder) if kinder is not None and not isinstance(kinder, str) else 0
+
+    def test_die_ansicht_zeichnet_kein_diagramm(self, history_run):
+        gezeichnet = animation.render(history_run, "run_minimal")
+
+        assert self._graphen(gezeichnet) == 0
+        assert str(gezeichnet).count(animation.ZEIGEN) >= 5
+
+    def test_ein_klick_liefert_das_diagramm(self, history_run):
+        from dash import dcc
+
+        for kennung in ("bevoelkerung", "spielraum", "saettigung", "merkmal-0", "alter"):
+            assert isinstance(animation.diagramm(kennung, history_run), dcc.Graph), kennung
+
+    def test_die_punktwolke_nimmt_eine_stichprobe(self, tmp_path, minimal_run):
+        _schreibe_historie(minimal_run, personen=animation.STICHPROBE_BEVOELKERUNG + 100)
+
+        figur = animation.diagramm("bevoelkerung", minimal_run).figure
+        ids = {i for spur in figur.data if spur.hovertext is not None for i in spur.hovertext}
+
+        assert len(ids) == animation.STICHPROBE_BEVOELKERUNG
+
+    def test_ohne_klick_geschieht_nichts(self):
+        """Dash ruft den Callback auch, wenn der Knopf neu gezeichnet wird."""
+
+        from dash import no_update
+
+        gefangen: dict = {}
+
+        class _App:
+            def callback(self, *args, **kwargs):
+                def deko(fn):
+                    gefangen[fn.__name__] = fn
+                    return fn
+
+                return deko
+
+        animation.register_callbacks(_App())
+
+        assert gefangen["_zeigen"](None, {"run_dir": "x"}, "light") == (no_update, no_update)
+
+
 class TestSurplusPulse:
     """P5.2 (2026-09-11): der erste übernommene Block der Researcher-Variante."""
 

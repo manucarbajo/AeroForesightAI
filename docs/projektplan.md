@@ -4469,7 +4469,7 @@ Jetzt liegen alle drei Wirte in einer `dcc.Loading` mit derselben Verzögerung, 
 | V8 | 🟡 Drehbuch steht (2026-10-01), Proben offen | Drehbuch der Vorführung am Stand: [`drehbuch_vorfuehrung.md`](drehbuch_vorfuehrung.md) — sechs Schritte, ein Live-Weg «Ohne Sprachmodell» mit nachgerechnet gleichen Zahlen, Regeln, Antworten auf naheliegende Fragen |
 | V9 | Soll | Handbuch: die sechs offenen Befunde (4)–(9) der Gegenprüfung vom 2026-09-21 |
 | V10 | ✅ 2026-09-30 | Vergleich zeigt nur Rahmen, Satzfehler «unter aus einem» (zieht P7.6-U6.4 vor); dazu Befund 9 der Abnahme: der Vergleich im Leitstand zählt seine Szenarien, meldet sein Ende und wählt einen Rahmen |
-| V11 | Soll | «Animation» ohne acht Sekunden Warten (zieht P7.6-U6.2 vor) |
+| V11 | ✅ 2026-10-01 | «Animation» ohne acht Sekunden Warten (zieht P7.6-U6.2 vor): jedes Diagramm auf Klick, Öffnen unter 1 s und 15 KiB |
 | V12–V14 | Kann | Sprunglink, Rechtstexte der Landingpage (P1.4-Rest), Klick-Latenz (P7.11) |
 
 **Fertig wenn:** Der zweite Abnahme-Durchgang (V6, Generalprobe am 07.10.) hat keinen Befund der Stufe «bricht die Vorführung», und der Prüfsatz aus V1 ergibt keinen unmarkierten Widerspruch.

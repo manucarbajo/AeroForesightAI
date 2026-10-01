@@ -72,13 +72,11 @@ ANSICHTEN = {
 #: Eine Ausnahme hier ist keine Freigabe auf Dauer: `test_no_exception_is_free`
 #: verlangt, dass sie noch zutrifft, damit sie nicht stehen bleibt, nachdem das
 #: Paket sie erledigt hat.
-WACHSEN_DARF = {
-    "animation": (
-        "Zeigt die Personen selbst statt eines Aggregats — neun animierte Diagramme "
-        "über jeden Tick. Aufgelöst mit P7.6-U6.2 (Stichprobe oder Aggregat, jedes "
-        "Diagramm erst beim Aufklappen); dort steht auch der Deckel von 2 MB."
-    ),
-}
+WACHSEN_DARF: dict[str, str] = {}
+#: Bis zum 2026-10-01 stand hier «animation»: neun animierte Diagramme über jede
+#: Person und jeden Tick, 335 → 658 KiB bei vierfacher Bevölkerung. Seit P8-V11
+#: zeichnet die Ansicht kein Diagramm mehr beim Öffnen, sondern jedes auf Klick,
+#: und die Punktwolke nimmt eine Stichprobe — die Ausnahme ist erledigt.
 
 #: Wie viel größer die Nutzlast bei vierfacher Bevölkerung höchstens werden
 #: darf. **1,0 wäre zu scharf**: Eine Ansicht darf die Zahl der Personen
@@ -344,7 +342,13 @@ class TestKeineAnsichtWaechstMitDerBevoelkerung:
         viel = (gross / "individuals_history.csv").stat().st_size
 
         assert viel > wenig * 3, f"Die Testläufe unterscheiden sich kaum: {wenig} / {viel} Bytes"
-        assert _kib(animation, gross) > _kib(animation, klein) * 1.5, (
-            "Die Ansicht, an der der Befund hängt, wächst in dieser Messung nicht — "
-            "dann misst der Wächter etwas anderes als das, was gemeldet war."
+
+        # Seit P8-V11 wächst keine Ansicht mehr; die Punktwolke **ohne** Stichprobe
+        # tut es weiterhin — an ihr zeigt sich, dass die Messung Wachstum sieht.
+        def _ungekuerzt(lauf: Path) -> float:
+            return len(to_json(animation._population_figure(animation.load_history(lauf)))) / 1024
+
+        assert _ungekuerzt(gross) > _ungekuerzt(klein) * 1.5, (
+            "Eine Figur über alle Personen wächst in dieser Messung nicht — "
+            "dann misst der Wächter etwas anderes als die Bevölkerung."
         )

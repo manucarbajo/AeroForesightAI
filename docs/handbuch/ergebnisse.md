@@ -113,9 +113,11 @@ Streudiagramme, die sich über die Ticks abspielen lassen. Sie bringen ihre
 eigenen Abspielknöpfe mit; eine Zeitleiste gibt es unter «Ergebnisse» nicht — anders als
 die Szene im Bereich «Leitstand», die genau das tut. Wer beides nebeneinander
 braucht, nimmt die Szene; wer eine Aggregation über Alters- oder Segmentgruppen
-sucht, ist hier richtig. Das erste zeigt
-jede einzelne Person nach Zahlungsbereitschaft und Umweltbewusstsein, eingefärbt
-danach, ob sie gebucht hat.
+sucht, ist hier richtig. **Jedes Diagramm rechnet erst, wenn Sie «Diagramm
+zeigen» drücken** — je nach Länge des Laufs dauert das einige Sekunden; die
+Ansicht selbst ist sofort da. Das erste zeigt eine feste Stichprobe von 200
+Personen nach Zahlungsbereitschaft und Umweltbewusstsein, eingefärbt danach, ob
+sie gebucht hat.
 
 **«Wer sich den Flug leisten kann»** zeigt eine feste Stichprobe von 150 Personen, in jedem
 Tick dieselben. Waagrecht steht der höchste Ticketpreis, den eine Person
@@ -202,10 +204,9 @@ Ein Chat, der ausschließlich über die Daten dieses Laufs antwortet. Ausführli
 unter [Läufe abfragen](/doku/abfrage).
 
 Beim Wechsel zwischen den Ansichten erscheint ein Ladepunkt, solange die neue
-Ansicht gebaut wird. **«Animation» braucht dafür am längsten** — sie überträgt
-die simulierten Personen selbst, nicht nur die Ergebnisdaten, und bei einigen
-Tausend Personen über viele Ticks sind das mehrere Megabyte und einige Sekunden.
-Die übrigen Ansichten sind in Bruchteilen einer Sekunde da.
+Ansicht gebaut wird. Die Ansichten sind in Bruchteilen einer Sekunde da; die
+Diagramme unter «Animation» rechnen einzeln auf Knopfdruck, weil jedes die
+simulierten Personen selbst überträgt.
 
 ## Dateien
 

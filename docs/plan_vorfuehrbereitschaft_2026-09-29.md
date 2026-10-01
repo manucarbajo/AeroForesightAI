@@ -167,6 +167,8 @@ Englisch und Datum überall 0, **12,1 s je Tick** (vorher 13,8 — eine Messung,
 **Fertig wenn:** Nutzlast ≤ 2 MB, Aufruf < 2 s, die Ausnahme im Wechselwächter entfällt.
 **Aufwand:** ½ Tag. **Falls die Zeit nicht reicht:** in der Vorführung nicht öffnen.
 
+**Erledigt am 2026-10-01, anders als geplant.** Die Stichprobe allein hätte nicht gereicht: Gemessen kostet jedes der neun animierten Diagramme bei 120 Ticks 1 bis 3 s, die Punktwolke war nur das schwerste. Umgesetzt ist deshalb der zweite Teil von U6.2 — jedes Diagramm rechnet erst auf «Diagramm zeigen» —, dazu die Stichprobe (200 Personen) für die Punktwolke. Öffnen der Ansicht: 7,6 s und 5,05 MiB → unter 1 s und 15 KiB (Pitch-Fall; bei 120 Ticks vorher 20,5 s und 14,84 MiB); je Diagramm 0,9 bis 1,5 s (bei 120 Ticks bis 4 s), höchstens 1,88 MiB. Die Ausnahme im Wechselwächter ist gestrichen. Im Browser geprüft, ohne Konsolenfehler.
+
 ### Kann — nur, wenn Zeit bleibt
 
 - **V12 — Sprunglink als erster Tab-Stopp** (Befund 3 vom 2026-09-21): der Fokus-folgt-der-Frage-Mechanismus greift beim ersten Laden nicht. ¼ Tag.
