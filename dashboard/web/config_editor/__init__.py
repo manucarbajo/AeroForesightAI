@@ -687,7 +687,7 @@ def _handle_action(
         delete_custom_property(prop, data.get("properties_file", "properties.json"))
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))
         data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
-        return data, f"Property «{prop}» gelöscht.", "erfolg"
+        return data, f"Größe «{prop}» gelöscht.", "erfolg"
 
     if kind == micro.SEGMENT_DELETE:
         segment = trigger["segment"]
@@ -745,7 +745,14 @@ def _handle_action(
     if action == "add-property":
         prop_id = c.free_value(free, "new-prop-id").strip()
         if not prop_id or not prop_id.isidentifier():
-            return data, "Bitte eine gültige Property-ID angeben (Python-Bezeichner).", "warnung"
+            return (
+                data,
+                (
+                    "Bitte eine gültige Kennung angeben: Buchstaben, Ziffern und Unterstrich, "
+                    "nicht mit einer Ziffer am Anfang."
+                ),
+                "warnung",
+            )
         add_custom_property(
             prop_id,
             c.free_value(free, "new-prop-label").strip() or prop_id,
@@ -754,17 +761,24 @@ def _handle_action(
         )
         edits = extract_property_edits_from_file(data.get("properties_file", "properties.json"))
         data["property_edits"] = {k: asdict(v) for k, v in edits.items()}
-        return data, f"Property «{prop_id}» angelegt.", "erfolg"
+        return data, f"Größe «{prop_id}» angelegt.", "erfolg"
 
     if action == "save-market-feedback":
         draft = draft_from_dict(data)
         save_market_feedback_to_file(draft.market_feedback_edit, draft.properties_file)
-        return data, "Markt-Feedback gespeichert.", "erfolg"
+        return data, "Preisverhalten der Airline als Standard gespeichert.", "erfolg"
 
     if action == "add-segment":
         segment_id = c.free_value(free, "new-segment-id").strip()
         if not segment_id or not segment_id.isidentifier():
-            return data, "Bitte eine gültige Segment-ID angeben (Python-Bezeichner).", "warnung"
+            return (
+                data,
+                (
+                    "Bitte eine gültige Kennung für das Segment angeben: Buchstaben, Ziffern und "
+                    "Unterstrich, nicht mit einer Ziffer am Anfang."
+                ),
+                "warnung",
+            )
         segments = data.get("population_edits") or []
         if any(item.get("id") == segment_id for item in segments):
             return data, f"Ein Segment «{segment_id}» existiert bereits.", "warnung"
@@ -790,6 +804,6 @@ def _handle_action(
         draft = draft_from_dict(data)
         save_population_edits_to_file(draft.population_edits, draft.properties_file)
         save_saturation_to_file(draft.saturation_edit, draft.properties_file)
-        return data, "Population und Sättigung gespeichert.", "erfolg"
+        return data, "Bevölkerung und Sättigung als Standard gespeichert.", "erfolg"
 
     return data, None, "info"

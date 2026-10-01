@@ -324,7 +324,7 @@ def test_add_property_rejects_an_invalid_identifier():
     )
 
     assert kind == "warnung"
-    assert "Python-Bezeichner" in message
+    assert "Buchstaben, Ziffern und Unterstrich" in message
 
 
 def test_add_segment_rejects_a_duplicate():

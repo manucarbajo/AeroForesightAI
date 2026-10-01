@@ -138,7 +138,7 @@ def render(
                                 "Beispielantworten ohne Sprachmodell",
                                 value=False,
                                 id="explorer-mock",
-                                hint="Deaktivieren für echte Antworten via Ollama (Modell in .env).",
+                                hint="Ausgeschaltet antwortet das lokal laufende Sprachmodell.",
                             ),
                             ui.checkbox(
                                 "Datenkontext anzeigen", value=False, id="explorer-show-context"
