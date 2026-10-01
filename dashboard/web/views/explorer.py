@@ -28,6 +28,12 @@ _STATUS_COLORS = {
 }
 
 
+#: Der Name des Schalters — **einer**, im Kästchen, in der Beispielantwort und im
+#: Handbuch. Die Beispielantwort sagte «Demo ohne Ollama», ein Name, den die
+#: Oberfläche nirgends zeigt (Befund N5 der Gegenprüfung vom 2026-09-21).
+DEMO_SCHALTER = "Beispielantworten ohne Sprachmodell"
+
+
 class _MockLLM:
     """Antwortet ohne Ollama — für Vorführungen ohne laufendes Modell."""
 
@@ -38,7 +44,7 @@ class _MockLLM:
         scope = f"Tick {self._focus_tick}" if self._focus_tick else "dem gesamten Lauf"
         return (
             f"Demo-Antwort: Die Frage bezieht sich auf {scope}. "
-            "Deaktivieren Sie «Demo ohne Ollama», wenn Ollama für echte Antworten laufen soll."
+            f"Schalten Sie «{DEMO_SCHALTER}» aus, damit das Sprachmodell antwortet."
         )
 
 
@@ -135,7 +141,7 @@ def render(
                     html.Div(
                         [
                             ui.checkbox(
-                                "Beispielantworten ohne Sprachmodell",
+                                DEMO_SCHALTER,
                                 value=False,
                                 id="explorer-mock",
                                 hint="Ausgeschaltet antwortet das lokal laufende Sprachmodell.",

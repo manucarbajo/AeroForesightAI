@@ -80,7 +80,7 @@ einem anderen Lauf.
 
 ## Ohne Ollama
 
-Der Schalter «Demo ohne Ollama» beantwortet Fragen mit einem Platzhaltertext.
+Der Schalter «Beispielantworten ohne Sprachmodell» beantwortet Fragen mit einem Platzhaltertext.
 Sinnvoll, um den Ablauf vorzuführen, ohne ein Sprachmodell laufen zu haben. Für
 echte Antworten schalten Sie ihn aus; dann muss Ollama erreichbar sein.
 
