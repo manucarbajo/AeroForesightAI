@@ -155,6 +155,14 @@ def lauf_kopf(summary: RunSummary) -> html.Div:
     teile = [lauf_bezeichnung(summary), modus]
     if summary.ticks_completed is not None:
         teile.append(formate.ticks_mit_modellzeit(summary.ticks_completed))
+        # **Ein abgebrochener Lauf sagt es** (Befund 10 der Abnahme, 2026-10-01):
+        # Bis dahin erkannte man ihn nur daran, dass die Zahl der Ticks unter dem
+        # Maximum lag. «Vorzeitig» und nicht «abgebrochen», weil ein Fehler mitten
+        # im Lauf dieselben Spuren hinterlässt.
+        if summary.ticks_max and summary.ticks_completed < summary.ticks_max:
+            teile.append(
+                "vorzeitig beendet, angelegt auf " + formate.ticks_mit_modellzeit(summary.ticks_max)
+            )
     kinder: list = [html.P(" · ".join(teile), className=f"{ui.BESCHRIFTUNG} af-text-muted")]
     if summary.degraded:
         count = summary.llm_incident_count

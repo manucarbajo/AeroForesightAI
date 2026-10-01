@@ -50,8 +50,8 @@ noch den Abschlusstext. So lange sagt der Ladebildschirm **«Der Lauf wird
 beendet»** und, bei welchem Tick abgebrochen wurde.
 
 Was bis dahin gerechnet wurde, bleibt erhalten. Der Lauf steht danach in der
-Auswahl wie jeder andere — erkennbar daran, dass die Zahl der Ticks unter dem
-Maximum liegt. Der Knopf wirkt auch dann, wenn Sie die Seite zwischendurch neu
+Auswahl wie jeder andere; sein Kopf unter «Ergebnisse» und im Leitstand sagt
+«vorzeitig beendet, angelegt auf 40 Ticks». Der Knopf wirkt auch dann, wenn Sie die Seite zwischendurch neu
 geladen haben: Es läuft ohnehin höchstens ein Lauf, und der Server weiß, welcher.
 
 **Beim Szenario-Vergleich gibt es den Knopf nicht.** Ein Vergleich baut seinen

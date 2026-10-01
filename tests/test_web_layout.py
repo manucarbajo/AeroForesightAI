@@ -157,6 +157,16 @@ def _summary(tmp_path, **overrides) -> RunSummary:
     return RunSummary(**fields)
 
 
+def test_ein_vorzeitig_beendeter_lauf_sagt_es(tmp_path):
+    """Befund 10 der Abnahme: Ein abgebrochener Lauf war nur an «5 / 40» zu erkennen."""
+
+    kurz = _text(runs_page.lauf_kopf(_summary(tmp_path, ticks_completed=5, ticks_max=40)))
+    voll = _text(runs_page.lauf_kopf(_summary(tmp_path, ticks_completed=40, ticks_max=40)))
+
+    assert "vorzeitig beendet, angelegt auf 40 Ticks" in kurz
+    assert "vorzeitig" not in voll
+
+
 def test_degraded_run_is_flagged_above_every_tab(tmp_path):
     """P0.1: Der Banner sitzt im Kopf der Seite, nicht in einer einzelnen Ansicht."""
 
