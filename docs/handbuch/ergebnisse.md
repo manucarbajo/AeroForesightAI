@@ -197,6 +197,9 @@ Steht keine Warnung da, ist der Satz vollständig und benannt.
 
 Der Tick-für-Tick-Bericht des Laufs, mit Kennzahlen und dem, was die Akteure
 gesagt haben. Der richtige Ort, um einem einzelnen Tick nachzugehen.
+Vorangestellt sind die vom Szenario geplanten Änderungen der Systemgrößen —
+nur die, die in die Länge dieses Laufs fallen. Ein Bericht vor dem 1. Oktober
+2026 listet dort noch alle Stützpunkte samt ihrer Konfigurationsbeschreibung.
 
 ## Abfrage
 

@@ -14,13 +14,16 @@ def format_property_event_line(event: dict[str, object]) -> str:
     value = event["value"]
     unit = event.get("unit") or ""
 
+    # Deutsch und mit Dezimalkomma (Befund 13 der Abnahme vom 2026-09-30): Hier
+    # stand «set → 200.0», «ramp → …» und «step_function → 1003.0».
+    wert = f"{value:g}".replace(".", ",") if isinstance(value, (int, float)) else str(value)
     if effect_type == "set":
-        detail = f"set → {value}"
+        detail = f"springt auf {wert}"
     elif effect_type == "ramp":
         duration = event.get("duration_ticks", 1)
-        detail = f"ramp → {value} über {duration} Tick(s)"
+        detail = f"steigt über {duration} Ticks auf {wert}"
     else:
-        detail = f"step_function → {value}"
+        detail = f"Stufe auf {wert}"
 
     unit_suffix = f" {unit}" if unit else ""
     description = event.get("description")

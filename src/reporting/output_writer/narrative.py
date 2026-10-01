@@ -203,21 +203,28 @@ def save_final_narrative(
     lines.append("\n## Leseschlüssel")
     lines.append(
         "Pro Tick bucht die Population **zuerst** (Referenzpreis = Endpreis des Vorticks), "
-        "der Markt setzt **danach** den neuen Endpreis. Die Kennzahlen-Zeile ist Python-Ground-Truth."
+        "der Markt setzt **danach** den neuen Endpreis. Die Kennzahlen-Zeile kommt aus der "
+        "Rechnung, nicht vom Sprachmodell."
     )
     lines.append(
         "Pro Tick drei Blöcke: **Segment-Buchung** (wer bucht) → **Agenten-Einschätzung** "
-        "(LLM-Begründung) → **Agenten-Events** (eine Meldung/Aktion pro Rolle — nicht doppelt, "
-        "sondern Reasoning vs. öffentliches Event). Maschinenlesbar: `tick_mechanics.json`."
+        "(die Begründung des Sprachmodells) → **Öffentliche Meldungen** (eine je Rolle — "
+        "nicht doppelt: dort die Begründung, hier die Meldung nach außen). "
+        "Maschinenlesbar: `tick_mechanics.json`."
     )
 
     properties = state.resolved_properties()
     schedule = scheduled_property_events(properties)
-    if schedule:
-        lines.append("\n## Property-Zeitplan (Config)")
-        lines.append("Geplante System-Property-Änderungen aus `properties.json`:")
-        for event in schedule:
-            lines.append(format_property_event_line(event))
+    # **Nur, was in diesem Lauf geschieht, und ohne die Konfigurationsprosa**
+    # (Befund 13 der Abnahme vom 2026-09-30): Hier standen in einem Lauf über 40
+    # Ticks die Stützpunkte bis Tick 120, jeder mit der vollen Beschreibung aus
+    # `properties.json` samt Paketkennungen («EIN TICK IST EIN MONAT (P3.8 …)»).
+    im_lauf = [event for event in schedule if int(event["tick"]) <= state.clock.max_ticks]
+    if im_lauf:
+        lines.append("\n## Geplante Änderungen der Systemgrößen")
+        lines.append("Vorgegeben vom Szenario, in diesem Lauf:")
+        for event in im_lauf:
+            lines.append(format_property_event_line({**event, "description": None}))
 
     shift_rules = properties.shift_rules
     if shift_rules:
