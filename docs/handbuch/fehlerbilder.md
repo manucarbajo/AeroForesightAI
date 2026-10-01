@@ -154,6 +154,6 @@ nur die Deutung.
 
 ## Wenn nichts davon passt
 
-Der Ansicht **Abfrage** blendet über «Artefakt-Checks anzeigen» eine Prüfung ein, die
+Der Ansicht **Abfrage** blendet über «Dateien des Laufs gegeneinander prüfen» eine Prüfung ein, die
 die erzeugten Dateien gegeneinander abgleicht. Sie sagt unabhängig vom
 Sprachmodell, ob ein Lauf in sich stimmig ist.

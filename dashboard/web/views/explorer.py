@@ -3,7 +3,7 @@
 Der `StateExplorer` beantwortet ausschließlich aus `tick_mechanics.json`,
 `price_history.json` und `event_log.json` — keine erfundenen Zahlen. Die
 Oberfläche macht sichtbar, was dabei übergeben wird: der Datenkontext und die
-Artefakt-Checks lassen sich jederzeit einblenden.
+Die Prüfung der Dateien gegeneinander lässt sich jederzeit einblenden.
 """
 
 from __future__ import annotations
@@ -150,7 +150,9 @@ def render(
                                 "Datenkontext anzeigen", value=False, id="explorer-show-context"
                             ),
                             ui.checkbox(
-                                "Artefakt-Checks anzeigen", value=False, id="explorer-show-checks"
+                                "Dateien des Laufs gegeneinander prüfen",
+                                value=False,
+                                id="explorer-show-checks",
                             ),
                         ],
                         className="space-y-1",

@@ -84,12 +84,12 @@ Der Schalter «Beispielantworten ohne Sprachmodell» beantwortet Fragen mit eine
 Sinnvoll, um den Ablauf vorzuführen, ohne ein Sprachmodell laufen zu haben. Für
 echte Antworten schalten Sie ihn aus; dann muss Ollama erreichbar sein.
 
-## Die Artefakt-Checks
+## Die Dateien gegeneinander prüfen
 
-Der Schalter «Artefakt-Checks anzeigen» blendet eine Prüfung ein, die die
+Der Schalter «Dateien des Laufs gegeneinander prüfen» blendet eine Prüfung ein, die die
 erzeugten Dateien gegeneinander abgleicht. Sie prüft, ob alle Pflichtdateien
 vorliegen, ob die Preise in den verschiedenen Dateien übereinstimmen, ob die
-Änderungen als Python-Deltas protokolliert sind und ob Zwischenstände existieren.
+Änderungen aus der Rechnung im Ereignisprotokoll stehen und ob Zwischenstände existieren.
 
 Diese Prüfung ist unabhängig vom Sprachmodell und der schnellste Weg zu der Frage,
 ob einem Lauf zu trauen ist.

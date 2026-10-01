@@ -23,6 +23,7 @@ VERBOTEN = (
     "Property «",
     "Markt-Feedback gespeichert",
     "Population und Sättigung gespeichert",
+    "Artefakt-Checks",
 )
 
 
@@ -128,3 +129,33 @@ def test_die_bilder_des_png_exports_sind_deutsch_beschriftet():
     ]
 
     assert not funde, "\n".join(funde)
+
+
+class TestDiePruefungenSprechenDeutsch:
+    """Was «Dateien des Laufs gegeneinander prüfen» einblendet (Befund 13).
+
+    Die Prüfungen stehen in `dashboard/consistency_report.py`, also außerhalb
+    der Suche oben — und sprachen von «Booking-Deltas», dem «Run-Ordner» und
+    «Checkpoints für State Explorer». Geprüft wird jeder Titel und jede
+    Auskunft eines leeren Laufs; nur die Liste fehlender Dateien nennt Dateien,
+    weil sie genau das sagen soll.
+    """
+
+    WOERTER = ("Delta", "Booking", "Run-Ordner", "Checkpoint", "Explorer", "Artefakt", "↔")
+
+    def test_kein_entwicklerbegriff_in_einer_pruefung(self, tmp_path):
+        from dashboard.consistency_report import run_consistency_checks
+
+        funde = [
+            f"{pruefung.check_id}: {text!r}"
+            for pruefung in run_consistency_checks(tmp_path)
+            for text in (
+                (pruefung.title,)
+                if pruefung.check_id == "required_files"
+                else (pruefung.title, pruefung.detail)
+            )
+            for wort in self.WOERTER
+            if wort in text
+        ]
+
+        assert not funde, "\n".join(funde)
