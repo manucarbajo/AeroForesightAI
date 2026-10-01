@@ -130,21 +130,34 @@ Modell wurde gegen die Jahre 2015–2024 gerechnet: Die tatsächlichen CO₂- un
 Flugpreise und Fluggastzahlen gehalten. Das Ergebnis ist zweigeteilt, und beide
 Hälften sollten Sie kennen, bevor Sie eine Zahl aus diesem Modell zitieren.
 
-**Die Preisseite trifft — bis 2019.** Die mittlere Abweichung liegt bei 1,8
+**Die Zahlen unten haben einen Stand: 1. Oktober 2026**, nachgerechnet mit dem
+Modell von diesem Tag. Seit dem ersten Vergleich haben mehrere Änderungen am
+Modell sie verschoben — Kapazität, Preisstrategie, Einkommen im Nutzen, ein Tick
+als Monat —, und eine Zahl ohne Datum sähe aus, als gälte sie für jeden Stand.
+Jeder Lauf des Vergleichs schreibt die gültigen Zahlen neu in
+`docs/backtest_vorlauf.md`.
+
+**Die Preisseite trifft — bis 2019.** Die mittlere Abweichung liegt bei 1,15
 Indexpunkten. Für ein Modell, dessen Parameter sämtlich von Hand gesetzt und nie
 angepasst wurden, ist das bemerkenswert. Ein Beweis ist es nicht: Es sind vier
 frei vergleichbare Jahre, und das Basisjahr liegt per Konstruktion auf null.
 
-**Ab 2022 verfehlt sie den Markt deutlich** — 38 Indexpunkte. Die realen
-Flugpreise liegen seither rund die Hälfte über dem Niveau von 2015, das Modell
-bei plus zwei Prozent. Es kennt den Strukturbruch nach der Pandemie nicht.
+**Ab 2022 verfehlt sie den Markt deutlich** — im Mittel 21 Indexpunkte. Die realen
+Flugpreise steigen bis 2024 auf fast die Hälfte über dem Niveau von 2015 (148),
+das Modell fällt von 141 im Jahr 2022 auf 113. Es kennt den Strukturbruch nach
+der Pandemie nicht.
 
 **Die Nachfrageseite läuft in die falsche Richtung**, und das ist die wichtigere
-Einschränkung. Das Modell lässt die Buchungsrate bis 2019 auf 86 sinken; real
-stiegen die europäischen Fluggastzahlen auf 126. Die Ursache ist nachgemessen:
-Das Modell hat praktisch **nur einen** Kanal, über den Nachfrage sich bewegt,
-und der ist der Preis. Real wuchs der Luftverkehr, *obwohl* die Preise anzogen —
-getragen von Einkommen, Netzausbau und Kapazität. Davon kennt das Modell nichts.
+Einschränkung. Das Modell lässt die Buchungsrate bis 2019 auf 92 sinken; real
+stiegen die europäischen Fluggastzahlen auf 126 — im Mittel 25 Indexpunkte
+Abstand, ab 2022 sogar 52. Beim ersten Vergleich war die Ursache schnell
+benannt: Das Modell hatte praktisch **nur einen** Kanal, über den Nachfrage sich
+bewegt, und der war der Preis. Real wuchs der Luftverkehr, *obwohl* die Preise
+anzogen — getragen von Einkommen, Netzausbau und Kapazität. Einkommen und
+Kapazität kennt das Modell inzwischen (siehe unten), und die Zahlen oben rechnen
+beide mit; der Abstand ist geblieben. Ein Grund ist eine Datenfrage: Die
+Kapazität geht als Zahl der **Flüge** ein, und die wuchs bis 2024 auf 108,
+die der Fluggäste auf 128 — mehr Menschen je Flug kennt das Modell nicht.
 
 Nachgemessen wurde auch, **woran es liegt** — der naheliegende Verdacht war
 falsch. Ein fehlender Einkommenseffekt ist es nicht: Seit dem 31. August 2026
@@ -158,8 +171,8 @@ wieder weg.
 Real wuchs der europäische Luftverkehr 2015–2019 um gut ein Viertel, **während
 die Realpreise ungefähr flach blieben** — weil das Angebot wuchs: mehr
 Sitzplätze, mehr Strecken, mehr Wettbewerb. Wachstum bei gleichbleibendem Preis
-setzt Kapazitätsausweitung voraus. Dafür hat dieses Modell keine Größe, und
-deshalb kann es einen wachsenden Markt nicht abbilden.
+setzt Kapazitätsausweitung voraus. Dafür hatte dieses Modell beim ersten
+Vergleich keine Größe, und deshalb konnte es einen wachsenden Markt nicht abbilden.
 
 **Und wie der Anbieter darauf reagiert, ist eine Wahl.** Er kann den Preis senken,
 bis die Plätze gefüllt sind — oder seinen Aufschlag halten und die Auslastung
