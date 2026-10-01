@@ -148,6 +148,15 @@ class TestBeideModiSindVollstaendig:
             template = pio.templates[theme.template_for(mode)]
             assert template.layout.paper_bgcolor == theme.PALETTE[mode]["paper-bg"]
 
+    def test_the_templates_write_numbers_in_german(self):
+        """Dezimalkomma wie in den Kennzahlen (`formate.zahl`, P8-V6) — auch die
+        Figur, die über ihr eigenes `template=` geht (Animation), nimmt eines davon."""
+
+        theme.register_template()
+
+        for mode in theme.MODES:
+            assert pio.templates[theme.template_for(mode)].layout.separators == ",."
+
     @pytest.mark.parametrize(
         ("eingabe", "erwartet"),
         [("dark", "dark"), ("DARK", "dark"), ("light", "light"), (None, "light"), ("", "light")],
