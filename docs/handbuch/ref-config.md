@@ -11,6 +11,8 @@ will, wählt ein Szenario.
 | `properties.json` | Systemgrößen, Personen-Merkmale, Marktregeln, Preismodell, Marktrückkopplung, Sättigung |
 | `factors.json` | Die sieben Faktoren mit Namen, Leitfrage und je zwei Zuständen |
 | `cib_frozen.json` | Die eingefrorene Einflussmatrix für die Konsistenzprüfung |
+| `agents.json` | Die drei Akteure mit ihren Rollen |
+| `agent_profiles.json` | Was jeder Akteur sehen und vorschlagen darf |
 
 ## Die Koeffizienten der Buchungsentscheidung
 
@@ -43,8 +45,6 @@ Wer sie eicht, ersetzt beides: den Wert und seine Herkunft.
 
 Der Bereich **Modell** im Dashboard zeigt diese Felder noch nicht — sie sind
 über die Datei zu ändern.
-| `agents.json` | Die drei Akteure mit ihren Rollen |
-| `agent_profiles.json` | Was jeder Akteur sehen und vorschlagen darf |
 
 Dazu kommt `configs/sweeps/` mit den Szenario-Presets, je eines pro Datei. Eine
 solche Datei überschreibt Systemgrößen (`property_overrides`) und darf seit dem
