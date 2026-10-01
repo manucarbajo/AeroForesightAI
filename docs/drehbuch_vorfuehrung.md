@@ -35,7 +35,6 @@ Paket [P8-V8](plan_vorfuehrbereitschaft_2026-09-29.md). Stand 2026-10-01.
 3. Im Bereich «Modell» nichts speichern — das ändert die Auslieferung (Befund 14).
 4. «Animation» nicht öffnen: neun Sekunden Laden, englische Legende (V11).
 5. Den Pitch-Fall gegen seine Referenz «Aufschlag halten» zeigen, nicht gegen «Vorführung: Business as Usual» — die rechnet mit «Plätze füllen», und dort sinkt der Ticketpreis nach dem Sprung (Befund 8).
-6. Fragt jemand nach dem Rechenmodus im Bedienfeld beim Vergleich («Nur Zahlen (vorgegeben)»): Die Abschlusstexte schreibt dort trotzdem das Sprachmodell; der Lauf-Kopf sagt es richtig (Befund 17).
 
 ## Wenn jemand fragt
 

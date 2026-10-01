@@ -78,3 +78,20 @@ class TestDieMeldung:
 
         assert "sweeps/" not in text and "sweep_summary" not in text
         assert "zzz_test_short" not in text
+
+
+class TestDerRechenmodusDesVergleichs:
+    """Befund 17: Das Bedienfeld sagte «Nur Zahlen (vorgegeben)», während das
+    Sprachmodell die Abschlusstexte schrieb."""
+
+    def test_bedienfeld_und_artefakt_sagen_dasselbe(self):
+        from dashboard.web.state import initial_draft_dict
+        from src.orchestration.scenario_sweeps import SZENARIOTEXT_NUTZT_LLM, sweep_metadata_args
+        from src.reporting.output_writer.provenance import COMPUTE_MODE_LABELS, compute_mode
+
+        zeilen = dict(launch_page.stand({**initial_draft_dict(), "run_all_sweeps": True}))
+        geschrieben = compute_mode(sweep_metadata_args(llm_narrative=SZENARIOTEXT_NUTZT_LLM))
+
+        assert zeilen["Rechenmodus"] == COMPUTE_MODE_LABELS[geschrieben]
+        if SZENARIOTEXT_NUTZT_LLM:
+            assert "Modell" in zeilen["Rechenmodus"], zeilen["Rechenmodus"]

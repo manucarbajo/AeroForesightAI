@@ -121,6 +121,22 @@ def _row(label: str, value: str) -> dcc.Link:
     )
 
 
+def rechenmodus_des_vergleichs() -> str:
+    """Wie ein Szenario-Vergleich rechnet — **aus dem, was er in sein Artefakt schreibt**.
+
+    Bis zum 2026-10-01 stand hier «Nur Zahlen (vorgegeben)», während das
+    Sprachmodell die Abschlusstexte schrieb und der Lauf-Kopf danach richtig
+    «Nur Zahlen, Abschlusstext vom Modell» sagte (Befund 17 der Abnahme).
+    Abgeleitet aus `sweep_metadata_args`, derselben Quelle wie `run_metadata.json`.
+    """
+
+    from src.orchestration.scenario_sweeps import SZENARIOTEXT_NUTZT_LLM, sweep_metadata_args
+    from src.reporting.output_writer.provenance import COMPUTE_MODE_LABELS
+    from src.reporting.output_writer.provenance import compute_mode as modus_von
+
+    return COMPUTE_MODE_LABELS[modus_von(sweep_metadata_args(llm_narrative=SZENARIOTEXT_NUTZT_LLM))]
+
+
 def stand(draft: dict) -> list[tuple[str, str]]:
     """Was als Nächstes gerechnet wird, als drei Paare aus Beschriftung und Wert.
 
@@ -135,7 +151,7 @@ def stand(draft: dict) -> list[tuple[str, str]]:
         return [
             ("Lauf", f"Vergleich · {len(rahmenszenarien())} Rahmenszenarien"),
             ("Länge", "je Szenario"),
-            ("Rechenmodus", "Nur Zahlen (vorgegeben)"),
+            ("Rechenmodus", rechenmodus_des_vergleichs()),
         ]
     return [
         ("Szenario", _scenario_name(draft)),
