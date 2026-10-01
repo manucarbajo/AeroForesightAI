@@ -211,7 +211,8 @@ simulierten Personen selbst überträgt.
 ## Dateien
 
 Alle Rohdaten des Laufs. JSON eingerückt, Tabellen sortier- und filterbar,
-Markdown gerendert, Bilder angezeigt, alles herunterladbar.
+Markdown gerendert, Bilder angezeigt, alles herunterladbar. Gewählt ist beim
+Öffnen der Abschlusstext (`run_scenario.md`), ohne ihn die Angaben zum Lauf.
 
 Dateien über 256 KB werden erst auf Klick geladen — ein Zwischenstand ist
 schnell dreiviertel Megabyte groß. Welche Datei was enthält, steht unter
