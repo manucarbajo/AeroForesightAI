@@ -424,3 +424,22 @@ class TestDieBegruendungStoertDieEntscheidungNicht:
                 "Sie hieß bis D3 «Quellen und was davon nicht belegt ist» und trug nur "
                 "zwei der vier Texte."
             )
+
+
+class TestSchrittEinsSprichtKeineDateisprache:
+    """Befund 13 der Abnahme vom 2026-09-30: Schritt 1 nannte unter «Business as
+    Usual» die Datei `business_as_usual.json` und «CIB-Kombination A1 + B1»; die
+    «Freiwillige Wende» sprach von «carbon_tax ab Tick 19 auf 120 EUR». Und der
+    Satz versprach, eigene Einstellungen blieben außen vor — seit P7.13 ändert der
+    Schritt «Verläufe» einzelne Verläufe des Szenarios."""
+
+    VERBOTEN = (".json", "CIB-Kombination", "carbon_tax", "EUR", "Flight Shaming", "außen vor")
+
+    @pytest.mark.parametrize("preset", list_sweep_presets(), ids=lambda p: p.id)
+    def test_kein_dateiname_kein_kuerzel(self, preset):
+        draft = {**initial_draft_dict(), "sweep_id": preset.id, "scenario_mode": "sweep"}
+
+        text = str(start_flow.scenario_details(draft))
+
+        assert preset.name in text, "Misst der Test das gewählte Szenario?"
+        assert not [w for w in self.VERBOTEN if w in text], [w for w in self.VERBOTEN if w in text]

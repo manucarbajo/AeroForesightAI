@@ -474,11 +474,17 @@ def scenario_details(draft: dict) -> html.Div:
         # dort, wo er gebraucht wird: bei dem einen Szenario, das zur Debatte
         # steht, statt zehnmal im Raster.
         html.P(preset.description, className=f"{ui.CAPTION} mb-4"),
+        # **Ohne Dateinamen und ohne «bleibt außen vor»** (Befund 13 der Abnahme,
+        # 2026-10-01): Der Satz nannte `business_as_usual.json` und versprach, eigene
+        # Einstellungen blieben außen vor — seit P7.13 ändert der Schritt «Verläufe»
+        # einzelne Verläufe des Szenarios, und die Länge kommt nicht mehr im
+        # nächsten Schritt.
         ui.hinweis(
-            "Das Szenario gilt **unverändert**: Politik, Kosten und Nachfrageumfeld kommen aus "
-            f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
-            f"Angelegt ist es auf **{formate.ticks_mit_modellzeit(preset.max_ticks)}** — die Länge stellen Sie im "
-            "nächsten Schritt selbst ein.",
+            f"Politik, Kosten und Nachfrageumfeld kommen aus dem Szenario «{preset.name}». "
+            "Einzelne Verläufe ändern Sie im Schritt «Verläufe»; der Lauf heißt dann "
+            "«…, verändert». "
+            f"Angelegt ist es auf **{formate.ticks_mit_modellzeit(preset.max_ticks)}** — die "
+            "Länge stellen Sie im Schritt «Wie weit reicht der Lauf?» ein.",
             "kontext",
         ),
     ]

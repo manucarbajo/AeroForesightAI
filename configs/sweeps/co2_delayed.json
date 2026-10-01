@@ -2,7 +2,7 @@
   "id": "co2_delayed",
   "name": "CO₂-Verzögerung",
   "description": "Die CO₂-Bepreisung bleibt lange niedrig und steigt erst ab Tick 60 — nach fünf Jahren — steil an. SAF-Mandat ebenfalls verzögert. Simuliert politische Trägheit.",
-  "rationale": "In der Standard-Ausgangslage steigt carbon_tax_level bei Tick 15 auf 120 EUR und bei Tick 30 auf 200 EUR. Dieses Szenario setzt beide Stufen erst bei Tick 60 und Tick 96, also nach fünf und acht Jahren; das SAF-Mandat folgt bei Tick 38 und Tick 58 (Standard: 8 und 16). Damit bleiben F2 (moderate Regulierung) und F6 (Fliegen akzeptiert) länger aktiv, da die Schwellwerte (carbon_tax > 100 für F2.2, carbon_tax > 80 für F6.2) erst spät erreicht werden.",
+  "rationale": "In der Standard-Ausgangslage steigt die CO₂-Abgabe bei Tick 15 auf 120 € und bei Tick 30 auf 200 €. Dieses Szenario setzt beide Stufen erst bei Tick 60 und Tick 96, also nach fünf und acht Jahren; die SAF-Quote folgt bei Tick 38 und Tick 58 (Standard: Tick 8 und 16). Damit bleiben die moderate Regulierung (F2.1) und das akzeptierte Fliegen (F6.1) länger bestehen: Das Modell lässt die Regulierung erst über 100 € und den Wertewandel erst über 80 € wechseln.",
   "max_ticks": 120,
   "preisstrategie": "auslastung",
   "property_overrides": [
