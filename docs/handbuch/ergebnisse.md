@@ -197,6 +197,11 @@ Steht keine Warnung da, ist der Satz vollständig und benannt.
 
 Der Tick-für-Tick-Bericht des Laufs, mit Kennzahlen und dem, was die Akteure
 gesagt haben. Der richtige Ort, um einem einzelnen Tick nachzugehen.
+Überblick und Endstand stehen offen; die Vorgaben des Szenarios und **jeder
+Tick sind zugeklappt**. Die Zeile eines Ticks nennt Buchungsrate und Preis,
+ein Tick mit Faktorwechsel trägt eine Marke — wer einem Tick nachgeht, klappt
+ihn auf. Ein Bericht über 40 Ticks war bis zum 1. Oktober 2026 rund 60
+Bildschirme lang, seither knapp fünf.
 Vorangestellt sind die vom Szenario geplanten Änderungen der Systemgrößen —
 nur die, die in die Länge dieses Laufs fallen. Ein Bericht vor dem 1. Oktober
 2026 listet dort noch alle Stützpunkte samt ihrer Konfigurationsbeschreibung.
