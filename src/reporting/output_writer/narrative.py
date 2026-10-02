@@ -13,6 +13,7 @@ Gehalten von `tests/test_bericht.py`.
 from pathlib import Path
 
 from src.market.property_engine import scheduled_property_events
+from src.reporting.aussagen_pruefung import pruefe_bis
 from src.reporting.namen import (
     FAKTOR_KURZNAMEN,
     MERKMAL_NAMEN,
@@ -155,6 +156,18 @@ def _format_segment_booking_block(
     return lines
 
 
+def _widerspruch(text: str, ticks: list[dict], tick: int) -> list[str]:
+    """Was an einem Agententext der Rechnung bis zu seinem Tick widerspricht (2026-10-02).
+
+    Markiert, nicht gestrichen — dieselbe Entscheidung wie beim Abschlusstext.
+    """
+
+    return [
+        f"⚠ *Widerspricht der Rechnung:* {befund.erklaerung}"
+        for befund in pruefe_bis(text, ticks, tick)
+    ]
+
+
 def _hat_inhalt(resp) -> bool:
     """Ob ein Akteur etwas gesagt hat — eine Begründung, eine Aktion, einen Vorschlag."""
 
@@ -167,7 +180,9 @@ def _hat_inhalt(resp) -> bool:
     )
 
 
-def _format_agent_reasoning_block(agent_responses) -> list[str]:
+def _format_agent_reasoning_block(
+    agent_responses, ticks: list[dict] | None = None, tick: int = 0
+) -> list[str]:
     """Die Begründungen der Akteure — **weggelassen, wenn keiner etwas gesagt hat**.
 
     In einem Lauf ohne Sprachmodell stand hier je Tick dreimal «> mock».
@@ -185,6 +200,8 @@ def _format_agent_reasoning_block(agent_responses) -> list[str]:
         begruendung = (resp.reasoning or "").strip()
         if begruendung and begruendung not in _OHNE_BEGRUENDUNG:
             lines.append("\n".join(f"> {line}" for line in begruendung.splitlines()))
+            for warnung in _widerspruch(begruendung, ticks or [], tick):
+                lines.append(f">\n> {warnung}")
         else:
             lines.append("> *(keine Begründung)*")
 
@@ -213,7 +230,7 @@ def _format_agent_reasoning_block(agent_responses) -> list[str]:
     return lines
 
 
-def _format_agent_events_block(events) -> list[str]:
+def _format_agent_events_block(events, ticks: list[dict] | None = None, tick: int = 0) -> list[str]:
     """Die Meldungen der Akteure nach außen.
 
     **Ohne die Delta-Meldungen des Systems** und ohne die Preismeldung des
@@ -232,6 +249,8 @@ def _format_agent_events_block(events) -> list[str]:
     lines = ["", "#### Meldungen", ""]
     for event in meldungen:
         lines.append(f"- **{_AGENT_LABELS[event.source_agent]}:** {event.description}")
+        for warnung in _widerspruch(event.description, ticks or [], tick):
+            lines.append(f"  - {warnung}")
     return lines
 
 
@@ -303,7 +322,8 @@ def save_final_narrative(
     lines.append(
         "Je Tick folgen: **Wer bucht** (nach Segment) → **Begründungen der Akteure** (was das "
         "Sprachmodell als Grund nennt) → **Meldungen** (was die Akteure nach außen sagen). "
-        "In einem Lauf ohne Sprachmodell fehlen die beiden letzten. "
+        "In einem Lauf ohne Sprachmodell fehlen die beiden letzten. Was ein Akteur "
+        "sagt und der Rechnung bis zu seinem Tick widerspricht, ist mit ⚠ markiert. "
         "Maschinenlesbar: `tick_mechanics.json`."
     )
 
@@ -337,15 +357,19 @@ def save_final_narrative(
         | {event.round_number for event in state.event_log if event.round_number >= 1}
     )
 
+    # Alle Ticks vorab: Ein Agententext wird gegen den Stand bis zu seinem Tick
+    # gehalten, und den kennt erst, wer die Ticks davor schon hat.
+    mechaniken = {
+        rn: build_tick_mechanics_record(state, rn, scheduled_by_tick=scheduled_by_tick)
+        for rn in round_numbers
+    }
+    alle_ticks = list(mechaniken.values())
+
     for round_number in round_numbers:
         tick_label = state.clock.tick_label(round_number)
         lines.append(f"\n### {tick_label}")
 
-        mechanics = build_tick_mechanics_record(
-            state,
-            round_number,
-            scheduled_by_tick=scheduled_by_tick,
-        )
+        mechanics = mechaniken[round_number]
         lines.extend(_format_tick_summary_markdown(mechanics))
         lines.extend(_format_faktorwechsel(state, round_number))
 
@@ -358,10 +382,10 @@ def save_final_narrative(
             lines.extend(_format_segment_booking_block(stats_for_round, prior_stats))
 
         agent_responses = agent_responses_for_round(state, round_number)
-        lines.extend(_format_agent_reasoning_block(agent_responses))
+        lines.extend(_format_agent_reasoning_block(agent_responses, alle_ticks, round_number))
 
         narrative_events = narrative_events_for_round(state, round_number)
-        lines.extend(_format_agent_events_block(narrative_events))
+        lines.extend(_format_agent_events_block(narrative_events, alle_ticks, round_number))
 
     lines.append("\n## Faktorlage am Ende")
     for factor_id, factor in state.environment.factors.items():

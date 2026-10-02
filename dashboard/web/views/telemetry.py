@@ -22,6 +22,7 @@ from dash import dcc, html
 from dashboard.web import components as ui
 from dashboard.web import formate, theme
 from dashboard.web.run_data import RunData
+from src.reporting.aussagen_pruefung import pruefe_bis
 
 #: Wie viele Konsolenzeilen höchstens dargestellt werden. Bei 300 lagen bei
 #: einem 40-Tick-Lauf schon 254 Zeilen gleichzeitig im DOM einer Seitenspalte —
@@ -31,6 +32,10 @@ MAX_CONSOLE_LINES = 80
 
 #: Welche Ereignisquelle welche Stufe trägt. Der Regulator setzt Politik, das
 #: ist die einzige Quelle, die im Normalbetrieb hervorstechen soll.
+#: Wessen Ereignisse das Sprachmodell schreibt — nur sie werden gegen die Rechnung
+#: gehalten; was `market` und `system` melden, rechnet Python.
+_AGENTEN = ("provider", "regulator", "consumer")
+
 _EVENT_LEVELS = {
     "market": "muted",
     "regulator": "info",
@@ -281,13 +286,18 @@ def console_lines(
 
     for event in reversed(data.events):
         quelle = str(event.get("source_agent") or "?")
-        zeilen.append(
-            ui.log_line(
-                _EVENT_LEVELS.get(quelle, "info"),
-                f"{quelle}: {event.get('description', '')}",
-                tick=event.get("round_number"),
-            )
-        )
+        text = str(event.get("description", ""))
+        stufe = _EVENT_LEVELS.get(quelle, "info")
+        # **Ein Agententext, der der Rechnung bis zu seinem Tick widerspricht, ist
+        # eine Warnung** (2026-10-02) — markiert, nicht gestrichen, wie im Bericht.
+        if quelle in _AGENTEN:
+            befunde = pruefe_bis(text, data.ticks, int(event.get("round_number") or 0))
+            if befunde:
+                stufe = "warning"
+                text += " — widerspricht der Rechnung: " + "; ".join(
+                    befund.erklaerung for befund in befunde
+                )
+        zeilen.append(ui.log_line(stufe, f"{quelle}: {text}", tick=event.get("round_number")))
 
     return zeilen[:MAX_CONSOLE_LINES]
 

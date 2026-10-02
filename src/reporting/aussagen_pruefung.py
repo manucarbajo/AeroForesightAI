@@ -465,3 +465,56 @@ def pruefe(text: str, ticks: list[dict[str, Any]]) -> list[Befund]:
                 )
             )
     return befunde
+
+
+#: Das Gegenteil einer Richtung — «gleich» hat keines.
+_GEGENTEIL = {"steigt": "sinkt", "sinkt": "steigt"}
+
+
+def pruefe_bis(text: str, ticks: list[dict[str, Any]], tick: int) -> list[Befund]:
+    """Die Befunde eines Texts, der über **seinen** Tick spricht — die Agenten (2026-10-02).
+
+    `pruefe` hält einen Text gegen den ganzen Lauf, und das ist für einen Agenten
+    falsch: Er schreibt in Tick 3 über das, was er bis dahin sieht. Der Prüfsatz
+    zählte so fünf «Widersprüche» der Form «gestiegene Nachfrage» in einem Lauf,
+    dessen Nachfrage über alle Ticks sank — ob sie bis zu jenem Tick stieg, fragte
+    er nicht.
+
+    Gehalten wird deshalb gegen vier Fenster: vom Anfang bis zu diesem Tick und
+    bis zum Tick davor (den sieht der Agent, wenn er schreibt), und jeweils die
+    letzten zwei Ticks davon. **Ein Befund entsteht nur bei einem klaren
+    Gegensatz**: Der Text sagt «steigt», und in keinem Fenster und keiner Lesart
+    steigt die Größe, aber in mindestens einem sinkt sie (und umgekehrt). «Etwa
+    gleich» gegen «steigt» bleibt unmarkiert — eine kleine Bewegung, die der
+    Agent anders liest, ist kein Widerspruch, und Fehlalarme sind hier teurer
+    als übersehene Fälle.
+    """
+
+    befunde = [b for b in pruefe(text, []) if b.art != "richtung"]
+    geordnet = sorted(
+        (t for t in ticks if isinstance(t.get("tick"), int)), key=lambda t: int(t["tick"])
+    )
+    bis_hier = [t for t in geordnet if int(t["tick"]) <= tick]
+    bis_davor = [t for t in geordnet if int(t["tick"]) <= tick - 1]
+    gerechnet: dict[str, set[str]] = {}
+    for fenster in (bis_hier, bis_hier[-2:], bis_davor, bis_davor[-2:]):
+        for groesse, richtungen in verlaeufe(fenster).items():
+            gerechnet.setdefault(groesse, set()).update(richtungen)
+
+    for teil in _satzteile(text):
+        groessen = _groessen_in(teil)
+        richtungen = _richtungen_in(teil)
+        if len(groessen) != 1 or len(richtungen) != 1:
+            continue
+        groesse, behauptet = groessen[0], richtungen[0]
+        tatsaechlich = gerechnet.get(groesse)
+        gegenteil = _GEGENTEIL.get(behauptet)
+        if tatsaechlich and gegenteil in tatsaechlich and behauptet not in tatsaechlich:
+            befunde.append(
+                Befund(
+                    "richtung",
+                    teil,
+                    f"{groesse}: im Text «{behauptet}», gerechnet bis Tick {tick} «{gegenteil}».",
+                )
+            )
+    return befunde

@@ -72,6 +72,14 @@ verlaufen dürfen als der Lauf. **Was die Prüfung nicht erkennt**, sind frei
 erfundene Dinge ohne falsche Richtung — etwa eine «Elektroflotte», die das
 Modell nicht kennt.
 
+**Auch was die Akteure sagen, wird geprüft** — seit dem 2. Oktober 2026, im
+Bericht und in der Konsole des Leitstands. Gehalten wird ein Akteurstext gegen
+den Stand **bis zu seinem Tick**, nicht gegen den ganzen Lauf: Wer in Tick 3
+schreibt, die Nachfrage sei gestiegen, hat recht, wenn sie bis dahin stieg,
+auch wenn sie danach fällt. Markiert wird nur ein klarer Gegensatz — der Text
+sagt «gestiegen», gerechnet ist «gesunken» —, im Bericht mit ⚠ unter der
+Stelle, in der Konsole als gelbe Zeile.
+
 Jedes Szenario lässt sich aufklappen und zeigt dann zweierlei: die Anhaltspunkte
 aus dem Lauf mit konkreten Tick-Werten, und die Beschreibung selbst. Die
 Anhaltspunkte nennen Buchungsrate und Ticketpreis zu einigen Ticks, die

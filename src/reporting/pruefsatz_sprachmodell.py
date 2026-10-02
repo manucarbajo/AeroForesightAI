@@ -37,7 +37,7 @@ from pathlib import Path
 
 from src.llm import OllamaClient, OllamaConfig
 from src.logging_setup import stdio_auf_utf8
-from src.reporting.aussagen_pruefung import LAUFTEXTE, Befund, laufzeilen, pruefe
+from src.reporting.aussagen_pruefung import LAUFTEXTE, Befund, laufzeilen, pruefe, pruefe_bis
 from src.reporting.output_writer.paths import OUTPUT_DIR
 
 REPO = Path(__file__).resolve().parents[2]
@@ -178,11 +178,17 @@ def agenten() -> tuple[list[Text], float | None]:
     ereignisse = json.loads((run_dir / "event_log.json").read_text(encoding="utf-8"))
     ereignisse = ereignisse if isinstance(ereignisse, list) else ereignisse.get("events", [])
     lauf_ticks = _ticks(run_dir)
+    # **Gegen den Stand bis zu ihrem Tick**, nicht gegen den ganzen Lauf (2026-10-02):
+    # Ein Agent spricht über das, was er bis dahin sieht. Bericht und Konsole markieren
+    # genau diese Befunde — deshalb ist `markiert` hier ihre eigene Zeilenmenge.
     texte = [
         Text(
             f"Agent, {e.get('event_type')}",
             str(e.get("description")),
-            pruefe(str(e.get("description")), lauf_ticks),
+            befunde := pruefe_bis(
+                str(e.get("description")), lauf_ticks, int(e.get("round_number") or 0)
+            ),
+            markiert=tuple(b.zeile for b in befunde),
         )
         for e in ereignisse
         # Die Zeilen des Rechenkerns ([delta:…], Marktberichte) schreibt Python, nicht das Modell.
@@ -245,9 +251,10 @@ def bericht(rechner: str, gruppen: dict[str, list[Text]], sekunden_je_tick: floa
         "statt geraten.",
         "",
         "**«davon unmarkiert»** zählt Befunde, die das Produkt dem Leser nicht zeigt. Abschlusstext "
-        "und Abfrage markieren seit P8-V3 jeden Befund dieser Prüfung; die Texte der Agenten markiert "
-        "das Produkt nicht, weil sie den Zustand eines Ticks beschreiben und nicht den ganzen Lauf — "
-        "ihr Richtungsbefund ist deshalb ein Hinweis, kein sicherer Widerspruch.",
+        "und Abfrage markieren seit P8-V3 jeden Befund dieser Prüfung. Die Texte der Agenten werden "
+        "seit dem 2026-10-02 gegen den Stand **bis zu ihrem Tick** gehalten statt gegen den ganzen "
+        "Lauf, nur ein klarer Gegensatz zählt («steigt» gegen «sinkt»), und Bericht und Konsole "
+        "markieren ihn.",
         "",
     ]
     return "\n".join(zeilen)
