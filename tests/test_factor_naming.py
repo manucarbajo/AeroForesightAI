@@ -141,3 +141,35 @@ def test_the_provenance_of_the_matrix_is_stated(matrix):
         "Dass die 48 F7-Zellen modellgeneriert sind, muss weiterhin dranstehen — "
         "sonst liest sich die Matrix wie geprüfte Expertenarbeit."
     )
+
+
+#: Wörter, in denen «ae», «oe» oder «ue» kein umschriebener Umlaut ist.
+ECHTE_SCHREIBUNG = {"teuer", "fuels"}
+
+
+def _texte(wert) -> list[str]:
+    if isinstance(wert, str):
+        return [wert]
+    if isinstance(wert, dict):
+        return [t for v in wert.values() for t in _texte(v)]
+    if isinstance(wert, list):
+        return [t for v in wert for t in _texte(v)]
+    return []
+
+
+def test_die_faktornamen_schreiben_umlaute(factors):
+    """Was die Oberfläche zeigt, steht mit Umlaut — «Mobilitätsbedürfnis», nicht
+    «Mobilitaetsbeduerfnis» (bis zum 2026-10-02 in Leitstand, Bericht und
+    Szenario-Text). Die Matrix-Datei darf umschreiben: Sie ist ein Beleg und
+    erscheint nirgends, und `_normalise` gleicht beide Schreibweisen an.
+    """
+
+    funde = sorted(
+        {
+            wort
+            for text in _texte(factors)
+            for wort in re.findall(r"\w*(?:ae|oe|ue)\w*", text, flags=re.IGNORECASE)
+            if wort.lower() not in ECHTE_SCHREIBUNG
+        }
+    )
+    assert not funde, funde

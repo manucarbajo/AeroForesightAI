@@ -65,7 +65,7 @@ SEGMENT_NAMEN: dict[str, str] = {
 
 #: Die Kurznamen der sieben Faktoren — für die Faktorleiste über der Szene (P7.5-U5.3,
 #: von Haiko entschieden am 2026-09-15: eine Reihe, Kurzname und Zustand als Marke).
-#: Die langen Namen in `configs/factors.json` («Mobilitaetsbeduerfnis / Nachfrage»)
+#: Die langen Namen in `configs/factors.json` («Mobilitätsbedürfnis / Nachfrage»)
 #: passen bei 1280 px in keinen Chip; gemessen blieben je Chip 72 px. Die Wörter sind
 #: die des Domain-Glossars in CLAUDE.md.
 FAKTOR_KURZNAMEN: dict[str, str] = {
