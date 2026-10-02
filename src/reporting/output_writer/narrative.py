@@ -180,9 +180,7 @@ def _hat_inhalt(resp) -> bool:
     )
 
 
-def _format_agent_reasoning_block(
-    agent_responses, ticks: list[dict] | None = None, tick: int = 0
-) -> list[str]:
+def _format_agent_reasoning_block(agent_responses, ticks: list[dict], tick: int) -> list[str]:
     """Die Begründungen der Akteure — **weggelassen, wenn keiner etwas gesagt hat**.
 
     In einem Lauf ohne Sprachmodell stand hier je Tick dreimal «> mock».
@@ -200,7 +198,7 @@ def _format_agent_reasoning_block(
         begruendung = (resp.reasoning or "").strip()
         if begruendung and begruendung not in _OHNE_BEGRUENDUNG:
             lines.append("\n".join(f"> {line}" for line in begruendung.splitlines()))
-            for warnung in _widerspruch(begruendung, ticks or [], tick):
+            for warnung in _widerspruch(begruendung, ticks, tick):
                 lines.append(f">\n> {warnung}")
         else:
             lines.append("> *(keine Begründung)*")
@@ -230,7 +228,7 @@ def _format_agent_reasoning_block(
     return lines
 
 
-def _format_agent_events_block(events, ticks: list[dict] | None = None, tick: int = 0) -> list[str]:
+def _format_agent_events_block(events, ticks: list[dict], tick: int) -> list[str]:
     """Die Meldungen der Akteure nach außen.
 
     **Ohne die Delta-Meldungen des Systems** und ohne die Preismeldung des
@@ -249,7 +247,7 @@ def _format_agent_events_block(events, ticks: list[dict] | None = None, tick: in
     lines = ["", "#### Meldungen", ""]
     for event in meldungen:
         lines.append(f"- **{_AGENT_LABELS[event.source_agent]}:** {event.description}")
-        for warnung in _widerspruch(event.description, ticks or [], tick):
+        for warnung in _widerspruch(event.description, ticks, tick):
             lines.append(f"  - {warnung}")
     return lines
 
