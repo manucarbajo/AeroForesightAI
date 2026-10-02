@@ -76,6 +76,9 @@ def modellpfade(*, seed: int = 42, mit_kapazitaet: bool = True) -> dict[str, dic
             deterministic_only=True,
             checkpoint_interval=0,
             verbose_ticks=False,
+            # Den Personenverlauf liest der Backtest nicht; geschrieben landete er
+            # im Vorführbestand unter `outputs/` (2026-10-02).
+            personenverlauf=False,
         ),
     )
     ende = runner.run(
