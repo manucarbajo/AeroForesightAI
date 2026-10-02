@@ -1,6 +1,6 @@
 # Drehbuch: Vorführung am Stand (Pitch, Please!, 08.10.2026)
 
-Paket [P8-V8](plan_vorfuehrbereitschaft_2026-09-29.md). Stand 2026-10-01.
+Paket [P8-V8](plan_vorfuehrbereitschaft_2026-09-29.md). Stand 2026-10-02.
 
 **Wann:** nicht im Pitch. Der dauert fünf Minuten und ist nur die Präsentation ([Skript](pitch_skript_2026-09-23.md)). Gezeigt wird danach **am eigenen Stand, auf Nachfrage**: drei Minuten, die die Folien 4 bis 6 fortsetzen. Wer selbst klicken will, darf das; die Regeln unten sagen, wohin besser nicht.
 
@@ -22,7 +22,7 @@ Paket [P8-V8](plan_vorfuehrbereitschaft_2026-09-29.md). Stand 2026-10-01.
 | 1 | Leitstand, Pitch-Fall auf **Tick 23**, dann **«Ein Tick vor»** | «Das ist die Frage von der Folie: Business as Usual, aber die CO₂-Abgabe springt im 24. Monat von 50 auf 200 €. Jeder Punkt ist ein Reisender, der bucht oder nicht. In diesem einen Monat fällt die Buchungsrate von 23,3 auf 12,0 %.» |
 | 2 | «Ans Ende» (Tick 40) | «Nach gut drei Jahren: 201 € je Ticket, 8,2 % Buchungen. Die Fluggesellschaft hält ihren Aufschlag und gibt die Kosten weiter.» |
 | 3 | Lauf wählen → **«Vorführung: Business as Usual, Aufschlag halten»** → «Ans Ende» | «Zum Vergleich dieselbe Welt ohne Erhöhung: 194 € und 15,9 %. Die Abgabe macht das Ticket rund 7 € teurer und halbiert die Buchungen.» |
-| 4 | **Ergebnisse → Szenario** (Pitch-Fall) | «Die KI fasst den Lauf in Worte. Das Produkt prüft jeden Satz gegen die Rechnung.» **Steht unter dem Text ein Hinweis «Widerspricht der Rechnung»** (im Bestand vom 2026-09-30: «Nachfrage steigt», gerechnet sinkt sie): «Hier hat sich die KI geirrt — und das Produkt markiert es, statt es durchzulassen. Deshalb kommt keine Zahl von der KI.» **Steht keiner:** «Kein Satz widerspricht der Rechnung; sonst stünde hier eine Markierung.» Welcher Fall gilt, nach dem Neurechnen des Bestands auf dem Laptop einmal ansehen. |
+| 4 | **Ergebnisse → Szenario** (Pitch-Fall) | «Die KI fasst den Lauf in Worte. Das Produkt prüft jeden Satz gegen die Rechnung.» **Steht unter dem Text ein Hinweis «Widerspricht der Rechnung»** (im Bestand vom 2026-09-30: «Nachfrage steigt», gerechnet sinkt sie): «Hier hat sich die KI geirrt — und das Produkt markiert es, statt es durchzulassen. Deshalb kommt keine Zahl von der KI.» **Steht keiner:** «Kein Satz widerspricht der Rechnung; sonst stünde hier eine Markierung.» Welcher Fall gilt, nach dem Neurechnen des Bestands auf dem Laptop einmal ansehen. **Zweiter Ort, falls gefragt:** «Ergebnisse → Bericht», ein Tick aufgeklappt — auch was die Akteure sagen, wird gegen die Rechnung bis zu ihrem Tick gehalten und mit ⚠ markiert (seit 2026-10-02; die Konsole im Leitstand zeigt dasselbe als gelbe Zeile). |
 | 5 | **Abfrage**, eine Frage aus dem Prüfsatz, etwa «Wie hat sich die CO₂-Abgabe über den Lauf entwickelt?» | «Man kann den Lauf auch fragen. Unter jeder Antwort steht, welche Zahlen geprüft wurden.» — nur, wenn die Antworten auf dem Laptop in wenigen Sekunden kommen (V1). |
 | 6 | Lauf wählen → **«Transformationskonflikt»** (Szenario-Vergleich) → **Diagramme → 4 · Die Szenarien nebeneinander** | «Das Bild von Folie 6: vier Rahmenszenarien über zehn Jahre. Nur im Transformationskonflikt bricht die Nachfrage weg, und der Preis steigt über 400 €.» |
 
@@ -31,7 +31,7 @@ Paket [P8-V8](plan_vorfuehrbereitschaft_2026-09-29.md). Stand 2026-10-01.
 ## Regeln
 
 1. **Live nur «Ohne Sprachmodell»** (oder «Nur Zahlen», gleich schnell). «Mit Sprachmodell» braucht 40 Ticks lang rund 10 s je Tick (Entwicklungsrechner; auf dem Laptop eher mehr). «Ohne Sprachmodell» ist die sichere Wahl, weil es Ollama auch dann nicht braucht, wenn auf dem Laptop etwas klemmt.
-2. Keinen Szenario-Vergleich live starten (rund zwei Minuten mit Sprachmodell), keinen Lauf abbrechen (eine Minute ohne Rückmeldung, Befund 10).
+2. Keinen Szenario-Vergleich live starten (rund zwei Minuten mit Sprachmodell). Einen Lauf abzubrechen geht seit dem 2026-10-01: Der Ladebildschirm sagt es sofort, der Lauf endet nach dem Tick, der gerade rechnet, und heißt danach «vorzeitig beendet» (Befund 10).
 3. Im Bereich «Modell» nichts speichern — das ändert die Auslieferung (Befund 14).
 4. «Animation» darf jetzt offen werden: Die Ansicht ist sofort da, jedes Diagramm rechnet auf «Diagramm zeigen» in ein bis zwei Sekunden (Pitch-Fall), und die Legende ist deutsch (V11, seit 2026-10-01). Das erste Diagramm zeigt die Wolke der Reisenden über die Ticks — passend zu Schritt 1.
 5. Den Pitch-Fall gegen seine Referenz «Aufschlag halten» zeigen, nicht gegen «Vorführung: Business as Usual» — die rechnet mit «Plätze füllen», und dort sinkt der Ticketpreis nach dem Sprung (Befund 8).
