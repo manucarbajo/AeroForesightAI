@@ -90,7 +90,13 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
     kosten = _number(row, "cost_pressure_eur")
     nachfrage = _number(row, "demand_level")
 
-    raten_delta, raten_richtung = _delta(row.get("booking_rate_delta"), digits=3)
+    # **In Prozentpunkten**, wie der Wert daneben in Prozent steht (2026-10-02): Bis
+    # dahin «23,3 %» und darunter «↓ −0,036» — ein Anteil neben einem Prozentwert,
+    # im ersten Schritt der Vorführung zu sehen.
+    raten_aenderung = _number(row, "booking_rate_delta")
+    raten_delta, raten_richtung = _delta(
+        None if raten_aenderung is None else raten_aenderung * 100, digits=1, suffix=" Pp."
+    )
     preis_delta, preis_richtung = _delta(row.get("market_price_delta_eur"), suffix=" €")
 
     return ui.grid(

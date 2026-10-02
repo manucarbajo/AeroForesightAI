@@ -40,7 +40,8 @@ Kurzname und Zustand («Regulierung», «F2.1»); ein hervorgehobener Chip heiß
 dieser Faktor ist gekippt. Der volle Zustandstext steht im Tooltip des Chips.
 
 Rechts stehen die Kennzahlen desselben Ticks — Buchungsrate, Ticketpreis,
-Kostendruck, Nachfrageniveau, jeweils mit der Veränderung zum Vortick —, darunter
+Kostendruck, Nachfrageniveau, jeweils mit der Veränderung zum Vortick, bei der
+Buchungsrate in Prozentpunkten («−11,4 Pp.») —, darunter
 dieselben Größen als Verlauf mit einer Marke an der aktuellen Stelle, jeder mit
 seiner Einheit im Titel. Die Veränderung trägt einen Pfeil — ↑ gestiegen,
 ↓ gefallen — und keine Farbe: Ob ein steigender Preis gut oder schlecht ist,

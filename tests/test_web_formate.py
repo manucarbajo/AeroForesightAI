@@ -280,3 +280,20 @@ class TestZahlen:
 
         assert "%" in text and "€" in text, "Misst der Test ins Leere?"
         assert not _ENGLISCH.findall(text), _ENGLISCH.findall(text)
+
+    def test_die_veraenderung_der_buchungsrate_steht_in_prozentpunkten(self):
+        """Neben «23,3 %» stand «↓ −0,036» — ein Anteil neben einem Prozentwert (2026-10-02)."""
+
+        from dashboard.web.run_data import RunData
+        from dashboard.web.views import telemetry
+
+        daten = RunData(
+            run_id="probe",
+            run_dir=None,
+            ticks=[{"tick": 23, "booking_rate": 0.233, "booking_rate_delta": -0.036}],
+        )
+
+        text = _text(telemetry.kpi_row(daten, 23))
+
+        assert "−3,6 Pp." in text
+        assert "0,036" not in text
