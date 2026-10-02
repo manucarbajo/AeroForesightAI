@@ -106,27 +106,109 @@ def build_scenario_prompt(context: RunScenarioContext) -> str:
 _NACHSICHTIG = json.JSONDecoder(strict=False)
 
 
+#: Was nach einem Backslash in einem JSON-Text stehen darf.
+_GUELTIGE_ESCAPES = frozenset('"\\/bfnrtu')
+
+#: Woran ein Szenario-Objekt zu erkennen ist, wenn das Modell es außerhalb von
+#: `scenarios` schreibt.
+_SZENARIO_MERKMALE = ("candidate_id", "story", "rank")
+
+
+def _escapes_reparieren(text: str) -> str:
+    """Ungültige Escape-Sequenzen lesbar machen (2026-10-02).
+
+    `llama3.2` schrieb in einen langen Text einen Backslash direkt vor einen
+    Zeilenumbruch — eine Fortsetzungszeile wie in Python, in JSON ungültig. Der
+    Backslash vor einem Umbruch fällt weg; jeder andere ungültige wird verdoppelt
+    und steht damit als Zeichen im Text. Gelesen wird **paarweise**, damit ein
+    korrekt geschriebenes `\\\\` nicht als Anfang einer neuen Sequenz gilt.
+    """
+
+    def ersetzen(treffer: re.Match[str]) -> str:
+        zeichen = treffer.group(1)
+        if zeichen in _GUELTIGE_ESCAPES:
+            return treffer.group(0)
+        if zeichen in "\r\n":
+            return zeichen
+        return "\\\\" + zeichen
+
+    return re.sub(r"\\(.)", ersetzen, text, flags=re.DOTALL)
+
+
+def _bereinigen(text: str) -> str:
+    return _escapes_reparieren(re.sub(r",\s*([\]}])", r"\1", text))
+
+
+def _objekte(text: str) -> list[Any]:
+    """Alle JSON-Objekte, die hintereinander im Text stehen — auch durch Kommas getrennt."""
+
+    gefunden: list[Any] = []
+    pos = text.find("{")
+    while 0 <= pos < len(text):
+        try:
+            objekt, ende = _NACHSICHTIG.raw_decode(text, pos)
+        except json.JSONDecodeError:
+            break
+        gefunden.append(objekt)
+        pos = ende
+        while pos < len(text) and text[pos] in " \t\r\n,":
+            pos += 1
+        if pos < len(text) and text[pos] != "{":
+            break
+    return gefunden
+
+
+def _zusammensetzen(objekte: list[Any]) -> dict[str, Any] | None:
+    """Ein Hauptobjekt, dem das Modell die Szenarien als eigene Objekte nachgeschoben hat.
+
+    Gemessen am 2026-10-02: Eine von acht Antworten schloss das Objekt nach
+    `summary` und schrieb die Szenarien danach als `{…}` `{…}` `{…}`. Was ein
+    Szenario-Merkmal trägt, wird zu `scenarios`; andere Felder der folgenden
+    Objekte werden übernommen, **wenn sie im Hauptobjekt fehlen** — nichts wird
+    überschrieben, was das Modell schon gesagt hat.
+    """
+
+    if not objekte or not isinstance(objekte[0], dict):
+        return None
+    haupt = dict(objekte[0])
+    if len(objekte) == 1 or haupt.get("scenarios"):
+        return haupt
+    szenarien = [
+        o for o in objekte[1:] if isinstance(o, dict) and any(m in o for m in _SZENARIO_MERKMALE)
+    ]
+    for o in objekte[1:]:
+        if isinstance(o, dict) and o not in szenarien:
+            for schluessel, wert in o.items():
+                haupt.setdefault(schluessel, wert)
+    if szenarien:
+        haupt["scenarios"] = szenarien
+    return haupt
+
+
 def _extract_json_object(text: str) -> dict[str, Any] | None:
+    """Das JSON-Objekt einer Antwort — so nachsichtig, wie es ohne Raten geht.
+
+    Nachsichtig sind vier Dinge, und jedes kommt aus einer gemessenen Antwort von
+    `llama3.2`: echte Zeilenumbrüche in Texten (`_NACHSICHTIG`), ein Komma vor
+    der schließenden Klammer, ungültige Escape-Sequenzen und Szenarien, die als
+    eigene Objekte hinter dem Hauptobjekt stehen. Bei acht Aufrufen mit demselben
+    Prompt waren am 2026-10-02 zwei unlesbar — eine aus jedem der beiden letzten
+    Gründe —, und bei zwei Versuchen je Text fiel im Probelauf des Vorführbestands
+    einer von sieben Abschlusstexten auf die Vorlage zurück.
+    """
+
     text = text.strip()
     if not text:
         return None
-
-    def _clean_json(s: str) -> str:
-        return re.sub(r",\s*([\]}])", r"\1", s)
-
     try:
-        parsed = _NACHSICHTIG.decode(_clean_json(text))
+        parsed = _NACHSICHTIG.decode(_bereinigen(text))
         return parsed if isinstance(parsed, dict) else None
     except json.JSONDecodeError:
         pass
-    match = re.search(r"\{.*\}", text, flags=re.DOTALL)
-    if not match:
+    anfang = text.find("{")
+    if anfang < 0:
         return None
-    try:
-        parsed = _NACHSICHTIG.decode(_clean_json(match.group(0)))
-        return parsed if isinstance(parsed, dict) else None
-    except json.JSONDecodeError:
-        return None
+    return _zusammensetzen(_objekte(_bereinigen(text[anfang:])))
 
 
 def _walk_numbers(obj: Any):

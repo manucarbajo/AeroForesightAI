@@ -32,3 +32,43 @@ def test_die_szenario_node_liest_ihn_ebenso():
     gelesen = lies_szenarien('{"narrative": "Zeile eins\nZeile zwei", "scenarios": []}')
 
     assert gelesen == {"narrative": "Zeile eins\nZeile zwei", "scenarios": []}
+
+
+#: Die beiden unlesbaren von acht Antworten vom 2026-10-02, gekürzt, ihre Form
+#: wörtlich: Szenarien als eigene Objekte hinter dem Hauptobjekt …
+NACHGESCHOBEN = (
+    '{\n  "title": "Nachfrage- und Ticketpreisentwicklung im Lauf",\n'
+    '  "run_narrative": "Die Nachfrage sinkt."\n}\n'
+    '{\n  "rank": 1,\n  "candidate_id": "C2",\n  "story": "Erstens."\n}\n'
+    '{\n  "rank": 2,\n  "candidate_id": "C3",\n  "story": "Zweitens."\n}\n'
+    '{\n  "limitations": "explorativ"\n}'
+)
+#: … und ein Backslash vor dem Zeilenumbruch in einem Text.
+FORTSETZUNG = (
+    '{"title": "Nachfrage und Ticketpreis im Lauf", "run_narrative": "Sinkt.",'
+    ' "scenarios": [{"candidate_id": "C1", "story": "Absatz.\\n\\n(F1.2)\\n\\\nWeiter."},'
+    ' {"candidate_id": "C2", "story": "Ein \\\\ Backslash bleibt."}]}'
+)
+
+
+def test_nachgeschobene_szenarien_werden_gelesen():
+    gelesen = lies_abschlusstext(NACHGESCHOBEN)
+
+    assert gelesen is not None
+    assert [s["candidate_id"] for s in gelesen["scenarios"]] == ["C2", "C3"]
+    assert gelesen["limitations"] == "explorativ"
+    assert gelesen["title"] == "Nachfrage- und Ticketpreisentwicklung im Lauf"
+
+
+def test_ein_backslash_vor_dem_umbruch_wird_gelesen():
+    gelesen = lies_abschlusstext(FORTSETZUNG)
+
+    assert gelesen is not None
+    assert gelesen["scenarios"][0]["story"].endswith("(F1.2)\n\nWeiter.")
+    assert gelesen["scenarios"][1]["story"] == "Ein \\ Backslash bleibt."
+
+
+def test_was_schon_gesagt_ist_wird_nicht_ueberschrieben():
+    gelesen = lies_abschlusstext('{"title": "A", "scenarios": [{"x": 1}]}\n{"title": "B"}')
+
+    assert gelesen == {"title": "A", "scenarios": [{"x": 1}]}
