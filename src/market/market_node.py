@@ -7,6 +7,13 @@ from src.market.simulation_functions import compute_market_metrics
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry, PriceHistoryEntry
 from src.models.state_models import SimulationState
+from src.reporting.namen import prozent, zahl
+
+
+def _vorzeichen(wert: float) -> str:
+    """Eine Veränderung mit Vorzeichen und Dezimalkomma: «+0,7», «−1,2»."""
+
+    return f"{'+' if wert >= 0 else '−'}{zahl(abs(wert), 1)}"
 
 
 class MarketNode:
@@ -108,9 +115,13 @@ class MarketNode:
 
         prev_price = last_price
         price_delta_pct = ((price - prev_price) / prev_price * 100.0) if prev_price > 0 else 0.0
+        # **Deutsch und mit Dezimalkomma** (2026-10-02): Diese Meldungen stehen in der
+        # Konsole des Leitstands, unter «Dateien» und im Kontext der Abfrage; bis
+        # dahin lauteten sie «Market update (M4): price=140.58 (+0.7%), cost=…».
+        # Die Kennung `[delta:price]` bleibt, weil Prüfungen sie wörtlich suchen.
         booking_note = ""
         if booking_rate is not None:
-            booking_note = f", booking_rate={booking_rate:.1%}, feedback applied"
+            booking_note = f", Buchungsrate {prozent(float(booking_rate))}"
 
         state.event_log.append(
             EventLogEntry(
@@ -119,9 +130,10 @@ class MarketNode:
                 source_agent="market",
                 event_type=EventType.MARKET_EVENT,
                 description=(
-                    f"Market update (M4): price={price:.2f} ({price_delta_pct:+.1f}%), "
-                    f"cost={metrics.get('cost_pressure', 0):.2f}, markup={metrics.get('markup', 0):.2f}, "
-                    f"demand_level={demand_level:.2f}{booking_note}"
+                    f"Markt: Ticketpreis {zahl(price, 2)} € ({_vorzeichen(price_delta_pct)} %), "
+                    f"Kostendruck {zahl(float(metrics.get('cost_pressure', 0)), 2)} €, "
+                    f"Aufschlag {zahl(float(metrics.get('markup', 0)), 2)} €, "
+                    f"Nachfrageniveau {zahl(float(demand_level), 2)}{booking_note}"
                 ),
                 affected_factors=[],
                 timestamp="",
@@ -131,7 +143,9 @@ class MarketNode:
         price_delta_abs = abs(price - prev_price)
         if prev_price > 0 and (price_delta_abs >= 0.5 or abs(price_delta_pct) >= 0.5):
             markup = metrics.get("markup", metrics.get("provider_markup", 0.0))
-            booking_part = f"{float(booking_rate):.1%}" if booking_rate is not None else "n/a"
+            booking_part = (
+                prozent(float(booking_rate)) if booking_rate is not None else "nicht bekannt"
+            )
             state.event_log.append(
                 EventLogEntry(
                     id=str(uuid4()),
@@ -139,10 +153,10 @@ class MarketNode:
                     source_agent="provider",
                     event_type=EventType.PRICE_CHANGE,
                     description=(
-                        f"[delta:price] Provider yield feedback: ticket price "
-                        f"{prev_price:.2f} → {price:.2f} ({price_delta_pct:+.1f}%), "
-                        f"markup={float(markup):.2f}, booking_rate={booking_part} "
-                        f"(Python, market_rules aus properties.json)"
+                        f"[delta:price] Preisbildung des Anbieters: Ticketpreis "
+                        f"{zahl(prev_price, 2)} → {zahl(price, 2)} € "
+                        f"({_vorzeichen(price_delta_pct)} %), Aufschlag {zahl(float(markup), 2)} €, "
+                        f"Buchungsrate {booking_part} (gerechnet, Marktregel)"
                     ),
                     affected_factors=[],
                     timestamp="",
