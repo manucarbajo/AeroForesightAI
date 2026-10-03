@@ -1,6 +1,6 @@
 # Pitch: Wo liegt was?
 
-Diese Seite beantwortet, wenn im Chat jemand fragt „wo ist der Pitch, wie ändere ich ihn, woher kommt die Zahl?". Anlass ist der Pitch bei „Pitch, Please!" am 08.10.2026 im HdM Startup Center Stuttgart. Stand 2026-10-03: 4-Minuten-Fassung (Ziel, 290 Wörter, mit Pausen rund 3:08) mit acht Folien und sechs Anhangfolien, zwei Platzhalter offen. Am 2026-10-03 nachgezogen nach der Rückmeldung aus dem Hearing (siehe unten): Markt als Beachhead ohne Euro-Beträge, Fahrplan ohne Umsatzzahlen, Aussicht als Ringe um einen gemeinsamen Kern, Bitte mit „Warum ihr euch meldet“.
+Diese Seite beantwortet, wenn im Chat jemand fragt „wo ist der Pitch, wie ändere ich ihn, woher kommt die Zahl?". Anlass ist der Pitch bei „Pitch, Please!" am 08.10.2026 im HdM Startup Center Stuttgart. Stand 2026-10-03: 4-Minuten-Fassung (Ziel, 290 Wörter, mit Pausen rund 3:08) mit acht Folien und sechs Anhangfolien, keine Platzhalter mehr (kein Kontakt auf Folie 8). Am 2026-10-03 nachgezogen nach der Rückmeldung aus dem Hearing (siehe unten): Markt als Beachhead ohne Euro-Beträge, Fahrplan ohne Umsatzzahlen, Aussicht als Ringe um einen gemeinsamen Kern, Bitte mit „Warum ihr euch meldet“.
 
 ## Die Dateien
 
@@ -9,7 +9,7 @@ Diese Seite beantwortet, wenn im Chat jemand fragt „wo ist der Pitch, wie änd
 | Präsentation zum Vorführen | [`pitch.html`](../pitch.html) im Repo-Wurzelverzeichnis | Eine einzige Datei, per Doppelklick im Browser zu öffnen. Pfeiltasten oder Klick blättern, F schaltet Vollbild. Bilder **und Schriften** sind eingebettet (seit 2026-10-01: Plus Jakarta Sans und Inter, Teilsätze latin und latin-ext, rund 240 KiB) — die Datei braucht kein Netz und stellt keine einzige Anfrage, geprüft in einem Browser, der jede Netzanfrage abweist. Bis dahin kamen die Schriften von Google, und ohne Internet sprang die Schrift auf eine Ersatzschrift |
 | Rückfall als PDF | [`pitch.pdf`](../pitch.pdf) im Repo-Wurzelverzeichnis | Dieselben 14 Folien (8 Haupt-, 6 Anhangfolien) als Bilder (1920 × 1080 bei 1,5-facher Dichte), aufgenommen aus `pitch.html` ohne Netz, ohne Blätterhinweis. Für einen fremden Vorführrechner oder wenn der Veranstalter ein PDF verlangt; der Text ist darin nicht auswählbar. **Wer `pitch.html` ändert, erzeugt es neu** — sonst zeigt das PDF den alten Stand |
 | Gesprochener Text | [`docs/pitch_skript_2026-09-23.md`](pitch_skript_2026-09-23.md) | Die **4-Minuten-Fassung** (seit 2026-10-03, 290 Wörter) mit acht Folien (rund 3:08 mit Pausen): je Folie, was darauf steht und was gesprochen wird, dazu Anhang für die Fragerunde, die Quellen jeder Zahl und die Herleitung von TAM, SAM und SOM |
-| Bearbeitbare Fassung, **aktuell** (seit 2026-10-03) | Artefakt in claude.ai (Manuels Konto, Kopie von Haikos Deck mit allen Änderungen vom 2026-10-03, Sprechernotizen = neues Skript): <https://claude.ai/artifact/KVkNxmx7VUAU9KsS5Cpcdd>. Privat, bis es über das Teilen-Menü freigegeben ist. **Hier wird weitergearbeitet** |
+| Bearbeitbare Fassung, **aktuell** (seit 2026-10-03) | Artefakt in claude.ai (Manuels Konto, Kopie von Haikos Deck mit allen Änderungen vom 2026-10-03, Sprechernotizen = neues Skript): <https://claude.ai/artifact/KVkNxmx7VUAU9KsS5Cpcdd>. Privat, bis es über das Teilen-Menü freigegeben ist. **Hier wird weitergearbeitet**; Änderungen daran müssen ins Repo zurück (`pitch.html`, Skript) |
 | Bearbeitbare Fassung, **bis 2026-10-02** | Artefakt in claude.ai (Haikos Konto): <https://claude.ai/artifact/XRaiAGbnRJ4dj2VQ6qPBEw> | Hier wird der Pitch inhaltlich angepasst, und aus ihm entsteht `pitch.html`. Von dort lässt sich als PowerPoint oder PDF exportieren. Privat, bis es über das Teilen-Menü freigegeben ist |
 | Frühere Fassung | Artefakt in claude.ai (Manus Konto): <https://claude.ai/artifact/V8DxvLSBtGVAmrFFYnaVnz> | Manus Deck, auf dem die bearbeitbare Fassung am 2026-09-28 aufsetzt. Es liegt in einer anderen Organisation, und Änderungen daran ließen sich aus Haikos Sitzung nicht speichern; deshalb die Kopie. **Wird nicht mehr gepflegt** (von Haiko entschieden am 2026-09-29): Änderungen gehören in die bearbeitbare Fassung darüber |
 | Bilder für die Folien | [`docs/pitch/`](pitch/): `pitch_folie3_leitstand.png` (Leitstand, in der 5-Minuten-Fassung Folie 5), daneben `pitch_folie3_leitstand_voll.png`, dazu `pitch_folie4_verlaeufe.png` und `pitch_folie6_szenarien.png` | Screenshots aus dem laufenden Dashboard, 1920 × 1080 bei doppelter Pixeldichte (der Leitstand ohne linke Spalte zugeschnitten, 3160 × 2052; daneben das ganze Fenster). Wie sie entstanden sind, steht unten |
@@ -43,8 +43,8 @@ Acht Hauptfolien (seit 2026-10-03, vorher zwölf) und sechs Anhangfolien:
 4. **Produkt · Szenarien im Vergleich.** Die vier Rahmen im Vergleich. **Kein KI-Text.**
 5. **Warum wir.** Tabelle Einzelprognose gegen AeroForesight, vier Zeilen.
 6. **Beachhead und Aussicht.** „Luftfahrt ist der Beachhead, der Kern kann mehr.“ Drei Ringe um einen Kern (Luftfahrt, Mobilität & Verkehr, weitere regulierte Märkte; die äußeren sind Richtung, keine Zusage) und drei Karten: „Beachhead: 235 Organisationen“, „Gleicher Kern“, „Anderer Use Case — Marktmodell angepasst“. **Keine Euro-Beträge.**
-7. **Team.** Manuel und Haiko mit Foto, `[Rolle]` und LinkedIn-QR-Code, dazu „Du? Mitgründer:in Vertrieb & Business Development“.
-8. **Bitte.** „Wir suchen 3 Design-Partner“ — wen, „Warum ihr euch meldet“, `[Kontakt]`, dazu die Zeile mit der offenen Rolle Vertrieb und den Mentoren.
+7. **Team.** Manuel und Haiko mit Foto und LinkedIn-QR-Code. Ohne Rolle und ohne „Du?“-Karte; die offene Vertriebsrolle wird nur gesprochen.
+8. **Bitte.** „Wir suchen 3 Design-Partner“ — wen, „Warum ihr euch meldet“. **Ohne Kontaktzeile** (die Platzhalter sind entfernt, nicht gefüllt): Der Kontakt muss gesprochen oder noch ergänzt werden.
 
 **Anhang für die Fragerunde:** A1 Genauigkeit (Abgleich mit den Marktdaten, Stand 29.09.2026) · A2 Marktrechnung als Tabelle · A3 warum ein Sprachmodell · A4 Das Problem im Detail (die frühere Problemfolie) · A5 Produkt: Einrichten (Screenshot „Verläufe“) · A6 Geschäftsmodell & Fahrplan (Jahresabo, Kundenziele 3 / 8 / 15, ohne Umsatzzahlen). **Das Geschäftsmodell wird im Pitch nicht mehr gesprochen**, es steht nur in A6.
 
@@ -96,6 +96,6 @@ Die Korrektur am Bild von Folie 3 aus der 3-Minuten-Fassung entfällt mit dem Um
 ## Offene Punkte
 
 - Das Artefakt ist privat. Für andere braucht es Freigabe über sein Teilen-Menü.
-- Platzhalter: `[Rolle]` je Person auf Folie 11, `[Kontakt]` auf Folie 12.
+- Es gibt keine Platzhalter mehr; dafür nennt Folie 8 keinen Kontakt und Folie 7 nicht die offene Vertriebsrolle (nur gesprochen).
 - Die Quelle „Aviation sector decarbonisation as a case of deep uncertainty" (ScienceDirect 2025) wurde nur über die Trefferbeschreibung geprüft, nicht im Volltext.
 - Das Marktbericht-Zitat für den Cross-Check der Marktgröße hat keinen benannten Herausgeber und gilt nur als Größenordnung.

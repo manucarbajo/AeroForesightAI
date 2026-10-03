@@ -1,6 +1,6 @@
 # Pitch-Skript: AeroForesight AI (5 Minuten)
 
-Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026), Folie für Folie, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-10-03: **acht Folien** plus sechs Anhangfolien (A1–A6); offen sind zwei Platzhalter.
+Gesprochener Text für den Pitch bei „Pitch, Please!" (HdM Startup Center Stuttgart, 08.10.2026), Folie für Folie, siehe [pitch_uebersicht.md](pitch_uebersicht.md). Stand 2026-10-03: **acht Folien** plus sechs Anhangfolien (A1–A6); die Platzhalter sind entfernt (kein Kontakt auf Folie 8).
 
 Länge: **8 Folien**, **290 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 Wörter pro Minute) rund 2:54. Mit Pausen an den beiden Produktfolien sind es rund **3:08**. **Ziel sind vier Minuten mit Puffer** (von Haiko entschieden am 2026-10-03): Zwölf Folien in vier Minuten waren zu hektisch (rund 20 Sekunden je Folie), jetzt sind es acht. Gezählt wird nur der Text in den Zitatblöcken unter „Gesprochen“. Gesprochen wird nur, was unter „Gesprochen“ steht; wer ergänzt, streicht an anderer Stelle.
 
@@ -32,6 +32,7 @@ Länge: **8 Folien**, **290 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 W�
 | Markt schön verpacken; sind die Zahlen zu gering, lieber nicht erwähnen und als Beachhead verpacken | **Die Euro-Beträge (9 und 33 Mio. €) stehen nicht mehr auf Folie 8 und nicht mehr im gesprochenen Text.** Die Folie zeigt die 235 Organisationen als Beachhead und die Treppe Europa → weltweit → weitere Märkte ohne Betrag. **Auch auf Folie 9 stehen keine Umsatzzahlen mehr** (≈ 300 und ≈ 570 Tsd. €, entschieden von Haiko am 2026-10-03); die Ziele sind Kundenzahlen (3, 8, 15). Die Rechnung bleibt als Anhang A2 für die Fragerunde, damit eine Nachfrage nicht ins Leere läuft |
 | Größer denken, aber **auf eine andere Art** (Nachtrag am selben Tag) | Folie 10 zeigt statt gestapelter Bausteine drei Ringe um einen Kern: Luftfahrt innen, darum Mobilität & Verkehr, außen weitere regulierte Märkte. Die äußeren Ringe sind **Richtung, keine Zusage**, und die Folie sagt das selbst |
 | Sprechzeit und Folienzahl | **Vier Minuten statt knapp fünf, und acht Folien statt zwölf** (Rückmeldung am 2026-10-03: zu viele Folien). Aufhänger und Problem sind eine Folie; „Einrichten“ (Screenshot), „Problem“ im Detail und „Geschäftsmodell & Fahrplan“ stehen im Anhang (A4–A6), die Marktfolie geht in der Beachhead-Folie auf. **Das Geschäftsmodell (Jahresabo) wird im Pitch nicht mehr gesprochen** — wer es zurückhaben will, nimmt A6 wieder hinein und streicht dafür an anderer Stelle |
+| Kopie im Artefakt (Manuel, 2026-10-03) | Dort wurden `[Rolle]` ×2 und die Karte „Du? Mitgründer:in“ (Folie 7) sowie die Zeile mit `[Kontakt]`, Vertriebsrolle und Mentoren (Folie 8) entfernt; in `pitch.html` und `pitch.pdf` übernommen |
 
 ## Ablauf
 
@@ -99,7 +100,7 @@ Länge: **8 Folien**, **290 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 W�
 
 ## Folie 7: Team (0:17)
 
-**Auf der Folie:** zwei Karten mit Foto und Rolle — Manuel Carbajo · [Rolle], Haiko Wiedenberg · [Rolle] — und eine dritte, leere Karte: „**Du?** Mitgründer:in Vertrieb & Business Development“.
+**Auf der Folie:** zwei Karten mit Foto, Name und LinkedIn-QR-Code — Manuel Carbajo, Haiko Wiedenberg. **Ohne Rolle und ohne die dritte Karte „Du? Mitgründer:in Vertrieb“** (vom Deck in der Kopie am 2026-10-03 entfernt); die offene Rolle wird nur gesprochen.
 
 **Gesprochen:**
 
@@ -107,7 +108,7 @@ Länge: **8 Folien**, **290 Wörter** gesprochen, bei ruhigem Tempo (etwa 100 W�
 
 ## Folie 8: Bitte (0:23)
 
-**Auf der Folie:** groß „**Wir suchen 3 Design-Partner**“. Darunter zwei Spalten: *Wen:* Strategie und Netzwerkplanung bei Airline, Flughafen oder Behörde · *Warum ihr euch meldet:* kostenloser Pilot zu eurer eigenen Frage, ihr bestimmt mit, was wir als Nächstes bauen, direkter Draht zu den Gründern. Unten: [Kontakt] und die Zeile „Außerdem gesucht: Mitgründer:in Vertrieb & Business Development · Mentoren aus der Branche“. Leitsatz „Berechnet, nicht geraten.“
+**Auf der Folie:** groß „**Wir suchen 3 Design-Partner**“. Darunter zwei Spalten: *Wen:* Strategie und Netzwerkplanung bei Airline, Flughafen oder Behörde · *Warum ihr euch meldet:* kostenloser Pilot zu eurer eigenen Frage, ihr bestimmt mit, was wir als Nächstes bauen, direkter Draht zu den Gründern. **Ohne Kontaktzeile und ohne die Zeile mit Vertriebsrolle und Mentoren** (entfernt am 2026-10-03, siehe Nachtrag). Leitsatz „Berechnet, nicht geraten.“
 
 **Gesprochen:**
 
@@ -154,7 +155,7 @@ Jede Zahl und jede Behauptung über das Produkt ist hier belegt oder als eigene 
 | Luftfahrt als Beachhead; Mobilität & Verkehr und weitere Märkte als Richtung (Ringe auf Folie 6, ausdrücklich ohne Modell und ohne Kunden); anderer Use Case heißt angepasstes Marktmodell | Eigene Einschätzung, am Code gemessen (2026-09-29): Rechenkern im Takt, Agenten mit Rechten, Regelwerk, exogene Szenarien, Auswertung und Oberfläche sind nach Bauprinzip branchenunabhängig; alle 6 Dateien in `src/market/` und das Buchungsmodell sind luftfahrtspezifisch, und das Regelwerk kennt `ticket_price` und `carbon_tax_level` fest. Deshalb **nicht** „per Konfiguration auf jede Branche übertragbar“ |
 | Wir sind Manuel und Haiko, Wirtschaftsinformatik im Master, und haben das System gebaut | Angabe aus der Teamfolie; das Team sind nur die beiden |
 
-**Offene Platzhalter** (vor dem Bau der Folien zu füllen): [Rolle] je Person auf Folie 7, [Kontakt] auf Folie 8.
+**Keine Platzhalter mehr auf den Folien** (seit 2026-10-03: `[Rolle]` und `[Kontakt]` sind entfernt, nicht gefüllt). Folge: **Die Folie nennt keinen Kontakt** — wer sich melden soll, muss ihn sagen oder auf der Folie ergänzen —, und die offene Vertriebsrolle steht nur im gesprochenen Text von Folie 7.
 
 Nicht belegt und bewusst nicht behauptet: Pilotkunden, Kundengespräche, Umsatz, Investitionssumme. Die Fahrplanfolie nennt nur Ziele, keine Ist-Werte — sie hieß bis zum 2026-09-28 „Traktion“, und so benannt versprach sie Ist-Werte, die sie nicht zeigte.
 
