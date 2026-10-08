@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dash import Input, Output, State, ctx, dcc, html, no_update
+from dash import Input, Output, State, dcc, html, no_update
 
 from dashboard.web import components as ui
 from dashboard.web.run_data import RunData
@@ -236,6 +236,7 @@ def layout(data: RunData, tick: int = 1, *, playing: bool = False) -> html.Div:
                         className="af-timeline__readout",
                     ),
                     dcc.Dropdown(
+                        labels=ui.AUSWAHL_TEXTE,
                         id=SPEED,
                         options=SPEEDS,
                         value=DEFAULT_SPEED,
@@ -260,7 +261,46 @@ def _clamp(tick: Any, max_tick: int) -> int:
 
 
 def register_callbacks(app) -> None:
-    @app.callback(
+    # Die sechs Knöpfe in einem Callback: Sie verändern beide dasselbe Paar
+    # (läuft es? welcher Tick?); getrennte Callbacks müssten sich denselben
+    # Ausgang teilen und würden sich beim gleichzeitigen Feuern gegenseitig
+    # überschreiben.
+    #
+    # **Clientseitig, weil zwei schnelle Klicks sonst einer sind** (Befund 16 der
+    # Abnahme vom 2026-09-30): Auf dem Server las der zweite Klick den Tick, bevor
+    # die Antwort auf den ersten ankam — zweimal «Ein Tick vor» ergab Tick 2,
+    # auch mit 80 ms Abstand. Im Browser liest jeder Klick den Stand, den der
+    # vorige geschrieben hat. Gehalten im Browser-Wächter (Marker `zeitleiste`).
+    app.clientside_callback(
+        """
+        function(_p, _s, _b, _f, _a, _e, playing, tick, maxTick) {
+            var nu = window.dash_clientside.no_update;
+            var context = window.dash_clientside.callback_context;
+            var trigger = ((context.triggered[0] || {}).prop_id || '').split('.')[0];
+            var obergrenze = Math.max(parseInt(maxTick, 10) || 1, 1);
+            var aktuell = parseInt(tick, 10);
+            if (isNaN(aktuell)) { aktuell = 1; }
+            aktuell = Math.max(1, Math.min(aktuell, obergrenze));
+            if (trigger === '%(play)s') {
+                if (!playing && aktuell >= obergrenze) { return [true, 1]; }
+                return [!playing, nu];
+            }
+            if (trigger === '%(stop)s') { return [false, 1]; }
+            if (trigger === '%(back)s') { return [false, Math.max(1, aktuell - 1)]; }
+            if (trigger === '%(forward)s') { return [false, Math.min(obergrenze, aktuell + 1)]; }
+            if (trigger === '%(start)s') { return [false, 1]; }
+            if (trigger === '%(end)s') { return [false, obergrenze]; }
+            return [nu, nu];
+        }
+        """
+        % {
+            "play": PLAY,
+            "stop": STOP,
+            "back": STEP_BACK,
+            "forward": STEP_FORWARD,
+            "start": TO_START,
+            "end": TO_END,
+        },
         Output(PLAY_STORE, "data"),
         Output(TICK_STORE, "data", allow_duplicate=True),
         Input(PLAY, "n_clicks"),
@@ -274,35 +314,6 @@ def register_callbacks(app) -> None:
         State(SLIDER, "max"),
         prevent_initial_call=True,
     )
-    def _controls(_p, _s, _b, _f, _a, _e, playing: bool | None, tick, max_tick):
-        """Die sechs Knöpfe in einem Callback.
-
-        Sie verändern beide dasselbe Paar (läuft es? welcher Tick?); getrennte
-        Callbacks müssten sich denselben Ausgang teilen und würden sich beim
-        gleichzeitigen Feuern gegenseitig überschreiben.
-        """
-
-        obergrenze = int(max_tick or 1)
-        aktuell = _clamp(tick, obergrenze)
-        ausgeloest = ctx.triggered_id
-
-        if ausgeloest == PLAY:
-            # Am Ende erneut auf «Abspielen» heißt: von vorn. Sonst passierte
-            # sichtbar nichts, und der Knopf wirkte kaputt.
-            if not playing and aktuell >= obergrenze:
-                return True, 1
-            return not bool(playing), no_update
-        if ausgeloest == STOP:
-            return False, 1
-        if ausgeloest == STEP_BACK:
-            return False, max(1, aktuell - 1)
-        if ausgeloest == STEP_FORWARD:
-            return False, min(obergrenze, aktuell + 1)
-        if ausgeloest == TO_START:
-            return False, 1
-        if ausgeloest == TO_END:
-            return False, obergrenze
-        return no_update, no_update
 
     @app.callback(
         Output(INTERVAL, "disabled"),

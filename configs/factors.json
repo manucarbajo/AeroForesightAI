@@ -1,7 +1,7 @@
 {
   "F1": {
     "id": "F1",
-    "name": "Mobilitaetsbeduerfnis / Nachfrage",
+    "name": "Mobilitätsbedürfnis / Nachfrage",
     "description": "Wie stark wollen Menschen fliegen?",
     "current_state": "F1.1",
     "possible_states": {
@@ -41,12 +41,12 @@
   },
   "F5": {
     "id": "F5",
-    "name": "Verfuegbarkeit von Alternativen",
-    "description": "Schiene, digitale Substitution, Intermodalitaet",
+    "name": "Verfügbarkeit von Alternativen",
+    "description": "Schiene, digitale Substitution, Intermodalität",
     "current_state": "F5.1",
     "possible_states": {
       "F5.1": "Schiene stagniert, Fliegen alternativlos",
-      "F5.2": "Massiver Schienenausbau, Intermodalitaet"
+      "F5.2": "Massiver Schienenausbau, Intermodalität"
     }
   },
   "F6": {
@@ -61,11 +61,11 @@
   },
   "F7": {
     "id": "F7",
-    "name": "Geopolitische Stabilitaet",
-    "description": "Offene Luftraeume, Konflikte, Pandemien",
+    "name": "Geopolitische Stabilität",
+    "description": "Offene Lufträume, Konflikte, Pandemien",
     "current_state": "F7.1",
     "possible_states": {
-      "F7.1": "Offene Luftraeume, multilaterale Kooperation",
+      "F7.1": "Offene Lufträume, multilaterale Kooperation",
       "F7.2": "Fragmentierung, Sperrungen, Konflikte"
     }
   }

@@ -101,3 +101,34 @@ def test_the_guard_would_notice_a_relapse():
 
     assert len(gefunden) == 2
     assert gefunden[0].startswith("a.py:1") and gefunden[1].startswith("b.py:2")
+
+
+#: Eine Schrittposition in Worten — «im zweiten Schritt». Im Handbuch stand sie an
+#: sechs Stellen und war seit P7.13 an allen falsch (Befund N4 der Gegenprüfung
+#: vom 2026-09-21): Der zweite Schritt heißt seither «Verläufe».
+#: «Im ersten Schritt» bleibt erlaubt: Der erste Schritt ist der, von dem
+#: «Zurück» auf den Einstieg führt — das ist eine Aussage über die Position.
+SCHRITTPOSITION = re.compile(
+    r"\b(?:zweiten|dritten|vierten|fünften|sechsten|siebten|achten)\s+Schritt",
+    re.IGNORECASE,
+)
+HANDBUCH = WEB_ROOT.parent.parent / "docs" / "handbuch"
+
+
+def test_das_handbuch_nennt_schritte_beim_namen():
+    """Nur die Position in Worten, nicht Nummer und Name wie oben.
+
+    Eine Nummer steht im Handbuch an Stellen, an denen sie stimmt: als eigene
+    Zählung der ersten Simulation («Schritt 1: Was soll gerechnet werden?»), als
+    Beispiel der Ansage («Schritt 6 von 8») und als Geschichte («Der Schritt
+    «Ausgangslage» ist entfallen»). Eine Position in Worten war an allen sechs
+    Fundstellen ein Ortsverweis — und an allen falsch.
+    """
+
+    funde_handbuch = []
+    for datei in sorted(HANDBUCH.glob("*.md")):
+        flach = " ".join(datei.read_text(encoding="utf-8").split())
+        for treffer in SCHRITTPOSITION.finditer(flach):
+            funde_handbuch.append(f"{datei.name}: {flach[treffer.start() : treffer.end() + 40]!r}")
+
+    assert not funde_handbuch, "\n".join(funde_handbuch)

@@ -34,6 +34,19 @@ def _factor_name(catalog: dict[str, Any], factor_id: str) -> str:
     return str(factor.get("name") or factor_id)
 
 
+def faktor_namen(catalog: dict[str, Any]) -> dict[str, str]:
+    """Faktor- und Zustandskennungen auf ihre Bezeichnung — für das Faktenblatt (P8-V3)."""
+
+    namen: dict[str, str] = {}
+    for factor_id, eintrag in catalog.items():
+        if not isinstance(eintrag, dict):
+            continue
+        namen[factor_id] = _factor_name(catalog, factor_id)
+        for state_id in eintrag.get("possible_states") or {}:
+            namen[state_id] = _factor_state_label(catalog, factor_id, state_id)
+    return namen
+
+
 def _flip_state(state_id: str) -> str:
     if not state_id or "." not in state_id:
         return state_id
@@ -43,12 +56,14 @@ def _flip_state(state_id: str) -> str:
 
 
 def _format_factor_compact(catalog: dict[str, Any], states: dict[str, str]) -> str:
-    parts: list[str] = []
-    for factor_id in FACTOR_IDS:
-        state_id = states.get(factor_id)
-        if state_id:
-            parts.append(f"{factor_id}={state_id}")
-    return ", ".join(parts)
+    """Die Zustände in Kurzform — «F1.2, F2.2, …», wie die Faktorleiste im Leitstand.
+
+    Bis zum 2026-10-01 «F1=F1.2, F2=F2.2»: die Schreibweise eines Programms, in
+    der Szenario-Ansicht sichtbar (Befund 13 der Abnahme). Der Zustand nennt
+    seinen Faktor schon selbst.
+    """
+
+    return ", ".join(state_id for factor_id in FACTOR_IDS if (state_id := states.get(factor_id)))
 
 
 def _format_factor_labels_short(

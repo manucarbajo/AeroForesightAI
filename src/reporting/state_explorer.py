@@ -5,14 +5,16 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from src.llm import LLMCallable, OllamaClient, OllamaConfig
+from src.llm import LLMCallable, OllamaClient, OllamaConfig, auf_deutsch
 from src.logging_setup import stdio_auf_utf8
 from src.orchestration.checkpoint_manager import CheckpointManager
+from src.reporting.aussagen_pruefung import faktenblatt_saetze, laufzeilen, pruefe
 from src.reporting.output_writer import OUTPUT_DIR
+from src.reporting.run_scenario_generator.factors import _load_factor_catalog, faktor_namen
 
 EXPLORER_INSTRUCTIONS = """You are an expert data analyst and simulation explorer for an aviation foresight scenario.
 Your task is to answer the user's question comprehensively and helpfully using ONLY the GROUND TRUTH DATA block below.
@@ -240,6 +242,24 @@ def build_grounded_context_block(context: RunExplorerContext) -> str:
         f"run_id={context.run_id}",
         f"simulation={context.metadata.get('simulation_name', context.metadata.get('name', 'unknown'))}",
     ]
+    # Die Richtung jeder Kerngröße als Satz, vor den Rohdaten (P8-V3). Am
+    # 2026-09-29 antwortete `llama3.2` auf «Ist die Buchungsrate gestiegen oder
+    # gesunken?» mit «gestiegen», während sie fiel — aus Zahlenreihen gedeutet.
+    #
+    # **Nicht bei einer Frage zu einem einzelnen Tick** (Abnahme V6, 2026-09-30):
+    # Auf «Was passierte bei Tick 24?» antwortete das Modell mit «Die Buchungsrate
+    # sank von 47,9 % auf 24,7 %» — den Werten des ganzen Laufs, wörtlich aus dem
+    # Faktenblatt. Es stand vor den Daten des Ticks und wurde abgeschrieben.
+    faktenblatt = (
+        faktenblatt_saetze(
+            context.run_dir, context.factors_timeseries, faktor_namen(_load_factor_catalog())
+        )
+        if context.focus_tick is None
+        else []
+    )
+    if faktenblatt:
+        lines.append("faktenblatt (Verlauf über den ganzen Lauf, von Python gerechnet):")
+        lines.extend(f"- {satz}" for satz in faktenblatt)
     if context.tick_mechanics.get("reading_guide"):
         lines.append(f"reading_guide: {context.tick_mechanics['reading_guide']}")
 
@@ -394,6 +414,10 @@ def _zahlen(text: str) -> list[tuple[str, float, int, bool]]:
     return gefunden
 
 
+def _zahlwort(anzahl: int) -> str:
+    return "1 Zahl" if anzahl == 1 else f"{anzahl} Zahlen"
+
+
 @dataclass(frozen=True)
 class Antwort:
     """Was der Explorer zurückgibt — **samt Prüfung** (P2.5).
@@ -418,20 +442,53 @@ class Antwort:
     #: wiegt anders als eines aus einem mit dreihundert, und wer die Antwort liest,
     #: konnte das bisher nicht wissen.
     kontextzahlen: int = 0
+    #: Stellen, an denen die Antwort der Rechnung widerspricht (P8-V3) — eine
+    #: Richtung gegen das Faktenblatt, ein Kalenderdatum, englischer Text. Je
+    #: Befund die Zeile, die der Leser sieht (`aussagen_pruefung.Befund.zeile`).
+    widersprueche: tuple[str, ...] = ()
 
     @property
     def belegt(self) -> bool:
         return not self.unbelegt
 
     def __str__(self) -> str:
-        """Antwort mit angehängtem Vorbehalt, wenn es einen gibt.
+        """Antwort mit angehängtem Vorbehalt — **immer**, nicht nur bei einem Befund.
 
         Damit bleibt jeder Aufrufer, der die Antwort als Text behandelt,
         richtig — und bekommt die Warnung mit, statt sie zu verlieren.
+
+        **Bis P8-V3 stand die Auskunft nur unter einer markierten Antwort** (Rest
+        von N10). Eine Antwort ohne unbelegte Zahl — oder ganz ohne Zahl — sah
+        damit genauso aus wie eine ungeprüfte, und gerade die Antwort, deren
+        falsche Prozentangabe durchgerutscht war, trug keinen Hinweis. Die
+        Abwägung aus B7c («sonst geht die Markierung in einer Fußnote unter»)
+        gilt weiter für die **Form**: Der Hinweis unter einer belegten Antwort ist
+        ein Satz, die Warnung unter einer unbelegten bleibt ein Block.
         """
 
+        widerspruch = ""
+        if self.widersprueche:
+            zeilen = "\n".join(f"- {zeile}" for zeile in self.widersprueche)
+            widerspruch = (
+                f"⚠️ **Widerspricht der Rechnung:**\n\n{zeilen}\n\n"
+                "Den gerechneten Verlauf nennt das Faktenblatt am Anfang der Laufdaten."
+            )
+
         if self.belegt:
-            return self.text
+            if widerspruch:
+                return f"{self.text}\n\n{widerspruch}"
+            if self.geprueft == 0:
+                hinweis = (
+                    "Prüfung: Diese Antwort enthält keine Zahl, die sich gegen die "
+                    "Laufdaten halten ließe."
+                )
+            else:
+                hinweis = (
+                    f"Prüfung: {_zahlwort(self.geprueft)} der Antwort, gehalten gegen "
+                    f"{self.kontextzahlen} verschiedene Zahlen der Laufdaten — jede kommt "
+                    "dort vor. Ob an der richtigen Stelle, prüft das nicht."
+                )
+            return f"{self.text}\n\n_{hinweis}_"
         zahlen = ", ".join(self.unbelegt)
         return (
             f"{self.text}\n\n"
@@ -443,7 +500,7 @@ class Antwort:
             f"{self.kontextzahlen} verschiedene Zahlen der Laufdaten. Die Prüfung "
             "fragt, **ob** eine Zahl dort vorkommt — nicht, ob sie an der richtigen "
             "Stelle steht."
-        )
+        ) + (f"\n\n{widerspruch}" if widerspruch else "")
 
 
 def pruefe_gegen_kontext(antwort: str, kontext: str) -> Antwort:
@@ -469,7 +526,19 @@ def pruefe_gegen_kontext(antwort: str, kontext: str) -> Antwort:
     Markierung würde zum Rauschen, das niemand mehr liest.
     """
 
-    im_kontext = [wert for _, wert, _, _ in _zahlen(kontext)]
+    kontextzahlen = _zahlen(kontext)
+    im_kontext = [wert for _, wert, _, _ in kontextzahlen]
+    # Auf Prozent gebracht: ein Anteil mal hundert, eine Prozentangabe wie sie ist.
+    # **Ein Anteil hat Nachkommastellen** — im JSON trägt jede Gleitkommazahl
+    # welche (`1.0`). Eine ganze Zahl ist ein Tick oder eine Personenzahl, und
+    # «200 %» traf sonst Tick 2.
+    als_prozent = [
+        wert if prozent else wert * 100.0
+        for _, wert, stellen, prozent in kontextzahlen
+        if prozent or stellen > 0
+    ]
+    # Auf die Skala einer schlichten Zahl: eine Prozentangabe des Kontexts durch hundert.
+    als_zahl = [wert / 100.0 if prozent else wert for _, wert, _, prozent in kontextzahlen]
     unbelegt: list[str] = []
     geprueft = 0
 
@@ -478,13 +547,16 @@ def pruefe_gegen_kontext(antwort: str, kontext: str) -> Antwort:
             continue
         geprueft += 1
 
-        # Ein Prozentwert darf auch als Anteil in den Daten stehen und umgekehrt.
-        kandidaten = [wert, wert / 100.0] if prozent else [wert, wert * 100.0]
-        if any(
-            round(im_daten, stellen) == round(kandidat, stellen)
-            for im_daten in im_kontext
-            for kandidat in kandidaten
-        ):
+        # Eine Prozentangabe wird gegen die Kontextzahlen **als Prozent** gehalten
+        # — ein Anteil mal hundert, eine Prozentangabe wie sie ist — und nicht
+        # gegen jede Zahl (N10, P8-V3). Bis dahin wurde «49 %» zu 0,49
+        # verkleinert und auf null Stellen gerundet: 0,0, und jede Kontextzahl
+        # unter 0,5 ebenfalls. Gegen einen echten Lauf galten damit 250 von 250
+        # ganzzahligen Prozentangaben als belegt; nach der Skalenkorrektur allein
+        # noch 137, weil «140 %» den Ticketpreis von 140 EUR traf.
+        vergleich = als_prozent if prozent else als_zahl
+        ziel = round(wert, stellen)
+        if any(round(im_daten, stellen) == ziel for im_daten in vergleich):
             continue
         if schreibweise not in unbelegt:
             unbelegt.append(schreibweise)
@@ -507,12 +579,14 @@ class StateExplorer:
         self.llm = llm or OllamaClient(OllamaConfig(temperature=0.2))
 
     def build_prompt(self, question: str) -> str:
+        """Der Prompt einer Frage — die Sprachanweisung vor «ANSWER:» (P8-V2)."""
+
         grounded = build_grounded_context_block(self.context)
-        return (
+        return auf_deutsch(
             f"{EXPLORER_INSTRUCTIONS}\n\n"
             f"GROUND TRUTH DATA:\n{grounded}\n\n"
-            f"USER QUESTION:\n{question.strip()}\n\n"
-            "ANSWER:"
+            f"USER QUESTION:\n{question.strip()}",
+            schluss="\n\nANSWER:",
         )
 
     def ask(self, question: str) -> Antwort:
@@ -523,14 +597,17 @@ class StateExplorer:
         aber im Text mit; wer die einzelnen Befunde braucht, liest `unbelegt`.
         """
 
+        # Ein Prompt, eine Stelle: Bis P8-V2 stand er hier ein zweites Mal wörtlich
+        # neben `build_prompt`, und die Sprachanweisung hätte an beiden gefehlt.
         grounded = build_grounded_context_block(self.context)
-        prompt = (
-            f"{EXPLORER_INSTRUCTIONS}\n\n"
-            f"GROUND TRUTH DATA:\n{grounded}\n\n"
-            f"USER QUESTION:\n{question.strip()}\n\n"
-            "ANSWER:"
-        )
-        return pruefe_gegen_kontext(self.llm.call(prompt), grounded)
+        antwort = pruefe_gegen_kontext(self.llm.call(self.build_prompt(question)), grounded)
+        # Und was sie behauptet, gegen den Verlauf gehalten (P8-V3). Eine Frage zu
+        # einem einzelnen Tick darf etwas anderes über die Richtung sagen als der
+        # ganze Lauf — dort gilt die Richtungsprüfung nicht.
+        befunde = pruefe(antwort.text, laufzeilen(self.context.run_dir))
+        if self.context.focus_tick is not None:
+            befunde = [befund for befund in befunde if befund.art != "richtung"]
+        return replace(antwort, widersprueche=tuple(befund.zeile for befund in befunde))
 
 
 def _build_parser() -> argparse.ArgumentParser:

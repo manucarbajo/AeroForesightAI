@@ -26,6 +26,8 @@ import math
 from functools import lru_cache
 from typing import Any
 
+from dashboard.web import formate
+
 #: Fester Startwert. Der Demo-Datensatz soll bei jedem Aufruf identisch sein —
 #: ein Screenshot von gestern und die Seite von heute zeigen dasselbe.
 SEED = 20260828
@@ -173,9 +175,9 @@ def event_log() -> list[dict[str, Any]]:
                 "source_agent": "market",
                 "event_type": "market_event",
                 "description": (
-                    f"Market update: price={row['market_price_after_feedback_eur']:.2f}, "
-                    f"cost={row['cost_pressure_eur']:.2f}, "
-                    f"booking_rate={row['booking_rate']:.1%}"
+                    f"Markt: Ticketpreis {formate.euro(row['market_price_after_feedback_eur'])}, "
+                    f"Kostendruck {formate.euro(row['cost_pressure_eur'])}, "
+                    f"Buchungsrate {formate.prozent(row['booking_rate'])}"
                 ),
                 "affected_factors": [],
                 "timestamp": "",

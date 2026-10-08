@@ -179,6 +179,22 @@ class TestRunScenarioGenerator:
         kinds = {item["scenario_kind"] for item in payload["scenarios"]}
         assert kinds == {"fortsetzung", "alternative", "spannung"}
 
+    def test_die_anhaltspunkte_sprechen_keine_programmsprache(self, tmp_path):
+        """Befund 13 der Abnahme vom 2026-09-30: In der Szenario-Ansicht standen
+        «Tick 1, BR 37.0%» und «F1=F1.2, F2=F2.2». Seither «Buchungsrate 37,0 %»
+        und die Kurzform der Faktorleiste."""
+
+        import re
+
+        run_dir = tmp_path / "run_a"
+        _write_scenario_fixture(run_dir, booking_start=0.7, booking_end=0.3)
+        payload = build_template_scenario(load_run_scenario_context("run_a", run_dir=run_dir))
+        texte = [s["tick_grounding"] for s in payload["scenarios"]] + [payload["summary"]]
+
+        assert all("Buchungsrate" in s["tick_grounding"] for s in payload["scenarios"])
+        for text in texte:
+            assert not re.search(r"\bBR\b|F\d=F\d|\d\.\d %", text), text
+
     def test_load_context_builds_agent_digest(self, tmp_path):
         run_dir = tmp_path / "run_digest"
         _write_scenario_fixture(run_dir, booking_start=0.6, booking_end=0.4)

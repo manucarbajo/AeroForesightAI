@@ -11,6 +11,7 @@ from src.reporting.run_scenario_generator.pipeline import (
     generate_and_save_run_scenario,
     generate_run_scenario,
     save_run_scenario_artifacts,
+    szenario_vorfall,
 )
 from src.reporting.run_scenario_generator.prompt import (
     build_ground_truth_block,
@@ -32,6 +33,7 @@ __all__ = [
     "generate_and_save_run_scenario",
     "generate_run_scenario",
     "save_run_scenario_artifacts",
+    "szenario_vorfall",
     "build_ground_truth_block",
     "build_scenario_prompt",
     "validate_scenario_narrative",

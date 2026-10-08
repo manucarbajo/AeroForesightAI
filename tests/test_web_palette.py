@@ -91,15 +91,31 @@ class TestAchtToeneUndDerRestGrau:
         assert "Weitere (3)" not in _legende(fig)
         assert all(spur.line.color == "#123456" for spur in fig.data)
 
-    def test_the_scenario_comparison_shows_at_most_eight_entries(self, tmp_path):
-        """Die Stelle, an der der Befund lag — mit zehn Läufen, wie in `outputs/sweeps/`."""
+    def test_the_scenario_comparison_shows_at_most_eight_entries(self, tmp_path, monkeypatch):
+        """Die Stelle, an der der Befund lag — mit zehn Läufen, wie in `outputs/sweeps/`.
 
+        Seit P8-V10 vergleicht die Ansicht nur Läufe unter heutigen
+        Rahmenszenarien; zehn Rahmen gibt es nicht, also werden sie hier gesetzt.
+        """
+
+        from types import SimpleNamespace
+
+        from dashboard import config_catalog
+
+        monkeypatch.setattr(
+            config_catalog,
+            "rahmenszenarien",
+            lambda: [SimpleNamespace(id=f"s{i}") for i in range(10)],
+        )
         sweeps = tmp_path / "sweeps"
         for i in range(10):
             ordner = sweeps / f"sweep_szenario_{i}"
             ordner.mkdir(parents=True)
             (ordner / "run_metadata.json").write_text(
-                json.dumps({"rahmen": {"id": f"s{i}", "name": f"Szenario {i}"}}), encoding="utf-8"
+                json.dumps(
+                    {"rahmen": {"id": f"s{i}", "name": f"Szenario {i}", "quelle": "preset"}}
+                ),
+                encoding="utf-8",
             )
             ticks = [
                 {"tick": t, "booking_rate": 0.4, "market_price_after_feedback_eur": 100.0}

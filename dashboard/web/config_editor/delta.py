@@ -60,6 +60,25 @@ VERSCHACHTELT = {
 }
 
 
+#: **Der Rechenmodus ist eine Wahl aus zwei Schaltern** — und steht deshalb als
+#: eine Abweichung da, mit dem gewählten Modus beim Namen (Abnahme V6,
+#: 2026-09-30). Bis dahin stand jeder Schalter für sich, mit seinem eigenen
+#: Namen: Wer «Mit Sprachmodell» wählte, schaltete `mock_llm` aus und las in der
+#: Liste «Rechenmodus ‹Ohne Sprachmodell›» — das Gegenteil seiner Wahl.
+RECHENMODUS = "rechenmodus"
+RECHENMODUS_FELDER = ("mock_llm", "deterministic_only")
+
+
+def rechenmodus(werte: dict) -> str:
+    """Wie der Rechenmodus eines Entwurfs heißt — dieselben drei Namen wie in Schritt 5."""
+
+    if werte.get("deterministic_only"):
+        return "Nur Zahlen"
+    if werte.get("mock_llm"):
+        return "Ohne Sprachmodell"
+    return "Mit Sprachmodell"
+
+
 def _klartext(wert: object) -> str:
     if wert is None or wert == "":
         return "—"
@@ -97,7 +116,7 @@ def unterschiede(draft: dict) -> list[Abweichung]:
     gefunden: list[Abweichung] = []
 
     for feld in sorted(set(standard) | set(draft or {})):
-        if feld in PFADWAHL:
+        if feld in PFADWAHL or feld in RECHENMODUS_FELDER:
             continue
         alt, neu = standard.get(feld), (draft or {}).get(feld)
         if alt == neu:
@@ -118,7 +137,11 @@ def unterschiede(draft: dict) -> list[Abweichung]:
 
         gefunden.append(Abweichung(feld, _name(feld), _klartext(alt), _klartext(neu)))
 
-    return gefunden
+    vorher, jetzt = rechenmodus(standard), rechenmodus(draft or {})
+    if vorher != jetzt:
+        gefunden.append(Abweichung(RECHENMODUS, "Rechenmodus", vorher, jetzt))
+
+    return sorted(gefunden, key=lambda abweichung: abweichung.feld)
 
 
 def _zeile(abweichung: Abweichung) -> html.Div:
@@ -182,7 +205,10 @@ def zuruecknehmen(draft: dict, feld: str) -> dict:
     from dashboard.web.state import initial_draft_dict
 
     standard = initial_draft_dict()
-    if feld in standard:
+    if feld == RECHENMODUS:
+        for schalter in RECHENMODUS_FELDER:
+            draft[schalter] = standard[schalter]
+    elif feld in standard:
         draft[feld] = standard[feld]
     else:
         draft.pop(feld, None)

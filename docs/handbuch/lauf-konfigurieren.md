@@ -7,8 +7,8 @@ nach. Das ist der Weg, wenn Sie den Lauf zusammenstellen wollen.
 **Szenario-Vergleich starten** rechnet alle **Rahmenszenarien** nacheinander
 und legt sie am Ende nebeneinander; die Stresstests der Engine sind nicht dabei.
 Sie landen unmittelbar bei **Prüfen & Starten**. Jedes Szenario läuft in der
-Länge, auf die es angelegt ist — die Länge aus dem zweiten Schritt gilt für den
-Vergleich nicht.
+Länge, auf die es angelegt ist — die Länge aus dem Schritt «Wie weit reicht der
+Lauf?» gilt für den Vergleich nicht.
 
 **Letzte Einstellungen weiterverwenden** springt ebenfalls ans Ende, mit dem, was
 zuletzt eingestellt war — ohne die Fragen erneut durchzugehen. Dieser Weg ist
@@ -28,7 +28,15 @@ Platz, nur ihr Gewicht; wo ein Weg beim letzten Mal lag, liegt er auch beim
 nächsten.
 
 Einen Weg zurück gibt es auch: **Zurück** auf dem ersten Schritt führt wieder auf
-diese Auswahl.
+diese Auswahl. **Und nach jedem Start** fängt **Einrichten** wieder hier an —
+wer nach einem Szenario-Vergleich einen einzelnen Lauf will, wählt «Neuen Lauf
+einrichten»; wer denselben Lauf noch einmal mit einer Änderung rechnen will,
+«Letzte Einstellungen weiterverwenden».
+
+Ist der Vergleich gewählt und Sie öffnen trotzdem einen der ersten fünf
+Schritte — Szenario, Verläufe, Modellannahmen, Länge oder Rechenmodus —, steht
+dort oben ein Hinweis: Der Vergleich übernimmt nicht, was Sie in diesem Schritt
+einstellen. **Zum Einstieg** führt zurück zur Auswahl, ohne etwas zu ändern.
 
 ## Die Schrittfolge
 
@@ -275,8 +283,11 @@ vorher endete das in einem Verbindungsfehler mitten im Lauf, dem niemand die
 Ursache ansah.
 
 Die letzten vier betreffen ausschließlich Ollama. In den Modi «Ohne
-Sprachmodell» und «Nur Zahlen» wird gar kein Client aufgebaut — dort dürfen die
-Felder also stehen, wie sie wollen, und blockieren nichts.
+Sprachmodell» und «Nur Zahlen» wird das Sprachmodell nicht gefragt — dort
+dürfen die Felder also stehen, wie sie wollen, und blockieren nichts. Für «Nur
+Zahlen» gilt das seit Oktober 2026 auch für die Szenario-Erzählungen am Ende
+des Laufs; vorher fragte der Lauf dort doch Ollama und galt ohne laufenden
+Dienst als beeinträchtigt.
 
 Der **Name des Laufs** darf leer bleiben — dann greift der Name aus
 `simulation_config.json`. Leer sein darf er nur dort nicht.
@@ -402,7 +413,9 @@ ist der einzige Weg dafür. Ein Klick öffnet ein Fenster mit einem Namen —
 vorgeschlagen ist der Name des Laufs —, der Option «Mit Zeitstempel im Namen
 sichern», die so kein vorhandenes Szenario ersetzt, und einer
 Warnung, wenn es ein Szenario unter diesem Namen schon gibt. Gesichert wird unter
-`configs/sweeps/`; danach steht das Szenario im ersten Schritt zur Auswahl.
+`configs/sweeps/`; danach steht das Szenario im ersten Schritt zur Auswahl — unter
+dem Namen, den Sie eingegeben haben (die Datei heißt klein geschrieben und mit
+Unterstrichen).
 Gesichert wird **das gewählte Szenario** in seiner eigenen Länge und mit seiner
 Preisstrategie, und darauf Ihre Abweichungen, sofern «Eigene Werte anwenden» an
 ist — also genau das, was ein Lauf mit diesen Einstellungen rechnen würde.
@@ -426,8 +439,8 @@ der Lauf rechnete mit dem Formular, im Zustand stand weiter der Wert aus
 auffiel. Bei einem Lauf **ohne** Sprachmodell bleiben die vier Felder unberührt:
 Gerufen wird nichts, also beschreiben sie nichts, und in `run_metadata.json`
 stehen sie dann ausdrücklich leer. **Ob** überhaupt ein Sprachmodell beteiligt ist und mit
-welchem Zufallsstartwert gerechnet wird, entscheiden Sie oben im dritten
-Schritt.
+welchem Zufallsstartwert gerechnet wird, entscheiden Sie oben im Schritt
+«Womit wird gerechnet?».
 
 Ein einzelner Lauf ist auch ohne eigenen Startwert wiederholbar — ohne Angabe
 gilt ein Standardwert. Der Startwert zählt an zwei Stellen: Setzen Sie ihn fest,

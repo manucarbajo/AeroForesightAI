@@ -108,12 +108,17 @@ neu gestartet. Zwischenstände sind Fortsetzungspunkte, kein Archiv.
 
 Im Kopf des Laufs — im Leitstand über der Szene, unter «Ergebnisse» über den
 sieben Ansichten — steht ein gelber Hinweis, dass Aufrufe an das Sprachmodell
-unbeantwortet blieben; «Was das heißt» klappt die Erklärung auf. In der Kopfzeile
+ohne verwertbare Antwort blieben; «Was das heißt» klappt die Erklärung auf. In der Kopfzeile
 erscheint der Hinweis nicht: Sie sagt seit September 2026 nur, ob gerade gerechnet
 wird — ein beeinträchtigter Lauf ist eine Eigenschaft dieses Laufs, nicht der Anlage. Das heißt nicht, dass die Zahlen falsch sind: Preise,
 Buchungsraten und Faktorzustände rechnet Python, unabhängig vom Sprachmodell.
 Fehlen können die Beiträge der Akteure und Teile der Deutung — an den
 betroffenen Stellen hat der jeweilige Akteur ausgesetzt.
+
+**Auch eine Antwort, die sich nicht verwenden ließ, zählt** (seit Ende September
+2026): Hat das Modell zum Abschlusstext geantwortet, aber etwa ohne Titel oder in
+kaputtem Format, fragt das Programm ein zweites Mal; ist auch diese Antwort unbrauchbar, steht
+dort die deterministische Vorlage — und der Lauf ist beeinträchtigt. Vorher sah er in diesem Fall vollwertig aus.
 
 Welche Ticks es traf und woran es lag, steht in `llm_incidents.json`; im Tab
 **Dateien** lässt sie sich öffnen. Die häufigste Ursache ist ein nicht laufendes
@@ -149,6 +154,6 @@ nur die Deutung.
 
 ## Wenn nichts davon passt
 
-Der Ansicht **Abfrage** blendet über «Artefakt-Checks anzeigen» eine Prüfung ein, die
+Der Ansicht **Abfrage** blendet über «Dateien des Laufs gegeneinander prüfen» eine Prüfung ein, die
 die erzeugten Dateien gegeneinander abgleicht. Sie sagt unabhängig vom
 Sprachmodell, ob ein Lauf in sich stimmig ist.

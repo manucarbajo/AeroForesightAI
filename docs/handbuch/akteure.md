@@ -39,6 +39,12 @@ Erst danach kommen die Akteure zu Wort. Sie sehen das Ergebnis des Ticks und
 deuten es. Was sie sagen, kann Ereignisse für den nächsten Tick erzeugen — aber
 es verändert nicht rückwirkend die Zahlen dieses Ticks.
 
+Die Akteure schreiben **deutsch**, ebenso Abschlusstext und Abfrage. Englisch
+bleiben nur Kennungen, die das Programm wörtlich liest — Ereignisarten wie
+`demand_shift` und Faktornummern wie F1.1. Das mitgelieferte kleine Sprachmodell
+formuliert dabei nicht immer sauber und wiederholt sich über mehrere Ticks; die
+Zahlen berührt das nicht, sie kommen aus der Rechnung.
+
 ## Redebedarf
 
 Im Normalbetrieb äußert sich jeder Akteur in jedem Tick. Das erzeugt viel Text,

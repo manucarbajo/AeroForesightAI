@@ -362,6 +362,7 @@ def _felder_raster(groesse: str, index: int, felder: dict, gesperrt: bool) -> ht
             ui.field(
                 "Art",
                 dcc.Dropdown(
+                    labels=ui.AUSWAHL_TEXTE,
                     id=punkt_id(groesse, index, "art"),
                     options=ARTEN,
                     value=felder.get("art"),

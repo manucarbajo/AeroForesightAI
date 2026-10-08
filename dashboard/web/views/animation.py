@@ -15,10 +15,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
-from dash import dcc, html
+from dash import MATCH, Input, Output, State, ctx, dcc, html, no_update
 
+from dashboard.config_catalog import segment_name
 from dashboard.web import components as ui
 from dashboard.web import theme
 
@@ -49,6 +51,12 @@ _BASE_COLUMNS = {
 #: Personen zu sehen sind — so hielt es die Researcher-Variante (P5.2).
 STICHPROBE = 150
 _STICHPROBEN_SEED = 42
+
+#: Wie viele Personen die Punktwolke «Die Bevölkerung über die Ticks» zeigt
+#: (P8-V11). Bis zum 2026-10-01 waren es alle — bei 120 Ticks 8,15 MiB für ein
+#: einziges Diagramm, mit 300 noch 2,62 MiB; mit 200 bleibt es unter 2 MB. Mehr als
+#: die Einzelsichten, weil sie die ganze Wolke zeigen soll.
+STICHPROBE_BEVOELKERUNG = 200
 
 
 @dataclass(frozen=True)
@@ -104,6 +112,28 @@ MERKMALSICHTEN = (
     ),
 )
 
+#: Die Werte und Spaltennamen, die in Legende und Hover der Diagramme stehen.
+GEBUCHT = "gebucht"
+NICHT_GEBUCHT = "nicht gebucht"
+GESCHAEFTLICH = "Geschäftsreise"
+PRIVAT = "Privatreise"
+_BESCHRIFTUNG = {
+    "Gebucht": "Buchung",
+    "Segment": "Reiseanlass",
+    "tick": "Tick",
+    "id": "Person",
+    "age": "Alter",
+    "substitution_readiness": "Bahnbereitschaft",
+    "price_sensitivity": "Preisempfindlichkeit",
+    "saturation_level": "Sättigung",
+    "income_factor": "Einkommensfaktor",
+    "wtp_eur": "Zahlungsbereitschaft in €",
+    "environmental_awareness": "Umweltbewusstsein",
+    "ticket_price": "Ticketpreis (€)",
+    "total_agenten": "Personen",
+    "gebucht": "Anzahl Buchungen",
+}
+
 _AGE_BINS = [0, 18, 26, 36, 51, 66, 120]
 _AGE_LABELS = ["<18", "18-25", "26-35", "36-50", "51-65", ">65"]
 
@@ -149,11 +179,14 @@ def load_history(run_dir: Path):
     else:
         frame["ticket_price"] = 0
 
-    frame["Segment"] = frame.apply(
-        lambda row: "Business" if str(row.get("business", False)).lower() == "true" else "Leisure",
-        axis=1,
-    )
-    frame["Gebucht"] = frame["booked"].astype(str)
+    # **Deutsche Werte, weil sie die Legende sind** (Befund 12 der Abnahme vom
+    # 2026-09-30): Dort stand «False, Leisure» und «True, Business».
+    if "business" in frame.columns:
+        geschaeftlich = frame["business"].astype(str).str.lower() == "true"
+    else:
+        geschaeftlich = frame["id"] != frame["id"]
+    frame["Segment"] = geschaeftlich.map({True: GESCHAEFTLICH, False: PRIVAT})
+    frame["Gebucht"] = frame["booked"].astype(bool).map({True: GEBUCHT, False: NICHT_GEBUCHT})
     frame["booked_num"] = frame["booked"].astype(bool).astype(int)
     frame["Altersgruppe"] = pd.cut(frame["age"], bins=_AGE_BINS, labels=_AGE_LABELS, right=False)
     return frame
@@ -209,12 +242,13 @@ def _surplus_figure(frame, mode: str = theme.LIGHT):
         hover_data=hover,
         title="Wer sich den Flug leisten kann",
         labels={
+            **_BESCHRIFTUNG,
             "erschwinglichkeitsgrenze_eur": "Höchster bezahlbarer Preis (€)",
             "spielraum_eur": "Spielraum bis zur Grenze (€)",
             "ticket_price": "Ticketpreis (€)",
             "tick": "Tick",
         },
-        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        color_discrete_map={GEBUCHT: tone["positive"], NICHT_GEBUCHT: tone["negative"]},
         range_x=[0, frame["erschwinglichkeitsgrenze_eur"].max() * 1.1],
         range_y=[frame["spielraum_eur"].min() - 10, frame["spielraum_eur"].max() + 10],
     )
@@ -259,12 +293,13 @@ def _swarm_figure(frame, mode: str = theme.LIGHT):
         hover_data=["saturation_level"],
         title="Sättigung",
         labels={
+            **_BESCHRIFTUNG,
             "wtp_eur": "Zahlungsbereitschaft in €",
             "reisebedarf": "Reisebedarf (1 − Sättigung)",
             "saturation_level": "Sättigung",
             "tick": "Tick",
         },
-        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        color_discrete_map={GEBUCHT: tone["positive"], NICHT_GEBUCHT: tone["negative"]},
         range_x=[0, frame["wtp_eur"].max() * 1.1],
         range_y=[-0.05, 1.05],
     )
@@ -286,8 +321,8 @@ def _merkmal_figure(frame, sicht: Merkmalsicht, mode: str = theme.LIGHT):
         symbol="Segment",
         hover_name="id",
         title=sicht.titel.split(":")[0],
-        labels={sicht.x: sicht.x_achse, sicht.y: sicht.y_achse, "tick": "Tick"},
-        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        labels={**_BESCHRIFTUNG, sicht.x: sicht.x_achse, sicht.y: sicht.y_achse},
+        color_discrete_map={GEBUCHT: tone["positive"], NICHT_GEBUCHT: tone["negative"]},
         range_x=list(sicht.x_bereich) if sicht.x_bereich else None,
         range_y=list(sicht.y_bereich) if sicht.y_bereich else None,
     )
@@ -311,11 +346,12 @@ def _population_figure(frame, mode: str = theme.LIGHT):
         hover_data=["age", "substitution_readiness", "price_sensitivity"],
         title="Population über Zeit",
         labels={
+            **_BESCHRIFTUNG,
             "wtp_eur": "Zahlungsbereitschaft in €",
-            "environmental_awareness": "Umweltbewusstsein (Awareness)",
+            "environmental_awareness": "Umweltbewusstsein",
             "tick": "Tick",
         },
-        color_discrete_map={"True": tone["positive"], "False": tone["negative"]},
+        color_discrete_map={GEBUCHT: tone["positive"], NICHT_GEBUCHT: tone["negative"]},
         range_x=[
             frame["wtp_eur"].quantile(0.01) * 0.9,
             frame["wtp_eur"].quantile(0.99) * 1.1,
@@ -365,6 +401,7 @@ def _age_figure(frame):
         },
         title="Buchungsverhalten nach Altersgruppen",
         labels={
+            **_BESCHRIFTUNG,
             "Buchungsrate": "Buchungsrate (0–1)",
             "avg_wtp": "Ø Zahlungsbereitschaft in €",
             "gebucht": "Anzahl Buchungen",
@@ -398,7 +435,7 @@ def _segment_frame(frame):
             records.append(
                 {
                     "tick": tick,
-                    "Segment": column.replace("_", " ").title(),
+                    "Segment": segment_name(column),
                     "total_agenten": total,
                     "gebucht": booked,
                     "Buchungsrate": booked / total,
@@ -432,6 +469,9 @@ def _segment_figure(segments):
         },
         title="Buchungsverhalten nach Segmenten",
         labels={
+            **_BESCHRIFTUNG,
+            # Hier ist «Segment» das Bevölkerungssegment, nicht der Reiseanlass.
+            "Segment": "Segment",
             "Buchungsrate": "Buchungsrate (0–1)",
             "avg_wtp": "Ø Zahlungsbereitschaft in €",
             "gebucht": "Anzahl Buchungen",
@@ -473,6 +513,9 @@ def _efficiency_figure(frame, segments, mode: str = theme.LIGHT):
         },
         title="Marktanteil vs. Populationsanteil",
         labels={
+            **_BESCHRIFTUNG,
+            # Hier ist «Segment» das Bevölkerungssegment, nicht der Reiseanlass.
+            "Segment": "Segment",
             "pop_share": "Anteil an Gesamtpopulation (0–1)",
             "booking_share": "Anteil an Gesamtbuchungen (0–1)",
             "gebucht": "Anzahl Buchungen",
@@ -492,7 +535,180 @@ def _efficiency_figure(frame, segments, mode: str = theme.LIGHT):
     return fig
 
 
+#: Die Knöpfe «Diagramm zeigen» und die Wirte, in die das Diagramm gezeichnet wird
+#: (P8-V11). **Musterkennungen**, weil es je Lauf verschieden viele Blöcke gibt
+#: und `MATCH` null Treffer verträgt (Regel 6).
+ZEIGEN = "animation-zeigen"
+WIRT = "animation-wirt"
+
+
+def _kopf(run_dir: Path) -> list[str]:
+    """Die Spalten des Personenverlaufs — gelesen wird nur die erste Zeile."""
+
+    import pandas as pd
+
+    return list(pd.read_csv(run_dir / "individuals_history.csv", nrows=0).columns)
+
+
+@lru_cache(maxsize=2)
+def _verlauf(laufordner: str, stand: float):
+    """`load_history` je Lauf **einmal** — *stand* ist die Änderungszeit der Datei.
+
+    Neun Diagramme lesen dieselbe Datei; ohne Zwischenspeicher läse jeder Klick
+    sie neu (bei 120 Ticks rund 1,4 s). Die Änderungszeit im Schlüssel sorgt
+    dafür, dass ein neu gerechneter Lauf nicht den alten Stand zeigt.
+    """
+
+    return load_history(Path(laufordner))
+
+
+def _bloecke(run_dir: Path) -> list[tuple[str, str, str]]:
+    """Welche Diagramme dieser Lauf hergibt: (Kennung, Titel, Erklärung).
+
+    Entschieden wird aus dem **Kopf** der Datei — die Daten selbst liest erst der
+    Klick. Ein Hinweis statt eines Diagramms trägt die Kennung `""`.
+    """
+
+    spalten = set(_kopf(run_dir))
+    eintraege: list[tuple[str, str, str]] = [
+        (
+            "bevoelkerung",
+            "Die Bevölkerung über die Ticks",
+            f"Eine feste Stichprobe von {STICHPROBE_BEVOELKERUNG} Personen nach "
+            "Zahlungsbereitschaft und Umweltbewusstsein, über die Ticks.",
+        )
+    ]
+    if "erschwinglichkeitsgrenze_eur" in spalten and (run_dir / "price_history.json").is_file():
+        eintraege.append(
+            (
+                "spielraum",
+                "Wer sich den Flug leisten kann: Spielraum bis zur Erschwinglichkeitsgrenze",
+                f"Eine feste Stichprobe von {STICHPROBE} Personen. Waagrecht der höchste "
+                "Preis, den eine Person überhaupt bezahlen kann, senkrecht der Abstand zum "
+                "Ticketpreis des Ticks. Unter der gestrichelten Linie bucht sie nicht; "
+                "darüber entscheidet die Wahrscheinlichkeit.",
+            )
+        )
+    else:
+        eintraege.append(
+            (
+                "",
+                "",
+                "Das Diagramm «Wer sich den Flug leisten kann» braucht die Spalte "
+                "`erschwinglichkeitsgrenze_eur` und den Preisverlauf. Läufe vor dem "
+                "11. September 2026 schreiben die Spalte nicht — ein neuer Lauf zeigt ihn.",
+            )
+        )
+    if "saturation_level" in spalten:
+        eintraege.append(
+            (
+                "saettigung",
+                "Sättigung: Reisebedarf und Wiederkehr",
+                f"Dieselbe Stichprobe von {STICHPROBE} Personen. Waagrecht die "
+                "Zahlungsbereitschaft, senkrecht der Reisebedarf: eins minus die Sättigung. "
+                "Wer bucht, wird gesättigt und fällt nach unten; danach klingt die Sättigung "
+                "Tick für Tick ab, und der Punkt steigt wieder — je nach Segment "
+                "verschieden schnell.",
+            )
+        )
+    else:
+        eintraege.append(
+            (
+                "",
+                "",
+                "Das Diagramm «Sättigung» braucht die Spalte `saturation_level` — dieser Lauf "
+                "schreibt sie nicht.",
+            )
+        )
+    for nummer, sicht in enumerate(MERKMALSICHTEN):
+        if sicht.x in spalten and sicht.y in spalten:
+            eintraege.append(
+                (
+                    f"merkmal-{nummer}",
+                    sicht.titel,
+                    f"Dieselbe Stichprobe von {STICHPROBE} Personen. {sicht.lesehilfe}",
+                )
+            )
+        else:
+            eintraege.append(
+                (
+                    "",
+                    "",
+                    f"«{sicht.titel}» braucht die Spalten `{sicht.x}` und `{sicht.y}` — "
+                    "dieser Lauf schreibt sie nicht.",
+                )
+            )
+    eintraege.append(
+        (
+            "alter",
+            "Aggregation nach Altersgruppen",
+            "Buchungsraten und -mengen pro Altersgruppe über die Ticks.",
+        )
+    )
+    if not [c for c in spalten if c not in _BASE_COLUMNS]:
+        eintraege.append(("", "", "Keine Segmente (Labels) in der Population definiert."))
+        return eintraege
+    eintraege.append(
+        (
+            "segmente",
+            "Aggregation nach Segmenten",
+            "Buchungsraten und -mengen pro Segment über die Ticks.",
+        )
+    )
+    eintraege.append(
+        (
+            "effizienz",
+            "Segment-Effizienz (Buchungsanteil vs. Populationsanteil)",
+            "Liegt eine Bubble oberhalb der Diagonalen, bucht dieses Segment "
+            "überdurchschnittlich oft in Relation zu seiner Größe.",
+        )
+    )
+    return eintraege
+
+
+def diagramm(kennung: str, run_dir: Path, mode: str = theme.LIGHT):
+    """Das eine Diagramm hinter einem Knopf «Diagramm zeigen» — oder ein Hinweis."""
+
+    datei = run_dir / "individuals_history.csv"
+    frame = _verlauf(str(run_dir), datei.stat().st_mtime)
+    if kennung == "bevoelkerung":
+        return _graph(
+            _population_figure(stichprobe(frame, STICHPROBE_BEVOELKERUNG), mode), mode=mode
+        )
+    if kennung == "spielraum":
+        surplus = surplus_frame(frame)
+        if surplus is not None:
+            return _graph(_surplus_figure(stichprobe(surplus), mode), mode=mode)
+    if kennung == "saettigung":
+        bedarf = bedarf_frame(frame)
+        if bedarf is not None:
+            return _graph(_swarm_figure(stichprobe(bedarf), mode), mode=mode)
+    if kennung.startswith("merkmal-"):
+        sicht = MERKMALSICHTEN[int(kennung.removeprefix("merkmal-"))]
+        return _graph(_merkmal_figure(stichprobe(frame), sicht, mode), mode=mode)
+    if kennung == "alter":
+        figur = _age_figure(frame)
+        if figur is not None:
+            return _graph(figur, mode=mode)
+    if kennung in ("segmente", "effizienz"):
+        segments = _segment_frame(frame)
+        if segments is not None:
+            if kennung == "segmente":
+                return _graph(_segment_figure(segments), mode=mode)
+            return _graph(_efficiency_figure(frame, segments, mode), mode=mode)
+    return ui.hinweis("Für dieses Diagramm enthält der Lauf keine Daten.", "info")
+
+
 def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
+    """Die Ansicht — **ohne ein einziges Diagramm** (P8-V11, 2026-10-01).
+
+    Bis dahin zeichnete sie neun animierte Diagramme auf einmal: gemessen 7,6 s
+    und 5,05 MiB für den Pitch-Fall über 40 Ticks, 20,5 s und 14,84 MiB für
+    einen Rahmen über 120 Ticks. Jedes Diagramm kostet für sich 1 bis 3 s; ein
+    Bruchteil davon lässt sich sparen, die Summe nicht. Deshalb rechnet jedes
+    erst, wenn jemand es sehen will — so sah es P7.6-U6.2 vor.
+    """
+
     history_file = run_dir / "individuals_history.csv"
     if not history_file.is_file():
         return ui.empty_state(
@@ -503,118 +719,70 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
         )
 
     try:
-        frame = load_history(run_dir)
+        eintraege = _bloecke(run_dir)
     except Exception as exc:  # noqa: BLE001 - defekte History soll die Seite nicht sprengen
         return ui.hinweis(f"Der Personenverlauf ließ sich nicht lesen: {exc}", "fehler")
 
-    if frame.empty:
-        return ui.hinweis("Der Personenverlauf ist leer.", "warnung")
-
     blocks: list = [
-        _block(
-            "Die Bevölkerung über die Ticks",
-            "Jede Person nach Zahlungsbereitschaft und Umweltbewusstsein, über die Ticks.",
-            _graph(_population_figure(frame, mode), mode=mode),
+        ui.satz(
+            "Jedes Diagramm rechnet erst, wenn Sie es öffnen — je nach Länge des Laufs "
+            "dauert das einige Sekunden.",
+            class_name=f"{ui.CAPTION} mb-6",
         )
     ]
-
-    surplus = surplus_frame(frame)
-    if surplus is None:
-        blocks.append(
-            ui.hinweis(
-                "Das Diagramm «Wer sich den Flug leisten kann» braucht die Spalte `erschwinglichkeitsgrenze_eur` und den "
-                "Preisverlauf. Läufe vor dem 11. September 2026 schreiben die Spalte nicht — "
-                "ein neuer Lauf zeigt ihn.",
-                "info",
-                class_name="mb-6",
-            )
-        )
-    else:
-        blocks.append(
-            _block(
-                "Wer sich den Flug leisten kann: Spielraum bis zur Erschwinglichkeitsgrenze",
-                f"Eine feste Stichprobe von {STICHPROBE} Personen. Waagrecht der höchste Preis, "
-                "den eine Person überhaupt bezahlen kann, senkrecht der Abstand zum Ticketpreis "
-                "des Ticks. Unter der gestrichelten Linie bucht sie nicht; darüber entscheidet "
-                "die Wahrscheinlichkeit.",
-                _graph(_surplus_figure(stichprobe(surplus), mode), mode=mode),
-            )
-        )
-
-    bedarf = bedarf_frame(frame)
-    if bedarf is None:
-        blocks.append(
-            ui.hinweis(
-                "Das Diagramm «Sättigung» braucht die Spalte `saturation_level` — dieser Lauf "
-                "schreibt sie nicht.",
-                "info",
-                class_name="mb-6",
-            )
-        )
-    else:
-        blocks.append(
-            _block(
-                "Sättigung: Reisebedarf und Wiederkehr",
-                f"Dieselbe Stichprobe von {STICHPROBE} Personen. Waagrecht die "
-                "Zahlungsbereitschaft, senkrecht der Reisebedarf: eins minus die Sättigung. "
-                "Wer bucht, wird gesättigt und fällt nach unten; danach klingt die Sättigung "
-                "Tick für Tick ab, und der Punkt steigt wieder — je nach Segment "
-                "verschieden schnell.",
-                _graph(_swarm_figure(stichprobe(bedarf), mode), mode=mode),
-            )
-        )
-
-    for sicht in MERKMALSICHTEN:
-        if sicht.x not in frame.columns or sicht.y not in frame.columns:
-            blocks.append(
-                ui.hinweis(
-                    f"«{sicht.titel}» braucht die Spalten `{sicht.x}` und `{sicht.y}` — "
-                    "dieser Lauf schreibt sie nicht.",
-                    "info",
-                    class_name="mb-6",
-                )
-            )
+    for kennung, titel, erklaerung in eintraege:
+        if not kennung:
+            blocks.append(ui.hinweis(erklaerung, "info", class_name="mb-6"))
             continue
         blocks.append(
             _block(
-                sicht.titel,
-                f"Dieselbe Stichprobe von {STICHPROBE} Personen. {sicht.lesehilfe}",
-                _graph(_merkmal_figure(stichprobe(frame), sicht, mode), mode=mode),
+                titel,
+                erklaerung,
+                html.Div(
+                    [
+                        ui.button(
+                            "Diagramm zeigen",
+                            id={"type": ZEIGEN, "diagramm": kennung},
+                            variant="secondary",
+                            icon_name="play_arrow",
+                        ),
+                        dcc.Loading(
+                            html.Div(id={"type": WIRT, "diagramm": kennung}),
+                            type="dot",
+                            className="af-ladeanzeige",
+                            delay_show=ui.LADEANZEIGE_NACH_MS,
+                        ),
+                    ]
+                ),
             )
         )
-
-    age_figure = _age_figure(frame)
-    if age_figure is not None:
-        blocks.append(
-            _block(
-                "Aggregation nach Altersgruppen",
-                "Buchungsraten und -mengen pro Altersgruppe über die Ticks.",
-                _graph(age_figure, mode=mode),
-            )
-        )
-
-    segments = _segment_frame(frame)
-    if segments is None:
-        blocks.append(
-            ui.hinweis(
-                "Keine Segmente (Labels) in der Population definiert.", "info", class_name="mb-6"
-            )
-        )
-        return html.Div(blocks)
-
-    blocks.append(
-        _block(
-            "Aggregation nach Segmenten",
-            "Buchungsraten und -mengen pro Segment über die Ticks.",
-            _graph(_segment_figure(segments), mode=mode),
-        )
-    )
-    blocks.append(
-        _block(
-            "Segment-Effizienz (Buchungsanteil vs. Populationsanteil)",
-            "Liegt eine Bubble oberhalb der Diagonalen, bucht dieses Segment "
-            "überdurchschnittlich oft in Relation zu seiner Größe.",
-            _graph(_efficiency_figure(frame, segments, mode), mode=mode),
-        )
-    )
     return html.Div(blocks)
+
+
+def register_callbacks(app) -> None:
+    @app.callback(
+        Output({"type": WIRT, "diagramm": MATCH}, "children"),
+        Output({"type": ZEIGEN, "diagramm": MATCH}, "style"),
+        Input({"type": ZEIGEN, "diagramm": MATCH}, "n_clicks"),
+        State("selected-run-store", "data"),
+        State("theme-store", "data"),
+        prevent_initial_call=True,
+    )
+    def _zeigen(n_clicks, selected, mode):
+        """Ein Diagramm auf Klick — und der Knopf geht, wenn es da ist.
+
+        Dash ruft einen Callback mit Musterkennung auch, wenn der Knopf neu
+        gezeichnet wird; dann ist `n_clicks` leer, und es geschieht nichts.
+        """
+
+        if not n_clicks or not selected:
+            return no_update, no_update
+        kennung = ctx.triggered_id["diagramm"]
+        try:
+            inhalt = diagramm(kennung, Path(selected["run_dir"]), theme.normalise(mode))
+        except Exception as exc:  # noqa: BLE001 - ein Diagramm soll die Seite nicht sprengen
+            return (
+                ui.hinweis(f"Das Diagramm ließ sich nicht zeichnen: {exc}", "fehler"),
+                no_update,
+            )
+        return inhalt, {"display": "none"}

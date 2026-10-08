@@ -18,6 +18,8 @@ Aussage ist die Zweiteilung: vor der Pandemie nah dran, danach nicht.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from src.backtest.auswertung import bewerten, indexieren, jahresmittel, saisonspanne
@@ -253,8 +255,15 @@ def test_der_vorlauf_laeuft_durch_und_liefert_beide_seiten():
     """
 
     from src.backtest.vorlauf import ZIELREIHEN, modellpfade
+    from src.reporting.output_writer import paths
 
     pfade = modellpfade()
+
+    # **Und er legt nichts in den Ausgabeordner** (2026-10-02): Der Personenverlauf
+    # landete je Lauf mit rund 11 MB unter `outputs/backtest_vorlauf` — mitten im
+    # Vorführbestand, gelesen hat ihn der Backtest nie.
+    verlauf = Path(paths.OUTPUT_DIR) / "backtest_vorlauf" / "individuals_history.csv"
+    assert not verlauf.exists(), f"Der Backtest schreibt noch {verlauf}"
 
     for titel, (modellgroesse, zielname) in ZIELREIHEN.items():
         assert (

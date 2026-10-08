@@ -20,8 +20,9 @@ import plotly.graph_objects as go
 from dash import dcc, html
 
 from dashboard.web import components as ui
-from dashboard.web import theme
+from dashboard.web import formate, theme
 from dashboard.web.run_data import RunData
+from src.reporting.aussagen_pruefung import pruefe_bis
 
 #: Wie viele Konsolenzeilen höchstens dargestellt werden. Bei 300 lagen bei
 #: einem 40-Tick-Lauf schon 254 Zeilen gleichzeitig im DOM einer Seitenspalte —
@@ -31,6 +32,10 @@ MAX_CONSOLE_LINES = 80
 
 #: Welche Ereignisquelle welche Stufe trägt. Der Regulator setzt Politik, das
 #: ist die einzige Quelle, die im Normalbetrieb hervorstechen soll.
+#: Wessen Ereignisse das Sprachmodell schreibt — nur sie werden gegen die Rechnung
+#: gehalten; was `market` und `system` melden, rechnet Python.
+_AGENTEN = ("provider", "regulator", "consumer")
+
 _EVENT_LEVELS = {
     "market": "muted",
     "regulator": "info",
@@ -58,7 +63,7 @@ def _delta(value: Any, *, digits: int = 2, suffix: str = "") -> tuple[str | None
     if abs(number) < 10**-digits / 2:
         return f"±0{suffix}", None
     zeichen = "+" if number > 0 else "−"
-    return f"{zeichen}{abs(number):.{digits}f}{suffix}", ("up" if number > 0 else "down")
+    return f"{zeichen}{formate.zahl(abs(number), digits)}{suffix}", ("up" if number > 0 else "down")
 
 
 def _number(row: dict, key: str) -> float | None:
@@ -85,13 +90,19 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
     kosten = _number(row, "cost_pressure_eur")
     nachfrage = _number(row, "demand_level")
 
-    raten_delta, raten_richtung = _delta(row.get("booking_rate_delta"), digits=3)
+    # **In Prozentpunkten**, wie der Wert daneben in Prozent steht (2026-10-02): Bis
+    # dahin «23,3 %» und darunter «↓ −0,036» — ein Anteil neben einem Prozentwert,
+    # im ersten Schritt der Vorführung zu sehen.
+    raten_aenderung = _number(row, "booking_rate_delta")
+    raten_delta, raten_richtung = _delta(
+        None if raten_aenderung is None else raten_aenderung * 100, digits=1, suffix=" Pp."
+    )
     preis_delta, preis_richtung = _delta(row.get("market_price_delta_eur"), suffix=" €")
 
     return ui.grid(
         ui.kachel(
             "Buchungsrate",
-            "—" if rate is None else f"{rate:.1%}",
+            "—" if rate is None else formate.prozent(rate),
             variante="kompakt",
             delta=raten_delta,
             direction=raten_richtung,
@@ -99,24 +110,24 @@ def kpi_row(data: RunData, tick: int) -> html.Div:
         ),
         ui.kachel(
             "Ticketpreis",
-            "—" if preis is None else f"{preis:.2f} €",
+            "—" if preis is None else formate.euro(preis),
             variante="kompakt",
             delta=preis_delta,
             direction=preis_richtung,
         ),
         ui.kachel(
             "Kostendruck",
-            "—" if kosten is None else f"{kosten:.2f} €",
+            "—" if kosten is None else formate.euro(kosten),
             variante="kompakt",
             hint=(
                 None
                 if row.get("carbon_tax_level") is None
-                else f"CO₂-Abgabe {float(row['carbon_tax_level']):.0f} €/t"
+                else f"CO₂-Abgabe {formate.zahl(float(row['carbon_tax_level']), 0)} €/t"
             ),
         ),
         ui.kachel(
             "Nachfrageniveau",
-            "—" if nachfrage is None else f"{nachfrage:.2f}",
+            "—" if nachfrage is None else formate.zahl(nachfrage),
             variante="kompakt",
             hint=None if row.get("population") is None else f"{row['population']} Personen",
         ),
@@ -281,13 +292,18 @@ def console_lines(
 
     for event in reversed(data.events):
         quelle = str(event.get("source_agent") or "?")
-        zeilen.append(
-            ui.log_line(
-                _EVENT_LEVELS.get(quelle, "info"),
-                f"{quelle}: {event.get('description', '')}",
-                tick=event.get("round_number"),
-            )
-        )
+        text = str(event.get("description", ""))
+        stufe = _EVENT_LEVELS.get(quelle, "info")
+        # **Ein Agententext, der der Rechnung bis zu seinem Tick widerspricht, ist
+        # eine Warnung** (2026-10-02) — markiert, nicht gestrichen, wie im Bericht.
+        if quelle in _AGENTEN:
+            befunde = pruefe_bis(text, data.ticks, int(event.get("round_number") or 0))
+            if befunde:
+                stufe = "warning"
+                text += " — widerspricht der Rechnung: " + "; ".join(
+                    befund.erklaerung for befund in befunde
+                )
+        zeilen.append(ui.log_line(stufe, f"{quelle}: {text}", tick=event.get("round_number")))
 
     return zeilen[:MAX_CONSOLE_LINES]
 

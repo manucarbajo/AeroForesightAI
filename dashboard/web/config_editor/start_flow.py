@@ -474,11 +474,17 @@ def scenario_details(draft: dict) -> html.Div:
         # dort, wo er gebraucht wird: bei dem einen Szenario, das zur Debatte
         # steht, statt zehnmal im Raster.
         html.P(preset.description, className=f"{ui.CAPTION} mb-4"),
+        # **Ohne Dateinamen und ohne «bleibt außen vor»** (Befund 13 der Abnahme,
+        # 2026-10-01): Der Satz nannte `business_as_usual.json` und versprach, eigene
+        # Einstellungen blieben außen vor — seit P7.13 ändert der Schritt «Verläufe»
+        # einzelne Verläufe des Szenarios, und die Länge kommt nicht mehr im
+        # nächsten Schritt.
         ui.hinweis(
-            "Das Szenario gilt **unverändert**: Politik, Kosten und Nachfrageumfeld kommen aus "
-            f"`{preset.id}.json`, Ihre Einstellungen im Editor bleiben dafür außen vor. "
-            f"Angelegt ist es auf **{formate.ticks_mit_modellzeit(preset.max_ticks)}** — die Länge stellen Sie im "
-            "nächsten Schritt selbst ein.",
+            f"Politik, Kosten und Nachfrageumfeld kommen aus dem Szenario «{preset.name}». "
+            "Einzelne Verläufe ändern Sie im Schritt «Verläufe»; der Lauf heißt dann "
+            "«…, verändert». "
+            f"Angelegt ist es auf **{formate.ticks_mit_modellzeit(preset.max_ticks)}** — die "
+            "Länge stellen Sie im Schritt «Wie weit reicht der Lauf?» ein.",
             "kontext",
         ),
     ]
@@ -876,10 +882,22 @@ def _horizont_hinweis(draft: dict) -> list:
     """
 
     ticks = int(draft.get("rounds") or 0)
-    if ticks <= 0:
+    # **Beim Vergleich gibt es keine Länge des Laufs**: Jeder Rahmen rechnet in
+    # seiner eigenen. Bis zum 2026-10-01 stand hier die Rechnung eines Laufs über
+    # die Länge des Entwurfs (Befund 15 der Abnahme).
+    if ticks <= 0 or ist_vergleich(draft):
         return []
 
-    luecken = horizontluecken(load_properties_config(), max_ticks=ticks)
+    # **Die Verläufe, mit denen der Lauf wirklich rechnet** — das gewählte
+    # Szenario samt Abweichungen, wie `prepare_simulation_state` sie legt. Bis zum
+    # 2026-10-01 kamen sie immer aus `properties.json`, also aus der
+    # Standard-Ausgangslage: Unter «Business as Usual» nannte der Hinweis die
+    # SAF-Quote des Standards, die dieser Lauf gar nicht hat.
+    try:
+        verlaeufe = _zustand(draft).properties
+    except Exception:  # noqa: BLE001 - ein ungültiger Entwurf meldet sich im Preflight
+        return []
+    luecken = horizontluecken(verlaeufe, max_ticks=ticks)
     if not luecken:
         return []
 

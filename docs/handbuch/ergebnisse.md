@@ -20,6 +20,12 @@ Szenario, das heute kein Rahmenszenario ist, etwa einem Stresstest. Die Liste
 zeigt höchstens 30 Läufe; die Suche grenzt ein. Ein Klick auf eine Zeile wählt
 den Lauf und schließt das Fenster, Escape schließt es ohne Wahl.
 
+**Ein Lauf, der ein Szenario verändert hat, sagt es im Namen:** Haben Sie im
+Schritt «Verläufe» etwa die CO₂-Abgabe angehoben, heißt der Lauf «Business as
+Usual (A1+B1), verändert» — in der Auswahl, im Kopf des Laufs und in der
+Übersicht, wo unter dem Rahmenszenario steht, welche Größen abweichen. Bis Ende
+September 2026 hieß er genau wie der unveränderte Rahmen.
+
 ## Der Leitstand selbst
 
 Bevor Sie in die sieben Ansichten gehen: Der Bereich **Leitstand** beantwortet
@@ -34,7 +40,8 @@ Kurzname und Zustand («Regulierung», «F2.1»); ein hervorgehobener Chip heiß
 dieser Faktor ist gekippt. Der volle Zustandstext steht im Tooltip des Chips.
 
 Rechts stehen die Kennzahlen desselben Ticks — Buchungsrate, Ticketpreis,
-Kostendruck, Nachfrageniveau, jeweils mit der Veränderung zum Vortick —, darunter
+Kostendruck, Nachfrageniveau, jeweils mit der Veränderung zum Vortick, bei der
+Buchungsrate in Prozentpunkten («−11,4 Pp.») —, darunter
 dieselben Größen als Verlauf mit einer Marke an der aktuellen Stelle, jeder mit
 seiner Einheit im Titel. Die Veränderung trägt einen Pfeil — ↑ gestiegen,
 ↓ gefallen — und keine Farbe: Ob ein steigender Preis gut oder schlecht ist,
@@ -54,8 +61,32 @@ höchstens drei; alle stehen in der Konsole.
 Die Hauptansicht. Oben das Lauf-Narrativ, also was im Lauf tatsächlich passiert
 ist, darunter das Tripleset aus drei möglichen Fortsetzungen.
 
+**Widerspricht der Text der Rechnung, steht das direkt darunter.** Seit Ende
+September 2026 hält das Programm Titel, Zusammenfassung, Lauf-Narrativ und
+Auswahlbegründung eines vom Sprachmodell geschriebenen Texts gegen den
+gerechneten Verlauf: Schreibt der Text, die CO₂-Abgabe steige, während sie den
+ganzen Lauf bei 50 € stand, erscheint ein gelber Hinweis «Widerspricht der
+Rechnung» mit der Stelle. Ebenso ein Kalenderdatum oder ein genanntes Jahr («im Jahr 2030») — ein Tick
+hat keines — und englischer Text. Der Text wird nicht verändert oder verworfen. Die drei
+Szenarien sind ausgenommen: Sie beschreiben mögliche Zukünfte, die anders
+verlaufen dürfen als der Lauf. **Was die Prüfung nicht erkennt**, sind frei
+erfundene Dinge ohne falsche Richtung — etwa eine «Elektroflotte», die das
+Modell nicht kennt.
+
+**Auch was die Akteure sagen, wird geprüft** — seit dem 2. Oktober 2026, im
+Bericht und in der Konsole des Leitstands. Gehalten wird ein Akteurstext gegen
+den Stand **bis zu seinem Tick**, nicht gegen den ganzen Lauf: Wer in Tick 3
+schreibt, die Nachfrage sei gestiegen, hat recht, wenn sie bis dahin stieg,
+auch wenn sie danach fällt. Markiert wird nur ein klarer Gegensatz — der Text
+sagt «gestiegen», gerechnet ist «gesunken» —, im Bericht mit ⚠ unter der
+Stelle, in der Konsole als gelbe Zeile.
+
 Jedes Szenario lässt sich aufklappen und zeigt dann zweierlei: die Anhaltspunkte
 aus dem Lauf mit konkreten Tick-Werten, und die Beschreibung selbst. Die
+Anhaltspunkte nennen Buchungsrate und Ticketpreis zu einigen Ticks, die
+Faktorlage des Szenarios in derselben Kurzform wie die Faktorleiste im
+Leitstand (etwa «F1.2, F2.2, …») und, wo sie vom Ende des Laufs abweicht, den
+Wechsel («Anders als am Ende des Laufs: F3.1 → F3.2»). Die
 Anhaltspunkte sind der Beleg dafür, dass die Erzählung an gerechneten Zahlen
 hängt.
 
@@ -91,9 +122,11 @@ Streudiagramme, die sich über die Ticks abspielen lassen. Sie bringen ihre
 eigenen Abspielknöpfe mit; eine Zeitleiste gibt es unter «Ergebnisse» nicht — anders als
 die Szene im Bereich «Leitstand», die genau das tut. Wer beides nebeneinander
 braucht, nimmt die Szene; wer eine Aggregation über Alters- oder Segmentgruppen
-sucht, ist hier richtig. Das erste zeigt
-jede einzelne Person nach Zahlungsbereitschaft und Umweltbewusstsein, eingefärbt
-danach, ob sie gebucht hat.
+sucht, ist hier richtig. **Jedes Diagramm rechnet erst, wenn Sie «Diagramm
+zeigen» drücken** — je nach Länge des Laufs dauert das einige Sekunden; die
+Ansicht selbst ist sofort da. Das erste zeigt eine feste Stichprobe von 200
+Personen nach Zahlungsbereitschaft und Umweltbewusstsein, eingefärbt danach, ob
+sie gebucht hat.
 
 **«Wer sich den Flug leisten kann»** zeigt eine feste Stichprobe von 150 Personen, in jedem
 Tick dieselben. Waagrecht steht der höchste Ticketpreis, den eine Person
@@ -150,9 +183,11 @@ Szenario endet.
 
 **Aussage 4 braucht mehr als einen Lauf.** Steht Ihr Lauf allein, sagt die
 Ansicht das und zeigt seine Faktorlage am Ende; ein Vergleich entsteht über
-**Einrichten → Szenario-Vergleich starten**. Verglichen werden dann alle
-Szenario-Läufe aus einem Vergleich — auch solche aus früheren Durchläufen; auf
-der Platte liegen sie unter `outputs/sweeps/`.
+**Einrichten → Szenario-Vergleich starten**. Verglichen werden dann die
+heutigen Rahmenszenarien, jedes mit seinem jüngsten Lauf aus einem Vergleich.
+Läufe unter Szenarien, die heute kein Rahmen mehr sind — ältere Prüfläufe etwa
+—, bleiben draußen; der Satz unter dem Vergleich sagt, wie viele es sind. Im
+Lauf-Browser finden Sie sie unter dem Filter «Prüfläufe».
 
 Unter **PNG-Export** kann eine Warnung über den Bildern stehen; sie sagt, dass
 dem Satz nicht zu trauen ist. Zwei Fälle gibt es:
@@ -171,6 +206,24 @@ Steht keine Warnung da, ist der Satz vollständig und benannt.
 
 Der Tick-für-Tick-Bericht des Laufs, mit Kennzahlen und dem, was die Akteure
 gesagt haben. Der richtige Ort, um einem einzelnen Tick nachzugehen.
+Überblick und Endstand stehen offen; die Vorgaben des Szenarios und **jeder
+Tick sind zugeklappt**. Die Zeile eines Ticks nennt Buchungsrate und Preis,
+ein Tick mit Faktorwechsel trägt eine Marke — wer einem Tick nachgeht, klappt
+ihn auf. Ein Bericht über 40 Ticks war bis zum 1. Oktober 2026 rund 60
+Bildschirme lang, seither knapp fünf.
+Vorangestellt sind die vom Szenario geplanten Änderungen der Systemgrößen —
+nur die, die in die Länge dieses Laufs fallen. Ein Bericht vor dem 1. Oktober
+2026 listet dort noch alle Stützpunkte samt ihrer Konfigurationsbeschreibung.
+
+Je Tick steht eine Kennzahlenzeile — Buchungsrate, Veränderung in
+Prozentpunkten, Preis vorher und nachher, die Vorgaben des Szenarios für diesen
+Tick —, darunter ein **Faktorwechsel**, wenn es einen gab, dann **Wer bucht**
+nach Segment, die **Begründungen der Akteure** und ihre **Meldungen**. Die
+beiden letzten gibt es nur in einem Lauf mit Sprachmodell. Die Meldungen des
+Systems selbst («[delta:…]») stehen nicht im Bericht, weil die Kennzahlenzeile
+dieselben Zahlen nennt; im Ereignisprotokoll (`event_log.json`) bleiben sie.
+Berichte von vor dem 1. Oktober 2026 nennen Segmente und Größen noch mit ihren
+Kennungen und schreiben Zahlen mit Punkt.
 
 ## Abfrage
 
@@ -178,15 +231,15 @@ Ein Chat, der ausschließlich über die Daten dieses Laufs antwortet. Ausführli
 unter [Läufe abfragen](/doku/abfrage).
 
 Beim Wechsel zwischen den Ansichten erscheint ein Ladepunkt, solange die neue
-Ansicht gebaut wird. **«Animation» braucht dafür am längsten** — sie überträgt
-die simulierten Personen selbst, nicht nur die Ergebnisdaten, und bei einigen
-Tausend Personen über viele Ticks sind das mehrere Megabyte und einige Sekunden.
-Die übrigen Ansichten sind in Bruchteilen einer Sekunde da.
+Ansicht gebaut wird. Die Ansichten sind in Bruchteilen einer Sekunde da; die
+Diagramme unter «Animation» rechnen einzeln auf Knopfdruck, weil jedes die
+simulierten Personen selbst überträgt.
 
 ## Dateien
 
 Alle Rohdaten des Laufs. JSON eingerückt, Tabellen sortier- und filterbar,
-Markdown gerendert, Bilder angezeigt, alles herunterladbar.
+Markdown gerendert, Bilder angezeigt, alles herunterladbar. Gewählt ist beim
+Öffnen der Abschlusstext (`run_scenario.md`), ohne ihn die Angaben zum Lauf.
 
 Dateien über 256 KB werden erst auf Klick geladen — ein Zwischenstand ist
 schnell dreiviertel Megabyte groß. Welche Datei was enthält, steht unter

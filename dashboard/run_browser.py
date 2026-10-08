@@ -43,6 +43,10 @@ class RunSummary:
     #: `preset`, `eigen`, `standard`) — für die Art im Lauf-Browser (P7.3-U3.3).
     rahmen_id: str | None = None
     rahmen_quelle: str | None = None
+    #: Was an einem abgeleiteten Lauf vom Szenario abweicht (`rahmen.abweichungen`,
+    #: seit P7.13-U13.2) — damit Auswahl und Kopf ihn von einem unveränderten
+    #: unterscheiden (P8-V6).
+    rahmen_abweichungen: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -259,6 +263,9 @@ def list_runs(root: Path | str | None = None) -> list[RunSummary]:
                 compute_mode=meta_dict.get("compute_mode"),
                 rahmen_id=str((meta_dict.get("rahmen") or {}).get("id") or "") or None,
                 rahmen_quelle=str((meta_dict.get("rahmen") or {}).get("quelle") or "") or None,
+                rahmen_abweichungen=tuple(
+                    str(a) for a in (meta_dict.get("rahmen") or {}).get("abweichungen") or []
+                ),
             )
         )
 

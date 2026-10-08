@@ -121,32 +121,50 @@ def _row(label: str, value: str) -> dcc.Link:
     )
 
 
-def summary_rows(draft: dict) -> html.Div:
-    """Szenario, Länge, Rechenmodus — der Entwurf auf drei Zeilen.
+def rechenmodus_des_vergleichs() -> str:
+    """Wie ein Szenario-Vergleich rechnet — **aus dem, was er in sein Artefakt schreibt**.
 
-    **Beim Szenario-Vergleich stehen hier andere drei** (P1.9-W1.3). Er nimmt
-    vom Entwurf nichts entgegen: Szenario, Länge und Rechenmodus kommen dann aus
-    den Presets bzw. aus dem Vertrag des Sweeps. Die Zeilen des Entwurfs
-    anzuzeigen hieße, drei Werte zu behaupten, mit denen nicht gerechnet wird —
-    derselbe Fehler wie im Preflight, nur in der Nachbarzone.
+    Bis zum 2026-10-01 stand hier «Nur Zahlen (vorgegeben)», während das
+    Sprachmodell die Abschlusstexte schrieb und der Lauf-Kopf danach richtig
+    «Nur Zahlen, Abschlusstext vom Modell» sagte (Befund 17 der Abnahme).
+    Abgeleitet aus `sweep_metadata_args`, derselben Quelle wie `run_metadata.json`.
+    """
+
+    from src.orchestration.scenario_sweeps import SZENARIOTEXT_NUTZT_LLM, sweep_metadata_args
+    from src.reporting.output_writer.provenance import COMPUTE_MODE_LABELS
+    from src.reporting.output_writer.provenance import compute_mode as modus_von
+
+    return COMPUTE_MODE_LABELS[modus_von(sweep_metadata_args(llm_narrative=SZENARIOTEXT_NUTZT_LLM))]
+
+
+def stand(draft: dict) -> list[tuple[str, str]]:
+    """Was als Nächstes gerechnet wird, als drei Paare aus Beschriftung und Wert.
+
+    **Beim Szenario-Vergleich sind es andere drei** (P1.9-W1.3). Er nimmt vom
+    Entwurf nichts entgegen: Szenario, Länge und Rechenmodus kommen dann aus den
+    Presets bzw. aus dem Vertrag des Sweeps. Die Zeilen des Entwurfs anzuzeigen
+    hieße, drei Werte zu behaupten, mit denen nicht gerechnet wird — derselbe
+    Fehler wie im Preflight, nur in der Nachbarzone.
     """
 
     if start_flow.ist_vergleich(draft):
-        return html.Div(
-            [
-                _row("Lauf", f"Vergleich · {len(rahmenszenarien())} Rahmenszenarien"),
-                _row("Länge", "je Szenario"),
-                _row("Rechenmodus", "Nur Zahlen (vorgegeben)"),
-            ],
-            className="af-rail-rows",
-        )
+        return [
+            ("Lauf", f"Vergleich · {len(rahmenszenarien())} Rahmenszenarien"),
+            ("Länge", "je Szenario"),
+            ("Rechenmodus", rechenmodus_des_vergleichs()),
+        ]
+    return [
+        ("Szenario", _scenario_name(draft)),
+        ("Länge", _length(draft)),
+        ("Rechenmodus", compute_mode.short_label(draft)),
+    ]
+
+
+def summary_rows(draft: dict) -> html.Div:
+    """Szenario, Länge, Rechenmodus — der Entwurf auf drei Zeilen (siehe `stand`)."""
 
     return html.Div(
-        [
-            _row("Szenario", _scenario_name(draft)),
-            _row("Länge", _length(draft)),
-            _row("Rechenmodus", compute_mode.short_label(draft)),
-        ],
+        [_row(label, wert) for label, wert in stand(draft)],
         className="af-rail-rows",
     )
 
@@ -179,6 +197,12 @@ def progress_payload() -> dict | None:
         # hier, zeigte er sie nie — die Ansicht bekommt den Fortschritt immer
         # über diesen Umweg, nie direkt aus `runner.progress()`.
         "tick_seconds": list(aktuell.tick_seconds),
+        # Und die Zählung des Szenario-Vergleichs — ohne sie stünde dort wieder
+        # «nicht bezifferbar» (Befund 9 der Abnahme vom 2026-09-30).
+        "szenarien": aktuell.szenarien,
+        "szenarien_fertig": aktuell.szenarien_fertig,
+        "szenario_name": aktuell.szenario_name,
+        "abbruch": aktuell.abbruch,
     }
 
 
@@ -248,30 +272,47 @@ def rail(draft: dict | None = None) -> html.Div:
 layout = rail
 
 
+def _vergleich_fertig(result) -> html.Div:
+    """Die Fertigmeldung eines Szenario-Vergleichs (P8-V6, Befund 9).
+
+    **Sie nennt die Rahmen, nicht ihre Ablageorte**, und sagt, welcher Lauf
+    danach gewählt ist. Bis zum 2026-09-30 stand hier der Pfad der
+    Zusammenfassung und die Kennung jedes Ordners unter `sweeps/`, auch alter
+    Prüfläufe — und «oben in der Lauf-Auswahl wählen», obwohl `_poll` schon
+    einen gewählt hatte.
+    """
+
+    from dashboard.web.views import running
+
+    namen = list(result.child_names)
+    if not namen:
+        return ui.hinweis(
+            "Der Szenario-Vergleich ist durchgelaufen, hat aber keinen Lauf hinterlassen.",
+            "warnung",
+        )
+    return html.Div(
+        [
+            ui.hinweis(
+                f"Szenario-Vergleich abgeschlossen: {len(namen)} Rahmenszenarien gerechnet — "
+                + ", ".join(namen)
+                + ".",
+                "erfolg",
+            ),
+            html.P(
+                f"Gewählt ist «{namen[0]}». Unter «Diagramme» stehen alle "
+                "Szenarien nebeneinander.",
+                className=f"{ui.CAPTION} mt-2",
+            ),
+            running.finished_link(),
+        ]
+    )
+
+
 def _result_message(result) -> html.Div:
     """Die drei Ausgänge eines Laufs: Sweep-Batch, Multi-Run, Einzellauf."""
 
     if result.sweep_batch:
-        children = [ui.hinweis("Szenario-Vergleich abgeschlossen.", "erfolg")]
-        if result.sweep_summary_path:
-            children.append(
-                html.P(
-                    ["Summary: ", html.Code(str(result.sweep_summary_path))],
-                    className=f"{ui.CAPTION} mt-2",
-                )
-            )
-        if result.child_run_ids:
-            children.append(
-                ui.hinweis(
-                    "Einzelne Szenario-Läufe oben in der Lauf-Auswahl wählen: "
-                    + ", ".join(f"`{run_id}`" for run_id in result.child_run_ids),
-                    "info",
-                    class_name="mt-2",
-                )
-            )
-        else:
-            children.append(ui.json_view(result.artifacts))
-        return html.Div(children)
+        return _vergleich_fertig(result)
 
     if result.multi_run_batch:
         return html.Div(
@@ -355,6 +396,12 @@ def register_callbacks(app) -> None:
         # Index 2, Knopf an Index 4); ein Einschub dazwischen ließe die Meldung
         # in der falschen Komponente landen, ohne dass etwas rot wird.
         Output("url", "pathname", allow_duplicate=True),
+        # **Nach dem Start steht «Einrichten» wieder am Einstieg** (P8-V6, Befund 7).
+        # Drei Ausgänge, weil ein Anlauf aus Schritt, Besuchtem und Verlauf besteht
+        # — dasselbe Zurücksetzen wie auf den drei Wegen des Einstiegs.
+        Output(wizard.STEP_STORE, "data", allow_duplicate=True),
+        Output(wizard.VISITED_STORE, "data", allow_duplicate=True),
+        Output(wizard.HISTORY_STORE, "data", allow_duplicate=True),
         Input("run-start", "n_clicks"),
         # Der Knopf am Ende der Schrittfolge (P1.7). Zwei Ausloeser, **ein**
         # Startpfad: dieselbe Pruefung, dasselbe `runner.start`. Der Einwand
@@ -377,7 +424,7 @@ def register_callbacks(app) -> None:
         """
 
         if not (n_clicks or wizard_clicks):
-            return no_update, no_update, no_update, no_update, no_update, no_update
+            return (no_update,) * 9
 
         # Vor dem Start prüfen, nicht danach: Ohne das läuft eine kaputte Config
         # an und scheitert irgendwo im ersten Tick — ein negativer Seed etwa mit
@@ -397,6 +444,9 @@ def register_callbacks(app) -> None:
                 no_update,
                 False,
                 no_update,
+                no_update,
+                no_update,
+                no_update,
             )
 
         try:
@@ -408,6 +458,9 @@ def register_callbacks(app) -> None:
                 ui.hinweis(str(exc), "warnung"),
                 no_update,
                 False,
+                no_update,
+                no_update,
+                no_update,
                 no_update,
             )
         # Der Fortschritt wird geleert, nicht stehen gelassen: Sonst zeigte der
@@ -421,6 +474,13 @@ def register_callbacks(app) -> None:
             None,
             True,
             routing.url(running.leitstand_route()),
+            # Wer danach «Einrichten» öffnet, wählt wieder, welche Art von Lauf es
+            # wird. Bis zum 2026-09-30 blieb die Schrittfolge nach einem
+            # Szenario-Vergleich auf «Prüfen & Starten» stehen, und ein dort
+            # eingestellter Einzellauf startete wieder den Vergleich.
+            wizard.ENTRY,
+            [],
+            [],
         )
 
     @app.callback(
@@ -449,7 +509,10 @@ def register_callbacks(app) -> None:
         if not job.done:
             return no_update, False, True, no_update
 
-        runner.forget(job_id)
+        # **Kein `runner.forget` hier.** Diese Antwort kann verloren gehen — Dash
+        # verwirft sie, wenn der Takt `_poll` erneut auslöst, bevor sie ankommt —,
+        # und dann muss der nächste Aufruf dasselbe noch einmal sagen können.
+        # Aufgeräumt wird beim nächsten Start (`runner.start`).
         if job.error:
             return ui.hinweis(f"Lauf fehlgeschlagen: {job.error}", "fehler"), True, False, no_update
 

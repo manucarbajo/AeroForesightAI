@@ -77,21 +77,21 @@ def generate_all_figures(
     figure_paths: dict[str, Path] = {}
 
     if sweep_series:
-        figure_paths["Szenario-Vergleich Booking"] = plot_scenario_comparison(
+        figure_paths["Szenario-Vergleich Buchungsrate"] = plot_scenario_comparison(
             sweep_series, figures_dir / "scenario_comparison_booking.png", metric="booking"
         )
         figure_paths["Szenario-Vergleich Preis"] = plot_scenario_comparison(
             sweep_series, figures_dir / "scenario_comparison_price.png", metric="price"
         )
     if scores:
-        figure_paths["CIB Consistency Scores"] = plot_cib_scores(
+        figure_paths["Widerspruchsfreiheit der Szenarien"] = plot_cib_scores(
             scores, figures_dir / "scenario_cib_scores.png"
         )
 
-    figure_paths["Preis vs. Booking"] = plot_price_vs_booking(
+    figure_paths["Preis und Buchungsrate"] = plot_price_vs_booking(
         reference, figures_dir / "price_vs_booking.png"
     )
-    figure_paths["CO₂-Policy-Shock"] = plot_policy_shock(
+    figure_paths["CO₂-Abgabe und Buchungsrate"] = plot_policy_shock(
         reference, figures_dir / "policy_shock_co2_booking.png"
     )
     figure_paths["Systemdynamik"] = plot_system_dynamics(

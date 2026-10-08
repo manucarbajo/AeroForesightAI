@@ -114,6 +114,23 @@ def _options(run_dir: Path) -> list[dict]:
     ]
 
 
+#: Was «Dateien» zuerst zeigt, in dieser Reihenfolge — der Abschlusstext, dann
+#: die Angaben zum Lauf. Bis zum 2026-10-01 war es die erste Datei der Liste,
+#: und die ist alphabetisch ein Zwischenstand aus `checkpoints/` (Befund 16 der
+#: Abnahme vom 2026-09-30): rund dreiviertel Megabyte Zustand eines Ticks.
+VORWAHL = ("run_scenario.md", "run_metadata.json")
+
+
+def vorwahl(options: list[dict]) -> str:
+    """Die Datei, die beim Öffnen gewählt ist — nie ein Zwischenstand, wenn es anderes gibt."""
+
+    werte = [o["value"] for o in options]
+    for name in VORWAHL:
+        if name in werte:
+            return name
+    return next((w for w in werte if not w.startswith("checkpoints/")), werte[0])
+
+
 def _download_link(path: Path):
     url = run_file_url(path, download=True)
     if not url:
@@ -177,7 +194,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
     if not options:
         return ui.hinweis("Keine Dateien gefunden.", "warnung")
 
-    first = options[0]["value"]
+    first = vorwahl(options)
     content, download = _view(run_dir, first, mode)
     return html.Div(
         [
@@ -186,6 +203,7 @@ def render(run_dir: Path, run_id: str, *, mode: str = theme.LIGHT) -> html.Div:
                     ui.field(
                         "Datei",
                         dcc.Dropdown(
+                            labels=ui.AUSWAHL_TEXTE,
                             id="files-select",
                             options=options,
                             value=first,

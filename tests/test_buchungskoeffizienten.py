@@ -202,3 +202,24 @@ def test_ein_schreibzugriff_des_modell_editors_verliert_den_block_nicht(tmp_path
     )
     assert danach["booking_model"]["substitution_weight"]["wert"] == 1.5
     assert danach["booking_model"]["substitution_weight"]["quelle"]
+
+
+#: Wie das Handbuch die Zahl der Koeffizienten schreibt.
+ZAHLWORT = {8: "acht", 9: "neun", 10: "zehn", 11: "elf", 12: "zwölf"}
+
+
+def test_das_handbuch_kennt_jeden_koeffizienten() -> None:
+    """Die Referenz nannte acht Zahlen und ließ `verfuegbarkeit_gewicht` aus.
+
+    Das Gewicht kam am 2026-09-03 dazu (B2 des Audits), das Handbuch nicht mit —
+    gefunden am 2026-10-01 beim Reparieren der Tabelle darüber.
+    """
+
+    text = (Path(__file__).resolve().parents[1] / "docs" / "handbuch" / "ref-config.md").read_text(
+        encoding="utf-8"
+    )
+
+    fehlend = [name for name in NAMEN if f"| `{name}` |" not in text]
+    assert not fehlend, f"Ohne Zeile in ref-config.md: {fehlend}"
+    assert f"die {ZAHLWORT[len(NAMEN)]} Zahlen" in text
+    assert f"Keiner der {ZAHLWORT[len(NAMEN)]} Werte" in text

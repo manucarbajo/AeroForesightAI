@@ -93,6 +93,12 @@ den frühesten Verlauf und wie viele Ticks über ihn hinauslaufen; im Protokoll 
 es für jeden betroffenen Verlauf. Es ist ein **Hinweis und kein Fehler**: Der Lauf
 startet, die Zahlen stimmen, Sie wissen nur, worauf sie beruhen.
 
+Gerechnet wird der Hinweis mit den Verläufen, die **dieser** Lauf bekommt — dem
+gewählten Szenario samt Ihren Änderungen im Schritt «Verläufe». Bis Oktober 2026
+nahm er immer die Standard-Ausgangslage und nannte unter «Business as Usual» die
+SAF-Quote, die dort gar nicht vorkommt. Beim Szenario-Vergleich steht er nicht:
+Jeder Rahmen rechnet dort in seiner eigenen Länge.
+
 ## Das Szenario
 
 Ein Szenario ist keine Fortschreibung des Laufs, sondern eine mögliche

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.reporting.aussagen_pruefung import _schreiben
 from src.reporting.run_scenario_generator.agent_digest import _sample_delta_events
 from src.reporting.run_scenario_generator.context import (
     RunScenarioContext,
@@ -72,23 +73,23 @@ def build_scenario_tick_grounding(
         booking = row.get("booking_rate")
         price = row.get("market_price_after_feedback_eur")
         if booking is not None:
-            bits.append(f"BR {float(booking):.1%}")
+            # «Buchungsrate 37,0 %» und nicht «BR 37.0%» (Befund 13 der Abnahme):
+            # dieselbe Schreibweise wie das Faktenblatt.
+            bits.append(f"Buchungsrate {_schreiben(float(booking), '%')}")
         if price is not None:
             bits.append(f"Preis {float(price):.0f} €")
         lines.append("- " + ", ".join(bits))
 
     end_by_id = factor_profile.get("end_by_id") or {}
-    lines.append("Szenario-Faktoren: " + _format_factor_compact(catalog, states) + ".")
+    lines.append("Faktorlage des Szenarios: " + _format_factor_compact(catalog, states) + ".")
     diffs = [
         factor_id
         for factor_id in FACTOR_IDS
         if states.get(factor_id) and end_by_id.get(factor_id) != states.get(factor_id)
     ]
     if diffs:
-        diff_bits = [
-            f"{factor_id} {end_by_id.get(factor_id)}→{states.get(factor_id)}" for factor_id in diffs
-        ]
-        lines.append("Abweichung zur Lauf-Endlage: " + ", ".join(diff_bits) + ".")
+        diff_bits = [f"{end_by_id.get(factor_id)} → {states.get(factor_id)}" for factor_id in diffs]
+        lines.append("Anders als am Ende des Laufs: " + ", ".join(diff_bits) + ".")
     elif end_by_id:
         lines.append("Entspricht der Faktor-Endlage des Laufs.")
 

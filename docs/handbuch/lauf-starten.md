@@ -45,11 +45,13 @@ bringt Sie zurück zum Ladebildschirm.
 abbrechen** unter dem Fortschritt. Er endet dann **nach dem laufenden Tick**,
 nicht sofort: Ein Tick lässt sich nicht in der Mitte anhalten, ohne einen halben
 Zustand zu hinterlassen. Bei «Nur Zahlen» ist das eine Sache von Millisekunden,
-mit Sprachmodell kann der letzte Tick noch laufen.
+mit Sprachmodell kann der letzte Tick noch laufen, und danach schreibt das Modell
+noch den Abschlusstext. So lange sagt der Ladebildschirm **«Der Lauf wird
+beendet»** und, bei welchem Tick abgebrochen wurde.
 
 Was bis dahin gerechnet wurde, bleibt erhalten. Der Lauf steht danach in der
-Auswahl wie jeder andere — erkennbar daran, dass die Zahl der Ticks unter dem
-Maximum liegt. Der Knopf wirkt auch dann, wenn Sie die Seite zwischendurch neu
+Auswahl wie jeder andere; sein Kopf unter «Ergebnisse» und im Leitstand sagt
+«vorzeitig beendet, angelegt auf 40 Ticks». Der Knopf wirkt auch dann, wenn Sie die Seite zwischendurch neu
 geladen haben: Es läuft ohnehin höchstens ein Lauf, und der Server weiß, welcher.
 
 **Beim Szenario-Vergleich gibt es den Knopf nicht.** Ein Vergleich baut seinen
@@ -62,12 +64,21 @@ Wie weit der Lauf ist, weiß nur, wer eine Tick-Meldung gesehen hat, und die
 Oberfläche erfindet keine. Sie unterscheidet dabei zwei Fälle. **«Lauf wird
 vorbereitet …»** heißt: Es ist noch keine Zeile angekommen. **«Läuft —
 Fortschritt nicht bezifferbar»** heißt: Es rechnet, aber die Ausgabe enthält
-keine Tick-Zählung — so ist es beim Szenario-Vergleich, der je Szenario nur
-dessen Abschluss meldet. Die Prozentangabe erscheint, sobald eine Tick-Zählung
+keine Tick-Zählung. Die Prozentangabe erscheint, sobald eine Tick-Zählung
 vorliegt.
+
+**Der Szenario-Vergleich zählt Szenarien statt Ticks.** Er meldet keine Ticks,
+aber jedes Szenario, das er beginnt und beendet: Dort steht etwa «Szenario 2
+von 4: CO₂-Verzögerung», der Balken zeigt den Anteil der fertigen Szenarien,
+und die drei Kacheln darunter nennen den Vergleich statt eines einzelnen
+Szenarios. Sind alle gerechnet, schreibt er noch seine Zusammenfassung — dann
+steht dort «Alle 4 Szenarien gerechnet — Abschluss wird geschrieben».
 
 Ist der Lauf fertig, meldet das Bedienfeld links die Kennung des Laufs mit der Zahl der
 Ticks und Ereignisse — und daneben steht der Weg weiter: **Ergebnisse ansehen**.
+Der fertige Lauf ist danach gewählt; Szene und Telemetrie zeigen ihn. **Nach
+einem Szenario-Vergleich** nennt die Meldung die gerechneten Rahmenszenarien,
+gewählt ist das erste davon, und unter **Diagramme** stehen alle nebeneinander.
 
 Der Lauf läuft im Hintergrund. Sie können in der Zwischenzeit auf **Einrichten**,
 **Ergebnisse** oder ins **Handbuch** wechseln, ohne ihn abzubrechen — die Kopfzeile bleibt
@@ -93,8 +104,8 @@ ein Lauf langsamer wird. Auch hier eine Spanne statt einer Zahl.
 
 Drei Fälle, in denen dort nichts steht, und in allen dreien ist das die richtige
 Antwort: in den ersten Ticks (eine einzelne Messung ist keine Erwartung), beim
-**Szenario-Vergleich** (er meldet keine Tick-Zahlen, deshalb läuft dort auch der
-Balken unbestimmt) und im letzten Tick. Ist es nur noch eine Frage von
+**Szenario-Vergleich** (er meldet keine Tick-Zahlen; sein Balken zählt fertige
+Szenarien, eine Restzeit daraus zu schätzen wäre zu grob) und im letzten Tick. Ist es nur noch eine Frage von
 Sekundenbruchteilen, steht dort «gleich fertig».
 
 Die folgende Tabelle bleibt eine grobe Schätzung ohne Messung, für eine
@@ -125,7 +136,7 @@ Kopfzeile des Leitstands oder der Ergebnisse.
 
 Beim **Szenario-Vergleich** — also wenn Sie ihn auf dem Einstieg von
 «Einrichten» gewählt oder «Alle Szenarien vergleichen» hinter der
-«Feinabstimmung» des zweiten Schritts eingeschaltet haben — wird jedes Preset
+«Feinabstimmung» des Schritts «Wie weit reicht der Lauf?» eingeschaltet haben — wird jedes Preset
 einmal durchgerechnet. Die Ergebnisse
 liegen unter `outputs/sweeps/`, dazu entsteht eine Zusammenfassung. Auch hier
 erscheinen die einzelnen Läufe in der Auswahl der Kopfzeile.
@@ -167,7 +178,7 @@ rechnen will, braucht den Seed. Alle Felder stehen auch in
 [Was ein Lauf hinterlässt](/doku/ref-ausgaben).
 
 **Auch ohne eigenen Startwert ist ein Lauf wiederholbar.** Lassen Sie das Feld
-«Eigenen Zufallsstartwert festlegen» im dritten Schritt aus, rechnet der Lauf mit einem
+«Eigenen Zufallsstartwert festlegen» im Schritt «Womit wird gerechnet?» aus, rechnet der Lauf mit einem
 Standardwert — nicht zufällig. Zwei Wiederholungen desselben Aufbaus liefern
 dann dasselbe Ergebnis, und welcher Wert es war, steht nach dem Lauf in der
 Ansicht **Übersicht**. Einen eigenen Startwert brauchen Sie erst, wenn Sie denselben

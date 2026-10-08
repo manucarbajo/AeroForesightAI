@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from src.config_loader import build_initial_state
@@ -59,8 +60,31 @@ def test_final_narrative_includes_property_schedule(tmp_path):
     path = save_final_narrative(state, run_dir=run_dir)
     content = Path(path).read_text(encoding="utf-8")
 
-    assert "## Property-Zeitplan (Config)" in content
+    assert "## Geplante Änderungen der Systemgrößen" in content
     assert "Tick 8" in content
-    assert "saf_mandate_share" in content
+    assert "SAF-Mandat" in content
     assert "Leseschlüssel" in content
     assert "gebucht (" in content
+
+
+def test_der_bericht_nennt_nur_den_lauf_und_spricht_deutsch(tmp_path):
+    """Befund 13 der Abnahme vom 2026-09-30: Der Bericht eines 40-Tick-Laufs
+    listete Stützpunkte bis Tick 120, jeden mit der vollen Beschreibung aus
+    `properties.json` samt Paketkennungen, dazu «Python-Ground-Truth» und
+    «set →» / «step_function →»."""
+
+    state = build_initial_state()
+    state.config.seed = 1
+    state.clock.max_ticks = 8
+    state.clock.current_tick = 1
+    state = MarketNode().invoke(state)
+
+    run_dir = tmp_path / "run_test"
+    run_dir.mkdir()
+    content = Path(save_final_narrative(state, run_dir=run_dir)).read_text(encoding="utf-8")
+    plan = content.split("## Geplante Änderungen der Systemgrößen", 1)[1].split("\n\n", 1)[0]
+
+    ticks = [int(t) for t in re.findall(r"\*\*Tick (\d+):\*\*", plan)]
+    assert ticks and max(ticks) <= 8, ticks
+    for wort in ("Python-Ground-Truth", "set →", "step_function →", "(P3.8", "LLM-Begründung"):
+        assert wort not in content, wort

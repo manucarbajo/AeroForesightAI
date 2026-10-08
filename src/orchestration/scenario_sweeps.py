@@ -42,7 +42,6 @@ from src.config_loader import build_initial_state, load_cib_frozen
 from src.llm import OllamaClient, OllamaConfig
 from src.logging_setup import stdio_auf_utf8
 from src.market.market_feedback import BOOKING_YIELD_FEEDBACK
-from src.models.llm_models import LLMIncident
 from src.models.run_models import RunArgs
 from src.models.state_models import Rahmenszenario
 from src.models.sweep_models import (
@@ -51,8 +50,10 @@ from src.models.sweep_models import (
     SweepResult,
     SweepSummary,
 )
+from src.orchestration.konsole import szenario_ende, szenario_kopf, zahl
 from src.orchestration.simulation_runner import RunnerOptions, SimulationRunner
 from src.reporting.output_writer import (
+    OUTPUT_DIR,
     resolve_run_output_dir,
     save_cib_matrix,
     save_event_log,
@@ -67,7 +68,10 @@ from src.reporting.output_writer import (
     save_segment_analysis,
     save_tick_mechanics,
 )
-from src.reporting.run_scenario_generator import generate_and_save_run_scenario
+from src.reporting.run_scenario_generator import (
+    generate_and_save_run_scenario,
+    szenario_vorfall,
+)
 
 #: Sweeps laufen bewusst mit festem Seed — sie sollen vergleichbar sein,
 #: nicht variabel. Stand bis P0.6 zweimal als Literal im Modul: einmal im
@@ -314,7 +318,12 @@ def sweep_metadata_args(*, llm_narrative: bool = True) -> RunArgs:
 
 
 SWEEPS_DIR = REPO_ROOT / "configs" / "sweeps"
-SWEEP_OUTPUT_DIR = REPO_ROOT / "outputs" / "sweeps"
+#: Wohin ein Vergleich seine Zusammenfassung schreibt — **unter demselben
+#: Ausgabeordner wie seine Läufe**, also auch unter `AF_AUSGABE`. Bis zum
+#: 2026-10-01 stand hier `REPO_ROOT / "outputs" / "sweeps"`: Die Läufe landeten
+#: im verlegten Ordner, `sweep_summary.json` und `scenario_scores.json` im
+#: Repository und überschrieben dort die Zusammenfassung des Bestands.
+SWEEP_OUTPUT_DIR = Path(OUTPUT_DIR) / "sweeps"
 
 
 def load_sweep_config(path: Path) -> SweepConfig:
@@ -670,7 +679,7 @@ def run_single_sweep(
 
     if verbose:
         print(f"\n{'='*60}")
-        print(f"Sweep: {sweep.name} ({sweep.id})")
+        print(szenario_kopf(sweep.name))
         print(f"  {sweep.description[:80]}...")
         print(f"{'='*60}")
 
@@ -756,6 +765,13 @@ def run_single_sweep(
         final_state.cib_matrix.metadata["consistency_score"] = consistency_score
     save_cib_matrix(final_state, run_dir=run_dir_path)
 
+    # **Die Metadaten stehen, bevor der Abschlusstext entsteht** (P8-V4): Der
+    # Generator liest sie von der Platte, und ein Sweep schreibt in einen festen
+    # Ordner — bis zum 2026-09-29 las er die des vorigen Durchlaufs und schrieb
+    # «50 Ticks» über einen Lauf mit 120. Unten wird noch einmal geschrieben,
+    # weil ein Ausfall im Text den Lauf als beeinträchtigt markiert.
+    save_run_metadata(final_state, dummy_args, run_dir=run_dir_path, run_id=run_id_str)
+
     # Generate LLM Scenario
     #
     # `llm=None` **und** `prefer_llm=False`: Der erste Wert allein genügte
@@ -776,16 +792,9 @@ def run_single_sweep(
     # Fiel er auf das Template zurück, stand im Sweep trotzdem
     # `degraded: false`. Dieselbe Kette wie in `run_simulation.save_run_outputs`,
     # und in derselben Reihenfolge: erst der Vorfall, dann die Metadaten.
-    scenario_llm_error = scenario_result.get("llm_error")
-    if scenario_llm_error:
-        final_state.llm_incidents.append(
-            LLMIncident(
-                tick=final_state.clock.current_tick,
-                caller="run_scenario_generator",
-                kind="call_failed",
-                error=str(scenario_llm_error),
-            )
-        )
+    vorfall = szenario_vorfall(scenario_result, final_state.clock.current_tick)
+    if vorfall is not None:
+        final_state.llm_incidents.append(vorfall)
 
     save_llm_incidents(final_state.llm_incidents, run_dir=run_dir_path)
     save_run_metadata(final_state, dummy_args, run_dir=run_dir_path, run_id=run_id_str)
@@ -795,29 +804,32 @@ def run_single_sweep(
 
         generate_run_figures(run_dir_path)
         if verbose:
-            print(f"  Figures saved under {run_dir_path / 'figures'}")
+            print("  Diagramme gespeichert")
     except Exception as exc:
         if verbose:
-            print(f"  Warning: figure generation failed: {exc}")
+            print(f"  Warnung: Diagramme ließen sich nicht erzeugen: {exc}")
 
     if verbose:
         ticks_done = final_state.clock.current_tick
+        # **Deutsch und ohne Ersetzungszeichen** (Befund 13 der Abnahme vom
+        # 2026-09-30): Hier stand «Completed … ticks», «Final factors», «Conflicts»
+        # und «Milestones», und Beschreibungen gingen durch `encode("ascii",
+        # "replace")` — ein Rest aus der Zeit vor P3.10, als eine cp1252-Konsole
+        # kein «→» schrieb. In der Konsole des Dashboards stand «CO?-Steuer».
+        print(f"  {szenario_ende(ticks_done, elapsed)}")
+        print("  Faktorlage am Ende: " + ", ".join(final_factors.values()))
         print(
-            f"  Completed {ticks_done} ticks in {elapsed:.2f}s "
-            f"({ticks_done / elapsed:.0f} ticks/sec)"
+            f"  Konsistenz (eigene Heuristik, kein Urteil über Plausibilität): "
+            f"{zahl(consistency_score, 3)}, Stabilität {zahl(stability_index, 3)}, "
+            f"Spannungen in der Matrix: {len(check_result.conflicts)}"
         )
-        print(f"  Final factors: {final_factors}")
-        print(f"  CIB consistency: {consistency_score:.3f}, stability: {stability_index:.3f}")
-        if check_result.conflicts:
-            print(f"  Conflicts ({len(check_result.conflicts)}):")
-            for c in check_result.conflicts[:5]:
-                print(f"    - {c.encode('ascii', 'replace').decode()}")
         ms_passed = sum(1 for m in milestone_results if m["passed"])
-        print(f"  Milestones: {ms_passed}/{len(milestone_results)} passed")
+        print(f"  Meilensteine: {ms_passed} von {len(milestone_results)} erreicht")
         for m in milestone_results:
-            status = "OK" if m["passed"] else "FAIL"
-            desc = m["description"].encode("ascii", "replace").decode()
-            print(f"    [{status}] Tick {m['tick']}: {desc} " f"(actual={m['actual_value']})")
+            status = "erreicht" if m["passed"] else "verfehlt"
+            wert = m["actual_value"]
+            wert_text = zahl(wert, 2) if isinstance(wert, float) else str(wert)
+            print(f"    [{status}] Tick {m['tick']}: {m['description']} (Wert: {wert_text})")
 
     return SweepResult(
         sweep_id=sweep.id,
@@ -883,17 +895,13 @@ def run_all_sweeps(
 
     if verbose:
         print(f"\n{'='*60}")
-        print("SWEEP SUMMARY")
+        print("Szenario-Vergleich abgeschlossen")
         print(f"{'='*60}")
-        print(f"Total sweeps: {len(results)}")
-        print(f"Total time: {total_elapsed:.2f}s")
-        print("\nConsistency ranking:")
-        for r in sorted(results, key=lambda x: x.consistency_score, reverse=True):
+        print(f"Szenarien: {len(results)}, Dauer {zahl(total_elapsed, 1)} s")
+        for r in results:
             print(
-                f"  {r.sweep_name:40s}  "
-                f"consistency={r.consistency_score:.3f}  "
-                f"stability={r.stability_index:.3f}  "
-                f"conflicts={len(r.conflicts)}"
+                f"  {r.sweep_name}: Konsistenz {zahl(r.consistency_score, 3)}, "
+                f"Stabilität {zahl(r.stability_index, 3)}, Spannungen {len(r.conflicts)}"
             )
 
     return summary
@@ -907,7 +915,7 @@ def _save_sweep_outputs(summary: SweepSummary) -> None:
     summary_path = SWEEP_OUTPUT_DIR / "sweep_summary.json"
     with open(summary_path, "w", encoding="utf-8") as f:
         json.dump(summary.model_dump(), f, indent=2, ensure_ascii=False, default=str)
-    print(f"\nSaved: {summary_path}")
+    print(f"\nGespeichert: {summary_path.name}")
 
     # scenario_scores.json — focused view on CIB scores
     scores = []
@@ -927,7 +935,7 @@ def _save_sweep_outputs(summary: SweepSummary) -> None:
     scores_path = SWEEP_OUTPUT_DIR / "scenario_scores.json"
     with open(scores_path, "w", encoding="utf-8") as f:
         json.dump(scores, f, indent=2, ensure_ascii=False, default=str)
-    print(f"Saved: {scores_path}")
+    print(f"Gespeichert: {scores_path.name}")
 
 
 def main() -> None:

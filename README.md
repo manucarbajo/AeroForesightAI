@@ -202,6 +202,20 @@ python -m dashboard.web.app --port 8511
 python src/run_simulation.py --studio
 ```
 
+### Für eine Vorführung: der Vorführbestand
+
+```powershell
+python -m dashboard.vorfuehrbestand
+```
+
+Verschiebt den bisherigen Inhalt von `outputs/` in ein Archiv neben dem Repository
+(nichts wird gelöscht), rechnet mit dem Sprachmodell vor — den Szenario-Vergleich,
+«Business as Usual» über 40 Ticks, denselben Rahmen mit der Preisstrategie
+«Aufschlag halten» und diesen mit einer CO₂-Abgabe, die ab Tick 24 auf 200 € steigt
+— und prüft jeden Lauf. Braucht Ollama und dauert rund eine halbe Stunde. `--nur-pruefen` prüft einen vorhandenen
+Bestand, ohne etwas zu verschieben oder zu rechnen; `--nur vorfuehrung_bau` (oder
+`vergleich`, `vorfuehrung_bau_marge`, `vorfuehrung_co2`) rechnet einen einzelnen Lauf neu, wenn er durchfällt.
+
 ## Deployment
 
 Zielumgebung: Hetzner Cloud Server mit lokal laufendem Ollama. `Dockerfile` und `docker-compose.yml` sind ein Ausgangspunkt (Dashboard + Ollama als Services) — noch nicht produktionsfertig verkabelt (kein TLS/Reverse Proxy, keine Persistenzstrategie für `outputs/`). Der Container startet die Dash-App auf Port 8511 — Landingpage auf `/`, Dashboard auf `/app/`.

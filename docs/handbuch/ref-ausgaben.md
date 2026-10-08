@@ -14,6 +14,21 @@ Alle Dateien sind in der Ansicht **Dateien** einsehbar und herunterladbar.
 
 **Die Überschrift nennt den Lauf beim Namen.** Sie nimmt den Namen, den Sie unter «Lauf & Ablage» vergeben haben; ohne ihn den Rahmen, unter dem der Lauf stand, und erst zuletzt seine Kennung. Läufe eines Szenario-Vergleichs trugen dort bis zum 13. September 2026 ihren Ablageort — «Szenarien zum Lauf sweeps/sweep_transformation_conflict». Ältere Artefakte behalten ihren Titel; er entsteht beim Schreiben.
 
+### Das Faktenblatt in `run_scenario.json`
+
+Unter `ground_truth.faktenblatt` steht, was das Sprachmodell vor dem Schreiben als
+Rechnung bekommen hat: je Kerngröße ein Satz mit Richtung, Anfangs- und Endwert
+(«CO₂-Abgabe bleibt unverändert bei 50,00 € (Tick 1 bis 120).») und je Faktor
+einer mit seinem Verlauf. «Steigt» und «sinkt» heißt: mehr als fünf Prozent
+Änderung vom ersten zum letzten Tick. Den Abschlusstext können Sie gegen genau
+diese Sätze lesen. Ältere Läufe tragen das Feld nicht.
+
+Daneben steht `widersprueche`: jede Stelle in Titel, Zusammenfassung,
+Lauf-Narrativ oder Auswahlbegründung, die der Rechnung widerspricht, je mit
+`feld`, `art` (`richtung`, `datum` oder `englisch`), der `stelle` im Text, der
+`erklaerung` und der `zeile`, die das Dashboard zeigt. Eine leere Liste heißt:
+nichts gefunden — die drei Szenarien werden nicht geprüft.
+
 ### Der Konsistenzwert in `run_scenario.json`
 
 Jedes der drei Szenarien trägt dort drei zusammengehörige Felder:
@@ -46,17 +61,19 @@ gegeneinander», nicht «das passiert eher nicht».
 | `event_log.json` | Alle Ereignisse, einschließlich der als `[delta:…]` markierten Python-Änderungen |
 | `round_history.json` | Der Zustand je Tick — erst seit dem 11. September 2026 wirklich der dieses Ticks; ältere Läufe tragen in jedem Tick den Endzustand |
 | `run_metadata.json` | Ticks, Modell, Zeitstempel, **Rechendauer**, ob das Marktmodell aktiv war, ob der Lauf beeinträchtigt war — und woraus er entstanden ist (Seed, Rechenmodus, Konfigurations-Fingerabdruck, Codestand) |
-| `llm_incidents.json` | Nur vorhanden, wenn Aufrufe an das Sprachmodell ins Leere gingen: welcher Tick, welcher Aufrufer, welcher Fehler |
+| `llm_incidents.json` | Nur vorhanden, wenn Aufrufe an das Sprachmodell ins Leere gingen: welcher Tick, welcher Aufrufer, welcher Fehler. Die Art (`kind`) ist `call_failed` (der Aufruf scheiterte), `no_op_emitted` (ein Akteur setzte daraufhin aus) oder `answer_unusable` (das Modell antwortete, die Antwort ließ sich nicht verwenden, und an ihre Stelle trat die Vorlage) |
 | `segment_analysis.json` | Auswertung nach Segmenten |
 | `cib_matrix.json` | Die im Lauf verwendete Einflussmatrix |
 
 Drei Felder in `run_metadata.json` betreffen die Verlässlichkeit eines Laufs:
-`degraded` sagt, ob mindestens ein Aufruf an das Sprachmodell unbeantwortet
+`degraded` sagt, ob mindestens ein Aufruf an das Sprachmodell ohne verwertbare Antwort
 blieb, `llm_incident_count` zählt sie, und `llm_degraded_ticks` nennt die
 betroffenen Ticks. Die drei stehen **immer** in der Datei, auch bei einem
 sauberen Lauf mit `false` und `0` — fehlen sie ganz, stammt der Lauf aus der
 Zeit vor dieser Aufzeichnung. `llm_incidents.json` entsteht dagegen nur, wenn es
-etwas zu berichten gibt.
+etwas zu berichten gibt — und rechnet ein Lauf in einen Ordner, in dem schon
+einmal gerechnet wurde (etwa ein Szenario-Vergleich), räumt er die Datei des
+früheren Laufs ab, wenn er selbst keinen Ausfall hatte.
 
 ## Woraus ein Lauf entstanden ist
 

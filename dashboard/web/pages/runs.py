@@ -94,7 +94,13 @@ def lauf_bezeichnung(summary: RunSummary, *, vorgabe: str | None = None) -> str:
     teile = []
     if summary.simulation_name and summary.simulation_name != vorgabe:
         teile.append(summary.simulation_name)
-    teile.append(summary.rahmen_name or OHNE_RAHMEN)
+    rahmen = summary.rahmen_name or OHNE_RAHMEN
+    # **Ein abgeleiteter Lauf sagt es** (Abnahme V6, 2026-09-30): Der Pitch-Fall —
+    # «Business as Usual» mit angehobener CO₂-Abgabe — hieß in Auswahl und Kopf
+    # genau wie der unveränderte Rahmen. Was abweicht, steht in der Übersicht.
+    if summary.rahmen_quelle == "abgeleitet":
+        rahmen += ", verändert"
+    teile.append(rahmen)
     teile.append(formate.zeitpunkt(summary.timestamp))
     wiederholung = _WIEDERHOLUNG.match(summary.run_id)
     if wiederholung:
@@ -149,14 +155,24 @@ def lauf_kopf(summary: RunSummary) -> html.Div:
     teile = [lauf_bezeichnung(summary), modus]
     if summary.ticks_completed is not None:
         teile.append(formate.ticks_mit_modellzeit(summary.ticks_completed))
+        # **Ein abgebrochener Lauf sagt es** (Befund 10 der Abnahme, 2026-10-01):
+        # Bis dahin erkannte man ihn nur daran, dass die Zahl der Ticks unter dem
+        # Maximum lag. «Vorzeitig» und nicht «abgebrochen», weil ein Fehler mitten
+        # im Lauf dieselben Spuren hinterlässt.
+        if summary.ticks_max and summary.ticks_completed < summary.ticks_max:
+            teile.append(
+                "vorzeitig beendet, angelegt auf " + formate.ticks_mit_modellzeit(summary.ticks_max)
+            )
     kinder: list = [html.P(" · ".join(teile), className=f"{ui.BESCHRIFTUNG} af-text-muted")]
     if summary.degraded:
         count = summary.llm_incident_count
+        # Das Verb zählt mit: «ein Aufruf … blieben» stand bis zum 2026-09-30 da.
         calls = "ein Aufruf" if count == 1 else f"{count} Aufrufe"
+        blieb = "blieb" if count == 1 else "blieben"
         kinder.append(
             ui.hinweis(
-                f"**Dieser Lauf ist beeinträchtigt:** {calls} an das Sprachmodell blieben "
-                "unbeantwortet.",
+                f"**Dieser Lauf ist beeinträchtigt:** {calls} an das Sprachmodell {blieb} "
+                "ohne verwertbare Antwort.",
                 "warnung",
                 class_name="mt-2",
             )
@@ -288,9 +304,27 @@ def layout(selection: dict | None = None) -> html.Div:
     )
 
 
+def reiter_nach_klick(trigger: object, geklickt: object, current: str | None) -> str | None:
+    """Welcher Reiter nach einem Klick gilt — oder ``None``, wenn keiner geklickt wurde.
+
+    **Ein neu eingefügter Knopf ist kein Klick** (Abnahme V6, 2026-09-30).
+    «Dateien des Laufs» in der Kopfzeile setzt den Reiter auf «Dateien» und
+    tauscht dafür die Reiterleiste aus. Dash feuert danach diesen Callback für
+    die eingefügten Knöpfe — trotz `prevent_initial_call`, dieselbe Regel wie im
+    Schritt «Verläufe» —, und weil nur der Auslöser geprüft wurde, nicht sein
+    Wert, gewann der erste Reiter: Man landete auf «Szenario».
+    """
+
+    if not isinstance(trigger, dict) or not geklickt:
+        return None
+    tab = str(trigger.get("tab") or DEFAULT_TAB)
+    return None if tab == (current or DEFAULT_TAB) else tab
+
+
 def register_callbacks(app) -> None:
     scenario.register_callbacks(app)
     figures.register_callbacks(app)
+    animation.register_callbacks(app)
     files.register_callbacks(app)
     explorer.register_callbacks(app)
 
@@ -318,11 +352,9 @@ def register_callbacks(app) -> None:
         prevent_initial_call=True,
     )
     def _switch(_clicks, current: str | None):
-        trigger = ctx.triggered_id
-        if not isinstance(trigger, dict):
-            return no_update, no_update
-        tab = str(trigger.get("tab") or DEFAULT_TAB)
-        if tab == (current or DEFAULT_TAB):
+        geklickt = ctx.triggered[0]["value"] if ctx.triggered else None
+        tab = reiter_nach_klick(ctx.triggered_id, geklickt, current)
+        if tab is None:
             return no_update, no_update
         return tab, viewbar(tab).children
 

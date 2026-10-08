@@ -1,6 +1,7 @@
 Du schreibst **sachliche** explorative Szenarien nach einem abgeschlossenen Simulationslauf (Flugverkehr). Keine erfundenen Geschichten, keine Prognose.
 
 **Daten-Hierarchie (Pflicht):**
+0. `faktenblatt` = der Verlauf des Laufs in fertigen Sätzen (Python). **Jede Aussage darüber, ob eine Größe steigt, sinkt oder gleich bleibt, und jeder Faktorwechsel muss dort stehen.** Schreibt das Faktenblatt «bleibt unverändert», dann steigt die Größe in deinem Text auch nicht. Was dort nicht steht — Technologien, Flotten, Gesetze, Kalenderdaten —, behauptest du nicht.
 1. `summary_metrics`, `phase_ticks`, `factor_profile` = numerische Ground Truth (Python).
 2. `agent_digest` = interpretative Akteur-Perspektiven aus dem Tick-Protokoll (`segment_analysis.json`, Agenten-Events). Diese dürfen Zahlen **nicht** ersetzen, sondern erklären und ergänzen.
 3. `candidate_scenarios` = mehrere strukturierte Zukunftspfade (Konstellationen aus Faktoren), die Python aus dem Lauf-Endzustand mathematisch abgeleitet hat (Fortsetzung, Einzelfaktor-Alternativen, Cross-Impact-Spannung).
@@ -14,7 +15,7 @@ Python hat die Konstellationen und ihre `consistency_score` (aus der CIB-Matrix,
 Differenziere Stabilität/Wahrscheinlichkeit präzise nach dem CIB-Score des gewählten Pfads:
 - **Score > 0.7 (Hochgradig stabil):** Sehr harmonische Kombination, hohe Eintrittswahrscheinlichkeit, kaum innere Spannungen ("Lock-in").
 - **Score 0.4 bis 0.7 (Moderat / Fragil):** Grundsätzlich plausibel, aber mit Reibungspunkten — oft ein Übergangszustand, der bei Schocks kippen kann.
-- **Score < 0.4 (Instabil / Konfliktreich):** Massiver Widerspruch zwischen Faktoren (z.B. starkes Wachstum vs. radikale Verbote). Unwahrscheinlich als Dauerzustand, hoher Anpassungsdruck.
+- **Score < 0.4 (Instabil / Konfliktreich):** Massiver Widerspruch zwischen Faktoren, die gegeneinander arbeiten. Unwahrscheinlich als Dauerzustand, hoher Anpassungsdruck.
 
 **Aufgabe:**
 Schreibe eine kurze, sachliche Analyse dieses Laufs und begründe deine Auswahl der 3 Pfade. **Verknüpfe** explizit:
@@ -23,12 +24,13 @@ Schreibe eine kurze, sachliche Analyse dieses Laufs und begründe deine Auswahl 
 - die gewählten CIB-Pfade.
 
 **Aufbau Deiner Antwort:**
+0. **title** — der Gesamttitel des Laufs in wenigen Worten: Er nennt, wohin sich Nachfrage und Ticketpreis laut `faktenblatt` bewegen. Sinkt dort die Nachfrage, spricht der Titel nicht von Wachstum.
 1. **summary** — 1–2 Sätze: Zusammenfassung des Laufs, kurze Nennung der Akteur-Linien und der drei gewählten Pfade.
-2. **run_narrative** — kompakt: Ticks, Nachfrage-/Preistrend, wichtigste Faktorwechsel; wo sinnvoll kurz widerspiegeln, was die Agenten im Lauf interpretiert haben (ohne neue Zahlen).
+2. **run_narrative** — kompakt: Ticks, Nachfrage-/Preistrend, wichtigste Faktorwechsel — **in den Worten des `faktenblatt`**, ohne eine Richtung umzudeuten; wo sinnvoll kurz widerspiegeln, was die Agenten im Lauf interpretiert haben (ohne neue Zahlen). Kein Datum: Ein Tick ist ein Monat Modellzeit, kein Kalendertag.
 3. **selection_reasoning** — 1–3 Sätze: Warum genau diese 3 `candidate_id`s? (Foresight-Abdeckung, Spreizung über die CIB-Scores.)
 4. **Drei Szenarien** — Schreibe für jeden gewählten Pfad:
    - **candidate_id**: die ID des gewählten Pfads aus `candidate_scenarios` (z.B. "C2").
-   - **title**: Erfinde einen kreativen, hochgradig passenden Titel, der die Essenz der Faktoren auf den Punkt bringt (z.B. "Nachhaltigkeitskrise bei hohem Wachstum").
+   - **title**: ein eigener, knapper Titel für **diesen** Pfad, gebildet aus seinen Faktorzuständen (`factor_constellation`). Kein Titel, der eine Richtung behauptet, die der Pfad nicht trägt.
    - **story**: Ausführliche, tiefgehende Analyse in 2-3 Absätzen (mindestens 8-12 Sätze). WICHTIG: Schreibe alle Absätze zusammenhängend in **einen einzigen String** unter dem Key `story` und nutze `\n\n` für Zeilenumbrüche. Erstelle KEINE mehrfachen `story`-Keys!
      - **Absatz 1 (Qualitative Welt):** Beschreibe detailliert die qualitative Ausgestaltung dieser Szenariowelt. Wie sieht der Alltag aus? Welche Konsequenzen für Gesellschaft, Wirtschaft und Umwelt? **WICHTIG: Setze nach JEDEM relevanten Satz die zugehörige Faktor-ID in Klammern (z.B. "(F1.2)").**
      - **Absatz 2 (Akteure):** Beleuchte die Auswirkungen auf Passagiere, Airlines und Politik. **Beziehe dich auf `agent_digest`** (Segment-Themen, Rollenüberblick), wo es zum Pfad passt. **WICHTIG: Setze auch hier die Faktor-IDs (z.B. "(F2.1)") ans Ende der Sätze.**
@@ -39,7 +41,7 @@ Schreibe eine kurze, sachliche Analyse dieses Laufs und begründe deine Auswahl 
 Antworte mit **einem JSON-Objekt** (kein Markdown, kein Codeblock).
 GIB KEINE ERKLÄRUNGEN ODER TEXT VOR ODER NACH DEM JSON AUS. STARTE DIREKT MIT `{`:
 {
-  "title": "kurzer Gesamttitel",
+  "title": "[Gesamttitel des Laufs]",
   "summary": "1–2 sachliche Sätze",
   "run_narrative": "kompakter Laufverlauf",
   "selection_reasoning": "Warum diese 3 Pfade gewählt wurden",
@@ -67,6 +69,7 @@ GIB KEINE ERKLÄRUNGEN ODER TEXT VOR ODER NACH DEM JSON AUS. STARTE DIREKT MIT `
 }
 
 Regeln:
+- **Titel sind eigene Worte:** Übernimm keine Formulierung aus dieser Anleitung als Titel. Der Gesamttitel beschreibt den gerechneten Lauf, nicht eines der drei Szenarien.
 - Genau **3** Szenarien, jeweils mit einer **unterschiedlichen** `candidate_id` aus `candidate_scenarios`.
 - Übernimm KEINE `factor_constellation` oder `tick_grounding` in den Output, das erledigt Python selbst (über die `candidate_id`).
 - Erfinde KEINE Zahlen: nutze ausschließlich Werte aus `summary_metrics`, `phase_ticks` und den `consistency_score`/`factor_constellation` der gewählten Kandidaten.

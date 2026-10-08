@@ -1,4 +1,11 @@
-"""Cross-checks generated run artifacts against each other for QA/debugging."""
+"""Cross-checks generated run artifacts against each other for QA/debugging.
+
+**Die Texte sind Produktsprache** (Befund 13 der Abnahme vom 2026-09-30): Hier
+standen «Booking-Deltas protokolliert», «Run-Ordner», «Checkpoints für State
+Explorer» und «tick_mechanics ↔ price_history» — sichtbar in der Abfrage unter
+«Dateien des Laufs gegeneinander prüfen». Gehalten von
+`tests/test_web_entwicklersprache.py::TestDiePruefungenSprechenDeutsch`.
+"""
 
 from __future__ import annotations
 
@@ -19,6 +26,12 @@ class ConsistencyCheck:
     detail: str
 
 
+def zahl(wert: float) -> str:
+    """Ein Preis mit Dezimalkomma, wie überall in der Oberfläche."""
+
+    return f"{wert:.2f}".replace(".", ",")
+
+
 def run_consistency_checks(run_dir: Path | str) -> list[ConsistencyCheck]:
     """Cross-check generated artefacts for presentation and debugging."""
 
@@ -36,12 +49,12 @@ def run_consistency_checks(run_dir: Path | str) -> list[ConsistencyCheck]:
     checks.append(
         ConsistencyCheck(
             check_id="required_files",
-            title="Pflicht-Artefakte vorhanden",
+            title="Alle Pflichtdateien vorhanden",
             status="fail" if missing else "ok",
             detail=(
                 "Fehlt: " + ", ".join(missing)
                 if missing
-                else "Alle Kern-Dateien liegen im Run-Ordner."
+                else "Alle Pflichtdateien liegen im Ordner des Laufs."
             ),
         )
     )
@@ -65,13 +78,13 @@ def run_consistency_checks(run_dir: Path | str) -> list[ConsistencyCheck]:
             continue
         if abs(float(expected) - float(actual)) > 0.05:
             price_mismatches.append(
-                f"Tick {tick}: mechanics={expected:.2f}, price_history={actual:.2f}"
+                f"Tick {tick}: {zahl(float(expected))} € gegen {zahl(float(actual))} €"
             )
 
     checks.append(
         ConsistencyCheck(
             check_id="price_alignment",
-            title="Ticketpreis: tick_mechanics ↔ price_history",
+            title="Ticketpreis in beiden Verlaufsdateien gleich",
             status="fail" if price_mismatches else "ok",
             detail=(
                 "; ".join(price_mismatches[:5]) if price_mismatches else "Preise stimmen überein."
@@ -83,12 +96,12 @@ def run_consistency_checks(run_dir: Path | str) -> list[ConsistencyCheck]:
     checks.append(
         ConsistencyCheck(
             check_id="delta_events",
-            title="Python-Delta-Events im event_log",
+            title="Änderungen aus der Rechnung im Ereignisprotokoll",
             status="ok" if delta_events else "warn",
             detail=(
-                f"{len(delta_events)} Delta-Events gefunden (source=system/provider/market)."
+                f"{len(delta_events)} Änderungen aus der Rechnung protokolliert."
                 if delta_events
-                else "Keine [delta:…]-Events — Run evtl. ohne Delta-Events oder ohne Markt-Feedback."
+                else "Keine Änderung aus der Rechnung im Ereignisprotokoll — der Lauf rechnete womöglich ohne Markt."
             ),
         )
     )
@@ -110,12 +123,13 @@ def run_consistency_checks(run_dir: Path | str) -> list[ConsistencyCheck]:
     checks.append(
         ConsistencyCheck(
             check_id="booking_delta_events",
-            title="Booking-Deltas protokolliert",
+            title="Buchungsänderungen protokolliert",
             status="warn" if missing_booking_deltas else "ok",
             detail=(
-                "Ticks ohne Booking-Delta-Event: " + ", ".join(map(str, missing_booking_deltas[:8]))
+                "Ticks ohne protokollierte Buchungsänderung: "
+                + ", ".join(map(str, missing_booking_deltas[:8]))
                 if missing_booking_deltas
-                else "Booking-Änderungen sind als Delta-Events sichtbar."
+                else "Jede Änderung der Buchungsrate steht im Ereignisprotokoll."
             ),
         )
     )
@@ -125,12 +139,12 @@ def run_consistency_checks(run_dir: Path | str) -> list[ConsistencyCheck]:
     checks.append(
         ConsistencyCheck(
             check_id="checkpoints",
-            title="Checkpoints für State Explorer",
+            title="Zwischenstände für die Abfrage",
             status="ok" if checkpoint_files else "warn",
             detail=(
-                f"{len(checkpoint_files)} Checkpoint-Dateien unter checkpoints/."
+                f"{len(checkpoint_files)} Zwischenstände gespeichert."
                 if checkpoint_files
-                else "Keine Checkpoints — Explorer nutzt nur CSV/JSON-Artefakte."
+                else "Keine Zwischenstände — die Abfrage liest nur die Verlaufsdateien."
             ),
         )
     )

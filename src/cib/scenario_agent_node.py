@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from src.cib.scenario_consistency import ScenarioDeriver, scenarios_to_dict
-from src.llm import LLMCallable
+from src.llm import LLMCallable, auf_deutsch
 from src.models.cib_models import DESCRIPTOR_IDS, MAX_INFLUENCE, MIN_INFLUENCE, CIBMatrix
 from src.models.llm_models import LLMIncident
 from src.models.scenario_models import (
@@ -146,14 +146,16 @@ def _extract_json_object(text: str) -> dict[str, Any] | None:
     if cleaned.startswith("```"):
         cleaned = cleaned.strip("`")
         cleaned = cleaned.replace("json\n", "", 1).strip()
+    # Steuerzeichen in Texten zulassen — derselbe Befund wie beim Abschlusstext
+    # (P8-V5): ein echter Zeilenumbruch in einem JSON-Text verwarf die Antwort.
+    decoder = json.JSONDecoder(strict=False)
     try:
-        direct = json.loads(cleaned)
+        direct = decoder.decode(cleaned)
         if isinstance(direct, dict):
             return direct
     except json.JSONDecodeError:
         pass
 
-    decoder = json.JSONDecoder()
     for idx, ch in enumerate(cleaned):
         if ch != "{":
             continue
@@ -271,9 +273,20 @@ def _normalize_scenarios(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 class ScenarioAgentNode:
-    def __init__(self, llm: LLMCallable, output_dir: Path | None = None) -> None:
+    def __init__(
+        self, llm: LLMCallable, output_dir: Path | None = None, *, erzaehlen: bool = True
+    ) -> None:
+        """*erzaehlen* ``False``: nur die gerechneten Szenarien, kein Aufruf ans Modell.
+
+        **Für «Nur Zahlen»** (`deterministic_only`, seit 2026-10-01). Bis dahin
+        fragte dieser Knoten das Sprachmodell auch in einem reinen Zahlenlauf:
+        Ohne Ollama wurde der Lauf als beeinträchtigt markiert, mit Ollama stand
+        ein Modelltext unter `compute_mode: deterministic_only`.
+        """
+
         self.llm = llm
         self.output_dir = output_dir
+        self.erzaehlen = erzaehlen
 
     def invoke(self, state: SimulationState) -> SimulationState:
         if state.cib_matrix is None:
@@ -285,10 +298,12 @@ class ScenarioAgentNode:
         # **Zwei Schlüssel, die sich nicht um ein Wort unterscheiden** (P1.3).
         # Vorher: `scenario_candidates` und `scenarios`.
         state.cib_matrix.metadata["gerechnete_szenarien"] = gerechnet.model_dump()
+        if not self.erzaehlen:
+            return state
 
         prompt = _build_scenario_prompt(state, gerechnet)
         try:
-            raw = self.llm.call(prompt)
+            raw = self.llm.call(auf_deutsch(prompt))
         except Exception as e:
             # Ohne Narrativ bleibt der deterministische Teil (`gerechnete_szenarien`)
             # stehen — der Lauf ist damit unvollständig, nicht falsch. Festhalten,

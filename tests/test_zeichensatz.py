@@ -239,7 +239,9 @@ class TestDieHeikleZeileKommtAnBeidenEndenAn:
         zeilen: list[str] = []
         with progress_logging(zeilen.append):
             handler = logging.StreamHandler(strom)
-            log = logging.getLogger("test_zeichensatz")
+            # Ein Logger des Projekts: Fremde (etwa der Webserver) erreichen das
+            # Fortschrittsfenster seit P8-V6 nicht mehr.
+            log = logging.getLogger("src.test_zeichensatz")
             log.handlers = [handler]
             log.propagate = True
             log.setLevel(logging.INFO)

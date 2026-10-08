@@ -240,6 +240,32 @@ class TestConfigCatalog:
 
         assert config_catalog.sweep_ziel("Mein Szenario").name == "mein_szenario.json"
 
+    def test_ein_gesichertes_szenario_heisst_wie_eingegeben(self, monkeypatch, tmp_path):
+        """Befund 13 der Abnahme: Aus «Abnahme V6» wurde in der Auswahl «abnahme_v6»."""
+
+        from dashboard import config_catalog
+
+        monkeypatch.setattr(config_catalog, "SWEEPS_DIR", tmp_path)
+
+        payload = json.loads(
+            save_custom_sweep_preset(default_config_draft(), "Abnahme V6").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        assert (payload["id"], payload["name"]) == ("abnahme_v6", "Abnahme V6")
+
+    def test_ein_eigener_laufname_bleibt_vorrangig(self, monkeypatch, tmp_path):
+        from dashboard import config_catalog
+
+        monkeypatch.setattr(config_catalog, "SWEEPS_DIR", tmp_path)
+        draft = default_config_draft()
+        draft.simulation_name = "Mein Lauf"
+
+        payload = json.loads(save_custom_sweep_preset(draft, "datei").read_text(encoding="utf-8"))
+
+        assert payload["name"] == "Mein Lauf"
+
     def test_list_runs_scenario_preview(self, tmp_path):
         run_dir = tmp_path / "run_20260101T120000Z"
         _write_minimal_run(run_dir)

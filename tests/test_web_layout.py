@@ -157,20 +157,30 @@ def _summary(tmp_path, **overrides) -> RunSummary:
     return RunSummary(**fields)
 
 
+def test_ein_vorzeitig_beendeter_lauf_sagt_es(tmp_path):
+    """Befund 10 der Abnahme: Ein abgebrochener Lauf war nur an «5 / 40» zu erkennen."""
+
+    kurz = _text(runs_page.lauf_kopf(_summary(tmp_path, ticks_completed=5, ticks_max=40)))
+    voll = _text(runs_page.lauf_kopf(_summary(tmp_path, ticks_completed=40, ticks_max=40)))
+
+    assert "vorzeitig beendet, angelegt auf 40 Ticks" in kurz
+    assert "vorzeitig" not in voll
+
+
 def test_degraded_run_is_flagged_above_every_tab(tmp_path):
     """P0.1: Der Banner sitzt im Kopf der Seite, nicht in einer einzelnen Ansicht."""
 
     rendered = _text(runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=3)))
 
     assert "beeinträchtigt" in rendered
-    assert "3 Aufrufe" in rendered
+    assert "3 Aufrufe an das Sprachmodell blieben" in rendered
     assert "llm_incidents.json" in rendered
 
 
 def test_a_single_incident_is_phrased_in_the_singular(tmp_path):
     rendered = _text(runs_page.lauf_kopf(_summary(tmp_path, degraded=True, llm_incident_count=1)))
 
-    assert "ein Aufruf" in rendered
+    assert "ein Aufruf an das Sprachmodell blieb ohne" in rendered
 
 
 def test_a_clean_run_gets_no_warning(tmp_path):
@@ -324,7 +334,7 @@ def test_add_property_rejects_an_invalid_identifier():
     )
 
     assert kind == "warnung"
-    assert "Python-Bezeichner" in message
+    assert "Buchstaben, Ziffern und Unterstrich" in message
 
 
 def test_add_segment_rejects_a_duplicate():
@@ -421,6 +431,7 @@ def test_result_message_covers_all_three_outcomes():
         multi_run_batch = False
         sweep_summary_path = None
         child_run_ids: tuple = ()
+        child_names: tuple = ()
 
     single = _Result()
     assert "run_1" in _text(launch_page._result_message(single))
@@ -433,6 +444,7 @@ def test_result_message_covers_all_three_outcomes():
     sweep = _Result()
     sweep.sweep_batch = True
     sweep.child_run_ids = ("sweeps/sweep_a",)
+    sweep.child_names = ("Business as Usual",)
     sweep.sweep_summary_path = "outputs/sweeps/sweep_summary.json"
     assert "Szenario-Vergleich" in _text(launch_page._result_message(sweep))
 
@@ -533,11 +545,13 @@ class TestDieErgebnisseBeantwortenVierFragen:
         from dashboard.web.views import figures
 
         sweeps = tmp_path / "sweeps"
-        for name in ("sweep_a", "sweep_b"):
+        for name in ("sweep_a", "sweep_b", "nicht_ein_sweep"):
             (sweeps / name).mkdir(parents=True)
-        (sweeps / "nicht_ein_sweep").mkdir()
+            (sweeps / name / "run_metadata.json").write_text(
+                json.dumps({"rahmen": {"id": name[-1], "quelle": "preset"}}), encoding="utf-8"
+            )
 
-        geschwister = figures.sweep_geschwister(sweeps / "sweep_a")
+        geschwister = figures.sweep_geschwister(sweeps / "sweep_a", {"a", "b"})
 
         assert [p.name for p in geschwister] == ["sweep_a", "sweep_b"]
 
@@ -590,6 +604,87 @@ def _schreibe_historie(run_dir, *, mit_grenze: bool = True, personen: int = 200)
 def history_run(minimal_run):
     _schreibe_historie(minimal_run)
     return minimal_run
+
+
+class TestDieAnimationRechnetErstAufKlick:
+    """P8-V11 (2026-10-01): «Animation» zeichnete neun animierte Diagramme auf einmal —
+    gemessen 7,6 s und 5,05 MiB für den Pitch-Fall, 20,5 s und 14,84 MiB für einen
+    Rahmen über 120 Ticks. Seither rechnet jedes erst auf «Diagramm zeigen»."""
+
+    def _graphen(self, knoten) -> int:
+        from dash import dcc
+
+        if isinstance(knoten, dcc.Graph):
+            return 1
+        kinder = getattr(knoten, "children", None)
+        if isinstance(kinder, (list, tuple)):
+            return sum(self._graphen(k) for k in kinder)
+        return self._graphen(kinder) if kinder is not None and not isinstance(kinder, str) else 0
+
+    def test_die_ansicht_zeichnet_kein_diagramm(self, history_run):
+        gezeichnet = animation.render(history_run, "run_minimal")
+
+        assert self._graphen(gezeichnet) == 0
+        assert str(gezeichnet).count(animation.ZEIGEN) >= 5
+
+    def test_ein_klick_liefert_das_diagramm(self, history_run):
+        from dash import dcc
+
+        for kennung in ("bevoelkerung", "spielraum", "saettigung", "merkmal-0", "alter"):
+            assert isinstance(animation.diagramm(kennung, history_run), dcc.Graph), kennung
+
+    def test_die_punktwolke_nimmt_eine_stichprobe(self, tmp_path, minimal_run):
+        _schreibe_historie(minimal_run, personen=animation.STICHPROBE_BEVOELKERUNG + 100)
+
+        figur = animation.diagramm("bevoelkerung", minimal_run).figure
+        ids = {i for spur in figur.data if spur.hovertext is not None for i in spur.hovertext}
+
+        assert len(ids) == animation.STICHPROBE_BEVOELKERUNG
+
+    def test_ohne_klick_geschieht_nichts(self):
+        """Dash ruft den Callback auch, wenn der Knopf neu gezeichnet wird."""
+
+        from dash import no_update
+
+        gefangen: dict = {}
+
+        class _App:
+            def callback(self, *args, **kwargs):
+                def deko(fn):
+                    gefangen[fn.__name__] = fn
+                    return fn
+
+                return deko
+
+        animation.register_callbacks(_App())
+
+        assert gefangen["_zeigen"](None, {"run_dir": "x"}, "light") == (no_update, no_update)
+
+
+class TestDieAnimationSprichtDeutsch:
+    """Befund 12 der Abnahme vom 2026-09-30: Die Legende der Animation hieß
+    «False, Leisure» und «True, Business», der Hover nannte Spaltennamen."""
+
+    ENGLISCH = ("True", "False", "Business", "Leisure", "Awareness")
+    SPALTEN = ("substitution_readiness", "price_sensitivity", "saturation_level", "wtp_eur")
+
+    def test_legende_und_hover(self, history_run):
+        for kennung in ("bevoelkerung", "spielraum", "saettigung", "merkmal-0"):
+            figur = animation.diagramm(kennung, history_run).figure
+            namen = " ".join(spur.name or "" for spur in figur.data)
+            hover = " ".join(spur.hovertemplate or "" for spur in figur.data)
+
+            assert animation.GEBUCHT in namen, (kennung, namen)
+            assert not [w for w in self.ENGLISCH if w in namen], (kennung, namen)
+            assert not [w for w in self.SPALTEN if w + "=" in hover], (kennung, hover)
+
+    def test_segmente_heissen_wie_im_modell(self, history_run):
+        from dashboard.config_catalog import SEGMENT_NAMEN
+
+        figur = animation.diagramm("segmente", history_run).figure
+
+        namen = {spur.name for spur in figur.data}
+        assert SEGMENT_NAMEN["business"] in namen, namen
 
 
 class TestSurplusPulse:

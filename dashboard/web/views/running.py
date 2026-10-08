@@ -28,7 +28,7 @@ from dash import dcc, html
 
 from dashboard.web import components as ui
 from dashboard.web import routing
-from dashboard.web.config_editor import compute_mode, dauer
+from dashboard.web.config_editor import dauer
 from dashboard.web.runner import Progress
 
 #: Wie viele Konsolenzeilen der Ladebildschirm zeigt. Mehr als hier passt nicht
@@ -72,8 +72,8 @@ def _readout(progress: Progress) -> str:
 
     **Drei Zustände, nicht zwei.** Die frühere Fassung kannte nur «Tick x von y»
     und sonst «Lauf wird vorbereitet …». Bei einem Szenario-Vergleich stimmte
-    das nie: Der Sweep schreibt keine `[tick n/m]`-Zeilen, sondern meldet je
-    Szenario «Completed 50 ticks». Am laufenden System gemessen stand deshalb
+    das nie: Der Sweep schreibt keine `[Tick n/m]`-Zeilen, sondern meldet je
+    Szenario «50 Ticks gerechnet». Am laufenden System gemessen stand deshalb
     **achtunddreißig Sekunden lang** «wird vorbereitet», während acht Szenarien
     rechneten.
 
@@ -82,8 +82,19 @@ def _readout(progress: Progress) -> str:
     läuft der Lauf; nur *wie weit* er ist, weiß niemand.
     """
 
+    if progress.abbruch:
+        stand = f" nach Tick {progress.tick} von {progress.total}" if progress.tick else ""
+        return f"Abgebrochen{stand} — der Lauf wird gesichert"
     if progress.tick and progress.total:
         return f"Tick {progress.tick} von {progress.total}"
+    if progress.szenarien:
+        if progress.szenarien_fertig >= progress.szenarien:
+            return f"Alle {progress.szenarien} Szenarien gerechnet — Abschluss wird geschrieben"
+        if progress.szenario_name:
+            return (
+                f"Szenario {progress.szenarien_fertig + 1} von {progress.szenarien}: "
+                f"{progress.szenario_name}"
+            )
     if progress.lines:
         return "Läuft — Fortschritt nicht bezifferbar"
     return "Lauf wird vorbereitet …"
@@ -104,7 +115,7 @@ def _restzeit(progress: Progress) -> str | None:
     das nicht nötig.
 
     **Nichts zu sagen heißt nichts sagen.** In den ersten Ticks, bei einem
-    Szenario-Vergleich ohne `[tick n/m]`-Zeilen und im letzten Tick gibt es
+    Szenario-Vergleich ohne `[Tick n/m]`-Zeilen und im letzten Tick gibt es
     keine Zahl. Ein «unbekannt» an dieser Stelle wäre Platz für eine Auskunft,
     die es nicht gibt — dieselbe Entscheidung wie beim unbestimmten Balken.
     """
@@ -125,16 +136,19 @@ def _restzeit(progress: Progress) -> str | None:
 
 
 def _what(draft: dict) -> html.Div:
-    """Was gerade gerechnet wird — dieselben drei Angaben wie im Bedienfeld."""
+    """Was gerade gerechnet wird — **dieselben** drei Angaben wie im Bedienfeld.
 
-    from dashboard.web.pages.launch import _length, _scenario_name
+    Bis zum 2026-09-30 leitete der Ladebildschirm sie selbst ab und kannte den
+    Szenario-Vergleich nicht: Während vier Rahmen rechneten, stand dort
+    «Standard-Ausgangslage · 40 Ticks» (Befund 9 der Abnahme).
+    """
 
-    # `prose=True`, weil hier **Text** steht und keine Zahl: Im Zahlensatz
+    from dashboard.web.pages.launch import stand
+
+    # Variante `text`, weil hier **Text** steht und keine Zahl: Im Zahlensatz
     # sprengten «Standard-Ausgangslage» und «Ohne Sprachmodell» ihre Karten.
     return ui.grid(
-        ui.kachel("Szenario", _scenario_name(draft), variante="text"),
-        ui.kachel("Umfang", _length(draft), variante="text"),
-        ui.kachel("Rechenmodus", compute_mode.short_label(draft), variante="text"),
+        *[ui.kachel(label, wert, variante="text") for label, wert in stand(draft)],
         cols="sm:grid-cols-3",
         gap="gap-3",
     )
@@ -149,8 +163,15 @@ def render(progress: Progress, draft: dict) -> html.Div:
         [
             html.Div(
                 [
-                    ui.badge("Simulation läuft", variant="info", icon_name="autorenew"),
-                    html.H1("Der Lauf rechnet", className=f"{ui.H1} mt-3"),
+                    ui.badge(
+                        "Abbruch angefordert" if progress.abbruch else "Simulation läuft",
+                        variant="warning" if progress.abbruch else "info",
+                        icon_name="autorenew",
+                    ),
+                    html.H1(
+                        "Der Lauf wird beendet" if progress.abbruch else "Der Lauf rechnet",
+                        className=f"{ui.H1} mt-3",
+                    ),
                     html.P(
                         "Die Zahlen entstehen jetzt in Python. Sie können in der Zwischenzeit "
                         "unter «Ergebnisse» einen früheren Lauf ansehen — der Fortschritt "

@@ -45,7 +45,7 @@ def _warte_auf_ende(job_id: str, sekunden: float = 5.0) -> runner.Job:
 def test_a_run_reports_its_progress_and_result(monkeypatch):
     def fake_launch(draft, *, repo_root=None, on_progress=None, should_stop=None):
         for tick in (1, 2, 3):
-            on_progress(f"[tick {tick}/3] price=100")
+            on_progress(f"[Tick {tick}/3] price=100")
         return "fertig"
 
     monkeypatch.setattr(runner, "launch_from_draft", fake_launch)
@@ -56,7 +56,7 @@ def test_a_run_reports_its_progress_and_result(monkeypatch):
     assert job.error is None
     assert job.result == "fertig"
     assert len(job.lines) == 3
-    assert job.lines[0].startswith("[tick 1/3]")
+    assert job.lines[0].startswith("[Tick 1/3]")
 
 
 def test_progress_arrives_while_the_run_is_still_going(monkeypatch):
@@ -192,6 +192,49 @@ def test_the_log_does_not_grow_without_bound(monkeypatch):
     assert job.lines[-1] == f"Zeile {ueberzaehlig - 1}", "die jüngsten Zeilen bleiben"
 
 
+class TestDieFertigmeldungGehtNichtVerloren:
+    """**Befund 9 der Abnahme vom 2026-09-30.** Nach dem Szenario-Vergleich kam
+    keine Fertigmeldung, «Lauf aktiv …» blieb stehen, und kein Lauf wurde gewählt.
+
+    Dash verwirft die Antwort eines Callbacks, der noch läuft, wenn sein Takt
+    ihn erneut auslöst. `_poll` vergaß den Job in genau der Antwort, die ihn als
+    fertig meldete — ging sie verloren, fand der nächste Aufruf nichts mehr.
+    """
+
+    def _poll(self):
+        from dashboard.web.pages import launch as launch_page
+
+        app = _MitschreibendeApp()
+        launch_page.register_callbacks(app)
+        return next(fn for _ids, fn in app.callbacks if fn.__name__ == "_poll")
+
+    def test_ein_zweites_abholen_sagt_dasselbe(self, monkeypatch):
+        from dashboard.run_launcher import RunLaunchResult
+
+        ergebnis = RunLaunchResult(
+            run_id="run_x", run_dir=None, ticks_completed=3, total_events=0, artifacts={}
+        )
+        monkeypatch.setattr(runner, "launch_from_draft", lambda draft, **kw: ergebnis)
+        job_id = runner.start(initial_draft_dict())
+        _warte_auf_ende(job_id)
+
+        erste, zweite = self._poll()(1, job_id), self._poll()(2, job_id)
+
+        assert str(erste) == str(zweite)
+        assert erste[3] == "run_x", "der fertige Lauf wird gewählt"
+        assert erste[1] is True, "danach fragt niemand mehr nach"
+
+    def test_der_naechste_start_raeumt_auf(self, monkeypatch):
+        monkeypatch.setattr(runner, "launch_from_draft", lambda draft, **kw: "ok")
+        erster = runner.start(initial_draft_dict())
+        _warte_auf_ende(erster)
+
+        zweiter = runner.start(initial_draft_dict())
+        _warte_auf_ende(zweiter)
+
+        assert runner.poll(erster) is None and runner.poll(zweiter) is not None
+
+
 # --- Der Start-Knopf selbst -------------------------------------------------
 
 
@@ -267,6 +310,39 @@ def test_the_start_button_starts_a_healthy_config(monkeypatch):
 
     assert ergebnis[0] == "job-4711"
     assert ergebnis[_KNOPF] is True, "während des Laufs ist der Knopf gesperrt"
+
+
+class TestNachDemStartStehtEinrichtenAmEinstieg:
+    """**Befund 7 der Abnahme vom 2026-09-30.** Nach einem Szenario-Vergleich blieb
+    die Schrittfolge auf «Prüfen & Starten» stehen. Wer dort einen Einzellauf
+    einstellte, wählte Szenario und Verläufe ohne Warnung — und startete wieder
+    den Vergleich, der beides nicht übernimmt. Seit dem Start steht «Einrichten»
+    wieder am Einstieg, wie der Docstring von `wizard.STEP_STORE` es verspricht."""
+
+    #: Die drei letzten Ausgänge: Schritt, Besuchtes, Verlauf.
+    SCHRITT, BESUCHT, VERLAUF = 6, 7, 8
+
+    def test_ein_gestarteter_lauf_setzt_die_schrittfolge_zurueck(self, monkeypatch):
+        from dashboard.web.config_editor import wizard
+
+        monkeypatch.setattr(runner, "start", lambda draft: "job-1")
+
+        ergebnis = _start_callback()(None, 1, {**initial_draft_dict(), "run_all_sweeps": True})
+
+        assert ergebnis[self.SCHRITT] is wizard.ENTRY
+        assert ergebnis[self.BESUCHT] == [] and ergebnis[self.VERLAUF] == []
+
+    def test_ein_abgewiesener_start_laesst_sie_stehen(self, monkeypatch):
+        """Wer die Fehlermeldung lesen soll, bleibt bei den Feldern."""
+
+        from dash import no_update
+
+        monkeypatch.setattr(runner, "start", lambda draft: "job-1")
+        draft = {**initial_draft_dict(), "use_seed": True, "seed": -1}
+
+        ergebnis = _start_callback()(None, 1, draft)
+
+        assert ergebnis[self.SCHRITT :] == (no_update, no_update, no_update)
 
 
 # --- Ein Lauf gehört dem Server, nicht der Sitzung --------------------------

@@ -424,3 +424,56 @@ class TestDieBegruendungStoertDieEntscheidungNicht:
                 "Sie hieß bis D3 «Quellen und was davon nicht belegt ist» und trug nur "
                 "zwei der vier Texte."
             )
+
+
+class TestSchrittEinsSprichtKeineDateisprache:
+    """Befund 13 der Abnahme vom 2026-09-30: Schritt 1 nannte unter «Business as
+    Usual» die Datei `business_as_usual.json` und «CIB-Kombination A1 + B1»; die
+    «Freiwillige Wende» sprach von «carbon_tax ab Tick 19 auf 120 EUR». Und der
+    Satz versprach, eigene Einstellungen blieben außen vor — seit P7.13 ändert der
+    Schritt «Verläufe» einzelne Verläufe des Szenarios."""
+
+    VERBOTEN = (".json", "CIB-Kombination", "carbon_tax", "EUR", "Flight Shaming", "außen vor")
+
+    @pytest.mark.parametrize("preset", list_sweep_presets(), ids=lambda p: p.id)
+    def test_kein_dateiname_kein_kuerzel(self, preset):
+        draft = {**initial_draft_dict(), "sweep_id": preset.id, "scenario_mode": "sweep"}
+
+        text = str(start_flow.scenario_details(draft))
+
+        assert preset.name in text, "Misst der Test das gewählte Szenario?"
+        assert not [w for w in self.VERBOTEN if w in text], [w for w in self.VERBOTEN if w in text]
+
+
+class TestDerHorizontHinweisMeintDenLauf:
+    """Befund 15 der Abnahme vom 2026-09-30: Der Hinweis zu auslaufenden Verläufen
+    rechnete immer mit der Standard-Ausgangslage und der Länge des Entwurfs —
+    beim Vergleich «die letzten 24 Ticks» eines 40-Tick-Laufs, unter «Business as
+    Usual» die SAF-Quote des Standards, die dieser Lauf nicht hat."""
+
+    def _text(self, **felder) -> str:
+        return str(start_flow._horizont_hinweis({**initial_draft_dict(), **felder}))
+
+    def test_beim_vergleich_steht_keiner(self):
+        assert self._text(rounds=40, run_all_sweeps=True) == "[]"
+
+    def test_unter_einem_rahmen_zaehlen_dessen_verlaeufe(self):
+        from dashboard.config_catalog import PROPERTY_LABELS
+
+        text = self._text(rounds=120, scenario_mode="sweep", sweep_id="business_as_usual")
+
+        assert PROPERTY_LABELS["saf_mandate_share"] not in text, text
+        assert "Tick 1." in text or "Tick 96." in text, text
+
+    def test_eine_eigene_abweichung_zaehlt_mit(self):
+        """Der Pitch-Fall: die CO₂-Abgabe springt bei Tick 24 — der Lauf meldet
+        denselben Horizont in seinem Protokoll."""
+
+        from dashboard.run_launcher import launch_config_to_draft
+        from dashboard.vorfuehrbestand import bestand
+        from dashboard.web.state import draft_to_dict
+
+        fall = next(lauf for lauf in bestand() if lauf.kennung == "vorfuehrung_co2").konfiguration
+        entwurf = draft_to_dict(launch_config_to_draft(fall))
+
+        assert "bei Tick 24" in str(start_flow._horizont_hinweis(entwurf))

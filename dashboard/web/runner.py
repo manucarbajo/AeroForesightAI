@@ -15,14 +15,20 @@ gegenseitig die Ausgabe abschneiden.
 from __future__ import annotations
 
 import queue
-import re
 import threading
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
+from dashboard.config_catalog import rahmenszenarien
 from dashboard.run_launcher import REPO_ROOT, launch_from_draft
 from dashboard.web.state import draft_from_dict
+from src.orchestration.konsole import (
+    SZENARIO_ENDE,
+    SZENARIO_KOPF,
+    TICK_ZEILE,
+    tick_sekunden,
+)
 
 #: Wie viele Zeilen das Log höchstens behält. Ein 500-Tick-Lauf schreibt sonst
 #: mehr in den Browser, als dieser flüssig darstellen kann.
@@ -49,9 +55,15 @@ class Job:
     #: Tick», und dann passiert nichts. Ein Versprechen ohne Deckung ist
     #: schlimmer als ein fehlender Knopf.
     cancellable: bool = True
+    #: Wie viele Szenarien ein Szenario-Vergleich rechnet — bei einem Einzellauf `None`.
+    szenarien: int | None = None
 
 
-#: Die Fortschrittszeile des Tick-Loops: `[tick  14/40] 0.14s (…) — price=…`.
+#: Die Fortschrittszeile des Tick-Loops: `[Tick  14/40] 0,14 s (…) — Preis …`.
+#: **Format und Muster stehen im Rechenkern** (`src.orchestration.konsole`), seit
+#: die Zeile deutsch ist (Befund 13 der Abnahme vom 2026-09-30) — vorher kannten
+#: zwei Stellen dasselbe Format, ohne voneinander zu wissen.
+#:
 #: Gelesen, nicht geschätzt — steht dort nichts, gibt es keine Prozentzahl
 #: (Invariante 1: Zahlen werden nicht erfunden).
 #:
@@ -62,7 +74,7 @@ class Job:
 #: **Sie ist bewusst optional.** Verlangte das Muster sie, ginge bei einer Zeile
 #: ohne Dauer auch `tick`/`total` verloren — der Balken verlöre seine Zahl, weil
 #: eine Nebenauskunft fehlt. Die Restzeit darf ausfallen, der Fortschritt nicht.
-_TICK_LINE = re.compile(r"\[tick\s+(\d+)\s*/\s*(\d+)\](?:\s+([\d.]+)s)?")
+_TICK_LINE = TICK_ZEILE
 
 #: Wie viele der zuletzt gemessenen Tickdauern in die Restzeit eingehen. Genug,
 #: um einen Ausreißer zu dämpfen, wenig genug, um dem aktuellen Tempo zu folgen:
@@ -78,6 +90,12 @@ TEMPO_MINDESTENS = 2
 #: Wie viele Zeilen die Oberfläche höchstens bekommt. Die Konsole zeigt
 #: ohnehin nur die letzten; alles davor waere Ballast im Browser.
 VISIBLE_LINES = 200
+
+#: Der Kopf, mit dem ein Szenario-Vergleich jedes Szenario beginnt
+#: (`Szenario «Business as Usual (A1+B1)»`), und die Zeile, mit der er es
+#: beendet (`120 Ticks gerechnet in 3,2 s (…)`).
+_SZENARIO_KOPF = SZENARIO_KOPF
+_SZENARIO_ENDE = SZENARIO_ENDE
 
 
 @dataclass(frozen=True)
@@ -100,6 +118,18 @@ class Progress:
     #: Die Dauer der zuletzt gerechneten Ticks, in Sekunden, älteste zuerst.
     #: Höchstens `TEMPO_FENSTER` Einträge.
     tick_seconds: tuple[float, ...] = ()
+    #: Beim Szenario-Vergleich: wie viele Szenarien er rechnet, wie viele davon
+    #: fertig sind und welches gerade rechnet (P8-V6, Befund 9). Gezählt über
+    #: **alle** Zeilen des Laufs, nicht nur die `VISIBLE_LINES`, die durch den
+    #: Browser gehen — sonst verlöre die Zählung ihre ersten Szenarien.
+    szenarien: int | None = None
+    szenarien_fertig: int = 0
+    szenario_name: str | None = None
+    #: Ob jemand den Lauf abgebrochen hat (P8-V6, Befund 10). Der Lauf rechnet
+    #: danach noch den laufenden Tick zu Ende und schreibt seine Artefakte —
+    #: mit Sprachmodell bis zu einer Minute, in der der Ladebildschirm bis zum
+    #: 2026-10-01 weiter «Der Lauf rechnet» sagte.
+    abbruch: bool = False
 
     @property
     def fraction(self) -> float | None:
@@ -107,11 +137,18 @@ class Progress:
 
         `None` heißt «unbestimmt» und gehört als unbestimmter Balken dargestellt.
         Eine Null an dieser Stelle waere eine Behauptung.
+
+        **Ein Szenario-Vergleich zählt fertige Szenarien** statt Ticks: Er
+        schreibt keine Tick-Zeilen, meldet aber jedes Szenario mit Kopf und
+        Abschluss. Bis zum 2026-09-30 stand dort «nicht bezifferbar», obwohl
+        die Zahl in der Ausgabe stand.
         """
 
-        if not self.tick or not self.total:
-            return None
-        return min(1.0, self.tick / self.total)
+        if self.tick and self.total:
+            return min(1.0, self.tick / self.total)
+        if self.szenarien:
+            return min(1.0, self.szenarien_fertig / self.szenarien)
+        return None
 
     @property
     def remaining_seconds(self) -> tuple[float, float] | None:
@@ -199,10 +236,20 @@ def progress() -> Progress | None:
         if tick is None:
             tick, total = int(treffer.group(1)), int(treffer.group(2))
             zeile = eintrag
-        if treffer.group(3) is not None and len(dauern) < TEMPO_FENSTER:
-            dauern.append(float(treffer.group(3)))
+        sekunden = tick_sekunden(treffer)
+        if sekunden is not None and len(dauern) < TEMPO_FENSTER:
+            dauern.append(sekunden)
         elif len(dauern) >= TEMPO_FENSTER:
             break
+
+    fertig, name = 0, None
+    if job.szenarien:
+        for eintrag in zeilen:
+            kopf = _SZENARIO_KOPF.match(eintrag.strip())
+            if kopf:
+                name = kopf.group(1)
+            elif _SZENARIO_ENDE.match(eintrag):
+                fertig += 1
 
     return Progress(
         job_id=job.job_id,
@@ -213,6 +260,10 @@ def progress() -> Progress | None:
         cancellable=job.cancellable,
         # Älteste zuerst — gelesen wurde von hinten.
         tick_seconds=tuple(reversed(dauern)),
+        szenarien=job.szenarien,
+        szenarien_fertig=fertig,
+        szenario_name=name,
+        abbruch=job.stop.is_set(),
     )
 
 
@@ -222,11 +273,21 @@ def start(draft_data: dict) -> str:
     if is_running():
         raise RuntimeError("Es läuft bereits eine Simulation. Bitte abwarten.")
 
+    # Erst hier wird ein fertiger Lauf vergessen, nicht beim Abholen: Siehe `forget`.
+    with _LOCK:
+        for alt in [kennung for kennung, eintrag in _JOBS.items() if eintrag.done]:
+            del _JOBS[alt]
+
     draft = draft_from_dict(draft_data)
     # Ein Szenario-Vergleich ist nicht abbrechbar — der Sweep-Pfad bekommt
     # `should_stop` nicht. Das steht hier fest, damit die Oberflaeche es
     # anzeigen kann, statt einen wirkungslosen Knopf zu zeigen.
-    job = Job(job_id=uuid.uuid4().hex, cancellable=not bool(draft.run_all_sweeps))
+    job = Job(
+        job_id=uuid.uuid4().hex,
+        cancellable=not bool(draft.run_all_sweeps),
+        # Dieselbe Quelle, aus der `run_all_sweeps` seine Szenarien nimmt.
+        szenarien=len(rahmenszenarien()) if draft.run_all_sweeps else None,
+    )
     with _LOCK:
         _JOBS[job.job_id] = job
 
@@ -294,7 +355,16 @@ def poll(job_id: str | None) -> Job | None:
 
 
 def forget(job_id: str | None) -> None:
-    """Abgeschlossenen Job vergessen, damit der Speicher nicht mitwächst."""
+    """Abgeschlossenen Job vergessen, damit der Speicher nicht mitwächst.
+
+    **Die Oberfläche ruft das nicht beim Abholen** (P8-V6, Befund 9). Bis zum
+    2026-09-30 vergaß `_poll` den Job in derselben Antwort, die ihn als fertig
+    meldete. Dash verwirft aber die Antwort eines Callbacks, der noch läuft,
+    wenn sein Takt ihn erneut auslöst — dauerte diese eine Antwort länger als
+    der Takt, ging sie verloren, und der nächste Aufruf fand keinen Job mehr:
+    keine Fertigmeldung, «Lauf aktiv …» blieb stehen, kein Lauf wurde gewählt.
+    Abgeholt wird deshalb wiederholbar; aufgeräumt wird beim nächsten `start`.
+    """
 
     if not job_id:
         return

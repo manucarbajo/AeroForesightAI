@@ -3,7 +3,7 @@
 Der `StateExplorer` beantwortet ausschließlich aus `tick_mechanics.json`,
 `price_history.json` und `event_log.json` — keine erfundenen Zahlen. Die
 Oberfläche macht sichtbar, was dabei übergeben wird: der Datenkontext und die
-Artefakt-Checks lassen sich jederzeit einblenden.
+Die Prüfung der Dateien gegeneinander lässt sich jederzeit einblenden.
 """
 
 from __future__ import annotations
@@ -28,6 +28,12 @@ _STATUS_COLORS = {
 }
 
 
+#: Der Name des Schalters — **einer**, im Kästchen, in der Beispielantwort und im
+#: Handbuch. Die Beispielantwort sagte «Demo ohne Ollama», ein Name, den die
+#: Oberfläche nirgends zeigt (Befund N5 der Gegenprüfung vom 2026-09-21).
+DEMO_SCHALTER = "Beispielantworten ohne Sprachmodell"
+
+
 class _MockLLM:
     """Antwortet ohne Ollama — für Vorführungen ohne laufendes Modell."""
 
@@ -38,7 +44,7 @@ class _MockLLM:
         scope = f"Tick {self._focus_tick}" if self._focus_tick else "dem gesamten Lauf"
         return (
             f"Demo-Antwort: Die Frage bezieht sich auf {scope}. "
-            "Deaktivieren Sie «Demo ohne Ollama», wenn Ollama für echte Antworten laufen soll."
+            f"Schalten Sie «{DEMO_SCHALTER}» aus, damit das Sprachmodell antwortet."
         )
 
 
@@ -135,16 +141,18 @@ def render(
                     html.Div(
                         [
                             ui.checkbox(
-                                "Beispielantworten ohne Sprachmodell",
+                                DEMO_SCHALTER,
                                 value=False,
                                 id="explorer-mock",
-                                hint="Deaktivieren für echte Antworten via Ollama (Modell in .env).",
+                                hint="Ausgeschaltet antwortet das lokal laufende Sprachmodell.",
                             ),
                             ui.checkbox(
                                 "Datenkontext anzeigen", value=False, id="explorer-show-context"
                             ),
                             ui.checkbox(
-                                "Artefakt-Checks anzeigen", value=False, id="explorer-show-checks"
+                                "Dateien des Laufs gegeneinander prüfen",
+                                value=False,
+                                id="explorer-show-checks",
                             ),
                         ],
                         className="space-y-1",
@@ -235,7 +243,7 @@ def register_callbacks(app) -> None:
                 if use_mock
                 else StateExplorer(context)
             )
-            # `str()` hängt den Vorbehalt an, wenn Zahlen unbelegt sind (P2.5).
+            # `str()` hängt den Vorbehalt an (P2.5), seit P8-V3 unter jede Antwort.
             # Ohne diese Umwandlung stünde das `Antwort`-Objekt selbst im
             # Verlauf und der Hinweis ginge verloren.
             answer = str(explorer.ask(question))

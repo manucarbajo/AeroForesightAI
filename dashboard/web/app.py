@@ -186,6 +186,10 @@ def _progress_from(payload: dict | None) -> runner.Progress | None:
         # Muss mit durch den Browser, sonst fiele die Restzeit genau dort aus,
         # wo sie gezeigt wird — dieselbe Falle wie bei `cancellable`.
         tick_seconds=tuple(float(w) for w in (payload.get("tick_seconds") or ())),
+        szenarien=payload.get("szenarien"),
+        szenarien_fertig=int(payload.get("szenarien_fertig") or 0),
+        szenario_name=payload.get("szenario_name"),
+        abbruch=bool(payload.get("abbruch")),
     )
 
 
@@ -429,6 +433,9 @@ def create_app() -> Dash:
             var wirt = document.getElementById("%s");
             if (!wirt) { return window.dash_clientside.no_update; }
             var setzen = function () {
+                // Erst nach einer Handlung (P8-V12, assets/fokus_folgt_handlung.js):
+                // `dcc.Location` meldet den Pfad auch beim Laden als Aenderung.
+                if (!window.afHatGehandelt) { return; }
                 var aktiv = document.activeElement;
                 // **Auch frei, wenn das Fokussierte unsichtbar geworden ist.**
                 // Ein Bereichswechsel schaltet die Sichtbarkeiten nacheinander:

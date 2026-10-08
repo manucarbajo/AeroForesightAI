@@ -7,6 +7,13 @@ from uuid import uuid4
 from src.models.enums import EventType
 from src.models.event_models import EventLogEntry
 from src.models.state_models import SimulationState
+from src.reporting.namen import (
+    FAKTOR_KURZNAMEN,
+    groesse_name,
+    prozent,
+    prozentpunkte,
+    zahl,
+)
 
 _DELTA_SOURCE = "system"
 
@@ -25,20 +32,16 @@ _TRACKED_PROPERTIES: tuple[str, ...] = (
     "booking_rate",
 )
 
-_PROPERTY_LABELS: dict[str, str] = {
-    "carbon_tax_level": "CO₂ tax",
-    "income_index": "income index",
-    "saf_mandate_share": "SAF mandate",
-    "fuel_price_change": "fuel price change",
-    "oil_price_index": "oil price index",
-    "efuel_subsidy": "e-fuel subsidy",
-    "bevoelkerungsentwicklung": "population trajectory",
-    "maintenance_cost_index": "maintenance cost index",
-    "staff_cost_index": "staff cost index",
-    "provider_markup": "provider markup",
-    "cost_pressure": "cost pressure",
-    "booking_rate": "booking rate",
+#: Die Namen der Größen, die keine Systemgröße mit Eintrag in `PROPERTY_LABELS`
+#: sind. Alle übrigen kommen aus `src.reporting.namen` — bis zum 2026-10-02 stand
+#: hier eine zweite, englische Tabelle («CO₂ tax», «population trajectory»).
+_EIGENE_NAMEN: dict[str, str] = {
+    "cost_pressure": "Kostendruck",
+    "booking_rate": "Buchungsrate",
 }
+
+#: Größen, die ein Anteil sind und als Prozent geschrieben werden.
+_ANTEILE = ("saf_mandate_share", "booking_rate")
 
 
 def _row_for_tick(rows: list[dict[str, object]], tick: int) -> dict[str, object] | None:
@@ -82,16 +85,28 @@ def _append_delta_event(
     )
 
 
-def _format_numeric_delta(label: str, previous: float, current: float) -> str:
+def _name(prop_id: str) -> str:
+    return _EIGENE_NAMEN.get(prop_id) or groesse_name(prop_id)
+
+
+def _format_numeric_delta(prop_id: str, previous: float, current: float) -> str:
+    """Eine Veränderung als deutscher Satzteil (2026-10-02).
+
+    Bis dahin «booking rate 23.3% → 12.0% (-11.4 pp, Python delta)» — sichtbar in der
+    Konsole, unter «Dateien» und im Kontext der Abfrage.
+    """
+
     delta = current - previous
-    if label == "booking rate":
-        return f"{label} {previous:.1%} → {current:.1%} " f"({delta * 100:+.1f} pp, Python delta)"
-    if label == "SAF mandate":
+    vorzeichen = "+" if delta >= 0 else "−"
+    if prop_id in _ANTEILE:
         return (
-            f"{label} {previous:.1%} → {current:.1%} "
-            f"({(current - previous) * 100:+.1f} pp, Python delta)"
+            f"{_name(prop_id)} {prozent(previous)} → {prozent(current)} "
+            f"({prozentpunkte(delta)}, gerechnet)"
         )
-    return f"{label} {previous:g} → {current:g} ({delta:+.4g}, Python delta)"
+    return (
+        f"{_name(prop_id)} {zahl(round(previous, 2))} → {zahl(round(current, 2))} "
+        f"({vorzeichen}{zahl(round(abs(delta), 2))}, gerechnet)"
+    )
 
 
 def write_events_from_deltas(state: SimulationState) -> SimulationState:
@@ -120,8 +135,8 @@ def write_events_from_deltas(state: SimulationState) -> SimulationState:
                 marker=f"factor:{factor_id}",
                 event_type=EventType.POLICY_CHANGE,
                 description=(
-                    f"Factor {factor_id} state {previous} → {current} "
-                    f"(factor_rules, Python delta)"
+                    f"Faktor {FAKTOR_KURZNAMEN.get(factor_id, factor_id)} ({factor_id}): "
+                    f"{previous} → {current} (Faktorregeln, gerechnet)"
                 ),
                 affected_factors=[factor_id],
             )
@@ -138,13 +153,12 @@ def write_events_from_deltas(state: SimulationState) -> SimulationState:
                 continue
             if float(previous) == float(current):
                 continue
-            label = _PROPERTY_LABELS.get(prop_id, prop_id)
             _append_delta_event(
                 state,
                 tick=tick,
                 marker=f"property:{prop_id}",
                 event_type=EventType.MARKET_EVENT,
-                description=_format_numeric_delta(label, float(previous), float(current)),
+                description=_format_numeric_delta(prop_id, float(previous), float(current)),
             )
 
     prior_stats = next(
@@ -169,7 +183,7 @@ def write_events_from_deltas(state: SimulationState) -> SimulationState:
                 marker="booking:population",
                 event_type=EventType.DEMAND_SHIFT,
                 description=_format_numeric_delta(
-                    "booking rate",
+                    "booking_rate",
                     float(prior_booking),
                     float(current_booking),
                 ),

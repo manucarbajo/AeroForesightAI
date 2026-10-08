@@ -38,11 +38,11 @@ def plot_scenario_comparison(
     for series in series_list:
         if metric == "booking":
             y = series.booking_rate
-            ylabel = "Booking Rate"
-            title = "Szenario-Vergleich: Booking Rate"
+            ylabel = "Buchungsrate"
+            title = "Szenario-Vergleich: Buchungsrate"
         else:
             y = series.ticket_price
-            ylabel = "Ticketpreis (EUR)"
+            ylabel = "Ticketpreis (€)"
             title = "Szenario-Vergleich: Ticketpreis"
         ax.plot(series.ticks, y, marker=".", linewidth=1.8, label=series.label)
     ax.set_xlabel("Tick")
@@ -75,10 +75,10 @@ def plot_cib_scores(scores: list[dict[str, Any]], output_path: Path) -> Path:
     values = [float(row["consistency_score"]) for row in scores]
     fig, ax = plt.subplots(figsize=(9, 4.5))
     bars = ax.barh(names, values, color=FARBEN["buchung"])
-    ax.set_xlabel("CIB Consistency Score")
+    ax.set_xlabel("Widerspruchsfreiheit (CIB-Wert)")
     # Nicht «Plausibilität»: Der Score misst Widerspruchsfreiheit und steigt mit
     # der Polarität der Faktorlage, nicht mit der Eintrittschance (P2.0).
-    ax.set_title("Szenario-Widerspruchsfreiheit (CIB Consistency)")
+    ax.set_title("Widerspruchsfreiheit der Szenarien (CIB)")
     ax.set_xlim(0, max(values) * 1.15 if values else 1)
     for bar, value in zip(bars, values):
         ax.text(
@@ -97,16 +97,16 @@ def plot_price_vs_booking(series: RunSeries, output_path: Path) -> Path:
         series.ticks, series.ticket_price, color=FARBEN["preis"], marker="o", label="Ticketpreis"
     )
     ax1.set_xlabel("Tick")
-    ax1.set_ylabel("Ticketpreis (EUR)", color=FARBEN["preis"])
+    ax1.set_ylabel("Ticketpreis (€)", color=FARBEN["preis"])
     ax1.tick_params(axis="y", labelcolor=FARBEN["preis"])
     ax2 = ax1.twinx()
     ax2.plot(
-        series.ticks, series.booking_rate, color=FARBEN["buchung"], marker="s", label="Booking Rate"
+        series.ticks, series.booking_rate, color=FARBEN["buchung"], marker="s", label="Buchungsrate"
     )
-    ax2.set_ylabel("Booking Rate", color=FARBEN["buchung"])
+    ax2.set_ylabel("Buchungsrate", color=FARBEN["buchung"])
     ax2.tick_params(axis="y", labelcolor=FARBEN["buchung"])
     ax2.set_ylim(0, 1)
-    ax1.set_title(f"Markt-Rückkopplung: Preis und Booking ({series.label})")
+    ax1.set_title(f"Markt-Rückkopplung: Preis und Buchungsrate ({series.label})")
     return _save_figure(fig, output_path)
 
 
@@ -118,7 +118,7 @@ def plot_policy_shock(
         series.ticks, series.carbon_tax, color=FARBEN["politik"], marker="o", label="CO₂-Steuer"
     )
     ax1.set_xlabel("Tick")
-    ax1.set_ylabel("CO₂-Steuer (EUR/t)", color=FARBEN["politik"])
+    ax1.set_ylabel("CO₂-Abgabe (€/t)", color=FARBEN["politik"])
     ax1.tick_params(axis="y", labelcolor=FARBEN["politik"])
     for tick in shock_ticks:
         ax1.axvline(
@@ -130,24 +130,24 @@ def plot_policy_shock(
         )
     ax2 = ax1.twinx()
     ax2.plot(
-        series.ticks, series.booking_rate, color=FARBEN["buchung"], marker="s", label="Booking Rate"
+        series.ticks, series.booking_rate, color=FARBEN["buchung"], marker="s", label="Buchungsrate"
     )
-    ax2.set_ylabel("Booking Rate", color=FARBEN["buchung"])
+    ax2.set_ylabel("Buchungsrate", color=FARBEN["buchung"])
     ax2.tick_params(axis="y", labelcolor=FARBEN["buchung"])
     ax2.set_ylim(0, 1)
-    ax1.set_title(f"Policy-Shock: CO₂-Steuer und Booking ({series.label})")
+    ax1.set_title(f"Politik-Schock: CO₂-Abgabe und Buchungsrate ({series.label})")
     return _save_figure(fig, output_path)
 
 
 def plot_system_dynamics(series: RunSeries, output_path: Path) -> Path:
     fig, axes = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
     axes[0].plot(
-        series.ticks, series.booking_rate, color=FARBEN["buchung"], marker="o", label="Booking Rate"
+        series.ticks, series.booking_rate, color=FARBEN["buchung"], marker="o", label="Buchungsrate"
     )
-    axes[0].set_ylabel("Booking Rate")
+    axes[0].set_ylabel("Buchungsrate")
     axes[0].set_ylim(0, 1)
     axes[0].grid(True, alpha=0.3)
-    axes[0].set_title(f"Systemdynamik: Booking und Properties ({series.label})")
+    axes[0].set_title(f"Systemdynamik: Buchungsrate und Systemgrößen ({series.label})")
 
     axes[1].plot(series.ticks, series.carbon_tax, label="CO₂-Steuer", linewidth=1.8)
     if any(v == v for v in series.income_index):
@@ -155,7 +155,7 @@ def plot_system_dynamics(series: RunSeries, output_path: Path) -> Path:
     if series.saf_mandate and any(v == v for v in series.saf_mandate):
         axes[1].plot(series.ticks, series.saf_mandate, label="SAF-Mandat", linewidth=1.8)
     axes[1].set_xlabel("Tick")
-    axes[1].set_ylabel("Property-Wert")
+    axes[1].set_ylabel("Wert der Systemgröße")
     axes[1].legend(fontsize=8)
     axes[1].grid(True, alpha=0.3)
     return _save_figure(fig, output_path)
@@ -172,9 +172,9 @@ def plot_age_segments(series: RunSeries, output_path: Path) -> Path:
         ticks = series.age_ticks[: len(values)]
         ax.plot(ticks, values, marker="o", linewidth=1.5, label=group)
     ax.set_xlabel("Tick")
-    ax.set_ylabel("Booking Rate")
+    ax.set_ylabel("Buchungsrate")
     ax.set_ylim(0, 1)
-    ax.set_title(f"Booking nach Altersgruppe ({series.label})")
+    ax.set_title(f"Buchungsrate nach Altersgruppe ({series.label})")
     ax.legend(fontsize=8)
     return _save_figure(fig, output_path)
 

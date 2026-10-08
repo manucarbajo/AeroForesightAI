@@ -11,12 +11,15 @@ will, wählt ein Szenario.
 | `properties.json` | Systemgrößen, Personen-Merkmale, Marktregeln, Preismodell, Marktrückkopplung, Sättigung |
 | `factors.json` | Die sieben Faktoren mit Namen, Leitfrage und je zwei Zuständen |
 | `cib_frozen.json` | Die eingefrorene Einflussmatrix für die Konsistenzprüfung |
+| `agents.json` | Die drei Akteure mit ihren Rollen |
+| `agent_profiles.json` | Was jeder Akteur sehen und vorschlagen darf |
 
 ## Die Koeffizienten der Buchungsentscheidung
 
-Unter `booking_model` in `properties.json` stehen die acht Zahlen, die
+Unter `booking_model` in `properties.json` stehen die neun Zahlen, die
 bestimmen, wie stark Preis, CO₂-Abgabe und Bahnalternative gegen die
-Buchungsbereitschaft arbeiten. Sie standen bis August 2026 als Literale im
+Buchungsbereitschaft arbeiten — und, seit dem 3. September 2026, wie stark ein
+wachsendes Angebot für sie arbeitet. Sie standen bis August 2026 als Literale im
 Programmcode.
 
 Jede trägt zwei Felder: `wert` und `quelle`. **Die Quelle nennt beides
@@ -25,7 +28,7 @@ Nutzen eingeht, ist Standard der diskreten Wahltheorie und belegt. Dass das
 Gewicht der Bahnalternative *1,5* beträgt, ist es nicht: Dieser Wert ist in
 diesem Modell gesetzt.
 
-**Keiner der acht Werte ist aus Daten geschätzt.** Das steht so in jeder
+**Keiner der neun Werte ist aus Daten geschätzt.** Das steht so in jeder
 Quellenangabe, und ein Test hält es fest — eine Literaturangabe an eine
 handgesetzte Zahl zu heften sähe aus wie eine Kalibrierung, die es nicht gibt.
 Wer sie eicht, ersetzt beides: den Wert und seine Herkunft.
@@ -40,11 +43,10 @@ Wer sie eicht, ersetzt beides: den Wert und seine Herkunft.
 | `green_premium` | Aufschlag auf die Zahlungsbereitschaft umweltbewusster Personen |
 | `high_price_sensitivity_threshold` | Ab welcher Preisempfindlichkeit der zusätzliche Abgaben-Malus greift |
 | `high_price_sensitivity_penalty` | Wie hoch dieser zusätzliche Malus ausfällt |
+| `verfuegbarkeit_gewicht` | Wie stark mehr Kapazität — mehr Flüge und Strecken — die Buchungsbereitschaft hebt; bei der Kapazität des Ausgangsjahrs wirkt es nicht |
 
 Der Bereich **Modell** im Dashboard zeigt diese Felder noch nicht — sie sind
 über die Datei zu ändern.
-| `agents.json` | Die drei Akteure mit ihren Rollen |
-| `agent_profiles.json` | Was jeder Akteur sehen und vorschlagen darf |
 
 Dazu kommt `configs/sweeps/` mit den Szenario-Presets, je eines pro Datei. Eine
 solche Datei überschreibt Systemgrößen (`property_overrides`) und darf seit dem

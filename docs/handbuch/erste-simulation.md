@@ -130,7 +130,8 @@ Modell, Handbuch. Mit der Tastatur geht das seit August 2026 ohne Umwege:
 
 Der **erste** Griff auf jeder Seite ist «Zum Inhalt springen». Er erscheint,
 sobald er den Fokus hat, und überspringt Kopfzeile und Bereichsliste — sonst
-tastet man sich vor jedem Bereich durch dieselben acht Elemente.
+tastet man sich vor jedem Bereich durch dieselben acht Elemente. Beim Laden der
+Seite rührt die Oberfläche den Fokus nicht an; der erste Tabulator führt dorthin.
 
 Wechseln Sie den Bereich, wandert der **Fokus auf dessen Überschrift**, und der
 Wechsel wird angesagt: «Bereich gewechselt: Ergebnisse». In der Bereichsliste

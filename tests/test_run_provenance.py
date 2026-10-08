@@ -195,15 +195,21 @@ class TestSweepSchreibtNichtMehrVorbei:
 
     def test_metadata_is_written_after_the_scenario(self) -> None:
         """Reihenfolge im Quelltext: Erst der Vorfall, dann die Metadaten.
-        Andersherum kann `degraded` den Ausfall gar nicht mehr sehen."""
+        Andersherum kann `degraded` den Ausfall gar nicht mehr sehen.
+
+        **Seit P8-V4 werden die Metadaten zweimal geschrieben**: einmal vor dem
+        Abschlusstext, der sie von der Platte liest, und endgültig danach. Diese
+        Zusage gilt dem **letzten** Schreiben; das erste hält
+        `tests/test_abschlusstext_liest_seinen_lauf.py` am Verhalten fest."""
 
         from pathlib import Path
 
         source = Path("src/orchestration/scenario_sweeps.py").read_text(encoding="utf-8")
         scenario_at = source.index("scenario_result = generate_and_save_run_scenario")
         incidents_at = source.index("save_llm_incidents(final_state.llm_incidents")
-        metadata_at = source.index("save_run_metadata(final_state, dummy_args")
-        assert scenario_at < incidents_at < metadata_at
+        metadata_first = source.index("save_run_metadata(final_state, dummy_args")
+        metadata_last = source.rindex("save_run_metadata(final_state, dummy_args")
+        assert metadata_first < scenario_at < incidents_at < metadata_last
 
     def test_sweep_seed_is_one_constant(self) -> None:
         """Der Seed stand zweimal als Literal — einmal im Lauf, einmal in den

@@ -307,7 +307,12 @@ def test_scenario_generation_falls_back_to_the_template(tmp_path, monkeypatch) -
     assert "Ollama nicht erreichbar" in result["llm_error"]
 
 
-def test_a_working_scenario_call_reports_no_error(tmp_path, monkeypatch) -> None:
+def test_an_unusable_answer_is_an_incident(tmp_path, monkeypatch) -> None:
+    """**Bis P8-V5 hielt dieser Test das Gegenteil fest** («ein funktionierender
+    Aufruf meldet keinen Fehler» — mit der Antwort `{}`). Eine Antwort, die nicht
+    verwendet wird, ist aber ein Ausfall: An ihre Stelle tritt die Vorlage, und am
+    2026-09-30 sah so die Hälfte des Vorführbestands vollwertig aus."""
+
     from src.reporting.run_scenario_generator import pipeline
 
     monkeypatch.setattr(pipeline, "load_run_scenario_context", _stub_context)
@@ -318,8 +323,40 @@ def test_a_working_scenario_call_reports_no_error(tmp_path, monkeypatch) -> None
             return "{}"
 
     result = pipeline.generate_run_scenario("run_x", _EmptyLLM(), run_dir=tmp_path)
+    vorfall = pipeline.szenario_vorfall(result, tick=40)
 
-    assert result["llm_error"] is None
+    assert result["source"] == "template"
+    assert result["llm_error"] == "Antwort nicht verwertbar: es fehlt title, run_narrative"
+    assert vorfall is not None and vorfall.kind == "answer_unusable"
+
+
+def test_a_failed_call_stays_call_failed(tmp_path, monkeypatch) -> None:
+    from src.reporting.run_scenario_generator import pipeline
+
+    monkeypatch.setattr(pipeline, "load_run_scenario_context", _stub_context)
+    monkeypatch.setattr(pipeline, "build_scenario_prompt", lambda context: "prompt")
+
+    class _Weg:
+        def call(self, prompt: str) -> str:
+            raise ConnectionError("Ollama nicht erreichbar")
+
+    result = pipeline.generate_run_scenario("run_x", _Weg(), run_dir=tmp_path)
+    vorfall = pipeline.szenario_vorfall(result, tick=3)
+
+    assert vorfall is not None and vorfall.kind == "call_failed" and vorfall.tick == 3
+
+
+def test_a_usable_answer_is_no_incident(tmp_path) -> None:
+    from src.reporting.run_scenario_generator import pipeline
+    from tests.test_run_scenario_generator import _write_scenario_fixture
+    from tests.test_widerspruch_markiert import RICHTIG, _abschlusstext
+
+    run_dir = tmp_path / "lauf"
+    _write_scenario_fixture(run_dir, booking_start=0.7, booking_end=0.3)
+    result = _abschlusstext(run_dir, run_narrative=RICHTIG, story=RICHTIG * 3)
+
+    assert result["source"] == "llm" and result["llm_error"] is None
+    assert pipeline.szenario_vorfall(result, tick=3) is None
 
 
 # --- Der Weg ins Fortschrittsfenster ---------------------------------------
@@ -387,3 +424,91 @@ def test_configure_logging_is_idempotent() -> None:
     configure_logging()
 
     assert len(root.handlers) == before
+
+
+def test_a_run_without_a_language_model_is_no_incident(tmp_path) -> None:
+    """Invariante 1: Ein bewusster Lauf ohne Sprachmodell ist kein Ausfall.
+
+    Der Browser-Wächter hat es gefunden: Sein Referenzlauf ohne Modell wurde mit
+    dem ersten Anlauf von `answer_unusable` beeinträchtigt, und der Warnhinweis
+    schob das erste Diagramm unter die Falz.
+    """
+
+    from src.llm import MockLLM
+    from src.reporting.run_scenario_generator import pipeline
+    from tests.test_run_scenario_generator import _write_scenario_fixture
+
+    run_dir = tmp_path / "lauf"
+    _write_scenario_fixture(run_dir, booking_start=0.7, booking_end=0.3)
+    result = pipeline.generate_run_scenario("lauf", MockLLM(), run_dir=run_dir)
+
+    assert result["source"] == "template"
+    assert pipeline.szenario_vorfall(result, tick=3) is None
+
+
+def test_an_unusable_answer_gets_a_second_try(tmp_path) -> None:
+    """Die Antworten streuen — eine unbrauchbare wird einmal wiederholt, bevor die Vorlage einspringt."""
+
+    import json as _json
+
+    from src.reporting.run_scenario_generator import pipeline
+    from tests.test_run_scenario_generator import _write_scenario_fixture
+    from tests.test_widerspruch_markiert import RICHTIG
+
+    run_dir = tmp_path / "lauf"
+    _write_scenario_fixture(run_dir, booking_start=0.7, booking_end=0.3)
+    gut = _json.dumps(
+        {
+            "title": "Titel",
+            "summary": "Eine sachliche Zusammenfassung des Laufs. " * 6,
+            "run_narrative": RICHTIG,
+            "scenarios": [
+                {"candidate_id": "C1", "story": "a"},
+                {"candidate_id": "C2", "story": "b"},
+            ],
+        }
+    )
+
+    class _ErstKaputt:
+        aufrufe = 0
+
+        def call(self, prompt: str) -> str:
+            _ErstKaputt.aufrufe += 1
+            return "kein JSON" if _ErstKaputt.aufrufe == 1 else gut
+
+    result = pipeline.generate_run_scenario("lauf", _ErstKaputt(), run_dir=run_dir)
+
+    assert _ErstKaputt.aufrufe == 2
+    assert result["source"] == "llm" and result["llm_error"] is None
+
+
+def test_two_unusable_answers_are_one_incident(tmp_path, monkeypatch) -> None:
+    from src.reporting.run_scenario_generator import pipeline
+
+    monkeypatch.setattr(pipeline, "load_run_scenario_context", _stub_context)
+    monkeypatch.setattr(pipeline, "build_scenario_prompt", lambda context: "prompt")
+    aufrufe = []
+
+    class _ImmerKaputt:
+        def call(self, prompt: str) -> str:
+            aufrufe.append(prompt)
+            return "kein JSON"
+
+    result = pipeline.generate_run_scenario("run_x", _ImmerKaputt(), run_dir=tmp_path)
+
+    assert len(aufrufe) == pipeline.VERSUCHE
+    assert result["llm_error"] == "Antwort nicht verwertbar: kein lesbares JSON-Objekt"
+
+
+def test_the_web_servers_access_log_stays_out_of_the_progress_window() -> None:
+    """Abnahme V6: «INFO werkzeug: 127.0.0.1 … POST /app/_dash-update-component» stand
+    im Fortschrittsfenster, während ein Szenario-Vergleich rechnete."""
+
+    lines: list[str] = []
+
+    with progress_logging(lines.append):
+        logging.getLogger("werkzeug").warning('127.0.0.1 - - "POST /app/_dash-update-component"')
+        logging.getLogger("src.orchestration.simulation_runner").warning("Tick 3 gerechnet")
+        logging.getLogger("dashboard.run_launcher").warning("Lauf gestartet")
+
+    assert [zeile.split(": ", 1)[1] for zeile in lines] == ["Tick 3 gerechnet", "Lauf gestartet"]

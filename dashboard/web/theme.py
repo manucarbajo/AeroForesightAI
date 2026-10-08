@@ -414,6 +414,11 @@ def _build_template(mode: str) -> go.layout.Template:
     return go.layout.Template(
         layout=go.Layout(
             colorway=COLORWAYS[mode],
+            # **Dezimalkomma und Tausenderpunkt** (P8-V6, 2026-10-01): Achsen und
+            # Hover schrieben «0.5» und «37.4%» neben Kennzahlen, die seither
+            # «37,4 %» heißen (`formate.zahl`). Erstes Zeichen Dezimal-, zweites
+            # Tausendertrennung — gilt für jede Figur, die das Template trägt.
+            separators=",.",
             paper_bgcolor=tone["paper-bg"],
             plot_bgcolor=tone["plot-bg"],
             font=dict(family=FONT_BODY, size=13, color=tone["text-body"]),

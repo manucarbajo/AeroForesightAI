@@ -5,7 +5,12 @@ nichts wissen.
 ## Was er sieht
 
 Die Antwort stützt sich auf die Kennzahlen je Tick, den Preisverlauf und das
-Ereignisprotokoll. Sind Zwischenstände geschrieben worden, kommen einzelne
+Ereignisprotokoll. Bei einer Frage zum ganzen Lauf steht ganz vorn seit Ende September 2026 ein **Faktenblatt**:
+die Richtung jeder Kerngröße über den Lauf — «Buchungsrate sinkt von 47,9 % auf
+35,7 %» — und jeder Faktorwechsel, fertig gerechnet. Das Modell soll die Richtung
+von dort übernehmen, statt sie aus Zahlenreihen zu deuten. Eine Frage zu einem
+einzelnen Tick bekommt es nicht — das Modell schriebe sonst die Werte des ganzen
+Laufs als Antwort ab. Sind Zwischenstände geschrieben worden, kommen einzelne
 Ticks im Detail dazu.
 
 Über den Schalter «Datenkontext anzeigen» sehen Sie genau die Daten, die einer
@@ -41,11 +46,25 @@ gerechnet ist. Ob eine Rechnung stimmt, kann die Prüfung nicht wissen.
 Umgekehrt gilt: Eine **nicht** markierte Zahl steht so in den Daten. Gerundete
 Angaben zählen dabei mit — «rund 140 Euro» gilt als belegt, wenn der Wert 140,38
 beträgt. Und Prozentangaben werden erkannt: «48,2 %» belegt einen gespeicherten
-Anteil von 0,4818.
+Anteil von 0,4818. Eine Prozentangabe wird dabei nur gegen Anteile und
+Prozentwerte gehalten, nicht gegen jede Zahl — «140 %» belegt also keinen
+Ticketpreis von 140 Euro, und «49 %» keine Buchungsrate, die nie bei 49 % lag.
 
 **Zurückgewiesen wird nichts.** Eine Antwort mit einer nicht belegten Zahl wäre
 oft trotzdem brauchbar — sie kommt deshalb vollständig, mit dem Vorbehalt
 darunter.
+
+**Auch eine falsche Richtung wird markiert.** Sagt die Antwort, die Buchungsrate
+sei gestiegen, während sie über den Lauf fiel, steht darunter «Widerspricht der
+Rechnung» mit der Stelle — geprüft gegen das Faktenblatt. Bei einer Frage zu
+einem einzelnen Tick entfällt diese Prüfung, weil eine Größe dort anders laufen
+kann als über den ganzen Lauf.
+
+**Und jede Antwort sagt, dass sie geprüft wurde.** Seit Ende September 2026 steht
+auch unter einer Antwort ohne Befund ein Satz, etwa «Prüfung: 3 Zahlen der
+Antwort, gehalten gegen 442 verschiedene Zahlen der Laufdaten — jede kommt dort
+vor.» Enthält die Antwort keine Zahl, steht das dort. Vorher blieb eine belegte
+Antwort ohne Hinweis und sah damit aus wie eine ungeprüfte.
 
 ## Fragen stellen
 
@@ -61,16 +80,16 @@ einem anderen Lauf.
 
 ## Ohne Ollama
 
-Der Schalter «Demo ohne Ollama» beantwortet Fragen mit einem Platzhaltertext.
+Der Schalter «Beispielantworten ohne Sprachmodell» beantwortet Fragen mit einem Platzhaltertext.
 Sinnvoll, um den Ablauf vorzuführen, ohne ein Sprachmodell laufen zu haben. Für
 echte Antworten schalten Sie ihn aus; dann muss Ollama erreichbar sein.
 
-## Die Artefakt-Checks
+## Die Dateien gegeneinander prüfen
 
-Der Schalter «Artefakt-Checks anzeigen» blendet eine Prüfung ein, die die
+Der Schalter «Dateien des Laufs gegeneinander prüfen» blendet eine Prüfung ein, die die
 erzeugten Dateien gegeneinander abgleicht. Sie prüft, ob alle Pflichtdateien
 vorliegen, ob die Preise in den verschiedenen Dateien übereinstimmen, ob die
-Änderungen als Python-Deltas protokolliert sind und ob Zwischenstände existieren.
+Änderungen aus der Rechnung im Ereignisprotokoll stehen und ob Zwischenstände existieren.
 
 Diese Prüfung ist unabhängig vom Sprachmodell und der schnellste Weg zu der Frage,
 ob einem Lauf zu trauen ist.

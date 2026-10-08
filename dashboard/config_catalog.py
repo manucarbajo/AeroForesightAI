@@ -27,6 +27,13 @@ from src.orchestration.scenario_sweeps import (
 from src.orchestration.scenario_sweeps import (
     rahmenszenarien as _rahmenszenarien,
 )
+from src.reporting.namen import (  # noqa: F401 - die Namen gehören zur Schnittstelle
+    EINHEITEN,
+    FAKTOR_KURZNAMEN,
+    PROPERTY_LABELS,
+    SEGMENT_NAMEN,
+    segment_name,
+)
 from src.validation import collect_state_errors, field_of, issue
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -45,80 +52,6 @@ STANDARD_PROPERTY_IDS: tuple[str, ...] = (
     "maintenance_cost_index",
     "staff_cost_index",
 )
-
-#: **Die Namen der Systemgrößen — die eine Quelle** für Diagramme, Modell-Bereich
-#: und Handbuch (P7.1-U1.5). Bis zum 2026-09-13 standen hier acht von sechzehn;
-#: die übrigen erschienen als Kennung (`maintenance_cost_index`), und das
-#: Diagramm «Was die Politik bewirkt» benannte **alle** seine Reihen so, weil es
-#: die Liste gar nicht benutzte. `tests/test_web_diagrammnamen.py` hält jede
-#: Größe aus `configs/properties.json` gegen diese Liste.
-PROPERTY_LABELS: dict[str, str] = {
-    "carbon_tax_level": "CO₂-Steuer (€/t)",
-    "saf_mandate_share": "SAF-Mandat (0–1)",
-    "demand_growth_rate": "Nachfragewachstum / Tick",
-    "income_index": "Einkommensindex",
-    "oil_price_index": "Ölpreis-Index",
-    "fuel_price_change": "Treibstoff-Trend / Tick",
-    "efuel_subsidy": "E-Fuel-Subvention",
-    "bevoelkerungsentwicklung": "Bevölkerung (Personen)",
-    "provider_markup": "Anbieter-Marge (€)",
-    "ticket_price": "Ticketpreis (€)",
-    "kapazitaet_index": "Kapazitätsindex",
-    "altersmittel_jahre": "Altersmittel (Jahre)",
-    "erneuerungsrate": "Erneuerungsrate / Tick",
-    "maintenance_cost_index": "Wartungskostenindex",
-    "staff_cost_index": "Personalkostenindex",
-    "airport_fee": "Flughafengebühr (€)",
-}
-
-#: Einheiten aus `properties.json` — (kurz für Achsentitel, lang für Tabellen).
-#: Bis zum 2026-09-13 lebte eine zweite, halbe Fassung im Handbuch
-#: (`docs_reference.UNIT_LABELS`), und sie sprach noch von «Runde» statt Tick.
-EINHEITEN: dict[str, tuple[str, str]] = {
-    "eur_per_tonne": ("€/t", "€ je Tonne"),
-    "fraction": ("0–1", "Anteil (0–1)"),
-    "fraction_per_tick": ("Anteil je Tick", "Anteil je Tick"),
-    "share_per_tick": ("Anteil je Tick", "Anteil je Tick"),
-    "index": ("Index", "Index (1.0 = Basis)"),
-    "eur": ("€", "Euro"),
-    "EUR": ("€", "Euro"),
-    "persons": ("Personen", "Personen"),
-    "years": ("Jahre", "Jahre"),
-    "%": ("%", "Prozent"),
-}
-
-#: Die Namen der Bevölkerungssegmente — dieselbe Quelle für die Karten im
-#: Modell-Bereich und die Linien in «Wer noch fliegt». Vorher entstand der Name
-#: an beiden Stellen aus der Kennung («Eco Conscious»).
-SEGMENT_NAMEN: dict[str, str] = {
-    "business": "Geschäftsreisende",
-    "family": "Familien",
-    "price_sensitive": "Preisbewusste",
-    "eco_conscious": "Umweltbewusste",
-    "frequent_flyer": "Vielflieger",
-}
-
-
-#: Die Kurznamen der sieben Faktoren — für die Faktorleiste über der Szene (P7.5-U5.3,
-#: von Haiko entschieden am 2026-09-15: eine Reihe, Kurzname und Zustand als Marke).
-#: Die langen Namen in `configs/factors.json` («Mobilitaetsbeduerfnis / Nachfrage»)
-#: passen bei 1280 px in keinen Chip; gemessen blieben je Chip 72 px. Die Wörter sind
-#: die des Domain-Glossars in CLAUDE.md.
-FAKTOR_KURZNAMEN: dict[str, str] = {
-    "F1": "Nachfrage",
-    "F2": "Regulierung",
-    "F3": "Technologie",
-    "F4": "Wirtschaft",
-    "F5": "Alternativen",
-    "F6": "Gesellschaft",
-    "F7": "Geopolitik",
-}
-
-
-def segment_name(segment_id: str) -> str:
-    """Der Name eines Segments — für ein unbekanntes die Kennung in Lesbarform."""
-
-    return SEGMENT_NAMEN.get(segment_id, segment_id.replace("_", " "))
 
 
 def property_einheit(property_id: str, properties_file: str = "properties.json") -> str:
@@ -181,8 +114,21 @@ def add_custom_property(
         )
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
     if label:
         PROPERTY_LABELS[property_id] = label
+
+
+def abweichungen_benannt(abweichungen: list[str] | tuple[str, ...]) -> list[str]:
+    """Die Abweichungen eines abgeleiteten Laufs in den Namen der Oberfläche (P8-V6).
+
+    `rahmen.abweichungen` trägt Kennungen (`carbon_tax_level`, `preisstrategie`,
+    `abschnitt.wert`); gezeigt wird, was `PROPERTY_LABELS` dazu kennt. Eine
+    Kennung ohne Namen bleibt stehen — lieber sie als gar nichts.
+    """
+
+    eigene = {"preisstrategie": "Preisstrategie"}
+    return [PROPERTY_LABELS.get(a, eigene.get(a, a)) for a in abweichungen]
 
 
 def delete_custom_property(property_id: str, properties_file: str = "properties.json") -> None:
@@ -200,6 +146,7 @@ def delete_custom_property(property_id: str, properties_file: str = "properties.
         ]
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+            f.write("\n")
 
 
 @dataclass
@@ -427,6 +374,22 @@ def extract_population_edits_from_file(
     return edits
 
 
+#: Die Felder eines Bevölkerungsmerkmals, die der Modell-Editor pflegt.
+_POPULATION_FELDER = (
+    "prevalence",
+    "exclusive_group",
+    "saturation_decay",
+    "modifiers",
+    "distribution",
+    "mean",
+    "std_dev",
+    "min_value",
+    "max_value",
+    "alpha",
+    "beta",
+)
+
+
 def save_population_edits_to_file(
     edits: list[PopulationEditState], filename: str = "properties.json"
 ) -> None:
@@ -436,37 +399,49 @@ def save_population_edits_to_file(
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
 
+    # **Was der Editor nicht kennt, bleibt stehen** (Befund 14 der Abnahme vom
+    # 2026-09-30): Bis dahin entstand jeder Eintrag neu aus den Feldern von
+    # `PopulationEditState` — die Quellenangabe der Altersverteilung (`quelle`)
+    # fiel dabei weg, und ein ausgeschaltetes Merkmal war danach wieder an.
+    # Gesetzt werden nur die Felder, die der Editor pflegt; ein leeres entfällt.
+    bisher = {p.get("id"): p for p in data.get("individual_properties", [])}
     new_props = []
     for e in edits:
-        d = {"id": e.id, "type": e.type, "enabled": True}
+        d = dict(bisher.get(e.id, {}))
+        d.update({"id": e.id, "type": e.type})
+        d.setdefault("enabled", True)
+        werte: dict
         if e.type == "boolean":
-            if e.prevalence is not None:
-                d["prevalence"] = float(e.prevalence)
-            if e.exclusive_group:
-                d["exclusive_group"] = e.exclusive_group
-            if e.saturation_decay is not None:
-                d["saturation_decay"] = float(e.saturation_decay)
-            d["modifiers"] = e.modifiers
+            werte = {
+                "prevalence": e.prevalence,
+                "exclusive_group": e.exclusive_group or None,
+                "saturation_decay": e.saturation_decay,
+                "modifiers": e.modifiers,
+            }
         else:
-            if e.distribution:
-                d["distribution"] = e.distribution
-            if e.mean is not None:
-                d["mean"] = float(e.mean)
-            if e.std_dev is not None:
-                d["std_dev"] = float(e.std_dev)
-            if e.min_value is not None:
-                d["min_value"] = float(e.min_value)
-            if e.max_value is not None:
-                d["max_value"] = float(e.max_value)
-            if e.alpha is not None:
-                d["alpha"] = float(e.alpha)
-            if e.beta is not None:
-                d["beta"] = float(e.beta)
+            werte = {
+                "distribution": e.distribution or None,
+                "mean": e.mean,
+                "std_dev": e.std_dev,
+                "min_value": e.min_value,
+                "max_value": e.max_value,
+                "alpha": e.alpha,
+                "beta": e.beta,
+            }
+        for feld in _POPULATION_FELDER:
+            wert = werte.get(feld)
+            if wert is None:
+                d.pop(feld, None)
+            elif isinstance(wert, (int, float)) and not isinstance(wert, bool):
+                d[feld] = float(wert)
+            else:
+                d[feld] = wert
         new_props.append(d)
 
     data["individual_properties"] = new_props
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
 
 def extract_saturation_from_file(filename: str = "properties.json") -> SaturationEditState:
@@ -492,6 +467,7 @@ def save_saturation_to_file(edit: SaturationEditState, filename: str = "properti
     }
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
 
 def extract_market_feedback_from_file(filename: str = "properties.json") -> MarketFeedbackEditState:
@@ -550,6 +526,7 @@ def save_market_feedback_to_file(
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 
 
 def save_property_edits_to_file(
@@ -596,6 +573,7 @@ def save_property_edits_to_file(
             item["trajectory"] = neu[item["id"]]
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
     return sorted(neu)
 
 
@@ -1263,6 +1241,12 @@ def save_custom_sweep_preset(draft: ConfigDraft, filename: str) -> Path:
     SWEEPS_DIR.mkdir(parents=True, exist_ok=True)
     target = sweep_ziel(filename)
     sweep = szenario_zum_sichern(draft, filename=target.stem)
+    # **Der Name ist, was eingegeben wurde** (Befund 13 der Abnahme, 2026-10-01).
+    # Ohne eigenen Laufnamen hieß das Szenario wie seine Datei: Aus «Abnahme V6»
+    # wurde in der Auswahl «abnahme_v6». Die Kennung bleibt der Dateiname.
+    eingabe = filename.strip().removesuffix(".json").strip()
+    if eingabe and sweep.name == target.stem:
+        sweep = sweep.model_copy(update={"name": eingabe})
     payload = sweep.model_dump(mode="json")
-    target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    target.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return target

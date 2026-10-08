@@ -4,28 +4,44 @@ import json
 from pathlib import Path
 
 from src.market.property_engine import scheduled_property_events
+from src.reporting.namen import einheit_kurz, groesse_name, prozent, zahl
 from src.reporting.output_writer.paths import ensure_output_dir, resolve_output_path
 
 
+def _wert_mit_einheit(value: object, unit: str) -> str:
+    """Ein Wert einer Systemgröße mit Einheit — ein Anteil als Prozent."""
+
+    if not isinstance(value, (int, float)):
+        return str(value)
+    if unit == "fraction":
+        return prozent(float(value), 0)
+    einheit = einheit_kurz(unit)
+    return f"{zahl(float(value))} {einheit}".strip()
+
+
 def format_property_event_line(event: dict[str, object]) -> str:
+    """Eine geplante Änderung als Satz: «Tick 24: CO₂-Steuer springt auf 200 €/t».
+
+    Deutsch, mit Namen und Dezimalkomma (Befund 13 der Abnahme vom 2026-09-30):
+    Hier stand «`carbon_tax_level` set → 200.0 eur_per_tonne».
+    """
+
     tick = event["tick"]
-    prop_id = event["property_id"]
+    name = groesse_name(str(event["property_id"]))
     effect_type = event["effect_type"]
-    value = event["value"]
-    unit = event.get("unit") or ""
+    wert = _wert_mit_einheit(event["value"], str(event.get("unit") or ""))
 
     if effect_type == "set":
-        detail = f"set → {value}"
+        detail = f"springt auf {wert}"
     elif effect_type == "ramp":
         duration = event.get("duration_ticks", 1)
-        detail = f"ramp → {value} über {duration} Tick(s)"
+        detail = f"geht über {duration} Ticks auf {wert}"
     else:
-        detail = f"step_function → {value}"
+        detail = f"auf {wert}"
 
-    unit_suffix = f" {unit}" if unit else ""
     description = event.get("description")
     desc_suffix = f" ({description})" if description else ""
-    return f"- **Tick {tick}:** `{prop_id}` {detail}{unit_suffix}{desc_suffix}"
+    return f"- **Tick {tick}:** {name} {detail}{desc_suffix}"
 
 
 def prior_population_stats(state, round_number: int) -> dict | None:
@@ -70,9 +86,9 @@ def _interpret_tick_mechanics(record: dict[str, object]) -> list[str]:
         and isinstance(post_price, (int, float))
     ):
         notes.append(
-            "Buchung stieg, obwohl der **Endpreis** dieses Ticks stieg: Die Entscheidung "
-            f"fiel bei Referenzpreis **{ref_price:.2f} €** (Vortick-Marktpreis). "
-            f"Der Anstieg auf **{post_price:.2f} €** ist **Folge** der Buchung (Markt-Feedback), "
+            "Die Buchung stieg, obwohl der **Endpreis** dieses Ticks stieg: Gebucht wurde "
+            f"zum Preis des Vorticks, **{zahl(ref_price, 2)} €**. Der Anstieg auf "
+            f"**{zahl(post_price, 2)} €** ist **Folge** der Buchung (Markt-Feedback), "
             "nicht deren Ursache."
         )
 
@@ -83,8 +99,8 @@ def _interpret_tick_mechanics(record: dict[str, object]) -> list[str]:
         and price_delta < -1.0
     ):
         notes.append(
-            "Buchung fiel, während der Endpreis sank: Markt-Feedback senkt den Preis bei "
-            "schwacher Buchung — beides hängt am selben Regelkreis."
+            "Die Buchung fiel, während der Endpreis sank: Das Markt-Feedback senkt den Preis "
+            "bei schwacher Buchung — beides hängt am selben Regelkreis."
         )
 
     shocks = record.get("scheduled_shocks") or []
@@ -92,22 +108,21 @@ def _interpret_tick_mechanics(record: dict[str, object]) -> list[str]:
 
     if "carbon_tax_level" in shock_ids and isinstance(br_delta, (int, float)) and br_delta >= -0.01:
         notes.append(
-            "CO₂-Steuer stieg, Buchung blieb stabil oder stieg: Die Steuer wirkt schwach in "
-            "der Kostenformel (`carbon_per_tonne` sehr klein). Für die Buchung zählt der "
-            "Referenz-Ticketpreis (Vortick), nicht der neue `cost_pressure`. Zusätzlich kann "
-            "Markt-Feedback den Verkaufspreis **senken**, obwohl Kosten steigen."
+            "Die CO₂-Steuer stieg, die Buchung blieb stabil oder stieg: Gebucht wird zum "
+            "Preis des Vorticks — der höhere Kostendruck erreicht den Ticketpreis erst über "
+            "das Markt-Feedback."
         )
 
     if "income_index" in shock_ids and isinstance(br_delta, (int, float)) and br_delta > 0.02:
         notes.append(
-            "Einkommensindex stieg — höhere Zahlungsbereitschaft aller Individuen "
-            "erklärt den Buchungsanstieg unabhängig vom späteren Preis-Feedback."
+            "Der Einkommensindex stieg — höhere Zahlungsbereitschaft erklärt den "
+            "Buchungsanstieg unabhängig vom späteren Preis-Feedback."
         )
 
     if isinstance(pop_delta, int) and pop_delta > 0:
         notes.append(
-            f"Population wuchs um **+{pop_delta}** Personen. Neue Individuen werden frisch "
-            "gesampelt und fließen direkt in die Buchungsrate ein."
+            f"Die Bevölkerung wuchs um **{pop_delta}** Personen. Sie werden neu gezogen "
+            "und gehen direkt in die Buchungsrate ein."
         )
 
     cost_pressure = record.get("cost_pressure_eur")
@@ -117,9 +132,9 @@ def _interpret_tick_mechanics(record: dict[str, object]) -> list[str]:
         and post_price < cost_pressure - 5
     ):
         notes.append(
-            f"Verkaufspreis ({post_price:.2f} €) liegt unter `cost_pressure` "
-            f"({cost_pressure:.2f} €) — der Anbieter verkauft unter Kosten; "
-            "Markt-Feedback und Markup-Regeln entkoppeln Preis und Kosten."
+            f"Der Ticketpreis ({zahl(post_price, 2)} €) liegt unter dem Kostendruck "
+            f"({zahl(cost_pressure, 2)} €) — der Anbieter verkauft unter Kosten; "
+            "Markt-Feedback und Aufschlag entkoppeln Preis und Kosten."
         )
 
     return notes
@@ -199,24 +214,14 @@ def build_tick_mechanics_record(
 
 
 def format_shock_short(shock: dict[str, object]) -> str:
+    """Eine Vorgabe dieses Ticks, knapp: «Kapazitätsindex 1,06», «SAF-Mandat 5 %»."""
+
     prop_id = str(shock.get("property_id", ""))
     value = shock.get("value")
-    labels = {
-        "carbon_tax_level": "CO₂-Steuer",
-        "saf_mandate_share": "SAF-Mandat",
-        "income_index": "Einkommen",
-        "bevoelkerungsentwicklung": "Population",
-        "fuel_price_change": "Treibstoff",
-        "oil_price_index": "Ölpreis",
-    }
-    label = labels.get(prop_id, prop_id)
-    if prop_id == "saf_mandate_share" and isinstance(value, (int, float)):
-        return f"{label} {float(value):.0%}"
-    if isinstance(value, (int, float)) and prop_id != "bevoelkerungsentwicklung":
-        return f"{label} {value:g}"
+    name = groesse_name(prop_id)
     if isinstance(value, (int, float)):
-        return f"{label} {int(value)}"
-    return label
+        return f"{name} {_wert_mit_einheit(value, str(shock.get('unit') or ''))}"
+    return name
 
 
 def save_tick_mechanics(

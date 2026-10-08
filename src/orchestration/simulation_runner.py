@@ -21,6 +21,7 @@ from src.models.agent_models import AgentConfig
 from src.models.enums import AgentType
 from src.models.state_models import DEFAULT_SEED, SimulationState
 from src.orchestration.environment_node import EnvironmentNode
+from src.orchestration.konsole import tick_zeile
 from src.reporting.output_writer import append_individuals_history, resolve_run_output_dir
 from src.reporting.output_writer.provenance import config_fingerprint
 from src.validation import horizontluecken, validate_state
@@ -50,6 +51,13 @@ class RunnerOptions:
     #: gab. Gefragt wird deshalb an der einen Stelle, an der der Zustand
     #: vollständig ist: nach einem fertigen Tick.
     should_stop: Callable[[], bool] | None = None
+    #: Ob der Lauf den Personenverlauf (`individuals_history.csv`) schreibt — die
+    #: Quelle der Ansicht «Animation». **Abschaltbar seit dem 2026-10-02**, weil
+    #: der Backtest ihn nie liest und trotzdem je Lauf rund 11 MB nach
+    #: `outputs/backtest_vorlauf` und `outputs/backtest_ohne_kapazitaet` legte —
+    #: mitten in den Vorführbestand. Ein Lauf aus Dashboard oder CLI schreibt ihn
+    #: weiterhin.
+    personenverlauf: bool = True
 
 
 @dataclass(frozen=True)
@@ -505,16 +513,17 @@ class SimulationRunner:
 
             # Save individual history for animation — always write to run_dir,
             # independent of whether a checkpoint_store is configured.
-            run_dir = resolve_run_output_dir(run_id)
-            if checkpoint_store is not None and hasattr(checkpoint_store, "checkpoint_dir"):
-                # Prefer the checkpoint_store's parent dir if available (keeps paths consistent)
-                run_dir = checkpoint_store.checkpoint_dir.parent
-            append_individuals_history(
-                tick,
-                state.population_individuals,
-                koeffizienten=state.resolved_properties().booking_model,
-                run_dir=run_dir,
-            )
+            if self.options.personenverlauf:
+                run_dir = resolve_run_output_dir(run_id)
+                if checkpoint_store is not None and hasattr(checkpoint_store, "checkpoint_dir"):
+                    # Prefer the checkpoint_store's parent dir if available (keeps paths consistent)
+                    run_dir = checkpoint_store.checkpoint_dir.parent
+                append_individuals_history(
+                    tick,
+                    state.population_individuals,
+                    koeffizienten=state.resolved_properties().booking_model,
+                    run_dir=run_dir,
+                )
 
             if self.options.verbose_ticks:
                 self._print_tick_progress(state, tick=tick, max_ticks=max_ticks)
@@ -537,8 +546,6 @@ class SimulationRunner:
         booking = metrics.get("booking_rate")
         if booking is None and state.price_history:
             booking = state.price_history[-1].booking_rate
-        price_text = f"{price:.2f}" if isinstance(price, (int, float)) else "n/a"
-        booking_text = f"{booking:.1%}" if isinstance(booking, (int, float)) else "n/a"
 
         now = time.perf_counter()
         tick_elapsed = now - getattr(self, "_progress_last_tick_at", now)
@@ -546,9 +553,13 @@ class SimulationRunner:
         self._progress_last_tick_at = now
         rate = tick / total_elapsed if total_elapsed > 0 else 0.0
 
-        msg = (
-            f"[tick {tick:>3}/{max_ticks}] {tick_elapsed:.2f}s "
-            f"({rate:.2f} ticks/s) — price={price_text} €, booking={booking_text}"
+        msg = tick_zeile(
+            tick,
+            max_ticks,
+            sekunden=tick_elapsed,
+            je_sekunde=rate,
+            preis=price,
+            buchungsrate=booking,
         )
         print(msg, flush=True)
         callback = self.options.tick_progress_callback

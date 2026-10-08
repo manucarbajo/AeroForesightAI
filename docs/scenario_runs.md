@@ -39,8 +39,8 @@ der Titel im Manifest nennt die Aussage.
 
 | Datei | Aussage | Inhalt |
 | --- | --- | --- |
-| `preis_und_nachfrage.png` | 1 | Ticketpreis vs. Booking-Rate |
-| `politik_und_wirkung.png` | 2 | CO₂-Policy-Shock |
+| `preis_und_nachfrage.png` | 1 | Ticketpreis und Buchungsrate |
+| `politik_und_wirkung.png` | 2 | CO₂-Abgabe und Buchungsrate |
 | `wer_noch_fliegt.png` | 3 | Alterssegmente |
 | `bevoelkerung.png` | 3 | Populationsverteilung |
 | `faktorlage.png` | 4 | Faktor-Zustände F1–F7 |
